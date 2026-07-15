@@ -10,8 +10,15 @@ import 'engine.dart';
 /// Native wake-word detection and the mic-ownership handoff with the
 /// Voice Satellite card (docs/js-api.md, "Wake-word handoff protocol").
 ///
+/// Configuration is inherited from Voice Satellite: the card pushes the
+/// engine + model list via `setWakeWordConfig` (JS API); nothing is chosen
+/// locally except the master enable switch. The app answers with
+/// `available` so the card can fall back to browser detection when the
+/// configured engine has no native runner here.
+///
 /// State:
-///   enabled   — the `wake_word.enabled` setting
+///   enabled   — the `wake_word.enabled` local master switch
+///   config    — pushed by the VS card; null until the page configures us
 ///   active    — page-controlled via setWakeWordActive(); suspended (false)
 ///               while the VS card owns the mic for STT
 ///   listening — mic actually open and inference running
@@ -27,26 +34,51 @@ class WakeWordManager extends Manager {
   @override
   String get name => 'wake_word';
 
-  // TODO(milestone-2): replace with the TFLite microWakeWord engine running
-  // the same .tflite streaming models Voice Satellite ships.
   late final WakeWordEngine _engine = StubWakeWordEngine();
 
+  WakeWordConfig? _config;
   bool _active = true;
   Timer? _resumeTimer;
 
   bool get enabled => _settings.get(defs.wakeWordEnabled);
   bool get listening => _engine.running;
 
+  /// Whether we can natively run the engine Voice Satellite configured.
+  bool get available =>
+      _config != null && _engine.supportedEngines.contains(_config!.engine);
+
   @override
   Future<void> init() async {
     bus.on<SettingChanged>().listen((e) {
-      if (e.key == defs.wakeWordEnabled.key ||
-          e.key == defs.wakeWordModel.key) {
-        _sync();
-      }
+      if (e.key == defs.wakeWordEnabled.key) _sync();
     });
 
     commands
+      ..register(Command(
+        name: 'setWakeWordConfig',
+        description:
+            'Inherit wake-word config from Voice Satellite: engine '
+            '(microWakeWord | openWakeWord | vsWakeWord) and models with '
+            'manifest URLs on the HA instance',
+        params: const {
+          'engine': 'microWakeWord | openWakeWord | vsWakeWord',
+          'models': '[{id, wakeWord, manifestUrl}]',
+        },
+        handler: (p) async {
+          final config = WakeWordConfig.fromJson(p);
+          if (config == null) {
+            return const CommandResult.fail('invalid wake word config');
+          }
+          _config = config;
+          log.info(
+              name,
+              'configured by page: ${config.engine.name} '
+              '[${config.models.map((m) => m.id).join(', ')}]'
+              '${available ? '' : ' (no native runner — reporting unavailable)'}');
+          await _sync();
+          return CommandResult.ok({'available': available});
+        },
+      ))
       ..register(Command(
         name: 'setWakeWordActive',
         description:
@@ -62,19 +94,16 @@ class WakeWordManager extends Manager {
         name: 'getWakeWordState',
         description: 'Current wake-word engine state',
         handler: (_) async => CommandResult.ok({
-          'available': _engine.available,
+          'available': available,
+          'enabled': enabled,
           'active': _active,
           'listening': listening,
-          'model': _settings.get(defs.wakeWordModel),
+          'engine': _config?.engine.name,
+          'models': [
+            for (final m in _config?.models ?? const <WakeWordModelRef>[])
+              m.toJson(),
+          ],
         }),
-      ))
-      ..register(Command(
-        name: 'getWakeWordModels',
-        description: 'Installed wake-word models',
-        handler: (_) async => CommandResult.ok([
-          for (final m in _engine.models)
-            {'id': m.id, 'wakeWord': m.wakeWord, 'engine': m.engine},
-        ]),
       ))
       ..register(Command(
         name: 'simulateWakeWord',
@@ -82,7 +111,10 @@ class WakeWordManager extends Manager {
             'Fire a wake-word detection without the engine — for testing the '
             'Voice Satellite handoff end-to-end',
         handler: (_) async {
-          await _onDetection(_settings.get(defs.wakeWordModel));
+          final model = _config?.models.firstOrNull ??
+              const WakeWordModelRef(
+                  id: 'test', wakeWord: 'Test', manifestUrl: '');
+          await _onDetection(model);
           return const CommandResult.ok();
         },
       ));
@@ -99,13 +131,10 @@ class WakeWordManager extends Manager {
   }
 
   Future<void> _sync() async {
-    final shouldListen = enabled && _active;
+    final shouldListen = enabled && _active && available;
     if (shouldListen && !_engine.running) {
-      await _engine.start(
-        model: _settings.get(defs.wakeWordModel),
-        onDetection: _onDetection,
-      );
-      log.info(name, 'listening (${_settings.get(defs.wakeWordModel)})');
+      await _engine.start(config: _config!, onDetection: _onDetection);
+      log.info(name, 'listening (${_config!.engine.name})');
     } else if (!shouldListen && _engine.running) {
       await _engine.stop();
       log.info(name, 'stopped');
@@ -113,15 +142,12 @@ class WakeWordManager extends Manager {
     bus.publish(WakeWordStateChanged(active: _active, listening: listening));
   }
 
-  Future<void> _onDetection(String model) async {
+  Future<void> _onDetection(WakeWordModelRef model) async {
     // Stop capture FIRST — the page opens the mic as soon as the event fires.
     await _engine.stop();
     _active = false;
-    log.info(name, 'detected "$model", mic released');
-    bus.publish(WakeWordDetected(
-      model: model,
-      phrase: _engine.phraseFor(model),
-    ));
+    log.info(name, 'detected "${model.id}", mic released');
+    bus.publish(WakeWordDetected(model: model.id, phrase: model.wakeWord));
 
     // Self-heal: if the page never resumes us (crash, navigation), re-arm.
     _resumeTimer?.cancel();

@@ -128,21 +128,12 @@ const motionEnabled = SettingDef<bool>(
 const wakeWordEnabled = SettingDef<bool>(
   key: 'wake_word.enabled',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Wake word detection',
   description:
-      'Listen for a wake word natively and hand off to the Voice Satellite '
-      'card via the JavaScript API.',
-  category: 'Wake word',
-);
-
-const wakeWordModel = SettingDef<String>(
-  key: 'wake_word.model',
-  type: SettingType.string,
-  defaultValue: 'okay_nabu',
-  title: 'Wake word model',
-  description: 'Installed microWakeWord model to run.',
-  category: 'Wake word',
+      'Master switch. Engine and models are inherited from Voice Satellite '
+      'in Home Assistant — there is nothing to configure here.',
+  category: 'Voice Satellite',
 );
 
 const wakeWordResumeTimeoutSeconds = SettingDef<num>(
@@ -153,7 +144,7 @@ const wakeWordResumeTimeoutSeconds = SettingDef<num>(
   description:
       'Self-heal: resume listening if the page never calls '
       'setWakeWordActive(true) after a handoff.',
-  category: 'Wake word',
+  category: 'Voice Satellite',
 );
 
 // ── Home Assistant ─────────────────────────────────────────────────────
@@ -242,7 +233,6 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDismissOnMotion,
   motionEnabled,
   wakeWordEnabled,
-  wakeWordModel,
   wakeWordResumeTimeoutSeconds,
   haUrl,
   haToken,

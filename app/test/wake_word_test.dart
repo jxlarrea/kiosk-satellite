@@ -7,25 +7,34 @@ import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/managers/wake_word/wake_word_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The wake-word handoff protocol (docs/js-api.md): detection stops the
-/// native engine before the event is published; the page resumes listening
-/// via setWakeWordActive(true).
+/// The wake-word contract (docs/js-api.md): config is pushed by the Voice
+/// Satellite card (setWakeWordConfig), detection releases the mic before the
+/// event is published, and the page resumes listening via
+/// setWakeWordActive(true).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late EventBus bus;
   late CommandRegistry commands;
-  late SettingsManager settings;
   late WakeWordManager wakeWord;
 
+  const vsConfig = {
+    'engine': 'microWakeWord',
+    'models': [
+      {
+        'id': 'okay_nabu',
+        'wakeWord': 'Okay Nabu',
+        'manifestUrl': 'http://ha.local:8123/voice_satellite/models/okay_nabu.json',
+      },
+    ],
+  };
+
   setUp(() async {
-    SharedPreferences.setMockInitialValues({
-      'ks.wake_word.enabled': true,
-    });
+    SharedPreferences.setMockInitialValues({});
     bus = EventBus();
     final log = Logger();
     commands = CommandRegistry(log);
-    settings = SettingsManager(bus, commands, log);
+    final settings = SettingsManager(bus, commands, log);
     await settings.init();
     wakeWord = WakeWordManager(bus, commands, log, settings);
     await wakeWord.init();
@@ -36,12 +45,36 @@ void main() {
     await bus.dispose();
   });
 
-  test('listens on init when enabled', () {
-    expect(wakeWord.listening, isTrue);
+  test('unconfigured until Voice Satellite pushes a config', () async {
+    expect(wakeWord.available, isFalse);
+    final state = await commands.execute('getWakeWordState', const {});
+    expect((state.data as Map)['engine'], isNull);
+  });
+
+  test('rejects malformed configs', () async {
+    final result = await commands
+        .execute('setWakeWordConfig', const {'engine': 'bogus', 'models': []});
+    expect(result.ok, isFalse);
+  });
+
+  test('accepts a VS config and reports native availability honestly',
+      () async {
+    final result = await commands.execute('setWakeWordConfig', vsConfig);
+    expect(result.ok, isTrue);
+    // The stub engine runs nothing natively — VS must keep its browser
+    // engine. Flips to true when the real TFLite runner lands.
+    expect((result.data as Map)['available'], isFalse);
+
+    final state = await commands.execute('getWakeWordState', const {});
+    final data = state.data as Map<String, Object?>;
+    expect(data['engine'], 'microWakeWord');
+    expect((data['models'] as List), hasLength(1));
   });
 
   test('detection releases the mic before publishing, page resume re-arms',
       () async {
+    await commands.execute('setWakeWordConfig', vsConfig);
+
     final detections = <WakeWordDetected>[];
     var listeningAtDetection = true;
     bus.on<WakeWordDetected>().listen((e) {
@@ -54,29 +87,17 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     expect(detections, hasLength(1));
+    expect(detections.single.model, 'okay_nabu');
+    expect(detections.single.phrase, 'Okay Nabu');
     // Mic released before the page hears about the detection.
     expect(listeningAtDetection, isFalse);
-    expect(wakeWord.listening, isFalse);
 
-    // Page finished its voice session and resumes us.
-    final resume =
-        await commands.execute('setWakeWordActive', const {'active': true});
-    expect(resume.ok, isTrue);
-    expect(wakeWord.listening, isTrue);
-  });
+    // Detection suspends listening until the page resumes us.
+    var state = await commands.execute('getWakeWordState', const {});
+    expect((state.data as Map)['active'], isFalse);
 
-  test('getWakeWordState reflects suspension', () async {
-    await commands.execute('setWakeWordActive', const {'active': false});
-    final state = await commands.execute('getWakeWordState', const {});
-    expect(state.ok, isTrue);
-    final data = state.data as Map<String, Object?>;
-    expect(data['active'], isFalse);
-    expect(data['listening'], isFalse);
-  });
-
-  test('disabling the setting stops listening', () async {
-    await settings.setFromJson('wake_word.enabled', false);
-    await Future<void>.delayed(Duration.zero);
-    expect(wakeWord.listening, isFalse);
+    await commands.execute('setWakeWordActive', const {'active': true});
+    state = await commands.execute('getWakeWordState', const {});
+    expect((state.data as Map)['active'], isTrue);
   });
 }

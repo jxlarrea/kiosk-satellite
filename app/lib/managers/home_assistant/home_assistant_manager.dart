@@ -55,6 +55,25 @@ class HomeAssistantManager extends Manager {
       ));
   }
 
+  bool? _vsDetected;
+
+  /// Whether the Voice Satellite integration is installed on the connected
+  /// HA instance (probes its static frontend path). Cached per app run.
+  Future<bool> detectVoiceSatellite() async {
+    if (_vsDetected != null) return _vsDetected!;
+    if (baseUrl.isEmpty) return false;
+    try {
+      final response = await http
+          .head(Uri.parse('$baseUrl/voice_satellite/voice-satellite-card.js'))
+          .timeout(const Duration(seconds: 5));
+      _vsDetected = response.statusCode == 200;
+    } catch (_) {
+      _vsDetected = false;
+    }
+    if (_vsDetected!) log.info(name, 'Voice Satellite detected');
+    return _vsDetected!;
+  }
+
   /// Null when reachable and authorized, otherwise an error description.
   Future<String?> checkConnection() async {
     if (!configured) return 'Home Assistant URL and token not configured';

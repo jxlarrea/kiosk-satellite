@@ -35,9 +35,9 @@ String buildKioskSatelliteScript({required String version, required String os}) 
 
     getMotionEnabled: function () { return call('getMotionEnabled'); },
 
+    setWakeWordConfig: function (config) { return call('setWakeWordConfig', config); },
     setWakeWordActive: function (active) { return call('setWakeWordActive', { active: !!active }); },
-    getWakeWordState: function () { return call('getWakeWordState'); },
-    getWakeWordModels: function () { return call('getWakeWordModels'); }
+    getWakeWordState: function () { return call('getWakeWordState'); }
   };
 })();
 ''';

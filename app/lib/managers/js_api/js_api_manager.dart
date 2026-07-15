@@ -38,9 +38,9 @@ class JsApiManager extends Manager {
     'stopScreensaver': 'stopScreensaver',
     'pauseScreensaver': 'pauseScreensaver',
     'getMotionEnabled': 'getMotionEnabled',
+    'setWakeWordConfig': 'setWakeWordConfig',
     'setWakeWordActive': 'setWakeWordActive',
     'getWakeWordState': 'getWakeWordState',
-    'getWakeWordModels': 'getWakeWordModels',
   };
 
   @override

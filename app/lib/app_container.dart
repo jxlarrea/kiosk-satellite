@@ -11,6 +11,7 @@ import 'managers/motion/motion_manager.dart';
 import 'managers/remote/remote_manager.dart';
 import 'managers/screen/screen_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
+import 'managers/settings/provisioning.dart';
 import 'managers/settings/settings_manager.dart';
 import 'managers/wake_word/wake_word_manager.dart';
 
@@ -65,6 +66,9 @@ class AppContainer {
 
   Future<void> init() async {
     await settings.init();
+    // Apply any adb/MDM intent provisioning before other managers read
+    // their settings; the channel also handles pushes while running.
+    await ProvisioningChannel(settings, log).init();
     await device.init();
     jsApi = JsApiManager(bus, commands, log, device.appVersion);
     for (final manager in _ordered.skip(2)) {
