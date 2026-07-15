@@ -171,11 +171,12 @@ const haToken = SettingDef<String>(
 const haKioskMode = SettingDef<String>(
   key: 'ha.kiosk_mode',
   type: SettingType.select,
-  defaultValue: 'auto',
+  defaultValue: 'off',
   title: 'HA kiosk mode',
   description:
-      'Hide the Home Assistant header and sidebar. "auto" uses the kiosk-mode '
-      'HACS plugin when detected, otherwise injects CSS.',
+      'Hide the Home Assistant header and sidebar. Off shows the normal HA '
+      'UI. "auto" uses the kiosk-mode HACS plugin when detected, otherwise '
+      'injects CSS. Applies immediately — no restart.',
   category: 'Home Assistant',
   options: ['off', 'auto', 'plugin', 'css'],
 );

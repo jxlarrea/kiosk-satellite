@@ -192,6 +192,16 @@ class BrowserManager extends Manager {
     await _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
 
+  /// Evaluate JavaScript in the current page (fire-and-forget helper for the
+  /// UI layer, e.g. applying/removing kiosk-mode CSS).
+  Future<void> runJs(String source) async {
+    try {
+      await _controller?.evaluateJavascript(source: source);
+    } catch (e) {
+      log.debug(name, 'runJs failed: $e');
+    }
+  }
+
   static String _stripSlash(String url) =>
       url.endsWith('/') ? url.substring(0, url.length - 1) : url;
 }

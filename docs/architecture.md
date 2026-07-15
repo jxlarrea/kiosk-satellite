@@ -115,7 +115,15 @@ engines cannot do.
   kiosk manager detects and walks the user through enabling it.
 - **iOS remote server** runs only while the app is foreground — always true in
   kiosk use.
-- **HA kiosk mode**: if the `kiosk-mode` HACS plugin is installed we append
-  `?kiosk` and let it handle shadow-DOM changes across HA releases; otherwise we
-  fall back to native CSS injection (version-fragile; kept small and isolated in
-  `managers/home_assistant/kiosk_mode.dart`).
+- **HA kiosk mode** (`ha.kiosk_mode`, default **off** — the normal HA UI shows
+  until you opt in): `auto` probes for the `kiosk-mode` HACS plugin and, when
+  present, appends `?kiosk` and defers to it entirely (it tracks HA's shadow-DOM
+  changes across releases); otherwise it falls back to our own CSS injection
+  (`plugin` and `css` force either path). The CSS fallback is version-fragile
+  and isolated in `managers/home_assistant/kiosk_mode.dart`. Kiosk mode is
+  applied live — injected per navigation and re-applied on setting change — so
+  toggling it never needs an app restart.
+- **WebView media permissions**: the app requests the OS `RECORD_AUDIO` and
+  `CAMERA` runtime grants at launch. Without the app-level grant, the WebView's
+  `getUserMedia` fails with "Could not start audio source" even though we grant
+  the per-origin WebView permission — so the Voice Satellite mic needs both.

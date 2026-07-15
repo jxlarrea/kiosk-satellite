@@ -53,6 +53,35 @@ class HomeAssistantManager extends Manager {
               : CommandResult.ok(dashboards);
         },
       ));
+
+    // "auto" kiosk mode needs to know up front whether the plugin exists so
+    // the initial URL can carry ?kiosk. Detect before the kiosk screen builds.
+    if (configured && _settings.get(defs.haKioskMode) == 'auto') {
+      await detectKioskModePlugin();
+    }
+  }
+
+  bool? _kioskPlugin;
+
+  /// Whether the kiosk-mode HACS plugin is installed on the connected HA
+  /// instance (probes its static resource). Cached per app run. When present
+  /// it is the preferred way to hide the header/sidebar — it tracks HA's DOM
+  /// across releases, unlike our CSS fallback.
+  bool get kioskPluginDetected => _kioskPlugin ?? false;
+
+  Future<bool> detectKioskModePlugin() async {
+    if (_kioskPlugin != null) return _kioskPlugin!;
+    if (baseUrl.isEmpty) return false;
+    try {
+      final response = await http
+          .head(Uri.parse('$baseUrl/hacsfiles/kiosk-mode/kiosk-mode.js'))
+          .timeout(const Duration(seconds: 5));
+      _kioskPlugin = response.statusCode == 200;
+    } catch (_) {
+      _kioskPlugin = false;
+    }
+    log.info(name, 'kiosk-mode plugin ${_kioskPlugin! ? 'detected' : 'absent'}');
+    return _kioskPlugin!;
   }
 
   bool? _vsDetected;

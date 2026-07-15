@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
@@ -33,10 +34,24 @@ class _KioskScreenState extends State<KioskScreen> {
   AppContainer get c => widget.container;
 
   bool _consoleOpen = false;
+  StreamSubscription<SettingChanged>? _kioskModeSub;
 
   @override
   void initState() {
     super.initState();
+
+    // HA kiosk mode is applied live (per navigation + on setting change), so
+    // toggling it never needs an app restart.
+    _kioskModeSub = c.bus.on<SettingChanged>().listen((e) async {
+      if (e.key != defs.haKioskMode.key) return;
+      if (e.value == 'auto' && c.homeAssistant.configured) {
+        await c.homeAssistant.detectKioskModePlugin();
+      }
+      await _applyKioskMode();
+      // Reload so the plugin's ?kiosk param takes / drops cleanly.
+      await c.browser.loadUrl(_initialUrl);
+    });
+
     if (widget.showMenuHint) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -49,25 +64,38 @@ class _KioskScreenState extends State<KioskScreen> {
     }
   }
 
-  String get _initialUrl {
-    var url = c.settings.get(defs.startUrl);
-    final kioskMode = c.settings.get(defs.haKioskMode);
-    if (kioskMode == 'plugin' || kioskMode == 'auto') {
-      url = withKioskParam(url);
+  /// Resolve `auto` to a concrete strategy using plugin detection:
+  /// `plugin` (defer to the HACS plugin) or `css` (inject our fallback).
+  String get _effectiveKioskMode {
+    final mode = c.settings.get(defs.haKioskMode);
+    if (mode == 'auto') {
+      return c.homeAssistant.kioskPluginDetected ? 'plugin' : 'css';
     }
-    return url;
+    return mode;
   }
 
-  List<UserScript> get _userScripts {
-    final kioskMode = c.settings.get(defs.haKioskMode);
-    return [
-      c.jsApi.buildUserScript(c.device.os),
-      if (kioskMode == 'css' || kioskMode == 'auto')
-        UserScript(
-          source: kioskModeCss,
-          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_END,
-        ),
-    ];
+  bool get _usePlugin => _effectiveKioskMode == 'plugin';
+  bool get _useCss => _effectiveKioskMode == 'css';
+
+  String get _initialUrl {
+    final url = c.settings.get(defs.startUrl);
+    return _usePlugin ? withKioskParam(url) : url;
+  }
+
+  /// The JS bridge is always injected at document start. The kiosk-mode CSS
+  /// is applied per-load in [onLoadStop] (not a fixed initial script) so it
+  /// can be toggled live.
+  List<UserScript> get _userScripts => [c.jsApi.buildUserScript(c.device.os)];
+
+  /// Apply or tear down the CSS kiosk mode against the current page.
+  Future<void> _applyKioskMode() async {
+    await c.browser.runJs(kioskModeScript(apply: _useCss));
+  }
+
+  @override
+  void dispose() {
+    _kioskModeSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -99,6 +127,9 @@ class _KioskScreenState extends State<KioskScreen> {
               },
               onLoadStop: (controller, url) {
                 if (url != null) c.browser.onPageLoaded(url.toString());
+                // Re-apply CSS kiosk mode on every navigation (only does
+                // work when the effective mode is 'css').
+                if (_useCss) _applyKioskMode();
               },
               onReceivedError: (controller, request, error) {
                 if (request.isForMainFrame ?? true) {
