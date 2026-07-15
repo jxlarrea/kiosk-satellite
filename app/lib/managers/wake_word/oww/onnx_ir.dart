@@ -14,17 +14,21 @@ int? irVersionOf(Uint8List bytes) {
 /// Rewrite `ir_version` down to [target] in place; returns true if it changed.
 ///
 /// The onnxruntime package bundles ORT 1.15, which refuses anything above IR 9.
-/// Voice Satellite's own model conversions emit IR 10 (its upstream tf2onnx
-/// models are v8 and load fine), and IR 10 is essentially a container revision:
-/// where the *operators* are ones ORT 1.15 knows, the model runs identically
-/// once the header stops claiming a version it does not recognise. Verified on
-/// device against the openWakeWord classifiers.
+/// `ir_version` declares the *file format*, and a runtime checks it before it
+/// looks at a single node — so a model built from ops ORT 1.15 knows perfectly
+/// well is rejected for the header alone. Lower the claim and the same bytes
+/// load and run identically. Verified on device against every openWakeWord
+/// classifier.
 ///
 /// Safe by construction: if the graph really did use newer operators, loading
 /// still fails loudly with an unsupported-op error rather than misbehaving.
 ///
-/// This is a compatibility shim, not the cure. The real fix is the exporter
-/// emitting IR 9; this keeps already-shipped models working either way.
+/// This is a shim, and it is deliberately still here now that the cause is
+/// fixed. Voice Satellite's converter used to emit IR 10 for no reason (it
+/// writes opset 12, whose IR version is 7) and now emits 7, but this must keep
+/// working for models we did not build: users drop their own .onnx into
+/// `/config/voice_satellite/models/openwakeword/` and the integration serves
+/// them as-is, so whatever exporter they used decides the IR version, not us.
 bool downgradeIrVersion(Uint8List bytes, {int target = 9}) {
   final current = irVersionOf(bytes);
   if (current == null || current <= target) return false;
