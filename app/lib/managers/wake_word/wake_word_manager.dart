@@ -78,6 +78,13 @@ class WakeWordManager extends Manager {
   /// Cleared when the page pushes config again.
   bool _released = false;
 
+  /// Why the page released us, in the card's words: 'muted', 'browser', or
+  /// null from a card too old to say. Both are a closed mic to us and nothing
+  /// else, so without being told we can only report the mechanism and not the
+  /// cause — which is how muting the satellite came to display as "no native
+  /// runner for openWakeWord".
+  String? _releaseReason;
+
   bool get enabled => _settings.get(defs.wakeWordEnabled);
 
   /// Actively detecting. The engine can be running (mic open, models loaded)
@@ -121,8 +128,16 @@ class WakeWordManager extends Manager {
   /// Why, when we know. Drives what the UIs offer to do about it.
   EngineFailure? _failure;
 
-  /// What went wrong, or null when nothing has.
-  EngineFailure? get failure => _failed ? _failure : null;
+  /// Whether offering a retry would mean anything.
+  ///
+  /// Not while the card has released us: retrying re-runs the sync, which will
+  /// not start anything the card has taken back, so the button would do
+  /// nothing. Unmuting is what fixes a mute, and that comes from the card.
+  bool get canRetry => _failed && !_released;
+
+  /// What went wrong, or null when nothing has — or when it no longer matters
+  /// because the card has since taken the microphone back.
+  EngineFailure? get failure => canRetry ? _failure : null;
 
   /// The microphone is refused and Android will not ask again, so the only way
   /// back is the OS settings screen. Both UIs offer that when this is true.
@@ -167,6 +182,10 @@ class WakeWordManager extends Manager {
   /// settings screen and the remote web admin must say the same thing about the
   /// same device, and they cannot if each decides for itself what "available
   /// but not listening" means.
+  /// Deliberately walks the same clauses as [available], in the same order, so
+  /// each way of being unavailable gets its own answer. There is no catch-all
+  /// here on purpose: "No native runner" used to be one, and it told anyone who
+  /// muted the satellite that their engine was unsupported.
   ({String code, String label}) get status {
     if (!enabled) {
       return (
@@ -183,12 +202,28 @@ class WakeWordManager extends Manager {
             'configured by the card once this device opens its dashboard.',
       );
     }
-    if (!available) {
-      // Say what actually happened. "No native runner" was once the only way to
-      // be unavailable and became the catch-all, which meant a refused
-      // microphone displayed as a missing engine — sending anyone who read it
-      // off to debug the wrong thing entirely.
-      return switch (failure) {
+    if (_released) {
+      // Why the card took the mic back is the card's to know: mute and "the
+      // browser is taking detection back" are the same event to us.
+      return switch (_releaseReason) {
+        'muted' => (
+            code: 'muted',
+            label: 'Muted in Voice Satellite. The microphone is closed until '
+                'the satellite is unmuted.',
+          ),
+        'browser' => (
+            code: 'browser',
+            label: 'Voice Satellite is running detection in the browser for '
+                'this engine.',
+          ),
+        _ => (
+            code: 'released',
+            label: 'Voice Satellite released the microphone.',
+          ),
+      };
+    }
+    if (_failed) {
+      return switch (_failure) {
         EngineFailure.micBlocked => (
             code: 'micBlocked',
             label: 'Microphone blocked. Android will not ask again — allow it '
@@ -209,11 +244,18 @@ class WakeWordManager extends Manager {
                 'once it is reachable.',
           ),
         null => (
-            code: 'unavailable',
-            label: 'No native runner for ${config.engine.label} — Voice '
-                'Satellite keeps browser detection.',
+            code: 'failed',
+            label: 'The wake-word engine could not start. Retry, or reload '
+                'the page.',
           ),
       };
+    }
+    if (!_engine.supportedEngines.contains(config.engine)) {
+      return (
+        code: 'unavailable',
+        label: 'No native runner for ${config.engine.label} — Voice Satellite '
+            'keeps browser detection.',
+      );
     }
     return listening
         ? (code: 'listening', label: 'Listening natively')
@@ -235,7 +277,9 @@ class WakeWordManager extends Manager {
         'status': status.code,
         'statusLabel': status.label,
         // Both UIs offer a way out; they must not each decide when to.
-        'canRetry': _failed,
+        'canRetry': canRetry,
+        'released': _released,
+        'releaseReason': _releaseReason,
         'needsAppSettings': needsAppSettings,
         'stopWord': _config?.stopModel?.wakeWord,
         'models': [
@@ -275,6 +319,7 @@ class WakeWordManager extends Manager {
           // fixed by now, and this is the only retry there is.
           final changed = _config != config || _released || _failed;
           _released = false; // a fresh push takes the mic back
+          _releaseReason = null;
           _failed = false; // and re-earns the right to claim availability
           _config = config;
           if (changed && _engine.running) {
@@ -307,9 +352,13 @@ class WakeWordManager extends Manager {
             'resume between turns, this closes it: for when the satellite is '
             'muted or the page switched to an engine we do not run. Push '
             'setWakeWordConfig again to take it back.',
-        handler: (_) async {
+        params: const {
+          'reason': "optional: 'muted' | 'browser' — shown to the user",
+        },
+        handler: (p) async {
           if (_released) return const CommandResult.ok();
           _released = true;
+          _releaseReason = p['reason'] as String?;
           _resumeTimer?.cancel();
           _active = true; // a later re-push starts listening, not suspended
           await _engine.stop();

@@ -70,9 +70,40 @@ the app downloads what it needs from those URLs.
 
 | Method | Returns | Description |
 |---|---|---|
-| `setWakeWordConfig({engine, models})` | `{available}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two — VS routes two wake words to separate pipeline slots). Resolves `{available: false}` when the app has no native runner for that engine — **the card must then keep using its browser engine**. |
-| `setWakeWordActive(active)` | `boolean` | Resume (`true`) or suspend (`false`) native listening. **The page must call `setWakeWordActive(true)` when its voice session returns to idle** — see handoff protocol. |
-| `getWakeWordState()` | `{available, enabled, active, listening, engine, models}` | Current engine state |
+| `setWakeWordConfig({engine, models, stopModel, energyGate})` | `{available, stopWordAvailable}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two — VS routes two wake words to separate pipeline slots). Resolves `{available: false}` when the app is not listening for that config — no native runner, but also a refused microphone or models it could not download — **the card must then keep using its browser engine**. Pushing again is also the retry: it clears any previous failure and takes the mic back after a release. |
+| `setWakeWordActive(active)` | `boolean` | Resume (`true`) or suspend (`false`) native listening. The mic stays open, for an instant resume between turns. **The page must call `setWakeWordActive(true)` when its voice session returns to idle** — see handoff protocol. |
+| `releaseWakeWord({reason})` | `boolean` | Hard mic-off: stop detecting **and close the microphone**, unlike `setWakeWordActive(false)`. For a muted satellite, or the browser taking detection back. `reason` is `'muted' \| 'browser'` and is shown to the user — both look identical from the app's side, so **only the card can say which**, and an unexplained release can only be reported as "the microphone was released". `setWakeWordConfig` takes it back. |
+| `getWakeWordState()` | see below | Current engine state |
+
+`getWakeWordState()` resolves the whole state, which is also what the app's own
+settings screen and its remote admin render — one shape, so the two cannot
+disagree about the same device:
+
+```js
+{
+  available: false,          // are we listening for the pushed config, right now
+  stopWordAvailable: false,  // is the stop classifier running natively
+  enabled: true,             // the app's own master switch
+  active: true,              // not suspended for a turn
+  listening: false,
+  engine: 'openWakeWord',
+  engineLabel: 'openWakeWord',
+  status: 'muted',           // machine-readable; see below
+  statusLabel: 'Muted in Voice Satellite. The microphone is closed until …',
+  canRetry: false,           // would retryWakeWord() mean anything
+  needsAppSettings: false,   // mic blocked: only the OS settings can undo it
+  released: true,
+  releaseReason: 'muted',
+  stopWord: 'Stop',
+  models: [{ id, wakeWord, manifestUrl, confidenceScale, cutoff }],
+}
+```
+
+`status` is one of `disabled`, `waiting`, `muted`, `browser`, `released`,
+`micBlocked`, `micDeclined`, `micLost`, `modelsUnavailable`, `failed`,
+`unavailable`, `listening`, `suspended` — one per distinct way of being in that
+state, deliberately with no catch-all. `statusLabel` is the sentence to show;
+derive nothing from `status` that the label already says.
 
 ## Events
 

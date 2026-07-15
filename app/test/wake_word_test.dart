@@ -241,6 +241,66 @@ void main() {
     expect(wakeWord.describeState()['status'], 'modelsUnavailable');
   });
 
+  group('releasing the mic explains itself', () {
+    // Muting the satellite and "the browser is taking detection back" are the
+    // same event here — the card closes our mic — so the card tells us which.
+    // Without that this fell through to the catch-all and told anyone who muted
+    // their satellite that openWakeWord had no native runner.
+    test('a mute says it is muted', () async {
+      await commands.execute('setWakeWordConfig', vsConfig);
+      await commands.execute('releaseWakeWord', const {'reason': 'muted'});
+
+      final state = wakeWord.describeState();
+      expect(state['status'], 'muted');
+      expect(state['statusLabel'], contains('Muted in Voice Satellite'));
+      expect(state['available'], isFalse, reason: 'the mic really is closed');
+      expect(state['statusLabel'], isNot(contains('No native runner')));
+      expect(state['canRetry'], isFalse,
+          reason: 'nothing failed; unmuting is the fix, not retrying');
+    });
+
+    test('detection going back to the browser says that instead', () async {
+      await commands.execute('setWakeWordConfig', vsConfig);
+      await commands.execute('releaseWakeWord', const {'reason': 'browser'});
+      expect(wakeWord.describeState()['status'], 'browser');
+    });
+
+    test('a card too old to give a reason still does not lie', () async {
+      await commands.execute('setWakeWordConfig', vsConfig);
+      await commands.execute('releaseWakeWord', const {});
+      final state = wakeWord.describeState();
+      expect(state['status'], 'released');
+      expect(state['statusLabel'], contains('released the microphone'));
+      expect(state['statusLabel'], isNot(contains('No native runner')));
+    });
+
+    test('unmuting clears it: a fresh config push takes the mic back',
+        () async {
+      await commands.execute('setWakeWordConfig', vsConfig);
+      await commands.execute('releaseWakeWord', const {'reason': 'muted'});
+      expect(wakeWord.describeState()['status'], 'muted');
+
+      await commands.execute('setWakeWordConfig', vsConfig);
+      expect(wakeWord.describeState()['status'], isNot('muted'));
+      expect(wakeWord.describeState()['releaseReason'], isNull);
+    });
+
+    test('"no native runner" is kept for the case that really is that',
+        () async {
+      // The catch-all became a lie because it was a catch-all. It still has to
+      // be right about its own case: an engine with no native runner here.
+      await commands.execute('setWakeWordConfig', const {
+        'engine': 'vsWakeWord',
+        'models': [
+          {'id': 'ok_luna', 'wakeWord': 'Ok Luna', 'manifestUrl': 'http://x/m.json'},
+        ],
+      });
+      // vsWakeWord *does* have a runner, so this must not claim otherwise —
+      // it fails on the model download instead.
+      expect(wakeWord.describeState()['status'], 'modelsUnavailable');
+    });
+  });
+
   group('a refused microphone is recoverable', () {
     // The dead end this guards: Android stops asking after the second "Don't
     // allow", and the browser fallback needs the same permission, so both paths

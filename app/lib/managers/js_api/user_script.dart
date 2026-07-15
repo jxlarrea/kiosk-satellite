@@ -40,8 +40,11 @@ String buildKioskSatelliteScript({required String version, required String os}) 
 
     // Hard mic-off: stops detection and closes the microphone (mute, or the
     // page switching to an engine we do not run natively). setWakeWordConfig
-    // takes it back.
-    releaseWakeWord: function () { return call('releaseWakeWord'); },
+    // takes it back. Pass {reason: 'muted' | 'browser'} — both look identical
+    // from here, and the app shows this state to a person.
+    releaseWakeWord: function (opts) {
+      return call('releaseWakeWord', { reason: (opts && opts.reason) || null });
+    },
     getWakeWordState: function () { return call('getWakeWordState'); },
 
     // Stop word: armed by the page only while something interruptible is
