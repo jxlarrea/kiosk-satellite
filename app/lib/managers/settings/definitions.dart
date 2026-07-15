@@ -53,6 +53,18 @@ const autoReloadOnError = SettingDef<bool>(
   category: 'Browser',
 );
 
+const disableCache = SettingDef<bool>(
+  key: 'browser.disable_cache',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable cache',
+  description:
+      'Always fetch pages and scripts from the network, ignoring the cache. '
+      'Useful while developing a dashboard or card so you never load a stale '
+      'copy. Slower on a normal kiosk.',
+  category: 'Browser',
+);
+
 const allowMixedContent = SettingDef<bool>(
   key: 'browser.allow_mixed_content',
   type: SettingType.boolean,
@@ -296,6 +308,7 @@ const deviceName = SettingDef<String>(
 const List<SettingDef<Object>> allSettings = [
   startUrl,
   autoReloadOnError,
+  disableCache,
   allowMixedContent,
   ignoreSslErrors,
   webMicrophone,

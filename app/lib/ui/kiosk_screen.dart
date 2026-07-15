@@ -51,10 +51,13 @@ class _KioskScreenState extends State<KioskScreen> {
       await c.browser.loadUrl(_initialUrl); // reload so ?kiosk takes/drops
       return;
     }
-    // Mixed-content / SSL are read only at WebView creation — rebuild it
-    // (preserving the current URL) so the change applies without a restart.
+    // Mixed-content / SSL / cache are read only at WebView creation — rebuild
+    // it (preserving the current URL) so the change applies without a restart.
+    // The rebuild is storage-safe: localStorage is per-origin and outlives the
+    // widget, so a page's saved config is not lost.
     if (e.key == defs.allowMixedContent.key ||
-        e.key == defs.ignoreSslErrors.key) {
+        e.key == defs.ignoreSslErrors.key ||
+        e.key == defs.disableCache.key) {
       setState(() => _webViewEpoch++);
       return;
     }
@@ -198,6 +201,16 @@ class _KioskScreenState extends State<KioskScreen> {
                 mixedContentMode: c.settings.get(defs.allowMixedContent)
                     ? MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW
                     : MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,
+                // Dev aid: always hit the network so an edited dashboard or
+                // card bundle is never served from a stale cache. This only
+                // bypasses the HTTP cache — it does NOT touch localStorage /
+                // DOM storage (kept alive by domStorageEnabled, which stays
+                // on), so a page's saved config survives. Nothing is cleared;
+                // only "Log out" deliberately wipes storage.
+                cacheEnabled: !c.settings.get(defs.disableCache),
+                cacheMode: c.settings.get(defs.disableCache)
+                    ? CacheMode.LOAD_NO_CACHE
+                    : CacheMode.LOAD_DEFAULT,
               ),
               onReceivedServerTrustAuthRequest: (controller, challenge) async {
                 // Accept untrusted/self-signed certs only when the user opted
