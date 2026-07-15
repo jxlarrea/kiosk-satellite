@@ -400,16 +400,16 @@ async function loadWakeWord() {
   }
 
   if (s.engineLabel) {
-    card.appendChild(readOnlyRow('Engine', 'Chosen in Voice Satellite', s.engineLabel));
+    card.appendChild(readOnlyRow('Engine', 'Running in Kiosk', s.engineLabel));
   }
   const words = (s.models || []).map((m) => m.wakeWord).filter(Boolean);
   if (words.length) {
-    card.appendChild(readOnlyRow('Wake words', 'Inherited from the card', words.join(', ')));
+    card.appendChild(readOnlyRow('Wake words', 'Running in Kiosk', words.join(', ')));
   }
   if (s.stopWord) {
     card.appendChild(readOnlyRow(
       'Stop word',
-      s.stopWordAvailable ? 'Running natively' : 'Voice Satellite keeps this one in the browser',
+      s.stopWordAvailable ? 'Running in Kiosk' : 'Voice Satellite keeps this one in the browser',
       s.stopWord));
   }
 

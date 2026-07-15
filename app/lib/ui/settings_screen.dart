@@ -293,7 +293,7 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
             leading: const Icon(Icons.front_hand_outlined),
             title: const Text('Stop word'),
             subtitle: Text(wake.stopWordAvailable
-                ? 'Running natively'
+                ? 'Running in Kiosk'
                 : 'Voice Satellite keeps this one in the browser'),
             trailing: Text(config.stopModel!.wakeWord,
                 style: theme.textTheme.bodyMedium),
