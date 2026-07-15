@@ -37,6 +37,10 @@ class _KioskScreenState extends State<KioskScreen> {
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
 
+  /// Bumped to force a WebView rebuild for settings that are only read at
+  /// creation (mixed content, SSL trust). Rebuilding re-reads initialSettings.
+  int _webViewEpoch = 0;
+
   Future<void> _onSettingChanged(SettingChanged e) async {
     // HA kiosk mode is applied live (no app restart).
     if (e.key == defs.haKioskMode.key) {
@@ -45,6 +49,13 @@ class _KioskScreenState extends State<KioskScreen> {
       }
       await _applyKioskMode();
       await c.browser.loadUrl(_initialUrl); // reload so ?kiosk takes/drops
+      return;
+    }
+    // Mixed-content / SSL are read only at WebView creation — rebuild it
+    // (preserving the current URL) so the change applies without a restart.
+    if (e.key == defs.allowMixedContent.key ||
+        e.key == defs.ignoreSslErrors.key) {
+      setState(() => _webViewEpoch++);
       return;
     }
     // Enabling a media toggle proactively requests its OS grant (Fully-style),
@@ -157,7 +168,13 @@ class _KioskScreenState extends State<KioskScreen> {
         child: Stack(
           children: [
             InAppWebView(
-              initialUrlRequest: URLRequest(url: WebUri(_initialUrl)),
+              key: ValueKey(_webViewEpoch),
+              initialUrlRequest: URLRequest(
+                url: WebUri(_webViewEpoch == 0 ||
+                        c.browser.currentUrl.isEmpty
+                    ? _initialUrl
+                    : c.browser.currentUrl),
+              ),
               initialUserScripts: UnmodifiableListView(_userScripts),
               initialSettings: InAppWebViewSettings(
                 mediaPlaybackRequiresUserGesture:
@@ -168,7 +185,22 @@ class _KioskScreenState extends State<KioskScreen> {
                 geolocationEnabled: c.settings.get(defs.webGeolocation),
                 javaScriptCanOpenWindowsAutomatically:
                     c.settings.get(defs.webPopups),
+                // Android: let HTTPS pages pull in HTTP subresources.
+                mixedContentMode: c.settings.get(defs.allowMixedContent)
+                    ? MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW
+                    : MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,
               ),
+              onReceivedServerTrustAuthRequest: (controller, challenge) async {
+                // Accept untrusted/self-signed certs only when the user opted
+                // in (e.g. a local HA instance without proper SSL). Otherwise
+                // fall through to the platform's default validation.
+                if (c.settings.get(defs.ignoreSslErrors)) {
+                  return ServerTrustAuthResponse(
+                      action: ServerTrustAuthResponseAction.PROCEED);
+                }
+                return ServerTrustAuthResponse(
+                    action: ServerTrustAuthResponseAction.CANCEL);
+              },
               onWebViewCreated: (controller) {
                 c.browser.attach(controller);
                 c.jsApi.attach(controller);

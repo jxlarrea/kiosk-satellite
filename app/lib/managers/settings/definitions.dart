@@ -53,6 +53,28 @@ const autoReloadOnError = SettingDef<bool>(
   category: 'Browser',
 );
 
+const allowMixedContent = SettingDef<bool>(
+  key: 'browser.allow_mixed_content',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Allow mixed content',
+  description:
+      'Let HTTPS pages load insecure HTTP resources. Helps when Home '
+      'Assistant mixes http:// content into an https:// dashboard.',
+  category: 'Browser',
+);
+
+const ignoreSslErrors = SettingDef<bool>(
+  key: 'browser.ignore_ssl_errors',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Ignore SSL errors',
+  description:
+      'Accept untrusted or self-signed certificates. Use only on your own '
+      'network — this disables certificate verification.',
+  category: 'Browser',
+);
+
 // ── Web content (permissions, à la Fully Kiosk) ────────────────────────
 
 const webMicrophone = SettingDef<bool>(
@@ -274,6 +296,8 @@ const deviceName = SettingDef<String>(
 const List<SettingDef<Object>> allSettings = [
   startUrl,
   autoReloadOnError,
+  allowMixedContent,
+  ignoreSslErrors,
   webMicrophone,
   webCamera,
   webGeolocation,
