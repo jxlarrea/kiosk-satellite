@@ -48,11 +48,17 @@ class VswwModelStore {
     return VswwModel(manifest, manifestResp.body, onnxBytes);
   }
 
+  /// Derive the `.onnx` URL from the manifest URL, preserving any query
+  /// string (Voice Satellite appends `?v=<version>` for cache-busting, so we
+  /// must swap the extension in the path only and keep the query).
   static String _onnxUrlFor(String manifestUrl) {
-    if (manifestUrl.endsWith('.json')) {
-      return '${manifestUrl.substring(0, manifestUrl.length - 5)}.onnx';
-    }
-    return '$manifestUrl.onnx';
+    final q = manifestUrl.indexOf('?');
+    final path = q >= 0 ? manifestUrl.substring(0, q) : manifestUrl;
+    final query = q >= 0 ? manifestUrl.substring(q) : '';
+    final onnxPath = path.endsWith('.json')
+        ? '${path.substring(0, path.length - 5)}.onnx'
+        : '$path.onnx';
+    return '$onnxPath$query';
   }
 
   Future<Uint8List> _fetchOnnxCached(String onnxUrl) async {
