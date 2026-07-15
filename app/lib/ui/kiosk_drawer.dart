@@ -54,6 +54,10 @@ class KioskDrawer extends StatelessWidget {
           icon: Icon(Icons.terminal_outlined),
           label: Text('Web Console'),
         ),
+        const NavigationDrawerDestination(
+          icon: Icon(Icons.cleaning_services_outlined),
+          label: Text('Clear web cache'),
+        ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 28, vertical: 8),
           child: Divider(),
@@ -83,12 +87,14 @@ class KioskDrawer extends StatelessWidget {
         }
       case 2: // Web Console
         onWebConsole();
-      case 3: // Log out
+      case 3: // Clear web cache
+        await c.commands.execute('clearWebCache', const {});
+      case 4: // Log out
         if (context.mounted && await _confirm(context, 'Log out',
             'Clear cookies and site data, then reload the start page?')) {
           await c.commands.execute('logout', const {});
         }
-      case 4: // Exit
+      case 5: // Exit
         if (context.mounted && await _confirm(context, 'Exit Application',
             'Close Kiosk Satellite?')) {
           await c.commands.execute('exitApp', const {});

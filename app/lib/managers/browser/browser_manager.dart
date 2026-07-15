@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import 'no_cache_script.dart';
+
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
@@ -117,6 +119,22 @@ class BrowserManager extends Manager {
           }
           final result = await controller.evaluateJavascript(source: code);
           return CommandResult.ok('$result');
+        },
+      ))
+      ..register(Command(
+        name: 'clearWebCache',
+        description:
+            'Drop the HTTP cache, Cache Storage and any service worker, then '
+            'reload — so a redeployed dashboard or card is picked up. Keeps '
+            'localStorage and cookies (you stay logged in).',
+        handler: (_) async {
+          // NOT WebStorageManager.deleteAllData(): that would wipe
+          // localStorage, and pages keep real config there (the Voice
+          // Satellite card stores its per-browser satellite settings).
+          await InAppWebViewController.clearAllCache();
+          await runJs(clearWebCacheScript); // SW + Cache Storage, then reload
+          log.info(name, 'web cache cleared (localStorage preserved)');
+          return const CommandResult.ok();
         },
       ))
       ..register(Command(
