@@ -8,10 +8,12 @@ import 'package:path_provider/path_provider.dart';
 
 import 'manifest.dart';
 
-/// A downloaded vsWakeWord model: its parsed manifest and the ONNX bytes.
+/// A downloaded vsWakeWord model: its parsed manifest, the raw manifest JSON
+/// (so it can be re-parsed inside the compute isolate), and the ONNX bytes.
 class VswwModel {
-  VswwModel(this.manifest, this.onnxBytes);
+  VswwModel(this.manifest, this.manifestJson, this.onnxBytes);
   final VswwManifest manifest;
+  final String manifestJson;
   final Uint8List onnxBytes;
 }
 
@@ -43,7 +45,7 @@ class VswwModelStore {
 
     final onnxUrl = _onnxUrlFor(manifestUrl);
     final onnxBytes = await _fetchOnnxCached(onnxUrl);
-    return VswwModel(manifest, onnxBytes);
+    return VswwModel(manifest, manifestResp.body, onnxBytes);
   }
 
   static String _onnxUrlFor(String manifestUrl) {
