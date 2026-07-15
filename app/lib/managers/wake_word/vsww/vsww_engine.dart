@@ -197,9 +197,11 @@ class VswwEngine extends WakeWordEngine {
     final nowMs = _epochMs;
     try {
       final n = ring.length;
-      for (var i = 0; i < n; i++) {
-        scratch[i] = ring[(_head + i) % n];
-      }
+      // Linearize the circular buffer (oldest→newest) with two memmoves
+      // instead of a per-element modulo — when full, _head points at oldest.
+      final tail = n - _head;
+      scratch.setRange(0, tail, ring, _head); // ring[_head..n)
+      scratch.setRange(tail, n, ring, 0); // ring[0.._head)
       // energy veto
       var sumSq = 0.0;
       for (var i = 0; i < n; i++) {
@@ -208,7 +210,9 @@ class VswwEngine extends WakeWordEngine {
       final windowRms = math.sqrt(sumSq / n);
       final silent = windowRms < _windowRmsVeto;
 
-      final features = extractor.extract(scratch);
+      // Incremental: the window advanced by newSamples (a whole number of
+      // hops), so only the trailing frames are recomputed.
+      final features = extractor.extract(scratch, newSamples: newSamples);
       final feat = _feature!;
       final inputShape = [1, feat.frames, feat.nMels];
 

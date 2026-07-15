@@ -34,48 +34,80 @@ class LogMelExtractor {
   final List<_MelFilter> _filters; // length nMels
   late final int _halfBins;
 
+  // Reused scratch + the persistent feature buffer for incremental extraction.
+  late final Float32List _featBuf =
+      Float32List(feature.frames * feature.nMels);
+  late final Float64List _re = Float64List(feature.nFft);
+  late final Float64List _im = Float64List(feature.nFft);
+  late final Float64List _power = Float64List(_halfBins);
+  bool _primed = false;
+
   /// Extract [frames * nMels] log-mel features from a full window of
-  /// [windowSamples] float samples (time order). Returns a Float32List
-  /// suitable as the ONNX input tensor.
-  Float32List extract(Float32List window) {
+  /// [windowSamples] float samples (time order). Returns the internal feature
+  /// buffer (valid until the next call).
+  ///
+  /// [newSamples] enables the incremental fast path: the window slides by a
+  /// whole number of hops between calls, so only the trailing
+  /// `newSamples / hopSamples` frames are new — the rest are shifted down. Old
+  /// frame j (float32) becomes new frame j - newFrames, which is *bit-identical*
+  /// to recomputing it (same audio, same math). Pass -1 (default) or a
+  /// non-hop-aligned value to force a full recompute (e.g. the first window).
+  Float32List extract(Float32List window, {int newSamples = -1}) {
     final frames = feature.frames;
     final mels = feature.nMels;
     final hop = feature.hopSamples;
-    final frameLen = feature.frameSamples;
-    final nFft = feature.nFft;
-    final out = Float32List(frames * mels);
 
-    final re = Float64List(nFft);
-    final im = Float64List(nFft);
-    final power = Float64List(_halfBins);
+    int newFrames;
+    if (!_primed || newSamples < 0 || newSamples % hop != 0) {
+      newFrames = frames; // full recompute
+    } else {
+      newFrames = newSamples ~/ hop;
+      if (newFrames > frames) newFrames = frames;
+    }
 
-    for (var f = 0; f < frames; f++) {
-      final base = f * hop;
-      // windowed frame, zero-padded to nFft
-      for (var i = 0; i < frameLen; i++) {
-        re[i] = window[base + i] * _window[i];
+    if (newFrames >= frames) {
+      for (var f = 0; f < frames; f++) {
+        _computeFrame(window, f);
       }
-      for (var i = frameLen; i < nFft; i++) {
-        re[i] = 0.0;
-      }
-      for (var i = 0; i < nFft; i++) {
-        im[i] = 0.0;
-      }
-      _fft.forward(re, im);
-      for (var k = 0; k < _halfBins; k++) {
-        power[k] = re[k] * re[k] + im[k] * im[k];
-      }
-      for (var m = 0; m < mels; m++) {
-        final filt = _filters[m];
-        var energy = 0.0;
-        for (var k = filt.lo; k < filt.hi; k++) {
-          energy += filt.coeff[k - filt.lo] * power[k];
-        }
-        final v = energy > feature.logFloor ? energy : feature.logFloor;
-        out[f * mels + m] = math.log(v);
+    } else {
+      // shift the retained frames down by newFrames, then recompute the tail
+      final shift = newFrames * mels;
+      _featBuf.setRange(0, frames * mels - shift, _featBuf, shift);
+      for (var f = frames - newFrames; f < frames; f++) {
+        _computeFrame(window, f);
       }
     }
-    return out;
+    _primed = true;
+    return _featBuf;
+  }
+
+  void _computeFrame(Float32List window, int f) {
+    final frameLen = feature.frameSamples;
+    final nFft = feature.nFft;
+    final mels = feature.nMels;
+    final base = f * feature.hopSamples;
+    for (var i = 0; i < frameLen; i++) {
+      _re[i] = window[base + i] * _window[i];
+    }
+    for (var i = frameLen; i < nFft; i++) {
+      _re[i] = 0.0;
+    }
+    for (var i = 0; i < nFft; i++) {
+      _im[i] = 0.0;
+    }
+    _fft.forward(_re, _im);
+    for (var k = 0; k < _halfBins; k++) {
+      _power[k] = _re[k] * _re[k] + _im[k] * _im[k];
+    }
+    for (var m = 0; m < mels; m++) {
+      final filt = _filters[m];
+      var energy = 0.0;
+      for (var k = filt.lo; k < filt.hi; k++) {
+        energy += filt.coeff[k - filt.lo] * _power[k];
+      }
+      final v = energy > feature.logFloor ? energy : feature.logFloor;
+      _featBuf[f * mels + m] = math.log(v);
+    }
   }
 
   // ── Window ──────────────────────────────────────────────────────────

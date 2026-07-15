@@ -55,18 +55,33 @@ class VswwBenchmark {
       window[i] = (i % 320) / 320.0 - 0.5;
     }
     for (var i = 0; i < 5; i++) {
-      extractor.extract(window); // warmup
+      extractor.extract(window); // warmup (full)
     }
-    final featSamples = <int>[];
+    int median(List<int> xs) {
+      xs.sort();
+      return xs[xs.length ~/ 2];
+    }
+
+    // Full recompute (all 128 frames) — the cold/first-window cost.
+    final fullSamples = <int>[];
     for (var i = 0; i < iters; i++) {
       final sw = Stopwatch()..start();
-      extractor.extract(window);
+      extractor.extract(window); // newSamples default → full
       sw.stop();
-      featSamples.add(sw.elapsedMicroseconds);
+      fullSamples.add(sw.elapsedMicroseconds);
     }
-    featSamples.sort();
-    results['featureExtractMs'] = double.parse(
-        (featSamples[featSamples.length ~/ 2] / 1000.0).toStringAsFixed(2));
+    // Incremental (only the trailing 8 frames) — the real per-chunk cost.
+    final incSamples = <int>[];
+    for (var i = 0; i < iters; i++) {
+      final sw = Stopwatch()..start();
+      extractor.extract(window, newSamples: 1280); // one chunk = 8 hops
+      sw.stop();
+      incSamples.add(sw.elapsedMicroseconds);
+    }
+    results['featureExtractFullMs'] =
+        double.parse((median(fullSamples) / 1000.0).toStringAsFixed(2));
+    results['featureExtractIncrementalMs'] =
+        double.parse((median(incSamples) / 1000.0).toStringAsFixed(2));
 
     for (final entry in configs.entries) {
       final name = entry.key;

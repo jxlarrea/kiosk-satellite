@@ -114,9 +114,31 @@ void main() {
       for (var i = 0; i < window.length; i++) {
         window[i] = math.sin(i * 0.01);
       }
-      final a = ex.extract(window);
+      final a = Float32List.fromList(ex.extract(window));
       final b = ex.extract(window);
       expect(a, equals(b));
+    });
+
+    test('incremental update is bit-identical to a full recompute', () {
+      // Build window A, then window B = A shifted left by one chunk (8 hops
+      // = 1280 samples) with fresh tail audio — exactly how the engine slides.
+      final rnd = <double>[];
+      for (var i = 0; i < _feature.windowSamples + 1280; i++) {
+        rnd.add(math.sin(i * 0.017) * 0.3 + math.sin(i * 0.0031) * 0.2);
+      }
+      final windowA = Float32List.fromList(rnd.sublist(0, _feature.windowSamples));
+      final windowB =
+          Float32List.fromList(rnd.sublist(1280, 1280 + _feature.windowSamples));
+
+      final incremental = LogMelExtractor(_feature);
+      incremental.extract(windowA); // prime (full)
+      final incB =
+          Float32List.fromList(incremental.extract(windowB, newSamples: 1280));
+
+      final fresh = LogMelExtractor(_feature);
+      final fullB = fresh.extract(windowB); // full recompute of window B
+
+      expect(incB, equals(fullB)); // bit-identical
     });
   });
 
