@@ -1,0 +1,133 @@
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
+import '../../core/command_registry.dart';
+import '../../core/events.dart';
+import '../../core/manager.dart';
+import '../settings/definitions.dart' as defs;
+import '../settings/settings_manager.dart';
+
+/// Brightness, keep-awake, and (simulated) screen power.
+///
+/// True hardware screen-off requires device-owner privileges on Android; the
+/// portable approach — same as kiosk browsers use — is brightness 0 plus a
+/// black overlay, which the screensaver manager renders. "Screen on/off"
+/// here therefore tracks a logical state that other managers react to.
+class ScreenManager extends Manager {
+  ScreenManager(super.bus, super.commands, super.log, this._settings);
+
+  final SettingsManager _settings;
+
+  @override
+  String get name => 'screen';
+
+  bool _screenOn = true;
+  double? _savedBrightness;
+
+  bool get isScreenOn => _screenOn;
+
+  @override
+  Future<void> init() async {
+    if (_settings.get(defs.keepScreenOn)) {
+      await WakelockPlus.enable();
+    }
+
+    bus.on<SettingChanged>().listen((e) async {
+      if (e.key == defs.keepScreenOn.key) {
+        e.value == true
+            ? await WakelockPlus.enable()
+            : await WakelockPlus.disable();
+      }
+    });
+
+    commands
+      ..register(Command(
+        name: 'getBrightness',
+        description: 'Current screen brightness (0..1)',
+        handler: (_) async => CommandResult.ok(await getBrightness()),
+      ))
+      ..register(Command(
+        name: 'isScreenOn',
+        description: 'Whether the screen is (logically) on',
+        handler: (_) async => CommandResult.ok(isScreenOn),
+      ))
+      ..register(Command(
+        name: 'setBrightness',
+        description: 'Set screen brightness',
+        params: const {'level': 'Brightness 0..1'},
+        handler: (p) async {
+          final level = (p['level'] as num?)?.toDouble();
+          if (level == null || level < 0 || level > 1) {
+            return const CommandResult.fail('level must be 0..1');
+          }
+          await setBrightness(level);
+          return const CommandResult.ok();
+        },
+      ))
+      ..register(Command(
+        name: 'screenOn',
+        description: 'Turn the screen on',
+        handler: (_) async {
+          await screenOn();
+          return const CommandResult.ok();
+        },
+      ))
+      ..register(Command(
+        name: 'screenOff',
+        description: 'Turn the screen off (black overlay + zero brightness)',
+        handler: (_) async {
+          await screenOff();
+          return const CommandResult.ok();
+        },
+      ));
+  }
+
+  Future<double?> getBrightness() async {
+    try {
+      return await ScreenBrightness().application;
+    } catch (e) {
+      log.warn(name, 'getBrightness failed: $e');
+      return null;
+    }
+  }
+
+  Future<bool> setBrightness(double level) async {
+    try {
+      await ScreenBrightness().setApplicationScreenBrightness(
+          level.clamp(0.0, 1.0));
+      bus.publish(BrightnessChanged(level: level));
+      return true;
+    } catch (e) {
+      log.warn(name, 'setBrightness failed: $e');
+      return false;
+    }
+  }
+
+  /// Restore OS-controlled brightness (undoes any app override).
+  Future<void> resetBrightness() async {
+    try {
+      await ScreenBrightness().resetApplicationScreenBrightness();
+    } catch (e) {
+      log.warn(name, 'resetBrightness failed: $e');
+    }
+  }
+
+  Future<void> screenOff() async {
+    if (!_screenOn) return;
+    _screenOn = false;
+    _savedBrightness = await getBrightness();
+    await setBrightness(0);
+    bus.publish(const ScreenStateChanged(on: false));
+  }
+
+  Future<void> screenOn() async {
+    if (_screenOn) return;
+    _screenOn = true;
+    if (_savedBrightness != null) {
+      await setBrightness(_savedBrightness!);
+    } else {
+      await resetBrightness();
+    }
+    bus.publish(const ScreenStateChanged(on: true));
+  }
+}
