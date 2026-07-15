@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
+import '../core/events.dart';
 import '../managers/settings/definitions.dart';
+import '../managers/wake_word/engine.dart';
 
 /// Hierarchical settings, Fully Kiosk style: the top level is a list of
 /// category pages, each rendered from the declarative setting definitions —
@@ -159,12 +163,131 @@ class _HomeAssistantSettingsScreenState
                       def: def,
                       onChanged: () => setState(() {}),
                     ),
+                  WakeWordStatusTile(container: widget.container),
                 ],
               );
             },
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Read-only status of the wake-word config inherited from Voice Satellite:
+/// the active engine, the wake word(s), and whether native inference is
+/// running. Updates live as the VS card pushes config / state changes.
+class WakeWordStatusTile extends StatefulWidget {
+  const WakeWordStatusTile({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<WakeWordStatusTile> createState() => _WakeWordStatusTileState();
+}
+
+class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
+  StreamSubscription<WakeWordStateChanged>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = widget.container.bus
+        .on<WakeWordStateChanged>()
+        .listen((_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final wake = widget.container.wakeWord;
+    final config = wake.config;
+
+    if (!wake.enabled) {
+      return const ListTile(
+        leading: Icon(Icons.mic_off_outlined),
+        title: Text('Wake word detection is off'),
+        subtitle: Text('Turn it on above to inherit models from Voice Satellite.'),
+      );
+    }
+    if (config == null) {
+      return const ListTile(
+        leading: Icon(Icons.hourglass_empty),
+        title: Text('Waiting for Voice Satellite'),
+        subtitle: Text(
+            'The engine and wake words are configured by the Voice Satellite '
+            'card once this device opens its dashboard.'),
+      );
+    }
+
+    final statusColor = wake.available
+        ? (wake.listening ? theme.colorScheme.primary : theme.colorScheme.onSurface)
+        : theme.colorScheme.error;
+    final statusText = !wake.available
+        ? 'No native runner for ${config.engine.label} — Voice Satellite keeps '
+            'browser detection'
+        : wake.listening
+            ? 'Listening natively'
+            : 'Ready (suspended during a voice session)';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          leading: Icon(Icons.graphic_eq, color: statusColor),
+          title: const Text('Engine'),
+          trailing: Text(config.engine.label,
+              style: theme.textTheme.titleMedium),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Wake words',
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final m in config.models)
+                    Chip(
+                      avatar: const Icon(Icons.record_voice_over, size: 18),
+                      label: Text(m.wakeWord),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(
+                    wake.available
+                        ? (wake.listening ? Icons.mic : Icons.mic_none)
+                        : Icons.warning_amber_rounded,
+                    size: 16,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(statusText,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: statusColor)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

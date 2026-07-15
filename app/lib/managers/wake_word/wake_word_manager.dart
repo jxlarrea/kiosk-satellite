@@ -6,6 +6,7 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'engine.dart';
+import 'vsww/vsww_engine.dart';
 
 /// Native wake-word detection and the mic-ownership handoff with the
 /// Voice Satellite card (docs/js-api.md, "Wake-word handoff protocol").
@@ -34,7 +35,9 @@ class WakeWordManager extends Manager {
   @override
   String get name => 'wake_word';
 
-  late final WakeWordEngine _engine = StubWakeWordEngine();
+  // vsWakeWord runs natively (ONNX). microWakeWord/openWakeWord fall through
+  // to unavailable (VS keeps browser detection) until ported.
+  late final WakeWordEngine _engine = VswwEngine(log);
 
   WakeWordConfig? _config;
   bool _active = true;
@@ -42,6 +45,10 @@ class WakeWordManager extends Manager {
 
   bool get enabled => _settings.get(defs.wakeWordEnabled);
   bool get listening => _engine.running;
+
+  /// The wake-word config inherited from Voice Satellite (null until the VS
+  /// card pushes it via setWakeWordConfig).
+  WakeWordConfig? get config => _config;
 
   /// Whether we can natively run the engine Voice Satellite configured.
   bool get available =>

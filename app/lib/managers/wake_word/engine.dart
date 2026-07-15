@@ -21,6 +21,15 @@ WakeWordEngineType? engineTypeFromWire(String? value) => switch (value) {
       _ => null,
     };
 
+extension WakeWordEngineTypeLabel on WakeWordEngineType {
+  /// Human-readable engine name for the settings UI.
+  String get label => switch (this) {
+        WakeWordEngineType.microWakeWord => 'microWakeWord',
+        WakeWordEngineType.openWakeWord => 'openWakeWord',
+        WakeWordEngineType.vsWakeWord => 'vsWakeWord',
+      };
+}
+
 /// A model as pushed by Voice Satellite: identity plus where to fetch the
 /// model + manifest from the HA instance.
 class WakeWordModelRef {

@@ -1,0 +1,71 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+
+import 'manifest.dart';
+
+/// A downloaded vsWakeWord model: its parsed manifest and the ONNX bytes.
+class VswwModel {
+  VswwModel(this.manifest, this.onnxBytes);
+  final VswwManifest manifest;
+  final Uint8List onnxBytes;
+}
+
+/// Downloads vsWakeWord models + manifests from the URLs the Voice Satellite
+/// card hands us (served by the VS integration at
+/// `<ha>/voice_satellite/models/vswakeword/<name>.{json,onnx}`), caching the
+/// ONNX bytes on disk so we don't re-download every launch.
+class VswwModelStore {
+  Future<Directory> _cacheDir() async {
+    final base = await getApplicationSupportDirectory();
+    final dir = Directory('${base.path}/vsww_models');
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return dir;
+  }
+
+  /// Fetch manifest (always fresh) + ONNX (disk-cached by URL hash).
+  Future<VswwModel> fetch(String manifestUrl) async {
+    final manifestResp = await http
+        .get(Uri.parse(manifestUrl))
+        .timeout(const Duration(seconds: 20));
+    if (manifestResp.statusCode != 200) {
+      throw StateError('manifest HTTP ${manifestResp.statusCode}: $manifestUrl');
+    }
+    final manifest = VswwManifest.fromJson(
+        jsonDecode(manifestResp.body) as Map<String, dynamic>);
+    if (!manifest.isCtc) {
+      throw StateError('unsupported vsWakeWord format: ${manifest.format}');
+    }
+
+    final onnxUrl = _onnxUrlFor(manifestUrl);
+    final onnxBytes = await _fetchOnnxCached(onnxUrl);
+    return VswwModel(manifest, onnxBytes);
+  }
+
+  static String _onnxUrlFor(String manifestUrl) {
+    if (manifestUrl.endsWith('.json')) {
+      return '${manifestUrl.substring(0, manifestUrl.length - 5)}.onnx';
+    }
+    return '$manifestUrl.onnx';
+  }
+
+  Future<Uint8List> _fetchOnnxCached(String onnxUrl) async {
+    final dir = await _cacheDir();
+    final key = sha256.convert(utf8.encode(onnxUrl)).toString().substring(0, 24);
+    final file = File('${dir.path}/$key.onnx');
+    if (await file.exists() && await file.length() > 0) {
+      return file.readAsBytes();
+    }
+    final resp =
+        await http.get(Uri.parse(onnxUrl)).timeout(const Duration(seconds: 60));
+    if (resp.statusCode != 200) {
+      throw StateError('onnx HTTP ${resp.statusCode}: $onnxUrl');
+    }
+    await file.writeAsBytes(resp.bodyBytes, flush: true);
+    return resp.bodyBytes;
+  }
+}

@@ -8,8 +8,11 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
 
+    private var micRecorder: MicRecorder? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        micRecorder = MicRecorder(flutterEngine.dartExecutor.binaryMessenger)
         provisionChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "kiosk_satellite/provision"

@@ -43,6 +43,11 @@ dependencies:
   # Runtime permissions (mic for Voice Satellite, camera for motion)
   permission_handler: ^11.3.1
 
+  # Native wake-word inference: ONNX runtime (mic capture is a platform
+  # channel in android/, to avoid third-party AGP-9 build breakage)
+  onnxruntime: ^1.4.1
+  path_provider: ^2.1.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
