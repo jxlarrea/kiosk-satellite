@@ -9,6 +9,7 @@ import '../settings/settings_manager.dart';
 import 'engine.dart';
 import 'mww/mww_engine.dart';
 import 'mww/mww_probe.dart';
+import 'oww/oww_probe.dart';
 import 'vsww/benchmark.dart';
 import 'vsww/model_store.dart';
 import 'vsww/vsww_engine.dart';
@@ -295,6 +296,27 @@ class WakeWordManager extends Manager {
           }
           final res = await probeMww(url);
           log.info(name, 'mww probe: $res');
+          return CommandResult.ok(res);
+        },
+      ))
+      ..register(Command(
+        name: 'probeOww',
+        description:
+            'Can this device run the openWakeWord chain (mel + embedding + '
+            'classifier) in real time on the CPU? Times each stage against the '
+            '80ms per-chunk budget. Groundwork for native oww.',
+        params: const {
+          'base': 'models base URL, e.g. <ha>/voice_satellite/models/openwakeword',
+          'wakeWord': 'classifier name, e.g. alexa',
+        },
+        handler: (p) async {
+          final base = p['base'] as String?;
+          final wakeWord = p['wakeWord'] as String? ?? 'alexa';
+          if (base == null || base.isEmpty) {
+            return const CommandResult.fail('base required');
+          }
+          final res = await probeOww(base, wakeWord);
+          log.info(name, 'oww probe: $res');
           return CommandResult.ok(res);
         },
       ))

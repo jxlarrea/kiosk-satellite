@@ -151,13 +151,33 @@ class BrowserManager extends Manager {
       ))
       ..register(Command(
         name: 'screenshot',
-        description: 'Capture the current page as a base64 PNG',
-        handler: (_) async {
+        description:
+            'Capture the current page as a base64 JPEG. `quality` 1-100 '
+            '(default 60); `width` scales the capture down (default 720).',
+        params: const {
+          'quality': 'JPEG quality 1-100, default 60',
+          'width': 'scale the capture to this width, default 720',
+        },
+        handler: (p) async {
           final controller = _controller;
           if (controller == null) {
             return const CommandResult.fail('no webview attached');
           }
-          final bytes = await controller.takeScreenshot();
+          // JPEG, downscaled. The remote dashboard polls this every few
+          // seconds while an admin tab is open, and a full-size PNG of a
+          // 1920x1200 WebView costs ~380ms of GPU readback plus encode, which
+          // lands as a visible stutter on the tablet itself. The preview is
+          // shown a few hundred pixels wide, so the pixels were being thrown
+          // away anyway.
+          final quality = (p['quality'] as num?)?.toInt() ?? 60;
+          final width = (p['width'] as num?)?.toDouble() ?? 720;
+          final bytes = await controller.takeScreenshot(
+            screenshotConfiguration: ScreenshotConfiguration(
+              compressFormat: CompressFormat.JPEG,
+              quality: quality.clamp(1, 100),
+              snapshotWidth: width > 0 ? width : null,
+            ),
+          );
           if (bytes == null) {
             return const CommandResult.fail('screenshot failed');
           }
