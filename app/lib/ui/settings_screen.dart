@@ -249,73 +249,43 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
     final statusColor = wake.available
         ? (wake.listening ? theme.colorScheme.primary : theme.colorScheme.onSurface)
         : theme.colorScheme.error;
-    final statusText = status.label;
 
+    // Every row the same shape: label on the left, value on the right. These
+    // are the same rows the remote admin lists, in the same order, because they
+    // describe the same device — see loadWakeWord() in
+    // assets/remote-ui/index.html.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: _separated([
-        // Engine, wake words and status read as one block: they are three
-        // views of a single fact, so no line runs between them.
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
         ListTile(
-          leading: Icon(Icons.graphic_eq, color: statusColor),
+          leading: Icon(
+            wake.available
+                ? (wake.listening ? Icons.mic : Icons.mic_none)
+                : Icons.warning_amber_rounded,
+            color: statusColor,
+          ),
+          title: const Text('Status'),
+          subtitle: Text(status.label,
+              style: theme.textTheme.bodyMedium?.copyWith(color: statusColor)),
+        ),
+        if (wake.canRetry) WakeWordRecoveryTile(container: widget.container),
+        ListTile(
+          leading: const Icon(Icons.graphic_eq),
           title: const Text('Engine'),
+          subtitle: const Text('Running in Kiosk'),
           trailing: Text(config.engine.label,
               style: theme.textTheme.titleMedium),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Wake words',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final m in config.models)
-                    Chip(
-                      avatar: const Icon(Icons.record_voice_over, size: 18),
-                      label: Text(m.wakeWord),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                ],
-              ),
-              // When something has failed the recovery card below states it,
-              // in full and next to the buttons that act on it. Saying it here
-              // too just prints the same sentence twice.
-              if (wake.failure == null) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Icon(
-                      wake.available
-                          ? (wake.listening ? Icons.mic : Icons.mic_none)
-                          : Icons.warning_amber_rounded,
-                      size: 16,
-                      color: statusColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(statusText,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: statusColor)),
-                    ),
-                  ],
-                ),
-              ],
-            ],
+        if (config.models.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.record_voice_over),
+            title: const Text('Wake words'),
+            subtitle: const Text('Running in Kiosk'),
+            trailing: _rowValue(
+              context,
+              config.models.map((m) => m.wakeWord).join(', '),
+            ),
           ),
-        ),
-          ],
-        ),
-        if (wake.failure != null)
-          WakeWordRecoveryTile(container: widget.container),
         if (config.stopModel != null)
           ListTile(
             leading: const Icon(Icons.front_hand_outlined),
@@ -323,14 +293,25 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
             subtitle: Text(wake.stopWordAvailable
                 ? 'Running in Kiosk'
                 : 'Voice Satellite keeps this one in the browser'),
-            trailing: Text(config.stopModel!.wakeWord,
-                style: theme.textTheme.bodyMedium),
+            trailing: _rowValue(context, config.stopModel!.wakeWord),
           ),
         ClearModelCacheTile(container: widget.container),
       ]),
     );
   }
 }
+
+/// A row's value, right-aligned. Bounded because a ListTile's trailing sits in
+/// an unconstrained Row: two wake words are wider than they look.
+Widget _rowValue(BuildContext context, String text) => ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 280),
+      child: Text(
+        text,
+        textAlign: TextAlign.end,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodyLarge,
+      ),
+    );
 
 /// The way out of a failed engine.
 ///
@@ -354,58 +335,41 @@ class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final wake = widget.container.wakeWord;
     final settingsFirst = wake.needsAppSettings;
 
-    return Card(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      color: theme.colorScheme.errorContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.error_outline,
-                    size: 18, color: theme.colorScheme.onErrorContainer),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(wake.status.label,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onErrorContainer)),
-                ),
-              ],
+    // What went wrong is the Status row's job, right above this. This row is
+    // what to do about it — same split as the remote admin's Recover row.
+    return ListTile(
+      leading: const Icon(Icons.build_outlined),
+      title: const Text('Recover'),
+      subtitle: Text(settingsFirst
+          ? 'Allow the microphone in the app settings, then retry.'
+          : 'Try starting the engine again.'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (settingsFirst)
+            TextButton(
+              onPressed: _busy
+                  ? null
+                  : () => widget.container.commands
+                      .execute('openAppSettings', const {}),
+              child: const Text('App settings'),
             ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (settingsFirst)
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => widget.container.commands
-                            .execute('openAppSettings', const {}),
-                    child: const Text('Open app settings'),
-                  ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _busy
-                      ? null
-                      : () async {
-                          setState(() => _busy = true);
-                          await widget.container.commands
-                              .execute('retryWakeWord', const {});
-                          if (mounted) setState(() => _busy = false);
-                        },
-                  child: Text(_busy ? 'Retrying…' : 'Retry'),
-                ),
-              ],
-            ),
-          ],
-        ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: _busy
+                ? null
+                : () async {
+                    setState(() => _busy = true);
+                    await widget.container.commands
+                        .execute('retryWakeWord', const {});
+                    if (mounted) setState(() => _busy = false);
+                  },
+            child: Text(_busy ? 'Retrying…' : 'Retry'),
+          ),
+        ],
       ),
     );
   }
