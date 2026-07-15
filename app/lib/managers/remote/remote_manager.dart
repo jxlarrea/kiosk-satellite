@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show Random;
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shelf/shelf.dart';
@@ -23,7 +24,7 @@ class RemoteManager extends Manager {
   RemoteManager(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
-  final _auth = AuthStore();
+  late final AuthStore _auth;
 
   @override
   String get name => 'remote';
@@ -35,6 +36,14 @@ class RemoteManager extends Manager {
 
   @override
   Future<void> init() async {
+    // Persistent signing secret → tokens survive app restarts.
+    final secret = await _settings.secret('remote_auth', () {
+      final random = Random.secure();
+      return base64Url.encode(
+          List<int>.generate(32, (_) => random.nextInt(256)));
+    });
+    _auth = AuthStore(secret);
+
     // The admin SPA is a single self-contained asset.
     try {
       _indexHtml = await rootBundle.loadString('assets/remote-ui/index.html');

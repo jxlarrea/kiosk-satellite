@@ -53,6 +53,54 @@ const autoReloadOnError = SettingDef<bool>(
   category: 'Browser',
 );
 
+// ── Web content (permissions, à la Fully Kiosk) ────────────────────────
+
+const webMicrophone = SettingDef<bool>(
+  key: 'web.microphone',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable microphone access',
+  description:
+      'Let web pages use the microphone (required for Voice Satellite).',
+  category: 'Web Content',
+);
+
+const webCamera = SettingDef<bool>(
+  key: 'web.camera',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable webcam access',
+  description: 'Let web pages use the camera.',
+  category: 'Web Content',
+);
+
+const webGeolocation = SettingDef<bool>(
+  key: 'web.geolocation',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable geolocation access',
+  description: 'Let web pages request the device location.',
+  category: 'Web Content',
+);
+
+const webAutoplay = SettingDef<bool>(
+  key: 'web.autoplay',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Autoplay audio and video',
+  description: 'Allow media to play without a user gesture.',
+  category: 'Web Content',
+);
+
+const webPopups = SettingDef<bool>(
+  key: 'web.popups',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable pop-ups',
+  description: 'Allow pages to open new windows via JavaScript.',
+  category: 'Web Content',
+);
+
 // ── Screen ─────────────────────────────────────────────────────────────
 
 const keepScreenOn = SettingDef<bool>(
@@ -226,6 +274,11 @@ const deviceName = SettingDef<String>(
 const List<SettingDef<Object>> allSettings = [
   startUrl,
   autoReloadOnError,
+  webMicrophone,
+  webCamera,
+  webGeolocation,
+  webAutoplay,
+  webPopups,
   keepScreenOn,
   screensaverEnabled,
   screensaverTimeoutSeconds,

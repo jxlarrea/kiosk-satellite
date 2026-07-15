@@ -123,7 +123,16 @@ engines cannot do.
   and isolated in `managers/home_assistant/kiosk_mode.dart`. Kiosk mode is
   applied live — injected per navigation and re-applied on setting change — so
   toggling it never needs an app restart.
-- **WebView media permissions**: the app requests the OS `RECORD_AUDIO` and
-  `CAMERA` runtime grants at launch. Without the app-level grant, the WebView's
-  `getUserMedia` fails with "Could not start audio source" even though we grant
-  the per-origin WebView permission — so the Voice Satellite mic needs both.
+- **WebView media permissions** follow Fully Kiosk's model: the "Web Content"
+  settings (microphone, camera, geolocation, pop-ups, autoplay) gate what
+  `onPermissionRequest` grants. The OS runtime grant is requested **lazily** —
+  when a toggle is switched on or a page first asks — never all-at-once at
+  launch, so we don't prompt for permissions the user hasn't enabled. Note the
+  app-level grant is still required on Android: without it the WebView's
+  `getUserMedia` fails with "Could not start audio source" even when the
+  per-origin permission is granted. For prompt-free kiosk deployment, pre-grant
+  via `adb shell pm grant me.jxl.kiosk_satellite android.permission.RECORD_AUDIO`
+  (and `…CAMERA`) or an MDM.
+- **Remote-admin auth** uses stateless HMAC-signed tokens (7-day expiry) keyed
+  by a secret persisted in settings, so sessions survive app restarts. An
+  earlier in-memory token store signed the remote UI out on every relaunch.

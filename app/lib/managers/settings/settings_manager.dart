@@ -24,7 +24,10 @@ class SettingsManager extends Manager {
 
   T get<T>(SettingDef<T> def) {
     final raw = _prefs.get(_prefix + def.key);
-    if (raw is T) return raw;
+    // The `raw != null` guard matters: when T is inferred nullable (e.g.
+    // Object? from a caller's ternary), `null is T` is true, which would
+    // wrongly return null for an unstored setting instead of its default.
+    if (raw != null && raw is T) return raw as T;
     // num settings may come back as int or double depending on what was set.
     if (raw is num && def.defaultValue is num) return raw as T;
     return def.defaultValue;
@@ -43,6 +46,16 @@ class SettingsManager extends Manager {
     }
     log.info(name, 'set ${def.key}${def.secret ? '' : ' = $value'}');
     bus.publish(SettingChanged(key: def.key, value: value));
+  }
+
+  /// Persisted internal value not exposed in the settings UI (e.g. the
+  /// remote-auth signing secret). Returns [orElse] and stores it when absent.
+  Future<String> secret(String key, String Function() orElse) async {
+    final existing = _prefs.getString('${_prefix}secret.$key');
+    if (existing != null && existing.isNotEmpty) return existing;
+    final value = orElse();
+    await _prefs.setString('${_prefix}secret.$key', value);
+    return value;
   }
 
   SettingDef<Object>? defByKey(String key) {

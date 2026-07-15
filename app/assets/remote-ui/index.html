@@ -208,7 +208,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const state = { token: sessionStorage.getItem('ks_token'), ws: null, autoShotTimer: null };
+const state = { token: localStorage.getItem('ks_token'), ws: null, autoShotTimer: null };
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -230,11 +230,11 @@ async function login() {
   });
   if (!res.ok) { $('#loginError').textContent = 'Invalid password'; return; }
   state.token = (await res.json()).token;
-  sessionStorage.setItem('ks_token', state.token);
+  localStorage.setItem('ks_token', state.token);
   start();
 }
 function logout() {
-  state.token = null; sessionStorage.removeItem('ks_token');
+  state.token = null; localStorage.removeItem('ks_token');
   if (state.ws) { state.ws.onclose = null; state.ws.close(); state.ws = null; }
   clearInterval(state.autoShotTimer);
   $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
@@ -391,7 +391,9 @@ $('#loginBtn').addEventListener('click', login);
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
 $('#logoutBtn').addEventListener('click', logout);
 
-if (state.token) start().catch(logout);
+// Only a real 401 (handled inside api()) logs out. A transient network error
+// at boot must NOT — just log it and let the WebSocket reconnect.
+if (state.token) start().catch((e) => console.warn('start failed', e));
 </script>
 </body>
 </html>

@@ -19,6 +19,8 @@ class SettingsScreen extends StatelessWidget {
     // (defs category, page title, icon, subtitle)
     ('Browser', 'Web Browsing', Icons.public,
         'Start URL, error recovery'),
+    ('Web Content', 'Web Content', Icons.tune,
+        'Microphone, camera, geolocation, pop-ups'),
     ('Screen', 'Screen', Icons.brightness_6_outlined,
         'Brightness, keep awake'),
     ('Screensaver', 'Screensaver', Icons.dark_mode_outlined,

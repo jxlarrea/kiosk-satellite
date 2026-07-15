@@ -34,6 +34,9 @@ dependencies:
   # Persistence
   shared_preferences: ^2.5.2
 
+  # HMAC for stateless remote-admin tokens (survive app restarts)
+  crypto: ^3.0.6
+
   # Share sheet (console log export)
   share_plus: ^10.1.4
 

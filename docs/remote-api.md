@@ -27,7 +27,8 @@ adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
 
 - A device password (set in the wizard; required before the server starts).
 - REST: `Authorization: Bearer <token>` obtained from `POST /api/login
-  {password}`. Tokens are random, in-memory, expire after inactivity.
+  {password}`. Tokens are HMAC-signed (stateless) with a persisted secret and
+  expire after 7 days, so a session survives the app/kiosk restarting.
 - WS: `?token=` query parameter.
 - Failed logins are rate-limited (exponential backoff per client IP).
 - Optional TLS with a self-signed cert (off by default; LAN-only assumption

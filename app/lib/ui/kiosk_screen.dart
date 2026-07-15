@@ -3,6 +3,7 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
@@ -34,23 +35,37 @@ class _KioskScreenState extends State<KioskScreen> {
   AppContainer get c => widget.container;
 
   bool _consoleOpen = false;
-  StreamSubscription<SettingChanged>? _kioskModeSub;
+  StreamSubscription<SettingChanged>? _settingsSub;
+
+  Future<void> _onSettingChanged(SettingChanged e) async {
+    // HA kiosk mode is applied live (no app restart).
+    if (e.key == defs.haKioskMode.key) {
+      if (e.value == 'auto' && c.homeAssistant.configured) {
+        await c.homeAssistant.detectKioskModePlugin();
+      }
+      await _applyKioskMode();
+      await c.browser.loadUrl(_initialUrl); // reload so ?kiosk takes/drops
+      return;
+    }
+    // Enabling a media toggle proactively requests its OS grant (Fully-style),
+    // then reloads so the page can re-request now that access is allowed.
+    if (e.value == true) {
+      Permission? permission;
+      if (e.key == defs.webMicrophone.key) permission = Permission.microphone;
+      if (e.key == defs.webCamera.key) permission = Permission.camera;
+      if (e.key == defs.webGeolocation.key) permission = Permission.location;
+      if (permission != null) {
+        await _ensureOsPermission(permission);
+        await c.browser.runJs('location.reload();');
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
 
-    // HA kiosk mode is applied live (per navigation + on setting change), so
-    // toggling it never needs an app restart.
-    _kioskModeSub = c.bus.on<SettingChanged>().listen((e) async {
-      if (e.key != defs.haKioskMode.key) return;
-      if (e.value == 'auto' && c.homeAssistant.configured) {
-        await c.homeAssistant.detectKioskModePlugin();
-      }
-      await _applyKioskMode();
-      // Reload so the plugin's ?kiosk param takes / drops cleanly.
-      await c.browser.loadUrl(_initialUrl);
-    });
+    _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
 
     if (widget.showMenuHint) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -92,9 +107,38 @@ class _KioskScreenState extends State<KioskScreen> {
     await c.browser.runJs(kioskModeScript(apply: _useCss));
   }
 
+  /// Whether a WebView permission request may be granted: its Web Content
+  /// toggle must be on and the OS runtime grant must be held (requested
+  /// lazily here — never all-at-once at launch).
+  Future<bool> _resourceAllowed(PermissionResourceType resource) async {
+    if (resource == PermissionResourceType.MICROPHONE) {
+      return c.settings.get(defs.webMicrophone) &&
+          await _ensureOsPermission(Permission.microphone);
+    }
+    if (resource == PermissionResourceType.CAMERA) {
+      return c.settings.get(defs.webCamera) &&
+          await _ensureOsPermission(Permission.camera);
+    }
+    if (resource == PermissionResourceType.GEOLOCATION) {
+      return c.settings.get(defs.webGeolocation) &&
+          await _ensureOsPermission(Permission.location);
+    }
+    // Anything else the page asks for (e.g. protected media id) follows the
+    // camera/mic decision conservatively: deny unless explicitly handled.
+    return false;
+  }
+
+  Future<bool> _ensureOsPermission(Permission permission) async {
+    var status = await permission.status;
+    if (status.isGranted) return true;
+    if (status.isPermanentlyDenied) return false;
+    status = await permission.request();
+    return status.isGranted;
+  }
+
   @override
   void dispose() {
-    _kioskModeSub?.cancel();
+    _settingsSub?.cancel();
     super.dispose();
   }
 
@@ -116,10 +160,14 @@ class _KioskScreenState extends State<KioskScreen> {
               initialUrlRequest: URLRequest(url: WebUri(_initialUrl)),
               initialUserScripts: UnmodifiableListView(_userScripts),
               initialSettings: InAppWebViewSettings(
-                mediaPlaybackRequiresUserGesture: false,
+                mediaPlaybackRequiresUserGesture:
+                    !c.settings.get(defs.webAutoplay),
                 allowsInlineMediaPlayback: true,
                 iframeAllow: 'camera; microphone',
                 transparentBackground: true,
+                geolocationEnabled: c.settings.get(defs.webGeolocation),
+                javaScriptCanOpenWindowsAutomatically:
+                    c.settings.get(defs.webPopups),
               ),
               onWebViewCreated: (controller) {
                 c.browser.attach(controller);
@@ -149,12 +197,17 @@ class _KioskScreenState extends State<KioskScreen> {
                 );
               },
               onPermissionRequest: (controller, request) async {
-                // The Voice Satellite card needs the mic for STT; motion
-                // demos may want the camera. Kiosk devices are dedicated,
-                // so grant what the page asks for.
+                // Fully-Kiosk-style: grant a resource only if its Web Content
+                // toggle is on, ensuring the OS runtime grant lazily.
+                final granted = <PermissionResourceType>[];
+                for (final resource in request.resources) {
+                  if (await _resourceAllowed(resource)) granted.add(resource);
+                }
                 return PermissionResponse(
-                  resources: request.resources,
-                  action: PermissionResponseAction.GRANT,
+                  resources: granted,
+                  action: granted.isEmpty
+                      ? PermissionResponseAction.DENY
+                      : PermissionResponseAction.GRANT,
                 );
               },
             ),
