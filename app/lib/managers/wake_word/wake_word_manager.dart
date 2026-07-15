@@ -7,6 +7,7 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'engine.dart';
+import 'mww/mww_engine.dart';
 import 'mww/mww_probe.dart';
 import 'vsww/benchmark.dart';
 import 'vsww/model_store.dart';
@@ -39,9 +40,30 @@ class WakeWordManager extends Manager {
   @override
   String get name => 'wake_word';
 
-  // vsWakeWord runs natively (ONNX). microWakeWord/openWakeWord fall through
-  // to unavailable (VS keeps browser detection) until ported.
-  late final WakeWordEngine _engine = VswwEngine(log);
+  // One engine per runner, created lazily and kept: switching wake word
+  // engines should not re-download models the other one already has.
+  // openWakeWord has no native runner yet, so a config naming it reports
+  // unavailable and the card transparently keeps browser detection.
+  final Map<WakeWordEngineType, WakeWordEngine> _engines = {};
+
+  WakeWordEngine? _engineFor(WakeWordEngineType type) => switch (type) {
+        WakeWordEngineType.vsWakeWord =>
+          _engines.putIfAbsent(type, () => VswwEngine(log)),
+        WakeWordEngineType.microWakeWord =>
+          _engines.putIfAbsent(type, () => MwwEngine(log)),
+        WakeWordEngineType.openWakeWord => null,
+      };
+
+  /// The engine for the pushed config, or a do-nothing stand-in when there is
+  /// no config or no native runner for it. Never the *running* engine: see
+  /// [_active] handling in [_sync], which stops the outgoing one on a switch.
+  WakeWordEngine get _engine {
+    final config = _config;
+    if (config == null) return _noEngine;
+    return _engineFor(config.engine) ?? _noEngine;
+  }
+
+  final WakeWordEngine _noEngine = StubWakeWordEngine();
 
   WakeWordConfig? _config;
   bool _active = true;
@@ -76,6 +98,11 @@ class WakeWordManager extends Manager {
       !_released &&
       _config != null &&
       _engine.supportedEngines.contains(_config!.engine);
+
+  /// Engines that were started and must be stopped when the config moves to a
+  /// different runner. Without this, switching engines would leave the old one
+  /// holding the mic.
+  WakeWordEngine? _runningEngine;
 
   /// Whether we are natively running the card's stop-word classifier. False
   /// unless the card actually pushed a stop model and the engine loaded it, so
@@ -305,18 +332,37 @@ class WakeWordManager extends Manager {
   /// recompile every model, and would drop the mic the page is streaming from.
   Future<void> _sync() async {
     final shouldRun = enabled && available;
+    // A config that switched runners (vsWakeWord -> microWakeWord) leaves the
+    // previous engine running and holding the mic. Stop it before starting the
+    // new one, or two engines fight over the microphone.
+    final desired = shouldRun ? _engine : null;
+    final previous = _runningEngine;
+    if (previous != null && !identical(previous, desired) && previous.running) {
+      log.info(name, 'engine changed; stopping the previous runner');
+      await previous.stop();
+      _runningEngine = null;
+    }
     if (shouldRun && !_engine.running) {
       await _engine.start(
         config: _config!,
         onDetection: _onDetection,
         onStopDetection: _onStopDetection,
       );
-      log.info(
-          name,
-          'listening (${_config!.engine.name})'
-          '${_engine.supportsStopWord ? ' + stop word' : ''}');
+      // start() gives up rather than throwing when every model fails to
+      // download, so ask the engine instead of assuming it worked: claiming to
+      // listen while nothing is running is how a satellite goes quietly deaf.
+      if (_engine.running) {
+        log.info(
+            name,
+            'listening (${_config!.engine.name})'
+            '${_engine.supportsStopWord ? ' + stop word' : ''}');
+        _runningEngine = _engine;
+      } else {
+        log.warn(name, 'engine failed to start (${_config!.engine.name})');
+      }
     } else if (!shouldRun && _engine.running) {
       await _engine.stop();
+      _runningEngine = null;
       log.info(name, 'stopped');
     }
     if (_engine.running) {

@@ -61,9 +61,8 @@ void main() {
       () async {
     final result = await commands.execute('setWakeWordConfig', vsConfig);
     expect(result.ok, isTrue);
-    // The stub engine runs nothing natively — VS must keep its browser
-    // engine. Flips to true when the real TFLite runner lands.
-    expect((result.data as Map)['available'], isFalse);
+    // microWakeWord now has a native TFLite runner, so we take the handoff.
+    expect((result.data as Map)['available'], isTrue);
 
     final state = await commands.execute('getWakeWordState', const {});
     final data = state.data as Map<String, Object?>;
