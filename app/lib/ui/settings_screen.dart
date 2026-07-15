@@ -208,33 +208,27 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
     final theme = Theme.of(context);
     final wake = widget.container.wakeWord;
     final config = wake.config;
+    final status = wake.status;
 
-    if (!wake.enabled) {
-      return const ListTile(
-        leading: Icon(Icons.mic_off_outlined),
-        title: Text('Wake word detection is off'),
-        subtitle: Text('Turn it on above to inherit models from Voice Satellite.'),
-      );
-    }
-    if (config == null) {
-      return const ListTile(
-        leading: Icon(Icons.hourglass_empty),
-        title: Text('Waiting for Voice Satellite'),
-        subtitle: Text(
-            'The engine and wake words are configured by the Voice Satellite '
-            'card once this device opens its dashboard.'),
+    // Before the card has pushed a config there is nothing to show but the
+    // status itself. The wording is the manager's, so the web admin says it
+    // word for word (see WakeWordManager.status).
+    if (config == null || !wake.enabled) {
+      return ListTile(
+        leading: Icon(status.code == 'disabled'
+            ? Icons.mic_off_outlined
+            : Icons.hourglass_empty),
+        title: Text(status.code == 'disabled'
+            ? 'Wake word detection is off'
+            : 'Waiting for Voice Satellite'),
+        subtitle: Text(status.label),
       );
     }
 
     final statusColor = wake.available
         ? (wake.listening ? theme.colorScheme.primary : theme.colorScheme.onSurface)
         : theme.colorScheme.error;
-    final statusText = !wake.available
-        ? 'No native runner for ${config.engine.label} — Voice Satellite keeps '
-            'browser detection'
-        : wake.listening
-            ? 'Listening natively'
-            : 'Ready (suspended during a voice session)';
+    final statusText = status.label;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +281,66 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
             ],
           ),
         ),
+        if (config.stopModel != null)
+          ListTile(
+            leading: const Icon(Icons.front_hand_outlined),
+            title: const Text('Stop word'),
+            subtitle: Text(wake.stopWordAvailable
+                ? 'Running natively'
+                : 'Voice Satellite keeps this one in the browser'),
+            trailing: Text(config.stopModel!.wakeWord,
+                style: theme.textTheme.bodyMedium),
+          ),
+        ClearModelCacheTile(container: widget.container),
       ],
+    );
+  }
+}
+
+/// Drop the cached models and re-download them.
+///
+/// Mirrored by the web admin's "Clear cache" button (both call
+/// `clearWakeWordModels`). Models cache by URL, so a model re-published on Home
+/// Assistant under the same name never reaches a device that already has one.
+class ClearModelCacheTile extends StatefulWidget {
+  const ClearModelCacheTile({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<ClearModelCacheTile> createState() => _ClearModelCacheTileState();
+}
+
+class _ClearModelCacheTileState extends State<ClearModelCacheTile> {
+  bool _busy = false;
+  String? _result;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.cleaning_services_outlined),
+      title: const Text('Cached models'),
+      subtitle: Text(_result ??
+          'Re-download from Home Assistant. Use after re-publishing a model.'),
+      trailing: _busy
+          ? const SizedBox(
+              width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+          : TextButton(
+              onPressed: () async {
+                setState(() => _busy = true);
+                final result = await widget.container.commands
+                    .execute('clearWakeWordModels', const {});
+                if (!mounted) return;
+                final removed = (result.data as Map?)?['removed'];
+                setState(() {
+                  _busy = false;
+                  _result = result.ok
+                      ? 'Cleared $removed file(s); re-downloading.'
+                      : 'Could not clear the cache.';
+                });
+              },
+              child: const Text('Clear'),
+            ),
     );
   }
 }

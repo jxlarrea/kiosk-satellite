@@ -7,6 +7,7 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'engine.dart';
+import 'model_cache.dart';
 import 'mww/mww_engine.dart';
 import 'mww/mww_probe.dart';
 import 'oww/oww_engine.dart';
@@ -97,8 +98,37 @@ class WakeWordManager extends Manager {
   bool get available =>
       enabled &&
       !_released &&
+      !_failed &&
       _config != null &&
       _engine.supportedEngines.contains(_config!.engine);
+
+  /// The engine was asked to run this config and could not.
+  ///
+  /// Having a native runner for an engine is not the same as that runner
+  /// working here and now: the models may fail to download, or the microphone
+  /// may refuse to open (permission revoked, another app holding it). Both end
+  /// with us loaded, willing, and deaf.
+  ///
+  /// This must feed [available], because Voice Satellite reads that as "I have
+  /// this covered" and *stops its own detection* on the strength of it. Saying
+  /// yes while nothing is listening is the worst answer available: the card
+  /// would keep browser detection running if we simply admitted we cannot.
+  ///
+  /// Cleared whenever the card pushes config again, so a reload retries.
+  bool _failed = false;
+
+  /// The engine died under us after a clean start (the mic dropped).
+  void _onEngineFailure(String reason) {
+    _failed = true;
+    _runningEngine = null;
+    log.error(
+        name,
+        'engine stopped: $reason; reporting unavailable so Voice Satellite '
+        'takes detection back on the next config push');
+    // Tell the page and the settings UIs, both of which are still showing
+    // "Listening natively" over a microphone that no longer exists.
+    bus.publish(WakeWordStateChanged(active: _active, listening: listening));
+  }
 
   /// Engines that were started and must be stopped when the config moves to a
   /// different runner. Without this, switching engines would leave the old one
@@ -109,6 +139,60 @@ class WakeWordManager extends Manager {
   /// unless the card actually pushed a stop model and the engine loaded it, so
   /// the card knows to keep its own browser stop classifier instead.
   bool get stopWordAvailable => available && _engine.supportsStopWord;
+
+  /// How the wake-word state should read to a person, as a code plus the
+  /// sentence to show. Derived here rather than in either UI: the on-device
+  /// settings screen and the remote web admin must say the same thing about the
+  /// same device, and they cannot if each decides for itself what "available
+  /// but not listening" means.
+  ({String code, String label}) get status {
+    if (!enabled) {
+      return (
+        code: 'disabled',
+        label: 'Wake word detection is off. Turn it on to inherit models from '
+            'Voice Satellite.',
+      );
+    }
+    final config = _config;
+    if (config == null) {
+      return (
+        code: 'waiting',
+        label: 'Waiting for Voice Satellite. The engine and wake words are '
+            'configured by the card once this device opens its dashboard.',
+      );
+    }
+    if (!available) {
+      return (
+        code: 'unavailable',
+        label: 'No native runner for ${config.engine.label} — Voice Satellite '
+            'keeps browser detection.',
+      );
+    }
+    return listening
+        ? (code: 'listening', label: 'Listening natively')
+        : (code: 'suspended', label: 'Ready (suspended during a voice session)');
+  }
+
+  /// The whole wake-word state as data: what `getWakeWordState` answers, what
+  /// the settings screen draws, and what the web admin draws. One shape, so the
+  /// two UIs cannot disagree.
+  Map<String, Object?> describeState() => {
+        'available': available,
+        'stopWordAvailable': stopWordAvailable,
+        'enabled': enabled,
+        'active': _active,
+        'listening': listening,
+        'engine': _config?.engine.name,
+        // The label Voice Satellite uses ("microWakeWord"), not the enum name.
+        'engineLabel': _config?.engine.label,
+        'status': status.code,
+        'statusLabel': status.label,
+        'stopWord': _config?.stopModel?.wakeWord,
+        'models': [
+          for (final m in _config?.models ?? const <WakeWordModelRef>[])
+            m.toJson(),
+        ],
+      };
 
   @override
   Future<void> init() async {
@@ -136,8 +220,12 @@ class WakeWordManager extends Manager {
           // has to reach the engine, and it only reads the config at start.
           // Re-pushing the same config on every page load must NOT restart it,
           // though: that would re-download every model on each navigation.
-          final changed = _config != config || _released;
+          // A push after a failure must retry, even when the config is
+          // identical: whatever broke (mic permission, a model 404) may well be
+          // fixed by now, and this is the only retry there is.
+          final changed = _config != config || _released || _failed;
           _released = false; // a fresh push takes the mic back
+          _failed = false; // and re-earns the right to claim availability
           _config = config;
           if (changed && _engine.running) {
             log.info(name, 'config changed; restarting engine');
@@ -209,18 +297,31 @@ class WakeWordManager extends Manager {
       ..register(Command(
         name: 'getWakeWordState',
         description: 'Current wake-word engine state',
-        handler: (_) async => CommandResult.ok({
-          'available': available,
-          'stopWordAvailable': stopWordAvailable,
-          'enabled': enabled,
-          'active': _active,
-          'listening': listening,
-          'engine': _config?.engine.name,
-          'models': [
-            for (final m in _config?.models ?? const <WakeWordModelRef>[])
-              m.toJson(),
-          ],
-        }),
+        handler: (_) async => CommandResult.ok(describeState()),
+      ))
+      ..register(Command(
+        name: 'clearWakeWordModels',
+        description: 'Delete cached wake-word models and re-download them. '
+            'Use after re-publishing a model on Home Assistant: the cache is '
+            'keyed by URL, so new bytes at the same URL are otherwise never '
+            'picked up.',
+        handler: (_) async {
+          final held = await WakeModelCache.size();
+          final running = _engine.running;
+          // Stop first: the engine holds the loaded copies, and on some
+          // platforms the open files too.
+          if (running) await _engine.stop();
+          final removed = await WakeModelCache.clear();
+          log.info(name,
+              'cleared $removed cached model file(s) (${(held / 1024).round()} KB)');
+          // Coming back up re-fetches from Home Assistant.
+          await _sync();
+          return CommandResult.ok({
+            'removed': removed,
+            'bytesFreed': held,
+            'restarted': running && _engine.running,
+          });
+        },
       ))
       ..register(Command(
         name: 'startAudioStream',
@@ -369,6 +470,7 @@ class WakeWordManager extends Manager {
         config: _config!,
         onDetection: _onDetection,
         onStopDetection: _onStopDetection,
+        onFailure: _onEngineFailure,
       );
       // start() gives up rather than throwing when every model fails to
       // download, so ask the engine instead of assuming it worked: claiming to
@@ -380,7 +482,13 @@ class WakeWordManager extends Manager {
             '${_engine.supportsStopWord ? ' + stop word' : ''}');
         _runningEngine = _engine;
       } else {
-        log.warn(name, 'engine failed to start (${_config!.engine.name})');
+        // Report unavailable from here on, so the card keeps doing this itself
+        // rather than trusting a runner that never came up.
+        _failed = true;
+        log.error(
+            name,
+            'engine failed to start (${_config!.engine.name}); '
+            'reporting unavailable so Voice Satellite keeps browser detection');
       }
     } else if (!shouldRun && _engine.running) {
       await _engine.stop();

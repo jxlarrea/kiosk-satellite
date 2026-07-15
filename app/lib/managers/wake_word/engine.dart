@@ -15,6 +15,12 @@ import 'dart:typed_data';
 typedef DetectionCallback = Future<void> Function(WakeWordModelRef model);
 typedef StopDetectionCallback = Future<void> Function();
 
+/// The engine has stopped working and cannot recover on its own — the mic died
+/// under it, most often. Reported so the manager can tell Voice Satellite it is
+/// no longer covered, rather than leave it trusting a runner that has gone
+/// deaf. [reason] is for the log.
+typedef EngineFailureCallback = void Function(String reason);
+
 enum WakeWordEngineType { microWakeWord, openWakeWord, vsWakeWord }
 
 WakeWordEngineType? engineTypeFromWire(String? value) => switch (value) {
@@ -249,6 +255,7 @@ abstract class WakeWordEngine {
     required WakeWordConfig config,
     required DetectionCallback onDetection,
     StopDetectionCallback? onStopDetection,
+    EngineFailureCallback? onFailure,
   });
 
   Future<void> stop();
@@ -315,6 +322,7 @@ class StubWakeWordEngine extends WakeWordEngine {
     required WakeWordConfig config,
     required DetectionCallback onDetection,
     StopDetectionCallback? onStopDetection,
+    EngineFailureCallback? onFailure,
   }) async {
     _running = true;
   }

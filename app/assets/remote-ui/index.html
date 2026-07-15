@@ -306,6 +306,95 @@ async function loadSettings() {
   const otherCats = Object.keys(byCat).filter((c) => !HA_CATEGORIES.includes(c));
   render($('#tab-homeassistant'), haCats);
   render($('#tab-settings'), otherCats);
+  // The on-device settings screen shows the wake-word config inherited from
+  // Voice Satellite under the same heading. This tab mirrors it.
+  await loadWakeWord();
+}
+
+/* ---- Voice Satellite wake word (read-only, pushed by the VS card) ---- */
+// Not a setting: nothing here is ours to change. The card owns the engine, the
+// wake words and the sensitivity, and pushes them to this device. We report.
+async function loadWakeWord() {
+  let s;
+  try {
+    const res = await cmd('getWakeWordState');
+    if (!res.ok) return;
+    s = res.data;
+  } catch { return; }
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'wakeWordCard';
+  const h = document.createElement('h2');
+  h.textContent = 'Wake word';
+  card.appendChild(h);
+
+  // Status first: it is the answer to "is this thing working?".
+  const status = document.createElement('div');
+  status.className = 'row';
+  const dot = { listening: 'var(--ok, #7ee081)', unavailable: 'var(--err, #ff6b6b)' }[s.status]
+    || 'var(--muted)';
+  status.innerHTML =
+    `<div class="info"><div class="name">Status</div>` +
+    `<div class="desc"></div></div>` +
+    `<span style="color:${dot}; white-space:nowrap"></span>`;
+  status.querySelector('.desc').textContent = s.statusLabel || '';
+  status.querySelector('span').textContent = s.status || '';
+  card.appendChild(status);
+
+  if (s.engineLabel) {
+    card.appendChild(readOnlyRow('Engine', 'Chosen in Voice Satellite', s.engineLabel));
+  }
+  const words = (s.models || []).map((m) => m.wakeWord).filter(Boolean);
+  if (words.length) {
+    card.appendChild(readOnlyRow('Wake words', 'Inherited from the card', words.join(', ')));
+  }
+  if (s.stopWord) {
+    card.appendChild(readOnlyRow(
+      'Stop word',
+      s.stopWordAvailable ? 'Running natively' : 'Voice Satellite keeps this one in the browser',
+      s.stopWord));
+  }
+
+  // Models are cached by URL, so re-publishing one on Home Assistant under the
+  // same name is invisible to this device until the cache is dropped.
+  const row = document.createElement('div'); row.className = 'row';
+  const info = document.createElement('div'); info.className = 'info';
+  info.innerHTML = `<div class="name">Cached models</div>` +
+    `<div class="desc">Re-download from Home Assistant. Use after re-publishing a model.</div>`;
+  row.appendChild(info);
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Clear cache';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    btn.textContent = 'Clearing…';
+    try {
+      const r = await cmd('clearWakeWordModels');
+      btn.textContent = r.ok ? `Cleared ${r.data.removed}` : 'Failed';
+    } catch { btn.textContent = 'Failed'; }
+    setTimeout(() => { btn.disabled = false; btn.textContent = 'Clear cache'; loadWakeWord(); }, 1200);
+  });
+  row.appendChild(btn);
+  card.appendChild(row);
+
+  const root = $('#tab-homeassistant');
+  root.querySelector('#wakeWordCard')?.remove();
+  root.appendChild(card);
+}
+
+function readOnlyRow(name, desc, value) {
+  const row = document.createElement('div'); row.className = 'row';
+  const info = document.createElement('div'); info.className = 'info';
+  info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
+  info.querySelector('.name').textContent = name;
+  info.querySelector('.desc').textContent = desc;
+  row.appendChild(info);
+  const v = document.createElement('span');
+  v.style.whiteSpace = 'nowrap';
+  v.textContent = value;
+  row.appendChild(v);
+  return row;
 }
 function settingRow(s) {
   const row = document.createElement('div'); row.className = 'row';

@@ -192,6 +192,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   StreamSubscription<Uint8List>? _audioSub;
   DetectionCallback? _onDetection;
   StopDetectionCallback? _onStopDetection;
+  EngineFailureCallback? _onFailure;
   Completer<bool>? _ready;
   Completer<void>? _stopped;
   Map<String, Object>? _pendingInit;
@@ -210,11 +211,13 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     required WakeWordConfig config,
     required DetectionCallback onDetection,
     StopDetectionCallback? onStopDetection,
+    EngineFailureCallback? onFailure,
   }) async {
     if (_running) return;
     if (config.engine != engineType) return;
     _onDetection = onDetection;
     _onStopDetection = onStopDetection;
+    _onFailure = onFailure;
 
     // Models are downloaded here, on the main isolate: http and path_provider
     // are platform channels and only work on the isolate that owns them.
@@ -249,15 +252,30 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     // The mic EventChannel stays on the main isolate; per chunk we hand the raw
     // bytes to the compute isolate (unless detection is paused), keep a short
     // pre-roll, and feed the page's audio stream when it wants one.
-    _audioSub = _mic().listen(
-      _onMicChunk,
-      onError: (Object e) => log.warn(tag, 'audio stream error: $e'),
-    );
+    _audioSub = _mic().listen(_onMicChunk, onError: _onMicError);
     _running = true;
     log.info(
         tag,
         'listening (${config.models.length} wake word(s)'
         '${_hasStopModel ? ' + stop word' : ''}, isolate)');
+  }
+
+  /// The mic stream died. Fatal, and deliberately not a warning we shrug off.
+  ///
+  /// A dropped mic is silent in every sense: no audio arrives, nothing throws
+  /// again, and the engine goes on reporting `running` while hearing nothing.
+  /// Meanwhile Voice Satellite has stopped its own browser detection because we
+  /// said we had this. So tear down and say so — the manager reports
+  /// unavailable, and the next config push retries from scratch.
+  ///
+  /// Seen for real: revoking the microphone permission (an app-data clear does
+  /// this) leaves `AudioRecord init failed` here and a satellite that looks
+  /// perfectly healthy in the logs while ignoring every wake word.
+  void _onMicError(Object e) {
+    if (!_running) return;
+    log.error(tag, 'microphone failed: $e');
+    final report = _onFailure;
+    stop().whenComplete(() => report?.call('microphone failed: $e'));
   }
 
   void _onMicChunk(Uint8List bytes) {

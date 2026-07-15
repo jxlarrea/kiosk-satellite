@@ -310,6 +310,43 @@ void main() {
           hasLength(1), reason: 're-arming an armed classifier is a no-op');
     });
 
+    test('a dead mic is fatal, not a warning', () async {
+      // The real incident: revoking the microphone permission left
+      // "AudioRecord init failed" on this stream. Nothing threw again, the
+      // engine kept reporting `running`, and Voice Satellite — which had
+      // stopped its own browser detection because we said we were covered —
+      // heard nothing for the rest of the session.
+      final failures = <String>[];
+      await engine.start(
+        config: _config,
+        onDetection: (m) async => engine.detections.add(m),
+        onFailure: failures.add,
+      );
+      expect(engine.running, isTrue);
+
+      mic.addError(Exception('AudioRecord init failed'));
+      await settle();
+
+      expect(failures, hasLength(1));
+      expect(failures.single, contains('AudioRecord init failed'));
+      expect(engine.running, isFalse,
+          reason: 'a deaf engine must not claim to be running');
+    });
+
+    test('a mic that dies twice reports once', () async {
+      final failures = <String>[];
+      await engine.start(
+        config: _config,
+        onDetection: (_) async {},
+        onFailure: failures.add,
+      );
+      mic.addError(Exception('first'));
+      await settle();
+      mic.addError(Exception('second'));
+      await settle();
+      expect(failures, hasLength(1), reason: 'already stopped by the first');
+    });
+
     test('stop releases the mic and tears the isolate down', () async {
       await start();
       expect(mic.hasListener, isTrue);
