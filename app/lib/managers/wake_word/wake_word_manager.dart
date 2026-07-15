@@ -9,6 +9,7 @@ import '../settings/settings_manager.dart';
 import 'engine.dart';
 import 'mww/mww_engine.dart';
 import 'mww/mww_probe.dart';
+import 'oww/oww_engine.dart';
 import 'oww/oww_probe.dart';
 import 'vsww/benchmark.dart';
 import 'vsww/model_store.dart';
@@ -43,8 +44,6 @@ class WakeWordManager extends Manager {
 
   // One engine per runner, created lazily and kept: switching wake word
   // engines should not re-download models the other one already has.
-  // openWakeWord has no native runner yet, so a config naming it reports
-  // unavailable and the card transparently keeps browser detection.
   final Map<WakeWordEngineType, WakeWordEngine> _engines = {};
 
   WakeWordEngine? _engineFor(WakeWordEngineType type) => switch (type) {
@@ -52,7 +51,8 @@ class WakeWordManager extends Manager {
           _engines.putIfAbsent(type, () => VswwEngine(log)),
         WakeWordEngineType.microWakeWord =>
           _engines.putIfAbsent(type, () => MwwEngine(log)),
-        WakeWordEngineType.openWakeWord => null,
+        WakeWordEngineType.openWakeWord =>
+          _engines.putIfAbsent(type, () => OwwEngine(log)),
       };
 
   /// The engine for the pushed config, or a do-nothing stand-in when there is

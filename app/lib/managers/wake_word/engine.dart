@@ -41,6 +41,7 @@ class WakeWordModelRef {
     required this.wakeWord,
     required this.manifestUrl,
     this.confidenceScale = 1.0,
+    this.cutoff,
   });
 
   final String id;
@@ -50,6 +51,15 @@ class WakeWordModelRef {
 
   /// Absolute URL of the model's JSON manifest on the HA instance.
   final String manifestUrl;
+
+  /// An absolute detection cutoff resolved by Voice Satellite, or null to use
+  /// the model manifest's own (scaled by [confidenceScale]).
+  ///
+  /// openWakeWord ships no manifest: its cutoff is entirely the card's policy,
+  /// so we are handed the finished number. vsWakeWord and microWakeWord carry
+  /// theirs in the manifest we download, so those get a multiplier instead.
+  /// Either way the card decides and we apply.
+  final double? cutoff;
 
   /// Multiplier for this model's confidence gates, resolved by Voice Satellite
   /// from its Sensitivity setting.
@@ -66,6 +76,7 @@ class WakeWordModelRef {
         'wakeWord': wakeWord,
         'manifestUrl': manifestUrl,
         'confidenceScale': confidenceScale,
+        if (cutoff != null) 'cutoff': cutoff,
       };
 
   @override
@@ -74,10 +85,12 @@ class WakeWordModelRef {
       other.id == id &&
       other.wakeWord == wakeWord &&
       other.manifestUrl == manifestUrl &&
-      other.confidenceScale == confidenceScale;
+      other.confidenceScale == confidenceScale &&
+      other.cutoff == cutoff;
 
   @override
-  int get hashCode => Object.hash(id, wakeWord, manifestUrl, confidenceScale);
+  int get hashCode =>
+      Object.hash(id, wakeWord, manifestUrl, confidenceScale, cutoff);
 }
 
 /// Voice Satellite's energy gate, already resolved to numbers.
@@ -170,6 +183,7 @@ class WakeWordConfig {
         manifestUrl: manifestUrl,
         // An older card sends no scale; leave the manifest gates alone.
         confidenceScale: scale != null && scale > 0 ? scale : 1.0,
+        cutoff: (raw['cutoff'] as num?)?.toDouble(),
       );
     }
     return null;
