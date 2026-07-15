@@ -6,21 +6,7 @@ import 'package:onnxruntime/onnxruntime.dart';
 import '../vsww/ort_init.dart';
 import 'oww_gate.dart';
 import 'oww_pipeline.dart';
-
-/// Message tags for the openWakeWord compute isolate. Mirrors VswwMsg/MwwMsg.
-class OwwMsg {
-  // isolate -> main
-  static const ready = 'ready';
-  static const detection = 'detection';
-  static const error = 'error';
-  static const log = 'log';
-  static const stopped = 'stopped';
-  // main -> isolate (control; audio arrives as a bare Uint8List)
-  static const init = 'init';
-  static const stop = 'stop';
-  static const resume = 'resume';
-  static const armStop = 'armStop';
-}
+import '../wake_msg.dart';
 
 /// Entry point of the openWakeWord compute isolate.
 void owwIsolateEntry(SendPort mainPort) {
@@ -32,13 +18,13 @@ void owwIsolateEntry(SendPort mainPort) {
       worker.onAudio(msg);
     } else if (msg is Map) {
       switch (msg['type']) {
-        case OwwMsg.init:
+        case WakeMsg.init:
           worker.init(msg);
-        case OwwMsg.resume:
+        case WakeMsg.resume:
           worker.resumeDetection(msg['absSample'] as int?);
-        case OwwMsg.armStop:
+        case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
-        case OwwMsg.stop:
+        case WakeMsg.stop:
           worker.stop();
           port.close();
       }
@@ -83,7 +69,7 @@ class _OwwWorker {
   int _absSamples = 0;
 
   void _log(String level, String message) =>
-      _main.send({'type': OwwMsg.log, 'level': level, 'message': message});
+      _main.send({'type': WakeMsg.log, 'level': level, 'message': message});
 
   void init(Map msg) {
     try {
@@ -126,7 +112,7 @@ class _OwwWorker {
             '(cutoff ${cutoff.toStringAsFixed(3)})');
       }
       if (_kws.isEmpty) {
-        _main.send({'type': OwwMsg.error, 'message': 'no models loaded'});
+        _main.send({'type': WakeMsg.error, 'message': 'no models loaded'});
         return;
       }
 
@@ -138,9 +124,9 @@ class _OwwWorker {
       sw.stop();
       _log('info', 'warmed up in ${sw.elapsedMilliseconds}ms');
 
-      _main.send({'type': OwwMsg.ready});
+      _main.send({'type': WakeMsg.ready});
     } catch (e) {
-      _main.send({'type': OwwMsg.error, 'message': '$e'});
+      _main.send({'type': WakeMsg.error, 'message': '$e'});
     }
   }
 
@@ -187,7 +173,7 @@ class _OwwWorker {
       if (k.isStop) {
         _log('info',
             'stop word detected (${trigger.name}, score ${probability.toStringAsFixed(3)})');
-        _main.send({'type': OwwMsg.detection, 'id': k.id, 'stop': true});
+        _main.send({'type': WakeMsg.detection, 'id': k.id, 'stop': true});
         return;
       }
 
@@ -195,7 +181,7 @@ class _OwwWorker {
           'detected "${k.id}" (${trigger.name}, score ${probability.toStringAsFixed(3)})');
       _detected = true;
       _main.send({
-        'type': OwwMsg.detection,
+        'type': WakeMsg.detection,
         'id': k.id,
         'wakeWord': k.wakeWord,
         // A window classifier: it knows the wake word happened recently, not
@@ -288,6 +274,6 @@ class _OwwWorker {
     _sharedSessions.clear();
     _kws.clear();
     _pipeline = null;
-    _main.send({'type': OwwMsg.stopped});
+    _main.send({'type': WakeMsg.stopped});
   }
 }

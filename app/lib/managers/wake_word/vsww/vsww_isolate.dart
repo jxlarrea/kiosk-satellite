@@ -11,21 +11,7 @@ import 'log_mel.dart';
 import 'manifest.dart';
 import 'ort_init.dart';
 import 'stream_matcher.dart';
-
-/// Message type tags exchanged with the compute isolate.
-class VswwMsg {
-  // isolate → main
-  static const ready = 'ready';
-  static const detection = 'detection';
-  static const error = 'error';
-  static const log = 'log';
-  static const stopped = 'stopped';
-  // main → isolate (control; audio is sent as a bare Uint8List)
-  static const init = 'init';
-  static const stop = 'stop';
-  static const resume = 'resume';
-  static const armStop = 'armStop';
-}
+import '../wake_msg.dart';
 
 /// Entry point of the vsWakeWord compute isolate. Pure Dart + FFI (no platform
 /// channels): the main isolate owns the mic and forwards raw PCM here as bare
@@ -39,13 +25,13 @@ void vswwIsolateEntry(SendPort mainPort) {
       worker.onAudio(msg);
     } else if (msg is Map) {
       switch (msg['type']) {
-        case VswwMsg.init:
+        case WakeMsg.init:
           worker.init(msg);
-        case VswwMsg.resume:
+        case WakeMsg.resume:
           worker.resumeDetection(msg['absSample'] as int?);
-        case VswwMsg.armStop:
+        case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
-        case VswwMsg.stop:
+        case WakeMsg.stop:
           worker.stop();
           port.close();
       }
@@ -116,7 +102,7 @@ class _IsolateWorker {
   int _silentChunks = 0;
 
   void _log(String level, String message) =>
-      _main.send({'type': VswwMsg.log, 'level': level, 'message': message});
+      _main.send({'type': WakeMsg.log, 'level': level, 'message': message});
 
   static bool _sameFeature(VswwFeatureConfig a, VswwFeatureConfig b) =>
       a.windowSamples == b.windowSamples &&
@@ -171,7 +157,7 @@ class _IsolateWorker {
             '${scale == 1.0 ? '' : ', conf gate scale x${scale.toStringAsFixed(2)}'}');
       }
       if (_kws.isEmpty) {
-        _main.send({'type': VswwMsg.error, 'message': 'no models loaded'});
+        _main.send({'type': WakeMsg.error, 'message': 'no models loaded'});
         return;
       }
       final f = _feature!;
@@ -183,9 +169,9 @@ class _IsolateWorker {
           _energyEnabled
               ? 'energy gate on (wake rms $_wakeRms, sleep after $_sleepAfterChunks quiet chunks)'
               : 'energy gate off');
-      _main.send({'type': VswwMsg.ready});
+      _main.send({'type': WakeMsg.ready});
     } catch (e) {
-      _main.send({'type': VswwMsg.error, 'message': '$e'});
+      _main.send({'type': WakeMsg.error, 'message': '$e'});
     }
   }
 
@@ -335,7 +321,7 @@ class _IsolateWorker {
           // interruptible state down. Deciding here would fork that state.
           // The gate's cooldown, not a self-disarm, is what stops the same
           // word firing twice before the card's command lands.
-          _main.send({'type': VswwMsg.detection, 'id': k.id, 'stop': true});
+          _main.send({'type': WakeMsg.detection, 'id': k.id, 'stop': true});
           return;
         }
         final wakeEnd = _wakeEndSample(k, combined, identical(combined, perWindow));
@@ -343,7 +329,7 @@ class _IsolateWorker {
             'detected "${k.id}" (conf ${combined.matchedConfidence.toStringAsFixed(2)}, ed ${combined.editDistance}, wake ended ${_absSamples - wakeEnd} samples back)');
         _detected = true;
         _main.send({
-          'type': VswwMsg.detection,
+          'type': WakeMsg.detection,
           'id': k.id,
           'wakeWord': k.wakeWord,
           'wakeEndSample': wakeEnd,
@@ -459,6 +445,6 @@ class _IsolateWorker {
       k.session.release();
     }
     _kws.clear();
-    _main.send({'type': VswwMsg.stopped});
+    _main.send({'type': WakeMsg.stopped});
   }
 }

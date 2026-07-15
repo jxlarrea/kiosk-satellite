@@ -6,22 +6,7 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 
 import 'micro_frontend.dart';
 import 'mww_gate.dart';
-
-/// Message tags exchanged with the microWakeWord compute isolate. Mirrors
-/// [VswwMsg] so the two engines behave the same to their controllers.
-class MwwMsg {
-  // isolate -> main
-  static const ready = 'ready';
-  static const detection = 'detection';
-  static const error = 'error';
-  static const log = 'log';
-  static const stopped = 'stopped';
-  // main -> isolate (control; audio arrives as a bare Uint8List)
-  static const init = 'init';
-  static const stop = 'stop';
-  static const resume = 'resume';
-  static const armStop = 'armStop';
-}
+import '../wake_msg.dart';
 
 /// Entry point of the microWakeWord compute isolate.
 ///
@@ -37,13 +22,13 @@ void mwwIsolateEntry(SendPort mainPort) {
       worker.onAudio(msg);
     } else if (msg is Map) {
       switch (msg['type']) {
-        case MwwMsg.init:
+        case WakeMsg.init:
           worker.init(msg);
-        case MwwMsg.resume:
+        case WakeMsg.resume:
           worker.resumeDetection(msg['absSample'] as int?);
-        case MwwMsg.armStop:
+        case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
-        case MwwMsg.stop:
+        case WakeMsg.stop:
           worker.stop();
           port.close();
       }
@@ -111,7 +96,7 @@ class _MwwWorker {
   int _absSamples = 0;
 
   void _log(String level, String message) =>
-      _main.send({'type': MwwMsg.log, 'level': level, 'message': message});
+      _main.send({'type': WakeMsg.log, 'level': level, 'message': message});
 
   void init(Map msg) {
     try {
@@ -158,12 +143,12 @@ class _MwwWorker {
             '${scale.toStringAsFixed(5)}, zp $zeroPoint)');
       }
       if (_kws.isEmpty) {
-        _main.send({'type': MwwMsg.error, 'message': 'no models loaded'});
+        _main.send({'type': WakeMsg.error, 'message': 'no models loaded'});
         return;
       }
-      _main.send({'type': MwwMsg.ready});
+      _main.send({'type': WakeMsg.ready});
     } catch (e) {
-      _main.send({'type': MwwMsg.error, 'message': '$e'});
+      _main.send({'type': WakeMsg.error, 'message': '$e'});
     }
   }
 
@@ -223,7 +208,7 @@ class _MwwWorker {
           // Report and keep listening: the card owns the stop state and
           // disarms us as it tears the interruptible state down. Deciding here
           // would fork that state (see the vsWakeWord isolate).
-          _main.send({'type': MwwMsg.detection, 'id': k.id, 'stop': true});
+          _main.send({'type': WakeMsg.detection, 'id': k.id, 'stop': true});
           return;
         }
 
@@ -233,7 +218,7 @@ class _MwwWorker {
             '${k.gate.windowMean.toStringAsFixed(3)})');
         _detected = true;
         _main.send({
-          'type': MwwMsg.detection,
+          'type': WakeMsg.detection,
           'id': k.id,
           'wakeWord': k.wakeWord,
           // A window classifier knows only that the wake word happened
@@ -351,7 +336,7 @@ class _MwwWorker {
       k.interpreter.close();
     }
     _kws.clear();
-    _main.send({'type': MwwMsg.stopped});
+    _main.send({'type': WakeMsg.stopped});
   }
 }
 
