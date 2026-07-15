@@ -58,6 +58,15 @@ class _KioskScreenState extends State<KioskScreen> {
       setState(() => _webViewEpoch++);
       return;
     }
+    // Wake word detection is negotiated with the Voice Satellite card at page
+    // load (it asks whether we can run its engine natively, and we answer with
+    // our own enabled setting). Reload so that handoff is re-evaluated:
+    // turning it on hands detection to us, turning it off gives it back to the
+    // browser engine.
+    if (e.key == defs.wakeWordEnabled.key) {
+      await c.browser.runJs('location.reload();');
+      return;
+    }
     // Enabling a media toggle proactively requests its OS grant (Fully-style),
     // then reloads so the page can re-request now that access is allowed.
     if (e.value == true) {

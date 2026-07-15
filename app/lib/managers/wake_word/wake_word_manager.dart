@@ -52,9 +52,18 @@ class WakeWordManager extends Manager {
   /// card pushes it via setWakeWordConfig).
   WakeWordConfig? get config => _config;
 
-  /// Whether we can natively run the engine Voice Satellite configured.
+  /// Whether this app will natively handle wake-word detection for the
+  /// pushed config: the user enabled wake word detection in *our* settings
+  /// AND we have a native runner for that engine.
+  ///
+  /// This is the honest answer Voice Satellite gates its handoff on — if it
+  /// is false, VS transparently keeps doing detection in the browser. It must
+  /// therefore include [enabled]: handing off to a disabled engine would mean
+  /// nobody is listening.
   bool get available =>
-      _config != null && _engine.supportedEngines.contains(_config!.engine);
+      enabled &&
+      _config != null &&
+      _engine.supportedEngines.contains(_config!.engine);
 
   @override
   Future<void> init() async {
