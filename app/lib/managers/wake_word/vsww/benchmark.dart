@@ -25,9 +25,18 @@ class VswwBenchmark {
       features[i] = (i % 40) / 40.0 - 0.5;
     }
 
+    void oneThread(OrtSessionOptions o) {
+      o.setIntraOpNumThreads(1);
+      o.setInterOpNumThreads(1);
+    }
+
     final configs = <String, void Function(OrtSessionOptions)>{
-      'cpu-default': (o) {},
-      'xnnpack': (o) => o.appendXnnpackProvider(),
+      'cpu-default': (o) {}, // ORT default (threads = cores)
+      'cpu-1thread': oneThread,
+      'xnnpack-1thread': (o) {
+        oneThread(o);
+        o.appendXnnpackProvider();
+      },
       'nnapi': (o) => o.appendNnapiProvider(NnapiFlags.useNone),
     };
 

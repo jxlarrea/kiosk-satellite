@@ -88,7 +88,13 @@ class VswwEngine extends WakeWordEngine {
     for (final ref in config.models) {
       try {
         final model = await _store.fetch(ref.manifestUrl);
-        final opts = OrtSessionOptions();
+        // Single-threaded: the model is tiny (~2 ms), and ORT's default
+        // multi-threaded, spinning thread pool otherwise burns ~4-5 cores
+        // between 80 ms inferences — brutal for an always-on kiosk's battery,
+        // heat, and WebView responsiveness. One thread is plenty.
+        final opts = OrtSessionOptions()
+          ..setIntraOpNumThreads(1)
+          ..setInterOpNumThreads(1);
         final session = OrtSession.fromBuffer(model.onnxBytes, opts);
         final inputName = session.inputNames.first;
         final decoder = CtcDecoder(model.manifest.ctc);
