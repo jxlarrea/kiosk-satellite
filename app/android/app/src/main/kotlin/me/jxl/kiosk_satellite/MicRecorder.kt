@@ -3,8 +3,12 @@ package me.jxl.kiosk_satellite
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.AutomaticGainControl
+import android.media.audiofx.NoiseSuppressor
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import kotlin.concurrent.thread
@@ -17,10 +21,28 @@ import kotlin.math.max
  * available streaming-mic packages don't build against AGP 9. onListen starts
  * capture; onCancel (Dart cancelling the subscription) stops it and releases
  * the mic — which is what frees it for the WebView's getUserMedia during STT.
+ *
+ * Capture DSP: echo cancellation on, everything else off. We are the audio
+ * source for wake-word inference, the stop word and STT, and only the first of
+ * those is helped by the platform's other processing:
+ *
+ *  - Echo cancellation earns its keep because the stop word listens *while*
+ *    TTS plays out of this same device. Without it the mic hears our own
+ *    speech and scores it.
+ *  - Noise suppression and AGC are off: they reshape the signal the wake
+ *    models were trained on (AGC in particular pumps the level between
+ *    utterances), and STT engines do better with the unprocessed stream.
+ *
+ * VOICE_COMMUNICATION rather than MIC is deliberate: it is the capture path
+ * that carries the playback reference AEC needs. On a MIC session the effect
+ * usually attaches and then silently does nothing. The tradeoff is that this
+ * source also applies the platform's own NS/AGC by default, which is exactly
+ * what [applyDsp] turns back off.
  */
 class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
     companion object {
         const val CHANNEL = "kiosk_satellite/mic"
+        private const val TAG = "MicRecorder"
         private const val SAMPLE_RATE = 16000
         private const val CHUNK_BYTES = 1280 * 2 // 80 ms of 16-bit mono
     }
@@ -31,6 +53,9 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
     @Volatile private var recording = false
     private var record: AudioRecord? = null
     private var worker: Thread? = null
+    private var aec: AcousticEchoCanceler? = null
+    private var ns: NoiseSuppressor? = null
+    private var agc: AutomaticGainControl? = null
 
     init {
         eventChannel.setStreamHandler(this)
@@ -46,7 +71,7 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
         val bufSize = max(minBuf, CHUNK_BYTES * 4)
         val rec = try {
             AudioRecord(
-                MediaRecorder.AudioSource.MIC,
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
@@ -62,6 +87,7 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
             return
         }
         record = rec
+        applyDsp(rec.audioSessionId)
         recording = true
         rec.startRecording()
         worker = thread(name = "vsww-mic") {
@@ -78,6 +104,57 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
         }
     }
 
+    /**
+     * Echo cancellation on, noise suppression and AGC off, on this capture
+     * session. Each effect is device-optional, so every step is best-effort:
+     * a tablet without an AEC implementation still captures fine, it just does
+     * not cancel. The resulting state is logged rather than assumed, since
+     * "created the effect" and "the effect is actually running" are different
+     * things on Android and vary by OEM.
+     */
+    private fun applyDsp(sessionId: Int) {
+        if (AcousticEchoCanceler.isAvailable()) {
+            aec = try {
+                AcousticEchoCanceler.create(sessionId)?.also { it.setEnabled(true) }
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "AEC unavailable on this session: ${e.message}")
+                null
+            }
+        }
+        // Creating these and disabling them is how you turn off the processing
+        // VOICE_COMMUNICATION applies by default; there is no "raw" flavour of
+        // this source.
+        if (NoiseSuppressor.isAvailable()) {
+            ns = try {
+                NoiseSuppressor.create(sessionId)?.also { it.setEnabled(false) }
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "NS control unavailable: ${e.message}")
+                null
+            }
+        }
+        if (AutomaticGainControl.isAvailable()) {
+            agc = try {
+                AutomaticGainControl.create(sessionId)?.also { it.setEnabled(false) }
+            } catch (e: RuntimeException) {
+                Log.w(TAG, "AGC control unavailable: ${e.message}")
+                null
+            }
+        }
+        Log.i(
+            TAG,
+            "capture DSP: aec=${describe(aec?.enabled, AcousticEchoCanceler.isAvailable())} " +
+                "ns=${describe(ns?.enabled, NoiseSuppressor.isAvailable())} " +
+                "agc=${describe(agc?.enabled, AutomaticGainControl.isAvailable())}",
+        )
+    }
+
+    private fun describe(enabled: Boolean?, available: Boolean): String = when {
+        enabled == true -> "on"
+        enabled == false -> "off"
+        available -> "unsupported-on-session"
+        else -> "unsupported-on-device"
+    }
+
     override fun onCancel(arguments: Any?) {
         stop()
     }
@@ -86,6 +163,13 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
         recording = false
         worker?.let { try { it.join(500) } catch (_: InterruptedException) {} }
         worker = null
+        // Effects first: they are attached to the session this AudioRecord owns.
+        aec?.release()
+        ns?.release()
+        agc?.release()
+        aec = null
+        ns = null
+        agc = null
         record?.let {
             try { it.stop() } catch (_: IllegalStateException) {}
             it.release()
