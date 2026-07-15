@@ -12,6 +12,7 @@ import 'log_mel.dart';
 import 'manifest.dart';
 import 'model_store.dart';
 import 'native_mic.dart';
+import 'ort_init.dart';
 import 'stream_matcher.dart';
 
 /// One loaded wake word: ONNX session + its decode/stream/gate state.
@@ -46,7 +47,6 @@ class VswwEngine extends WakeWordEngine {
   static const _windowRmsVeto = 0.002; // hard-silence veto
 
   bool _running = false;
-  bool _envReady = false;
   StreamSubscription<Uint8List>? _audioSub;
   DetectionCallback? _onDetection;
 
@@ -82,10 +82,7 @@ class VswwEngine extends WakeWordEngine {
     if (config.engine != WakeWordEngineType.vsWakeWord) return;
     _onDetection = onDetection;
 
-    if (!_envReady) {
-      OrtEnv.instance.init();
-      _envReady = true;
-    }
+    ensureOrtInit();
 
     // Load each wake word (download + compile ONNX + build pipeline).
     for (final ref in config.models) {

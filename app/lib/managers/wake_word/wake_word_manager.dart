@@ -6,6 +6,8 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'engine.dart';
+import 'vsww/benchmark.dart';
+import 'vsww/model_store.dart';
 import 'vsww/vsww_engine.dart';
 
 /// Native wake-word detection and the mic-ownership handoff with the
@@ -111,6 +113,38 @@ class WakeWordManager extends Manager {
               m.toJson(),
           ],
         }),
+      ))
+      ..register(Command(
+        name: 'benchmarkVsww',
+        description:
+            'Benchmark vsWakeWord ONNX inference across CPU/XNNPACK/NNAPI '
+            'execution providers (ms per inference vs the 80 ms budget)',
+        params: const {
+          'manifestUrl': 'model manifest URL (defaults to first configured)',
+          'iters': 'timed iterations (default 60)',
+        },
+        handler: (p) async {
+          final url = (p['manifestUrl'] as String?) ??
+              _config?.models.firstOrNull?.manifestUrl;
+          if (url == null || url.isEmpty) {
+            return const CommandResult.fail(
+                'no manifestUrl and no configured model');
+          }
+          // Stop live capture so it doesn't compete for CPU during timing.
+          final wasActive = _active;
+          await _engine.stop();
+          try {
+            final model = await VswwModelStore().fetch(url);
+            final result = await VswwBenchmark(log)
+                .run(model, iters: (p['iters'] as num?)?.toInt() ?? 60);
+            return CommandResult.ok(result);
+          } catch (e) {
+            return CommandResult.fail('$e');
+          } finally {
+            _active = wasActive;
+            await _sync(); // resume listening if it was on
+          }
+        },
       ))
       ..register(Command(
         name: 'simulateWakeWord',
