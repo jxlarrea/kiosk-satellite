@@ -37,6 +37,11 @@ String buildKioskSatelliteScript({required String version, required String os}) 
 
     setWakeWordConfig: function (config) { return call('setWakeWordConfig', config); },
     setWakeWordActive: function (active) { return call('setWakeWordActive', { active: !!active }); },
+
+    // Hard mic-off: stops detection and closes the microphone (mute, or the
+    // page switching to an engine we do not run natively). setWakeWordConfig
+    // takes it back.
+    releaseWakeWord: function () { return call('releaseWakeWord'); },
     getWakeWordState: function () { return call('getWakeWordState'); },
 
     // Stop word: armed by the page only while something interruptible is

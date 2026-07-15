@@ -46,6 +46,12 @@ class WakeWordManager extends Manager {
   bool _active = true;
   Timer? _resumeTimer;
 
+  /// The page handed the mic back (it muted the satellite, or switched to an
+  /// engine we cannot run). Distinct from `active:false`, which keeps the mic
+  /// open for an instant resume: released means *stop capturing entirely*.
+  /// Cleared when the page pushes config again.
+  bool _released = false;
+
   bool get enabled => _settings.get(defs.wakeWordEnabled);
 
   /// Actively detecting. The engine can be running (mic open, models loaded)
@@ -66,6 +72,7 @@ class WakeWordManager extends Manager {
   /// nobody is listening.
   bool get available =>
       enabled &&
+      !_released &&
       _config != null &&
       _engine.supportedEngines.contains(_config!.engine);
 
@@ -100,7 +107,8 @@ class WakeWordManager extends Manager {
           // has to reach the engine, and it only reads the config at start.
           // Re-pushing the same config on every page load must NOT restart it,
           // though: that would re-download every model on each navigation.
-          final changed = _config != config;
+          final changed = _config != config || _released;
+          _released = false; // a fresh push takes the mic back
           _config = config;
           if (changed && _engine.running) {
             log.info(name, 'config changed; restarting engine');
@@ -122,6 +130,25 @@ class WakeWordManager extends Manager {
             'available': available,
             'stopWordAvailable': stopWordAvailable,
           });
+        },
+      ))
+      ..register(Command(
+        name: 'releaseWakeWord',
+        description:
+            'Stop detection and release the microphone entirely. Unlike '
+            'setWakeWordActive(false), which keeps the mic open for an instant '
+            'resume between turns, this closes it: for when the satellite is '
+            'muted or the page switched to an engine we do not run. Push '
+            'setWakeWordConfig again to take it back.',
+        handler: (_) async {
+          if (_released) return const CommandResult.ok();
+          _released = true;
+          _resumeTimer?.cancel();
+          _active = true; // a later re-push starts listening, not suspended
+          await _engine.stop();
+          log.info(name, 'released by page (mic closed)');
+          bus.publish(WakeWordStateChanged(active: _active, listening: listening));
+          return const CommandResult.ok();
         },
       ))
       ..register(Command(

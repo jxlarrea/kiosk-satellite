@@ -40,6 +40,7 @@ class JsApiManager extends Manager {
     'getMotionEnabled': 'getMotionEnabled',
     'setWakeWordConfig': 'setWakeWordConfig',
     'setWakeWordActive': 'setWakeWordActive',
+    'releaseWakeWord': 'releaseWakeWord',
     'setStopWordActive': 'setStopWordActive',
     'getWakeWordState': 'getWakeWordState',
     'startAudioStream': 'startAudioStream',
