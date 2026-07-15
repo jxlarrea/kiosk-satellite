@@ -72,8 +72,11 @@ JSON messages, `{type, ...}`:
 
 ## Remote UI
 
-`remote-ui/` is a small Svelte + Vite SPA compiled to static assets and bundled
-into the app. Pages: Dashboard (live state + screenshot), Settings (rendered
-from the declarative setting definitions), Commands, Logs. Talks only to the
-REST/WS API above — no privileged path — so it doubles as the API's reference
-client.
+The admin UI is a single self-contained page (inline CSS + vanilla JS, no
+build step) at [app/assets/remote-ui/index.html](../app/assets/remote-ui/index.html),
+bundled as a Flutter asset and served at `/`. Tabs: Dashboard (live
+screenshot + quick controls + brightness), Settings (rendered from the
+declarative setting definitions), Console (live JS console over WS), Logs.
+It talks only to the REST/WS API above — no privileged path — so it doubles
+as the API's reference client. It can be replaced by a build-based SPA later
+without touching the server.

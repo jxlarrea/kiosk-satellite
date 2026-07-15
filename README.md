@@ -63,5 +63,7 @@ flutter analyze
 ```
 
 The app lives in [app/](app/), one folder per manager under
-[app/lib/managers/](app/lib/managers/). The remote admin SPA will live in
-`remote-ui/`.
+[app/lib/managers/](app/lib/managers/). The remote admin UI is a single
+self-contained page at
+[app/assets/remote-ui/index.html](app/assets/remote-ui/index.html), served by
+the remote server at `http://<device-ip>:2323`.

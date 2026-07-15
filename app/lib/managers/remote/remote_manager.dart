@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -30,9 +31,17 @@ class RemoteManager extends Manager {
   HttpServer? _server;
   String _currentUrl = '';
   final _wsClients = <WebSocketChannel>{};
+  String? _indexHtml;
 
   @override
   Future<void> init() async {
+    // The admin SPA is a single self-contained asset.
+    try {
+      _indexHtml = await rootBundle.loadString('assets/remote-ui/index.html');
+    } catch (e) {
+      log.warn(name, 'remote-ui asset missing: $e');
+    }
+
     bus.on<PageChanged>().listen((e) => _currentUrl = e.url);
 
     // Live event feed for connected WS clients.
@@ -276,8 +285,8 @@ class RemoteManager extends Manager {
   // ── Helpers ──────────────────────────────────────────────────────────
 
   Response _index() => Response.ok(
-        _placeholderHtml,
-        headers: {'content-type': 'text/html'},
+        _indexHtml ?? _placeholderHtml,
+        headers: {'content-type': 'text/html; charset=utf-8'},
       );
 
   static String? _bearerToken(Request request) {

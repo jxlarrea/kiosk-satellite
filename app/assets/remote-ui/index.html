@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kiosk Satellite — Remote</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #171a23; --surface-2: #1e2230;
+    --border: #2a2f3f; --text: #e6e8ee; --muted: #8b90a0;
+    --primary: #8b95e8; --primary-ink: #10131c;
+    --error: #ef6b73; --warn: #e0b34d; --ok: #5fbf80; --debug: #7d8290;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; cursor: pointer; }
+  input, select { font: inherit; }
+  .hidden { display: none !important; }
+
+  /* Login */
+  #login { min-height: 100%; display: grid; place-items: center; padding: 24px; }
+  .login-card {
+    width: 100%; max-width: 360px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 32px; text-align: center;
+  }
+  .logo { font-size: 40px; }
+  .login-card h1 { font-size: 20px; font-weight: 600; margin: 12px 0 4px; }
+  .login-card p { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .field { width: 100%; padding: 13px 15px; margin-bottom: 12px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 11px; color: var(--text); }
+  .field:focus { outline: none; border-color: var(--primary); }
+  .btn-primary { width: 100%; padding: 13px; background: var(--primary);
+    color: var(--primary-ink); border: none; border-radius: 11px;
+    font-weight: 600; }
+  .btn-primary:active { transform: translateY(1px); }
+  .msg-error { color: var(--error); font-size: 14px; margin-top: 12px; min-height: 18px; }
+
+  /* App shell */
+  #app { min-height: 100%; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10; }
+  header .title { font-weight: 600; }
+  header .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--debug); }
+  header .dot.on { background: var(--ok); }
+  header .dot.off { background: var(--error); }
+  header .device { color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+  header .battery { color: var(--muted); font-size: 13px; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border);
+    color: var(--text); border-radius: 9px; padding: 7px 12px; }
+  .btn-ghost:hover { border-color: var(--primary); }
+
+  nav { display: flex; gap: 4px; padding: 10px 14px; background: var(--surface);
+    border-bottom: 1px solid var(--border); overflow-x: auto; }
+  nav button { background: transparent; border: none; color: var(--muted);
+    padding: 8px 14px; border-radius: 9px; white-space: nowrap; }
+  nav button.active { background: var(--surface-2); color: var(--text); }
+
+  main { flex: 1; padding: 18px; max-width: 900px; width: 100%; margin: 0 auto; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 14px; font-weight: 600; color: var(--primary);
+    margin: 0 0 14px; text-transform: uppercase; letter-spacing: .04em; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .action { padding: 12px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 11px; color: var(--text); text-align: center; }
+  .action:hover { border-color: var(--primary); }
+
+  .row { display: flex; align-items: center; gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: none; }
+  .row .info { flex: 1; min-width: 0; }
+  .row .info .name { font-weight: 500; }
+  .row .info .desc { color: var(--muted); font-size: 13px; }
+  .row input[type=text], .row input[type=password], .row input[type=number], .row select {
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 9px; padding: 8px 11px; max-width: 220px; }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 26px; transition: .2s; }
+  .slider::before { content: ""; position: absolute; width: 18px; height: 18px;
+    left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: .2s; }
+  .switch input:checked + .slider { background: var(--primary); border-color: var(--primary); }
+  .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+
+  .shot-wrap { position: relative; border-radius: 11px; overflow: hidden;
+    background: var(--surface-2); aspect-ratio: 16/10; display: grid; place-items: center; }
+  .shot-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .shot-wrap .placeholder { color: var(--muted); }
+
+  .console { background: #0a0c12; border: 1px solid var(--border); border-radius: 11px;
+    height: 60vh; overflow-y: auto; padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .line { white-space: pre-wrap; word-break: break-word; padding: 1px 0; }
+  .line .ts { color: var(--debug); }
+  .line.log { color: var(--text); } .line.error { color: var(--error); }
+  .line.warn { color: var(--warn); } .line.debug { color: var(--debug); }
+  .line.tip { color: var(--primary); }
+  .line.info { color: var(--text); }
+
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .toolbar .spacer { flex: 1; }
+  label.inline { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<section id="login">
+  <div class="login-card">
+    <div class="logo">🛰️</div>
+    <h1>Kiosk Satellite</h1>
+    <p>Remote administration</p>
+    <input id="password" class="field" type="password" placeholder="Admin password" autocomplete="current-password">
+    <button id="loginBtn" class="btn-primary">Log in</button>
+    <div id="loginError" class="msg-error"></div>
+  </div>
+</section>
+
+<!-- App -->
+<section id="app" class="hidden">
+  <header>
+    <span class="dot" id="connDot"></span>
+    <span class="title">Kiosk Satellite</span>
+    <span class="device" id="deviceName"></span>
+    <span class="spacer"></span>
+    <span class="battery" id="battery"></span>
+    <button class="btn-ghost" id="logoutBtn">Log out</button>
+  </header>
+  <nav id="tabs">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="settings">Settings</button>
+    <button data-tab="console">Console</button>
+    <button data-tab="logs">Logs</button>
+  </nav>
+  <main>
+    <!-- Dashboard -->
+    <div class="tab active" id="tab-dashboard">
+      <div class="card">
+        <h2>Screen</h2>
+        <div class="shot-wrap" id="shotWrap">
+          <span class="placeholder">No screenshot</span>
+        </div>
+        <div class="toolbar" style="margin-top:12px">
+          <button class="btn-ghost" id="refreshShot">Refresh</button>
+          <label class="inline"><input type="checkbox" id="autoShot"> Auto</label>
+          <span class="spacer"></span>
+          <span class="device" id="currentUrl"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Quick controls</h2>
+        <div class="grid">
+          <button class="action" data-cmd="reload">Reload page</button>
+          <button class="action" data-cmd="screenOn">Screen on</button>
+          <button class="action" data-cmd="screenOff">Screen off</button>
+          <button class="action" data-cmd="startScreensaver">Screensaver</button>
+          <button class="action" data-cmd="stopScreensaver">Wake</button>
+          <button class="action" data-cmd="exitApp">Exit app</button>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <div class="info"><div class="name">Brightness</div></div>
+          <input type="range" id="brightness" min="0" max="100" value="100" style="flex:1">
+        </div>
+        <div class="row">
+          <input type="text" id="urlInput" placeholder="https://…" style="flex:1; max-width:none">
+          <button class="btn-ghost" id="loadUrlBtn">Load URL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="tab" id="tab-settings"></div>
+
+    <!-- Console -->
+    <div class="tab" id="tab-console">
+      <div class="toolbar">
+        <strong>Web Console</strong>
+        <span class="device">live from the WebView</span>
+        <span class="spacer"></span>
+        <button class="btn-ghost" id="clearConsole">Clear</button>
+      </div>
+      <div class="console" id="consoleOut"></div>
+    </div>
+
+    <!-- Logs -->
+    <div class="tab" id="tab-logs">
+      <div class="toolbar"><strong>App Log</strong><span class="spacer"></span>
+        <button class="btn-ghost" id="refreshLogs">Refresh</button></div>
+      <div class="console" id="logsOut"></div>
+    </div>
+  </main>
+</section>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const state = { token: sessionStorage.getItem('ks_token'), ws: null, autoShotTimer: null };
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { ...(opts.headers || {}), Authorization: `Bearer ${state.token}` },
+  });
+  if (res.status === 401) { logout(); throw new Error('unauthorized'); }
+  return res;
+}
+const cmd = (name, params = {}) =>
+  api(`/api/commands/${name}`, { method: 'POST', body: JSON.stringify(params) })
+    .then((r) => r.json());
+
+/* ---- Auth ---- */
+async function login() {
+  $('#loginError').textContent = '';
+  const res = await fetch('/api/login', {
+    method: 'POST', body: JSON.stringify({ password: $('#password').value }),
+  });
+  if (!res.ok) { $('#loginError').textContent = 'Invalid password'; return; }
+  state.token = (await res.json()).token;
+  sessionStorage.setItem('ks_token', state.token);
+  start();
+}
+function logout() {
+  state.token = null; sessionStorage.removeItem('ks_token');
+  if (state.ws) { state.ws.onclose = null; state.ws.close(); state.ws = null; }
+  clearInterval(state.autoShotTimer);
+  $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
+}
+
+/* ---- Tabs ---- */
+$('#tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.tab').forEach((t) =>
+    t.classList.toggle('active', t.id === `tab-${btn.dataset.tab}`));
+  if (btn.dataset.tab === 'logs') loadLogs();
+});
+
+/* ---- Dashboard ---- */
+document.querySelectorAll('.action[data-cmd]').forEach((b) =>
+  b.addEventListener('click', () => cmd(b.dataset.cmd)));
+$('#brightness').addEventListener('change', (e) =>
+  cmd('setBrightness', { level: e.target.value / 100 }));
+$('#loadUrlBtn').addEventListener('click', () => {
+  const url = $('#urlInput').value.trim();
+  if (url) cmd('loadUrl', { url });
+});
+$('#refreshShot').addEventListener('click', loadScreenshot);
+$('#autoShot').addEventListener('change', (e) => {
+  clearInterval(state.autoShotTimer);
+  if (e.target.checked) { loadScreenshot(); state.autoShotTimer = setInterval(loadScreenshot, 3000); }
+});
+async function loadScreenshot() {
+  try {
+    const res = await api('/api/screenshot');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const wrap = $('#shotWrap');
+    let img = wrap.querySelector('img');
+    if (!img) { wrap.innerHTML = ''; img = document.createElement('img'); wrap.appendChild(img); }
+    const old = img.src; img.src = url; if (old) URL.revokeObjectURL(old);
+  } catch (_) { /* ignore */ }
+}
+
+/* ---- Settings ---- */
+async function loadSettings() {
+  const { settings } = await (await api('/api/settings')).json();
+  const byCat = {};
+  settings.forEach((s) => (byCat[s.category] ??= []).push(s));
+  const root = $('#tab-settings'); root.innerHTML = '';
+  for (const [cat, items] of Object.entries(byCat)) {
+    const card = document.createElement('div'); card.className = 'card';
+    const h = document.createElement('h2'); h.textContent = cat; card.appendChild(h);
+    items.forEach((s) => card.appendChild(settingRow(s)));
+    root.appendChild(card);
+  }
+}
+function settingRow(s) {
+  const row = document.createElement('div'); row.className = 'row';
+  const info = document.createElement('div'); info.className = 'info';
+  info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
+  info.querySelector('.name').textContent = s.title;
+  info.querySelector('.desc').textContent = s.description;
+  row.appendChild(info);
+  const save = (value) => api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
+
+  if (s.type === 'boolean') {
+    const lbl = document.createElement('label'); lbl.className = 'switch';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!s.value;
+    cb.addEventListener('change', () => save(cb.checked));
+    const sl = document.createElement('span'); sl.className = 'slider';
+    lbl.append(cb, sl); row.appendChild(lbl);
+  } else if (s.type === 'select') {
+    const sel = document.createElement('select');
+    (s.options || []).forEach((o) => {
+      const opt = document.createElement('option'); opt.value = o; opt.textContent = o;
+      opt.selected = o === s.value; sel.appendChild(opt);
+    });
+    sel.addEventListener('change', () => save(sel.value));
+    row.appendChild(sel);
+  } else {
+    const inp = document.createElement('input');
+    inp.type = s.type === 'password' ? 'password' : s.type === 'number' ? 'number' : 'text';
+    if (s.type === 'password') inp.placeholder = s.value === '__set__' ? '•••••• (set)' : 'Not set';
+    else inp.value = s.value ?? '';
+    inp.addEventListener('change', () =>
+      save(s.type === 'number' ? Number(inp.value) : inp.value));
+    row.appendChild(inp);
+  }
+  return row;
+}
+
+/* ---- Console + Logs ---- */
+function appendLine(el, level, message, timeMs) {
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  const div = document.createElement('div'); div.className = `line ${level}`;
+  const ts = new Date(timeMs || Date.now()).toTimeString().slice(0, 8);
+  const t = document.createElement('span'); t.className = 'ts'; t.textContent = ts + ' ';
+  div.appendChild(t); div.appendChild(document.createTextNode(message));
+  el.appendChild(div);
+  while (el.childElementCount > 500) el.removeChild(el.firstChild);
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+async function loadConsole() {
+  const { console: lines } = await (await api('/api/console')).json();
+  const el = $('#consoleOut'); el.innerHTML = '';
+  (lines || []).forEach((l) => appendLine(el, l.level, l.message, l.time));
+}
+$('#clearConsole').addEventListener('click', () => {
+  cmd('clearConsole'); $('#consoleOut').innerHTML = '';
+});
+async function loadLogs() {
+  const { logs } = await (await api('/api/logs')).json();
+  const el = $('#logsOut'); el.innerHTML = '';
+  (logs || []).forEach((l) =>
+    appendLine(el, l.level, `${l.tag}: ${l.message}`, Date.parse(l.time)));
+}
+$('#refreshLogs').addEventListener('click', loadLogs);
+
+/* ---- Live state (WebSocket) ---- */
+function connectWs() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/api/ws?token=${state.token}`);
+  state.ws = ws;
+  ws.onopen = () => {
+    setConn('on');
+    ws.send(JSON.stringify({ type: 'subscribe', topics: ['state', 'events', 'console', 'logs'] }));
+  };
+  ws.onclose = () => { setConn('off'); if (state.token) setTimeout(connectWs, 3000); };
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'state') applyInfo(msg.device, msg.currentUrl);
+    else if (msg.type === 'console') appendLine($('#consoleOut'), msg.level, msg.message, msg.time);
+    else if (msg.type === 'log') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
+    else if (msg.type === 'event' && msg.event === 'screenon') loadScreenshot();
+  };
+}
+function setConn(s) { $('#connDot').className = `dot ${s}`; }
+function applyInfo(device, currentUrl) {
+  if (!device) return;
+  $('#deviceName').textContent = device.name || device.model || '';
+  if (device.battery != null)
+    $('#battery').textContent = `${device.charging ? '⚡' : '🔋'} ${device.battery}%`;
+  if (currentUrl) $('#currentUrl').textContent = currentUrl;
+}
+
+/* ---- Boot ---- */
+async function start() {
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  const info = await (await api('/api/info')).json();
+  applyInfo(info, info.currentUrl);
+  await loadSettings();
+  await loadConsole();
+  await loadScreenshot();
+  connectWs();
+}
+$('#loginBtn').addEventListener('click', login);
+$('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+$('#logoutBtn').addEventListener('click', logout);
+
+if (state.token) start().catch(logout);
+</script>
+</body>
+</html>
