@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
-import '../managers/settings/definitions.dart' as defs;
 import 'settings_screen.dart';
 
 /// Slide-out menu (swipe from the left edge), Fully Kiosk style:
 /// Home, Settings, Web Console, Log out, Exit Application.
 class KioskDrawer extends StatelessWidget {
-  const KioskDrawer({super.key, required this.container});
+  const KioskDrawer({
+    super.key,
+    required this.container,
+    required this.onWebConsole,
+  });
 
   final AppContainer container;
+
+  /// Opens the bottom-docked JS console panel (owned by the kiosk screen).
+  final VoidCallback onWebConsole;
 
   AppContainer get c => container;
 
@@ -76,7 +82,7 @@ class KioskDrawer extends StatelessWidget {
           ));
         }
       case 2: // Web Console
-        if (context.mounted) await _showWebConsoleInfo(context);
+        onWebConsole();
       case 3: // Log out
         if (context.mounted && await _confirm(context, 'Log out',
             'Clear cookies and site data, then reload the start page?')) {
@@ -88,33 +94,6 @@ class KioskDrawer extends StatelessWidget {
           await c.commands.execute('exitApp', const {});
         }
     }
-  }
-
-  Future<void> _showWebConsoleInfo(BuildContext context) async {
-    final enabled = c.settings.get(defs.remoteEnabled) &&
-        c.settings.get(defs.remotePassword).isNotEmpty;
-    final port = c.settings.get(defs.remotePort).toInt();
-    final ip = await c.device.ipAddress();
-    if (!context.mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Web Console'),
-        content: Text(
-          enabled
-              ? 'Manage this kiosk from any browser on your network:\n\n'
-                  'http://${ip ?? '<device-ip>'}:$port'
-              : 'The web console is disabled.\n\nSet an admin password under '
-                  'Settings → Remote to enable it.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<bool> _confirm(

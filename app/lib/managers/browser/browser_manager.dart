@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../core/command_registry.dart';
@@ -7,6 +8,17 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+
+/// One line of the page's JavaScript console.
+class ConsoleEntry {
+  ConsoleEntry(this.time, this.level, this.message);
+
+  final DateTime time;
+
+  /// 'log' | 'debug' | 'warn' | 'error' | 'tip'
+  final String level;
+  final String message;
+}
 
 /// WebView lifecycle: navigation, current URL, error recovery, screenshots.
 ///
@@ -25,6 +37,12 @@ class BrowserManager extends Manager {
   String _currentUrl = '';
 
   String get currentUrl => _currentUrl;
+
+  /// JavaScript console ring buffer for the Web Console panel. Bumping
+  /// [consoleRevision] notifies listeners of new entries.
+  static const _consoleCapacity = 300;
+  final List<ConsoleEntry> consoleEntries = [];
+  final ValueNotifier<int> consoleRevision = ValueNotifier(0);
 
   String get startUrl => _settings.get(defs.startUrl);
 
@@ -68,6 +86,20 @@ class BrowserManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'evalJs',
+        description: 'Evaluate JavaScript in the page and return the result',
+        params: const {'code': 'JavaScript source'},
+        handler: (p) async {
+          final code = p['code'] as String?;
+          final controller = _controller;
+          if (code == null || controller == null) {
+            return const CommandResult.fail('code required / no webview');
+          }
+          final result = await controller.evaluateJavascript(source: code);
+          return CommandResult.ok('$result');
+        },
+      ))
+      ..register(Command(
         name: 'logout',
         description:
             'Clear cookies and web storage, then reload the start URL',
@@ -98,6 +130,20 @@ class BrowserManager extends Manager {
 
   void attach(InAppWebViewController controller) {
     _controller = controller;
+  }
+
+  /// Called by the UI layer from the WebView's onConsoleMessage.
+  void onConsoleMessage(String level, String message) {
+    if (consoleEntries.length >= _consoleCapacity) {
+      consoleEntries.removeAt(0);
+    }
+    consoleEntries.add(ConsoleEntry(DateTime.now(), level, message));
+    consoleRevision.value++;
+  }
+
+  void clearConsole() {
+    consoleEntries.clear();
+    consoleRevision.value++;
   }
 
   /// Called by the UI layer from the WebView's onLoadStop.

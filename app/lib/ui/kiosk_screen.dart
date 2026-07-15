@@ -8,6 +8,7 @@ import '../core/events.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kiosk_drawer.dart';
+import 'web_console_panel.dart';
 
 /// The kiosk itself: a fullscreen WebView with the JS bridge, the
 /// screensaver overlay, and a slide-out menu (swipe from the left edge —
@@ -30,6 +31,8 @@ class KioskScreen extends StatefulWidget {
 
 class _KioskScreenState extends State<KioskScreen> {
   AppContainer get c => widget.container;
+
+  bool _consoleOpen = false;
 
   @override
   void initState() {
@@ -71,7 +74,10 @@ class _KioskScreenState extends State<KioskScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      drawer: KioskDrawer(container: c),
+      drawer: KioskDrawer(
+        container: c,
+        onWebConsole: () => setState(() => _consoleOpen = true),
+      ),
       drawerEdgeDragWidth: 48,
       body: Listener(
         onPointerDown: (_) =>
@@ -99,6 +105,18 @@ class _KioskScreenState extends State<KioskScreen> {
                   c.browser.onLoadError(error.description);
                 }
               },
+              onConsoleMessage: (controller, message) {
+                c.browser.onConsoleMessage(
+                  switch (message.messageLevel) {
+                    ConsoleMessageLevel.ERROR => 'error',
+                    ConsoleMessageLevel.WARNING => 'warn',
+                    ConsoleMessageLevel.DEBUG => 'debug',
+                    ConsoleMessageLevel.TIP => 'tip',
+                    _ => 'log',
+                  },
+                  message.message,
+                );
+              },
               onPermissionRequest: (controller, request) async {
                 // The Voice Satellite card needs the mic for STT; motion
                 // demos may want the camera. Kiosk devices are dedicated,
@@ -109,6 +127,11 @@ class _KioskScreenState extends State<KioskScreen> {
                 );
               },
             ),
+            if (_consoleOpen)
+              WebConsolePanel(
+                browser: c.browser,
+                onClose: () => setState(() => _consoleOpen = false),
+              ),
             // Screensaver black overlay ('black' mode) — tap to dismiss.
             ValueListenableBuilder<bool>(
               valueListenable: c.screensaver.overlayActive,
