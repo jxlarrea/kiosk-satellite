@@ -125,14 +125,18 @@ engines cannot do.
   toggling it never needs an app restart.
 - **WebView media permissions** follow Fully Kiosk's model: the "Web Content"
   settings (microphone, camera, geolocation, pop-ups, autoplay) gate what
-  `onPermissionRequest` grants. The OS runtime grant is requested **lazily** —
-  when a toggle is switched on or a page first asks — never all-at-once at
-  launch, so we don't prompt for permissions the user hasn't enabled. Note the
-  app-level grant is still required on Android: without it the WebView's
-  `getUserMedia` fails with "Could not start audio source" even when the
-  per-origin permission is granted. For prompt-free kiosk deployment, pre-grant
-  via `adb shell pm grant me.jxl.kiosk_satellite android.permission.RECORD_AUDIO`
-  (and `…CAMERA`) or an MDM.
+  `onPermissionRequest` grants. When a toggle is enabled or a page first asks,
+  the standard OS runtime permission dialog appears and the user taps Allow
+  once — the normal App Store flow, no developer tooling required. We never
+  request permissions the user hasn't enabled.
+  - **iOS**: usage-description strings are set in `ios/Runner/Info.plist`
+    (mic/camera/location) — mandatory or the app crashes on request and Apple
+    rejects it. `ios/Podfile` compiles in only those three permission handlers.
+  - **Android**: `RECORD_AUDIO`, `CAMERA`, and location are declared in the
+    manifest; the runtime grant is requested on demand.
+  - *Optional, enterprise only*: fleets can pre-grant via MDM or
+    `adb shell pm grant … RECORD_AUDIO` for zero-prompt provisioning. This is
+    never part of the consumer flow.
 - **Remote-admin auth** uses stateless HMAC-signed tokens (7-day expiry) keyed
   by a secret persisted in settings, so sessions survive app restarts. An
   earlier in-memory token store signed the remote UI out on every relaunch.

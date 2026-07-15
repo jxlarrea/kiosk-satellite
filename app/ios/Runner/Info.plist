@@ -4,6 +4,12 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Kiosk Satellite uses the microphone for voice assistant features, such as speaking to Home Assistant with Voice Satellite.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Kiosk Satellite uses the camera for motion detection to wake the screen, and for dashboards that show a camera view.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Kiosk Satellite shares your location with web pages you open that request it, such as weather or presence dashboards.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
