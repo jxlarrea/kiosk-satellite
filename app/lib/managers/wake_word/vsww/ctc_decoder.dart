@@ -6,9 +6,16 @@ import 'manifest.dart';
 /// Result of greedy CTC decoding: the collapsed phoneme ids and a per-phoneme
 /// confidence (mean raw logit of the frame-run that emitted it).
 class CtcDecode {
-  CtcDecode(this.ids, this.confidence);
+  CtcDecode(this.ids, this.confidence, [this.endFrames = const []]);
   final List<int> ids;
   final List<double> confidence;
+
+  /// Index of the last raw frame in each collapsed token's run, in whatever
+  /// timeline the logits came from (an inference window for [CtcDecoder.decode],
+  /// the stitched buffer for [StreamMatcher.analyze]). Lets a caller recover
+  /// *when* a matched wake word ended, which the collapsed [ids] alone cannot
+  /// say. Empty when the caller does not need alignment.
+  final List<int> endFrames;
 }
 
 /// Result of matching a decode against the manifest's wake-word targets.
@@ -19,6 +26,7 @@ class MatchResult {
     required this.editDistance,
     required this.matchedConfidence,
     required this.gateThreshold,
+    this.endFrame = -1,
   });
 
   static const miss = MatchResult(
@@ -32,6 +40,13 @@ class MatchResult {
   final bool matched;
   final int targetIndex;
   final int editDistance;
+
+  /// Raw frame index where the matched wake word ends, in the decode's own
+  /// timeline. Note this is the end of the *matched region*, not of speech: in
+  /// a one-shot phrase ("okay nabu turn off the lights") the trailing command
+  /// keeps emitting phonemes, so the last non-blank frame is far later. -1 when
+  /// unmatched or when the decode carried no alignment.
+  final int endFrame;
 
   /// Mean raw-logit confidence over the matched window (drives the
   /// high-confidence bypass).
@@ -67,6 +82,7 @@ class CtcDecoder {
 
     final ids = <int>[];
     final conf = <double>[];
+    final endFrames = <int>[];
     var i = 0;
     while (i < tOut) {
       final tok = argId[i];
@@ -79,10 +95,11 @@ class CtcDecoder {
       if (tok != ctc.blankId && tok != ctc.padId) {
         ids.add(tok);
         conf.add(sum / (j - i));
+        endFrames.add(j - 1);
       }
       i = j;
     }
-    return CtcDecode(ids, conf);
+    return CtcDecode(ids, conf, endFrames);
   }
 
   /// Best accepted match of [decode] against all wake-word targets, or
@@ -90,6 +107,7 @@ class CtcDecoder {
   MatchResult match(CtcDecode decode) {
     final ids = decode.ids;
     final conf = decode.confidence;
+    final endFrames = decode.endFrames;
     final len = ids.length;
     MatchResult best = MatchResult.miss;
 
@@ -110,12 +128,14 @@ class CtcDecoder {
       if (!best.matched ||
           ed < best.editDistance ||
           (ed == best.editDistance && mc > best.matchedConfidence)) {
+        final last = start + winLen - 1;
         best = MatchResult(
           matched: true,
           targetIndex: ti,
           editDistance: ed,
           matchedConfidence: mc,
           gateThreshold: gate,
+          endFrame: last < endFrames.length ? endFrames[last] : -1,
         );
       }
     }

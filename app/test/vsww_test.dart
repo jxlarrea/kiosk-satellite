@@ -165,6 +165,39 @@ void main() {
       final d = dec.decode(out, tOut, vocab);
       expect(d.ids, [18, 2, 32]);
       expect(d.confidence.length, 3);
+      // Each token's end frame is the last frame of its run: 18 spans 0-1.
+      expect(d.endFrames, [1, 3, 5]);
+    });
+  });
+
+  group('wake-end alignment', () {
+    final dec = CtcDecoder(_ctc);
+
+    test('endFrame is the end of the matched wake word, not of speech', () {
+      // A one-shot phrase: the wake word, then a word of the command. The
+      // trailing token keeps emitting phonemes, so "last non-blank frame" is
+      // the wrong answer and would make STT eat the start of the command.
+      final phonemes = [..._ctc.wakeWordTargets[0], 30];
+      final logits = _logitsFor(phonemes, 64, 52, logit: 5.0);
+      final d = dec.decode(logits, 64, 52);
+      final r = dec.match(d);
+
+      expect(r.matched, isTrue);
+      // _logitsFor lays each token on its own frame with a blank after, so the
+      // wake word's 12th token sits on frame 22 and the command's on frame 24.
+      expect(d.endFrames.last, 24, reason: 'command token is the last speech');
+      expect(r.endFrame, 22, reason: 'match must end at the wake word');
+    });
+
+    test('a match at the window edge ends at its own last frame', () {
+      final logits = _logitsFor(_ctc.wakeWordTargets[0], 64, 52, logit: 5.0);
+      final r = dec.match(dec.decode(logits, 64, 52));
+      expect(r.matched, isTrue);
+      expect(r.endFrame, 22);
+    });
+
+    test('a miss carries no alignment', () {
+      expect(MatchResult.miss.endFrame, -1);
     });
   });
 

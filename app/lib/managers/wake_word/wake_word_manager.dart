@@ -69,6 +69,11 @@ class WakeWordManager extends Manager {
       _config != null &&
       _engine.supportedEngines.contains(_config!.engine);
 
+  /// Whether we are natively running the card's stop-word classifier. False
+  /// unless the card actually pushed a stop model and the engine loaded it, so
+  /// the card knows to keep its own browser stop classifier instead.
+  bool get stopWordAvailable => available && _engine.supportsStopWord;
+
   @override
   Future<void> init() async {
     bus.on<SettingChanged>().listen((e) {
@@ -91,14 +96,47 @@ class WakeWordManager extends Manager {
           if (config == null) {
             return const CommandResult.fail('invalid wake word config');
           }
+          // A genuinely new config (different wake word, stop word toggled on)
+          // has to reach the engine, and it only reads the config at start.
+          // Re-pushing the same config on every page load must NOT restart it,
+          // though: that would re-download every model on each navigation.
+          final changed = _config != config;
           _config = config;
+          if (changed && _engine.running) {
+            log.info(name, 'config changed; restarting engine');
+            await _engine.stop();
+          }
           log.info(
               name,
               'configured by page: ${config.engine.name} '
               '[${config.models.map((m) => m.id).join(', ')}]'
+              '${config.stopModel == null ? '' : ' + stop:${config.stopModel!.id}'}'
               '${available ? '' : ' (no native runner — reporting unavailable)'}');
           await _sync();
-          return CommandResult.ok({'available': available});
+          // A page that has just (re)configured us owns no interruptible state
+          // yet, so it cannot want the stop word armed. Without this, a reload
+          // would inherit the previous page's arming: it never disarms on the
+          // way out, and an unchanged config does not restart the engine.
+          await _engine.setStopWordActive(false);
+          return CommandResult.ok({
+            'available': available,
+            'stopWordAvailable': stopWordAvailable,
+          });
+        },
+      ))
+      ..register(Command(
+        name: 'setStopWordActive',
+        description:
+            'Arm (active=true) or disarm the native stop-word classifier. '
+            'Pages arm it for the duration of an interruptible state (TTS '
+            'playback, media, a ringing timer) and disarm it when that ends.',
+        params: const {'active': 'true to arm, false to disarm'},
+        handler: (p) async {
+          if (!stopWordAvailable) {
+            return const CommandResult.fail('no native stop word');
+          }
+          await _engine.setStopWordActive(p['active'] == true);
+          return const CommandResult.ok();
         },
       ))
       ..register(Command(
@@ -117,6 +155,7 @@ class WakeWordManager extends Manager {
         description: 'Current wake-word engine state',
         handler: (_) async => CommandResult.ok({
           'available': available,
+          'stopWordAvailable': stopWordAvailable,
           'enabled': enabled,
           'active': _active,
           'listening': listening,
@@ -138,8 +177,12 @@ class WakeWordManager extends Manager {
           if (!_engine.running) {
             return const CommandResult.fail('engine not running');
           }
-          await _engine.startAudioStream((pcm) {
-            bus.publish(AudioChunk(base64: base64Encode(pcm), sampleRate: 16000));
+          await _engine.startAudioStream((pcm, preRoll) {
+            bus.publish(AudioChunk(
+              base64: base64Encode(pcm),
+              sampleRate: 16000,
+              preRoll: preRoll,
+            ));
           });
           return const CommandResult.ok({'sampleRate': 16000});
         },
@@ -219,8 +262,15 @@ class WakeWordManager extends Manager {
   Future<void> _sync() async {
     final shouldRun = enabled && available;
     if (shouldRun && !_engine.running) {
-      await _engine.start(config: _config!, onDetection: _onDetection);
-      log.info(name, 'listening (${_config!.engine.name})');
+      await _engine.start(
+        config: _config!,
+        onDetection: _onDetection,
+        onStopDetection: _onStopDetection,
+      );
+      log.info(
+          name,
+          'listening (${_config!.engine.name})'
+          '${_engine.supportsStopWord ? ' + stop word' : ''}');
     } else if (!shouldRun && _engine.running) {
       await _engine.stop();
       log.info(name, 'stopped');
@@ -233,6 +283,14 @@ class WakeWordManager extends Manager {
       }
     }
     bus.publish(WakeWordStateChanged(active: _active, listening: listening));
+  }
+
+  /// The stop word fired. Unlike a wake word this starts no turn and touches
+  /// no engine state: the page owns what "stop" means (cancel TTS, pause media,
+  /// silence a timer), and it disarms us as part of tearing that down.
+  Future<void> _onStopDetection() async {
+    log.info(name, 'stop word detected');
+    bus.publish(const StopWordDetected());
   }
 
   Future<void> _onDetection(WakeWordModelRef model) async {

@@ -13,6 +13,7 @@ library;
 import 'dart:typed_data';
 
 typedef DetectionCallback = Future<void> Function(WakeWordModelRef model);
+typedef StopDetectionCallback = Future<void> Function();
 
 enum WakeWordEngineType { microWakeWord, openWakeWord, vsWakeWord }
 
@@ -51,15 +52,47 @@ class WakeWordModelRef {
 
   Map<String, Object?> toJson() =>
       {'id': id, 'wakeWord': wakeWord, 'manifestUrl': manifestUrl};
+
+  @override
+  bool operator ==(Object other) =>
+      other is WakeWordModelRef &&
+      other.id == id &&
+      other.wakeWord == wakeWord &&
+      other.manifestUrl == manifestUrl;
+
+  @override
+  int get hashCode => Object.hash(id, wakeWord, manifestUrl);
 }
 
 /// The configuration Voice Satellite pushes: one engine, one or two models
 /// (VS supports two wake words routed to separate pipeline slots).
 class WakeWordConfig {
-  const WakeWordConfig({required this.engine, required this.models});
+  const WakeWordConfig({
+    required this.engine,
+    required this.models,
+    this.stopModel,
+  });
 
   final WakeWordEngineType engine;
   final List<WakeWordModelRef> models;
+
+  /// Optional stop-word classifier ("ok_stop"), pushed when Voice Satellite's
+  /// stop_word switch is on. Loaded alongside the wake words but only armed
+  /// while the card says an interruptible state is running (TTS, media, a
+  /// ringing timer), since it is only meaningful then.
+  final WakeWordModelRef? stopModel;
+
+  static WakeWordModelRef? _refFrom(Object? raw) {
+    if (raw is! Map) return null;
+    final id = raw['id'];
+    final wakeWord = raw['wakeWord'];
+    final manifestUrl = raw['manifestUrl'];
+    if (id is String && wakeWord is String && manifestUrl is String) {
+      return WakeWordModelRef(
+          id: id, wakeWord: wakeWord, manifestUrl: manifestUrl);
+    }
+    return null;
+  }
 
   static WakeWordConfig? fromJson(Map<String, Object?> json) {
     final engine = engineTypeFromWire(json['engine'] as String?);
@@ -67,17 +100,36 @@ class WakeWordConfig {
     if (engine == null || rawModels is! List) return null;
     final models = <WakeWordModelRef>[];
     for (final raw in rawModels) {
-      if (raw is! Map) continue;
-      final id = raw['id'];
-      final wakeWord = raw['wakeWord'];
-      final manifestUrl = raw['manifestUrl'];
-      if (id is String && wakeWord is String && manifestUrl is String) {
-        models.add(WakeWordModelRef(
-            id: id, wakeWord: wakeWord, manifestUrl: manifestUrl));
-      }
+      final ref = _refFrom(raw);
+      if (ref != null) models.add(ref);
     }
     if (models.isEmpty) return null;
-    return WakeWordConfig(engine: engine, models: models);
+    return WakeWordConfig(
+      engine: engine,
+      models: models,
+      stopModel: _refFrom(json['stopModel']),
+    );
+  }
+
+  /// Value equality so the manager can tell a genuine config change (the user
+  /// switched wake word, or turned the stop word on) from the card re-pushing
+  /// the same config on every page load. Only the former is worth a restart.
+  @override
+  bool operator ==(Object other) =>
+      other is WakeWordConfig &&
+      other.engine == engine &&
+      other.stopModel == stopModel &&
+      _listEquals(other.models, models);
+
+  @override
+  int get hashCode => Object.hash(engine, stopModel, Object.hashAll(models));
+
+  static bool _listEquals(List<WakeWordModelRef> a, List<WakeWordModelRef> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 }
 
@@ -89,12 +141,24 @@ abstract class WakeWordEngine {
 
   bool get running;
 
+  /// True when this engine can run the config's stop model natively. The
+  /// manager reports it back to the card, which keeps its own browser stop
+  /// classifier loaded when we answer false.
+  bool get supportsStopWord => false;
+
+
   Future<void> start({
     required WakeWordConfig config,
     required DetectionCallback onDetection,
+    StopDetectionCallback? onStopDetection,
   });
 
   Future<void> stop();
+
+  /// Arm/disarm the stop-word classifier. Unlike wake detection this runs
+  /// *during* a voice turn (that is the whole point: interrupting playback),
+  /// so it is independent of [pauseDetection].
+  Future<void> setStopWordActive(bool active) async {}
 
   /// Pause/resume *detection* without tearing the engine down. The mic stays
   /// open and the models stay loaded, so resuming is instant — as opposed to
@@ -108,8 +172,29 @@ abstract class WakeWordEngine {
   /// Stream captured audio to the page (the app owns the mic; the card uses
   /// this instead of getUserMedia). [onChunk] receives raw 16 kHz mono PCM16
   /// little-endian bytes, starting with a short pre-roll of already-captured
-  /// audio so speech right after the wake word isn't lost.
-  Future<void> startAudioStream(void Function(Uint8List pcm) onChunk) async {}
+  /// audio so speech right after the wake word isn't lost. `preRoll` marks
+  /// those replayed chunks, so consumers that render audio live (a level
+  /// meter) can skip past audio while the pipeline still consumes it.
+  ///
+  /// After a detection the pre-roll is trimmed so the wake word itself is
+  /// never replayed into the stream. **Every engine must honour this**, which
+  /// is what lets the card's one-shot handling work regardless of engine:
+  ///
+  ///  - An engine that can locate where the wake word *ended* (vsWakeWord,
+  ///    via its CTC alignment) trims to exactly that point, keeping the audio
+  ///    between the wake word ending and detection settling. That is the part
+  ///    a one-shot phrase's command starts in.
+  ///  - An engine that cannot (microWakeWord, openWakeWord, and any other
+  ///    sliding-window classifier that only knows the wake word occurred
+  ///    somewhere in the last window) trims to the detection instant instead.
+  ///    Detection never fires before the wake word ends, so this is always
+  ///    safe, and it is exactly what the card's own browser path does.
+  ///
+  /// So the wake end is a quality improvement, not a prerequisite: a
+  /// classifier engine gives up the audio between wake end and detection, the
+  /// same audio the browser gives up, and nothing more.
+  Future<void> startAudioStream(
+      void Function(Uint8List pcm, bool preRoll) onChunk) async {}
   Future<void> stopAudioStream() async {}
 }
 
@@ -131,6 +216,7 @@ class StubWakeWordEngine extends WakeWordEngine {
   Future<void> start({
     required WakeWordConfig config,
     required DetectionCallback onDetection,
+    StopDetectionCallback? onStopDetection,
   }) async {
     _running = true;
   }

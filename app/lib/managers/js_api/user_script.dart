@@ -39,6 +39,10 @@ String buildKioskSatelliteScript({required String version, required String os}) 
     setWakeWordActive: function (active) { return call('setWakeWordActive', { active: !!active }); },
     getWakeWordState: function () { return call('getWakeWordState'); },
 
+    // Stop word: armed by the page only while something interruptible is
+    // playing. Fires as a 'kiosksatellite:stopword' event.
+    setStopWordActive: function (active) { return call('setStopWordActive', { active: !!active }); },
+
     // Audio delegation: the app owns the mic, so a page can stream captured
     // audio from us instead of calling getUserMedia. Chunks arrive as
     // 'kiosksatellite:audio' events ({pcm: base64 PCM16 LE, sampleRate}),

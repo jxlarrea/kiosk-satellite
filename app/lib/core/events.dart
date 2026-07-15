@@ -80,12 +80,36 @@ class WakeWordDetected extends AppEvent {
 /// wire-event feed, or the remote admin WebSocket would stream ~43 KB/s of
 /// audio to every connected browser.
 class AudioChunk extends AppEvent {
-  const AudioChunk({required this.base64, required this.sampleRate});
+  const AudioChunk({
+    required this.base64,
+    required this.sampleRate,
+    this.preRoll = false,
+  });
   final String base64;
   final int sampleRate;
 
+  /// True for the already-captured chunks replayed from the pre-roll ring when
+  /// a stream starts. The speech pipeline wants them (they hold the start of
+  /// the command), but a level meter must skip them: they are past audio, so
+  /// rendering them leaves the meter running a pre-roll behind live speech for
+  /// as long as the stream lasts.
+  final bool preRoll;
+
   @override
-  Map<String, Object?> toJson() => {'pcm': base64, 'sampleRate': sampleRate};
+  Map<String, Object?> toJson() =>
+      {'pcm': base64, 'sampleRate': sampleRate, 'preRoll': preRoll};
+}
+
+/// The stop word fired during an interruptible state (TTS, media, a ringing
+/// timer). The page decides what to interrupt; we only report the word.
+class StopWordDetected extends AppEvent {
+  const StopWordDetected();
+
+  @override
+  String get wireName => 'stopword';
+
+  @override
+  Map<String, Object?> toJson() => const {};
 }
 
 class WakeWordStateChanged extends AppEvent {

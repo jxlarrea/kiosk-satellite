@@ -37,6 +37,13 @@ class StreamMatcher {
   bool _dirtySinceAnalyze = false;
   int _matchStreak = 0;
   MatchResult _lastVerdict = MatchResult.miss;
+  int _lastMatchSamplesBack = 0;
+
+  /// How many samples before the *current inference window's end* the last
+  /// matched wake word finished. The stitched buffer is sampled `lag` frames
+  /// behind the window edge, so even its newest frame is already that far in
+  /// the past; anything earlier adds on top.
+  int get lastMatchSamplesBack => _lastMatchSamplesBack;
 
   static int _clamp(int v, int hi) => v < 0 ? 0 : (v > hi ? hi : v);
 
@@ -48,6 +55,7 @@ class StreamMatcher {
     _dirtySinceAnalyze = false;
     _matchStreak = 0;
     _lastVerdict = MatchResult.miss;
+    _lastMatchSamplesBack = 0;
   }
 
   /// Feed one inference window's logits [tOut, vocab] plus the number of new
@@ -113,6 +121,7 @@ class StreamMatcher {
     final pad = manifest.ctc.padId;
     final ids = <int>[];
     final conf = <double>[];
+    final endFrames = <int>[];
     var i = 0;
     while (i < _ids.length) {
       final tok = _ids[i];
@@ -125,12 +134,17 @@ class StreamMatcher {
       if (tok != blank && tok != pad) {
         ids.add(tok);
         conf.add(sum / (j - i));
+        endFrames.add(j - 1);
       }
       i = j;
     }
 
-    final result = _decoder.match(CtcDecode(ids, conf));
+    final result = _decoder.match(CtcDecode(ids, conf, endFrames));
     if (result.matched) {
+      // Translate the buffer-relative end frame into samples behind the
+      // current window edge, the one timeline the caller can anchor to.
+      final framesFromEnd = math.max(0, (_ids.length - 1) - result.endFrame);
+      _lastMatchSamplesBack = (_lag + framesFromEnd) * _frameSamples;
       _matchStreak++;
       if (_matchStreak >= 4) {
         // one utterance shouldn't re-fire after cooldown

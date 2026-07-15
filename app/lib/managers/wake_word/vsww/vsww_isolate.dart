@@ -24,6 +24,7 @@ class VswwMsg {
   static const init = 'init';
   static const stop = 'stop';
   static const resume = 'resume';
+  static const armStop = 'armStop';
 }
 
 /// Entry point of the vsWakeWord compute isolate. Pure Dart + FFI (no platform
@@ -41,7 +42,9 @@ void vswwIsolateEntry(SendPort mainPort) {
         case VswwMsg.init:
           worker.init(msg);
         case VswwMsg.resume:
-          worker.resumeDetection();
+          worker.resumeDetection(msg['absSample'] as int?);
+        case VswwMsg.armStop:
+          worker.armStop(msg['active'] == true);
         case VswwMsg.stop:
           worker.stop();
           port.close();
@@ -52,9 +55,13 @@ void vswwIsolateEntry(SendPort mainPort) {
 
 class _Kw {
   _Kw(this.id, this.wakeWord, this.manifest, this.session, this.inputName,
-      this.decoder, this.stream, this.gate);
+      this.decoder, this.stream, this.gate, {this.isStop = false});
   final String id;
   final String wakeWord;
+
+  /// Stop classifier rather than a wake word: armed only during interruptible
+  /// states, and firing interrupts playback instead of starting a turn.
+  final bool isStop;
   final VswwManifest manifest;
   final OrtSession session;
   final String inputName;
@@ -79,13 +86,32 @@ class _IsolateWorker {
   int _filled = 0;
   int _samplesSinceInfer = 0;
   int _epochMs = 0;
+
+  /// Total samples that have entered the ring, in the *mic's* timeline: the
+  /// main isolate keeps the same count and re-syncs us on resume (it goes on
+  /// counting while detection is paused and we are not being fed). Shared
+  /// origin is what lets a detection name an absolute sample the main isolate
+  /// can find again in its pre-roll ring.
+  int _absSamples = 0;
   final _pending = BytesBuilder(copy: false);
   final _chunk = Float32List(_chunkSamples);
   bool _stopped = false;
+
+  /// A wake word fired and we are waiting to be re-armed: wake models go quiet,
+  /// but the stop classifier does not, since the turn it started is exactly
+  /// when the user might say "stop".
   bool _detected = false;
+  bool _stopArmed = false;
 
   void _log(String level, String message) =>
       _main.send({'type': VswwMsg.log, 'level': level, 'message': message});
+
+  static bool _sameFeature(VswwFeatureConfig a, VswwFeatureConfig b) =>
+      a.windowSamples == b.windowSamples &&
+      a.frames == b.frames &&
+      a.nMels == b.nMels &&
+      a.hopSamples == b.hopSamples &&
+      a.sampleRate == b.sampleRate;
 
   void init(Map msg) {
     try {
@@ -93,11 +119,20 @@ class _IsolateWorker {
       for (final md in (msg['models'] as List)) {
         final manifest = VswwManifest.fromJson(
             jsonDecode(md['manifestJson'] as String) as Map<String, dynamic>);
+        // One log-mel extractor feeds every model, so they must agree on the
+        // feature shape. Rejecting a mismatch beats silently scoring a model
+        // against features it was never trained on.
+        if (_feature != null && !_sameFeature(_feature!, manifest.feature)) {
+          _log('warn',
+              'skipped "${md['id']}": feature config differs from the loaded models');
+          continue;
+        }
         final opts = OrtSessionOptions()
           ..setIntraOpNumThreads(1)
           ..setInterOpNumThreads(1);
         final session = OrtSession.fromBuffer(md['onnx'] as Uint8List, opts);
         final decoder = CtcDecoder(manifest.ctc);
+        final isStop = md['stop'] == true;
         _kws.add(_Kw(
           md['id'] as String,
           md['wakeWord'] as String,
@@ -107,9 +142,10 @@ class _IsolateWorker {
           decoder,
           StreamMatcher(manifest, decoder),
           DetectionGate(manifest.runtime),
+          isStop: isStop,
         ));
         _feature ??= manifest.feature;
-        _log('info', 'loaded "${md['id']}"');
+        _log('info', 'loaded "${md['id']}"${isStop ? ' (stop classifier)' : ''}');
       }
       if (_kws.isEmpty) {
         _main.send({'type': VswwMsg.error, 'message': 'no models loaded'});
@@ -126,7 +162,8 @@ class _IsolateWorker {
   }
 
   void onAudio(Uint8List bytes) {
-    if (_stopped || _detected) return;
+    if (_stopped) return;
+    if (_detected && !_stopArmed) return; // nothing left to score
     _pending.add(bytes);
     final buf = _pending.toBytes();
     const chunkBytes = _chunkSamples * 2;
@@ -138,7 +175,7 @@ class _IsolateWorker {
       }
       offset += chunkBytes;
       _ingest(_chunk);
-      if (_detected) return;
+      if (_detected && !_stopArmed) break;
     }
     _pending.clear();
     if (offset < buf.length) {
@@ -156,6 +193,7 @@ class _IsolateWorker {
     }
     if (_filled < n) _filled = math.min(n, _filled + chunk.length);
     _samplesSinceInfer += chunk.length;
+    _absSamples += chunk.length;
     _epochMs += 80;
     if (_filled >= n) _infer(); // synchronous — we are already off the UI
   }
@@ -183,6 +221,9 @@ class _IsolateWorker {
     final shape = [1, feat.frames, feat.nMels];
 
     for (final k in _kws) {
+      // Wake models go quiet once one has fired (until re-armed); the stop
+      // classifier only runs while the card says playback is interruptible.
+      if (k.isStop ? !_stopArmed : _detected) continue;
       final tOut = k.manifest.tOut;
       final vocab = k.manifest.ctc.vocabSize;
       final logits = _run(k, features, shape, tOut, vocab);
@@ -213,14 +254,56 @@ class _IsolateWorker {
         nowMs: nowMs,
       );
       if (fired) {
+        if (k.isStop) {
+          _log('info',
+              'stop word detected (conf ${combined.matchedConfidence.toStringAsFixed(2)}, ed ${combined.editDistance})');
+          // Report and keep listening. We do NOT disarm ourselves: the card
+          // owns the stop state and disarms us as part of tearing the
+          // interruptible state down. Deciding here would fork that state.
+          // The gate's cooldown, not a self-disarm, is what stops the same
+          // word firing twice before the card's command lands.
+          _main.send({'type': VswwMsg.detection, 'id': k.id, 'stop': true});
+          return;
+        }
+        final wakeEnd = _wakeEndSample(k, combined, identical(combined, perWindow));
         _log('info',
-            'detected "${k.id}" (conf ${combined.matchedConfidence.toStringAsFixed(2)}, ed ${combined.editDistance})');
+            'detected "${k.id}" (conf ${combined.matchedConfidence.toStringAsFixed(2)}, ed ${combined.editDistance}, wake ended ${_absSamples - wakeEnd} samples back)');
         _detected = true;
-        _main.send(
-            {'type': VswwMsg.detection, 'id': k.id, 'wakeWord': k.wakeWord});
+        _main.send({
+          'type': VswwMsg.detection,
+          'id': k.id,
+          'wakeWord': k.wakeWord,
+          'wakeEndSample': wakeEnd,
+        });
         return;
       }
     }
+  }
+
+  /// Absolute sample index where the matched wake word ended.
+  ///
+  /// This is what makes a one-shot phrase work: the caller can start the audio
+  /// stream exactly after "okay nabu" and keep every sample of "turn off the
+  /// lights", without replaying the wake word into STT. Detection fires up to a
+  /// window late, so the end has to be recovered from the match alignment
+  /// rather than assumed to be now.
+  int _wakeEndSample(_Kw k, MatchResult m, bool fromWindow) {
+    final windowSamples = _feature!.windowSamples;
+    final tOut = k.manifest.tOut;
+    final frameSamples = windowSamples ~/ tOut;
+    int samplesBack;
+    if (fromWindow && m.endFrame >= 0) {
+      // Window frame `endFrame` ends this many samples before the window edge.
+      samplesBack = windowSamples - (m.endFrame + 1) * frameSamples;
+    } else if (!fromWindow) {
+      samplesBack = k.stream.lastMatchSamplesBack;
+    } else {
+      samplesBack = 0; // no alignment: treat the wake as ending now
+    }
+    if (samplesBack < 0) samplesBack = 0;
+    if (samplesBack > windowSamples) samplesBack = windowSamples;
+    final end = _absSamples - samplesBack;
+    return end < 0 ? 0 : end;
   }
 
   Float32List? _run(
@@ -259,18 +342,41 @@ class _IsolateWorker {
   /// be instant — reloading them per wake would be pure waste) but clears the
   /// audio window and all detector state so speech from the turn we just
   /// handled can't fire a stale detection.
-  void resumeDetection() {
+  void resumeDetection([int? absSample]) {
     if (_stopped) return;
     _detected = false;
-    _head = 0;
-    _filled = 0;
     _samplesSinceInfer = 0;
-    _pending.clear();
+    // Main kept counting through the turn while we were not being fed; adopt
+    // its count or every later detection names a sample it has long evicted.
+    if (absSample != null) _absSamples = absSample;
+    // The ring is shared with the stop classifier, so only blank it when the
+    // stop word is not listening; wiping it mid-playback would leave stop deaf
+    // for a whole window while it refills. Resetting the wake detectors below
+    // is what actually prevents a stale re-fire.
+    if (!_stopArmed) {
+      _head = 0;
+      _filled = 0;
+      _pending.clear();
+    }
     for (final k in _kws) {
+      if (k.isStop) continue; // armed independently; not ours to reset
       k.stream.reset();
       k.gate.reset();
     }
     _log('info', 're-armed');
+  }
+
+  /// Arm/disarm the stop classifier. Clears its detector state on the way in so
+  /// speech from before the interruptible state started cannot fire it.
+  void armStop(bool active) {
+    if (_stopped || _stopArmed == active) return;
+    _stopArmed = active;
+    for (final k in _kws) {
+      if (!k.isStop) continue;
+      k.stream.reset();
+      k.gate.reset();
+    }
+    _log('info', active ? 'stop word armed' : 'stop word disarmed');
   }
 
   void stop() {
