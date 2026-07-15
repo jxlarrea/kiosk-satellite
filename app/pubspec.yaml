@@ -12,8 +12,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # WebView + JS bridge
-  flutter_inappwebview: ^6.1.5
+  # WebView + JS bridge. Beta needed: 6.1.x's Android gradle file is
+  # incompatible with the AGP 9 the current Flutter template uses.
+  flutter_inappwebview: ^6.2.0-beta.3
 
   # Screen / device
   screen_brightness: ^2.1.0
