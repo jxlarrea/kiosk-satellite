@@ -143,6 +143,7 @@
   </header>
   <nav id="tabs">
     <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="homeassistant">Home Assistant</button>
     <button data-tab="settings">Settings</button>
     <button data-tab="console">Console</button>
     <button data-tab="logs">Logs</button>
@@ -183,7 +184,10 @@
       </div>
     </div>
 
-    <!-- Settings -->
+    <!-- Home Assistant + Voice Satellite settings -->
+    <div class="tab" id="tab-homeassistant"></div>
+
+    <!-- Settings (everything else) -->
     <div class="tab" id="tab-settings"></div>
 
     <!-- Console -->
@@ -276,17 +280,32 @@ async function loadScreenshot() {
 }
 
 /* ---- Settings ---- */
+// Categories that belong on the Home Assistant tab (in display order).
+const HA_CATEGORIES = ['Home Assistant', 'Voice Satellite'];
+
 async function loadSettings() {
   const { settings } = await (await api('/api/settings')).json();
   const byCat = {};
   settings.forEach((s) => (byCat[s.category] ??= []).push(s));
-  const root = $('#tab-settings'); root.innerHTML = '';
-  for (const [cat, items] of Object.entries(byCat)) {
-    const card = document.createElement('div'); card.className = 'card';
-    const h = document.createElement('h2'); h.textContent = cat; card.appendChild(h);
-    items.forEach((s) => card.appendChild(settingRow(s)));
-    root.appendChild(card);
-  }
+
+  const render = (root, cats) => {
+    root.innerHTML = '';
+    if (!cats.length) {
+      root.innerHTML = '<div class="card"><div class="desc" style="color:var(--muted)">Nothing here.</div></div>';
+      return;
+    }
+    for (const cat of cats) {
+      const card = document.createElement('div'); card.className = 'card';
+      const h = document.createElement('h2'); h.textContent = cat; card.appendChild(h);
+      byCat[cat].forEach((s) => card.appendChild(settingRow(s)));
+      root.appendChild(card);
+    }
+  };
+
+  const haCats = HA_CATEGORIES.filter((c) => byCat[c]);
+  const otherCats = Object.keys(byCat).filter((c) => !HA_CATEGORIES.includes(c));
+  render($('#tab-homeassistant'), haCats);
+  render($('#tab-settings'), otherCats);
 }
 function settingRow(s) {
   const row = document.createElement('div'); row.className = 'row';
