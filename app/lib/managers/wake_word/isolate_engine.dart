@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/logging.dart';
+import '../../core/permissions.dart';
 import 'engine.dart';
 import 'vsww/native_mic.dart';
 import 'wake_msg.dart';
@@ -100,6 +102,11 @@ class WakeModelPayload {
 /// Opens the mic. Injectable so the engines are testable without a device.
 typedef MicSource = Stream<Uint8List> Function();
 
+/// Obtains the OS microphone grant, prompting if need be.
+typedef MicPermission = Future<bool> Function();
+
+Future<bool> _ensureMicPermission() => ensureOsPermission(Permission.microphone);
+
 /// Spawns the compute isolate; returns null if it did not really spawn one.
 typedef IsolateSpawner = Future<Isolate?> Function(
     void Function(SendPort) entry, SendPort port, String debugName);
@@ -128,14 +135,17 @@ Future<Isolate?> _spawnIsolate(
 /// three copies of it drifted (see the sample-clock reset in
 /// [PreRollBuffer.reset]) before anyone noticed.
 abstract class IsolateWakeEngine extends WakeWordEngine {
-  IsolateWakeEngine(this.log, {MicSource? mic, IsolateSpawner? spawner})
+  IsolateWakeEngine(this.log,
+      {MicSource? mic, IsolateSpawner? spawner, MicPermission? micPermission})
       : _mic = mic ?? (() => NativeMic().stream()),
-        _spawn = spawner ?? _spawnIsolate;
+        _spawn = spawner ?? _spawnIsolate,
+        _micPermission = micPermission ?? _ensureMicPermission;
 
   @protected
   final Logger log;
   final MicSource _mic;
   final IsolateSpawner _spawn;
+  final MicPermission _micPermission;
 
   /// Short name for logs and the isolate's debug name.
   @protected
@@ -218,6 +228,34 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     _onDetection = onDetection;
     _onStopDetection = onStopDetection;
     _onFailure = onFailure;
+
+    // Ask for the microphone before anything else, including the models: it is
+    // the one thing that can make all of this pointless, and it is worth
+    // neither the megabytes nor the wait if the answer is no.
+    //
+    // We must ask ourselves. It is tempting to assume the WebView already did —
+    // it has its own permission flow for getUserMedia — but the whole point of
+    // the Voice Satellite handoff is that the card stops calling getUserMedia
+    // once we say we can do this natively. So on a fresh device that request
+    // never fires, Android never prompts, and AudioRecord fails on a permission
+    // nobody ever asked for. Every wake word, silently, forever.
+    // A check that throws (no permission plugin on this platform, an OS that
+    // refuses to answer) is not a grant. Treat it as a refusal and say so: the
+    // alternative is opening the mic on an assumption and going quietly deaf,
+    // which is the failure this whole path exists to prevent.
+    var granted = false;
+    try {
+      granted = await _micPermission();
+    } catch (e) {
+      log.error(tag, 'could not check the microphone permission: $e');
+    }
+    if (!granted) {
+      log.error(
+          tag,
+          'microphone permission denied; not starting (Voice Satellite will '
+          'keep browser detection, which prompts for the mic itself)');
+      return;
+    }
 
     // Models are downloaded here, on the main isolate: http and path_provider
     // are platform channels and only work on the isolate that owns them.

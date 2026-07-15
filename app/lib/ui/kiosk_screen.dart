@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../core/permissions.dart';
+
 import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/browser/no_cache_script.dart';
@@ -79,7 +81,7 @@ class _KioskScreenState extends State<KioskScreen> {
       if (e.key == defs.webCamera.key) permission = Permission.camera;
       if (e.key == defs.webGeolocation.key) permission = Permission.location;
       if (permission != null) {
-        await _ensureOsPermission(permission);
+        await ensureOsPermission(permission);
         await c.browser.runJs('location.reload();');
       }
     }
@@ -146,27 +148,19 @@ class _KioskScreenState extends State<KioskScreen> {
   Future<bool> _resourceAllowed(PermissionResourceType resource) async {
     if (resource == PermissionResourceType.MICROPHONE) {
       return c.settings.get(defs.webMicrophone) &&
-          await _ensureOsPermission(Permission.microphone);
+          await ensureOsPermission(Permission.microphone);
     }
     if (resource == PermissionResourceType.CAMERA) {
       return c.settings.get(defs.webCamera) &&
-          await _ensureOsPermission(Permission.camera);
+          await ensureOsPermission(Permission.camera);
     }
     if (resource == PermissionResourceType.GEOLOCATION) {
       return c.settings.get(defs.webGeolocation) &&
-          await _ensureOsPermission(Permission.location);
+          await ensureOsPermission(Permission.location);
     }
     // Anything else the page asks for (e.g. protected media id) follows the
     // camera/mic decision conservatively: deny unless explicitly handled.
     return false;
-  }
-
-  Future<bool> _ensureOsPermission(Permission permission) async {
-    var status = await permission.status;
-    if (status.isGranted) return true;
-    if (status.isPermanentlyDenied) return false;
-    status = await permission.request();
-    return status.isGranted;
   }
 
   @override

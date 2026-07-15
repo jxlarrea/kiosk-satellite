@@ -137,6 +137,35 @@ void main() {
       await settle();
     }
 
+    test('asks for the microphone before it needs it', () async {
+      // The fresh-install path. Nothing else asks: the WebView requests the mic
+      // when a page calls getUserMedia, and the entire point of the handoff is
+      // that Voice Satellite stops calling getUserMedia once we claim the
+      // engine. So on a new device that prompt never fires and AudioRecord
+      // fails on a permission nobody asked for — every wake word, silently.
+      await start();
+      expect(engine.micPermissionAsks, 1);
+      expect(engine.running, isTrue);
+    });
+
+    test('asks before downloading, not after', () async {
+      // Models are megabytes; a denied mic makes all of them pointless.
+      engine.micPermissionGranted = false;
+      await start();
+      expect(engine.micPermissionAsks, 1);
+      expect(engine.loadCalls, 0, reason: 'nothing worth downloading');
+    });
+
+    test('a denied microphone does not start the engine', () async {
+      engine.micPermissionGranted = false;
+      await start();
+      expect(engine.running, isFalse);
+      // The manager turns "did not start" into available:false, which is what
+      // sends Voice Satellite back to browser detection — and the browser's own
+      // getUserMedia prompt is then the user's way back to granting it.
+      expect(engine.isolateAudio, isEmpty);
+    });
+
     test('refuses a config for another engine', () async {
       await engine.start(
         config: const WakeWordConfig(
@@ -388,6 +417,17 @@ const _config = WakeWordConfig(
   ],
 );
 
+/// Stands in for the OS microphone grant.
+class _FakeGrant {
+  bool granted = true;
+  int asks = 0;
+
+  Future<bool> ask() async {
+    asks++;
+    return granted;
+  }
+}
+
 /// Stands in for the compute isolate: same ports, same protocol, no models.
 ///
 /// It answers `init` with `ready` and `stop` with `stopped` the way a real
@@ -434,11 +474,25 @@ class _FakeIsolate {
 
 /// An engine with no models: the base's behaviour on its own.
 class _FakeEngine extends IsolateWakeEngine {
-  factory _FakeEngine(Logger log, {MicSource? mic}) =>
-      _FakeEngine._(_FakeIsolate(), log, mic: mic);
+  factory _FakeEngine(Logger log, {MicSource? mic}) {
+    // A mutable box, because the engine takes the permission check at
+    // construction and the tests flip the answer afterwards.
+    final grant = _FakeGrant();
+    return _FakeEngine._(_FakeIsolate(), grant, log,
+        mic: mic, micPermission: grant.ask);
+  }
 
-  _FakeEngine._(this.isolate, Logger log, {MicSource? mic})
-      : super(log, mic: mic, spawner: isolate.spawn);
+  _FakeEngine._(this.isolate, this._grant, Logger log,
+      {MicSource? mic, MicPermission? micPermission})
+      : super(log,
+            mic: mic, spawner: isolate.spawn, micPermission: micPermission);
+
+  final _FakeGrant _grant;
+
+  /// Stands in for the OS grant.
+  bool get micPermissionGranted => _grant.granted;
+  set micPermissionGranted(bool v) => _grant.granted = v;
+  int get micPermissionAsks => _grant.asks;
 
   final _FakeIsolate isolate;
   final List<WakeWordModelRef> detections = [];

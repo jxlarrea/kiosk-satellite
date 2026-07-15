@@ -12,6 +12,9 @@ import 'package:kiosk_satellite/managers/wake_word/model_cache.dart';
 import 'package:kiosk_satellite/managers/wake_word/wake_word_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// permission_handler's PermissionStatus.granted, over the wire.
+const _granted = 1;
+
 /// The wake-word contract (docs/js-api.md): config is pushed by the Voice
 /// Satellite card (setWakeWordConfig), detection releases the mic before the
 /// event is published, and the page resumes listening via
@@ -37,6 +40,21 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    // The engine asks the OS for the microphone before it opens it, and
+    // permission_handler has no implementation under `flutter test`. Answer
+    // "granted", which is the interesting case here: these tests are about what
+    // the manager does once the mic is allowed. The denial path is covered
+    // against the engine directly, in isolate_engine_test.dart.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('flutter.baseflow.com/permissions/methods'),
+      (call) async => switch (call.method) {
+        'checkPermissionStatus' => _granted,
+        'requestPermissions' => {call.arguments.first: _granted},
+        _ => null,
+      },
+    );
+
     bus = EventBus();
     final log = Logger();
     commands = CommandRegistry(log);
@@ -47,6 +65,10 @@ void main() {
   });
 
   tearDown(() async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+            const MethodChannel('flutter.baseflow.com/permissions/methods'),
+            null);
     await wakeWord.dispose();
     await bus.dispose();
   });
