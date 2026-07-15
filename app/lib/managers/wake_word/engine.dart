@@ -10,6 +10,8 @@
 /// engine natively so the card can fall back to browser detection.
 library;
 
+import 'dart:typed_data';
+
 typedef DetectionCallback = Future<void> Function(WakeWordModelRef model);
 
 enum WakeWordEngineType { microWakeWord, openWakeWord, vsWakeWord }
@@ -93,6 +95,22 @@ abstract class WakeWordEngine {
   });
 
   Future<void> stop();
+
+  /// Pause/resume *detection* without tearing the engine down. The mic stays
+  /// open and the models stay loaded, so resuming is instant — as opposed to
+  /// stop()+start(), which re-downloads/recompiles every model.
+  ///
+  /// This is what runs between a wake word and the end of the voice turn: the
+  /// page owns the audio during the turn, and we re-arm afterwards.
+  Future<void> pauseDetection() async {}
+  Future<void> resumeDetection() async {}
+
+  /// Stream captured audio to the page (the app owns the mic; the card uses
+  /// this instead of getUserMedia). [onChunk] receives raw 16 kHz mono PCM16
+  /// little-endian bytes, starting with a short pre-roll of already-captured
+  /// audio so speech right after the wake word isn't lost.
+  Future<void> startAudioStream(void Function(Uint8List pcm) onChunk) async {}
+  Future<void> stopAudioStream() async {}
 }
 
 /// No-op engine: supports nothing, never detects. Keeps the manager's state

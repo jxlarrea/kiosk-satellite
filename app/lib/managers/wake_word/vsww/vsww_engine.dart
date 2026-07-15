@@ -28,6 +28,21 @@ class VswwEngine extends WakeWordEngine {
   final _mic = NativeMic();
 
   bool _running = false;
+
+  /// Detection paused (during a voice turn) — the mic stays open and the
+  /// models stay loaded; we just stop feeding the detector.
+  bool _detectionPaused = false;
+
+  /// Streaming captured audio to the page (the card uses us instead of
+  /// getUserMedia during a turn).
+  void Function(Uint8List pcm)? _onAudioChunk;
+
+  /// Recent mic chunks kept so a stream can start with a short pre-roll —
+  /// covers the gap between the wake firing and the card asking for audio, so
+  /// speech right after the wake word isn't clipped. 8 x 80 ms = 640 ms.
+  static const _preRollChunks = 8;
+  final List<Uint8List> _preRoll = [];
+
   Isolate? _isolate;
   SendPort? _isolatePort;
   ReceivePort? _fromIsolate;
@@ -91,10 +106,11 @@ class VswwEngine extends WakeWordEngine {
       return;
     }
 
-    // Forward mic audio to the isolate. The mic EventChannel stays on the
-    // main isolate; per chunk we just hand the raw bytes across.
+    // The mic EventChannel stays on the main isolate; per chunk we hand the
+    // raw bytes to the compute isolate (unless detection is paused), keep a
+    // short pre-roll, and feed the page's audio stream when it wants one.
     _audioSub = _mic.stream().listen(
-      (bytes) => _isolatePort?.send(bytes),
+      _onMicChunk,
       onError: (Object e) => _log.warn('vsww', 'audio stream error: $e'),
     );
     _running = true;
@@ -102,6 +118,56 @@ class VswwEngine extends WakeWordEngine {
   }
 
   Map<String, Object>? _pendingInit;
+
+  void _onMicChunk(Uint8List bytes) {
+    // Detection (skipped while a voice turn owns the audio).
+    if (!_detectionPaused) _isolatePort?.send(bytes);
+    // Pre-roll ring, so a stream can start slightly in the past.
+    _preRoll.add(bytes);
+    while (_preRoll.length > _preRollChunks) {
+      _preRoll.removeAt(0);
+    }
+    // Live stream to the page.
+    _onAudioChunk?.call(bytes);
+  }
+
+  @override
+  Future<void> pauseDetection() async {
+    if (_detectionPaused) return;
+    _detectionPaused = true;
+    _log.info('vsww', 'detection paused (mic stays open)');
+  }
+
+  @override
+  Future<void> resumeDetection() async {
+    if (!_detectionPaused) return;
+    // Clear the isolate's audio window + detector state so speech from the
+    // turn we just handled can't fire a stale detection.
+    _isolatePort?.send({'type': VswwMsg.resume});
+    _detectionPaused = false;
+    _log.info('vsww', 'detection re-armed');
+  }
+
+  @override
+  Future<void> startAudioStream(void Function(Uint8List pcm) onChunk) async {
+    _onAudioChunk = onChunk;
+    // Flush the pre-roll first so the caller gets the audio captured between
+    // the wake word firing and this call — otherwise the start of the user's
+    // command is lost.
+    final preRoll = List<Uint8List>.of(_preRoll);
+    for (final chunk in preRoll) {
+      onChunk(chunk);
+    }
+    _log.info('vsww',
+        'audio stream started (${preRoll.length} pre-roll chunk(s) = ${preRoll.length * 80}ms)');
+  }
+
+  @override
+  Future<void> stopAudioStream() async {
+    if (_onAudioChunk == null) return;
+    _onAudioChunk = null;
+    _log.info('vsww', 'audio stream stopped');
+  }
 
   void _onIsolateMessage(dynamic msg) {
     if (msg is SendPort) {
@@ -148,10 +214,10 @@ class VswwEngine extends WakeWordEngine {
       wakeWord: msg['wakeWord'] as String? ?? '',
       manifestUrl: '',
     );
-    // Release the mic immediately so the WebView can open getUserMedia for STT.
-    await _audioSub?.cancel();
-    _audioSub = null;
-    // The manager's callback stops us and fires the wake-word event.
+    // Keep the mic open — we are the audio source for the turn (the card
+    // streams PCM from us instead of opening its own mic, which is what makes
+    // wake -> STT instant and loses no speech). Just stop detecting.
+    await pauseDetection();
     await _onDetection?.call(ref);
   }
 

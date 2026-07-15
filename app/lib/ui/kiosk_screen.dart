@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
+import '../managers/browser/no_cache_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kiosk_drawer.dart';
@@ -123,7 +124,16 @@ class _KioskScreenState extends State<KioskScreen> {
   /// The JS bridge is always injected at document start. The kiosk-mode CSS
   /// is applied per-load in [onLoadStop] (not a fixed initial script) so it
   /// can be toggled live.
-  List<UserScript> get _userScripts => [c.jsApi.buildUserScript(c.device.os)];
+  List<UserScript> get _userScripts => [
+        c.jsApi.buildUserScript(c.device.os),
+        // "Disable cache" must also defeat the page's service worker, which
+        // caches above the HTTP layer (HA always registers one).
+        if (c.settings.get(defs.disableCache))
+          UserScript(
+            source: noCachePurgeScript,
+            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+          ),
+      ];
 
   /// Apply or tear down the CSS kiosk mode against the current page.
   Future<void> _applyKioskMode() async {

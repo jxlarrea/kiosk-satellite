@@ -23,6 +23,7 @@ class VswwMsg {
   // main → isolate (control; audio is sent as a bare Uint8List)
   static const init = 'init';
   static const stop = 'stop';
+  static const resume = 'resume';
 }
 
 /// Entry point of the vsWakeWord compute isolate. Pure Dart + FFI (no platform
@@ -39,6 +40,8 @@ void vswwIsolateEntry(SendPort mainPort) {
       switch (msg['type']) {
         case VswwMsg.init:
           worker.init(msg);
+        case VswwMsg.resume:
+          worker.resumeDetection();
         case VswwMsg.stop:
           worker.stop();
           port.close();
@@ -250,6 +253,24 @@ class _IsolateWorker {
       }
     }
     return out;
+  }
+
+  /// Re-arm after a voice turn. Keeps the loaded ONNX sessions (resuming must
+  /// be instant — reloading them per wake would be pure waste) but clears the
+  /// audio window and all detector state so speech from the turn we just
+  /// handled can't fire a stale detection.
+  void resumeDetection() {
+    if (_stopped) return;
+    _detected = false;
+    _head = 0;
+    _filled = 0;
+    _samplesSinceInfer = 0;
+    _pending.clear();
+    for (final k in _kws) {
+      k.stream.reset();
+      k.gate.reset();
+    }
+    _log('info', 're-armed');
   }
 
   void stop() {

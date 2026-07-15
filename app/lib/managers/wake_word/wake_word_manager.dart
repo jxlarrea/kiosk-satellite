@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
@@ -46,7 +47,10 @@ class WakeWordManager extends Manager {
   Timer? _resumeTimer;
 
   bool get enabled => _settings.get(defs.wakeWordEnabled);
-  bool get listening => _engine.running;
+
+  /// Actively detecting. The engine can be running (mic open, models loaded)
+  /// while detection is paused for the duration of a voice turn.
+  bool get listening => _engine.running && _active;
 
   /// The wake-word config inherited from Voice Satellite (null until the VS
   /// card pushes it via setWakeWordConfig).
@@ -124,6 +128,31 @@ class WakeWordManager extends Manager {
         }),
       ))
       ..register(Command(
+        name: 'startAudioStream',
+        description:
+            'Stream captured mic audio to the page (PCM16 16 kHz mono, '
+            'base64, via kiosksatellite:audio events), starting with a short '
+            'pre-roll. The card uses this instead of getUserMedia during a '
+            'voice turn, so wake -> STT is instant and no speech is clipped.',
+        handler: (_) async {
+          if (!_engine.running) {
+            return const CommandResult.fail('engine not running');
+          }
+          await _engine.startAudioStream((pcm) {
+            bus.publish(AudioChunk(base64: base64Encode(pcm), sampleRate: 16000));
+          });
+          return const CommandResult.ok({'sampleRate': 16000});
+        },
+      ))
+      ..register(Command(
+        name: 'stopAudioStream',
+        description: 'Stop streaming mic audio to the page',
+        handler: (_) async {
+          await _engine.stopAudioStream();
+          return const CommandResult.ok();
+        },
+      ))
+      ..register(Command(
         name: 'benchmarkVsww',
         description:
             'Benchmark vsWakeWord ONNX inference across CPU/XNNPACK/NNAPI '
@@ -180,23 +209,37 @@ class WakeWordManager extends Manager {
     _sync();
   }
 
+  /// Bring the engine up (or down) with the config, then pause/resume
+  /// *detection* to match [_active].
+  ///
+  /// The engine stays running — mic open, models loaded — for the whole time
+  /// wake word detection is enabled. Suspending during a voice turn only
+  /// pauses detection: tearing the engine down per wake would re-download and
+  /// recompile every model, and would drop the mic the page is streaming from.
   Future<void> _sync() async {
-    final shouldListen = enabled && _active && available;
-    if (shouldListen && !_engine.running) {
+    final shouldRun = enabled && available;
+    if (shouldRun && !_engine.running) {
       await _engine.start(config: _config!, onDetection: _onDetection);
       log.info(name, 'listening (${_config!.engine.name})');
-    } else if (!shouldListen && _engine.running) {
+    } else if (!shouldRun && _engine.running) {
       await _engine.stop();
       log.info(name, 'stopped');
+    }
+    if (_engine.running) {
+      if (_active) {
+        await _engine.resumeDetection();
+      } else {
+        await _engine.pauseDetection();
+      }
     }
     bus.publish(WakeWordStateChanged(active: _active, listening: listening));
   }
 
   Future<void> _onDetection(WakeWordModelRef model) async {
-    // Stop capture FIRST — the page opens the mic as soon as the event fires.
-    await _engine.stop();
+    // The engine has already paused detection and kept the mic — it is the
+    // audio source for the turn the page is about to run.
     _active = false;
-    log.info(name, 'detected "${model.id}", mic released');
+    log.info(name, 'detected "${model.id}"');
     bus.publish(WakeWordDetected(model: model.id, phrase: model.wakeWord));
 
     // Self-heal: if the page never resumes us (crash, navigation), re-arm.

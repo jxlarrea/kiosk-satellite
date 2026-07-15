@@ -59,9 +59,11 @@ const disableCache = SettingDef<bool>(
   defaultValue: false,
   title: 'Disable cache',
   description:
-      'Always fetch pages and scripts from the network, ignoring the cache. '
-      'Useful while developing a dashboard or card so you never load a stale '
-      'copy. Slower on a normal kiosk.',
+      'Always fetch from the network, ignoring the HTTP cache, and drop any '
+      'service worker + Cache Storage on load (Home Assistant registers one, '
+      'which otherwise keeps serving a stale dashboard or card after you '
+      'redeploy). Saved page data (localStorage) is never touched. Slower on '
+      'a normal kiosk — this is a development aid.',
   category: 'Browser',
 );
 

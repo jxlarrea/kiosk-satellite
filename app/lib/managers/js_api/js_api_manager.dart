@@ -41,6 +41,8 @@ class JsApiManager extends Manager {
     'setWakeWordConfig': 'setWakeWordConfig',
     'setWakeWordActive': 'setWakeWordActive',
     'getWakeWordState': 'getWakeWordState',
+    'startAudioStream': 'startAudioStream',
+    'stopAudioStream': 'stopAudioStream',
   };
 
   @override
@@ -49,6 +51,9 @@ class JsApiManager extends Manager {
       final wireName = event.wireName;
       if (wireName != null) _dispatchToPage(wireName, event.toJson());
     });
+    // Mic audio for the page. AudioChunk has no wireName (it must not reach
+    // the remote admin feed), so it is dispatched here explicitly.
+    bus.on<AudioChunk>().listen((e) => _dispatchToPage('audio', e.toJson()));
   }
 
   /// The script the UI layer injects at document start.

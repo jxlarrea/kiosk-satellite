@@ -73,6 +73,21 @@ class WakeWordDetected extends AppEvent {
   Map<String, Object?> toJson() => {'model': model, 'phrase': phrase};
 }
 
+/// A chunk of captured mic audio for the page (base64 PCM16 LE, 16 kHz mono).
+///
+/// Internal-only (no wireName): the JS API bridge subscribes to it directly
+/// and dispatches it into the page. It must NOT go through the generic
+/// wire-event feed, or the remote admin WebSocket would stream ~43 KB/s of
+/// audio to every connected browser.
+class AudioChunk extends AppEvent {
+  const AudioChunk({required this.base64, required this.sampleRate});
+  final String base64;
+  final int sampleRate;
+
+  @override
+  Map<String, Object?> toJson() => {'pcm': base64, 'sampleRate': sampleRate};
+}
+
 class WakeWordStateChanged extends AppEvent {
   const WakeWordStateChanged({required this.active, required this.listening});
   final bool active;

@@ -37,7 +37,15 @@ String buildKioskSatelliteScript({required String version, required String os}) 
 
     setWakeWordConfig: function (config) { return call('setWakeWordConfig', config); },
     setWakeWordActive: function (active) { return call('setWakeWordActive', { active: !!active }); },
-    getWakeWordState: function () { return call('getWakeWordState'); }
+    getWakeWordState: function () { return call('getWakeWordState'); },
+
+    // Audio delegation: the app owns the mic, so a page can stream captured
+    // audio from us instead of calling getUserMedia. Chunks arrive as
+    // 'kiosksatellite:audio' events ({pcm: base64 PCM16 LE, sampleRate}),
+    // beginning with a short pre-roll so speech right after a wake word is
+    // not lost.
+    startAudioStream: function () { return call('startAudioStream'); },
+    stopAudioStream: function () { return call('stopAudioStream'); }
   };
 })();
 ''';
