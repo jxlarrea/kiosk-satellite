@@ -7,7 +7,7 @@
 <style>
   :root {
     --bg: #0f1117; --surface: #171a23; --surface-2: #1e2230;
-    --border: #2a2f3f; --text: #e6e8ee; --muted: #8b90a0;
+    --border: #2a2f3f; --divider: #333a4d; --text: #e6e8ee; --muted: #8b90a0;
     --primary: #8b95e8; --primary-ink: #10131c;
     --error: #ef6b73; --warn: #e0b34d; --ok: #5fbf80; --debug: #7d8290;
     --radius: 14px;
@@ -79,8 +79,11 @@
     border-radius: 11px; color: var(--text); text-align: center; }
   .action:hover { border-color: var(--primary); }
 
+  /* A settings list is a list: the separator has to be visible enough to
+     actually divide one row from the next, which --border (tuned for card
+     edges against the page) is not. */
   .row { display: flex; align-items: center; gap: 12px; padding: 12px 0;
-    border-bottom: 1px solid var(--border); }
+    border-bottom: 1px solid var(--divider); }
   .row:last-child { border-bottom: none; }
   .row .info { flex: 1; min-width: 0; }
   .row .info .name { font-weight: 500; }
@@ -245,13 +248,29 @@ function logout() {
 }
 
 /* ---- Tabs ---- */
-$('#tabs').addEventListener('click', (e) => {
-  const btn = e.target.closest('button'); if (!btn) return;
-  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b === btn));
+// Addressable, because this is a page in a browser and behaves like one: the
+// tab lives in the URL, so a reload keeps you where you were, Back goes back,
+// and #settings can be bookmarked or handed to someone. Everything is served
+// from one root, so without this a reload always dumped you on the dashboard.
+const TABS = ['dashboard', 'settings', 'homeassistant', 'console', 'logs'];
+
+function showTab(name, { push = true } = {}) {
+  const tab = TABS.includes(name) ? name : 'dashboard';
+  document.querySelectorAll('#tabs button').forEach((b) =>
+    b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach((t) =>
-    t.classList.toggle('active', t.id === `tab-${btn.dataset.tab}`));
-  if (btn.dataset.tab === 'logs') loadLogs();
+    t.classList.toggle('active', t.id === `tab-${tab}`));
+  if (push && location.hash.slice(1) !== tab) location.hash = tab;
+  if (tab === 'logs') loadLogs();
+}
+
+$('#tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (btn) showTab(btn.dataset.tab);
 });
+
+// Back/forward, and an address typed by hand.
+window.addEventListener('hashchange', () => showTab(location.hash.slice(1), { push: false }));
 
 /* ---- Dashboard ---- */
 document.querySelectorAll('.action[data-cmd]').forEach((b) =>
@@ -512,6 +531,9 @@ function connectWs() {
     else if (msg.type === 'console') appendLine($('#consoleOut'), msg.level, msg.message, msg.time);
     else if (msg.type === 'log') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
     else if (msg.type === 'event' && msg.event === 'screenon') loadScreenshot();
+    // The device's own settings screen updates live off the same event; this
+    // panel has to as well, or the two disagree about the same device.
+    else if (msg.type === 'wakeword-state') loadWakeWord();
   };
 }
 function setConn(s) { $('#connDot').className = `dot ${s}`; }
@@ -531,6 +553,8 @@ async function start() {
   await loadSettings();
   await loadConsole();
   await loadScreenshot();
+  // Whatever the URL asked for, now that the panels it needs exist.
+  showTab(location.hash.slice(1) || 'dashboard', { push: false });
   // Auto-refresh is OFF by default: each capture makes the tablet read back
   // and encode its whole WebView, which is visible as a stutter on the device
   // itself. One shot on load is free; a standing timer is not, and an admin

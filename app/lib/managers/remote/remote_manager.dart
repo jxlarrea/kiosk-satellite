@@ -71,6 +71,19 @@ class RemoteManager extends Manager {
       _broadcast({'type': 'console', ...event.toJson()});
     });
 
+    // Wake-word state, likewise: no wireName, so the generic feed skips it.
+    //
+    // The admin shows the same wake-word panel as the device's own settings
+    // screen, and that one updates live off this event. Without relaying it,
+    // the remote copy silently went stale — toggle the master switch and the
+    // status, engine and wake words all kept describing the state before the
+    // toggle until someone reloaded the page. Two views of one device that
+    // disagree are worse than one view.
+    bus.on<WakeWordStateChanged>().listen((_) {
+      if (_wsClients.isEmpty) return;
+      _broadcast({'type': 'wakeword-state'});
+    });
+
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.remoteEnabled.key ||
           e.key == defs.remotePort.key ||
