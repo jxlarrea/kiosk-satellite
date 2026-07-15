@@ -157,7 +157,7 @@
         </div>
         <div class="toolbar" style="margin-top:12px">
           <button class="btn-ghost" id="refreshShot">Refresh</button>
-          <label class="inline"><input type="checkbox" id="autoShot"> Auto</label>
+          <label class="inline"><input type="checkbox" id="autoShot" checked> Auto</label>
           <span class="spacer"></span>
           <span class="device" id="currentUrl"></span>
         </div>
@@ -385,6 +385,12 @@ async function start() {
   await loadSettings();
   await loadConsole();
   await loadScreenshot();
+  // Auto-refresh is on by default; the checkbox is pre-checked, so kick off
+  // the timer here (a checked box fires no change event on load).
+  if ($('#autoShot').checked) {
+    clearInterval(state.autoShotTimer);
+    state.autoShotTimer = setInterval(loadScreenshot, 3000);
+  }
   connectWs();
 }
 $('#loginBtn').addEventListener('click', login);
