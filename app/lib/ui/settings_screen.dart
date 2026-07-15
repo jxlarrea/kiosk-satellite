@@ -7,6 +7,18 @@ import '../core/events.dart';
 import '../managers/settings/definitions.dart';
 import '../managers/wake_word/engine.dart';
 
+/// A line between rows, and never after the last one.
+///
+/// The same rule the remote admin's `.row` border follows (see
+/// assets/remote-ui/index.html): these two screens show the same settings and
+/// are meant to read alike.
+List<Widget> _separated(List<Widget> rows) => [
+      for (var i = 0; i < rows.length; i++) ...[
+        rows[i],
+        if (i < rows.length - 1) const Divider(height: 1),
+      ],
+    ];
+
 /// Hierarchical settings, Fully Kiosk style: the top level is a list of
 /// category pages, each rendered from the declarative setting definitions —
 /// the same source the remote admin UI uses.
@@ -44,7 +56,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        children: [
+        children: _separated([
           for (final (category, title, icon, subtitle) in _categories)
             ListTile(
               leading: Icon(icon),
@@ -61,7 +73,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
               )),
             ),
-        ],
+        ]),
       ),
     );
   }
@@ -93,14 +105,14 @@ class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
       body: ListView(
-        children: [
+        children: _separated([
           for (final def in widget.defs)
             SettingTile(
               container: widget.container,
               def: def,
               onChanged: () => setState(() {}),
             ),
-        ],
+        ]),
       ),
     );
   }
@@ -135,12 +147,14 @@ class _HomeAssistantSettingsScreenState
       appBar: AppBar(title: const Text('Home Assistant')),
       body: ListView(
         children: [
-          for (final def in SettingsScreen._defsFor('Home Assistant'))
-            SettingTile(
-              container: widget.container,
-              def: def,
-              onChanged: () => setState(() {}),
-            ),
+          ..._separated([
+            for (final def in SettingsScreen._defsFor('Home Assistant'))
+              SettingTile(
+                container: widget.container,
+                def: def,
+                onChanged: () => setState(() {}),
+              ),
+          ]),
           FutureBuilder<bool>(
             future: _vsDetected,
             builder: (context, snapshot) {
@@ -148,6 +162,8 @@ class _HomeAssistantSettingsScreenState
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // The heading is the section break; a line as well would be
+                  // saying it twice.
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
                     child: Text(
@@ -157,13 +173,18 @@ class _HomeAssistantSettingsScreenState
                       ),
                     ),
                   ),
-                  for (final def in SettingsScreen._defsFor('Voice Satellite'))
-                    SettingTile(
-                      container: widget.container,
-                      def: def,
-                      onChanged: () => setState(() {}),
-                    ),
-                  WakeWordStatusTile(container: widget.container),
+                  ..._separated([
+                    for (final def
+                        in SettingsScreen._defsFor('Voice Satellite'))
+                      SettingTile(
+                        container: widget.container,
+                        def: def,
+                        onChanged: () => setState(() {}),
+                      ),
+                    // Not a setting, but a row on the same list, so it sits
+                    // behind the same line as the rest.
+                    WakeWordStatusTile(container: widget.container),
+                  ]),
                 ],
               );
             },
@@ -232,7 +253,12 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: _separated([
+        // Engine, wake words and status read as one block: they are three
+        // views of a single fact, so no line runs between them.
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
         ListTile(
           leading: Icon(Icons.graphic_eq, color: statusColor),
           title: const Text('Engine'),
@@ -286,6 +312,8 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
             ],
           ),
         ),
+          ],
+        ),
         if (wake.failure != null)
           WakeWordRecoveryTile(container: widget.container),
         if (config.stopModel != null)
@@ -299,7 +327,7 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
                 style: theme.textTheme.bodyMedium),
           ),
         ClearModelCacheTile(container: widget.container),
-      ],
+      ]),
     );
   }
 }
