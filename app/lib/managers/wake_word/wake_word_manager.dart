@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart';
+
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../core/permissions.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'background_listening.dart';
 import 'engine.dart';
 import 'model_cache.dart';
 import 'mww/mww_engine.dart';
@@ -142,6 +145,36 @@ class WakeWordManager extends Manager {
   /// The microphone is refused and Android will not ask again, so the only way
   /// back is the OS settings screen. Both UIs offer that when this is true.
   bool get needsAppSettings => failure == EngineFailure.micBlocked;
+
+  /// Whether the foreground service is up, so we only cross the platform
+  /// channel when the answer actually changes — and never at all where the
+  /// setting is off, which is every kiosk that stays in front.
+  bool _serviceRunning = false;
+
+  /// Run the keep-alive service exactly while there is something to keep alive.
+  ///
+  /// Without it Android freezes the whole process the moment another app covers
+  /// us: mic, WebView, Voice Satellite's websocket and our own Dart, together.
+  /// See [BackgroundListening].
+  Future<void> _syncBackgroundService() async {
+    final want = _settings.get(defs.wakeWordBackground) && _engine.running;
+    if (want == _serviceRunning) return;
+    try {
+      if (want) {
+        await BackgroundListening.start();
+      } else {
+        await BackgroundListening.stop();
+      }
+      _serviceRunning = want;
+      log.info(
+          name, want ? 'background listening on' : 'background listening off');
+    } catch (e) {
+      // A platform with no such service (tests, desktop). Nothing to keep
+      // alive, so nothing is broken by not keeping it alive.
+      log.warn(name, 'background service unavailable: $e');
+      _serviceRunning = false;
+    }
+  }
 
   void _onEngineFailure(EngineFailure kind, String detail) {
     _failed = true;
@@ -291,7 +324,10 @@ class WakeWordManager extends Manager {
   @override
   Future<void> init() async {
     bus.on<SettingChanged>().listen((e) {
-      if (e.key == defs.wakeWordEnabled.key) _sync();
+      if (e.key == defs.wakeWordEnabled.key ||
+          e.key == defs.wakeWordBackground.key) {
+        _sync();
+      }
     });
 
     commands
@@ -630,6 +666,7 @@ class WakeWordManager extends Manager {
         await _engine.pauseDetection();
       }
     }
+    await _syncBackgroundService();
     bus.publish(WakeWordStateChanged(active: _active, listening: listening));
   }
 
@@ -641,11 +678,46 @@ class WakeWordManager extends Manager {
     bus.publish(const StopWordDetected());
   }
 
+  /// Bring the app to the front when the wake word arrived while we were
+  /// behind something else.
+  ///
+  /// Only when it is actually behind: [AppLifecycleState] is the last state the
+  /// framework reported, and re-fronting an app that is already in front would
+  /// mean every wake word poked the Activity for nothing.
+  ///
+  /// A missing "Display over other apps" grant is not a small problem here — we
+  /// heard the wake word and cannot act on it, which is worse for the user than
+  /// not having listened — so it is logged as an error and reads as one in both
+  /// settings UIs, which show the grant as missing.
+  Future<void> _comeForwardIfBehind() async {
+    if (!_settings.get(defs.wakeWordBackground)) return;
+    if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+      return;
+    }
+    try {
+      if (await BackgroundListening.bringToFront()) {
+        log.info(name, 'woke from the background; bringing the app forward');
+      } else {
+        log.error(
+            name,
+            'heard the wake word from the background but cannot come forward: '
+            '"Display over other apps" is not granted');
+      }
+    } catch (e) {
+      log.warn(name, 'could not come forward: $e');
+    }
+  }
+
   Future<void> _onDetection(WakeWordModelRef model) async {
     // The engine has already paused detection and kept the mic — it is the
     // audio source for the turn the page is about to run.
     _active = false;
     log.info(name, 'detected "${model.id}"');
+    // Heard from behind another app: come forward, or the turn happens on a
+    // page nobody can see. Ordered before the event so the card's UI is on
+    // screen by the time it reacts; the audio it will ask us for is already in
+    // the pre-roll, so the trip costs nothing.
+    await _comeForwardIfBehind();
     bus.publish(WakeWordDetected(model: model.id, phrase: model.wakeWord));
 
     // Self-heal: if the page never resumes us (crash, navigation), re-arm.

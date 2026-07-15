@@ -220,6 +220,20 @@ const wakeWordEnabled = SettingDef<bool>(
   category: 'Voice Satellite',
 );
 
+const wakeWordBackground = SettingDef<bool>(
+  key: 'wake_word.background',
+  type: SettingType.boolean,
+  // Off: it costs a permanent notification and two more OS grants, which is a
+  // poor trade for a kiosk that is never behind another app — the normal case.
+  defaultValue: false,
+  title: 'Keep listening in the background',
+  description:
+      'Keep hearing the wake word while another app is in front, and come back '
+      'to the front on a detection. Android freezes apps it cannot see, so this '
+      'needs a permanent notification and permission to display over other apps.',
+  category: 'Voice Satellite',
+);
+
 const wakeWordResumeTimeoutSeconds = SettingDef<num>(
   key: 'wake_word.resume_timeout_seconds',
   type: SettingType.number,
@@ -326,6 +340,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDismissOnMotion,
   motionEnabled,
   wakeWordEnabled,
+  wakeWordBackground,
   wakeWordResumeTimeoutSeconds,
   haUrl,
   haToken,

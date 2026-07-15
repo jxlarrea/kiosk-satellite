@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/settings/definitions.dart';
+import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/engine.dart';
 
 /// A line between rows, and never after the last one.
@@ -295,6 +296,8 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
                 : 'Voice Satellite keeps this one in the browser'),
             trailing: _rowValue(context, config.stopModel!.wakeWord),
           ),
+        if (widget.container.settings.get(wakeWordBackground))
+          const BackgroundGrantsTile(),
         ClearModelCacheTile(container: widget.container),
       ]),
     );
@@ -371,6 +374,112 @@ class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The OS grants background listening needs, and whether we actually have
+/// them.
+///
+/// Shown only when the setting is on, because until then none of it applies.
+/// It has to be shown *then*, though: the switch alone does nothing. Android
+/// will not let us start our own window from behind another app without
+/// "Display over other apps", so without it the wake word is heard and nothing
+/// happens — the one outcome worse than not listening. And Samsung will stop
+/// the service after a few hours of "unused app" unless the battery exemption
+/// is granted, whatever the foreground-service rules say.
+class BackgroundGrantsTile extends StatefulWidget {
+  const BackgroundGrantsTile({super.key});
+
+  @override
+  State<BackgroundGrantsTile> createState() => _BackgroundGrantsTileState();
+}
+
+class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
+    with WidgetsBindingObserver {
+  bool? _canBringToFront;
+  bool? _batteryUnrestricted;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Both grants are given on an OS screen we cannot see the result of, so
+    // re-read them when the user comes back from one.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final front = await BackgroundListening.canBringToFront();
+      final battery = await BackgroundListening.isBatteryUnrestricted();
+      if (!mounted) return;
+      setState(() {
+        _canBringToFront = front;
+        _batteryUnrestricted = battery;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _canBringToFront = null;
+        _batteryUnrestricted = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: _separated([
+        ListTile(
+          leading: Icon(
+            _canBringToFront == true
+                ? Icons.check_circle_outline
+                : Icons.error_outline,
+            color: _canBringToFront == true ? null : theme.colorScheme.error,
+          ),
+          title: const Text('Display over other apps'),
+          subtitle: Text(_canBringToFront == true
+              ? 'Kiosk Satellite can come forward when it hears you.'
+              : 'Without this the wake word is heard and nothing happens.'),
+          trailing: _canBringToFront == true
+              ? null
+              : TextButton(
+                  onPressed: BackgroundListening.requestBringToFront,
+                  child: const Text('Grant'),
+                ),
+        ),
+        ListTile(
+          leading: Icon(
+            _batteryUnrestricted == true
+                ? Icons.check_circle_outline
+                : Icons.battery_alert_outlined,
+            color: _batteryUnrestricted == true ? null : theme.colorScheme.error,
+          ),
+          title: const Text('Unrestricted battery'),
+          subtitle: Text(_batteryUnrestricted == true
+              ? 'Android will leave the listener running.'
+              : 'Without this the listener is stopped after a few hours.'),
+          trailing: _batteryUnrestricted == true
+              ? null
+              : TextButton(
+                  onPressed: BackgroundListening.requestBatteryUnrestricted,
+                  child: const Text('Grant'),
+                ),
+        ),
+      ]),
     );
   }
 }
