@@ -46,6 +46,13 @@ class RemoteManager extends Manager {
       _broadcast({'type': 'log', 'entry': entry.toJson()});
     });
 
+    // Relay the page's JS console to admin clients (ConsoleMessage has no
+    // wireName, so it is not covered by the generic event feed above).
+    bus.on<ConsoleLine>().listen((event) {
+      if (_wsClients.isEmpty) return;
+      _broadcast({'type': 'console', ...event.toJson()});
+    });
+
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.remoteEnabled.key ||
           e.key == defs.remotePort.key ||
@@ -138,6 +145,9 @@ class RemoteManager extends Manager {
         });
       case ('GET', 'api/logs'):
         return _json(200, {'logs': [for (final e in log.recent) e.toJson()]});
+      case ('GET', 'api/console'):
+        final console = await commands.execute('getConsole', const {});
+        return _json(200, {'console': console.data});
       case ('GET', 'api/screenshot'):
         return _screenshot();
     }

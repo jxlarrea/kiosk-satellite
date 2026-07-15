@@ -50,7 +50,8 @@ is administrable here by construction.
 | `/api/commands` | GET | List registered commands + param schemas |
 | `/api/commands/<name>` | POST | Execute a command with JSON params |
 | `/api/screenshot` | GET | PNG of the current screen |
-| `/api/logs` | GET | Recent log ring buffer |
+| `/api/logs` | GET | Recent app log ring buffer |
+| `/api/console` | GET | Current WebView JS console buffer |
 
 Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 `loadDashboard {dashboard}`, `reload`, `screenOn` / `screenOff`,
@@ -62,7 +63,10 @@ Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 JSON messages, `{type, ...}`:
 
 - Server → client: `state` (full snapshot on connect, then diffs), `event`
-  (bus events: motion, wake word, screen, navigation), `log` (when subscribed).
+  (bus events: motion, wake word, screen, navigation), `log` (app log lines),
+  `console` (`{type: 'console', level, message, time}` — the WebView's
+  JavaScript console, streamed live so you can watch a wall-mounted tablet's
+  page logs remotely; fetch history first from `GET /api/console`).
 - Client → server: `subscribe {topics: ['state','events','logs']}`,
   `command {name, params}` (same registry as REST).
 

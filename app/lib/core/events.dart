@@ -81,6 +81,25 @@ class WakeWordStateChanged extends AppEvent {
 
 // ── Browser ────────────────────────────────────────────────────────────
 
+/// A line from the WebView's JavaScript console. Internal-only (no
+/// wireName) so it is never echoed back into the page; the remote server
+/// relays it to admin WebSocket clients.
+class ConsoleLine extends AppEvent {
+  const ConsoleLine({
+    required this.level,
+    required this.message,
+    required this.timeMs,
+  });
+
+  final String level; // 'log' | 'debug' | 'warn' | 'error' | 'tip'
+  final String message;
+  final int timeMs; // epoch millis (stamped by the browser manager)
+
+  @override
+  Map<String, Object?> toJson() =>
+      {'level': level, 'message': message, 'time': timeMs};
+}
+
 class PageChanged extends AppEvent {
   const PageChanged({required this.url});
   final String url;

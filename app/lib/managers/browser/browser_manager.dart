@@ -86,6 +86,26 @@ class BrowserManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'getConsole',
+        description: 'Current JavaScript console buffer',
+        handler: (_) async => CommandResult.ok([
+          for (final e in consoleEntries)
+            {
+              'level': e.level,
+              'message': e.message,
+              'time': e.time.millisecondsSinceEpoch,
+            },
+        ]),
+      ))
+      ..register(Command(
+        name: 'clearConsole',
+        description: 'Clear the JavaScript console buffer',
+        handler: (_) async {
+          clearConsole();
+          return const CommandResult.ok();
+        },
+      ))
+      ..register(Command(
         name: 'evalJs',
         description: 'Evaluate JavaScript in the page and return the result',
         params: const {'code': 'JavaScript source'},
@@ -134,11 +154,17 @@ class BrowserManager extends Manager {
 
   /// Called by the UI layer from the WebView's onConsoleMessage.
   void onConsoleMessage(String level, String message) {
+    final now = DateTime.now();
     if (consoleEntries.length >= _consoleCapacity) {
       consoleEntries.removeAt(0);
     }
-    consoleEntries.add(ConsoleEntry(DateTime.now(), level, message));
+    consoleEntries.add(ConsoleEntry(now, level, message));
     consoleRevision.value++;
+    bus.publish(ConsoleLine(
+      level: level,
+      message: message,
+      timeMs: now.millisecondsSinceEpoch,
+    ));
   }
 
   void clearConsole() {
