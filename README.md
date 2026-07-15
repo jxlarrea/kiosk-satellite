@@ -1,15 +1,18 @@
 # Kiosk Satellite
 
-A modern, cross-platform (Android/iOS) kiosk browser for Home Assistant —
-and the companion app for
+A modern, cross-platform (Android/iOS) kiosk browser. Point it at any URL —
+and if that URL is Home Assistant, it comes with first-class HA integration
+and is the companion app for
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration).
 
 ## Why
 
 - **Fully Kiosk, but modern** — the essential kiosk feature set behind a
   clean Material 3 UI, on Android *and* iOS.
-- **Home Assistant native** — connect with a long-lived token, pick a
-  dashboard, hide the HA header/sidebar, and (soon) expose the device to HA
+- **Standalone first** — a full kiosk app for any website; no Home Assistant
+  required.
+- **Home Assistant native (optional)** — connect with a long-lived token, pick
+  a dashboard, hide the HA header/sidebar, and (soon) expose the device to HA
   via MQTT discovery.
 - **Voice Satellite companion** — native wake-word detection (microWakeWord,
   the same models Voice Satellite ships) handed off to the card through the

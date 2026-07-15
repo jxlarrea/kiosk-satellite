@@ -8,9 +8,10 @@ Three pillars:
 
 1. **Kiosk browser** — a locked-down WebView with the classic Fully Kiosk feature
    set (start URL, keep awake, screensaver, brightness control, motion detection,
-   crash recovery, boot start) behind a modern UI.
-2. **Home Assistant native integration** — long-lived-token connection, dashboard
-   picker, HA kiosk mode (hide header/sidebar), MQTT discovery entities,
+   crash recovery, boot start) behind a modern UI. Fully standalone: pillars 2
+   and 3 are optional layers, and every generic kiosk feature works without them.
+2. **Home Assistant native integration (optional)** — long-lived-token connection,
+   dashboard picker, HA kiosk mode (hide header/sidebar), MQTT discovery entities,
    event-driven navigation.
 3. **Voice Satellite companion** — native wake-word detection (microWakeWord via
    TFLite) handed off to the Voice Satellite card through a JavaScript API, plus
