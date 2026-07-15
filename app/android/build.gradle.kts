@@ -27,6 +27,17 @@ subprojects {
             if (current == null || current < 36) {
                 android.compileSdkVersion(36)
             }
+            // Older plugins (e.g. tflite_flutter 0.12.1) pin Java to 11 while
+            // their Kotlin follows the JDK we build with, and AGP 9 rejects the
+            // mismatch outright ("Inconsistent JVM-target compatibility").
+            // Pull both onto the app's target rather than let the plugin decide.
+            android.compileOptions.sourceCompatibility = JavaVersion.VERSION_17
+            android.compileOptions.targetCompatibility = JavaVersion.VERSION_17
+        }
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+            compilerOptions.jvmTarget.set(
+                org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17,
+            )
         }
     }
 }

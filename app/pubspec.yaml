@@ -47,6 +47,7 @@ dependencies:
   # channel in android/, to avoid third-party AGP-9 build breakage)
   onnxruntime: ^1.4.1
   path_provider: ^2.1.5
+  tflite_flutter: ^0.12.1
 
 dev_dependencies:
   flutter_test:

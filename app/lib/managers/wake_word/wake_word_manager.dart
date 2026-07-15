@@ -7,6 +7,7 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'engine.dart';
+import 'mww/mww_probe.dart';
 import 'vsww/benchmark.dart';
 import 'vsww/model_store.dart';
 import 'vsww/vsww_engine.dart';
@@ -252,6 +253,22 @@ class WakeWordManager extends Manager {
             _active = wasActive;
             await _sync(); // resume listening if it was on
           }
+        },
+      ))
+      ..register(Command(
+        name: 'probeMww',
+        description:
+            'Can this device run a microWakeWord .tflite model? Reports its '
+            'tensors and times one invoke. Groundwork for native mww.',
+        params: const {'url': 'absolute .tflite URL'},
+        handler: (p) async {
+          final url = p['url'] as String?;
+          if (url == null || url.isEmpty) {
+            return const CommandResult.fail('url required');
+          }
+          final res = await probeMww(url);
+          log.info(name, 'mww probe: $res');
+          return CommandResult.ok(res);
         },
       ))
       ..register(Command(
