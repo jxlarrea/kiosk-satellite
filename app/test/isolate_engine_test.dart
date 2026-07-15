@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/core/permissions.dart';
 import 'package:kiosk_satellite/managers/wake_word/engine.dart';
 import 'package:kiosk_satellite/managers/wake_word/isolate_engine.dart';
 
@@ -150,20 +151,63 @@ void main() {
 
     test('asks before downloading, not after', () async {
       // Models are megabytes; a denied mic makes all of them pointless.
-      engine.micPermissionGranted = false;
+      engine.micOutcome = PermissionOutcome.declined;
       await start();
       expect(engine.micPermissionAsks, 1);
       expect(engine.loadCalls, 0, reason: 'nothing worth downloading');
     });
 
     test('a denied microphone does not start the engine', () async {
-      engine.micPermissionGranted = false;
+      engine.micOutcome = PermissionOutcome.declined;
       await start();
       expect(engine.running, isFalse);
       // The manager turns "did not start" into available:false, which is what
-      // sends Voice Satellite back to browser detection — and the browser's own
-      // getUserMedia prompt is then the user's way back to granting it.
+      // sends Voice Satellite back to browser detection.
       expect(engine.isolateAudio, isEmpty);
+    });
+
+    test('declined and blocked are reported apart', () async {
+      // They need different answers: a decline can be asked again, a block can
+      // only be undone in the OS settings. Reporting both as "denied" is how a
+      // stray tap turns into a device nobody can fix.
+      final failures = <EngineFailure>[];
+
+      engine.micOutcome = PermissionOutcome.declined;
+      await engine.start(
+          config: _config,
+          onDetection: (_) async {},
+          onFailure: (kind, _) => failures.add(kind));
+      expect(failures, [EngineFailure.micDeclined]);
+
+      engine.micOutcome = PermissionOutcome.blocked;
+      await engine.start(
+          config: _config,
+          onDetection: (_) async {},
+          onFailure: (kind, _) => failures.add(kind));
+      expect(failures, [EngineFailure.micDeclined, EngineFailure.micBlocked]);
+    });
+
+    test('a retry after a decline asks again', () async {
+      // Android keeps asking until the second refusal, so a stray "Don't allow"
+      // must not be the end of it.
+      engine.micOutcome = PermissionOutcome.declined;
+      await start();
+      expect(engine.running, isFalse);
+
+      engine.micOutcome = PermissionOutcome.granted;
+      await start();
+      expect(engine.micPermissionAsks, 2);
+      expect(engine.running, isTrue, reason: 'the second ask was allowed');
+    });
+
+    test('no models is reported as such, not as a mic problem', () async {
+      engine.payload = const WakeModelPayload(models: []);
+      final failures = <EngineFailure>[];
+      await engine.start(
+          config: _config,
+          onDetection: (_) async {},
+          onFailure: (kind, _) => failures.add(kind));
+      expect(failures, [EngineFailure.modelsUnavailable]);
     });
 
     test('refuses a config for another engine', () async {
@@ -345,29 +389,28 @@ void main() {
       // engine kept reporting `running`, and Voice Satellite — which had
       // stopped its own browser detection because we said we were covered —
       // heard nothing for the rest of the session.
-      final failures = <String>[];
+      final failures = <EngineFailure>[];
       await engine.start(
         config: _config,
         onDetection: (m) async => engine.detections.add(m),
-        onFailure: failures.add,
+        onFailure: (kind, _) => failures.add(kind),
       );
       expect(engine.running, isTrue);
 
       mic.addError(Exception('AudioRecord init failed'));
       await settle();
 
-      expect(failures, hasLength(1));
-      expect(failures.single, contains('AudioRecord init failed'));
+      expect(failures, [EngineFailure.micLost]);
       expect(engine.running, isFalse,
           reason: 'a deaf engine must not claim to be running');
     });
 
     test('a mic that dies twice reports once', () async {
-      final failures = <String>[];
+      final failures = <EngineFailure>[];
       await engine.start(
         config: _config,
         onDetection: (_) async {},
-        onFailure: failures.add,
+        onFailure: (kind, _) => failures.add(kind),
       );
       mic.addError(Exception('first'));
       await settle();
@@ -419,12 +462,12 @@ const _config = WakeWordConfig(
 
 /// Stands in for the OS microphone grant.
 class _FakeGrant {
-  bool granted = true;
+  PermissionOutcome outcome = PermissionOutcome.granted;
   int asks = 0;
 
-  Future<bool> ask() async {
+  Future<PermissionOutcome> ask() async {
     asks++;
-    return granted;
+    return outcome;
   }
 }
 
@@ -490,8 +533,8 @@ class _FakeEngine extends IsolateWakeEngine {
   final _FakeGrant _grant;
 
   /// Stands in for the OS grant.
-  bool get micPermissionGranted => _grant.granted;
-  set micPermissionGranted(bool v) => _grant.granted = v;
+  PermissionOutcome get micOutcome => _grant.outcome;
+  set micOutcome(PermissionOutcome v) => _grant.outcome = v;
   int get micPermissionAsks => _grant.asks;
 
   final _FakeIsolate isolate;

@@ -332,8 +332,10 @@ async function loadWakeWord() {
   // Status first: it is the answer to "is this thing working?".
   const status = document.createElement('div');
   status.className = 'row';
-  const dot = { listening: 'var(--ok, #7ee081)', unavailable: 'var(--err, #ff6b6b)' }[s.status]
-    || 'var(--muted)';
+  const bad = ['micBlocked', 'micDeclined', 'micLost', 'modelsUnavailable', 'unavailable'];
+  const dot = s.status === 'listening' ? 'var(--ok, #7ee081)'
+    : bad.includes(s.status) ? 'var(--err, #ff6b6b)'
+    : 'var(--muted)';
   status.innerHTML =
     `<div class="info"><div class="name">Status</div>` +
     `<div class="desc"></div></div>` +
@@ -341,6 +343,42 @@ async function loadWakeWord() {
   status.querySelector('.desc').textContent = s.statusLabel || '';
   status.querySelector('span').textContent = s.status || '';
   card.appendChild(status);
+
+  // The way out, offered on exactly the terms the device decided — a blocked
+  // mic needs the OS settings, a declined one only needs asking again. The
+  // on-device settings screen shows the same two buttons off the same flags.
+  if (s.canRetry) {
+    const row = document.createElement('div'); row.className = 'row';
+    const info = document.createElement('div'); info.className = 'info';
+    info.innerHTML = `<div class="name">Recover</div><div class="desc"></div>`;
+    // The status row above already carries the sentence; this one says what
+    // the buttons will do about it.
+    info.querySelector('.desc').textContent = s.needsAppSettings
+      ? 'Open the app settings on the device and allow the microphone, then retry.'
+      : 'Try starting the engine again.';
+    row.appendChild(info);
+
+    if (s.needsAppSettings) {
+      const open = document.createElement('button');
+      open.className = 'btn-ghost';
+      open.textContent = 'Open app settings';
+      // Puts the *device* on its settings screen; someone still has to tap
+      // Allow there. That is the whole of the way back, so say so plainly.
+      open.addEventListener('click', () => cmd('openAppSettings'));
+      row.appendChild(open);
+    }
+    const retry = document.createElement('button');
+    retry.className = 'btn-ghost';
+    retry.textContent = 'Retry';
+    retry.addEventListener('click', async () => {
+      retry.disabled = true; retry.textContent = 'Retrying…';
+      try { await cmd('retryWakeWord'); } catch {}
+      retry.disabled = false; retry.textContent = 'Retry';
+      loadWakeWord();
+    });
+    row.appendChild(retry);
+    card.appendChild(row);
+  }
 
   if (s.engineLabel) {
     card.appendChild(readOnlyRow('Engine', 'Chosen in Voice Satellite', s.engineLabel));

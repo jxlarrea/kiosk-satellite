@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../../core/permissions.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'engine.dart';
@@ -117,17 +118,38 @@ class WakeWordManager extends Manager {
   /// Cleared whenever the card pushes config again, so a reload retries.
   bool _failed = false;
 
-  /// The engine died under us after a clean start (the mic dropped).
-  void _onEngineFailure(String reason) {
+  /// Why, when we know. Drives what the UIs offer to do about it.
+  EngineFailure? _failure;
+
+  /// What went wrong, or null when nothing has.
+  EngineFailure? get failure => _failed ? _failure : null;
+
+  /// The microphone is refused and Android will not ask again, so the only way
+  /// back is the OS settings screen. Both UIs offer that when this is true.
+  bool get needsAppSettings => failure == EngineFailure.micBlocked;
+
+  void _onEngineFailure(EngineFailure kind, String detail) {
     _failed = true;
+    _failure = kind;
     _runningEngine = null;
     log.error(
         name,
-        'engine stopped: $reason; reporting unavailable so Voice Satellite '
-        'takes detection back on the next config push');
-    // Tell the page and the settings UIs, both of which are still showing
+        'engine unavailable ($detail); Voice Satellite keeps browser detection');
+    // Tell the page and the settings UIs, both of which may be showing
     // "Listening natively" over a microphone that no longer exists.
     bus.publish(WakeWordStateChanged(active: _active, listening: listening));
+  }
+
+  /// Try again after a failure: re-ask for the microphone, re-fetch the models.
+  ///
+  /// The card only pushes config on page load, so without this a stray "Don't
+  /// allow" leaves the device deaf until something reloads it — and the person
+  /// who tapped it has no idea that is the fix.
+  Future<bool> retry() async {
+    _failed = false;
+    _failure = null;
+    await _sync();
+    return available;
   }
 
   /// Engines that were started and must be stopped when the config moves to a
@@ -162,11 +184,36 @@ class WakeWordManager extends Manager {
       );
     }
     if (!available) {
-      return (
-        code: 'unavailable',
-        label: 'No native runner for ${config.engine.label} — Voice Satellite '
-            'keeps browser detection.',
-      );
+      // Say what actually happened. "No native runner" was once the only way to
+      // be unavailable and became the catch-all, which meant a refused
+      // microphone displayed as a missing engine — sending anyone who read it
+      // off to debug the wrong thing entirely.
+      return switch (failure) {
+        EngineFailure.micBlocked => (
+            code: 'micBlocked',
+            label: 'Microphone blocked. Android will not ask again — allow it '
+                'in the app settings, then retry.',
+          ),
+        EngineFailure.micDeclined => (
+            code: 'micDeclined',
+            label: 'Microphone declined. Wake word detection needs it; retry '
+                'to be asked again.',
+          ),
+        EngineFailure.micLost => (
+            code: 'micLost',
+            label: 'The microphone stopped working. Retry, or reload the page.',
+          ),
+        EngineFailure.modelsUnavailable => (
+            code: 'modelsUnavailable',
+            label: 'Could not download the models from Home Assistant. Retry '
+                'once it is reachable.',
+          ),
+        null => (
+            code: 'unavailable',
+            label: 'No native runner for ${config.engine.label} — Voice '
+                'Satellite keeps browser detection.',
+          ),
+      };
     }
     return listening
         ? (code: 'listening', label: 'Listening natively')
@@ -187,6 +234,9 @@ class WakeWordManager extends Manager {
         'engineLabel': _config?.engine.label,
         'status': status.code,
         'statusLabel': status.label,
+        // Both UIs offer a way out; they must not each decide when to.
+        'canRetry': _failed,
+        'needsAppSettings': needsAppSettings,
         'stopWord': _config?.stopModel?.wakeWord,
         'models': [
           for (final m in _config?.models ?? const <WakeWordModelRef>[])
@@ -298,6 +348,31 @@ class WakeWordManager extends Manager {
         name: 'getWakeWordState',
         description: 'Current wake-word engine state',
         handler: (_) async => CommandResult.ok(describeState()),
+      ))
+      ..register(Command(
+        name: 'retryWakeWord',
+        description: 'Try to start the wake-word engine again after a failure: '
+            're-asks for the microphone and re-fetches the models. The card '
+            'only pushes config on page load, so this is the way back without '
+            'a reload.',
+        handler: (_) async {
+          final ok = await retry();
+          return CommandResult.ok({
+            'available': ok,
+            ...describeState(),
+          });
+        },
+      ))
+      ..register(Command(
+        name: 'openAppSettings',
+        description: 'Open this app in the OS settings. The only way back from '
+            'a microphone the user blocked, since Android stops asking.',
+        handler: (_) async {
+          final opened = await openOsAppSettings();
+          return opened
+              ? const CommandResult.ok()
+              : const CommandResult.fail('could not open the OS settings');
+        },
       ))
       ..register(Command(
         name: 'clearWakeWordModels',
@@ -481,9 +556,13 @@ class WakeWordManager extends Manager {
             'listening (${_config!.engine.name})'
             '${_engine.supportsStopWord ? ' + stop word' : ''}');
         _runningEngine = _engine;
-      } else {
-        // Report unavailable from here on, so the card keeps doing this itself
-        // rather than trusting a runner that never came up.
+      } else if (!_failed) {
+        // The engine reports its own failures (a refused mic, models that would
+        // not download) through onFailure, which has already run and said
+        // something specific. This is the backstop for a runner that declined
+        // to start without explaining itself: report unavailable regardless, so
+        // the card keeps doing this rather than trust something that never came
+        // up.
         _failed = true;
         log.error(
             name,

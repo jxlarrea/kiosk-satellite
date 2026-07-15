@@ -260,27 +260,34 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Icon(
-                    wake.available
-                        ? (wake.listening ? Icons.mic : Icons.mic_none)
-                        : Icons.warning_amber_rounded,
-                    size: 16,
-                    color: statusColor,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(statusText,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: statusColor)),
-                  ),
-                ],
-              ),
+              // When something has failed the recovery card below states it,
+              // in full and next to the buttons that act on it. Saying it here
+              // too just prints the same sentence twice.
+              if (wake.failure == null) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Icon(
+                      wake.available
+                          ? (wake.listening ? Icons.mic : Icons.mic_none)
+                          : Icons.warning_amber_rounded,
+                      size: 16,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(statusText,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: statusColor)),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
+        if (wake.failure != null)
+          WakeWordRecoveryTile(container: widget.container),
         if (config.stopModel != null)
           ListTile(
             leading: const Icon(Icons.front_hand_outlined),
@@ -293,6 +300,85 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
           ),
         ClearModelCacheTile(container: widget.container),
       ],
+    );
+  }
+}
+
+/// The way out of a failed engine.
+///
+/// Mirrored by the web admin, which offers the same two actions from the same
+/// state (`canRetry` / `needsAppSettings`). A blocked microphone is the reason
+/// this exists: Android stops asking after the second refusal, the browser
+/// fallback needs the same permission and goes quiet too, and without an offer
+/// to open the OS settings a single stray tap disables wake words for good on a
+/// device whose owner may never see a system UI again.
+class WakeWordRecoveryTile extends StatefulWidget {
+  const WakeWordRecoveryTile({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<WakeWordRecoveryTile> createState() => _WakeWordRecoveryTileState();
+}
+
+class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final wake = widget.container.wakeWord;
+    final settingsFirst = wake.needsAppSettings;
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      color: theme.colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.error_outline,
+                    size: 18, color: theme.colorScheme.onErrorContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(wake.status.label,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onErrorContainer)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (settingsFirst)
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => widget.container.commands
+                            .execute('openAppSettings', const {}),
+                    child: const Text('Open app settings'),
+                  ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          setState(() => _busy = true);
+                          await widget.container.commands
+                              .execute('retryWakeWord', const {});
+                          if (mounted) setState(() => _busy = false);
+                        },
+                  child: Text(_busy ? 'Retrying…' : 'Retry'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

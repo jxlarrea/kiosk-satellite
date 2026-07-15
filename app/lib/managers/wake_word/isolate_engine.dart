@@ -103,9 +103,10 @@ class WakeModelPayload {
 typedef MicSource = Stream<Uint8List> Function();
 
 /// Obtains the OS microphone grant, prompting if need be.
-typedef MicPermission = Future<bool> Function();
+typedef MicPermission = Future<PermissionOutcome> Function();
 
-Future<bool> _ensureMicPermission() => ensureOsPermission(Permission.microphone);
+Future<PermissionOutcome> _requestMicPermission() =>
+    requestOsPermission(Permission.microphone);
 
 /// Spawns the compute isolate; returns null if it did not really spawn one.
 typedef IsolateSpawner = Future<Isolate?> Function(
@@ -139,7 +140,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       {MicSource? mic, IsolateSpawner? spawner, MicPermission? micPermission})
       : _mic = mic ?? (() => NativeMic().stream()),
         _spawn = spawner ?? _spawnIsolate,
-        _micPermission = micPermission ?? _ensureMicPermission;
+        _micPermission = micPermission ?? _requestMicPermission;
 
   @protected
   final Logger log;
@@ -243,17 +244,23 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     // refuses to answer) is not a grant. Treat it as a refusal and say so: the
     // alternative is opening the mic on an assumption and going quietly deaf,
     // which is the failure this whole path exists to prevent.
-    var granted = false;
+    var outcome = PermissionOutcome.declined;
     try {
-      granted = await _micPermission();
+      outcome = await _micPermission();
     } catch (e) {
       log.error(tag, 'could not check the microphone permission: $e');
     }
-    if (!granted) {
+    if (outcome != PermissionOutcome.granted) {
+      final blocked = outcome == PermissionOutcome.blocked;
       log.error(
           tag,
-          'microphone permission denied; not starting (Voice Satellite will '
-          'keep browser detection, which prompts for the mic itself)');
+          blocked
+              ? 'microphone blocked: Android will not ask again, so this needs '
+                  'the app settings screen'
+              : 'microphone declined; will ask again on the next config push');
+      onFailure?.call(
+          blocked ? EngineFailure.micBlocked : EngineFailure.micDeclined,
+          'microphone ${blocked ? 'blocked' : 'declined'}');
       return;
     }
 
@@ -262,6 +269,7 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     final payload = await loadModels(config);
     if (payload == null || payload.isEmpty) {
       log.warn(tag, 'no models; not starting');
+      onFailure?.call(EngineFailure.modelsUnavailable, 'no models loaded');
       return;
     }
     _hasStopModel = payload.hasStopModel;
@@ -313,7 +321,8 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     if (!_running) return;
     log.error(tag, 'microphone failed: $e');
     final report = _onFailure;
-    stop().whenComplete(() => report?.call('microphone failed: $e'));
+    stop().whenComplete(
+        () => report?.call(EngineFailure.micLost, 'microphone failed: $e'));
   }
 
   void _onMicChunk(Uint8List bytes) {

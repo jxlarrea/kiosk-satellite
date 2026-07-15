@@ -15,11 +15,33 @@ import 'dart:typed_data';
 typedef DetectionCallback = Future<void> Function(WakeWordModelRef model);
 typedef StopDetectionCallback = Future<void> Function();
 
-/// The engine has stopped working and cannot recover on its own — the mic died
-/// under it, most often. Reported so the manager can tell Voice Satellite it is
-/// no longer covered, rather than leave it trusting a runner that has gone
-/// deaf. [reason] is for the log.
-typedef EngineFailureCallback = void Function(String reason);
+/// Why an engine could not run, or stopped running.
+///
+/// A code rather than a message, because the UI has to *act* on the difference:
+/// a blocked microphone needs a link to the OS settings, a declined one needs a
+/// retry, and a model that would not download needs neither.
+enum EngineFailure {
+  /// The microphone grant was refused, and can be asked for again.
+  micDeclined,
+
+  /// The microphone grant was refused for good; only the OS settings can undo
+  /// it. See [PermissionOutcome.blocked].
+  micBlocked,
+
+  /// The microphone was granted, opened, and then died — permission revoked
+  /// underneath us, or another app took the device.
+  micLost,
+
+  /// No model could be loaded, so there is nothing to listen with.
+  modelsUnavailable,
+}
+
+/// The engine cannot run this config, or can no longer run it.
+///
+/// Reported so the manager can tell Voice Satellite it is not covered, rather
+/// than leave the card trusting a runner that has gone deaf, and so the UIs can
+/// say something truer than "it isn't working". [detail] is for the log.
+typedef EngineFailureCallback = void Function(EngineFailure kind, String detail);
 
 enum WakeWordEngineType { microWakeWord, openWakeWord, vsWakeWord }
 
