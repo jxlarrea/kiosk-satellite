@@ -57,9 +57,16 @@ class MatchResult {
 /// Greedy CTC decode + phoneme matching, ported from Voice Satellite's
 /// `ctc-decoder.js` (greedyDecodeWithConfidence + acceptedMatch + editDistance).
 class CtcDecoder {
-  CtcDecoder(this.ctc);
+  CtcDecoder(this.ctc, {this.confidenceScale = 1.0});
 
   final VswwCtcConfig ctc;
+
+  /// Voice Satellite's Sensitivity setting, resolved by the card into a plain
+  /// multiplier on our confidence gates (see [WakeWordModelRef.confidenceScale]).
+  /// Scales the gate rather than the measured confidence, matching the card's
+  /// browser decoder, so a match is judged against a moved bar and the logged
+  /// confidence still means the same thing.
+  final double confidenceScale;
 
   /// Greedy decode of raw logits, shape [tOut, vocab] row-major.
   CtcDecode decode(Float32List logits, int tOut, int vocab) {
@@ -121,7 +128,7 @@ class CtcDecoder {
     }
 
     void consider(int ti, int start, int winLen, int ed) {
-      final gate = ctc.minConfidenceFor(ti);
+      final gate = ctc.minConfidenceFor(ti) * confidenceScale;
       final mc = meanConf(start, winLen);
       if (mc < gate) return; // confidence gate
       // prefer lower edit distance, then higher confidence

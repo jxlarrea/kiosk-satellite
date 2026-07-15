@@ -40,6 +40,7 @@ class WakeWordModelRef {
     required this.id,
     required this.wakeWord,
     required this.manifestUrl,
+    this.confidenceScale = 1.0,
   });
 
   final String id;
@@ -50,18 +51,88 @@ class WakeWordModelRef {
   /// Absolute URL of the model's JSON manifest on the HA instance.
   final String manifestUrl;
 
-  Map<String, Object?> toJson() =>
-      {'id': id, 'wakeWord': wakeWord, 'manifestUrl': manifestUrl};
+  /// Multiplier for this model's confidence gates, resolved by Voice Satellite
+  /// from its Sensitivity setting.
+  ///
+  /// We deliberately do not know what "Very sensitive" means: that mapping is
+  /// the card's policy and lives there alone, so it can be retuned without an
+  /// app release. All we do is multiply, exactly as the card's own browser
+  /// engine does (min_matched_confidence, each target_min_matched_confidence,
+  /// and runtime.high_confidence_bypass). 1.0 leaves the manifest untouched.
+  final double confidenceScale;
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'wakeWord': wakeWord,
+        'manifestUrl': manifestUrl,
+        'confidenceScale': confidenceScale,
+      };
 
   @override
   bool operator ==(Object other) =>
       other is WakeWordModelRef &&
       other.id == id &&
       other.wakeWord == wakeWord &&
-      other.manifestUrl == manifestUrl;
+      other.manifestUrl == manifestUrl &&
+      other.confidenceScale == confidenceScale;
 
   @override
-  int get hashCode => Object.hash(id, wakeWord, manifestUrl);
+  int get hashCode => Object.hash(id, wakeWord, manifestUrl, confidenceScale);
+}
+
+/// Voice Satellite's energy gate, already resolved to numbers.
+///
+/// Skips inference while the room is quiet, which on an always-listening
+/// tablet is nearly all the time. As with [WakeWordModelRef.confidenceScale],
+/// we are told the thresholds rather than the Sensitivity label or the
+/// noise_gate switch: the policy is the card's.
+class EnergyGateConfig {
+  const EnergyGateConfig({
+    required this.enabled,
+    required this.wakeRms,
+    required this.sleepAfterChunks,
+  });
+
+  /// Off unless the card's noise_gate switch is on.
+  final bool enabled;
+
+  /// Chunk RMS at or above which audio counts as speech.
+  final double wakeRms;
+
+  /// Consecutive sub-threshold chunks before inference sleeps.
+  final int sleepAfterChunks;
+
+  /// A disabled gate: what an older card that sends none implies.
+  static const off =
+      EnergyGateConfig(enabled: false, wakeRms: 0, sleepAfterChunks: 0);
+
+  static EnergyGateConfig fromJson(Object? raw) {
+    if (raw is! Map) return off;
+    final wakeRms = (raw['wakeRms'] as num?)?.toDouble();
+    final sleepAfter = (raw['sleepAfterChunks'] as num?)?.toInt();
+    if (wakeRms == null || sleepAfter == null || sleepAfter <= 0) return off;
+    return EnergyGateConfig(
+      enabled: raw['enabled'] == true,
+      wakeRms: wakeRms,
+      sleepAfterChunks: sleepAfter,
+    );
+  }
+
+  Map<String, Object?> toJson() => {
+        'enabled': enabled,
+        'wakeRms': wakeRms,
+        'sleepAfterChunks': sleepAfterChunks,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is EnergyGateConfig &&
+      other.enabled == enabled &&
+      other.wakeRms == wakeRms &&
+      other.sleepAfterChunks == sleepAfterChunks;
+
+  @override
+  int get hashCode => Object.hash(enabled, wakeRms, sleepAfterChunks);
 }
 
 /// The configuration Voice Satellite pushes: one engine, one or two models
@@ -71,10 +142,14 @@ class WakeWordConfig {
     required this.engine,
     required this.models,
     this.stopModel,
+    this.energyGate = EnergyGateConfig.off,
   });
 
   final WakeWordEngineType engine;
   final List<WakeWordModelRef> models;
+
+  /// Skip-inference-while-quiet policy, resolved by the card.
+  final EnergyGateConfig energyGate;
 
   /// Optional stop-word classifier ("ok_stop"), pushed when Voice Satellite's
   /// stop_word switch is on. Loaded alongside the wake words but only armed
@@ -88,8 +163,14 @@ class WakeWordConfig {
     final wakeWord = raw['wakeWord'];
     final manifestUrl = raw['manifestUrl'];
     if (id is String && wakeWord is String && manifestUrl is String) {
+      final scale = (raw['confidenceScale'] as num?)?.toDouble();
       return WakeWordModelRef(
-          id: id, wakeWord: wakeWord, manifestUrl: manifestUrl);
+        id: id,
+        wakeWord: wakeWord,
+        manifestUrl: manifestUrl,
+        // An older card sends no scale; leave the manifest gates alone.
+        confidenceScale: scale != null && scale > 0 ? scale : 1.0,
+      );
     }
     return null;
   }
@@ -108,6 +189,7 @@ class WakeWordConfig {
       engine: engine,
       models: models,
       stopModel: _refFrom(json['stopModel']),
+      energyGate: EnergyGateConfig.fromJson(json['energyGate']),
     );
   }
 
@@ -119,10 +201,12 @@ class WakeWordConfig {
       other is WakeWordConfig &&
       other.engine == engine &&
       other.stopModel == stopModel &&
+      other.energyGate == energyGate &&
       _listEquals(other.models, models);
 
   @override
-  int get hashCode => Object.hash(engine, stopModel, Object.hashAll(models));
+  int get hashCode =>
+      Object.hash(engine, stopModel, energyGate, Object.hashAll(models));
 
   static bool _listEquals(List<WakeWordModelRef> a, List<WakeWordModelRef> b) {
     if (a.length != b.length) return false;

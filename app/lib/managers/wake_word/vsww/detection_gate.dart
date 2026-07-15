@@ -8,7 +8,13 @@ import 'manifest.dart';
 /// This is a persistent per-keyword state machine: feed it one result per
 /// 80 ms audio chunk, in order.
 class DetectionGate {
-  DetectionGate(this.runtime);
+  DetectionGate(this.runtime, {this.confidenceScale = 1.0});
+
+  /// Sensitivity multiplier from the card, applied to the high-confidence
+  /// bypass for the same reason the CTC gates get it: the bypass is a
+  /// confidence threshold, so leaving it fixed would neutralize the setting at
+  /// the top end (see CtcDecoder.confidenceScale).
+  final double confidenceScale;
 
   final VswwRuntimeConfig runtime;
 
@@ -45,7 +51,8 @@ class DetectionGate {
     _lastTargetIndex = targetIndex;
 
     var trigger = false;
-    final bypass = runtime.highConfidenceBypass;
+    final base = runtime.highConfidenceBypass;
+    final bypass = base == null ? null : base * confidenceScale;
     if (bypass != null &&
         matchedConfidence >= bypass &&
         nextHits >= runtime.highConfidenceBypassMinHits) {

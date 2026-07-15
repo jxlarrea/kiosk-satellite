@@ -170,6 +170,34 @@ void main() {
     });
   });
 
+  group('sensitivity confidence scale', () {
+    // The card resolves its Sensitivity setting to a multiplier and hands it
+    // over; we only multiply. Target 0's gate is 3.2, so a logit of 3.3 sits
+    // just above it at x1.0.
+    final logits = _logitsFor(_ctc.wakeWordTargets[0], 64, 52, logit: 3.3);
+
+    test('x1.0 leaves the manifest gate alone', () {
+      final dec = CtcDecoder(_ctc);
+      expect(dec.match(dec.decode(logits, 64, 52)).matched, isTrue);
+    });
+
+    test('"Slightly sensitive" (x1.10) raises the gate above the match', () {
+      // 3.2 * 1.10 = 3.52 > 3.3 -> rejected.
+      final dec = CtcDecoder(_ctc, confidenceScale: 1.10);
+      expect(dec.match(dec.decode(logits, 64, 52)).matched, isFalse);
+    });
+
+    test('"Very sensitive" (x0.90) lowers the gate under a faint match', () {
+      // 3.2 * 0.90 = 2.88, so a 3.0 logit that misses at x1.0 now matches.
+      final faint = _logitsFor(_ctc.wakeWordTargets[0], 64, 52, logit: 3.0);
+      expect(CtcDecoder(_ctc).match(
+        CtcDecoder(_ctc).decode(faint, 64, 52),
+      ).matched, isFalse);
+      final dec = CtcDecoder(_ctc, confidenceScale: 0.90);
+      expect(dec.match(dec.decode(faint, 64, 52)).matched, isTrue);
+    });
+  });
+
   group('wake-end alignment', () {
     final dec = CtcDecoder(_ctc);
 

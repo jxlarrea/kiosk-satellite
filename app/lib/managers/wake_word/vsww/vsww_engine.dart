@@ -117,6 +117,7 @@ class VswwEngine extends WakeWordEngine {
           'wakeWord': ref.wakeWord,
           'manifestJson': model.manifestJson,
           'onnx': model.onnxBytes,
+          'confidenceScale': ref.confidenceScale,
         });
         _log.info('vsww', 'downloaded "${ref.id}" (${model.onnxBytes.length} bytes)');
       } catch (e) {
@@ -136,6 +137,7 @@ class VswwEngine extends WakeWordEngine {
           'wakeWord': stopRef.wakeWord,
           'manifestJson': model.manifestJson,
           'onnx': model.onnxBytes,
+          'confidenceScale': stopRef.confidenceScale,
           'stop': true,
         });
         _hasStopModel = true;
@@ -158,7 +160,11 @@ class VswwEngine extends WakeWordEngine {
         onError: _fromIsolate!.sendPort, debugName: 'vsww');
 
     // _onIsolateMessage sends init once it has the isolate's port.
-    _pendingInit = {'type': VswwMsg.init, 'models': models};
+    _pendingInit = {
+      'type': VswwMsg.init,
+      'models': models,
+      'energyGate': config.energyGate.toJson(),
+    };
 
     final ready = await _ready!.future
         .timeout(const Duration(seconds: 20), onTimeout: () => false);

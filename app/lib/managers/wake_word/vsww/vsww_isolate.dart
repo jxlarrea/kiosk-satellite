@@ -103,6 +103,18 @@ class _IsolateWorker {
   bool _detected = false;
   bool _stopArmed = false;
 
+  // Energy gate: the card's "skip inference while the room is quiet" policy,
+  // handed to us as plain numbers. Inference is the entire cost here (log-mel
+  // + ONNX); the ring write is a memcpy. So we gate only _infer() and keep the
+  // ring filling, which means the sample clock never skips, the pre-roll stays
+  // continuous, and waking needs no replay buffer: the last 1.3s of audio is
+  // already in the window.
+  bool _energyEnabled = false;
+  double _wakeRms = 0;
+  int _sleepAfterChunks = 0;
+  bool _sleeping = false;
+  int _silentChunks = 0;
+
   void _log(String level, String message) =>
       _main.send({'type': VswwMsg.log, 'level': level, 'message': message});
 
@@ -116,6 +128,12 @@ class _IsolateWorker {
   void init(Map msg) {
     try {
       ensureOrtInit();
+      final gate = msg['energyGate'];
+      if (gate is Map && gate['enabled'] == true) {
+        _energyEnabled = true;
+        _wakeRms = (gate['wakeRms'] as num).toDouble();
+        _sleepAfterChunks = (gate['sleepAfterChunks'] as num).toInt();
+      }
       for (final md in (msg['models'] as List)) {
         final manifest = VswwManifest.fromJson(
             jsonDecode(md['manifestJson'] as String) as Map<String, dynamic>);
@@ -131,7 +149,9 @@ class _IsolateWorker {
           ..setIntraOpNumThreads(1)
           ..setInterOpNumThreads(1);
         final session = OrtSession.fromBuffer(md['onnx'] as Uint8List, opts);
-        final decoder = CtcDecoder(manifest.ctc);
+        // The card's Sensitivity setting, already resolved to a multiplier.
+        final scale = (md['confidenceScale'] as num?)?.toDouble() ?? 1.0;
+        final decoder = CtcDecoder(manifest.ctc, confidenceScale: scale);
         final isStop = md['stop'] == true;
         _kws.add(_Kw(
           md['id'] as String,
@@ -141,11 +161,14 @@ class _IsolateWorker {
           session.inputNames.first,
           decoder,
           StreamMatcher(manifest, decoder),
-          DetectionGate(manifest.runtime),
+          DetectionGate(manifest.runtime, confidenceScale: scale),
           isStop: isStop,
         ));
         _feature ??= manifest.feature;
-        _log('info', 'loaded "${md['id']}"${isStop ? ' (stop classifier)' : ''}');
+        _log(
+            'info',
+            'loaded "${md['id']}"${isStop ? ' (stop classifier)' : ''}'
+            '${scale == 1.0 ? '' : ', conf gate scale x${scale.toStringAsFixed(2)}'}');
       }
       if (_kws.isEmpty) {
         _main.send({'type': VswwMsg.error, 'message': 'no models loaded'});
@@ -155,6 +178,11 @@ class _IsolateWorker {
       _extractor = LogMelExtractor(f);
       _ring = Float32List(f.windowSamples);
       _scratch = Float32List(f.windowSamples);
+      _log(
+          'info',
+          _energyEnabled
+              ? 'energy gate on (wake rms $_wakeRms, sleep after $_sleepAfterChunks quiet chunks)'
+              : 'energy gate off');
       _main.send({'type': VswwMsg.ready});
     } catch (e) {
       _main.send({'type': VswwMsg.error, 'message': '$e'});
@@ -195,7 +223,52 @@ class _IsolateWorker {
     _samplesSinceInfer += chunk.length;
     _absSamples += chunk.length;
     _epochMs += 80;
-    if (_filled >= n) _infer(); // synchronous — we are already off the UI
+    // The ring is always fed; only the expensive part is gated.
+    if (_filled >= n && _shouldInfer(chunk)) {
+      _infer(); // synchronous — we are already off the UI
+    }
+  }
+
+  /// The card's energy gate: is this chunk worth running inference on?
+  ///
+  /// Mirrors the browser engine's gate (sleep after N consecutive chunks below
+  /// the wake RMS, resume on the first chunk at or above it), minus its replay
+  /// buffer, which exists because its inference owns the audio window. Ours is
+  /// external and never stopped filling, so on wake the window already holds
+  /// the last 1.3 s including whatever just got loud.
+  bool _shouldInfer(Float32List chunk) {
+    if (!_energyEnabled) return true;
+    final rms = _rms(chunk);
+    if (_sleeping) {
+      if (rms < _wakeRms) return false;
+      _sleeping = false;
+      _silentChunks = 0;
+      _log('info', 'energy gate: awake (rms ${rms.toStringAsFixed(4)})');
+      return true;
+    }
+    if (rms >= _wakeRms) {
+      _silentChunks = 0;
+      return true;
+    }
+    _silentChunks++;
+    if (_silentChunks < _sleepAfterChunks) return true;
+    _sleeping = true;
+    // Drop detector state with the audio we are about to stop scoring, so a
+    // pre-silence fragment cannot pair up with post-silence speech.
+    for (final k in _kws) {
+      k.stream.reset();
+      k.gate.reset();
+    }
+    _log('info', 'energy gate: asleep (rms ${rms.toStringAsFixed(4)})');
+    return false;
+  }
+
+  static double _rms(Float32List samples) {
+    var sum = 0.0;
+    for (var i = 0; i < samples.length; i++) {
+      sum += samples[i] * samples[i];
+    }
+    return math.sqrt(sum / samples.length);
   }
 
   void _infer() {
