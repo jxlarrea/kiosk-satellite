@@ -1,3 +1,6 @@
+import 'package:flutter/services.dart';
+
+import '../../core/command_registry.dart';
 import '../../core/manager.dart';
 import '../settings/settings_manager.dart';
 
@@ -21,8 +24,18 @@ class KioskManager extends Manager {
 
   @override
   Future<void> init() async {
+    commands.register(Command(
+      name: 'exitApp',
+      description: 'Close Kiosk Satellite',
+      handler: (_) async {
+        log.info(name, 'exiting application');
+        await SystemNavigator.pop();
+        return const CommandResult.ok();
+      },
+    ));
+
     // TODO(milestone-3): platform channels for lock task / screen pinning,
-    // BOOT_COMPLETED autostart, exit PIN gate for the local settings UI.
+    // BOOT_COMPLETED autostart, exit PIN gate for the menu and settings.
     log.info(name, 'lockdown not yet implemented');
   }
 }

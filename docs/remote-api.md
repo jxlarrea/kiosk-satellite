@@ -11,6 +11,18 @@ On iOS the server runs while the app is foreground — always true in kiosk use.
 Devices advertise over mDNS as `_kiosksatellite._tcp` for discovery (and a
 future multi-device fleet view).
 
+## Enabling
+
+The server starts only when `remote.enabled` is on **and** `remote.password`
+is set. Three ways to get there: the setup wizard's optional admin-password
+field, Settings → Remote on the device (swipe from the left edge → Settings),
+or an Android provisioning intent:
+
+```sh
+adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
+  --es ks.provision '"{\"remote.enabled\":true,\"remote.password\":\"secret\"}"'
+```
+
 ## Authentication
 
 - A device password (set in the wizard; required before the server starts).

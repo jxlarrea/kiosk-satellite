@@ -57,11 +57,28 @@ class DeviceManager extends Manager {
     ));
   }
 
+  /// First non-loopback IPv4 address, or null (e.g. no network).
+  Future<String?> ipAddress() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+          type: InternetAddressType.IPv4, includeLoopback: false);
+      for (final interface in interfaces) {
+        for (final address in interface.addresses) {
+          return address.address;
+        }
+      }
+    } catch (e) {
+      log.warn(name, 'ipAddress failed: $e');
+    }
+    return null;
+  }
+
   Future<Map<String, Object?>> info() async {
     final level = await _battery.batteryLevel;
     final state = await _battery.batteryState;
     return {
       'name': deviceName,
+      'ip': await ipAddress(),
       'model': model,
       'os': os,
       'osVersion': osVersion,

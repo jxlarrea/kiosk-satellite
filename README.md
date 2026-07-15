@@ -36,6 +36,22 @@ engine itself is next).
 - [JavaScript API](docs/js-api.md) — `window.kioskSatellite`, wake-word handoff protocol
 - [Remote API](docs/remote-api.md) — REST + WebSocket surface
 
+## Using the kiosk
+
+- **Menu on the device**: **swipe from the left edge** (like Fully Kiosk) —
+  Home, Settings, Web Console, Log out, Exit Application.
+- **Remote management**: set an admin password (setup wizard or Settings →
+  Remote), then browse to `http://<device-ip>:2323`. The REST API lives under
+  `/api/` (see [docs/remote-api.md](docs/remote-api.md)).
+- **Provisioning via adb/MDM** (no UI):
+
+  ```sh
+  adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
+    --es ks.provision '"{\"remote.enabled\":true,\"remote.password\":\"secret\"}"'
+  ```
+
+  Keys are the same as the remote API's settings import.
+
 ## Development
 
 ```sh

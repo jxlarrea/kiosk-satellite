@@ -28,6 +28,7 @@ class _SetupScreenState extends State<SetupScreen> {
   final _startUrl = TextEditingController();
   final _haUrl = TextEditingController();
   final _haToken = TextEditingController();
+  final _remotePassword = TextEditingController();
 
   List<Map<String, Object?>>? _dashboards;
   String? _selectedDashboard;
@@ -78,10 +79,15 @@ class _SetupScreenState extends State<SetupScreen> {
       }
       url = '${c.homeAssistant.baseUrl}/$_selectedDashboard';
     }
+    final remotePassword = _remotePassword.text;
+    if (remotePassword.isNotEmpty) {
+      await c.settings.set(defs.remotePassword, remotePassword);
+      await c.settings.set(defs.remoteEnabled, true);
+    }
     await c.settings.set(defs.startUrl, url);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
-      builder: (_) => KioskScreen(container: c),
+      builder: (_) => KioskScreen(container: c, showMenuHint: true),
     ));
   }
 
@@ -177,6 +183,16 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                 ],
               ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _remotePassword,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Remote admin password (optional)',
+                  helperText:
+                      'Enables the web admin at http://<device-ip>:2323',
+                ),
+              ),
               if (_status != null) ...[
                 const SizedBox(height: 16),
                 Text(
@@ -214,6 +230,7 @@ class _SetupScreenState extends State<SetupScreen> {
     _startUrl.dispose();
     _haUrl.dispose();
     _haToken.dispose();
+    _remotePassword.dispose();
     super.dispose();
   }
 }

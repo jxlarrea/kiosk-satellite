@@ -7,15 +7,22 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
-import 'settings_screen.dart';
+import 'kiosk_drawer.dart';
 
 /// The kiosk itself: a fullscreen WebView with the JS bridge, the
-/// screensaver overlay, and a hidden settings gesture (5 taps in the
-/// top-left corner).
+/// screensaver overlay, and a slide-out menu (swipe from the left edge —
+/// Fully Kiosk behavior).
 class KioskScreen extends StatefulWidget {
-  const KioskScreen({super.key, required this.container});
+  const KioskScreen({
+    super.key,
+    required this.container,
+    this.showMenuHint = false,
+  });
 
   final AppContainer container;
+
+  /// Show the menu-gesture hint once (set when arriving from the wizard).
+  final bool showMenuHint;
 
   @override
   State<KioskScreen> createState() => _KioskScreenState();
@@ -24,8 +31,20 @@ class KioskScreen extends StatefulWidget {
 class _KioskScreenState extends State<KioskScreen> {
   AppContainer get c => widget.container;
 
-  int _cornerTaps = 0;
-  DateTime _lastCornerTap = DateTime.fromMillisecondsSinceEpoch(0);
+  @override
+  void initState() {
+    super.initState();
+    if (widget.showMenuHint) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Tip: swipe from the left edge to open the menu'),
+          duration: Duration(seconds: 10),
+          behavior: SnackBarBehavior.floating,
+        ));
+      });
+    }
+  }
 
   String get _initialUrl {
     var url = c.settings.get(defs.startUrl);
@@ -48,36 +67,15 @@ class _KioskScreenState extends State<KioskScreen> {
     ];
   }
 
-  void _onPointerDown(PointerDownEvent event) {
-    c.bus.publish(const ActivityDetected(source: 'touch'));
-
-    // Hidden settings gesture: 5 quick taps in the top-left corner.
-    final inCorner = event.position.dx < 100 && event.position.dy < 100;
-    final now = DateTime.now();
-    if (inCorner && now.difference(_lastCornerTap).inSeconds < 2) {
-      _cornerTaps++;
-      if (_cornerTaps >= 5) {
-        _cornerTaps = 0;
-        _openSettings();
-      }
-    } else {
-      _cornerTaps = inCorner ? 1 : 0;
-    }
-    _lastCornerTap = now;
-  }
-
-  void _openSettings() {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => SettingsScreen(container: c),
-    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      drawer: KioskDrawer(container: c),
+      drawerEdgeDragWidth: 48,
       body: Listener(
-        onPointerDown: _onPointerDown,
+        onPointerDown: (_) =>
+            c.bus.publish(const ActivityDetected(source: 'touch')),
         child: Stack(
           children: [
             InAppWebView(

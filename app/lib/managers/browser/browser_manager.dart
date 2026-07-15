@@ -68,6 +68,18 @@ class BrowserManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'logout',
+        description:
+            'Clear cookies and web storage, then reload the start URL',
+        handler: (_) async {
+          await CookieManager.instance().deleteAllCookies();
+          await WebStorageManager.instance().deleteAllData();
+          await InAppWebViewController.clearAllCache();
+          if (startUrl.isNotEmpty) await loadUrl(startUrl);
+          return const CommandResult.ok();
+        },
+      ))
+      ..register(Command(
         name: 'screenshot',
         description: 'Capture the current page as a base64 PNG',
         handler: (_) async {
