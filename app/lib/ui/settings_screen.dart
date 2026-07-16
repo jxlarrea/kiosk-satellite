@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/settings/definitions.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../core/permissions.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/engine.dart';
 
@@ -399,6 +402,7 @@ class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
     with WidgetsBindingObserver {
   bool? _canBringToFront;
   bool? _batteryUnrestricted;
+  bool? _canNotify;
 
   @override
   void initState() {
@@ -424,16 +428,19 @@ class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
     try {
       final front = await BackgroundListening.canBringToFront();
       final battery = await BackgroundListening.isBatteryUnrestricted();
+      final notify = await Permission.notification.isGranted;
       if (!mounted) return;
       setState(() {
         _canBringToFront = front;
         _batteryUnrestricted = battery;
+        _canNotify = notify;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _canBringToFront = null;
         _batteryUnrestricted = null;
+        _canNotify = null;
       });
     }
   }
@@ -458,6 +465,31 @@ class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
               ? null
               : TextButton(
                   onPressed: BackgroundListening.requestBringToFront,
+                  child: const Text('Grant'),
+                ),
+        ),
+        // Android 13+ denies notifications by default, and a foreground service
+        // whose notification is denied still runs — silently. A tablet
+        // listening to a room with no sign that it is doing so is not something
+        // to ship, so this is a grant, not a nicety.
+        ListTile(
+          leading: Icon(
+            _canNotify == true
+                ? Icons.check_circle_outline
+                : Icons.notifications_off_outlined,
+            color: _canNotify == true ? null : theme.colorScheme.error,
+          ),
+          title: const Text('Listening notification'),
+          subtitle: Text(_canNotify == true
+              ? 'The device shows that it is listening.'
+              : 'Without this it listens with nothing on screen to say so.'),
+          trailing: _canNotify == true
+              ? null
+              : TextButton(
+                  onPressed: () async {
+                    await ensureOsPermission(Permission.notification);
+                    await _refresh();
+                  },
                   child: const Text('Grant'),
                 ),
         ),
