@@ -50,7 +50,7 @@ class KioskDrawer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 18),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
                 child: Row(
                   children: [
                     Icon(
@@ -188,13 +188,15 @@ class KioskDrawer extends StatelessWidget {
                       // carries the tap-to-copy version.
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                        child: Text(
-                          'Device ID: ${c.device.deviceId}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 11,
-                            letterSpacing: 0.4,
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.6),
+                        child: Center(
+                          child: Text(
+                            'Device ID: ${c.device.deviceId}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              letterSpacing: 0.4,
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.6),
+                            ),
                           ),
                         ),
                       ),
