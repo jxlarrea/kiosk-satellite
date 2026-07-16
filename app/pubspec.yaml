@@ -59,3 +59,10 @@ flutter:
   assets:
     - assets/remote-ui/index.html
     - assets/screensaver/index.html
+  fonts:
+    # Rubik (SIL Open Font License) — an open geometric sans that gives the
+    # clock the clean, friendly feel of Google Sans without the licensing.
+    # The TTF carries a `wght` axis, so w300/w400 in TextStyle map to it.
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik.ttf

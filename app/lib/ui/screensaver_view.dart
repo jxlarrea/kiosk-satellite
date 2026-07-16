@@ -170,6 +170,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
               Text(
                 _time(),
                 style: TextStyle(
+                  fontFamily: 'Rubik',
                   color: color,
                   fontSize: clockSize,
                   fontWeight: FontWeight.w300,
@@ -183,6 +184,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                 Text(
                   _date(),
                   style: TextStyle(
+                    fontFamily: 'Rubik',
                     // The date sits back a little, as in VS (~65% of the clock).
                     color: color.withValues(alpha: 0.65),
                     fontSize: dateSize,
