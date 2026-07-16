@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import '../app_container.dart';
 import '../core/events.dart';
@@ -431,6 +432,36 @@ class _CategoryContentState extends State<_CategoryContent> {
           _defsFor(widget.category),
           () => setState(() {}),
         ),
+        // Not a setting — the device's licensing identity, derived, never
+        // chosen (see DeviceManager.deviceId). It lives with the Device
+        // rows because "which device is this" is the question both answer.
+        if (widget.category == 'Device')
+          _SettingsCard(
+            children: [
+              ListTile(
+                title: const Text('Device ID'),
+                subtitle: const Text(
+                  'Identifies this device for licensing. Tap to copy.',
+                ),
+                trailing: Text(
+                  container.device.deviceId,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 15),
+                ),
+                onTap: () {
+                  Clipboard.setData(
+                    ClipboardData(text: container.device.deviceId),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Device ID copied'),
+                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         if (widget.category == 'Home Assistant') ...[
           FutureBuilder<bool>(
             future: _vsDetected,

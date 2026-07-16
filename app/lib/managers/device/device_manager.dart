@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show Random;
 
 import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'package:battery_plus/battery_plus.dart';
+import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -27,6 +30,15 @@ class DeviceManager extends Manager {
   late final String appVersion;
   late final String packageName;
   late final String buildNumber;
+
+  /// The licensing Device ID, `XXXX-XXXX-XXXX-XXXX`.
+  ///
+  /// Derived (hashed) from the SSAID, so it survives a reinstall and even a
+  /// cleared app storage — a license bound to it stays bound to the device.
+  /// Where the platform has no SSAID the seed is random and persisted
+  /// instead, which is as stable as the app's data. The raw SSAID never
+  /// leaves the device; only the hash does.
+  late final String deviceId;
 
   /// Android API level, or null off Android. Worth reporting: most of what
   /// bites a kiosk on this platform is versioned by it, not by the marketing
@@ -68,7 +80,8 @@ class DeviceManager extends Manager {
       model = Platform.operatingSystem;
       osVersion = Platform.operatingSystemVersion;
     }
-    log.info(name, '$model, $osVersion, app $appVersion');
+    deviceId = await _deriveDeviceId();
+    log.info(name, '$model, $osVersion, app $appVersion, id $deviceId');
 
     commands.register(
       Command(
@@ -99,6 +112,30 @@ class DeviceManager extends Manager {
         handler: (_) async => CommandResult.ok(await stats()),
       ),
     );
+  }
+
+  Future<String> _deriveDeviceId() async {
+    var seed = await DeviceDetails.androidId();
+    if (seed == null || seed.isEmpty) {
+      // No SSAID to derive from: fall back to a random seed persisted with
+      // the settings. Weaker (cleared app data mints a new identity), but
+      // only reachable off Android.
+      seed = await _settings.secret('device_id_seed', () {
+        final random = Random.secure();
+        return base64Url.encode(
+          List<int>.generate(16, (_) => random.nextInt(256)),
+        );
+      });
+    }
+    // Salted so the ID is this app's identity, not a re-usable device
+    // fingerprint; 64 bits of the digest is plenty to never collide across
+    // any realistic install base and stays short enough to read out loud.
+    final digest = sha256.convert(utf8.encode('kiosk-satellite:$seed')).bytes;
+    final hex = [
+      for (final b in digest.take(8))
+        b.toRadixString(16).padLeft(2, '0').toUpperCase(),
+    ].join();
+    return [for (var i = 0; i < 16; i += 4) hex.substring(i, i + 4)].join('-');
   }
 
   /// The three live numbers the admin header shows. Its own read because the
@@ -168,6 +205,7 @@ class DeviceManager extends Manager {
     return {
       ...await stats(),
       'name': deviceName,
+      'deviceId': deviceId,
       'ip': await ipAddress(),
       'ipv6': await ipv6Addresses(),
       'model': model,

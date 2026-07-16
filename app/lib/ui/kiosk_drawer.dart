@@ -182,7 +182,7 @@ class KioskDrawer extends StatelessWidget {
               // without a trip into Settings; it applies live (main.dart
               // listens for the setting) and the drawer stays open.
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
                 child: Center(
                   child: SegmentedButton<String>(
                     showSelectedIcon: false,
@@ -216,6 +216,23 @@ class KioskDrawer extends StatelessWidget {
                     onSelectionChanged: (selection) => c.settings.setFromJson(
                       defs.uiTheme.key,
                       selection.first,
+                    ),
+                  ),
+                ),
+              ),
+              // The licensing Device ID, whispered at the very foot: findable
+              // when support asks for it, invisible until then. The Device
+              // settings page carries the readable, tap-to-copy version.
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  c.device.deviceId,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    letterSpacing: 0.6,
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.6,
                     ),
                   ),
                 ),

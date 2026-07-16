@@ -688,6 +688,9 @@ async function loadDeviceInfo() {
 
   card('Device', [
     ['Device name', or(info?.name)],
+    // The licensing identity — derived on the device, stable across
+    // reinstalls (see DeviceManager.deviceId).
+    ['Device ID', or(info?.deviceId)],
     ['Device model', det?.brand && det?.brand !== det?.manufacturer
       ? `${or(info?.model)} (${det.brand})` : or(info?.model)],
     ['Android version', `${or(info?.osVersion)}${info?.sdkInt ? ` (SDK ${info.sdkInt})` : ''}`],

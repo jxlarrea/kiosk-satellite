@@ -7,6 +7,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.StatFs
+import android.provider.Settings
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import io.flutter.plugin.common.BinaryMessenger
@@ -38,6 +39,12 @@ class DeviceDetails(
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "read" -> result.success(read())
+                // The SSAID: stable per device + app signing key, surviving
+                // reinstalls (a factory reset changes it). The seed for the
+                // licensing Device ID — a value that has to outlive app data.
+                "androidId" -> result.success(
+                    Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                )
                 // Dozens of sysfs reads, polled every few seconds while an
                 // admin tab is open — off the main thread, so a stats tick
                 // can never cost the UI a frame.

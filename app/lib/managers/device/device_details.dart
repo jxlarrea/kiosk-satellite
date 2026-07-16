@@ -23,6 +23,17 @@ class DeviceDetails {
     }
   }
 
+  /// The SSAID — stable per device and app signing key, surviving app
+  /// reinstalls (only a factory reset changes it). Null off Android or when
+  /// the platform declines. The seed for the licensing Device ID.
+  static Future<String?> androidId() async {
+    try {
+      return await _channel.invokeMethod<String>('androidId');
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Live CPU load (`usage`, 0-100) and temperature (`temp`, °C). Either is
   /// null when the platform declines; the whole map is empty off-Android.
   static Future<Map<String, Object?>> cpu() async {
@@ -64,18 +75,18 @@ class DeviceDetails {
   String? get webviewVersion => _map('webview')?['version'] as String?;
 
   Map<String, Object?> toJson() => {
-        'brand': brand,
-        'manufacturer': manufacturer,
-        'model': model,
-        'androidBuild': androidBuild,
-        'fingerprint': fingerprint,
-        'ram': {'free': ramFree, 'total': ramTotal, 'low': ramLow},
-        'storage': {'free': storageFree, 'total': storageTotal},
-        'screen': {
-          'width': screenWidth,
-          'height': screenHeight,
-          'density': screenDensity,
-        },
-        'webview': {'package': webviewPackage, 'version': webviewVersion},
-      };
+    'brand': brand,
+    'manufacturer': manufacturer,
+    'model': model,
+    'androidBuild': androidBuild,
+    'fingerprint': fingerprint,
+    'ram': {'free': ramFree, 'total': ramTotal, 'low': ramLow},
+    'storage': {'free': storageFree, 'total': storageTotal},
+    'screen': {
+      'width': screenWidth,
+      'height': screenHeight,
+      'density': screenDensity,
+    },
+    'webview': {'package': webviewPackage, 'version': webviewVersion},
+  };
 }
