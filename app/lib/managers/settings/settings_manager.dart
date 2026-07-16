@@ -98,7 +98,7 @@ class SettingsManager extends Manager {
     // A dependency that does not exist is a typo in the definitions, and
     // hiding the row would hide the evidence.
     if (dep == null) return true;
-    return get(dep) == true;
+    return get(dep) == def.dependsOnValue;
   }
 
   List<Map<String, Object?>> describe() => [
@@ -112,6 +112,7 @@ class SettingsManager extends Manager {
             // The remote admin renders these too, and must hide what the
             // device hides.
             if (def.dependsOn != null) 'dependsOn': def.dependsOn,
+            if (def.dependsOn != null) 'dependsOnValue': def.dependsOnValue,
             if (def.options != null) 'options': def.options,
             'default': def.secret ? null : def.defaultValue,
             'value': def.secret

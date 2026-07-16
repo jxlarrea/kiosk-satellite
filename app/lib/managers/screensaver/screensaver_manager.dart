@@ -30,8 +30,11 @@ class ScreensaverManager extends Manager {
   bool _paused = false;
   double? _savedBrightness;
 
-  /// The UI layer renders a black, tap-to-dismiss overlay while true.
-  final ValueNotifier<bool> overlayActive = ValueNotifier(false);
+  /// The visual overlay the UI should render, or null for none.
+  ///
+  /// One of 'black' | 'clock' | 'media' | 'website'. The 'dim' mode sets no
+  /// view — it only lowers the backlight — so this stays null there.
+  final ValueNotifier<String?> activeView = ValueNotifier(null);
 
   bool get isActive => _active;
 
@@ -104,16 +107,23 @@ class ScreensaverManager extends Manager {
     final mode = _settings.get(defs.screensaverMode);
     log.info(name, 'start ($mode)');
 
-    final brightness =
-        await commands.execute('getBrightness', const {});
-    _savedBrightness = (brightness.data as num?)?.toDouble();
-
-    if (mode == 'black') {
-      overlayActive.value = true;
-      await commands.execute('screenOff', const {});
-    } else {
-      final dim = _settings.get(defs.screensaverDimLevel).toDouble();
-      await commands.execute('setBrightness', {'level': dim});
+    switch (mode) {
+      case 'dim':
+        // Backlight only — no overlay. Save the level so stop() can restore it.
+        final brightness = await commands.execute('getBrightness', const {});
+        _savedBrightness = (brightness.data as num?)?.toDouble();
+        final dim = _settings.get(defs.screensaverDimLevel).toDouble();
+        await commands.execute('setBrightness', {'level': dim});
+      case 'black':
+        // The panel off *is* the black, and it saves the backlight. The overlay
+        // is the catch: if the OS refuses screenOff, the black Container still
+        // covers whatever is behind it.
+        activeView.value = 'black';
+        await commands.execute('screenOff', const {});
+      default:
+        // clock / media / website: a lit overlay showing content. The screen
+        // stays at its normal brightness — dimming a clock to 10% defeats it.
+        activeView.value = mode;
     }
     bus.publish(const ScreensaverStateChanged(active: true));
   }
@@ -122,10 +132,11 @@ class ScreensaverManager extends Manager {
     if (!_active) return;
     _active = false;
     log.info(name, 'stop');
-    overlayActive.value = false;
+    activeView.value = null;
     await commands.execute('screenOn', const {});
     if (_savedBrightness != null) {
       await commands.execute('setBrightness', {'level': _savedBrightness});
+      _savedBrightness = null;
     }
     bus.publish(const ScreensaverStateChanged(active: false));
   }
@@ -133,6 +144,6 @@ class ScreensaverManager extends Manager {
   @override
   Future<void> dispose() async {
     _idleTimer?.cancel();
-    overlayActive.dispose();
+    activeView.dispose();
   }
 }

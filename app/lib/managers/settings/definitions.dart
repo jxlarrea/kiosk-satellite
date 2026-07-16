@@ -18,6 +18,7 @@ class SettingDef<T> {
     this.options,
     this.secret = false,
     this.dependsOn,
+    this.dependsOnValue = true,
   });
 
   final String key;
@@ -33,15 +34,20 @@ class SettingDef<T> {
   /// Secrets are write-only over the remote API and masked in exports.
   final bool secret;
 
-  /// Key of a boolean setting this one only makes sense under. Hidden — not
-  /// disabled — while that setting is off: a control that cannot do anything is
-  /// noise, and explaining why it is greyed out costs more words than it saves.
+  /// Key of another setting this one only makes sense under. Hidden — not
+  /// disabled — unless that setting equals [dependsOnValue]: a control that
+  /// cannot do anything is noise, and explaining why it is greyed out costs
+  /// more words than it saves.
   ///
   /// Declared here rather than in a screen because there are two screens. The
   /// on-device settings and the remote admin both render from these
   /// definitions, and a rule that lives in one of them is a rule the other
   /// breaks.
   final String? dependsOn;
+
+  /// The value [dependsOn] must hold. Defaults to `true` for the common
+  /// boolean-switch case; set to a string to gate on a mode select.
+  final Object dependsOnValue;
 }
 
 // ── Browser ────────────────────────────────────────────────────────────
@@ -182,11 +188,144 @@ const screensaverTimeoutSeconds = SettingDef<num>(
 const screensaverMode = SettingDef<String>(
   key: 'screensaver.mode',
   type: SettingType.select,
-  defaultValue: 'dim',
+  defaultValue: 'black',
   title: 'Screensaver mode',
-  description: 'What the screensaver shows.',
+  description: 'What the screensaver shows. The last three mirror Voice '
+      'Satellite; "dim" only lowers the backlight and is the lightest.',
   category: 'Screensaver',
-  options: ['dim', 'black'],
+  options: ['dim', 'black', 'clock', 'media', 'website'],
+);
+
+// ── Clock (mode: clock) ──
+
+const screensaverClock24h = SettingDef<bool>(
+  key: 'screensaver.clock_24h',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: '24-hour clock',
+  description: 'Show a 24-hour time instead of AM/PM.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
+const screensaverClockSeconds = SettingDef<bool>(
+  key: 'screensaver.clock_seconds',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show seconds',
+  description: 'Include seconds in the clock.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
+const screensaverClockDate = SettingDef<bool>(
+  key: 'screensaver.clock_show_date',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show date',
+  description: 'Show the weekday and date under the clock.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
+const screensaverClockScale = SettingDef<num>(
+  key: 'screensaver.clock_scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Clock size (%)',
+  description: 'Scale the clock from 50 to 300 percent for this screen.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
+const screensaverClockColor = SettingDef<String>(
+  key: 'screensaver.clock_color',
+  type: SettingType.string,
+  // "r,g,b", to match Voice Satellite's stored colour. A string rather than a
+  // colour picker because the settings layer has no colour type and a diagnostic
+  // triplet is legible enough.
+  defaultValue: '250,250,250',
+  title: 'Clock colour (r,g,b)',
+  description: 'Text colour as three 0-255 values, e.g. 250,250,250.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
+// ── Media (mode: media) ──
+
+const screensaverMediaId = SettingDef<String>(
+  key: 'screensaver.media_id',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Media',
+  description: 'A Home Assistant media item, folder, or camera. Use Browse to '
+      'pick one.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'media',
+);
+
+const screensaverMediaInterval = SettingDef<num>(
+  key: 'screensaver.media_interval_seconds',
+  type: SettingType.number,
+  defaultValue: 10,
+  title: 'Seconds per image',
+  description: 'How long each image shows before the next. Videos play in full.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'media',
+);
+
+const screensaverMediaShuffle = SettingDef<bool>(
+  key: 'screensaver.media_shuffle',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Shuffle',
+  description: 'Play a folder in random order.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'media',
+);
+
+const screensaverMediaRecursive = SettingDef<bool>(
+  key: 'screensaver.media_recursive',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Include subfolders',
+  description: 'Descend into subfolders when a folder is chosen.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'media',
+);
+
+// ── Website (mode: website) ──
+
+const screensaverWebsiteUrl = SettingDef<String>(
+  key: 'screensaver.website_url',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Website URL',
+  description: 'A page to show full-screen. It must allow being embedded.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'website',
+);
+
+// ── Burn-in ──
+
+const screensaverPixelShift = SettingDef<bool>(
+  key: 'screensaver.pixel_shift',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Pixel shift',
+  description: 'Nudge the image every minute to protect OLED panels. Not for '
+      'the black screensaver, whose pixels are already off.',
+  category: 'Screensaver',
 );
 
 const screensaverDimLevel = SettingDef<num>(
@@ -196,6 +335,8 @@ const screensaverDimLevel = SettingDef<num>(
   title: 'Dim level',
   description: 'Brightness (0..1) while the screensaver is dimming.',
   category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'dim',
 );
 
 const screensaverDismissOnMotion = SettingDef<bool>(
@@ -350,6 +491,17 @@ const List<SettingDef<Object>> allSettings = [
   screensaverTimeoutSeconds,
   screensaverMode,
   screensaverDimLevel,
+  screensaverClock24h,
+  screensaverClockSeconds,
+  screensaverClockDate,
+  screensaverClockScale,
+  screensaverClockColor,
+  screensaverMediaId,
+  screensaverMediaInterval,
+  screensaverMediaShuffle,
+  screensaverMediaRecursive,
+  screensaverWebsiteUrl,
+  screensaverPixelShift,
   screensaverDismissOnMotion,
   motionEnabled,
   wakeWordEnabled,

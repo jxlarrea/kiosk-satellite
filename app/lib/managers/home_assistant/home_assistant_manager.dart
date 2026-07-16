@@ -139,6 +139,25 @@ class HomeAssistantManager extends Manager {
   }
 
   /// Single authenticated websocket round-trip.
+  /// Browse a Home Assistant media node (`media_source/browse_media`). Null
+  /// [mediaContentId] is the root of every media source, including the
+  /// synthetic `camera` source that lists camera entities. Returns the raw node
+  /// (`title`, `media_content_id`, `can_play`, `can_expand`, `children`), or
+  /// null on failure.
+  Future<Map<String, Object?>?> browseMedia([String? mediaContentId]) async {
+    if (!configured) return null;
+    try {
+      final result = await _wsCommand({
+        'type': 'media_source/browse_media',
+        if (mediaContentId != null) 'media_content_id': mediaContentId,
+      });
+      return result is Map ? result.cast<String, Object?>() : null;
+    } catch (e) {
+      log.warn(name, 'browseMedia failed: $e');
+      return null;
+    }
+  }
+
   Future<Object?> _wsCommand(Map<String, Object?> command) async {
     final wsBase = baseUrl
         .replaceFirst('https://', 'wss://')

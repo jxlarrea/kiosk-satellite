@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Screensaver</title>
+<style>
+  /* Longhand offsets, not `inset`, and no shadow DOM — the Echo Show's WebView
+     is old, and this has to render there. Ported from Voice Satellite. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+  #content { position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    transition: transform 2s ease; }
+  .media { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: contain; background: #000; opacity: 0;
+    transition: opacity 600ms ease; }
+  .media.in { opacity: 1; }
+  iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    border: 0; opacity: 0; transition: opacity 600ms ease;
+    /* Taps must reach our dismiss handler, not the embedded site. */
+    pointer-events: none; }
+  iframe.in { opacity: 1; }
+  #msg { position: absolute; top: 50%; left: 0; right: 0; text-align: center;
+    transform: translateY(-50%); color: #666;
+    font: 16px system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<div id="content"></div>
+<div id="msg"></div>
+<script>
+'use strict';
+const CFG = window.__ksScreensaver || {};
+const content = document.getElementById('content');
+const msgEl = document.getElementById('msg');
+
+const bridge = (name, arg) => {
+  try { window.flutter_inappwebview?.callHandler(name, arg); } catch (_) {}
+};
+const log = (m) => bridge('log', String(m));
+const msg = (m) => { msgEl.textContent = m || ''; };
+
+// Any tap wakes the device — the Flutter side dismisses. document-level so it
+// works over the iframe (which is pointer-events:none) and any media element.
+['pointerdown', 'click', 'keydown'].forEach((e) =>
+  document.addEventListener(e, () => bridge('dismiss'), true));
+
+/* ── Home Assistant websocket ─────────────────────────────────────────────
+   A small client: authenticate with the token, issue id'd commands, and keep
+   subscriptions open for the camera WebRTC handshake. */
+class Hass {
+  constructor(url, token) {
+    this._base = url.replace(/\/$/, '');
+    this._token = token;
+    this._id = 1;
+    this._pending = new Map();   // id -> {resolve, reject}
+    this._subs = new Map();      // id -> callback
+  }
+  hassUrl(path = '') { return this._base + path; }
+  connect() {
+    const wsUrl = this._base.replace(/^http/, 'ws') + '/api/websocket';
+    return new Promise((resolve, reject) => {
+      const ws = new WebSocket(wsUrl);
+      this._ws = ws;
+      ws.onmessage = (ev) => {
+        const m = JSON.parse(ev.data);
+        if (m.type === 'auth_required') {
+          ws.send(JSON.stringify({ type: 'auth', access_token: this._token }));
+        } else if (m.type === 'auth_ok') {
+          resolve();
+        } else if (m.type === 'auth_invalid') {
+          reject(new Error('auth invalid'));
+        } else if (m.type === 'result') {
+          const p = this._pending.get(m.id);
+          if (p) {
+            this._pending.delete(m.id);
+            m.success ? p.resolve(m.result) : p.reject(new Error(m.error?.message || 'error'));
+          }
+        } else if (m.type === 'event') {
+          const cb = this._subs.get(m.id);
+          if (cb) cb(m.event);
+        }
+      };
+      ws.onerror = () => reject(new Error('ws error'));
+      ws.onclose = () => {
+        this._pending.forEach((p) => p.reject(new Error('ws closed')));
+        this._pending.clear();
+      };
+    });
+  }
+  send(msg) {
+    const id = this._id++;
+    return new Promise((resolve, reject) => {
+      this._pending.set(id, { resolve, reject });
+      this._ws.send(JSON.stringify({ ...msg, id }));
+    });
+  }
+  // A subscription: the command stays open and streams events to cb until
+  // unsubscribed. Used by the WebRTC offer handshake.
+  subscribe(msg, cb) {
+    const id = this._id++;
+    this._subs.set(id, cb);
+    this._ws.send(JSON.stringify({ ...msg, id }));
+    return {
+      id,
+      close: () => {
+        this._subs.delete(id);
+        this._ws.send(JSON.stringify({ id: this._id++, type: 'unsubscribe_events', subscription: id }));
+      },
+    };
+  }
+  async signPath(path, expires = 3600) {
+    const r = await this.send({ type: 'auth/sign_path', path, expires });
+    return this.hassUrl(r.path);
+  }
+}
+
+/* ── Cross-fade helper ────────────────────────────────────────────────────
+   Add the new element on top at opacity 0, fade it in, then drop the ones
+   under it — no black flash between items. */
+function showElement(el) {
+  el.classList.add('media');
+  content.appendChild(el);
+  requestAnimationFrame(() => {
+    el.classList.add('in');
+    setTimeout(() => {
+      Array.from(content.children).forEach((c) => { if (c !== el) c.remove(); });
+    }, 650);
+  });
+  return el;
+}
+
+/* ── Camera WebRTC ────────────────────────────────────────────────────────
+   HA's native signalling (camera/webrtc/*), the same flow as ha-web-rtc-player:
+   capability check, offer as a subscription, trickle ICE, attach the stream.
+   No go2rtc, no HLS. */
+async function cameraSupportsWebrtc(hass, entity) {
+  try {
+    const caps = await hass.send({ type: 'camera/capabilities', entity_id: entity });
+    return (caps?.frontend_stream_types || []).includes('web_rtc');
+  } catch (_) { return false; }
+}
+
+function playCameraWebrtc(hass, entity) {
+  return new Promise(async (resolve, reject) => {
+    let pc, sub, settled = false;
+    const done = (ok, err) => {
+      if (settled) return;
+      settled = true;
+      if (ok) resolve(() => { try { sub?.close(); } catch (_) {} try { pc?.close(); } catch (_) {} });
+      else { try { sub?.close(); } catch (_) {} try { pc?.close(); } catch (_) {} reject(err); }
+    };
+    try {
+      let config = {};
+      try {
+        const c = await hass.send({ type: 'camera/webrtc/get_client_config', entity_id: entity });
+        config = c?.configuration || {};
+      } catch (_) {}
+      pc = new RTCPeerConnection(config);
+      pc.addTransceiver('video', { direction: 'recvonly' });
+      pc.addTransceiver('audio', { direction: 'recvonly' });
+
+      let sessionId = null;
+      const localBuf = [];
+      pc.onicecandidate = (e) => {
+        if (!e.candidate) return;
+        if (sessionId) {
+          hass._ws.send(JSON.stringify({ id: hass._id++, type: 'camera/webrtc/candidate',
+            entity_id: entity, session_id: sessionId, candidate: e.candidate.toJSON() }));
+        } else {
+          localBuf.push(e.candidate.toJSON());
+        }
+      };
+      pc.ontrack = (e) => {
+        const video = document.createElement('video');
+        video.autoplay = true; video.muted = true; video.playsInline = true;
+        video.srcObject = e.streams[0];
+        showElement(video);
+        done(true);
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const remoteBuf = [];
+      sub = hass.subscribe(
+        { type: 'camera/webrtc/offer', entity_id: entity, offer: offer.sdp },
+        async (event) => {
+          if (event.type === 'session') {
+            sessionId = event.session_id;
+            localBuf.forEach((c) => hass._ws.send(JSON.stringify({ id: hass._id++,
+              type: 'camera/webrtc/candidate', entity_id: entity, session_id: sessionId, candidate: c })));
+            localBuf.length = 0;
+          } else if (event.type === 'answer') {
+            await pc.setRemoteDescription({ type: 'answer', sdp: event.answer });
+            remoteBuf.forEach((c) => pc.addIceCandidate(c).catch(() => {}));
+            remoteBuf.length = 0;
+          } else if (event.type === 'candidate') {
+            const cand = { candidate: event.candidate, sdpMLineIndex: 0 };
+            if (pc.remoteDescription) pc.addIceCandidate(cand).catch(() => {});
+            else remoteBuf.push(cand);
+          } else if (event.type === 'error') {
+            done(false, new Error(event.message || 'webrtc error'));
+          }
+        },
+      );
+      // If nothing attaches within a few seconds, fall back.
+      setTimeout(() => done(false, new Error('webrtc timeout')), 8000);
+    } catch (e) { done(false, e); }
+  });
+}
+
+async function playCameraMjpeg(hass, entity) {
+  const url = await hass.signPath(`/api/camera_proxy_stream/${entity}`);
+  const img = document.createElement('img');
+  img.src = url;
+  showElement(img);
+}
+
+/* ── Playlist ─────────────────────────────────────────────────────────────*/
+const cameraOf = (id) => (id || '').match(/^media-source:\/\/camera\/(camera\.[a-z0-9_]+)/i)?.[1] || null;
+const isImage = (m, u) => /^image\//.test(m || '') || /\.(jpe?g|png|gif|webp|bmp|avif|svg)$/i.test(u || '');
+const isVideo = (m, u) => /^video\//.test(m || '') || /\.(mp4|webm|ogg|mov)$/i.test(u || '');
+
+async function resolvePlaylist(hass, mediaId, recursive) {
+  const MAX = 12000, MAX_FOLDERS = 200, MAX_DEPTH = 5;
+  let node;
+  try { node = await hass.send({ type: 'media_source/browse_media', media_content_id: mediaId }); }
+  catch (e) { return [mediaId]; }
+  if (!node.children || !node.children.length) return [mediaId];
+
+  const items = [];
+  const folders = [[node, 0]];
+  let folderCount = 0;
+  while (folders.length && items.length < MAX && folderCount < MAX_FOLDERS) {
+    const [n, depth] = folders.shift();
+    for (const c of (n.children || [])) {
+      if (c.can_play && !c.can_expand) items.push(c.media_content_id);
+      else if (c.can_expand && recursive && depth < MAX_DEPTH) {
+        try {
+          const sub = await hass.send({ type: 'media_source/browse_media', media_content_id: c.media_content_id });
+          folders.push([sub, depth + 1]);
+          folderCount++;
+        } catch (_) {}
+      }
+      if (items.length >= MAX) break;
+    }
+  }
+  return items.length ? items : [mediaId];
+}
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ── Playback loop ────────────────────────────────────────────────────────*/
+let cleanup = null;      // teardown for the current camera stream, if any
+const failedWebrtc = new Set();
+
+async function playItem(hass, id, playlist, advance, intervalMs) {
+  if (cleanup) { cleanup(); cleanup = null; }
+  const cam = cameraOf(id);
+  if (cam) {
+    if (!failedWebrtc.has(cam) && await cameraSupportsWebrtc(hass, cam)) {
+      try { cleanup = await playCameraWebrtc(hass, cam); return; }
+      catch (_) { failedWebrtc.add(cam); }
+    }
+    try { await playCameraMjpeg(hass, cam); } catch (e) { log('camera failed: ' + e); advance(); }
+    return;
+  }
+  // image or video
+  let resolved;
+  try { resolved = await hass.send({ type: 'media_source/resolve_media', media_content_id: id }); }
+  catch (e) { advance(); return; }
+  let url = resolved.url;
+  if (url && url.startsWith('/')) url = hass.hassUrl(url);
+
+  if (isVideo(resolved.mime_type, url)) {
+    const v = document.createElement('video');
+    v.src = url; v.autoplay = true; v.muted = true; v.playsInline = true;
+    v.loop = playlist.length === 1;
+    if (playlist.length > 1) v.addEventListener('ended', advance);
+    v.addEventListener('error', advance);
+    showElement(v);
+  } else {
+    const img = document.createElement('img');
+    img.onerror = advance;
+    img.src = url;
+    showElement(img);
+    if (playlist.length > 1) setTimeout(advance, intervalMs);
+  }
+}
+
+async function runMedia() {
+  const token = CFG.haToken, url = CFG.haUrl;
+  if (!url || !token) { msg('Home Assistant is not connected.'); return; }
+  if (!CFG.mediaId) { msg('No media selected.'); return; }
+  msg('Loading…');
+  const hass = new Hass(url, token);
+  try { await hass.connect(); } catch (e) { msg('Could not connect to Home Assistant.'); return; }
+
+  let playlist = await resolvePlaylist(hass, CFG.mediaId, !!CFG.mediaRecursive);
+  if (CFG.mediaShuffle) playlist = shuffle(playlist);
+  if (!playlist.length) { msg('Nothing to show.'); return; }
+  msg('');
+
+  const intervalMs = Math.max(2, Number(CFG.mediaIntervalSeconds) || 10) * 1000;
+  let i = 0, advancing = false;
+  const advance = () => {
+    if (advancing) return;       // ended + timeout can race
+    advancing = true;
+    i = (i + 1) % playlist.length;
+    setTimeout(() => { advancing = false; playItem(hass, playlist[i], playlist, advance, intervalMs); }, 50);
+  };
+  playItem(hass, playlist[i], playlist, advance, intervalMs);
+}
+
+function runWebsite() {
+  if (!CFG.websiteUrl) { document.body.style.background = '#000'; return; }
+  const f = document.createElement('iframe');
+  f.referrerPolicy = 'no-referrer';
+  f.allow = 'autoplay; fullscreen';
+  f.src = CFG.websiteUrl;
+  f.addEventListener('load', () => f.classList.add('in'));
+  content.appendChild(f);
+}
+
+/* ── Pixel shift (burn-in) ────────────────────────────────────────────────*/
+if (CFG.pixelShift) {
+  setInterval(() => {
+    const max = Math.min(24, window.innerWidth * 0.015);
+    const x = (Math.random() * 2 - 1) * max, y = (Math.random() * 2 - 1) * max;
+    content.style.transform = `translate(${x}px, ${y}px)`;
+  }, 60000);
+}
+
+if (CFG.mode === 'website') runWebsite();
+else runMedia();
+</script>
+</body>
+</html>

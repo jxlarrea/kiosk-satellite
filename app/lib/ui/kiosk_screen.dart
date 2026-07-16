@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../core/permissions.dart';
 
 import '../app_container.dart';
+import 'screensaver_view.dart';
 import '../core/events.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
@@ -274,16 +275,9 @@ class _KioskScreenState extends State<KioskScreen> {
                 browser: c.browser,
                 onClose: () => setState(() => _consoleOpen = false),
               ),
-            // Screensaver black overlay ('black' mode) — tap to dismiss.
-            ValueListenableBuilder<bool>(
-              valueListenable: c.screensaver.overlayActive,
-              builder: (context, active, _) => active
-                  ? GestureDetector(
-                      onTap: () => c.screensaver.notifyActivity('touch'),
-                      child: Container(color: Colors.black),
-                    )
-                  : const SizedBox.shrink(),
-            ),
+            // The screensaver: black, clock, media or website. Renders nothing
+            // until the manager activates a view.
+            ScreensaverOverlay(container: c),
           ],
         ),
       ),

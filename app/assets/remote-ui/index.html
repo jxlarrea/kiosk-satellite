@@ -317,7 +317,8 @@ async function loadSettings() {
   // about the same device — and the remote copy is the one that gets believed
   // by whoever is not in the room.
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]));
-  const visible = (s) => !s.dependsOn || byKey[s.dependsOn]?.value === true;
+  const visible = (s) => !s.dependsOn ||
+    byKey[s.dependsOn]?.value === (s.dependsOnValue ?? true);
 
   const byCat = {};
   settings.filter(visible).forEach((s) => (byCat[s.category] ??= []).push(s));
