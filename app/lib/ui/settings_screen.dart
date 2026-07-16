@@ -14,37 +14,71 @@ import '../managers/wake_word/engine.dart';
 import 'color_picker.dart';
 import 'media_picker.dart';
 
-/// A line between rows, and never after the last one.
-///
-/// The same rule the remote admin's `.row` border follows (see
-/// assets/remote-ui/index.html): these two screens show the same settings and
-/// are meant to read alike.
+/// A line between rows, and never after the last one. Inset from the card
+/// edges, One UI style, so the line reads as part of the card rather than a
+/// cut through it. The remote admin's `.row` border follows the same
+/// no-line-after-the-last rule.
 List<Widget> _separated(List<Widget> rows) => [
-      for (var i = 0; i < rows.length; i++) ...[
-        rows[i],
-        if (i < rows.length - 1) const Divider(height: 1),
-      ],
-    ];
+  for (var i = 0; i < rows.length; i++) ...[
+    rows[i],
+    if (i < rows.length - 1)
+      const Divider(height: 1, indent: 20, endIndent: 20),
+  ],
+];
 
-/// Render a category's settings, grouping any that share a `section` under one
-/// [_SectionHeading]. Only visible settings appear; dividers separate the rows
-/// of a section, and the heading is the break between sections (no extra line).
-List<Widget> _sectionedTiles(
+/// A group of settings rows on one flat, borderless, large-radius card —
+/// One UI's rounded section mask. Clips so row ink stays inside the corners.
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 16),
+    clipBehavior: Clip.antiAlias,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    child: Column(children: _separated(children)),
+  );
+}
+
+/// Narrow-screen pages read as a column, not a sheet: capped at a comfortable
+/// reading width and centered.
+Widget _constrained(Widget child) => Center(
+  child: ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: 760),
+    child: child,
+  ),
+);
+
+const _pagePadding = EdgeInsets.fromLTRB(20, 16, 20, 24);
+
+/// Render a category's settings as cards: consecutive settings sharing a
+/// `section` become one card under one [_SectionHeading]; unsectioned runs
+/// share an unheaded card. Only visible settings appear.
+List<Widget> _sectionedCards(
   AppContainer container,
   List<SettingDef<Object>> defs,
   VoidCallback onChanged,
 ) {
   final settings = container.settings;
-  final visible = [for (final d in defs) if (settings.visible(d)) d];
-  final rows = <Widget>[];
+  final visible = [
+    for (final d in defs)
+      if (settings.visible(d)) d,
+  ];
+  final out = <Widget>[];
   String? current;
   var buffer = <SettingDef<Object>>[];
   void flush() {
     if (buffer.isEmpty) return;
-    rows.addAll(_separated([
-      for (final def in buffer)
-        SettingTile(container: container, def: def, onChanged: onChanged),
-    ]));
+    out.add(
+      _SettingsCard(
+        children: [
+          for (final def in buffer)
+            SettingTile(container: container, def: def, onChanged: onChanged),
+        ],
+      ),
+    );
     buffer = [];
   }
 
@@ -52,176 +86,384 @@ List<Widget> _sectionedTiles(
     if (def.section != current) {
       flush();
       current = def.section;
-      if (current != null) rows.add(_SectionHeading(current));
+      if (current != null) out.add(_SectionHeading(current));
     }
     buffer.add(def);
   }
   flush();
-  return rows;
+  return out;
 }
 
-/// Hierarchical settings, Fully Kiosk style: the top level is a list of
-/// category pages, each rendered from the declarative setting definitions —
-/// the same source the remote admin UI uses.
-///
-/// Home Assistant and Voice Satellite share one page; the Voice Satellite
-/// section only appears when the VS integration is detected on the
-/// connected HA instance.
-class SettingsScreen extends StatelessWidget {
+/// (defs category, page title, icon, subtitle)
+const _categories = <(String, String, IconData, String)>[
+  ('Browser', 'Web Browsing', Icons.public, 'Start URL, error recovery'),
+  (
+    'Web Content',
+    'Web Content',
+    Icons.tune,
+    'Microphone, camera, geolocation, pop-ups',
+  ),
+  ('Screen', 'Screen', Icons.brightness_6_outlined, 'Brightness, keep awake'),
+  (
+    'Screensaver',
+    'Screensaver',
+    Icons.dark_mode_outlined,
+    'Idle timeout, modes, motion wake',
+  ),
+  (
+    'Home Assistant',
+    'Home Assistant',
+    Icons.home_outlined,
+    'Connection, kiosk mode, Voice Satellite',
+  ),
+  (
+    'Remote',
+    'Remote Administration',
+    Icons.settings_remote_outlined,
+    'Web console access',
+  ),
+  (
+    'Device',
+    'Device',
+    Icons.tablet_android_outlined,
+    'Name, identity, app theme',
+  ),
+];
+
+List<SettingDef<Object>> _defsFor(String category) => [
+  for (final def in allSettings)
+    if (def.category == category && !def.hidden) def,
+];
+
+/// A category icon the way One UI paints them: a solid colour disc with a
+/// white glyph. The disc colours cycle the four brand accents (already
+/// light/dark-adapted by the scheme).
+class _CategoryIcon extends StatelessWidget {
+  const _CategoryIcon({required this.index, required this.icon});
+
+  final int index;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final accents = [
+      scheme.primary, // sage
+      scheme.secondary, // teal
+      scheme.tertiary, // ochre
+      scheme.error, // rust
+    ];
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: accents[index % accents.length],
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: Colors.white, size: 22),
+    );
+  }
+}
+
+/// Hierarchical settings, One UI style: on a wide screen the category list is
+/// a rail that stays put on the left while the selected category's settings
+/// fill the right pane; on a narrow screen the rail is a page of its own and
+/// categories push on top. Both render from the declarative setting
+/// definitions — the same source the remote admin UI uses.
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.container});
 
   final AppContainer container;
 
-  static const _categories = <(String, String, IconData, String)>[
-    // (defs category, page title, icon, subtitle)
-    ('Browser', 'Web Browsing', Icons.public,
-        'Start URL, error recovery'),
-    ('Web Content', 'Web Content', Icons.tune,
-        'Microphone, camera, geolocation, pop-ups'),
-    ('Screen', 'Screen', Icons.brightness_6_outlined,
-        'Brightness, keep awake'),
-    ('Screensaver', 'Screensaver', Icons.dark_mode_outlined,
-        'Idle timeout, modes, motion wake'),
-    ('Home Assistant', 'Home Assistant', Icons.home_outlined,
-        'Connection, kiosk mode, Voice Satellite'),
-    ('Remote', 'Remote Administration', Icons.settings_remote_outlined,
-        'Web console access'),
-    ('Device', 'Device', Icons.tablet_android_outlined,
-        'Name and identity'),
-  ];
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _selected = 0;
 
   @override
   Widget build(BuildContext context) {
+    // The split needs room for a readable rail plus content; below that,
+    // fall back to push navigation (One UI does the same on phones).
+    final wide = MediaQuery.sizeOf(context).width >= 720;
+    return wide ? _splitView(context) : _hub(context);
+  }
+
+  Widget _splitView(BuildContext context) {
+    final theme = Theme.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+    final railWidth = (width * 0.4).clamp(320.0, 430.0);
+    final (category, title, _, _) = _categories[_selected];
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        children: _separated([
-          for (final (category, title, icon, subtitle) in _categories)
-            ListTile(
-              leading: Icon(icon),
-              title: Text(title),
-              subtitle: Text(subtitle),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                builder: (_) => category == 'Home Assistant'
-                    ? HomeAssistantSettingsScreen(container: container)
-                    : CategorySettingsScreen(
-                        container: container,
-                        title: title,
-                        defs: _defsFor(category),
-                      ),
-              )),
+      body: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: railWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(28, 20, 12, 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Settings',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Close',
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
+                      children: [
+                        for (final (index, (_, title, icon, subtitle))
+                            in _categories.indexed)
+                          _railTile(context, index, title, icon, subtitle),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-        ]),
+            Expanded(
+              child: ListView(
+                key: PageStorageKey('settings-pane-$category'),
+                padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
+                    child: Text(
+                      title,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  _CategoryContent(
+                    key: ValueKey(category),
+                    container: widget.container,
+                    category: category,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  static List<SettingDef<Object>> _defsFor(String category) => [
-        for (final def in allSettings)
-          if (def.category == category && !def.hidden) def,
-      ];
-}
+  /// One rail row, One UI style: icon disc, semibold title, muted one-line
+  /// subtitle, and a large rounded highlight on the selected row.
+  Widget _railTile(
+    BuildContext context,
+    int index,
+    String title,
+    IconData icon,
+    String subtitle,
+  ) {
+    final theme = Theme.of(context);
+    final selected = index == _selected;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Material(
+        color: selected
+            ? theme.colorScheme.surfaceContainerHighest
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => setState(() => _selected = index),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                _CategoryIcon(index: index, icon: icon),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
-/// One category's settings.
-class CategorySettingsScreen extends StatefulWidget {
-  const CategorySettingsScreen({
-    super.key,
-    required this.container,
-    required this.title,
-    required this.defs,
-  });
-
-  final AppContainer container;
-  final String title;
-  final List<SettingDef<Object>> defs;
-
-  @override
-  State<CategorySettingsScreen> createState() => _CategorySettingsScreenState();
-}
-
-class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
-  @override
-  Widget build(BuildContext context) {
+  /// Narrow screens: the classic hub page; categories push on top of it.
+  Widget _hub(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
-      body: ListView(
-        children: _sectionedTiles(
-          widget.container,
-          widget.defs,
-          () => setState(() {}),
+      appBar: AppBar(title: const Text('Settings')),
+      body: _constrained(
+        ListView(
+          padding: _pagePadding,
+          children: [
+            _SettingsCard(
+              children: [
+                for (final (index, (category, title, icon, subtitle))
+                    in _categories.indexed)
+                  ListTile(
+                    leading: _CategoryIcon(index: index, icon: icon),
+                    title: Text(title),
+                    subtitle: Text(subtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => CategorySettingsScreen(
+                          container: widget.container,
+                          title: title,
+                          category: category,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Home Assistant + Voice Satellite share a page; the VS section is only
-/// shown when the integration is detected on the connected instance.
-class HomeAssistantSettingsScreen extends StatefulWidget {
-  const HomeAssistantSettingsScreen({super.key, required this.container});
+/// One category as a pushed page (narrow screens only — wide screens show the
+/// same content as the split view's right pane).
+class CategorySettingsScreen extends StatelessWidget {
+  const CategorySettingsScreen({
+    super.key,
+    required this.container,
+    required this.title,
+    required this.category,
+  });
 
   final AppContainer container;
-
-  @override
-  State<HomeAssistantSettingsScreen> createState() =>
-      _HomeAssistantSettingsScreenState();
-}
-
-class _HomeAssistantSettingsScreenState
-    extends State<HomeAssistantSettingsScreen> {
-  late Future<bool> _vsDetected;
-
-  @override
-  void initState() {
-    super.initState();
-    _vsDetected = widget.container.homeAssistant.detectVoiceSatellite();
-  }
+  final String title;
+  final String category;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Home Assistant')),
-      body: ListView(
-        children: [
-          ..._sectionedTiles(
-            widget.container,
-            SettingsScreen._defsFor('Home Assistant'),
-            () => setState(() {}),
-          ),
+      appBar: AppBar(title: Text(title)),
+      body: _constrained(
+        ListView(
+          padding: _pagePadding,
+          children: [
+            _CategoryContent(container: container, category: category),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One category's settings content — the cards only, no scaffolding — shared
+/// by the split view's right pane and the narrow-screen category page.
+///
+/// Home Assistant is the special case: the Voice Satellite section appears
+/// only when the integration is detected on the connected instance, and the
+/// required-permissions card only while wake word detection is on.
+class _CategoryContent extends StatefulWidget {
+  const _CategoryContent({
+    super.key,
+    required this.container,
+    required this.category,
+  });
+
+  final AppContainer container;
+  final String category;
+
+  @override
+  State<_CategoryContent> createState() => _CategoryContentState();
+}
+
+class _CategoryContentState extends State<_CategoryContent> {
+  Future<bool>? _vsDetected;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.category == 'Home Assistant') {
+      _vsDetected = widget.container.homeAssistant.detectVoiceSatellite();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final container = widget.container;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ..._sectionedCards(
+          container,
+          _defsFor(widget.category),
+          () => setState(() {}),
+        ),
+        if (widget.category == 'Home Assistant') ...[
           FutureBuilder<bool>(
             future: _vsDetected,
             builder: (context, snapshot) {
               if (snapshot.data != true) return const SizedBox.shrink();
               return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // The heading is the section break; a line as well would be
-                  // saying it twice.
                   _SectionHeading('Voice Satellite'),
-                  ..._separated([
-                    for (final def
-                        in SettingsScreen._defsFor('Voice Satellite'))
-                      if (widget.container.settings.visible(def))
-                        SettingTile(
-                          container: widget.container,
-                          def: def,
-                          onChanged: () => setState(() {}),
-                        ),
-                    // Not a setting, but a row on the same list, so it sits
-                    // behind the same line as the rest. Gone with the rest when
-                    // detection is off: there is no state to report about a
-                    // thing that is not running, and "it is off" is already
-                    // said by the switch above.
-                    if (widget.container.settings.get(wakeWordEnabled))
-                      WakeWordStatusTile(container: widget.container),
-                  ]),
+                  _SettingsCard(
+                    children: [
+                      for (final def in _defsFor('Voice Satellite'))
+                        if (container.settings.visible(def))
+                          SettingTile(
+                            container: container,
+                            def: def,
+                            onChanged: () => setState(() {}),
+                          ),
+                      // Not a setting, but a row on the same card, so it sits
+                      // behind the same line as the rest. Gone with the rest
+                      // when detection is off: there is no state to report
+                      // about a thing that is not running, and "it is off" is
+                      // already said by the switch above.
+                      if (container.settings.get(wakeWordEnabled))
+                        WakeWordStatusTile(container: container),
+                    ],
+                  ),
                 ],
               );
             },
           ),
-          // Last, and on their own: these are the OS's to give, not ours to
-          // set, and every one of them is a thing that stops working rather
+          // Last, and on their own card: these are the OS's to give, not ours
+          // to set, and every one of them is a thing that stops working rather
           // than a preference.
           //
           // Only while we are the one listening. With wake word detection off
@@ -229,12 +471,14 @@ class _HomeAssistantSettingsScreenState
           // microphone through the WebView's own permission flow — so none of
           // this is ours to need, and demanding it would be asking for grants
           // nothing here uses.
-          if (widget.container.settings.get(wakeWordEnabled)) ...[
+          if (container.settings.get(wakeWordEnabled)) ...[
             _SectionHeading('Required system permissions'),
-            SystemPermissionsTile(container: widget.container),
+            _SettingsCard(
+              children: [SystemPermissionsTile(container: container)],
+            ),
           ],
         ],
-      ),
+      ],
     );
   }
 }
@@ -248,12 +492,16 @@ class _SectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Sits between cards, which already carry a 16px bottom margin; the left
+    // inset lines the text up with the rows inside the cards.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: const EdgeInsets.fromLTRB(24, 6, 24, 10),
       child: Text(
         text,
-        style: theme.textTheme.titleSmall
-            ?.copyWith(color: theme.colorScheme.primary),
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -277,9 +525,9 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
   @override
   void initState() {
     super.initState();
-    _sub = widget.container.bus
-        .on<WakeWordStateChanged>()
-        .listen((_) => setState(() {}));
+    _sub = widget.container.bus.on<WakeWordStateChanged>().listen(
+      (_) => setState(() {}),
+    );
   }
 
   @override
@@ -300,18 +548,24 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
     // word for word (see WakeWordManager.status).
     if (config == null || !wake.enabled) {
       return ListTile(
-        leading: Icon(status.code == 'disabled'
-            ? Icons.mic_off_outlined
-            : Icons.hourglass_empty),
-        title: Text(status.code == 'disabled'
-            ? 'Wake word detection is off'
-            : 'Waiting for Voice Satellite'),
+        leading: Icon(
+          status.code == 'disabled'
+              ? Icons.mic_off_outlined
+              : Icons.hourglass_empty,
+        ),
+        title: Text(
+          status.code == 'disabled'
+              ? 'Wake word detection is off'
+              : 'Waiting for Voice Satellite',
+        ),
         subtitle: Text(status.label),
       );
     }
 
     final statusColor = wake.available
-        ? (wake.listening ? theme.colorScheme.primary : theme.colorScheme.onSurface)
+        ? (wake.listening
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurface)
         : theme.colorScheme.error;
 
     // Every row the same shape: label on the left, value on the right. These
@@ -329,16 +583,20 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
             color: statusColor,
           ),
           title: const Text('Status'),
-          subtitle: Text(status.label,
-              style: theme.textTheme.bodyMedium?.copyWith(color: statusColor)),
+          subtitle: Text(
+            status.label,
+            style: theme.textTheme.bodyMedium?.copyWith(color: statusColor),
+          ),
         ),
         if (wake.canRetry) WakeWordRecoveryTile(container: widget.container),
         ListTile(
           leading: const Icon(Icons.graphic_eq),
           title: const Text('Engine'),
           subtitle: const Text('Running in Kiosk'),
-          trailing: Text(config.engine.label,
-              style: theme.textTheme.titleMedium),
+          trailing: Text(
+            config.engine.label,
+            style: theme.textTheme.titleMedium,
+          ),
         ),
         if (config.models.isNotEmpty)
           ListTile(
@@ -354,9 +612,11 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
           ListTile(
             leading: const Icon(Icons.front_hand_outlined),
             title: const Text('Stop word'),
-            subtitle: Text(wake.stopWordAvailable
-                ? 'Running in Kiosk'
-                : 'Voice Satellite keeps this one in the browser'),
+            subtitle: Text(
+              wake.stopWordAvailable
+                  ? 'Running in Kiosk'
+                  : 'Voice Satellite keeps this one in the browser',
+            ),
             trailing: _rowValue(context, config.stopModel!.wakeWord),
           ),
         ClearModelCacheTile(container: widget.container),
@@ -368,14 +628,14 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
 /// A row's value, right-aligned. Bounded because a ListTile's trailing sits in
 /// an unconstrained Row: two wake words are wider than they look.
 Widget _rowValue(BuildContext context, String text) => ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 280),
-      child: Text(
-        text,
-        textAlign: TextAlign.end,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyLarge,
-      ),
-    );
+  constraints: const BoxConstraints(maxWidth: 280),
+  child: Text(
+    text,
+    textAlign: TextAlign.end,
+    overflow: TextOverflow.ellipsis,
+    style: Theme.of(context).textTheme.bodyLarge,
+  ),
+);
 
 /// The way out of a failed engine.
 ///
@@ -407,9 +667,11 @@ class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
     return ListTile(
       leading: const Icon(Icons.build_outlined),
       title: const Text('Recover'),
-      subtitle: Text(settingsFirst
-          ? 'Allow the microphone in the app settings, then retry.'
-          : 'Try starting the engine again.'),
+      subtitle: Text(
+        settingsFirst
+            ? 'Allow the microphone in the app settings, then retry.'
+            : 'Try starting the engine again.',
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -417,8 +679,10 @@ class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
             TextButton(
               onPressed: _busy
                   ? null
-                  : () => widget.container.commands
-                      .execute('openAppSettings', const {}),
+                  : () => widget.container.commands.execute(
+                      'openAppSettings',
+                      const {},
+                    ),
               child: const Text('App settings'),
             ),
           const SizedBox(width: 8),
@@ -427,8 +691,10 @@ class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
                 ? null
                 : () async {
                     setState(() => _busy = true);
-                    await widget.container.commands
-                        .execute('retryWakeWord', const {});
+                    await widget.container.commands.execute(
+                      'retryWakeWord',
+                      const {},
+                    );
                     if (mounted) setState(() => _busy = false);
                   },
             child: Text(_busy ? 'Retrying…' : 'Retry'),
@@ -535,7 +801,7 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
           held: 'Wake word detection can hear you.',
           missing: perms?.microphoneBlocked == true
               ? 'Blocked. Android will not ask again — allow it in the app '
-                  'settings.'
+                    'settings.'
               : 'Without this nothing is listening for the wake word.',
           action: perms?.microphoneBlocked == true ? 'App settings' : 'Grant',
           onGrant: () async {
@@ -562,7 +828,8 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
             missingIcon: Icons.notifications_off_outlined,
             title: 'Listening notification',
             held: 'The device shows that it is listening.',
-            missing: 'Without this it listens with nothing on screen to say so.',
+            missing:
+                'Without this it listens with nothing on screen to say so.',
             onGrant: () async {
               await ensureOsPermission(Permission.notification);
               await _refresh();
@@ -605,16 +872,23 @@ class _ClearModelCacheTileState extends State<ClearModelCacheTile> {
     return ListTile(
       leading: const Icon(Icons.cleaning_services_outlined),
       title: const Text('Cached models'),
-      subtitle: Text(_result ??
-          'Re-download from Home Assistant. Use after re-publishing a model.'),
+      subtitle: Text(
+        _result ??
+            'Re-download from Home Assistant. Use after re-publishing a model.',
+      ),
       trailing: _busy
           ? const SizedBox(
-              width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
           : TextButton(
               onPressed: () async {
                 setState(() => _busy = true);
-                final result = await widget.container.commands
-                    .execute('clearWakeWordModels', const {});
+                final result = await widget.container.commands.execute(
+                  'clearWakeWordModels',
+                  const {},
+                );
                 if (!mounted) return;
                 final removed = (result.data as Map?)?['removed'];
                 setState(() {
@@ -692,19 +966,20 @@ class SettingTile extends StatelessWidget {
             },
           ),
         );
-      case SettingType.string ||
-            SettingType.password ||
-            SettingType.number:
+      case SettingType.string || SettingType.password || SettingType.number:
         final value = c.settings.get(def);
         final display = def.secret
             ? ((value as String).isEmpty ? 'Not set' : '••••••••')
             : (value is num
-                ? _formatNum(value)
-                : ('$value'.isEmpty ? 'Not set' : '$value'));
+                  ? _formatNum(value)
+                  : ('$value'.isEmpty ? 'Not set' : '$value'));
         // A colour is picked, not typed.
         if (def.key == screensaverClockColor.key) {
           final rgb = value as String;
-          final parts = rgb.split(',').map((p) => int.tryParse(p.trim())).toList();
+          final parts = rgb
+              .split(',')
+              .map((p) => int.tryParse(p.trim()))
+              .toList();
           final swatch = (parts.length == 3 && parts.every((p) => p != null))
               ? Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!)
               : const Color(0xFFFAFAFA);
@@ -713,8 +988,11 @@ class SettingTile extends StatelessWidget {
             subtitle: Text(def.description),
             trailing: GestureDetector(
               onTap: () async {
-                final picked = await pickColor(context,
-                    initial: rgb, title: def.title);
+                final picked = await pickColor(
+                  context,
+                  initial: rgb,
+                  title: def.title,
+                );
                 if (picked != null) {
                   await c.settings.setFromJson(def.key, picked);
                   onChanged();
@@ -736,8 +1014,11 @@ class SettingTile extends StatelessWidget {
         if (def.key == screensaverMediaId.key) {
           return ListTile(
             title: Text(def.title),
-            subtitle:
-                Text(display, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(
+              display,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             trailing: TextButton(
               onPressed: () async {
                 final picked = await pickMedia(context, c);
@@ -746,7 +1027,9 @@ class SettingTile extends StatelessWidget {
                   // Remember folder-ness so the playlist settings (shuffle,
                   // subfolders, interval) know whether to show.
                   await c.settings.setFromJson(
-                      screensaverMediaIsFolder.key, picked.isFolder);
+                    screensaverMediaIsFolder.key,
+                    picked.isFolder,
+                  );
                   onChanged();
                 }
               },
@@ -783,7 +1066,8 @@ class SettingTile extends StatelessWidget {
     );
     final picked = await showTimePicker(context: context, initialTime: initial);
     if (picked == null) return;
-    final hhmm = '${picked.hour.toString().padLeft(2, '0')}:'
+    final hhmm =
+        '${picked.hour.toString().padLeft(2, '0')}:'
         '${picked.minute.toString().padLeft(2, '0')}';
     await c.settings.setFromJson(def.key, hhmm);
     onChanged();

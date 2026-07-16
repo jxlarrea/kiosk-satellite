@@ -14,6 +14,7 @@ import '../managers/browser/no_cache_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kiosk_drawer.dart';
+import 'settings_screen.dart';
 import 'web_console_panel.dart';
 
 /// The kiosk itself: a fullscreen WebView with the JS bridge, the
@@ -35,11 +36,37 @@ class KioskScreen extends StatefulWidget {
   State<KioskScreen> createState() => _KioskScreenState();
 }
 
-class _KioskScreenState extends State<KioskScreen> {
+class _KioskScreenState extends State<KioskScreen>
+    with SingleTickerProviderStateMixin {
   AppContainer get c => widget.container;
 
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
+
+  /// The push drawer: the kiosk content slides right in step with the pane,
+  /// so the menu reads as sharing the kiosk's plane instead of floating over
+  /// it. 0 = closed, 1 = fully open; dragged directly during edge swipes.
+  /// Narrow on purpose — the widest thing in it is "Exit Application".
+  static const _drawerWidth = 300.0;
+  late final AnimationController _drawer = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  );
+
+  void _closeDrawer() => _drawer.fling(velocity: -1);
+
+  void _drawerDragUpdate(DragUpdateDetails details) {
+    _drawer.value += details.delta.dx / _drawerWidth;
+  }
+
+  void _drawerDragEnd(DragEndDetails details) {
+    final velocity = details.velocity.pixelsPerSecond.dx / _drawerWidth;
+    if (velocity.abs() > 1) {
+      _drawer.fling(velocity: velocity.sign);
+    } else {
+      _drawer.fling(velocity: _drawer.value > 0.5 ? 1 : -1);
+    }
+  }
 
   /// Bumped to force a WebView rebuild for settings that are only read at
   /// creation (mixed content, SSL trust). Rebuilding re-reads initialSettings.
@@ -97,11 +124,13 @@ class _KioskScreenState extends State<KioskScreen> {
     if (widget.showMenuHint) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Tip: swipe from the left edge to open the menu'),
-          duration: Duration(seconds: 10),
-          behavior: SnackBarBehavior.floating,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tip: swipe from the left edge to open the menu'),
+            duration: Duration(seconds: 10),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       });
     }
   }
@@ -128,19 +157,33 @@ class _KioskScreenState extends State<KioskScreen> {
   /// is applied per-load in [onLoadStop] (not a fixed initial script) so it
   /// can be toggled live.
   List<UserScript> get _userScripts => [
-        c.jsApi.buildUserScript(c.device.os),
-        // "Disable cache" must also defeat the page's service worker, which
-        // caches above the HTTP layer (HA always registers one).
-        if (c.settings.get(defs.disableCache))
-          UserScript(
-            source: noCachePurgeScript,
-            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-          ),
-      ];
+    c.jsApi.buildUserScript(c.device.os),
+    // "Disable cache" must also defeat the page's service worker, which
+    // caches above the HTTP layer (HA always registers one).
+    if (c.settings.get(defs.disableCache))
+      UserScript(
+        source: noCachePurgeScript,
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
+  ];
 
   /// Apply or tear down the CSS kiosk mode against the current page.
   Future<void> _applyKioskMode() async {
     await c.browser.runJs(kioskModeScript(apply: _useCss));
+  }
+
+  /// Open the settings screen (One UI-style split view on wide screens).
+  Future<void> _openSettings() async {
+    // Hold the screensaver while settings are open. Otherwise the idle timer
+    // keeps firing behind the route: it dims the backlight and, with motion
+    // on, opens the camera while someone is configuring. Re-arm on return.
+    await c.commands.execute('pauseScreensaver', {'paused': true});
+    if (mounted) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => SettingsScreen(container: c)),
+      );
+    }
+    await c.commands.execute('pauseScreensaver', {'paused': false});
   }
 
   /// Whether a WebView permission request may be granted: its Web Content
@@ -166,121 +209,201 @@ class _KioskScreenState extends State<KioskScreen> {
 
   @override
   void dispose() {
+    _drawer.dispose();
     _settingsSub?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
     return Scaffold(
       backgroundColor: Colors.black,
-      drawer: KioskDrawer(
-        container: c,
-        onWebConsole: () => setState(() => _consoleOpen = true),
-      ),
-      drawerEdgeDragWidth: 48,
       body: Listener(
         onPointerDown: (_) =>
             c.bus.publish(const ActivityDetected(source: 'touch')),
-        child: Stack(
-          children: [
-            InAppWebView(
-              key: ValueKey(_webViewEpoch),
-              initialUrlRequest: URLRequest(
-                url: WebUri(_webViewEpoch == 0 ||
-                        c.browser.currentUrl.isEmpty
-                    ? _initialUrl
-                    : c.browser.currentUrl),
+        child: AnimatedBuilder(
+          animation: _drawer,
+          builder: (context, _) {
+            final dx = _drawerWidth * _drawer.value;
+            final open = _drawer.value > 0;
+            return PopScope(
+              // System back closes the drawer first; only a closed kiosk
+              // keeps the default back behavior.
+              canPop: !open,
+              onPopInvokedWithResult: (didPop, _) {
+                if (!didPop) _closeDrawer();
+              },
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // The kiosk plane, pushed right in step with the drawer.
+                  // It keeps its full size — it slides, it is never squeezed
+                  // (resizing the platform view would reflow the page).
+                  Positioned(
+                    left: dx,
+                    top: 0,
+                    bottom: 0,
+                    width: size.width,
+                    child: Stack(
+                      // Expand: the Stack takes its size from its parent,
+                      // never from its children — the overlays are positioned
+                      // or zero-sized and would collapse a child-sized Stack.
+                      fit: StackFit.expand,
+                      children: [
+                        _webView(),
+                        if (_consoleOpen)
+                          WebConsolePanel(
+                            browser: c.browser,
+                            onClose: () => setState(() => _consoleOpen = false),
+                          ),
+                      ],
+                    ),
+                  ),
+                  // The drawer plane, sliding in from the same seam. A
+                  // horizontal drag anywhere on it moves the drawer too —
+                  // swiping the menu itself closed is the intuitive gesture,
+                  // not just swiping the kiosk. Taps and vertical scrolling
+                  // inside the menu are untouched (different gesture axes).
+                  Positioned(
+                    left: dx - _drawerWidth,
+                    top: 0,
+                    bottom: 0,
+                    width: _drawerWidth,
+                    child: GestureDetector(
+                      onHorizontalDragUpdate: _drawerDragUpdate,
+                      onHorizontalDragEnd: _drawerDragEnd,
+                      child: KioskDrawer(
+                        container: c,
+                        onClose: _closeDrawer,
+                        onWebConsole: () => setState(() => _consoleOpen = true),
+                        onSettings: _openSettings,
+                      ),
+                    ),
+                  ),
+                  // While open, the visible slice of the kiosk closes the
+                  // drawer on tap or drag — no scrim: dimming the content
+                  // would put the drawer visually "above" it again.
+                  if (open)
+                    Positioned(
+                      left: dx,
+                      top: 0,
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _closeDrawer,
+                        onHorizontalDragUpdate: _drawerDragUpdate,
+                        onHorizontalDragEnd: _drawerDragEnd,
+                      ),
+                    ),
+                  // Closed: the edge strip that swipes it open.
+                  if (!open)
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: 48,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onHorizontalDragUpdate: _drawerDragUpdate,
+                        onHorizontalDragEnd: _drawerDragEnd,
+                      ),
+                    ),
+                  // The screensaver covers both planes — it owns the whole
+                  // display, drawer open or not.
+                  ScreensaverOverlay(container: c),
+                ],
               ),
-              initialUserScripts: UnmodifiableListView(_userScripts),
-              initialSettings: InAppWebViewSettings(
-                mediaPlaybackRequiresUserGesture:
-                    !c.settings.get(defs.webAutoplay),
-                allowsInlineMediaPlayback: true,
-                iframeAllow: 'camera; microphone',
-                transparentBackground: true,
-                geolocationEnabled: c.settings.get(defs.webGeolocation),
-                javaScriptCanOpenWindowsAutomatically:
-                    c.settings.get(defs.webPopups),
-                // Android: let HTTPS pages pull in HTTP subresources.
-                mixedContentMode: c.settings.get(defs.allowMixedContent)
-                    ? MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW
-                    : MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,
-                // Dev aid: always hit the network so an edited dashboard or
-                // card bundle is never served from a stale cache. This only
-                // bypasses the HTTP cache — it does NOT touch localStorage /
-                // DOM storage (kept alive by domStorageEnabled, which stays
-                // on), so a page's saved config survives. Nothing is cleared;
-                // only "Log out" deliberately wipes storage.
-                cacheEnabled: !c.settings.get(defs.disableCache),
-                cacheMode: c.settings.get(defs.disableCache)
-                    ? CacheMode.LOAD_NO_CACHE
-                    : CacheMode.LOAD_DEFAULT,
-              ),
-              onReceivedServerTrustAuthRequest: (controller, challenge) async {
-                // Accept untrusted/self-signed certs only when the user opted
-                // in (e.g. a local HA instance without proper SSL). Otherwise
-                // fall through to the platform's default validation.
-                if (c.settings.get(defs.ignoreSslErrors)) {
-                  return ServerTrustAuthResponse(
-                      action: ServerTrustAuthResponseAction.PROCEED);
-                }
-                return ServerTrustAuthResponse(
-                    action: ServerTrustAuthResponseAction.CANCEL);
-              },
-              onWebViewCreated: (controller) {
-                c.browser.attach(controller);
-                c.jsApi.attach(controller);
-              },
-              onLoadStop: (controller, url) {
-                if (url != null) c.browser.onPageLoaded(url.toString());
-                // Re-apply CSS kiosk mode on every navigation (only does
-                // work when the effective mode is 'css').
-                if (_useCss) _applyKioskMode();
-              },
-              onReceivedError: (controller, request, error) {
-                if (request.isForMainFrame ?? true) {
-                  c.browser.onLoadError(error.description);
-                }
-              },
-              onConsoleMessage: (controller, message) {
-                c.browser.onConsoleMessage(
-                  switch (message.messageLevel) {
-                    ConsoleMessageLevel.ERROR => 'error',
-                    ConsoleMessageLevel.WARNING => 'warn',
-                    ConsoleMessageLevel.DEBUG => 'debug',
-                    ConsoleMessageLevel.TIP => 'tip',
-                    _ => 'log',
-                  },
-                  message.message,
-                );
-              },
-              onPermissionRequest: (controller, request) async {
-                // Fully-Kiosk-style: grant a resource only if its Web Content
-                // toggle is on, ensuring the OS runtime grant lazily.
-                final granted = <PermissionResourceType>[];
-                for (final resource in request.resources) {
-                  if (await _resourceAllowed(resource)) granted.add(resource);
-                }
-                return PermissionResponse(
-                  resources: granted,
-                  action: granted.isEmpty
-                      ? PermissionResponseAction.DENY
-                      : PermissionResponseAction.GRANT,
-                );
-              },
-            ),
-            if (_consoleOpen)
-              WebConsolePanel(
-                browser: c.browser,
-                onClose: () => setState(() => _consoleOpen = false),
-              ),
-            // The screensaver: black, clock, media or website. Renders nothing
-            // until the manager activates a view.
-            ScreensaverOverlay(container: c),
-          ],
+            );
+          },
         ),
       ),
     );
   }
+
+  Widget _webView() => InAppWebView(
+    key: ValueKey(_webViewEpoch),
+    initialUrlRequest: URLRequest(
+      url: WebUri(
+        _webViewEpoch == 0 || c.browser.currentUrl.isEmpty
+            ? _initialUrl
+            : c.browser.currentUrl,
+      ),
+    ),
+    initialUserScripts: UnmodifiableListView(_userScripts),
+    initialSettings: InAppWebViewSettings(
+      mediaPlaybackRequiresUserGesture: !c.settings.get(defs.webAutoplay),
+      allowsInlineMediaPlayback: true,
+      iframeAllow: 'camera; microphone',
+      transparentBackground: true,
+      geolocationEnabled: c.settings.get(defs.webGeolocation),
+      javaScriptCanOpenWindowsAutomatically: c.settings.get(defs.webPopups),
+      // Android: let HTTPS pages pull in HTTP subresources.
+      mixedContentMode: c.settings.get(defs.allowMixedContent)
+          ? MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW
+          : MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,
+      // Dev aid: always hit the network so an edited dashboard or
+      // card bundle is never served from a stale cache. This only
+      // bypasses the HTTP cache — it does NOT touch localStorage /
+      // DOM storage (kept alive by domStorageEnabled, which stays
+      // on), so a page's saved config survives. Nothing is cleared;
+      // only "Log out" deliberately wipes storage.
+      cacheEnabled: !c.settings.get(defs.disableCache),
+      cacheMode: c.settings.get(defs.disableCache)
+          ? CacheMode.LOAD_NO_CACHE
+          : CacheMode.LOAD_DEFAULT,
+    ),
+    onReceivedServerTrustAuthRequest: (controller, challenge) async {
+      // Accept untrusted/self-signed certs only when the user opted
+      // in (e.g. a local HA instance without proper SSL). Otherwise
+      // fall through to the platform's default validation.
+      if (c.settings.get(defs.ignoreSslErrors)) {
+        return ServerTrustAuthResponse(
+          action: ServerTrustAuthResponseAction.PROCEED,
+        );
+      }
+      return ServerTrustAuthResponse(
+        action: ServerTrustAuthResponseAction.CANCEL,
+      );
+    },
+    onWebViewCreated: (controller) {
+      c.browser.attach(controller);
+      c.jsApi.attach(controller);
+    },
+    onLoadStop: (controller, url) {
+      if (url != null) c.browser.onPageLoaded(url.toString());
+      // Re-apply CSS kiosk mode on every navigation (only does
+      // work when the effective mode is 'css').
+      if (_useCss) _applyKioskMode();
+    },
+    onReceivedError: (controller, request, error) {
+      if (request.isForMainFrame ?? true) {
+        c.browser.onLoadError(error.description);
+      }
+    },
+    onConsoleMessage: (controller, message) {
+      c.browser.onConsoleMessage(switch (message.messageLevel) {
+        ConsoleMessageLevel.ERROR => 'error',
+        ConsoleMessageLevel.WARNING => 'warn',
+        ConsoleMessageLevel.DEBUG => 'debug',
+        ConsoleMessageLevel.TIP => 'tip',
+        _ => 'log',
+      }, message.message);
+    },
+    onPermissionRequest: (controller, request) async {
+      // Fully-Kiosk-style: grant a resource only if its Web Content
+      // toggle is on, ensuring the OS runtime grant lazily.
+      final granted = <PermissionResourceType>[];
+      for (final resource in request.resources) {
+        if (await _resourceAllowed(resource)) granted.add(resource);
+      }
+      return PermissionResponse(
+        resources: granted,
+        action: granted.isEmpty
+            ? PermissionResponseAction.DENY
+            : PermissionResponseAction.GRANT,
+      );
+    },
+  );
 }
