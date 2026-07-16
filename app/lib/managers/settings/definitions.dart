@@ -371,8 +371,43 @@ const motionEnabled = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Motion detection',
-  description: 'Detect motion with the front camera.',
+  description: 'Wake the screensaver when the camera sees someone approach. The '
+      'camera only runs while the screensaver is showing, so it costs nothing '
+      'during normal use.',
   category: 'Motion',
+);
+
+const motionFps = SettingDef<num>(
+  key: 'motion.fps',
+  type: SettingType.number,
+  defaultValue: 2,
+  title: 'Analysis frame rate',
+  description: 'Frames per second the camera checks for motion. Lower is lighter '
+      'on the CPU; 2 is plenty to notice someone approaching.',
+  category: 'Motion',
+  dependsOn: 'motion.enabled',
+);
+
+const motionSensitivity = SettingDef<num>(
+  key: 'motion.sensitivity',
+  type: SettingType.number,
+  defaultValue: 40,
+  title: 'Sensitivity',
+  description: 'Higher trips on smaller movements. 1 needs a large change across '
+      'the frame; 100 reacts to the slightest motion.',
+  category: 'Motion',
+  dependsOn: 'motion.enabled',
+);
+
+const motionCamera = SettingDef<String>(
+  key: 'motion.camera',
+  type: SettingType.select,
+  defaultValue: 'front',
+  title: 'Camera',
+  description: 'Which camera watches for motion.',
+  category: 'Motion',
+  options: ['front', 'back'],
+  dependsOn: 'motion.enabled',
 );
 
 // ── Wake word ──────────────────────────────────────────────────────────
@@ -521,6 +556,9 @@ const List<SettingDef<Object>> allSettings = [
   screensaverPixelShift,
   screensaverDismissOnMotion,
   motionEnabled,
+  motionFps,
+  motionSensitivity,
+  motionCamera,
   wakeWordEnabled,
   wakeWordBackground,
   wakeWordResumeTimeoutSeconds,

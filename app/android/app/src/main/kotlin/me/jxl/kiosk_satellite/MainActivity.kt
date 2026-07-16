@@ -11,12 +11,14 @@ class MainActivity : FlutterActivity() {
     private var micRecorder: MicRecorder? = null
     private var background: BackgroundBridge? = null
     private var deviceDetails: DeviceDetails? = null
+    private var cameraMotion: CameraMotion? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         micRecorder = MicRecorder(flutterEngine.dartExecutor.binaryMessenger)
         background = BackgroundBridge(this, flutterEngine.dartExecutor.binaryMessenger)
         deviceDetails = DeviceDetails(this, flutterEngine.dartExecutor.binaryMessenger)
+        cameraMotion = CameraMotion(this, flutterEngine.dartExecutor.binaryMessenger)
         provisionChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "kiosk_satellite/provision"
@@ -37,6 +39,8 @@ class MainActivity : FlutterActivity() {
         background = null
         deviceDetails?.dispose()
         deviceDetails = null
+        cameraMotion?.dispose()
+        cameraMotion = null
         super.onDestroy()
     }
 
