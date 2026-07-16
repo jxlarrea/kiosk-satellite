@@ -133,6 +133,25 @@
   .switch input:checked + .slider { background: var(--primary); border-color: var(--primary); }
   .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
 
+  /* On phones, reflow each row so the name and its control share the top line
+     and the description spans full width below both — instead of a cramped
+     name+description column beside the control. Placed after the base .row
+     rules so this display:grid wins (media queries add no specificity).
+     `display: contents` promotes the .info's name/desc into the row's grid. */
+  @media (max-width: 640px) {
+    .row { display: grid; grid-template-columns: 1fr auto; align-items: center;
+      column-gap: 12px; row-gap: 3px;
+      grid-template-areas: "name control" "desc desc"; }
+    .row .info { display: contents; }
+    .row .info .name { grid-area: name; }
+    .row .info .desc { grid-area: desc; }
+    .row > :not(.info) { grid-area: control; justify-self: end; }
+    /* Keep controls from crowding the name off its line. Numbers hold short
+       values, so they get a tight cap; text/selects a little more. */
+    .row input[type=text], .row input[type=password], .row select { max-width: 48vw; }
+    .row input[type=number] { max-width: 90px; }
+  }
+
   .shot-wrap { position: relative; border-radius: 11px; overflow: hidden;
     background: var(--surface-2); aspect-ratio: 16/10; display: grid; place-items: center; }
   .shot-wrap img { width: 100%; height: 100%; object-fit: contain; }
@@ -807,7 +826,11 @@ function settingRow(s) {
         await loadSettings();
       }
     });
-    row.append(val, btn);
+    // One wrapper so the value + button occupy a single grid cell on mobile.
+    const controls = document.createElement('div');
+    controls.style.cssText = 'display:flex; gap:8px; align-items:center; min-width:0';
+    controls.append(val, btn);
+    row.appendChild(controls);
     return row;
   }
 
