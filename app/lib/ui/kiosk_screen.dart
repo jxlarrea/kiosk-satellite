@@ -333,13 +333,15 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     initialUserScripts: UnmodifiableListView(_userScripts),
     initialSettings: InAppWebViewSettings(
-      // Render the WebView into a texture (virtual display) instead of
-      // hybrid composition. Hybrid composition interleaves the Android view
-      // with Flutter's surfaces, and every Flutter animation frame drawn
-      // while it is visible syncs with the Android UI thread — the push
-      // drawer, route transitions and even list scrolling janked visibly.
-      // A texture composites like any other Flutter layer.
-      useHybridComposition: false,
+      // Hybrid composition, decided twice. Virtual display (false) freed
+      // Flutter animations from syncing with the Android UI thread, but it
+      // paced the WebView itself badly: a constantly-animating dashboard
+      // pushes every frame through an extra texture copy, dropping frames
+      // on the page and stuttering the whole UI. The kiosk *is* the
+      // WebView — its scrolling wins. Flutter animates over the live view
+      // only for the brief drawer slide; settings is an opaque route, so
+      // the view is not even composited while it is open.
+      useHybridComposition: true,
       mediaPlaybackRequiresUserGesture: !c.settings.get(defs.webAutoplay),
       allowsInlineMediaPlayback: true,
       iframeAllow: 'camera; microphone',
