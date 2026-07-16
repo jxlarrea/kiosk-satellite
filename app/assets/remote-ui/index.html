@@ -506,6 +506,28 @@ async function loadSettings() {
   render($('#tab-homeassistant'), haCats);
   render($('#tab-settings'), otherCats);
   render($('#tab-screensaver'), byCat['Screensaver'] ? ['Screensaver'] : []);
+
+  // The Device ID, mirroring the device's Settings → Device card. Not a
+  // setting (derived, never chosen — see DeviceManager.deviceId), so it is
+  // appended to the card rather than declared with the settings.
+  const deviceId = state.device?.deviceId;
+  const deviceCard = [...$('#tab-settings').querySelectorAll('.card')]
+    .find((el) => el.querySelector('h2')?.textContent === 'Device');
+  if (deviceId && deviceCard) {
+    const row = readOnlyRow('Device ID', 'Click to copy.', deviceId);
+    row.querySelector('span').style.fontFamily = 'ui-monospace, monospace';
+    row.style.cursor = 'pointer';
+    row.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(deviceId);
+        row.querySelector('.desc').textContent = 'Copied.';
+        setTimeout(
+          () => (row.querySelector('.desc').textContent = 'Click to copy.'),
+          1500);
+      } catch (_) { /* clipboard needs https or localhost; row still shows */ }
+    });
+    deviceCard.appendChild(row);
+  }
   // The on-device settings screen shows the wake-word config inherited from
   // Voice Satellite under the same heading. This tab mirrors it.
   await loadWakeWord();
