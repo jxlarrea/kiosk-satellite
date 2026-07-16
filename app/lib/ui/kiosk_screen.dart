@@ -333,6 +333,13 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     initialUserScripts: UnmodifiableListView(_userScripts),
     initialSettings: InAppWebViewSettings(
+      // Render the WebView into a texture (virtual display) instead of
+      // hybrid composition. Hybrid composition interleaves the Android view
+      // with Flutter's surfaces, and every Flutter animation frame drawn
+      // while it is visible syncs with the Android UI thread — the push
+      // drawer, route transitions and even list scrolling janked visibly.
+      // A texture composites like any other Flutter layer.
+      useHybridComposition: false,
       mediaPlaybackRequiresUserGesture: !c.settings.get(defs.webAutoplay),
       allowsInlineMediaPlayback: true,
       iframeAllow: 'camera; microphone',
