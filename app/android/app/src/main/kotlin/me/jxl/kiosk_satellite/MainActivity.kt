@@ -17,6 +17,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
     private var cameraMotion: CameraMotion? = null
+    private var screenCapture: ScreenCapture? = null
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? =
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
@@ -29,6 +30,7 @@ class MainActivity : FlutterActivity() {
         // cached engine in KioskApplication. Only Activity-scoped bridges here.
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         cameraMotion = CameraMotion(this, messenger)
+        screenCapture = ScreenCapture(this, messenger)
         provisionChannel = MethodChannel(messenger, "kiosk_satellite/provision")
         provisionChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -48,6 +50,8 @@ class MainActivity : FlutterActivity() {
         // bridges as we detach. The engine (and its Dart isolate) stays.
         cameraMotion?.dispose()
         cameraMotion = null
+        screenCapture?.dispose()
+        screenCapture = null
         provisionChannel?.setMethodCallHandler(null)
         provisionChannel = null
     }

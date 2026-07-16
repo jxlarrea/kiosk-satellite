@@ -8,6 +8,7 @@ import 'no_cache_script.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../device/screen_capture.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -51,139 +52,169 @@ class BrowserManager extends Manager {
   @override
   Future<void> init() async {
     commands
-      ..register(Command(
-        name: 'loadUrl',
-        description: 'Navigate to a URL',
-        params: const {'url': 'Absolute URL to load'},
-        handler: (p) async {
-          final url = p['url'] as String?;
-          if (url == null || url.isEmpty) {
-            return const CommandResult.fail('url required');
-          }
-          await loadUrl(url);
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'loadDashboard',
-        description: 'Navigate to a Home Assistant dashboard',
-        params: const {'dashboard': 'Dashboard url_path, e.g. lovelace'},
-        handler: (p) async {
-          final dashboard = p['dashboard'] as String?;
-          final base = _settings.get(defs.haUrl);
-          if (dashboard == null || base.isEmpty) {
-            return const CommandResult.fail(
-                'dashboard required and Home Assistant URL must be configured');
-          }
-          await loadUrl('${_stripSlash(base)}/$dashboard');
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'reload',
-        description: 'Reload the current page',
-        handler: (_) async {
-          await _controller?.reload();
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'getConsole',
-        description: 'Current JavaScript console buffer',
-        handler: (_) async => CommandResult.ok([
-          for (final e in consoleEntries)
-            {
-              'level': e.level,
-              'message': e.message,
-              'time': e.time.millisecondsSinceEpoch,
-            },
-        ]),
-      ))
-      ..register(Command(
-        name: 'clearConsole',
-        description: 'Clear the JavaScript console buffer',
-        handler: (_) async {
-          clearConsole();
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'evalJs',
-        description: 'Evaluate JavaScript in the page and return the result',
-        params: const {'code': 'JavaScript source'},
-        handler: (p) async {
-          final code = p['code'] as String?;
-          final controller = _controller;
-          if (code == null || controller == null) {
-            return const CommandResult.fail('code required / no webview');
-          }
-          final result = await controller.evaluateJavascript(source: code);
-          return CommandResult.ok('$result');
-        },
-      ))
-      ..register(Command(
-        name: 'clearWebCache',
-        description:
-            'Drop the HTTP cache, Cache Storage and any service worker, then '
-            'reload — so a redeployed dashboard or card is picked up. Keeps '
-            'localStorage and cookies (you stay logged in).',
-        handler: (_) async {
-          // NOT WebStorageManager.deleteAllData(): that would wipe
-          // localStorage, and pages keep real config there (the Voice
-          // Satellite card stores its per-browser satellite settings).
-          await InAppWebViewController.clearAllCache();
-          await runJs(clearWebCacheScript); // SW + Cache Storage, then reload
-          log.info(name, 'web cache cleared (localStorage preserved)');
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'logout',
-        description:
-            'Clear cookies and web storage, then reload the start URL',
-        handler: (_) async {
-          await CookieManager.instance().deleteAllCookies();
-          await WebStorageManager.instance().deleteAllData();
-          await InAppWebViewController.clearAllCache();
-          if (startUrl.isNotEmpty) await loadUrl(startUrl);
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'screenshot',
-        description:
-            'Capture the current page as a base64 JPEG. `quality` 1-100 '
-            '(default 60); `width` scales the capture down (default 720).',
-        params: const {
-          'quality': 'JPEG quality 1-100, default 60',
-          'width': 'scale the capture to this width, default 720',
-        },
-        handler: (p) async {
-          final controller = _controller;
-          if (controller == null) {
-            return const CommandResult.fail('no webview attached');
-          }
-          // JPEG, downscaled. The remote dashboard polls this every few
-          // seconds while an admin tab is open, and a full-size PNG of a
-          // 1920x1200 WebView costs ~380ms of GPU readback plus encode, which
-          // lands as a visible stutter on the tablet itself. The preview is
-          // shown a few hundred pixels wide, so the pixels were being thrown
-          // away anyway.
-          final quality = (p['quality'] as num?)?.toInt() ?? 60;
-          final width = (p['width'] as num?)?.toDouble() ?? 720;
-          final bytes = await controller.takeScreenshot(
-            screenshotConfiguration: ScreenshotConfiguration(
-              compressFormat: CompressFormat.JPEG,
-              quality: quality.clamp(1, 100),
-              snapshotWidth: width > 0 ? width : null,
-            ),
-          );
-          if (bytes == null) {
-            return const CommandResult.fail('screenshot failed');
-          }
-          return CommandResult.ok(base64Encode(bytes));
-        },
-      ));
+      ..register(
+        Command(
+          name: 'loadUrl',
+          description: 'Navigate to a URL',
+          params: const {'url': 'Absolute URL to load'},
+          handler: (p) async {
+            final url = p['url'] as String?;
+            if (url == null || url.isEmpty) {
+              return const CommandResult.fail('url required');
+            }
+            await loadUrl(url);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'loadDashboard',
+          description: 'Navigate to a Home Assistant dashboard',
+          params: const {'dashboard': 'Dashboard url_path, e.g. lovelace'},
+          handler: (p) async {
+            final dashboard = p['dashboard'] as String?;
+            final base = _settings.get(defs.haUrl);
+            if (dashboard == null || base.isEmpty) {
+              return const CommandResult.fail(
+                'dashboard required and Home Assistant URL must be configured',
+              );
+            }
+            await loadUrl('${_stripSlash(base)}/$dashboard');
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'reload',
+          description: 'Reload the current page',
+          handler: (_) async {
+            await _controller?.reload();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'getConsole',
+          description: 'Current JavaScript console buffer',
+          handler: (_) async => CommandResult.ok([
+            for (final e in consoleEntries)
+              {
+                'level': e.level,
+                'message': e.message,
+                'time': e.time.millisecondsSinceEpoch,
+              },
+          ]),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'clearConsole',
+          description: 'Clear the JavaScript console buffer',
+          handler: (_) async {
+            clearConsole();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'evalJs',
+          description: 'Evaluate JavaScript in the page and return the result',
+          params: const {'code': 'JavaScript source'},
+          handler: (p) async {
+            final code = p['code'] as String?;
+            final controller = _controller;
+            if (code == null || controller == null) {
+              return const CommandResult.fail('code required / no webview');
+            }
+            final result = await controller.evaluateJavascript(source: code);
+            return CommandResult.ok('$result');
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'clearWebCache',
+          description:
+              'Drop the HTTP cache, Cache Storage and any service worker, then '
+              'reload — so a redeployed dashboard or card is picked up. Keeps '
+              'localStorage and cookies (you stay logged in).',
+          handler: (_) async {
+            // NOT WebStorageManager.deleteAllData(): that would wipe
+            // localStorage, and pages keep real config there (the Voice
+            // Satellite card stores its per-browser satellite settings).
+            await InAppWebViewController.clearAllCache();
+            await runJs(clearWebCacheScript); // SW + Cache Storage, then reload
+            log.info(name, 'web cache cleared (localStorage preserved)');
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'logout',
+          description:
+              'Clear cookies and web storage, then reload the start URL',
+          handler: (_) async {
+            await CookieManager.instance().deleteAllCookies();
+            await WebStorageManager.instance().deleteAllData();
+            await InAppWebViewController.clearAllCache();
+            if (startUrl.isNotEmpty) await loadUrl(startUrl);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'screenshot',
+          description:
+              'Capture the screen as a base64 JPEG — what the display shows: '
+              'page, menus, screensaver. `quality` 1-100 (default 60); `width` '
+              'scales the capture down (default 720).',
+          params: const {
+            'quality': 'JPEG quality 1-100, default 60',
+            'width': 'scale the capture to this width, default 720',
+          },
+          handler: (p) async {
+            final quality = ((p['quality'] as num?)?.toInt() ?? 60).clamp(
+              1,
+              100,
+            );
+            final width = (p['width'] as num?)?.toInt() ?? 720;
+            // The window, via a GPU blit on a background thread (see
+            // ScreenCapture.kt). The WebView's own capture below draws the
+            // view into a bitmap on the UI thread — with the admin's
+            // auto-refresh ticked that was a visible stutter every few
+            // seconds — and it can only ever show the page, never the
+            // screensaver or menu actually on screen.
+            final native = await ScreenCapture.capture(
+              width: width,
+              quality: quality,
+            );
+            if (native != null) return CommandResult.ok(base64Encode(native));
+            // No Activity window (app backgrounded, or Android < 8): the
+            // WebView outlives the Activity, so its page capture still works.
+            final controller = _controller;
+            if (controller == null) {
+              return const CommandResult.fail('no webview attached');
+            }
+            final bytes = await controller.takeScreenshot(
+              screenshotConfiguration: ScreenshotConfiguration(
+                compressFormat: CompressFormat.JPEG,
+                quality: quality,
+                snapshotWidth: width > 0 ? width.toDouble() : null,
+              ),
+            );
+            if (bytes == null) {
+              return const CommandResult.fail('screenshot failed');
+            }
+            return CommandResult.ok(base64Encode(bytes));
+          },
+        ),
+      );
   }
 
   void attach(InAppWebViewController controller) {
@@ -198,11 +229,13 @@ class BrowserManager extends Manager {
     }
     consoleEntries.add(ConsoleEntry(now, level, message));
     consoleRevision.value++;
-    bus.publish(ConsoleLine(
-      level: level,
-      message: message,
-      timeMs: now.millisecondsSinceEpoch,
-    ));
+    bus.publish(
+      ConsoleLine(
+        level: level,
+        message: message,
+        timeMs: now.millisecondsSinceEpoch,
+      ),
+    );
   }
 
   void clearConsole() {
