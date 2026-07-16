@@ -436,6 +436,28 @@ class WakeWordManager extends Manager {
         handler: (_) async => CommandResult.ok(describeState()),
       ))
       ..register(Command(
+        name: 'bringToFront',
+        description: 'Bring the app to the foreground — for a server-initiated '
+            'interaction (announcement, ask_question, start_conversation) that '
+            'arrives while the app is behind another one. No-op when already in '
+            'front; false when it cannot come forward (no "Display over other '
+            'apps" grant). The app must be running to receive the trigger at '
+            'all, which is what keeping the wake word alive in the background '
+            'ensures.',
+        handler: (_) async {
+          // Already in front: do nothing and report success. Relaunching a
+          // foreground Activity recreates the WebView and reloads the page —
+          // dropping the card session in the middle of the very interaction
+          // this was meant to reveal. Only come forward when actually behind
+          // something (same guard as the native wake path).
+          if (WidgetsBinding.instance.lifecycleState ==
+              AppLifecycleState.resumed) {
+            return const CommandResult.ok(true);
+          }
+          return CommandResult.ok(await BackgroundListening.bringToFront());
+        },
+      ))
+      ..register(Command(
         name: 'retryWakeWord',
         description: 'Try to start the wake-word engine again after a failure: '
             're-asks for the microphone and re-fetches the models. The card '

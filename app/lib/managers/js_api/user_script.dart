@@ -33,6 +33,11 @@ String buildKioskSatelliteScript({required String version, required String os}) 
     stopScreensaver: function () { return call('stopScreensaver'); },
     pauseScreensaver: function (paused) { return call('pauseScreensaver', { paused: !!paused }); },
 
+    // Bring the app to the foreground — for a server-initiated interaction that
+    // arrives while the app is behind another one. Resolves true if it came (or
+    // was already) forward, false if it could not (no overlay grant).
+    bringToFront: function () { return call('bringToFront'); },
+
     getMotionEnabled: function () { return call('getMotionEnabled'); },
 
     setWakeWordConfig: function (config) { return call('setWakeWordConfig', config); },
