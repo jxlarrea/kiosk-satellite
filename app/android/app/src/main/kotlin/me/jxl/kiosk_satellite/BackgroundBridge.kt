@@ -73,16 +73,20 @@ class BackgroundBridge(
     private fun bringToFront(): Boolean {
         if (!canDrawOverlays()) return false
         return try {
-            context.startActivity(
-                Intent(context, MainActivity::class.java).apply {
-                    // REORDER_TO_FRONT rather than a fresh launch: the WebView is
-                    // still mounted with the card's session on it, and a relaunch
-                    // would reload the page and lose the turn we woke up for.
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-                },
-            )
+            // Resume the existing task exactly the way tapping the launcher icon
+            // does. The running Activity (singleTop) and its live WebView are
+            // reused — the card session survives.
+            //
+            // The previous explicit-component intent with NEW_TASK + the empty
+            // taskAffinity could instead spawn a *second* MainActivity instance
+            // in a separate task; its fresh WebView reloaded the page and the
+            // original session was lost. The launcher intent targets the app's
+            // one task deterministically and never does that.
+            val launch = context.packageManager
+                .getLaunchIntentForPackage(context.packageName)
+                ?: return false
+            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(launch)
             true
         } catch (e: Exception) {
             false
