@@ -63,8 +63,37 @@
   nav { display: flex; gap: 4px; padding: 10px 14px; background: var(--surface);
     border-bottom: 1px solid var(--border); overflow-x: auto; }
   nav button { background: transparent; border: none; color: var(--muted);
-    padding: 8px 14px; border-radius: 9px; white-space: nowrap; }
+    padding: 8px 14px; border-radius: 9px; white-space: nowrap; cursor: pointer; }
   nav button.active { background: var(--surface-2); color: var(--text); }
+
+  /* The hamburger and drawer are mobile-only; hidden on wider screens. */
+  .hamburger { display: none; background: transparent; border: 1px solid var(--border);
+    color: var(--text); border-radius: 9px; padding: 6px 11px; font-size: 17px;
+    line-height: 1; cursor: pointer; }
+  .hamburger:hover { border-color: var(--primary); }
+  .nav-backdrop { display: none; position: fixed; inset: 0;
+    background: rgba(0, 0, 0, .5); z-index: 19; }
+
+  @media (max-width: 640px) {
+    /* Header shrinks to the essentials; the brand and device name give way to
+       the hamburger, and the health stats stay because that is what a glance
+       is for. */
+    .hamburger { display: inline-flex; align-items: center; }
+    header { gap: 8px; padding: 10px 12px; }
+    header .title, header .device { display: none; }
+    header .stat, header .battery { font-size: 12px; }
+    .btn-ghost { padding: 6px 10px; }
+
+    /* Nav slides in from the left as a vertical list instead of overflowing. */
+    nav#tabs { position: fixed; top: 0; left: 0; bottom: 0; width: 250px; max-width: 82vw;
+      flex-direction: column; align-items: stretch; gap: 2px; padding: 14px 12px;
+      overflow-y: auto; overflow-x: hidden;
+      border-right: 1px solid var(--border); border-bottom: none;
+      transform: translateX(-100%); transition: transform .22s ease; z-index: 20; }
+    nav#tabs.open { transform: translateX(0); box-shadow: 0 10px 40px rgba(0, 0, 0, .55); }
+    nav#tabs button { width: 100%; text-align: left; padding: 13px 14px; font-size: 15px; }
+    .nav-backdrop.show { display: block; }
+  }
 
   main { flex: 1; padding: 18px; max-width: 900px; width: 100%; margin: 0 auto; }
   .tab { display: none; }
@@ -141,6 +170,7 @@
 <!-- App -->
 <section id="app" class="hidden">
   <header>
+    <button class="hamburger" id="navToggle" aria-label="Menu" aria-expanded="false">☰</button>
     <span class="dot" id="connDot"></span>
     <span class="title">Kiosk Satellite</span>
     <span class="device" id="deviceName"></span>
@@ -159,6 +189,7 @@
     <button data-tab="console">Console</button>
     <button data-tab="logs">Logs</button>
   </nav>
+  <div class="nav-backdrop" id="navBackdrop"></div>
   <main>
     <!-- Dashboard -->
     <div class="tab active" id="tab-dashboard">
@@ -279,9 +310,21 @@ function showTab(name, { push = true } = {}) {
   if (tab === 'device') loadDeviceInfo();
 }
 
+// Mobile drawer: the hamburger toggles the nav in/out; the backdrop and picking
+// a tab close it. On wide screens the nav is a normal bar and these are inert
+// (the .open/.show styles live only inside the mobile media query).
+function setNav(open) {
+  $('#tabs').classList.toggle('open', open);
+  $('#navBackdrop').classList.toggle('show', open);
+  $('#navToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+$('#navToggle').addEventListener('click', () =>
+  setNav(!$('#tabs').classList.contains('open')));
+$('#navBackdrop').addEventListener('click', () => setNav(false));
+
 $('#tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
-  if (btn) showTab(btn.dataset.tab);
+  if (btn) { showTab(btn.dataset.tab); setNav(false); }
 });
 
 // Back/forward, and an address typed by hand.
