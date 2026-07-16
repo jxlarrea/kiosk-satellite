@@ -217,6 +217,40 @@ class _KioskScreenState extends State<KioskScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    // Built once per build(), NOT once per animation tick. The
+    // AnimatedBuilder below runs its builder every frame of the drawer
+    // slide; the planes themselves never change during it — only their
+    // positions do. Rebuilding the WebView widget (and re-reading every
+    // initialSettings value) per frame would be pure waste, spent at the
+    // exact moment the platform view is being moved.
+    final kioskPlane = Stack(
+      // Expand: the Stack takes its size from its parent, never from its
+      // children — the overlays are positioned or zero-sized and would
+      // collapse a child-sized Stack.
+      fit: StackFit.expand,
+      children: [
+        _webView(),
+        if (_consoleOpen)
+          WebConsolePanel(
+            browser: c.browser,
+            onClose: () => setState(() => _consoleOpen = false),
+          ),
+      ],
+    );
+    // A horizontal drag anywhere on the drawer moves it too — swiping the
+    // menu itself closed is the intuitive gesture, not just swiping the
+    // kiosk. Taps and vertical scrolling inside the menu are untouched
+    // (different gesture axes).
+    final drawerPane = GestureDetector(
+      onHorizontalDragUpdate: _drawerDragUpdate,
+      onHorizontalDragEnd: _drawerDragEnd,
+      child: KioskDrawer(
+        container: c,
+        onClose: _closeDrawer,
+        onWebConsole: () => setState(() => _consoleOpen = true),
+        onSettings: _openSettings,
+      ),
+    );
     return Scaffold(
       backgroundColor: Colors.black,
       body: Listener(
@@ -245,41 +279,15 @@ class _KioskScreenState extends State<KioskScreen>
                     top: 0,
                     bottom: 0,
                     width: size.width,
-                    child: Stack(
-                      // Expand: the Stack takes its size from its parent,
-                      // never from its children — the overlays are positioned
-                      // or zero-sized and would collapse a child-sized Stack.
-                      fit: StackFit.expand,
-                      children: [
-                        _webView(),
-                        if (_consoleOpen)
-                          WebConsolePanel(
-                            browser: c.browser,
-                            onClose: () => setState(() => _consoleOpen = false),
-                          ),
-                      ],
-                    ),
+                    child: kioskPlane,
                   ),
-                  // The drawer plane, sliding in from the same seam. A
-                  // horizontal drag anywhere on it moves the drawer too —
-                  // swiping the menu itself closed is the intuitive gesture,
-                  // not just swiping the kiosk. Taps and vertical scrolling
-                  // inside the menu are untouched (different gesture axes).
+                  // The drawer plane, sliding in from the same seam.
                   Positioned(
                     left: dx - _drawerWidth,
                     top: 0,
                     bottom: 0,
                     width: _drawerWidth,
-                    child: GestureDetector(
-                      onHorizontalDragUpdate: _drawerDragUpdate,
-                      onHorizontalDragEnd: _drawerDragEnd,
-                      child: KioskDrawer(
-                        container: c,
-                        onClose: _closeDrawer,
-                        onWebConsole: () => setState(() => _consoleOpen = true),
-                        onSettings: _openSettings,
-                      ),
-                    ),
+                    child: drawerPane,
                   ),
                   // While open, the visible slice of the kiosk closes the
                   // drawer on tap or drag — no scrim: dimming the content
