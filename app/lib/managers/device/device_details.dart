@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 /// The device facts that need the platform to answer: memory, storage, the
 /// panel, the WebView actually rendering the page.
 ///
-/// Everything here is read on demand. A null field means Android would not tell
-/// us, and is rendered as unavailable with the reason rather than as a
-/// plausible-looking zero — see [DeviceDetails.macAddresses], which is the
-/// cautionary tale.
+/// Everything here is read on demand, and is limited to what Android will
+/// answer without a further grant. A null field means the platform declined,
+/// and is rendered as unavailable rather than as a plausible-looking zero.
 class DeviceDetails {
   const DeviceDetails._(this._raw);
 
@@ -54,15 +53,6 @@ class DeviceDetails {
   String? get webviewPackage => _map('webview')?['package'] as String?;
   String? get webviewVersion => _map('webview')?['version'] as String?;
 
-  /// Empty on any modern Android. Kept as a list rather than a string so
-  /// "none" is representable without inventing one.
-  List<String> get macAddresses =>
-      (_raw['macAddresses'] as List?)?.cast<String>() ?? const [];
-
-  /// Null without "Usage access", the special grant this needs.
-  String? get foregroundApp => _raw['foregroundApp'] as String?;
-  bool get hasUsageAccess => _raw['hasUsageAccess'] == true;
-
   Map<String, Object?> toJson() => {
         'brand': brand,
         'manufacturer': manufacturer,
@@ -77,8 +67,5 @@ class DeviceDetails {
           'density': screenDensity,
         },
         'webview': {'package': webviewPackage, 'version': webviewVersion},
-        'macAddresses': macAddresses,
-        'foregroundApp': foregroundApp,
-        'hasUsageAccess': hasUsageAccess,
       };
 }

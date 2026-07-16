@@ -529,12 +529,6 @@ async function loadDeviceInfo() {
     ['Android build', or(det?.androidBuild)],
     ['IPv4 address', or(info?.ip)],
     ['IPv6 addresses', or((info?.ipv6 || []).join(', '))],
-    // Android stopped handing these to apps in 6 and closed the last way in
-    // by 11 — on 16 even an adb shell cannot read the sysfs node. Saying so
-    // beats printing the 02:00:00:00:00:00 placeholder as if it were real.
-    ['MAC addresses', (det?.macAddresses || []).length
-      ? det.macAddresses.join(', ')
-      : 'not available (Android hides these from apps)'],
     ['Battery level', info?.battery == null ? '—'
       : `${info.battery}%${info.charging ? ' (plugged)' : ''}`],
     ['Screen brightness', info?.brightness == null ? '—'
@@ -547,9 +541,6 @@ async function loadDeviceInfo() {
       (det?.ram?.low ? ' — low' : '')],
     ['Internal storage (free/total)',
       pair(mb(det?.storage?.free), mb(det?.storage?.total), 'MB')],
-    ['Foreground app', det?.hasUsageAccess
-      ? or(det?.foregroundApp)
-      : 'not available (needs Usage access)'],
   ]);
 
   card('Home Assistant', [
@@ -578,7 +569,6 @@ async function loadDeviceInfo() {
       ' — come forward on a wake word'],
     ['Unrestricted battery', st(perms?.batteryUnrestricted) +
       ' — keep the background listener alive'],
-    ['Usage access', st(perms?.usageAccess) + ' — foreground app'],
     ['Install-time', 'granted — internet, network state, wake lock, audio ' +
       'settings, boot, foreground service'],
   ]);

@@ -1,6 +1,5 @@
 import 'package:permission_handler/permission_handler.dart';
 
-import '../device/device_details.dart';
 import 'background_listening.dart';
 
 /// The OS grants native wake-word detection needs, read in one place.
@@ -22,7 +21,6 @@ class SystemPermissions {
     required this.batteryUnrestricted,
     required this.camera,
     required this.location,
-    required this.usageAccess,
   });
 
   /// Nothing listens without this one, foreground or not.
@@ -47,9 +45,6 @@ class SystemPermissions {
   /// Only a page ever wants this (geolocation). Nothing native here uses it.
   final bool location;
 
-  /// "Usage access", the special grant needed to ask which app is in front.
-  /// Nothing depends on it; it buys one diagnostic field.
-  final bool usageAccess;
 
   static Future<SystemPermissions> read() async => SystemPermissions(
         microphone: await Permission.microphone.isGranted,
@@ -59,7 +54,6 @@ class SystemPermissions {
         batteryUnrestricted: await BackgroundListening.isBatteryUnrestricted(),
         camera: await Permission.camera.isGranted,
         location: await Permission.locationWhenInUse.isGranted,
-        usageAccess: (await DeviceDetails.read()).hasUsageAccess,
       );
 
   /// Nothing we could not read. A platform without these channels answers
@@ -73,7 +67,6 @@ class SystemPermissions {
     batteryUnrestricted: false,
     camera: false,
     location: false,
-    usageAccess: false,
   );
 
   Map<String, Object?> toJson() => {
@@ -84,6 +77,5 @@ class SystemPermissions {
         'batteryUnrestricted': batteryUnrestricted,
         'camera': camera,
         'location': location,
-        'usageAccess': usageAccess,
       };
 }
