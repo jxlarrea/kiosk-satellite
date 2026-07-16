@@ -41,7 +41,7 @@ engine itself is next).
 - **Menu on the device**: **swipe from the left edge** (like Fully Kiosk) —
   Home, Settings, Web Console, Log out, Exit Application.
 - **Remote management**: set an admin password (setup wizard or Settings →
-  Remote), then browse to `http://<device-ip>:2323`. The REST API lives under
+  Remote), then browse to `http://<device-ip>:2324`. The REST API lives under
   `/api/` (see [docs/remote-api.md](docs/remote-api.md)).
 - **Provisioning via adb/MDM** (no UI):
 
@@ -66,4 +66,4 @@ The app lives in [app/](app/), one folder per manager under
 [app/lib/managers/](app/lib/managers/). The remote admin UI is a single
 self-contained page at
 [app/assets/remote-ui/index.html](app/assets/remote-ui/index.html), served by
-the remote server at `http://<device-ip>:2323`.
+the remote server at `http://<device-ip>:2324`.

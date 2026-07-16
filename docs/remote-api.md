@@ -1,6 +1,6 @@
 # Kiosk Satellite — Remote Management API
 
-Every device runs an embedded HTTP server (default port **2323**, configurable —
+Every device runs an embedded HTTP server (default port **2324**, configurable —
 kept for Fully Kiosk familiarity) serving:
 
 1. The **remote admin SPA** (`remote-ui/`, bundled into app assets) at `/`.

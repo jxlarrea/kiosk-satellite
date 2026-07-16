@@ -190,7 +190,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Remote admin password (optional)',
                   helperText:
-                      'Enables the web admin at http://<device-ip>:2323',
+                      'Enables the web admin at http://<device-ip>:2324',
                 ),
               ),
               if (_status != null) ...[

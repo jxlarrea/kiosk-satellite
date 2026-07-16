@@ -293,7 +293,7 @@ const remoteEnabled = SettingDef<bool>(
 const remotePort = SettingDef<num>(
   key: 'remote.port',
   type: SettingType.number,
-  defaultValue: 2323,
+  defaultValue: 2324,
   title: 'Server port',
   description: 'Port for the remote admin interface.',
   category: 'Remote',
