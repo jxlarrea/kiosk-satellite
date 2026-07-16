@@ -4,13 +4,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kiosk Satellite — Remote</title>
+<script>
+  // Theme before first paint (no flash); the full logic lives at the bottom.
+  {
+    const p = localStorage.getItem('ks_theme');
+    document.documentElement.dataset.theme =
+      p === 'dark' || p === 'light' ? p
+        : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+</script>
 <style>
+  /* Kiosk Satellite brand palette, shared with the app's own theme (see
+     lib/ui/theme.dart): sage green primary, teal accent, ochre warning, rust
+     error. Exact values on the dark background; darkened a step for text on
+     the light one. --primary is the text/border accent, --primary-fill the
+     solid-fill tone — one and the same in dark. */
   :root {
-    --bg: #0f1117; --surface: #171a23; --surface-2: #1e2230;
-    --border: #2a2f3f; --divider: #333a4d; --text: #e6e8ee; --muted: #8b90a0;
-    --primary: #8b95e8; --primary-ink: #10131c;
-    --error: #ef6b73; --warn: #e0b34d; --ok: #5fbf80; --debug: #7d8290;
-    --radius: 14px;
+    color-scheme: light;
+    --bg: #f5f4f2; --surface: #ffffff; --surface-2: #edeae5;
+    --border: #e2dfd9; --divider: #eae7e1;
+    --text: #212327; --muted: #6c7076;
+    --primary: #56814f; --primary-fill: #749c6f; --primary-ink: #ffffff;
+    --primary-soft: #e3eae1;
+    --accent: #44686c;
+    --ok: #56814f; --warn: #9c742a; --error: #a9501f; --debug: #9a9da3;
+    --radius: 14px; --radius-sm: 10px;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #202124; --surface: #2a2b2f; --surface-2: #37383d;
+    --border: #3c3e43; --divider: #3c3e43;
+    --text: #e8eaed; --muted: #9aa0a6;
+    --primary: #749c6f; --primary-fill: #749c6f; --primary-ink: #ffffff;
+    --primary-soft: #333f31;
+    --accent: #7aa6aa;
+    --ok: #749c6f; --warn: #ce9c3e; --error: #d97e4c; --debug: #7d8188;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -21,6 +49,7 @@
   }
   button { font: inherit; cursor: pointer; }
   input, select { font: inherit; }
+  input[type=range], input[type=checkbox] { accent-color: var(--primary-fill); }
   .hidden { display: none !important; }
 
   /* Login */
@@ -35,11 +64,12 @@
   .login-card p { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
   .field { width: 100%; padding: 13px 15px; margin-bottom: 12px;
     background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 11px; color: var(--text); }
+    border-radius: var(--radius-sm); color: var(--text); }
   .field:focus { outline: none; border-color: var(--primary); }
-  .btn-primary { width: 100%; padding: 13px; background: var(--primary);
-    color: var(--primary-ink); border: none; border-radius: 11px;
+  .btn-primary { width: 100%; padding: 13px; background: var(--primary-fill);
+    color: var(--primary-ink); border: none; border-radius: var(--radius-sm);
     font-weight: 600; }
+  .btn-primary:hover { filter: brightness(1.06); }
   .btn-primary:active { transform: translateY(1px); }
   .msg-error { color: var(--error); font-size: 14px; margin-top: 12px; min-height: 18px; }
 
@@ -57,19 +87,24 @@
   header .battery { color: var(--muted); font-size: 13px; }
   header .stat { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
   .btn-ghost { background: transparent; border: 1px solid var(--border);
-    color: var(--text); border-radius: 9px; padding: 7px 12px; }
-  .btn-ghost:hover { border-color: var(--primary); }
+    color: var(--text); border-radius: var(--radius-sm); padding: 7px 12px; }
+  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+  #themeBtn { display: inline-flex; align-items: center; padding: 7px 9px; }
+  #themeBtn svg { display: block; }
 
   nav { display: flex; gap: 4px; padding: 10px 14px; background: var(--surface);
     border-bottom: 1px solid var(--border); overflow-x: auto; }
   nav button { background: transparent; border: none; color: var(--muted);
-    padding: 8px 14px; border-radius: 9px; white-space: nowrap; cursor: pointer; }
-  nav button.active { background: var(--surface-2); color: var(--text); }
+    padding: 8px 14px; border-radius: var(--radius-sm); white-space: nowrap;
+    cursor: pointer; }
+  nav button:hover { color: var(--text); }
+  nav button.active { background: var(--primary-soft); color: var(--primary);
+    font-weight: 500; }
 
   /* The hamburger and drawer are mobile-only; hidden on wider screens. */
   .hamburger { display: none; background: transparent; border: 1px solid var(--border);
-    color: var(--text); border-radius: 9px; padding: 6px 11px; font-size: 17px;
-    line-height: 1; cursor: pointer; }
+    color: var(--text); border-radius: var(--radius-sm); padding: 6px 11px;
+    font-size: 17px; line-height: 1; cursor: pointer; }
   .hamburger:hover { border-color: var(--primary); }
   .nav-backdrop { display: none; position: fixed; inset: 0;
     background: rgba(0, 0, 0, .5); z-index: 19; }
@@ -101,16 +136,16 @@
 
   .card { background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
-  .card h2 { font-size: 14px; font-weight: 600; color: var(--primary);
+  .card h2 { font-size: 14px; font-weight: 600; color: var(--accent);
     margin: 0 0 14px; text-transform: uppercase; letter-spacing: .04em; }
-  .card h3.section { font-size: 12px; font-weight: 600; color: var(--primary);
+  .card h3.section { font-size: 12px; font-weight: 600; color: var(--accent);
     margin: 20px 0 10px; text-transform: uppercase; letter-spacing: .04em;
     border-top: 1px solid var(--divider); padding-top: 16px; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .action { padding: 12px; background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 11px; color: var(--text); text-align: center; }
-  .action:hover { border-color: var(--primary); }
+  .action { padding: 12px; background: var(--surface-2); border: 1px solid transparent;
+    border-radius: var(--radius-sm); color: var(--text); text-align: center; }
+  .action:hover { border-color: var(--primary-fill); }
 
   /* A settings list is a list: the separator has to be visible enough to
      actually divide one row from the next, which --border (tuned for card
@@ -123,14 +158,16 @@
   .row .info .desc { color: var(--muted); font-size: 13px; }
   .row input[type=text], .row input[type=password], .row input[type=number], .row select {
     background: var(--surface-2); border: 1px solid var(--border);
-    color: var(--text); border-radius: 9px; padding: 8px 11px; max-width: 220px; }
+    color: var(--text); border-radius: var(--radius-sm); padding: 8px 11px;
+    max-width: 220px; }
+  .row input:focus, .row select:focus { outline: none; border-color: var(--accent); }
   .switch { position: relative; width: 46px; height: 26px; flex: none; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .slider { position: absolute; inset: 0; background: var(--surface-2);
     border: 1px solid var(--border); border-radius: 26px; transition: .2s; }
   .slider::before { content: ""; position: absolute; width: 18px; height: 18px;
     left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: .2s; }
-  .switch input:checked + .slider { background: var(--primary); border-color: var(--primary); }
+  .switch input:checked + .slider { background: var(--primary-fill); border-color: var(--primary-fill); }
   .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
 
   /* On phones, reflow each row so the name and its control share the top line
@@ -152,13 +189,13 @@
     .row input[type=number] { max-width: 90px; }
   }
 
-  .shot-wrap { position: relative; border-radius: 11px; overflow: hidden;
+  .shot-wrap { position: relative; border-radius: var(--radius-sm); overflow: hidden;
     background: var(--surface-2); aspect-ratio: 16/10; display: grid; place-items: center; }
   .shot-wrap img { width: 100%; height: 100%; object-fit: contain; }
   .shot-wrap .placeholder { color: var(--muted); }
 
-  .console { background: #0a0c12; border: 1px solid var(--border); border-radius: 11px;
-    height: 60vh; overflow-y: auto; padding: 10px 12px;
+  .console { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); height: 60vh; overflow-y: auto; padding: 10px 12px;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
   .line { white-space: pre-wrap; word-break: break-word; padding: 1px 0; }
   .line .ts { color: var(--debug); }
@@ -197,6 +234,7 @@
     <span class="stat" id="cpu"></span>
     <span class="stat" id="cputemp"></span>
     <span class="battery" id="battery"></span>
+    <button class="btn-ghost" id="themeBtn" title="Theme" aria-label="Theme"></button>
     <button class="btn-ghost" id="logoutBtn">Log out</button>
   </header>
   <nav id="tabs">
@@ -280,6 +318,35 @@
 <script>
 const $ = (s) => document.querySelector(s);
 const state = { token: localStorage.getItem('ks_token'), ws: null, autoShotTimer: null };
+
+/* ---- Theme ---- */
+// Follows the OS by default; the header button cycles auto → dark → light and
+// remembers. The head script applies the same choice before first paint.
+const themeMedia = matchMedia('(prefers-color-scheme: dark)');
+// The button shows the *preference* (auto / dark / light), not the resolved
+// theme — auto has its own face so "following the OS" stays visible.
+const THEME_ICONS = {
+  auto: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg>',
+  dark: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+  light: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg>',
+};
+function applyTheme() {
+  const pref = localStorage.getItem('ks_theme') || 'auto';
+  const dark = pref === 'dark' || (pref === 'auto' && themeMedia.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const btn = $('#themeBtn');
+  btn.innerHTML = THEME_ICONS[pref];
+  btn.title = `Theme: ${pref}`;
+  btn.setAttribute('aria-label', `Theme: ${pref}`);
+}
+$('#themeBtn').addEventListener('click', () => {
+  const order = ['auto', 'dark', 'light'];
+  const pref = localStorage.getItem('ks_theme') || 'auto';
+  localStorage.setItem('ks_theme', order[(order.indexOf(pref) + 1) % order.length]);
+  applyTheme();
+});
+themeMedia.addEventListener('change', applyTheme);
+applyTheme();
 
 async function api(path, opts = {}) {
   const res = await fetch(path, {
@@ -466,8 +533,8 @@ async function loadWakeWord() {
   const status = document.createElement('div');
   status.className = 'row';
   const bad = ['micBlocked', 'micDeclined', 'micLost', 'modelsUnavailable', 'unavailable'];
-  const dot = s.status === 'listening' ? 'var(--ok, #7ee081)'
-    : bad.includes(s.status) ? 'var(--err, #ff6b6b)'
+  const dot = s.status === 'listening' ? 'var(--ok)'
+    : bad.includes(s.status) ? 'var(--error)'
     : 'var(--muted)';
   status.innerHTML =
     `<div class="info"><div class="name">Status</div>` +
@@ -797,7 +864,7 @@ function settingRow(s) {
     const inp = document.createElement('input');
     inp.type = 'color'; inp.value = hex;
     inp.style.cssText = 'width:44px; height:32px; padding:2px; background:var(--surface-2);'
-      + 'border:1px solid var(--border); border-radius:9px; cursor:pointer';
+      + 'border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer';
     inp.addEventListener('change', () => {
       const h = inp.value; // #rrggbb
       const rgb = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)).join(',');
@@ -840,7 +907,7 @@ function settingRow(s) {
     inp.type = 'time';
     inp.value = s.value || '';
     inp.style.cssText = 'background:var(--surface-2); border:1px solid var(--border);'
-      + 'border-radius:9px; color:var(--text); padding:6px 8px';
+      + 'border-radius:var(--radius-sm); color:var(--text); padding:6px 8px';
     inp.addEventListener('change', () => save(inp.value));
     row.appendChild(inp);
     return row;
@@ -1031,8 +1098,8 @@ function renderStats(o) {
   if (o.temp != null) {
     const t = Math.round(o.temp);
     temp.textContent = `${t}°C`;
-    temp.style.color = t >= 80 ? 'var(--err, #ff6b6b)'
-      : t >= 65 ? 'var(--warn, #e0a94b)' : 'var(--muted)';
+    temp.style.color = t >= 80 ? 'var(--error)'
+      : t >= 65 ? 'var(--warn)' : 'var(--muted)';
     temp.style.display = '';
   } else temp.style.display = 'none';
 }
