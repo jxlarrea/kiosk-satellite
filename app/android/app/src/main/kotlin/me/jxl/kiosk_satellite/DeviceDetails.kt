@@ -4,6 +4,8 @@ import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.os.StatFs
 import android.util.DisplayMetrics
 import android.view.WindowManager
@@ -36,7 +38,13 @@ class DeviceDetails(
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "read" -> result.success(read())
-                "cpu" -> result.success(cpu())
+                // Dozens of sysfs reads, polled every few seconds while an
+                // admin tab is open — off the main thread, so a stats tick
+                // can never cost the UI a frame.
+                "cpu" -> Thread {
+                    val data = cpu()
+                    Handler(Looper.getMainLooper()).post { result.success(data) }
+                }.start()
                 else -> result.notImplemented()
             }
         }
