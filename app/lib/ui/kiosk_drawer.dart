@@ -80,11 +80,17 @@ class KioskDrawer extends StatelessWidget {
       case 0: // Home
         await c.commands.execute('loadUrl', {'url': c.browser.startUrl});
       case 1: // Settings
+        // Hold the screensaver while settings are open. Otherwise the idle
+        // timer keeps firing behind this route: the overlay renders under it
+        // (invisible), yet it still dims the backlight and, with motion on,
+        // opens the camera while someone is configuring. Re-arm on return.
+        await c.commands.execute('pauseScreensaver', {'paused': true});
         if (context.mounted) {
           await Navigator.of(context).push(MaterialPageRoute<void>(
             builder: (_) => SettingsScreen(container: c),
           ));
         }
+        await c.commands.execute('pauseScreensaver', {'paused': false});
       case 2: // Web Console
         onWebConsole();
       case 3: // Clear web cache
