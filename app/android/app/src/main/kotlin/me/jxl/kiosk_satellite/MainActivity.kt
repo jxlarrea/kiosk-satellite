@@ -1,47 +1,55 @@
 package me.jxl.kiosk_satellite
 
+import android.content.Context
 import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 
+/**
+ * Attaches to the process-wide engine from [KioskApplication] instead of
+ * spinning up its own, so destroying this Activity does not take the Dart
+ * isolate (and the admin server with it) down. It only owns the bridges that
+ * genuinely need a live Activity — the camera and the launch intent — and tears
+ * those down when it detaches; the engine lives on.
+ */
 class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
-
-    private var micRecorder: MicRecorder? = null
-    private var background: BackgroundBridge? = null
-    private var deviceDetails: DeviceDetails? = null
     private var cameraMotion: CameraMotion? = null
 
+    override fun provideFlutterEngine(context: Context): FlutterEngine? =
+        FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
+
+    // The engine belongs to the process, not this Activity.
+    override fun shouldDestroyEngineWithHost(): Boolean = false
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        micRecorder = MicRecorder(flutterEngine.dartExecutor.binaryMessenger)
-        background = BackgroundBridge(this, flutterEngine.dartExecutor.binaryMessenger)
-        deviceDetails = DeviceDetails(this, flutterEngine.dartExecutor.binaryMessenger)
-        cameraMotion = CameraMotion(this, flutterEngine.dartExecutor.binaryMessenger)
-        provisionChannel = MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            "kiosk_satellite/provision"
-        )
+        // Deliberately not calling super: plugins are registered once on the
+        // cached engine in KioskApplication. Only Activity-scoped bridges here.
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        cameraMotion = CameraMotion(this, messenger)
+        provisionChannel = MethodChannel(messenger, "kiosk_satellite/provision")
         provisionChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
-                // Settings JSON passed as a launch-intent extra:
-                //   adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
-                //     --es ks.provision '{"remote.enabled":true,...}'
                 "getProvisionJson" -> result.success(intent?.getStringExtra("ks.provision"))
                 else -> result.notImplemented()
             }
         }
+        // Cold launch: Dart's provisioning pull runs at process start, before
+        // this Activity exists, so push the launch-intent extra now.
+        intent?.getStringExtra("ks.provision")?.let {
+            provisionChannel?.invokeMethod("provision", it)
+        }
     }
 
-    override fun onDestroy() {
-        background?.dispose()
-        background = null
-        deviceDetails?.dispose()
-        deviceDetails = null
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        // Counterpart to configureFlutterEngine: drop the Activity-scoped
+        // bridges as we detach. The engine (and its Dart isolate) stays.
         cameraMotion?.dispose()
         cameraMotion = null
-        super.onDestroy()
+        provisionChannel?.setMethodCallHandler(null)
+        provisionChannel = null
     }
 
     override fun onNewIntent(intent: Intent) {
