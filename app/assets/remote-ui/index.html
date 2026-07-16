@@ -148,6 +148,7 @@
     <button data-tab="dashboard" class="active">Dashboard</button>
     <button data-tab="settings">Settings</button>
     <button data-tab="homeassistant">Home Assistant</button>
+    <button data-tab="device">Device Info</button>
     <button data-tab="console">Console</button>
     <button data-tab="logs">Logs</button>
   </nav>
@@ -179,6 +180,7 @@
         <div class="row" style="margin-top:6px">
           <div class="info"><div class="name">Brightness</div></div>
           <input type="range" id="brightness" min="0" max="100" value="100" style="flex:1">
+          <span class="device" id="brightnessValue" style="min-width:3.5em; text-align:right">—</span>
         </div>
         <div class="row">
           <input type="text" id="urlInput" placeholder="https://…" style="flex:1; max-width:none">
@@ -192,6 +194,9 @@
 
     <!-- Settings (everything else) -->
     <div class="tab" id="tab-settings"></div>
+
+    <!-- Device Info -->
+    <div class="tab" id="tab-device"></div>
 
     <!-- Console -->
     <div class="tab" id="tab-console">
@@ -252,7 +257,7 @@ function logout() {
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-const TABS = ['dashboard', 'settings', 'homeassistant', 'console', 'logs'];
+const TABS = ['dashboard', 'settings', 'homeassistant', 'device', 'console', 'logs'];
 
 function showTab(name, { push = true } = {}) {
   const tab = TABS.includes(name) ? name : 'dashboard';
@@ -262,6 +267,7 @@ function showTab(name, { push = true } = {}) {
     t.classList.toggle('active', t.id === `tab-${tab}`));
   if (push && location.hash.slice(1) !== tab) location.hash = tab;
   if (tab === 'logs') loadLogs();
+  if (tab === 'device') loadDeviceInfo();
 }
 
 $('#tabs').addEventListener('click', (e) => {
@@ -275,6 +281,8 @@ window.addEventListener('hashchange', () => showTab(location.hash.slice(1), { pu
 /* ---- Dashboard ---- */
 document.querySelectorAll('.action[data-cmd]').forEach((b) =>
   b.addEventListener('click', () => cmd(b.dataset.cmd)));
+$('#brightness').addEventListener('input', (e) =>
+  $('#brightnessValue').textContent = `${e.target.value}%`);
 $('#brightness').addEventListener('change', (e) =>
   cmd('setBrightness', { level: e.target.value / 100 }));
 $('#loadUrlBtn').addEventListener('click', () => {
@@ -447,6 +455,114 @@ async function loadWakeWord() {
   root.querySelector('#wakeWordCard')?.remove();
   root.appendChild(card);
   await loadPermissions();
+}
+
+/* ---- Device Info ---- */
+// What this device is and what it is doing, read fresh each time the tab is
+// opened. Everything here comes from the device itself; nothing is inferred
+// from what we asked it to do earlier, because the interesting case is exactly
+// when those two disagree.
+async function loadDeviceInfo() {
+  const root = $('#tab-device');
+  root.innerHTML = '<div class="card"><div class="desc" style="color:var(--muted)">Reading…</div></div>';
+
+  const get = async (name, params = {}) => {
+    try { const r = await cmd(name, params); return r.ok ? r.data : null; }
+    catch { return null; }
+  };
+
+  const [info, settings, perms, wake, screenOn, motion, ua] = await Promise.all([
+    api('/api/info').then((r) => r.json()).catch(() => null),
+    api('/api/settings').then((r) => r.json()).catch(() => null),
+    get('getSystemPermissions'),
+    get('getWakeWordState'),
+    get('isScreenOn'),
+    get('getMotionEnabled'),
+    // The page's own view of itself: the one thing only the WebView knows.
+    get('evalJs', { code: 'navigator.userAgent' }),
+  ]);
+
+  const S = {};
+  (settings?.settings || []).forEach((x) => (S[x.key] = x.value));
+  const yn = (v) => (v === true ? 'on' : v === false ? 'off' : '—');
+  const or = (v, alt = '—') => (v === null || v === undefined || v === '' ? alt : v);
+
+  root.innerHTML = '';
+  const card = (title, rows) => {
+    const c = document.createElement('div'); c.className = 'card';
+    const h = document.createElement('h2'); h.textContent = title; c.appendChild(h);
+    for (const [k, v] of rows) {
+      if (v === undefined) continue;
+      const row = document.createElement('div'); row.className = 'row';
+      const info = document.createElement('div'); info.className = 'info';
+      const n = document.createElement('div'); n.className = 'name'; n.textContent = k;
+      info.appendChild(n); row.appendChild(info);
+      const val = document.createElement('span');
+      val.style.cssText = 'text-align:right; word-break:break-all; max-width:60%';
+      val.textContent = String(v);
+      row.appendChild(val);
+      c.appendChild(row);
+    }
+    root.appendChild(c);
+  };
+
+  card('App', [
+    ['App version', `${or(info?.appVersion)} (${or(info?.buildNumber, '—')})`],
+    // Which build this is decides where its logs go: a release build reports
+    // to this page and stays silent on logcat.
+    ['Build', or(info?.buildMode)],
+    ['Package', or(info?.package)],
+    ['Start URL', or(S['browser.start_url'])],
+    ['Current page', or(info?.currentUrl)],
+    ['Kiosk mode', or(S['ha.kiosk_mode'])],
+  ]);
+
+  card('Device', [
+    ['Device name', or(info?.name)],
+    ['Model', or(info?.model)],
+    ['Android version', `${or(info?.osVersion)}${info?.sdkInt ? ` (SDK ${info.sdkInt})` : ''}`],
+    ['IPv4 address', or(info?.ip)],
+    ['Battery level', info?.battery == null ? '—'
+      : `${info.battery}%${info.charging ? ' (plugged)' : ''}`],
+    ['Screen brightness', info?.brightness == null ? '—'
+      : `${Math.round(info.brightness * 100)}%`],
+    ['Screen status', yn(screenOn)],
+  ]);
+
+  card('Home Assistant', [
+    ['Home Assistant URL', or(S['ha.url'])],
+    ['Wake word detection', yn(S['wake_word.enabled'])],
+    ['Wake word status', or(wake?.statusLabel)],
+    ['Engine', or(wake?.engineLabel)],
+    ['Wake words', or((wake?.models || []).map((m) => m.wakeWord).join(', '))],
+    ['Stop word', or(wake?.stopWord)],
+    ['Background listening', yn(S['wake_word.background'])],
+    ['Motion detection', yn(motion)],
+  ]);
+
+  // Fully lists the denied ones; the useful version is all of them with their
+  // state, since "granted" is the claim you want to check when something has
+  // gone quiet.
+  if (perms?.required) {
+    card('Permissions', [
+      ['Microphone', perms.microphone ? 'granted'
+        : perms.microphoneBlocked ? 'blocked' : 'denied'],
+      ...(perms.background ? [
+        ['Display over other apps', perms.displayOverOtherApps ? 'granted' : 'denied'],
+        ['Listening notification', perms.notification ? 'granted' : 'denied'],
+        ['Unrestricted battery', perms.batteryUnrestricted ? 'granted' : 'denied'],
+      ] : []),
+    ]);
+  }
+
+  card('Remote administration', [
+    ['Port', or(S['remote.port'])],
+    ['Web admin', `http://${or(info?.ip, '<device-ip>')}:${or(S['remote.port'], 2324)}`],
+  ]);
+
+  card('WebView', [
+    ['User agent', or(ua)],
+  ]);
 }
 
 /* ---- Required system permissions (read-only) ---- */
@@ -626,6 +742,8 @@ function connectWs() {
     // The device's own settings screen updates live off the same event; this
     // panel has to as well, or the two disagree about the same device.
     else if (msg.type === 'wakeword-state') loadWakeWord();
+    // The screensaver and the card both dim behind our back.
+    else if (msg.type === 'brightness') showBrightness(msg.level);
   };
 }
 function setConn(s) { $('#connDot').className = `dot ${s}`; }
@@ -635,6 +753,17 @@ function applyInfo(device, currentUrl) {
   if (device.battery != null)
     $('#battery').textContent = `${device.charging ? '⚡' : '🔋'} ${device.battery}%`;
   if (currentUrl) $('#currentUrl').textContent = currentUrl;
+  if (device.brightness != null) showBrightness(device.brightness);
+  state.device = device;
+}
+
+// The slider is also a readout. It used to be born at 100 and only ever send,
+// so a screensaver dimming the screen to nothing left it sitting at full —
+// reporting a number nobody had measured.
+function showBrightness(level) {
+  const pct = Math.round(level * 100);
+  $('#brightness').value = pct;
+  $('#brightnessValue').textContent = `${pct}%`;
 }
 
 /* ---- Boot ---- */

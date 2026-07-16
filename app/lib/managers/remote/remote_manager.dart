@@ -71,6 +71,14 @@ class RemoteManager extends Manager {
       _broadcast({'type': 'console', ...event.toJson()});
     });
 
+    // Brightness, which the screensaver and the Voice Satellite card both
+    // change behind the admin's back. No wireName either, so the generic feed
+    // skips it and the dashboard's slider sat at whatever it was born with.
+    bus.on<BrightnessChanged>().listen((e) {
+      if (_wsClients.isEmpty) return;
+      _broadcast({'type': 'brightness', 'level': e.level});
+    });
+
     // Wake-word state, likewise: no wireName, so the generic feed skips it.
     //
     // The admin shows the same wake-word panel as the device's own settings
@@ -217,11 +225,23 @@ class RemoteManager extends Manager {
   }
 
   Future<Response> _info() async {
+    return _json(200, await _deviceState());
+  }
+
+  /// What the device is doing, as the admin's dashboard draws it.
+  ///
+  /// Brightness comes from the screen manager rather than getDeviceInfo, which
+  /// is about identity and battery. It belongs here because the admin shows a
+  /// brightness control: a slider with nothing behind it is not a control, it
+  /// is a decoration that happens to send.
+  Future<Map<String, Object?>> _deviceState() async {
     final device = await commands.execute('getDeviceInfo', const {});
-    return _json(200, {
+    final brightness = await commands.execute('getBrightness', const {});
+    return {
       ...?(device.data as Map<String, Object?>?),
+      'brightness': (brightness.data as num?)?.toDouble(),
       'currentUrl': _currentUrl,
-    });
+    };
   }
 
   Future<Response> _patchSettings(Request request) async {
@@ -289,11 +309,11 @@ class RemoteManager extends Manager {
   }
 
   Future<void> _sendState(WebSocketChannel channel) async {
-    final device = await commands.execute('getDeviceInfo', const {});
+    final state = await _deviceState();
     channel.sink.add(jsonEncode({
       'type': 'state',
-      'device': device.data,
-      'currentUrl': _currentUrl,
+      'device': state,
+      'currentUrl': state['currentUrl'],
     }));
   }
 

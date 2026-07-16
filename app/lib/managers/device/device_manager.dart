@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
+
 import 'package:battery_plus/battery_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -22,6 +24,20 @@ class DeviceManager extends Manager {
   late final String model;
   late final String osVersion;
   late final String appVersion;
+  late final String packageName;
+  late final String buildNumber;
+
+  /// Android API level, or null off Android. Worth reporting: most of what
+  /// bites a kiosk on this platform is versioned by it, not by the marketing
+  /// number — background limits, foreground-service types, permission rules.
+  int? sdkInt;
+
+  /// Whether this is a debug or a release build.
+  ///
+  /// Not cosmetic: a release build sends its logs to the remote admin and *not*
+  /// to logcat (see Logger._add), so someone holding an adb cable and seeing
+  /// silence needs to know which of the two they are looking at.
+  String get buildMode => kDebugMode ? 'debug' : 'release';
 
   String get os => Platform.isAndroid ? 'android' : 'ios';
 
@@ -34,12 +50,15 @@ class DeviceManager extends Manager {
   Future<void> init() async {
     final packageInfo = await PackageInfo.fromPlatform();
     appVersion = packageInfo.version;
+    packageName = packageInfo.packageName;
+    buildNumber = packageInfo.buildNumber;
 
     final deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
       final android = await deviceInfo.androidInfo;
       model = '${android.manufacturer} ${android.model}';
       osVersion = 'Android ${android.version.release}';
+      sdkInt = android.version.sdkInt;
     } else if (Platform.isIOS) {
       final ios = await deviceInfo.iosInfo;
       model = ios.utsname.machine;
@@ -82,7 +101,11 @@ class DeviceManager extends Manager {
       'model': model,
       'os': os,
       'osVersion': osVersion,
+      'sdkInt': sdkInt,
       'appVersion': appVersion,
+      'buildNumber': buildNumber,
+      'buildMode': buildMode,
+      'package': packageName,
       'battery': level,
       'charging': state == BatteryState.charging ||
           state == BatteryState.connectedNotCharging,
