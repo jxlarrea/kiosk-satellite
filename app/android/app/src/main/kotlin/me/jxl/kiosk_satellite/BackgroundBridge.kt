@@ -1,6 +1,5 @@
 package me.jxl.kiosk_satellite
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -14,11 +13,17 @@ import io.flutter.plugin.common.MethodChannel
  * Dart's handle on the three OS grants that background listening needs, and on
  * bringing the app back to the front when it hears something.
  *
- * Each of the three is separate, each is refusable, and none of them can be
+ * Uses the application context, not an Activity: the whole point of
+ * [bringToFront] is to run when no Activity of ours is on screen (the Activity
+ * may have been destroyed while the foreground service kept the process alive),
+ * and an Activity reference would be stale exactly then. Starting an Activity
+ * from a non-Activity context needs [Intent.FLAG_ACTIVITY_NEW_TASK].
+ *
+ * Each of the three grants is separate, each is refusable, and none can be
  * assumed — see the comments per method for what happens when one is missing.
  */
 class BackgroundBridge(
-    private val activity: Activity,
+    private val context: Context,
     messenger: BinaryMessenger,
 ) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/background")
@@ -27,11 +32,11 @@ class BackgroundBridge(
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> {
-                    WakeWordService.start(activity)
+                    WakeWordService.start(context)
                     result.success(true)
                 }
                 "stop" -> {
-                    WakeWordService.stop(activity)
+                    WakeWordService.stop(context)
                     result.success(true)
                 }
                 // Can we start our own Activity while another app is in front?
@@ -40,11 +45,11 @@ class BackgroundBridge(
                 // and nothing happens, which is worse than not listening.
                 "canBringToFront" -> result.success(canDrawOverlays())
                 "requestBringToFront" -> {
-                    activity.startActivity(
+                    context.startActivity(
                         Intent(
                             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:${activity.packageName}"),
-                        ),
+                            Uri.parse("package:${context.packageName}"),
+                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
                     result.success(null)
                 }
@@ -63,13 +68,13 @@ class BackgroundBridge(
     }
 
     private fun canDrawOverlays(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(activity)
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
 
     private fun bringToFront(): Boolean {
         if (!canDrawOverlays()) return false
         return try {
-            activity.startActivity(
-                Intent(activity, MainActivity::class.java).apply {
+            context.startActivity(
+                Intent(context, MainActivity::class.java).apply {
                     // REORDER_TO_FRONT rather than a fresh launch: the WebView is
                     // still mounted with the card's session on it, and a relaunch
                     // would reload the page and lose the turn we woke up for.
@@ -86,18 +91,18 @@ class BackgroundBridge(
 
     private fun isBatteryUnrestricted(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
-        val power = activity.getSystemService(Context.POWER_SERVICE) as PowerManager
-        return power.isIgnoringBatteryOptimizations(activity.packageName)
+        val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        return power.isIgnoringBatteryOptimizations(context.packageName)
     }
 
     @Suppress("BatteryLife") // The point of the app is to listen continuously.
     private fun requestBatteryUnrestricted() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
-        activity.startActivity(
+        context.startActivity(
             Intent(
                 Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                Uri.parse("package:${activity.packageName}"),
-            ),
+                Uri.parse("package:${context.packageName}"),
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         )
     }
 

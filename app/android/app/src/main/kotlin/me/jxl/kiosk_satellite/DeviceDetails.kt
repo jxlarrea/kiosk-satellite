@@ -72,7 +72,11 @@ class DeviceDetails(
     private fun screen(): Map<String, Any> {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val b = wm.currentWindowMetrics.bounds
+            // maximumWindowMetrics, not currentWindowMetrics: the latter needs a
+            // visual (Activity) context and throws from the application context
+            // this now runs in. The maximum bounds are the full display — the
+            // right answer for a fullscreen kiosk anyway.
+            val b = wm.maximumWindowMetrics.bounds
             mapOf(
                 "width" to b.width(),
                 "height" to b.height(),
