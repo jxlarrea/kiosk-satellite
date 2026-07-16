@@ -20,8 +20,18 @@ Future<void> main() async {
   // Content toggles and the OS grant is requested lazily (see KioskScreen),
   // so we never prompt for camera/mic the user hasn't enabled.
 
-  // Kiosk devices run fullscreen; system bars come back with a swipe.
+  // Kiosk devices run fullscreen; system bars come back with a swipe and
+  // hide again on their own. That promise breaks the moment the WebView — a
+  // platform view — takes input focus (a tap, the keyboard): Android drops
+  // the window's immersive flags and, set only once, they would stay lost.
+  // So hiding is re-asserted whenever the system reports the bars visible,
+  // after the short peek immersive-sticky is supposed to give.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  SystemChrome.setSystemUIChangeCallback((systemOverlaysAreVisible) async {
+    if (!systemOverlaysAreVisible) return;
+    await Future<void>.delayed(const Duration(seconds: 3));
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  });
 
   runApp(KioskSatelliteApp(container: container));
 }
@@ -35,12 +45,14 @@ class KioskSatelliteApp extends StatefulWidget {
   State<KioskSatelliteApp> createState() => _KioskSatelliteAppState();
 }
 
-class _KioskSatelliteAppState extends State<KioskSatelliteApp> {
+class _KioskSatelliteAppState extends State<KioskSatelliteApp>
+    with WidgetsBindingObserver {
   StreamSubscription<SettingChanged>? _sub;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // The theme setting applies live, including when flipped from the remote
     // admin — the whole point of changing it from another room is seeing it.
     _sub = widget.container.bus
@@ -49,7 +61,17 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Coming back from an OS screen (permission grants, app settings) is
+    // another way the window returns without its immersive flags.
+    if (state == AppLifecycleState.resumed) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     super.dispose();
   }
