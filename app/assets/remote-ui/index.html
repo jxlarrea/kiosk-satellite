@@ -28,7 +28,7 @@
     --primary-soft: #e3eae1;
     --accent: #44686c;
     --ok: #56814f; --warn: #9c742a; --error: #a9501f; --debug: #9a9da3;
-    --radius: 14px; --radius-sm: 10px;
+    --radius: 24px; --radius-sm: 10px;
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
@@ -56,11 +56,10 @@
   #login { min-height: 100%; display: grid; place-items: center; padding: 24px; }
   .login-card {
     width: 100%; max-width: 360px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 32px; text-align: center;
+    border-radius: var(--radius); padding: 32px; text-align: center;
   }
   .logo { font-size: 40px; }
-  .login-card h1 { font-size: 20px; font-weight: 600; margin: 12px 0 4px; }
+  .login-card h1 { font-size: 20px; font-weight: 700; margin: 12px 0 4px; }
   .login-card p { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
   .field { width: 100%; padding: 13px 15px; margin-bottom: 12px;
     background: var(--surface-2); border: 1px solid var(--border);
@@ -73,89 +72,95 @@
   .btn-primary:active { transform: translateY(1px); }
   .msg-error { color: var(--error); font-size: 14px; margin-top: 12px; min-height: 18px; }
 
-  /* App shell */
-  #app { min-height: 100%; display: flex; flex-direction: column; }
-  header { display: flex; align-items: center; gap: 12px; padding: 12px 18px;
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10; }
-  header .title { font-weight: 600; }
-  header .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--debug); }
-  header .dot.on { background: var(--ok); }
-  header .dot.off { background: var(--error); }
-  header .device { color: var(--muted); font-size: 13px; }
-  header .spacer { flex: 1; }
-  header .battery { color: var(--muted); font-size: 13px; }
-  header .stat { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  /* App shell: a One UI split, mirroring the device's settings — the nav is
+     a rail that stays put on the left, the content pane scrolls. */
+  #app { min-height: 100%; }
+  .shell { display: flex; min-height: 100vh; }
+  #sidebar { width: 320px; flex: none; display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh;
+    background: var(--bg); border-right: 1px solid var(--border); }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 22px 24px 18px; }
+  .brand-text { min-width: 0; }
+  .brand-title { font-size: 18px; font-weight: 700; line-height: 1.25; }
+  .brand-sub { font-size: 12.5px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--debug); }
+  .dot.on { background: var(--ok); }
+  .dot.off { background: var(--error); }
+
+  /* The rail rows: icon discs cycling the brand accents (the same language
+     as the device's category icons), semibold titles, muted subtitles, and
+     a large rounded highlight on the selected row. */
+  nav#tabs { flex: 1; overflow-y: auto; padding: 4px 12px 12px;
+    display: flex; flex-direction: column; gap: 4px; }
+  nav#tabs button { display: flex; align-items: center; gap: 14px;
+    padding: 11px 14px; border: none; border-radius: 18px;
+    background: transparent; color: var(--text); text-align: left; }
+  nav#tabs button:hover { background: var(--surface); }
+  nav#tabs button.active { background: var(--surface-2); }
+  .disc { flex: none; width: 38px; height: 38px; border-radius: 50%;
+    display: grid; place-items: center; color: #fff; }
+  .disc svg { width: 19px; height: 19px; }
+  .d1 { background: var(--primary); }
+  .d2 { background: var(--accent); }
+  .d3 { background: var(--warn); }
+  .d4 { background: var(--error); }
+  .nav-text { min-width: 0; display: flex; flex-direction: column; }
+  .nav-title { font-size: 15.5px; font-weight: 600; }
+  .nav-sub { font-size: 12.5px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .side-foot { padding: 10px 16px 14px; }
+  .foot-stats { display: flex; gap: 12px; padding: 0 8px 10px; min-height: 29px; }
+  .stat { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .foot-actions { display: flex; gap: 8px; }
+  .foot-actions #logoutBtn { flex: 1; }
+
   .btn-ghost { background: transparent; border: 1px solid var(--border);
     color: var(--text); border-radius: var(--radius-sm); padding: 7px 12px; }
   .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
-  #themeBtn { display: inline-flex; align-items: center; padding: 7px 9px; }
+  #themeBtn { display: inline-flex; align-items: center; justify-content: center;
+    padding: 7px 9px; }
   #themeBtn svg { display: block; }
 
-  nav { display: flex; gap: 4px; padding: 10px 14px; background: var(--surface);
-    border-bottom: 1px solid var(--border); overflow-x: auto; }
-  nav button { background: transparent; border: none; color: var(--muted);
-    padding: 8px 14px; border-radius: var(--radius-sm); white-space: nowrap;
-    cursor: pointer; }
-  nav button:hover { color: var(--text); }
-  nav button.active { background: var(--primary-soft); color: var(--primary);
-    font-weight: 500; }
-
-  /* The hamburger and drawer are mobile-only; hidden on wider screens. */
-  .hamburger { display: none; background: transparent; border: 1px solid var(--border);
+  /* Phone top bar; hidden on wide screens where the rail is always there. */
+  .mobilebar { display: none; }
+  .hamburger { background: transparent; border: 1px solid var(--border);
     color: var(--text); border-radius: var(--radius-sm); padding: 6px 11px;
     font-size: 17px; line-height: 1; cursor: pointer; }
   .hamburger:hover { border-color: var(--primary); }
   .nav-backdrop { display: none; position: fixed; inset: 0;
     background: rgba(0, 0, 0, .5); z-index: 19; }
 
-  @media (max-width: 640px) {
-    /* Header shrinks to the essentials; the brand and device name give way to
-       the hamburger, and the health stats stay because that is what a glance
-       is for. */
-    .hamburger { display: inline-flex; align-items: center; }
-    header { gap: 8px; padding: 10px 12px; }
-    header .title, header .device { display: none; }
-    header .stat, header .battery { font-size: 12px; }
-    .btn-ghost { padding: 6px 10px; }
+  main { flex: 1; min-width: 0; padding: 20px 28px 28px; }
+  main > * { max-width: 880px; }
+  #pageTitle { font-size: 26px; font-weight: 700; margin: 4px 0 18px 4px; }
 
-    /* Nav slides in from the left as a vertical list instead of overflowing. */
-    nav#tabs { position: fixed; top: 0; left: 0; bottom: 0; width: 250px; max-width: 82vw;
-      flex-direction: column; align-items: stretch; gap: 2px; padding: 14px 12px;
-      overflow-y: auto; overflow-x: hidden;
-      border-right: 1px solid var(--border); border-bottom: none;
-      transform: translateX(-100%); transition: transform .22s ease; z-index: 20; }
-    nav#tabs.open { transform: translateX(0); box-shadow: 0 10px 40px rgba(0, 0, 0, .55); }
-    nav#tabs button { width: 100%; text-align: left; padding: 13px 14px; font-size: 15px; }
-    .nav-backdrop.show { display: block; }
-  }
-
-  main { flex: 1; padding: 18px; max-width: 900px; width: 100%; margin: 0 auto; }
   .tab { display: none; }
   .tab.active { display: block; }
 
-  .card { background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
-  .card h2 { font-size: 14px; font-weight: 600; color: var(--accent);
-    margin: 0 0 14px; text-transform: uppercase; letter-spacing: .04em; }
-  .card h3.section { font-size: 12px; font-weight: 600; color: var(--accent);
-    margin: 20px 0 10px; text-transform: uppercase; letter-spacing: .04em;
-    border-top: 1px solid var(--divider); padding-top: 16px; }
+  /* Cards: One UI section masks, mirroring the device — borderless, large
+     radius, headed from outside by a small primary-tinted title. */
+  .card-title { font-size: 13.5px; font-weight: 600; color: var(--primary);
+    margin: 2px 20px 10px; }
+  .card { background: var(--surface); border-radius: var(--radius);
+    padding: 7px 20px; margin-bottom: 18px; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px; padding: 10px 0; }
   .action { padding: 12px; background: var(--surface-2); border: 1px solid transparent;
     border-radius: var(--radius-sm); color: var(--text); text-align: center; }
   .action:hover { border-color: var(--primary-fill); }
 
-  /* A settings list is a list: the separator has to be visible enough to
-     actually divide one row from the next, which --border (tuned for card
-     edges against the page) is not. */
-  .row { display: flex; align-items: center; gap: 12px; padding: 12px 0;
+  /* Rows: the device's list rhythm — a readable medium-weight title over a
+     clearly quieter description, hairlines between rows and never after the
+     last (the card's own padding insets them). */
+  .row { display: flex; align-items: center; gap: 12px; padding: 13px 0;
     border-bottom: 1px solid var(--divider); }
   .row:last-child { border-bottom: none; }
   .row .info { flex: 1; min-width: 0; }
-  .row .info .name { font-weight: 500; }
-  .row .info .desc { color: var(--muted); font-size: 13px; }
+  .row .info .name { font-size: 16px; font-weight: 500; }
+  .row .info .desc { color: var(--muted); font-size: 13.5px; }
   .row input[type=text], .row input[type=password], .row input[type=number], .row select {
     background: var(--surface-2); border: 1px solid var(--border);
     color: var(--text); border-radius: var(--radius-sm); padding: 8px 11px;
@@ -169,6 +174,44 @@
     left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: .2s; }
   .switch input:checked + .slider { background: var(--primary-fill); border-color: var(--primary-fill); }
   .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+
+  .shot-wrap { position: relative; border-radius: 14px; overflow: hidden;
+    background: var(--surface-2); aspect-ratio: 16/10; display: grid;
+    place-items: center; margin-top: 10px; }
+  .shot-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .shot-wrap .placeholder { color: var(--muted); }
+
+  .console { background: var(--surface); border-radius: var(--radius);
+    height: 62vh; overflow-y: auto; padding: 14px 20px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .line { white-space: pre-wrap; word-break: break-word; padding: 1px 0; }
+  .line .ts { color: var(--debug); }
+  .line.log { color: var(--text); } .line.error { color: var(--error); }
+  .line.warn { color: var(--warn); } .line.debug { color: var(--debug); }
+  .line.tip { color: var(--primary); }
+  .line.info { color: var(--text); }
+
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .toolbar .spacer { flex: 1; }
+  label.inline { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+  .spacer { flex: 1; }
+
+  /* Phone: the rail becomes a drawer behind a slim top bar. */
+  @media (max-width: 900px) {
+    .mobilebar { display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10; }
+    .mtitle { font-weight: 700; }
+    .shell { display: block; min-height: 0; }
+    #sidebar { position: fixed; left: 0; top: 0; bottom: 0; height: auto;
+      z-index: 20; width: 300px; max-width: 84vw;
+      transform: translateX(-100%); transition: transform .22s ease; }
+    #sidebar.open { transform: none; box-shadow: 0 10px 40px rgba(0, 0, 0, .45); }
+    .nav-backdrop.show { display: block; }
+    main { padding: 14px 16px 20px; }
+    #pageTitle { font-size: 22px; margin-bottom: 12px; }
+  }
 
   /* On phones, reflow each row so the name and its control share the top line
      and the description spans full width below both — instead of a cramped
@@ -188,25 +231,6 @@
     .row input[type=text], .row input[type=password], .row select { max-width: 48vw; }
     .row input[type=number] { max-width: 90px; }
   }
-
-  .shot-wrap { position: relative; border-radius: var(--radius-sm); overflow: hidden;
-    background: var(--surface-2); aspect-ratio: 16/10; display: grid; place-items: center; }
-  .shot-wrap img { width: 100%; height: 100%; object-fit: contain; }
-  .shot-wrap .placeholder { color: var(--muted); }
-
-  .console { background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); height: 60vh; overflow-y: auto; padding: 10px 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
-  .line { white-space: pre-wrap; word-break: break-word; padding: 1px 0; }
-  .line .ts { color: var(--debug); }
-  .line.log { color: var(--text); } .line.error { color: var(--error); }
-  .line.warn { color: var(--warn); } .line.debug { color: var(--debug); }
-  .line.tip { color: var(--primary); }
-  .line.info { color: var(--text); }
-
-  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-  .toolbar .spacer { flex: 1; }
-  label.inline { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -225,33 +249,74 @@
 
 <!-- App -->
 <section id="app" class="hidden">
-  <header>
+  <!-- Phone top bar; on wide screens the rail is always visible instead. -->
+  <div class="mobilebar">
     <button class="hamburger" id="navToggle" aria-label="Menu" aria-expanded="false">☰</button>
-    <span class="dot" id="connDot"></span>
-    <span class="title">Kiosk Satellite</span>
-    <span class="device" id="deviceName"></span>
+    <span class="mtitle">Kiosk Satellite</span>
     <span class="spacer"></span>
-    <span class="stat" id="cpu"></span>
-    <span class="stat" id="cputemp"></span>
-    <span class="battery" id="battery"></span>
-    <button class="btn-ghost" id="themeBtn" title="Theme" aria-label="Theme"></button>
-    <button class="btn-ghost" id="logoutBtn">Log out</button>
-  </header>
-  <nav id="tabs">
-    <button data-tab="dashboard" class="active">Dashboard</button>
-    <button data-tab="settings">Settings</button>
-    <button data-tab="screensaver">Screensaver</button>
-    <button data-tab="homeassistant">Home Assistant</button>
-    <button data-tab="device">Device Info</button>
-    <button data-tab="console">Console</button>
-    <button data-tab="logs">Logs</button>
-  </nav>
-  <div class="nav-backdrop" id="navBackdrop"></div>
-  <main>
+    <span class="stat js-cpu"></span>
+    <span class="stat js-temp"></span>
+    <span class="stat js-batt"></span>
+  </div>
+  <div class="shell">
+    <!-- The rail, mirroring the device's settings split view. -->
+    <aside id="sidebar">
+      <div class="brand">
+        <span class="dot" id="connDot"></span>
+        <div class="brand-text">
+          <div class="brand-title">Kiosk Satellite</div>
+          <div class="brand-sub" id="deviceName"></div>
+        </div>
+      </div>
+      <nav id="tabs">
+        <button data-tab="dashboard" class="active">
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Dashboard</span><span class="nav-sub">Screen and quick controls</span></span>
+        </button>
+        <button data-tab="settings">
+          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="15" cy="17" r="2.5"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Settings</span><span class="nav-sub">Browser, screen, device</span></span>
+        </button>
+        <button data-tab="screensaver">
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Screensaver</span><span class="nav-sub">Idle timeout, modes</span></span>
+        </button>
+        <button data-tab="homeassistant">
+          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Home Assistant</span><span class="nav-sub">Connection, Voice Satellite</span></span>
+        </button>
+        <button data-tab="device">
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Device Info</span><span class="nav-sub">Identity and status</span></span>
+        </button>
+        <button data-tab="console">
+          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Console</span><span class="nav-sub">Live from the WebView</span></span>
+        </button>
+        <button data-tab="logs">
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Logs</span><span class="nav-sub">App log</span></span>
+        </button>
+      </nav>
+      <div class="side-foot">
+        <div class="foot-stats">
+          <span class="stat js-cpu"></span>
+          <span class="stat js-temp"></span>
+          <span class="stat js-batt"></span>
+        </div>
+        <div class="foot-actions">
+          <button class="btn-ghost" id="themeBtn" title="Theme" aria-label="Theme"></button>
+          <button class="btn-ghost" id="logoutBtn">Log out</button>
+        </div>
+      </div>
+    </aside>
+    <div class="nav-backdrop" id="navBackdrop"></div>
+    <main>
+      <h1 id="pageTitle">Dashboard</h1>
     <!-- Dashboard -->
     <div class="tab active" id="tab-dashboard">
+      <h2 class="card-title">Screen</h2>
       <div class="card">
-        <h2>Screen</h2>
         <div class="shot-wrap" id="shotWrap">
           <span class="placeholder">No screenshot</span>
         </div>
@@ -262,8 +327,8 @@
           <span class="device" id="currentUrl"></span>
         </div>
       </div>
+      <h2 class="card-title">Quick controls</h2>
       <div class="card">
-        <h2>Quick controls</h2>
         <div class="grid">
           <button class="action" data-cmd="reload">Reload page</button>
           <button class="action" data-cmd="clearWebCache">Clear cache</button>
@@ -298,8 +363,6 @@
     <!-- Console -->
     <div class="tab" id="tab-console">
       <div class="toolbar">
-        <strong>Web Console</strong>
-        <span class="device">live from the WebView</span>
         <span class="spacer"></span>
         <button class="btn-ghost" id="clearConsole">Clear</button>
       </div>
@@ -308,11 +371,12 @@
 
     <!-- Logs -->
     <div class="tab" id="tab-logs">
-      <div class="toolbar"><strong>App Log</strong><span class="spacer"></span>
+      <div class="toolbar"><span class="spacer"></span>
         <button class="btn-ghost" id="refreshLogs">Refresh</button></div>
       <div class="console" id="logsOut"></div>
     </div>
-  </main>
+    </main>
+  </div>
 </section>
 
 <script>
@@ -384,6 +448,11 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'settings', 'screensaver', 'homeassistant', 'device', 'console', 'logs'];
+const TAB_TITLES = {
+  dashboard: 'Dashboard', settings: 'Settings', screensaver: 'Screensaver',
+  homeassistant: 'Home Assistant', device: 'Device Info', console: 'Console',
+  logs: 'Logs',
+};
 
 function showTab(name, { push = true } = {}) {
   const tab = TABS.includes(name) ? name : 'dashboard';
@@ -391,6 +460,7 @@ function showTab(name, { push = true } = {}) {
     b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach((t) =>
     t.classList.toggle('active', t.id === `tab-${tab}`));
+  $('#pageTitle').textContent = TAB_TITLES[tab];
   if (push && location.hash.slice(1) !== tab) location.hash = tab;
   if (tab === 'logs') loadLogs();
   if (tab === 'device') loadDeviceInfo();
@@ -400,7 +470,7 @@ function showTab(name, { push = true } = {}) {
 // a tab close it. On wide screens the nav is a normal bar and these are inert
 // (the .open/.show styles live only inside the mobile media query).
 function setNav(open) {
-  $('#tabs').classList.toggle('open', open);
+  $('#sidebar').classList.toggle('open', open);
   $('#navBackdrop').classList.toggle('show', open);
   $('#navToggle').setAttribute('aria-expanded', open ? 'true' : 'false');
 }
@@ -477,26 +547,32 @@ async function loadSettings() {
   const render = (root, cats) => {
     root.innerHTML = '';
     if (!cats.length) {
-      root.innerHTML = '<div class="card"><div class="desc" style="color:var(--muted)">Nothing here.</div></div>';
+      root.innerHTML = '<div class="card"><div class="desc" style="color:var(--muted); padding:12px 0">Nothing here.</div></div>';
       return;
     }
+    // One UI shape, mirroring the device's settings panes: a small heading
+    // floats above each rounded card, and settings sharing a `section` get a
+    // card of their own (e.g. the motion controls under "Motion Detection").
     for (const cat of cats) {
-      const card = document.createElement('div'); card.className = 'card';
-      const h = document.createElement('h2'); h.textContent = cat; card.appendChild(h);
-      // Settings sharing a `section` render under one subheading, mirroring the
-      // device (e.g. the motion controls under "Motion Detection").
-      let lastSection;
+      let heading = cat;
+      let rows = [];
+      const flush = () => {
+        if (!rows.length) return;
+        const h = document.createElement('h2');
+        h.className = 'card-title';
+        h.textContent = heading;
+        const card = document.createElement('div');
+        card.className = 'card';
+        rows.forEach((r) => card.appendChild(r));
+        root.append(h, card);
+        rows = [];
+      };
       byCat[cat].forEach((s) => {
-        if (s.section && s.section !== lastSection) {
-          const sh = document.createElement('h3');
-          sh.className = 'section';
-          sh.textContent = s.section;
-          card.appendChild(sh);
-        }
-        lastSection = s.section;
-        card.appendChild(settingRow(s));
+        const want = s.section || cat;
+        if (want !== heading) { flush(); heading = want; }
+        rows.push(settingRow(s));
       });
-      root.appendChild(card);
+      flush();
     }
   };
 
@@ -511,8 +587,8 @@ async function loadSettings() {
   // setting (derived, never chosen — see DeviceManager.deviceId), so it is
   // appended to the card rather than declared with the settings.
   const deviceId = state.device?.deviceId;
-  const deviceCard = [...$('#tab-settings').querySelectorAll('.card')]
-    .find((el) => el.querySelector('h2')?.textContent === 'Device');
+  const deviceCard = [...$('#tab-settings').querySelectorAll('h2.card-title')]
+    .find((el) => el.textContent === 'Device')?.nextElementSibling;
   if (deviceId && deviceCard) {
     const row = readOnlyRow('Device ID', 'Click to copy.', deviceId);
     row.querySelector('span').style.fontFamily = 'ui-monospace, monospace';
@@ -544,12 +620,14 @@ async function loadWakeWord() {
     s = res.data;
   } catch { return; }
 
+  const wrap = document.createElement('div');
+  wrap.id = 'wakeWordCard';
+  const h = document.createElement('h2');
+  h.className = 'card-title';
+  h.textContent = 'Wake word';
   const card = document.createElement('div');
   card.className = 'card';
-  card.id = 'wakeWordCard';
-  const h = document.createElement('h2');
-  h.textContent = 'Wake word';
-  card.appendChild(h);
+  wrap.append(h, card);
 
   // Status first: it is the answer to "is this thing working?".
   const status = document.createElement('div');
@@ -640,7 +718,7 @@ async function loadWakeWord() {
 
   const root = $('#tab-homeassistant');
   root.querySelector('#wakeWordCard')?.remove();
-  root.appendChild(card);
+  root.appendChild(wrap);
   await loadPermissions();
 }
 
@@ -680,8 +758,11 @@ async function loadDeviceInfo() {
 
   root.innerHTML = '';
   const card = (title, rows) => {
+    const h = document.createElement('h2');
+    h.className = 'card-title';
+    h.textContent = title;
+    root.appendChild(h);
     const c = document.createElement('div'); c.className = 'card';
-    const h = document.createElement('h2'); h.textContent = title; c.appendChild(h);
     for (const [k, v] of rows) {
       if (v === undefined) continue;
       const row = document.createElement('div'); row.className = 'row';
@@ -797,12 +878,14 @@ async function loadPermissions() {
   // which asks for the microphone itself — none of this applies.
   if (!p.required) return;
 
+  const wrap = document.createElement('div');
+  wrap.id = 'permsCard';
+  const h = document.createElement('h2');
+  h.className = 'card-title';
+  h.textContent = 'Required system permissions';
   const card = document.createElement('div');
   card.className = 'card';
-  card.id = 'permsCard';
-  const h = document.createElement('h2');
-  h.textContent = 'Required system permissions';
-  card.appendChild(h);
+  wrap.append(h, card);
 
   const rows = [
     ['Microphone', p.microphone,
@@ -853,7 +936,7 @@ async function loadPermissions() {
     card.appendChild(note);
   }
 
-  root.appendChild(card);
+  root.appendChild(wrap);
 }
 
 function readOnlyRow(name, desc, value) {
@@ -1113,20 +1196,20 @@ function applyInfo(device, currentUrl) {
 // state or a live `stats` push. CPU/temp are null on platforms that decline
 // (kept hidden rather than shown as a fake 0). Temp warms from muted → amber →
 // red so a hot kiosk stands out at a glance.
+function setStat(cls, text, color) {
+  document.querySelectorAll(cls).forEach((el) => {
+    el.textContent = text ?? '';
+    el.style.color = color || '';
+  });
+}
 function renderStats(o) {
   if (o.battery != null)
-    $('#battery').textContent = `${o.charging ? '⚡' : '🔋'} ${o.battery}%`;
-  const cpu = $('#cpu');
-  if (o.cpu != null) { cpu.textContent = `CPU ${Math.round(o.cpu)}%`; cpu.style.display = ''; }
-  else cpu.style.display = 'none';
-  const temp = $('#cputemp');
-  if (o.temp != null) {
-    const t = Math.round(o.temp);
-    temp.textContent = `${t}°C`;
-    temp.style.color = t >= 80 ? 'var(--error)'
-      : t >= 65 ? 'var(--warn)' : 'var(--muted)';
-    temp.style.display = '';
-  } else temp.style.display = 'none';
+    setStat('.js-batt', `${o.charging ? '⚡' : '🔋'} ${o.battery}%`);
+  setStat('.js-cpu', o.cpu != null ? `CPU ${Math.round(o.cpu)}%` : '');
+  if (o.temp == null) { setStat('.js-temp', ''); return; }
+  const t = Math.round(o.temp);
+  setStat('.js-temp', `${t}°C`,
+    t >= 80 ? 'var(--error)' : t >= 65 ? 'var(--warn)' : '');
 }
 
 // The slider is also a readout. It used to be born at 100 and only ever send,
