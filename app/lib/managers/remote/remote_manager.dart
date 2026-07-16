@@ -100,8 +100,29 @@ class RemoteManager extends Manager {
       }
     });
 
+    // Live header stats. Battery, CPU load and temperature change on their own,
+    // so push them on a cadence rather than only at connect. Cheap while nobody
+    // is watching — it does nothing with no clients — and deliberately its own
+    // lean message, not a full state re-push, so it never disturbs the
+    // brightness slider or url the admin might be interacting with.
+    _statsTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
+      if (_wsClients.isEmpty) return;
+      final info = await commands.execute('getDeviceInfo', const {});
+      final data = info.data;
+      if (data is! Map) return;
+      _broadcast({
+        'type': 'stats',
+        'battery': data['battery'],
+        'charging': data['charging'],
+        'cpu': data['cpu'],
+        'temp': data['temp'],
+      });
+    });
+
     await _sync();
   }
+
+  Timer? _statsTimer;
 
   Future<void> _sync() async {
     final wantRunning = _settings.get(defs.remoteEnabled) &&
@@ -353,7 +374,10 @@ class RemoteManager extends Manager {
           headers: {'content-type': 'application/json'});
 
   @override
-  Future<void> dispose() => _stop();
+  Future<void> dispose() {
+    _statsTimer?.cancel();
+    return _stop();
+  }
 }
 
 /// Served at `/` until the remote-ui SPA is built and bundled.

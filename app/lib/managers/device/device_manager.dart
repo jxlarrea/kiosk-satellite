@@ -131,7 +131,10 @@ class DeviceManager extends Manager {
   Future<Map<String, Object?>> info() async {
     final level = await _battery.batteryLevel;
     final state = await _battery.batteryState;
+    final cpu = await DeviceDetails.cpu();
     return {
+      'cpu': cpu['usage'],
+      'temp': cpu['temp'],
       'name': deviceName,
       'ip': await ipAddress(),
       'ipv6': await ipv6Addresses(),

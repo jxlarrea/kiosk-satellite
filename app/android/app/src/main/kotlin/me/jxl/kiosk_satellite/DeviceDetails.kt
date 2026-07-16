@@ -9,6 +9,7 @@ import android.util.DisplayMetrics
 import android.view.WindowManager
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 /**
  * The device facts Android will still tell an app, for the remote admin's
@@ -35,6 +36,7 @@ class DeviceDetails(
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "read" -> result.success(read())
+                "cpu" -> result.success(cpu())
                 else -> result.notImplemented()
             }
         }
@@ -88,6 +90,73 @@ class DeviceDetails(
             mapOf("width" to dm.widthPixels, "height" to dm.heightPixels, "density" to dm.density)
         }
     }
+
+    /**
+     * Live CPU load and temperature, both `null` when the platform won't answer.
+     *
+     * Neither comes from `/proc/stat` — an app can't read it (SELinux denies
+     * `proc_stat`), and the WebView renderer is an isolated process whose CPU we
+     * couldn't see anyway. What sysfs *does* let an untrusted app read is the
+     * cpufreq state and the thermal zones, and those actually answer the two
+     * questions better: every process on the device drives the governor, so a
+     * frequency-derived load reflects the whole device, and the thermal zone is
+     * the real silicon temperature no matter which process is heating it.
+     */
+    private fun cpu(): Map<String, Any?> = mapOf(
+        "usage" to cpuUsage(),
+        "temp" to cpuTemp(),
+    )
+
+    /**
+     * Load estimated from clock speed: per online core, how far its current
+     * frequency sits between its min and max, averaged. Idle cores park at min
+     * (→0), a pegged device ramps every core to max (→100). Not the exact
+     * utilisation `/proc/stat` would give, but it tracks it and it is readable.
+     */
+    private fun cpuUsage(): Double? {
+        val cores = File("/sys/devices/system/cpu")
+            .listFiles { f -> f.name.matches(Regex("cpu[0-9]+")) } ?: return null
+        var sum = 0.0
+        var n = 0
+        for (core in cores) {
+            val fq = File(core, "cpufreq")
+            val cur = readLong(File(fq, "scaling_cur_freq")) ?: continue
+            val min = readLong(File(fq, "cpuinfo_min_freq")) ?: continue
+            val max = readLong(File(fq, "cpuinfo_max_freq")) ?: continue
+            if (max <= min) continue
+            sum += ((cur - min).toDouble() / (max - min)).coerceIn(0.0, 1.0)
+            n++
+        }
+        return if (n == 0) null else sum / n * 100.0
+    }
+
+    /**
+     * The hottest CPU thermal zone, in °C. Zones are matched by `type`
+     * containing "cpu", never by index — the numbering differs per device (an
+     * S8 and an S8+ disagree). Values are milli-°C on these SoCs; a few report
+     * plain °C, so both scales are accepted and implausible readings dropped.
+     */
+    private fun cpuTemp(): Double? {
+        val zones = File("/sys/class/thermal")
+            .listFiles { f -> f.name.startsWith("thermal_zone") } ?: return null
+        var max: Double? = null
+        for (z in zones) {
+            val type = readText(File(z, "type"))?.lowercase() ?: continue
+            if (!type.contains("cpu")) continue
+            val raw = readLong(File(z, "temp")) ?: continue
+            val c = if (raw > 1000) raw / 1000.0 else raw.toDouble()
+            if (c in 20.0..130.0 && (max == null || c > max)) max = c
+        }
+        return max
+    }
+
+    private fun readText(file: File): String? = try {
+        if (file.canRead()) file.readText().trim() else null
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun readLong(file: File): Long? = readText(file)?.toLongOrNull()
 
     /** The WebView implementation actually in use — the thing rendering the card. */
     private fun webview(): Map<String, Any?> {

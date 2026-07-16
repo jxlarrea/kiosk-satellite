@@ -23,6 +23,16 @@ class DeviceDetails {
     }
   }
 
+  /// Live CPU load (`usage`, 0-100) and temperature (`temp`, °C). Either is
+  /// null when the platform declines; the whole map is empty off-Android.
+  static Future<Map<String, Object?>> cpu() async {
+    try {
+      return await _channel.invokeMapMethod<String, Object?>('cpu') ?? const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
   Map<String, Object?>? _map(String key) {
     final v = _raw[key];
     return v is Map ? v.cast<String, Object?>() : null;

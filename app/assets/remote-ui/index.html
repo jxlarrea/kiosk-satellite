@@ -55,6 +55,7 @@
   header .device { color: var(--muted); font-size: 13px; }
   header .spacer { flex: 1; }
   header .battery { color: var(--muted); font-size: 13px; }
+  header .stat { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
   .btn-ghost { background: transparent; border: 1px solid var(--border);
     color: var(--text); border-radius: 9px; padding: 7px 12px; }
   .btn-ghost:hover { border-color: var(--primary); }
@@ -144,6 +145,8 @@
     <span class="title">Kiosk Satellite</span>
     <span class="device" id="deviceName"></span>
     <span class="spacer"></span>
+    <span class="stat" id="cpu"></span>
+    <span class="stat" id="cputemp"></span>
     <span class="battery" id="battery"></span>
     <button class="btn-ghost" id="logoutBtn">Log out</button>
   </header>
@@ -927,6 +930,7 @@ function connectWs() {
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
     if (msg.type === 'state') applyInfo(msg.device, msg.currentUrl);
+    else if (msg.type === 'stats') renderStats(msg);
     else if (msg.type === 'console') appendLine($('#consoleOut'), msg.level, msg.message, msg.time);
     else if (msg.type === 'log') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
     else if (msg.type === 'event' && msg.event === 'screenon') loadScreenshot();
@@ -941,11 +945,30 @@ function setConn(s) { $('#connDot').className = `dot ${s}`; }
 function applyInfo(device, currentUrl) {
   if (!device) return;
   $('#deviceName').textContent = device.name || device.model || '';
-  if (device.battery != null)
-    $('#battery').textContent = `${device.charging ? '⚡' : '🔋'} ${device.battery}%`;
+  renderStats(device);
   if (currentUrl) $('#currentUrl').textContent = currentUrl;
   if (device.brightness != null) showBrightness(device.brightness);
   state.device = device;
+}
+
+// Battery, CPU load and temperature in the header, from either the initial
+// state or a live `stats` push. CPU/temp are null on platforms that decline
+// (kept hidden rather than shown as a fake 0). Temp warms from muted → amber →
+// red so a hot kiosk stands out at a glance.
+function renderStats(o) {
+  if (o.battery != null)
+    $('#battery').textContent = `${o.charging ? '⚡' : '🔋'} ${o.battery}%`;
+  const cpu = $('#cpu');
+  if (o.cpu != null) { cpu.textContent = `CPU ${Math.round(o.cpu)}%`; cpu.style.display = ''; }
+  else cpu.style.display = 'none';
+  const temp = $('#cputemp');
+  if (o.temp != null) {
+    const t = Math.round(o.temp);
+    temp.textContent = `${t}°C`;
+    temp.style.color = t >= 80 ? 'var(--err, #ff6b6b)'
+      : t >= 65 ? 'var(--warn, #e0a94b)' : 'var(--muted)';
+    temp.style.display = '';
+  } else temp.style.display = 'none';
 }
 
 // The slider is also a readout. It used to be born at 100 and only ever send,
