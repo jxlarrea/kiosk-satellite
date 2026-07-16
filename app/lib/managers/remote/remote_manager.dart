@@ -40,7 +40,8 @@ class RemoteManager extends Manager {
     final secret = await _settings.secret('remote_auth', () {
       final random = Random.secure();
       return base64Url.encode(
-          List<int>.generate(32, (_) => random.nextInt(256)));
+        List<int>.generate(32, (_) => random.nextInt(256)),
+      );
     });
     _auth = AuthStore(secret);
 
@@ -107,7 +108,9 @@ class RemoteManager extends Manager {
     // brightness slider or url the admin might be interacting with.
     _statsTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
       if (_wsClients.isEmpty) return;
-      final info = await commands.execute('getDeviceInfo', const {});
+      // getStats, not getDeviceInfo: the full read walks every network
+      // interface to answer questions this tick never asks.
+      final info = await commands.execute('getStats', const {});
       final data = info.data;
       if (data is! Map) return;
       _broadcast({
@@ -125,14 +128,18 @@ class RemoteManager extends Manager {
   Timer? _statsTimer;
 
   Future<void> _sync() async {
-    final wantRunning = _settings.get(defs.remoteEnabled) &&
+    final wantRunning =
+        _settings.get(defs.remoteEnabled) &&
         _settings.get(defs.remotePassword).isNotEmpty;
     if (wantRunning && _server == null) {
       await _start();
     } else if (!wantRunning && _server != null) {
       await _stop();
       if (_settings.get(defs.remoteEnabled)) {
-        log.warn(name, 'remote enabled but no admin password set; not starting');
+        log.warn(
+          name,
+          'remote enabled but no admin password set; not starting',
+        );
       }
     } else if (wantRunning && _server != null) {
       // Port may have changed; restart.
@@ -200,11 +207,13 @@ class RemoteManager extends Manager {
                 'name': c.name,
                 'description': c.description,
                 'params': c.params,
-              }
-          ]
+              },
+          ],
         });
       case ('GET', 'api/logs'):
-        return _json(200, {'logs': [for (final e in log.recent) e.toJson()]});
+        return _json(200, {
+          'logs': [for (final e in log.recent) e.toJson()],
+        });
       case ('GET', 'api/console'):
         final console = await commands.execute('getConsole', const {});
         return _json(200, {'console': console.data});
@@ -226,9 +235,9 @@ class RemoteManager extends Manager {
     if (request.method != 'POST') return Response.notFound('not found');
     final ip =
         (request.context['shelf.io.connection_info'] as HttpConnectionInfo?)
-                ?.remoteAddress
-                .address ??
-            'unknown';
+            ?.remoteAddress
+            .address ??
+        'unknown';
     if (_auth.isThrottled(ip)) {
       return _json(429, {'error': 'too many attempts'});
     }
@@ -316,11 +325,13 @@ class RemoteManager extends Manager {
               msg['name'] as String,
               (msg['params'] as Map?)?.cast<String, Object?>() ?? const {},
             );
-            channel.sink.add(jsonEncode({
-              'type': 'result',
-              'name': msg['name'],
-              ...result.toJson(),
-            }));
+            channel.sink.add(
+              jsonEncode({
+                'type': 'result',
+                'name': msg['name'],
+                ...result.toJson(),
+              }),
+            );
           }
         } catch (e) {
           log.debug(name, 'bad ws message: $e');
@@ -331,11 +342,13 @@ class RemoteManager extends Manager {
 
   Future<void> _sendState(WebSocketChannel channel) async {
     final state = await _deviceState();
-    channel.sink.add(jsonEncode({
-      'type': 'state',
-      'device': state,
-      'currentUrl': state['currentUrl'],
-    }));
+    channel.sink.add(
+      jsonEncode({
+        'type': 'state',
+        'device': state,
+        'currentUrl': state['currentUrl'],
+      }),
+    );
   }
 
   void _broadcast(Map<String, Object?> message) {
@@ -348,9 +361,9 @@ class RemoteManager extends Manager {
   // ── Helpers ──────────────────────────────────────────────────────────
 
   Response _index() => Response.ok(
-        _indexHtml ?? _placeholderHtml,
-        headers: {'content-type': 'text/html; charset=utf-8'},
-      );
+    _indexHtml ?? _placeholderHtml,
+    headers: {'content-type': 'text/html; charset=utf-8'},
+  );
 
   static String? _bearerToken(Request request) {
     final header = request.headers['authorization'];
@@ -368,10 +381,11 @@ class RemoteManager extends Manager {
     }
   }
 
-  static Response _json(int status, Map<String, Object?> body) =>
-      Response(status,
-          body: jsonEncode(body),
-          headers: {'content-type': 'application/json'});
+  static Response _json(int status, Map<String, Object?> body) => Response(
+    status,
+    body: jsonEncode(body),
+    headers: {'content-type': 'application/json'},
+  );
 
   @override
   Future<void> dispose() {

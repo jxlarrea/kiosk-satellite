@@ -70,19 +70,53 @@ class DeviceManager extends Manager {
     }
     log.info(name, '$model, $osVersion, app $appVersion');
 
-    commands.register(Command(
-      name: 'getDeviceDetails',
-      description: 'Memory, storage, panel, WebView and build details. Fields '
-          'Android will not give an app come back null rather than as a '
-          'placeholder — see DeviceDetails.',
-      handler: (_) async => CommandResult.ok((await DeviceDetails.read()).toJson()),
-    ));
+    commands.register(
+      Command(
+        name: 'getDeviceDetails',
+        description:
+            'Memory, storage, panel, WebView and build details. Fields '
+            'Android will not give an app come back null rather than as a '
+            'placeholder — see DeviceDetails.',
+        handler: (_) async =>
+            CommandResult.ok((await DeviceDetails.read()).toJson()),
+      ),
+    );
 
-    commands.register(Command(
-      name: 'getDeviceInfo',
-      description: 'Device identity and battery status',
-      handler: (_) async => CommandResult.ok(await info()),
-    ));
+    commands.register(
+      Command(
+        name: 'getDeviceInfo',
+        description: 'Device identity and battery status',
+        handler: (_) async => CommandResult.ok(await info()),
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'getStats',
+        description:
+            'Battery, CPU load and temperature only — the live header '
+            'numbers, without everything else getDeviceInfo gathers.',
+        handler: (_) async => CommandResult.ok(await stats()),
+      ),
+    );
+  }
+
+  /// The three live numbers the admin header shows. Its own read because the
+  /// remote admin polls this every few seconds: [info] walks every network
+  /// interface (twice) and queries the package on each call, all to produce
+  /// fields a stats tick throws away.
+  Future<Map<String, Object?>> stats() async {
+    final level = await _battery.batteryLevel;
+    final state = await _battery.batteryState;
+    final cpu = await DeviceDetails.cpu();
+    return {
+      'battery': level,
+      'charging':
+          state == BatteryState.charging ||
+          state == BatteryState.connectedNotCharging,
+      'cpu': cpu['usage'],
+      'temp': cpu['temp'],
+    };
   }
 
   /// Every non-loopback IPv6 address, in interface order.
@@ -116,7 +150,9 @@ class DeviceManager extends Manager {
   Future<String?> ipAddress() async {
     try {
       final interfaces = await NetworkInterface.list(
-          type: InternetAddressType.IPv4, includeLoopback: false);
+        type: InternetAddressType.IPv4,
+        includeLoopback: false,
+      );
       for (final interface in interfaces) {
         for (final address in interface.addresses) {
           return address.address;
@@ -129,12 +165,8 @@ class DeviceManager extends Manager {
   }
 
   Future<Map<String, Object?>> info() async {
-    final level = await _battery.batteryLevel;
-    final state = await _battery.batteryState;
-    final cpu = await DeviceDetails.cpu();
     return {
-      'cpu': cpu['usage'],
-      'temp': cpu['temp'],
+      ...await stats(),
       'name': deviceName,
       'ip': await ipAddress(),
       'ipv6': await ipv6Addresses(),
@@ -146,9 +178,6 @@ class DeviceManager extends Manager {
       'buildNumber': buildNumber,
       'buildMode': buildMode,
       'package': packageName,
-      'battery': level,
-      'charging': state == BatteryState.charging ||
-          state == BatteryState.connectedNotCharging,
     };
   }
 }
