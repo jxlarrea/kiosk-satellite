@@ -26,18 +26,16 @@ class ScreenManager extends Manager {
 
   bool get isScreenOn => _screenOn;
 
+  /// The screensaver asks the screen to stay on while its overlay is up (see
+  /// [_applyWakelock]).
+  bool _screensaverHold = false;
+
   @override
   Future<void> init() async {
-    if (_settings.get(defs.keepScreenOn)) {
-      await WakelockPlus.enable();
-    }
+    await _applyWakelock();
 
     bus.on<SettingChanged>().listen((e) async {
-      if (e.key == defs.keepScreenOn.key) {
-        e.value == true
-            ? await WakelockPlus.enable()
-            : await WakelockPlus.disable();
-      }
+      if (e.key == defs.keepScreenOn.key) await _applyWakelock();
     });
 
     commands
@@ -79,7 +77,33 @@ class ScreenManager extends Manager {
           await screenOff();
           return const CommandResult.ok();
         },
+      ))
+      ..register(Command(
+        name: 'keepScreenAwake',
+        description: 'Hold the panel on regardless of the keep-awake setting. '
+            'The screensaver uses this so a black overlay stays black-and-on '
+            'rather than letting the OS power the display off underneath it — '
+            'which would also freeze the app and drop the admin server.',
+        params: const {'enabled': 'true to hold the screen on'},
+        handler: (p) async {
+          _screensaverHold = p['enabled'] == true;
+          await _applyWakelock();
+          return const CommandResult.ok();
+        },
       ));
+  }
+
+  /// Keep the screen on when either the user's setting asks for it or the
+  /// screensaver is holding it. `FLAG_KEEP_SCREEN_ON` (via wakelock_plus) stops
+  /// the OS display timeout — the panel stays powered, brightness is ours to
+  /// set (0 for black), and the app is never backgrounded into a freeze.
+  Future<void> _applyWakelock() async {
+    final want = _settings.get(defs.keepScreenOn) || _screensaverHold;
+    try {
+      want ? await WakelockPlus.enable() : await WakelockPlus.disable();
+    } catch (e) {
+      log.warn(name, 'wakelock ${want ? 'enable' : 'disable'} failed: $e');
+    }
   }
 
   Future<double?> getBrightness() async {

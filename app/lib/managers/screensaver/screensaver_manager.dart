@@ -130,6 +130,11 @@ class ScreensaverManager extends Manager {
   Future<void> start() async {
     if (_active || _paused) return;
     _active = true;
+    // Hold the panel on for the whole screensaver, every mode. The screensaver
+    // owns the display while it is up — black means brightness 0 under a black
+    // overlay, not the OS powering the panel off, which would also freeze the
+    // app and take the admin server down with it.
+    await commands.execute('keepScreenAwake', {'enabled': true});
     final mode = _settings.get(defs.screensaverMode);
     log.info(name, 'start ($mode)');
 
@@ -160,6 +165,8 @@ class ScreensaverManager extends Manager {
     log.info(name, 'stop');
     activeView.value = null;
     await commands.execute('screenOn', const {});
+    // Release the hold; the keep-awake setting (if any) still applies.
+    await commands.execute('keepScreenAwake', {'enabled': false});
     if (_savedBrightness != null) {
       await commands.execute('setBrightness', {'level': _savedBrightness});
       _savedBrightness = null;
