@@ -28,6 +28,11 @@ class ScreensaverManager extends Manager {
   Timer? _idleTimer;
   bool _active = false;
   bool _paused = false;
+
+  /// A voice turn is in progress (wake word fired, page not yet resumed). The
+  /// idle timer is held the whole time, so the screensaver cannot return while
+  /// the user is mid-interaction.
+  bool _voiceTurn = false;
   double? _savedBrightness;
 
   /// The visual overlay the UI should render, or null for none.
@@ -41,9 +46,27 @@ class ScreensaverManager extends Manager {
   @override
   Future<void> init() async {
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
-    // A wake word means a voice turn is starting — wake the screen so the user
-    // can see it, exactly as they would on a touch.
-    bus.on<WakeWordDetected>().listen((_) => notifyActivity('wake word'));
+    // A wake word starts a voice turn: wake the screen, then hold the idle
+    // timer until the turn actually finishes. Arming it here — as a touch would
+    // — is wrong: the countdown would run through the user speaking and the
+    // spoken reply, and the screensaver could reappear mid-conversation.
+    bus.on<WakeWordDetected>().listen((_) {
+      _voiceTurn = true;
+      if (_active) {
+        log.debug(name, 'dismissed by wake word');
+        stop();
+      }
+      _idleTimer?.cancel();
+    });
+    // The page resuming wake detection (active again) is the end of the turn —
+    // only now does the idle countdown begin. A stuck turn is covered by the
+    // wake manager's own resume timeout, which resumes and lands us here too.
+    bus.on<WakeWordStateChanged>().listen((e) {
+      if (e.active && _voiceTurn) {
+        _voiceTurn = false;
+        _resetIdleTimer();
+      }
+    });
     bus.on<MotionDetected>().listen((_) {
       if (_settings.get(defs.screensaverDismissOnMotion)) {
         notifyActivity('motion');
@@ -98,7 +121,7 @@ class ScreensaverManager extends Manager {
 
   void _resetIdleTimer() {
     _idleTimer?.cancel();
-    if (!_settings.get(defs.screensaverEnabled) || _paused) return;
+    if (!_settings.get(defs.screensaverEnabled) || _paused || _voiceTurn) return;
     final seconds = _settings.get(defs.screensaverTimeoutSeconds).toInt();
     if (seconds <= 0) return;
     _idleTimer = Timer(Duration(seconds: seconds), start);
