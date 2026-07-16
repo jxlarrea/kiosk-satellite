@@ -146,7 +146,6 @@ class _HomeAssistantSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Home Assistant')),
       body: ListView(
@@ -168,15 +167,7 @@ class _HomeAssistantSettingsScreenState
                 children: [
                   // The heading is the section break; a line as well would be
                   // saying it twice.
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Text(
-                      'Voice Satellite',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ),
+                  _SectionHeading('Voice Satellite'),
                   ..._separated([
                     for (final def
                         in SettingsScreen._defsFor('Voice Satellite'))
@@ -193,7 +184,32 @@ class _HomeAssistantSettingsScreenState
               );
             },
           ),
+          // Last, and on their own: these are the OS's to give, not ours to
+          // set, and every one of them is a thing that stops working rather
+          // than a preference.
+          _SectionHeading('Required system permissions'),
+          SystemPermissionsTile(container: widget.container),
         ],
+      ),
+    );
+  }
+}
+
+/// A section break. The heading is the break; a divider as well says it twice.
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Text(
+        text,
+        style: theme.textTheme.titleSmall
+            ?.copyWith(color: theme.colorScheme.primary),
       ),
     );
   }
@@ -299,8 +315,6 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
                 : 'Voice Satellite keeps this one in the browser'),
             trailing: _rowValue(context, config.stopModel!.wakeWord),
           ),
-        if (widget.container.settings.get(wakeWordBackground))
-          const BackgroundGrantsTile(),
         ClearModelCacheTile(container: widget.container),
       ]),
     );
@@ -381,25 +395,29 @@ class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
   }
 }
 
-/// The OS grants background listening needs, and whether we actually have
-/// them.
+/// Every OS grant the app needs, and whether it actually holds it.
 ///
-/// Shown only when the setting is on, because until then none of it applies.
-/// It has to be shown *then*, though: the switch alone does nothing. Android
-/// will not let us start our own window from behind another app without
-/// "Display over other apps", so without it the wake word is heard and nothing
-/// happens — the one outcome worse than not listening. And Samsung will stop
-/// the service after a few hours of "unused app" unless the battery exemption
-/// is granted, whatever the foreground-service rules say.
-class BackgroundGrantsTile extends StatefulWidget {
-  const BackgroundGrantsTile({super.key});
+/// Together and last, because they are one kind of thing: not preferences but
+/// permissions, given on an Android screen, each of which silently stops
+/// something working when it is missing. A row per grant, saying what breaks
+/// rather than what it is called — "microphone" means nothing to someone
+/// wondering why the wake word went quiet.
+///
+/// The microphone is always listed. The three background grants only appear
+/// with the setting that needs them, because until then none of them applies.
+class SystemPermissionsTile extends StatefulWidget {
+  const SystemPermissionsTile({super.key, required this.container});
+
+  final AppContainer container;
 
   @override
-  State<BackgroundGrantsTile> createState() => _BackgroundGrantsTileState();
+  State<SystemPermissionsTile> createState() => _SystemPermissionsTileState();
 }
 
-class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
+class _SystemPermissionsTileState extends State<SystemPermissionsTile>
     with WidgetsBindingObserver {
+  bool? _mic;
+  bool? _micBlocked;
   bool? _canBringToFront;
   bool? _batteryUnrestricted;
   bool? _canNotify;
@@ -419,18 +437,22 @@ class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Both grants are given on an OS screen we cannot see the result of, so
-    // re-read them when the user comes back from one.
+    // Every one of these is given on an OS screen that tells us nothing on the
+    // way back, so re-read them when the user returns from one.
     if (state == AppLifecycleState.resumed) _refresh();
   }
 
   Future<void> _refresh() async {
     try {
+      final mic = await Permission.microphone.isGranted;
+      final micBlocked = await Permission.microphone.isPermanentlyDenied;
       final front = await BackgroundListening.canBringToFront();
       final battery = await BackgroundListening.isBatteryUnrestricted();
       final notify = await Permission.notification.isGranted;
       if (!mounted) return;
       setState(() {
+        _mic = mic;
+        _micBlocked = micBlocked;
         _canBringToFront = front;
         _batteryUnrestricted = battery;
         _canNotify = notify;
@@ -438,6 +460,8 @@ class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
     } catch (_) {
       if (!mounted) return;
       setState(() {
+        _mic = null;
+        _micBlocked = null;
         _canBringToFront = null;
         _batteryUnrestricted = null;
         _canNotify = null;
@@ -445,72 +469,87 @@ class _BackgroundGrantsTileState extends State<BackgroundGrantsTile>
     }
   }
 
+  /// One grant. [granted] null means we could not tell, which is not the same
+  /// as denied and must not be drawn as if it were.
+  Widget _row({
+    required bool? granted,
+    required IconData missingIcon,
+    required String title,
+    required String held,
+    required String missing,
+    required VoidCallback onGrant,
+    String action = 'Grant',
+  }) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(
+        granted == true ? Icons.check_circle_outline : missingIcon,
+        color: granted == true ? null : theme.colorScheme.error,
+      ),
+      title: Text(title),
+      subtitle: Text(granted == true ? held : missing),
+      trailing: granted == true
+          ? null
+          : TextButton(onPressed: onGrant, child: Text(action)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final background = widget.container.settings.get(wakeWordBackground);
     return Column(
       children: _separated([
-        ListTile(
-          leading: Icon(
-            _canBringToFront == true
-                ? Icons.check_circle_outline
-                : Icons.error_outline,
-            color: _canBringToFront == true ? null : theme.colorScheme.error,
-          ),
-          title: const Text('Display over other apps'),
-          subtitle: Text(_canBringToFront == true
-              ? 'Kiosk Satellite can come forward when it hears you.'
-              : 'Without this the wake word is heard and nothing happens.'),
-          trailing: _canBringToFront == true
-              ? null
-              : TextButton(
-                  onPressed: BackgroundListening.requestBringToFront,
-                  child: const Text('Grant'),
-                ),
+        // Nothing else here matters without this one: no microphone, no wake
+        // word, in the foreground or out of it.
+        _row(
+          granted: _mic,
+          missingIcon: Icons.mic_off_outlined,
+          title: 'Microphone',
+          held: 'Wake word detection can hear you.',
+          missing: _micBlocked == true
+              ? 'Blocked. Android will not ask again — allow it in the app '
+                  'settings.'
+              : 'Without this nothing is listening for the wake word.',
+          action: _micBlocked == true ? 'App settings' : 'Grant',
+          onGrant: () async {
+            if (_micBlocked == true) {
+              await openOsAppSettings();
+            } else {
+              await ensureOsPermission(Permission.microphone);
+            }
+            await _refresh();
+          },
         ),
-        // Android 13+ denies notifications by default, and a foreground service
-        // whose notification is denied still runs — silently. A tablet
-        // listening to a room with no sign that it is doing so is not something
-        // to ship, so this is a grant, not a nicety.
-        ListTile(
-          leading: Icon(
-            _canNotify == true
-                ? Icons.check_circle_outline
-                : Icons.notifications_off_outlined,
-            color: _canNotify == true ? null : theme.colorScheme.error,
+        if (background)
+          _row(
+            granted: _canBringToFront,
+            missingIcon: Icons.open_in_new_off_outlined,
+            title: 'Display over other apps',
+            held: 'Kiosk Satellite can come forward when it hears you.',
+            missing: 'Without this the wake word is heard and nothing happens.',
+            onGrant: BackgroundListening.requestBringToFront,
           ),
-          title: const Text('Listening notification'),
-          subtitle: Text(_canNotify == true
-              ? 'The device shows that it is listening.'
-              : 'Without this it listens with nothing on screen to say so.'),
-          trailing: _canNotify == true
-              ? null
-              : TextButton(
-                  onPressed: () async {
-                    await ensureOsPermission(Permission.notification);
-                    await _refresh();
-                  },
-                  child: const Text('Grant'),
-                ),
-        ),
-        ListTile(
-          leading: Icon(
-            _batteryUnrestricted == true
-                ? Icons.check_circle_outline
-                : Icons.battery_alert_outlined,
-            color: _batteryUnrestricted == true ? null : theme.colorScheme.error,
+        if (background)
+          _row(
+            granted: _canNotify,
+            missingIcon: Icons.notifications_off_outlined,
+            title: 'Listening notification',
+            held: 'The device shows that it is listening.',
+            missing: 'Without this it listens with nothing on screen to say so.',
+            onGrant: () async {
+              await ensureOsPermission(Permission.notification);
+              await _refresh();
+            },
           ),
-          title: const Text('Unrestricted battery'),
-          subtitle: Text(_batteryUnrestricted == true
-              ? 'Android will leave the listener running.'
-              : 'Without this the listener is stopped after a few hours.'),
-          trailing: _batteryUnrestricted == true
-              ? null
-              : TextButton(
-                  onPressed: BackgroundListening.requestBatteryUnrestricted,
-                  child: const Text('Grant'),
-                ),
-        ),
+        if (background)
+          _row(
+            granted: _batteryUnrestricted,
+            missingIcon: Icons.battery_alert_outlined,
+            title: 'Unrestricted battery',
+            held: 'Android will leave the listener running.',
+            missing: 'Without this the listener is stopped after a few hours.',
+            onGrant: BackgroundListening.requestBatteryUnrestricted,
+          ),
       ]),
     );
   }
