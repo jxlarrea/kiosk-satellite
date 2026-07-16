@@ -11,6 +11,7 @@ import '../core/permissions.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
+import 'media_picker.dart';
 
 /// A line between rows, and never after the last one.
 ///
@@ -652,7 +653,25 @@ class SettingTile extends StatelessWidget {
         final value = c.settings.get(def);
         final display = def.secret
             ? ((value as String).isEmpty ? 'Not set' : '••••••••')
-            : '$value';
+            : ('$value'.isEmpty ? 'Not set' : '$value');
+        // The screensaver's media is picked from Home Assistant, not typed.
+        if (def.key == screensaverMediaId.key) {
+          return ListTile(
+            title: Text(def.title),
+            subtitle:
+                Text(display, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: TextButton(
+              onPressed: () async {
+                final picked = await pickMedia(context, c);
+                if (picked != null) {
+                  await c.settings.setFromJson(def.key, picked);
+                  onChanged();
+                }
+              },
+              child: const Text('Browse'),
+            ),
+          );
+        }
         return ListTile(
           title: Text(def.title),
           subtitle: Text(display),

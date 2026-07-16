@@ -52,6 +52,18 @@ class HomeAssistantManager extends Manager {
               ? const CommandResult.fail('could not list dashboards')
               : CommandResult.ok(dashboards);
         },
+      ))
+      ..register(Command(
+        name: 'haBrowseMedia',
+        description: 'Browse a Home Assistant media node for the screensaver '
+            'picker. Omit mediaContentId for the root of every media source.',
+        params: const {'mediaContentId': 'media-source id, or omit for root'},
+        handler: (p) async {
+          final node = await browseMedia(p['mediaContentId'] as String?);
+          return node == null
+              ? const CommandResult.fail('could not browse media')
+              : CommandResult.ok(node);
+        },
       ));
 
     // "auto" kiosk mode needs to know up front whether the plugin exists so

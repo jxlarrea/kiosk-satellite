@@ -692,6 +692,23 @@ function settingRow(s) {
     await loadSettings();
   };
 
+  // The screensaver's media is browsed from Home Assistant, not typed — the
+  // same picker the device offers, so the two stay in step.
+  if (s.key === 'screensaver.media_id') {
+    const val = document.createElement('span');
+    val.className = 'device';
+    val.style.cssText = 'max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
+    val.textContent = s.value || 'Not set';
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost'; btn.textContent = 'Browse';
+    btn.addEventListener('click', async () => {
+      const picked = await openMediaBrowser();
+      if (picked) await save(picked);
+    });
+    row.append(val, btn);
+    return row;
+  }
+
   if (s.type === 'boolean') {
     const lbl = document.createElement('label'); lbl.className = 'switch';
     const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!s.value;
@@ -716,6 +733,85 @@ function settingRow(s) {
     row.appendChild(inp);
   }
   return row;
+}
+
+/* ---- Media browser (screensaver) ---- */
+// A modal that walks the Home Assistant media tree over haBrowseMedia — the
+// same command and the same shape the device's native picker uses. Resolves to
+// the chosen media-source id, or null if cancelled.
+function openMediaBrowser() {
+  return new Promise((resolve) => {
+    const trail = [{ id: undefined, title: 'Media' }];
+
+    const back = document.createElement('div');
+    back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+      + 'display:grid; place-items:center; z-index:1000; padding:16px';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'width:100%; max-width:520px; max-height:80vh;'
+      + 'display:flex; flex-direction:column; margin:0';
+    back.appendChild(card);
+    document.body.appendChild(back);
+
+    const close = (val) => { back.remove(); resolve(val); };
+    back.addEventListener('click', (e) => { if (e.target === back) close(null); });
+
+    const crumbs = document.createElement('div');
+    crumbs.style.cssText = 'font-size:13px; color:var(--muted); margin-bottom:10px';
+    const list = document.createElement('div');
+    list.style.cssText = 'overflow:auto; flex:1';
+    const foot = document.createElement('div');
+    foot.className = 'toolbar'; foot.style.marginTop = '12px';
+    card.append(crumbs, list, foot);
+
+    async function open(id, title, push) {
+      if (push) trail.push({ id, title });
+      crumbs.textContent = trail.map((c) => c.title).join('  ›  ');
+      list.innerHTML = '<div class="desc" style="color:var(--muted)">Loading…</div>';
+      let node;
+      try {
+        const r = await cmd('haBrowseMedia', id ? { mediaContentId: id } : {});
+        if (!r.ok) throw new Error(r.error || 'browse failed');
+        node = r.data;
+      } catch (e) {
+        list.innerHTML = `<div class="desc" style="color:var(--error)">Could not browse: ${e}</div>`;
+        return;
+      }
+      list.innerHTML = '';
+      for (const c of (node.children || [])) {
+        const r = document.createElement('div'); r.className = 'row';
+        const info = document.createElement('div'); info.className = 'info';
+        const isCam = (c.media_content_id || '').startsWith('media-source://camera/');
+        info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
+        info.querySelector('.name').textContent = c.title;
+        info.querySelector('.desc').textContent =
+          c.can_expand ? 'folder' : isCam ? 'camera' : (c.media_content_type || 'item');
+        r.appendChild(info);
+        r.style.cursor = 'pointer';
+        r.addEventListener('click', () => {
+          if (c.can_expand) open(c.media_content_id, c.title, true);
+          else if (c.can_play) close(c.media_content_id);
+        });
+        list.appendChild(r);
+      }
+      if (!node.children || !node.children.length)
+        list.innerHTML = '<div class="desc" style="color:var(--muted)">Nothing here.</div>';
+
+      foot.innerHTML = '';
+      const cancel = document.createElement('button');
+      cancel.className = 'btn-ghost'; cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => close(null));
+      const spacer = document.createElement('span'); spacer.className = 'spacer';
+      foot.append(cancel, spacer);
+      if (trail.length > 1 && node.can_expand) {
+        const useFolder = document.createElement('button');
+        useFolder.className = 'btn-ghost'; useFolder.textContent = 'Use this folder';
+        useFolder.addEventListener('click', () => close(node.media_content_id));
+        foot.appendChild(useFolder);
+      }
+    }
+    open(undefined, 'Media', false);
+  });
 }
 
 /* ---- Console + Logs ---- */
