@@ -21,6 +21,10 @@ class SettingDef<T> {
     this.dependsOn,
     this.dependsOnValue = true,
     this.hidden = false,
+    this.min,
+    this.max,
+    this.step,
+    this.unit,
   });
 
   final String key;
@@ -61,6 +65,19 @@ class SettingDef<T> {
   /// app tracks on the user's behalf — e.g. whether the chosen media is a
   /// folder — that other settings key their visibility off.
   final bool hidden;
+
+  /// Range for [SettingType.number]. With both [min] and [max] set, the
+  /// setting renders as a slider — in the on-device settings and the remote
+  /// admin alike — instead of a free-typed number.
+  final num? min;
+  final num? max;
+
+  /// Slider increment; null means continuous.
+  final num? step;
+
+  /// Display suffix for the slider's value ('%'). A '%' unit with max <= 1
+  /// means the stored value is a 0..1 fraction shown as a percentage.
+  final String? unit;
 }
 
 // ── Browser ────────────────────────────────────────────────────────────
@@ -203,7 +220,8 @@ const screensaverMode = SettingDef<String>(
   type: SettingType.select,
   defaultValue: 'black',
   title: 'Screensaver mode',
-  description: 'What the screensaver shows after the idle timeout. "dim" only '
+  description:
+      'What the screensaver shows after the idle timeout. "dim" only '
       'lowers the backlight and is the lightest.',
   category: 'Screensaver',
   options: ['dim', 'black', 'clock', 'media', 'website'],
@@ -248,11 +266,15 @@ const screensaverClockScale = SettingDef<num>(
   key: 'screensaver.clock_scale',
   type: SettingType.number,
   defaultValue: 100,
-  title: 'Clock size (%)',
+  title: 'Clock size',
   description: 'Scale the clock from 50 to 300 percent for this screen.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
+  min: 50,
+  max: 300,
+  step: 5,
+  unit: '%',
 );
 
 const screensaverClockColor = SettingDef<String>(
@@ -274,7 +296,8 @@ const screensaverMediaId = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Home Assistant Media',
-  description: 'A Home Assistant media item, folder, or camera. Use Browse to '
+  description:
+      'A Home Assistant media item, folder, or camera. Use Browse to '
       'pick one.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mode',
@@ -301,7 +324,8 @@ const screensaverMediaInterval = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 10,
   title: 'Seconds per image',
-  description: 'How long each image shows before the next. Videos play in full.',
+  description:
+      'How long each image shows before the next. Videos play in full.',
   category: 'Screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
@@ -346,7 +370,8 @@ const screensaverPixelShift = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Pixel shift',
-  description: 'Nudge the image every minute to protect OLED panels. Not for '
+  description:
+      'Nudge the image every minute to protect OLED panels. Not for '
       'the black screensaver, whose pixels are already off.',
   category: 'Screensaver',
 );
@@ -356,10 +381,14 @@ const screensaverDimLevel = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 0.1,
   title: 'Dim level',
-  description: 'Brightness (0..1) while the screensaver is dimming.',
+  description: 'Screen brightness while the screensaver is dimming.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'dim',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
 );
 
 // Motion detection exists only to wake the screensaver for now, so this one
@@ -371,7 +400,8 @@ const screensaverDismissOnMotion = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Dismiss on motion',
-  description: 'Watch the camera while the screensaver is up and wake the screen '
+  description:
+      'Watch the camera while the screensaver is up and wake the screen '
       'when someone approaches. The camera runs only during the screensaver, so '
       'it costs nothing during normal use.',
   category: 'Screensaver',
@@ -383,7 +413,8 @@ const motionFps = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 2,
   title: 'Motion frame rate',
-  description: 'Frames per second the camera checks for motion. Lower is lighter '
+  description:
+      'Frames per second the camera checks for motion. Lower is lighter '
       'on the CPU; 2 is plenty to notice someone approaching.',
   category: 'Screensaver',
   section: 'Motion Detection',
@@ -395,11 +426,15 @@ const motionSensitivity = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 40,
   title: 'Motion sensitivity',
-  description: 'Higher trips on smaller movements. 1 needs a large change across '
+  description:
+      'Higher trips on smaller movements. 1 needs a large change across '
       'the frame; 100 reacts to the slightest motion.',
   category: 'Screensaver',
   section: 'Motion Detection',
   dependsOn: 'screensaver.dismiss_on_motion',
+  min: 1,
+  max: 100,
+  step: 1,
 );
 
 const motionCamera = SettingDef<String>(
@@ -493,7 +528,8 @@ const themeAuto = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Match theme to time of day',
-  description: 'Switch Home Assistant between light and dark on a schedule. '
+  description:
+      'Switch Home Assistant between light and dark on a schedule. '
       'Keeps whatever theme is selected, flipping only its light/dark variant.',
   category: 'Home Assistant',
   section: 'Theme',
@@ -567,7 +603,8 @@ const uiTheme = SettingDef<String>(
   type: SettingType.select,
   defaultValue: 'dark',
   title: 'App theme',
-  description: "Light or dark for the app's own screens — menu, settings, "
+  description:
+      "Light or dark for the app's own screens — menu, settings, "
       'dialogs. System follows the Android setting. Dark by default: kiosks '
       'live on walls, mostly at night.',
   category: 'Device',

@@ -933,6 +933,85 @@ class _ClearModelCacheTileState extends State<ClearModelCacheTile> {
   }
 }
 
+/// A bounded number setting as a slider row: the value reads at the right of
+/// the row, the slider spans beneath. Dragging updates the label live; the
+/// setting is written once, on release, so a drag is one change event rather
+/// than a stream of them (settings changes can restart cameras and reload
+/// pages — see KioskScreen._onSettingChanged).
+class _SliderTile extends StatefulWidget {
+  const _SliderTile({
+    required this.container,
+    required this.def,
+    required this.onChanged,
+  });
+
+  final AppContainer container;
+  final SettingDef<Object> def;
+  final VoidCallback onChanged;
+
+  @override
+  State<_SliderTile> createState() => _SliderTileState();
+}
+
+class _SliderTileState extends State<_SliderTile> {
+  /// Value under the finger mid-drag; null reads the stored setting.
+  double? _drag;
+
+  String _label(num v) {
+    final def = widget.def;
+    if (def.unit == '%') {
+      // max <= 1 marks a 0..1 fraction stored, percentage shown.
+      return '${(def.max! <= 1 ? v * 100 : v).round()}%';
+    }
+    final text = v == v.roundToDouble()
+        ? v.toInt().toString()
+        : v.toStringAsFixed(2);
+    return def.unit == null ? text : '$text${def.unit}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final def = widget.def;
+    final min = def.min!.toDouble();
+    final max = def.max!.toDouble();
+    final step = def.step?.toDouble();
+    final value =
+        _drag ??
+        (widget.container.settings.get(def) as num).toDouble().clamp(min, max);
+    return Column(
+      children: [
+        ListTile(
+          title: Text(def.title),
+          subtitle: Text(def.description),
+          trailing: Text(
+            _label(value),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Slider(
+            value: value,
+            min: min,
+            max: max,
+            divisions: step != null ? ((max - min) / step).round() : null,
+            onChanged: (v) => setState(() => _drag = v),
+            onChangeEnd: (v) async {
+              _drag = null;
+              // Trim float noise so a whole value stores as a whole value.
+              await widget.container.settings.setFromJson(
+                def.key,
+                num.parse(v.toStringAsFixed(4)),
+              );
+              widget.onChanged();
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// A single setting rendered by its declared type.
 class SettingTile extends StatelessWidget {
   const SettingTile({
@@ -996,6 +1075,12 @@ class SettingTile extends StatelessWidget {
           ),
         );
       case SettingType.string || SettingType.password || SettingType.number:
+        // A bounded number is dragged, not typed — a slider in both UIs.
+        if (def.type == SettingType.number &&
+            def.min != null &&
+            def.max != null) {
+          return _SliderTile(container: c, def: def, onChanged: onChanged);
+        }
         final value = c.settings.get(def);
         final display = def.secret
             ? ((value as String).isEmpty ? 'Not set' : '••••••••')

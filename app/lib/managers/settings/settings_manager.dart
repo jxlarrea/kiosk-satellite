@@ -80,12 +80,10 @@ class SettingsManager extends Manager {
         await set(def, value);
       case SettingType.number when value is num:
         await set(def, value);
-      case SettingType.string ||
-            SettingType.password when value is String:
+      case SettingType.string || SettingType.password when value is String:
         await set(def, value);
       case SettingType.select
-          when value is String &&
-              (def.options?.contains(value) ?? false):
+          when value is String && (def.options?.contains(value) ?? false):
         await set(def, value);
       default:
         return false;
@@ -111,33 +109,39 @@ class SettingsManager extends Manager {
   }
 
   List<Map<String, Object?>> describe() => [
-        for (final def in allSettings)
-          {
-            'key': def.key,
-            'type': def.type.name,
-            'title': def.title,
-            'description': def.description,
-            'category': def.category,
-            if (def.section != null) 'section': def.section,
-            // The remote admin renders these too, and must hide what the
-            // device hides.
-            if (def.dependsOn != null) 'dependsOn': def.dependsOn,
-            if (def.dependsOn != null) 'dependsOnValue': def.dependsOnValue,
-            if (def.hidden) 'hidden': true,
-            if (def.options != null) 'options': def.options,
-            'default': def.secret ? null : def.defaultValue,
-            'value': def.secret
-                ? ((get(def) as String).isNotEmpty ? '__set__' : '')
-                : get(def),
-            'secret': def.secret,
-          }
-      ];
+    for (final def in allSettings)
+      {
+        'key': def.key,
+        'type': def.type.name,
+        'title': def.title,
+        'description': def.description,
+        'category': def.category,
+        if (def.section != null) 'section': def.section,
+        // The remote admin renders these too, and must hide what the
+        // device hides.
+        if (def.dependsOn != null) 'dependsOn': def.dependsOn,
+        if (def.dependsOn != null) 'dependsOnValue': def.dependsOnValue,
+        if (def.hidden) 'hidden': true,
+        if (def.options != null) 'options': def.options,
+        // Number ranges: with min+max present the remote renders a
+        // slider, exactly as the device does.
+        if (def.min != null) 'min': def.min,
+        if (def.max != null) 'max': def.max,
+        if (def.step != null) 'step': def.step,
+        if (def.unit != null) 'unit': def.unit,
+        'default': def.secret ? null : def.defaultValue,
+        'value': def.secret
+            ? ((get(def) as String).isNotEmpty ? '__set__' : '')
+            : get(def),
+        'secret': def.secret,
+      },
+  ];
 
   /// Full config for provisioning. Secrets included only when [withSecrets].
   Map<String, Object?> export({bool withSecrets = false}) => {
-        for (final def in allSettings)
-          if (!def.secret || withSecrets) def.key: get(def),
-      };
+    for (final def in allSettings)
+      if (!def.secret || withSecrets) def.key: get(def),
+  };
 
   Future<int> import(Map<String, Object?> config) async {
     var applied = 0;
