@@ -251,12 +251,10 @@ const screensaverClockScale = SettingDef<num>(
 const screensaverClockColor = SettingDef<String>(
   key: 'screensaver.clock_color',
   type: SettingType.string,
-  // "r,g,b", to match Voice Satellite's stored colour. A string rather than a
-  // colour picker because the settings layer has no colour type and a diagnostic
-  // triplet is legible enough.
+  // Stored as "r,g,b"; both UIs render a real colour picker for it.
   defaultValue: '250,250,250',
-  title: 'Clock colour (r,g,b)',
-  description: 'Text colour as three 0-255 values, e.g. 250,250,250.',
+  title: 'Clock colour',
+  description: 'The colour of the clock text.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',

@@ -11,6 +11,7 @@ import '../core/permissions.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
+import 'color_picker.dart';
 import 'media_picker.dart';
 
 /// A line between rows, and never after the last one.
@@ -675,6 +676,37 @@ class SettingTile extends StatelessWidget {
             : (value is num
                 ? _formatNum(value)
                 : ('$value'.isEmpty ? 'Not set' : '$value'));
+        // A colour is picked, not typed.
+        if (def.key == screensaverClockColor.key) {
+          final rgb = value as String;
+          final parts = rgb.split(',').map((p) => int.tryParse(p.trim())).toList();
+          final swatch = (parts.length == 3 && parts.every((p) => p != null))
+              ? Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!)
+              : const Color(0xFFFAFAFA);
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(def.description),
+            trailing: GestureDetector(
+              onTap: () async {
+                final picked = await pickColor(context,
+                    initial: rgb, title: def.title);
+                if (picked != null) {
+                  await c.settings.setFromJson(def.key, picked);
+                  onChanged();
+                }
+              },
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: swatch,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.black26),
+                ),
+              ),
+            ),
+          );
+        }
         // The screensaver's media is picked from Home Assistant, not typed.
         if (def.key == screensaverMediaId.key) {
           return ListTile(
