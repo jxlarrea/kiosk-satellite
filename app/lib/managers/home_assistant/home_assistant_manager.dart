@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/command_registry.dart';
+import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
@@ -81,12 +82,85 @@ class HomeAssistantManager extends Manager {
         },
       ));
 
+    // Day/night theme. Re-assert on every full page load (login, logout,
+    // reload all reset the frontend), react to schedule edits at once, and tick
+    // once a minute to catch the scheduled switchover with no page load.
+    bus.on<PageChanged>().listen((_) => _applyThemeSchedule(force: true));
+    bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.themeAuto.key ||
+          e.key == defs.themeDarkAt.key ||
+          e.key == defs.themeLightAt.key) {
+        _applyThemeSchedule(force: true);
+      }
+    });
+    _themeTimer =
+        Timer.periodic(const Duration(minutes: 1), (_) => _applyThemeSchedule());
+
     // "auto" kiosk mode needs to know up front whether the plugin exists so
     // the initial URL can carry ?kiosk. Detect before the kiosk screen builds.
     if (configured && _settings.get(defs.haKioskMode) == 'auto') {
       await detectKioskModePlugin();
     }
   }
+
+  Timer? _themeTimer;
+
+  /// The dark state last pushed to the page, so the minute tick only fires JS
+  /// on an actual light↔dark transition. Cleared when the feature is off so
+  /// re-enabling always re-applies.
+  bool? _lastDark;
+
+  /// Push the scheduled light/dark theme into the HA frontend when it changes.
+  ///
+  /// Mirrors what browser_mod's `set_theme` does — dispatch a `settheme` event
+  /// on the `<home-assistant>` base element — but keeps the selected theme and
+  /// only flips its dark variant. HA persists this per browser (localStorage),
+  /// so it survives SPA navigation; we re-assert on full loads that reset it.
+  Future<void> _applyThemeSchedule({bool force = false}) async {
+    if (!_settings.get(defs.themeAuto)) {
+      _lastDark = null;
+      return;
+    }
+    final dark = _desiredDark(DateTime.now());
+    if (!force && dark == _lastDark) return;
+    _lastDark = dark;
+    await commands.execute('evalJs', {'code': _themeJs(dark)});
+  }
+
+  /// Whether [now] falls in the dark window between the two configured times.
+  /// The usual case (dark 19:00 → light 07:00) wraps midnight.
+  bool _desiredDark(DateTime now) {
+    final darkAt = _parseMinutes(_settings.get(defs.themeDarkAt), 19 * 60);
+    final lightAt = _parseMinutes(_settings.get(defs.themeLightAt), 7 * 60);
+    if (darkAt == lightAt) return false;
+    final t = now.hour * 60 + now.minute;
+    return darkAt < lightAt
+        ? (t >= darkAt && t < lightAt)
+        : (t >= darkAt || t < lightAt);
+  }
+
+  int _parseMinutes(String hhmm, int fallback) {
+    final parts = hhmm.split(':');
+    if (parts.length != 2) return fallback;
+    final h = int.tryParse(parts[0].trim());
+    final m = int.tryParse(parts[1].trim());
+    if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59) {
+      return fallback;
+    }
+    return h * 60 + m;
+  }
+
+  String _themeJs(bool dark) => '''
+(function () {
+  var base = document.querySelector('home-assistant');
+  if (!base || !base.hass) return;
+  var t = (base.hass.selectedTheme && base.hass.selectedTheme.theme)
+      || (base.hass.themes && base.hass.themes.default_theme)
+      || 'default';
+  base.dispatchEvent(new CustomEvent('settheme',
+      { detail: { theme: t, dark: $dark } }));
+})();
+''';
 
   bool? _kioskPlugin;
 
@@ -223,5 +297,10 @@ class HomeAssistantManager extends Manager {
     } finally {
       await channel.sink.close();
     }
+  }
+
+  @override
+  Future<void> dispose() async {
+    _themeTimer?.cancel();
   }
 }

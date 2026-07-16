@@ -765,6 +765,18 @@ function settingRow(s) {
     return row;
   }
 
+  // A time of day gets the browser's native time picker.
+  if (s.key === 'ha.theme_dark_at' || s.key === 'ha.theme_light_at') {
+    const inp = document.createElement('input');
+    inp.type = 'time';
+    inp.value = s.value || '';
+    inp.style.cssText = 'background:var(--surface-2); border:1px solid var(--border);'
+      + 'border-radius:9px; color:var(--text); padding:6px 8px';
+    inp.addEventListener('change', () => save(inp.value));
+    row.appendChild(inp);
+    return row;
+  }
+
   if (s.type === 'boolean') {
     const lbl = document.createElement('label'); lbl.className = 'switch';
     const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!s.value;

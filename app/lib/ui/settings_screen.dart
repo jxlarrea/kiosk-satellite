@@ -26,6 +26,40 @@ List<Widget> _separated(List<Widget> rows) => [
       ],
     ];
 
+/// Render a category's settings, grouping any that share a `section` under one
+/// [_SectionHeading]. Only visible settings appear; dividers separate the rows
+/// of a section, and the heading is the break between sections (no extra line).
+List<Widget> _sectionedTiles(
+  AppContainer container,
+  List<SettingDef<Object>> defs,
+  VoidCallback onChanged,
+) {
+  final settings = container.settings;
+  final visible = [for (final d in defs) if (settings.visible(d)) d];
+  final rows = <Widget>[];
+  String? current;
+  var buffer = <SettingDef<Object>>[];
+  void flush() {
+    if (buffer.isEmpty) return;
+    rows.addAll(_separated([
+      for (final def in buffer)
+        SettingTile(container: container, def: def, onChanged: onChanged),
+    ]));
+    buffer = [];
+  }
+
+  for (final def in visible) {
+    if (def.section != current) {
+      flush();
+      current = def.section;
+      if (current != null) rows.add(_SectionHeading(current));
+    }
+    buffer.add(def);
+  }
+  flush();
+  return rows;
+}
+
 /// Hierarchical settings, Fully Kiosk style: the top level is a list of
 /// category pages, each rendered from the declarative setting definitions —
 /// the same source the remote admin UI uses.
@@ -109,41 +143,15 @@ class CategorySettingsScreen extends StatefulWidget {
 class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    final settings = widget.container.settings;
-    final visible = [for (final d in widget.defs) if (settings.visible(d)) d];
-
-    // Render each section (a run of settings sharing a `section`) under its own
-    // heading, with dividers only between the rows of a section — the heading
-    // is the break, as on the Home Assistant page.
-    final rows = <Widget>[];
-    String? current;
-    var buffer = <SettingDef<Object>>[];
-    void flush() {
-      if (buffer.isEmpty) return;
-      rows.addAll(_separated([
-        for (final def in buffer)
-          SettingTile(
-            container: widget.container,
-            def: def,
-            onChanged: () => setState(() {}),
-          ),
-      ]));
-      buffer = [];
-    }
-
-    for (final def in visible) {
-      if (def.section != current) {
-        flush();
-        current = def.section;
-        if (current != null) rows.add(_SectionHeading(current));
-      }
-      buffer.add(def);
-    }
-    flush();
-
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
-      body: ListView(children: rows),
+      body: ListView(
+        children: _sectionedTiles(
+          widget.container,
+          widget.defs,
+          () => setState(() {}),
+        ),
+      ),
     );
   }
 }
@@ -176,14 +184,11 @@ class _HomeAssistantSettingsScreenState
       appBar: AppBar(title: const Text('Home Assistant')),
       body: ListView(
         children: [
-          ..._separated([
-            for (final def in SettingsScreen._defsFor('Home Assistant'))
-              SettingTile(
-                container: widget.container,
-                def: def,
-                onChanged: () => setState(() {}),
-              ),
-          ]),
+          ..._sectionedTiles(
+            widget.container,
+            SettingsScreen._defsFor('Home Assistant'),
+            () => setState(() {}),
+          ),
           FutureBuilder<bool>(
             future: _vsDetected,
             builder: (context, snapshot) {
@@ -749,6 +754,18 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
+        // A time of day is picked from a clock, not typed.
+        if (def.key == themeDarkAt.key || def.key == themeLightAt.key) {
+          final current = value as String;
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(def.description),
+            trailing: TextButton(
+              onPressed: () => _pickTime(context, current),
+              child: Text(current.isEmpty ? 'Not set' : current),
+            ),
+          );
+        }
         return ListTile(
           title: Text(def.title),
           subtitle: Text(display),
@@ -756,6 +773,20 @@ class SettingTile extends StatelessWidget {
           onTap: () => _editText(context),
         );
     }
+  }
+
+  Future<void> _pickTime(BuildContext context, String current) async {
+    final parts = current.split(':');
+    final initial = TimeOfDay(
+      hour: int.tryParse(parts.isNotEmpty ? parts[0] : '')?.clamp(0, 23) ?? 0,
+      minute: int.tryParse(parts.length > 1 ? parts[1] : '')?.clamp(0, 59) ?? 0,
+    );
+    final picked = await showTimePicker(context: context, initialTime: initial);
+    if (picked == null) return;
+    final hhmm = '${picked.hour.toString().padLeft(2, '0')}:'
+        '${picked.minute.toString().padLeft(2, '0')}';
+    await c.settings.setFromJson(def.key, hhmm);
+    onChanged();
   }
 
   Future<void> _editText(BuildContext context) async {

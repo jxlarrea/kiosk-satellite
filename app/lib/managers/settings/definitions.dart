@@ -488,6 +488,39 @@ const haKioskMode = SettingDef<String>(
   options: ['off', 'auto', 'plugin', 'css'],
 );
 
+const themeAuto = SettingDef<bool>(
+  key: 'ha.theme_auto',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Match theme to time of day',
+  description: 'Switch Home Assistant between light and dark on a schedule. '
+      'Keeps whatever theme is selected, flipping only its light/dark variant.',
+  category: 'Home Assistant',
+  section: 'Theme',
+);
+
+const themeDarkAt = SettingDef<String>(
+  key: 'ha.theme_dark_at',
+  type: SettingType.string,
+  defaultValue: '19:00',
+  title: 'Dark theme at',
+  description: 'Local time to switch to the dark theme.',
+  category: 'Home Assistant',
+  section: 'Theme',
+  dependsOn: 'ha.theme_auto',
+);
+
+const themeLightAt = SettingDef<String>(
+  key: 'ha.theme_light_at',
+  type: SettingType.string,
+  defaultValue: '07:00',
+  title: 'Light theme at',
+  description: 'Local time to switch back to the light theme.',
+  category: 'Home Assistant',
+  section: 'Theme',
+  dependsOn: 'ha.theme_auto',
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -568,6 +601,9 @@ const List<SettingDef<Object>> allSettings = [
   haUrl,
   haToken,
   haKioskMode,
+  themeAuto,
+  themeDarkAt,
+  themeLightAt,
   remoteEnabled,
   remotePort,
   remotePassword,
