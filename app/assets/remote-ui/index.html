@@ -438,6 +438,86 @@ async function loadWakeWord() {
   const root = $('#tab-homeassistant');
   root.querySelector('#wakeWordCard')?.remove();
   root.appendChild(card);
+  await loadPermissions();
+}
+
+/* ---- Required system permissions (read-only) ---- */
+// The same rows the device's own settings screen shows, from the same read.
+// Status only, and deliberately: these are Android dialogs and settings
+// screens, so only someone at the device can give them. A permission granted
+// from another room would not be much of a permission.
+async function loadPermissions() {
+  const root = $('#tab-homeassistant');
+  root.querySelector('#permsCard')?.remove();
+
+  let p;
+  try {
+    const res = await cmd('getSystemPermissions');
+    if (!res.ok) return;
+    p = res.data;
+  } catch { return; }
+
+  // With wake word detection off the card keeps detection in the browser,
+  // which asks for the microphone itself — none of this applies.
+  if (!p.required) return;
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'permsCard';
+  const h = document.createElement('h2');
+  h.textContent = 'Required system permissions';
+  card.appendChild(h);
+
+  const rows = [
+    ['Microphone', p.microphone,
+      'Wake word detection can hear you.',
+      p.microphoneBlocked
+        ? 'Blocked — Android will not ask again.'
+        : 'Nothing is listening for the wake word.'],
+  ];
+  if (p.background) {
+    rows.push(
+      ['Display over other apps', p.displayOverOtherApps,
+        'Can come forward when it hears you.',
+        'The wake word is heard and nothing happens.'],
+      ['Listening notification', p.notification,
+        'The device shows that it is listening.',
+        'It listens with nothing on screen to say so.'],
+      ['Unrestricted battery', p.batteryUnrestricted,
+        'Android will leave the listener running.',
+        'The listener is stopped after a few hours.'],
+    );
+  }
+
+  let anyMissing = false;
+  for (const [name, granted, held, missing] of rows) {
+    if (!granted) anyMissing = true;
+    const row = document.createElement('div'); row.className = 'row';
+    const info = document.createElement('div'); info.className = 'info';
+    info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
+    info.querySelector('.name').textContent = name;
+    info.querySelector('.desc').textContent = granted ? held : missing;
+    row.appendChild(info);
+    const state = document.createElement('span');
+    state.style.cssText =
+      `white-space:nowrap; color:${granted ? 'var(--ok)' : 'var(--error)'}`;
+    state.textContent = granted ? 'Granted' : 'Missing';
+    row.appendChild(state);
+    card.appendChild(row);
+  }
+
+  if (anyMissing) {
+    // Say where to go, since it cannot be done from here.
+    const note = document.createElement('div');
+    note.className = 'desc';
+    note.style.cssText = 'margin-top:12px; color:var(--warn)';
+    note.textContent =
+      'Grant these on the device itself: swipe in from the left edge → ' +
+      'Settings → Home Assistant → Required system permissions.';
+    card.appendChild(note);
+  }
+
+  root.appendChild(card);
 }
 
 function readOnlyRow(name, desc, value) {

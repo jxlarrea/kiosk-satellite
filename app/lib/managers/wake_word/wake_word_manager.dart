@@ -12,6 +12,7 @@ import '../settings/settings_manager.dart';
 import 'background_listening.dart';
 import 'engine.dart';
 import 'model_cache.dart';
+import 'system_permissions.dart';
 import 'mww/mww_engine.dart';
 import 'mww/mww_probe.dart';
 import 'oww/oww_engine.dart';
@@ -457,6 +458,22 @@ class WakeWordManager extends Manager {
           return opened
               ? const CommandResult.ok()
               : const CommandResult.fail('could not open the OS settings');
+        },
+      ))
+      ..register(Command(
+        name: 'getSystemPermissions',
+        description: 'OS grants native wake-word detection needs, and whether '
+            'this device holds them. Read-only: they can only be given on the '
+            'device itself. `required` is false when wake word detection is '
+            'off, where the browser asks for the microphone on its own and '
+            'none of this applies.',
+        handler: (_) async {
+          final perms = await SystemPermissions.read();
+          return CommandResult.ok({
+            'required': enabled,
+            'background': _settings.get(defs.wakeWordBackground),
+            ...perms.toJson(),
+          });
         },
       ))
       ..register(Command(

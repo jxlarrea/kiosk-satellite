@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../core/permissions.dart';
 import '../managers/wake_word/background_listening.dart';
+import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
 
 /// A line between rows, and never after the last one.
@@ -187,8 +188,16 @@ class _HomeAssistantSettingsScreenState
           // Last, and on their own: these are the OS's to give, not ours to
           // set, and every one of them is a thing that stops working rather
           // than a preference.
-          _SectionHeading('Required system permissions'),
-          SystemPermissionsTile(container: widget.container),
+          //
+          // Only while we are the one listening. With wake word detection off
+          // the card keeps detection in the browser, which asks for the
+          // microphone through the WebView's own permission flow — so none of
+          // this is ours to need, and demanding it would be asking for grants
+          // nothing here uses.
+          if (widget.container.settings.get(wakeWordEnabled)) ...[
+            _SectionHeading('Required system permissions'),
+            SystemPermissionsTile(container: widget.container),
+          ],
         ],
       ),
     );
@@ -416,11 +425,9 @@ class SystemPermissionsTile extends StatefulWidget {
 
 class _SystemPermissionsTileState extends State<SystemPermissionsTile>
     with WidgetsBindingObserver {
-  bool? _mic;
-  bool? _micBlocked;
-  bool? _canBringToFront;
-  bool? _batteryUnrestricted;
-  bool? _canNotify;
+  /// Null until read, or when we could not read them at all — which is not
+  /// the same as denied and must not be drawn as if it were.
+  SystemPermissions? _perms;
 
   @override
   void initState() {
@@ -444,28 +451,12 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
 
   Future<void> _refresh() async {
     try {
-      final mic = await Permission.microphone.isGranted;
-      final micBlocked = await Permission.microphone.isPermanentlyDenied;
-      final front = await BackgroundListening.canBringToFront();
-      final battery = await BackgroundListening.isBatteryUnrestricted();
-      final notify = await Permission.notification.isGranted;
+      final perms = await SystemPermissions.read();
       if (!mounted) return;
-      setState(() {
-        _mic = mic;
-        _micBlocked = micBlocked;
-        _canBringToFront = front;
-        _batteryUnrestricted = battery;
-        _canNotify = notify;
-      });
+      setState(() => _perms = perms);
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _mic = null;
-        _micBlocked = null;
-        _canBringToFront = null;
-        _batteryUnrestricted = null;
-        _canNotify = null;
-      });
+      setState(() => _perms = null);
     }
   }
 
@@ -497,22 +488,23 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
   @override
   Widget build(BuildContext context) {
     final background = widget.container.settings.get(wakeWordBackground);
+    final perms = _perms;
     return Column(
       children: _separated([
         // Nothing else here matters without this one: no microphone, no wake
         // word, in the foreground or out of it.
         _row(
-          granted: _mic,
+          granted: perms?.microphone,
           missingIcon: Icons.mic_off_outlined,
           title: 'Microphone',
           held: 'Wake word detection can hear you.',
-          missing: _micBlocked == true
+          missing: perms?.microphoneBlocked == true
               ? 'Blocked. Android will not ask again — allow it in the app '
                   'settings.'
               : 'Without this nothing is listening for the wake word.',
-          action: _micBlocked == true ? 'App settings' : 'Grant',
+          action: perms?.microphoneBlocked == true ? 'App settings' : 'Grant',
           onGrant: () async {
-            if (_micBlocked == true) {
+            if (perms?.microphoneBlocked == true) {
               await openOsAppSettings();
             } else {
               await ensureOsPermission(Permission.microphone);
@@ -522,7 +514,7 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
         ),
         if (background)
           _row(
-            granted: _canBringToFront,
+            granted: perms?.displayOverOtherApps,
             missingIcon: Icons.open_in_new_off_outlined,
             title: 'Display over other apps',
             held: 'Kiosk Satellite can come forward when it hears you.',
@@ -531,7 +523,7 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
           ),
         if (background)
           _row(
-            granted: _canNotify,
+            granted: perms?.notification,
             missingIcon: Icons.notifications_off_outlined,
             title: 'Listening notification',
             held: 'The device shows that it is listening.',
@@ -543,7 +535,7 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
           ),
         if (background)
           _row(
-            granted: _batteryUnrestricted,
+            granted: perms?.batteryUnrestricted,
             missingIcon: Icons.battery_alert_outlined,
             title: 'Unrestricted battery',
             held: 'Android will leave the listener running.',
