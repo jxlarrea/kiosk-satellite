@@ -147,6 +147,7 @@
   <nav id="tabs">
     <button data-tab="dashboard" class="active">Dashboard</button>
     <button data-tab="settings">Settings</button>
+    <button data-tab="screensaver">Screensaver</button>
     <button data-tab="homeassistant">Home Assistant</button>
     <button data-tab="device">Device Info</button>
     <button data-tab="console">Console</button>
@@ -193,6 +194,9 @@
 
     <!-- Settings (everything else) -->
     <div class="tab" id="tab-settings"></div>
+
+    <!-- Screensaver -->
+    <div class="tab" id="tab-screensaver"></div>
 
     <!-- Device Info -->
     <div class="tab" id="tab-device"></div>
@@ -256,7 +260,7 @@ function logout() {
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-const TABS = ['dashboard', 'settings', 'homeassistant', 'device', 'console', 'logs'];
+const TABS = ['dashboard', 'settings', 'screensaver', 'homeassistant', 'device', 'console', 'logs'];
 
 function showTab(name, { push = true } = {}) {
   const tab = TABS.includes(name) ? name : 'dashboard';
@@ -308,6 +312,8 @@ async function loadScreenshot() {
 /* ---- Settings ---- */
 // Categories that belong on the Home Assistant tab (in display order).
 const HA_CATEGORIES = ['Home Assistant', 'Voice Satellite'];
+// Screensaver has its own tab, so it is neither a Home Assistant nor a 'rest'.
+const OWN_TAB_CATEGORIES = ['Screensaver'];
 
 async function loadSettings() {
   const { settings } = await (await api('/api/settings')).json();
@@ -348,9 +354,11 @@ async function loadSettings() {
   };
 
   const haCats = HA_CATEGORIES.filter((c) => byCat[c]);
-  const otherCats = Object.keys(byCat).filter((c) => !HA_CATEGORIES.includes(c));
+  const otherCats = Object.keys(byCat).filter(
+    (c) => !HA_CATEGORIES.includes(c) && !OWN_TAB_CATEGORIES.includes(c));
   render($('#tab-homeassistant'), haCats);
   render($('#tab-settings'), otherCats);
+  render($('#tab-screensaver'), byCat['Screensaver'] ? ['Screensaver'] : []);
   // The on-device settings screen shows the wake-word config inherited from
   // Voice Satellite under the same heading. This tab mirrors it.
   await loadWakeWord();
