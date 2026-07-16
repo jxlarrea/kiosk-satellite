@@ -22,8 +22,23 @@ class HomeAssistantManager extends Manager {
   @override
   String get name => 'home_assistant';
 
+  /// The Home Assistant origin — scheme, host and port, no path.
+  ///
+  /// Everything here builds on it: `/api/` for the REST checks, `/api/websocket`
+  /// for media browsing and the screensaver. Home Assistant serves all of those
+  /// from the origin, never under a dashboard path, so a setting of
+  /// `https://ha.example/dashboard-x/0` (an easy paste of the address bar) must
+  /// still resolve to `https://ha.example`. Falls back to the trimmed string if
+  /// it will not parse.
   String get baseUrl {
-    final url = _settings.get(defs.haUrl);
+    final url = _settings.get(defs.haUrl).trim();
+    if (url.isEmpty) return '';
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.hasScheme && uri.host.isNotEmpty) {
+      return uri.hasPort
+          ? '${uri.scheme}://${uri.host}:${uri.port}'
+          : '${uri.scheme}://${uri.host}';
+    }
     return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
   }
 
