@@ -562,6 +562,18 @@ const deviceName = SettingDef<String>(
   category: 'Device',
 );
 
+const uiTheme = SettingDef<String>(
+  key: 'ui.theme',
+  type: SettingType.select,
+  defaultValue: 'dark',
+  title: 'App theme',
+  description: "Light or dark for the app's own screens — menu, settings, "
+      'dialogs. System follows the Android setting. Dark by default: kiosks '
+      'live on walls, mostly at night.',
+  category: 'Device',
+  options: ['dark', 'light', 'system'],
+);
+
 /// All settings, in display order.
 const List<SettingDef<Object>> allSettings = [
   startUrl,
@@ -608,4 +620,5 @@ const List<SettingDef<Object>> allSettings = [
   remotePort,
   remotePassword,
   deviceName,
+  uiTheme,
 ];
