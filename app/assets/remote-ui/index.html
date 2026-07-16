@@ -315,10 +315,20 @@ async function loadSettings() {
   // A setting can declare that it only means anything while another one is on
   // (dependsOn). The device hides those rows; so must we, or the two disagree
   // about the same device — and the remote copy is the one that gets believed
-  // by whoever is not in the room.
+  // by whoever is not in the room. Transitive, matching the device: a row is
+  // shown only if its dependency holds and that dependency is itself shown.
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]));
-  const visible = (s) => !s.dependsOn ||
-    byKey[s.dependsOn]?.value === (s.dependsOnValue ?? true);
+  const visible = (s) => {
+    if (s.hidden) return false;
+    if (!s.dependsOn) return true;
+    const dep = byKey[s.dependsOn];
+    if (!dep) return true;
+    return dep.value === (s.dependsOnValue ?? true) && visible(dep);
+  };
+
+  // The Home Assistant Media mode only offers itself with HA connected.
+  state.haConfigured = (byKey['ha.url']?.value || '') !== '' &&
+    byKey['ha.token']?.value === '__set__';
 
   const byCat = {};
   settings.filter(visible).forEach((s) => (byCat[s.category] ??= []).push(s));
@@ -703,7 +713,13 @@ function settingRow(s) {
     btn.className = 'btn-ghost'; btn.textContent = 'Browse';
     btn.addEventListener('click', async () => {
       const picked = await openMediaBrowser();
-      if (picked) await save(picked);
+      if (picked) {
+        await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+          'screensaver.media_id': picked.id,
+          'screensaver.media_is_folder': picked.isFolder,
+        }) });
+        await loadSettings();
+      }
     });
     row.append(val, btn);
     return row;
@@ -717,7 +733,10 @@ function settingRow(s) {
     lbl.append(cb, sl); row.appendChild(lbl);
   } else if (s.type === 'select') {
     const sel = document.createElement('select');
-    (s.options || []).forEach((o) => {
+    let opts = s.options || [];
+    if (s.key === 'screensaver.mode' && !state.haConfigured)
+      opts = opts.filter((o) => o !== 'media');
+    opts.forEach((o) => {
       const opt = document.createElement('option'); opt.value = o; opt.textContent = o;
       opt.selected = o === s.value; sel.appendChild(opt);
     });
@@ -727,7 +746,9 @@ function settingRow(s) {
     const inp = document.createElement('input');
     inp.type = s.type === 'password' ? 'password' : s.type === 'number' ? 'number' : 'text';
     if (s.type === 'password') inp.placeholder = s.value === '__set__' ? '•••••• (set)' : 'Not set';
-    else inp.value = s.value ?? '';
+    else inp.value = (s.type === 'number' && typeof s.value === 'number')
+      ? String(s.value)  // JS prints an integer-valued number without a .0
+      : (s.value ?? '');
     inp.addEventListener('change', () =>
       save(s.type === 'number' ? Number(inp.value) : inp.value));
     row.appendChild(inp);
@@ -790,7 +811,7 @@ function openMediaBrowser() {
         r.style.cursor = 'pointer';
         r.addEventListener('click', () => {
           if (c.can_expand) open(c.media_content_id, c.title, true);
-          else if (c.can_play) close(c.media_content_id);
+          else if (c.can_play) close({ id: c.media_content_id, isFolder: false });
         });
         list.appendChild(r);
       }
@@ -806,7 +827,7 @@ function openMediaBrowser() {
       if (trail.length > 1 && node.can_expand) {
         const useFolder = document.createElement('button');
         useFolder.className = 'btn-ghost'; useFolder.textContent = 'Use this folder';
-        useFolder.addEventListener('click', () => close(node.media_content_id));
+        useFolder.addEventListener('click', () => close({ id: node.media_content_id, isFolder: true }));
         foot.appendChild(useFolder);
       }
     }

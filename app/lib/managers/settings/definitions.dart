@@ -19,6 +19,7 @@ class SettingDef<T> {
     this.secret = false,
     this.dependsOn,
     this.dependsOnValue = true,
+    this.hidden = false,
   });
 
   final String key;
@@ -48,6 +49,11 @@ class SettingDef<T> {
   /// The value [dependsOn] must hold. Defaults to `true` for the common
   /// boolean-switch case; set to a string to gate on a mode select.
   final Object dependsOnValue;
+
+  /// Persisted and readable, but never shown as a settings row. For state the
+  /// app tracks on the user's behalf — e.g. whether the chosen media is a
+  /// folder — that other settings key their visibility off.
+  final bool hidden;
 }
 
 // ── Browser ────────────────────────────────────────────────────────────
@@ -190,8 +196,8 @@ const screensaverMode = SettingDef<String>(
   type: SettingType.select,
   defaultValue: 'black',
   title: 'Screensaver mode',
-  description: 'What the screensaver shows. The last three mirror Voice '
-      'Satellite; "dim" only lowers the backlight and is the lightest.',
+  description: 'What the screensaver shows after the idle timeout. "dim" only '
+      'lowers the backlight and is the lightest.',
   category: 'Screensaver',
   options: ['dim', 'black', 'clock', 'media', 'website'],
 );
@@ -262,10 +268,25 @@ const screensaverMediaId = SettingDef<String>(
   key: 'screensaver.media_id',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Media',
+  title: 'Home Assistant Media',
   description: 'A Home Assistant media item, folder, or camera. Use Browse to '
       'pick one.',
   category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'media',
+);
+
+// Set by the media picker: true when a folder was chosen, false for a single
+// image, video, or camera. The playlist settings key their visibility off it —
+// shuffle and subfolders mean nothing for one file.
+const screensaverMediaIsFolder = SettingDef<bool>(
+  key: 'screensaver.media_is_folder',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Media is a folder',
+  description: '',
+  category: 'Screensaver',
+  hidden: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
 );
@@ -277,8 +298,7 @@ const screensaverMediaInterval = SettingDef<num>(
   title: 'Seconds per image',
   description: 'How long each image shows before the next. Videos play in full.',
   category: 'Screensaver',
-  dependsOn: 'screensaver.mode',
-  dependsOnValue: 'media',
+  dependsOn: 'screensaver.media_is_folder',
 );
 
 const screensaverMediaShuffle = SettingDef<bool>(
@@ -288,8 +308,7 @@ const screensaverMediaShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Play a folder in random order.',
   category: 'Screensaver',
-  dependsOn: 'screensaver.mode',
-  dependsOnValue: 'media',
+  dependsOn: 'screensaver.media_is_folder',
 );
 
 const screensaverMediaRecursive = SettingDef<bool>(
@@ -299,8 +318,7 @@ const screensaverMediaRecursive = SettingDef<bool>(
   title: 'Include subfolders',
   description: 'Descend into subfolders when a folder is chosen.',
   category: 'Screensaver',
-  dependsOn: 'screensaver.mode',
-  dependsOnValue: 'media',
+  dependsOn: 'screensaver.media_is_folder',
 );
 
 // ── Website (mode: website) ──
@@ -497,6 +515,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockScale,
   screensaverClockColor,
   screensaverMediaId,
+  screensaverMediaIsFolder,
   screensaverMediaInterval,
   screensaverMediaShuffle,
   screensaverMediaRecursive,

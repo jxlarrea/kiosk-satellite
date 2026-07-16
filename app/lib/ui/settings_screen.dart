@@ -84,8 +84,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  static List<SettingDef<Object>> _defsFor(String category) =>
-      [for (final def in allSettings) if (def.category == category) def];
+  static List<SettingDef<Object>> _defsFor(String category) => [
+        for (final def in allSettings)
+          if (def.category == category && !def.hidden) def,
+      ];
 }
 
 /// One category's settings.
@@ -617,6 +619,21 @@ class SettingTile extends StatelessWidget {
 
   AppContainer get c => container;
 
+  /// A select's options, filtered for context. The Home Assistant Media
+  /// screensaver only makes sense with Home Assistant connected, so its option
+  /// is hidden until a URL and token are set.
+  List<String> _optionsFor(SettingDef<Object> def) {
+    final options = List<String>.from(def.options ?? const <String>[]);
+    if (def.key == screensaverMode.key && !c.homeAssistant.configured) {
+      options.remove('media');
+    }
+    return options;
+  }
+
+  /// A number without a pointless trailing `.0` — 10, not 10.0.
+  String _formatNum(num v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toString();
+
   @override
   Widget build(BuildContext context) {
     switch (def.type) {
@@ -631,13 +648,15 @@ class SettingTile extends StatelessWidget {
           },
         );
       case SettingType.select:
+        final options = _optionsFor(def);
+        final current = c.settings.get(def) as String;
         return ListTile(
           title: Text(def.title),
           subtitle: Text(def.description),
           trailing: DropdownButton<String>(
-            value: c.settings.get(def) as String,
+            value: options.contains(current) ? current : options.first,
             items: [
-              for (final option in def.options ?? const <String>[])
+              for (final option in options)
                 DropdownMenuItem(value: option, child: Text(option)),
             ],
             onChanged: (v) async {
@@ -653,7 +672,9 @@ class SettingTile extends StatelessWidget {
         final value = c.settings.get(def);
         final display = def.secret
             ? ((value as String).isEmpty ? 'Not set' : '••••••••')
-            : ('$value'.isEmpty ? 'Not set' : '$value');
+            : (value is num
+                ? _formatNum(value)
+                : ('$value'.isEmpty ? 'Not set' : '$value'));
         // The screensaver's media is picked from Home Assistant, not typed.
         if (def.key == screensaverMediaId.key) {
           return ListTile(
@@ -664,7 +685,11 @@ class SettingTile extends StatelessWidget {
               onPressed: () async {
                 final picked = await pickMedia(context, c);
                 if (picked != null) {
-                  await c.settings.setFromJson(def.key, picked);
+                  await c.settings.setFromJson(def.key, picked.id);
+                  // Remember folder-ness so the playlist settings (shuffle,
+                  // subfolders, interval) know whether to show.
+                  await c.settings.setFromJson(
+                      screensaverMediaIsFolder.key, picked.isFolder);
                   onChanged();
                 }
               },
@@ -684,7 +709,9 @@ class SettingTile extends StatelessWidget {
   Future<void> _editText(BuildContext context) async {
     final current = c.settings.get(def);
     final controller = TextEditingController(
-      text: def.secret ? '' : '$current',
+      text: def.secret
+          ? ''
+          : (current is num ? _formatNum(current) : '$current'),
     );
     final result = await showDialog<String>(
       context: context,

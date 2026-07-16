@@ -41,6 +41,9 @@ class ScreensaverManager extends Manager {
   @override
   Future<void> init() async {
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
+    // A wake word means a voice turn is starting — wake the screen so the user
+    // can see it, exactly as they would on a touch.
+    bus.on<WakeWordDetected>().listen((_) => notifyActivity('wake word'));
     bus.on<MotionDetected>().listen((_) {
       if (_settings.get(defs.screensaverDismissOnMotion)) {
         notifyActivity('motion');

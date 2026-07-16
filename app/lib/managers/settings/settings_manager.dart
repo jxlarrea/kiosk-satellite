@@ -40,7 +40,13 @@ class SettingsManager extends Manager {
       case final String v:
         await _prefs.setString(_prefix + def.key, v);
       case final num v:
-        await _prefs.setDouble(_prefix + def.key, v.toDouble());
+        // A whole value is an int, not 10.0 — SharedPreferences keeps the two
+        // apart, and get() reads back whichever was stored.
+        if (v is int || v == v.roundToDouble()) {
+          await _prefs.setInt(_prefix + def.key, v.toInt());
+        } else {
+          await _prefs.setDouble(_prefix + def.key, v.toDouble());
+        }
       default:
         throw ArgumentError('unsupported setting type: $value');
     }
@@ -98,7 +104,10 @@ class SettingsManager extends Manager {
     // A dependency that does not exist is a typo in the definitions, and
     // hiding the row would hide the evidence.
     if (dep == null) return true;
-    return get(dep) == def.dependsOnValue;
+    // Transitive: the dependency must both hold *and* itself be visible, so a
+    // setting can gate on a hidden flag that gates on the mode (folder
+    // playlist settings → media_is_folder → mode == media).
+    return get(dep) == def.dependsOnValue && visible(dep);
   }
 
   List<Map<String, Object?>> describe() => [
@@ -113,6 +122,7 @@ class SettingsManager extends Manager {
             // device hides.
             if (def.dependsOn != null) 'dependsOn': def.dependsOn,
             if (def.dependsOn != null) 'dependsOnValue': def.dependsOnValue,
+            if (def.hidden) 'hidden': true,
             if (def.options != null) 'options': def.options,
             'default': def.secret ? null : def.defaultValue,
             'value': def.secret

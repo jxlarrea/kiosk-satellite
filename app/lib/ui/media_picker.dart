@@ -9,8 +9,10 @@ import '../app_container.dart';
 /// video, or a camera from the synthetic `camera` source — is picked and
 /// returned. "Use this folder" returns the folder itself, for slideshow
 /// cycling. Returns the chosen media-source id, or null if cancelled.
-Future<String?> pickMedia(BuildContext context, AppContainer container) {
-  return showDialog<String>(
+typedef MediaPick = ({String id, bool isFolder});
+
+Future<MediaPick?> pickMedia(BuildContext context, AppContainer container) {
+  return showDialog<MediaPick>(
     context: context,
     builder: (_) => _MediaPickerDialog(container: container),
   );
@@ -146,8 +148,12 @@ class _MediaPickerDialogState extends State<_MediaPickerDialog> {
         // real folder.
         if (!atRoot && canExpand)
           FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, _node?['media_content_id'] as String?),
+            onPressed: () {
+              final id = _node?['media_content_id'] as String?;
+              if (id != null) {
+                Navigator.pop(context, (id: id, isFolder: true));
+              }
+            },
             child: const Text('Use this folder'),
           ),
       ],
@@ -174,7 +180,7 @@ class _MediaPickerDialogState extends State<_MediaPickerDialog> {
         if (expand) {
           _open(id, title);
         } else if (play && id != null) {
-          Navigator.pop(context, id);
+          Navigator.pop(context, (id: id, isFolder: false));
         }
       },
     );
