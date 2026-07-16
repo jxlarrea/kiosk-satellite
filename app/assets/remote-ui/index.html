@@ -522,6 +522,7 @@ async function loadDeviceInfo() {
     ['Model', or(info?.model)],
     ['Android version', `${or(info?.osVersion)}${info?.sdkInt ? ` (SDK ${info.sdkInt})` : ''}`],
     ['IPv4 address', or(info?.ip)],
+    ['IPv6 addresses', or((info?.ipv6 || []).join(', '))],
     ['Battery level', info?.battery == null ? '—'
       : `${info.battery}%${info.charging ? ' (plugged)' : ''}`],
     ['Screen brightness', info?.brightness == null ? '—'

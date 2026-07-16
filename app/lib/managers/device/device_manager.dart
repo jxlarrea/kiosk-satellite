@@ -76,6 +76,33 @@ class DeviceManager extends Manager {
     ));
   }
 
+  /// Every non-loopback IPv6 address, in interface order.
+  ///
+  /// All of them, link-local included: on a kiosk the interesting question is
+  /// usually "what can reach this thing", and a device with a global address
+  /// and a stale link-local one looks identical from here unless both are
+  /// shown. Empty when the network has no IPv6 at all, which is not an error.
+  Future<List<String>> ipv6Addresses() async {
+    try {
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv6,
+        includeLoopback: false,
+        // Off by default in Dart, which quietly drops every fe80:: address —
+        // the device reports them, we just would not have. They are worth
+        // listing: a device with a global address and a link-local one that no
+        // longer routes looks identical from here unless both are shown.
+        includeLinkLocal: true,
+      );
+      return [
+        for (final interface in interfaces)
+          for (final address in interface.addresses) address.address,
+      ];
+    } catch (e) {
+      log.warn(name, 'ipv6Addresses failed: $e');
+      return const [];
+    }
+  }
+
   /// First non-loopback IPv4 address, or null (e.g. no network).
   Future<String?> ipAddress() async {
     try {
@@ -98,6 +125,7 @@ class DeviceManager extends Manager {
     return {
       'name': deviceName,
       'ip': await ipAddress(),
+      'ipv6': await ipv6Addresses(),
       'model': model,
       'os': os,
       'osVersion': osVersion,
