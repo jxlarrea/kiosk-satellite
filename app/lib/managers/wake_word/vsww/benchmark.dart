@@ -6,6 +6,7 @@ import '../../../core/logging.dart';
 import 'log_mel.dart';
 import 'model_store.dart';
 import 'ort_init.dart';
+import 'ort_tensor_io.dart';
 
 /// Micro-benchmark of a vsWakeWord ONNX model across execution providers, to
 /// decide whether CPU inference keeps up with the 80 ms streaming budget or
@@ -82,6 +83,65 @@ class VswwBenchmark {
         double.parse((median(fullSamples) / 1000.0).toStringAsFixed(2));
     results['featureExtractIncrementalMs'] =
         double.parse((median(incSamples) / 1000.0).toStringAsFixed(2));
+
+    // Equivalence check for the streaming loop's zero-copy tensor I/O
+    // (ort_tensor_io.dart): the same features through the plugin's boxed-list
+    // path and the direct-FFI path must produce identical logits.
+    try {
+      final opts = OrtSessionOptions()
+        ..setIntraOpNumThreads(1)
+        ..setInterOpNumThreads(1);
+      final session = OrtSession.fromBuffer(model.onnxBytes, opts);
+      final inputName = session.inputNames.first;
+      final runOpts = OrtRunOptions();
+
+      final boxedInput =
+          OrtValueTensor.createTensorWithDataList(features, shape);
+      final boxedOut = session.run(runOpts, {inputName: boxedInput});
+      final boxedVal = boxedOut[0]?.value as List; // [1][T][vocab]
+      final tOut = (boxedVal[0] as List).length;
+      final vocab = ((boxedVal[0] as List)[0] as List).length;
+      final boxed = Float32List(tOut * vocab);
+      for (var t = 0; t < tOut; t++) {
+        final row = (boxedVal[0] as List)[t] as List;
+        for (var v = 0; v < vocab; v++) {
+          boxed[t * vocab + v] = (row[v] as num).toDouble();
+        }
+      }
+      for (final o in boxedOut) {
+        o?.release();
+      }
+      boxedInput.release();
+
+      final directInput = ReusableInputTensor.create(shape);
+      directInput.write(features);
+      final directOut = session.run(runOpts, {inputName: directInput.tensor});
+      final direct = Float32List(tensorElementCount(directOut[0]!));
+      readFloatTensor(directOut[0]!, direct);
+      for (final o in directOut) {
+        o?.release();
+      }
+      directInput.release();
+      runOpts.release();
+      session.release();
+
+      var maxDiff = 0.0;
+      final sameLength = boxed.length == direct.length;
+      if (sameLength) {
+        for (var i = 0; i < boxed.length; i++) {
+          final d = (boxed[i] - direct[i]).abs();
+          if (d > maxDiff) maxDiff = d;
+        }
+      }
+      results['tensorIoEquivalence'] = {
+        'elements': direct.length,
+        'sameLength': sameLength,
+        'maxAbsDiff': sameLength ? maxDiff : null,
+        'identical': sameLength && maxDiff == 0.0,
+      };
+    } catch (e) {
+      results['tensorIoEquivalence'] = {'error': '$e'};
+    }
 
     for (final entry in configs.entries) {
       final name = entry.key;

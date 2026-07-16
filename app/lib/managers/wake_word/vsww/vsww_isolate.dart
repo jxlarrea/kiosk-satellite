@@ -10,6 +10,7 @@ import 'detection_gate.dart';
 import 'log_mel.dart';
 import 'manifest.dart';
 import 'ort_init.dart';
+import 'ort_tensor_io.dart';
 import 'stream_matcher.dart';
 import '../wake_msg.dart';
 
@@ -41,7 +42,8 @@ void vswwIsolateEntry(SendPort mainPort) {
 
 class _Kw {
   _Kw(this.id, this.wakeWord, this.manifest, this.session, this.inputName,
-      this.decoder, this.stream, this.gate, {this.isStop = false});
+      this.decoder, this.stream, this.gate, {this.isStop = false})
+      : logitsBuf = Float32List(manifest.tOut * manifest.ctc.vocabSize);
   final String id;
   final String wakeWord;
 
@@ -54,6 +56,19 @@ class _Kw {
   final CtcDecoder decoder;
   final StreamMatcher stream;
   final DetectionGate gate;
+
+  /// Reused per-inference logits destination, [tOut * vocab].
+  final Float32List logitsBuf;
+
+  /// Whether the session's output element count was verified against the
+  /// manifest's [tOut * vocab] (checked on the first inference; a mismatched
+  /// model is dropped rather than read out of bounds).
+  bool outputChecked = false;
+
+  /// Set when the first-inference output check fails: the session is released
+  /// and the model never scored again (removing mid-iteration would break the
+  /// scoring loop).
+  bool dead = false;
 }
 
 class _IsolateWorker {
@@ -68,6 +83,12 @@ class _IsolateWorker {
   VswwFeatureConfig? _feature;
   Float32List? _ring;
   Float32List? _scratch;
+
+  // One input tensor and one run-options handle for the whole session: every
+  // model scores the same feature window, so writing it once per chunk into a
+  // persistent native buffer replaces a per-model create/copy/release cycle.
+  ReusableInputTensor? _input;
+  OrtRunOptions? _runOptions;
   int _head = 0;
   int _filled = 0;
   int _samplesSinceInfer = 0;
@@ -164,6 +185,8 @@ class _IsolateWorker {
       _extractor = LogMelExtractor(f);
       _ring = Float32List(f.windowSamples);
       _scratch = Float32List(f.windowSamples);
+      _input = ReusableInputTensor.create([1, f.frames, f.nMels]);
+      _runOptions = OrtRunOptions();
       _log(
           'info',
           _energyEnabled
@@ -183,9 +206,11 @@ class _IsolateWorker {
     const chunkBytes = _chunkSamples * 2;
     var offset = 0;
     while (buf.length - offset >= chunkBytes) {
-      final view = ByteData.sublistView(buf, offset, offset + chunkBytes);
+      // buf is freshly built (byte offset 0) and offset stays even, so an
+      // aligned Int16List view is safe; PCM16LE matches host endianness.
+      final samples = Int16List.sublistView(buf, offset, offset + chunkBytes);
       for (var i = 0; i < _chunkSamples; i++) {
-        _chunk[i] = view.getInt16(i * 2, Endian.little) / 32768.0;
+        _chunk[i] = samples[i] / 32768.0;
       }
       offset += chunkBytes;
       _ingest(_chunk);
@@ -201,9 +226,15 @@ class _IsolateWorker {
     final ring = _ring;
     if (ring == null) return;
     final n = ring.length;
-    for (var i = 0; i < chunk.length; i++) {
-      ring[_head] = chunk[i];
-      _head = (_head + 1) % n;
+    // Bulk copy in at most two runs instead of a per-sample modulo walk.
+    var src = 0;
+    var remaining = chunk.length;
+    while (remaining > 0) {
+      final len = math.min(remaining, n - _head);
+      ring.setRange(_head, _head + len, chunk, src);
+      _head = (_head + len) % n;
+      src += len;
+      remaining -= len;
     }
     if (_filled < n) _filled = math.min(n, _filled + chunk.length);
     _samplesSinceInfer += chunk.length;
@@ -276,16 +307,16 @@ class _IsolateWorker {
     final silent = math.sqrt(sumSq / n) < _rmsVeto;
 
     final features = extractor.extract(scratch, newSamples: newSamples);
-    final feat = _feature!;
-    final shape = [1, feat.frames, feat.nMels];
+    _input!.write(features);
 
     for (final k in _kws) {
+      if (k.dead) continue;
       // Wake models go quiet once one has fired (until re-armed); the stop
       // classifier only runs while the card says playback is interruptible.
       if (k.isStop ? !_stopArmed : _detected) continue;
       final tOut = k.manifest.tOut;
       final vocab = k.manifest.ctc.vocabSize;
-      final logits = _run(k, features, shape, tOut, vocab);
+      final logits = _run(k);
       if (logits == null) continue;
 
       final perWindow = k.decoder.match(k.decoder.decode(logits, tOut, vocab));
@@ -365,36 +396,32 @@ class _IsolateWorker {
     return end < 0 ? 0 : end;
   }
 
-  Float32List? _run(
-      _Kw k, Float32List features, List<int> shape, int tOut, int vocab) {
-    OrtValueTensor? input;
+  Float32List? _run(_Kw k) {
     List<OrtValue?>? outputs;
     try {
-      input = OrtValueTensor.createTensorWithDataList(features, shape);
-      outputs = k.session.run(OrtRunOptions(), {k.inputName: input}); // sync
-      return _flatten(outputs.isNotEmpty ? outputs[0]?.value : null, tOut, vocab);
+      outputs =
+          k.session.run(_runOptions!, {k.inputName: _input!.tensor}); // sync
+      final out = outputs.isNotEmpty ? outputs[0] : null;
+      if (out == null) return null;
+      if (!k.outputChecked) {
+        final count = tensorElementCount(out);
+        if (count != k.logitsBuf.length) {
+          _log('warn',
+              '"${k.id}": output has $count elements, manifest says ${k.logitsBuf.length}; dropping model');
+          k.dead = true;
+          k.session.release();
+          return null;
+        }
+        k.outputChecked = true;
+      }
+      readFloatTensor(out, k.logitsBuf);
+      return k.logitsBuf;
     } catch (e) {
       _log('warn', 'inference error: $e');
       return null;
     } finally {
-      input?.release();
       outputs?.forEach((o) => o?.release());
     }
-  }
-
-  static Float32List? _flatten(Object? value, int tOut, int vocab) {
-    if (value is! List || value.isEmpty) return null;
-    final batch = value[0];
-    if (batch is! List) return null;
-    final out = Float32List(tOut * vocab);
-    for (var t = 0; t < tOut && t < batch.length; t++) {
-      final row = batch[t];
-      if (row is! List) return null;
-      for (var v = 0; v < vocab && v < row.length; v++) {
-        out[t * vocab + v] = (row[v] as num).toDouble();
-      }
-    }
-    return out;
   }
 
   /// Re-arm after a voice turn. Keeps the loaded ONNX sessions (resuming must
@@ -442,9 +469,13 @@ class _IsolateWorker {
     if (_stopped) return;
     _stopped = true;
     for (final k in _kws) {
-      k.session.release();
+      if (!k.dead) k.session.release(); // dead models released at drop time
     }
     _kws.clear();
+    _input?.release();
+    _input = null;
+    _runOptions?.release();
+    _runOptions = null;
     _main.send({'type': WakeMsg.stopped});
   }
 }
