@@ -21,8 +21,8 @@
     pointer-events: none; }
   iframe.in { opacity: 1; }
   #msg { position: absolute; top: 50%; left: 0; right: 0; text-align: center;
-    transform: translateY(-50%); color: #666;
-    font: 16px system-ui, sans-serif; }
+    transform: translateY(-50%); color: #bbb; padding: 0 8vw;
+    font: 3vw system-ui, sans-serif; }
 </style>
 </head>
 <body>
@@ -171,11 +171,18 @@ function playCameraWebrtc(hass, entity) {
           localBuf.push(e.candidate.toJSON());
         }
       };
+      let attached = false;
       pc.ontrack = (e) => {
+        if (attached) return;   // fires per track (video + audio) — attach once
+        attached = true;
         const video = document.createElement('video');
         video.autoplay = true; video.muted = true; video.playsInline = true;
+        video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
+        video.onerror = () => log('camera: video element error');
         video.srcObject = e.streams[0];
         showElement(video);
+        // Autoplay is unreliable even muted inside a WebView; kick it.
+        video.play().catch((err) => log('camera: play() failed: ' + err));
         done(true);
       };
 
@@ -265,11 +272,15 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
   if (cleanup) { cleanup(); cleanup = null; }
   const cam = cameraOf(id);
   if (cam) {
-    if (!failedWebrtc.has(cam) && await cameraSupportsWebrtc(hass, cam)) {
-      try { cleanup = await playCameraWebrtc(hass, cam); return; }
-      catch (_) { failedWebrtc.add(cam); }
+    log('camera: ' + cam);
+    let webrtc = false;
+    try { webrtc = !failedWebrtc.has(cam) && await cameraSupportsWebrtc(hass, cam); } catch (e) { log('camera: caps error ' + e); }
+    log('camera: webrtc supported = ' + webrtc);
+    if (webrtc) {
+      try { cleanup = await playCameraWebrtc(hass, cam); log('camera: webrtc attached'); return; }
+      catch (e) { log('camera: webrtc failed ' + e); failedWebrtc.add(cam); }
     }
-    try { await playCameraMjpeg(hass, cam); } catch (e) { log('camera failed: ' + e); advance(); }
+    try { await playCameraMjpeg(hass, cam); log('camera: mjpeg started'); } catch (e) { log('camera: mjpeg failed ' + e); advance(); }
     return;
   }
   // image or video
@@ -279,6 +290,7 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
   let url = resolved.url;
   if (url && url.startsWith('/')) url = hass.hassUrl(url);
 
+  log('media: resolved ' + (resolved.mime_type || '?') + ' ' + (url || '').slice(0, 60));
   if (isVideo(resolved.mime_type, url)) {
     const v = document.createElement('video');
     v.src = url; v.autoplay = true; v.muted = true; v.playsInline = true;
@@ -300,10 +312,13 @@ async function runMedia() {
   if (!url || !token) { msg('Home Assistant is not connected.'); return; }
   if (!CFG.mediaId) { msg('No media selected.'); return; }
   msg('Loading…');
+  log('media: connecting to ' + url + ' (token ' + (token ? token.length + ' chars' : 'MISSING') + ')');
   const hass = new Hass(url, token);
-  try { await hass.connect(); } catch (e) { msg('Could not connect to Home Assistant.'); return; }
+  try { await hass.connect(); } catch (e) { log('media: connect failed: ' + e); msg('Could not connect to Home Assistant: ' + e); return; }
+  log('media: connected');
 
   let playlist = await resolvePlaylist(hass, CFG.mediaId, !!CFG.mediaRecursive);
+  log('media: playlist has ' + playlist.length + ' item(s); first=' + playlist[0]);
   if (CFG.mediaShuffle) playlist = shuffle(playlist);
   if (!playlist.length) { msg('Nothing to show.'); return; }
   msg('');
