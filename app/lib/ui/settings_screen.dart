@@ -440,9 +440,7 @@ class _CategoryContentState extends State<_CategoryContent> {
             children: [
               ListTile(
                 title: const Text('Device ID'),
-                subtitle: const Text(
-                  'Identifies this device for licensing. Tap to copy.',
-                ),
+                subtitle: const Text('Tap to copy.'),
                 trailing: Text(
                   container.device.deviceId,
                   style: const TextStyle(fontFamily: 'monospace', fontSize: 15),

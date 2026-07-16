@@ -87,91 +87,118 @@ class KioskDrawer extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Material(
-                    color: theme.colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(24),
-                    clipBehavior: Clip.antiAlias,
-                    child: Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _item(context, Icons.home_outlined, 'Home', () {
-                            onClose();
-                            c.commands.execute('loadUrl', {
-                              'url': c.browser.startUrl,
-                            });
-                          }),
-                          _item(
-                            context,
-                            Icons.settings_outlined,
-                            'Settings',
-                            () {
-                              onClose();
-                              onSettings();
-                            },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Material(
+                        color: theme.colorScheme.surfaceContainer,
+                        borderRadius: BorderRadius.circular(24),
+                        clipBehavior: Clip.antiAlias,
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _item(context, Icons.home_outlined, 'Home', () {
+                                onClose();
+                                c.commands.execute('loadUrl', {
+                                  'url': c.browser.startUrl,
+                                });
+                              }),
+                              _item(
+                                context,
+                                Icons.settings_outlined,
+                                'Settings',
+                                () {
+                                  onClose();
+                                  onSettings();
+                                },
+                              ),
+                              _item(
+                                context,
+                                Icons.terminal_outlined,
+                                'Web Console',
+                                () {
+                                  onClose();
+                                  onWebConsole();
+                                },
+                              ),
+                              _item(
+                                context,
+                                Icons.cleaning_services_outlined,
+                                'Clear web cache',
+                                () {
+                                  onClose();
+                                  c.commands.execute('clearWebCache', const {});
+                                },
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                child: Divider(),
+                              ),
+                              _item(
+                                context,
+                                Icons.logout_outlined,
+                                'Log out',
+                                () async {
+                                  onClose();
+                                  if (context.mounted &&
+                                      await _confirm(
+                                        context,
+                                        'Log out',
+                                        'Clear cookies and site data, then reload the '
+                                            'start page?',
+                                      )) {
+                                    await c.commands.execute(
+                                      'logout',
+                                      const {},
+                                    );
+                                  }
+                                },
+                              ),
+                              _item(
+                                context,
+                                Icons.power_settings_new_outlined,
+                                'Exit Application',
+                                () async {
+                                  onClose();
+                                  if (context.mounted &&
+                                      await _confirm(
+                                        context,
+                                        'Exit Application',
+                                        'Close Kiosk Satellite?',
+                                      )) {
+                                    await c.commands.execute(
+                                      'exitApp',
+                                      const {},
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
                           ),
-                          _item(
-                            context,
-                            Icons.terminal_outlined,
-                            'Web Console',
-                            () {
-                              onClose();
-                              onWebConsole();
-                            },
-                          ),
-                          _item(
-                            context,
-                            Icons.cleaning_services_outlined,
-                            'Clear web cache',
-                            () {
-                              onClose();
-                              c.commands.execute('clearWebCache', const {});
-                            },
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            child: Divider(),
-                          ),
-                          _item(
-                            context,
-                            Icons.logout_outlined,
-                            'Log out',
-                            () async {
-                              onClose();
-                              if (context.mounted &&
-                                  await _confirm(
-                                    context,
-                                    'Log out',
-                                    'Clear cookies and site data, then reload the '
-                                        'start page?',
-                                  )) {
-                                await c.commands.execute('logout', const {});
-                              }
-                            },
-                          ),
-                          _item(
-                            context,
-                            Icons.power_settings_new_outlined,
-                            'Exit Application',
-                            () async {
-                              onClose();
-                              if (context.mounted &&
-                                  await _confirm(
-                                    context,
-                                    'Exit Application',
-                                    'Close Kiosk Satellite?',
-                                  )) {
-                                await c.commands.execute('exitApp', const {});
-                              }
-                            },
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      // The licensing Device ID, whispered right under the
+                      // actions card: findable when support asks for it,
+                      // invisible until then. The Device settings page
+                      // carries the tap-to-copy version.
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                        child: Text(
+                          'Device ID: ${c.device.deviceId}',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 11,
+                            letterSpacing: 0.4,
+                            color: theme.colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -182,7 +209,7 @@ class KioskDrawer extends StatelessWidget {
               // without a trip into Settings; it applies live (main.dart
               // listens for the setting) and the drawer stays open.
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
                 child: Center(
                   child: SegmentedButton<String>(
                     showSelectedIcon: false,
@@ -216,23 +243,6 @@ class KioskDrawer extends StatelessWidget {
                     onSelectionChanged: (selection) => c.settings.setFromJson(
                       defs.uiTheme.key,
                       selection.first,
-                    ),
-                  ),
-                ),
-              ),
-              // The licensing Device ID, whispered at the very foot: findable
-              // when support asks for it, invisible until then. The Device
-              // settings page carries the readable, tap-to-copy version.
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  c.device.deviceId,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    letterSpacing: 0.6,
-                    color: theme.colorScheme.onSurfaceVariant.withValues(
-                      alpha: 0.6,
                     ),
                   ),
                 ),
