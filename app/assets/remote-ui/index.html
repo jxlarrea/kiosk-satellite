@@ -471,7 +471,7 @@ async function loadDeviceInfo() {
     catch { return null; }
   };
 
-  const [info, settings, perms, wake, screenOn, motion, ua] = await Promise.all([
+  const [info, settings, perms, wake, screenOn, motion, ua, det] = await Promise.all([
     api('/api/info').then((r) => r.json()).catch(() => null),
     api('/api/settings').then((r) => r.json()).catch(() => null),
     get('getSystemPermissions'),
@@ -480,12 +480,16 @@ async function loadDeviceInfo() {
     get('getMotionEnabled'),
     // The page's own view of itself: the one thing only the WebView knows.
     get('evalJs', { code: 'navigator.userAgent' }),
+    get('getDeviceDetails'),
   ]);
 
   const S = {};
   (settings?.settings || []).forEach((x) => (S[x.key] = x.value));
   const yn = (v) => (v === true ? 'on' : v === false ? 'off' : '—');
   const or = (v, alt = '—') => (v === null || v === undefined || v === '' ? alt : v);
+  const mb = (b) => (b == null ? null : Math.round(b / 1048576));
+  const pair = (free, total, unit) =>
+    free == null || total == null ? '—' : `${free}/${total} ${unit}`;
 
   root.innerHTML = '';
   const card = (title, rows) => {
@@ -519,15 +523,33 @@ async function loadDeviceInfo() {
 
   card('Device', [
     ['Device name', or(info?.name)],
-    ['Model', or(info?.model)],
+    ['Device model', det?.brand && det?.brand !== det?.manufacturer
+      ? `${or(info?.model)} (${det.brand})` : or(info?.model)],
     ['Android version', `${or(info?.osVersion)}${info?.sdkInt ? ` (SDK ${info.sdkInt})` : ''}`],
+    ['Android build', or(det?.androidBuild)],
     ['IPv4 address', or(info?.ip)],
     ['IPv6 addresses', or((info?.ipv6 || []).join(', '))],
+    // Android stopped handing these to apps in 6 and closed the last way in
+    // by 11 — on 16 even an adb shell cannot read the sysfs node. Saying so
+    // beats printing the 02:00:00:00:00:00 placeholder as if it were real.
+    ['MAC addresses', (det?.macAddresses || []).length
+      ? det.macAddresses.join(', ')
+      : 'not available (Android hides these from apps)'],
     ['Battery level', info?.battery == null ? '—'
       : `${info.battery}%${info.charging ? ' (plugged)' : ''}`],
     ['Screen brightness', info?.brightness == null ? '—'
-      : `${Math.round(info.brightness * 100)}%`],
+      : `${Math.round(info.brightness * 100)}% (${Math.round(info.brightness * 255)}/255)`],
     ['Screen status', yn(screenOn)],
+    ['Screen size', det?.screen?.width == null ? '—'
+      : `${det.screen.width}x${det.screen.height} px` +
+        (det.screen.density ? ` @${det.screen.density}x` : '')],
+    ['RAM (free/total)', pair(mb(det?.ram?.free), mb(det?.ram?.total), 'MB') +
+      (det?.ram?.low ? ' — low' : '')],
+    ['Internal storage (free/total)',
+      pair(mb(det?.storage?.free), mb(det?.storage?.total), 'MB')],
+    ['Foreground app', det?.hasUsageAccess
+      ? or(det?.foregroundApp)
+      : 'not available (needs Usage access)'],
   ]);
 
   card('Home Assistant', [
@@ -541,20 +563,25 @@ async function loadDeviceInfo() {
     ['Motion detection', yn(motion)],
   ]);
 
-  // Fully lists the denied ones; the useful version is all of them with their
-  // state, since "granted" is the claim you want to check when something has
-  // gone quiet.
-  if (perms?.required) {
-    card('Permissions', [
-      ['Microphone', perms.microphone ? 'granted'
-        : perms.microphoneBlocked ? 'blocked' : 'denied'],
-      ...(perms.background ? [
-        ['Display over other apps', perms.displayOverOtherApps ? 'granted' : 'denied'],
-        ['Listening notification', perms.notification ? 'granted' : 'denied'],
-        ['Unrestricted battery', perms.batteryUnrestricted ? 'granted' : 'denied'],
-      ] : []),
-    ]);
-  }
+  // Every permission that can actually fail, with what it is for — Fully lists
+  // only the denied ones, but "granted" is exactly the claim you want to check
+  // when something has gone quiet. The install-time normals are summarised
+  // rather than listed: they cannot be denied, so a row each would be noise.
+  const st = (v) => (v ? 'granted' : 'denied');
+  card('Permissions', [
+    ['Microphone', perms?.microphoneBlocked ? 'blocked'
+      : st(perms?.microphone) + ' — wake word'],
+    ['Camera', st(perms?.camera) + ' — motion detection'],
+    ['Location', st(perms?.location) + ' — page geolocation'],
+    ['Notifications', st(perms?.notification) + ' — listening notification'],
+    ['Display over other apps', st(perms?.displayOverOtherApps) +
+      ' — come forward on a wake word'],
+    ['Unrestricted battery', st(perms?.batteryUnrestricted) +
+      ' — keep the background listener alive'],
+    ['Usage access', st(perms?.usageAccess) + ' — foreground app'],
+    ['Install-time', 'granted — internet, network state, wake lock, audio ' +
+      'settings, boot, foreground service'],
+  ]);
 
   card('Remote administration', [
     ['Port', or(S['remote.port'])],
@@ -562,6 +589,10 @@ async function loadDeviceInfo() {
   ]);
 
   card('WebView', [
+    // The system WebView, which updates itself independently of this app and
+    // is the thing actually rendering the card.
+    ['Provider', or(det?.webview?.package)],
+    ['Version', or(det?.webview?.version)],
     ['User agent', or(ua)],
   ]);
 }

@@ -10,6 +10,7 @@ import '../../core/command_registry.dart';
 import '../../core/manager.dart';
 import '../settings/settings_manager.dart';
 import '../settings/definitions.dart' as defs;
+import 'device_details.dart';
 
 /// Device identity and status: model, OS, app version, battery.
 class DeviceManager extends Manager {
@@ -68,6 +69,14 @@ class DeviceManager extends Manager {
       osVersion = Platform.operatingSystemVersion;
     }
     log.info(name, '$model, $osVersion, app $appVersion');
+
+    commands.register(Command(
+      name: 'getDeviceDetails',
+      description: 'Memory, storage, panel, WebView and build details. Fields '
+          'Android will not give an app come back null rather than as a '
+          'placeholder — see DeviceDetails.',
+      handler: (_) async => CommandResult.ok((await DeviceDetails.read()).toJson()),
+    ));
 
     commands.register(Command(
       name: 'getDeviceInfo',
