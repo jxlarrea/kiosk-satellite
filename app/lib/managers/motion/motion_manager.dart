@@ -29,7 +29,9 @@ class MotionManager extends Manager {
   @override
   String get name => 'motion';
 
-  bool get enabled => _settings.get(defs.motionEnabled);
+  /// Motion detection is on exactly when the screensaver's "dismiss on motion"
+  /// switch is — that single toggle is the whole feature's on/off.
+  bool get enabled => _settings.get(defs.screensaverDismissOnMotion);
 
   StreamSubscription<void>? _camera;
   bool _screensaverActive = false;
@@ -42,13 +44,12 @@ class MotionManager extends Manager {
       _sync();
     });
     // A tuning change (fps / sensitivity / camera) restarts the stream so the
-    // native analyzer picks up the new arguments; toggling detection on prompts
+    // native analyzer picks up the new arguments; turning the feature on prompts
     // for the camera up front so the first dim can start it without a pause.
     bus.on<SettingChanged>().listen((e) {
-      if (!e.key.startsWith('motion.')) return;
-      if (e.key == defs.motionEnabled.key && enabled) {
-        unawaited(_ensurePermission());
-      }
+      final isGate = e.key == defs.screensaverDismissOnMotion.key;
+      if (!isGate && !e.key.startsWith('motion.')) return;
+      if (isGate && enabled) unawaited(_ensurePermission());
       _stop();
       _sync();
     });

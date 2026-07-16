@@ -118,6 +118,7 @@ class SettingsManager extends Manager {
             'title': def.title,
             'description': def.description,
             'category': def.category,
+            if (def.section != null) 'section': def.section,
             // The remote admin renders these too, and must hide what the
             // device hides.
             if (def.dependsOn != null) 'dependsOn': def.dependsOn,

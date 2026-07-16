@@ -73,6 +73,9 @@
     border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
   .card h2 { font-size: 14px; font-weight: 600; color: var(--primary);
     margin: 0 0 14px; text-transform: uppercase; letter-spacing: .04em; }
+  .card h3.section { font-size: 12px; font-weight: 600; color: var(--primary);
+    margin: 20px 0 10px; text-transform: uppercase; letter-spacing: .04em;
+    border-top: 1px solid var(--divider); padding-top: 16px; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
   .action { padding: 12px; background: var(--surface-2); border: 1px solid var(--border);
@@ -348,7 +351,19 @@ async function loadSettings() {
     for (const cat of cats) {
       const card = document.createElement('div'); card.className = 'card';
       const h = document.createElement('h2'); h.textContent = cat; card.appendChild(h);
-      byCat[cat].forEach((s) => card.appendChild(settingRow(s)));
+      // Settings sharing a `section` render under one subheading, mirroring the
+      // device (e.g. the motion controls under "Motion Detection").
+      let lastSection;
+      byCat[cat].forEach((s) => {
+        if (s.section && s.section !== lastSection) {
+          const sh = document.createElement('h3');
+          sh.className = 'section';
+          sh.textContent = s.section;
+          card.appendChild(sh);
+        }
+        lastSection = s.section;
+        card.appendChild(settingRow(s));
+      });
       root.appendChild(card);
     }
   };

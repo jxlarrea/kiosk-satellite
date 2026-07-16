@@ -15,6 +15,7 @@ class SettingDef<T> {
     required this.title,
     required this.description,
     this.category = 'General',
+    this.section,
     this.options,
     this.secret = false,
     this.dependsOn,
@@ -28,6 +29,12 @@ class SettingDef<T> {
   final String title;
   final String description;
   final String category;
+
+  /// An optional subheading within [category]. Consecutive settings sharing a
+  /// section render under one heading in both the on-device and remote UIs —
+  /// e.g. the motion controls grouped under "Motion Detection" on the
+  /// Screensaver page.
+  final String? section;
 
   /// Allowed values for [SettingType.select].
   final List<String>? options;
@@ -355,59 +362,56 @@ const screensaverDimLevel = SettingDef<num>(
   dependsOnValue: 'dim',
 );
 
+// Motion detection exists only to wake the screensaver for now, so this one
+// switch is its whole on/off — no separate "motion detection" toggle. Off by
+// default because turning it on asks for the camera. When on, the camera runs
+// only while the screensaver is showing.
 const screensaverDismissOnMotion = SettingDef<bool>(
   key: 'screensaver.dismiss_on_motion',
   type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Dismiss on motion',
-  description: 'Camera motion wakes the screen.',
-  category: 'Screensaver',
-);
-
-// ── Motion ─────────────────────────────────────────────────────────────
-
-const motionEnabled = SettingDef<bool>(
-  key: 'motion.enabled',
-  type: SettingType.boolean,
   defaultValue: false,
-  title: 'Motion detection',
-  description: 'Wake the screensaver when the camera sees someone approach. The '
-      'camera only runs while the screensaver is showing, so it costs nothing '
-      'during normal use.',
-  category: 'Motion',
+  title: 'Dismiss on motion',
+  description: 'Watch the camera while the screensaver is up and wake the screen '
+      'when someone approaches. The camera runs only during the screensaver, so '
+      'it costs nothing during normal use.',
+  category: 'Screensaver',
+  section: 'Motion Detection',
 );
 
 const motionFps = SettingDef<num>(
   key: 'motion.fps',
   type: SettingType.number,
   defaultValue: 2,
-  title: 'Analysis frame rate',
+  title: 'Motion frame rate',
   description: 'Frames per second the camera checks for motion. Lower is lighter '
       'on the CPU; 2 is plenty to notice someone approaching.',
-  category: 'Motion',
-  dependsOn: 'motion.enabled',
+  category: 'Screensaver',
+  section: 'Motion Detection',
+  dependsOn: 'screensaver.dismiss_on_motion',
 );
 
 const motionSensitivity = SettingDef<num>(
   key: 'motion.sensitivity',
   type: SettingType.number,
   defaultValue: 40,
-  title: 'Sensitivity',
+  title: 'Motion sensitivity',
   description: 'Higher trips on smaller movements. 1 needs a large change across '
       'the frame; 100 reacts to the slightest motion.',
-  category: 'Motion',
-  dependsOn: 'motion.enabled',
+  category: 'Screensaver',
+  section: 'Motion Detection',
+  dependsOn: 'screensaver.dismiss_on_motion',
 );
 
 const motionCamera = SettingDef<String>(
   key: 'motion.camera',
   type: SettingType.select,
   defaultValue: 'front',
-  title: 'Camera',
+  title: 'Motion camera',
   description: 'Which camera watches for motion.',
-  category: 'Motion',
+  category: 'Screensaver',
+  section: 'Motion Detection',
   options: ['front', 'back'],
-  dependsOn: 'motion.enabled',
+  dependsOn: 'screensaver.dismiss_on_motion',
 );
 
 // ── Wake word ──────────────────────────────────────────────────────────
@@ -555,7 +559,6 @@ const List<SettingDef<Object>> allSettings = [
   screensaverWebsiteUrl,
   screensaverPixelShift,
   screensaverDismissOnMotion,
-  motionEnabled,
   motionFps,
   motionSensitivity,
   motionCamera,

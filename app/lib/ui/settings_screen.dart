@@ -47,9 +47,7 @@ class SettingsScreen extends StatelessWidget {
     ('Screen', 'Screen', Icons.brightness_6_outlined,
         'Brightness, keep awake'),
     ('Screensaver', 'Screensaver', Icons.dark_mode_outlined,
-        'Idle timeout, dim and black modes'),
-    ('Motion', 'Motion Detection', Icons.sensors,
-        'Wake the screen with the camera'),
+        'Idle timeout, modes, motion wake'),
     ('Home Assistant', 'Home Assistant', Icons.home_outlined,
         'Connection, kiosk mode, Voice Satellite'),
     ('Remote', 'Remote Administration', Icons.settings_remote_outlined,
@@ -111,19 +109,41 @@ class CategorySettingsScreen extends StatefulWidget {
 class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    final settings = widget.container.settings;
+    final visible = [for (final d in widget.defs) if (settings.visible(d)) d];
+
+    // Render each section (a run of settings sharing a `section`) under its own
+    // heading, with dividers only between the rows of a section — the heading
+    // is the break, as on the Home Assistant page.
+    final rows = <Widget>[];
+    String? current;
+    var buffer = <SettingDef<Object>>[];
+    void flush() {
+      if (buffer.isEmpty) return;
+      rows.addAll(_separated([
+        for (final def in buffer)
+          SettingTile(
+            container: widget.container,
+            def: def,
+            onChanged: () => setState(() {}),
+          ),
+      ]));
+      buffer = [];
+    }
+
+    for (final def in visible) {
+      if (def.section != current) {
+        flush();
+        current = def.section;
+        if (current != null) rows.add(_SectionHeading(current));
+      }
+      buffer.add(def);
+    }
+    flush();
+
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
-      body: ListView(
-        children: _separated([
-          for (final def in widget.defs)
-            if (widget.container.settings.visible(def))
-              SettingTile(
-                container: widget.container,
-                def: def,
-                onChanged: () => setState(() {}),
-              ),
-        ]),
-      ),
+      body: ListView(children: rows),
     );
   }
 }
