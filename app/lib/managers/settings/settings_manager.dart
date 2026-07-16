@@ -89,6 +89,18 @@ class SettingsManager extends Manager {
 
   /// Snapshot of definitions + values for the remote API and settings UI.
   /// Secrets report whether they are set, never their value.
+  /// Whether [def] should be shown at all: its [SettingDef.dependsOn] switch
+  /// is on, or it has none.
+  bool visible(SettingDef<Object> def) {
+    final key = def.dependsOn;
+    if (key == null) return true;
+    final dep = allSettings.where((d) => d.key == key).firstOrNull;
+    // A dependency that does not exist is a typo in the definitions, and
+    // hiding the row would hide the evidence.
+    if (dep == null) return true;
+    return get(dep) == true;
+  }
+
   List<Map<String, Object?>> describe() => [
         for (final def in allSettings)
           {
@@ -97,6 +109,9 @@ class SettingsManager extends Manager {
             'title': def.title,
             'description': def.description,
             'category': def.category,
+            // The remote admin renders these too, and must hide what the
+            // device hides.
+            if (def.dependsOn != null) 'dependsOn': def.dependsOn,
             if (def.options != null) 'options': def.options,
             'default': def.secret ? null : def.defaultValue,
             'value': def.secret

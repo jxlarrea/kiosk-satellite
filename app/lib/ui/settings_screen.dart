@@ -112,11 +112,12 @@ class _CategorySettingsScreenState extends State<CategorySettingsScreen> {
       body: ListView(
         children: _separated([
           for (final def in widget.defs)
-            SettingTile(
-              container: widget.container,
-              def: def,
-              onChanged: () => setState(() {}),
-            ),
+            if (widget.container.settings.visible(def))
+              SettingTile(
+                container: widget.container,
+                def: def,
+                onChanged: () => setState(() {}),
+              ),
         ]),
       ),
     );
@@ -172,14 +173,19 @@ class _HomeAssistantSettingsScreenState
                   ..._separated([
                     for (final def
                         in SettingsScreen._defsFor('Voice Satellite'))
-                      SettingTile(
-                        container: widget.container,
-                        def: def,
-                        onChanged: () => setState(() {}),
-                      ),
+                      if (widget.container.settings.visible(def))
+                        SettingTile(
+                          container: widget.container,
+                          def: def,
+                          onChanged: () => setState(() {}),
+                        ),
                     // Not a setting, but a row on the same list, so it sits
-                    // behind the same line as the rest.
-                    WakeWordStatusTile(container: widget.container),
+                    // behind the same line as the rest. Gone with the rest when
+                    // detection is off: there is no state to report about a
+                    // thing that is not running, and "it is off" is already
+                    // said by the switch above.
+                    if (widget.container.settings.get(wakeWordEnabled))
+                      WakeWordStatusTile(container: widget.container),
                   ]),
                 ],
               );

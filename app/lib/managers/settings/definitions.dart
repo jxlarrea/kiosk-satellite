@@ -17,6 +17,7 @@ class SettingDef<T> {
     this.category = 'General',
     this.options,
     this.secret = false,
+    this.dependsOn,
   });
 
   final String key;
@@ -31,6 +32,16 @@ class SettingDef<T> {
 
   /// Secrets are write-only over the remote API and masked in exports.
   final bool secret;
+
+  /// Key of a boolean setting this one only makes sense under. Hidden — not
+  /// disabled — while that setting is off: a control that cannot do anything is
+  /// noise, and explaining why it is greyed out costs more words than it saves.
+  ///
+  /// Declared here rather than in a screen because there are two screens. The
+  /// on-device settings and the remote admin both render from these
+  /// definitions, and a rule that lives in one of them is a rule the other
+  /// breaks.
+  final String? dependsOn;
 }
 
 // ── Browser ────────────────────────────────────────────────────────────
@@ -232,6 +243,7 @@ const wakeWordBackground = SettingDef<bool>(
       'to the front on a detection. Android freezes apps it cannot see, so this '
       'needs a permanent notification and permission to display over other apps.',
   category: 'Voice Satellite',
+  dependsOn: 'wake_word.enabled',
 );
 
 const wakeWordResumeTimeoutSeconds = SettingDef<num>(
@@ -243,6 +255,7 @@ const wakeWordResumeTimeoutSeconds = SettingDef<num>(
       'Self-heal: resume listening if the page never calls '
       'setWakeWordActive(true) after a handoff.',
   category: 'Voice Satellite',
+  dependsOn: 'wake_word.enabled',
 );
 
 // ── Home Assistant ─────────────────────────────────────────────────────

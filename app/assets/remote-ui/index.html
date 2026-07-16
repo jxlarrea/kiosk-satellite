@@ -304,8 +304,16 @@ const HA_CATEGORIES = ['Home Assistant', 'Voice Satellite'];
 
 async function loadSettings() {
   const { settings } = await (await api('/api/settings')).json();
+
+  // A setting can declare that it only means anything while another one is on
+  // (dependsOn). The device hides those rows; so must we, or the two disagree
+  // about the same device — and the remote copy is the one that gets believed
+  // by whoever is not in the room.
+  const byKey = Object.fromEntries(settings.map((s) => [s.key, s]));
+  const visible = (s) => !s.dependsOn || byKey[s.dependsOn]?.value === true;
+
   const byCat = {};
-  settings.forEach((s) => (byCat[s.category] ??= []).push(s));
+  settings.filter(visible).forEach((s) => (byCat[s.category] ??= []).push(s));
 
   const render = (root, cats) => {
     root.innerHTML = '';
@@ -540,7 +548,11 @@ function settingRow(s) {
   info.querySelector('.name').textContent = s.title;
   info.querySelector('.desc').textContent = s.description;
   row.appendChild(info);
-  const save = (value) => api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
+  const save = async (value) => {
+    await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
+    // This switch may be the one others depend on: redraw so they appear or go.
+    await loadSettings();
+  };
 
   if (s.type === 'boolean') {
     const lbl = document.createElement('label'); lbl.className = 'switch';
