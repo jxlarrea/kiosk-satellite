@@ -59,6 +59,20 @@
             android:name=".WakeWordService"
             android:exported="false"
             android:foregroundServiceType="microphone"/>
+        <!-- Device-owner hook: `dpm set-device-owner` targets this receiver;
+             holding the role turns "Disable home button" from screen pinning
+             into full lock-task (see KioskLock). -->
+        <receiver
+            android:name=".KioskAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin"/>
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED"/>
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

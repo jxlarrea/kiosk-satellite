@@ -93,9 +93,11 @@ class KioskManager extends Manager {
     final on = force && _settings.get(defs.kioskEnabled);
     final gesture = _settings.get(defs.kioskExitGesture);
     await _invoke<void>('apply', {
-      // Back is tied to the master switch, not its own toggle: a kiosk the
-      // back button can background is not locked in any useful sense.
+      // Back and the bar-blink watcher are tied to the master switch, not
+      // their own toggles: a kiosk the back button can background — or one
+      // where the bars linger — is not locked in any useful sense.
       'back': on,
+      'bars': on,
       'volume': on && _settings.get(defs.kioskDisableVolume),
       'power': on && _settings.get(defs.kioskDisablePower),
       'statusBar': on && _settings.get(defs.kioskDisableStatusBar),

@@ -2,6 +2,8 @@ package me.jxl.kiosk_satellite
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -17,6 +19,7 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowInsets
 import android.view.WindowManager
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -45,6 +48,8 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     @Volatile private var blockVolume = false
     @Volatile private var blockBack = false
     @Volatile private var gestureTaps = 0
+    private var barWatch = false
+    private var barTicker: Runnable? = null
 
     private var wakeOnScreenOff = false
     private var screenOffReceiver: BroadcastReceiver? = null
@@ -63,6 +68,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     setWakeOnScreenOff(call.argument<Boolean>("power") ?: false)
                     setShield(call.argument<Boolean>("statusBar") ?: false)
                     setPinned(call.argument<Boolean>("home") ?: false)
+                    setBarWatch(call.argument<Boolean>("bars") ?: false)
                     result.success(null)
                 }
                 "hasOverlayPermission" ->
@@ -118,6 +124,40 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
         if (tapCount >= needed) {
             tapCount = 0
             main.post { channel.invokeMethod("exitGesture", null) }
+        }
+    }
+
+    /**
+     * In *sticky* immersive the transient bars are a system override: they
+     * notify nothing and ignore app re-hide requests, so kiosk mode runs in
+     * plain immersive instead (Dart flips the mode with the master switch),
+     * where a revealed bar is an ordinary one that hide() dismisses. This
+     * ticker is the guarantee that the request keeps being made, whatever
+     * notification the platform did or did not deliver.
+     */
+    private fun setBarWatch(enabled: Boolean) {
+        if (Build.VERSION.SDK_INT < 30 || enabled == barWatch) return
+        barWatch = enabled
+        barTicker?.let { main.removeCallbacks(it) }
+        barTicker = null
+        if (enabled) {
+            val tick = object : Runnable {
+                override fun run() {
+                    if (!barWatch) return
+                    hideBars()
+                    main.postDelayed(this, 800)
+                }
+            }
+            barTicker = tick
+            main.postDelayed(tick, 800)
+        }
+    }
+
+    private fun hideBars() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            activity.window.insetsController?.hide(
+                WindowInsets.Type.statusBars()
+                        or WindowInsets.Type.navigationBars())
         }
     }
 
@@ -194,7 +234,24 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
         val pinned =
             am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
         try {
-            if (enabled && !pinned) activity.startLockTask()
+            if (enabled && !pinned) {
+                // Device owner (provisioned with `dpm set-device-owner`):
+                // whitelist ourselves first, so startLockTask enters the
+                // real LOCKED mode — no confirmation, no "app is pinned"
+                // toast, no Back+Recents escape, home and recents removed
+                // from the bar. Without it, plain screen pinning: the
+                // ceiling Android sets for a store app.
+                val dpm = activity.getSystemService(DevicePolicyManager::class.java)
+                if (dpm.isDeviceOwnerApp(activity.packageName)) {
+                    val admin = ComponentName(activity, KioskAdminReceiver::class.java)
+                    dpm.setLockTaskPackages(admin, arrayOf(activity.packageName))
+                    if (Build.VERSION.SDK_INT >= 28) {
+                        dpm.setLockTaskFeatures(
+                            admin, DevicePolicyManager.LOCK_TASK_FEATURE_NONE)
+                    }
+                }
+                activity.startLockTask()
+            }
             if (!enabled && pinned) activity.stopLockTask()
         } catch (_: Exception) {
             // Racing the pin state (or a denied confirmation) is not fatal.
@@ -202,6 +259,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     }
 
     fun dispose() {
+        setBarWatch(false)
         setShield(false)
         screenOffReceiver?.let { activity.unregisterReceiver(it) }
         screenOffReceiver = null

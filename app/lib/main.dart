@@ -21,22 +21,33 @@ Future<void> main() async {
   // so we never prompt for camera/mic the user hasn't enabled.
 
   // Kiosk devices run fullscreen; system bars come back with a swipe and
-  // hide again on their own. That promise breaks the moment the WebView — a
-  // platform view — takes input focus (a tap, the keyboard): Android drops
-  // the window's immersive flags and, set only once, they would stay lost.
-  // So hiding is re-asserted whenever the system reports the bars visible,
-  // after the short peek immersive-sticky is supposed to give.
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  // hide again. That promise breaks the moment the WebView — a platform
+  // view — takes input focus (a tap, the keyboard): Android drops the
+  // window's immersive flags and, set only once, they would stay lost. So
+  // hiding is re-asserted whenever the system reports the bars visible.
+  //
+  // The mode depends on kiosk mode. Sticky immersive gives the friendly
+  // behavior — but its transient bars are a system override: no callback
+  // fires and re-hide requests are ignored, so the peek is always the
+  // system's three seconds. Locked down, that is too long a window; plain
+  // immersive makes a revealed bar an ordinary one, which notifies us and
+  // obeys the fast re-hide (KioskLock's ticker backstops it besides).
+  Future<void> applyImmersion() => SystemChrome.setEnabledSystemUIMode(
+    container.settings.get(defs.kioskEnabled)
+        ? SystemUiMode.immersive
+        : SystemUiMode.immersiveSticky,
+  );
+  await applyImmersion();
+  container.bus.on<SettingChanged>().listen((e) {
+    if (e.key == defs.kioskEnabled.key) applyImmersion();
+  });
   SystemChrome.setSystemUIChangeCallback((systemOverlaysAreVisible) async {
     if (!systemOverlaysAreVisible) return;
-    // The swipe-summoned transient bars cannot be vetoed by an app, only
-    // outlived. Kiosk mode shortens the peek to a blink; otherwise the
-    // system gets its customary few seconds.
     final locked = container.settings.get(defs.kioskEnabled);
     await Future<void>.delayed(
       locked ? const Duration(milliseconds: 400) : const Duration(seconds: 3),
     );
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    await applyImmersion();
   });
 
   runApp(KioskSatelliteApp(container: container));
