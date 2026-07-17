@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
+
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -46,17 +48,89 @@ class HomeAssistantManager extends Manager {
   bool get configured =>
       baseUrl.isNotEmpty && _settings.get(defs.haToken).isNotEmpty;
 
+  /// Whether the configured connection has been proven this run. Never
+  /// persisted — every app start revalidates, and both settings UIs hide
+  /// the rest of the Home Assistant configuration until this holds.
+  final connectionOk = ValueNotifier<bool>(false);
+
+  /// Validate the connection and remember the verdict for the UIs.
+  Future<String?> validateConnection() async {
+    final error = await checkConnection();
+    connectionOk.value = error == null;
+    return error;
+  }
+
   @override
   Future<void> init() async {
+    // Startup validation: the kiosk boots either way (an offline HA must
+    // not brick the tablet), but the settings gate stays shut until HA
+    // actually answered once this run.
+    if (configured) {
+      unawaited(validateConnection());
+    }
+    bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.haUrl.key || e.key == defs.haToken.key) {
+        connectionOk.value = false;
+      }
+    });
     commands
       ..register(Command(
         name: 'haCheckConnection',
         description: 'Validate the Home Assistant URL and token',
         handler: (_) async {
-          final error = await checkConnection();
+          final error = await validateConnection();
           return error == null
               ? const CommandResult.ok()
               : CommandResult.fail(error);
+        },
+      ))
+      ..register(Command(
+        name: 'haStatus',
+        description:
+            'Whether Home Assistant is configured and this run\'s '
+            'connection check passed.',
+        handler: (_) async => CommandResult.ok({
+          'configured': configured,
+          'connected': connectionOk.value,
+        }),
+      ))
+      ..register(Command(
+        name: 'haDetectVoiceSatellite',
+        description:
+            'Whether the Voice Satellite card is installed on the '
+            'connected Home Assistant instance.',
+        handler: (_) async => CommandResult.ok(await detectVoiceSatellite()),
+      ))
+      ..register(Command(
+        name: 'applyVsRecommended',
+        description:
+            'Apply the recommended settings for a Voice Satellite kiosk: '
+            'resilience, refresh, mixed content, mic, autoplay, boot '
+            'start, keep-awake, wake word and remote management.',
+        handler: (_) async {
+          const recommended = <String, Object>{
+            'browser.auto_reload_on_error': true,
+            'browser.pull_to_refresh': true,
+            'browser.pull_to_refresh_clear_cache': true,
+            'browser.allow_mixed_content': true,
+            'browser.ignore_ssl_errors': true,
+            'web.microphone': true,
+            'web.autoplay': true,
+            'kiosk.start_on_boot': true,
+            'screen.keep_on': true,
+            'wake_word.enabled': true,
+            'wake_word.background': true,
+            'remote.enabled': true,
+          };
+          var applied = 0;
+          for (final entry in recommended.entries) {
+            if (await _settings.setFromJson(entry.key, entry.value)) {
+              applied++;
+            } else {
+              log.warn(name, 'recommended setting rejected: ${entry.key}');
+            }
+          }
+          return CommandResult.ok({'applied': applied});
         },
       ))
       ..register(Command(

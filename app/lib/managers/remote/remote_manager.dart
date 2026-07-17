@@ -96,7 +96,10 @@ class RemoteManager extends Manager {
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.remoteEnabled.key ||
           e.key == defs.remotePort.key ||
-          e.key == defs.remotePassword.key) {
+          e.key == defs.remotePassword.key ||
+          // Setup completing (start URL set) may mean the server should
+          // stop — the wizard ran on the setup-mode allowance alone.
+          e.key == defs.startUrl.key) {
         _sync();
       }
     });
@@ -127,10 +130,15 @@ class RemoteManager extends Manager {
 
   Timer? _statsTimer;
 
+  /// Unconfigured device: the remote onboarding wizard must be reachable,
+  /// password or not — its own first step is to set one.
+  bool get _setupMode => _settings.get(defs.startUrl).isEmpty;
+
   Future<void> _sync() async {
     final wantRunning =
-        _settings.get(defs.remoteEnabled) &&
-        _settings.get(defs.remotePassword).isNotEmpty;
+        _setupMode ||
+        (_settings.get(defs.remoteEnabled) &&
+            _settings.get(defs.remotePassword).isNotEmpty);
     if (wantRunning && _server == null) {
       await _start();
     } else if (!wantRunning && _server != null) {
@@ -180,6 +188,31 @@ class RemoteManager extends Manager {
     if (path.isEmpty || path == 'index.html') return _index();
     if (path == 'api/login') return _login(request);
     if (path == 'api/ws') return _ws(request);
+
+    // First-run onboarding. Status is public (the UI decides whether to
+    // show the wizard); the password endpoint works exactly once — only
+    // while no password exists on an unconfigured device — and answers
+    // with a session token so the wizard continues authenticated.
+    if (path == 'api/setup/status') {
+      return _json(200, {
+        'setupNeeded': _setupMode,
+        'passwordNeeded': _settings.get(defs.remotePassword).isEmpty,
+      });
+    }
+    if (path == 'api/setup/password' && request.method == 'POST') {
+      if (!_setupMode || _settings.get(defs.remotePassword).isNotEmpty) {
+        return _json(403, {'error': 'setup already done'});
+      }
+      final body = await _body(request);
+      final password = body?['password'];
+      if (password is! String || password.length < 4) {
+        return _json(400, {'error': 'password must be at least 4 characters'});
+      }
+      await _settings.set(defs.remotePassword, password);
+      await _settings.set(defs.remoteEnabled, true);
+      log.info(name, 'remote password set by onboarding');
+      return _json(200, {'token': _auth.issueToken()});
+    }
 
     if (!path.startsWith('api/')) return Response.notFound('not found');
 

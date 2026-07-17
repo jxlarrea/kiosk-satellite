@@ -26,6 +26,7 @@ class SettingDef<T> {
     this.step,
     this.unit,
     this.optionLabels,
+    this.validator,
   });
 
   final String key;
@@ -84,17 +85,45 @@ class SettingDef<T> {
   /// "Home Assistant Media" without changing what is persisted. Both UIs
   /// fall back to capitalising the raw value when a label is missing.
   final Map<String, String>? optionLabels;
+
+  /// Optional value check applied on every write (device UI, remote API,
+  /// import all funnel through setFromJson). Returns an error message, or
+  /// null for a valid value.
+  final String? Function(Object? value)? validator;
+}
+
+/// A Home Assistant *base* URL: scheme + host (+ port), nothing after.
+/// Dashboard paths belong to the dashboard picker, not here.
+String? validateBaseUrl(Object? value) {
+  if (value is! String || value.trim().isEmpty) return null; // empty = unset
+  final uri = Uri.tryParse(value.trim());
+  if (uri == null ||
+      (uri.scheme != 'http' && uri.scheme != 'https') ||
+      uri.host.isEmpty) {
+    return 'Enter a URL like https://homeassistant.local:8123';
+  }
+  if (uri.path.isNotEmpty && uri.path != '/') {
+    return 'Base URL only — no dashboard path (…:8123, not …/lovelace/0)';
+  }
+  if (uri.hasQuery || uri.hasFragment) {
+    return 'Base URL only — drop everything after the port';
+  }
+  return null;
 }
 
 // ── Browser ────────────────────────────────────────────────────────────
 
+// Hidden: the dashboard picker (Home Assistant → Dashboard) owns this
+// value now — the app is Home Assistant-oriented, and a free-typed URL is
+// the setup wizard's job to avoid, not offer.
 const startUrl = SettingDef<String>(
   key: 'browser.start_url',
   type: SettingType.string,
   defaultValue: '',
   title: 'Start URL',
-  description: 'Page loaded on launch. Usually your Home Assistant dashboard.',
+  description: 'Page loaded on launch.',
   category: 'Browser',
+  hidden: true,
 );
 
 const autoReloadOnError = SettingDef<bool>(
@@ -188,24 +217,27 @@ const webMicrophone = SettingDef<bool>(
   description:
       'Let web pages use the microphone (required for Voice Satellite).',
   category: 'Web Content',
+  hidden: true,
 );
 
 const webCamera = SettingDef<bool>(
   key: 'web.camera',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Enable webcam access',
   description: 'Let web pages use the camera.',
   category: 'Web Content',
+  hidden: true,
 );
 
 const webGeolocation = SettingDef<bool>(
   key: 'web.geolocation',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Enable geolocation access',
   description: 'Let web pages request the device location.',
   category: 'Web Content',
+  hidden: true,
 );
 
 const webAutoplay = SettingDef<bool>(
@@ -215,15 +247,17 @@ const webAutoplay = SettingDef<bool>(
   title: 'Autoplay audio and video',
   description: 'Allow media to play without a user gesture.',
   category: 'Web Content',
+  hidden: true,
 );
 
 const webPopups = SettingDef<bool>(
   key: 'web.popups',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Enable pop-ups',
   description: 'Allow pages to open new windows via JavaScript.',
   category: 'Web Content',
+  hidden: true,
 );
 
 // ── Kiosk Mode ─────────────────────────────────────────────────────────
@@ -871,9 +905,10 @@ const haUrl = SettingDef<String>(
   key: 'ha.url',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Home Assistant URL',
-  description: 'Base URL, e.g. http://homeassistant.local:8123',
+  title: 'Home Assistant Base URL',
+  description: 'e.g. https://homeassistant.local:8123 — no dashboard path.',
   category: 'Home Assistant',
+  validator: validateBaseUrl,
 );
 
 const haToken = SettingDef<String>(

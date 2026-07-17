@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
@@ -50,6 +51,40 @@ class KioskManager extends Manager {
           await _apply(force: false);
           await SystemNavigator.pop();
           return const CommandResult.ok();
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'requestOsPermissions',
+        description:
+            'Fire the OS permission prompts on the device: microphone '
+            'always; notifications, battery-optimization exemption and '
+            'draw-over-apps too when full=true. The dialogs appear on the '
+            'device screen — the remote wizard sends someone to tap them.',
+        params: const {'full': 'true for the whole recommended set'},
+        handler: (p) async {
+          final full = p['full'] == true;
+          final results = <String, bool>{};
+          Future<void> ask(String label, Permission permission) async {
+            try {
+              results[label] = (await permission.request()).isGranted;
+            } catch (_) {
+              results[label] = false;
+            }
+          }
+
+          await ask('microphone', Permission.microphone);
+          if (full) {
+            await ask('notifications', Permission.notification);
+            await ask(
+              'batteryOptimizations',
+              Permission.ignoreBatteryOptimizations,
+            );
+            await ask('overlay', Permission.systemAlertWindow);
+          }
+          return CommandResult.ok(results);
         },
       ),
     );

@@ -105,12 +105,17 @@ class KioskDrawer extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _item(context, Icons.home_outlined, 'Home', () {
-                                onClose();
-                                c.commands.execute('loadUrl', {
-                                  'url': c.browser.startUrl,
-                                });
-                              }),
+                              _item(
+                                context,
+                                Icons.dashboard_outlined,
+                                'Dashboard',
+                                () {
+                                  onClose();
+                                  c.commands.execute('loadUrl', {
+                                    'url': c.browser.startUrl,
+                                  });
+                                },
+                              ),
                               _item(
                                 context,
                                 Icons.settings_outlined,
@@ -185,24 +190,6 @@ class KioskDrawer extends StatelessWidget {
                                 },
                               ),
                             ],
-                          ),
-                        ),
-                      ),
-                      // The licensing Device ID, whispered right under the
-                      // actions card: findable when support asks for it,
-                      // invisible until then. The Device settings page
-                      // carries the tap-to-copy version.
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                        child: Center(
-                          child: Text(
-                            'Device ID: ${c.device.deviceId}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              fontSize: 11,
-                              letterSpacing: 0.4,
-                              color: theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.6),
-                            ),
                           ),
                         ),
                       ),

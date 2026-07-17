@@ -147,6 +147,7 @@ class SettingsManager extends Manager {
   Future<bool> setFromJson(String key, Object? value) async {
     final def = defByKey(key);
     if (def == null) return false;
+    if (def.validator?.call(value) != null) return false;
     switch (def.type) {
       case SettingType.boolean when value is bool:
         await set(def, value);

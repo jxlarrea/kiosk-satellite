@@ -21,8 +21,9 @@ void main() {
 
   test('unstored settings return their declared default', () async {
     await build({});
-    expect(settings.get(defs.webMicrophone), isTrue); // default true
-    expect(settings.get(defs.webCamera), isFalse); // default false
+    // Web Content has no settings page anymore: everything defaults on.
+    expect(settings.get(defs.webMicrophone), isTrue);
+    expect(settings.get(defs.webCamera), isTrue);
     expect(settings.get(defs.screensaverTimeoutSeconds), 300);
   });
 
@@ -35,7 +36,7 @@ void main() {
     // null, so the UI rendered every untouched toggle as off.
     expect(mic['value'], isTrue);
     final camera = described.firstWhere((s) => s['key'] == 'web.camera');
-    expect(camera['value'], isFalse);
+    expect(camera['value'], isTrue);
   });
 
   test('set persists and is read back', () async {

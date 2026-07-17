@@ -245,6 +245,30 @@
     .row input[type=text], .row input[type=password], .row select { max-width: 48vw; }
     .row input[type=number] { max-width: 90px; }
   }
+  /* ---- Onboarding wizard: the login card's language, sized for steps. */
+  #wizard { min-height: 100vh; display: flex; align-items: center;
+    justify-content: center; padding: 24px; }
+  .wizard-card { width: 100%; max-width: 520px; background: var(--card);
+    border-radius: 24px; padding: 36px 32px 28px; text-align: center; }
+  .wizard-card .logo { margin-bottom: 6px; }
+  .wizard-dots { display: flex; justify-content: center; gap: 8px;
+    margin: 14px 0 22px; }
+  .wizard-dots span { width: 8px; height: 8px; border-radius: 4px;
+    background: var(--divider); transition: all .2s; }
+  .wizard-dots span.done { background: var(--primary); }
+  .wizard-dots span.now { width: 22px; background: var(--primary); }
+  .wizard-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .wizard-card .lead { color: var(--muted); font-size: 14px;
+    line-height: 1.5; margin-bottom: 20px; }
+  .wizard-body { text-align: left; }
+  .wizard-body .field { width: 100%; margin-bottom: 12px; }
+  .wizard-nav { display: flex; align-items: center; margin-top: 18px; }
+  .wizard-nav .spacer { flex: 1; }
+  .wizard-list { border: 1px solid var(--divider); border-radius: 16px;
+    overflow: hidden; margin-bottom: 4px; }
+  .wizard-list .row { padding: 12px 16px; }
+  #wizardError { color: var(--error); font-size: 13px; min-height: 18px;
+    margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -258,6 +282,23 @@
     <input id="password" class="field" type="password" placeholder="Admin password" autocomplete="current-password">
     <button id="loginBtn" class="btn-primary">Log in</button>
     <div id="loginError" class="msg-error"></div>
+  </div>
+</section>
+
+<!-- Onboarding wizard (unconfigured device) -->
+<section id="wizard" class="hidden">
+  <div class="wizard-card">
+    <img class="logo" id="wizardLogo" src="" alt="" width="56" height="56">
+    <div class="wizard-dots" id="wizardDots"></div>
+    <h2 id="wizardTitle"></h2>
+    <p class="lead" id="wizardLead"></p>
+    <div class="wizard-body" id="wizardBody"></div>
+    <div id="wizardError"></div>
+    <div class="wizard-nav">
+      <button class="btn-ghost hidden" id="wizardBack">Back</button>
+      <span class="spacer"></span>
+      <button class="btn-primary" id="wizardNext">Next</button>
+    </div>
   </div>
 </section>
 
@@ -287,13 +328,13 @@
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
           <span class="nav-text"><span class="nav-title">Dashboard</span><span class="nav-sub">Screen and quick controls</span></span>
         </button>
-        <button data-tab="browser">
-          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13.5 13.5 0 0 1 0 18M12 3a13.5 13.5 0 0 0 0 18"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Web Browsing</span><span class="nav-sub">Start URL, error recovery</span></span>
+        <button data-tab="homeassistant">
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Home Assistant Configuration</span><span class="nav-sub">Connection, dashboard, Voice Satellite</span></span>
         </button>
-        <button data-tab="webcontent">
-          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2.5"/><circle cx="15" cy="17" r="2.5"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Web Content</span><span class="nav-sub">Microphone, camera, geolocation, pop-ups</span></span>
+        <button data-tab="browser">
+          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13.5 13.5 0 0 1 0 18M12 3a13.5 13.5 0 0 0 0 18"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Web Browsing</span><span class="nav-sub">Start URL, error recovery</span></span>
         </button>
         <button data-tab="kiosk">
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
@@ -307,24 +348,20 @@
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
           <span class="nav-text"><span class="nav-title">Screensaver</span><span class="nav-sub">Idle timeout, modes, motion wake</span></span>
         </button>
-        <button data-tab="homeassistant">
-          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Home Assistant</span><span class="nav-sub">Connection, kiosk mode, Voice Satellite</span></span>
-        </button>
         <button data-tab="remote">
-          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="9" width="7" height="12" rx="2"/><path d="M8.2 5.5a6 6 0 0 1 7.6 0M5.8 2.9a10 10 0 0 1 12.4 0"/></svg></span>
+          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="9" width="7" height="12" rx="2"/><path d="M8.2 5.5a6 6 0 0 1 7.6 0M5.8 2.9a10 10 0 0 1 12.4 0"/></svg></span>
           <span class="nav-text"><span class="nav-title">Remote Administration</span><span class="nav-sub">Web console access</span></span>
         </button>
         <button data-tab="device">
-          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
           <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
         </button>
         <button data-tab="console">
-          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></svg></span>
+          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></svg></span>
           <span class="nav-text"><span class="nav-title">Console</span><span class="nav-sub">Live from the WebView</span></span>
         </button>
         <button data-tab="logs">
-          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
           <span class="nav-text"><span class="nav-title">Logs</span><span class="nav-sub">App log</span></span>
         </button>
       </nav>
@@ -380,7 +417,6 @@
     <!-- Settings, one tab per category — the same groupings, in the same
          order, as the device's settings rail. -->
     <div class="tab" id="tab-browser"></div>
-    <div class="tab" id="tab-webcontent"></div>
     <div class="tab" id="tab-kiosk"></div>
     <div class="tab" id="tab-screen"></div>
     <div class="tab" id="tab-screensaver"></div>
@@ -477,12 +513,13 @@ function logout() {
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-const TABS = ['dashboard', 'browser', 'webcontent', 'kiosk', 'screen', 'screensaver',
+const TABS = ['dashboard', 'homeassistant', 'browser', 'kiosk', 'screen', 'screensaver',
   'homeassistant', 'remote', 'device', 'console', 'logs'];
 const TAB_TITLES = {
-  dashboard: 'Dashboard', browser: 'Web Browsing', webcontent: 'Web Content',
+  dashboard: 'Dashboard', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', screen: 'Screen', screensaver: 'Screensaver',
-  homeassistant: 'Home Assistant', remote: 'Remote Administration',
+  homeassistant: 'Home Assistant Configuration',
+  remote: 'Remote Administration',
   device: 'Device', console: 'Console', logs: 'Logs',
 };
 
@@ -552,7 +589,6 @@ async function loadScreenshot() {
 // device.
 const CATEGORY_TABS = [
   ['tab-browser', ['Browser']],
-  ['tab-webcontent', ['Web Content']],
   ['tab-kiosk', ['Kiosk']],
   ['tab-screen', ['Screen']],
   ['tab-screensaver', ['Screensaver']],
@@ -626,31 +662,97 @@ async function loadSettings() {
   };
 
   for (const [tabId, cats] of CATEGORY_TABS) {
+    if (tabId === 'tab-homeassistant') continue; // custom render below
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
 
-  // The Device ID, mirroring the device's Settings → Device card. Not a
-  // setting (derived, never chosen — see DeviceManager.deviceId), so it is
-  // appended to the card rather than declared with the settings.
-  const deviceId = state.device?.deviceId;
-  const deviceCard = document.createElement('div');
-  deviceCard.className = 'card';
-  if (deviceId) {
-    $('#device-settings').appendChild(deviceCard);
-    const row = readOnlyRow('Device ID', 'Click to copy.', deviceId);
-    row.querySelector('span').style.fontFamily = 'ui-monospace, monospace';
-    row.style.cursor = 'pointer';
-    row.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(deviceId);
-        row.querySelector('.desc').textContent = 'Copied.';
-        setTimeout(
-          () => (row.querySelector('.desc').textContent = 'Click to copy.'),
-          1500);
-      } catch (_) { /* clipboard needs https or localhost; row still shows */ }
+  // ── Home Assistant Configuration ──────────────────────────────────────
+  // The connection card is the gate: base URL, token, a Validate row.
+  // Everything else — the dashboard picker, kiosk mode, theme, Voice
+  // Satellite — appears only after this run's connection check passed,
+  // mirroring the device's settings page exactly.
+  {
+    const root = document.getElementById('tab-homeassistant');
+    root.innerHTML = '';
+    const ha = byCat['Home Assistant'] || [];
+    const connCard = document.createElement('div');
+    connCard.className = 'card';
+    ha.filter((s) => s.key === 'ha.url' || s.key === 'ha.token')
+      .forEach((s) => connCard.appendChild(settingRow(s)));
+    const vrow = readOnlyRow('Validate connection', '', '');
+    vrow.querySelector('span').remove();
+    const vbtn = document.createElement('button');
+    vbtn.className = 'action';
+    vbtn.textContent = 'Validate';
+    vrow.appendChild(vbtn);
+    connCard.appendChild(vrow);
+    root.appendChild(connCard);
+    const vdesc = vrow.querySelector('.desc');
+
+    let status = {};
+    try {
+      status = (await (await api('/api/commands/haStatus', { method: 'POST', body: '{}' })).json()).data || {};
+    } catch (_) {}
+    state.haConnected = !!status.connected;
+    vbtn.addEventListener('click', async () => {
+      vbtn.disabled = true; vbtn.textContent = 'Checking\u2026';
+      const out = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json().catch(() => ({}));
+      vbtn.disabled = false; vbtn.textContent = 'Validate';
+      if (out.ok) { await loadSettings(); await loadWakeWord(); }
+      else vdesc.textContent = out.error || 'Could not connect.';
     });
-    deviceCard.appendChild(row);
+
+    if (!state.haConnected) {
+      vdesc.textContent = 'Not validated \u2014 the settings below unlock once the connection checks out.';
+    } else {
+      vdesc.textContent = 'Connected.';
+      // Dashboard picker: what the kiosk shows. Radio rows; picking one
+      // sets the start URL and navigates the device right away.
+      const h = document.createElement('h2');
+      h.className = 'card-title';
+      h.textContent = 'Dashboard';
+      root.appendChild(h);
+      const dcard = document.createElement('div');
+      dcard.className = 'card';
+      root.appendChild(dcard);
+      try {
+        const dashboards = (await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json()).data || [];
+        const rawBase = (byKey['ha.url']?.value || '').trim().replace(/\/$/, '');
+        const current = byKey['browser.start_url']?.value || '';
+        dashboards.forEach((d) => {
+          const url = `${rawBase}/${d.url_path}`;
+          const selected = current === url || current.startsWith(url + '/');
+          const row = readOnlyRow(d.title || d.url_path, d.url_path,
+            selected ? '\u25c9' : '\u25cb');
+          const mark = row.querySelector('span');
+          mark.style.color = selected ? 'var(--primary)' : 'var(--muted)';
+          mark.style.fontSize = '18px';
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', async () => {
+            await api('/api/settings', { method: 'PATCH',
+              body: JSON.stringify({ 'browser.start_url': url }) });
+            await api('/api/commands/loadUrl', { method: 'POST',
+              body: JSON.stringify({ url }) });
+            await loadSettings();
+          });
+          dcard.appendChild(row);
+        });
+        if (!dashboards.length) dcard.appendChild(readOnlyRow('No dashboards found', '', ''));
+      } catch (_) {
+        dcard.appendChild(readOnlyRow('Could not list dashboards', '', ''));
+      }
+      // The rest of the Home Assistant settings, then Voice Satellite —
+      // through the same section-aware renderer as every other tab.
+      const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token');
+      const restRoot = document.createElement('div');
+      root.appendChild(restRoot);
+      const savedHa = byCat['Home Assistant'];
+      byCat['Home Assistant'] = rest;
+      render(restRoot, ['Home Assistant', 'Voice Satellite'].filter((c) => (byCat[c] || []).length));
+      byCat['Home Assistant'] = savedHa;
+    }
   }
+
   // Configuration backup, mirroring the device's Settings -> Device card:
   // export downloads the full config (settings incl. secrets + the page's
   // localStorage); import uploads one and applies it.
@@ -728,6 +830,12 @@ async function loadSettings() {
 // Not a setting: nothing here is ours to change. The card owns the engine, the
 // wake words and the sensitivity, and pushes them to this device. We report.
 async function loadWakeWord() {
+  // Behind the connection gate with the rest of the HA page.
+  if (!state.haConnected) {
+    document.querySelector('#tab-homeassistant #wakeWordCard')?.remove();
+    document.querySelector('#tab-homeassistant #permsCard')?.remove();
+    return;
+  }
   let s;
   try {
     const res = await cmd('getWakeWordState');
@@ -906,9 +1014,6 @@ async function loadDeviceInfo() {
 
   card('Hardware', [
     ['Device name', or(info?.name)],
-    // The licensing identity — derived on the device, stable across
-    // reinstalls (see DeviceManager.deviceId).
-    ['Device ID', or(info?.deviceId)],
     ['Device model', det?.brand && det?.brand !== det?.manufacturer
       ? `${or(info?.model)} (${det.brand})` : or(info?.model)],
     ['Android version', `${or(info?.osVersion)}${info?.sdkInt ? ` (SDK ${info.sdkInt})` : ''}`],
@@ -1381,6 +1486,13 @@ function showBrightness(level) {
 
 /* ---- Boot ---- */
 async function start() {
+  // An unconfigured device continues into the wizard, not the app — the
+  // login (with the password the device wizard set) was just the door.
+  if (state.wizardAfterLogin) {
+    state.wizardAfterLogin = false;
+    startWizard({ needPassword: false });
+    return;
+  }
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
   const info = await (await api('/api/info')).json();
   applyInfo(info, info.currentUrl);
@@ -1395,13 +1507,220 @@ async function start() {
   // which is also why the capture can afford to be high-quality.
   connectWs();
 }
+/* ---- Onboarding wizard ----------------------------------------------
+   The remote twin of the device's five-step setup. An unconfigured device
+   serves this passwordless; minting the admin password is the first step
+   (skipped when the device wizard already set one — then it appears after
+   login instead). */
+const wizard = {
+  steps: [], i: 0, needPassword: false,
+  vsDetected: false, applyRecommended: true,
+  dashboards: [], dashboard: null,
+};
+
+function wizardShow() {
+  $('#login').classList.add('hidden');
+  $('#app').classList.add('hidden');
+  $('#wizard').classList.remove('hidden');
+  $('#wizardLogo').src = $('#login .logo').src;
+  wizardRender();
+}
+
+function wizardRender() {
+  const s = wizard.steps[wizard.i];
+  const dots = $('#wizardDots');
+  dots.innerHTML = '';
+  wizard.steps.forEach((_, n) => {
+    const d = document.createElement('span');
+    if (n < wizard.i) d.className = 'done';
+    if (n === wizard.i) d.className = 'now';
+    dots.appendChild(d);
+  });
+  $('#wizardError').textContent = '';
+  $('#wizardBack').classList.toggle('hidden', wizard.i === 0);
+  $('#wizardNext').textContent = s.nextLabel || 'Next';
+  $('#wizardTitle').textContent = s.title;
+  $('#wizardLead').textContent = s.lead;
+  const body = $('#wizardBody');
+  body.innerHTML = '';
+  s.body(body);
+}
+
+function wizardField(body, id, type, placeholder) {
+  const f = document.createElement('input');
+  f.className = 'field'; f.id = id; f.type = type;
+  f.placeholder = placeholder; f.autocomplete = 'off';
+  body.appendChild(f);
+  return f;
+}
+
+function wizardSteps() {
+  const steps = [];
+  if (wizard.needPassword) steps.push({
+    title: 'Welcome to Kiosk Satellite',
+    lead: 'This tablet is waiting to be set up. First, protect this remote admin with a password.',
+    body: (b) => { wizardField(b, 'wzPassword', 'password', 'Admin password (min 4 characters)'); },
+    next: async () => {
+      const password = $('#wzPassword').value;
+      if (password.length < 4) throw new Error('Pick a password of at least 4 characters');
+      const res = await fetch('api/setup/password', { method: 'POST', body: JSON.stringify({ password }) });
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error || 'Could not set the password');
+      state.token = out.token; localStorage.setItem('ks_token', state.token);
+    },
+  });
+  steps.push({
+    title: 'Connect to Home Assistant',
+    lead: 'The base URL of your instance and a long-lived access token (HA profile \u2192 Security).',
+    nextLabel: 'Validate & continue',
+    body: (b) => {
+      wizardField(b, 'wzUrl', 'url', 'https://homeassistant.local:8123');
+      wizardField(b, 'wzToken', 'password', 'Long-lived access token');
+    },
+    next: async () => {
+      const url = $('#wzUrl').value.trim(), token = $('#wzToken').value.trim();
+      if (!url || !token) throw new Error('Both fields are needed');
+      const patch = await api('/api/settings', { method: 'PATCH',
+        body: JSON.stringify({ 'ha.url': url, 'ha.token': token }) });
+      const pout = await patch.json();
+      if ((pout.rejected || []).includes('ha.url')) {
+        throw new Error('Base URL only \u2014 https://host:port, no dashboard path');
+      }
+      const check = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json();
+      if (!check.ok) throw new Error(check.error || 'Could not connect');
+      const dashboards = await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json();
+      wizard.dashboards = dashboards.data || [];
+      wizard.dashboard = wizard.dashboards[0]?.url_path || null;
+      wizard.base = url.replace(/\/$/, '');
+    },
+  });
+  steps.push({
+    title: 'Choose a dashboard',
+    lead: 'This is what the kiosk will show.',
+    body: (b) => {
+      const list = document.createElement('div');
+      list.className = 'wizard-list';
+      wizard.dashboards.forEach((d) => {
+        const row = readOnlyRow(d.title || d.url_path, d.url_path,
+          wizard.dashboard === d.url_path ? '\u25c9' : '\u25cb');
+        const mark = row.querySelector('span');
+        mark.style.color = wizard.dashboard === d.url_path ? 'var(--primary)' : 'var(--muted)';
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => { wizard.dashboard = d.url_path; wizardRender(); });
+        list.appendChild(row);
+      });
+      if (!wizard.dashboards.length) list.appendChild(readOnlyRow('No dashboards found', '', ''));
+      b.appendChild(list);
+    },
+    next: async () => {
+      if (!wizard.dashboard) throw new Error('Pick a dashboard');
+      const vs = await (await api('/api/commands/haDetectVoiceSatellite', { method: 'POST', body: '{}' })).json();
+      wizard.vsDetected = vs.ok && vs.data === true;
+      if (!wizard.vsDetected) wizard.i++; // skip the VS step
+    },
+  });
+  steps.push({
+    title: 'Voice Satellite detected',
+    lead: 'This instance runs the Voice Satellite card. Apply the recommended kiosk settings for it?',
+    body: (b) => {
+      const list = document.createElement('div');
+      list.className = 'wizard-list';
+      const row = readOnlyRow('Apply recommended settings',
+        'Auto-reload, pull to refresh with cache clear, mixed content, self-signed certificates, microphone, autoplay, start on boot, keep screen on, wake word with background listening, remote management.',
+        wizard.applyRecommended ? '\u2611' : '\u2610');
+      row.querySelector('span').style.fontSize = '20px';
+      row.style.cursor = 'pointer';
+      row.addEventListener('click', () => { wizard.applyRecommended = !wizard.applyRecommended; wizardRender(); });
+      list.appendChild(row);
+      b.appendChild(list);
+    },
+    next: async () => {},
+  });
+  steps.push({
+    title: 'Permissions',
+    lead: 'Android asks for these on the tablet itself \u2014 walk over and accept the prompts, then finish here.',
+    nextLabel: 'Finish',
+    body: (b) => {
+      const full = wizard.vsDetected && wizard.applyRecommended;
+      const list = document.createElement('div');
+      list.className = 'wizard-list';
+      list.appendChild(readOnlyRow('Microphone', 'Voice input for the dashboard', ''));
+      if (full) {
+        list.appendChild(readOnlyRow('Notifications', 'The background listening service', ''));
+        list.appendChild(readOnlyRow('Ignore battery optimizations', 'So Android never freezes the kiosk', ''));
+        list.appendChild(readOnlyRow('Display over other apps', 'Start on boot needs it', ''));
+      }
+      b.appendChild(list);
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost';
+      btn.style.marginTop = '10px';
+      btn.textContent = 'Show the prompts on the tablet';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true; btn.textContent = 'Asking on the tablet\u2026';
+        await api('/api/commands/requestOsPermissions', { method: 'POST',
+          body: JSON.stringify({ full }) });
+        btn.textContent = 'Prompts sent to the tablet';
+      });
+      b.appendChild(btn);
+    },
+    next: async () => {
+      if (wizard.vsDetected && wizard.applyRecommended) {
+        await api('/api/commands/applyVsRecommended', { method: 'POST', body: '{}' });
+      }
+      // Setting the start URL is what flips the device to configured; the
+      // kiosk on the wall navigates to the dashboard on its own.
+      await api('/api/settings', { method: 'PATCH',
+        body: JSON.stringify({ 'browser.start_url': `${wizard.base}/${wizard.dashboard}` }) });
+      location.reload();
+    },
+  });
+  return steps;
+}
+
+async function startWizard({ needPassword }) {
+  wizard.needPassword = needPassword;
+  wizard.i = 0;
+  wizard.steps = wizardSteps();
+  wizardShow();
+}
+
+$('#wizardNext').addEventListener('click', async () => {
+  const btn = $('#wizardNext');
+  const step = wizard.steps[wizard.i];
+  btn.disabled = true;
+  try {
+    await step.next();
+    if (wizard.i < wizard.steps.length - 1) { wizard.i++; wizardRender(); }
+  } catch (e) {
+    $('#wizardError').textContent = e.message || String(e);
+  } finally {
+    btn.disabled = false;
+  }
+});
+$('#wizardBack').addEventListener('click', () => {
+  // Stepping back over the VS step when it was skipped forward.
+  const target = wizard.i - 1;
+  wizard.i = (target === 3 && !wizard.vsDetected) ? 2 : Math.max(0, target);
+  wizardRender();
+});
+
 $('#loginBtn').addEventListener('click', login);
 $('#password').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
 $('#logoutBtn').addEventListener('click', logout);
 
 // Only a real 401 (handled inside api()) logs out. A transient network error
 // at boot must NOT — just log it and let the WebSocket reconnect.
-if (state.token) start().catch((e) => console.warn('start failed', e));
+(async () => {
+  let setup = null;
+  try { setup = await (await fetch('api/setup/status')).json(); } catch (_) {}
+  if (setup?.setupNeeded) {
+    if (setup.passwordNeeded) { startWizard({ needPassword: true }); return; }
+    // A password exists (set in the device wizard's first step): log in
+    // first, then continue the setup here.
+    state.wizardAfterLogin = true;
+  }
+  if (state.token) start().catch((e) => console.warn('start failed', e));
+})();
 </script>
 </body>
 </html>

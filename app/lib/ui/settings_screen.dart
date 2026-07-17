@@ -7,7 +7,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import '../app_container.dart';
 import '../core/events.dart';
@@ -103,13 +102,13 @@ List<Widget> _sectionedCards(
 
 /// (defs category, page title, icon, subtitle)
 const _categories = <(String, String, IconData, String)>[
-  ('Browser', 'Web Browsing', Icons.public, 'Start URL, error recovery'),
   (
-    'Web Content',
-    'Web Content',
-    Icons.tune,
-    'Microphone, camera, geolocation, pop-ups',
+    'Home Assistant',
+    'Home Assistant Configuration',
+    Icons.home_outlined,
+    'Connection, dashboard, Voice Satellite',
   ),
+  ('Browser', 'Web Browsing', Icons.public, 'Reload, cache, zoom'),
   (
     'Kiosk',
     'Kiosk Mode',
@@ -122,12 +121,6 @@ const _categories = <(String, String, IconData, String)>[
     'Screensaver',
     Icons.dark_mode_outlined,
     'Idle timeout, modes, motion wake',
-  ),
-  (
-    'Home Assistant',
-    'Home Assistant',
-    Icons.home_outlined,
-    'Connection, kiosk mode, Voice Satellite',
   ),
   (
     'Remote',
@@ -543,38 +536,13 @@ class _CategoryContentState extends State<_CategoryContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ..._sectionedCards(
-          container,
-          _defsFor(widget.category),
-          () => setState(() {}),
-        ),
-        // Not a setting — the device's licensing identity, derived, never
-        // chosen (see DeviceManager.deviceId). It lives with the Device
-        // rows because "which device is this" is the question both answer.
-        if (widget.category == 'Device')
-          _SettingsCard(
-            children: [
-              ListTile(
-                title: const Text('Device ID'),
-                subtitle: const Text('Tap to copy.'),
-                trailing: Text(
-                  container.device.deviceId,
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 15),
-                ),
-                onTap: () {
-                  Clipboard.setData(
-                    ClipboardData(text: container.device.deviceId),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Device ID copied'),
-                      duration: Duration(seconds: 2),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-              ),
-            ],
+        if (widget.category == 'Home Assistant')
+          ..._haConnectionCards(container)
+        else
+          ..._sectionedCards(
+            container,
+            _defsFor(widget.category),
+            () => setState(() {}),
           ),
         if (widget.category == 'Device') ...[
           const _SectionHeading('Configuration'),
@@ -600,7 +568,95 @@ class _CategoryContentState extends State<_CategoryContent> {
             ],
           ),
         ],
-        if (widget.category == 'Home Assistant') ...[
+        if (widget.category == 'Home Assistant')
+          ValueListenableBuilder<bool>(
+            valueListenable: container.homeAssistant.connectionOk,
+            builder: (context, connected, _) => connected
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _haConfiguredCards(container),
+                  )
+                : const SizedBox.shrink(),
+          ),
+      ],
+    );
+  }
+
+  /// The connection card: base URL, token, and the validation row. Always
+  /// visible — it is the gate everything else on this page waits behind.
+  List<Widget> _haConnectionCards(AppContainer container) {
+    return [
+      _SettingsCard(
+        children: [
+          SettingTile(
+            container: container,
+            def: haUrl,
+            onChanged: () => setState(() {}),
+          ),
+          SettingTile(
+            container: container,
+            def: haToken,
+            onChanged: () => setState(() {}),
+          ),
+          ListTile(
+            title: const Text('Validate connection'),
+            subtitle: Text(
+              _haValidating
+                  ? 'Checking…'
+                  : _haError ??
+                        (container.homeAssistant.connectionOk.value
+                            ? 'Connected'
+                            : 'Not validated — the settings below unlock '
+                                  'once the connection checks out.'),
+            ),
+            trailing: _haValidating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  )
+                : Icon(
+                    container.homeAssistant.connectionOk.value
+                        ? Icons.cloud_done_outlined
+                        : Icons.cloud_off_outlined,
+                  ),
+            onTap: _haValidating ? null : () => _validateHa(container),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  bool _haValidating = false;
+  String? _haError;
+
+  Future<void> _validateHa(AppContainer container) async {
+    setState(() {
+      _haValidating = true;
+      _haError = null;
+    });
+    final error = await container.homeAssistant.validateConnection();
+    if (!mounted) return;
+    setState(() {
+      _haValidating = false;
+      _haError = error;
+    });
+  }
+
+  /// Everything a proven connection unlocks: the dashboard picker, then the
+  /// regular Home Assistant settings, Voice Satellite and its permissions.
+  List<Widget> _haConfiguredCards(AppContainer container) {
+    return [
+        const _SectionHeading('Dashboard'),
+        _DashboardPickerCard(container: container),
+        ..._sectionedCards(
+          container,
+          [
+            for (final def in _defsFor('Home Assistant'))
+              if (def.key != haUrl.key && def.key != haToken.key) def,
+          ],
+          () => setState(() {}),
+        ),
           FutureBuilder<bool>(
             future: _vsDetected,
             builder: (context, snapshot) {
@@ -646,8 +702,96 @@ class _CategoryContentState extends State<_CategoryContent> {
               children: [SystemPermissionsTile(container: container)],
             ),
           ],
-        ],
-      ],
+    ];
+  }
+}
+
+/// The dashboard chooser: every Home Assistant dashboard as a radio row;
+/// the chosen one becomes the start URL. The kiosk navigates immediately —
+/// picking a dashboard and not seeing it would read as a failed tap.
+class _DashboardPickerCard extends StatefulWidget {
+  const _DashboardPickerCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_DashboardPickerCard> createState() => _DashboardPickerCardState();
+}
+
+class _DashboardPickerCardState extends State<_DashboardPickerCard> {
+  late Future<List<Map<String, Object?>>?> _dashboards;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboards = widget.container.homeAssistant.listDashboards();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.container;
+    return FutureBuilder<List<Map<String, Object?>>?>(
+      future: _dashboards,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _SettingsCard(
+            children: [
+              ListTile(
+                title: Text('Loading dashboards…'),
+                trailing: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.4),
+                ),
+              ),
+            ],
+          );
+        }
+        final dashboards = snapshot.data;
+        if (dashboards == null || dashboards.isEmpty) {
+          return _SettingsCard(
+            children: [
+              ListTile(
+                title: const Text('Could not list dashboards'),
+                subtitle: const Text('Tap to retry.'),
+                trailing: const Icon(Icons.refresh),
+                onTap: () => setState(() {
+                  _dashboards = c.homeAssistant.listDashboards();
+                }),
+              ),
+            ],
+          );
+        }
+        final base = c.homeAssistant.baseUrl;
+        final current = c.settings.get(startUrl);
+        // Selection by prefix: the stored URL may carry ?kiosk or a view
+        // suffix appended later; the dashboard is the prefix.
+        bool selected(String url) =>
+            current == url || current.startsWith('$url/');
+        return _SettingsCard(
+          children: [
+            for (final d in dashboards)
+              ListTile(
+                leading: Icon(
+                  selected('$base/${d['url_path']}')
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: selected('$base/${d['url_path']}')
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+                ),
+                title: Text('${d['title'] ?? d['url_path']}'),
+                subtitle: Text('${d['url_path']}'),
+                onTap: () async {
+                  final url = '$base/${d['url_path']}';
+                  await c.settings.set(startUrl, url);
+                  await c.commands.execute('loadUrl', {'url': url});
+                  if (mounted) setState(() {});
+                },
+              ),
+          ],
+        );
+      },
     );
   }
 }
