@@ -729,14 +729,18 @@ class WakeWordManager extends Manager {
   /// not having listened — so it is logged as an error and reads as one in both
   /// settings UIs, which show the grant as missing.
   Future<void> _comeForwardIfBehind() async {
-    if (!_settings.get(defs.wakeWordBackground)) return;
+    // Not resumed covers two distinct darknesses: the screen is off (the
+    // kiosk still frontmost), or another app is in front. Waking a dark
+    // panel needs no grant and no setting, so the attempt is made
+    // unconditionally — bringToFront wakes the display first and only
+    // then needs the overlay grant to actually switch tasks.
     if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
       return;
     }
     try {
       if (await BackgroundListening.bringToFront()) {
-        log.info(name, 'woke from the background; bringing the app forward');
-      } else {
+        log.info(name, 'woke the screen / brought the app forward');
+      } else if (_settings.get(defs.wakeWordBackground)) {
         log.error(
             name,
             'heard the wake word from the background but cannot come forward: '

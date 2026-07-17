@@ -71,6 +71,23 @@ class BackgroundBridge(
         Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
 
     private fun bringToFront(): Boolean {
+        // A sleeping panel first: starting the Activity does not wake the
+        // display, so a wake word heard with the screen off would answer
+        // into darkness. Same wake-lock pattern as the kiosk's power-button
+        // re-wake — and deliberately before the overlay-grant check, since
+        // waking the screen needs no grant at all (the common case is the
+        // kiosk still frontmost, just dark).
+        try {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isInteractive) {
+                @Suppress("DEPRECATION")
+                pm.newWakeLock(
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                            or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                    "ks:wakeWordScreenOn",
+                ).acquire(5000)
+            }
+        } catch (_: Exception) {}
         if (!canDrawOverlays()) return false
         return try {
             // Resume the existing task exactly the way tapping the launcher icon
