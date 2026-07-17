@@ -1763,7 +1763,7 @@ function wizardSteps() {
   steps.push({
     railTitle: 'Connect', railSub: 'Home Assistant URL & token',
     title: 'Connect to Home Assistant',
-    lead: 'The base URL of your instance and a long-lived access token (HA profile \u2192 Security).',
+    lead: 'The base URL of your instance and a long-lived access token, created under your HA profile \u2192 Security \u2192 Long-lived access tokens.',
     nextLabel: 'Validate & continue',
     body: (b) => {
       const card = wizardCard(b);
@@ -1794,7 +1794,7 @@ function wizardSteps() {
   steps.push({
     railTitle: 'Dashboard', railSub: 'What the kiosk shows',
     title: 'Choose a dashboard',
-    lead: 'This is what the kiosk will show.',
+    lead: 'This is what the kiosk will show when it starts.',
     body: (b) => {
       const list = wizardCard(b, true);
       wizard.dashboards.forEach((d) => {
@@ -1842,16 +1842,21 @@ function wizardSteps() {
           sats.appendChild(row);
         });
       }
-      const mark = (on) => on ? '\u2611' : '\u2610';
+      // The settings pages' own switch control, not a checkbox glyph.
       const toggleRow = (label, desc, on, locked, onClick) => {
-        const row = readOnlyRow(label, desc, mark(on));
-        const span = row.querySelector('span');
-        span.style.fontSize = '20px';
-        span.style.color = locked ? 'var(--muted)' : (on ? 'var(--primary)' : 'var(--muted)');
-        if (!locked) {
-          row.style.cursor = 'pointer';
-          row.addEventListener('click', onClick);
-        }
+        const row = readOnlyRow(label, desc, '');
+        row.querySelector('span').remove();
+        const lbl = document.createElement('label');
+        lbl.className = 'switch';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = on;
+        input.disabled = !!locked;
+        if (!locked) input.addEventListener('change', onClick);
+        const slider = document.createElement('span');
+        slider.className = 'slider';
+        lbl.append(input, slider);
+        row.appendChild(lbl);
         return row;
       };
       const master = wizardCard(b, true);
