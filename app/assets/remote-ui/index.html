@@ -702,7 +702,7 @@ async function loadSettings() {
       card.appendChild(readOnlyRow('Voice Satellite is not installed in Home Assistant',
         'Voice Satellite turns this kiosk into a full hands-free voice assistant for Home Assistant \u2014 wake word detection, conversations, timers and announcements, right on the dashboard. It is available in the default HACS repository. Install it on your Home Assistant instance, then come back here.', ''));
       const wrap = document.createElement('div');
-      wrap.style.padding = '4px 16px 16px';
+      wrap.style.cssText = 'padding:16px; text-align:center';
       const a = document.createElement('a');
       a.href = ((byKey['ha.url']?.value || '').trim().replace(/\/$/, '')) + '/hacs/repository/1159616380';
       a.target = '_blank';

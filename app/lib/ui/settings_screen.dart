@@ -733,9 +733,9 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                   child: Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.center,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(24),
                       onTap: () {
