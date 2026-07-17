@@ -350,7 +350,7 @@ class _SetupScreenState extends State<SetupScreen> {
                   children: _pane(theme),
                 ),
               ),
-              _footer(theme, const EdgeInsets.fromLTRB(8, 4, 28, 20)),
+              _footer(theme, const EdgeInsets.fromLTRB(8, 20, 28, 20)),
             ],
           ),
         ),
@@ -403,7 +403,7 @@ class _SetupScreenState extends State<SetupScreen> {
             children: _pane(theme),
           ),
         ),
-        _footer(theme, const EdgeInsets.fromLTRB(20, 4, 20, 16)),
+        _footer(theme, const EdgeInsets.fromLTRB(20, 16, 20, 16)),
       ],
     );
   }
