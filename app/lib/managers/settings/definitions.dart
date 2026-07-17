@@ -1031,12 +1031,11 @@ const deviceName = SettingDef<String>(
 const uiTheme = SettingDef<String>(
   key: 'ui.theme',
   type: SettingType.select,
-  defaultValue: 'dark',
+  defaultValue: 'light',
   title: 'App theme',
   description:
       "Light or dark for the app's own screens — menu, settings, "
-      'dialogs. System follows the Android setting. Dark by default: kiosks '
-      'live on walls, mostly at night.',
+      'dialogs. System follows the Android setting.',
   category: 'Device',
   options: ['dark', 'light', 'system'],
   optionLabels: {'dark': 'Dark', 'light': 'Light', 'system': 'System'},

@@ -104,9 +104,9 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
       theme: buildTheme(Brightness.light),
       darkTheme: buildTheme(Brightness.dark),
       themeMode: switch (container.settings.get(defs.uiTheme)) {
-        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
         'system' => ThemeMode.system,
-        _ => ThemeMode.dark,
+        _ => ThemeMode.light,
       },
       home: configured
           ? KioskScreen(container: container)
