@@ -89,12 +89,26 @@ class _KioskScreenState extends State<KioskScreen>
 
   /// One refresh at a time, whichever side asked for it: the guard keeps the
   /// native gesture and the JS probe from doubling up on pages where both
-  /// fire. Reset when the reload settles.
+  /// fire. Reset when the reload settles — and by [_refreshingFailsafe],
+  /// because the reload is not guaranteed to settle: a pull racing an
+  /// in-flight navigation runs the reload script in a dying document, no
+  /// onLoadStop ever follows, and a guard with no way back would silently
+  /// swallow every pull from then on.
   bool _refreshing = false;
+  Timer? _refreshingFailsafe;
 
   Future<void> _triggerRefresh() async {
+    c.log.info(
+      'kiosk',
+      'pull trigger: refreshing=$_refreshing '
+          'enabled=${c.settings.get(defs.pullToRefresh)}',
+    );
     if (_refreshing || !c.settings.get(defs.pullToRefresh)) return;
     _refreshing = true;
+    _refreshingFailsafe?.cancel();
+    _refreshingFailsafe = Timer(const Duration(seconds: 8), () {
+      _refreshing = false;
+    });
     // No beginRefreshing here: the native gesture already shows its spinner,
     // and the JS probe draws (and keeps) its own — awaiting the platform
     // spinner from a bridge callback is what once held the reload hostage.
@@ -258,6 +272,7 @@ class _KioskScreenState extends State<KioskScreen>
 
   @override
   void dispose() {
+    _refreshingFailsafe?.cancel();
     _drawer.dispose();
     _settingsSub?.cancel();
     super.dispose();
@@ -445,6 +460,7 @@ class _KioskScreenState extends State<KioskScreen>
     },
     onLoadStop: (controller, url) {
       _refreshing = false;
+      _refreshingFailsafe?.cancel();
       _pullToRefresh.endRefreshing();
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
@@ -454,6 +470,7 @@ class _KioskScreenState extends State<KioskScreen>
     onReceivedError: (controller, request, error) {
       if (request.isForMainFrame ?? true) {
         _refreshing = false;
+        _refreshingFailsafe?.cancel();
         _pullToRefresh.endRefreshing();
         c.browser.onLoadError(error.description);
       }
