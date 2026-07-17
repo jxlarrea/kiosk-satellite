@@ -289,7 +289,8 @@
   #wizardError { display: flex; gap: 12px; align-items: flex-start;
     background: color-mix(in srgb, var(--error) 16%, var(--bg));
     color: var(--text); border-radius: 20px; padding: 16px 18px;
-    font-size: 13.5px; line-height: 1.4; margin-bottom: 4px; }
+    font-size: 13.5px; line-height: 1.4; margin-bottom: 16px; }
+  #wizardError .hint { opacity: .85; }
   #wizardError:empty { display: none; }
   .wizard-foot { margin-top: auto; padding: 10px 16px 4px; }
   @media (max-width: 719px) {
@@ -1636,6 +1637,39 @@ const wizard = {
 // The wizard starts light — the product default — whatever an earlier
 // admin session stored; its own toggle flips light/dark, and the choice
 // persists so the app matches after setup.
+// The device wizard's error card, verbatim: what went wrong in bold,
+// what to do about it underneath, on the error tint.
+function wizFail(title, hint) {
+  const err = new Error(title);
+  err.hint = hint;
+  return err;
+}
+
+function wizConnectFail(error) {
+  if (error.includes('invalid token')) {
+    return wizFail('Invalid access token',
+      'Home Assistant rejected this token. In Home Assistant, open your profile \u2192 Security \u2192 Long-lived access tokens, create a new token, and copy the complete value.');
+  }
+  if (error.startsWith('unreachable')) {
+    return wizFail("Can't reach Home Assistant",
+      'No response from this address. Check that the URL is correct and that this device is on the same network as your Home Assistant server.');
+  }
+  if (error.startsWith('HTTP')) {
+    return wizFail(`Unexpected response (${error})`,
+      "A server responded, but it doesn't appear to be Home Assistant. Check that the URL is your Home Assistant base address, for example https://homeassistant.local:8123.");
+  }
+  return wizFail("Can't connect", error);
+}
+
+function wizardShowError(e) {
+  const box = $('#wizardError');
+  box.innerHTML =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>' +
+    '<span><b style="display:block; font-size:14.5px; margin-bottom:2px"></b><span class="hint"></span></span>';
+  box.querySelector('b').textContent = e.message || String(e);
+  box.querySelector('.hint').textContent = e.hint || '';
+}
+
 function wizardApplyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   const btn = $('#wizardThemeBtn');
@@ -1719,10 +1753,10 @@ function wizardSteps() {
     },
     next: async () => {
       const password = $('#wzPassword').value;
-      if (password.length < 4) throw new Error('Password too short \u2014 use at least 4 characters.');
+      if (password.length < 4) throw wizFail('Password too short', 'Use at least 4 characters.');
       const res = await fetch('api/setup/password', { method: 'POST', body: JSON.stringify({ password }) });
       const out = await res.json();
-      if (!res.ok) throw new Error(out.error || 'Could not set the password');
+      if (!res.ok) throw wizFail('Could not set the password', out.error || '');
       state.token = out.token; localStorage.setItem('ks_token', state.token);
     },
   });
@@ -1738,15 +1772,19 @@ function wizardSteps() {
     },
     next: async () => {
       const url = $('#wzUrl').value.trim(), token = $('#wzToken').value.trim();
-      if (!url || !token) throw new Error('Enter both the base URL and the access token.');
+      if (!url) throw wizFail('Enter your Home Assistant base URL',
+        'This is the address you use to open Home Assistant, for example https://homeassistant.local:8123.');
+      if (!token) throw wizFail('Enter a long-lived access token',
+        'In Home Assistant, open your profile \u2192 Security \u2192 Long-lived access tokens to create one.');
       const patch = await api('/api/settings', { method: 'PATCH',
         body: JSON.stringify({ 'ha.url': url, 'ha.token': token }) });
       const pout = await patch.json();
       if ((pout.rejected || []).includes('ha.url')) {
-        throw new Error('Enter only the base URL, without a dashboard path. Example: https://homeassistant.local:8123');
+        throw wizFail('Invalid base URL',
+          'Enter only the base URL, without a dashboard path. Example: https://homeassistant.local:8123');
       }
       const check = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json();
-      if (!check.ok) throw new Error(check.error || 'Could not connect');
+      if (!check.ok) throw wizConnectFail(check.error || '');
       const dashboards = await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json();
       wizard.dashboards = dashboards.data || [];
       wizard.dashboard = wizard.dashboards[0]?.url_path || null;
@@ -1771,7 +1809,8 @@ function wizardSteps() {
       if (!wizard.dashboards.length) list.appendChild(readOnlyRow('No dashboards found', '', ''));
     },
     next: async () => {
-      if (!wizard.dashboard) throw new Error('Select a dashboard.');
+      if (!wizard.dashboard) throw wizFail('Select a dashboard',
+        'Choose the dashboard the kiosk will display. You can change it later in Settings.');
       const vs = await (await api('/api/commands/haDetectVoiceSatellite', { method: 'POST', body: '{}' })).json();
       wizard.vsDetected = vs.ok && vs.data === true;
       if (wizard.vsDetected) {
@@ -1902,7 +1941,7 @@ $('#wizardNext').addEventListener('click', async () => {
     await step.next();
     if (wizard.i < wizard.steps.length - 1) { wizard.i++; wizardRender(); }
   } catch (e) {
-    $('#wizardError').textContent = e.message || String(e);
+    wizardShowError(e);
   } finally {
     btn.disabled = false;
   }
