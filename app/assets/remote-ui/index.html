@@ -1899,19 +1899,25 @@ function wizardSteps() {
       if (bootStart) {
         list.appendChild(readOnlyRow('Display over other apps', 'Grant this permission if you want Kiosk Satellite to auto start when your device boots.', ''));
       }
+      // Tonal, like the wizard's Back button — Finish stays the one
+      // filled action on the step.
       const btn = document.createElement('button');
-      btn.className = 'btn-ghost';
-      btn.style.margin = '2px 4px 12px';
-      btn.textContent = 'Show the prompts on the tablet';
+      btn.style.cssText =
+        'border:none; border-radius:12px; padding:13px 32px; ' +
+        'font-size:14px; font-weight:600; cursor:pointer; ' +
+        'background:var(--surface-2); color:var(--text); margin:2px 0 12px';
+      btn.textContent = 'Grant permissions on the device';
       btn.addEventListener('click', async () => {
-        btn.disabled = true; btn.textContent = 'Asking on the tablet\u2026';
+        btn.disabled = true;
+        btn.style.opacity = '.6';
+        btn.textContent = 'Requesting on the device\u2026';
         await api('/api/commands/requestOsPermissions', { method: 'POST',
           body: JSON.stringify({ which: [
             'microphone',
             ...(background ? ['notifications', 'batteryOptimizations'] : []),
             ...(bootStart ? ['overlay'] : []),
           ] }) });
-        btn.textContent = 'Prompts sent to the tablet';
+        btn.textContent = 'Permissions requested on the device';
       });
       b.appendChild(btn);
     },
