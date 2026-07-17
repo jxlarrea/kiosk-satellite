@@ -72,9 +72,20 @@ const clearWebCacheScript = '''
 /// after a boot, actively writing these caches) from holding the reload
 /// hostage; whatever survives the window is stale cache the next pull can
 /// take another swing at.
+///
+/// Worker UPDATES still flow: the browser re-checks the worker script on
+/// every navigation anyway, and the fire-and-forget `update()` below asks
+/// explicitly on every pull. A genuinely new worker installs, activates
+/// (Home Assistant's calls skipWaiting) and runs the site's own update flow;
+/// an unchanged one is a no-op with no controller churn.
 const pullRefreshClearScript = '''
 (async function () {
   try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.update(); });
+      }).catch(function () {});
+    }
     var work = (async function () {
       if ('caches' in window) {
         var keys = await caches.keys();
