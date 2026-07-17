@@ -199,6 +199,23 @@ class RemoteManager extends Manager {
         return _json(200, _settings.export());
       case ('POST', 'api/settings/import'):
         return _import(request);
+      // The full backup: settings with secrets plus the page's
+      // localStorage — strictly bearer-gated like everything else here.
+      case ('GET', 'api/config/export'):
+        final exported = await commands.execute('exportConfig', const {});
+        return exported.ok
+            ? _json(200, (exported.data as Map).cast<String, Object?>())
+            : _json(500, {'error': exported.error});
+      case ('POST', 'api/config/import'):
+        final body = await _body(request);
+        if (body == null) return _json(400, {'error': 'invalid JSON'});
+        final imported = await commands.execute('importConfig', {
+          'config': body,
+        });
+        return _json(
+          imported.ok ? 200 : 400,
+          imported.toJson(),
+        );
       case ('GET', 'api/commands'):
         return _json(200, {
           'commands': [

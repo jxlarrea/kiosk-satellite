@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -81,6 +82,44 @@ class BrowserManager extends Manager {
               );
             }
             await loadUrl('${_stripSlash(base)}/$dashboard');
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'getLocalStorage',
+          description:
+              "The page's localStorage as a JSON string (current origin).",
+          handler: (_) async {
+            final controller = _controller;
+            if (controller == null) {
+              return const CommandResult.fail('no page loaded');
+            }
+            final result = await controller.evaluateJavascript(
+              source: 'JSON.stringify(localStorage)',
+            );
+            if (result is! String) {
+              return const CommandResult.fail('localStorage unavailable');
+            }
+            return CommandResult.ok(result);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'setLocalStorage',
+          description:
+              'Write entries into the page\'s localStorage (applied on the '
+              'next page load if none is up yet), then reload.',
+          params: const {'data': 'JSON object string of key/value pairs'},
+          handler: (p) async {
+            final data = p['data'];
+            if (data is! String || data.isEmpty) {
+              return const CommandResult.fail('data must be a JSON string');
+            }
+            await _settings.setInternal('pending_local_storage', data);
+            if (_currentUrl.isNotEmpty) await _applyPendingLocalStorage();
             return const CommandResult.ok();
           },
         ),
@@ -257,6 +296,29 @@ class BrowserManager extends Manager {
     _currentUrl = url;
     log.info(name, 'loaded $url');
     bus.publish(PageChanged(url: url));
+    unawaited(_applyPendingLocalStorage());
+  }
+
+  /// Imported localStorage waits (persisted) until a page is up to receive
+  /// it, then is written and the page reloaded so it takes effect. Cleared
+  /// before the write — the reload lands back here, and a still-pending
+  /// payload would loop forever.
+  Future<void> _applyPendingLocalStorage() async {
+    final pending = _settings.internal('pending_local_storage');
+    if (pending.isEmpty) return;
+    await _settings.setInternal('pending_local_storage', '');
+    log.info(name, 'restoring imported localStorage');
+    await runJs('''
+      (function () {
+        try {
+          var entries = JSON.parse(${jsonEncode(pending)});
+          Object.keys(entries).forEach(function (k) {
+            localStorage.setItem(k, entries[k]);
+          });
+          location.reload();
+        } catch (e) {}
+      })();
+    ''');
   }
 
   /// Called by the UI layer on load errors and render-process crashes.

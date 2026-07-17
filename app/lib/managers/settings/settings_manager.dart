@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import 'definitions.dart';
@@ -20,6 +21,64 @@ class SettingsManager extends Manager {
   @override
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+
+    commands
+      ..register(
+        Command(
+          name: 'exportConfig',
+          description:
+              'Full configuration for backup or cloning: every setting '
+              '(secrets included) plus the page\'s localStorage.',
+          handler: (_) async {
+            // Browser-owned; fails harmlessly when no page is up.
+            final local = await commands.execute('getLocalStorage', const {});
+            return CommandResult.ok({
+              'kind': 'kiosk-satellite-config',
+              'version': 1,
+              'settings': export(withSecrets: true),
+              if (local.ok && local.data is String)
+                'localStorage': local.data,
+            });
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'importConfig',
+          description: 'Apply a configuration produced by exportConfig.',
+          params: const {'config': 'The exported JSON object'},
+          handler: (p) async {
+            final config = p['config'];
+            if (config is! Map) {
+              return const CommandResult.fail('config must be an object');
+            }
+            if (config['kind'] != 'kiosk-satellite-config') {
+              return const CommandResult.fail(
+                'not a Kiosk Satellite configuration file',
+              );
+            }
+            final settings = config['settings'];
+            if (settings is! Map) {
+              return const CommandResult.fail('no settings in file');
+            }
+            final applied = await import(
+              settings.map((k, v) => MapEntry(k.toString(), v)),
+            );
+            // Stash localStorage BEFORE the reload below, so the fresh page
+            // load picks it up (see BrowserManager.onPageLoaded).
+            final local = config['localStorage'];
+            if (local is String && local.isNotEmpty) {
+              await commands.execute('setLocalStorage', {'data': local});
+            }
+            // The imported start URL should be what ends up on screen.
+            if (settings.containsKey(startUrl.key)) {
+              await commands.execute('loadUrl', {'url': get(startUrl)});
+            }
+            log.info(name, 'imported configuration ($applied settings)');
+            return CommandResult.ok({'applied': applied});
+          },
+        ),
+      );
   }
 
   T get<T>(SettingDef<T> def) {
@@ -52,6 +111,19 @@ class SettingsManager extends Manager {
     }
     log.info(name, 'set ${def.key}${def.secret ? '' : ' = $value'}');
     bus.publish(SettingChanged(key: def.key, value: value));
+  }
+
+  /// Internal string value with no settings row (state, not preference).
+  /// Empty string and absent are the same thing: nothing pending.
+  String internal(String key) =>
+      _prefs.getString('${_prefix}internal.$key') ?? '';
+
+  Future<void> setInternal(String key, String value) async {
+    if (value.isEmpty) {
+      await _prefs.remove('${_prefix}internal.$key');
+    } else {
+      await _prefs.setString('${_prefix}internal.$key', value);
+    }
   }
 
   /// Persisted internal value not exposed in the settings UI (e.g. the

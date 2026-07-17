@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -432,6 +433,87 @@ class _CategoryContentState extends State<_CategoryContent> {
     }
   }
 
+  void _toast(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _exportConfig() async {
+    final result = await widget.container.commands.execute(
+      'exportConfig',
+      const {},
+    );
+    if (!result.ok) {
+      _toast('Export failed: ${result.error}');
+      return;
+    }
+    final bytes = utf8.encode(
+      const JsonEncoder.withIndent('  ').convert(result.data),
+    );
+    // saveFile with bytes writes the file itself on Android; the system
+    // dialog picks the destination.
+    final path = await FilePicker.platform.saveFile(
+      fileName: 'kiosk-satellite-config.json',
+      type: FileType.custom,
+      allowedExtensions: const ['json'],
+      bytes: Uint8List.fromList(bytes),
+    );
+    if (path != null) _toast('Configuration exported');
+  }
+
+  Future<void> _importConfig() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['json'],
+      withData: true,
+    );
+    final bytes = picked?.files.single.bytes;
+    if (bytes == null) return;
+    Object? config;
+    try {
+      config = jsonDecode(utf8.decode(bytes));
+    } catch (_) {
+      _toast('That file is not valid JSON');
+      return;
+    }
+    if (!mounted) return;
+    final sure = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Import configuration'),
+        content: const Text(
+          "Replace this device's settings with the file's? The page may "
+          'reload.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+    if (sure != true) return;
+    final result = await widget.container.commands.execute('importConfig', {
+      'config': config,
+    });
+    if (result.ok) {
+      _toast('Applied ${(result.data as Map)['applied']} settings');
+      if (mounted) setState(() {});
+    } else {
+      _toast('Import failed: ${result.error}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final container = widget.container;
@@ -471,6 +553,30 @@ class _CategoryContentState extends State<_CategoryContent> {
               ),
             ],
           ),
+        if (widget.category == 'Device') ...[
+          const _SectionHeading('Configuration'),
+          _SettingsCard(
+            children: [
+              ListTile(
+                title: const Text('Export configuration'),
+                subtitle: const Text(
+                  "Save every setting and the page's local storage to a "
+                  'file.',
+                ),
+                trailing: const Icon(Icons.download_outlined),
+                onTap: _exportConfig,
+              ),
+              ListTile(
+                title: const Text('Import configuration'),
+                subtitle: const Text(
+                  "Replace this device's settings from an exported file.",
+                ),
+                trailing: const Icon(Icons.upload_outlined),
+                onTap: _importConfig,
+              ),
+            ],
+          ),
+        ],
         if (widget.category == 'Home Assistant') ...[
           FutureBuilder<bool>(
             future: _vsDetected,

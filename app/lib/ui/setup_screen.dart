@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
@@ -59,6 +62,46 @@ class _SetupScreenState extends State<SetupScreen> {
         _selectedDashboard = dashboards.first['url_path'] as String?;
       }
     });
+  }
+
+  /// The restore path: a config exported from another device (or this one,
+  /// before a reset) carries the start URL, so a successful import goes
+  /// straight to the kiosk — no form filling.
+  Future<void> _importConfig() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['json'],
+      withData: true,
+    );
+    final bytes = picked?.files.single.bytes;
+    if (bytes == null) return;
+    Object? config;
+    try {
+      config = jsonDecode(utf8.decode(bytes));
+    } catch (_) {
+      setState(() => _status = 'That file is not valid JSON');
+      return;
+    }
+    final result = await c.commands.execute('importConfig', {
+      'config': config,
+    });
+    if (!result.ok) {
+      setState(() => _status = 'Import failed: ${result.error}');
+      return;
+    }
+    if (c.settings.get(defs.startUrl).isEmpty) {
+      setState(
+        () => _status = 'Imported, but the file has no start URL — '
+            'finish setup below',
+      );
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => KioskScreen(container: c),
+      ),
+    );
   }
 
   Future<void> _launch() async {
@@ -223,6 +266,11 @@ class _SetupScreenState extends State<SetupScreen> {
                   style: theme.textTheme.bodySmall,
                 ),
               ],
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: _importConfig,
+                child: const Text('Import configuration file'),
+              ),
             ],
           ),
         ),
