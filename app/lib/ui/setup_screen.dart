@@ -46,6 +46,42 @@ class _SetupScreenState extends State<SetupScreen> {
   int _step = 0;
   bool _busy = false;
   String? _error;
+  String? _errorHint;
+
+  void _fail(String error, String hint) => setState(() {
+    _error = error;
+    _errorHint = hint;
+  });
+
+  /// The connection check's terse verdicts, translated into something a
+  /// person standing at a wall tablet can act on.
+  void _connectFail(String error) {
+    if (error.contains('invalid token')) {
+      _fail(
+        'Home Assistant rejected the access token',
+        'Open your HA profile → Security → Long-lived access tokens, '
+        'create (or re-copy) a token, and paste the entire string — they '
+        'are long, and a missing character is enough.',
+      );
+    } else if (error.startsWith('unreachable')) {
+      _fail(
+        'Could not reach Home Assistant at that address',
+        'Check the base URL for typos and make sure this tablet is on the '
+        'same network as your instance. If you use a self-signed '
+        'certificate, try the http:// address for setup — you can turn on '
+        '"Ignore SSL errors" later in Web Browsing settings.',
+      );
+    } else if (error.startsWith('HTTP')) {
+      _fail(
+        'That address answered, but not like Home Assistant ($error)',
+        'The URL points at a server, but not the Home Assistant API. '
+        'Double-check the base URL — usually https://homeassistant.local:8123 '
+        'or your Nabu Casa address, with nothing after the port.',
+      );
+    } else {
+      _fail('Could not connect', error);
+    }
+  }
 
   // Step 1 — remote admin.
   bool _remoteWanted = false;
@@ -108,14 +144,19 @@ class _SetupScreenState extends State<SetupScreen> {
   // ── Step transitions ───────────────────────────────────────────────────
 
   Future<void> _next() async {
-    setState(() => _error = null);
+    setState(() {
+      _error = null;
+      _errorHint = null;
+    });
     switch (_step) {
       case 0:
         if (_remoteWanted) {
           final password = _remotePassword.text;
           if (password.length < 4) {
-            setState(
-              () => _error = 'Pick a password of at least 4 characters',
+            _fail(
+              'That password is too short',
+              'Pick at least 4 characters — it protects the remote admin '
+              'on your network.',
             );
             return;
           }
@@ -126,13 +167,22 @@ class _SetupScreenState extends State<SetupScreen> {
       case 1:
         final urlError = defs.validateBaseUrl(_haUrl.text);
         if (_haUrl.text.trim().isEmpty || urlError != null) {
-          setState(
-            () => _error = urlError ?? 'Enter your Home Assistant base URL',
+          _fail(
+            urlError == null
+                ? 'Enter your Home Assistant base URL'
+                : 'That is not a base URL',
+            urlError ??
+                'The address you open Home Assistant at, e.g. '
+                    'https://homeassistant.local:8123.',
           );
           return;
         }
         if (_haToken.text.trim().isEmpty) {
-          setState(() => _error = 'Paste a long-lived access token');
+          _fail(
+            'Paste a long-lived access token',
+            'Created under your HA profile → Security → Long-lived access '
+            'tokens. It lets the kiosk talk to Home Assistant.',
+          );
           return;
         }
         setState(() => _busy = true);
@@ -141,10 +191,8 @@ class _SetupScreenState extends State<SetupScreen> {
         final error = await c.homeAssistant.validateConnection();
         if (!mounted) return;
         if (error != null) {
-          setState(() {
-            _busy = false;
-            _error = error;
-          });
+          setState(() => _busy = false);
+          _connectFail(error);
           return;
         }
         final dashboards = await c.homeAssistant.listDashboards();
@@ -157,7 +205,11 @@ class _SetupScreenState extends State<SetupScreen> {
         });
       case 2:
         if (_dashboard == null) {
-          setState(() => _error = 'Pick a dashboard');
+          _fail(
+            'Pick a dashboard',
+            'The kiosk needs one to show. You can change it any time in '
+            'Settings → Home Assistant Configuration.',
+          );
           return;
         }
         setState(() => _busy = true);
@@ -190,6 +242,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   void _back() => setState(() {
     _error = null;
+    _errorHint = null;
     // Step 5 backs up to the dashboard step when Voice Satellite was skipped.
     _step = (_step == 4 && !_vsStepActive) ? 2 : _step - 1;
   });
@@ -408,10 +461,17 @@ class _SetupScreenState extends State<SetupScreen> {
         ),
       ),
     );
+    // The step's content, with the error (if any) directly under the card
+    // it belongs to — where the eye already is, not anchored to the screen
+    // edge.
+    List<Widget> withError(List<Widget> children) => [
+      ...children,
+      if (_error != null) _ErrorCard(title: _error!, hint: _errorHint),
+    ];
 
     switch (_step) {
       case 0:
-        return [
+        return withError([
           heading('Welcome'),
           lead(
             'Turn this tablet into a Home Assistant kiosk. Setup takes a '
@@ -444,9 +504,9 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
           ]),
-        ];
+        ]);
       case 1:
-        return [
+        return withError([
           heading('Connect to Home Assistant'),
           lead(
             'The base URL of your instance and a long-lived access token, '
@@ -479,9 +539,9 @@ class _SetupScreenState extends State<SetupScreen> {
               ),
             ),
           ]),
-        ];
+        ]);
       case 2:
-        return [
+        return withError([
           heading('Choose a dashboard'),
           lead('This is what the kiosk will show when it starts.'),
           _Card([
@@ -504,9 +564,9 @@ class _SetupScreenState extends State<SetupScreen> {
                       setState(() => _dashboard = d['url_path'] as String?),
                 ),
           ]),
-        ];
+        ]);
       case 3:
-        return [
+        return withError([
           heading('Voice Satellite detected'),
           lead(
             'This instance runs the Voice Satellite card. Apply the '
@@ -526,10 +586,10 @@ class _SetupScreenState extends State<SetupScreen> {
               onChanged: (v) => setState(() => _applyRecommended = v),
             ),
           ]),
-        ];
+        ]);
       case 4:
         final full = _vsStepActive && _applyRecommended;
-        return [
+        return withError([
           heading('Permissions'),
           lead(
             full
@@ -563,52 +623,96 @@ class _SetupScreenState extends State<SetupScreen> {
               ),
             ],
           ]),
-        ];
+        ]);
     }
     return const [];
   }
 
   Widget _footer(ThemeData theme, EdgeInsets padding) {
+    const buttonPadding = EdgeInsets.symmetric(horizontal: 32, vertical: 16);
     return Padding(
       padding: padding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-              child: Text(
-                _error!,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
+          if (_step > 0) ...[
+            // Beside Next and dressed like it — the pair reads as one
+            // control group, tonal vs filled carrying the hierarchy.
+            FilledButton.tonal(
+              onPressed: _busy ? null : _back,
+              style: FilledButton.styleFrom(padding: buttonPadding),
+              child: const Text('Back'),
             ),
-          Row(
-            children: [
-              if (_step > 0)
-                TextButton(
-                  onPressed: _busy ? null : _back,
-                  child: const Text('Back'),
-                ),
-              const Spacer(),
-              FilledButton(
-                onPressed: _busy ? null : _next,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
+            const SizedBox(width: 12),
+          ],
+          FilledButton(
+            onPressed: _busy ? null : _next,
+            style: FilledButton.styleFrom(padding: buttonPadding),
+            child: Text(
+              _busy
+                  ? 'Working…'
+                  : switch (_step) {
+                      1 => 'Validate & continue',
+                      4 => 'Finish',
+                      _ => 'Next',
+                    },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A problem, said usefully: what went wrong in bold, what to do about it
+/// underneath — on the error container tint, same rounded mask as the rest
+/// of the wizard, sitting right under the card it refers to.
+class _ErrorCard extends StatelessWidget {
+  const _ErrorCard({required this.title, this.hint});
+
+  final String title;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, color: scheme.onErrorContainer),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                    color: scheme.onErrorContainer,
                   ),
                 ),
-                child: Text(
-                  _busy
-                      ? 'Working…'
-                      : switch (_step) {
-                          1 => 'Validate & continue',
-                          4 => 'Finish',
-                          _ => 'Next',
-                        },
-                ),
-              ),
-            ],
+                if (hint != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    hint!,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      height: 1.4,
+                      color: scheme.onErrorContainer.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
