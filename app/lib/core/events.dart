@@ -155,6 +155,12 @@ class KioskExitGesture extends AppEvent {
   const KioskExitGesture();
 }
 
+/// The Back key, swallowed natively while kiosk mode holds. The kiosk
+/// screen re-interprets it: close the menu, else step the page's history.
+class KioskBackPressed extends AppEvent {
+  const KioskBackPressed();
+}
+
 // ── Settings ───────────────────────────────────────────────────────────
 
 class SettingChanged extends AppEvent {

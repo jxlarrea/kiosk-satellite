@@ -43,6 +43,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     private val main = Handler(Looper.getMainLooper())
 
     @Volatile private var blockVolume = false
+    @Volatile private var blockBack = false
     @Volatile private var gestureTaps = 0
 
     private var wakeOnScreenOff = false
@@ -57,6 +58,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
             when (call.method) {
                 "apply" -> {
                     blockVolume = call.argument<Boolean>("volume") ?: false
+                    blockBack = call.argument<Boolean>("back") ?: false
                     gestureTaps = call.argument<Int>("gestureTaps") ?: 0
                     setWakeOnScreenOff(call.argument<Boolean>("power") ?: false)
                     setShield(call.argument<Boolean>("statusBar") ?: false)
@@ -84,13 +86,21 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
 
     /** Forwarded from MainActivity.dispatchKeyEvent. True = consumed. */
     fun onKey(event: KeyEvent): Boolean {
-        if (!blockVolume) return false
-        return when (event.keyCode) {
+        when (event.keyCode) {
             KeyEvent.KEYCODE_VOLUME_UP,
             KeyEvent.KEYCODE_VOLUME_DOWN,
-            KeyEvent.KEYCODE_VOLUME_MUTE -> true
-            else -> false
+            KeyEvent.KEYCODE_VOLUME_MUTE -> if (blockVolume) return true
+            // Back would background the whole kiosk. Swallowed here; Dart
+            // decides what it means instead (close the menu, step the page's
+            // history) — never leaving the app.
+            KeyEvent.KEYCODE_BACK -> if (blockBack) {
+                if (event.action == KeyEvent.ACTION_UP) {
+                    main.post { channel.invokeMethod("backPressed", null) }
+                }
+                return true
+            }
         }
+        return false
     }
 
     /**

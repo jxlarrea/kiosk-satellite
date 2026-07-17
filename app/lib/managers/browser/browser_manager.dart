@@ -221,6 +221,15 @@ class BrowserManager extends Manager {
     _controller = controller;
   }
 
+  /// Step the page's history back if it can. Returns whether it moved.
+  Future<bool> goBack() async {
+    final controller = _controller;
+    if (controller == null) return false;
+    if (!await controller.canGoBack()) return false;
+    await controller.goBack();
+    return true;
+  }
+
   /// Called by the UI layer from the WebView's onConsoleMessage.
   void onConsoleMessage(String level, String message) {
     final now = DateTime.now();

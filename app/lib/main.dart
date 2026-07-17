@@ -29,7 +29,13 @@ Future<void> main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setSystemUIChangeCallback((systemOverlaysAreVisible) async {
     if (!systemOverlaysAreVisible) return;
-    await Future<void>.delayed(const Duration(seconds: 3));
+    // The swipe-summoned transient bars cannot be vetoed by an app, only
+    // outlived. Kiosk mode shortens the peek to a blink; otherwise the
+    // system gets its customary few seconds.
+    final locked = container.settings.get(defs.kioskEnabled);
+    await Future<void>.delayed(
+      locked ? const Duration(milliseconds: 400) : const Duration(seconds: 3),
+    );
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   });
 

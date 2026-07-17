@@ -64,6 +64,8 @@ class KioskManager extends Manager {
         case 'exitGesture':
           log.info(name, 'exit gesture detected');
           bus.publish(const KioskExitGesture());
+        case 'backPressed':
+          bus.publish(const KioskBackPressed());
       }
       return null;
     });
@@ -91,6 +93,9 @@ class KioskManager extends Manager {
     final on = force && _settings.get(defs.kioskEnabled);
     final gesture = _settings.get(defs.kioskExitGesture);
     await _invoke<void>('apply', {
+      // Back is tied to the master switch, not its own toggle: a kiosk the
+      // back button can background is not locked in any useful sense.
+      'back': on,
       'volume': on && _settings.get(defs.kioskDisableVolume),
       'power': on && _settings.get(defs.kioskDisablePower),
       'statusBar': on && _settings.get(defs.kioskDisableStatusBar),

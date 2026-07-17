@@ -44,6 +44,7 @@ class _KioskScreenState extends State<KioskScreen>
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<KioskExitGesture>? _gestureSub;
+  StreamSubscription<KioskBackPressed>? _backSub;
 
   /// Guards the exit gesture while the settings route sits on top.
   bool _settingsOpen = false;
@@ -202,6 +203,14 @@ class _KioskScreenState extends State<KioskScreen>
 
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
+    _backSub = c.bus.on<KioskBackPressed>().listen((_) {
+      if (!mounted || _settingsOpen) return;
+      if (_drawer.value > 0) {
+        _closeDrawer();
+      } else {
+        c.browser.goBack();
+      }
+    });
 
     if (widget.showMenuHint) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -376,6 +385,7 @@ class _KioskScreenState extends State<KioskScreen>
     _drawer.dispose();
     _settingsSub?.cancel();
     _gestureSub?.cancel();
+    _backSub?.cancel();
     super.dispose();
   }
 
@@ -427,11 +437,21 @@ class _KioskScreenState extends State<KioskScreen>
             final dx = _drawerWidth * _drawer.value;
             final open = _drawer.value > 0;
             return PopScope(
-              // System back closes the drawer first; only a closed kiosk
-              // keeps the default back behavior.
-              canPop: !open,
+              // System back closes the drawer first. A closed kiosk keeps
+              // the default behavior — except in kiosk mode, where back must
+              // never background the app: it steps the page's history
+              // instead. This is the predictive-back path; devices that
+              // still deliver Back as a KeyEvent are caught in KioskLock
+              // before it ever reaches here, and land in the same handling
+              // via KioskBackPressed.
+              canPop: !open && !c.kiosk.locked,
               onPopInvokedWithResult: (didPop, _) {
-                if (!didPop) _closeDrawer();
+                if (didPop) return;
+                if (open) {
+                  _closeDrawer();
+                } else {
+                  c.browser.goBack();
+                }
               },
               child: Stack(
                 fit: StackFit.expand,

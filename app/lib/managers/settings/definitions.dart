@@ -240,7 +240,8 @@ const kioskEnabled = SettingDef<bool>(
   title: 'Enable kiosk mode',
   description:
       'Lock the tablet into Kiosk Satellite. The menu swipe is replaced '
-      'by the exit gesture, and the protections below arm.',
+      'by the exit gesture, the back button stays inside the kiosk, and '
+      'the protections below arm.',
   category: 'Kiosk',
 );
 
