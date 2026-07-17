@@ -1630,6 +1630,11 @@ const wizard = {
 };
 
 function wizardShow() {
+  // The wizard renders light, full stop — matching the on-device wizard.
+  // It carries no theme toggle, so a dark preference stored by an earlier
+  // admin session would otherwise be inescapable here. The app proper
+  // returns to the stored preference after setup.
+  document.documentElement.dataset.theme = 'light';
   $('#login').classList.add('hidden');
   $('#app').classList.add('hidden');
   $('#wizard').classList.remove('hidden');
