@@ -260,7 +260,7 @@ class WakeWordManager extends Manager {
       return switch (_failure) {
         EngineFailure.micBlocked => (
             code: 'micBlocked',
-            label: 'Microphone blocked. Android will not ask again — allow it '
+            label: 'Microphone blocked. Android will not ask again, so allow it '
                 'in the app settings, then retry.',
           ),
         EngineFailure.micDeclined => (
@@ -287,7 +287,7 @@ class WakeWordManager extends Manager {
     if (!_engine.supportedEngines.contains(config.engine)) {
       return (
         code: 'unavailable',
-        label: 'No native runner for ${config.engine.label} — Voice Satellite '
+        label: 'No native runner for ${config.engine.label}. Voice Satellite '
             'keeps browser detection.',
       );
     }
@@ -390,7 +390,7 @@ class WakeWordManager extends Manager {
             'muted or the page switched to an engine we do not run. Push '
             'setWakeWordConfig again to take it back.',
         params: const {
-          'reason': "optional: 'muted' | 'browser' — shown to the user",
+          'reason': "optional: 'muted' | 'browser', shown to the user",
         },
         handler: (p) async {
           if (_released) return const CommandResult.ok();
@@ -437,7 +437,7 @@ class WakeWordManager extends Manager {
       ))
       ..register(Command(
         name: 'bringToFront',
-        description: 'Bring the app to the foreground — for a server-initiated '
+        description: 'Bring the app to the foreground, for a server-initiated '
             'interaction (announcement, ask_question, start_conversation) that '
             'arrives while the app is behind another one. No-op when already in '
             'front; false when it cannot come forward (no "Display over other '
@@ -623,7 +623,7 @@ class WakeWordManager extends Manager {
       ..register(Command(
         name: 'simulateWakeWord',
         description:
-            'Fire a wake-word detection without the engine — for testing the '
+            'Fire a wake-word detection without the engine, for testing the '
             'Voice Satellite handoff end-to-end',
         handler: (_) async {
           final model = _config?.models.firstOrNull ??

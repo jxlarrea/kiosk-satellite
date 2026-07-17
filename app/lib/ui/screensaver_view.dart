@@ -441,7 +441,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       if (mounted) {
         setState(
           () => _problem =
-              'Could not read $folder — is the '
+              'Could not read $folder. Is the '
               'media permission granted?',
         );
       }

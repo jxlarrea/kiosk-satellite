@@ -1,8 +1,8 @@
-# Kiosk Satellite — JavaScript API
+# Kiosk Satellite JavaScript API
 
 Kiosk Satellite injects `window.kioskSatellite` into every page at document
 start. It is a **promise-based** API (all methods return promises, even ones
-that resolve immediately) with **DOM `CustomEvent`s** for signals — no
+that resolve immediately) with **DOM `CustomEvent`s** for signals, with no
 string-eval callback registration like Fully Kiosk's `fully.bind()`.
 
 Primary consumer: the Voice Satellite card's kiosk abstraction
@@ -30,7 +30,7 @@ Kiosker, which needs an async round-trip to confirm).
 ## Methods
 
 All methods return a `Promise`. On failure they resolve `null` (queries) or
-`false` (commands) — they never reject for platform errors, matching the
+`false` (commands); they never reject for platform errors, matching the
 defensive style of Voice Satellite's kiosk wrapper.
 
 ### Device / screen
@@ -48,7 +48,7 @@ defensive style of Voice Satellite's kiosk wrapper.
 | Method | Returns | Description |
 |---|---|---|
 | `stopScreensaver()` | `boolean` | One-shot dismiss (Fully Kiosk semantics) |
-| `pauseScreensaver(paused)` | `boolean` | Suppress (`true`) / release (`false`) the screensaver while the page is busy (Kiosker semantics — both styles supported) |
+| `pauseScreensaver(paused)` | `boolean` | Suppress (`true`) / release (`false`) the screensaver while the page is busy (Kiosker semantics, both styles supported) |
 
 ### Motion
 
@@ -62,21 +62,21 @@ configuring detection is an app/remote-admin setting, not a page decision.
 ### Wake word
 
 Wake-word configuration is **inherited from Voice Satellite**, never chosen
-in Kiosk Satellite. VS supports three engines — microWakeWord, openWakeWord,
-and vsWakeWord — each with its own model catalog served by the VS
+in Kiosk Satellite. VS supports three engines (microWakeWord, openWakeWord,
+and vsWakeWord), each with its own model catalog served by the VS
 integration as static paths under `<ha>/voice_satellite/models/` (model file
 + JSON manifest). The VS card pushes the active engine + models to the app;
 the app downloads what it needs from those URLs.
 
 | Method | Returns | Description |
 |---|---|---|
-| `setWakeWordConfig({engine, models, stopModel, energyGate})` | `{available, stopWordAvailable}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two — VS routes two wake words to separate pipeline slots). Resolves `{available: false}` when the app is not listening for that config — no native runner, but also a refused microphone or models it could not download — **the card must then keep using its browser engine**. Pushing again is also the retry: it clears any previous failure and takes the mic back after a release. |
-| `setWakeWordActive(active)` | `boolean` | Resume (`true`) or suspend (`false`) native listening. The mic stays open, for an instant resume between turns. **The page must call `setWakeWordActive(true)` when its voice session returns to idle** — see handoff protocol. |
-| `releaseWakeWord({reason})` | `boolean` | Hard mic-off: stop detecting **and close the microphone**, unlike `setWakeWordActive(false)`. For a muted satellite, or the browser taking detection back. `reason` is `'muted' \| 'browser'` and is shown to the user — both look identical from the app's side, so **only the card can say which**, and an unexplained release can only be reported as "the microphone was released". `setWakeWordConfig` takes it back. |
+| `setWakeWordConfig({engine, models, stopModel, energyGate})` | `{available, stopWordAvailable}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two; VS routes two wake words to separate pipeline slots). Resolves `{available: false}` when the app is not listening for that config (no native runner, but also a refused microphone or models it could not download), and **the card must then keep using its browser engine**. Pushing again is also the retry: it clears any previous failure and takes the mic back after a release. |
+| `setWakeWordActive(active)` | `boolean` | Resume (`true`) or suspend (`false`) native listening. The mic stays open, for an instant resume between turns. **The page must call `setWakeWordActive(true)` when its voice session returns to idle**; see handoff protocol. |
+| `releaseWakeWord({reason})` | `boolean` | Hard mic-off: stop detecting **and close the microphone**, unlike `setWakeWordActive(false)`. For a muted satellite, or the browser taking detection back. `reason` is `'muted' \| 'browser'` and is shown to the user; both look identical from the app's side, so **only the card can say which**, and an unexplained release can only be reported as "the microphone was released". `setWakeWordConfig` takes it back. |
 | `getWakeWordState()` | see below | Current engine state |
 
 `getWakeWordState()` resolves the whole state, which is also what the app's own
-settings screen and its remote admin render — one shape, so the two cannot
+settings screen and its remote admin render: one shape, so the two cannot
 disagree about the same device:
 
 ```js
@@ -101,7 +101,7 @@ disagree about the same device:
 
 `status` is one of `disabled`, `waiting`, `muted`, `browser`, `released`,
 `micBlocked`, `micDeclined`, `micLost`, `modelsUnavailable`, `failed`,
-`unavailable`, `listening`, `suspended` — one per distinct way of being in that
+`unavailable`, `listening`, `suspended`, one per distinct way of being in that
 state, deliberately with no catch-all. `statusLabel` is the sentence to show;
 derive nothing from `status` that the label already says.
 
@@ -111,7 +111,7 @@ Dispatched on `window` as `CustomEvent`s:
 
 | Event | `detail` | When |
 |---|---|---|
-| `kiosksatellite:wakeword` | `{model, phrase}` | Native engine detected the wake word. Native mic capture is **already stopped** when this fires — the page may open `getUserMedia` immediately. |
+| `kiosksatellite:wakeword` | `{model, phrase}` | Native engine detected the wake word. Native mic capture is **already stopped** when this fires, so the page may open `getUserMedia` immediately. |
 | `kiosksatellite:motion` | `{}` | Camera motion detected (rate-limited to 1/s) |
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | Screen power changed |
 | `kiosksatellite:screensaverstart` / `:screensaverstop` | `{}` | Screensaver state changed |
@@ -133,7 +133,7 @@ opens the mic for passive listening.
    downloaded from the VS integration's model URLs.
 2. On detection the app **stops native capture first**, then dispatches
    `kiosksatellite:wakeword`.
-3. The VS adapter routes this into `triggerWake(session)` — the card opens the
+3. The VS adapter routes this into `triggerWake(session)` and the card opens the
    WebView mic for STT and runs the Assist pipeline from `start_stage: 'stt'`.
 4. When the VS session returns to idle, the card calls
    `kioskSatellite.setWakeWordActive(true)`; the app re-opens the mic and
@@ -148,7 +148,7 @@ timeout (default 60 s without an active WebView mic stream) re-arms listening.
 
 Method calls go over `flutter_inappwebview`'s `callHandler` bridge
 (`window.flutter_inappwebview.callHandler('ksApi', {method, params})`), which
-natively returns promises with per-call correlation — no FIFO reply matching.
+natively returns promises with per-call correlation, with no FIFO reply matching.
 The injected user script wraps this in the `window.kioskSatellite` facade so
 pages never touch the transport. Events are dispatched by the app evaluating
 `window.dispatchEvent(new CustomEvent(...))`.

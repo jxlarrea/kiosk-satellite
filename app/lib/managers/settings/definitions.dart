@@ -184,7 +184,7 @@ const disableCache = SettingDef<bool>(
       'service worker + Cache Storage on load (Home Assistant registers one, '
       'which otherwise keeps serving a stale dashboard or card after you '
       'redeploy). Saved page data (localStorage) is never touched. Slower on '
-      'a normal kiosk — this is a development aid.',
+      'a normal kiosk, so treat it as a development aid.',
   category: 'Browser',
 );
 
@@ -206,7 +206,7 @@ const ignoreSslErrors = SettingDef<bool>(
   title: 'Ignore SSL errors',
   description:
       'Accept untrusted or self-signed certificates. Use only on your own '
-      'network — this disables certificate verification.',
+      'network, since it disables certificate verification.',
   category: 'Browser',
 );
 
@@ -290,7 +290,7 @@ const kioskStartOnBoot = SettingDef<bool>(
   description:
       'Launch Kiosk Satellite when the device powers on. Reliable '
       'background launch on Android 10+ needs the "display over other '
-      'apps" permission — Android asks when this is first enabled on '
+      'apps" permission. Android asks when this is first enabled on '
       'the device.',
   category: 'Kiosk',
 );
@@ -301,7 +301,7 @@ const kioskExitGesture = SettingDef<String>(
   defaultValue: 'taps7',
   title: 'Kiosk exit gesture',
   description:
-      'Fast taps anywhere on the screen open the menu — after the PIN, '
+      'Fast taps anywhere on the screen open the menu, after the PIN '
       'if one is set. With the gesture disabled, only the remote admin '
       'can reach the settings.',
   category: 'Kiosk',
@@ -334,7 +334,7 @@ const kioskDisableStatusBar = SettingDef<bool>(
   title: 'Disable status bar',
   description:
       'Block the status bar pull-down with a shield over the top edge. '
-      'Needs the "display over other apps" permission — Android asks for '
+      'Needs the "display over other apps" permission. Android asks for '
       'it when this is first enabled on the device.',
   category: 'Kiosk',
   dependsOn: 'kiosk.enabled',
@@ -871,7 +871,7 @@ const wakeWordEnabled = SettingDef<bool>(
   title: 'Wake word detection',
   description:
       'Master switch. Engine and models are inherited from Voice Satellite '
-      'in Home Assistant — there is nothing to configure here.',
+      'in Home Assistant, so there is nothing to configure here.',
   category: 'Voice Satellite',
 );
 
@@ -909,7 +909,7 @@ const haUrl = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Home Assistant Base URL',
-  description: 'e.g. https://homeassistant.local:8123 — no dashboard path.',
+  description: 'e.g. https://homeassistant.local:8123, without a dashboard path.',
   category: 'Home Assistant',
   validator: validateBaseUrl,
 );
@@ -946,7 +946,7 @@ const haKioskMode = SettingDef<String>(
   description:
       'Hide the Home Assistant header and sidebar. Off shows the normal HA '
       'UI. "auto" uses the kiosk-mode HACS plugin when detected, otherwise '
-      'injects CSS. Applies immediately — no restart.',
+      'injects CSS. Applies immediately, with no restart.',
   category: 'Home Assistant',
   options: ['off', 'auto', 'plugin', 'css'],
   optionLabels: {
@@ -1051,7 +1051,7 @@ const uiTheme = SettingDef<String>(
   defaultValue: 'light',
   title: 'App theme',
   description:
-      "Light or dark for the app's own screens — menu, settings, "
+      "Light or dark for the app's own screens: menu, settings, "
       'dialogs. System follows the Android setting.',
   category: 'Device',
   options: ['dark', 'light', 'system'],

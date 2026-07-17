@@ -96,7 +96,7 @@ class ScreenManager extends Manager {
         name: 'keepScreenAwake',
         description: 'Hold the panel on regardless of the keep-awake setting. '
             'The screensaver uses this so a black overlay stays black-and-on '
-            'rather than letting the OS power the display off underneath it — '
+            'rather than letting the OS power the display off underneath it, '
             'which would also freeze the app and drop the admin server.',
         params: const {'enabled': 'true to hold the screen on'},
         handler: (p) async {

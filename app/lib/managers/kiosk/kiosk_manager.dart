@@ -62,7 +62,7 @@ class KioskManager extends Manager {
             'Fire the OS permission prompts on the device: microphone '
             'always; notifications, battery-optimization exemption and '
             'draw-over-apps too when full=true. The dialogs appear on the '
-            'device screen — the remote wizard sends someone to tap them.',
+            'device screen; the remote wizard sends someone to tap them.',
         params: const {
           'full': 'true for the whole recommended set',
           'which':

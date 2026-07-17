@@ -475,7 +475,7 @@ class _SetupScreenState extends State<SetupScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      skipped ? 'Not installed — skipped' : subtitle,
+                      skipped ? 'Not installed, skipped' : subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -528,7 +528,7 @@ class _SetupScreenState extends State<SetupScreen> {
           heading('Welcome'),
           lead(
             'Turn this tablet into a Home Assistant kiosk. Setup takes a '
-            'couple of minutes — this wizard walks you through it.',
+            'couple of minutes and this wizard walks you through it.',
           ),
           _Card([
             SwitchListTile(
@@ -536,12 +536,12 @@ class _SetupScreenState extends State<SetupScreen> {
               subtitle: Text(
                 _remoteWanted && _deviceIp != null
                     ? 'Continue this setup from a web browser at '
-                          'http://$_deviceIp:2324 — pasting the Home '
-                          'Assistant access token there is much easier.'
+                          'http://$_deviceIp:2324, where pasting the Home '
+                          'Assistant access token is much easier.'
                     : 'Keep managing this kiosk from a web browser after '
                           'setup. During setup the wizard is always '
                           'reachable at http://${_deviceIp ?? '<device-ip>'}:2324 '
-                          'regardless — this switch decides what happens '
+                          'regardless. This switch decides what happens '
                           'afterwards.',
               ),
               value: _remoteWanted,
@@ -627,7 +627,7 @@ class _SetupScreenState extends State<SetupScreen> {
           lead(
             'This Home Assistant instance runs the Voice Satellite '
             'integration. Choose which satellite this kiosk is, then '
-            'review its settings — everything can be changed later.',
+            'review its settings. Everything can be changed later.',
           ),
           if (_satellites == null || _satellites!.isEmpty)
             _Card(const [

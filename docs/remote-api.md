@@ -1,13 +1,13 @@
-# Kiosk Satellite — Remote Management API
+# Kiosk Satellite Remote Management API
 
-Every device runs an embedded HTTP server (default port **2324**, configurable —
+Every device runs an embedded HTTP server (default port **2324**, configurable;
 kept for Fully Kiosk familiarity) serving:
 
 1. The **remote admin SPA** (`remote-ui/`, bundled into app assets) at `/`.
 2. A **REST API** under `/api/`.
 3. A **WebSocket** at `/api/ws` for live state, events, and log tailing.
 
-On iOS the server runs while the app is foreground — always true in kiosk use.
+On iOS the server runs while the app is foreground, which is always true in kiosk use.
 Devices advertise over mDNS as `_kiosksatellite._tcp` for discovery (and a
 future multi-device fleet view).
 
@@ -36,7 +36,7 @@ adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
 
 ## REST surface
 
-The API is a thin adapter over the internal `CommandRegistry` — the same
+The API is a thin adapter over the internal `CommandRegistry`, the same
 commands the JS API and MQTT topics use. Everything administrable in the app
 is administrable here by construction.
 
@@ -65,7 +65,7 @@ JSON messages, `{type, ...}`:
 
 - Server → client: `state` (full snapshot on connect, then diffs), `event`
   (bus events: motion, wake word, screen, navigation), `log` (app log lines),
-  `console` (`{type: 'console', level, message, time}` — the WebView's
+  `console` (`{type: 'console', level, message, time}`, the WebView's
   JavaScript console, streamed live so you can watch a wall-mounted tablet's
   page logs remotely; fetch history first from `GET /api/console`).
 - Client → server: `subscribe {topics: ['state','events','logs']}`,
@@ -78,6 +78,6 @@ build step) at [app/assets/remote-ui/index.html](../app/assets/remote-ui/index.h
 bundled as a Flutter asset and served at `/`. Tabs: Dashboard (live
 screenshot + quick controls + brightness), Settings (rendered from the
 declarative setting definitions), Console (live JS console over WS), Logs.
-It talks only to the REST/WS API above — no privileged path — so it doubles
+It talks only to the REST/WS API above (no privileged path), so it doubles
 as the API's reference client. It can be replaced by a build-based SPA later
 without touching the server.

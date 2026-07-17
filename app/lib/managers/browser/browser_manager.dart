@@ -179,7 +179,7 @@ class BrowserManager extends Manager {
           name: 'clearWebCache',
           description:
               'Drop the HTTP cache, Cache Storage and any service worker, then '
-              'reload — so a redeployed dashboard or card is picked up. Keeps '
+              'reload, so a redeployed dashboard or card is picked up. Keeps '
               'localStorage and cookies (you stay logged in).',
           handler: (_) async {
             // NOT WebStorageManager.deleteAllData(): that would wipe
@@ -210,7 +210,7 @@ class BrowserManager extends Manager {
         Command(
           name: 'screenshot',
           description:
-              'Capture the screen as a base64 JPEG — what the display shows: '
+              'Capture the screen as a base64 JPEG of what the display shows: '
               'page, menus, screensaver. `quality` 1-100 (default 60); `width` '
               'scales the capture down (default 720).',
           params: const {

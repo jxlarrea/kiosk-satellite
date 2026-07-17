@@ -76,7 +76,7 @@ class DeviceManager extends Manager {
         description:
             'Memory, storage, panel, WebView and build details. Fields '
             'Android will not give an app come back null rather than as a '
-            'placeholder — see DeviceDetails.',
+            'placeholder; see DeviceDetails.',
         handler: (_) async =>
             CommandResult.ok((await DeviceDetails.read()).toJson()),
       ),
@@ -94,7 +94,7 @@ class DeviceManager extends Manager {
       Command(
         name: 'getStats',
         description:
-            'Battery, CPU load and temperature only — the live header '
+            'Battery, CPU load and temperature only: the live header '
             'numbers, without everything else getDeviceInfo gathers.',
         handler: (_) async => CommandResult.ok(await stats()),
       ),

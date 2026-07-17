@@ -618,7 +618,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   : _haError ??
                         (container.homeAssistant.connectionOk.value
                             ? 'Connected'
-                            : 'Not validated — the settings below unlock '
+                            : 'Not validated yet. The settings below unlock '
                                   'once the connection checks out.'),
             ),
             trailing: _haValidating
@@ -716,7 +716,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
                       'Voice Satellite turns this kiosk into a full '
-                      'hands-free voice assistant for Home Assistant — '
+                      'hands-free voice assistant for Home Assistant: '
                       'wake word detection, conversations, timers and '
                       'announcements, right on the dashboard.\n\n'
                       'It is available in the default HACS repository. '
@@ -1269,8 +1269,8 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
           title: 'Microphone',
           held: 'Wake word detection can hear you.',
           missing: perms?.microphoneBlocked == true
-              ? 'Blocked. Android will not ask again — allow it in the app '
-                    'settings.'
+              ? 'Blocked. Android will not ask again, so allow it in the '
+                    'app settings.'
               : 'Without this nothing is listening for the wake word.',
           action: perms?.microphoneBlocked == true ? 'App settings' : 'Grant',
           onGrant: () async {
