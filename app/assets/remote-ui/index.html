@@ -189,6 +189,9 @@
     left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: .2s; }
   .switch input:checked + .slider { background: var(--primary-fill); border-color: var(--primary-fill); }
   .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+  /* Locked-on: visibly in the on position, visibly not yours to flip —
+     the same reading as the device's disabled Material switch. */
+  .switch input:disabled + .slider { opacity: .45; cursor: default; }
 
   .shot-wrap { position: relative; border-radius: 14px; overflow: hidden;
     background: var(--surface-2); aspect-ratio: 16/10; display: grid;
