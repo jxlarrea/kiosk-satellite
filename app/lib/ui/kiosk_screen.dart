@@ -95,9 +95,10 @@ class _KioskScreenState extends State<KioskScreen>
   Future<void> _triggerRefresh() async {
     if (_refreshing || !c.settings.get(defs.pullToRefresh)) return;
     _refreshing = true;
-    // JS-initiated pulls have no native spinner out yet; show it. A no-op
-    // when the native gesture already did.
-    await _pullToRefresh.beginRefreshing();
+    // No beginRefreshing here: the native gesture already shows its spinner,
+    // and the JS probe draws (and keeps) its own — awaiting the platform
+    // spinner from a bridge callback is what once held the reload hostage.
+    //
     // The cache-clearing pull is the same operation as the menu's Clear web
     // cache (drops HTTP cache + service worker, keeps localStorage and
     // cookies, reloads); a plain pull is just the reload.
