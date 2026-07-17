@@ -184,6 +184,12 @@ class _SetupScreenState extends State<SetupScreen> {
           }
           await c.settings.set(defs.remotePassword, password);
           await c.settings.set(defs.remoteEnabled, true);
+        } else {
+          // The toggle is authoritative each time Next is pressed: coming
+          // back and switching it off must undo an earlier on — otherwise
+          // the password quietly survives and the switch lies.
+          await c.settings.set(defs.remoteEnabled, false);
+          await c.settings.set(defs.remotePassword, '');
         }
         setState(() => _step = 1);
       case 1:
@@ -532,9 +538,11 @@ class _SetupScreenState extends State<SetupScreen> {
                     ? 'Continue this setup from a web browser at '
                           'http://$_deviceIp:2324 — pasting the Home '
                           'Assistant access token there is much easier.'
-                    : 'Configure this kiosk from a web browser on your '
-                          'network. Recommended: the next step needs a Home '
-                          'Assistant access token pasted.',
+                    : 'Keep managing this kiosk from a web browser after '
+                          'setup. During setup the wizard is always '
+                          'reachable at http://${_deviceIp ?? '<device-ip>'}:2324 '
+                          'regardless — this switch decides what happens '
+                          'afterwards.',
               ),
               value: _remoteWanted,
               onChanged: (v) => setState(() => _remoteWanted = v),

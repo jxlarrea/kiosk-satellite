@@ -276,9 +276,10 @@
   .wizard-pane .lead { color: var(--muted); font-size: 14px;
     line-height: 1.5; margin: 0 8px 20px 4px; }
   #wizardBody { flex: 1; overflow-y: auto; }
+  #wizardBody .card { padding: 16px 20px; }
+  #wizardBody .card.rows { padding: 4px 20px; }
   #wizardBody .field { width: 100%; margin-bottom: 12px; }
-  .wizard-list { background: var(--card); border-radius: 20px;
-    overflow: hidden; margin-bottom: 16px; padding: 4px 16px; }
+  #wizardBody .field:last-child { margin-bottom: 4px; }
   .wizard-nav { display: flex; align-items: center;
     justify-content: flex-end; gap: 12px; padding-top: 18px; }
   #wizardBack { border: none; border-radius: 12px;
@@ -1669,6 +1670,13 @@ function wizardRender() {
   s.body(body);
 }
 
+function wizardCard(body, rows = false) {
+  const card = document.createElement('div');
+  card.className = rows ? 'card rows' : 'card';
+  body.appendChild(card);
+  return card;
+}
+
 function wizardField(body, id, type, placeholder) {
   const f = document.createElement('input');
   f.className = 'field'; f.id = id; f.type = type;
@@ -1683,7 +1691,9 @@ function wizardSteps() {
     railTitle: 'Welcome', railSub: 'Admin password',
     title: 'Welcome to Kiosk Satellite',
     lead: 'This tablet is waiting to be set up. First, protect this remote admin with a password.',
-    body: (b) => { wizardField(b, 'wzPassword', 'password', 'Admin password (min 4 characters)'); },
+    body: (b) => {
+      wizardField(wizardCard(b), 'wzPassword', 'password', 'Admin password (min 4 characters)');
+    },
     next: async () => {
       const password = $('#wzPassword').value;
       if (password.length < 4) throw new Error('Password too short \u2014 use at least 4 characters.');
@@ -1699,8 +1709,9 @@ function wizardSteps() {
     lead: 'The base URL of your instance and a long-lived access token (HA profile \u2192 Security).',
     nextLabel: 'Validate & continue',
     body: (b) => {
-      wizardField(b, 'wzUrl', 'url', 'https://homeassistant.local:8123');
-      wizardField(b, 'wzToken', 'password', 'Long-lived access token');
+      const card = wizardCard(b);
+      wizardField(card, 'wzUrl', 'url', 'https://homeassistant.local:8123');
+      wizardField(card, 'wzToken', 'password', 'Long-lived access token');
     },
     next: async () => {
       const url = $('#wzUrl').value.trim(), token = $('#wzToken').value.trim();
@@ -1724,8 +1735,7 @@ function wizardSteps() {
     title: 'Choose a dashboard',
     lead: 'This is what the kiosk will show.',
     body: (b) => {
-      const list = document.createElement('div');
-      list.className = 'wizard-list';
+      const list = wizardCard(b, true);
       wizard.dashboards.forEach((d) => {
         const row = readOnlyRow(d.title || d.url_path, d.url_path,
           wizard.dashboard === d.url_path ? '\u25c9' : '\u25cb');
@@ -1736,7 +1746,6 @@ function wizardSteps() {
         list.appendChild(row);
       });
       if (!wizard.dashboards.length) list.appendChild(readOnlyRow('No dashboards found', '', ''));
-      b.appendChild(list);
     },
     next: async () => {
       if (!wizard.dashboard) throw new Error('Select a dashboard.');
@@ -1756,8 +1765,7 @@ function wizardSteps() {
     title: 'Voice Satellite detected',
     lead: 'This Home Assistant instance runs the Voice Satellite integration. Choose which satellite this kiosk is, then review its settings \u2014 everything can be changed later.',
     body: (b) => {
-      const sats = document.createElement('div');
-      sats.className = 'wizard-list';
+      const sats = wizardCard(b, true);
       if (!wizard.satellites.length) {
         sats.appendChild(readOnlyRow('No satellites found',
           'Add an assist satellite in the Voice Satellite integration, or continue and pick one on the dashboard later.', ''));
@@ -1772,8 +1780,6 @@ function wizardSteps() {
           sats.appendChild(row);
         });
       }
-      b.appendChild(sats);
-      b.appendChild(Object.assign(document.createElement('div'), { style: 'height:10px' }));
       const mark = (on) => on ? '\u2611' : '\u2610';
       const toggleRow = (label, desc, on, locked, onClick) => {
         const row = readOnlyRow(label, desc, mark(on));
@@ -1786,8 +1792,7 @@ function wizardSteps() {
         }
         return row;
       };
-      const master = document.createElement('div');
-      master.className = 'wizard-list';
+      const master = wizardCard(b, true);
       const all = WIZ_OPTIONAL.every(([k]) => wizard.rec[k]);
       master.appendChild(toggleRow('Apply all recommended settings',
         'The optimal settings for full Voice Satellite integration and functionality.',
@@ -1796,10 +1801,7 @@ function wizardSteps() {
           WIZ_OPTIONAL.forEach(([k]) => { wizard.rec[k] = next; });
           wizardRender();
         }));
-      b.appendChild(master);
-      const list = document.createElement('div');
-      list.className = 'wizard-list';
-      list.style.marginTop = '10px';
+      const list = wizardCard(b, true);
       WIZ_LOCKED.forEach(([, label]) =>
         list.appendChild(toggleRow(label, 'Required by Voice Satellite', true, true)));
       WIZ_OPTIONAL.forEach(([key, label]) =>
@@ -1807,7 +1809,6 @@ function wizardSteps() {
           wizard.rec[key] = !wizard.rec[key];
           wizardRender();
         })));
-      b.appendChild(list);
     },
     next: async () => {},
   });
@@ -1819,8 +1820,7 @@ function wizardSteps() {
     body: (b) => {
       const background = wizard.vsDetected && wizard.rec['wake_word.background'];
       const bootStart = wizard.vsDetected && wizard.rec['kiosk.start_on_boot'];
-      const list = document.createElement('div');
-      list.className = 'wizard-list';
+      const list = wizardCard(b, true);
       list.appendChild(readOnlyRow('Microphone', 'Voice Satellite requires microphone access', ''));
       if (background) {
         list.appendChild(readOnlyRow('Notifications', 'Allows Kiosk Satellite to continue listening to the wake word in the background', ''));
@@ -1829,10 +1829,9 @@ function wizardSteps() {
       if (bootStart) {
         list.appendChild(readOnlyRow('Display over other apps', 'Grant this permission if you want Kiosk Satellite to auto start when your device boots.', ''));
       }
-      b.appendChild(list);
       const btn = document.createElement('button');
       btn.className = 'btn-ghost';
-      btn.style.marginTop = '10px';
+      btn.style.margin = '2px 4px 12px';
       btn.textContent = 'Show the prompts on the tablet';
       btn.addEventListener('click', async () => {
         btn.disabled = true; btn.textContent = 'Asking on the tablet\u2026';
