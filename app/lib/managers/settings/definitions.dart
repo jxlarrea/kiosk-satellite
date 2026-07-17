@@ -939,6 +939,19 @@ const themeLightAt = SettingDef<String>(
   dependsOn: 'ha.theme_auto',
 );
 
+const themeAutoApp = SettingDef<bool>(
+  key: 'ha.theme_auto_app',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Also switch the app theme',
+  description:
+      "Flip Kiosk Satellite's own theme (menu, settings) together with "
+      'the scheduled Home Assistant change.',
+  category: 'Home Assistant',
+  section: 'Theme',
+  dependsOn: 'ha.theme_auto',
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -1063,6 +1076,7 @@ const List<SettingDef<Object>> allSettings = [
   themeAuto,
   themeDarkAt,
   themeLightAt,
+  themeAutoApp,
   remoteEnabled,
   remotePort,
   remotePassword,

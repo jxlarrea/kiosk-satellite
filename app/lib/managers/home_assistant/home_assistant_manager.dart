@@ -88,6 +88,7 @@ class HomeAssistantManager extends Manager {
     bus.on<PageChanged>().listen((_) => _applyThemeSchedule(force: true));
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.themeAuto.key ||
+          e.key == defs.themeAutoApp.key ||
           e.key == defs.themeDarkAt.key ||
           e.key == defs.themeLightAt.key) {
         _applyThemeSchedule(force: true);
@@ -125,6 +126,15 @@ class HomeAssistantManager extends Manager {
     if (!force && dark == _lastDark) return;
     _lastDark = dark;
     await commands.execute('evalJs', {'code': _themeJs(dark)});
+    // The app's own theme follows the same clock when asked to. Through the
+    // settings store, not directly: main.dart already listens for ui.theme
+    // and applies it live, remote UI included.
+    if (_settings.get(defs.themeAutoApp)) {
+      final want = dark ? 'dark' : 'light';
+      if (_settings.get(defs.uiTheme) != want) {
+        await _settings.setFromJson(defs.uiTheme.key, want);
+      }
+    }
   }
 
   /// Whether [now] falls in the dark window between the two configured times.
