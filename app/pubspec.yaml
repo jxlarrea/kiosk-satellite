@@ -37,6 +37,7 @@ dependencies:
   # HMAC for stateless remote-admin tokens (survive app restarts)
   crypto: ^3.0.6
   file_picker: ^8.1.2
+  flutter_svg: ^2.0.10
   image_picker: ^1.1.2
   video_player: ^2.9.2
 
@@ -81,6 +82,7 @@ flutter:
     - assets/branding/icon.png
     - assets/branding/mark.png
     - assets/branding/mark_light.png
+    - assets/branding/hacs.svg
   fonts:
     # Rubik (SIL Open Font License) — an open geometric sans that gives the
     # clock the clean, friendly feel of Google Sans without the licensing.

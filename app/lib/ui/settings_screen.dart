@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
@@ -712,13 +713,45 @@ class _CategoryContentState extends State<_CategoryContent> {
             );
           }
           if (snapshot.data != true) {
-            return const _SettingsCard(
+            return _SettingsCard(
               children: [
-                ListTile(
-                  title: Text('Voice Satellite not detected'),
-                  subtitle: Text(
-                    'The connected Home Assistant instance does not run '
-                    'the Voice Satellite integration.',
+                const ListTile(
+                  title: Text('Voice Satellite is not installed'),
+                  subtitle: Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Voice Satellite turns this kiosk into a full '
+                      'hands-free voice assistant for Home Assistant — '
+                      'wake word detection, conversations, timers and '
+                      'announcements, right on the dashboard.\n\n'
+                      'It is available in the default HACS repository. '
+                      'Install it on your Home Assistant instance, then '
+                      'come back here.',
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () {
+                        final url =
+                            '${container.homeAssistant.baseUrl}'
+                            '/hacs/repository/1159616380';
+                        // Back to the kiosk, which then shows the HACS
+                        // page — installing happens in Home Assistant.
+                        Navigator.of(
+                          context,
+                        ).popUntil((route) => route.isFirst);
+                        container.commands.execute('loadUrl', {'url': url});
+                      },
+                      child: SvgPicture.asset(
+                        'assets/branding/hacs.svg',
+                        height: 44,
+                      ),
+                    ),
                   ),
                 ),
               ],
