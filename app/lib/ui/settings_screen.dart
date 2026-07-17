@@ -109,6 +109,12 @@ const _categories = <(String, String, IconData, String)>[
     Icons.tune,
     'Microphone, camera, geolocation, pop-ups',
   ),
+  (
+    'Kiosk',
+    'Kiosk Mode',
+    Icons.lock_outline,
+    'Exit gesture, PIN, hardware buttons',
+  ),
   ('Screen', 'Screen', Icons.brightness_6_outlined, 'Brightness, keep awake'),
   (
     'Screensaver',

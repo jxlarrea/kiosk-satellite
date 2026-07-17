@@ -43,6 +43,10 @@ class _KioskScreenState extends State<KioskScreen>
 
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
+  StreamSubscription<KioskExitGesture>? _gestureSub;
+
+  /// Guards the exit gesture while the settings route sits on top.
+  bool _settingsOpen = false;
 
   /// The push drawer: the kiosk content slides right in step with the pane,
   /// so the menu reads as sharing the kiosk's plane instead of floating over
@@ -148,8 +152,19 @@ class _KioskScreenState extends State<KioskScreen>
     if (e.key == defs.allowMixedContent.key ||
         e.key == defs.ignoreSslErrors.key ||
         e.key == defs.disableCache.key ||
-        e.key == defs.pinchToZoom.key) {
+        e.key == defs.pinchToZoom.key ||
+        e.key == defs.kioskDisableContextMenus.key) {
       setState(() => _webViewEpoch++);
+      return;
+    }
+    // Kiosk mode swaps the drawer swipe for the exit gesture (KioskManager
+    // pushes the native flags itself; this re-renders the gate — and
+    // rebuilds the WebView when the master switch changes whether the
+    // context-menu suppression is in force).
+    if (e.key == defs.kioskEnabled.key) {
+      setState(() {
+        if (c.settings.get(defs.kioskDisableContextMenus)) _webViewEpoch++;
+      });
       return;
     }
     // Pull-to-refresh toggles live on the existing WebView; the clear-cache
@@ -186,6 +201,7 @@ class _KioskScreenState extends State<KioskScreen>
     super.initState();
 
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
+    _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
 
     if (widget.showMenuHint) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -237,6 +253,18 @@ class _KioskScreenState extends State<KioskScreen>
       source: pullToRefreshProbeScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
+    // Belt to disableContextMenu's braces: the native flag stops the action
+    // mode, this stops the selection ever forming (and the web contextmenu).
+    if (c.kiosk.locked && c.settings.get(defs.kioskDisableContextMenus))
+      UserScript(
+        source: '''
+          document.addEventListener('contextmenu', (e) => e.preventDefault(), true);
+          const s = document.createElement('style');
+          s.textContent = '* { -webkit-user-select: none !important; user-select: none !important; }';
+          document.addEventListener('DOMContentLoaded', () => document.head.appendChild(s));
+        ''',
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
   ];
 
   /// Apply or tear down the CSS kiosk mode against the current page.
@@ -250,11 +278,13 @@ class _KioskScreenState extends State<KioskScreen>
     // keeps firing behind the route: it dims the backlight and, with motion
     // on, opens the camera while someone is configuring. Re-arm on return.
     await c.commands.execute('pauseScreensaver', {'paused': true});
+    _settingsOpen = true;
     if (mounted) {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => SettingsScreen(container: c)),
       );
     }
+    _settingsOpen = false;
     await c.commands.execute('pauseScreensaver', {'paused': false});
   }
 
@@ -279,11 +309,73 @@ class _KioskScreenState extends State<KioskScreen>
     return false;
   }
 
+  /// The kiosk exit gesture: N fast taps, counted natively so they land
+  /// even though the WebView swallows its pointers. PIN first when one is
+  /// set; the prize is just the menu — every escape route stays behind its
+  /// own confirmation.
+  Future<void> _onExitGesture(KioskExitGesture _) async {
+    if (!mounted || _settingsOpen || _drawer.value > 0) return;
+    if (c.kiosk.pinRequired) {
+      final ok = await _askPin();
+      if (!ok || !mounted) return;
+    }
+    _drawer.fling(velocity: 1);
+  }
+
+  Future<bool> _askPin() async {
+    final controller = TextEditingController();
+    var failed = false;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Kiosk PIN'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            obscureText: true,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              hintText: 'PIN',
+              errorText: failed ? 'Wrong PIN' : null,
+            ),
+            onSubmitted: (v) {
+              if (c.kiosk.pinMatches(v)) {
+                Navigator.pop(context, true);
+              } else {
+                setDialogState(() => failed = true);
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (c.kiosk.pinMatches(controller.text)) {
+                  Navigator.pop(context, true);
+                } else {
+                  setDialogState(() => failed = true);
+                }
+              },
+              child: const Text('Unlock'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    return ok ?? false;
+  }
+
   @override
   void dispose() {
     _refreshingFailsafe?.cancel();
     _drawer.dispose();
     _settingsSub?.cancel();
+    _gestureSub?.cancel();
     super.dispose();
   }
 
@@ -378,8 +470,10 @@ class _KioskScreenState extends State<KioskScreen>
                         onHorizontalDragEnd: _drawerDragEnd,
                       ),
                     ),
-                  // Closed: the edge strip that swipes it open.
-                  if (!open)
+                  // Closed: the edge strip that swipes it open — unless
+                  // kiosk mode holds the door; then only the exit gesture
+                  // (and its PIN) opens the menu.
+                  if (!open && !c.kiosk.locked)
                     Positioned(
                       left: 0,
                       top: 0,
@@ -424,6 +518,9 @@ class _KioskScreenState extends State<KioskScreen>
       // only for the brief drawer slide; settings is an opaque route, so
       // the view is not even composited while it is open.
       useHybridComposition: true,
+      // Long-press menus and text selection, when kiosk mode says so.
+      disableContextMenu:
+          c.kiosk.locked && c.settings.get(defs.kioskDisableContextMenus),
       // Pinch zoom needs both flags on Android; the on-screen +/- buttons
       // stay off regardless — a kiosk shows no browser chrome.
       supportZoom: c.settings.get(defs.pinchToZoom),

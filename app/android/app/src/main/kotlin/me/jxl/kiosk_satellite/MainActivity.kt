@@ -2,6 +2,8 @@ package me.jxl.kiosk_satellite
 
 import android.content.Context
 import android.content.Intent
+import android.view.KeyEvent
+import android.view.MotionEvent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
@@ -18,6 +20,7 @@ class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
     private var cameraMotion: CameraMotion? = null
     private var screenCapture: ScreenCapture? = null
+    private var kioskLock: KioskLock? = null
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? =
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
@@ -31,6 +34,7 @@ class MainActivity : FlutterActivity() {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         cameraMotion = CameraMotion(this, messenger)
         screenCapture = ScreenCapture(this, messenger)
+        kioskLock = KioskLock(this, messenger)
         provisionChannel = MethodChannel(messenger, "kiosk_satellite/provision")
         provisionChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -52,8 +56,23 @@ class MainActivity : FlutterActivity() {
         cameraMotion = null
         screenCapture?.dispose()
         screenCapture = null
+        kioskLock?.dispose()
+        kioskLock = null
         provisionChannel?.setMethodCallHandler(null)
         provisionChannel = null
+    }
+
+    // Kiosk lockdown sees every key and pointer first: volume keys may be
+    // swallowed, and fast taps are counted toward the exit gesture. Touches
+    // are observed, never consumed.
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (kioskLock?.onKey(event) == true) return true
+        return super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        kioskLock?.onTouch(ev)
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun onNewIntent(intent: Intent) {

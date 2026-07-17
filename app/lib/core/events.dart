@@ -147,6 +147,14 @@ class PageChanged extends AppEvent {
   Map<String, Object?> toJson() => {'url': url};
 }
 
+// ── Kiosk lockdown ─────────────────────────────────────────────────────
+
+/// The kiosk exit gesture (N fast taps, counted natively) fired. The kiosk
+/// screen answers with the PIN prompt and the menu.
+class KioskExitGesture extends AppEvent {
+  const KioskExitGesture();
+}
+
 // ── Settings ───────────────────────────────────────────────────────────
 
 class SettingChanged extends AppEvent {

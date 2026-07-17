@@ -226,6 +226,114 @@ const webPopups = SettingDef<bool>(
   category: 'Web Content',
 );
 
+// ── Kiosk Mode ─────────────────────────────────────────────────────────
+//
+// Fully-style device lockdown. What Android lets an ordinary app do, it
+// does; what it does not, the descriptions say honestly: the power button
+// cannot be intercepted (the screen is re-woken instead), and the home
+// button is only blocked through OS screen pinning.
+
+const kioskEnabled = SettingDef<bool>(
+  key: 'kiosk.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable kiosk mode',
+  description:
+      'Lock the tablet into Kiosk Satellite. The menu swipe is replaced '
+      'by the exit gesture, and the protections below arm.',
+  category: 'Kiosk',
+);
+
+const kioskExitGesture = SettingDef<String>(
+  key: 'kiosk.exit_gesture',
+  type: SettingType.select,
+  defaultValue: 'taps7',
+  title: 'Kiosk exit gesture',
+  description:
+      'Fast taps anywhere on the screen open the menu — after the PIN, '
+      'if one is set. With the gesture disabled, only the remote admin '
+      'can reach the settings.',
+  category: 'Kiosk',
+  options: ['taps5', 'taps7', 'none'],
+  optionLabels: {
+    'taps5': '5 fast taps',
+    'taps7': '7 fast taps',
+    'none': 'Disabled (remote admin only)',
+  },
+  dependsOn: 'kiosk.enabled',
+);
+
+const kioskPin = SettingDef<String>(
+  key: 'kiosk.pin',
+  type: SettingType.password,
+  defaultValue: '',
+  title: 'Kiosk mode PIN',
+  description:
+      'Asked after the exit gesture before the menu opens. Leave empty '
+      'for no PIN.',
+  category: 'Kiosk',
+  secret: true,
+  dependsOn: 'kiosk.enabled',
+);
+
+const kioskDisableStatusBar = SettingDef<bool>(
+  key: 'kiosk.disable_status_bar',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable status bar',
+  description:
+      'Block the status bar pull-down with a shield over the top edge. '
+      'Needs the "display over other apps" permission — Android asks for '
+      'it when this is first enabled on the device.',
+  category: 'Kiosk',
+  dependsOn: 'kiosk.enabled',
+);
+
+const kioskDisableVolume = SettingDef<bool>(
+  key: 'kiosk.disable_volume',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable volume buttons',
+  description: 'Swallow the hardware volume keys.',
+  category: 'Kiosk',
+  dependsOn: 'kiosk.enabled',
+);
+
+const kioskDisablePower = SettingDef<bool>(
+  key: 'kiosk.disable_power',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable power button',
+  description:
+      'Android does not let apps block the power button; when it switches '
+      'the screen off, Kiosk Satellite turns it right back on.',
+  category: 'Kiosk',
+  dependsOn: 'kiosk.enabled',
+);
+
+const kioskDisableHome = SettingDef<bool>(
+  key: 'kiosk.disable_home',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable home button',
+  description:
+      'Pin the app with Android screen pinning, which blocks the home and '
+      'recents buttons. Android asks to confirm the first time.',
+  category: 'Kiosk',
+  dependsOn: 'kiosk.enabled',
+);
+
+const kioskDisableContextMenus = SettingDef<bool>(
+  key: 'kiosk.disable_context_menus',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable context menus',
+  description:
+      'Suppress long-press menus and text selection inside the web view.',
+  category: 'Kiosk',
+  dependsOn: 'kiosk.enabled',
+);
+
 // ── Screen ─────────────────────────────────────────────────────────────
 
 const keepScreenOn = SettingDef<bool>(
@@ -859,6 +967,14 @@ const List<SettingDef<Object>> allSettings = [
   webGeolocation,
   webAutoplay,
   webPopups,
+  kioskEnabled,
+  kioskExitGesture,
+  kioskPin,
+  kioskDisableStatusBar,
+  kioskDisableVolume,
+  kioskDisablePower,
+  kioskDisableHome,
+  kioskDisableContextMenus,
   keepScreenOn,
   screensaverEnabled,
   screensaverTimeoutSeconds,
