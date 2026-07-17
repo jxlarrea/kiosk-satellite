@@ -697,7 +697,9 @@ async function loadSettings() {
     file.type = 'file';
     file.accept = '.json,application/json';
     file.style.display = 'none';
-    card.appendChild(file);
+    // Inside the row, not after it — the card strips the divider off its
+    // last child, and a trailing hidden input would steal that place.
+    imp.row.appendChild(file);
     file.addEventListener('change', async () => {
       const f = file.files[0];
       file.value = '';
