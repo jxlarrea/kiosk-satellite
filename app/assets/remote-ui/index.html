@@ -1098,7 +1098,12 @@ function settingRow(s) {
     if (s.key === 'screensaver.mode' && !state.haConfigured)
       opts = opts.filter((o) => o !== 'media');
     opts.forEach((o) => {
-      const opt = document.createElement('option'); opt.value = o; opt.textContent = o;
+      const opt = document.createElement('option');
+      opt.value = o;
+      // The declared label ('media' → "Home Assistant Media"), or
+      // Capitalised as a fallback — stored values are lowercase identifiers.
+      opt.textContent = (s.optionLabels && s.optionLabels[o]) ||
+        (o ? o[0].toUpperCase() + o.slice(1) : o);
       opt.selected = o === s.value; sel.appendChild(opt);
     });
     sel.addEventListener('change', () => save(sel.value));

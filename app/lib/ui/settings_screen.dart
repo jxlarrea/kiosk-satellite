@@ -1058,6 +1058,14 @@ class SettingTile extends StatelessWidget {
       case SettingType.select:
         final options = _optionsFor(def);
         final current = c.settings.get(def) as String;
+        // Stored values are lowercase identifiers; people read the declared
+        // label ('media' → "Home Assistant Media"), or Capitalised as a
+        // fallback.
+        String label(String option) =>
+            def.optionLabels?[option] ??
+            (option.isEmpty
+                ? option
+                : option[0].toUpperCase() + option.substring(1));
         return ListTile(
           title: Text(def.title),
           subtitle: Text(def.description),
@@ -1065,7 +1073,7 @@ class SettingTile extends StatelessWidget {
             value: options.contains(current) ? current : options.first,
             items: [
               for (final option in options)
-                DropdownMenuItem(value: option, child: Text(option)),
+                DropdownMenuItem(value: option, child: Text(label(option))),
             ],
             onChanged: (v) async {
               if (v == null) return;

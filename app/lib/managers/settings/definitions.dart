@@ -25,6 +25,7 @@ class SettingDef<T> {
     this.max,
     this.step,
     this.unit,
+    this.optionLabels,
   });
 
   final String key;
@@ -78,6 +79,11 @@ class SettingDef<T> {
   /// Display suffix for the slider's value ('%'). A '%' unit with max <= 1
   /// means the stored value is a 0..1 fraction shown as a percentage.
   final String? unit;
+
+  /// Display names for [options], keyed by stored value — 'media' can read
+  /// "Home Assistant Media" without changing what is persisted. Both UIs
+  /// fall back to capitalising the raw value when a label is missing.
+  final Map<String, String>? optionLabels;
 }
 
 // ── Browser ────────────────────────────────────────────────────────────
@@ -257,10 +263,17 @@ const screensaverMode = SettingDef<String>(
   defaultValue: 'black',
   title: 'Screensaver mode',
   description:
-      'What the screensaver shows after the idle timeout. "dim" only '
+      'What the screensaver shows after the idle timeout. Dim only '
       'lowers the backlight and is the lightest.',
   category: 'Screensaver',
   options: ['dim', 'black', 'clock', 'media', 'website'],
+  optionLabels: {
+    'dim': 'Dim',
+    'black': 'Black',
+    'clock': 'Clock',
+    'media': 'Home Assistant Media',
+    'website': 'Website',
+  },
 );
 
 // ── Clock (mode: clock) ──
@@ -482,6 +495,7 @@ const motionCamera = SettingDef<String>(
   category: 'Screensaver',
   section: 'Motion Detection',
   options: ['front', 'back'],
+  optionLabels: {'front': 'Front', 'back': 'Back'},
   dependsOn: 'screensaver.dismiss_on_motion',
 );
 
@@ -557,6 +571,12 @@ const haKioskMode = SettingDef<String>(
       'injects CSS. Applies immediately — no restart.',
   category: 'Home Assistant',
   options: ['off', 'auto', 'plugin', 'css'],
+  optionLabels: {
+    'off': 'Off',
+    'auto': 'Auto',
+    'plugin': 'Plugin',
+    'css': 'CSS',
+  },
 );
 
 const themeAuto = SettingDef<bool>(
@@ -645,6 +665,7 @@ const uiTheme = SettingDef<String>(
       'live on walls, mostly at night.',
   category: 'Device',
   options: ['dark', 'light', 'system'],
+  optionLabels: {'dark': 'Dark', 'light': 'Light', 'system': 'System'},
 );
 
 /// All settings, in display order.
