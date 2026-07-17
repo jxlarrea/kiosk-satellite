@@ -1891,14 +1891,40 @@ function wizardSteps() {
       const background = wizard.vsDetected && wizard.rec['wake_word.background'];
       const bootStart = wizard.vsDetected && wizard.rec['kiosk.start_on_boot'];
       const list = wizardCard(b, true);
-      list.appendChild(readOnlyRow('Microphone', 'Voice Satellite requires microphone access', ''));
+      // Status to the right of each row, exactly as the settings pages
+      // show grants: green Granted / red Not granted, read live from the
+      // device and re-read after the prompts run.
+      const statusSpans = {};
+      const addRow = (key, name, desc) => {
+        const row = readOnlyRow(name, desc, '\u2026');
+        statusSpans[key] = row.querySelector('span');
+        list.appendChild(row);
+      };
+      addRow('microphone', 'Microphone',
+        'Voice Satellite requires microphone access');
       if (background) {
-        list.appendChild(readOnlyRow('Notifications', 'Allows Kiosk Satellite to continue listening to the wake word in the background', ''));
-        list.appendChild(readOnlyRow('Ignore battery optimizations', 'Allows Kiosk Satellite to run in the background permanently', ''));
+        addRow('notification', 'Notifications',
+          'Allows Kiosk Satellite to continue listening to the wake word in the background');
+        addRow('batteryUnrestricted', 'Ignore battery optimizations',
+          'Allows Kiosk Satellite to run in the background permanently');
       }
       if (bootStart) {
-        list.appendChild(readOnlyRow('Display over other apps', 'Grant this permission if you want Kiosk Satellite to auto start when your device boots.', ''));
+        addRow('displayOverOtherApps', 'Display over other apps',
+          'Grant this permission if you want Kiosk Satellite to auto start when your device boots.');
       }
+      const refreshStatus = async () => {
+        try {
+          const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+          const p = res.data || {};
+          for (const [key, span] of Object.entries(statusSpans)) {
+            const ok = !!p[key];
+            span.textContent = ok ? 'Granted' : 'Not granted';
+            span.style.cssText =
+              'white-space:nowrap; color:' + (ok ? 'var(--ok)' : 'var(--error)');
+          }
+        } catch (_) {}
+      };
+      refreshStatus();
       // Tonal, like the wizard's Back button — Finish stays the one
       // filled action on the step.
       const btn = document.createElement('button');
@@ -1918,6 +1944,7 @@ function wizardSteps() {
             ...(bootStart ? ['overlay'] : []),
           ] }) });
         btn.textContent = 'Permissions requested on the device';
+        await refreshStatus();
       });
       b.appendChild(btn);
     },
