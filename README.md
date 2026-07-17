@@ -63,6 +63,23 @@ and it keeps the dashboard perfectly smooth while listening. It is
 efficient enough that vsWakeWord now runs even on an Amazon Echo Show 5,
 on CPU, with no GPU or accelerator needed.
 
+Detection also no longer depends on the page being visible: with
+background listening enabled, the wake word keeps working while the
+screen is off or **another app entirely is in the foreground** — say the
+word and the kiosk brings the dashboard back and answers.
+
+| Capability | Voice Satellite alone | Kiosk Satellite + Voice Satellite |
+| --- | --- | --- |
+| Wake word with the dashboard on screen | ✅ | ✅ |
+| Wake word with the screen off | ❌ | ✅ |
+| Wake word with another app in front | ❌ | ✅ (returns to the dashboard on detection) |
+| Wake word during the screensaver | ❌ browser throttled | ✅ |
+| Detection cost | Browser-side inference, heavy on tablets | Native CPU inference, many times faster than realtime |
+| Low-end hardware (e.g. Echo Show 5) | Struggles | ✅ CPU only, no GPU needed |
+| Microphone at wake | Reacquired per wake (can clip your first words) | Held natively and streamed with pre-roll — nothing is clipped |
+| Survives reboots | Manual relaunch | ✅ Start on boot |
+| Satellite setup | Pick the entity in the card | Assigned automatically during onboarding |
+
 Voice Satellite is not required — Kiosk Satellite is a complete Home
 Assistant kiosk on its own — but together they make a tablet into something
 very close to a purpose-built voice hub.
