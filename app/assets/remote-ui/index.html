@@ -245,30 +245,54 @@
     .row input[type=text], .row input[type=password], .row select { max-width: 48vw; }
     .row input[type=number] { max-width: 90px; }
   }
-  /* ---- Onboarding wizard: the login card's language, sized for steps. */
-  #wizard { min-height: 100vh; display: flex; align-items: center;
-    justify-content: center; padding: 24px; }
-  .wizard-card { width: 100%; max-width: 520px; background: var(--card);
-    border-radius: 24px; padding: 36px 32px 28px; text-align: center; }
-  .wizard-card .logo { margin-bottom: 6px; }
-  .wizard-dots { display: flex; justify-content: center; gap: 8px;
-    margin: 14px 0 22px; }
-  .wizard-dots span { width: 8px; height: 8px; border-radius: 4px;
-    background: var(--divider); transition: all .2s; }
-  .wizard-dots span.done { background: var(--primary); }
-  .wizard-dots span.now { width: 22px; background: var(--primary); }
-  .wizard-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-  .wizard-card .lead { color: var(--muted); font-size: 14px;
-    line-height: 1.5; margin-bottom: 20px; }
-  .wizard-body { text-align: left; }
-  .wizard-body .field { width: 100%; margin-bottom: 12px; }
-  .wizard-nav { display: flex; align-items: center; margin-top: 18px; }
-  .wizard-nav .spacer { flex: 1; }
-  .wizard-list { border: 1px solid var(--divider); border-radius: 16px;
-    overflow: hidden; margin-bottom: 4px; }
-  .wizard-list .row { padding: 12px 16px; }
-  #wizardError { color: var(--error); font-size: 13px; min-height: 18px;
-    margin-top: 10px; }
+  /* ---- Onboarding wizard: the settings split layout — the step list on
+     a One UI rail, the current step's work on the right. */
+  #wizard { min-height: 100vh; display: flex; }
+  .wizard-rail { width: clamp(300px, 34vw, 400px); flex: none;
+    display: flex; flex-direction: column; padding: 20px 12px;
+    border-right: 1px solid var(--divider); }
+  .wizard-brand { display: flex; align-items: center; gap: 14px;
+    padding: 8px 16px 22px; }
+  .wizard-brand .brand-mark { width: 40px; height: 40px; }
+  .wizard-brand h1 { font-size: 20px; font-weight: 700; line-height: 1.2; }
+  .wizard-step { display: flex; align-items: center; gap: 16px;
+    padding: 14px 16px; border-radius: 22px; }
+  .wizard-step.now { background: var(--surface-2); }
+  .wizard-step .stepdisc { flex: none; width: 34px; height: 34px;
+    border-radius: 50%; display: grid; place-items: center;
+    background: var(--surface-2); color: var(--muted);
+    font-weight: 700; font-size: 14px; }
+  .wizard-step.now .stepdisc, .wizard-step.done .stepdisc {
+    background: var(--primary); color: #fff; }
+  .wizard-step .nav-title { color: var(--muted); }
+  .wizard-step.now .nav-title, .wizard-step.done .nav-title {
+    color: var(--text); }
+  .wizard-pane { flex: 1; min-width: 0; display: flex;
+    flex-direction: column; padding: 28px 28px 20px 24px;
+    max-width: 860px; }
+  .wizard-pane h2 { font-size: 24px; font-weight: 700;
+    margin: 0 0 6px 4px; }
+  .wizard-pane .lead { color: var(--muted); font-size: 14px;
+    line-height: 1.5; margin: 0 8px 20px 4px; }
+  #wizardBody { flex: 1; overflow-y: auto; }
+  #wizardBody .field { width: 100%; margin-bottom: 12px; }
+  .wizard-list { background: var(--card); border-radius: 20px;
+    overflow: hidden; margin-bottom: 16px; padding: 4px 16px; }
+  .wizard-nav { display: flex; align-items: center;
+    justify-content: flex-end; gap: 12px; padding-top: 18px; }
+  #wizardBack { border: none; border-radius: 12px;
+    padding: 13px 32px; font-size: 14px; font-weight: 600;
+    background: var(--surface-2); color: var(--text); cursor: pointer; }
+  #wizardNext { padding: 13px 32px; width: auto; flex: none; }
+  #wizardError { display: flex; gap: 12px; align-items: flex-start;
+    background: color-mix(in srgb, var(--error) 16%, var(--bg));
+    color: var(--text); border-radius: 20px; padding: 16px 18px;
+    font-size: 13.5px; line-height: 1.4; margin-bottom: 4px; }
+  #wizardError:empty { display: none; }
+  @media (max-width: 719px) {
+    .wizard-rail { display: none; }
+    .wizard-pane { padding: 20px 16px 16px; }
+  }
 </style>
 </head>
 <body>
@@ -285,21 +309,25 @@
   </div>
 </section>
 
-<!-- Onboarding wizard (unconfigured device) -->
+<!-- Onboarding wizard (unconfigured device): the settings split shape. -->
 <section id="wizard" class="hidden">
-  <div class="wizard-card">
-    <img class="logo" id="wizardLogo" src="" alt="" width="56" height="56">
-    <div class="wizard-dots" id="wizardDots"></div>
+  <aside class="wizard-rail">
+    <div class="wizard-brand">
+      <span class="brand-mark"></span>
+      <h1>Set up<br>Kiosk Satellite</h1>
+    </div>
+    <nav id="wizardStepsRail"></nav>
+  </aside>
+  <main class="wizard-pane">
     <h2 id="wizardTitle"></h2>
     <p class="lead" id="wizardLead"></p>
-    <div class="wizard-body" id="wizardBody"></div>
+    <div id="wizardBody"></div>
     <div id="wizardError"></div>
     <div class="wizard-nav">
-      <button class="btn-ghost hidden" id="wizardBack">Back</button>
-      <span class="spacer"></span>
+      <button class="hidden" id="wizardBack">Back</button>
       <button class="btn-primary" id="wizardNext">Next</button>
     </div>
-  </div>
+  </main>
 </section>
 
 <!-- App -->
@@ -1601,19 +1629,32 @@ function wizardShow() {
   $('#login').classList.add('hidden');
   $('#app').classList.add('hidden');
   $('#wizard').classList.remove('hidden');
-  $('#wizardLogo').src = $('#login .logo').src;
   wizardRender();
 }
 
 function wizardRender() {
   const s = wizard.steps[wizard.i];
-  const dots = $('#wizardDots');
-  dots.innerHTML = '';
-  wizard.steps.forEach((_, n) => {
-    const d = document.createElement('span');
-    if (n < wizard.i) d.className = 'done';
-    if (n === wizard.i) d.className = 'now';
-    dots.appendChild(d);
+  // The rail: one row per step, numbered disc → check when done, dash when
+  // skipped — the same shape the on-device wizard and settings rail use.
+  const rail = $('#wizardStepsRail');
+  rail.innerHTML = '';
+  wizard.steps.forEach((step, n) => {
+    const row = document.createElement('div');
+    const skipped = step.isVs && wizard.i > n && !wizard.vsDetected;
+    const done = n < wizard.i && !skipped;
+    row.className = 'wizard-step' +
+      (n === wizard.i ? ' now' : '') + (done ? ' done' : '');
+    const disc = document.createElement('span');
+    disc.className = 'stepdisc';
+    disc.textContent = done ? '\u2713' : skipped ? '\u2013' : String(n + 1);
+    const text = document.createElement('span');
+    text.className = 'nav-text';
+    text.innerHTML = '<span class="nav-title"></span><span class="nav-sub"></span>';
+    text.querySelector('.nav-title').textContent = step.railTitle;
+    text.querySelector('.nav-sub').textContent =
+      skipped ? 'Not installed \u2014 skipped' : step.railSub;
+    row.append(disc, text);
+    rail.appendChild(row);
   });
   $('#wizardError').textContent = '';
   $('#wizardBack').classList.toggle('hidden', wizard.i === 0);
@@ -1636,6 +1677,7 @@ function wizardField(body, id, type, placeholder) {
 function wizardSteps() {
   const steps = [];
   if (wizard.needPassword) steps.push({
+    railTitle: 'Welcome', railSub: 'Admin password',
     title: 'Welcome to Kiosk Satellite',
     lead: 'This tablet is waiting to be set up. First, protect this remote admin with a password.',
     body: (b) => { wizardField(b, 'wzPassword', 'password', 'Admin password (min 4 characters)'); },
@@ -1649,6 +1691,7 @@ function wizardSteps() {
     },
   });
   steps.push({
+    railTitle: 'Connect', railSub: 'Home Assistant URL & token',
     title: 'Connect to Home Assistant',
     lead: 'The base URL of your instance and a long-lived access token (HA profile \u2192 Security).',
     nextLabel: 'Validate & continue',
@@ -1674,6 +1717,7 @@ function wizardSteps() {
     },
   });
   steps.push({
+    railTitle: 'Dashboard', railSub: 'What the kiosk shows',
     title: 'Choose a dashboard',
     lead: 'This is what the kiosk will show.',
     body: (b) => {
@@ -1704,6 +1748,8 @@ function wizardSteps() {
     },
   });
   steps.push({
+    isVs: true,
+    railTitle: 'Voice Satellite', railSub: 'Satellite, recommended settings',
     title: 'Voice Satellite detected',
     lead: 'This Home Assistant instance runs the Voice Satellite integration. Choose which satellite this kiosk is, then review its settings \u2014 everything can be changed later.',
     body: (b) => {
@@ -1763,6 +1809,7 @@ function wizardSteps() {
     next: async () => {},
   });
   steps.push({
+    railTitle: 'Permissions', railSub: 'What the setup needs',
     title: 'Permissions',
     lead: 'Android asks for these on the tablet itself \u2014 walk over and accept the prompts, then finish here.',
     nextLabel: 'Finish',
