@@ -86,9 +86,11 @@ class _SetupScreenState extends State<SetupScreen> {
     }
     await c.settings.set(defs.startUrl, url);
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
-      builder: (_) => KioskScreen(container: c, showMenuHint: true),
-    ));
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => KioskScreen(container: c, showMenuHint: true),
+      ),
+    );
   }
 
   @override
@@ -102,16 +104,19 @@ class _SetupScreenState extends State<SetupScreen> {
             shrinkWrap: true,
             padding: const EdgeInsets.all(32),
             children: [
-              Icon(Icons.satellite_alt_rounded,
-                  size: 56, color: theme.colorScheme.primary),
+              Image.asset('assets/branding/icon.png', width: 72, height: 72),
               const SizedBox(height: 16),
-              Text('Kiosk Satellite',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium),
+              Text(
+                'Kiosk Satellite',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineMedium,
+              ),
               const SizedBox(height: 8),
-              Text('Turn this device into a kiosk. What should it show?',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium),
+              Text(
+                'Turn this device into a kiosk. What should it show?',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium,
+              ),
               const SizedBox(height: 32),
               SegmentedButton<_SetupMode>(
                 segments: const [

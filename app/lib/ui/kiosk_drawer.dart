@@ -53,10 +53,10 @@ class KioskDrawer extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.satellite_alt_rounded,
-                      size: 36,
-                      color: theme.colorScheme.primary,
+                    Image.asset(
+                      'assets/branding/icon.png',
+                      width: 38,
+                      height: 38,
                     ),
                     const SizedBox(width: 14),
                     Expanded(
