@@ -40,7 +40,15 @@ const noCachePurgeScript = '''
 /// keep your saved page config.
 const clearWebCacheScript = '''
 (async function () {
-  try {
+  // The reload is the product; the cleanup is best-effort and TIMEBOXED.
+  // Right after a page boot, Home Assistant's service worker is busy
+  // re-caching the whole frontend, and deleting Cache Storage while it
+  // writes can block for ten seconds and more — which held this script's
+  // reload hostage exactly when a pull-to-refresh user is most likely to
+  // pull again. Whatever the cleanup has not managed within the window is
+  // left behind; the reload happens regardless, and the next clear gets
+  // another chance.
+  var cleanup = (async function () {
     if ('serviceWorker' in navigator) {
       var regs = await navigator.serviceWorker.getRegistrations();
       for (var i = 0; i < regs.length; i++) { await regs[i].unregister(); }
@@ -49,6 +57,12 @@ const clearWebCacheScript = '''
       var keys = await caches.keys();
       for (var j = 0; j < keys.length; j++) { await caches.delete(keys[j]); }
     }
+  })();
+  try {
+    await Promise.race([
+      cleanup,
+      new Promise(function (r) { setTimeout(r, 1800); }),
+    ]);
   } catch (e) { /* fall through to the reload regardless */ }
   location.reload();
 })();
