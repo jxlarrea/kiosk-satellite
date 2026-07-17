@@ -53,23 +53,16 @@ class KioskDrawer extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
                 child: Row(
                   children: [
-                    // The bare brand mark, not the app-icon tile. The source
-                    // is the adaptive-icon foreground, which carries the
-                    // adaptive safe-zone padding — the scale crops it back to
-                    // header size. White as designed on dark; tinted teal in
-                    // the light theme, where white would vanish.
-                    SizedBox(
-                      width: 42,
-                      height: 42,
-                      child: Transform.scale(
-                        scale: 1.4,
-                        child: Image.asset(
-                          'assets/branding/mark.png',
-                          color: theme.brightness == Brightness.dark
-                              ? null
-                              : theme.colorScheme.secondary,
-                        ),
-                      ),
+                    // The bare brand mark, not the app-icon tile — cropped
+                    // of its adaptive safe-zone padding at build time. White
+                    // as designed on dark; on light the body is teal but the
+                    // bubble keeps its three brand dots (mark_light.png).
+                    Image.asset(
+                      theme.brightness == Brightness.dark
+                          ? 'assets/branding/mark.png'
+                          : 'assets/branding/mark_light.png',
+                      width: 48,
+                      height: 48,
                     ),
                     const SizedBox(width: 14),
                     Expanded(

@@ -64,8 +64,8 @@ flutter_launcher_icons:
   android: true
   image_path_android: ../assets/icons/rounded/icon_1024.png
   adaptive_icon_background: ../assets/icons/google/adaptive/ic_launcher_background.png
-  adaptive_icon_foreground: ../assets/icons/google/adaptive/ic_launcher_foreground.png
-  adaptive_icon_monochrome: ../assets/icons/google/adaptive/ic_launcher_monochrome.png
+  adaptive_icon_foreground: ../assets/icons/google/adaptive/ic_launcher_foreground_scaled.png
+  adaptive_icon_monochrome: ../assets/icons/google/adaptive/ic_launcher_monochrome_scaled.png
   ios: true
   image_path_ios: ../assets/icons/apple/appstore_1024.png
   remove_alpha_ios: true
@@ -77,6 +77,7 @@ flutter:
     - assets/screensaver/index.html
     - assets/branding/icon.png
     - assets/branding/mark.png
+    - assets/branding/mark_light.png
   fonts:
     # Rubik (SIL Open Font License) — an open geometric sans that gives the
     # clock the clean, friendly feel of Google Sans without the licensing.
