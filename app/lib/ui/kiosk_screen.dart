@@ -11,6 +11,7 @@ import '../app_container.dart';
 import 'screensaver_view.dart';
 import '../core/events.dart';
 import '../managers/browser/no_cache_script.dart';
+import '../managers/browser/pull_to_refresh_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kiosk_drawer.dart';
@@ -72,24 +73,40 @@ class _KioskScreenState extends State<KioskScreen>
   /// creation (mixed content, SSL trust). Rebuilding re-reads initialSettings.
   int _webViewEpoch = 0;
 
-  /// Pull-to-refresh, Fully style. The spinner is ended from onLoadStop /
-  /// onReceivedError — the reload's own completion — never on a timer.
+  /// Pull-to-refresh, Fully style. The native wrapper handles pages that fit
+  /// the screen; scrollable pages never hand it the gesture (Chromium claims
+  /// every vertical drag), so those report their pulls through the JS probe
+  /// (see pull_to_refresh_script.dart) into [_triggerRefresh]. The spinner is
+  /// ended from onLoadStop / onReceivedError — the reload's own completion —
+  /// never on a timer.
   late final PullToRefreshController _pullToRefresh = PullToRefreshController(
     settings: PullToRefreshSettings(
       enabled: c.settings.get(defs.pullToRefresh),
       color: const Color(0xFF749C6F), // brand sage on the stock spinner
     ),
-    onRefresh: () async {
-      // The cache-clearing pull is the same operation as the menu's Clear
-      // web cache (drops HTTP cache + service worker, keeps localStorage and
-      // cookies, reloads); a plain pull is just the reload.
-      if (c.settings.get(defs.pullToRefreshClearCache)) {
-        await c.commands.execute('clearWebCache', const {});
-      } else {
-        await c.commands.execute('reload', const {});
-      }
-    },
+    onRefresh: _triggerRefresh,
   );
+
+  /// One refresh at a time, whichever side asked for it: the guard keeps the
+  /// native gesture and the JS probe from doubling up on pages where both
+  /// fire. Reset when the reload settles.
+  bool _refreshing = false;
+
+  Future<void> _triggerRefresh() async {
+    if (_refreshing || !c.settings.get(defs.pullToRefresh)) return;
+    _refreshing = true;
+    // JS-initiated pulls have no native spinner out yet; show it. A no-op
+    // when the native gesture already did.
+    await _pullToRefresh.beginRefreshing();
+    // The cache-clearing pull is the same operation as the menu's Clear web
+    // cache (drops HTTP cache + service worker, keeps localStorage and
+    // cookies, reloads); a plain pull is just the reload.
+    if (c.settings.get(defs.pullToRefreshClearCache)) {
+      await c.commands.execute('clearWebCache', const {});
+    } else {
+      await c.commands.execute('reload', const {});
+    }
+  }
 
   Future<void> _onSettingChanged(SettingChanged e) async {
     // HA kiosk mode is applied live (no app restart).
@@ -190,6 +207,12 @@ class _KioskScreenState extends State<KioskScreen>
         source: noCachePurgeScript,
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
       ),
+    // Always injected, acted on only while the setting is on (checked in
+    // _triggerRefresh) — so the toggle needs no page reload to take effect.
+    UserScript(
+      source: pullToRefreshProbeScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
   ];
 
   /// Apply or tear down the CSS kiosk mode against the current page.
@@ -413,8 +436,14 @@ class _KioskScreenState extends State<KioskScreen>
     onWebViewCreated: (controller) {
       c.browser.attach(controller);
       c.jsApi.attach(controller);
+      // Scrollable pages report their pulls here (see _pullToRefresh).
+      controller.addJavaScriptHandler(
+        handlerName: 'ksPullToRefresh',
+        callback: (_) => _triggerRefresh(),
+      );
     },
     onLoadStop: (controller, url) {
+      _refreshing = false;
       _pullToRefresh.endRefreshing();
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
@@ -423,6 +452,7 @@ class _KioskScreenState extends State<KioskScreen>
     },
     onReceivedError: (controller, request, error) {
       if (request.isForMainFrame ?? true) {
+        _refreshing = false;
         _pullToRefresh.endRefreshing();
         c.browser.onLoadError(error.description);
       }
