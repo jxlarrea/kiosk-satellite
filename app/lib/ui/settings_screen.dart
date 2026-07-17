@@ -716,7 +716,9 @@ class _CategoryContentState extends State<_CategoryContent> {
             return _SettingsCard(
               children: [
                 const ListTile(
-                  title: Text('Voice Satellite is not installed'),
+                  title: Text(
+                    'Voice Satellite is not installed in Home Assistant',
+                  ),
                   subtitle: Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
@@ -750,6 +752,58 @@ class _CategoryContentState extends State<_CategoryContent> {
                       child: SvgPicture.asset(
                         'assets/branding/hacs.svg',
                         height: 44,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      Navigator.of(
+                        context,
+                      ).popUntil((route) => route.isFirst);
+                      container.commands.execute('loadUrl', {
+                        'url':
+                            'https://github.com/jxlarrea/voice-satellite-card-integration',
+                      });
+                    },
+                    child: Text.rich(
+                      TextSpan(
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                        children: [
+                          const TextSpan(text: 'Learn more about '),
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: SvgPicture.string(
+                                _githubMark,
+                                height: 15,
+                                colorFilter: ColorFilter.mode(
+                                  Theme.of(context).colorScheme.primary,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'Voice Satellite on Github',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -796,6 +850,21 @@ class _CategoryContentState extends State<_CategoryContent> {
     ];
   }
 }
+
+/// The GitHub mark (octocat silhouette), inlined so the link row needs no
+/// asset round-trip; tinted via colorFilter where used.
+const _githubMark =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+    '<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105'
+    '.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035'
+    '-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 '
+    '1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765'
+    '-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3'
+    '-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04'
+    '.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 '
+    '1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095'
+    '.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 '
+    '0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>';
 
 /// The dashboard chooser: every Home Assistant dashboard as a radio row;
 /// the chosen one becomes the start URL. The kiosk navigates immediately —
