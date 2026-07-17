@@ -296,6 +296,12 @@
   #wizardError .hint { opacity: .85; }
   #wizardError:empty { display: none; }
   .wizard-foot { margin-top: auto; padding: 10px 16px 4px; }
+  .made-by { text-align: center; color: var(--muted); font-size: 13px;
+    padding: 22px 0 10px; }
+  .made-by a { color: var(--primary); font-weight: 600;
+    text-decoration: none; }
+  .made-by a:hover { text-decoration: underline; }
+  .made-by .heart { color: var(--error); }
   @media (max-width: 719px) {
     .wizard-rail { display: none; }
     .wizard-pane { padding: 20px 16px 16px; }
@@ -485,6 +491,10 @@
         <button class="btn-ghost" id="refreshLogs">Refresh</button></div>
       <div class="console" id="logsOut"></div>
     </div>
+    <div class="made-by">Made with <span class="heart">&#9829;</span> by
+      <a href="https://github.com/jxlarrea" target="_blank" rel="noreferrer">Xavier Larrea</a>
+      &#183; &#9749;
+      <a href="https://buymeacoffee.com/jxlarrea" target="_blank" rel="noreferrer">Buy me a coffee</a></div>
     </main>
   </div>
 </section>

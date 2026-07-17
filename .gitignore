@@ -12,3 +12,9 @@ app/*.iml
 
 # Misc
 .DS_Store
+
+# Release signing identity: never committed. Local builds read
+# android/key.properties; CI gets the same values from secrets.
+app/android/key.properties
+app/android/app/upload-keystore.jks
+*.jks

@@ -590,6 +590,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   )
                 : const SizedBox.shrink(),
           ),
+        _MadeByFooter(container: container),
       ],
     );
   }
@@ -948,6 +949,57 @@ class _DashboardPickerCardState extends State<_DashboardPickerCard> {
           ],
         );
       },
+    );
+  }
+}
+
+/// The maker's mark, closing every settings page: centered, quiet, with
+/// the name linking to GitHub and the coffee cup to the tip jar. Links
+/// open in the kiosk view, the only browser this device has.
+class _MadeByFooter extends StatelessWidget {
+  const _MadeByFooter({required this.container});
+
+  final AppContainer container;
+
+  void _open(BuildContext context, String url) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    container.commands.execute('loadUrl', {'url': url});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    final link = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.primary,
+      fontWeight: FontWeight.w600,
+    );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Made with ', style: muted),
+          Text(
+            '\u2665',
+            style: muted?.copyWith(color: theme.colorScheme.error),
+          ),
+          Text(' by ', style: muted),
+          InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: () => _open(context, 'https://github.com/jxlarrea'),
+            child: Text('Xavier Larrea', style: link),
+          ),
+          Text(' \u00b7 \u2615 ', style: muted),
+          InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: () => _open(context, 'https://buymeacoffee.com/jxlarrea'),
+            child: Text('Buy me a coffee', style: link),
+          ),
+        ],
+      ),
     );
   }
 }
