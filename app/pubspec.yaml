@@ -76,6 +76,7 @@ flutter:
     - assets/remote-ui/index.html
     - assets/screensaver/index.html
     - assets/branding/icon.png
+    - assets/branding/mark.png
   fonts:
     # Rubik (SIL Open Font License) — an open geometric sans that gives the
     # clock the clean, friendly feel of Google Sans without the licensing.
