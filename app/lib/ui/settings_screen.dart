@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
@@ -1129,6 +1130,32 @@ class SettingTile extends StatelessWidget {
                   border: Border.all(color: Colors.black26),
                 ),
               ),
+            ),
+          );
+        }
+        // The local-media folder is picked with the system picker, not
+        // typed. Media permissions are asked for first — the screensaver
+        // needs them to read the files later, and asking at pick time is
+        // the moment the user understands why.
+        if (def.key == screensaverLocalFolder.key) {
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(
+              display,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: TextButton(
+              onPressed: () async {
+                await ensureOsPermission(Permission.photos);
+                await ensureOsPermission(Permission.videos);
+                final path = await FilePicker.platform.getDirectoryPath();
+                if (path != null) {
+                  await c.settings.setFromJson(def.key, path);
+                  onChanged();
+                }
+              },
+              child: const Text('Browse'),
             ),
           );
         }

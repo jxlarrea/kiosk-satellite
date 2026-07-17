@@ -5,6 +5,12 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Local Media screensaver: reading the user's picked photo/video
+         folder. READ_MEDIA_* on 13+, the legacy storage grant before. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
     <!-- Motion detection uses a camera when one is present, but the app is fully
          usable without it, so never let the Store filter the install. -->
     <uses-feature android:name="android.hardware.camera.any" android:required="false"/>

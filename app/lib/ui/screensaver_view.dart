@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
 import '../managers/settings/definitions.dart' as defs;
@@ -30,18 +32,20 @@ class ScreensaverOverlay extends StatelessWidget {
         return Positioned.fill(
           child: switch (view) {
             'clock' => _Dismissable(
-                container: container,
-                child: ClockScreensaver(container: container),
-              ),
-            'media' || 'website' => ScreensaverWebView(
-                container: container,
-                mode: view,
-              ),
+              container: container,
+              child: ClockScreensaver(container: container),
+            ),
+            'media' ||
+            'website' => ScreensaverWebView(container: container, mode: view),
+            'local' => _Dismissable(
+              container: container,
+              child: LocalMediaScreensaver(container: container),
+            ),
             // 'black' and anything unexpected: the safe, opaque cover.
             _ => _Dismissable(
-                container: container,
-                child: const ColoredBox(color: Colors.black),
-              ),
+              container: container,
+              child: const ColoredBox(color: Colors.black),
+            ),
           },
         );
       },
@@ -59,10 +63,10 @@ class _Dismissable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => container.screensaver.notifyActivity('touch'),
-        child: child,
-      );
+    behavior: HitTestBehavior.opaque,
+    onTap: () => container.screensaver.notifyActivity('touch'),
+    child: child,
+  );
 }
 
 /// A full-screen digital clock over black, mirroring Voice Satellite's clock.
@@ -119,8 +123,12 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     if (!mounted) return;
     final r = Random();
     const max = 24.0;
-    setState(() => _offset =
-        Offset((r.nextDouble() * 2 - 1) * max, (r.nextDouble() * 2 - 1) * max));
+    setState(
+      () => _offset = Offset(
+        (r.nextDouble() * 2 - 1) * max,
+        (r.nextDouble() * 2 - 1) * max,
+      ),
+    );
   }
 
   @override
@@ -153,11 +161,27 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   }
 
   static const _weekdays = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
   ];
   static const _months = [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-    'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   String _date() =>
@@ -284,12 +308,187 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
         controller.addJavaScriptHandler(
           handlerName: 'log',
           callback: (args) {
-            widget.container.log
-                .info('screensaver', args.isNotEmpty ? '${args.first}' : '');
+            widget.container.log.info(
+              'screensaver',
+              args.isNotEmpty ? '${args.first}' : '',
+            );
             return null;
           },
         );
       },
+    );
+  }
+}
+
+/// The Local Media screensaver: photos and videos from a folder on this
+/// device, no Home Assistant involved. Photos hold for the configured
+/// interval; videos play to their end (muted — a screensaver that suddenly
+/// has a voice at 2am is a defect, not a feature). The listing is read once
+/// per activation: a screensaver session is short, and re-listing between
+/// slides would hitch exactly when nothing should.
+class LocalMediaScreensaver extends StatefulWidget {
+  const LocalMediaScreensaver({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<LocalMediaScreensaver> createState() => _LocalMediaScreensaverState();
+}
+
+class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
+  static const _imageExt = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'};
+  static const _videoExt = {'.mp4', '.webm', '.mkv', '.mov', '.3gp'};
+
+  List<File> _files = const [];
+  int _index = 0;
+  Timer? _timer;
+  VideoPlayerController? _video;
+
+  /// Set when the folder is missing, unreadable, or empty — the message is
+  /// the screensaver then, because a silently black screen looks like a
+  /// crash and teaches nothing.
+  String? _problem;
+
+  AppContainer get c => widget.container;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final folder = c.settings.get(defs.screensaverLocalFolder);
+    if (folder.isEmpty) {
+      setState(() => _problem = 'No folder selected. Pick one in Settings.');
+      return;
+    }
+    try {
+      final recursive = c.settings.get(defs.screensaverLocalRecursive);
+      final files = <File>[];
+      await for (final entry in Directory(
+        folder,
+      ).list(recursive: recursive, followLinks: false)) {
+        if (entry is! File) continue;
+        final dot = entry.path.lastIndexOf('.');
+        if (dot < 0) continue;
+        final ext = entry.path.substring(dot).toLowerCase();
+        if (_imageExt.contains(ext) || _videoExt.contains(ext)) {
+          files.add(entry);
+        }
+      }
+      if (files.isEmpty) {
+        setState(() => _problem = 'No photos or videos in $folder');
+        return;
+      }
+      if (c.settings.get(defs.screensaverLocalShuffle)) {
+        files.shuffle(Random());
+      } else {
+        files.sort((a, b) => a.path.compareTo(b.path));
+      }
+      if (!mounted) return;
+      setState(() => _files = files);
+      _show(0);
+    } catch (e) {
+      c.log.warn('screensaver', 'local media listing failed: $e');
+      if (mounted) {
+        setState(
+          () => _problem =
+              'Could not read $folder — is the '
+              'media permission granted?',
+        );
+      }
+    }
+  }
+
+  bool _isVideo(File f) {
+    final dot = f.path.lastIndexOf('.');
+    return dot >= 0 && _videoExt.contains(f.path.substring(dot).toLowerCase());
+  }
+
+  Future<void> _show(int index) async {
+    _timer?.cancel();
+    final old = _video;
+    _video = null;
+    await old?.dispose();
+    if (!mounted || _files.isEmpty) return;
+    setState(() => _index = index % _files.length);
+    final file = _files[_index];
+    if (_isVideo(file)) {
+      final video = VideoPlayerController.file(file);
+      _video = video;
+      try {
+        await video.initialize();
+        await video.setVolume(0);
+        video.addListener(() {
+          final v = video.value;
+          if (v.isInitialized &&
+              !v.isPlaying &&
+              v.position >= v.duration &&
+              v.duration > Duration.zero) {
+            _advance();
+          }
+        });
+        if (!mounted) return;
+        setState(() {});
+        await video.play();
+      } catch (e) {
+        // A codec the device lacks must not stall the slideshow.
+        c.log.warn('screensaver', 'video failed (${file.path}): $e');
+        _advance();
+      }
+    } else {
+      final seconds = c.settings
+          .get(defs.screensaverLocalInterval)
+          .toInt()
+          .clamp(2, 3600);
+      _timer = Timer(Duration(seconds: seconds), _advance);
+    }
+  }
+
+  void _advance() {
+    if (!mounted || _files.isEmpty) return;
+    _show(_index + 1);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _video?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final video = _video;
+    return ColoredBox(
+      color: Colors.black,
+      child: _problem != null
+          ? Center(
+              child: Text(
+                _problem!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white54, fontSize: 16),
+              ),
+            )
+          : _files.isEmpty
+          ? const SizedBox.expand()
+          : video != null && video.value.isInitialized
+          ? Center(
+              child: AspectRatio(
+                aspectRatio: video.value.aspectRatio,
+                child: VideoPlayer(video),
+              ),
+            )
+          : SizedBox.expand(
+              child: Image.file(
+                _files[_index],
+                key: ValueKey(_files[_index].path),
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => const SizedBox.expand(),
+              ),
+            ),
     );
   }
 }

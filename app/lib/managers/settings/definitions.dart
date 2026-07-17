@@ -266,12 +266,13 @@ const screensaverMode = SettingDef<String>(
       'What the screensaver shows after the idle timeout. Dim only '
       'lowers the backlight and is the lightest.',
   category: 'Screensaver',
-  options: ['dim', 'black', 'clock', 'media', 'website'],
+  options: ['dim', 'black', 'clock', 'media', 'local', 'website'],
   optionLabels: {
     'dim': 'Dim',
     'black': 'Black',
     'clock': 'Clock',
     'media': 'Home Assistant Media',
+    'local': 'Local Media',
     'website': 'Website',
   },
 );
@@ -413,6 +414,56 @@ const screensaverWebsiteUrl = SettingDef<String>(
 );
 
 // ── Burn-in ──
+
+// ── Local media (mode: local) ──
+
+const screensaverLocalFolder = SettingDef<String>(
+  key: 'screensaver.local_folder',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Local folder',
+  description:
+      'Folder on this device whose photos and videos the screensaver '
+      'cycles through. Picked on the device; the path can also be typed '
+      'here remotely.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
+
+const screensaverLocalInterval = SettingDef<num>(
+  key: 'screensaver.local_interval_seconds',
+  type: SettingType.number,
+  defaultValue: 10,
+  title: 'Seconds per photo',
+  description:
+      'How long each photo shows before the next. Videos play in full.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
+
+const screensaverLocalShuffle = SettingDef<bool>(
+  key: 'screensaver.local_shuffle',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Shuffle',
+  description: 'Cycle the folder in random order instead of by name.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
+
+const screensaverLocalRecursive = SettingDef<bool>(
+  key: 'screensaver.local_recursive',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Include subfolders',
+  description: 'Also cycle photos and videos inside subfolders.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
 
 const screensaverPixelShift = SettingDef<bool>(
   key: 'screensaver.pixel_shift',
@@ -699,6 +750,10 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMediaShuffle,
   screensaverMediaRecursive,
   screensaverWebsiteUrl,
+  screensaverLocalFolder,
+  screensaverLocalInterval,
+  screensaverLocalShuffle,
+  screensaverLocalRecursive,
   screensaverPixelShift,
   screensaverDismissOnMotion,
   motionFps,

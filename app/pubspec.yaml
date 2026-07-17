@@ -36,6 +36,8 @@ dependencies:
 
   # HMAC for stateless remote-admin tokens (survive app restarts)
   crypto: ^3.0.6
+  file_picker: ^8.1.2
+  video_player: ^2.9.2
 
   # Share sheet (console log export)
   share_plus: ^10.1.4
