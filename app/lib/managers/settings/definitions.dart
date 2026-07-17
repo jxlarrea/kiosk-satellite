@@ -287,6 +287,7 @@ const screensaverClock24h = SettingDef<bool>(
   title: '24-hour clock',
   description: 'Show a 24-hour time instead of AM/PM.',
   category: 'Screensaver',
+  section: 'Clock',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
 );
@@ -298,6 +299,7 @@ const screensaverClockSeconds = SettingDef<bool>(
   title: 'Show seconds',
   description: 'Include seconds in the clock.',
   category: 'Screensaver',
+  section: 'Clock',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
 );
@@ -309,6 +311,7 @@ const screensaverClockDate = SettingDef<bool>(
   title: 'Show date',
   description: 'Show the weekday and date under the clock.',
   category: 'Screensaver',
+  section: 'Clock',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
 );
@@ -320,6 +323,7 @@ const screensaverClockScale = SettingDef<num>(
   title: 'Clock size',
   description: 'Scale the clock from 50 to 300 percent for this screen.',
   category: 'Screensaver',
+  section: 'Clock',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
   min: 50,
@@ -336,6 +340,7 @@ const screensaverClockColor = SettingDef<String>(
   title: 'Clock colour',
   description: 'The colour of the clock text.',
   category: 'Screensaver',
+  section: 'Clock',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
 );
@@ -346,11 +351,14 @@ const screensaverMediaId = SettingDef<String>(
   key: 'screensaver.media_id',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Home Assistant Media',
+  // 'Media source', not 'Home Assistant Media': the row now sits under a
+  // panel already titled with the mode name.
+  title: 'Media source',
   description:
       'A Home Assistant media item, folder, or camera. Use Browse to '
       'pick one.',
   category: 'Screensaver',
+  section: 'Home Assistant Media',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
 );
@@ -365,6 +373,7 @@ const screensaverMediaIsFolder = SettingDef<bool>(
   title: 'Media is a folder',
   description: '',
   category: 'Screensaver',
+  section: 'Home Assistant Media',
   hidden: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
@@ -378,6 +387,7 @@ const screensaverMediaInterval = SettingDef<num>(
   description:
       'How long each image shows before the next. Videos play in full.',
   category: 'Screensaver',
+  section: 'Home Assistant Media',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -388,6 +398,7 @@ const screensaverMediaShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Play a folder in random order.',
   category: 'Screensaver',
+  section: 'Home Assistant Media',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -398,6 +409,7 @@ const screensaverMediaRecursive = SettingDef<bool>(
   title: 'Include subfolders',
   description: 'Descend into subfolders when a folder is chosen.',
   category: 'Screensaver',
+  section: 'Home Assistant Media',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -425,6 +437,7 @@ const screensaverMediaTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one item hands off to the next.',
   category: 'Screensaver',
+  section: 'Home Assistant Media',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.media_is_folder',
@@ -439,6 +452,7 @@ const screensaverWebsiteUrl = SettingDef<String>(
   title: 'Website URL',
   description: 'A page to show full-screen. It must allow being embedded.',
   category: 'Screensaver',
+  section: 'Website',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'website',
 );
@@ -463,6 +477,7 @@ const screensaverGalleryItems = SettingDef<String>(
       'The photos and videos this screensaver cycles. Picked from the '
       'gallery on the device; picking again replaces the selection.',
   category: 'Screensaver',
+  section: 'Photo Gallery',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -475,6 +490,7 @@ const screensaverGalleryInterval = SettingDef<num>(
   description:
       'How long each photo shows before the next. Videos play in full.',
   category: 'Screensaver',
+  section: 'Photo Gallery',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -486,6 +502,7 @@ const screensaverGalleryShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Cycle the selection in random order.',
   category: 'Screensaver',
+  section: 'Photo Gallery',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -497,6 +514,7 @@ const screensaverGalleryTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one photo hands off to the next.',
   category: 'Screensaver',
+  section: 'Photo Gallery',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.mode',
@@ -515,6 +533,7 @@ const screensaverLocalFolder = SettingDef<String>(
       'cycles through. Picked on the device; the path can also be typed '
       'here remotely.',
   category: 'Screensaver',
+  section: 'Local Media',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -527,6 +546,7 @@ const screensaverLocalInterval = SettingDef<num>(
   description:
       'How long each photo shows before the next. Videos play in full.',
   category: 'Screensaver',
+  section: 'Local Media',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -538,6 +558,7 @@ const screensaverLocalShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Cycle the folder in random order instead of by name.',
   category: 'Screensaver',
+  section: 'Local Media',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -549,6 +570,7 @@ const screensaverLocalRecursive = SettingDef<bool>(
   title: 'Include subfolders',
   description: 'Also cycle photos and videos inside subfolders.',
   category: 'Screensaver',
+  section: 'Local Media',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -560,6 +582,7 @@ const screensaverLocalTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one photo hands off to the next.',
   category: 'Screensaver',
+  section: 'Local Media',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.mode',
@@ -584,6 +607,7 @@ const screensaverDimLevel = SettingDef<num>(
   title: 'Dim level',
   description: 'Screen brightness while the screensaver is dimming.',
   category: 'Screensaver',
+  section: 'Dim',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'dim',
   min: 0,
@@ -838,7 +862,11 @@ const List<SettingDef<Object>> allSettings = [
   keepScreenOn,
   screensaverEnabled,
   screensaverTimeoutSeconds,
+  // Pixel shift sits with the general controls: it applies to every mode.
+  screensaverPixelShift,
   screensaverMode,
+  // One titled panel per mode, in the dropdown's order; only the panel of
+  // the selected mode is visible (each setting depends on the mode).
   screensaverDimLevel,
   screensaverClock24h,
   screensaverClockSeconds,
@@ -851,7 +879,6 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMediaShuffle,
   screensaverMediaRecursive,
   screensaverMediaTransition,
-  screensaverWebsiteUrl,
   screensaverLocalFolder,
   screensaverLocalInterval,
   screensaverLocalShuffle,
@@ -861,7 +888,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverGalleryInterval,
   screensaverGalleryShuffle,
   screensaverGalleryTransition,
-  screensaverPixelShift,
+  screensaverWebsiteUrl,
   screensaverDismissOnMotion,
   motionFps,
   motionSensitivity,
