@@ -443,6 +443,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
 
   Future<void> _show(int index) async {
     _timer?.cancel();
+    _rolled = _randomPool[_rand.nextInt(_randomPool.length)];
     // The outgoing video is not disposed here: it has to keep rendering
     // while the transition plays it out. _retire parks it until the
     // hand-off is over.
@@ -531,11 +532,21 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
     super.dispose();
   }
 
-  String get _transition => c.settings.get(
-    _gallery
-        ? defs.screensaverGalleryTransition
-        : defs.screensaverLocalTransition,
-  );
+  static final _rand = Random();
+  static const _randomPool = ['fade', 'slide', 'zoom', 'kenburns'];
+
+  /// The transition Random rolled for the hand-off now on screen. Rolled
+  /// once per slide change so both sides of one hand-off move the same way.
+  String _rolled = 'fade';
+
+  String get _transition {
+    final setting = c.settings.get(
+      _gallery
+          ? defs.screensaverGalleryTransition
+          : defs.screensaverLocalTransition,
+    );
+    return setting == 'random' ? _rolled : setting;
+  }
 
   static Duration _switchDuration(String transition) => switch (transition) {
     'slide' => const Duration(milliseconds: 450),

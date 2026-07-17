@@ -406,13 +406,16 @@ const screensaverMediaRecursive = SettingDef<bool>(
 // is the slow drifting zoom of documentary photo pans; stills only —
 // motion on top of motion just looks broken, so videos fall back to a
 // crossfade.
-const _transitionOptions = ['none', 'fade', 'slide', 'zoom', 'kenburns'];
+// 'random' rolls one of the real transitions per hand-off ('none' is
+// excluded from the pool — a surprise hard cut just reads as a glitch).
+const _transitionOptions = ['none', 'fade', 'slide', 'zoom', 'kenburns', 'random'];
 const _transitionLabels = {
   'none': 'None',
   'fade': 'Crossfade',
   'slide': 'Slide',
   'zoom': 'Zoom',
   'kenburns': 'Ken Burns',
+  'random': 'Random',
 };
 
 const screensaverMediaTransition = SettingDef<String>(

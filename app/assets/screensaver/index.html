@@ -24,10 +24,15 @@
   .t-slide { opacity: 1; transform: translateX(105%);
     transition: transform 500ms cubic-bezier(0.33, 0, 0.2, 1); }
   .t-slide.in { transform: translateX(0); }
-  .t-slide.out { transform: translateX(-105%); }
   .t-zoom { transform: scale(1.1);
     transition: opacity 600ms ease, transform 600ms ease; }
   .t-zoom.in { opacity: 1; transform: scale(1); }
+  /* Applied by an incoming slide to whatever sits beneath it, whatever
+     class that element entered with. !important outranks the Ken Burns
+     animation, which would otherwise keep owning transform. */
+  .media.slide-out { animation: none;
+    transform: translateX(-105%) !important;
+    transition: transform 500ms cubic-bezier(0.33, 0, 0.2, 1); }
   iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     border: 0; opacity: 0; transition: opacity 600ms ease;
     /* Taps must reach our dismiss handler, not the embedded site. */
@@ -133,14 +138,18 @@ class Hass {
    ones under it — no black flash between items. Ken Burns drifts stills
    for their whole hold; video and camera streams supply their own motion
    and fall back to the crossfade. */
-const TRANSITION = ['none', 'fade', 'slide', 'zoom', 'kenburns']
+const TRANSITION = ['none', 'fade', 'slide', 'zoom', 'kenburns', 'random']
   .includes(CFG.mediaTransition) ? CFG.mediaTransition : 'fade';
 const TDUR = { fade: 650, slide: 550, zoom: 650, kenburns: 850 };
+const RANDOM_POOL = ['fade', 'slide', 'zoom', 'kenburns'];
 let kbAnchor = 0;
 
 function showElement(el, opts) {
   const still = !!(opts && opts.still);
-  const t = (TRANSITION === 'kenburns' && !still) ? 'fade' : TRANSITION;
+  let t = TRANSITION === 'random'
+    ? RANDOM_POOL[Math.floor(Math.random() * RANDOM_POOL.length)]
+    : TRANSITION;
+  if (t === 'kenburns' && !still) t = 'fade';
   el.classList.add('media');
   if (t === 'none') {
     el.classList.add('cut');
@@ -159,9 +168,11 @@ function showElement(el, opts) {
   content.appendChild(el);
   requestAnimationFrame(() => {
     el.classList.add('in');
-    // .out only styles the push (slide); it is inert on the others, whose
-    // incumbents simply sit beneath the opaque newcomer until removal.
-    for (let p = el.previousElementSibling; p; p = p.previousElementSibling) p.classList.add('out');
+    // Only the push moves the incumbents; under the others they simply
+    // sit beneath the opaque newcomer until removal.
+    if (t === 'slide') {
+      for (let p = el.previousElementSibling; p; p = p.previousElementSibling) p.classList.add('slide-out');
+    }
     setTimeout(() => {
       // Sweep only what is still stacked beneath el. 'Everything except
       // el' here would raze elements appended while this timer was
