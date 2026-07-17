@@ -63,26 +63,36 @@ class KioskManager extends Manager {
             'always; notifications, battery-optimization exemption and '
             'draw-over-apps too when full=true. The dialogs appear on the '
             'device screen — the remote wizard sends someone to tap them.',
-        params: const {'full': 'true for the whole recommended set'},
+        params: const {
+          'full': 'true for the whole recommended set',
+          'which':
+              'explicit list of permissions to request (microphone, '
+              'notifications, batteryOptimizations, overlay); overrides '
+              'full',
+        },
         handler: (p) async {
-          final full = p['full'] == true;
+          const known = <String, Permission>{
+            'microphone': Permission.microphone,
+            'notifications': Permission.notification,
+            'batteryOptimizations': Permission.ignoreBatteryOptimizations,
+            'overlay': Permission.systemAlertWindow,
+          };
+          final which = p['which'];
+          final wanted = which is List
+              ? [
+                  for (final name in which)
+                    if (known.containsKey(name)) name as String,
+                ]
+              : p['full'] == true
+              ? known.keys.toList()
+              : const ['microphone'];
           final results = <String, bool>{};
-          Future<void> ask(String label, Permission permission) async {
+          for (final name in wanted) {
             try {
-              results[label] = (await permission.request()).isGranted;
+              results[name] = (await known[name]!.request()).isGranted;
             } catch (_) {
-              results[label] = false;
+              results[name] = false;
             }
-          }
-
-          await ask('microphone', Permission.microphone);
-          if (full) {
-            await ask('notifications', Permission.notification);
-            await ask(
-              'batteryOptimizations',
-              Permission.ignoreBatteryOptimizations,
-            );
-            await ask('overlay', Permission.systemAlertWindow);
           }
           return CommandResult.ok(results);
         },

@@ -112,7 +112,7 @@ class HomeAssistantManager extends Manager {
       ..register(Command(
         name: 'haDetectVoiceSatellite',
         description:
-            'Whether the Voice Satellite card is installed on the '
+            'Whether the Voice Satellite integration is installed on the '
             'connected Home Assistant instance.',
         handler: (_) async => CommandResult.ok(await detectVoiceSatellite()),
       ))

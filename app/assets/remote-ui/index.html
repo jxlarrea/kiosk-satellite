@@ -1512,9 +1512,26 @@ async function start() {
    serves this passwordless; minting the admin password is the first step
    (skipped when the device wizard already set one — then it appears after
    login instead). */
+const WIZ_LOCKED = [
+  ['web.microphone', 'Microphone access'],
+  ['wake_word.enabled', 'Native wake word detection'],
+];
+const WIZ_OPTIONAL = [
+  ['browser.auto_reload_on_error', 'Auto-reload on error'],
+  ['browser.pull_to_refresh', 'Pull to refresh'],
+  ['browser.pull_to_refresh_clear_cache', 'Clear cache when pulling to refresh'],
+  ['browser.allow_mixed_content', 'Allow mixed content'],
+  ['browser.ignore_ssl_errors', 'Ignore SSL errors'],
+  ['web.autoplay', 'Autoplay audio and video'],
+  ['kiosk.start_on_boot', 'Start on boot'],
+  ['screen.keep_on', 'Keep screen on'],
+  ['wake_word.background', 'Keep listening in the background'],
+  ['remote.enabled', 'Remote management'],
+];
 const wizard = {
   steps: [], i: 0, needPassword: false,
-  vsDetected: false, applyRecommended: true,
+  vsDetected: false,
+  rec: Object.fromEntries(WIZ_OPTIONAL.map(([k]) => [k, true])),
   dashboards: [], dashboard: null,
 };
 
@@ -1621,17 +1638,41 @@ function wizardSteps() {
   });
   steps.push({
     title: 'Voice Satellite detected',
-    lead: 'This instance runs the Voice Satellite card. Apply the recommended kiosk settings for it?',
+    lead: 'This Home Assistant instance runs the Voice Satellite integration. You can change any of these later in Settings.',
     body: (b) => {
+      const mark = (on) => on ? '\u2611' : '\u2610';
+      const toggleRow = (label, desc, on, locked, onClick) => {
+        const row = readOnlyRow(label, desc, mark(on));
+        const span = row.querySelector('span');
+        span.style.fontSize = '20px';
+        span.style.color = locked ? 'var(--muted)' : (on ? 'var(--primary)' : 'var(--muted)');
+        if (!locked) {
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', onClick);
+        }
+        return row;
+      };
+      const master = document.createElement('div');
+      master.className = 'wizard-list';
+      const all = WIZ_OPTIONAL.every(([k]) => wizard.rec[k]);
+      master.appendChild(toggleRow('Apply all recommended settings',
+        'The optimal settings for full Voice Satellite integration and functionality.',
+        all, false, () => {
+          const next = !all;
+          WIZ_OPTIONAL.forEach(([k]) => { wizard.rec[k] = next; });
+          wizardRender();
+        }));
+      b.appendChild(master);
       const list = document.createElement('div');
       list.className = 'wizard-list';
-      const row = readOnlyRow('Apply recommended settings',
-        'Auto-reload, pull to refresh with cache clear, mixed content, self-signed certificates, microphone, autoplay, start on boot, keep screen on, wake word with background listening, remote management.',
-        wizard.applyRecommended ? '\u2611' : '\u2610');
-      row.querySelector('span').style.fontSize = '20px';
-      row.style.cursor = 'pointer';
-      row.addEventListener('click', () => { wizard.applyRecommended = !wizard.applyRecommended; wizardRender(); });
-      list.appendChild(row);
+      list.style.marginTop = '10px';
+      WIZ_LOCKED.forEach(([, label]) =>
+        list.appendChild(toggleRow(label, 'Required by Voice Satellite', true, true)));
+      WIZ_OPTIONAL.forEach(([key, label]) =>
+        list.appendChild(toggleRow(label, '', wizard.rec[key], false, () => {
+          wizard.rec[key] = !wizard.rec[key];
+          wizardRender();
+        })));
       b.appendChild(list);
     },
     next: async () => {},
@@ -1641,14 +1682,17 @@ function wizardSteps() {
     lead: 'Android asks for these on the tablet itself \u2014 walk over and accept the prompts, then finish here.',
     nextLabel: 'Finish',
     body: (b) => {
-      const full = wizard.vsDetected && wizard.applyRecommended;
+      const background = wizard.vsDetected && wizard.rec['wake_word.background'];
+      const bootStart = wizard.vsDetected && wizard.rec['kiosk.start_on_boot'];
       const list = document.createElement('div');
       list.className = 'wizard-list';
-      list.appendChild(readOnlyRow('Microphone', 'Voice input for the dashboard', ''));
-      if (full) {
-        list.appendChild(readOnlyRow('Notifications', 'The background listening service', ''));
-        list.appendChild(readOnlyRow('Ignore battery optimizations', 'So Android never freezes the kiosk', ''));
-        list.appendChild(readOnlyRow('Display over other apps', 'Start on boot needs it', ''));
+      list.appendChild(readOnlyRow('Microphone', 'Voice Satellite requires microphone access', ''));
+      if (background) {
+        list.appendChild(readOnlyRow('Notifications', 'Allows Kiosk Satellite to continue listening to the wake word in the background', ''));
+        list.appendChild(readOnlyRow('Ignore battery optimizations', 'Allows Kiosk Satellite to run in the background permanently', ''));
+      }
+      if (bootStart) {
+        list.appendChild(readOnlyRow('Display over other apps', 'Grant this permission if you want Kiosk Satellite to auto start when your device boots.', ''));
       }
       b.appendChild(list);
       const btn = document.createElement('button');
@@ -1658,14 +1702,22 @@ function wizardSteps() {
       btn.addEventListener('click', async () => {
         btn.disabled = true; btn.textContent = 'Asking on the tablet\u2026';
         await api('/api/commands/requestOsPermissions', { method: 'POST',
-          body: JSON.stringify({ full }) });
+          body: JSON.stringify({ which: [
+            'microphone',
+            ...(background ? ['notifications', 'batteryOptimizations'] : []),
+            ...(bootStart ? ['overlay'] : []),
+          ] }) });
         btn.textContent = 'Prompts sent to the tablet';
       });
       b.appendChild(btn);
     },
     next: async () => {
-      if (wizard.vsDetected && wizard.applyRecommended) {
-        await api('/api/commands/applyVsRecommended', { method: 'POST', body: '{}' });
+      if (wizard.vsDetected) {
+        const chosen = Object.fromEntries([
+          ...WIZ_LOCKED.map(([k]) => [k, true]),
+          ...Object.entries(wizard.rec),
+        ]);
+        await api('/api/settings', { method: 'PATCH', body: JSON.stringify(chosen) });
       }
       // Setting the start URL is what flips the device to configured; the
       // kiosk on the wall navigates to the dashboard on its own.

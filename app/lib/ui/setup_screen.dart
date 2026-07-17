@@ -95,9 +95,31 @@ class _SetupScreenState extends State<SetupScreen> {
   List<Map<String, Object?>>? _dashboards;
   String? _dashboard;
 
-  // Step 4 — Voice Satellite.
+  // Step 4 — Voice Satellite. Each recommended setting is its own choice;
+  // the master switch just sets them all. Microphone and native wake word
+  // detection are not choices — Voice Satellite does not work without
+  // them, so they render locked-on.
   bool? _vsDetected;
-  bool _applyRecommended = true;
+  static const _lockedRecommended = <(String, String)>[
+    ('web.microphone', 'Microphone access'),
+    ('wake_word.enabled', 'Native wake word detection'),
+  ];
+  static const _optionalRecommended = <(String, String)>[
+    ('browser.auto_reload_on_error', 'Auto-reload on error'),
+    ('browser.pull_to_refresh', 'Pull to refresh'),
+    ('browser.pull_to_refresh_clear_cache', 'Clear cache when pulling to refresh'),
+    ('browser.allow_mixed_content', 'Allow mixed content'),
+    ('browser.ignore_ssl_errors', 'Ignore SSL errors'),
+    ('web.autoplay', 'Autoplay audio and video'),
+    ('kiosk.start_on_boot', 'Start on boot'),
+    ('screen.keep_on', 'Keep screen on'),
+    ('wake_word.background', 'Keep listening in the background'),
+    ('remote.enabled', 'Remote management'),
+  ];
+  late final Map<String, bool> _recommended = {
+    for (final (key, _) in _optionalRecommended) key: true,
+  };
+  bool get _allRecommended => _recommended.values.every((v) => v);
 
   StreamSubscription<SettingChanged>? _sub;
 
@@ -224,11 +246,25 @@ class _SetupScreenState extends State<SetupScreen> {
         setState(() => _step = 4);
       case 4:
         setState(() => _busy = true);
-        final full = _vsStepActive && _applyRecommended;
-        if (full) {
-          await c.commands.execute('applyVsRecommended', const {});
+        if (_vsStepActive) {
+          for (final (key, _) in _lockedRecommended) {
+            await c.settings.setFromJson(key, true);
+          }
+          for (final entry in _recommended.entries) {
+            await c.settings.setFromJson(entry.key, entry.value);
+          }
         }
-        await c.commands.execute('requestOsPermissions', {'full': full});
+        await c.commands.execute('requestOsPermissions', {
+          'which': [
+            'microphone',
+            if (_vsStepActive && _recommended['wake_word.background']!) ...[
+              'notifications',
+              'batteryOptimizations',
+            ],
+            if (_vsStepActive && _recommended['kiosk.start_on_boot']!)
+              'overlay',
+          ],
+        });
         // Last: setting the start URL is what flips the app to configured.
         await c.settings.set(
           defs.startUrl,
@@ -480,11 +516,12 @@ class _SetupScreenState extends State<SetupScreen> {
               title: const Text('Enable remote administration'),
               subtitle: Text(
                 _remoteWanted && _deviceIp != null
-                    ? 'Continue from a computer at http://$_deviceIp:2324 — '
-                          'pasting the access token there is much easier.'
-                    : 'Configure this kiosk from a browser on your network. '
-                          'Recommended: the next step wants a long-lived '
-                          'token pasted.',
+                    ? 'Continue this setup from a web browser at '
+                          'http://$_deviceIp:2324 — pasting the Home '
+                          'Assistant access token there is much easier.'
+                    : 'Configure this kiosk from a web browser on your '
+                          'network. Recommended: the next step needs a Home '
+                          'Assistant access token pasted.',
               ),
               value: _remoteWanted,
               onChanged: (v) => setState(() => _remoteWanted = v),
@@ -567,59 +604,84 @@ class _SetupScreenState extends State<SetupScreen> {
         return withError([
           heading('Voice Satellite detected'),
           lead(
-            'This instance runs the Voice Satellite card. Apply the '
-            'recommended kiosk settings for it? You can change any of them '
-            'later in Settings.',
+            'This Home Assistant instance runs the Voice Satellite '
+            'integration. You can change any of these later in Settings.',
           ),
           _Card([
             SwitchListTile(
-              title: const Text('Apply recommended settings'),
+              title: const Text('Apply all recommended settings'),
               subtitle: const Text(
-                'Auto-reload on error, pull to refresh with cache clear, '
-                'mixed content, self-signed certificates, microphone, '
-                'autoplay, start on boot, keep screen on, native wake word '
-                'detection with background listening, and remote management.',
+                'The optimal settings for full Voice Satellite integration '
+                'and functionality.',
               ),
-              value: _applyRecommended,
-              onChanged: (v) => setState(() => _applyRecommended = v),
+              value: _allRecommended,
+              onChanged: (v) => setState(() {
+                for (final key in _recommended.keys) {
+                  _recommended[key] = v;
+                }
+              }),
             ),
+          ]),
+          _Card([
+            for (final (_, label) in _lockedRecommended)
+              SwitchListTile(
+                title: Text(label),
+                subtitle: const Text('Required by Voice Satellite'),
+                value: true,
+                onChanged: null,
+              ),
+            for (final (key, label) in _optionalRecommended)
+              SwitchListTile(
+                title: Text(label),
+                value: _recommended[key]!,
+                onChanged: (v) => setState(() => _recommended[key] = v),
+              ),
           ]),
         ]);
       case 4:
-        final full = _vsStepActive && _applyRecommended;
+        final background =
+            _vsStepActive && _recommended['wake_word.background']!;
+        final bootStart =
+            _vsStepActive && _recommended['kiosk.start_on_boot']!;
         return withError([
           heading('Permissions'),
           lead(
-            full
-                ? 'Android will ask for the permissions the recommended setup '
-                      'needs. Everything is requested up front so the kiosk '
-                      'never interrupts you later.'
-                : 'Android will ask for microphone access so the dashboard '
-                      'can listen when you use voice.',
+            'Android will ask for these permissions. Everything is '
+            'requested up front so the kiosk never interrupts you later.',
           ),
           _Card([
             const ListTile(
               leading: Icon(Icons.mic_none),
               title: Text('Microphone'),
-              subtitle: Text('Voice input for the dashboard'),
+              subtitle: Text('Voice Satellite requires microphone access'),
             ),
-            if (full) ...[
+            if (background) ...[
               const ListTile(
                 leading: Icon(Icons.notifications_none),
                 title: Text('Notifications'),
-                subtitle: Text('The background listening service'),
+                subtitle: Text(
+                  'Allows Kiosk Satellite to continue listening to the '
+                  'wake word in the background',
+                ),
               ),
               const ListTile(
                 leading: Icon(Icons.battery_saver),
                 title: Text('Ignore battery optimizations'),
-                subtitle: Text('So Android never freezes the kiosk'),
+                subtitle: Text(
+                  'Allows Kiosk Satellite to run in the background '
+                  'permanently',
+                ),
               ),
+            ],
+            if (bootStart)
               const ListTile(
                 leading: Icon(Icons.layers_outlined),
                 title: Text('Display over other apps'),
-                subtitle: Text('Start on boot needs it'),
+                subtitle: Text(
+                  'Grant this permission if you want Kiosk Satellite to '
+                  'auto start when your device boots.',
+                ),
               ),
-            ],
           ]),
         ]);
     }
