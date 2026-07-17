@@ -55,12 +55,27 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Launcher icons for both platforms, generated from the master art in
+# ../assets/icons (run: dart run flutter_launcher_icons). The adaptive
+# layers are the designed ones, not derived — Android composes them.
+flutter_launcher_icons:
+  android: true
+  image_path_android: ../assets/icons/rounded/icon_1024.png
+  adaptive_icon_background: ../assets/icons/google/adaptive/ic_launcher_background.png
+  adaptive_icon_foreground: ../assets/icons/google/adaptive/ic_launcher_foreground.png
+  adaptive_icon_monochrome: ../assets/icons/google/adaptive/ic_launcher_monochrome.png
+  ios: true
+  image_path_ios: ../assets/icons/apple/appstore_1024.png
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
   assets:
     - assets/remote-ui/index.html
     - assets/screensaver/index.html
+    - assets/branding/icon.png
   fonts:
     # Rubik (SIL Open Font License) — an open geometric sans that gives the
     # clock the clean, friendly feel of Google Sans without the licensing.
