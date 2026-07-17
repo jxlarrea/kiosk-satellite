@@ -141,13 +141,14 @@ class _KioskScreenState extends State<KioskScreen>
       await c.browser.loadUrl(_initialUrl); // reload so ?kiosk takes/drops
       return;
     }
-    // Mixed-content / SSL / cache are read only at WebView creation — rebuild
-    // it (preserving the current URL) so the change applies without a restart.
-    // The rebuild is storage-safe: localStorage is per-origin and outlives the
-    // widget, so a page's saved config is not lost.
+    // Mixed-content / SSL / cache / zoom are read only at WebView creation —
+    // rebuild it (preserving the current URL) so the change applies without
+    // a restart. The rebuild is storage-safe: localStorage is per-origin and
+    // outlives the widget, so a page's saved config is not lost.
     if (e.key == defs.allowMixedContent.key ||
         e.key == defs.ignoreSslErrors.key ||
-        e.key == defs.disableCache.key) {
+        e.key == defs.disableCache.key ||
+        e.key == defs.pinchToZoom.key) {
       setState(() => _webViewEpoch++);
       return;
     }
@@ -423,6 +424,11 @@ class _KioskScreenState extends State<KioskScreen>
       // only for the brief drawer slide; settings is an opaque route, so
       // the view is not even composited while it is open.
       useHybridComposition: true,
+      // Pinch zoom needs both flags on Android; the on-screen +/- buttons
+      // stay off regardless — a kiosk shows no browser chrome.
+      supportZoom: c.settings.get(defs.pinchToZoom),
+      builtInZoomControls: c.settings.get(defs.pinchToZoom),
+      displayZoomControls: false,
       mediaPlaybackRequiresUserGesture: !c.settings.get(defs.webAutoplay),
       allowsInlineMediaPlayback: true,
       iframeAllow: 'camera; microphone',

@@ -124,6 +124,18 @@ const pullToRefreshClearCache = SettingDef<bool>(
   dependsOn: 'browser.pull_to_refresh',
 );
 
+const pinchToZoom = SettingDef<bool>(
+  key: 'browser.pinch_to_zoom',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable pinch to zoom',
+  description:
+      'Zoom the page with a two-finger pinch. Off by default: a '
+      'kiosk dashboard should stay put under stray touches. Pages that '
+      'forbid zooming in their viewport settings still win.',
+  category: 'Browser',
+);
+
 const disableCache = SettingDef<bool>(
   key: 'browser.disable_cache',
   type: SettingType.boolean,
@@ -641,6 +653,7 @@ const List<SettingDef<Object>> allSettings = [
   autoReloadOnError,
   pullToRefresh,
   pullToRefreshClearCache,
+  pinchToZoom,
   disableCache,
   allowMixedContent,
   ignoreSslErrors,
