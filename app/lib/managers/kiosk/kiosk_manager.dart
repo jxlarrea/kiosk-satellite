@@ -75,7 +75,9 @@ class KioskManager extends Manager {
       // Enabling the shield needs the draw-over-apps grant; fire the system
       // settings page the first time so the person is standing in front of
       // the right screen.
-      if (e.key == defs.kioskDisableStatusBar.key && e.value == true) {
+      if ((e.key == defs.kioskDisableStatusBar.key ||
+              e.key == defs.kioskStartOnBoot.key) &&
+          e.value == true) {
         final has = await _invoke<bool>('hasOverlayPermission') ?? false;
         if (!has) await _invoke<void>('requestOverlayPermission');
       }

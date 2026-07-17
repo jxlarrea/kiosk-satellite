@@ -245,6 +245,19 @@ const kioskEnabled = SettingDef<bool>(
   category: 'Kiosk',
 );
 
+const kioskStartOnBoot = SettingDef<bool>(
+  key: 'kiosk.start_on_boot',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Start on boot',
+  description:
+      'Launch Kiosk Satellite when the device powers on. Reliable '
+      'background launch on Android 10+ needs the "display over other '
+      'apps" permission — Android asks when this is first enabled on '
+      'the device.',
+  category: 'Kiosk',
+);
+
 const kioskExitGesture = SettingDef<String>(
   key: 'kiosk.exit_gesture',
   type: SettingType.select,
@@ -969,6 +982,7 @@ const List<SettingDef<Object>> allSettings = [
   webAutoplay,
   webPopups,
   kioskEnabled,
+  kioskStartOnBoot,
   kioskExitGesture,
   kioskPin,
   kioskDisableStatusBar,

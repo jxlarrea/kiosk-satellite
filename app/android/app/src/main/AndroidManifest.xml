@@ -59,6 +59,16 @@
             android:name=".WakeWordService"
             android:exported="false"
             android:foregroundServiceType="microphone"/>
+        <!-- Start on boot (kiosk.start_on_boot; RECEIVE_BOOT_COMPLETED is
+             declared above). -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
         <!-- Device-owner hook: `dpm set-device-owner` targets this receiver;
              holding the role turns "Disable home button" from screen pinning
              into full lock-task (see KioskLock). -->
