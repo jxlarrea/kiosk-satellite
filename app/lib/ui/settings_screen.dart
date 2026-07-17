@@ -459,10 +459,7 @@ class _CategoryContentState extends State<_CategoryContent> {
   void _toast(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
@@ -662,16 +659,12 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// regular Home Assistant settings, Voice Satellite and its permissions.
   List<Widget> _haConfiguredCards(AppContainer container) {
     return [
-        const _SectionHeading('Dashboard'),
-        _DashboardPickerCard(container: container),
-        ..._sectionedCards(
-          container,
-          [
-            for (final def in _defsFor('Home Assistant'))
-              if (def.key != haUrl.key && def.key != haToken.key) def,
-          ],
-          () => setState(() {}),
-        ),
+      const _SectionHeading('Dashboard'),
+      _DashboardPickerCard(container: container),
+      ..._sectionedCards(container, [
+        for (final def in _defsFor('Home Assistant'))
+          if (def.key != haUrl.key && def.key != haToken.key) def,
+      ], () => setState(() {})),
     ];
   }
 
@@ -733,7 +726,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 9),
                   child: Align(
                     alignment: Alignment.center,
                     child: InkWell(
@@ -757,53 +750,56 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () {
-                      Navigator.of(
-                        context,
-                      ).popUntil((route) => route.isFirst);
-                      container.commands.execute('loadUrl', {
-                        'url':
-                            'https://github.com/jxlarrea/voice-satellite-card-integration',
-                      });
-                    },
-                    child: Text.rich(
-                      TextSpan(
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                        children: [
-                          const TextSpan(text: 'Learn more about '),
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 4),
-                              child: SvgPicture.string(
-                                _githubMark,
-                                height: 15,
-                                colorFilter: ColorFilter.mode(
-                                  Theme.of(context).colorScheme.primary,
-                                  BlendMode.srcIn,
+                  padding: const EdgeInsets.fromLTRB(16, 9, 16, 18),
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        Navigator.of(
+                          context,
+                        ).popUntil((route) => route.isFirst);
+                        container.commands.execute('loadUrl', {
+                          'url':
+                              'https://github.com/jxlarrea/voice-satellite-card-integration',
+                        });
+                      },
+                      child: Text.rich(
+                        TextSpan(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                          children: [
+                            const TextSpan(text: 'Learn more about '),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: SvgPicture.string(
+                                  _githubMark,
+                                  height: 15,
+                                  colorFilter: ColorFilter.mode(
+                                    Theme.of(context).colorScheme.primary,
+                                    BlendMode.srcIn,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          TextSpan(
-                            text: 'Voice Satellite on Github',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              decoration: TextDecoration.underline,
-                              decorationColor: Theme.of(
-                                context,
-                              ).colorScheme.primary,
+                            TextSpan(
+                              text: 'Voice Satellite on Github',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1602,7 +1598,8 @@ class SettingTile extends StatelessWidget {
                 final paths = <String>[];
                 for (var i = 0; i < picked.length; i++) {
                   final name = picked[i].name.replaceAll('/', '_');
-                  final dest = '${dir.path}/${i.toString().padLeft(4, '0')}_$name';
+                  final dest =
+                      '${dir.path}/${i.toString().padLeft(4, '0')}_$name';
                   await File(picked[i].path).copy(dest);
                   paths.add(dest);
                 }
