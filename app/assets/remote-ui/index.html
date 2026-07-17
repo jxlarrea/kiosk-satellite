@@ -564,13 +564,17 @@ async function loadSettings() {
   // by whoever is not in the room. Transitive, matching the device: a row is
   // shown only if its dependency holds and that dependency is itself shown.
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]));
-  const visible = (s) => {
-    if (s.hidden) return false;
+  // Mirrors SettingsManager.visible(): the dependency chain ignores the
+  // `hidden` flag — a row may gate on a hidden bookkeeping flag (the media
+  // playlist settings gate on media_is_folder, which is hidden) — while
+  // hidden rows themselves are simply never rendered.
+  const depSatisfied = (s) => {
     if (!s.dependsOn) return true;
     const dep = byKey[s.dependsOn];
     if (!dep) return true;
-    return dep.value === (s.dependsOnValue ?? true) && visible(dep);
+    return dep.value === (s.dependsOnValue ?? true) && depSatisfied(dep);
   };
+  const visible = (s) => !s.hidden && depSatisfied(s);
 
   // The Home Assistant Media mode only offers itself with HA connected.
   state.haConfigured = (byKey['ha.url']?.value || '') !== '' &&
