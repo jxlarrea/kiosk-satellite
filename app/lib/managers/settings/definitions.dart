@@ -117,9 +117,9 @@ const pullToRefreshClearCache = SettingDef<bool>(
   defaultValue: false,
   title: 'Clear cache when pulling to refresh',
   description:
-      'A pull also drops the HTTP cache, Cache Storage and any '
-      'service worker before reloading — the same as Clear web cache. '
-      'Login and saved page data are kept.',
+      'A pull also empties the HTTP cache and Cache Storage before '
+      'reloading, so the page comes back fresh from the network. Login and '
+      'saved page data are kept.',
   category: 'Browser',
   dependsOn: 'browser.pull_to_refresh',
 );

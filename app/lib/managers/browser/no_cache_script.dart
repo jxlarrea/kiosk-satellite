@@ -38,17 +38,17 @@ const noCachePurgeScript = '''
 /// reloads afterwards, so the current page is refetched immediately. Also
 /// storage-safe — localStorage and cookies survive, so you stay logged in and
 /// keep your saved page config.
+/// Fully awaited on purpose — this is the drawer's deliberate maintenance
+/// action, not a gesture. Reloading before the worker is truly gone was
+/// tried (timeboxed) and produced a delayed aftershock: the half-cleaned
+/// page reloads, Home Assistant re-registers its worker, and when that
+/// worker finishes installing — up to half a minute later on cold caches —
+/// it seizes the page and the frontend reloads itself "out of nowhere".
+/// The pull-to-refresh gesture uses [pullRefreshClearScript] instead, which
+/// never touches the worker and so never has the aftershock.
 const clearWebCacheScript = '''
 (async function () {
-  // The reload is the product; the cleanup is best-effort and TIMEBOXED.
-  // Right after a page boot, Home Assistant's service worker is busy
-  // re-caching the whole frontend, and deleting Cache Storage while it
-  // writes can block for ten seconds and more — which held this script's
-  // reload hostage exactly when a pull-to-refresh user is most likely to
-  // pull again. Whatever the cleanup has not managed within the window is
-  // left behind; the reload happens regardless, and the next clear gets
-  // another chance.
-  var cleanup = (async function () {
+  try {
     if ('serviceWorker' in navigator) {
       var regs = await navigator.serviceWorker.getRegistrations();
       for (var i = 0; i < regs.length; i++) { await regs[i].unregister(); }
@@ -57,11 +57,33 @@ const clearWebCacheScript = '''
       var keys = await caches.keys();
       for (var j = 0; j < keys.length; j++) { await caches.delete(keys[j]); }
     }
-  })();
+  } catch (e) { /* fall through to the reload regardless */ }
+  location.reload();
+})();
+''';
+
+/// The cache-clearing pull: empty Cache Storage (timeboxed), reload, and
+/// leave the service worker ALONE.
+///
+/// An empty cache forces the worker to the network, so the reload is exactly
+/// as fresh as a full clear — but without unregistering anything there is no
+/// registration churn, and therefore none of the aftershock described on
+/// [clearWebCacheScript]. The timebox keeps a busy worker (mid-install right
+/// after a boot, actively writing these caches) from holding the reload
+/// hostage; whatever survives the window is stale cache the next pull can
+/// take another swing at.
+const pullRefreshClearScript = '''
+(async function () {
   try {
+    var work = (async function () {
+      if ('caches' in window) {
+        var keys = await caches.keys();
+        for (var i = 0; i < keys.length; i++) { await caches.delete(keys[i]); }
+      }
+    })();
     await Promise.race([
-      cleanup,
-      new Promise(function (r) { setTimeout(r, 1800); }),
+      work,
+      new Promise(function (r) { setTimeout(r, 1500); }),
     ]);
   } catch (e) { /* fall through to the reload regardless */ }
   location.reload();

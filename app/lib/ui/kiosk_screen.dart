@@ -113,11 +113,14 @@ class _KioskScreenState extends State<KioskScreen>
     // and the JS probe draws (and keeps) its own — awaiting the platform
     // spinner from a bridge callback is what once held the reload hostage.
     //
-    // The cache-clearing pull is the same operation as the menu's Clear web
-    // cache (drops HTTP cache + service worker, keeps localStorage and
-    // cookies, reloads); a plain pull is just the reload.
+    // The cache-clearing pull is NOT the menu's Clear web cache: it empties
+    // the HTTP cache and Cache Storage but leaves the service worker
+    // registered (see pullRefreshClearScript — unregistering it mid-session
+    // is what made pages reload themselves half a minute later). A plain
+    // pull is just the reload.
     if (c.settings.get(defs.pullToRefreshClearCache)) {
-      await c.commands.execute('clearWebCache', const {});
+      await InAppWebViewController.clearAllCache();
+      await c.browser.runJs(pullRefreshClearScript);
     } else {
       await c.commands.execute('reload', const {});
     }
