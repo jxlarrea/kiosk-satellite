@@ -37,9 +37,9 @@ class ScreensaverOverlay extends StatelessWidget {
             ),
             'media' ||
             'website' => ScreensaverWebView(container: container, mode: view),
-            'local' => _Dismissable(
+            'local' || 'gallery' => _Dismissable(
               container: container,
-              child: LocalMediaScreensaver(container: container),
+              child: LocalMediaScreensaver(container: container, mode: view),
             ),
             // 'black' and anything unexpected: the safe, opaque cover.
             _ => _Dismissable(
@@ -327,9 +327,17 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
 /// per activation: a screensaver session is short, and re-listing between
 /// slides would hitch exactly when nothing should.
 class LocalMediaScreensaver extends StatefulWidget {
-  const LocalMediaScreensaver({super.key, required this.container});
+  const LocalMediaScreensaver({
+    super.key,
+    required this.container,
+    required this.mode,
+  });
 
   final AppContainer container;
+
+  /// 'local' cycles a folder; 'gallery' cycles the hand-picked selection
+  /// (app-storage copies listed in screensaver.gallery_items).
+  final String mode;
 
   @override
   State<LocalMediaScreensaver> createState() => _LocalMediaScreensaverState();
@@ -357,7 +365,33 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
     _load();
   }
 
+  bool get _gallery => widget.mode == 'gallery';
+
   Future<void> _load() async {
+    if (_gallery) {
+      var files = <File>[];
+      try {
+        files = [
+          for (final p in jsonDecode(
+            c.settings.get(defs.screensaverGalleryItems),
+          ) as List)
+            File(p as String),
+        ];
+      } catch (_) {}
+      files = [for (final f in files) if (f.existsSync()) f];
+      if (files.isEmpty) {
+        setState(
+          () => _problem = 'No photos selected. Pick some in Settings.',
+        );
+        return;
+      }
+      if (c.settings.get(defs.screensaverGalleryShuffle)) {
+        files.shuffle(Random());
+      }
+      setState(() => _files = files);
+      _show(0);
+      return;
+    }
     final folder = c.settings.get(defs.screensaverLocalFolder);
     if (folder.isEmpty) {
       setState(() => _problem = 'No folder selected. Pick one in Settings.');
@@ -439,7 +473,11 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       }
     } else {
       final seconds = c.settings
-          .get(defs.screensaverLocalInterval)
+          .get(
+            _gallery
+                ? defs.screensaverGalleryInterval
+                : defs.screensaverLocalInterval,
+          )
           .toInt()
           .clamp(2, 3600);
       _timer = Timer(Duration(seconds: seconds), _advance);

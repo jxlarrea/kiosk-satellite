@@ -266,13 +266,14 @@ const screensaverMode = SettingDef<String>(
       'What the screensaver shows after the idle timeout. Dim only '
       'lowers the backlight and is the lightest.',
   category: 'Screensaver',
-  options: ['dim', 'black', 'clock', 'media', 'local', 'website'],
+  options: ['dim', 'black', 'clock', 'media', 'local', 'gallery', 'website'],
   optionLabels: {
     'dim': 'Dim',
     'black': 'Black',
     'clock': 'Clock',
     'media': 'Home Assistant Media',
     'local': 'Local Media',
+    'gallery': 'Photo Gallery',
     'website': 'Website',
   },
 );
@@ -414,6 +415,51 @@ const screensaverWebsiteUrl = SettingDef<String>(
 );
 
 // ── Burn-in ──
+
+// ── Photo gallery (mode: gallery) ──
+//
+// Hand-picked photos and videos, chosen with the system gallery picker on
+// the device (permissionless — the picker grants access per item) and
+// copied into app storage so the selection survives reboots and permission
+// changes. The value is a JSON array of those copies' paths: not a thing a
+// person edits, but not hidden either — both UIs special-case the row to
+// show the count.
+
+const screensaverGalleryItems = SettingDef<String>(
+  key: 'screensaver.gallery_items',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Photos',
+  description:
+      'The photos and videos this screensaver cycles. Picked from the '
+      'gallery on the device; picking again replaces the selection.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'gallery',
+);
+
+const screensaverGalleryInterval = SettingDef<num>(
+  key: 'screensaver.gallery_interval_seconds',
+  type: SettingType.number,
+  defaultValue: 10,
+  title: 'Seconds per photo',
+  description:
+      'How long each photo shows before the next. Videos play in full.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'gallery',
+);
+
+const screensaverGalleryShuffle = SettingDef<bool>(
+  key: 'screensaver.gallery_shuffle',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Shuffle',
+  description: 'Cycle the selection in random order.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'gallery',
+);
 
 // ── Local media (mode: local) ──
 
@@ -754,6 +800,9 @@ const List<SettingDef<Object>> allSettings = [
   screensaverLocalInterval,
   screensaverLocalShuffle,
   screensaverLocalRecursive,
+  screensaverGalleryItems,
+  screensaverGalleryInterval,
+  screensaverGalleryShuffle,
   screensaverPixelShift,
   screensaverDismissOnMotion,
   motionFps,

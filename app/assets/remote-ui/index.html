@@ -1006,6 +1006,20 @@ function settingRow(s) {
     await loadSettings();
   };
 
+  // The gallery selection lives on the device (system photo picker); the
+  // remote shows the count, mirroring the device row's summary.
+  if (s.key === 'screensaver.gallery_items') {
+    let count = 0;
+    try { count = JSON.parse(s.value || '[]').length; } catch (_) {}
+    const val = document.createElement('span');
+    val.className = 'device';
+    val.textContent = count
+      ? `${count} selected`
+      : 'None selected — pick on the device';
+    row.appendChild(val);
+    return row;
+  }
+
   // A colour is picked, not typed — the browser has a real picker for it.
   if (s.key === 'screensaver.clock_color') {
     const [r, g, b] = String(s.value || '250,250,250').split(',').map((n) => +n || 0);

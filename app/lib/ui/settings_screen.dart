@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
@@ -1130,6 +1134,43 @@ class SettingTile extends StatelessWidget {
                   border: Border.all(color: Colors.black26),
                 ),
               ),
+            ),
+          );
+        }
+        // Photo Gallery: picked with the system gallery picker — the
+        // modern Android photo picker needs no permission at all. The
+        // picker hands back cache copies, which the OS may purge, so the
+        // selection is copied into app documents where it survives reboots
+        // and cache trims; re-picking replaces the set.
+        if (def.key == screensaverGalleryItems.key) {
+          var count = 0;
+          try {
+            count = (jsonDecode(value as String) as List).length;
+          } catch (_) {}
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(
+              count == 0 ? 'No photos selected' : '$count selected',
+            ),
+            trailing: TextButton(
+              onPressed: () async {
+                final picked = await ImagePicker().pickMultipleMedia();
+                if (picked.isEmpty) return;
+                final docs = await getApplicationDocumentsDirectory();
+                final dir = Directory('${docs.path}/gallery');
+                if (await dir.exists()) await dir.delete(recursive: true);
+                await dir.create(recursive: true);
+                final paths = <String>[];
+                for (var i = 0; i < picked.length; i++) {
+                  final name = picked[i].name.replaceAll('/', '_');
+                  final dest = '${dir.path}/${i.toString().padLeft(4, '0')}_$name';
+                  await File(picked[i].path).copy(dest);
+                  paths.add(dest);
+                }
+                await c.settings.setFromJson(def.key, jsonEncode(paths));
+                onChanged();
+              },
+              child: const Text('Browse'),
             ),
           );
         }
