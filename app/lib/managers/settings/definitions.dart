@@ -100,13 +100,16 @@ String? validateBaseUrl(Object? value) {
   if (uri == null ||
       (uri.scheme != 'http' && uri.scheme != 'https') ||
       uri.host.isEmpty) {
-    return 'Enter a URL like https://homeassistant.local:8123';
+    return 'Enter a valid URL, for example '
+        'https://homeassistant.local:8123';
   }
   if (uri.path.isNotEmpty && uri.path != '/') {
-    return 'Base URL only — no dashboard path (…:8123, not …/lovelace/0)';
+    return 'Enter only the base URL, without a dashboard path. Example: '
+        'https://homeassistant.local:8123';
   }
   if (uri.hasQuery || uri.hasFragment) {
-    return 'Base URL only — drop everything after the port';
+    return 'Enter only the base URL, without anything after the port. '
+        'Example: https://homeassistant.local:8123';
   }
   return null;
 }

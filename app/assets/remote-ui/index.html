@@ -1562,7 +1562,7 @@ function wizardSteps() {
     body: (b) => { wizardField(b, 'wzPassword', 'password', 'Admin password (min 4 characters)'); },
     next: async () => {
       const password = $('#wzPassword').value;
-      if (password.length < 4) throw new Error('Pick a password of at least 4 characters');
+      if (password.length < 4) throw new Error('Password too short \u2014 use at least 4 characters.');
       const res = await fetch('api/setup/password', { method: 'POST', body: JSON.stringify({ password }) });
       const out = await res.json();
       if (!res.ok) throw new Error(out.error || 'Could not set the password');
@@ -1579,12 +1579,12 @@ function wizardSteps() {
     },
     next: async () => {
       const url = $('#wzUrl').value.trim(), token = $('#wzToken').value.trim();
-      if (!url || !token) throw new Error('Both fields are needed');
+      if (!url || !token) throw new Error('Enter both the base URL and the access token.');
       const patch = await api('/api/settings', { method: 'PATCH',
         body: JSON.stringify({ 'ha.url': url, 'ha.token': token }) });
       const pout = await patch.json();
       if ((pout.rejected || []).includes('ha.url')) {
-        throw new Error('Base URL only \u2014 https://host:port, no dashboard path');
+        throw new Error('Enter only the base URL, without a dashboard path. Example: https://homeassistant.local:8123');
       }
       const check = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json();
       if (!check.ok) throw new Error(check.error || 'Could not connect');
@@ -1613,7 +1613,7 @@ function wizardSteps() {
       b.appendChild(list);
     },
     next: async () => {
-      if (!wizard.dashboard) throw new Error('Pick a dashboard');
+      if (!wizard.dashboard) throw new Error('Select a dashboard.');
       const vs = await (await api('/api/commands/haDetectVoiceSatellite', { method: 'POST', body: '{}' })).json();
       wizard.vsDetected = vs.ok && vs.data === true;
       if (!wizard.vsDetected) wizard.i++; // skip the VS step

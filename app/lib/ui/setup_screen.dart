@@ -58,28 +58,28 @@ class _SetupScreenState extends State<SetupScreen> {
   void _connectFail(String error) {
     if (error.contains('invalid token')) {
       _fail(
-        'Home Assistant rejected the access token',
-        'Open your HA profile → Security → Long-lived access tokens, '
-        'create (or re-copy) a token, and paste the entire string — they '
-        'are long, and a missing character is enough.',
+        'Invalid access token',
+        'Home Assistant rejected this token. In Home Assistant, open your '
+        'profile → Security → Long-lived access tokens, create a new '
+        'token, and copy the complete value.',
       );
     } else if (error.startsWith('unreachable')) {
       _fail(
-        'Could not reach Home Assistant at that address',
-        'Check the base URL for typos and make sure this tablet is on the '
-        'same network as your instance. If you use a self-signed '
-        'certificate, try the http:// address for setup — you can turn on '
-        '"Ignore SSL errors" later in Web Browsing settings.',
+        "Can't reach Home Assistant",
+        'No response from this address. Check that the URL is correct and '
+        'that this device is on the same network as your Home Assistant '
+        'server. If the server uses a self-signed certificate, use its '
+        'http:// address during setup.',
       );
     } else if (error.startsWith('HTTP')) {
       _fail(
-        'That address answered, but not like Home Assistant ($error)',
-        'The URL points at a server, but not the Home Assistant API. '
-        'Double-check the base URL — usually https://homeassistant.local:8123 '
-        'or your Nabu Casa address, with nothing after the port.',
+        'Unexpected response ($error)',
+        "A server responded, but it doesn't appear to be Home Assistant. "
+        'Check that the URL is your Home Assistant base address, for '
+        'example https://homeassistant.local:8123.',
       );
     } else {
-      _fail('Could not connect', error);
+      _fail("Can't connect", error);
     }
   }
 
@@ -154,9 +154,8 @@ class _SetupScreenState extends State<SetupScreen> {
           final password = _remotePassword.text;
           if (password.length < 4) {
             _fail(
-              'That password is too short',
-              'Pick at least 4 characters — it protects the remote admin '
-              'on your network.',
+              'Password too short',
+              'Use at least 4 characters.',
             );
             return;
           }
@@ -170,18 +169,18 @@ class _SetupScreenState extends State<SetupScreen> {
           _fail(
             urlError == null
                 ? 'Enter your Home Assistant base URL'
-                : 'That is not a base URL',
+                : 'Invalid base URL',
             urlError ??
-                'The address you open Home Assistant at, e.g. '
-                    'https://homeassistant.local:8123.',
+                'This is the address you use to open Home Assistant, for '
+                    'example https://homeassistant.local:8123.',
           );
           return;
         }
         if (_haToken.text.trim().isEmpty) {
           _fail(
-            'Paste a long-lived access token',
-            'Created under your HA profile → Security → Long-lived access '
-            'tokens. It lets the kiosk talk to Home Assistant.',
+            'Enter a long-lived access token',
+            'In Home Assistant, open your profile → Security → Long-lived '
+            'access tokens to create one.',
           );
           return;
         }
@@ -206,9 +205,9 @@ class _SetupScreenState extends State<SetupScreen> {
       case 2:
         if (_dashboard == null) {
           _fail(
-            'Pick a dashboard',
-            'The kiosk needs one to show. You can change it any time in '
-            'Settings → Home Assistant Configuration.',
+            'Select a dashboard',
+            'Choose the dashboard the kiosk will display. You can change '
+            'it later in Settings.',
           );
           return;
         }
