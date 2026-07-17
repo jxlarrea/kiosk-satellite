@@ -55,6 +55,14 @@ inside Kiosk Satellite and hands detection over on its own. You keep
 configuring everything in Voice Satellite as usual; the kiosk just makes it
 always-on, cheaper, and screen-independent.
 
+The performance difference is one of the main reasons to use Kiosk
+Satellite. Native inference runs the entire wake-word pipeline many times
+faster than realtime on the CPU alone — tens of times faster on a modern
+tablet — at a fraction of the CPU and battery a browser-side engine burns,
+and it keeps the dashboard perfectly smooth while listening. It is
+efficient enough that vsWakeWord now runs even on an Amazon Echo Show 5,
+on CPU, with no GPU or accelerator needed.
+
 Voice Satellite is not required — Kiosk Satellite is a complete Home
 Assistant kiosk on its own — but together they make a tablet into something
 very close to a purpose-built voice hub.
@@ -95,7 +103,6 @@ very welcome in the issues.
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) — managers, event bus, command registry
 - [JavaScript API](docs/js-api.md) — `window.kioskSatellite`, wake-word handoff protocol
 - [Remote API](docs/remote-api.md) — REST + WebSocket surface
 
