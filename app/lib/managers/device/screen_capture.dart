@@ -8,7 +8,10 @@ import 'package:flutter/services.dart';
 class ScreenCapture {
   static const _channel = MethodChannel('kiosk_satellite/screen_capture');
 
-  static Future<Uint8List?> capture({int width = 720, int quality = 60}) async {
+  static Future<Uint8List?> capture({
+    int width = 1280,
+    int quality = 80,
+  }) async {
     try {
       return await _channel.invokeMethod<Uint8List>('capture', {
         'width': width,

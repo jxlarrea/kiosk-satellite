@@ -350,7 +350,6 @@
         </div>
         <div class="toolbar" style="margin-top:12px">
           <button class="btn-ghost" id="refreshShot">Refresh</button>
-          <label class="inline"><input type="checkbox" id="autoShot"> Auto</label>
           <span class="spacer"></span>
           <span class="device" id="currentUrl"></span>
         </div>
@@ -411,7 +410,7 @@
 
 <script>
 const $ = (s) => document.querySelector(s);
-const state = { token: localStorage.getItem('ks_token'), ws: null, autoShotTimer: null };
+const state = { token: localStorage.getItem('ks_token'), ws: null };
 
 /* ---- Theme ---- */
 // Follows the OS by default; the header button cycles auto → dark → light and
@@ -468,7 +467,6 @@ async function login() {
 function logout() {
   state.token = null; localStorage.removeItem('ks_token');
   if (state.ws) { state.ws.onclose = null; state.ws.close(); state.ws = null; }
-  clearInterval(state.autoShotTimer);
   $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
 }
 
@@ -530,10 +528,6 @@ $('#loadUrlBtn').addEventListener('click', () => {
   if (url) cmd('loadUrl', { url });
 });
 $('#refreshShot').addEventListener('click', loadScreenshot);
-$('#autoShot').addEventListener('change', (e) => {
-  clearInterval(state.autoShotTimer);
-  if (e.target.checked) { loadScreenshot(); state.autoShotTimer = setInterval(loadScreenshot, 3000); }
-});
 async function loadScreenshot() {
   try {
     const res = await api('/api/screenshot');
@@ -1389,10 +1383,10 @@ async function start() {
   await loadScreenshot();
   // Whatever the URL asked for, now that the panels it needs exist.
   showTab(location.hash.slice(1) || 'dashboard', { push: false });
-  // Auto-refresh is OFF by default: each capture makes the tablet read back
-  // and encode its whole WebView, which is visible as a stutter on the device
-  // itself. One shot on load is free; a standing timer is not, and an admin
-  // tab left open would otherwise poll forever. Tick the box when you want it.
+  // No auto-refresh at all: each capture makes the tablet read back and
+  // encode its screen, and an admin tab left open would otherwise poll the
+  // device forever. One shot on load plus the Refresh button is the deal —
+  // which is also why the capture can afford to be high-quality.
   connectWs();
 }
 $('#loginBtn').addEventListener('click', login);

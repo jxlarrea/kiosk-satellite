@@ -214,15 +214,17 @@ class BrowserManager extends Manager {
               'page, menus, screensaver. `quality` 1-100 (default 60); `width` '
               'scales the capture down (default 720).',
           params: const {
-            'quality': 'JPEG quality 1-100, default 60',
-            'width': 'scale the capture to this width, default 720',
+            'quality': 'JPEG quality 1-100, default 80',
+            'width': 'scale the capture to this width, default 1280',
           },
           handler: (p) async {
-            final quality = ((p['quality'] as num?)?.toInt() ?? 60).clamp(
+            // Generous defaults: captures are one-shot (the dashboard has no
+            // auto-refresh), so quality can win over bandwidth.
+            final quality = ((p['quality'] as num?)?.toInt() ?? 80).clamp(
               1,
               100,
             );
-            final width = (p['width'] as num?)?.toInt() ?? 720;
+            final width = (p['width'] as num?)?.toInt() ?? 1280;
             // The window, via a GPU blit on a background thread (see
             // ScreenCapture.kt). The WebView's own capture below draws the
             // view into a bitmap on the UI thread — with the admin's

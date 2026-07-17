@@ -323,7 +323,7 @@ class RemoteManager extends Manager {
     }
     return Response.ok(
       base64Decode(result.data as String),
-      headers: {'content-type': 'image/png'},
+      headers: {'content-type': 'image/jpeg'},
     );
   }
 

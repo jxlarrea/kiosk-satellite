@@ -39,8 +39,8 @@ class ScreenCapture(
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "capture" -> capture(
-                    (call.argument<Number>("width"))?.toInt() ?: 720,
-                    (call.argument<Number>("quality"))?.toInt() ?: 60,
+                    (call.argument<Number>("width"))?.toInt() ?: 1280,
+                    (call.argument<Number>("quality"))?.toInt() ?: 80,
                     result,
                 )
                 else -> result.notImplemented()
