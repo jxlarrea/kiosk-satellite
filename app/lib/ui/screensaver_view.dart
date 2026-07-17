@@ -275,6 +275,7 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       'mediaIntervalSeconds': s.get(defs.screensaverMediaInterval),
       'mediaShuffle': s.get(defs.screensaverMediaShuffle),
       'mediaRecursive': s.get(defs.screensaverMediaRecursive),
+      'mediaTransition': s.get(defs.screensaverMediaTransition),
       'pixelShift': s.get(defs.screensaverPixelShift),
     });
   }
@@ -442,15 +443,21 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
 
   Future<void> _show(int index) async {
     _timer?.cancel();
+    // The outgoing video is not disposed here: it has to keep rendering
+    // while the transition plays it out. _retire parks it until the
+    // hand-off is over.
     final old = _video;
     _video = null;
-    await old?.dispose();
-    if (!mounted || _files.isEmpty) return;
-    setState(() => _index = index % _files.length);
-    final file = _files[_index];
+    if (!mounted || _files.isEmpty) {
+      await old?.dispose();
+      return;
+    }
+    final next = index % _files.length;
+    final file = _files[next];
     if (_isVideo(file)) {
+      // The previous slide holds the screen while the video spins up —
+      // _index only moves once there are frames to hand off to.
       final video = VideoPlayerController.file(file);
-      _video = video;
       try {
         await video.initialize();
         await video.setVolume(0);
@@ -463,15 +470,26 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
             _advance();
           }
         });
-        if (!mounted) return;
-        setState(() {});
+        if (!mounted) {
+          await video.dispose();
+          await old?.dispose();
+          return;
+        }
+        _video = video;
+        setState(() => _index = next);
         await video.play();
       } catch (e) {
-        // A codec the device lacks must not stall the slideshow.
+        // A codec the device lacks must not stall the slideshow. Skip past
+        // `next` explicitly — _index never reached it, and retrying it
+        // forever would loop on the same broken file.
         c.log.warn('screensaver', 'video failed (${file.path}): $e');
-        _advance();
+        await video.dispose();
+        if (mounted) unawaited(_show(next + 1));
+        await old?.dispose();
+        return;
       }
     } else {
+      setState(() => _index = next);
       final seconds = c.settings
           .get(
             _gallery
@@ -482,6 +500,20 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
           .clamp(2, 3600);
       _timer = Timer(Duration(seconds: seconds), _advance);
     }
+    _retire(old);
+  }
+
+  /// Outgoing video controllers live until every transition that could
+  /// still be painting them has finished, then die.
+  final _retiring = <VideoPlayerController>[];
+
+  void _retire(VideoPlayerController? old) {
+    if (old == null) return;
+    _retiring.add(old);
+    Timer(const Duration(milliseconds: 1200), () {
+      _retiring.remove(old);
+      old.dispose();
+    });
   }
 
   void _advance() {
@@ -493,25 +525,78 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
   void dispose() {
     _timer?.cancel();
     _video?.dispose();
+    for (final v in _retiring) {
+      v.dispose();
+    }
     super.dispose();
+  }
+
+  String get _transition => c.settings.get(
+    _gallery
+        ? defs.screensaverGalleryTransition
+        : defs.screensaverLocalTransition,
+  );
+
+  static Duration _switchDuration(String transition) => switch (transition) {
+    'slide' => const Duration(milliseconds: 450),
+    'zoom' => const Duration(milliseconds: 600),
+    'kenburns' => const Duration(milliseconds: 800),
+    _ => const Duration(milliseconds: 500),
+  };
+
+  Widget _handOff(
+    String transition,
+    Key currentKey,
+    Widget child,
+    Animation<double> animation,
+  ) {
+    switch (transition) {
+      case 'slide':
+        // A push: the newcomer enters from the right while the incumbent
+        // leaves left. The outgoing child's animation runs in reverse, so
+        // its zero-target tween walks it off the opposite edge.
+        final tween = child.key == currentKey
+            ? Tween(begin: const Offset(1, 0), end: Offset.zero)
+            : Tween(begin: const Offset(-1, 0), end: Offset.zero);
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      case 'zoom':
+        // One shared tween reads as a zoom-through: the newcomer settles
+        // down from 1.08 as the incumbent, reversed, swells into it.
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: animation.drive(Tween(begin: 1.08, end: 1.0)),
+            child: child,
+          ),
+        );
+      default: // fade — and the crossfade half of Ken Burns
+        return FadeTransition(opacity: animation, child: child);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final video = _video;
-    return ColoredBox(
-      color: Colors.black,
-      child: _problem != null
-          ? Center(
-              child: Text(
-                _problem!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white54, fontSize: 16),
-              ),
-            )
-          : _files.isEmpty
-          ? const SizedBox.expand()
-          : video != null && video.value.isInitialized
+    Widget body;
+    if (_problem != null) {
+      body = Center(
+        child: Text(
+          _problem!,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white54, fontSize: 16),
+        ),
+      );
+    } else if (_files.isEmpty) {
+      body = const SizedBox.expand();
+    } else {
+      final transition = _transition;
+      final isVideoSlide = video != null && video.value.isInitialized;
+      // The index is in the key so a repeated file still hands off.
+      final key = ValueKey('$_index:${_files[_index].path}');
+      final Widget inner = isVideoSlide
           ? Center(
               child: AspectRatio(
                 aspectRatio: video.value.aspectRatio,
@@ -521,12 +606,106 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
           : SizedBox.expand(
               child: Image.file(
                 _files[_index],
-                key: ValueKey(_files[_index].path),
                 fit: BoxFit.contain,
                 gaplessPlayback: true,
                 errorBuilder: (_, _, _) => const SizedBox.expand(),
               ),
-            ),
-    );
+            );
+      final Widget slide = transition == 'kenburns' && !isVideoSlide
+          // Stills drift for the whole hold; videos supply their own
+          // motion and just crossfade (the default branch of _handOff).
+          ? _KenBurnsDrift(
+              key: key,
+              index: _index,
+              duration:
+                  Duration(
+                    seconds: c.settings
+                        .get(
+                          _gallery
+                              ? defs.screensaverGalleryInterval
+                              : defs.screensaverLocalInterval,
+                        )
+                        .toInt()
+                        .clamp(2, 3600),
+                  ) +
+                  const Duration(seconds: 2),
+              child: inner,
+            )
+          : KeyedSubtree(key: key, child: inner);
+      body = transition == 'none'
+          ? slide
+          : ClipRect(
+              child: AnimatedSwitcher(
+                duration: _switchDuration(transition),
+                switchInCurve: Curves.easeInOutCubic,
+                switchOutCurve: Curves.easeInOutCubic,
+                // StackFit.expand: with only positioned/animated children a
+                // plain Stack can collapse to nothing (the kiosk screen
+                // learned this the hard way).
+                layoutBuilder: (current, previous) => Stack(
+                  fit: StackFit.expand,
+                  children: [...previous, ?current],
+                ),
+                transitionBuilder: (child, animation) =>
+                    _handOff(transition, key, child, animation),
+                child: slide,
+              ),
+            );
+    }
+    return ColoredBox(color: Colors.black, child: body);
   }
+}
+
+/// The Ken Burns drift: a slow constant-velocity zoom anchored to a corner,
+/// a different corner each slide so consecutive photos drift different
+/// ways. The controller runs the full hold plus the hand-off, so the motion
+/// never freezes while the photo is still on screen.
+class _KenBurnsDrift extends StatefulWidget {
+  const _KenBurnsDrift({
+    super.key,
+    required this.index,
+    required this.duration,
+    required this.child,
+  });
+
+  final int index;
+  final Duration duration;
+  final Widget child;
+
+  @override
+  State<_KenBurnsDrift> createState() => _KenBurnsDriftState();
+}
+
+class _KenBurnsDriftState extends State<_KenBurnsDrift>
+    with SingleTickerProviderStateMixin {
+  static const _anchors = [
+    Alignment.topLeft,
+    Alignment.bottomRight,
+    Alignment.topRight,
+    Alignment.bottomLeft,
+  ];
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: widget.duration,
+  )..forward();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ClipRect(
+    child: AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Transform.scale(
+        scale: 1 + 0.1 * _controller.value,
+        alignment: _anchors[widget.index % _anchors.length],
+        child: child,
+      ),
+      child: widget.child,
+    ),
+  );
 }

@@ -12,9 +12,22 @@
   #content { position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     transition: transform 2s ease; }
   .media { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    object-fit: contain; background: #000; opacity: 0;
-    transition: opacity 600ms ease; }
-  .media.in { opacity: 1; }
+    object-fit: contain; background: #000; opacity: 0; }
+  .media.cut { opacity: 1; }
+  .t-fade { transition: opacity 600ms ease; }
+  .t-fade.in { opacity: 1; }
+  .t-kenburns { transition: opacity 800ms ease; }
+  .t-kenburns.in { opacity: 1;
+    animation: kskb var(--kb-dur, 12s) linear forwards; }
+  @keyframes kskb { to { transform: scale(1.1); } }
+  /* 105%, not 100%: subpixel layout must never leave a seam mid-push. */
+  .t-slide { opacity: 1; transform: translateX(105%);
+    transition: transform 500ms cubic-bezier(0.33, 0, 0.2, 1); }
+  .t-slide.in { transform: translateX(0); }
+  .t-slide.out { transform: translateX(-105%); }
+  .t-zoom { transform: scale(1.1);
+    transition: opacity 600ms ease, transform 600ms ease; }
+  .t-zoom.in { opacity: 1; transform: scale(1); }
   iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     border: 0; opacity: 0; transition: opacity 600ms ease;
     /* Taps must reach our dismiss handler, not the embedded site. */
@@ -115,17 +128,47 @@ class Hass {
   }
 }
 
-/* ── Cross-fade helper ────────────────────────────────────────────────────
-   Add the new element on top at opacity 0, fade it in, then drop the ones
-   under it — no black flash between items. */
-function showElement(el) {
+/* ── Transitions ──────────────────────────────────────────────────────────
+   Add the new element on top, run the configured hand-off, then drop the
+   ones under it — no black flash between items. Ken Burns drifts stills
+   for their whole hold; video and camera streams supply their own motion
+   and fall back to the crossfade. */
+const TRANSITION = ['none', 'fade', 'slide', 'zoom', 'kenburns']
+  .includes(CFG.mediaTransition) ? CFG.mediaTransition : 'fade';
+const TDUR = { fade: 650, slide: 550, zoom: 650, kenburns: 850 };
+let kbAnchor = 0;
+
+function showElement(el, opts) {
+  const still = !!(opts && opts.still);
+  const t = (TRANSITION === 'kenburns' && !still) ? 'fade' : TRANSITION;
   el.classList.add('media');
+  if (t === 'none') {
+    el.classList.add('cut');
+    content.appendChild(el);
+    while (el.previousElementSibling) el.previousElementSibling.remove();
+    return el;
+  }
+  el.classList.add('t-' + t);
+  if (t === 'kenburns') {
+    // The drift outlives the hold by the fade, so it never freezes on
+    // screen; each slide anchors a different corner.
+    el.style.setProperty('--kb-dur', (((opts && opts.holdMs) || 10000) + 2000) + 'ms');
+    el.style.transformOrigin =
+      ['20% 20%', '80% 80%', '80% 20%', '20% 80%'][kbAnchor++ % 4];
+  }
   content.appendChild(el);
   requestAnimationFrame(() => {
     el.classList.add('in');
+    // .out only styles the push (slide); it is inert on the others, whose
+    // incumbents simply sit beneath the opaque newcomer until removal.
+    for (let p = el.previousElementSibling; p; p = p.previousElementSibling) p.classList.add('out');
     setTimeout(() => {
-      Array.from(content.children).forEach((c) => { if (c !== el) c.remove(); });
-    }, 650);
+      // Sweep only what is still stacked beneath el. 'Everything except
+      // el' here would raze elements appended while this timer was
+      // pending — two quick shows used to annihilate each other and
+      // leave the stage black.
+      while (el.previousElementSibling) el.previousElementSibling.remove();
+    }, TDUR[t]);
   });
   return el;
 }
@@ -299,11 +342,19 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
     v.addEventListener('error', advance);
     showElement(v);
   } else {
+    if (/^audio\//.test(resolved.mime_type || '')) {
+      // A folder can hold sounds; there is nothing to show for one. Skip
+      // now — pushing it through a broken <img> would also schedule a
+      // phantom hold timer that later fires mid-photo and skips a slide.
+      advance();
+      return;
+    }
     const img = document.createElement('img');
     img.onerror = advance;
+    // The hold starts when there are pixels, not when the fetch starts.
+    if (playlist.length > 1) img.onload = () => setTimeout(advance, intervalMs);
     img.src = url;
-    showElement(img);
-    if (playlist.length > 1) setTimeout(advance, intervalMs);
+    showElement(img, { still: true, holdMs: intervalMs });
   }
 }
 

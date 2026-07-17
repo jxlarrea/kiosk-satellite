@@ -401,6 +401,32 @@ const screensaverMediaRecursive = SettingDef<bool>(
   dependsOn: 'screensaver.media_is_folder',
 );
 
+// One set of transitions shared by every slideshow mode — a person who
+// switches modes should not have to relearn the vocabulary. 'Ken Burns'
+// is the slow drifting zoom of documentary photo pans; stills only —
+// motion on top of motion just looks broken, so videos fall back to a
+// crossfade.
+const _transitionOptions = ['none', 'fade', 'slide', 'zoom', 'kenburns'];
+const _transitionLabels = {
+  'none': 'None',
+  'fade': 'Crossfade',
+  'slide': 'Slide',
+  'zoom': 'Zoom',
+  'kenburns': 'Ken Burns',
+};
+
+const screensaverMediaTransition = SettingDef<String>(
+  key: 'screensaver.media_transition',
+  type: SettingType.select,
+  defaultValue: 'fade',
+  title: 'Transition',
+  description: 'How one item hands off to the next.',
+  category: 'Screensaver',
+  options: _transitionOptions,
+  optionLabels: _transitionLabels,
+  dependsOn: 'screensaver.media_is_folder',
+);
+
 // ── Website (mode: website) ──
 
 const screensaverWebsiteUrl = SettingDef<String>(
@@ -461,6 +487,19 @@ const screensaverGalleryShuffle = SettingDef<bool>(
   dependsOnValue: 'gallery',
 );
 
+const screensaverGalleryTransition = SettingDef<String>(
+  key: 'screensaver.gallery_transition',
+  type: SettingType.select,
+  defaultValue: 'fade',
+  title: 'Transition',
+  description: 'How one photo hands off to the next.',
+  category: 'Screensaver',
+  options: _transitionOptions,
+  optionLabels: _transitionLabels,
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'gallery',
+);
+
 // ── Local media (mode: local) ──
 
 const screensaverLocalFolder = SettingDef<String>(
@@ -507,6 +546,19 @@ const screensaverLocalRecursive = SettingDef<bool>(
   title: 'Include subfolders',
   description: 'Also cycle photos and videos inside subfolders.',
   category: 'Screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
+
+const screensaverLocalTransition = SettingDef<String>(
+  key: 'screensaver.local_transition',
+  type: SettingType.select,
+  defaultValue: 'fade',
+  title: 'Transition',
+  description: 'How one photo hands off to the next.',
+  category: 'Screensaver',
+  options: _transitionOptions,
+  optionLabels: _transitionLabels,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -795,14 +847,17 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMediaInterval,
   screensaverMediaShuffle,
   screensaverMediaRecursive,
+  screensaverMediaTransition,
   screensaverWebsiteUrl,
   screensaverLocalFolder,
   screensaverLocalInterval,
   screensaverLocalShuffle,
   screensaverLocalRecursive,
+  screensaverLocalTransition,
   screensaverGalleryItems,
   screensaverGalleryInterval,
   screensaverGalleryShuffle,
+  screensaverGalleryTransition,
   screensaverPixelShift,
   screensaverDismissOnMotion,
   motionFps,
