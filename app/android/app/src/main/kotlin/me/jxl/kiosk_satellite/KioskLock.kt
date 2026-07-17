@@ -145,11 +145,11 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                 override fun run() {
                     if (!barWatch) return
                     hideBars()
-                    main.postDelayed(this, 800)
+                    main.postDelayed(this, 400)
                 }
             }
             barTicker = tick
-            main.postDelayed(tick, 800)
+            main.postDelayed(tick, 400)
         }
     }
 

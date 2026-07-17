@@ -32,11 +32,12 @@ Future<void> main() async {
   // system's three seconds. Locked down, that is too long a window; plain
   // immersive makes a revealed bar an ordinary one, which notifies us and
   // obeys the fast re-hide (KioskLock's ticker backstops it besides).
-  Future<void> applyImmersion() => SystemChrome.setEnabledSystemUIMode(
-    container.settings.get(defs.kioskEnabled)
-        ? SystemUiMode.immersive
-        : SystemUiMode.immersiveSticky,
-  );
+  // Sticky in BOTH states — plain immersive turned out to paint One UI's
+  // "swipe for status bar" hint pill on every touch, which is worse than
+  // what it fixed. Sticky draws no hint; its transient bar is dismissed
+  // early by KioskLock's hide() ticker while kiosk mode holds.
+  Future<void> applyImmersion() =>
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   await applyImmersion();
   container.bus.on<SettingChanged>().listen((e) {
     if (e.key == defs.kioskEnabled.key) applyImmersion();
