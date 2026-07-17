@@ -68,8 +68,7 @@ class _SetupScreenState extends State<SetupScreen> {
         "Can't reach Home Assistant",
         'No response from this address. Check that the URL is correct and '
         'that this device is on the same network as your Home Assistant '
-        'server. If the server uses a self-signed certificate, use its '
-        'http:// address during setup.',
+        'server.',
       );
     } else if (error.startsWith('HTTP')) {
       _fail(

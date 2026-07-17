@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_container.dart';
 import 'core/events.dart';
+import 'core/ha_http_overrides.dart';
 import 'managers/settings/definitions.dart' as defs;
 import 'ui/kiosk_screen.dart';
 import 'ui/setup_screen.dart';
@@ -15,6 +17,11 @@ Future<void> main() async {
 
   final container = AppContainer();
   await container.init();
+
+  // Self-signed certificates are the norm for LAN Home Assistant servers;
+  // accept them for the configured HA host (and only that host) across
+  // every HTTP and websocket client in the app.
+  HttpOverrides.global = HaHttpOverrides(container.settings);
 
   // Media permissions are NOT requested here. They are gated by the Web
   // Content toggles and the OS grant is requested lazily (see KioskScreen),

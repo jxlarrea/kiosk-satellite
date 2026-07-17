@@ -298,6 +298,18 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
         mediaPlaybackRequiresUserGesture: false,
         allowsInlineMediaPlayback: true,
       ),
+      onReceivedServerTrustAuthRequest: (controller, challenge) async {
+        // Same policy as the kiosk WebView: the media screensaver talks to
+        // the same self-signed Home Assistant.
+        if (widget.container.settings.get(defs.ignoreSslErrors)) {
+          return ServerTrustAuthResponse(
+            action: ServerTrustAuthResponseAction.PROCEED,
+          );
+        }
+        return ServerTrustAuthResponse(
+          action: ServerTrustAuthResponseAction.CANCEL,
+        );
+      },
       onWebViewCreated: (controller) {
         controller.addJavaScriptHandler(
           handlerName: 'dismiss',

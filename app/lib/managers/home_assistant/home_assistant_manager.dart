@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../core/command_registry.dart';
+import '../../core/ha_http_overrides.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
@@ -57,6 +58,20 @@ class HomeAssistantManager extends Manager {
   Future<String?> validateConnection() async {
     final error = await checkConnection();
     connectionOk.value = error == null;
+    // The API side tolerates the self-signed certificate by policy (see
+    // HaHttpOverrides); the WebView has its own trust stack, so when one
+    // was actually seen, switch its setting on too — otherwise the wizard
+    // validates but the dashboard page refuses to load.
+    if (error == null &&
+        HaHttpOverrides.sawSelfSigned &&
+        !_settings.get(defs.ignoreSslErrors)) {
+      log.info(
+        name,
+        'self-signed certificate accepted; enabling "Ignore SSL errors" '
+        'for the browser',
+      );
+      await _settings.setFromJson(defs.ignoreSslErrors.key, true);
+    }
     return error;
   }
 
