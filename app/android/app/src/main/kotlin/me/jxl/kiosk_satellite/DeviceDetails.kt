@@ -2,9 +2,6 @@ package me.jxl.kiosk_satellite
 
 import android.app.ActivityManager
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.BatteryManager
 import android.os.Build
 import android.os.Environment
 import android.os.Handler
@@ -55,7 +52,6 @@ class DeviceDetails(
                     val data = cpu()
                     Handler(Looper.getMainLooper()).post { result.success(data) }
                 }.start()
-                "battery" -> result.success(battery())
                 else -> result.notImplemented()
             }
         }
@@ -74,62 +70,6 @@ class DeviceDetails(
         "screen" to screen(),
         "webview" to webview(),
     )
-
-    /**
-     * Everything the platform will say about the battery, for the Battery
-     * Management card. Current is signed the intuitive way: positive while
-     * charge flows in. Fields the hardware won't report are null, and the
-     * UI drops those rows rather than showing dashes.
-     */
-    private fun battery(): Map<String, Any?> {
-        val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-        val sticky = context.registerReceiver(
-            null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        fun prop(id: Int): Long? {
-            val v = bm.getLongProperty(id)
-            return if (v == Long.MIN_VALUE || v == Int.MIN_VALUE.toLong()) null else v
-        }
-        val status = sticky?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
-        val plugged = sticky?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
-        val temp = sticky?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)
-        val volt = sticky?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, Int.MIN_VALUE)
-        val health = sticky?.getIntExtra(BatteryManager.EXTRA_HEALTH, -1) ?: -1
-        val cycles = if (Build.VERSION.SDK_INT >= 34)
-            sticky?.getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, -1) else -1
-        return mapOf(
-            "level" to prop(BatteryManager.BATTERY_PROPERTY_CAPACITY),
-            "status" to when (status) {
-                BatteryManager.BATTERY_STATUS_CHARGING -> "charging"
-                BatteryManager.BATTERY_STATUS_DISCHARGING -> "discharging"
-                BatteryManager.BATTERY_STATUS_FULL -> "full"
-                BatteryManager.BATTERY_STATUS_NOT_CHARGING -> "not_charging"
-                else -> "unknown"
-            },
-            "plugged" to when {
-                plugged and BatteryManager.BATTERY_PLUGGED_AC != 0 -> "ac"
-                plugged and BatteryManager.BATTERY_PLUGGED_USB != 0 -> "usb"
-                plugged and BatteryManager.BATTERY_PLUGGED_WIRELESS != 0 -> "wireless"
-                else -> null
-            },
-            // µA in, µA out; CURRENT_NOW's sign convention varies by vendor,
-            // so normalize: discharging must read negative.
-            "currentUa" to prop(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)?.let {
-                if (status == BatteryManager.BATTERY_STATUS_DISCHARGING && it > 0) -it else it
-            },
-            "chargeCounterUah" to prop(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER),
-            "temperatureC" to temp?.takeIf { it != Int.MIN_VALUE }?.let { it / 10.0 },
-            "voltageMv" to volt?.takeIf { it != Int.MIN_VALUE && it > 0 },
-            "health" to when (health) {
-                BatteryManager.BATTERY_HEALTH_GOOD -> "good"
-                BatteryManager.BATTERY_HEALTH_OVERHEAT -> "overheat"
-                BatteryManager.BATTERY_HEALTH_DEAD -> "dead"
-                BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> "over_voltage"
-                BatteryManager.BATTERY_HEALTH_COLD -> "cold"
-                else -> null
-            },
-            "cycleCount" to cycles?.takeIf { it > 0 },
-        )
-    }
 
     private fun ram(): Map<String, Any> {
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show Random;
@@ -11,7 +10,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/command_registry.dart';
-import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/settings_manager.dart';
 import '../settings/definitions.dart' as defs;
@@ -61,75 +59,8 @@ class DeviceManager extends Manager {
     return configured.isNotEmpty ? configured : model;
   }
 
-  Timer? _batteryTimer;
-
-  /// The charger state battery management last commanded, so a threshold is
-  /// acted on once per crossing rather than once per tick. Null until the
-  /// first crossing — the charger stays however the user left it.
-  bool? _chargerCommanded;
-
-  /// Turn the charger on below the min level, off above the max, through
-  /// the configured Home Assistant switch. Between the two nothing is sent:
-  /// the gap is the hysteresis that makes it a cycle instead of a fight.
-  bool _managingCharge = false;
-
-  Future<void> _manageCharging() async {
-    // A settings import fires one SettingChanged per battery key; without
-    // the guard each of them races the same threshold check and the switch
-    // hears about it four times.
-    if (_managingCharge) return;
-    _managingCharge = true;
-    try {
-      await _manageChargingInner();
-    } finally {
-      _managingCharge = false;
-    }
-  }
-
-  Future<void> _manageChargingInner() async {
-    if (!_settings.get(defs.batteryManage)) {
-      _chargerCommanded = null;
-      return;
-    }
-    final entity = _settings.get(defs.batteryChargerEntity).trim();
-    if (entity.isEmpty || !entity.contains('.')) return;
-    final minLevel = _settings.get(defs.batteryMinLevel).toInt();
-    final maxLevel = _settings.get(defs.batteryMaxLevel).toInt();
-    if (minLevel >= maxLevel) {
-      log.warn(name, 'battery: min level >= max level; not managing');
-      return;
-    }
-    final level = await _battery.batteryLevel;
-    bool? want;
-    if (level >= maxLevel) want = false;
-    if (level <= minLevel) want = true;
-    if (want == null || want == _chargerCommanded) return;
-    final result = await commands.execute('haCallService', {
-      'domain': entity.split('.').first,
-      'service': want ? 'turn_on' : 'turn_off',
-      'entityId': entity,
-    });
-    if (result.ok) {
-      _chargerCommanded = want;
-      log.info(
-        name,
-        'battery at $level%: charger ${want ? 'on' : 'off'} ($entity)',
-      );
-    } else {
-      log.warn(name, 'battery: charger switch failed: ${result.error}');
-    }
-  }
-
   @override
   Future<void> init() async {
-    _batteryTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => _manageCharging(),
-    );
-    bus.on<SettingChanged>().listen((e) {
-      if (e.key.startsWith('battery.')) _manageCharging();
-    });
-
     final packageInfo = await PackageInfo.fromPlatform();
     appVersion = packageInfo.version;
     packageName = packageInfo.packageName;
@@ -181,21 +112,6 @@ class DeviceManager extends Manager {
         handler: (_) async => CommandResult.ok(await stats()),
       ),
     );
-
-    commands.register(
-      Command(
-        name: 'getBatteryStats',
-        description:
-            'Full battery detail: level, state, current, temperature, '
-            'voltage, health — the Battery Management card.',
-        handler: (_) async => CommandResult.ok(await DeviceDetails.battery()),
-      ),
-    );
-  }
-
-  @override
-  Future<void> dispose() async {
-    _batteryTimer?.cancel();
   }
 
   Future<String> _deriveDeviceId() async {

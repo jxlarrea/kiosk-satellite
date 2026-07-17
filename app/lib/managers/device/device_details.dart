@@ -44,17 +44,6 @@ class DeviceDetails {
     }
   }
 
-  /// Full battery detail for the Battery Management card (see
-  /// DeviceDetails.kt); empty off-Android or when the channel is absent.
-  static Future<Map<String, Object?>> battery() async {
-    try {
-      return await _channel.invokeMapMethod<String, Object?>('battery') ??
-          const {};
-    } catch (_) {
-      return const {};
-    }
-  }
-
   Map<String, Object?>? _map(String key) {
     final v = _raw[key];
     return v is Map ? v.cast<String, Object?>() : null;

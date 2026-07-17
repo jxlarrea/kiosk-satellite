@@ -651,45 +651,6 @@ async function loadSettings() {
     });
     deviceCard.appendChild(row);
   }
-  // Battery stats, mirroring the device's card under Battery Management
-  // (the settings rows above it come from the declarative render). One
-  // fetch per load plus a refresh row — no standing poll.
-  {
-    const host = $('#device-settings');
-    const card = document.createElement('div');
-    card.className = 'card';
-    host.appendChild(card);
-    const fill = async () => {
-      card.textContent = '';
-      let b = {};
-      try {
-        const res = await api('/api/commands/getBatteryStats', { method: 'POST', body: '{}' });
-        b = (await res.json()).data || {};
-      } catch (_) {}
-      const rows = [];
-      if (b.level != null) rows.push(['Charge level', `${b.level}%`]);
-      const status = { charging: 'Charging', discharging: 'Discharging',
-        full: 'Full', not_charging: 'Plugged in, not charging' }[b.status];
-      const plugged = { ac: 'AC', usb: 'USB', wireless: 'wireless' }[b.plugged];
-      if (status) rows.push(['State', plugged ? `${status} (${plugged})` : status]);
-      if (b.currentUa != null) rows.push([
-        b.currentUa >= 0 ? 'Charge rate' : 'Discharge rate',
-        `${Math.round(Math.abs(b.currentUa) / 1000)} mA`]);
-      if (b.temperatureC != null) rows.push(['Temperature', `${b.temperatureC.toFixed(1)} \u00b0C`]);
-      if (b.voltageMv != null) rows.push(['Voltage', `${(b.voltageMv / 1000).toFixed(2)} V`]);
-      if (b.chargeCounterUah != null) rows.push(['Charge in battery', `${Math.round(b.chargeCounterUah / 1000)} mAh`]);
-      if (b.health) rows.push(['Health', b.health]);
-      if (b.cycleCount != null) rows.push(['Charge cycles', `${b.cycleCount}`]);
-      if (!rows.length) rows.push(['Battery stats', 'unavailable']);
-      rows.forEach(([n, v]) => card.appendChild(readOnlyRow(n, '', v)));
-      const refresh = readOnlyRow('Refresh', '', '\u21bb');
-      refresh.style.cursor = 'pointer';
-      refresh.addEventListener('click', fill);
-      card.appendChild(refresh);
-    };
-    await fill();
-  }
-
   // Configuration backup, mirroring the device's Settings -> Device card:
   // export downloads the full config (settings incl. secrets + the page's
   // localStorage); import uploads one and applies it.

@@ -456,79 +456,6 @@ class _CategoryContentState extends State<_CategoryContent> {
     }
   }
 
-  /// Bumped by the refresh icon; keys the battery stats FutureBuilder.
-  int _batteryTick = 0;
-
-  Widget _batteryStatsCard() {
-    return FutureBuilder(
-      key: ValueKey(_batteryTick),
-      future: widget.container.commands.execute('getBatteryStats', const {}),
-      builder: (context, snapshot) {
-        final data = snapshot.data?.data;
-        final b = data is Map ? data : const {};
-        String fmt(num? v, String suffix, [int digits = 0]) =>
-            v == null ? '' : '${v.toStringAsFixed(digits)}$suffix';
-        final status = switch (b['status']) {
-          'charging' => 'Charging',
-          'discharging' => 'Discharging',
-          'full' => 'Full',
-          'not_charging' => 'Plugged in, not charging',
-          _ => null,
-        };
-        final plugged = switch (b['plugged']) {
-          'ac' => 'AC',
-          'usb' => 'USB',
-          'wireless' => 'wireless',
-          _ => null,
-        };
-        final currentUa = b['currentUa'] as num?;
-        final rows = <(String, String)>[
-          if (b['level'] != null) ('Charge level', '${b['level']}%'),
-          if (status != null)
-            ('State', plugged == null ? status : '$status ($plugged)'),
-          if (currentUa != null)
-            (
-              currentUa >= 0 ? 'Charge rate' : 'Discharge rate',
-              '${(currentUa.abs() / 1000).round()} mA',
-            ),
-          if (b['temperatureC'] != null)
-            ('Temperature', fmt(b['temperatureC'] as num?, ' °C', 1)),
-          if (b['voltageMv'] != null)
-            ('Voltage', fmt((b['voltageMv'] as num) / 1000, ' V', 2)),
-          if (b['chargeCounterUah'] != null)
-            (
-              'Charge in battery',
-              '${((b['chargeCounterUah'] as num) / 1000).round()} mAh',
-            ),
-          if (b['health'] != null) ('Health', '${b['health']}'),
-          if (b['cycleCount'] != null) ('Charge cycles', '${b['cycleCount']}'),
-        ];
-        return _SettingsCard(
-          children: [
-            if (rows.isEmpty)
-              const ListTile(title: Text('Battery stats unavailable'))
-            else
-              for (final (label, value) in rows)
-                ListTile(
-                  dense: true,
-                  title: Text(label),
-                  trailing: Text(
-                    value,
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                ),
-            ListTile(
-              dense: true,
-              title: const Text('Refresh'),
-              trailing: const Icon(Icons.refresh, size: 20),
-              onTap: () => setState(() => _batteryTick++),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _toast(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -621,10 +548,6 @@ class _CategoryContentState extends State<_CategoryContent> {
           _defsFor(widget.category),
           () => setState(() {}),
         ),
-        // Live numbers under the Battery Management panel (which renders
-        // last among the Device sections, so this card sits inside the
-        // group visually).
-        if (widget.category == 'Device') _batteryStatsCard(),
         // Not a setting — the device's licensing identity, derived, never
         // chosen (see DeviceManager.deviceId). It lives with the Device
         // rows because "which device is this" is the question both answer.
