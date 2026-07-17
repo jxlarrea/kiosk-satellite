@@ -726,7 +726,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 9),
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                   child: Align(
                     alignment: Alignment.center,
                     child: InkWell(
@@ -750,7 +750,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 9, 16, 18),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
                   child: Align(
                     alignment: Alignment.center,
                     child: InkWell(
