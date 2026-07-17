@@ -291,6 +291,7 @@
     color: var(--text); border-radius: 20px; padding: 16px 18px;
     font-size: 13.5px; line-height: 1.4; margin-bottom: 4px; }
   #wizardError:empty { display: none; }
+  .wizard-foot { margin-top: auto; padding: 10px 16px 4px; }
   @media (max-width: 719px) {
     .wizard-rail { display: none; }
     .wizard-pane { padding: 20px 16px 16px; }
@@ -319,6 +320,9 @@
       <h1>Set up<br>Kiosk Satellite</h1>
     </div>
     <nav id="wizardStepsRail"></nav>
+    <div class="wizard-foot">
+      <button class="btn-ghost" id="wizardThemeBtn" title="Theme" aria-label="Theme"></button>
+    </div>
   </aside>
   <main class="wizard-pane">
     <h2 id="wizardTitle"></h2>
@@ -1629,17 +1633,31 @@ const wizard = {
   dashboards: [], dashboard: null,
 };
 
+// The wizard starts light — the product default — whatever an earlier
+// admin session stored; its own toggle flips light/dark, and the choice
+// persists so the app matches after setup.
+function wizardApplyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const btn = $('#wizardThemeBtn');
+  btn.innerHTML = THEME_ICONS[theme];
+  btn.title = `Theme: ${theme}`;
+  btn.setAttribute('aria-label', `Theme: ${theme}`);
+}
+
 function wizardShow() {
-  // The wizard renders light, full stop — matching the on-device wizard.
-  // It carries no theme toggle, so a dark preference stored by an earlier
-  // admin session would otherwise be inescapable here. The app proper
-  // returns to the stored preference after setup.
-  document.documentElement.dataset.theme = 'light';
+  wizardApplyTheme('light');
   $('#login').classList.add('hidden');
   $('#app').classList.add('hidden');
   $('#wizard').classList.remove('hidden');
   wizardRender();
 }
+
+$('#wizardThemeBtn').addEventListener('click', () => {
+  const next =
+    document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  localStorage.setItem('ks_theme', next);
+  wizardApplyTheme(next);
+});
 
 function wizardRender() {
   const s = wizard.steps[wizard.i];
