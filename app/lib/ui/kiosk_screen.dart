@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -262,6 +263,24 @@ class _KioskScreenState extends State<KioskScreen>
       source: pullToRefreshProbeScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
+    // The wizard's satellite choice, handed to Voice Satellite before its
+    // code runs: VS reads localStorage['vs-satellite-entity'], selects that
+    // assist_satellite, hydrates its server-side profile and starts. Only
+    // seeded while the key is absent — a satellite changed in the page
+    // afterwards must win over a stale wizard choice.
+    if (c.settings.get(defs.haSatelliteEntity).isNotEmpty)
+      UserScript(
+        source:
+            '''
+          try {
+            if (!localStorage.getItem('vs-satellite-entity')) {
+              localStorage.setItem('vs-satellite-entity',
+                ${jsonEncode(c.settings.get(defs.haSatelliteEntity))});
+            }
+          } catch (_) {}
+        ''',
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
     // Belt to disableContextMenu's braces: the native flag stops the action
     // mode, this stops the selection ever forming (and the web contextmenu).
     if (c.kiosk.locked && c.settings.get(defs.kioskDisableContextMenus))

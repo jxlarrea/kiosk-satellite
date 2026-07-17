@@ -924,6 +924,20 @@ const haToken = SettingDef<String>(
   secret: true,
 );
 
+// Hidden: written by the setup wizard's satellite picker. Seeded into the
+// dashboard page's localStorage (vs-satellite-entity) at document start so
+// Voice Satellite selects its assist_satellite, hydrates its server-side
+// profile and starts without any in-page setup.
+const haSatelliteEntity = SettingDef<String>(
+  key: 'ha.satellite_entity',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Voice Satellite entity',
+  description: 'The assist_satellite this kiosk announces itself as.',
+  category: 'Home Assistant',
+  hidden: true,
+);
+
 const haKioskMode = SettingDef<String>(
   key: 'ha.kiosk_mode',
   type: SettingType.select,
@@ -1109,6 +1123,7 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordResumeTimeoutSeconds,
   haUrl,
   haToken,
+  haSatelliteEntity,
   haKioskMode,
   themeAuto,
   themeDarkAt,

@@ -1532,6 +1532,7 @@ const wizard = {
   steps: [], i: 0, needPassword: false,
   vsDetected: false,
   rec: Object.fromEntries(WIZ_OPTIONAL.map(([k]) => [k, true])),
+  satellites: [], satellite: null,
   dashboards: [], dashboard: null,
 };
 
@@ -1633,13 +1634,36 @@ function wizardSteps() {
       if (!wizard.dashboard) throw new Error('Select a dashboard.');
       const vs = await (await api('/api/commands/haDetectVoiceSatellite', { method: 'POST', body: '{}' })).json();
       wizard.vsDetected = vs.ok && vs.data === true;
+      if (wizard.vsDetected) {
+        const sats = await (await api('/api/commands/haListVoiceSatellites', { method: 'POST', body: '{}' })).json();
+        wizard.satellites = (sats.ok && sats.data) || [];
+        wizard.satellite = wizard.satellite || wizard.satellites[0]?.entity_id || null;
+      }
       if (!wizard.vsDetected) wizard.i++; // skip the VS step
     },
   });
   steps.push({
     title: 'Voice Satellite detected',
-    lead: 'This Home Assistant instance runs the Voice Satellite integration. You can change any of these later in Settings.',
+    lead: 'This Home Assistant instance runs the Voice Satellite integration. Choose which satellite this kiosk is, then review its settings \u2014 everything can be changed later.',
     body: (b) => {
+      const sats = document.createElement('div');
+      sats.className = 'wizard-list';
+      if (!wizard.satellites.length) {
+        sats.appendChild(readOnlyRow('No satellites found',
+          'Add an assist satellite in the Voice Satellite integration, or continue and pick one on the dashboard later.', ''));
+      } else {
+        wizard.satellites.forEach((s) => {
+          const on = wizard.satellite === s.entity_id;
+          const row = readOnlyRow(s.name || s.entity_id, s.entity_id, on ? '\u25c9' : '\u25cb');
+          const mark = row.querySelector('span');
+          mark.style.color = on ? 'var(--primary)' : 'var(--muted)';
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', () => { wizard.satellite = s.entity_id; wizardRender(); });
+          sats.appendChild(row);
+        });
+      }
+      b.appendChild(sats);
+      b.appendChild(Object.assign(document.createElement('div'), { style: 'height:10px' }));
       const mark = (on) => on ? '\u2611' : '\u2610';
       const toggleRow = (label, desc, on, locked, onClick) => {
         const row = readOnlyRow(label, desc, mark(on));
@@ -1717,6 +1741,7 @@ function wizardSteps() {
           ...WIZ_LOCKED.map(([k]) => [k, true]),
           ...Object.entries(wizard.rec),
         ]);
+        if (wizard.satellite) chosen['ha.satellite_entity'] = wizard.satellite;
         await api('/api/settings', { method: 'PATCH', body: JSON.stringify(chosen) });
       }
       // Setting the start URL is what flips the device to configured; the

@@ -100,6 +100,8 @@ class _SetupScreenState extends State<SetupScreen> {
   // detection are not choices — Voice Satellite does not work without
   // them, so they render locked-on.
   bool? _vsDetected;
+  List<Map<String, Object?>>? _satellites;
+  String? _satellite;
   static const _lockedRecommended = <(String, String)>[
     ('web.microphone', 'Microphone access'),
     ('wake_word.enabled', 'Native wake word detection'),
@@ -234,10 +236,15 @@ class _SetupScreenState extends State<SetupScreen> {
         }
         setState(() => _busy = true);
         final vs = await c.homeAssistant.detectVoiceSatellite();
+        final satellites = vs
+            ? await c.homeAssistant.listVoiceSatellites()
+            : null;
         if (!mounted) return;
         setState(() {
           _busy = false;
           _vsDetected = vs;
+          _satellites = satellites;
+          _satellite ??= satellites?.firstOrNull?['entity_id'] as String?;
           // No Voice Satellite: nothing to recommend, straight on to the
           // permissions the minimal setup needs.
           _step = vs ? 3 : 4;
@@ -247,6 +254,12 @@ class _SetupScreenState extends State<SetupScreen> {
       case 4:
         setState(() => _busy = true);
         if (_vsStepActive) {
+          if (_satellite != null) {
+            await c.settings.setFromJson(
+              defs.haSatelliteEntity.key,
+              _satellite,
+            );
+          }
           for (final (key, _) in _lockedRecommended) {
             await c.settings.setFromJson(key, true);
           }
@@ -605,8 +618,39 @@ class _SetupScreenState extends State<SetupScreen> {
           heading('Voice Satellite detected'),
           lead(
             'This Home Assistant instance runs the Voice Satellite '
-            'integration. You can change any of these later in Settings.',
+            'integration. Choose which satellite this kiosk is, then '
+            'review its settings — everything can be changed later.',
           ),
+          if (_satellites == null || _satellites!.isEmpty)
+            _Card(const [
+              ListTile(
+                title: Text('No satellites found'),
+                subtitle: Text(
+                  'Add an assist satellite in the Voice Satellite '
+                  'integration, or continue without one and pick it on '
+                  'the dashboard later.',
+                ),
+              ),
+            ])
+          else
+            _Card([
+              for (final s in _satellites!)
+                ListTile(
+                  leading: Icon(
+                    _satellite == s['entity_id']
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: _satellite == s['entity_id']
+                        ? theme.colorScheme.primary
+                        : null,
+                  ),
+                  title: Text('${s['name']}'),
+                  subtitle: Text('${s['entity_id']}'),
+                  onTap: () => setState(
+                    () => _satellite = s['entity_id'] as String?,
+                  ),
+                ),
+            ]),
           _Card([
             SwitchListTile(
               title: const Text('Apply all recommended settings'),

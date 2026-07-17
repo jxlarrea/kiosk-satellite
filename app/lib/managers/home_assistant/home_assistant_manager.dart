@@ -149,6 +149,18 @@ class HomeAssistantManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'haListVoiceSatellites',
+        description:
+            'The assist_satellite entities the Voice Satellite '
+            'integration provides.',
+        handler: (_) async {
+          final satellites = await listVoiceSatellites();
+          return satellites == null
+              ? const CommandResult.fail('could not list satellites')
+              : CommandResult.ok(satellites);
+        },
+      ))
+      ..register(Command(
         name: 'haListDashboards',
         description: 'List Home Assistant dashboards',
         handler: (_) async {
@@ -316,6 +328,45 @@ class HomeAssistantManager extends Manager {
       return null;
     } catch (e) {
       return 'unreachable: $e';
+    }
+  }
+
+  /// The voice_satellite integration's assist_satellite entities, via the
+  /// entity registry (the only place platform ownership is recorded).
+  Future<List<Map<String, Object?>>?> listVoiceSatellites() async {
+    if (!configured) return null;
+    try {
+      final result = await _wsCommand({'type': 'config/entity_registry/list'});
+      if (result is! List) return null;
+      // Registry names are usually null for these; the slug reads fine
+      // once title-cased (living_room_tablet → Living Room Tablet).
+      String prettify(String entityId) => entityId
+          .split('.')
+          .last
+          .split('_')
+          .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+          .join(' ');
+      final satellites = [
+        for (final e in result.cast<Map>())
+          if (e['platform'] == 'voice_satellite' &&
+              (e['entity_id'] as String? ?? '').startsWith(
+                'assist_satellite.',
+              ))
+            {
+              'entity_id': e['entity_id'],
+              'name':
+                  e['name'] ??
+                      e['original_name'] ??
+                      prettify(e['entity_id'] as String),
+            },
+      ];
+      satellites.sort(
+        (a, b) => '${a['name']}'.compareTo('${b['name']}'),
+      );
+      return satellites;
+    } catch (e) {
+      log.warn(name, 'listVoiceSatellites failed: $e');
+      return null;
     }
   }
 
