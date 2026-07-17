@@ -60,6 +60,30 @@ class HomeAssistantManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'haCallService',
+        description:
+            'Call a Home Assistant service on one entity (battery '
+            'management throws the charger switch through this).',
+        params: const {
+          'domain': "Service domain, e.g. 'switch'",
+          'service': "Service name, e.g. 'turn_off'",
+          'entityId': 'Target entity id',
+        },
+        handler: (p) async {
+          final domain = p['domain'], service = p['service'],
+              entity = p['entityId'];
+          if (domain is! String || service is! String || entity is! String) {
+            return const CommandResult.fail(
+              'domain, service and entityId are required',
+            );
+          }
+          final error = await callService(domain, service, entity);
+          return error == null
+              ? const CommandResult.ok()
+              : CommandResult.fail(error);
+        },
+      ))
+      ..register(Command(
         name: 'haListDashboards',
         description: 'List Home Assistant dashboards',
         handler: (_) async {
@@ -215,6 +239,35 @@ class HomeAssistantManager extends Manager {
   }
 
   /// Null when reachable and authorized, otherwise an error description.
+  /// Call a Home Assistant service against one entity over REST. Used by
+  /// battery management to throw the charger switch; generic enough for
+  /// any turn_on/turn_off-style service.
+  Future<String?> callService(
+    String domain,
+    String service,
+    String entityId,
+  ) async {
+    if (!configured) return 'Home Assistant not configured';
+    try {
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/api/services/$domain/$service'),
+            headers: {
+              'Authorization': 'Bearer ${_settings.get(defs.haToken)}',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'entity_id': entityId}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return null;
+      }
+      return 'HTTP ${response.statusCode}';
+    } catch (e) {
+      return 'unreachable: $e';
+    }
+  }
+
   Future<String?> checkConnection() async {
     if (!configured) return 'Home Assistant URL and token not configured';
     try {

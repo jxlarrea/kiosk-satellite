@@ -984,6 +984,70 @@ const remotePassword = SettingDef<String>(
 
 // ── Device ─────────────────────────────────────────────────────────────
 
+// ── Battery management ──
+//
+// Real charge cycling needs a switch KS can actually throw. No app —
+// store-distributed or otherwise — can cut a tablet's charger from
+// software without root; the popular dumpsys fake only changes what
+// Android *reports* (measured: the charge counter does not move a µAh).
+// A smart plug exposed as a Home Assistant switch is the honest lever,
+// and this is a Home Assistant kiosk: it already has the connection.
+
+const batteryManage = SettingDef<bool>(
+  key: 'battery.manage',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Manage charging',
+  description:
+      'Cycle the battery between the levels below by switching the '
+      'charger through Home Assistant.',
+  category: 'Device',
+  section: 'Battery Management',
+);
+
+const batteryChargerEntity = SettingDef<String>(
+  key: 'battery.charger_entity',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Charger switch entity',
+  description:
+      'The Home Assistant switch that powers this tablet\'s charger '
+      '(e.g. a smart plug: switch.tablet_charger).',
+  category: 'Device',
+  section: 'Battery Management',
+  dependsOn: 'battery.manage',
+);
+
+const batteryMaxLevel = SettingDef<num>(
+  key: 'battery.max_level',
+  type: SettingType.number,
+  defaultValue: 80,
+  title: 'Max charge level',
+  description: 'Switch the charger off at this level.',
+  category: 'Device',
+  section: 'Battery Management',
+  min: 50,
+  max: 100,
+  step: 5,
+  unit: '%',
+  dependsOn: 'battery.manage',
+);
+
+const batteryMinLevel = SettingDef<num>(
+  key: 'battery.min_level',
+  type: SettingType.number,
+  defaultValue: 20,
+  title: 'Min charge level',
+  description: 'Switch the charger back on at this level.',
+  category: 'Device',
+  section: 'Battery Management',
+  min: 5,
+  max: 95,
+  step: 5,
+  unit: '%',
+  dependsOn: 'battery.manage',
+);
+
 const deviceName = SettingDef<String>(
   key: 'device.name',
   type: SettingType.string,
@@ -1082,4 +1146,8 @@ const List<SettingDef<Object>> allSettings = [
   remotePassword,
   deviceName,
   uiTheme,
+  batteryManage,
+  batteryChargerEntity,
+  batteryMaxLevel,
+  batteryMinLevel,
 ];
