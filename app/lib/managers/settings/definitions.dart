@@ -359,6 +359,34 @@ const keepScreenOn = SettingDef<bool>(
   category: 'Screen',
 );
 
+// Off by default: a slider with no gate would override every device's
+// OS-managed brightness the moment it upgrades.
+const setBrightnessOnLaunch = SettingDef<bool>(
+  key: 'screen.set_brightness_on_launch',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Set brightness on launch',
+  description: 'Apply the default brightness whenever the app starts.',
+  category: 'Screen',
+);
+
+const defaultBrightness = SettingDef<num>(
+  key: 'screen.default_brightness',
+  type: SettingType.number,
+  defaultValue: 0.8,
+  title: 'Default brightness',
+  description:
+      'Screen brightness applied when the app starts. Moving the slider '
+      'applies it immediately.',
+  category: 'Screen',
+  // Never 0: a kiosk that boots to a black panel looks dead.
+  min: 0.05,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+  dependsOn: 'screen.set_brightness_on_launch',
+);
+
 // ── Screensaver ────────────────────────────────────────────────────────
 
 const screensaverEnabled = SettingDef<bool>(
@@ -991,6 +1019,8 @@ const List<SettingDef<Object>> allSettings = [
   kioskDisableHome,
   kioskDisableContextMenus,
   keepScreenOn,
+  setBrightnessOnLaunch,
+  defaultBrightness,
   screensaverEnabled,
   screensaverTimeoutSeconds,
   // Pixel shift sits with the general controls: it applies to every mode.

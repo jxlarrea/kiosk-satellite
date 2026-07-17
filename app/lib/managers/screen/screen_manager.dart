@@ -34,8 +34,22 @@ class ScreenManager extends Manager {
   Future<void> init() async {
     await _applyWakelock();
 
+    // The default brightness, applied at start when its gate is on. Also
+    // applied live as the slider moves (or the gate turns on) — brightness
+    // is the kind of setting whose feedback should be the panel itself.
+    if (_settings.get(defs.setBrightnessOnLaunch)) {
+      await setBrightness(_settings.get(defs.defaultBrightness).toDouble());
+    }
+
     bus.on<SettingChanged>().listen((e) async {
       if (e.key == defs.keepScreenOn.key) await _applyWakelock();
+      if (e.key == defs.defaultBrightness.key &&
+          _settings.get(defs.setBrightnessOnLaunch)) {
+        await setBrightness((e.value as num).toDouble());
+      }
+      if (e.key == defs.setBrightnessOnLaunch.key && e.value == true) {
+        await setBrightness(_settings.get(defs.defaultBrightness).toDouble());
+      }
     });
 
     commands
