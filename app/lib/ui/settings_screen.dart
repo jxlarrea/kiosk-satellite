@@ -106,7 +106,13 @@ const _categories = <(String, String, IconData, String)>[
     'Home Assistant',
     'Home Assistant Configuration',
     Icons.home_outlined,
-    'Connection, dashboard, Voice Satellite',
+    'Connection, dashboard, kiosk mode',
+  ),
+  (
+    'Voice Satellite',
+    'Voice Satellite',
+    Icons.graphic_eq_outlined,
+    'Wake word, background listening',
   ),
   ('Browser', 'Web Browsing', Icons.public, 'Reload, cache, zoom'),
   (
@@ -444,7 +450,7 @@ class _CategoryContentState extends State<_CategoryContent> {
   @override
   void initState() {
     super.initState();
-    if (widget.category == 'Home Assistant') {
+    if (widget.category == 'Voice Satellite') {
       _vsDetected = widget.container.homeAssistant.detectVoiceSatellite();
     }
   }
@@ -538,6 +544,14 @@ class _CategoryContentState extends State<_CategoryContent> {
       children: [
         if (widget.category == 'Home Assistant')
           ..._haConnectionCards(container)
+        else if (widget.category == 'Voice Satellite')
+          ValueListenableBuilder<bool>(
+            valueListenable: container.homeAssistant.connectionOk,
+            builder: (context, _, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _vsContent(container),
+            ),
+          )
         else
           ..._sectionedCards(
             container,
@@ -657,51 +671,95 @@ class _CategoryContentState extends State<_CategoryContent> {
           ],
           () => setState(() {}),
         ),
-          FutureBuilder<bool>(
-            future: _vsDetected,
-            builder: (context, snapshot) {
-              if (snapshot.data != true) return const SizedBox.shrink();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _SectionHeading('Voice Satellite'),
-                  _SettingsCard(
-                    children: [
-                      for (final def in _defsFor('Voice Satellite'))
-                        if (container.settings.visible(def))
-                          SettingTile(
-                            container: container,
-                            def: def,
-                            onChanged: () => setState(() {}),
-                          ),
-                      // Not a setting, but a row on the same card, so it sits
-                      // behind the same line as the rest. Gone with the rest
-                      // when detection is off: there is no state to report
-                      // about a thing that is not running, and "it is off" is
-                      // already said by the switch above.
-                      if (container.settings.get(wakeWordEnabled))
-                        WakeWordStatusTile(container: container),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-          // Last, and on their own card: these are the OS's to give, not ours
-          // to set, and every one of them is a thing that stops working rather
-          // than a preference.
-          //
-          // Only while we are the one listening. With wake word detection off
-          // the card keeps detection in the browser, which asks for the
-          // microphone through the WebView's own permission flow — so none of
-          // this is ours to need, and demanding it would be asking for grants
-          // nothing here uses.
-          if (container.settings.get(wakeWordEnabled)) ...[
-            _SectionHeading('Required system permissions'),
-            _SettingsCard(
-              children: [SystemPermissionsTile(container: container)],
+    ];
+  }
+
+  /// The Voice Satellite page: gated on the proven HA connection like the
+  /// rest of the HA-derived configuration, then on the integration actually
+  /// being installed.
+  List<Widget> _vsContent(AppContainer container) {
+    if (!container.homeAssistant.connectionOk.value) {
+      return const [
+        _SettingsCard(
+          children: [
+            ListTile(
+              title: Text('Home Assistant not connected'),
+              subtitle: Text(
+                'Validate the connection under Home Assistant '
+                'Configuration first.',
+              ),
             ),
           ],
+        ),
+      ];
+    }
+    return [
+      FutureBuilder<bool>(
+        future: _vsDetected,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const _SettingsCard(
+              children: [
+                ListTile(
+                  title: Text('Checking for Voice Satellite…'),
+                  trailing: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  ),
+                ),
+              ],
+            );
+          }
+          if (snapshot.data != true) {
+            return const _SettingsCard(
+              children: [
+                ListTile(
+                  title: Text('Voice Satellite not detected'),
+                  subtitle: Text(
+                    'The connected Home Assistant instance does not run '
+                    'the Voice Satellite integration.',
+                  ),
+                ),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _SettingsCard(
+                children: [
+                  for (final def in _defsFor('Voice Satellite'))
+                    if (container.settings.visible(def))
+                      SettingTile(
+                        container: container,
+                        def: def,
+                        onChanged: () => setState(() {}),
+                      ),
+                  // Not a setting, but a row on the same card, so it sits
+                  // behind the same line as the rest. Gone with the rest
+                  // when detection is off: there is no state to report
+                  // about a thing that is not running, and "it is off" is
+                  // already said by the switch above.
+                  if (container.settings.get(wakeWordEnabled))
+                    WakeWordStatusTile(container: container),
+                ],
+              ),
+              // Last, and on their own card: these are the OS's to give,
+              // not ours to set, and every one of them is a thing that
+              // stops working rather than a preference. Only while we are
+              // the one listening — with detection off, the browser asks
+              // for the microphone through its own flow.
+              if (container.settings.get(wakeWordEnabled)) ...[
+                const _SectionHeading('Required system permissions'),
+                _SettingsCard(
+                  children: [SystemPermissionsTile(container: container)],
+                ),
+              ],
+            ],
+          );
+        },
+      ),
     ];
   }
 }
