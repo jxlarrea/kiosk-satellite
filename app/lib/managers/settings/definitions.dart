@@ -100,6 +100,30 @@ const autoReloadOnError = SettingDef<bool>(
   category: 'Browser',
 );
 
+const pullToRefresh = SettingDef<bool>(
+  key: 'browser.pull_to_refresh',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable pull to refresh',
+  description:
+      'Drag down from the top of the page to reload it. Off by '
+      'default: on a scrolling dashboard an accidental pull is easy.',
+  category: 'Browser',
+);
+
+const pullToRefreshClearCache = SettingDef<bool>(
+  key: 'browser.pull_to_refresh_clear_cache',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Clear cache when pulling to refresh',
+  description:
+      'A pull also drops the HTTP cache, Cache Storage and any '
+      'service worker before reloading — the same as Clear web cache. '
+      'Login and saved page data are kept.',
+  category: 'Browser',
+  dependsOn: 'browser.pull_to_refresh',
+);
+
 const disableCache = SettingDef<bool>(
   key: 'browser.disable_cache',
   type: SettingType.boolean,
@@ -615,6 +639,8 @@ const uiTheme = SettingDef<String>(
 const List<SettingDef<Object>> allSettings = [
   startUrl,
   autoReloadOnError,
+  pullToRefresh,
+  pullToRefreshClearCache,
   disableCache,
   allowMixedContent,
   ignoreSslErrors,

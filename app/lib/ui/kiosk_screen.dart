@@ -72,6 +72,25 @@ class _KioskScreenState extends State<KioskScreen>
   /// creation (mixed content, SSL trust). Rebuilding re-reads initialSettings.
   int _webViewEpoch = 0;
 
+  /// Pull-to-refresh, Fully style. The spinner is ended from onLoadStop /
+  /// onReceivedError — the reload's own completion — never on a timer.
+  late final PullToRefreshController _pullToRefresh = PullToRefreshController(
+    settings: PullToRefreshSettings(
+      enabled: c.settings.get(defs.pullToRefresh),
+      color: const Color(0xFF749C6F), // brand sage on the stock spinner
+    ),
+    onRefresh: () async {
+      // The cache-clearing pull is the same operation as the menu's Clear
+      // web cache (drops HTTP cache + service worker, keeps localStorage and
+      // cookies, reloads); a plain pull is just the reload.
+      if (c.settings.get(defs.pullToRefreshClearCache)) {
+        await c.commands.execute('clearWebCache', const {});
+      } else {
+        await c.commands.execute('reload', const {});
+      }
+    },
+  );
+
   Future<void> _onSettingChanged(SettingChanged e) async {
     // HA kiosk mode is applied live (no app restart).
     if (e.key == defs.haKioskMode.key) {
@@ -90,6 +109,12 @@ class _KioskScreenState extends State<KioskScreen>
         e.key == defs.ignoreSslErrors.key ||
         e.key == defs.disableCache.key) {
       setState(() => _webViewEpoch++);
+      return;
+    }
+    // Pull-to-refresh toggles live on the existing WebView; the clear-cache
+    // companion is read at pull time and needs nothing here.
+    if (e.key == defs.pullToRefresh.key) {
+      await _pullToRefresh.setEnabled(e.value == true);
       return;
     }
     // Wake word detection is negotiated with the Voice Satellite card at page
@@ -340,6 +365,7 @@ class _KioskScreenState extends State<KioskScreen>
       ),
     ),
     initialUserScripts: UnmodifiableListView(_userScripts),
+    pullToRefreshController: _pullToRefresh,
     initialSettings: InAppWebViewSettings(
       // Hybrid composition, decided twice. Virtual display (false) freed
       // Flutter animations from syncing with the Android UI thread, but it
@@ -389,6 +415,7 @@ class _KioskScreenState extends State<KioskScreen>
       c.jsApi.attach(controller);
     },
     onLoadStop: (controller, url) {
+      _pullToRefresh.endRefreshing();
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
       // work when the effective mode is 'css').
@@ -396,6 +423,7 @@ class _KioskScreenState extends State<KioskScreen>
     },
     onReceivedError: (controller, request, error) {
       if (request.isForMainFrame ?? true) {
+        _pullToRefresh.endRefreshing();
         c.browser.onLoadError(error.description);
       }
     },
