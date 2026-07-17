@@ -120,6 +120,11 @@ class _KioskScreenState extends State<KioskScreen>
     // pull is just the reload.
     if (c.settings.get(defs.pullToRefreshClearCache)) {
       await InAppWebViewController.clearAllCache();
+      // The wake word models are cached by URL too — a model re-published
+      // on Home Assistant under the same name is invisible until its cache
+      // is dropped, and a clearing pull should mean all the caches. Dropped
+      // before the reload so the page's wake-word handshake re-downloads.
+      await c.commands.execute('clearWakeWordModels', const {});
       await c.browser.runJs(pullRefreshClearScript);
     } else {
       await c.commands.execute('reload', const {});
