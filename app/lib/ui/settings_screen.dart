@@ -207,7 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final theme = Theme.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final railWidth = (width * 0.4).clamp(320.0, 430.0);
-    final (category, title, _, _) = _categories[_selected];
+    final (category, title, icon, _) = _categories[_selected];
     return Scaffold(
       body: SafeArea(
         child: Row(
@@ -258,11 +258,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
-                    child: Text(
-                      title,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Row(
+                      children: [
+                        // The rail's icon again — bare glyph, no disc: the
+                        // title row is a label, not a button.
+                        Icon(icon, size: 26),
+                        const SizedBox(width: 12),
+                        Text(
+                          title,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   _CategoryContent(
@@ -388,8 +396,23 @@ class CategorySettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final icon = _categories
+        .where((c) => c.$1 == category)
+        .map((c) => c.$3)
+        .firstOrNull;
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 24),
+              const SizedBox(width: 10),
+            ],
+            Text(title),
+          ],
+        ),
+      ),
       body: _constrained(
         ListView(
           padding: _pagePadding,

@@ -146,7 +146,9 @@
 
   main { flex: 1; min-width: 0; padding: 20px 28px 28px; }
   main > * { max-width: 880px; }
-  #pageTitle { font-size: 26px; font-weight: 700; margin: 4px 0 18px 4px; }
+  #pageTitle { font-size: 26px; font-weight: 700; margin: 4px 0 18px 4px;
+    display: flex; align-items: center; gap: 12px; }
+  #pageTitle svg { width: 24px; height: 24px; flex: none; }
 
   .tab { display: none; }
   .tab.active { display: block; }
@@ -490,7 +492,11 @@ function showTab(name, { push = true } = {}) {
     b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach((t) =>
     t.classList.toggle('active', t.id === `tab-${tab}`));
-  $('#pageTitle').textContent = TAB_TITLES[tab];
+  // The nav rail's glyph, bare — same drawing, no disc.
+  const titleEl = $('#pageTitle');
+  titleEl.textContent = TAB_TITLES[tab];
+  const glyph = document.querySelector(`#tabs button[data-tab="${tab}"] svg`);
+  if (glyph) titleEl.prepend(glyph.cloneNode(true));
   if (push && location.hash.slice(1) !== tab) location.hash = tab;
   if (tab === 'logs') loadLogs();
   if (tab === 'device') loadDeviceInfo();
