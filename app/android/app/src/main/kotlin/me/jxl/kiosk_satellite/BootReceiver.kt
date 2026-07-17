@@ -22,9 +22,11 @@ class BootReceiver : BroadcastReceiver() {
         val prefs = context.getSharedPreferences(
             "FlutterSharedPreferences", Context.MODE_PRIVATE)
         if (!prefs.getBoolean("flutter.ks.kiosk.start_on_boot", false)) return
-        context.startActivity(
-            Intent(context, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
+        // The launcher's own intent, not a bare component one: it carries
+        // the flags that surface an existing task instead of rooting a
+        // duplicate beside it.
+        val launch = context.packageManager
+            .getLaunchIntentForPackage(context.packageName) ?: return
+        context.startActivity(launch)
     }
 }
