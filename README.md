@@ -2,6 +2,10 @@
    <img alt="Kiosk Satellite for Home Assistant" src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/banners/kiosk_satellite_banner.png" width="650" />
 </h1>
 
+<p align="center">
+<a href="https://buymeacoffee.com/jxlarrea"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
+</p>
+
 Turn any Android tablet into a beautiful, voice-enabled Home Assistant
 kiosk in about two minutes.
 
