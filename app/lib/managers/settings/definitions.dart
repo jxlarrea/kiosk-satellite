@@ -28,6 +28,7 @@ class SettingDef<T> {
     this.optionLabels,
     this.validator,
     this.multiline = false,
+    this.placeholder,
   });
 
   final String key;
@@ -73,6 +74,10 @@ class SettingDef<T> {
   /// JavaScript). Both UIs swap the one-line field for a code-friendly
   /// multi-line editor, and the row shows its description, not the blob.
   final bool multiline;
+
+  /// Example text shown in the empty editor instead of [description] —
+  /// a code sample reads better than prose where code is expected.
+  final String? placeholder;
 
   /// Range for [SettingType.number]. With both [min] and [max] set, the
   /// setting renders as a slider — in the on-device settings and the remote
@@ -204,6 +209,9 @@ const browserInjectJs = SettingDef<String>(
       'distracting elements or tweak sites you do not control.',
   category: 'Browser',
   multiline: true,
+  placeholder:
+      "// Example: hide a distracting element\n"
+      "document.querySelector('#banner').style.display = 'none';",
 );
 
 const allowMixedContent = SettingDef<bool>(

@@ -1509,6 +1509,7 @@ function settingRow(s) {
     // Pasted code gets a real editor, not a one-line field.
     const ta = document.createElement('textarea');
     ta.value = s.value ?? '';
+    if (s.placeholder) ta.placeholder = s.placeholder;
     ta.rows = 5;
     ta.spellcheck = false;
     ta.style.cssText = 'width:100%; max-width:440px; background:var(--surface-2);'

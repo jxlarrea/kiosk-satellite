@@ -1897,7 +1897,10 @@ class SettingTile extends StatelessWidget {
             style: def.multiline
                 ? const TextStyle(fontFamily: 'monospace', fontSize: 13)
                 : null,
-            decoration: InputDecoration(hintText: def.description),
+            decoration: InputDecoration(
+              hintText: def.placeholder ?? def.description,
+              hintMaxLines: def.multiline ? 4 : null,
+            ),
           ),
         ),
         actions: [

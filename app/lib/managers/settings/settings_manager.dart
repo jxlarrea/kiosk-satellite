@@ -196,6 +196,7 @@ class SettingsManager extends Manager {
         if (def.dependsOn != null) 'dependsOnValue': def.dependsOnValue,
         if (def.hidden) 'hidden': true,
         if (def.multiline) 'multiline': true,
+        if (def.placeholder != null) 'placeholder': def.placeholder,
         if (def.options != null) 'options': def.options,
         if (def.optionLabels != null) 'optionLabels': def.optionLabels,
         // Number ranges: with min+max present the remote renders a
