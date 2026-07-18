@@ -1,8 +1,7 @@
 name: Release
 
-# Publishing a GitHub release builds the signed APK and attaches it, the
-# same rhythm as Voice Satellite's HACS zip. The app version comes from
-# the tag (v1.2.3 becomes 1.2.3), so a release can never disagree with
+# Publishing a GitHub release builds the signed APK and attaches it. 
+# The app version comes from the tag (v1.2.3 becomes 1.2.3), so a release can never disagree with
 # what the app reports about itself.
 
 on:
