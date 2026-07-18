@@ -141,6 +141,7 @@ const _categories = <(String, String, IconData, String)>[
     Icons.tablet_android_outlined,
     'Name, identity, app theme',
   ),
+  ('About', 'About', Icons.info_outline, 'Version, author, license'),
 ];
 
 List<SettingDef<Object>> _defsFor(String category) => [
@@ -534,6 +535,62 @@ class _CategoryContentState extends State<_CategoryContent> {
     }
   }
 
+  /// Leave the settings stack and show [url] in the kiosk browser.
+  void _openLink(String url) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    widget.container.commands.execute('loadUrl', {'url': url});
+  }
+
+  /// The About page: app identity and attribution. Mirrored on the remote
+  /// UI's About tab.
+  List<Widget> _aboutCards(AppContainer container) {
+    final device = container.device;
+    Widget row(String name, String value, {VoidCallback? onTap}) => ListTile(
+      title: Text(name),
+      trailing: Text(value, style: Theme.of(context).textTheme.bodyMedium),
+      onTap: onTap,
+    );
+    return [
+      const _SectionHeading('App'),
+      _SettingsCard(
+        children: [
+          row('App version', '${device.appVersion} (${device.buildNumber})'),
+          row('Build', device.buildMode),
+          row('Package', device.packageName),
+        ],
+      ),
+      const _SectionHeading('Attribution'),
+      _SettingsCard(
+        children: [
+          row('Author', 'Xavier Larrea'),
+          row(
+            'Source code',
+            'github.com/jxlarrea/kiosk-satellite',
+            onTap: () =>
+                _openLink('https://github.com/jxlarrea/kiosk-satellite'),
+          ),
+          row(
+            'License',
+            'CC BY-NC-ND 4.0',
+            onTap: () =>
+                _openLink('https://creativecommons.org/licenses/by-nc-nd/4.0/'),
+          ),
+        ],
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+        child: Text(
+          'Kiosk Satellite is free for personal, non-commercial use. It is '
+          'licensed under CC BY-NC-ND 4.0: you may use and share it, but '
+          'commercial use and derivative works are not permitted.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final container = widget.container;
@@ -590,6 +647,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   )
                 : const SizedBox.shrink(),
           ),
+        if (widget.category == 'About') ..._aboutCards(container),
         _MadeByFooter(container: container),
       ],
     );

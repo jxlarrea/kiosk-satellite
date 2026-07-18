@@ -412,6 +412,10 @@
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
           <span class="nav-text"><span class="nav-title">Logs</span><span class="nav-sub">App log</span></span>
         </button>
+        <button data-tab="about">
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></span>
+          <span class="nav-text"><span class="nav-title">About</span><span class="nav-sub">Version, author, license</span></span>
+        </button>
       </nav>
       <div class="side-foot">
         <div class="foot-stats">
@@ -491,6 +495,9 @@
         <button class="btn-ghost" id="refreshLogs">Refresh</button></div>
       <div class="console" id="logsOut"></div>
     </div>
+
+    <!-- About -->
+    <div class="tab" id="tab-about"><div id="about-info"></div></div>
     <div class="made-by">Made with <span class="heart">&#9829;</span> by
       <a href="https://github.com/jxlarrea" target="_blank" rel="noreferrer">Xavier Larrea</a>
       &#183; &#9749;
@@ -569,14 +576,14 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'screen', 'screensaver',
-  'homeassistant', 'remote', 'device', 'console', 'logs'];
+  'homeassistant', 'remote', 'device', 'console', 'logs', 'about'];
 const TAB_TITLES = {
   dashboard: 'Dashboard', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', screen: 'Screen', screensaver: 'Screensaver',
   homeassistant: 'Home Assistant Configuration',
   voicesatellite: 'Voice Satellite',
   remote: 'Remote Administration',
-  device: 'Device', console: 'Console', logs: 'Logs',
+  device: 'Device', console: 'Console', logs: 'Logs', about: 'About',
 };
 
 function showTab(name, { push = true } = {}) {
@@ -593,6 +600,7 @@ function showTab(name, { push = true } = {}) {
   if (push && location.hash.slice(1) !== tab) location.hash = tab;
   if (tab === 'logs') loadLogs();
   if (tab === 'device') loadDeviceInfo();
+  if (tab === 'about') loadAboutInfo();
 }
 
 // Mobile drawer: the hamburger toggles the nav in/out; the backdrop and picking
@@ -1112,17 +1120,6 @@ async function loadDeviceInfo() {
     root.appendChild(c);
   };
 
-  card('App', [
-    ['App version', `${or(info?.appVersion)} (${or(info?.buildNumber, '-')})`],
-    // Which build this is decides where its logs go: a release build reports
-    // to this page and stays silent on logcat.
-    ['Build', or(info?.buildMode)],
-    ['Package', or(info?.package)],
-    ['Start URL', or(S['browser.start_url'])],
-    ['Current page', or(info?.currentUrl)],
-    ['Kiosk mode', or(S['ha.kiosk_mode'])],
-  ]);
-
   card('Hardware', [
     ['Device name', or(info?.name)],
     ['Device model', det?.brand && det?.brand !== det?.manufacturer
@@ -1187,6 +1184,65 @@ async function loadDeviceInfo() {
     ['Version', or(det?.webview?.version)],
     ['User agent', or(ua)],
   ]);
+}
+
+/* ---- About ---- */
+// The same rows the device's own About page shows: app identity plus
+// attribution and the license in one sentence.
+async function loadAboutInfo() {
+  const root = $('#about-info');
+  const info = await api('/api/info').then((r) => r.json()).catch(() => null);
+  const or = (v, alt = '-') => (v === null || v === undefined || v === '' ? alt : v);
+
+  root.innerHTML = '';
+  const card = (title, rows) => {
+    const h = document.createElement('h2');
+    h.className = 'card-title';
+    h.textContent = title;
+    root.appendChild(h);
+    const c = document.createElement('div'); c.className = 'card';
+    for (const [k, v] of rows) {
+      const row = document.createElement('div'); row.className = 'row';
+      const cell = document.createElement('div'); cell.className = 'info';
+      const n = document.createElement('div'); n.className = 'name'; n.textContent = k;
+      cell.appendChild(n); row.appendChild(cell);
+      const val = document.createElement('span');
+      val.style.cssText = 'text-align:right; word-break:break-all; max-width:60%';
+      if (v instanceof Node) val.appendChild(v); else val.textContent = String(v);
+      row.appendChild(val);
+      c.appendChild(row);
+    }
+    root.appendChild(c);
+  };
+  const link = (text, href) => {
+    const a = document.createElement('a');
+    a.textContent = text; a.href = href;
+    a.target = '_blank'; a.rel = 'noreferrer';
+    return a;
+  };
+
+  // Which build this is decides where its logs go: a release build reports
+  // to this page and stays silent on logcat.
+  card('App', [
+    ['App version', `${or(info?.appVersion)} (${or(info?.buildNumber, '-')})`],
+    ['Build', or(info?.buildMode)],
+    ['Package', or(info?.package)],
+  ]);
+
+  card('Attribution', [
+    ['Author', 'Xavier Larrea'],
+    ['Source code', link('github.com/jxlarrea/kiosk-satellite',
+      'https://github.com/jxlarrea/kiosk-satellite')],
+    ['License', link('CC BY-NC-ND 4.0',
+      'https://creativecommons.org/licenses/by-nc-nd/4.0/')],
+  ]);
+
+  const p = document.createElement('p');
+  p.style.cssText = 'color:var(--muted); font-size:.85rem; margin:4px 4px 0; line-height:1.5;';
+  p.textContent = 'Kiosk Satellite is free for personal, non-commercial use. ' +
+    'It is licensed under CC BY-NC-ND 4.0: you may use and share it, but ' +
+    'commercial use and derivative works are not permitted.';
+  root.appendChild(p);
 }
 
 /* ---- Required system permissions (read-only) ---- */
