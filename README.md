@@ -16,7 +16,7 @@
 Turn any Android tablet into a beautiful, voice-enabled Home Assistant
 kiosk in about two minutes.
 
-Kiosk Satellite is a free lightweight kiosk browser built **specifically for Home
+Kiosk Satellite is an open source lightweight kiosk browser built **specifically for Home
 Assistant**, and the official companion app for
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration).
 Mount a tablet on the wall, run the setup wizard, and you get a locked-down,
