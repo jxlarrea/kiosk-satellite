@@ -752,6 +752,18 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// The Voice Satellite page: gated on the proven HA connection like the
   /// rest of the HA-derived configuration, then on the integration actually
   /// being installed.
+  /// The assist_satellite entity this kiosk identifies as. The page's own
+  /// choice wins (localStorage, changeable in the Voice Satellite panel);
+  /// the wizard's stored pick is the fallback before the page has booted.
+  Future<String> _assignedSatellite(AppContainer container) async {
+    final result = await container.commands.execute('evalJs', {
+      'code': "localStorage.getItem('vs-satellite-entity')",
+    });
+    final data = result.ok ? result.data : null;
+    if (data is String && data.isNotEmpty && data != 'null') return data;
+    return container.settings.get(haSatelliteEntity);
+  }
+
   List<Widget> _vsContent(AppContainer container) {
     if (!container.homeAssistant.connectionOk.value) {
       return const [
@@ -891,6 +903,28 @@ class _CategoryContentState extends State<_CategoryContent> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              FutureBuilder<String>(
+                future: _assignedSatellite(container),
+                builder: (context, snap) => _SettingsCard(
+                  children: [
+                    ListTile(
+                      title: const Text('Assigned satellite'),
+                      subtitle: const Text(
+                        'The assist_satellite entity this kiosk identifies '
+                        'as in Home Assistant.',
+                      ),
+                      trailing: Text(
+                        snap.connectionState != ConnectionState.done
+                            ? '…'
+                            : ((snap.data ?? '').isEmpty
+                                  ? 'None assigned'
+                                  : snap.data!),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               _SettingsCard(
                 children: [
                   for (final def in _defsFor('Voice Satellite'))

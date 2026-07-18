@@ -786,6 +786,22 @@ async function loadSettings() {
       card.appendChild(learn);
       root.appendChild(card);
     } else {
+      // The satellite this kiosk identifies as: the page's own choice wins
+      // (localStorage, changeable in the Voice Satellite panel); the
+      // wizard's stored pick is the fallback before the page has booted.
+      let satellite = '';
+      try {
+        const r = await (await api('/api/commands/evalJs', { method: 'POST',
+          body: JSON.stringify({ code: "localStorage.getItem('vs-satellite-entity')" }) })).json();
+        if (r.ok && typeof r.data === 'string' && r.data && r.data !== 'null') satellite = r.data;
+      } catch (_) {}
+      if (!satellite) satellite = (byKey['ha.satellite_entity']?.value || '').trim();
+      const satCard = document.createElement('div');
+      satCard.className = 'card';
+      satCard.appendChild(readOnlyRow('Assigned satellite',
+        'The assist_satellite entity this kiosk identifies as in Home Assistant.',
+        satellite || 'None assigned'));
+      root.appendChild(satCard);
       render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length));
     }
   }
