@@ -567,9 +567,26 @@ class _CategoryContentState extends State<_CategoryContent> {
             'Xavier Larrea',
             onTap: () => _openLink('https://github.com/jxlarrea'),
           ),
-          row(
-            'Source code',
-            'github.com/jxlarrea/kiosk-satellite',
+          ListTile(
+            title: const Text('Source code'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.string(
+                  _githubMark,
+                  height: 15,
+                  colorFilter: ColorFilter.mode(
+                    Theme.of(context).colorScheme.onSurface,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  'jxlarrea/kiosk-satellite',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
             onTap: () =>
                 _openLink('https://github.com/jxlarrea/kiosk-satellite'),
           ),
