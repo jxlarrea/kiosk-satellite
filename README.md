@@ -74,13 +74,10 @@ word and the kiosk brings the dashboard back and answers.
 | --- | --- | --- |
 | Wake word with the dashboard on screen | ✅ | ✅ |
 | Wake word with the screen off | ❌ | ✅ |
-| Wake word with another app in front | ❌ | ✅ (returns to the dashboard on detection) |
-| Wake word during the screensaver | ❌ browser throttled | ✅ |
-| Detection cost | Browser-side inference, heavy on tablets | Native CPU inference, many times faster than realtime |
-| Low-end hardware (e.g. Echo Show 5) | Struggles | ✅ CPU only, no GPU needed |
-| Microphone at wake | Reacquired per wake (can clip your first words) | Held natively and streamed with pre-roll, nothing is clipped |
-| Survives reboots | Manual relaunch | ✅ Start on boot |
-| Satellite setup | Pick the entity in the card | Assigned automatically during onboarding |
+| Wake word with another app in front | ❌ | ✅ Returns to the dashboard on trigger |
+| Detection cost | ⚠️ Browser based, heavy on tablets | ✅ Native CPU inference, 10x-30x faster |
+| Wake word on low-end hardware | ⚠️ Struggles | ✅ CPU only, no GPU needed |
+| Survives reboots | ⚠️ Manual relaunch | ✅ Start on boot |
 
 Voice Satellite is not required, since Kiosk Satellite is a complete Home
 Assistant kiosk on its own, but together they make a tablet into something
