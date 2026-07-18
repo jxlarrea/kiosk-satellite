@@ -23,6 +23,10 @@ Mount a tablet on the wall, run the setup wizard, and you get a locked-down,
 always-on dashboard that listens for your wake word natively, even while
 the screen is off or another app is in front.
 
+<p align="center">
+ <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/drawer.png" alt="Assist" width="94%"/>
+</p>
+
 ## What it does
 
 - **Guided setup**: a five-step onboarding wizard connects to your Home
