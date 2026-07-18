@@ -1159,6 +1159,11 @@ class _RotationCardState extends State<_RotationCard> {
           onChanged: () => setState(() {}),
         ),
         if (enabled) ...[
+          SettingTile(
+            container: c,
+            def: haRotationSeconds,
+            onChanged: () => setState(() {}),
+          ),
           FutureBuilder<List<(String, String, List<Map<String, Object?>>)>?>(
             future: _views,
             builder: (context, snapshot) {
@@ -1217,11 +1222,6 @@ class _RotationCardState extends State<_RotationCard> {
                 ],
               );
             },
-          ),
-          SettingTile(
-            container: c,
-            def: haRotationSeconds,
-            onChanged: () => setState(() {}),
           ),
         ],
       ],

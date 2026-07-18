@@ -914,6 +914,7 @@ async function loadSettings() {
         root.appendChild(rcard);
         rcard.appendChild(settingRow(rotEnabled));
         if (rotEnabled.value === true) {
+          rcard.appendChild(settingRow(byKey['ha.rotation_seconds']));
           let sel = [];
           try { sel = JSON.parse(byKey['ha.rotation_dashboards']?.value || '[]'); } catch (_) {}
           if (!Array.isArray(sel)) sel = [];
@@ -952,7 +953,6 @@ async function loadSettings() {
             });
           });
           if (!dashList.length) rcard.appendChild(readOnlyRow('No dashboards found', '', ''));
-          rcard.appendChild(settingRow(byKey['ha.rotation_seconds']));
         }
       }
     }
