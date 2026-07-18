@@ -137,7 +137,7 @@ class KioskDrawer extends StatelessWidget {
                                 c.settings.get(defs.haKioskMode) == 'off'
                                     ? Icons.fullscreen
                                     : Icons.fullscreen_exit,
-                                'HA Kiosk Mode',
+                                'Toggle HA Kiosk Mode',
                                 () async {
                                   onClose();
                                   final mode = c.settings.get(
@@ -159,10 +159,6 @@ class KioskDrawer extends StatelessWidget {
                                     );
                                   }
                                 },
-                                trailing:
-                                    defs.haKioskMode.optionLabels?[c.settings
-                                        .get(defs.haKioskMode)] ??
-                                    c.settings.get(defs.haKioskMode),
                               ),
                               _item(
                                 context,
@@ -288,15 +284,13 @@ class KioskDrawer extends StatelessWidget {
     );
   }
 
-  /// One action row, same weight language as the settings rail. [trailing]
-  /// right-aligns a small state hint (the kiosk-mode toggle shows its mode).
+  /// One action row, same weight language as the settings rail.
   Widget _item(
     BuildContext context,
     IconData icon,
     String label,
-    VoidCallback onTap, {
-    String? trailing,
-  }) {
+    VoidCallback onTap,
+  ) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -309,24 +303,15 @@ class KioskDrawer extends StatelessWidget {
             children: [
               Icon(icon, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  label,
-                  // The same style the settings rail titles use — titleMedium,
-                  // not bodyLarge: both are 16px, but bodyLarge tracks looser
-                  // (letter-spacing 0.5 vs 0.15) and the difference shows.
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(
+                label,
+                // The same style the settings rail titles use — titleMedium,
+                // not bodyLarge: both are 16px, but bodyLarge tracks looser
+                // (letter-spacing 0.5 vs 0.15) and the difference shows.
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              if (trailing != null)
-                Text(
-                  trailing,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
             ],
           ),
         ),
