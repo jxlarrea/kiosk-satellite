@@ -49,6 +49,7 @@ defensive style of Voice Satellite's kiosk wrapper.
 |---|---|---|
 | `stopScreensaver()` | `boolean` | One-shot dismiss (Fully Kiosk semantics) |
 | `pauseScreensaver(paused)` | `boolean` | Suppress (`true`) / release (`false`) the screensaver while the page is busy (Kiosker semantics, both styles supported) |
+| `getScreensaverSuppressed()` | `boolean` | True when the page should stand down its own screensaver: the app's screensaver is enabled and set to take precedence. Re-negotiated per page load (the app reloads the page when the answer changes) |
 
 ### Motion
 

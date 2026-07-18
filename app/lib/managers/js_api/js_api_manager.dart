@@ -37,6 +37,7 @@ class JsApiManager extends Manager {
     'isScreenOn': 'isScreenOn',
     'stopScreensaver': 'stopScreensaver',
     'pauseScreensaver': 'pauseScreensaver',
+    'getScreensaverSuppressed': 'getScreensaverSuppressed',
     'bringToFront': 'bringToFront',
     'getMotionEnabled': 'getMotionEnabled',
     'setWakeWordConfig': 'setWakeWordConfig',

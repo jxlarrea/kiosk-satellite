@@ -902,6 +902,19 @@ const wakeWordResumeTimeoutSeconds = SettingDef<num>(
   dependsOn: 'wake_word.enabled',
 );
 
+const vsSuppressScreensaver = SettingDef<bool>(
+  key: 'vs.suppress_screensaver',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Turn off the Voice Satellite screensaver',
+  description:
+      'While the Kiosk Satellite screensaver is enabled, the Voice Satellite '
+      'screensaver on the dashboard stands down so the two never run at '
+      'once. Voice Satellite shows a notice next to its own screensaver '
+      'setting while this is in effect.',
+  category: 'Voice Satellite',
+);
+
 // ── Home Assistant ─────────────────────────────────────────────────────
 
 const haUrl = SettingDef<String>(
@@ -1144,6 +1157,7 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordEnabled,
   wakeWordBackground,
   wakeWordResumeTimeoutSeconds,
+  vsSuppressScreensaver,
   haUrl,
   haToken,
   haSatelliteEntity,

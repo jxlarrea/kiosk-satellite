@@ -106,6 +106,16 @@ class ScreensaverManager extends Manager {
           _resetIdleTimer();
           return const CommandResult.ok();
         },
+      ))
+      ..register(Command(
+        name: 'getScreensaverSuppressed',
+        description:
+            'Whether the page should stand down its own screensaver '
+            'because this app runs one and is set to take precedence',
+        handler: (_) async => CommandResult.ok(
+          _settings.get(defs.screensaverEnabled) &&
+              _settings.get(defs.vsSuppressScreensaver),
+        ),
       ));
 
     _resetIdleTimer();

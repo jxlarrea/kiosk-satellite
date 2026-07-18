@@ -33,6 +33,11 @@ String buildKioskSatelliteScript({required String version, required String os}) 
     stopScreensaver: function () { return call('stopScreensaver'); },
     pauseScreensaver: function (paused) { return call('pauseScreensaver', { paused: !!paused }); },
 
+    // True when the page should stand down its own screensaver: the app's
+    // screensaver is enabled and set to take precedence. Re-negotiated per
+    // page load (the app reloads the page when the answer changes).
+    getScreensaverSuppressed: function () { return call('getScreensaverSuppressed'); },
+
     // Bring the app to the foreground — for a server-initiated interaction that
     // arrives while the app is behind another one. Resolves true if it came (or
     // was already) forward, false if it could not (no overlay grant).

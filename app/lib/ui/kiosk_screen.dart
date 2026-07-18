@@ -187,6 +187,15 @@ class _KioskScreenState extends State<KioskScreen>
       await c.browser.runJs('location.reload();');
       return;
     }
+    // Voice Satellite reads getScreensaverSuppressed once per page load, so
+    // anything that changes the answer re-negotiates with a reload. The
+    // screensaver toggle only matters while suppression is on.
+    if (e.key == defs.vsSuppressScreensaver.key ||
+        (e.key == defs.screensaverEnabled.key &&
+            c.settings.get(defs.vsSuppressScreensaver))) {
+      await c.browser.runJs('location.reload();');
+      return;
+    }
     // Enabling a media toggle proactively requests its OS grant (Fully-style),
     // then reloads so the page can re-request now that access is allowed.
     if (e.value == true) {
