@@ -5,7 +5,7 @@ start. It is a **promise-based** API (all methods return promises, even ones
 that resolve immediately) with **DOM `CustomEvent`s** for signals, with no
 string-eval callback registration like Fully Kiosk's `fully.bind()`.
 
-Primary consumer: the Voice Satellite card's kiosk abstraction
+Primary consumer: Voice Satellite's kiosk abstraction
 (`src/kiosk/index.js`), which gains a third platform adapter alongside
 `'fullykiosk'` and `'kiosker'`.
 
@@ -66,14 +66,14 @@ Wake-word configuration is **inherited from Voice Satellite**, never chosen
 in Kiosk Satellite. VS supports three engines (microWakeWord, openWakeWord,
 and vsWakeWord), each with its own model catalog served by the VS
 integration as static paths under `<ha>/voice_satellite/models/` (model file
-+ JSON manifest). The VS card pushes the active engine + models to the app;
-the app downloads what it needs from those URLs.
++ JSON manifest). Voice Satellite pushes the active engine + models to the
+app; the app downloads what it needs from those URLs.
 
 | Method | Returns | Description |
 |---|---|---|
-| `setWakeWordConfig({engine, models, stopModel, energyGate})` | `{available, stopWordAvailable}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two; VS routes two wake words to separate pipeline slots). Resolves `{available: false}` when the app is not listening for that config (no native runner, but also a refused microphone or models it could not download), and **the card must then keep using its browser engine**. Pushing again is also the retry: it clears any previous failure and takes the mic back after a release. |
+| `setWakeWordConfig({engine, models, stopModel, energyGate})` | `{available, stopWordAvailable}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two; VS routes two wake words to separate pipeline slots). Resolves `{available: false}` when the app is not listening for that config (no native runner, but also a refused microphone or models it could not download), and **Voice Satellite must then keep using its browser engine**. Pushing again is also the retry: it clears any previous failure and takes the mic back after a release. |
 | `setWakeWordActive(active)` | `boolean` | Resume (`true`) or suspend (`false`) native listening. The mic stays open, for an instant resume between turns. **The page must call `setWakeWordActive(true)` when its voice session returns to idle**; see handoff protocol. |
-| `releaseWakeWord({reason})` | `boolean` | Hard mic-off: stop detecting **and close the microphone**, unlike `setWakeWordActive(false)`. For a muted satellite, or the browser taking detection back. `reason` is `'muted' \| 'browser'` and is shown to the user; both look identical from the app's side, so **only the card can say which**, and an unexplained release can only be reported as "the microphone was released". `setWakeWordConfig` takes it back. |
+| `releaseWakeWord({reason})` | `boolean` | Hard mic-off: stop detecting **and close the microphone**, unlike `setWakeWordActive(false)`. For a muted satellite, or the browser taking detection back. `reason` is `'muted' \| 'browser'` and is shown to the user; both look identical from the app's side, so **only Voice Satellite can say which**, and an unexplained release can only be reported as "the microphone was released". `setWakeWordConfig` takes it back. |
 | `getWakeWordState()` | see below | Current engine state |
 
 `getWakeWordState()` resolves the whole state, which is also what the app's own
@@ -125,18 +125,19 @@ window.addEventListener('kiosksatellite:wakeword', (e) => {
 
 ## Wake-word handoff protocol (Voice Satellite)
 
-Preconditions: the card has pushed its config via `setWakeWordConfig` and
-received `{available: true}`, and the Voice Satellite `wake_word_detection`
-select is `Disabled` (or a dedicated "Kiosk App" mode), so the card never
-opens the mic for passive listening.
+Preconditions: Voice Satellite has pushed its config via `setWakeWordConfig`
+and received `{available: true}`, and the Voice Satellite
+`wake_word_detection` select is `Disabled` (or a dedicated "Kiosk App" mode),
+so Voice Satellite never opens the mic for passive listening.
 
 1. Kiosk Satellite owns the mic; native inference runs on the models it
    downloaded from the VS integration's model URLs.
 2. On detection the app **stops native capture first**, then dispatches
    `kiosksatellite:wakeword`.
-3. The VS adapter routes this into `triggerWake(session)` and the card opens the
-   WebView mic for STT and runs the Assist pipeline from `start_stage: 'stt'`.
-4. When the VS session returns to idle, the card calls
+3. The VS adapter routes this into `triggerWake(session)` and Voice Satellite
+   opens the WebView mic for STT and runs the Assist pipeline from
+   `start_stage: 'stt'`.
+4. When the VS session returns to idle, Voice Satellite calls
    `kioskSatellite.setWakeWordActive(true)`; the app re-opens the mic and
    resumes inference.
 

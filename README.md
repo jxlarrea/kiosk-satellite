@@ -36,7 +36,7 @@ the screen is off or another app is in front.
   built-in engine. Native detection keeps listening with the screen off or
   the app in the background, uses a fraction of the CPU a browser engine
   needs, and hands the microphone back to the dashboard the instant you
-  speak. No configuration inside the card; everything is inherited.
+  speak. No configuration needed in Voice Satellite; everything is inherited.
 - **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake when someone presses the
   power button, and full lock-task support on device-owner provisioned
@@ -63,8 +63,8 @@ browser, which is exactly its limit on a wall tablet: browsers can't listen
 while the screen is off, and browser-side wake-word engines are expensive.
 
 Kiosk Satellite removes that limit. The app runs Voice Satellite's own
-wake-word models natively and transparently: the card detects it is running
-inside Kiosk Satellite and hands detection over on its own. You keep
+wake-word models natively and transparently: Voice Satellite detects it is
+running inside Kiosk Satellite and hands detection over on its own. You keep
 configuring everything in Voice Satellite as usual; the kiosk just makes it
 always-on, cheaper, and screen-independent.
 
