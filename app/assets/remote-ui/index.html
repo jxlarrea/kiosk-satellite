@@ -857,8 +857,10 @@ async function loadSettings() {
       const dcard = document.createElement('div');
       dcard.className = 'card';
       root.appendChild(dcard);
+      let dashList = [];
       try {
         const dashboards = (await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json()).data || [];
+        dashList = dashboards;
         const rawBase = (byKey['ha.url']?.value || '').trim().replace(/\/$/, '');
         const current = byKey['browser.start_url']?.value || '';
         dashboards.forEach((d) => {
@@ -884,14 +886,55 @@ async function loadSettings() {
         dcard.appendChild(readOnlyRow('Could not list dashboards', '', ''));
       }
       // The rest of the Home Assistant settings, then Voice Satellite,
-      // through the same section-aware renderer as every other tab.
-      const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token');
+      // through the same section-aware renderer as every other tab. The
+      // rotation group is hand-built below instead: its dashboard list
+      // needs the live dashboards, which the generic renderer cannot
+      // supply.
+      const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token'
+        && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds');
       const restRoot = document.createElement('div');
       root.appendChild(restRoot);
       const savedHa = byCat['Home Assistant'];
       byCat['Home Assistant'] = rest;
       render(restRoot, ['Home Assistant'].filter((c) => (byCat[c] || []).length));
       byCat['Home Assistant'] = savedHa;
+
+      // Dashboard view rotation: toggle, then a checkbox per dashboard and
+      // the dwell time, mirroring the device's card.
+      const rotEnabled = byKey['ha.rotation_enabled'];
+      if (rotEnabled) {
+        const rh = document.createElement('h2');
+        rh.className = 'card-title';
+        rh.textContent = 'Dashboard View Rotation';
+        root.appendChild(rh);
+        const rcard = document.createElement('div');
+        rcard.className = 'card';
+        root.appendChild(rcard);
+        rcard.appendChild(settingRow(rotEnabled));
+        if (rotEnabled.value === true) {
+          let sel = [];
+          try { sel = JSON.parse(byKey['ha.rotation_dashboards']?.value || '[]'); } catch (_) {}
+          if (!Array.isArray(sel)) sel = [];
+          dashList.forEach((d) => {
+            const on = sel.includes(d.url_path);
+            const row = readOnlyRow(d.title || d.url_path, d.url_path,
+              on ? '☑' : '☐');
+            const mark = row.querySelector('span');
+            mark.style.color = on ? 'var(--primary)' : 'var(--muted)';
+            mark.style.fontSize = '18px';
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', async () => {
+              const next = on ? sel.filter((p) => p !== d.url_path) : sel.concat(d.url_path);
+              await api('/api/settings', { method: 'PATCH',
+                body: JSON.stringify({ 'ha.rotation_dashboards': JSON.stringify(next) }) });
+              await loadSettings();
+            });
+            rcard.appendChild(row);
+          });
+          if (!dashList.length) rcard.appendChild(readOnlyRow('No dashboards found', '', ''));
+          rcard.appendChild(settingRow(byKey['ha.rotation_seconds']));
+        }
+      }
     }
   }
 

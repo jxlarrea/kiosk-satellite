@@ -198,11 +198,78 @@ class HomeAssistantManager extends Manager {
     _themeTimer =
         Timer.periodic(const Duration(minutes: 1), (_) => _applyThemeSchedule());
 
+    // Dashboard view rotation: an endless loop over the chosen dashboards.
+    bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.haRotationEnabled.key ||
+          e.key == defs.haRotationDashboards.key ||
+          e.key == defs.haRotationSeconds.key) {
+        _configureRotation();
+      }
+    });
+    _configureRotation();
+
     // "auto" kiosk mode needs to know up front whether the plugin exists so
     // the initial URL can carry ?kiosk. Detect before the kiosk screen builds.
     if (configured && _settings.get(defs.haKioskMode) == 'auto') {
       await detectKioskModePlugin();
     }
+  }
+
+  Timer? _rotationTimer;
+  int _rotationIndex = 0;
+
+  /// (Re)arm the rotation timer from the current settings. Any change to the
+  /// rotation settings restarts the loop from the top of the list.
+  void _configureRotation() {
+    _rotationTimer?.cancel();
+    _rotationTimer = null;
+    _rotationIndex = 0;
+    if (!_settings.get(defs.haRotationEnabled)) return;
+    final seconds = _settings
+        .get(defs.haRotationSeconds)
+        .toInt()
+        .clamp(5, 86400);
+    _rotationTimer = Timer.periodic(
+      Duration(seconds: seconds),
+      (_) => _rotationTick(),
+    );
+    log.info(name, 'dashboard rotation armed (${seconds}s per dashboard)');
+  }
+
+  List<String> _rotationPaths() {
+    try {
+      final list =
+          jsonDecode(_settings.get(defs.haRotationDashboards)) as List;
+      return [
+        for (final p in list)
+          if (p is String && p.isNotEmpty) p,
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Advance to the next dashboard in the ring. Navigation happens inside
+  /// HA's SPA (pushState + location-changed, the same thing a card's
+  /// navigate action does) so nothing reloads and the page stays warm. The
+  /// script bails when something other than this HA instance is on screen —
+  /// another site's history is not ours to rewrite.
+  Future<void> _rotationTick() async {
+    final paths = _rotationPaths();
+    if (paths.isEmpty || baseUrl.isEmpty) return;
+    _rotationIndex = (_rotationIndex + 1) % paths.length;
+    final js =
+        '''
+(function () {
+  var base = ${jsonEncode(baseUrl)};
+  if (!location.href.startsWith(base)) return;
+  var path = '/' + ${jsonEncode(paths[_rotationIndex])};
+  if (location.pathname === path || location.pathname.indexOf(path + '/') === 0) return;
+  history.pushState(null, '', path);
+  window.dispatchEvent(new CustomEvent('location-changed'));
+})();
+''';
+    await commands.execute('evalJs', {'code': js});
   }
 
   Timer? _themeTimer;

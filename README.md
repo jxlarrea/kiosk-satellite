@@ -53,6 +53,10 @@ the screen is off or another app is in front.
   live screenshot, web console and logs, and can export/import the entire
   configuration (including the dashboard's local storage) as a single
   backup file.
+- **Dashboard view rotation**: cycle through a chosen set of dashboards in
+  an endless loop, each on screen for a configurable number of seconds.
+  Perfect for flipping between a camera wall, an energy map, and the main
+  dashboard.
 - **Kiosk conveniences**: pull-to-refresh with optional cache clearing,
   start on boot, keep screen awake, default brightness, scheduled
   light/dark theme that can flip the dashboard and the app together,

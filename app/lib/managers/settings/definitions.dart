@@ -1078,6 +1078,46 @@ const themeAutoApp = SettingDef<bool>(
   dependsOn: 'ha.theme_auto',
 );
 
+// ── Dashboard view rotation ────────────────────────────────────────────
+// Cycle through a chosen set of dashboards forever, each on screen for a
+// fixed dwell. Requested for camera-wall / energy-map style setups. The
+// dashboard list itself is custom UI in both settings surfaces (it needs
+// the live dashboard list from HA), so only the JSON selection is stored.
+
+const haRotationEnabled = SettingDef<bool>(
+  key: 'ha.rotation_enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable Dashboard view rotation',
+  description:
+      'Cycle through the selected dashboards in an endless loop, showing '
+      'each one for the chosen number of seconds.',
+  category: 'Home Assistant',
+  section: 'Dashboard View Rotation',
+);
+
+/// JSON array of dashboard url_paths, in rotation order.
+const haRotationDashboards = SettingDef<String>(
+  key: 'ha.rotation_dashboards',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Dashboards to rotate',
+  description: 'The dashboards included in the rotation.',
+  category: 'Home Assistant',
+  hidden: true,
+);
+
+const haRotationSeconds = SettingDef<num>(
+  key: 'ha.rotation_seconds',
+  type: SettingType.number,
+  defaultValue: 30,
+  title: 'Seconds per dashboard',
+  description: 'How long each dashboard stays on screen.',
+  category: 'Home Assistant',
+  section: 'Dashboard View Rotation',
+  dependsOn: 'ha.rotation_enabled',
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -1208,6 +1248,9 @@ const List<SettingDef<Object>> allSettings = [
   themeDarkAt,
   themeLightAt,
   themeAutoApp,
+  haRotationEnabled,
+  haRotationDashboards,
+  haRotationSeconds,
   remoteEnabled,
   remotePort,
   remotePassword,

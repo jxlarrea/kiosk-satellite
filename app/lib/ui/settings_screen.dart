@@ -744,8 +744,17 @@ class _CategoryContentState extends State<_CategoryContent> {
       _DashboardPickerCard(container: container),
       ..._sectionedCards(container, [
         for (final def in _defsFor('Home Assistant'))
-          if (def.key != haUrl.key && def.key != haToken.key) def,
+          if (def.key != haUrl.key &&
+              def.key != haToken.key &&
+              // The rotation group is hand-built below: its dashboard list
+              // needs the live dashboards from HA, which the generic
+              // renderer cannot supply.
+              def.key != haRotationEnabled.key &&
+              def.key != haRotationSeconds.key)
+            def,
       ], () => setState(() {})),
+      const _SectionHeading('Dashboard View Rotation'),
+      _RotationCard(container: container),
     ];
   }
 
@@ -1063,6 +1072,115 @@ class _DashboardPickerCardState extends State<_DashboardPickerCard> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Dashboard view rotation: the enable toggle, then (once on) a checkbox
+/// per dashboard and the dwell time. The selection is stored as a JSON
+/// array of url_paths in the hidden ha.rotation_dashboards setting; the
+/// rotation itself runs in HomeAssistantManager.
+class _RotationCard extends StatefulWidget {
+  const _RotationCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_RotationCard> createState() => _RotationCardState();
+}
+
+class _RotationCardState extends State<_RotationCard> {
+  late Future<List<Map<String, Object?>>?> _dashboards;
+
+  AppContainer get c => widget.container;
+
+  @override
+  void initState() {
+    super.initState();
+    _dashboards = c.homeAssistant.listDashboards();
+  }
+
+  List<String> _selected() {
+    try {
+      final list = jsonDecode(c.settings.get(haRotationDashboards)) as List;
+      return [
+        for (final p in list)
+          if (p is String) p,
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _toggle(String urlPath) async {
+    final selected = _selected();
+    selected.contains(urlPath)
+        ? selected.remove(urlPath)
+        : selected.add(urlPath);
+    await c.settings.setFromJson(
+      haRotationDashboards.key,
+      jsonEncode(selected),
+    );
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = c.settings.get(haRotationEnabled);
+    return _SettingsCard(
+      children: [
+        SettingTile(
+          container: c,
+          def: haRotationEnabled,
+          onChanged: () => setState(() {}),
+        ),
+        if (enabled) ...[
+          FutureBuilder<List<Map<String, Object?>>?>(
+            future: _dashboards,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const ListTile(
+                  title: Text('Loading dashboards…'),
+                  trailing: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2.4),
+                  ),
+                );
+              }
+              final dashboards = snapshot.data;
+              if (dashboards == null || dashboards.isEmpty) {
+                return ListTile(
+                  title: const Text('Could not list dashboards'),
+                  subtitle: const Text('Tap to retry.'),
+                  trailing: const Icon(Icons.refresh),
+                  onTap: () => setState(() {
+                    _dashboards = c.homeAssistant.listDashboards();
+                  }),
+                );
+              }
+              final selected = _selected();
+              return Column(
+                children: _separated([
+                  for (final d in dashboards)
+                    CheckboxListTile(
+                      value: selected.contains('${d['url_path']}'),
+                      title: Text('${d['title'] ?? d['url_path']}'),
+                      subtitle: Text('${d['url_path']}'),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      onChanged: (_) => _toggle('${d['url_path']}'),
+                    ),
+                ]),
+              );
+            },
+          ),
+          SettingTile(
+            container: c,
+            def: haRotationSeconds,
+            onChanged: () => setState(() {}),
+          ),
+        ],
+      ],
     );
   }
 }
