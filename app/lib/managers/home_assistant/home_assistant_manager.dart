@@ -83,6 +83,16 @@ class HomeAssistantManager extends Manager {
     if (configured) {
       unawaited(validateConnection());
     }
+    // And the gate self-heals: when the tablet boots faster than the HA
+    // server (a whole-house power cycle), the startup validation fails and
+    // would otherwise stay false all run. Retry quietly until HA answers,
+    // so the settings pages unlock without anyone tapping Validate. Idle
+    // once the connection is good.
+    _revalidateTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (configured && !connectionOk.value) {
+        unawaited(validateConnection());
+      }
+    });
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.haUrl.key || e.key == defs.haToken.key) {
         connectionOk.value = false;
@@ -284,6 +294,7 @@ class HomeAssistantManager extends Manager {
   }
 
   Timer? _themeTimer;
+  Timer? _revalidateTimer;
 
   /// The dark state last pushed to the page, so the minute tick only fires JS
   /// on an actual light↔dark transition. Cleared when the feature is off so
@@ -558,5 +569,7 @@ class HomeAssistantManager extends Manager {
   @override
   Future<void> dispose() async {
     _themeTimer?.cancel();
+    _revalidateTimer?.cancel();
+    _rotationTimer?.cancel();
   }
 }
