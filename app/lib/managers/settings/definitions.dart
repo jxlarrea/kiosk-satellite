@@ -945,8 +945,8 @@ const haKioskMode = SettingDef<String>(
   title: 'HA kiosk mode',
   description:
       'Hide the Home Assistant header and sidebar. Off shows the normal HA '
-      'UI. "auto" uses the kiosk-mode HACS plugin when detected, otherwise '
-      'injects CSS. Applies immediately, with no restart.',
+      'UI. "auto" injects CSS and also uses the kiosk-mode HACS plugin when '
+      'detected. Applies immediately, with no restart.',
   category: 'Home Assistant',
   options: ['off', 'auto', 'plugin', 'css'],
   optionLabels: {

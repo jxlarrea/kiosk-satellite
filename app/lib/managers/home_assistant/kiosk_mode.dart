@@ -7,8 +7,9 @@
 ///            tracks HA's shadow-DOM changes across releases. Preferred.
 ///   css    — inject CSS through the shadow roots ourselves. Version-fragile
 ///            by nature; deliberately isolated to this file.
-///   auto   — plugin params AND the CSS fallback (the params are inert
-///            without the plugin; the CSS covers that case).
+///   auto   — plugin params AND the CSS fallback. The params are inert
+///            without the plugin, and the CSS also covers a plugin that is
+///            installed but broken against the running HA release.
 library;
 
 /// Add the kiosk-mode plugin query parameters matching the hide choices.
@@ -110,18 +111,47 @@ String kioskModeScript({
     return styled;
   }
 
-  // Retry until the panel mounts, then keep watching for route changes.
-  let n = 0;
-  const timer = setInterval(function () {
-    if (apply() || ++n > 60) clearInterval(timer);
-  }, 150);
-  window.addEventListener('location-changed', function () { setTimeout(apply, 80); });
-  try {
-    const ha = document.querySelector('home-assistant');
-    if (ha && ha.shadowRoot) {
-      new MutationObserver(function () { apply(); })
-        .observe(ha.shadowRoot, { childList: true, subtree: true });
+  // One live instance per document. This script is re-run on every load and
+  // on every settings change; without the handoff an older run's watchers
+  // would keep re-asserting their stale choices over the new ones.
+  const prev = window.__ksKioskMode;
+  if (prev) {
+    if (prev.timer) clearInterval(prev.timer);
+    if (prev.observer) prev.observer.disconnect();
+    if (prev.onLocation) {
+      window.removeEventListener('location-changed', prev.onLocation);
     }
-  } catch (e) { /* ignore */ }
+  }
+  const state = window.__ksKioskMode =
+      { timer: null, observer: null, onLocation: null };
+
+  // Nothing to hide: strip whatever a previous run styled and stand down.
+  if (!APPLY || (!HIDE_HEADER && !HIDE_SIDEBAR)) { apply(); return; }
+
+  // The observer can only attach once <home-assistant> has a shadow root,
+  // which on a cold load is well after this script runs. It watches the app
+  // root for remounts; panel internals live in deeper shadow roots it cannot
+  // see, so route changes are covered by HA's location-changed event instead.
+  function ensureObserver() {
+    if (state.observer) return;
+    const ha = document.querySelector('home-assistant');
+    if (!ha || !ha.shadowRoot) return;
+    state.observer = new MutationObserver(function () { apply(); });
+    state.observer.observe(ha.shadowRoot, { childList: true, subtree: true });
+  }
+
+  // Poll until the dashboard is styled. A cold start can spend a long time
+  // booting (auth restore, service worker, a slow tablet), so the window is
+  // generous; the cap only exists for non-dashboard pages, where the
+  // observer and the location listener keep covering later navigation.
+  let n = 0;
+  state.timer = setInterval(function () {
+    ensureObserver();
+    if ((apply() && state.observer) || ++n > 240) clearInterval(state.timer);
+  }, 250);
+  state.onLocation = function () { setTimeout(apply, 80); };
+  window.addEventListener('location-changed', state.onLocation);
+  ensureObserver();
+  apply();
 })();
 ''';

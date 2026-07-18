@@ -230,18 +230,19 @@ class _KioskScreenState extends State<KioskScreen>
     }
   }
 
-  /// Resolve `auto` to a concrete strategy using plugin detection:
-  /// `plugin` (defer to the HACS plugin) or `css` (inject our fallback).
-  String get _effectiveKioskMode {
-    final mode = c.settings.get(defs.haKioskMode);
-    if (mode == 'auto') {
-      return c.homeAssistant.kioskPluginDetected ? 'plugin' : 'css';
-    }
-    return mode;
-  }
+  /// `auto` hedges instead of choosing: the plugin params ride the URL when
+  /// the plugin was detected, and the CSS fallback is injected regardless.
+  /// Detection only proves the plugin file exists on the server, not that it
+  /// still works against this HA release (its resource can be served while
+  /// its frontend hook silently fails, as HA's new drawer generation showed),
+  /// and the styles are idempotent so doubling up when the plugin does work
+  /// changes nothing visible.
+  String get _kioskMode => c.settings.get(defs.haKioskMode);
 
-  bool get _usePlugin => _effectiveKioskMode == 'plugin';
-  bool get _useCss => _effectiveKioskMode == 'css';
+  bool get _usePlugin =>
+      _kioskMode == 'plugin' ||
+      (_kioskMode == 'auto' && c.homeAssistant.kioskPluginDetected);
+  bool get _useCss => _kioskMode == 'css' || _kioskMode == 'auto';
 
   String get _initialUrl {
     final url = c.settings.get(defs.startUrl);
