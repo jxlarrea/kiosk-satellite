@@ -899,8 +899,10 @@ async function loadSettings() {
       render(restRoot, ['Home Assistant'].filter((c) => (byCat[c] || []).length));
       byCat['Home Assistant'] = savedHa;
 
-      // Dashboard view rotation: toggle, then a checkbox per dashboard and
-      // the dwell time, mirroring the device's card.
+      // Dashboard view rotation: toggle, then each dashboard as a plain
+      // header with a checkbox per view beneath it, and the dwell time,
+      // mirroring the device's card. Selection entries are navigation
+      // paths ("url_path/view-route").
       const rotEnabled = byKey['ha.rotation_enabled'];
       if (rotEnabled) {
         const rh = document.createElement('h2');
@@ -915,21 +917,39 @@ async function loadSettings() {
           let sel = [];
           try { sel = JSON.parse(byKey['ha.rotation_dashboards']?.value || '[]'); } catch (_) {}
           if (!Array.isArray(sel)) sel = [];
-          dashList.forEach((d) => {
-            const on = sel.includes(d.url_path);
-            const row = readOnlyRow(d.title || d.url_path, d.url_path,
-              on ? '☑' : '☐');
-            const mark = row.querySelector('span');
-            mark.style.color = on ? 'var(--primary)' : 'var(--muted)';
-            mark.style.fontSize = '18px';
-            row.style.cursor = 'pointer';
-            row.addEventListener('click', async () => {
-              const next = on ? sel.filter((p) => p !== d.url_path) : sel.concat(d.url_path);
-              await api('/api/settings', { method: 'PATCH',
-                body: JSON.stringify({ 'ha.rotation_dashboards': JSON.stringify(next) }) });
-              await loadSettings();
+          const viewLists = await Promise.all(dashList.map(async (d) => {
+            try {
+              const r = await (await api('/api/commands/haListDashboardViews', {
+                method: 'POST', body: JSON.stringify({ url_path: d.url_path }) })).json();
+              if (r.ok && Array.isArray(r.data) && r.data.length) return r.data;
+            } catch (_) {}
+            // Auto-generated dashboards store no view list; the whole
+            // dashboard still rotates via its first view.
+            return [{ title: 'Default view', route: '0' }];
+          }));
+          dashList.forEach((d, i) => {
+            const hdr = document.createElement('div');
+            hdr.style.cssText = 'padding:12px 0 2px; font-size:13px; font-weight:600;'
+              + 'color:var(--primary)';
+            hdr.textContent = d.title || d.url_path;
+            rcard.appendChild(hdr);
+            viewLists[i].forEach((v) => {
+              const path = `${d.url_path}/${v.route}`;
+              const on = sel.includes(path);
+              const row = readOnlyRow(v.title || v.route, path, on ? '☑' : '☐');
+              row.style.paddingLeft = '14px';
+              const mark = row.querySelector('span');
+              mark.style.color = on ? 'var(--primary)' : 'var(--muted)';
+              mark.style.fontSize = '18px';
+              row.style.cursor = 'pointer';
+              row.addEventListener('click', async () => {
+                const next = on ? sel.filter((p) => p !== path) : sel.concat(path);
+                await api('/api/settings', { method: 'PATCH',
+                  body: JSON.stringify({ 'ha.rotation_dashboards': JSON.stringify(next) }) });
+                await loadSettings();
+              });
+              rcard.appendChild(row);
             });
-            rcard.appendChild(row);
           });
           if (!dashList.length) rcard.appendChild(readOnlyRow('No dashboards found', '', ''));
           rcard.appendChild(settingRow(byKey['ha.rotation_seconds']));

@@ -171,6 +171,17 @@ class HomeAssistantManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'haListDashboardViews',
+        description: "One dashboard's views, for the rotation picker",
+        params: const {'url_path': "the dashboard's url_path"},
+        handler: (p) async {
+          final views = await listDashboardViews('${p['url_path'] ?? ''}');
+          return views == null
+              ? const CommandResult.fail('could not read the dashboard')
+              : CommandResult.ok(views);
+        },
+      ))
+      ..register(Command(
         name: 'haBrowseMedia',
         description: 'Browse a Home Assistant media node for the screensaver '
             'picker. Omit mediaContentId for the root of every media source.',
@@ -233,7 +244,7 @@ class HomeAssistantManager extends Manager {
       Duration(seconds: seconds),
       (_) => _rotationTick(),
     );
-    log.info(name, 'dashboard rotation armed (${seconds}s per dashboard)');
+    log.info(name, 'view rotation armed (${seconds}s per view)');
   }
 
   List<String> _rotationPaths() {
@@ -249,7 +260,7 @@ class HomeAssistantManager extends Manager {
     }
   }
 
-  /// Advance to the next dashboard in the ring. Navigation happens inside
+  /// Advance to the next view in the ring. Navigation happens inside
   /// HA's SPA (pushState + location-changed, the same thing a card's
   /// navigate action does) so nothing reloads and the page stays warm. The
   /// script bails when something other than this HA instance is on screen —
@@ -452,6 +463,34 @@ class HomeAssistantManager extends Manager {
       ];
     } catch (e) {
       log.warn(name, 'listDashboards failed: $e');
+      return null;
+    }
+  }
+
+  /// The views of one dashboard (`lovelace/config`). Each entry carries
+  /// `title` and `route` — the path segment HA navigates by: the view's
+  /// declared path when it has one, its index otherwise. Null when the
+  /// config cannot be read (auto-generated strategy dashboards store no
+  /// view list).
+  Future<List<Map<String, Object?>>?> listDashboardViews(
+    String urlPath,
+  ) async {
+    if (!configured || urlPath.isEmpty) return null;
+    try {
+      final result = await _wsCommand({
+        'type': 'lovelace/config',
+        // The default dashboard is addressed by a null url_path.
+        'url_path': urlPath == 'lovelace' ? null : urlPath,
+      });
+      if (result is! Map) return null;
+      final views = result['views'];
+      if (views is! List) return null;
+      return [
+        for (final (i, v) in views.cast<Map>().indexed)
+          {'title': '${v['title'] ?? 'View ${i + 1}'}', 'route': '${v['path'] ?? i}'},
+      ];
+    } catch (e) {
+      log.warn(name, 'listDashboardViews($urlPath) failed: $e');
       return null;
     }
   }

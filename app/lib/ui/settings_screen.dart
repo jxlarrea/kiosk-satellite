@@ -1076,10 +1076,11 @@ class _DashboardPickerCardState extends State<_DashboardPickerCard> {
   }
 }
 
-/// Dashboard view rotation: the enable toggle, then (once on) a checkbox
-/// per dashboard and the dwell time. The selection is stored as a JSON
-/// array of url_paths in the hidden ha.rotation_dashboards setting; the
-/// rotation itself runs in HomeAssistantManager.
+/// Dashboard view rotation: the enable toggle, then (once on) the user's
+/// dashboards as plain headers with a checkbox per view beneath each, and
+/// the dwell time. The selection is stored as a JSON array of navigation
+/// paths ("url_path/view-route") in the hidden ha.rotation_dashboards
+/// setting; the rotation itself runs in HomeAssistantManager.
 class _RotationCard extends StatefulWidget {
   const _RotationCard({required this.container});
 
@@ -1090,14 +1091,38 @@ class _RotationCard extends StatefulWidget {
 }
 
 class _RotationCardState extends State<_RotationCard> {
-  late Future<List<Map<String, Object?>>?> _dashboards;
+  late Future<List<(String, String, List<Map<String, Object?>>)>?> _views;
 
   AppContainer get c => widget.container;
 
   @override
   void initState() {
     super.initState();
-    _dashboards = c.homeAssistant.listDashboards();
+    _views = _load();
+  }
+
+  /// Every dashboard with its views: (title, url_path, views). A dashboard
+  /// whose config cannot be read (auto-generated strategies) still rotates
+  /// as a whole via a single synthetic entry for its first view.
+  Future<List<(String, String, List<Map<String, Object?>>)>?> _load() async {
+    final dashboards = await c.homeAssistant.listDashboards();
+    if (dashboards == null) return null;
+    final views = await Future.wait([
+      for (final d in dashboards)
+        c.homeAssistant.listDashboardViews('${d['url_path']}'),
+    ]);
+    return [
+      for (final (i, d) in dashboards.indexed)
+        (
+          '${d['title'] ?? d['url_path']}',
+          '${d['url_path']}',
+          views[i] == null || views[i]!.isEmpty
+              ? [
+                  {'title': 'Default view', 'route': '0'},
+                ]
+              : views[i]!,
+        ),
+    ];
   }
 
   List<String> _selected() {
@@ -1112,11 +1137,9 @@ class _RotationCardState extends State<_RotationCard> {
     }
   }
 
-  Future<void> _toggle(String urlPath) async {
+  Future<void> _toggle(String path) async {
     final selected = _selected();
-    selected.contains(urlPath)
-        ? selected.remove(urlPath)
-        : selected.add(urlPath);
+    selected.contains(path) ? selected.remove(path) : selected.add(path);
     await c.settings.setFromJson(
       haRotationDashboards.key,
       jsonEncode(selected),
@@ -1126,6 +1149,7 @@ class _RotationCardState extends State<_RotationCard> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final enabled = c.settings.get(haRotationEnabled);
     return _SettingsCard(
       children: [
@@ -1135,8 +1159,8 @@ class _RotationCardState extends State<_RotationCard> {
           onChanged: () => setState(() {}),
         ),
         if (enabled) ...[
-          FutureBuilder<List<Map<String, Object?>>?>(
-            future: _dashboards,
+          FutureBuilder<List<(String, String, List<Map<String, Object?>>)>?>(
+            future: _views,
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
                 return const ListTile(
@@ -1155,22 +1179,42 @@ class _RotationCardState extends State<_RotationCard> {
                   subtitle: const Text('Tap to retry.'),
                   trailing: const Icon(Icons.refresh),
                   onTap: () => setState(() {
-                    _dashboards = c.homeAssistant.listDashboards();
+                    _views = _load();
                   }),
                 );
               }
               final selected = _selected();
               return Column(
-                children: _separated([
-                  for (final d in dashboards)
-                    CheckboxListTile(
-                      value: selected.contains('${d['url_path']}'),
-                      title: Text('${d['title'] ?? d['url_path']}'),
-                      subtitle: Text('${d['url_path']}'),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      onChanged: (_) => _toggle('${d['url_path']}'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final (title, urlPath, views) in dashboards) ...[
+                    // The dashboard is a plain header, not a choice — the
+                    // views beneath it are what rotate.
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 2),
+                      child: Text(
+                        title,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                ]),
+                    for (final v in views)
+                      CheckboxListTile(
+                        value: selected.contains('$urlPath/${v['route']}'),
+                        title: Text('${v['title']}'),
+                        subtitle: Text('$urlPath/${v['route']}'),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: const EdgeInsets.only(
+                          left: 28,
+                          right: 20,
+                        ),
+                        onChanged: (_) => _toggle('$urlPath/${v['route']}'),
+                      ),
+                  ],
+                  const SizedBox(height: 6),
+                ],
               );
             },
           ),
