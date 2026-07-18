@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
 import '../managers/settings/definitions.dart' as defs;
+import '../managers/update/update_manager.dart';
 
 /// Slide-out menu (swipe from the left edge), Fully Kiosk style: Home,
 /// Settings, Web Console, Clear web cache, Log out, Exit Application.
@@ -232,6 +235,73 @@ class KioskDrawer extends StatelessWidget {
                   ),
                 ),
               ),
+              // Above the theme switcher: the update notice when GitHub has
+              // a newer release, the running version otherwise — the wall is
+              // where an update is noticed, not the repo page.
+              ValueListenableBuilder<UpdateInfo?>(
+                valueListenable: c.update.available,
+                builder: (context, info, _) => Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                  child: info == null
+                      ? Text(
+                          'Version ${c.device.appVersion}',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      : Material(
+                          color: theme.colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => _offerUpdate(context, info),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.system_update_outlined,
+                                    color:
+                                        theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Update available',
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: theme.colorScheme
+                                                    .onPrimaryContainer,
+                                              ),
+                                        ),
+                                        Text(
+                                          'Version ${info.version} · tap to '
+                                          'install',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: theme.colorScheme
+                                                    .onPrimaryContainer,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ),
               // The theme switcher, docked at the foot of the menu. Icons
               // only — no label or separator: the card above already bounds
               // the actions, and the compact pill is the whole footer.
@@ -317,6 +387,66 @@ class KioskDrawer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Confirm → download (progress dialog) → hand off to the Android
+  /// installer, which asks its own final confirmation. The drawer stays put
+  /// underneath so a cancelled install lands somewhere sensible.
+  Future<void> _offerUpdate(BuildContext context, UpdateInfo info) async {
+    if (!await _confirm(
+      context,
+      'Install update',
+      'Download Kiosk Satellite ${info.version} and install it? Android '
+          'will ask you to confirm the installation.',
+    )) {
+      return;
+    }
+    if (!context.mounted) return;
+    // Not awaited: the dialog is closed from below once the download
+    // settles, whichever way it settles.
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Downloading update'),
+          content: ValueListenableBuilder<double?>(
+            valueListenable: c.update.progress,
+            builder: (context, p, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                LinearProgressIndicator(value: p),
+                const SizedBox(height: 12),
+                Text(
+                  p == null
+                      ? 'Starting…'
+                      : '${(p * 100).toStringAsFixed(0)}%',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    final error = await c.update.downloadAndInstall();
+    if (!context.mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+    if (error != null) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Update failed'),
+          content: Text(error),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Future<bool> _confirm(

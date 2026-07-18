@@ -13,6 +13,7 @@ import 'managers/screen/screen_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
 import 'managers/settings/provisioning.dart';
 import 'managers/settings/settings_manager.dart';
+import 'managers/update/update_manager.dart';
 import 'managers/wake_word/wake_word_manager.dart';
 
 /// Composition root. Construction does no work; [init] brings managers up in
@@ -29,6 +30,7 @@ class AppContainer {
     motion = MotionManager(bus, commands, log, settings);
     homeAssistant = HomeAssistantManager(bus, commands, log, settings);
     wakeWord = WakeWordManager(bus, commands, log, settings);
+    update = UpdateManager(bus, commands, log);
     remote = RemoteManager(bus, commands, log, settings);
   }
 
@@ -45,6 +47,7 @@ class AppContainer {
   late final MotionManager motion;
   late final HomeAssistantManager homeAssistant;
   late final WakeWordManager wakeWord;
+  late final UpdateManager update;
   late final RemoteManager remote;
 
   /// Built after [device.init] so it can carry the app version.
@@ -61,6 +64,7 @@ class AppContainer {
         motion,
         homeAssistant,
         wakeWord,
+        update,
         remote,
       ];
 

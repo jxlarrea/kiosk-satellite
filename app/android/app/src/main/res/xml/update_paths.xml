@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The FileProvider scope for in-app updates: only the updates/ corner of
+     the app cache, where UpdateManager parks the downloaded APK. -->
+<paths>
+    <cache-path name="updates" path="updates/"/>
+</paths>

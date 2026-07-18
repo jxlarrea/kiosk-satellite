@@ -121,6 +121,9 @@
   .nav-title { font-size: 15.5px; font-weight: 600; }
   .nav-sub { font-size: 12.5px; color: var(--muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Update-available marker on the About nav item. */
+  .nav-dot { display: inline-block; width: 8px; height: 8px; margin-left: 8px;
+    border-radius: 50%; background: var(--primary-fill); vertical-align: 1px; }
 
   .side-foot { padding: 10px 16px 14px; }
   .foot-stats { display: flex; gap: 12px; padding: 0 8px 10px; min-height: 29px; }
@@ -1281,7 +1284,11 @@ async function loadDeviceInfo() {
 // attribution and the license in one sentence.
 async function loadAboutInfo() {
   const root = $('#about-info');
+  // Everything is fetched before the container is cleared: an await between
+  // clear and append lets a second invocation interleave and the tab ends up
+  // rendered twice.
   const info = await api('/api/info').then((r) => r.json()).catch(() => null);
+  const upd = (await cmd('getUpdateStatus').catch(() => null))?.data;
   const or = (v, alt = '-') => (v === null || v === undefined || v === '' ? alt : v);
 
   root.innerHTML = '';
@@ -1319,6 +1326,43 @@ async function loadAboutInfo() {
     ['Package', or(info?.package)],
   ]);
 
+  // The remote twin of the drawer's update slot: a newer GitHub release
+  // gets an Install button; otherwise the row just says so. The download
+  // runs on the tablet — the Android installer that follows can only be
+  // confirmed on its screen.
+  if (upd?.availableVersion) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost';
+    btn.textContent = `Install version ${upd.availableVersion}`;
+    btn.onclick = async () => {
+      if (!confirm(`Download Kiosk Satellite ${upd.availableVersion} on the ` +
+        'tablet and install it? The installation must be confirmed on the ' +
+        'tablet screen.')) return;
+      btn.disabled = true;
+      const res = await cmd('installUpdate').catch(() => null);
+      if (!res?.ok) {
+        btn.disabled = false;
+        alert(`Update failed: ${res?.error || 'device unreachable'}`);
+        return;
+      }
+      // Ride the download via polling; when it settles the installer has
+      // the rest (or the device will log why not).
+      let st;
+      do {
+        await new Promise((r) => setTimeout(r, 1000));
+        st = (await cmd('getUpdateStatus').catch(() => null))?.data;
+        if (st && st.progress !== null && st.progress !== undefined) {
+          btn.textContent = `Downloading… ${Math.round(st.progress * 100)}%`;
+        }
+      } while (st && st.progress !== null && st.progress !== undefined);
+      btn.textContent = 'Confirm on the tablet screen';
+    };
+    card('Updates', [['Update available', btn]]);
+  } else {
+    card('Updates', [['Updates',
+      upd ? 'Up to date' : or(null)]]);
+  }
+
   const repo = link('jxlarrea/kiosk-satellite',
     'https://github.com/jxlarrea/kiosk-satellite');
   repo.insertAdjacentHTML('afterbegin',
@@ -1347,6 +1391,21 @@ async function loadAboutInfo() {
     'It is licensed under CC BY-NC-ND 4.0: you may use and share it, but ' +
     'commercial use and derivative works are not permitted.';
   root.appendChild(p);
+}
+
+// A dot on the About nav item when the device reports a newer release —
+// the About tab is where the Install button lives, and nothing else on
+// this page would say so.
+async function refreshUpdateBadge() {
+  const upd = (await cmd('getUpdateStatus').catch(() => null))?.data;
+  const title = document.querySelector('button[data-tab="about"] .nav-title');
+  if (!title) return;
+  title.querySelector('.nav-dot')?.remove();
+  if (upd?.availableVersion) {
+    const dot = document.createElement('span');
+    dot.className = 'nav-dot';
+    title.appendChild(dot);
+  }
 }
 
 /* ---- Required system permissions (read-only) ---- */
@@ -1780,6 +1839,7 @@ async function start() {
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
   const info = await (await api('/api/info')).json();
   applyInfo(info, info.currentUrl);
+  refreshUpdateBadge();
   await loadSettings();
   await loadConsole();
   await loadScreenshot();
