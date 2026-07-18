@@ -641,6 +641,10 @@ class _KioskScreenState extends State<KioskScreen>
       // Re-apply CSS kiosk mode on every navigation (only does
       // work when the effective mode is 'css').
       if (_useCss) _applyKioskMode();
+      // The user's pasted JavaScript, Fully Kiosk style: runs after every
+      // page load. Errors surface in the web console, nowhere else.
+      final inject = c.settings.get(defs.browserInjectJs);
+      if (inject.trim().isNotEmpty) c.browser.runJs(inject);
     },
     onReceivedError: (controller, request, error) {
       if (request.isForMainFrame ?? true) {

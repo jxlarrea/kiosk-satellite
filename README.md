@@ -55,8 +55,9 @@ the screen is off or another app is in front.
   backup file.
 - **Kiosk conveniences**: pull-to-refresh with optional cache clearing,
   start on boot, keep screen awake, default brightness, scheduled
-  light/dark theme that can flip the dashboard and the app together, and
-  self-signed certificate support out of the box.
+  light/dark theme that can flip the dashboard and the app together,
+  custom JavaScript injected into every page, and self-signed certificate
+  support out of the box.
 
 ## Kiosk Satellite + Voice Satellite
 

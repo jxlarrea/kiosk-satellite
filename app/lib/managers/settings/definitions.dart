@@ -27,6 +27,7 @@ class SettingDef<T> {
     this.unit,
     this.optionLabels,
     this.validator,
+    this.multiline = false,
   });
 
   final String key;
@@ -67,6 +68,11 @@ class SettingDef<T> {
   /// app tracks on the user's behalf — e.g. whether the chosen media is a
   /// folder — that other settings key their visibility off.
   final bool hidden;
+
+  /// A [SettingType.string] holding free-form multi-line text (pasted
+  /// JavaScript). Both UIs swap the one-line field for a code-friendly
+  /// multi-line editor, and the row shows its description, not the blob.
+  final bool multiline;
 
   /// Range for [SettingType.number]. With both [min] and [max] set, the
   /// setting renders as a slider — in the on-device settings and the remote
@@ -186,6 +192,18 @@ const disableCache = SettingDef<bool>(
       'redeploy). Saved page data (localStorage) is never touched. Slower on '
       'a normal kiosk, so treat it as a development aid.',
   category: 'Browser',
+);
+
+const browserInjectJs = SettingDef<String>(
+  key: 'browser.inject_js',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Inject JavaScript',
+  description:
+      'Run this JavaScript code after loading each page. Useful to hide '
+      'distracting elements or tweak sites you do not control.',
+  category: 'Browser',
+  multiline: true,
 );
 
 const allowMixedContent = SettingDef<bool>(
@@ -1114,6 +1132,7 @@ const List<SettingDef<Object>> allSettings = [
   pullToRefreshClearCache,
   pinchToZoom,
   disableCache,
+  browserInjectJs,
   allowMixedContent,
   ignoreSslErrors,
   webMicrophone,

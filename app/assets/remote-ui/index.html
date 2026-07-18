@@ -1505,6 +1505,18 @@ function settingRow(s) {
     });
     sel.addEventListener('change', () => save(sel.value));
     row.appendChild(sel);
+  } else if (s.multiline) {
+    // Pasted code gets a real editor, not a one-line field.
+    const ta = document.createElement('textarea');
+    ta.value = s.value ?? '';
+    ta.rows = 5;
+    ta.spellcheck = false;
+    ta.style.cssText = 'width:100%; max-width:440px; background:var(--surface-2);'
+      + 'border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text);'
+      + 'padding:8px 10px; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;'
+      + 'font-size:12.5px; resize:vertical';
+    ta.addEventListener('change', () => save(ta.value));
+    row.appendChild(ta);
   } else {
     const inp = document.createElement('input');
     inp.type = s.type === 'password' ? 'password' : s.type === 'number' ? 'number' : 'text';

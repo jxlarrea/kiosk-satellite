@@ -1846,7 +1846,9 @@ class SettingTile extends StatelessWidget {
         }
         return ListTile(
           title: Text(def.title),
-          subtitle: Text(display),
+          // A multiline blob (pasted JavaScript) is edited, not read off the
+          // row — the description carries the row instead.
+          subtitle: Text(def.multiline ? def.description : display),
           trailing: const Icon(Icons.edit_outlined),
           onTap: () => _editText(context),
         );
@@ -1879,14 +1881,24 @@ class SettingTile extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(def.title),
-        content: TextField(
-          controller: controller,
-          obscureText: def.secret,
-          autofocus: true,
-          keyboardType: def.type == SettingType.number
-              ? TextInputType.number
-              : TextInputType.text,
-          decoration: InputDecoration(hintText: def.description),
+        content: SizedBox(
+          width: def.multiline ? 560 : null,
+          child: TextField(
+            controller: controller,
+            obscureText: def.secret,
+            autofocus: true,
+            minLines: def.multiline ? 6 : 1,
+            maxLines: def.multiline ? 14 : 1,
+            keyboardType: def.type == SettingType.number
+                ? TextInputType.number
+                : def.multiline
+                ? TextInputType.multiline
+                : TextInputType.text,
+            style: def.multiline
+                ? const TextStyle(fontFamily: 'monospace', fontSize: 13)
+                : null,
+            decoration: InputDecoration(hintText: def.description),
+          ),
         ),
         actions: [
           TextButton(
