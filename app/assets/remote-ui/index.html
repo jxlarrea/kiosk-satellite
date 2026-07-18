@@ -786,6 +786,9 @@ async function loadSettings() {
       card.appendChild(learn);
       root.appendChild(card);
     } else {
+      // render() clears the container, so it goes first and the assigned
+      // satellite card is prepended on top as the page's first item.
+      render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length));
       // The satellite this kiosk identifies as: the page's own choice wins
       // (localStorage, changeable in the Voice Satellite panel); the
       // wizard's stored pick is the fallback before the page has booted.
@@ -801,8 +804,7 @@ async function loadSettings() {
       satCard.appendChild(readOnlyRow('Assigned satellite',
         'The assist_satellite entity this kiosk identifies as in Home Assistant.',
         satellite || 'None assigned'));
-      root.appendChild(satCard);
-      render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length));
+      root.prepend(satCard);
     }
   }
 
