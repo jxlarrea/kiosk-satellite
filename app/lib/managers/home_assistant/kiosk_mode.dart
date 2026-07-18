@@ -88,7 +88,8 @@ String kioskModeScript({
         ? '.mdc-drawer,.sidebar-shell{display:none!important;' +
           'width:0!important;min-width:0!important;border:0!important;}' +
           '.mdc-drawer-app-content,.app-content{margin-left:0!important;' +
-          'margin-inline-start:0!important;}'
+          'margin-inline-start:0!important;padding-left:0!important;' +
+          'padding-inline-start:0!important;}'
         : '');
     }
 
