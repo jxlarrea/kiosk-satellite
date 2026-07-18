@@ -562,7 +562,11 @@ class _CategoryContentState extends State<_CategoryContent> {
       const _SectionHeading('Attribution'),
       _SettingsCard(
         children: [
-          row('Author', 'Xavier Larrea'),
+          row(
+            'Author',
+            'Xavier Larrea',
+            onTap: () => _openLink('https://github.com/jxlarrea'),
+          ),
           row(
             'Source code',
             'github.com/jxlarrea/kiosk-satellite',
@@ -572,8 +576,9 @@ class _CategoryContentState extends State<_CategoryContent> {
           row(
             'License',
             'CC BY-NC-ND 4.0',
-            onTap: () =>
-                _openLink('https://creativecommons.org/licenses/by-nc-nd/4.0/'),
+            onTap: () => _openLink(
+              'https://github.com/jxlarrea/kiosk-satellite/blob/main/LICENSE',
+            ),
           ),
         ],
       ),
