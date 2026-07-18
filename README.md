@@ -60,6 +60,10 @@ the screen is off or another app is in front.
 
 ## Kiosk Satellite + Voice Satellite
 
+<p align="center">
+ <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/vs-settings.png" alt="Assist" width="94%"/>
+</p>
+
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
 turns a Home Assistant dashboard into a full hands-free voice assistant
 with wake word, conversations, timers and announcements. It runs entirely in the
