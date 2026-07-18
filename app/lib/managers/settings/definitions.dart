@@ -836,7 +836,7 @@ const motionFps = SettingDef<num>(
 const motionSensitivity = SettingDef<num>(
   key: 'motion.sensitivity',
   type: SettingType.number,
-  defaultValue: 40,
+  defaultValue: 70,
   title: 'Motion sensitivity',
   description:
       'Higher trips on smaller movements. 1 needs a large change across '
