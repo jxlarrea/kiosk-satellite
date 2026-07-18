@@ -982,12 +982,12 @@ class _MadeByFooter extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text('Made with ', style: muted),
-          Text(
-            '\u2665',
-            // A fixed dusty rose, not a theme derivation: washing the
-            // error tone toward the surface goes darker in dark mode and
-            // pastel only in light. One soft constant reads right on both.
-            style: muted?.copyWith(color: const Color(0xFFD08989)),
+          // An icon, not the \u2665 character: Android renders that
+          // codepoint as the emoji glyph, which ignores text colour
+          // entirely and always shows its own saturated red.
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 1),
+            child: Icon(Icons.favorite, size: 13, color: Color(0xFFD08989)),
           ),
           Text(' by ', style: muted),
           InkWell(
