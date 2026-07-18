@@ -987,7 +987,7 @@ class _MadeByFooter extends StatelessWidget {
           // entirely and always shows its own saturated red.
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 1),
-            child: Icon(Icons.favorite, size: 13, color: Color(0xFFE27D7D)),
+            child: Icon(Icons.favorite, size: 13, color: Color(0xFFE86A6A)),
           ),
           Text(' by ', style: muted),
           InkWell(
