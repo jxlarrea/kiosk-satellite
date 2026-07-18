@@ -127,7 +127,8 @@ very welcome in the issues.
 
 ## License
 
-Kiosk Satellite is free and open source software, licensed under the
-[GNU AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html): you may use,
-share, and modify it, as long as derivative works stay under the same
-license and their source code remains available. See [LICENSE](LICENSE).
+Kiosk Satellite is free for personal, non-commercial use. It is licensed
+under
+[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/):
+you may use and share it, but commercial use and derivative works are not
+permitted. See [LICENSE](LICENSE).

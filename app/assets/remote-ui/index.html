@@ -1252,16 +1252,15 @@ async function loadAboutInfo() {
   card('Attribution', [
     ['Author', link('Xavier Larrea', 'https://github.com/jxlarrea')],
     ['Source code', repo],
-    ['License', link('AGPL-3.0',
+    ['License', link('CC BY-NC-ND 4.0',
       'https://github.com/jxlarrea/kiosk-satellite/blob/main/LICENSE')],
   ]);
 
   const p = document.createElement('p');
   p.style.cssText = 'color:var(--muted); font-size:.85rem; margin:4px 4px 0; line-height:1.5;';
-  p.textContent = 'Kiosk Satellite is free and open source software, ' +
-    'licensed under the GNU AGPL-3.0: you may use, share, and modify it, ' +
-    'as long as derivative works stay under the same license and their ' +
-    'source code remains available.';
+  p.textContent = 'Kiosk Satellite is free for personal, non-commercial use. ' +
+    'It is licensed under CC BY-NC-ND 4.0: you may use and share it, but ' +
+    'commercial use and derivative works are not permitted.';
   root.appendChild(p);
 }
 

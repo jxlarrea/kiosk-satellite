@@ -592,7 +592,7 @@ class _CategoryContentState extends State<_CategoryContent> {
           ),
           row(
             'License',
-            'AGPL-3.0',
+            'CC BY-NC-ND 4.0',
             onTap: () => _openLink(
               'https://github.com/jxlarrea/kiosk-satellite/blob/main/LICENSE',
             ),
@@ -602,10 +602,9 @@ class _CategoryContentState extends State<_CategoryContent> {
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
         child: Text(
-          'Kiosk Satellite is free and open source software, licensed under '
-          'the GNU AGPL-3.0: you may use, share, and modify it, as long as '
-          'derivative works stay under the same license and their source '
-          'code remains available.',
+          'Kiosk Satellite is free for personal, non-commercial use. It is '
+          'licensed under CC BY-NC-ND 4.0: you may use and share it, but '
+          'commercial use and derivative works are not permitted.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
