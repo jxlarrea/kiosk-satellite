@@ -951,6 +951,18 @@ const haSatelliteEntity = SettingDef<String>(
   hidden: true,
 );
 
+/// What the drawer's kiosk-mode toggle returns to: flipping off remembers
+/// the strategy here, flipping back on restores it. Hidden bookkeeping.
+const haKioskModeLast = SettingDef<String>(
+  key: 'ha.kiosk_mode_last',
+  type: SettingType.string,
+  defaultValue: 'auto',
+  title: 'HA kiosk mode to restore',
+  description: 'The strategy the drawer toggle returns to.',
+  category: 'Home Assistant',
+  hidden: true,
+);
+
 const haKioskMode = SettingDef<String>(
   key: 'ha.kiosk_mode',
   type: SettingType.select,
@@ -1162,6 +1174,7 @@ const List<SettingDef<Object>> allSettings = [
   haToken,
   haSatelliteEntity,
   haKioskMode,
+  haKioskModeLast,
   haKioskHideHeader,
   haKioskHideSidebar,
   themeAuto,

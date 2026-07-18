@@ -125,6 +125,45 @@ class KioskDrawer extends StatelessWidget {
                                   onSettings();
                                 },
                               ),
+                              // One tap between off and the user's chosen
+                              // strategy (auto/plugin/css, remembered in the
+                              // hidden ha.kiosk_mode_last) — showing the HA
+                              // header and sidebar briefly is the kind of
+                              // thing done at the wall, without a trip into
+                              // Settings. The kiosk screen reacts to the
+                              // setting change and reloads the page.
+                              _item(
+                                context,
+                                c.settings.get(defs.haKioskMode) == 'off'
+                                    ? Icons.fullscreen
+                                    : Icons.fullscreen_exit,
+                                'HA Kiosk Mode',
+                                () async {
+                                  onClose();
+                                  final mode = c.settings.get(
+                                    defs.haKioskMode,
+                                  );
+                                  if (mode == 'off') {
+                                    await c.settings.setFromJson(
+                                      defs.haKioskMode.key,
+                                      c.settings.get(defs.haKioskModeLast),
+                                    );
+                                  } else {
+                                    await c.settings.setFromJson(
+                                      defs.haKioskModeLast.key,
+                                      mode,
+                                    );
+                                    await c.settings.setFromJson(
+                                      defs.haKioskMode.key,
+                                      'off',
+                                    );
+                                  }
+                                },
+                                trailing:
+                                    defs.haKioskMode.optionLabels?[c.settings
+                                        .get(defs.haKioskMode)] ??
+                                    c.settings.get(defs.haKioskMode),
+                              ),
                               _item(
                                 context,
                                 Icons.terminal_outlined,
@@ -249,13 +288,15 @@ class KioskDrawer extends StatelessWidget {
     );
   }
 
-  /// One action row, same weight language as the settings rail.
+  /// One action row, same weight language as the settings rail. [trailing]
+  /// right-aligns a small state hint (the kiosk-mode toggle shows its mode).
   Widget _item(
     BuildContext context,
     IconData icon,
     String label,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    String? trailing,
+  }) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -268,15 +309,24 @@ class KioskDrawer extends StatelessWidget {
             children: [
               Icon(icon, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 16),
-              Text(
-                label,
-                // The same style the settings rail titles use — titleMedium,
-                // not bodyLarge: both are 16px, but bodyLarge tracks looser
-                // (letter-spacing 0.5 vs 0.15) and the difference shows.
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  label,
+                  // The same style the settings rail titles use — titleMedium,
+                  // not bodyLarge: both are 16px, but bodyLarge tracks looser
+                  // (letter-spacing 0.5 vs 0.15) and the difference shows.
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
+              if (trailing != null)
+                Text(
+                  trailing,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
             ],
           ),
         ),
