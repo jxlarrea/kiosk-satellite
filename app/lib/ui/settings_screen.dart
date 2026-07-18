@@ -984,13 +984,10 @@ class _MadeByFooter extends StatelessWidget {
           Text('Made with ', style: muted),
           Text(
             '\u2665',
-            style: muted?.copyWith(
-              color: Color.lerp(
-                theme.colorScheme.error,
-                theme.colorScheme.surface,
-                0.4,
-              ),
-            ),
+            // A fixed dusty rose, not a theme derivation: washing the
+            // error tone toward the surface goes darker in dark mode and
+            // pastel only in light. One soft constant reads right on both.
+            style: muted?.copyWith(color: const Color(0xFFD08989)),
           ),
           Text(' by ', style: muted),
           InkWell(
