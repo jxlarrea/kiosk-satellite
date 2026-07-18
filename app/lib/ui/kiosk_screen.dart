@@ -103,13 +103,16 @@ class _KioskScreenState extends State<KioskScreen>
   bool _refreshing = false;
   Timer? _refreshingFailsafe;
 
-  Future<void> _triggerRefresh() async {
+  /// Returns whether the pull was acted on — the JS probe retracts its
+  /// spinner on a false reply (nothing else would ever end it, since the
+  /// spinner otherwise dies with the reloading document).
+  Future<bool> _triggerRefresh() async {
     c.log.info(
       'kiosk',
       'pull trigger: refreshing=$_refreshing '
           'enabled=${c.settings.get(defs.pullToRefresh)}',
     );
-    if (_refreshing || !c.settings.get(defs.pullToRefresh)) return;
+    if (_refreshing || !c.settings.get(defs.pullToRefresh)) return false;
     _refreshing = true;
     _refreshingFailsafe?.cancel();
     _refreshingFailsafe = Timer(const Duration(seconds: 8), () {
@@ -135,6 +138,7 @@ class _KioskScreenState extends State<KioskScreen>
     } else {
       await c.commands.execute('reload', const {});
     }
+    return true;
   }
 
   Future<void> _onSettingChanged(SettingChanged e) async {
@@ -176,6 +180,7 @@ class _KioskScreenState extends State<KioskScreen>
     // companion is read at pull time and needs nothing here.
     if (e.key == defs.pullToRefresh.key) {
       await _pullToRefresh.setEnabled(e.value == true);
+      await c.browser.runJs('window.__ksPtrEnabled = ${e.value == true};');
       return;
     }
     // Wake word detection is negotiated with the Voice Satellite card at page
@@ -278,6 +283,14 @@ class _KioskScreenState extends State<KioskScreen>
       ),
     // Always injected, acted on only while the setting is on (checked in
     // _triggerRefresh) — so the toggle needs no page reload to take effect.
+    // The flag stops the disc from drawing while off; it is seeded here
+    // (frozen at WebView creation), corrected live in _onSettingChanged,
+    // and re-asserted every load in onLoadStop for pages loaded after a
+    // toggle.
+    UserScript(
+      source: 'window.__ksPtrEnabled = ${c.settings.get(defs.pullToRefresh)};',
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
     UserScript(
       source: pullToRefreshProbeScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
@@ -637,6 +650,11 @@ class _KioskScreenState extends State<KioskScreen>
       _refreshing = false;
       _refreshingFailsafe?.cancel();
       _pullToRefresh.endRefreshing();
+      // The document-start seed of this flag is frozen at WebView creation;
+      // re-assert per load so a toggled setting reaches pages loaded later.
+      c.browser.runJs(
+        'window.__ksPtrEnabled = ${c.settings.get(defs.pullToRefresh)};',
+      );
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
       // work when the effective mode is 'css').

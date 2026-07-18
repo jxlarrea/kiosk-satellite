@@ -23,7 +23,12 @@
 /// Capture-phase, passive listeners: the page cannot swallow them and they
 /// cannot slow its scrolling. Whether a report acts is the app's decision
 /// (the setting is checked on the Dart side), so toggling the setting needs
-/// no reinjection; an ignored report only costs a retracting disc.
+/// no reinjection. Two pieces keep the disabled state honest in-page:
+/// `window.__ksPtrEnabled` (seeded at document start, updated live on
+/// toggle and on every load) stops the disc from ever appearing, and the
+/// report handler's boolean reply retracts a disc that was already
+/// spinning when the Dart side declines — without the reply a rejected
+/// pull would spin forever, since only a reload's onLoadStop ends it.
 const pullToRefreshProbeScript = '''
 (function () {
   if (window.__ksPullProbe) return;
@@ -100,6 +105,7 @@ const pullToRefreshProbeScript = '''
   }
 
   addEventListener('touchstart', function (e) {
+    if (window.__ksPtrEnabled === false) { tracking = false; return; }
     fired = false;
     travel = 0;
     tracking = e.touches.length === 1;
@@ -109,6 +115,7 @@ const pullToRefreshProbeScript = '''
   }, { passive: true, capture: true });
 
   addEventListener('touchmove', function (e) {
+    if (window.__ksPtrEnabled === false) { tracking = false; disarm(); return; }
     if (!tracking || fired) return;
     if (e.touches.length !== 1) { tracking = false; disarm(); return; }
     var t = e.touches[0];
@@ -133,7 +140,13 @@ const pullToRefreshProbeScript = '''
       fired = true;
       spin();
       if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
-        window.flutter_inappwebview.callHandler('ksPullToRefresh');
+        // The reply says whether the app acted. A declined pull (setting
+        // off, or a refresh already in flight) retracts; an accepted one
+        // spins until the reload replaces the document.
+        window.flutter_inappwebview.callHandler('ksPullToRefresh').then(
+          function (accepted) { if (!accepted) { fired = false; disarm(); } },
+          function () { fired = false; disarm(); }
+        );
       } else {
         retract();
       }
