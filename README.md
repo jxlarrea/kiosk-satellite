@@ -1,5 +1,5 @@
 <h1 align="center" style="border-bottom: none">
-   <img alt="Kiosk Satellite for Home Assistant" src="https://raw.githubusercontent.com/jxlarrea/voice-satellite-card-integration/refs/heads/main/assets/banner.png" width="650" />
+   <img alt="Kiosk Satellite for Home Assistant" src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/banners/kiosk_satellite_banner.png" width="650" />
 </h1>
 
 Turn any Android tablet into a beautiful, voice-enabled Home Assistant
