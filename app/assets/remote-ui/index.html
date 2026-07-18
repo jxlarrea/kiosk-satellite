@@ -936,19 +936,23 @@ async function loadSettings() {
             rcard.appendChild(hdr);
             viewLists[i].forEach((v) => {
               const path = `${d.url_path}/${v.route}`;
-              const on = sel.includes(path);
-              const row = readOnlyRow(v.title || v.route, path, on ? '☑' : '☐');
+              // A real checkbox (accent-colored by the global input rule),
+              // saved in place: no full re-render, the page stays put.
+              const row = readOnlyRow(v.title || v.route, path, '');
+              row.querySelector('span').remove();
               row.style.paddingLeft = '14px';
-              const mark = row.querySelector('span');
-              mark.style.color = on ? 'var(--primary)' : 'var(--muted)';
-              mark.style.fontSize = '18px';
-              row.style.cursor = 'pointer';
-              row.addEventListener('click', async () => {
-                const next = on ? sel.filter((p) => p !== path) : sel.concat(path);
+              const cb = document.createElement('input');
+              cb.type = 'checkbox';
+              cb.checked = sel.includes(path);
+              cb.style.cssText = 'width:19px; height:19px; flex:none; cursor:pointer';
+              cb.addEventListener('change', async () => {
+                sel = cb.checked ? sel.concat(path) : sel.filter((p) => p !== path);
                 await api('/api/settings', { method: 'PATCH',
-                  body: JSON.stringify({ 'ha.rotation_dashboards': JSON.stringify(next) }) });
-                await loadSettings();
+                  body: JSON.stringify({ 'ha.rotation_dashboards': JSON.stringify(sel) }) });
               });
+              row.appendChild(cb);
+              row.style.cursor = 'pointer';
+              row.addEventListener('click', (e) => { if (e.target !== cb) cb.click(); });
               rcard.appendChild(row);
             });
           });
