@@ -957,6 +957,29 @@ const haKioskMode = SettingDef<String>(
   },
 );
 
+// What kiosk mode actually hides. Both default on (the classic full
+// kiosk), but they are separate choices: plenty of dashboards use the
+// header tabs as their only navigation.
+const haKioskHideHeader = SettingDef<bool>(
+  key: 'ha.kiosk_hide_header',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Hide the header',
+  description:
+      'Hide the dashboard toolbar and view tabs while HA kiosk mode is '
+      'on. Leave off if you switch views from the header.',
+  category: 'Home Assistant',
+);
+
+const haKioskHideSidebar = SettingDef<bool>(
+  key: 'ha.kiosk_hide_sidebar',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Hide the sidebar',
+  description: 'Hide the navigation sidebar while HA kiosk mode is on.',
+  category: 'Home Assistant',
+);
+
 const themeAuto = SettingDef<bool>(
   key: 'ha.theme_auto',
   type: SettingType.boolean,
@@ -1125,6 +1148,8 @@ const List<SettingDef<Object>> allSettings = [
   haToken,
   haSatelliteEntity,
   haKioskMode,
+  haKioskHideHeader,
+  haKioskHideSidebar,
   themeAuto,
   themeDarkAt,
   themeLightAt,

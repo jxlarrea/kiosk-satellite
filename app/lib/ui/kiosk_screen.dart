@@ -138,8 +138,11 @@ class _KioskScreenState extends State<KioskScreen>
   }
 
   Future<void> _onSettingChanged(SettingChanged e) async {
-    // HA kiosk mode is applied live (no app restart).
-    if (e.key == defs.haKioskMode.key) {
+    // HA kiosk mode is applied live (no app restart). The hide choices
+    // ride the same path: re-resolve, re-style, reload for the params.
+    if (e.key == defs.haKioskMode.key ||
+        e.key == defs.haKioskHideHeader.key ||
+        e.key == defs.haKioskHideSidebar.key) {
       if (e.value == 'auto' && c.homeAssistant.configured) {
         await c.homeAssistant.detectKioskModePlugin();
       }
@@ -242,7 +245,13 @@ class _KioskScreenState extends State<KioskScreen>
 
   String get _initialUrl {
     final url = c.settings.get(defs.startUrl);
-    return _usePlugin ? withKioskParam(url) : url;
+    return _usePlugin
+        ? withKioskParam(
+            url,
+            hideHeader: c.settings.get(defs.haKioskHideHeader),
+            hideSidebar: c.settings.get(defs.haKioskHideSidebar),
+          )
+        : url;
   }
 
   /// The JS bridge is always injected at document start. The kiosk-mode CSS
@@ -297,7 +306,13 @@ class _KioskScreenState extends State<KioskScreen>
 
   /// Apply or tear down the CSS kiosk mode against the current page.
   Future<void> _applyKioskMode() async {
-    await c.browser.runJs(kioskModeScript(apply: _useCss));
+    await c.browser.runJs(
+      kioskModeScript(
+        apply: _useCss,
+        hideHeader: c.settings.get(defs.haKioskHideHeader),
+        hideSidebar: c.settings.get(defs.haKioskHideSidebar),
+      ),
+    );
   }
 
   /// Open the settings screen (One UI-style split view on wide screens).
