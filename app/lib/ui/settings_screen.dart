@@ -1149,15 +1149,111 @@ class _DashboardPickerCard extends StatefulWidget {
 class _DashboardPickerCardState extends State<_DashboardPickerCard> {
   late Future<List<Map<String, Object?>>?> _dashboards;
 
+  // Views of the currently selected dashboard, loaded lazily: listing every
+  // sub-view of every dashboard would be an unusable wall, so only the chosen
+  // dashboard's views are fetched, for its row and the "Change view" popup.
+  // `_viewsFor` is the url_path they belong to; a null list is a strategy
+  // dashboard whose view list cannot be read.
+  List<Map<String, Object?>>? _views;
+  String? _viewsFor;
+
+  AppContainer get c => widget.container;
+  String get _base => c.homeAssistant.baseUrl;
+
   @override
   void initState() {
     super.initState();
-    _dashboards = widget.container.homeAssistant.listDashboards();
+    _dashboards = c.homeAssistant.listDashboards();
+  }
+
+  /// The selected dashboard's url_path, matched against the stored start URL
+  /// by prefix (the URL also carries the view route, and maybe a ?kiosk).
+  String? _selectedDash(List<Map<String, Object?>> dashboards) {
+    final current = c.settings.get(startUrl);
+    for (final d in dashboards) {
+      final url = '$_base/${d['url_path']}';
+      if (current == url || current.startsWith('$url/')) {
+        return '${d['url_path']}';
+      }
+    }
+    return null;
+  }
+
+  /// The view route within [urlPath] the start URL points at, or '' for the
+  /// dashboard's default (first) view.
+  String _selectedRoute(String urlPath) {
+    final current = c.settings.get(startUrl);
+    final prefix = '$_base/$urlPath/';
+    return current.startsWith(prefix) ? current.substring(prefix.length) : '';
+  }
+
+  String _viewPath(String urlPath, String route) =>
+      route.isEmpty ? urlPath : '$urlPath/$route';
+
+  Future<void> _apply(String urlPath, String route) async {
+    final url = route.isEmpty ? '$_base/$urlPath' : '$_base/$urlPath/$route';
+    await c.settings.set(startUrl, url);
+    await c.commands.execute('loadUrl', {'url': url});
+    if (mounted) setState(() {});
+  }
+
+  /// Select a dashboard: load its views and land on the first one.
+  Future<void> _pickDashboard(String urlPath) async {
+    final views = await c.homeAssistant.listDashboardViews(urlPath);
+    final route =
+        (views != null && views.isNotEmpty) ? '${views.first['route']}' : '';
+    if (mounted) {
+      setState(() {
+        _views = views;
+        _viewsFor = urlPath;
+      });
+    }
+    await _apply(urlPath, route);
+  }
+
+  /// The "Change view" popup: the dashboard's views as a radio list.
+  Future<void> _changeView(String urlPath) async {
+    final views = _views;
+    if (views == null || views.isEmpty) return;
+    final current = _selectedRoute(urlPath);
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SimpleDialog(
+          title: Row(
+            children: [
+              const Expanded(child: Text('Choose a view')),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+          children: [
+            for (final v in views)
+              ListTile(
+                leading: Icon(
+                  '${v['route']}' == current
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: '${v['route']}' == current
+                      ? theme.colorScheme.primary
+                      : null,
+                ),
+                title: Text('${v['title']}'),
+                subtitle: Text(_viewPath(urlPath, '${v['route']}')),
+                onTap: () => Navigator.pop(ctx, '${v['route']}'),
+              ),
+          ],
+        );
+      },
+    );
+    if (picked != null && picked != current) await _apply(urlPath, picked);
   }
 
   @override
   Widget build(BuildContext context) {
-    final c = widget.container;
     return FutureBuilder<List<Map<String, Object?>>?>(
       future: _dashboards,
       builder: (context, snapshot) {
@@ -1190,36 +1286,58 @@ class _DashboardPickerCardState extends State<_DashboardPickerCard> {
             ],
           );
         }
-        final base = c.homeAssistant.baseUrl;
-        final current = c.settings.get(startUrl);
-        // Selection by prefix: the stored URL may carry ?kiosk or a view
-        // suffix appended later; the dashboard is the prefix.
-        bool selected(String url) =>
-            current == url || current.startsWith('$url/');
+        final selectedDash = _selectedDash(dashboards);
+        // Lazily load the selected dashboard's views so its row can show the
+        // chosen view and offer "Change view". Guard re-entry with _viewsFor.
+        if (selectedDash != null && _viewsFor != selectedDash) {
+          _viewsFor = selectedDash;
+          c.homeAssistant.listDashboardViews(selectedDash).then((v) {
+            if (mounted) setState(() => _views = v);
+          });
+        }
         return _SettingsCard(
           children: [
             for (final d in dashboards)
-              ListTile(
-                leading: Icon(
-                  selected('$base/${d['url_path']}')
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
-                  color: selected('$base/${d['url_path']}')
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-                ),
-                title: Text('${d['title'] ?? d['url_path']}'),
-                subtitle: Text('${d['url_path']}'),
-                onTap: () async {
-                  final url = '$base/${d['url_path']}';
-                  await c.settings.set(startUrl, url);
-                  await c.commands.execute('loadUrl', {'url': url});
-                  if (mounted) setState(() {});
-                },
+              _dashRow(
+                context,
+                '${d['url_path']}',
+                '${d['title'] ?? d['url_path']}',
+                selectedDash,
               ),
           ],
         );
       },
+    );
+  }
+
+  Widget _dashRow(
+    BuildContext context,
+    String urlPath,
+    String title,
+    String? selectedDash,
+  ) {
+    final theme = Theme.of(context);
+    final selected = selectedDash == urlPath;
+    // The selected row shows the chosen view's path (defaulting to the first
+    // view); the others just name the dashboard. Only the selected row can
+    // change its view.
+    final subtitle =
+        selected ? _viewPath(urlPath, _selectedRoute(urlPath)) : urlPath;
+    final hasViews = selected && _views != null && _views!.isNotEmpty;
+    return ListTile(
+      leading: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_off,
+        color: selected ? theme.colorScheme.primary : null,
+      ),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: selected
+          ? TextButton(
+              onPressed: hasViews ? () => _changeView(urlPath) : null,
+              child: const Text('Change view'),
+            )
+          : null,
+      onTap: selected ? null : () => _pickDashboard(urlPath),
     );
   }
 }

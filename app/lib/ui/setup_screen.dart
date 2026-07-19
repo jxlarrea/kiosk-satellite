@@ -91,9 +91,14 @@ class _SetupScreenState extends State<SetupScreen> {
   final _haUrl = TextEditingController();
   final _haToken = TextEditingController();
 
-  // Step 3 — dashboards.
+  // Step 3 — dashboards. The kiosk lands on a single view, so the chosen
+  // dashboard carries a chosen view (its route), defaulting to the first.
+  // `_dashboardViews` are the views of `_dashboard`, for the "Change view"
+  // popup; a null list is a strategy dashboard whose views cannot be read.
   List<Map<String, Object?>>? _dashboards;
   String? _dashboard;
+  String? _dashboardView;
+  List<Map<String, Object?>>? _dashboardViews;
 
   // Step 4 — Voice Satellite. Each recommended setting is its own choice;
   // the master switch just sets them all. Microphone and native wake word
@@ -235,11 +240,18 @@ class _SetupScreenState extends State<SetupScreen> {
           await c.settings.set(defs.secureProxy, true);
         }
         final dashboards = await c.homeAssistant.listDashboards();
+        final firstDash = dashboards?.firstOrNull?['url_path'] as String?;
+        final views = firstDash != null
+            ? await c.homeAssistant.listDashboardViews(firstDash)
+            : null;
         if (!mounted) return;
         setState(() {
           _busy = false;
           _dashboards = dashboards;
-          _dashboard = dashboards?.firstOrNull?['url_path'] as String?;
+          _dashboard = firstDash;
+          _dashboardViews = views;
+          _dashboardView =
+              (views != null && views.isNotEmpty) ? '${views.first['route']}' : '';
           _step = 2;
         });
       case 2:
@@ -300,9 +312,12 @@ class _SetupScreenState extends State<SetupScreen> {
           ],
         });
         // Last: setting the start URL is what flips the app to configured.
+        final route = _dashboardView ?? '';
         await c.settings.set(
           defs.startUrl,
-          '${c.homeAssistant.baseUrl}/$_dashboard',
+          route.isEmpty
+              ? '${c.homeAssistant.baseUrl}/$_dashboard'
+              : '${c.homeAssistant.baseUrl}/$_dashboard/$route',
         );
         _enterKiosk();
     }
@@ -314,6 +329,63 @@ class _SetupScreenState extends State<SetupScreen> {
     // Step 5 backs up to the dashboard step when Voice Satellite was skipped.
     _step = (_step == 4 && !_vsStepActive) ? 2 : _step - 1;
   });
+
+  String _viewPath(String urlPath, String route) =>
+      route.isEmpty ? urlPath : '$urlPath/$route';
+
+  /// Select a dashboard: load its views and default to the first one.
+  Future<void> _pickDashboard(String urlPath) async {
+    final views = await c.homeAssistant.listDashboardViews(urlPath);
+    if (!mounted) return;
+    setState(() {
+      _dashboard = urlPath;
+      _dashboardViews = views;
+      _dashboardView =
+          (views != null && views.isNotEmpty) ? '${views.first['route']}' : '';
+    });
+  }
+
+  /// The "Change view" popup for the selected dashboard's views.
+  Future<void> _changeView() async {
+    final views = _dashboardViews;
+    final dash = _dashboard;
+    if (views == null || views.isEmpty || dash == null) return;
+    final current = _dashboardView ?? '';
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SimpleDialog(
+          title: Row(
+            children: [
+              const Expanded(child: Text('Choose a view')),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+          children: [
+            for (final v in views)
+              ListTile(
+                leading: Icon(
+                  '${v['route']}' == current
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: '${v['route']}' == current
+                      ? theme.colorScheme.primary
+                      : null,
+                ),
+                title: Text('${v['title']}'),
+                subtitle: Text(_viewPath(dash, '${v['route']}')),
+                onTap: () => Navigator.pop(ctx, '${v['route']}'),
+              ),
+          ],
+        );
+      },
+    );
+    if (picked != null && mounted) setState(() => _dashboardView = picked);
+  }
 
   // ── UI ─────────────────────────────────────────────────────────────────
 
@@ -620,20 +692,33 @@ class _SetupScreenState extends State<SetupScreen> {
               const ListTile(title: Text('No dashboards found'))
             else
               for (final d in _dashboards!)
-                ListTile(
-                  leading: Icon(
-                    _dashboard == d['url_path']
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                    color: _dashboard == d['url_path']
-                        ? theme.colorScheme.primary
-                        : null,
-                  ),
-                  title: Text('${d['title'] ?? d['url_path']}'),
-                  subtitle: Text('${d['url_path']}'),
-                  onTap: () =>
-                      setState(() => _dashboard = d['url_path'] as String?),
-                ),
+                for (final urlPath in ['${d['url_path']}'])
+                  for (final isSel in [_dashboard == urlPath])
+                    ListTile(
+                      leading: Icon(
+                        isSel
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        color: isSel ? theme.colorScheme.primary : null,
+                      ),
+                      title: Text('${d['title'] ?? urlPath}'),
+                      // The selected dashboard shows its chosen view's path
+                      // (defaulting to the first); the rest name the dashboard.
+                      subtitle: Text(
+                        isSel
+                            ? _viewPath(urlPath, _dashboardView ?? '')
+                            : urlPath,
+                      ),
+                      trailing: isSel &&
+                              _dashboardViews != null &&
+                              _dashboardViews!.isNotEmpty
+                          ? TextButton(
+                              onPressed: _changeView,
+                              child: const Text('Change view'),
+                            )
+                          : null,
+                      onTap: isSel ? null : () => _pickDashboard(urlPath),
+                    ),
           ]),
         ]);
       case 3:

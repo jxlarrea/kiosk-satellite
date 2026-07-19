@@ -982,8 +982,12 @@ async function loadSettings() {
       vdesc.textContent = 'Not validated yet. The settings below unlock once the connection checks out.';
     } else {
       vdesc.textContent = 'Connected.';
-      // Dashboard picker: what the kiosk shows. Radio rows; picking one
-      // sets the start URL and navigates the device right away.
+      // Dashboard picker: what the kiosk shows. Radio rows; picking one sets
+      // the start URL and navigates the device right away. The kiosk lands on
+      // a single view, so the selected dashboard's row shows its chosen view
+      // (defaulting to the first) with a "Change view" button; listing every
+      // sub-view of every dashboard would be an unusable wall, so a
+      // dashboard's views are only fetched when it is picked or changed.
       const h = document.createElement('h2');
       h.className = 'card-title';
       h.textContent = 'Dashboard';
@@ -997,18 +1001,53 @@ async function loadSettings() {
         dashList = dashboards;
         const rawBase = (byKey['ha.url']?.value || '').trim().replace(/\/$/, '');
         const current = byKey['browser.start_url']?.value || '';
-        dashboards.forEach((d) => {
+        // Which dashboard + view route the stored start URL points at.
+        let selDash = null, selRoute = '';
+        for (const d of dashboards) {
           const url = `${rawBase}/${d.url_path}`;
-          const selected = current === url || current.startsWith(url + '/');
-          dcard.appendChild(radioRow(d.title || d.url_path, d.url_path,
-            selected, async () => {
-              await api('/api/settings', { method: 'PATCH',
-                body: JSON.stringify({ 'browser.start_url': url }) });
-              await api('/api/commands/loadUrl', { method: 'POST',
-                body: JSON.stringify({ url }) });
-              await loadSettings();
-            }));
-        });
+          if (current === url) { selDash = d.url_path; selRoute = ''; }
+          else if (current.startsWith(url + '/')) {
+            selDash = d.url_path; selRoute = current.slice(url.length + 1);
+          }
+        }
+        const applyStart = async (url) => {
+          await api('/api/settings', { method: 'PATCH',
+            body: JSON.stringify({ 'browser.start_url': url }) });
+          await api('/api/commands/loadUrl', { method: 'POST',
+            body: JSON.stringify({ url }) });
+          await loadSettings();
+        };
+        for (const d of dashboards) {
+          const selected = selDash === d.url_path;
+          const sub = selected ? viewPath(d.url_path, selRoute) : d.url_path;
+          const row = radioRow(d.title || d.url_path, sub, selected, async () => {
+            if (selected) return;
+            // Land on the dashboard's first view.
+            const views = await fetchViews(d.url_path);
+            const route = (views && views.length) ? String(views[0].route) : '';
+            await applyStart(route ? `${rawBase}/${d.url_path}/${route}` : `${rawBase}/${d.url_path}`);
+          });
+          if (selected) {
+            // "Change view": pick another of this dashboard's views.
+            const btn = document.createElement('button');
+            btn.className = 'btn-ghost';
+            btn.textContent = 'Change view';
+            btn.style.cssText = 'width:auto; padding:6px 12px; margin-left:8px; flex-shrink:0;';
+            btn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              const views = await fetchViews(d.url_path);
+              if (!views || !views.length) {
+                messageBox({ title: 'No sub views', message: 'This dashboard has no selectable sub views.' });
+                return;
+              }
+              const route = await pickView(d.url_path, views, selRoute);
+              if (route == null) return;
+              await applyStart(route ? `${rawBase}/${d.url_path}/${route}` : `${rawBase}/${d.url_path}`);
+            });
+            row.insertBefore(btn, row.querySelector('input'));
+          }
+          dcard.appendChild(row);
+        }
         if (!dashboards.length) dcard.appendChild(readOnlyRow('No dashboards found', '', ''));
       } catch (_) {
         dcard.appendChild(readOnlyRow('Could not list dashboards', '', ''));
@@ -1732,6 +1771,59 @@ function readOnlyRow(name, desc, value) {
   row.appendChild(v);
   return row;
 }
+// The navigation path of a view within a dashboard: "url_path/route", or
+// just the dashboard when the route is empty (its default first view).
+function viewPath(urlPath, route) {
+  return route ? `${urlPath}/${route}` : urlPath;
+}
+
+// One dashboard's views (title + route), or null for a strategy dashboard
+// whose view list cannot be read.
+async function fetchViews(urlPath) {
+  try {
+    const r = await (await api('/api/commands/haListDashboardViews', {
+      method: 'POST', body: JSON.stringify({ url_path: urlPath }) })).json();
+    if (r.ok && Array.isArray(r.data)) return r.data;
+  } catch (_) {}
+  return null;
+}
+
+// The "Change view" modal: a dashboard's views as radio rows. Resolves to the
+// chosen route, or null if cancelled.
+function pickView(urlPath, views, currentRoute) {
+  return new Promise((resolve) => {
+    const back = document.createElement('div');
+    back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+      + 'display:grid; place-items:center; z-index:1000; padding:16px';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText =
+      'width:100%; max-width:440px; margin:0; padding:24px; max-height:80vh; overflow:auto';
+    // Header: title on the left, a close X on the right (matching the other
+    // modals). Dismissing resolves null, same as picking nothing.
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex; align-items:center; gap:12px; margin:0 0 14px;';
+    const h = document.createElement('h3');
+    h.textContent = 'Choose a view';
+    h.style.cssText = 'margin:0; flex:1; font-size:16px; font-weight:700;';
+    const close = document.createElement('button');
+    close.className = 'btn-ghost';
+    close.setAttribute('aria-label', 'Close');
+    close.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+    close.style.cssText = 'width:auto; padding:6px; line-height:0; flex-shrink:0;';
+    close.addEventListener('click', () => { back.remove(); resolve(null); });
+    head.append(h, close);
+    card.appendChild(head);
+    views.forEach((v) => {
+      const route = String(v.route);
+      card.appendChild(radioRow(v.title || route, viewPath(urlPath, route),
+        route === currentRoute, () => { back.remove(); resolve(route); }));
+    });
+    back.appendChild(card);
+    document.body.appendChild(back);
+  });
+}
+
 // A pick-one row (dashboard, satellite): a real radio control instead of a
 // text glyph. The whole row is the click target; the input is the visual,
 // kept in sync by each re-render.
@@ -2207,7 +2299,7 @@ const wizard = {
   vsDetected: false,
   rec: Object.fromEntries(WIZ_OPTIONAL.map(([k]) => [k, true])),
   satellites: [], satellite: null,
-  dashboards: [], dashboard: null,
+  dashboards: [], dashboard: null, dashboardView: '', dashboardViews: null,
 };
 
 // The wizard starts light (the product default) whatever an earlier
@@ -2376,6 +2468,11 @@ function wizardSteps() {
       wizard.dashboards = dashboards.data || [];
       wizard.dashboard = wizard.dashboards[0]?.url_path || null;
       wizard.base = url.replace(/\/$/, '');
+      // The kiosk lands on a single view; default the chosen dashboard to its
+      // first, ready for the Dashboard step's "Change view".
+      wizard.dashboardViews = wizard.dashboard ? await fetchViews(wizard.dashboard) : null;
+      wizard.dashboardView = (wizard.dashboardViews && wizard.dashboardViews.length)
+        ? String(wizard.dashboardViews[0].route) : '';
     },
   });
   steps.push({
@@ -2384,12 +2481,39 @@ function wizardSteps() {
     lead: 'This is what the kiosk will show when it starts.',
     body: (b) => {
       const list = wizardCard(b, true);
+      if (!wizard.dashboards.length) {
+        list.appendChild(readOnlyRow('No dashboards found', '', ''));
+        return;
+      }
       wizard.dashboards.forEach((d) => {
-        list.appendChild(radioRow(d.title || d.url_path, d.url_path,
-          wizard.dashboard === d.url_path,
-          () => { wizard.dashboard = d.url_path; wizardRender(); }));
+        const selected = wizard.dashboard === d.url_path;
+        // The selected dashboard shows its chosen view (defaulting to the
+        // first) with a "Change view" button; the rest name the dashboard.
+        const sub = selected ? viewPath(d.url_path, wizard.dashboardView) : d.url_path;
+        const row = radioRow(d.title || d.url_path, sub, selected, async () => {
+          if (selected) return;
+          wizard.dashboard = d.url_path;
+          wizard.dashboardViews = await fetchViews(d.url_path);
+          wizard.dashboardView = (wizard.dashboardViews && wizard.dashboardViews.length)
+            ? String(wizard.dashboardViews[0].route) : '';
+          wizardRender();
+        });
+        if (selected && wizard.dashboardViews && wizard.dashboardViews.length) {
+          const btn = document.createElement('button');
+          btn.className = 'btn-ghost';
+          btn.textContent = 'Change view';
+          btn.style.cssText = 'width:auto; padding:6px 12px; margin-left:8px; flex-shrink:0;';
+          btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const route = await pickView(d.url_path, wizard.dashboardViews, wizard.dashboardView);
+            if (route == null) return;
+            wizard.dashboardView = route;
+            wizardRender();
+          });
+          row.insertBefore(btn, row.querySelector('input'));
+        }
+        list.appendChild(row);
       });
-      if (!wizard.dashboards.length) list.appendChild(readOnlyRow('No dashboards found', '', ''));
     },
     next: async () => {
       if (!wizard.dashboard) throw wizFail('Select a dashboard',
@@ -2546,9 +2670,13 @@ function wizardSteps() {
         await api('/api/settings', { method: 'PATCH', body: JSON.stringify(chosen) });
       }
       // Setting the start URL is what flips the device to configured; the
-      // kiosk on the wall navigates to the dashboard on its own.
+      // kiosk on the wall navigates to the chosen dashboard view on its own.
+      const route = wizard.dashboardView || '';
+      const startUrl = route
+        ? `${wizard.base}/${wizard.dashboard}/${route}`
+        : `${wizard.base}/${wizard.dashboard}`;
       await api('/api/settings', { method: 'PATCH',
-        body: JSON.stringify({ 'browser.start_url': `${wizard.base}/${wizard.dashboard}` }) });
+        body: JSON.stringify({ 'browser.start_url': startUrl }) });
       location.reload();
     },
   });
