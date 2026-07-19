@@ -199,8 +199,9 @@ class _MwwWorker {
     for (final feature in frontend.feed(chunk)) {
       for (final k in _kws) {
         // Wake models go quiet once one has fired (until re-armed); the stop
-        // classifier only runs while the card says playback is interruptible.
-        if (k.isStop ? !_stopArmed : _detected) continue;
+        // classifier only runs while the card says playback is interruptible,
+        // or while a tester is watching it (telemetry, no real detection).
+        if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
         k.accum.add(feature);
         if (k.accum.length < k.framesPerInfer) continue;
         if (!scoreThisChunk) {
@@ -214,7 +215,7 @@ class _MwwWorker {
         if (probability == null) continue;
 
         final trigger = k.gate.update(probability, _absSamples ~/ 16);
-        if (_telemetry && !k.isStop) {
+        if (_telemetry) {
           // The windowed mean is what the gate compares to the cutoff; the
           // raw per-inference probability is the spikier underlying signal.
           _main.send({

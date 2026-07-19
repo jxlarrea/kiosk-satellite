@@ -179,13 +179,14 @@ class _OwwWorker {
     if (window == null) return;
 
     for (final k in _kws) {
-      if (k.isStop ? !_stopArmed : _detected) continue;
+      // Stop classifier runs while armed, or while a tester watches it.
+      if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
       final sw = _telemetry ? (Stopwatch()..start()) : null;
       final probability = _classify(k, window);
       sw?.stop();
       if (probability == null) continue;
       final trigger = k.gate.update(probability, _absSamples ~/ 16);
-      if (_telemetry && !k.isStop) {
+      if (_telemetry) {
         _main.send({
           'type': WakeMsg.telemetry,
           'id': k.id,

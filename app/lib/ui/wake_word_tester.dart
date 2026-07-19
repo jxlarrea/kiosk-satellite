@@ -85,8 +85,11 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
 
   int _hits = 0;
   int _nearMisses = 0;
-  String _wakeWord = '';
   String _engine = '';
+  // Every wake word (and the stop word) loaded for this session, so the
+  // tester can watch one at a time instead of a blur of all their scores.
+  List<({String id, String label})> _words = const [];
+  String? _selectedId;
   bool _dirty = false;
   bool _newSamples = false;
   int _frame = 0;
@@ -99,7 +102,22 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
   @override
   void initState() {
     super.initState();
-    _engine = widget.container.wakeWord.config?.engine.label ?? '';
+    final cfg = widget.container.wakeWord.config;
+    _engine = cfg?.engine.label ?? '';
+    if (cfg != null) {
+      final stop = cfg.stopModel;
+      _words = [
+        for (final m in cfg.models) (id: m.id, label: m.wakeWord),
+        if (stop != null)
+          (
+            id: stop.id,
+            label: stop.wakeWord.isEmpty
+                ? 'Stop word'
+                : '${stop.wakeWord} (stop word)',
+          ),
+      ];
+      if (_words.isNotEmpty) _selectedId = _words.first.id;
+    }
     widget.container.wakeWord.startTest();
     _sub = widget.container.wakeWord.telemetry.listen(_onSample);
     _logScroll.addListener(() {
@@ -131,8 +149,10 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
   }
 
   void _onSample(Map<String, Object?> m) {
+    // Only the wake word the dropdown has selected; the engine streams
+    // telemetry for every loaded model at once.
+    if (_selectedId != null && m['id'] != _selectedId) return;
     final s = _Sample(m);
-    _wakeWord = '${m['wakeWord'] ?? m['id'] ?? ''}';
     _samples.add(s);
     if (_samples.length > _capacity) _samples.removeAt(0);
     _newSamples = true;
@@ -175,6 +195,22 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
   void _addLog(String line, bool hit) {
     _log.add((line, hit));
     if (_log.length > _logCapacity) _log.removeAt(0);
+  }
+
+  // Switch which wake word we are watching. Its chart, stats, and log are
+  // independent, so wipe them: the old numbers are for a different model.
+  void _selectWord(String id) {
+    if (id == _selectedId) return;
+    setState(() {
+      _selectedId = id;
+      _samples.clear();
+      _log.clear();
+      _hits = 0;
+      _nearMisses = 0;
+      _lastLogged = '';
+      _lastNearMs = 0;
+    });
+    _repaint.tick();
   }
 
   @override
@@ -238,18 +274,67 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                _wakeWord.isEmpty
-                    ? 'Say the wake word. The line is the threshold the score '
-                          'must cross to trigger.'
-                    : 'Listening for "$_wakeWord"'
-                          '${_engine.isEmpty ? '' : ' ($_engine)'}. '
-                          'The line is the threshold the score must cross to '
-                          'trigger.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    'Wake word',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (_words.isEmpty)
+                    Text(
+                      'Waiting for Voice Satellite',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                  else
+                    Container(
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        border:
+                            Border.all(color: theme.colorScheme.outlineVariant),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedId,
+                          borderRadius: BorderRadius.circular(10),
+                          icon: const Padding(
+                            padding: EdgeInsets.only(left: 6),
+                            child: Icon(Icons.arrow_drop_down, size: 26),
+                          ),
+                          iconEnabledColor: theme.colorScheme.onSurfaceVariant,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          items: [
+                            for (final w in _words)
+                              DropdownMenuItem(
+                                value: w.id,
+                                child: Text(w.label),
+                              ),
+                          ],
+                          onChanged: (id) {
+                            if (id != null) _selectWord(id);
+                          },
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  if (_engine.isNotEmpty)
+                    Text(
+                      _engine,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 12),
               // Chart — repaints from [_repaint], not the widget rebuild.

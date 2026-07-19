@@ -319,8 +319,9 @@ class _IsolateWorker {
     for (final k in _kws) {
       if (k.dead) continue;
       // Wake models go quiet once one has fired (until re-armed); the stop
-      // classifier only runs while the card says playback is interruptible.
-      if (k.isStop ? !_stopArmed : _detected) continue;
+      // classifier only runs while the card says playback is interruptible,
+      // or while a tester is watching it (telemetry, no real detection).
+      if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
       final tOut = k.manifest.tOut;
       final vocab = k.manifest.ctc.vocabSize;
       final sw = _telemetry ? (Stopwatch()..start()) : null;
@@ -353,7 +354,7 @@ class _IsolateWorker {
         targetIndex: combined.targetIndex,
         nowMs: nowMs,
       );
-      if (_telemetry && !k.isStop) {
+      if (_telemetry) {
         // A CTC model has no continuous probability; the meaningful signal
         // is the matched confidence when the decoder aligns a target (a hit
         // or a below-gate near miss), plus what phonemes it actually
