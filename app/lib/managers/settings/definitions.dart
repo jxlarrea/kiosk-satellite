@@ -140,6 +140,23 @@ const startUrl = SettingDef<String>(
   hidden: true,
 );
 
+// Hidden from the generic renderers: both UIs hand-build this row inside
+// the Home Assistant connection card (below Validate connection), because
+// its enabled/disabled state derives from the HA URL's scheme — a plain
+// http URL enables it, https keeps it disabled and off.
+const secureProxy = SettingDef<bool>(
+  key: 'browser.secure_proxy',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Secure context proxy',
+  description:
+      'Routes a plain http Home Assistant through a proxy inside the app '
+      'so the browser unlocks the microphone and other https-only '
+      'features. Available only for http URLs.',
+  category: 'Home Assistant',
+  hidden: true,
+);
+
 const autoReloadOnError = SettingDef<bool>(
   key: 'browser.auto_reload_on_error',
   type: SettingType.boolean,
@@ -1176,6 +1193,7 @@ const uiTheme = SettingDef<String>(
 /// All settings, in display order.
 const List<SettingDef<Object>> allSettings = [
   startUrl,
+  secureProxy,
   autoReloadOnError,
   pullToRefresh,
   pullToRefreshClearCache,

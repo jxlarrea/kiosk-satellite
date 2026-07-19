@@ -332,8 +332,23 @@ class BrowserManager extends Manager {
     }
   }
 
+  /// Set by the composition root (see AppContainer): rewrites a URL to its
+  /// loopback-proxied form when the secure context proxy is on. Every load
+  /// funnels through here, so callers keep passing the real HA URLs.
+  String Function(String url)? urlMapper;
+
   Future<void> loadUrl(String url) async {
-    await _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
+    final mapped = urlMapper?.call(url) ?? url;
+    await _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(mapped)));
+  }
+
+  /// Evaluate JavaScript and return its stringified result — the REPL in
+  /// the console panels. Null when no WebView is attached.
+  Future<String?> eval(String code) async {
+    final controller = _controller;
+    if (controller == null) return null;
+    final result = await controller.evaluateJavascript(source: code);
+    return '$result';
   }
 
   /// Evaluate JavaScript in the current page (fire-and-forget helper for the

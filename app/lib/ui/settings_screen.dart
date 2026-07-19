@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,8 +8,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 
+import 'package:flutter/services.dart';
+
 import '../app_container.dart';
 import '../core/events.dart';
+import '../core/logging.dart';
 import '../managers/settings/definitions.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -142,6 +144,7 @@ const _categories = <(String, String, IconData, String)>[
     'Name, identity, app theme',
   ),
   ('About', 'About', Icons.info_outline, 'Version, author, license'),
+  ('Logs', 'App Logs', Icons.article_outlined, 'What the app has been doing'),
 ];
 
 List<SettingDef<Object>> _defsFor(String category) => [
@@ -541,6 +544,80 @@ class _CategoryContentState extends State<_CategoryContent> {
     widget.container.commands.execute('loadUrl', {'url': url});
   }
 
+  /// The app log, mirroring the remote UI's Logs tab: the same buffer the
+  /// admin serves, newest at the bottom, with copy for bug reports.
+  List<Widget> _logsCards(AppContainer container) {
+    final theme = Theme.of(context);
+    final entries = container.log.recent;
+    Color levelColor(LogLevel level) => switch (level) {
+      LogLevel.error => Colors.red.shade300,
+      LogLevel.warn => Colors.amber.shade700,
+      LogLevel.debug => theme.colorScheme.outline,
+      _ => theme.colorScheme.onSurface,
+    };
+    String fmt(LogEntry e) =>
+        '${e.time.toIso8601String().substring(11, 19)} ${e.tag}: ${e.message}';
+    return [
+      _SettingsCard(
+        children: [
+          ListTile(
+            title: const Text('App log'),
+            subtitle: Text('${entries.length} entries'),
+            trailing: Wrap(
+              spacing: 4,
+              children: [
+                IconButton(
+                  tooltip: 'Copy log',
+                  icon: const Icon(Icons.copy_outlined, size: 20),
+                  onPressed: () async {
+                    await Clipboard.setData(
+                      ClipboardData(
+                        text: entries.map(fmt).join('\n'),
+                      ),
+                    );
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('App log copied'),
+                        duration: Duration(seconds: 2),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  tooltip: 'Refresh',
+                  icon: const Icon(Icons.refresh, size: 20),
+                  onPressed: () => setState(() {}),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final e in entries)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 1),
+                    child: Text(
+                      fmt(e),
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        color: levelColor(e.level),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
   /// The About page: app identity and attribution. Mirrored on the remote
   /// UI's About tab.
   List<Widget> _aboutCards(AppContainer container) {
@@ -670,6 +747,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                 : const SizedBox.shrink(),
           ),
         if (widget.category == 'About') ..._aboutCards(container),
+        if (widget.category == 'Logs') ..._logsCards(container),
         _MadeByFooter(container: container),
       ],
     );
@@ -715,6 +793,33 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
             onTap: _haValidating ? null : () => _validateHa(container),
           ),
+          // Hand-built (and mirrored in the remote UI's connection card):
+          // the row's enabled state derives from the URL scheme. https
+          // needs no proxy, so the switch sits disabled and off; a plain
+          // http URL enables it, and validation turns it on with a modal.
+          Builder(
+            builder: (context) {
+              final uri = Uri.tryParse(
+                container.settings.get(haUrl).trim(),
+              );
+              final isHttp =
+                  uri != null &&
+                  uri.scheme == 'http' &&
+                  uri.host != 'localhost' &&
+                  uri.host != '127.0.0.1';
+              return SwitchListTile(
+                title: Text(secureProxy.title),
+                subtitle: Text(secureProxy.description),
+                value: container.settings.get(secureProxy),
+                onChanged: isHttp
+                    ? (v) async {
+                        await container.settings.set(secureProxy, v);
+                        if (mounted) setState(() {});
+                      }
+                    : null,
+              );
+            },
+          ),
         ],
       ),
     ];
@@ -724,6 +829,39 @@ class _CategoryContentState extends State<_CategoryContent> {
   String? _haError;
 
   Future<void> _validateHa(AppContainer container) async {
+    // A plain-http URL means the browser will withhold the microphone and
+    // every other https-only API from the dashboard. The secure context
+    // proxy is the fix; tell the user it is being turned on and why before
+    // validating.
+    final url = container.settings.get(haUrl).trim();
+    final uri = Uri.tryParse(url);
+    if (uri != null &&
+        uri.scheme == 'http' &&
+        uri.host != 'localhost' &&
+        uri.host != '127.0.0.1' &&
+        !container.settings.get(secureProxy)) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Secure context proxy'),
+          content: const Text(
+            'This Home Assistant URL uses plain http, and browsers block '
+            'the microphone and other features on http pages. Kiosk '
+            'Satellite will route the dashboard through a secure proxy '
+            'inside the app so everything works. You may need to sign in '
+            'to Home Assistant again.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      await container.settings.set(secureProxy, true);
+      if (!mounted) return;
+    }
     setState(() {
       _haValidating = true;
       _haError = null;

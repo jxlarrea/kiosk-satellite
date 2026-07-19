@@ -41,6 +41,14 @@ the screen is off or another app is in front.
   the app in the background, uses a fraction of the CPU a browser engine
   needs, and hands the microphone back to the dashboard the instant you
   speak. No configuration needed in Voice Satellite; everything is inherited.
+- **Plain http instances, fully unlocked**: browsers withhold the
+  microphone and every other secure-context feature from `http://` pages,
+  which normally cripples voice on a LAN-only Home Assistant. Kiosk
+  Satellite routes the dashboard through a loopback proxy inside the app,
+  making the page a genuine secure context: the microphone, AudioWorklet
+  and the rest of the https-only browser surface work on an http-only
+  instance, with no certificates or reverse proxy to set up. Enabled
+  automatically during setup when your URL is plain http.
 - **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake when someone presses the
   power button, and full lock-task support on device-owner provisioned
@@ -73,7 +81,8 @@ the screen is off or another app is in front.
 turns a Home Assistant dashboard into a full hands-free voice assistant
 with wake word, conversations, timers and announcements. It runs entirely in the
 browser, which is exactly its limit on a wall tablet: browsers can't listen
-while the screen is off, and browser-side wake-word engines are expensive.
+while the screen is off, browser-side wake-word engines are expensive, and
+on a plain http instance the browser refuses the microphone altogether.
 
 Kiosk Satellite removes that limit. The app runs Voice Satellite's own
 wake-word models natively and transparently: Voice Satellite detects it is
@@ -101,6 +110,7 @@ word and the kiosk brings the dashboard back and answers.
 | Wake word with another app in front | ❌ | ✅ Returns to the dashboard on trigger |
 | Detection cost | ⚠️ Browser based, heavy on tablets | ✅ Native CPU inference, 10x-30x faster |
 | Wake word on low-end hardware | ⚠️ Struggles | ✅ CPU only, no GPU needed |
+| Voice on a plain http instance | ❌ Browsers block the microphone | ✅ Secure context proxy built in |
 | Survives reboots | ⚠️ Manual relaunch | ✅ Start on boot |
 
 Voice Satellite is not required, since Kiosk Satellite is a complete Home

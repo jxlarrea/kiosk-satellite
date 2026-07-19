@@ -279,10 +279,18 @@ class HomeAssistantManager extends Manager {
     final paths = _rotationPaths();
     if (paths.isEmpty || baseUrl.isEmpty) return;
     _rotationIndex = (_rotationIndex + 1) % paths.length;
+    // With the secure context proxy on, the page lives on the loopback
+    // origin, not baseUrl — guard against what is actually on screen.
+    final mappedBase = await commands.execute('proxyMapUrl', {
+      'url': baseUrl,
+    });
+    final effectiveBase = mappedBase.ok && mappedBase.data is String
+        ? mappedBase.data as String
+        : baseUrl;
     final js =
         '''
 (function () {
-  var base = ${jsonEncode(baseUrl)};
+  var base = ${jsonEncode(effectiveBase)};
   if (!location.href.startsWith(base)) return;
   var path = '/' + ${jsonEncode(paths[_rotationIndex])};
   if (location.pathname === path || location.pathname.indexOf(path + '/') === 0) return;

@@ -176,6 +176,15 @@ class _KioskScreenState extends State<KioskScreen>
       });
       return;
     }
+    // The secure context proxy changes the page's ORIGIN, so the toggle is
+    // a full renavigation. Await the proxy's own sync first: its listener
+    // for this same event races ours, and loading before the server is up
+    // would map the URL onto a dead port.
+    if (e.key == defs.secureProxy.key) {
+      await c.proxy.sync();
+      await c.browser.loadUrl(_initialUrl);
+      return;
+    }
     // Pull-to-refresh toggles live on the existing WebView; the clear-cache
     // companion is read at pull time and needs nothing here.
     if (e.key == defs.pullToRefresh.key) {
@@ -577,9 +586,11 @@ class _KioskScreenState extends State<KioskScreen>
   Widget _webView() => InAppWebView(
     key: ValueKey(_webViewEpoch),
     initialUrlRequest: URLRequest(
+      // currentUrl needs no mapping: it is whatever actually loaded, so a
+      // proxied session rebuilds on the proxied origin it was already on.
       url: WebUri(
         _webViewEpoch == 0 || c.browser.currentUrl.isEmpty
-            ? _initialUrl
+            ? c.proxy.mapUrl(_initialUrl)
             : c.browser.currentUrl,
       ),
     ),

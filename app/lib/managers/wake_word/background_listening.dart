@@ -36,6 +36,10 @@ class BackgroundListening {
   static Future<bool> canBringToFront() async =>
       await _channel.invokeMethod<bool>('canBringToFront') ?? false;
 
+  /// Whether the device admin grant behind the real "Screen off" is active.
+  static Future<bool> isScreenOffAvailable() async =>
+      await _channel.invokeMethod<bool>('isScreenOffAvailable') ?? false;
+
   /// Send the user to the "Display over other apps" settings screen.
   static Future<void> requestBringToFront() =>
       _channel.invokeMethod<void>('requestBringToFront');

@@ -21,6 +21,7 @@ class SystemPermissions {
     required this.batteryUnrestricted,
     required this.camera,
     required this.location,
+    required this.deviceAdmin,
   });
 
   /// Nothing listens without this one, foreground or not.
@@ -45,6 +46,9 @@ class SystemPermissions {
   /// Only a page ever wants this (geolocation). Nothing native here uses it.
   final bool location;
 
+  /// The device admin grant behind the real "Screen off" (lockNow).
+  final bool deviceAdmin;
+
 
   static Future<SystemPermissions> read() async => SystemPermissions(
         microphone: await Permission.microphone.isGranted,
@@ -54,6 +58,7 @@ class SystemPermissions {
         batteryUnrestricted: await BackgroundListening.isBatteryUnrestricted(),
         camera: await Permission.camera.isGranted,
         location: await Permission.locationWhenInUse.isGranted,
+        deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
       );
 
   /// Nothing we could not read. A platform without these channels answers
@@ -67,6 +72,7 @@ class SystemPermissions {
     batteryUnrestricted: false,
     camera: false,
     location: false,
+    deviceAdmin: false,
   );
 
   Map<String, Object?> toJson() => {
@@ -77,5 +83,6 @@ class SystemPermissions {
         'batteryUnrestricted': batteryUnrestricted,
         'camera': camera,
         'location': location,
+        'deviceAdmin': deviceAdmin,
       };
 }

@@ -22,6 +22,7 @@ class WebConsolePanel extends StatefulWidget {
 
 class _WebConsolePanelState extends State<WebConsolePanel> {
   final _scroll = ScrollController();
+  final _input = TextEditingController();
 
   static Color _levelColor(BuildContext context, String level) {
     switch (level) {
@@ -33,8 +34,26 @@ class _WebConsolePanelState extends State<WebConsolePanel> {
         return Colors.grey.shade500;
       case 'tip':
         return Colors.lightBlue.shade200;
+      case 'cmd':
+        return Theme.of(context).colorScheme.primary;
       default:
         return Theme.of(context).colorScheme.onSurface;
+    }
+  }
+
+  /// Run typed JavaScript in the page, like the remote admin's web console.
+  /// Echo and result go through the console feed itself, so copy/share
+  /// capture the whole session and the live stream keeps its order.
+  Future<void> _run() async {
+    final code = _input.text.trim();
+    if (code.isEmpty) return;
+    _input.clear();
+    widget.browser.onConsoleMessage('cmd', '> $code');
+    final result = await widget.browser.eval(code);
+    // Statements evaluate to null/undefined (the WebView reports them as
+    // those strings); only actual values are worth a line.
+    if (result != null && result != 'null' && result != 'undefined') {
+      widget.browser.onConsoleMessage('log', result);
     }
   }
 
@@ -157,6 +176,49 @@ class _WebConsolePanelState extends State<WebConsolePanel> {
                   },
                 ),
               ),
+              // The REPL half, mirroring the remote admin's web console.
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: theme.colorScheme.outlineVariant),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Row(
+                  children: [
+                    Text(
+                      '>',
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _input,
+                        onSubmitted: (_) => _run(),
+                        textInputAction: TextInputAction.send,
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 13,
+                        ),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          hintText: 'Run JavaScript in the page',
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Run',
+                      icon: const Icon(Icons.send, size: 18),
+                      onPressed: _run,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -167,6 +229,7 @@ class _WebConsolePanelState extends State<WebConsolePanel> {
   @override
   void dispose() {
     _scroll.dispose();
+    _input.dispose();
     super.dispose();
   }
 }

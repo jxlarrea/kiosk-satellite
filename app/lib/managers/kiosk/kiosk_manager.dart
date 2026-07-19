@@ -27,6 +27,11 @@ class KioskManager extends Manager {
 
   static const _channel = MethodChannel('kiosk_satellite/kiosk_lock');
 
+  /// The device-admin grant screen for "Screen off" (see MainActivity /
+  /// BackgroundBridge; the Activity one shows the proper one-tap dialog).
+  static const _adminChannel = MethodChannel('kiosk_satellite/admin');
+  static const _backgroundChannel = MethodChannel('kiosk_satellite/background');
+
   @override
   String get name => 'kiosk';
 
@@ -67,8 +72,8 @@ class KioskManager extends Manager {
           'full': 'true for the whole recommended set',
           'which':
               'explicit list of permissions to request (microphone, '
-              'notifications, batteryOptimizations, overlay); overrides '
-              'full',
+              'notifications, batteryOptimizations, overlay, deviceAdmin); '
+              'overrides full',
         },
         handler: (p) async {
           const known = <String, Permission>{
@@ -92,6 +97,29 @@ class KioskManager extends Manager {
               results[name] = (await known[name]!.request()).isGranted;
             } catch (_) {
               results[name] = false;
+            }
+          }
+          // Device admin (the real "Screen off") is an Activity, not a
+          // dialog, so it goes LAST: launched earlier it would bury the
+          // runtime permission prompts. Activity channel first — Samsung
+          // only shows the one-tap activation screen to a foreground
+          // Activity — with the app-context fallback for a detached one.
+          final askAdmin = which is List
+              ? which.contains('deviceAdmin')
+              : p['full'] == true;
+          if (askAdmin) {
+            try {
+              await _adminChannel.invokeMethod('requestScreenOffAdmin');
+              results['deviceAdmin'] = true;
+            } catch (_) {
+              try {
+                await _backgroundChannel.invokeMethod(
+                  'requestScreenOffAdmin',
+                );
+                results['deviceAdmin'] = true;
+              } catch (_) {
+                results['deviceAdmin'] = false;
+              }
             }
           }
           return CommandResult.ok(results);

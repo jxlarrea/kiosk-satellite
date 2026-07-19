@@ -223,6 +223,17 @@ class _SetupScreenState extends State<SetupScreen> {
           _connectFail(error);
           return;
         }
+        // Plain-http Home Assistant: browsers withhold the microphone and
+        // the rest of the https-only surface from insecure origins, which
+        // would silently cripple Voice Satellite. The loopback proxy makes
+        // the page a secure context, so onboarding turns it on up front.
+        final validatedUri = Uri.tryParse(_haUrl.text.trim());
+        if (validatedUri != null &&
+            validatedUri.scheme == 'http' &&
+            validatedUri.host != 'localhost' &&
+            validatedUri.host != '127.0.0.1') {
+          await c.settings.set(defs.secureProxy, true);
+        }
         final dashboards = await c.homeAssistant.listDashboards();
         if (!mounted) return;
         setState(() {
@@ -282,6 +293,10 @@ class _SetupScreenState extends State<SetupScreen> {
             ],
             if (_vsStepActive && _recommended['kiosk.start_on_boot']!)
               'overlay',
+            // Last: the admin activation screen is a full Activity and
+            // would bury the permission dialogs (the handler orders it
+            // last regardless).
+            'deviceAdmin',
           ],
         });
         // Last: setting the start URL is what flips the app to configured.
@@ -734,6 +749,14 @@ class _SetupScreenState extends State<SetupScreen> {
                   'auto start when your device boots.',
                 ),
               ),
+            const ListTile(
+              leading: Icon(Icons.power_settings_new_outlined),
+              title: Text('Screen control'),
+              subtitle: Text(
+                'Allows Kiosk Satellite to turn the screen off on request '
+                '(device admin).',
+              ),
+            ),
           ]),
         ]);
     }

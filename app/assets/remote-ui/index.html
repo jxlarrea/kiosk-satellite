@@ -51,7 +51,8 @@
   }
   button { font: inherit; cursor: pointer; }
   input, select { font: inherit; }
-  input[type=range], input[type=checkbox] { accent-color: var(--primary-fill); }
+  input[type=range], input[type=checkbox], input[type=radio] {
+    accent-color: var(--primary-fill); }
   .hidden { display: none !important; }
 
   /* Login */
@@ -211,6 +212,18 @@
   .line.warn { color: var(--warn); } .line.debug { color: var(--debug); }
   .line.tip { color: var(--primary); }
   .line.info { color: var(--text); }
+  /* The web console's own REPL: typed commands echo in the accent color,
+     their results in the normal text color. */
+  .line.cmd { color: var(--primary); font-weight: 600; }
+  .console-input { display: flex; align-items: center; gap: 10px;
+    margin-top: 10px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 10px 14px; }
+  .console-input .prompt { color: var(--primary); font-weight: 700;
+    font-family: ui-monospace, monospace; }
+  .console-input input { flex: 1; background: transparent; border: none;
+    outline: none; color: var(--text);
+    font-family: ui-monospace, monospace; font-size: 13px; }
 
   .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
   .toolbar .spacer { flex: 1; }
@@ -412,17 +425,17 @@
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
           <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
         </button>
+        <button data-tab="about">
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></span>
+          <span class="nav-text"><span class="nav-title">About</span><span class="nav-sub">Version, author, license</span></span>
+        </button>
         <button data-tab="console">
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Console</span><span class="nav-sub">Live from the WebView</span></span>
+          <span class="nav-text"><span class="nav-title">Web Console</span><span class="nav-sub">Live from the WebView</span></span>
         </button>
         <button data-tab="logs">
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
           <span class="nav-text"><span class="nav-title">Logs</span><span class="nav-sub">App log</span></span>
-        </button>
-        <button data-tab="about">
-          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></span>
-          <span class="nav-text"><span class="nav-title">About</span><span class="nav-sub">Version, author, license</span></span>
         </button>
       </nav>
       <div class="side-foot">
@@ -492,14 +505,21 @@
     <div class="tab" id="tab-console">
       <div class="toolbar">
         <span class="spacer"></span>
+        <button class="btn-ghost" id="copyConsole">Copy</button>
         <button class="btn-ghost" id="clearConsole">Clear</button>
       </div>
       <div class="console" id="consoleOut"></div>
+      <div class="console-input">
+        <span class="prompt">&gt;</span>
+        <input id="consoleInput" autocomplete="off" spellcheck="false"
+          placeholder="Run JavaScript in the page (Enter to run, Up/Down for history)">
+      </div>
     </div>
 
     <!-- Logs -->
     <div class="tab" id="tab-logs">
       <div class="toolbar"><span class="spacer"></span>
+        <button class="btn-ghost" id="copyLogs">Copy</button>
         <button class="btn-ghost" id="refreshLogs">Refresh</button></div>
       <div class="console" id="logsOut"></div>
     </div>
@@ -591,7 +611,7 @@ const TAB_TITLES = {
   homeassistant: 'Home Assistant Configuration',
   voicesatellite: 'Voice Satellite',
   remote: 'Remote Administration',
-  device: 'Device', console: 'Console', logs: 'Logs', about: 'About',
+  device: 'Device', console: 'Web Console', logs: 'Logs', about: 'About',
 };
 
 function showTab(name, { push = true } = {}) {
@@ -881,6 +901,44 @@ async function loadSettings() {
     vbtn.textContent = 'Validate';
     vrow.appendChild(vbtn);
     connCard.appendChild(vrow);
+    // Secure context proxy, below Validate — hand-built here exactly like
+    // the device's connection card: the switch derives its enabled state
+    // from the URL scheme (https needs no proxy, so it sits disabled and
+    // off; plain http enables it, validation turns it on with a modal).
+    const spSetting = settings.find((s) => s.key === 'browser.secure_proxy');
+    {
+      const urlVal = (ha.find((s) => s.key === 'ha.url')?.value || '').trim();
+      const spu = (() => { try { return new URL(urlVal); } catch (_) { return null; } })();
+      const spHttp = spu && spu.protocol === 'http:'
+        && spu.hostname !== 'localhost' && spu.hostname !== '127.0.0.1';
+      const spRow = document.createElement('div');
+      spRow.className = 'row';
+      const spInfo = document.createElement('div');
+      spInfo.className = 'info';
+      spInfo.innerHTML = '<div class="name"></div><div class="desc"></div>';
+      spInfo.querySelector('.name').textContent = 'Secure context proxy';
+      spInfo.querySelector('.desc').textContent =
+        'Routes a plain http Home Assistant through a proxy inside the app '
+        + 'so the browser unlocks the microphone and other https-only '
+        + 'features. Available only for http URLs.';
+      spRow.appendChild(spInfo);
+      const spLbl = document.createElement('label');
+      spLbl.className = 'switch';
+      const spCb = document.createElement('input');
+      spCb.type = 'checkbox';
+      spCb.checked = spSetting?.value === true;
+      spCb.disabled = !spHttp;
+      if (!spHttp) spLbl.style.opacity = '.45';
+      spCb.addEventListener('change', () => api('/api/settings', {
+        method: 'PATCH',
+        body: JSON.stringify({ 'browser.secure_proxy': spCb.checked }),
+      }));
+      const spSl = document.createElement('span');
+      spSl.className = 'slider';
+      spLbl.append(spCb, spSl);
+      spRow.appendChild(spLbl);
+      connCard.appendChild(spRow);
+    }
     root.appendChild(connCard);
     const vdesc = vrow.querySelector('.desc');
 
@@ -890,6 +948,29 @@ async function loadSettings() {
     } catch (_) {}
     state.haConnected = !!status.connected;
     vbtn.addEventListener('click', async () => {
+      // A plain-http URL means the browser withholds the microphone and the
+      // rest of the https-only surface from the dashboard. Tell the user the
+      // secure context proxy is being turned on and why, then enable it.
+      const urlSetting = ha.find((s) => s.key === 'ha.url');
+      const proxySetting = settings.find((s) => s.key === 'browser.secure_proxy');
+      const u = (() => {
+        try { return new URL(urlSetting?.value || ''); } catch (_) { return null; }
+      })();
+      if (u && u.protocol === 'http:'
+        && u.hostname !== 'localhost' && u.hostname !== '127.0.0.1'
+        && proxySetting && proxySetting.value !== true) {
+        await messageBox({
+          title: 'Secure context proxy',
+          message: 'This Home Assistant URL uses plain http, and browsers '
+            + 'block the microphone and other features on http pages. Kiosk '
+            + 'Satellite will route the dashboard through a secure proxy '
+            + 'inside the app so everything works. You may need to sign in '
+            + 'to Home Assistant again on the tablet.',
+          buttons: ['OK'],
+        });
+        await api('/api/settings', { method: 'PATCH',
+          body: JSON.stringify({ 'browser.secure_proxy': true }) });
+      }
       vbtn.disabled = true; vbtn.textContent = 'Checking\u2026';
       const out = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json().catch(() => ({}));
       vbtn.disabled = false; vbtn.textContent = 'Validate';
@@ -919,20 +1000,14 @@ async function loadSettings() {
         dashboards.forEach((d) => {
           const url = `${rawBase}/${d.url_path}`;
           const selected = current === url || current.startsWith(url + '/');
-          const row = readOnlyRow(d.title || d.url_path, d.url_path,
-            selected ? '\u25c9' : '\u25cb');
-          const mark = row.querySelector('span');
-          mark.style.color = selected ? 'var(--primary)' : 'var(--muted)';
-          mark.style.fontSize = '18px';
-          row.style.cursor = 'pointer';
-          row.addEventListener('click', async () => {
-            await api('/api/settings', { method: 'PATCH',
-              body: JSON.stringify({ 'browser.start_url': url }) });
-            await api('/api/commands/loadUrl', { method: 'POST',
-              body: JSON.stringify({ url }) });
-            await loadSettings();
-          });
-          dcard.appendChild(row);
+          dcard.appendChild(radioRow(d.title || d.url_path, d.url_path,
+            selected, async () => {
+              await api('/api/settings', { method: 'PATCH',
+                body: JSON.stringify({ 'browser.start_url': url }) });
+              await api('/api/commands/loadUrl', { method: 'POST',
+                body: JSON.stringify({ url }) });
+              await loadSettings();
+            }));
         });
         if (!dashboards.length) dcard.appendChild(readOnlyRow('No dashboards found', '', ''));
       } catch (_) {
@@ -1552,6 +1627,21 @@ function readOnlyRow(name, desc, value) {
   row.appendChild(v);
   return row;
 }
+// A pick-one row (dashboard, satellite): a real radio control instead of a
+// text glyph. The whole row is the click target; the input is the visual,
+// kept in sync by each re-render.
+function radioRow(name, desc, selected, onPick) {
+  const row = readOnlyRow(name, desc, '');
+  row.querySelector('span').remove();
+  const r = document.createElement('input');
+  r.type = 'radio';
+  r.checked = selected;
+  r.style.cssText = 'width:19px; height:19px; margin:0; flex-shrink:0; pointer-events:none;';
+  row.appendChild(r);
+  row.style.cursor = 'pointer';
+  row.addEventListener('click', onPick);
+  return row;
+}
 function settingRow(s) {
   const row = document.createElement('div'); row.className = 'row';
   const info = document.createElement('div'); info.className = 'info';
@@ -1806,6 +1896,91 @@ async function loadConsole() {
 $('#clearConsole').addEventListener('click', () => {
   cmd('clearConsole'); $('#consoleOut').innerHTML = '';
 });
+
+// Copy a console-style pane as plain text. navigator.clipboard exists only
+// on secure origins and this admin page is plain http, so the execCommand
+// fallback is the path that actually runs day to day.
+async function copyPane(el, btn) {
+  const text = [...el.children].map((d) => d.textContent).join('\n');
+  let ok = false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    }
+  } catch (_) {}
+  if (!ok) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed; opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { ok = document.execCommand('copy'); } catch (_) {}
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = ok ? 'Copied' : 'Copy failed';
+  setTimeout(() => { btn.textContent = old; }, 1500);
+}
+$('#copyConsole').addEventListener('click', (e) => copyPane($('#consoleOut'), e.target));
+$('#copyLogs').addEventListener('click', (e) => copyPane($('#logsOut'), e.target));
+
+// The REPL half of the web console: JavaScript typed here runs in the
+// kiosk's page (the same evalJs the API exposes), the command echoes in
+// the pane and the result (or error) prints under it.
+{
+  const input = $('#consoleInput');
+  const history = [];
+  let histPos = -1;
+  input.addEventListener('keydown', async (e) => {
+    if (e.key === 'ArrowUp') {
+      if (history.length && histPos < history.length - 1) {
+        histPos += 1;
+        input.value = history[history.length - 1 - histPos];
+      }
+      e.preventDefault();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      if (histPos > 0) {
+        histPos -= 1;
+        input.value = history[history.length - 1 - histPos];
+      } else {
+        histPos = -1;
+        input.value = '';
+      }
+      e.preventDefault();
+      return;
+    }
+    if (e.key !== 'Enter') return;
+    const code = input.value.trim();
+    if (!code) return;
+    history.push(code);
+    histPos = -1;
+    input.value = '';
+    const out = $('#consoleOut');
+    appendLine(out, 'cmd', '> ' + code);
+    try {
+      const res = await cmd('evalJs', { code });
+      if (res.ok) {
+        // Only print an actual value. A statement (console.log, assignments,
+        // void calls) evaluates to null/undefined — and Android's WebView
+        // reports those as the STRINGS "null"/"undefined" (evaluateJavascript
+        // JSON-encodes its result) — echoing that after every command is
+        // just noise.
+        const d = res.data;
+        if (d !== undefined && d !== null && d !== 'null' && d !== 'undefined') {
+          appendLine(out, 'log', typeof d === 'string' ? d : JSON.stringify(d));
+        }
+      } else {
+        appendLine(out, 'error', res.error || 'evaluation failed');
+      }
+    } catch (_) {
+      appendLine(out, 'error', 'device unreachable');
+    }
+    out.scrollTop = out.scrollHeight;
+  });
+}
 async function loadLogs() {
   const { logs } = await (await api('/api/logs')).json();
   const el = $('#logsOut'); el.innerHTML = '';
@@ -2081,6 +2256,17 @@ function wizardSteps() {
       }
       const check = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json();
       if (!check.ok) throw wizConnectFail(check.error || '');
+      // Plain-http instance: enable the secure context proxy up front so
+      // the dashboard gets the https-only browser surface (microphone for
+      // Voice Satellite) from its very first load.
+      try {
+        const wu = new URL(url);
+        if (wu.protocol === 'http:'
+          && wu.hostname !== 'localhost' && wu.hostname !== '127.0.0.1') {
+          await api('/api/settings', { method: 'PATCH',
+            body: JSON.stringify({ 'browser.secure_proxy': true }) });
+        }
+      } catch (_) { /* not a parseable URL; validation already passed */ }
       const dashboards = await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json();
       wizard.dashboards = dashboards.data || [];
       wizard.dashboard = wizard.dashboards[0]?.url_path || null;
@@ -2094,13 +2280,9 @@ function wizardSteps() {
     body: (b) => {
       const list = wizardCard(b, true);
       wizard.dashboards.forEach((d) => {
-        const row = readOnlyRow(d.title || d.url_path, d.url_path,
-          wizard.dashboard === d.url_path ? '\u25c9' : '\u25cb');
-        const mark = row.querySelector('span');
-        mark.style.color = wizard.dashboard === d.url_path ? 'var(--primary)' : 'var(--muted)';
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', () => { wizard.dashboard = d.url_path; wizardRender(); });
-        list.appendChild(row);
+        list.appendChild(radioRow(d.title || d.url_path, d.url_path,
+          wizard.dashboard === d.url_path,
+          () => { wizard.dashboard = d.url_path; wizardRender(); }));
       });
       if (!wizard.dashboards.length) list.appendChild(readOnlyRow('No dashboards found', '', ''));
     },
@@ -2129,13 +2311,9 @@ function wizardSteps() {
           'Add an assist satellite in the Voice Satellite integration, or continue and pick one on the dashboard later.', ''));
       } else {
         wizard.satellites.forEach((s) => {
-          const on = wizard.satellite === s.entity_id;
-          const row = readOnlyRow(s.name || s.entity_id, s.entity_id, on ? '\u25c9' : '\u25cb');
-          const mark = row.querySelector('span');
-          mark.style.color = on ? 'var(--primary)' : 'var(--muted)';
-          row.style.cursor = 'pointer';
-          row.addEventListener('click', () => { wizard.satellite = s.entity_id; wizardRender(); });
-          sats.appendChild(row);
+          sats.appendChild(radioRow(s.name || s.entity_id, s.entity_id,
+            wizard.satellite === s.entity_id,
+            () => { wizard.satellite = s.entity_id; wizardRender(); }));
         });
       }
       // The settings pages' own switch control, not a checkbox glyph.
@@ -2205,6 +2383,8 @@ function wizardSteps() {
         addRow('displayOverOtherApps', 'Display over other apps',
           'Grant this permission if you want Kiosk Satellite to auto start when your device boots.');
       }
+      addRow('deviceAdmin', 'Screen control',
+        'Allows Kiosk Satellite to turn the screen off on request (device admin).');
       const refreshStatus = async () => {
         try {
           const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
@@ -2215,7 +2395,8 @@ function wizardSteps() {
             span.style.cssText =
               'white-space:nowrap; color:' + (ok ? 'var(--ok)' : 'var(--error)');
           }
-        } catch (_) {}
+          return p;
+        } catch (_) { return null; }
       };
       refreshStatus();
       // Tonal, like the wizard's Back button, Finish stays the one
@@ -2235,9 +2416,18 @@ function wizardSteps() {
             'microphone',
             ...(background ? ['notifications', 'batteryOptimizations'] : []),
             ...(bootStart ? ['overlay'] : []),
+            'deviceAdmin',
           ] }) });
         btn.textContent = 'Permissions requested on the device';
-        await refreshStatus();
+        // The runtime dialogs are awaited by the request, but the device
+        // admin activation is a full screen the request only LAUNCHES: the
+        // user taps Activate after this returns. Keep re-reading until the
+        // grants settle so the rows catch up.
+        for (let i = 0; i < 20; i++) {
+          const p = await refreshStatus();
+          if (p && Object.keys(statusSpans).every((k) => !!p[k])) break;
+          await new Promise((r) => setTimeout(r, 2500));
+        }
       });
       b.appendChild(btn);
     },

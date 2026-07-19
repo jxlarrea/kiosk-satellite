@@ -8,6 +8,7 @@ import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
 import 'managers/motion/motion_manager.dart';
+import 'managers/proxy/proxy_manager.dart';
 import 'managers/remote/remote_manager.dart';
 import 'managers/screen/screen_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
@@ -24,7 +25,12 @@ class AppContainer {
     settings = SettingsManager(bus, commands, log);
     device = DeviceManager(bus, commands, log, settings);
     screen = ScreenManager(bus, commands, log, settings);
+    proxy = ProxyManager(bus, commands, log, settings);
     browser = BrowserManager(bus, commands, log, settings);
+    // Composition-root wiring, not a manager-to-manager reference: every
+    // page load funnels through BrowserManager.loadUrl, and the proxy is
+    // the one that knows whether the URL must move to the loopback origin.
+    browser.urlMapper = proxy.mapUrl;
     kiosk = KioskManager(bus, commands, log, settings);
     screensaver = ScreensaverManager(bus, commands, log, settings);
     motion = MotionManager(bus, commands, log, settings);
@@ -41,6 +47,7 @@ class AppContainer {
   late final SettingsManager settings;
   late final DeviceManager device;
   late final ScreenManager screen;
+  late final ProxyManager proxy;
   late final BrowserManager browser;
   late final KioskManager kiosk;
   late final ScreensaverManager screensaver;
@@ -57,6 +64,7 @@ class AppContainer {
         settings,
         device,
         screen,
+        proxy,
         browser,
         jsApi,
         kiosk,
