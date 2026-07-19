@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -7,12 +8,14 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
-/// Brightness, keep-awake, and (simulated) screen power.
+/// Brightness, keep-awake, and screen power.
 ///
-/// True hardware screen-off requires device-owner privileges on Android; the
-/// portable approach — same as kiosk browsers use — is brightness 0 plus a
-/// black overlay, which the screensaver manager renders. "Screen on/off"
-/// here therefore tracks a logical state that other managers react to.
+/// "Screen on/off" is real display power, never a brightness trick: on is a
+/// wake-lock poke (no permission needed), off is device-admin lockNow — an
+/// active admin is the only way Android lets an app power the panel off, so
+/// without the grant the off button reports why instead of faking it. The
+/// black screensaver keeps its own brightness-zero overlay (it must keep the
+/// app alive for motion and wake word), independent of these commands.
 class ScreenManager extends Manager {
   ScreenManager(super.bus, super.commands, super.log, this._settings);
 
@@ -22,7 +25,6 @@ class ScreenManager extends Manager {
   String get name => 'screen';
 
   bool _screenOn = true;
-  double? _savedBrightness;
 
   bool get isScreenOn => _screenOn;
 
@@ -78,7 +80,7 @@ class ScreenManager extends Manager {
       ))
       ..register(Command(
         name: 'screenOn',
-        description: 'Turn the screen on',
+        description: 'Wake the display (works on a sleeping panel)',
         handler: (_) async {
           await screenOn();
           return const CommandResult.ok();
@@ -86,10 +88,26 @@ class ScreenManager extends Manager {
       ))
       ..register(Command(
         name: 'screenOff',
-        description: 'Turn the screen off (black overlay + zero brightness)',
+        description:
+            'Turn the display off (needs the device admin permission)',
         handler: (_) async {
-          await screenOff();
-          return const CommandResult.ok();
+          if (await screenOff()) return const CommandResult.ok();
+          // Missing grant: put Android's own activation screen up on the
+          // device — one tap there and the next press works. Via the
+          // Activity when one is up (Samsung shows the proper dialog only
+          // then); the app-context fallback covers a detached Activity.
+          try {
+            await _admin.invokeMethod('requestScreenOffAdmin');
+          } catch (_) {
+            try {
+              await _background.invokeMethod('requestScreenOffAdmin');
+            } catch (_) {}
+          }
+          return const CommandResult.fail(
+            'Turning the screen off needs a one-time permission. The tablet '
+            'is now showing the "device admin" grant screen. Approve it '
+            'there, then try again.',
+          );
         },
       ))
       ..register(Command(
@@ -150,22 +168,41 @@ class ScreenManager extends Manager {
     }
   }
 
-  Future<void> screenOff() async {
-    if (!_screenOn) return;
-    _screenOn = false;
-    _savedBrightness = await getBrightness();
-    await setBrightness(0);
-    bus.publish(const ScreenStateChanged(on: false));
+  /// App-scoped bridge (lives on the cached engine); carries the wake-lock
+  /// poke that lights a sleeping panel and the device-admin lockNow that
+  /// truly powers it off.
+  static const _background = MethodChannel('kiosk_satellite/background');
+
+  /// Activity-scoped (see MainActivity): the device-admin grant dialog.
+  static const _admin = MethodChannel('kiosk_satellite/admin');
+
+  /// True panel off via device-admin lockNow — never a brightness trick;
+  /// the brightness slider owns brightness (issue #2). Returns false when
+  /// the device admin permission is not active, in which case nothing
+  /// happens at all.
+  Future<bool> screenOff() async {
+    var ok = false;
+    try {
+      ok = await _background.invokeMethod('screenOff') == true;
+    } catch (_) {}
+    if (ok && _screenOn) {
+      _screenOn = false;
+      bus.publish(const ScreenStateChanged(on: false));
+    }
+    return ok;
   }
 
   Future<void> screenOn() async {
+    // The wake poke runs before the logical-state guard, and must: the power
+    // button (or screenOff above) puts the display to sleep without this
+    // manager necessarily hearing about it, so _screenOn can still read true
+    // in exactly the situation the admin's "Screen on" exists for. It is a
+    // no-op on an already-lit panel and needs no permission.
+    try {
+      await _background.invokeMethod('wakeScreen');
+    } catch (_) {}
     if (_screenOn) return;
     _screenOn = true;
-    if (_savedBrightness != null) {
-      await setBrightness(_savedBrightness!);
-    } else {
-      await resetBrightness();
-    }
     bus.publish(const ScreenStateChanged(on: true));
   }
 }

@@ -15,8 +15,11 @@ import '../settings/settings_manager.dart';
 ///   black — brightness 0 + a black overlay (rendered by the UI layer, which
 ///           watches [overlayActive])
 ///
-/// Dimming and restoring go through 'setBrightness'/'screenOn'/'screenOff'
-/// registry commands so this manager never references the screen manager.
+/// Dimming and restoring go through 'setBrightness'/'screenOn' registry
+/// commands so this manager never references the screen manager. Never
+/// 'screenOff': that is real display power (device-admin lockNow), which
+/// would freeze the app — the screensaver's black is brightness zero
+/// behind an overlay, with everything still running.
 class ScreensaverManager extends Manager {
   ScreensaverManager(super.bus, super.commands, super.log, this._settings);
 
@@ -156,11 +159,15 @@ class ScreensaverManager extends Manager {
         final dim = _settings.get(defs.screensaverDimLevel).toDouble();
         await commands.execute('setBrightness', {'level': dim});
       case 'black':
-        // The panel off *is* the black, and it saves the backlight. The overlay
-        // is the catch: if the OS refuses screenOff, the black Container still
-        // covers whatever is behind it.
+        // Backlight to zero behind a black overlay — deliberately NOT the
+        // screenOff command, which truly powers the panel off (device-admin
+        // lockNow) and would freeze the app with it. The black screensaver
+        // must stay alive: motion wake, the wake word UI and the admin's
+        // live view all keep running behind the dark glass.
         activeView.value = 'black';
-        await commands.execute('screenOff', const {});
+        final brightness = await commands.execute('getBrightness', const {});
+        _savedBrightness = (brightness.data as num?)?.toDouble();
+        await commands.execute('setBrightness', {'level': 0});
       default:
         // clock / media / website: a lit overlay showing content. The screen
         // stays at its normal brightness — dimming a clock to 10% defeats it.

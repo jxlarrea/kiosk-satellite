@@ -368,7 +368,7 @@ class WakeWordManager extends Manager {
               'configured by page: ${config.engine.name} '
               '[${config.models.map((m) => m.id).join(', ')}]'
               '${config.stopModel == null ? '' : ' + stop:${config.stopModel!.id}'}'
-              '${available ? '' : ' (no native runner — reporting unavailable)'}');
+              '${available ? '' : ' (no native runner, reporting unavailable)'}');
           await _sync();
           // A page that has just (re)configured us owns no interruptible state
           // yet, so it cannot want the stop word armed. Without this, a reload

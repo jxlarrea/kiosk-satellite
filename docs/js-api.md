@@ -40,7 +40,7 @@ defensive style of Voice Satellite's kiosk wrapper.
 | `getDeviceInfo()` | `{uuid, name, model, os, osVersion, appVersion, battery, charging}` | Device identity + status |
 | `getBrightness()` | `number` 0..1 | Current hardware backlight, normalized |
 | `setBrightness(level)` | `boolean` | Set backlight, `level` 0..1 |
-| `screenOn()` / `screenOff()` | `boolean` | Force screen power state |
+| `screenOn()` / `screenOff()` | `boolean` | Real display power: on wakes a sleeping panel; off needs the device admin permission (see remote API docs) |
 | `isScreenOn()` | `boolean` | Current screen power state |
 
 ### Screensaver

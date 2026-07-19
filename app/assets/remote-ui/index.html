@@ -632,8 +632,58 @@ $('#tabs').addEventListener('click', (e) => {
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1), { push: false }));
 
 /* ---- Dashboard ---- */
+// Styled stand-in for alert()/confirm(): the same backdrop-and-card
+// language as the media browser, in the page's theme. Resolves to the
+// label of the pressed button.
+function messageBox({ title, message, buttons = ['OK'] }) {
+  return new Promise((resolve) => {
+    const back = document.createElement('div');
+    back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+      + 'display:grid; place-items:center; z-index:1000; padding:16px';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText =
+      'width:100%; max-width:440px; margin:0; padding:30px 28px';
+    const h = document.createElement('h3');
+    h.textContent = title;
+    h.style.cssText = 'margin:0 0 10px; font-size:16px; font-weight:700;';
+    const p = document.createElement('p');
+    p.textContent = message;
+    p.style.cssText =
+      'margin:0 0 18px; color:var(--muted); font-size:14px; line-height:1.55;';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; justify-content:flex-end; gap:10px;';
+    buttons.forEach((label, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = label;
+      const primary = i === buttons.length - 1;
+      btn.className = primary ? 'btn-primary' : 'btn-ghost';
+      if (primary) btn.style.cssText = 'width:auto; padding:10px 20px;';
+      btn.addEventListener('click', () => { back.remove(); resolve(label); });
+      row.appendChild(btn);
+    });
+    card.append(h, p, row);
+    back.appendChild(card);
+    document.body.appendChild(back);
+  });
+}
+
 document.querySelectorAll('.action[data-cmd]').forEach((b) =>
-  b.addEventListener('click', () => cmd(b.dataset.cmd)));
+  b.addEventListener('click', async () => {
+    // Surface refusals, with a retry loop: the common case is "Screen off"
+    // pending its one-tap device-admin grant on the tablet — approve there,
+    // press Retry here.
+    let res = await cmd(b.dataset.cmd).catch(() => null);
+    while (res && res.ok === false && res.error) {
+      const choice = await messageBox({
+        title: b.textContent.trim(),
+        message: res.error,
+        buttons: ['Cancel', 'Retry'],
+      });
+      if (choice !== 'Retry') break;
+      res = await cmd(b.dataset.cmd).catch(() => null);
+    }
+  }));
 $('#brightness').addEventListener('input', (e) =>
   $('#brightnessValue').textContent = `${e.target.value}%`);
 $('#brightness').addEventListener('change', (e) =>

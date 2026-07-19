@@ -1,5 +1,7 @@
 package me.jxl.kiosk_satellite
 
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -54,6 +56,32 @@ class BackgroundBridge(
                     result.success(null)
                 }
                 "bringToFront" -> result.success(bringToFront())
+                // "Screen on" from the admin or the screensaver: light a
+                // genuinely sleeping panel. Brightness restore alone cannot.
+                "wakeScreen" -> result.success(wakeScreen())
+                // True panel off. Android only grants this to an active
+                // device admin (lockNow); plain apps have no API for it.
+                "screenOff" -> result.success(screenOff())
+                "isScreenOffAvailable" -> result.success(isAdminActive())
+                // The standard grant flow: Android's own "activate device
+                // admin app?" screen, one tap to approve. Opened on the
+                // device whenever "Screen off" is pressed without the grant.
+                "requestScreenOffAdmin" -> {
+                    context.startActivity(
+                        Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                            putExtra(
+                                DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                                ComponentName(context, KioskAdminReceiver::class.java),
+                            )
+                            putExtra(
+                                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                                "Lets Kiosk Satellite turn the screen off on request.",
+                            )
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        },
+                    )
+                    result.success(null)
+                }
                 // Samsung in particular will stop the service after a few hours
                 // of "unused app" regardless of what the foreground-service rules
                 // say. This is the only reliable way to be left alone.
@@ -70,6 +98,44 @@ class BackgroundBridge(
     private fun canDrawOverlays(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
 
+    private fun isAdminActive(): Boolean = try {
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        dpm.isAdminActive(ComponentName(context, KioskAdminReceiver::class.java))
+    } catch (_: Exception) {
+        false
+    }
+
+    private fun screenOff(): Boolean = try {
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        if (dpm.isAdminActive(ComponentName(context, KioskAdminReceiver::class.java))) {
+            dpm.lockNow()
+            true
+        } else {
+            false
+        }
+    } catch (_: Exception) {
+        false
+    }
+
+    private fun wakeScreen(): Boolean {
+        return try {
+            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isInteractive) {
+                @Suppress("DEPRECATION")
+                pm.newWakeLock(
+                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                            or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                    "ks:screenWake",
+                ).acquire(5000)
+                true
+            } else {
+                false
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     private fun bringToFront(): Boolean {
         // A sleeping panel first: starting the Activity does not wake the
         // display, so a wake word heard with the screen off would answer
@@ -77,17 +143,7 @@ class BackgroundBridge(
         // re-wake — and deliberately before the overlay-grant check, since
         // waking the screen needs no grant at all (the common case is the
         // kiosk still frontmost, just dark).
-        try {
-            val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            if (!pm.isInteractive) {
-                @Suppress("DEPRECATION")
-                pm.newWakeLock(
-                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK
-                            or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                    "ks:wakeWordScreenOn",
-                ).acquire(5000)
-            }
-        } catch (_: Exception) {}
+        wakeScreen()
         if (!canDrawOverlays()) return false
         return try {
             // Resume the existing task exactly the way tapping the launcher icon

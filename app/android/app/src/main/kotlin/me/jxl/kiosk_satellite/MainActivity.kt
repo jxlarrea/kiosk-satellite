@@ -19,6 +19,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
     private var installerChannel: MethodChannel? = null
+    private var adminChannel: MethodChannel? = null
     private var cameraMotion: CameraMotion? = null
     private var screenCapture: ScreenCapture? = null
     private var kioskLock: KioskLock? = null
@@ -67,6 +68,36 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+        // Device-admin grant for "Screen off" (lockNow). Launched from the
+        // Activity, not the application context: Samsung only presents the
+        // proper one-tap activation dialog to a foreground Activity — the
+        // NEW_TASK variant lands on the admin-apps list instead (or nowhere).
+        adminChannel = MethodChannel(messenger, "kiosk_satellite/admin")
+        adminChannel?.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "requestScreenOffAdmin" -> {
+                    try {
+                        startActivity(
+                            Intent(android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                                putExtra(
+                                    android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                                    android.content.ComponentName(
+                                        this@MainActivity, KioskAdminReceiver::class.java),
+                                )
+                                putExtra(
+                                    android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                                    "Lets Kiosk Satellite turn the screen off on request.",
+                                )
+                            },
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("admin", e.message, null)
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
         // Cold launch: Dart's provisioning pull runs at process start, before
         // this Activity exists, so push the launch-intent extra now.
         intent?.getStringExtra("ks.provision")?.let {
@@ -87,6 +118,8 @@ class MainActivity : FlutterActivity() {
         provisionChannel = null
         installerChannel?.setMethodCallHandler(null)
         installerChannel = null
+        adminChannel?.setMethodCallHandler(null)
+        adminChannel = null
     }
 
     // Kiosk lockdown sees every key and pointer first: volume keys may be
