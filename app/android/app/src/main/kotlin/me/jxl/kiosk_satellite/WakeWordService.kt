@@ -45,6 +45,20 @@ class WakeWordService : Service() {
         private const val CHANNEL_ID = "wake_word_listening"
         private const val NOTIFICATION_ID = 0x574B // 'WK'
 
+        /// Live while the foreground service is up. Lets the exit path (see
+        /// BackgroundBridge) tell a stop-then-die from a stop-and-stay.
+        @Volatile
+        var isRunning = false
+            private set
+
+        /// Set by the exit path just before stopping: onDestroy then ends the
+        /// process. Killing from there — after the service has actually left its
+        /// started state — is what START_STICKY cannot undo. Killing on a timer
+        /// instead (while the stop is still in flight) let Android treat it as a
+        /// crash of a started sticky service and revive the whole process.
+        @Volatile
+        var exiting = false
+
         fun start(context: Context) {
             ContextCompat.startForegroundService(
                 context, Intent(context, WakeWordService::class.java),
@@ -58,8 +72,18 @@ class WakeWordService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    override fun onDestroy() {
+        super.onDestroy()
+        isRunning = false
+        if (exiting) {
+            exiting = false
+            android.os.Process.killProcess(android.os.Process.myPid())
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         createChannel()
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE

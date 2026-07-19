@@ -54,7 +54,19 @@ class KioskManager extends Manager {
           log.info(name, 'exiting application');
           // Pinned tasks refuse to be backgrounded; unpin before leaving.
           await _apply(force: false);
-          await SystemNavigator.pop();
+          // A true quit: the native side stops the foreground service (so
+          // START_STICKY will not revive us), clears the task, and ends the
+          // process. SystemNavigator.pop only finished the Activity and left
+          // the service keeping the app alive in the background.
+          try {
+            await _backgroundChannel.invokeMethod<void>('exit');
+          } on PlatformException catch (e) {
+            log.warn(name, 'native exit failed, falling back: $e');
+            await SystemNavigator.pop();
+          } on MissingPluginException catch (e) {
+            log.warn(name, 'native exit unavailable, falling back: $e');
+            await SystemNavigator.pop();
+          }
           return const CommandResult.ok();
         },
       ),

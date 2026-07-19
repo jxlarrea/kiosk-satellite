@@ -41,6 +41,16 @@ class BackgroundBridge(
                     WakeWordService.stop(context)
                     result.success(true)
                 }
+                // A real quit, not SystemNavigator.pop (which only finishes the
+                // Activity and leaves the foreground service holding the process
+                // alive in the background). Stop the service so START_STICKY will
+                // not resurrect us, drop the task from recents, then end the
+                // process. Runs from the application context so it also works
+                // when triggered with no Activity on screen (the remote admin).
+                "exit" -> {
+                    exitApp()
+                    result.success(true)
+                }
                 // Can we start our own Activity while another app is in front?
                 // Android 10 forbids it, and "Display over other apps" is the
                 // exemption that gets it back. Without it the wake word is heard
@@ -92,6 +102,38 @@ class BackgroundBridge(
                 }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun exitApp() {
+        // Finish every Activity of ours and clear the task from recents. Works
+        // without an Activity reference, so it is valid from this app-context
+        // bridge whether or not the kiosk is currently on screen.
+        try {
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE)
+                as android.app.ActivityManager
+            for (task in am.appTasks) task.finishAndRemoveTask()
+        } catch (_: Exception) {
+        }
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        if (WakeWordService.isRunning) {
+            // The keep-alive foreground service is what fights a clean exit: kill
+            // the process on a timer while it is still started and START_STICKY
+            // revives everything. So stop it and let its onDestroy end the
+            // process, by which point it has left its started state for good.
+            WakeWordService.exiting = true
+            WakeWordService.stop(context)
+            // Safety net only: if onDestroy never lands, still leave. Long enough
+            // that the clean path always wins the race.
+            handler.postDelayed({
+                android.os.Process.killProcess(android.os.Process.myPid())
+            }, 2000)
+        } else {
+            // Nothing keeping the process alive; end it once the task-removal
+            // above has drained off the main looper.
+            handler.postDelayed({
+                android.os.Process.killProcess(android.os.Process.myPid())
+            }, 200)
         }
     }
 
