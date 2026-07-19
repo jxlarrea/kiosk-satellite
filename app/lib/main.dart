@@ -74,6 +74,12 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
     with WidgetsBindingObserver {
   StreamSubscription<SettingChanged>? _sub;
 
+  /// When the Activity last went to the background (screen off, app switch).
+  /// A resume after more than a few seconds of this may thaw the WebView with
+  /// a half-open HA socket, so we nudge it to reconnect (see BrowserManager).
+  DateTime? _backgroundedAt;
+  static const _reconnectAfterBackground = Duration(seconds: 5);
+
   @override
   void initState() {
     super.initState();
@@ -87,10 +93,23 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Coming back from an OS screen (permission grants, app settings) is
-    // another way the window returns without its immersive flags.
+    if (state == AppLifecycleState.paused) {
+      _backgroundedAt = DateTime.now();
+      return;
+    }
     if (state == AppLifecycleState.resumed) {
+      // Coming back from an OS screen (permission grants, app settings) is
+      // another way the window returns without its immersive flags.
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      final since = _backgroundedAt;
+      _backgroundedAt = null;
+      // Only after a real background spell: a long freeze is what leaves the
+      // HA socket half-open. Skip brief inactive flickers (dialogs, the
+      // drawer) so a healthy connection is never needlessly cycled.
+      if (since != null &&
+          DateTime.now().difference(since) >= _reconnectAfterBackground) {
+        widget.container.browser.reconnectHaSocket();
+      }
     }
   }
 

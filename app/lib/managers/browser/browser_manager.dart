@@ -388,6 +388,41 @@ class BrowserManager extends Manager {
     return '$result';
   }
 
+  /// Force the Home Assistant frontend to re-establish its WebSocket.
+  ///
+  /// After the WebView is frozen (screen off, Doze, backgrounded) it can thaw
+  /// holding a half-open socket: the client still reads it as OPEN, so the HA
+  /// frontend never reconnects. Everything riding that one connection then
+  /// silently stops — live entity state, the Voice Satellite pipeline, and
+  /// integrations like browser_mod (whose backend has long since dropped the
+  /// browser, so its navigate/popup commands go nowhere). Closing the socket
+  /// makes home-assistant-js-websocket reconnect and every subscription
+  /// re-register, with no page reload — the page, the VS session and the wake
+  /// word all stay loaded. A no-op on non-HA pages.
+  Future<void> reconnectHaSocket() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final result = await controller.evaluateJavascript(source: '''
+      (function () {
+        try {
+          var ha = document.querySelector('home-assistant');
+          var conn = ha && ha.hass && ha.hass.connection;
+          if (!conn) return 'no-connection';
+          if (typeof conn.reconnect === 'function') {
+            conn.reconnect(true);
+            return 'reconnect';
+          }
+          if (conn.socket) {
+            conn.socket.close();
+            return 'socket-closed';
+          }
+          return 'no-socket';
+        } catch (e) { return 'error: ' + e; }
+      })()
+    ''');
+    log.info(name, 'HA socket nudge: $result');
+  }
+
   /// Evaluate JavaScript in the current page (fire-and-forget helper for the
   /// UI layer, e.g. applying/removing kiosk-mode CSS).
   Future<void> runJs(String source) async {
