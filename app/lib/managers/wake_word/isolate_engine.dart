@@ -204,6 +204,18 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   DetectionCallback? _onDetection;
   StopDetectionCallback? _onStopDetection;
   EngineFailureCallback? _onFailure;
+  void Function(Map<String, Object?>)? _onTelemetry;
+  bool _telemetryOn = false;
+
+  @override
+  set onTelemetry(void Function(Map<String, Object?>)? sink) =>
+      _onTelemetry = sink;
+
+  @override
+  void setTelemetry(bool enabled) {
+    _telemetryOn = enabled;
+    _isolatePort?.send({'type': WakeMsg.setTelemetry, 'enabled': enabled});
+  }
   Completer<bool>? _ready;
   Completer<void>? _stopped;
   Map<String, Object>? _pendingInit;
@@ -394,6 +406,10 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
         _isolatePort!.send(_pendingInit);
         _pendingInit = null;
       }
+      // A restart mid-test must re-arm telemetry on the fresh isolate.
+      if (_telemetryOn) {
+        _isolatePort!.send({'type': WakeMsg.setTelemetry, 'enabled': true});
+      }
       return;
     }
     if (msg is List) {
@@ -418,6 +434,8 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
         }
       case WakeMsg.detection:
         _onDetectionMessage(msg);
+      case WakeMsg.telemetry:
+        _onTelemetry?.call(msg.cast<String, Object?>());
       case WakeMsg.error:
         log.error(tag, 'isolate: ${msg['message']}');
         _ready?.complete(false);

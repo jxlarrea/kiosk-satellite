@@ -89,6 +89,42 @@ class WakeWordManager extends Manager {
   /// runner for openWakeWord".
   String? _releaseReason;
 
+  /// Per-inference telemetry for the wake-word tester. Broadcast: the tester
+  /// dialog subscribes while it is open. Off (no engine overhead) otherwise.
+  final _telemetry = StreamController<Map<String, Object?>>.broadcast();
+  int _testers = 0;
+
+  /// Live per-inference scores from the running engine, while a tester holds
+  /// [startTest] open.
+  Stream<Map<String, Object?>> get telemetry => _telemetry.stream;
+
+  /// Begin streaming telemetry from whichever engine is running. Reference
+  /// counted so overlapping testers (device + remote) share one feed.
+  void startTest() {
+    _testers++;
+    if (_testers == 1) _applyTelemetry();
+  }
+
+  void stopTest() {
+    if (_testers == 0) return;
+    _testers--;
+    if (_testers == 0) _applyTelemetry();
+  }
+
+  /// Point the active engine's telemetry at our stream (or unhook it).
+  /// Re-run whenever the running engine changes, so requesting a test
+  /// before the engine is up — or across an engine switch — still lands on
+  /// the one actually inferring.
+  void _applyTelemetry() {
+    final want = _testers > 0;
+    _engine.onTelemetry = want
+        ? ((m) {
+            if (!_telemetry.isClosed) _telemetry.add(m);
+          })
+        : null;
+    _engine.setTelemetry(want);
+  }
+
   bool get enabled => _settings.get(defs.wakeWordEnabled);
 
   /// Actively detecting. The engine can be running (mic open, models loaded)
@@ -552,6 +588,24 @@ class WakeWordManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'startWakeWordTest',
+        description:
+            'Start streaming per-inference wake-word telemetry (score, '
+            'threshold, rms, latency, near-miss) for the wake word tester',
+        handler: (_) async {
+          startTest();
+          return const CommandResult.ok();
+        },
+      ))
+      ..register(Command(
+        name: 'stopWakeWordTest',
+        description: 'Stop wake-word telemetry streaming',
+        handler: (_) async {
+          stopTest();
+          return const CommandResult.ok();
+        },
+      ))
+      ..register(Command(
         name: 'benchmarkVsww',
         description:
             'Benchmark vsWakeWord ONNX inference across CPU/XNNPACK/NNAPI '
@@ -680,6 +734,9 @@ class WakeWordManager extends Manager {
             'listening (${_config!.engine.name})'
             '${_engine.supportsStopWord ? ' + stop word' : ''}');
         _runningEngine = _engine;
+        // A tester opened before this engine came up (or across an engine
+        // switch) still gets its telemetry.
+        if (_testers > 0) _applyTelemetry();
       } else if (!_failed) {
         // The engine reports its own failures (a refused mic, models that would
         // not download) through onFailure, which has already run and said

@@ -32,6 +32,8 @@ void vswwIsolateEntry(SendPort mainPort) {
           worker.resumeDetection(msg['absSample'] as int?);
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
+        case WakeMsg.setTelemetry:
+          worker.setTelemetry(msg['enabled'] == true);
         case WakeMsg.stop:
           worker.stop();
           port.close();
@@ -288,6 +290,10 @@ class _IsolateWorker {
     return math.sqrt(sum / samples.length);
   }
 
+  bool _telemetry = false;
+
+  void setTelemetry(bool enabled) => _telemetry = enabled;
+
   void _infer() {
     final ring = _ring, scratch = _scratch, extractor = _extractor;
     if (ring == null || scratch == null || extractor == null) return;
@@ -304,7 +310,8 @@ class _IsolateWorker {
     for (var i = 0; i < n; i++) {
       sumSq += scratch[i] * scratch[i];
     }
-    final silent = math.sqrt(sumSq / n) < _rmsVeto;
+    final rms = math.sqrt(sumSq / n);
+    final silent = rms < _rmsVeto;
 
     final features = extractor.extract(scratch, newSamples: newSamples);
     _input!.write(features);
@@ -316,10 +323,13 @@ class _IsolateWorker {
       if (k.isStop ? !_stopArmed : _detected) continue;
       final tOut = k.manifest.tOut;
       final vocab = k.manifest.ctc.vocabSize;
+      final sw = _telemetry ? (Stopwatch()..start()) : null;
       final logits = _run(k);
+      sw?.stop();
       if (logits == null) continue;
 
-      final perWindow = k.decoder.match(k.decoder.decode(logits, tOut, vocab));
+      final decode = k.decoder.decode(logits, tOut, vocab);
+      final perWindow = k.decoder.match(decode);
       k.stream.update(logits, newSamples, tOut, vocab);
       final streamRes = k.manifest.runtime.streamMatch
           ? k.stream.analyze()
@@ -343,6 +353,42 @@ class _IsolateWorker {
         targetIndex: combined.targetIndex,
         nowMs: nowMs,
       );
+      if (_telemetry && !k.isStop) {
+        // A CTC model has no continuous probability; the meaningful signal
+        // is the matched confidence when the decoder aligns a target (a hit
+        // or a below-gate near miss), plus what phonemes it actually
+        // decoded — the whole point of the tester for vsWakeWord: seeing
+        // that it heard [ax l eh k s ax] and how far that is from the
+        // target. Blank frames dropped; only rendered when speech is
+        // present, so the log is signal not silence.
+        final conf = combined.matchedConfidence;
+        final decoded = k.manifest.ctc.phonemesFor(decode.ids);
+        _main.send({
+          'type': WakeMsg.telemetry,
+          'id': k.id,
+          'wakeWord': k.wakeWord,
+          't': nowMs,
+          'score': conf.isFinite ? conf : 0.0,
+          'threshold': combined.gateThreshold.isFinite
+              ? combined.gateThreshold
+              : (k.manifest.ctc.minMatchedConfidence.isFinite
+                    ? k.manifest.ctc.minMatchedConfidence
+                    : 0.0),
+          'fired': fired,
+          'nearMiss': conf.isFinite && !fired,
+          'editDistance': combined.editDistance < (1 << 20)
+              ? combined.editDistance
+              : -1,
+          'matchedConfidence': conf.isFinite ? conf : null,
+          'decoded': decoded,
+          'rms': rms,
+          'latencyUs': sw?.elapsedMicroseconds ?? 0,
+        });
+      }
+      // Tester open: the hit is in telemetry above, but must not fire a
+      // real detection (that would start a voice interaction). Keep
+      // scoring — do not latch _detected.
+      if (fired && _telemetry) continue;
       if (fired) {
         if (k.isStop) {
           _log('info',

@@ -28,6 +28,8 @@ void mwwIsolateEntry(SendPort mainPort) {
           worker.resumeDetection(msg['absSample'] as int?);
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
+        case WakeMsg.setTelemetry:
+          worker.setTelemetry(msg['enabled'] == true);
         case WakeMsg.stop:
           worker.stop();
           port.close();
@@ -174,10 +176,22 @@ class _MwwWorker {
     }
   }
 
+  bool _telemetry = false;
+  double _chunkRms = 0;
+
+  void setTelemetry(bool enabled) => _telemetry = enabled;
+
   void _ingest(Float64List chunk) {
     final frontend = _frontend;
     if (frontend == null) return;
     _absSamples += chunk.length;
+    if (_telemetry) {
+      var sum = 0.0;
+      for (final s in chunk) {
+        sum += s * s;
+      }
+      _chunkRms = math.sqrt(sum / chunk.length);
+    }
     final scoreThisChunk = _shouldScore(chunk);
 
     // One 80 ms chunk yields 8 feature frames (10 ms step). The frontend is fed
@@ -193,12 +207,34 @@ class _MwwWorker {
           k.accum.clear();
           continue;
         }
+        final sw = _telemetry ? (Stopwatch()..start()) : null;
         final probability = _invoke(k);
+        sw?.stop();
         k.accum.clear();
         if (probability == null) continue;
 
         final trigger = k.gate.update(probability, _absSamples ~/ 16);
+        if (_telemetry && !k.isStop) {
+          // The windowed mean is what the gate compares to the cutoff; the
+          // raw per-inference probability is the spikier underlying signal.
+          _main.send({
+            'type': WakeMsg.telemetry,
+            'id': k.id,
+            'wakeWord': k.wakeWord,
+            't': _absSamples ~/ 16,
+            'score': k.gate.windowMean,
+            'raw': probability,
+            'threshold': k.gate.cutoff,
+            'fired': trigger != null,
+            'rms': _chunkRms,
+            'latencyUs': sw?.elapsedMicroseconds ?? 0,
+          });
+        }
         if (trigger == null) continue;
+        // Tester open: the hit is recorded in telemetry above, but must not
+        // fire a real detection (that would start a voice interaction). Keep
+        // scoring — do not latch _detected — so the chart stays live.
+        if (_telemetry) continue;
 
         if (k.isStop) {
           _log(

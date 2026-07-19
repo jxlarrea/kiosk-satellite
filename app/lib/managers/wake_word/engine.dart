@@ -287,6 +287,13 @@ abstract class WakeWordEngine {
   /// so it is independent of [pauseDetection].
   Future<void> setStopWordActive(bool active) async {}
 
+  /// Per-inference telemetry for the wake-word tester. Set a sink and turn
+  /// it on to receive one map per model per inference (score, threshold,
+  /// rms, latency, and any near-miss detail); off in normal operation to
+  /// avoid the overhead. Base engines that cannot report it stay silent.
+  set onTelemetry(void Function(Map<String, Object?>)? sink) {}
+  void setTelemetry(bool enabled) {}
+
   /// Pause/resume *detection* without tearing the engine down. The mic stays
   /// open and the models stay loaded, so resuming is instant — as opposed to
   /// stop()+start(), which re-downloads/recompiles every model.

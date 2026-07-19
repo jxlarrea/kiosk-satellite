@@ -17,9 +17,17 @@ class WakeMsg {
   static const log = 'log';
   static const stopped = 'stopped';
 
+  /// Per-inference score, sent only while the wake-word tester is open. One
+  /// per model per inference: {id, wakeWord, t, score, threshold, fired,
+  /// nearMiss, editDistance, latencyUs}. High volume, hence gated.
+  static const telemetry = 'telemetry';
+
   // main -> isolate (control; audio arrives as a bare Uint8List)
   static const init = 'init';
   static const stop = 'stop';
   static const resume = 'resume';
   static const armStop = 'armStop';
+
+  /// Turn per-inference [telemetry] on or off: {enabled}.
+  static const setTelemetry = 'setTelemetry';
 }

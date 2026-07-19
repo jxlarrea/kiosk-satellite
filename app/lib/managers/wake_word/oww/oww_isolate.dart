@@ -1,4 +1,5 @@
 import 'dart:isolate';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:onnxruntime/onnxruntime.dart';
@@ -24,6 +25,8 @@ void owwIsolateEntry(SendPort mainPort) {
           worker.resumeDetection(msg['absSample'] as int?);
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
+        case WakeMsg.setTelemetry:
+          worker.setTelemetry(msg['enabled'] == true);
         case WakeMsg.stop:
           worker.stop();
           port.close();
@@ -152,10 +155,22 @@ class _OwwWorker {
     }
   }
 
+  bool _telemetry = false;
+  double _chunkRms = 0;
+
+  void setTelemetry(bool enabled) => _telemetry = enabled;
+
   void _ingest(Float32List chunk) {
     final pipeline = _pipeline;
     if (pipeline == null) return;
     _absSamples += chunk.length;
+    if (_telemetry) {
+      var sum = 0.0;
+      for (final s in chunk) {
+        sum += s * s;
+      }
+      _chunkRms = math.sqrt(sum / chunk.length);
+    }
     if (!_shouldScore(chunk)) return;
 
     // mel + embedding run once per chunk and are shared by every classifier;
@@ -165,10 +180,28 @@ class _OwwWorker {
 
     for (final k in _kws) {
       if (k.isStop ? !_stopArmed : _detected) continue;
+      final sw = _telemetry ? (Stopwatch()..start()) : null;
       final probability = _classify(k, window);
+      sw?.stop();
       if (probability == null) continue;
       final trigger = k.gate.update(probability, _absSamples ~/ 16);
+      if (_telemetry && !k.isStop) {
+        _main.send({
+          'type': WakeMsg.telemetry,
+          'id': k.id,
+          'wakeWord': k.wakeWord,
+          't': _absSamples ~/ 16,
+          'score': probability,
+          'threshold': k.gate.cutoff,
+          'fired': trigger != null,
+          'rms': _chunkRms,
+          'latencyUs': sw?.elapsedMicroseconds ?? 0,
+        });
+      }
       if (trigger == null) continue;
+      // Tester open: recorded in telemetry, but do not fire a real
+      // detection (it would start a voice interaction). Keep scoring.
+      if (_telemetry) continue;
 
       if (k.isStop) {
         _log('info',

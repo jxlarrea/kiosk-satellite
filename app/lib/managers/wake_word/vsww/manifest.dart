@@ -56,12 +56,37 @@ class VswwCtcConfig {
     required this.minMatchedConfidence,
     required this.targetMaxEditDistance,
     required this.targetMinMatchedConfidence,
+    required this.inventory,
+    required this.targetPhonemes,
   });
 
   final int vocabSize;
   final int blankId;
   final int padId;
   final int wordSepId;
+
+  /// Phoneme label per vocab id, for rendering a decode as readable
+  /// phonemes in the wake-word tester. Empty when the manifest omits it.
+  final List<String> inventory;
+
+  /// The wake-word targets as phoneme labels (one list per target), so the
+  /// tester can show what the model is listening *for*.
+  final List<List<String>> targetPhonemes;
+
+  /// A decoded id sequence rendered to phoneme labels (blanks/pads dropped).
+  String phonemesFor(List<int> ids) {
+    if (inventory.isEmpty) return '';
+    final out = <String>[];
+    for (final id in ids) {
+      if (id == blankId || id == padId) continue;
+      if (id == wordSepId) {
+        out.add('_');
+      } else if (id >= 0 && id < inventory.length) {
+        out.add(inventory[id]);
+      }
+    }
+    return out.join(' ');
+  }
 
   /// Each target is a sequence of phoneme ids.
   final List<List<int>> wakeWordTargets;
@@ -109,6 +134,13 @@ class VswwCtcConfig {
       targetMinMatchedConfidence:
           ((j['target_min_matched_confidence'] as List?) ?? const [])
               .map((e) => (e as num).toDouble())
+              .toList(),
+      inventory: ((j['inventory'] as List?) ?? const [])
+          .map((e) => '$e')
+          .toList(),
+      targetPhonemes:
+          ((j['wake_word_target_phonemes'] as List?) ?? const [])
+              .map((t) => (t as List).map((e) => '$e').toList())
               .toList(),
     );
   }

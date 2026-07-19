@@ -22,6 +22,7 @@ import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
 import 'color_picker.dart';
 import 'media_picker.dart';
+import 'wake_word_tester.dart';
 
 /// A line between rows, and never after the last one. Inset from the card
 /// edges, One UI style, so the line reads as part of the card rather than a
@@ -888,7 +889,8 @@ class _CategoryContentState extends State<_CategoryContent> {
               // needs the live dashboards from HA, which the generic
               // renderer cannot supply.
               def.key != haRotationEnabled.key &&
-              def.key != haRotationSeconds.key)
+              def.key != haRotationSeconds.key &&
+              def.key != haRotationPauseSeconds.key)
             def,
       ], () => setState(() {})),
       const _SectionHeading('Dashboard View Rotation'),
@@ -1090,6 +1092,14 @@ class _CategoryContentState extends State<_CategoryContent> {
                     WakeWordStatusTile(container: container),
                 ],
               ),
+              // The tester: a live look at what the engine hears and scores,
+              // for diagnosing "the wake word isn't triggering".
+              if (container.settings.get(wakeWordEnabled)) ...[
+                const _SectionHeading('Wake Word Tester'),
+                _SettingsCard(
+                  children: [WakeWordTesterTile(container: container)],
+                ),
+              ],
               // Last, and on their own card: these are the OS's to give,
               // not ours to set, and every one of them is a thing that
               // stops working rather than a preference. Only while we are
@@ -1255,8 +1265,12 @@ class _RotationCardState extends State<_RotationCard> {
           '${d['title'] ?? d['url_path']}',
           '${d['url_path']}',
           views[i] == null || views[i]!.isEmpty
+              // A dashboard whose views cannot be read (the auto "Overview"
+              // and other strategy dashboards) rotates as a whole via its
+              // bare path — an empty route, navigated as /<url_path>, which
+              // resolves the default view. A synthetic "/0" would spin.
               ? [
-                  {'title': 'Default view', 'route': '0'},
+                  {'title': 'Default view', 'route': ''},
                 ]
               : views[i]!,
         ),
@@ -1285,6 +1299,43 @@ class _RotationCardState extends State<_RotationCard> {
     if (mounted) setState(() {});
   }
 
+  final _urlField = TextEditingController();
+
+  List<String> _urls() {
+    try {
+      final list = jsonDecode(c.settings.get(haRotationUrls)) as List;
+      return [
+        for (final u in list)
+          if (u is String) u,
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _saveUrls(List<String> urls) async {
+    await c.settings.setFromJson(haRotationUrls.key, jsonEncode(urls));
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _addUrl() async {
+    var url = _urlField.text.trim();
+    if (url.isEmpty) return;
+    // A bare host is almost always meant as a web address; default the
+    // scheme so the WebView does not treat it as a relative path.
+    if (!url.contains('://')) url = 'https://$url';
+    final urls = _urls();
+    if (!urls.contains(url)) urls.add(url);
+    _urlField.clear();
+    await _saveUrls(urls);
+  }
+
+  @override
+  void dispose() {
+    _urlField.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1300,6 +1351,11 @@ class _RotationCardState extends State<_RotationCard> {
           SettingTile(
             container: c,
             def: haRotationSeconds,
+            onChanged: () => setState(() {}),
+          ),
+          SettingTile(
+            container: c,
+            def: haRotationPauseSeconds,
             onChanged: () => setState(() {}),
           ),
           FutureBuilder<List<(String, String, List<Map<String, Object?>>)>?>(
@@ -1344,22 +1400,73 @@ class _RotationCardState extends State<_RotationCard> {
                       ),
                     ),
                     for (final v in views)
+                      // Empty route = the dashboard's bare path.
+                      for (final path in [
+                        '${v['route']}'.isEmpty
+                            ? urlPath
+                            : '$urlPath/${v['route']}',
+                      ])
                       CheckboxListTile(
-                        value: selected.contains('$urlPath/${v['route']}'),
+                        value: selected.contains(path),
                         title: Text('${v['title']}'),
-                        subtitle: Text('$urlPath/${v['route']}'),
+                        subtitle: Text(path),
                         controlAffinity: ListTileControlAffinity.leading,
                         contentPadding: const EdgeInsets.only(
                           left: 28,
                           right: 20,
                         ),
-                        onChanged: (_) => _toggle('$urlPath/${v['route']}'),
+                        onChanged: (_) => _toggle(path),
                       ),
                   ],
                   const SizedBox(height: 6),
                 ],
               );
             },
+          ),
+          // External pages: shown in their own overlay during rotation, so
+          // the dashboard (and Voice Satellite) stays loaded underneath.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 2),
+            child: Text(
+              'External pages',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          for (final url in _urls())
+            ListTile(
+              dense: true,
+              contentPadding: const EdgeInsets.only(left: 28, right: 12),
+              title: Text(url, style: const TextStyle(fontSize: 14)),
+              trailing: IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                tooltip: 'Remove',
+                onPressed: () => _saveUrls(_urls()..remove(url)),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(28, 4, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _urlField,
+                    keyboardType: TextInputType.url,
+                    autocorrect: false,
+                    onSubmitted: (_) => _addUrl(),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      hintText: 'https://example.com',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(onPressed: _addUrl, child: const Text('Add')),
+              ],
+            ),
           ),
         ],
       ],
