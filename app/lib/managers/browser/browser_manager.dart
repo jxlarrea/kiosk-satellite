@@ -170,6 +170,20 @@ class BrowserManager extends Manager {
       )
       ..register(
         Command(
+          name: 'ensureHaConnected',
+          description:
+              'Reconnect the Home Assistant websocket if it is down and wait '
+              'until it is live again, before a wake interaction runs on it',
+          handler: (_) async {
+            final ok = await ensureHaConnected();
+            return ok
+                ? const CommandResult.ok()
+                : const CommandResult.fail('HA socket not live');
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'getConsole',
           description: 'Current JavaScript console buffer',
           handler: (_) async => CommandResult.ok([
@@ -421,6 +435,67 @@ class BrowserManager extends Manager {
       })()
     ''');
     log.info(name, 'HA socket nudge: $result');
+  }
+
+  /// True when the Home Assistant frontend's websocket is live right now.
+  Future<bool> _haConnected() async {
+    final controller = _controller;
+    if (controller == null) return false;
+    final r = await controller.evaluateJavascript(source: '''
+      (function () {
+        try {
+          var c = document.querySelector('home-assistant');
+          c = c && c.hass && c.hass.connection;
+          return !!(c && c.connected && c.socket && c.socket.readyState === 1);
+        } catch (e) { return false; }
+      })()
+    ''');
+    return r == true || r == 'true' || r == 1;
+  }
+
+  /// Keep the HA websocket from dying while the app is in the background.
+  ///
+  /// Chromium throttles a hidden WebView's timers (hard, after ~5 minutes),
+  /// which starves the connection's own keepalive until the server drops it.
+  /// The Dart isolate stays alive on the foreground service though, so a timer
+  /// there can poke the page on demand: running any JS flushes the renderer's
+  /// pending socket messages, and an explicit ping keeps the server seeing
+  /// traffic. Best-effort — [ensureHaConnected] is the guarantee.
+  Future<void> pingHaConnection() async {
+    await runJs('''
+      (function () {
+        try {
+          var c = document.querySelector('home-assistant');
+          c = c && c.hass && c.hass.connection;
+          if (c && c.connected && c.socket && c.socket.readyState === 1) {
+            c.sendMessagePromise({ type: 'ping' }).catch(function () {});
+          }
+        } catch (e) {}
+      })()
+    ''');
+  }
+
+  /// Make sure the HA websocket is live before something runs on it — the
+  /// wake path calls this before handing a wake to Voice Satellite, so its
+  /// pipeline never starts on a socket Chromium let die in the background
+  /// (which came back as a duplicate wake-up, or a broken, reload-only page).
+  ///
+  /// A no-op when the socket is already up (foreground wakes, or the keepalive
+  /// held): one quick check and return. Otherwise force a reconnect and wait,
+  /// up to [timeout], for it to come back live and re-subscribed.
+  Future<bool> ensureHaConnected({
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    if (_controller == null) return false;
+    if (await _haConnected()) return true;
+    await reconnectHaSocket();
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (await _haConnected()) return true;
+    }
+    log.warn(name, 'HA socket did not come back within ${timeout.inSeconds}s');
+    return false;
   }
 
   /// Evaluate JavaScript in the current page (fire-and-forget helper for the

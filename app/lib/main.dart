@@ -73,12 +73,35 @@ class KioskSatelliteApp extends StatefulWidget {
 class _KioskSatelliteAppState extends State<KioskSatelliteApp>
     with WidgetsBindingObserver {
   StreamSubscription<SettingChanged>? _sub;
+  StreamSubscription<WakeWordDetected>? _wakeSub;
+  StreamSubscription<VoiceInteractionChanged>? _voiceSub;
 
   /// When the Activity last went to the background (screen off, app switch).
   /// A resume after more than a few seconds of this may thaw the WebView with
   /// a half-open HA socket, so we nudge it to reconnect (see BrowserManager).
   DateTime? _backgroundedAt;
   static const _reconnectAfterBackground = Duration(seconds: 5);
+
+  /// The reconnect nudge is DEFERRED, not fired on the resume itself, because a
+  /// wake word heard from the background brings the app forward — the resume
+  /// arrives BEFORE [WakeWordDetected] is published (wake_word_manager awaits
+  /// bringToFront first). Cycling the socket in the middle of that turn makes
+  /// Home Assistant reject Voice Satellite's pipeline as a duplicate wake-up.
+  /// So we wait, and cancel if a wake or voice turn shows up meanwhile: that
+  /// resume was wake-driven, the app was never frozen, and the socket is fine.
+  Timer? _nudgeTimer;
+  bool _voiceActive = false;
+  DateTime? _lastWakeAt;
+  static const _nudgeDelay = Duration(seconds: 3);
+  static const _wakeGuard = Duration(seconds: 8);
+
+  /// While backgrounded, poke the HA websocket so Chromium's hidden-tab timer
+  /// throttling does not starve its keepalive and let the server drop it. Only
+  /// runs when the process is kept alive (background listening's foreground
+  /// service); otherwise a frozen isolate never fires it. Best-effort: the
+  /// wake path's ensureHaConnected is the guarantee if the socket dies anyway.
+  Timer? _keepAliveTimer;
+  static const _keepAliveEvery = Duration(seconds: 20);
 
   @override
   void initState() {
@@ -89,34 +112,71 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
     _sub = widget.container.bus
         .on<SettingChanged>()
         .listen((e) => e.key == defs.uiTheme.key ? setState(() {}) : null);
+    // A wake-driven resume must never cycle the socket: record the wake and
+    // drop any pending nudge the resume it caused had scheduled.
+    _wakeSub = widget.container.bus.on<WakeWordDetected>().listen((_) {
+      _lastWakeAt = DateTime.now();
+      _nudgeTimer?.cancel();
+    });
+    _voiceSub = widget.container.bus.on<VoiceInteractionChanged>().listen((e) {
+      _voiceActive = e.active;
+      if (e.active) _nudgeTimer?.cancel();
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
       _backgroundedAt = DateTime.now();
+      _nudgeTimer?.cancel();
+      // Keep the socket warm while hidden (see _keepAliveTimer).
+      _keepAliveTimer?.cancel();
+      _keepAliveTimer = Timer.periodic(
+        _keepAliveEvery,
+        (_) => widget.container.browser.pingHaConnection(),
+      );
       return;
     }
     if (state == AppLifecycleState.resumed) {
       // Coming back from an OS screen (permission grants, app settings) is
       // another way the window returns without its immersive flags.
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      _keepAliveTimer?.cancel();
       final since = _backgroundedAt;
       _backgroundedAt = null;
       // Only after a real background spell: a long freeze is what leaves the
       // HA socket half-open. Skip brief inactive flickers (dialogs, the
-      // drawer) so a healthy connection is never needlessly cycled.
+      // drawer) so a healthy connection is never needlessly cycled. Deferred
+      // (see _nudgeTimer): if a wake word caused this resume, the wake/voice
+      // events land within the delay and cancel it.
       if (since != null &&
           DateTime.now().difference(since) >= _reconnectAfterBackground) {
-        widget.container.browser.reconnectHaSocket();
+        _nudgeTimer?.cancel();
+        _nudgeTimer = Timer(_nudgeDelay, _maybeNudge);
       }
     }
+  }
+
+  void _maybeNudge() {
+    // A wake word that brought us forward means Voice Satellite is starting an
+    // interaction on the live HA socket; cycling it now makes the server see a
+    // duplicate wake-up. Background listening also keeps the app unfrozen, so
+    // the socket is not the zombie the nudge exists to fix. Only recover when
+    // this resume was NOT wake-driven.
+    if (_voiceActive) return;
+    final wake = _lastWakeAt;
+    if (wake != null && DateTime.now().difference(wake) < _wakeGuard) return;
+    widget.container.browser.reconnectHaSocket();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
+    _wakeSub?.cancel();
+    _voiceSub?.cancel();
+    _nudgeTimer?.cancel();
+    _keepAliveTimer?.cancel();
     super.dispose();
   }
 
