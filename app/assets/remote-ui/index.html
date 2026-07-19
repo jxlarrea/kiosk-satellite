@@ -1019,7 +1019,8 @@ async function loadSettings() {
       // needs the live dashboards, which the generic renderer cannot
       // supply.
       const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token'
-        && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds');
+        && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds'
+        && s.key !== 'ha.rotation_pause_seconds');
       const restRoot = document.createElement('div');
       root.appendChild(restRoot);
       const savedHa = byCat['Home Assistant'];
@@ -1042,7 +1043,51 @@ async function loadSettings() {
         root.appendChild(rcard);
         rcard.appendChild(settingRow(rotEnabled));
         if (rotEnabled.value === true) {
-          rcard.appendChild(settingRow(byKey['ha.rotation_seconds']));
+          // Seconds saved in place: the shared settingRow re-renders the
+          // whole tab (and re-fetches every dashboard) on save, which reads
+          // as a jarring reload here. A plain PATCH is enough.
+          {
+            const secRow = readOnlyRow('Seconds per view', '', '');
+            secRow.querySelector('span').remove();
+            const secInp = document.createElement('input');
+            secInp.type = 'number';
+            secInp.min = '5';
+            secInp.value = byKey['ha.rotation_seconds']?.value ?? 30;
+            secInp.style.cssText = 'width:90px; background:var(--surface-2);'
+              + 'border:1px solid var(--border); border-radius:var(--radius-sm);'
+              + 'color:var(--text); padding:9px 12px';
+            secInp.addEventListener('change', () => {
+              const v = Math.max(5, Number(secInp.value) || 30);
+              secInp.value = v;
+              api('/api/settings', { method: 'PATCH',
+                body: JSON.stringify({ 'ha.rotation_seconds': v }) });
+            });
+            secRow.appendChild(secInp);
+            rcard.appendChild(secRow);
+          }
+          // Pause-on-interaction, same in-place save.
+          {
+            const pRow = readOnlyRow('Pause rotation on interaction (seconds)',
+              'Touch pauses rotation for this long; each touch restarts it. '
+              + 'Voice interactions always pause until they end. 0 keeps rotating.',
+              '');
+            pRow.querySelector('span').remove();
+            const pInp = document.createElement('input');
+            pInp.type = 'number';
+            pInp.min = '0';
+            pInp.value = byKey['ha.rotation_pause_seconds']?.value ?? 30;
+            pInp.style.cssText = 'width:90px; background:var(--surface-2);'
+              + 'border:1px solid var(--border); border-radius:var(--radius-sm);'
+              + 'color:var(--text); padding:9px 12px';
+            pInp.addEventListener('change', () => {
+              const v = Math.max(0, Number(pInp.value) || 0);
+              pInp.value = v;
+              api('/api/settings', { method: 'PATCH',
+                body: JSON.stringify({ 'ha.rotation_pause_seconds': v }) });
+            });
+            pRow.appendChild(pInp);
+            rcard.appendChild(pRow);
+          }
           let sel = [];
           try { sel = JSON.parse(byKey['ha.rotation_dashboards']?.value || '[]'); } catch (_) {}
           if (!Array.isArray(sel)) sel = [];
@@ -1054,7 +1099,10 @@ async function loadSettings() {
             } catch (_) {}
             // Auto-generated dashboards store no view list; the whole
             // dashboard still rotates via its first view.
-            return [{ title: 'Default view', route: '0' }];
+            // Unreadable (strategy) dashboards rotate via their bare path:
+            // an empty route navigated as /<url_path>, which resolves the
+            // default view. A synthetic /0 would spin.
+            return [{ title: 'Default view', route: '' }];
           }));
           dashList.forEach((d, i) => {
             const hdr = document.createElement('div');
@@ -1063,7 +1111,7 @@ async function loadSettings() {
             hdr.textContent = d.title || d.url_path;
             rcard.appendChild(hdr);
             viewLists[i].forEach((v) => {
-              const path = `${d.url_path}/${v.route}`;
+              const path = v.route ? `${d.url_path}/${v.route}` : d.url_path;
               // A real checkbox (accent-colored by the global input rule),
               // saved in place: no full re-render, the page stays put.
               const row = readOnlyRow(v.title || v.route, path, '');
@@ -1085,6 +1133,63 @@ async function loadSettings() {
             });
           });
           if (!dashList.length) rcard.appendChild(readOnlyRow('No dashboards found', '', ''));
+
+          // External pages: shown in their own overlay during rotation, so
+          // the dashboard (and Voice Satellite) stays loaded underneath.
+          // The list re-renders itself in place on add/remove — no
+          // loadSettings(), which would reload the whole tab.
+          let urls = [];
+          try { urls = JSON.parse(byKey['ha.rotation_urls']?.value || '[]'); } catch (_) {}
+          if (!Array.isArray(urls)) urls = [];
+          const saveUrls = (next) => { urls = next; return api('/api/settings',
+            { method: 'PATCH',
+              body: JSON.stringify({ 'ha.rotation_urls': JSON.stringify(next) }) }); };
+          const uhdr = document.createElement('div');
+          uhdr.style.cssText = 'padding:12px 0 2px; font-size:13px; font-weight:600;'
+            + 'color:var(--primary)';
+          uhdr.textContent = 'External pages';
+          rcard.appendChild(uhdr);
+          const ulist = document.createElement('div');
+          rcard.appendChild(ulist);
+          const renderUrls = () => {
+            ulist.innerHTML = '';
+            urls.forEach((u) => {
+              const row = readOnlyRow(u, '', '');
+              row.querySelector('span').remove();
+              row.style.paddingLeft = '14px';
+              const rm = document.createElement('button');
+              rm.className = 'btn-ghost'; rm.textContent = 'Remove';
+              rm.addEventListener('click', async () => {
+                await saveUrls(urls.filter((x) => x !== u));
+                renderUrls();
+              });
+              row.appendChild(rm);
+              ulist.appendChild(row);
+            });
+          };
+          renderUrls();
+          const addRow = document.createElement('div');
+          addRow.className = 'row';
+          addRow.style.paddingLeft = '14px';
+          const inp = document.createElement('input');
+          inp.type = 'url';
+          inp.placeholder = 'https://example.com';
+          inp.style.cssText = 'flex:1; background:var(--surface-2);'
+            + 'border:1px solid var(--border); border-radius:var(--radius-sm);'
+            + 'color:var(--text); padding:9px 12px; margin-right:8px';
+          const add = document.createElement('button');
+          add.className = 'action'; add.textContent = 'Add';
+          const doAdd = async () => {
+            let v = inp.value.trim();
+            if (!v) return;
+            if (v.indexOf('://') === -1) v = 'https://' + v;
+            inp.value = '';
+            if (!urls.includes(v)) { await saveUrls(urls.concat(v)); renderUrls(); }
+          };
+          add.addEventListener('click', doAdd);
+          inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
+          addRow.append(inp, add);
+          rcard.appendChild(addRow);
         }
       }
     }

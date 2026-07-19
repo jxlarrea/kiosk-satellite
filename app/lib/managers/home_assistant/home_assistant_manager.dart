@@ -223,8 +223,41 @@ class HomeAssistantManager extends Manager {
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.haRotationEnabled.key ||
           e.key == defs.haRotationDashboards.key ||
-          e.key == defs.haRotationSeconds.key) {
+          e.key == defs.haRotationUrls.key ||
+          e.key == defs.haRotationSeconds.key ||
+          e.key == defs.haRotationPauseSeconds.key) {
         _configureRotation();
+      }
+    });
+    // Touch pauses rotation for the configured window so the current view
+    // can be used; each touch restarts that window.
+    bus.on<ActivityDetected>().listen((e) {
+      if (e.source == 'touch') _pauseRotationForTouch();
+    });
+    // A voice interaction pauses rotation for its whole duration: Voice
+    // Satellite drives VoiceInteractionChanged on both edges of the turn.
+    bus.on<VoiceInteractionChanged>().listen((e) {
+      _voiceInteracting = e.active;
+      _voiceSafetyTimer?.cancel();
+      if (e.active) {
+        if (_rotationTimer != null) {
+          log.info(name, 'rotation paused by voice interaction');
+        }
+        _rotationTimer?.cancel();
+        _rotationTimer = null;
+        // Reveal the dashboard (with the voice UI) if an external page was
+        // up; the wake handler in the kiosk screen also does this, but the
+        // interaction can begin without a fresh wake (a follow-up turn).
+        unawaited(commands.execute('hideOverlayPage', const {}));
+        // Never stay held forever if the "ended" signal is lost (a page
+        // reload mid-turn, a Voice Satellite crash): release after a
+        // generous ceiling.
+        _voiceSafetyTimer = Timer(const Duration(minutes: 3), () {
+          _voiceInteracting = false;
+          _resumeRotationIfIdle();
+        });
+      } else {
+        _resumeRotationIfIdle();
       }
     });
     _configureRotation();
@@ -241,11 +274,31 @@ class HomeAssistantManager extends Manager {
 
   /// (Re)arm the rotation timer from the current settings. Any change to the
   /// rotation settings restarts the loop from the top of the list.
+  Timer? _touchPauseTimer;
+  Timer? _voiceSafetyTimer;
+  bool _voiceInteracting = false;
+
   void _configureRotation() {
-    _rotationTimer?.cancel();
-    _rotationTimer = null;
     _rotationIndex = 0;
-    if (!_settings.get(defs.haRotationEnabled)) return;
+    _touchPauseTimer?.cancel();
+    _touchPauseTimer = null;
+    if (!_settings.get(defs.haRotationEnabled)) {
+      _rotationTimer?.cancel();
+      _rotationTimer = null;
+      // A lingering external page must not outlive the feature that put
+      // it up.
+      unawaited(commands.execute('hideOverlayPage', const {}));
+      return;
+    }
+    // A voice interaction in progress keeps rotation held until it ends.
+    if (!_voiceInteracting) _armRotationTimer();
+    log.info(name, 'view rotation armed');
+  }
+
+  /// (Re)start the interval countdown from now, without disturbing the
+  /// current slot.
+  void _armRotationTimer() {
+    _rotationTimer?.cancel();
     final seconds = _settings
         .get(defs.haRotationSeconds)
         .toInt()
@@ -254,7 +307,33 @@ class HomeAssistantManager extends Manager {
       Duration(seconds: seconds),
       (_) => _rotationTick(),
     );
-    log.info(name, 'view rotation armed (${seconds}s per view)');
+  }
+
+  /// Touch pauses rotation for the configured window so the current view is
+  /// usable; each touch restarts the window. Zero disables the pause (touch
+  /// does not interrupt rotation). Never resumes over a live voice
+  /// interaction — that pause outranks this one.
+  void _pauseRotationForTouch() {
+    if (!_settings.get(defs.haRotationEnabled)) return;
+    final pause = _settings.get(defs.haRotationPauseSeconds).toInt();
+    if (pause <= 0) return;
+    _rotationTimer?.cancel();
+    _rotationTimer = null;
+    _touchPauseTimer?.cancel();
+    log.info(name, 'rotation paused by touch (${pause}s)');
+    _touchPauseTimer = Timer(Duration(seconds: pause), () {
+      _touchPauseTimer = null;
+      _resumeRotationIfIdle();
+    });
+  }
+
+  /// Re-arm rotation only when nothing still wants it held: no live voice
+  /// interaction and no pending touch-pause window.
+  void _resumeRotationIfIdle() {
+    if (!_settings.get(defs.haRotationEnabled)) return;
+    if (_voiceInteracting || _touchPauseTimer != null) return;
+    log.info(name, 'rotation resumed');
+    _armRotationTimer();
   }
 
   List<String> _rotationPaths() {
@@ -270,15 +349,48 @@ class HomeAssistantManager extends Manager {
     }
   }
 
-  /// Advance to the next view in the ring. Navigation happens inside
-  /// HA's SPA (pushState + location-changed, the same thing a card's
-  /// navigate action does) so nothing reloads and the page stays warm. The
-  /// script bails when something other than this HA instance is on screen —
-  /// another site's history is not ours to rewrite.
+  /// External pages in the ring, shown in an overlay WebView so the
+  /// dashboard (and Voice Satellite) stays loaded underneath.
+  List<String> _rotationUrls() {
+    try {
+      final list = jsonDecode(_settings.get(defs.haRotationUrls)) as List;
+      return [
+        for (final u in list)
+          if (u is String && u.isNotEmpty) u,
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// The full ring: dashboard views first, then external pages, in the
+  /// order the lists hold them.
+  List<String> _rotationSlots() => [
+    for (final p in _rotationPaths()) 'view:$p',
+    for (final u in _rotationUrls()) 'url:$u',
+  ];
+
+  /// Advance to the next slot in the ring. A dashboard view navigates
+  /// inside HA's SPA (pushState + location-changed, the same thing a
+  /// card's navigate action does) so nothing reloads and the page stays
+  /// warm; the script bails when something other than this HA instance is
+  /// on screen — another site's history is not ours to rewrite. An
+  /// external page shows in the overlay WebView instead, leaving the
+  /// dashboard untouched below.
   Future<void> _rotationTick() async {
-    final paths = _rotationPaths();
-    if (paths.isEmpty || baseUrl.isEmpty) return;
-    _rotationIndex = (_rotationIndex + 1) % paths.length;
+    final slots = _rotationSlots();
+    if (slots.isEmpty || baseUrl.isEmpty) return;
+    _rotationIndex = (_rotationIndex + 1) % slots.length;
+    final slot = slots[_rotationIndex];
+    if (slot.startsWith('url:')) {
+      await commands.execute('showOverlayPage', {
+        'url': slot.substring('url:'.length),
+      });
+      return;
+    }
+    // Back to a dashboard view: drop any overlay, then navigate the SPA.
+    await commands.execute('hideOverlayPage', const {});
+    final viewPath = slot.substring('view:'.length);
     // With the secure context proxy on, the page lives on the loopback
     // origin, not baseUrl — guard against what is actually on screen.
     final mappedBase = await commands.execute('proxyMapUrl', {
@@ -292,10 +404,28 @@ class HomeAssistantManager extends Manager {
 (function () {
   var base = ${jsonEncode(effectiveBase)};
   if (!location.href.startsWith(base)) return;
-  var path = '/' + ${jsonEncode(paths[_rotationIndex])};
+  var path = '/' + ${jsonEncode(viewPath)};
   if (location.pathname === path || location.pathname.indexOf(path + '/') === 0) return;
   history.pushState(null, '', path);
   window.dispatchEvent(new CustomEvent('location-changed'));
+  // Self-heal: a soft navigation cannot resolve every dashboard. Strategy
+  // dashboards (Home Assistant's auto "Overview") and redirect aliases
+  // (the legacy /lovelace path when the default lives elsewhere) leave the
+  // panel spinning forever. A full load always resolves them, so if the
+  // view is still spinning shortly after the soft nav — and the rotation
+  // has not already moved on — fall back to one.
+  setTimeout(function () {
+    try {
+      if (location.pathname !== path) return;
+      var ha = document.querySelector('home-assistant');
+      var main = ha && ha.shadowRoot && ha.shadowRoot.querySelector('home-assistant-main');
+      var panel = main && main.shadowRoot && main.shadowRoot.querySelector('ha-panel-lovelace');
+      if (!panel || !panel.shadowRoot) return;
+      if (panel.shadowRoot.querySelector('ha-circular-progress, hui-error-card')) {
+        location.reload();
+      }
+    } catch (e) {}
+  }, 2500);
 })();
 ''';
     await commands.execute('evalJs', {'code': js});
@@ -471,6 +601,16 @@ class HomeAssistantManager extends Manager {
   /// default `lovelace` which the API does not include.
   Future<List<Map<String, Object?>>?> listDashboards() async {
     if (!configured) return null;
+    // Source the list from the page's `hass.panels` — HA's own registry of
+    // what the sidebar can navigate to. It is the only place that knows the
+    // real default dashboard: modern Home Assistant ships an auto "Overview"
+    // whose panel component is `home` (not `lovelace`) at a url like /home,
+    // while /lovelace is a legacy redirect alias that a soft navigation
+    // cannot follow. The old WS-only path hardcoded `lovelace` and so
+    // offered that broken alias instead of the dashboard that actually
+    // renders. Falls back to the WS list when the page has no hass yet.
+    final page = await _dashboardsFromPage();
+    if (page != null) return page;
     try {
       final result = await _wsCommand({'type': 'lovelace/dashboards/list'});
       if (result is! List) return null;
@@ -482,6 +622,65 @@ class HomeAssistantManager extends Manager {
       ];
     } catch (e) {
       log.warn(name, 'listDashboards failed: $e');
+      return null;
+    }
+  }
+
+  /// The navigable dashboards from the page's `hass.panels`: every Lovelace
+  /// dashboard plus the auto "Overview" default (panel component `home`),
+  /// each with the url the sidebar navigates to. Null when hass is not up.
+  Future<List<Map<String, Object?>>?> _dashboardsFromPage() async {
+    const js = r'''
+(function () {
+  try {
+    var el = document.querySelector('home-assistant');
+    var hass = el && el.hass;
+    if (!hass || !hass.panels) return 'null';
+    var panels = hass.panels;
+    // The auto "Overview" default supersedes the empty /lovelace alias.
+    var hasHome = Object.keys(panels).some(function (k) {
+      return panels[k].component_name === 'home';
+    });
+    var out = [];
+    Object.keys(panels).forEach(function (k) {
+      var p = panels[k];
+      var isDash = p.component_name === 'lovelace' || p.component_name === 'home';
+      if (!isDash) return;
+      if (p.url_path === 'lovelace' && p.title == null && hasHome) return;
+      var title = p.title
+        ? ((hass.localize && hass.localize('panel.' + p.title)) || p.title)
+        : (p.component_name === 'home' ? 'Overview' : p.url_path);
+      out.push({ url_path: p.url_path, title: title, comp: p.component_name });
+    });
+    // Default dashboard first, matching the sidebar: hass.defaultPanel when
+    // set, otherwise the auto "Overview" (component `home`). The rest keep
+    // their registration order.
+    out.sort(function (a, b) {
+      function rank(d) {
+        if (hass.defaultPanel && d.url_path === hass.defaultPanel) return 0;
+        if (d.comp === 'home') return 1;
+        return 2;
+      }
+      return rank(a) - rank(b);
+    });
+    return JSON.stringify(out.map(function (d) {
+      return { url_path: d.url_path, title: d.title };
+    }));
+  } catch (e) {
+    return 'null';
+  }
+})()
+''';
+    try {
+      final res = await commands.execute('evalJs', {'code': js});
+      if (!res.ok) return null;
+      final decoded = jsonDecode(res.data as String);
+      if (decoded is! List || decoded.isEmpty) return null;
+      return [
+        for (final d in decoded.cast<Map>())
+          {'url_path': d['url_path'], 'title': d['title']},
+      ];
+    } catch (_) {
       return null;
     }
   }
@@ -579,5 +778,7 @@ class HomeAssistantManager extends Manager {
     _themeTimer?.cancel();
     _revalidateTimer?.cancel();
     _rotationTimer?.cancel();
+    _touchPauseTimer?.cancel();
+    _voiceSafetyTimer?.cancel();
   }
 }

@@ -50,6 +50,17 @@ class ActivityDetected extends AppEvent {
   final String source; // 'touch' | 'motion' | 'remote' | 'page'
 }
 
+/// A voice interaction is in progress (or has ended). Driven by Voice
+/// Satellite, which brackets every turn — wake, listen, respond, speak — by
+/// asking the app to hold its ambient behaviors (it calls pauseScreensaver
+/// on the way in and out). Ambient features that must stand down for the
+/// duration of a conversation (the screensaver, the dashboard view
+/// rotation) observe this rather than reaching into each other.
+class VoiceInteractionChanged extends AppEvent {
+  const VoiceInteractionChanged({required this.active});
+  final bool active;
+}
+
 // ── Motion ─────────────────────────────────────────────────────────────
 
 class MotionDetected extends AppEvent {

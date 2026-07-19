@@ -1125,12 +1125,40 @@ const haRotationDashboards = SettingDef<String>(
   hidden: true,
 );
 
+// Hidden: hand-built list UIs in both settings surfaces own this value —
+// external pages shown in their own overlay WebView during rotation, so
+// the dashboard (and Voice Satellite) stays loaded underneath.
+const haRotationUrls = SettingDef<String>(
+  key: 'ha.rotation_urls',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Rotation external pages',
+  description: 'External pages included in the dashboard view rotation.',
+  category: 'Home Assistant',
+  hidden: true,
+);
+
 const haRotationSeconds = SettingDef<num>(
   key: 'ha.rotation_seconds',
   type: SettingType.number,
   defaultValue: 30,
   title: 'Seconds per view',
   description: 'How long each view stays on screen.',
+  category: 'Home Assistant',
+  section: 'Dashboard View Rotation',
+  dependsOn: 'ha.rotation_enabled',
+);
+
+const haRotationPauseSeconds = SettingDef<num>(
+  key: 'ha.rotation_pause_seconds',
+  type: SettingType.number,
+  defaultValue: 30,
+  title: 'Pause rotation on interaction (seconds)',
+  description:
+      'When you touch the screen, rotation pauses for this long so you can '
+      'use the current view; each touch restarts the countdown. A voice '
+      'interaction always pauses rotation until it ends. Set to 0 to keep '
+      'rotating through touches.',
   category: 'Home Assistant',
   section: 'Dashboard View Rotation',
   dependsOn: 'ha.rotation_enabled',
@@ -1269,7 +1297,9 @@ const List<SettingDef<Object>> allSettings = [
   themeAutoApp,
   haRotationEnabled,
   haRotationDashboards,
+  haRotationUrls,
   haRotationSeconds,
+  haRotationPauseSeconds,
   remoteEnabled,
   remotePort,
   remotePassword,

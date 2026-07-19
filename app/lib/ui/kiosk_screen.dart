@@ -47,6 +47,7 @@ class _KioskScreenState extends State<KioskScreen>
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<KioskExitGesture>? _gestureSub;
   StreamSubscription<KioskBackPressed>? _backSub;
+  StreamSubscription<WakeWordDetected>? _wakeSub;
 
   /// Guards the exit gesture while the settings route sits on top.
   bool _settingsOpen = false;
@@ -232,6 +233,12 @@ class _KioskScreenState extends State<KioskScreen>
 
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
+    // A wake word heard while a rotation excursion covers the dashboard
+    // drops the overlay at once, so the Voice Satellite interaction (which
+    // lives in the always-loaded dashboard below) is instantly on screen.
+    _wakeSub = c.bus.on<WakeWordDetected>().listen((_) {
+      c.browser.overlayUrl.value = null;
+    });
     _backSub = c.bus.on<KioskBackPressed>().listen((_) {
       if (!mounted || _settingsOpen) return;
       if (_drawer.value > 0) {
@@ -467,6 +474,7 @@ class _KioskScreenState extends State<KioskScreen>
     _settingsSub?.cancel();
     _gestureSub?.cancel();
     _backSub?.cancel();
+    _wakeSub?.cancel();
     super.dispose();
   }
 
@@ -486,6 +494,16 @@ class _KioskScreenState extends State<KioskScreen>
       fit: StackFit.expand,
       children: [
         _webView(),
+        // The rotation's external pages, shown OVER the dashboard so the
+        // dashboard (and the Voice Satellite session with it) never
+        // unloads. A wake detection hides this instantly, revealing the
+        // live dashboard underneath (see initState).
+        ValueListenableBuilder<String?>(
+          valueListenable: c.browser.overlayUrl,
+          builder: (context, url, _) => url == null
+              ? const SizedBox.shrink()
+              : _OverlayWebView(url: url, key: ValueKey(url)),
+        ),
         if (_consoleOpen)
           WebConsolePanel(
             browser: c.browser,
@@ -728,4 +746,31 @@ class _KioskScreenState extends State<KioskScreen>
       );
     },
   );
+}
+
+/// A bare WebView for a rotation external page, layered over the dashboard.
+///
+/// Deliberately minimal: no JS bridge, no wake-word or kiosk-mode scripts,
+/// no pull-to-refresh — it only displays a page. The dashboard WebView
+/// below it stays fully loaded and interactive the instant this is removed,
+/// so the Voice Satellite session and the wake word never pause.
+class _OverlayWebView extends StatelessWidget {
+  const _OverlayWebView({required this.url, super.key});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: InAppWebView(
+        initialUrlRequest: URLRequest(url: WebUri(url)),
+        initialSettings: InAppWebViewSettings(
+          useHybridComposition: true,
+          transparentBackground: false,
+          supportZoom: false,
+        ),
+      ),
+    );
+  }
 }

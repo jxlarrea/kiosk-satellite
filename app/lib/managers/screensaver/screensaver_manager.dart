@@ -106,6 +106,11 @@ class ScreensaverManager extends Manager {
           if (_paused) {
             await stop();
           }
+          // Voice Satellite calls this on both edges of a turn; surface it
+          // as the app-wide "voice interaction" signal so other ambient
+          // features (view rotation) can stand down too, without any of
+          // them referencing each other.
+          bus.publish(VoiceInteractionChanged(active: _paused));
           _resetIdleTimer();
           return const CommandResult.ok();
         },

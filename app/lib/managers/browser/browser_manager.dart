@@ -50,9 +50,43 @@ class BrowserManager extends Manager {
 
   String get startUrl => _settings.get(defs.startUrl);
 
+  /// External page shown OVER the dashboard during its rotation slot (null
+  /// when none). The kiosk screen builds and tears down an overlay WebView
+  /// from this; the dashboard underneath stays loaded, so the Voice
+  /// Satellite session and the wake word never pay for the excursion.
+  final ValueNotifier<String?> overlayUrl = ValueNotifier(null);
+
   @override
   Future<void> init() async {
     commands
+      ..register(
+        Command(
+          name: 'showOverlayPage',
+          description:
+              'Show an external page in an overlay WebView above the '
+              'dashboard (used by the view rotation for external URLs)',
+          params: const {'url': 'Absolute URL to show'},
+          handler: (p) async {
+            final url = p['url'] as String?;
+            if (url == null || url.isEmpty) {
+              return const CommandResult.fail('url required');
+            }
+            overlayUrl.value = url;
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'hideOverlayPage',
+          description:
+              'Dismiss the overlay page and reveal the dashboard again',
+          handler: (_) async {
+            overlayUrl.value = null;
+            return const CommandResult.ok();
+          },
+        ),
+      )
       ..register(
         Command(
           name: 'loadUrl',
@@ -338,6 +372,9 @@ class BrowserManager extends Manager {
   String Function(String url)? urlMapper;
 
   Future<void> loadUrl(String url) async {
+    // An explicit navigation targets the main WebView; an overlay page
+    // sitting above it would make the navigation invisible.
+    overlayUrl.value = null;
     final mapped = urlMapper?.call(url) ?? url;
     await _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(mapped)));
   }
