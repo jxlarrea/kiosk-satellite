@@ -11,6 +11,7 @@ import '../core/permissions.dart';
 import '../app_container.dart';
 import 'screensaver_view.dart';
 import '../core/events.dart';
+import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
 import '../managers/proxy/media_rewrite_script.dart';
@@ -324,6 +325,12 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     UserScript(
       source: pullToRefreshProbeScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // Turn off Home Assistant's "Suspend background connections" so it does
+    // not deliberately drop the kiosk's socket after 5 minutes off screen.
+    UserScript(
+      source: disableSuspendScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // The wizard's satellite choice, handed to Voice Satellite before its
