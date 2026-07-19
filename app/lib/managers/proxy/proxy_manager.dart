@@ -60,6 +60,31 @@ class ProxyManager extends Manager {
   bool get running => _server != null;
   int get port => _server?.port ?? 0;
 
+  /// The proxied origin (e.g. `http://192.168.1.10:8123`), null while off.
+  String? get targetOrigin {
+    final t = _target;
+    if (_server == null || t == null) return null;
+    return 'http://${t.host}:${t.port}';
+  }
+
+  /// The loopback origin the page actually lives on, null while off.
+  String? get loopbackOrigin =>
+      _server == null ? null : 'http://127.0.0.1:${_server!.port}';
+
+  /// Last known mapping, kept after a stop so [unmapUrl] can translate a
+  /// proxied URL back even right after the toggle turned the server off.
+  String? _lastTargetOrigin;
+  String? _lastLoopbackOrigin;
+
+  /// The inverse of [mapUrl]: a URL on the loopback origin translated back
+  /// to the real Home Assistant origin. Pass-through for everything else.
+  String unmapUrl(String url) {
+    final from = _lastLoopbackOrigin;
+    final to = _lastTargetOrigin;
+    if (from == null || to == null || !url.startsWith(from)) return url;
+    return to + url.substring(from.length);
+  }
+
   @override
   Future<void> init() async {
     commands.register(
@@ -158,6 +183,8 @@ class ProxyManager extends Manager {
     _server!.listen(_handle, onError: (Object e) {
       log.warn(name, 'server error: $e');
     });
+    _lastTargetOrigin = targetOrigin;
+    _lastLoopbackOrigin = loopbackOrigin;
     log.info(
       name,
       'secure context proxy on 127.0.0.1:${_server!.port} '

@@ -13,6 +13,7 @@ import 'screensaver_view.dart';
 import '../core/events.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
+import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kiosk_drawer.dart';
@@ -176,13 +177,14 @@ class _KioskScreenState extends State<KioskScreen>
       });
       return;
     }
-    // The secure context proxy changes the page's ORIGIN, so the toggle is
-    // a full renavigation. Await the proxy's own sync first: its listener
-    // for this same event races ours, and loading before the server is up
-    // would map the URL onto a dead port.
+    // The secure context proxy changes the page's ORIGIN and its media
+    // rewrite user script, both fixed at WebView creation — so the toggle
+    // is a WebView rebuild. Await the proxy's own sync first: its listener
+    // for this same event races ours, and rebuilding before the server is
+    // up would map the URL onto a dead port.
     if (e.key == defs.secureProxy.key) {
       await c.proxy.sync();
-      await c.browser.loadUrl(_initialUrl);
+      setState(() => _webViewEpoch++);
       return;
     }
     // Pull-to-refresh toggles live on the existing WebView; the clear-cache
@@ -283,6 +285,19 @@ class _KioskScreenState extends State<KioskScreen>
   /// can be toggled live.
   List<UserScript> get _userScripts => [
     c.jsApi.buildUserScript(c.device.os),
+    // With the proxy on, Home Assistant's absolute URLs (TTS audio,
+    // announcement media) point at its own origin while the page lives on
+    // loopback; Web-Audio-tapped media then plays as CORS-tainted silence.
+    // The rewrite keeps everything same-origin. Frozen at WebView creation
+    // like every user script — the proxy toggle rebuilds the WebView.
+    if (c.proxy.running)
+      UserScript(
+        source: proxyMediaRewriteScript(
+          targetOrigin: c.proxy.targetOrigin!,
+          loopbackOrigin: c.proxy.loopbackOrigin!,
+        ),
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
     // "Disable cache" must also defeat the page's service worker, which
     // caches above the HTTP layer (HA always registers one).
     if (c.settings.get(defs.disableCache))
@@ -586,12 +601,18 @@ class _KioskScreenState extends State<KioskScreen>
   Widget _webView() => InAppWebView(
     key: ValueKey(_webViewEpoch),
     initialUrlRequest: URLRequest(
-      // currentUrl needs no mapping: it is whatever actually loaded, so a
-      // proxied session rebuilds on the proxied origin it was already on.
+      // unmap-then-map settles the URL on whichever origin the CURRENT
+      // proxy state calls for: a rebuild triggered by the proxy toggle
+      // moves a proxied currentUrl back to the real origin (or vice
+      // versa), and both calls pass everything else through untouched.
       url: WebUri(
-        _webViewEpoch == 0 || c.browser.currentUrl.isEmpty
-            ? c.proxy.mapUrl(_initialUrl)
-            : c.browser.currentUrl,
+        c.proxy.mapUrl(
+          c.proxy.unmapUrl(
+            _webViewEpoch == 0 || c.browser.currentUrl.isEmpty
+                ? _initialUrl
+                : c.browser.currentUrl,
+          ),
+        ),
       ),
     ),
     initialUserScripts: UnmodifiableListView(_userScripts),
