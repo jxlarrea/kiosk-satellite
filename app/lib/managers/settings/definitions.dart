@@ -1410,12 +1410,11 @@ const sendspinFullscreen = SettingDef<bool>(
   key: 'sendspin.fullscreen',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Full-screen player instead of the screensaver',
+  title: '"Now Playing" instead of the screensaver',
   description:
-      'While music plays, the idle screensaver becomes a full-screen '
-      'now-playing view: album art with large title and artist. With '
-      'nothing playing, the regular screensaver appears as usual. Touch '
-      'or motion dismisses either.',
+      'While music plays, the idle screensaver becomes "Now Playing": a '
+      'full-screen view with album art and large title and artist. With '
+      'nothing playing, the regular screensaver appears as usual.',
   category: 'Sendspin',
   dependsOn: 'sendspin.enabled',
 );
@@ -1424,11 +1423,11 @@ const sendspinFullscreenMotion = SettingDef<bool>(
   key: 'sendspin.fullscreen_motion',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Dismiss the full-screen player on motion',
+  title: 'Dismiss "Now Playing" on motion',
   description:
-      'Let motion dismiss the now-playing view like a regular screensaver. '
-      'Off, only touch dismisses it, so someone walking past does not '
-      'interrupt the music display.',
+      'Let motion dismiss the "Now Playing" view like a regular '
+      'screensaver. Off, only touch dismisses it, so someone walking past '
+      'does not interrupt the music display.',
   category: 'Sendspin',
   dependsOn: 'sendspin.fullscreen',
 );
@@ -1608,10 +1607,10 @@ const List<SettingDef<Object>> allSettings = [
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
+  sendspinDuckPercent,
   sendspinShowPlayer,
   sendspinPlayerSize,
   sendspinPausedHideMinutes,
-  sendspinDuckPercent,
   sendspinFullscreen,
   sendspinFullscreenMotion,
   sendspinPlayerPos,
