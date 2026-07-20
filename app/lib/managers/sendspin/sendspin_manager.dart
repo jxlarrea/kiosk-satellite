@@ -90,14 +90,23 @@ class SendspinManager extends Manager {
           };
         case 'volumeChanged':
           _status = {..._status, ...map};
+        case 'controllerChanged':
+          _status = {..._status, ...map};
         case 'playingChanged':
           final playing = map['playing'] == true;
           if (playing != _playing) {
             _playing = playing;
             // The same signal Voice Satellite media playback raises: hold
             // the screensaver and rotation while music is audible here.
-            bus.publish(
-                VoiceInteractionChanged(active: playing, reason: 'media'));
+            // NOT raised in full-screen player mode: there the screensaver
+            // must keep firing, because it IS the now-playing display.
+            if (!_settings.get(defs.sendspinFullscreen)) {
+              bus.publish(
+                  VoiceInteractionChanged(active: playing, reason: 'media'));
+            } else if (!playing) {
+              bus.publish(const VoiceInteractionChanged(
+                  active: false, reason: 'media'));
+            }
           }
       }
       _publishNowPlaying();
@@ -105,8 +114,18 @@ class SendspinManager extends Manager {
     });
 
     bus.on<SettingChanged>().listen((e) {
+      // Only connection-shaping settings restart the client; the UI-only
+      // ones (card visibility, size, position, fullscreen mode) must not
+      // interrupt playback when toggled.
+      const uiOnly = [
+        'sendspin.show_player',
+        'sendspin.player_size',
+        'sendspin.player_pos',
+        'sendspin.fullscreen',
+      ];
       final relevant = e.key.startsWith('sendspin.') &&
-              e.key != defs.sendspinClientId.key ||
+              e.key != defs.sendspinClientId.key &&
+              !uiOnly.contains(e.key) ||
           e.key == defs.deviceName.key;
       if (!relevant) return;
       _restartDebounce?.cancel();
@@ -129,6 +148,20 @@ class SendspinManager extends Manager {
         'playing': _playing,
         ..._status,
       }),
+    ));
+
+    commands.register(Command(
+      name: 'sendspinControl',
+      description:
+          'Send a transport command to the Sendspin group this player '
+          'belongs to (play, pause, next, previous).',
+      params: const {'command': 'play | pause | next | previous'},
+      handler: (p) async {
+        final ok = await control('${p['command'] ?? ''}');
+        return ok
+            ? const CommandResult.ok()
+            : const CommandResult.fail('command not supported or not sent');
+      },
     ));
 
     commands.register(Command(
@@ -159,6 +192,19 @@ class SendspinManager extends Manager {
   Future<void> dispose() async {
     _restartDebounce?.cancel();
     await _stop();
+  }
+
+  /// Group transport control (the controller role). False when the server
+  /// does not support the command or nothing is connected.
+  Future<bool> control(String command) async {
+    try {
+      return await _channel.invokeMethod<bool>(
+              'control', {'command': command}) ??
+          false;
+    } catch (e) {
+      log.warn(name, 'control $command failed: $e');
+      return false;
+    }
   }
 
   Future<void> _start() async {

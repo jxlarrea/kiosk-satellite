@@ -3,6 +3,7 @@ package me.jxl.kiosk_satellite.sendspin
 import android.os.Build
 import android.util.Log
 import me.jxl.kiosk_satellite.sendspin.decoder.AudioDecoderFactory
+import me.jxl.kiosk_satellite.sendspin.protocol.ControllerState
 import me.jxl.kiosk_satellite.sendspin.protocol.GroupInfo
 import me.jxl.kiosk_satellite.sendspin.protocol.SendSpinProtocol
 import me.jxl.kiosk_satellite.sendspin.protocol.SendSpinProtocolHandler
@@ -107,6 +108,22 @@ class SendSpin(
         fun onMutedChanged(muted: Boolean)
         fun onSyncMuteChanged(muted: Boolean)
         fun onReconnectExhausted()
+
+        /** Group-level command set the server accepts (controller role). */
+        fun onControllerUpdate(supportedCommands: List<String>)
+    }
+
+    /**
+     * Send a controller-role transport command (play, pause, next,
+     * previous, ...) acting on the group this player belongs to. Callers
+     * should gate on [Callback.onControllerUpdate]'s command set.
+     */
+    fun sendControllerCommand(command: String) {
+        sendTextMessage(MessageBuilder.buildControllerCommand(command))
+    }
+
+    override fun onControllerStateUpdate(state: ControllerState) {
+        callback.onControllerUpdate(state.supportedCommands ?: emptyList())
     }
 
     // Dedicated single-thread dispatcher for timer-dominated work: stall

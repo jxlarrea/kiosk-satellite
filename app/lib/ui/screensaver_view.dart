@@ -10,6 +10,7 @@ import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
 
 /// The screensaver overlay: whichever of the four views the manager says is
 /// active, or nothing.
@@ -29,24 +30,43 @@ class ScreensaverOverlay extends StatelessWidget {
       valueListenable: container.screensaver.activeView,
       builder: (context, view, _) {
         if (view == null) return const SizedBox.shrink();
-        return Positioned.fill(
-          child: switch (view) {
-            'clock' => _Dismissable(
-              container: container,
-              child: ClockScreensaver(container: container),
-            ),
-            'media' ||
-            'website' => ScreensaverWebView(container: container, mode: view),
-            'local' || 'gallery' => _Dismissable(
-              container: container,
-              child: LocalMediaScreensaver(container: container, mode: view),
-            ),
-            // 'black' and anything unexpected: the safe, opaque cover.
-            _ => _Dismissable(
-              container: container,
-              child: const ColoredBox(color: Colors.black),
-            ),
+        return ValueListenableBuilder<Map<String, Object?>?>(
+          valueListenable: container.sendspin.nowPlaying,
+          builder: (context, nowPlaying, child) {
+            // Music playing with the full-screen player enabled: the
+            // screensaver slot shows the now-playing view instead of the
+            // configured mode, dismissed exactly like any screensaver.
+            // Falls back live when playback ends mid-screensaver.
+            if (nowPlaying != null &&
+                container.settings.get(defs.sendspinFullscreen)) {
+              return Positioned.fill(
+                child: _Dismissable(
+                  container: container,
+                  child: SendspinFullscreenView(container: container),
+                ),
+              );
+            }
+            return child!;
           },
+          child: Positioned.fill(
+            child: switch (view) {
+              'clock' => _Dismissable(
+                container: container,
+                child: ClockScreensaver(container: container),
+              ),
+              'media' ||
+              'website' => ScreensaverWebView(container: container, mode: view),
+              'local' || 'gallery' => _Dismissable(
+                container: container,
+                child: LocalMediaScreensaver(container: container, mode: view),
+              ),
+              // 'black' and anything unexpected: the safe, opaque cover.
+              _ => _Dismissable(
+                container: container,
+                child: const ColoredBox(color: Colors.black),
+              ),
+            },
+          ),
         );
       },
     );
@@ -385,17 +405,18 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       var files = <File>[];
       try {
         files = [
-          for (final p in jsonDecode(
-            c.settings.get(defs.screensaverGalleryItems),
-          ) as List)
+          for (final p
+              in jsonDecode(c.settings.get(defs.screensaverGalleryItems))
+                  as List)
             File(p as String),
         ];
       } catch (_) {}
-      files = [for (final f in files) if (f.existsSync()) f];
+      files = [
+        for (final f in files)
+          if (f.existsSync()) f,
+      ];
       if (files.isEmpty) {
-        setState(
-          () => _problem = 'No photos selected. Pick some in Settings.',
-        );
+        setState(() => _problem = 'No photos selected. Pick some in Settings.');
         return;
       }
       if (c.settings.get(defs.screensaverGalleryShuffle)) {
@@ -581,10 +602,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         final tween = child.key == currentKey
             ? Tween(begin: const Offset(1, 0), end: Offset.zero)
             : Tween(begin: const Offset(-1, 0), end: Offset.zero);
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
+        return SlideTransition(position: animation.drive(tween), child: child);
       case 'zoom':
         // One shared tween reads as a zoom-through: the newcomer settles
         // down from 1.08 as the incumbent, reversed, swells into it.

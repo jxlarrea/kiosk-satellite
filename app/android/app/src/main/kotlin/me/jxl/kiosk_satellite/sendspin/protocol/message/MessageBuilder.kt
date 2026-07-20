@@ -37,6 +37,8 @@ object MessageBuilder {
                 put("supported_roles", buildJsonArray {
                     add(JsonPrimitive(SendSpinProtocol.Roles.PLAYER))
                     add(JsonPrimitive(SendSpinProtocol.Roles.METADATA))
+                    // Transport buttons on the now-playing card.
+                    add(JsonPrimitive(SendSpinProtocol.Roles.CONTROLLER))
                 })
                 put("device_info", buildJsonObject {
                     put("product_name", "Kiosk Satellite")
@@ -59,6 +61,19 @@ object MessageBuilder {
                         add(JsonPrimitive("volume"))
                         add(JsonPrimitive("mute"))
                     })
+                })
+            })
+        }
+        return message.toString()
+    }
+
+    /** Controller-role transport command (play, pause, next, previous). */
+    fun buildControllerCommand(command: String): String {
+        val message = buildJsonObject {
+            put("type", SendSpinProtocol.MessageType.CLIENT_COMMAND)
+            put("payload", buildJsonObject {
+                put("controller", buildJsonObject {
+                    put("command", command)
                 })
             })
         }

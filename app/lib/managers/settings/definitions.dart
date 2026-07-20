@@ -1357,6 +1357,35 @@ const sendspinShowPlayer = SettingDef<bool>(
   dependsOn: 'sendspin.enabled',
 );
 
+const sendspinPlayerSize = SettingDef<String>(
+  key: 'sendspin.player_size',
+  type: SettingType.select,
+  defaultValue: 'compact',
+  title: 'Player size',
+  description:
+      'Compact is a small, unobtrusive now-playing window. Large adds '
+      'previous, play/pause and next buttons sized for touch, controlling '
+      'the whole playback group.',
+  category: 'Sendspin',
+  options: ['compact', 'large'],
+  optionLabels: {'compact': 'Compact', 'large': 'Large with controls'},
+  dependsOn: 'sendspin.show_player',
+);
+
+const sendspinFullscreen = SettingDef<bool>(
+  key: 'sendspin.fullscreen',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Full-screen player instead of the screensaver',
+  description:
+      'While music plays, the idle screensaver becomes a full-screen '
+      'now-playing view: album art with large title and artist. Touch or '
+      'motion dismisses it like any screensaver. When off, music holds '
+      'the screensaver off entirely.',
+  category: 'Sendspin',
+  dependsOn: 'sendspin.enabled',
+);
+
 /// The floating player's position as "x,y" fractions of the free area.
 /// Hidden: owned by the drag gesture, not a settings row.
 const sendspinPlayerPos = SettingDef<String>(
@@ -1533,6 +1562,8 @@ const List<SettingDef<Object>> allSettings = [
   sendspinServer,
   sendspinCodec,
   sendspinShowPlayer,
+  sendspinPlayerSize,
+  sendspinFullscreen,
   sendspinPlayerPos,
   sendspinClientId,
   remoteEnabled,

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -107,6 +108,158 @@ class _MarqueeState extends State<_Marquee>
   }
 }
 
+/// The full-screen now-playing view that stands in for the screensaver
+/// while music plays (sendspin.fullscreen): album art as a blurred, dimmed
+/// backdrop, the art again as a centered panel, and large title/artist
+/// text. Deliberately control-free — it behaves exactly like a screensaver
+/// and the host wraps it in the same tap-to-dismiss surface.
+class SendspinFullscreenView extends StatefulWidget {
+  const SendspinFullscreenView({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<SendspinFullscreenView> createState() => _SendspinFullscreenViewState();
+}
+
+class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
+  AppContainer get c => widget.container;
+
+  Uint8List? _artBytes;
+  String _artUrl = '';
+
+  @override
+  void initState() {
+    super.initState();
+    c.sendspin.nowPlaying.addListener(_onNowPlaying);
+    _onNowPlaying();
+  }
+
+  @override
+  void dispose() {
+    c.sendspin.nowPlaying.removeListener(_onNowPlaying);
+    super.dispose();
+  }
+
+  void _onNowPlaying() {
+    final url = '${c.sendspin.nowPlaying.value?['artworkUrl'] ?? ''}';
+    if (url != _artUrl) {
+      _artUrl = url;
+      _fetchArt(url);
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _fetchArt(String url) async {
+    final bytes = await fetchSendspinArtwork(c, url);
+    if (mounted && url == _artUrl) setState(() => _artBytes = bytes);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = c.sendspin.nowPlaying.value;
+    final title = '${now?['title'] ?? ''}';
+    final artist = [
+      now?['artist'],
+      now?['album'],
+    ].where((v) => v != null && '$v'.isNotEmpty).join(' · ');
+    final art = _artBytes;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const ColoredBox(color: Colors.black),
+        if (art != null) ...[
+          Image.memory(art, fit: BoxFit.cover, gaplessPlayback: true),
+          // Blur + scrim so the backdrop reads as atmosphere, not content.
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: const ColoredBox(color: Color(0x99000000)),
+          ),
+        ],
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (art != null)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.memory(
+                    art,
+                    width: 360,
+                    height: 360,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                  ),
+                )
+              else
+                const Icon(Icons.music_note, size: 160, color: Colors.white24),
+              const SizedBox(height: 40),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 48),
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
+                ),
+              ),
+              if (artist.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 48),
+                  child: Text(
+                    artist,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Fetch artwork accepting a bad TLS certificate only for the configured
+/// Sendspin server's host (Music Assistant's image proxy is self-signed).
+/// Shared by the floating card and the full-screen view.
+Future<Uint8List?> fetchSendspinArtwork(AppContainer c, String url) async {
+  if (url.isEmpty) return null;
+  try {
+    final serverHost = Uri.parse(
+      'ws://${c.settings.get(defs.sendspinServer).trim()}',
+    ).host;
+    final client = HttpClient()
+      ..badCertificateCallback = (cert, host, port) =>
+          host == serverHost && serverHost.isNotEmpty;
+    final request = await client.getUrl(Uri.parse(url));
+    final response = await request.close();
+    final bytes = <int>[];
+    await for (final part in response) {
+      bytes.addAll(part);
+    }
+    client.close();
+    if (response.statusCode != 200) return null;
+    return Uint8List.fromList(bytes);
+  } catch (_) {
+    return null;
+  }
+}
+
 class SendspinPlayerOverlay extends StatefulWidget {
   const SendspinPlayerOverlay({super.key, required this.container});
 
@@ -117,8 +270,10 @@ class SendspinPlayerOverlay extends StatefulWidget {
 }
 
 class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
-  static const _cardWidth = 320.0;
-  static const _cardHeight = 96.0;
+  bool get _large => c.settings.get(defs.sendspinPlayerSize) == 'large';
+  double get _cardWidth => _large ? 400.0 : 320.0;
+  double get _cardHeight => _large ? 152.0 : 96.0;
+  double get _artSize => _large ? 128.0 : 72.0;
 
   AppContainer get c => widget.container;
 
@@ -139,30 +294,8 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
 
   Future<void> _loadArtwork(String url) async {
     _artUrl = url;
-    if (url.isEmpty) {
-      if (mounted) setState(() => _artBytes = null);
-      return;
-    }
-    try {
-      final serverHost = Uri.parse(
-        'ws://${c.settings.get(defs.sendspinServer).trim()}',
-      ).host;
-      final client = HttpClient()
-        ..badCertificateCallback = (cert, host, port) =>
-            host == serverHost && serverHost.isNotEmpty;
-      final request = await client.getUrl(Uri.parse(url));
-      final response = await request.close();
-      final bytes = <int>[];
-      await for (final part in response) {
-        bytes.addAll(part);
-      }
-      client.close();
-      if (mounted && _artUrl == url && response.statusCode == 200) {
-        setState(() => _artBytes = Uint8List.fromList(bytes));
-      }
-    } catch (_) {
-      if (mounted && _artUrl == url) setState(() => _artBytes = null);
-    }
+    final bytes = await fetchSendspinArtwork(c, url);
+    if (mounted && _artUrl == url) setState(() => _artBytes = bytes);
   }
 
   @override
@@ -201,6 +334,34 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
       _tick = null;
     }
     if (mounted) setState(() {});
+  }
+
+  /// The large card's transport row. Buttons appear only for commands the
+  /// server advertises; play/pause swaps on state. All act on the group.
+  Widget _controls(Map<String, Object?> now, bool playing, ColorScheme scheme) {
+    final supported =
+        (now['supportedCommands'] as List?)?.map((e) => '$e').toList() ??
+        const <String>[];
+    bool has(String cmd) => supported.isEmpty || supported.contains(cmd);
+    Widget btn(IconData icon, String command, {double size = 26}) => IconButton(
+      icon: Icon(icon, size: size),
+      color: scheme.onSurface,
+      visualDensity: VisualDensity.compact,
+      onPressed: () => c.sendspin.control(command),
+    );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (has('previous')) btn(Icons.skip_previous, 'previous'),
+        if (has(playing ? 'pause' : 'play'))
+          btn(
+            playing ? Icons.pause_circle_filled : Icons.play_circle_filled,
+            playing ? 'pause' : 'play',
+            size: 36,
+          ),
+        if (has('next')) btn(Icons.skip_next, 'next'),
+      ],
+    );
   }
 
   String _clock(int ms) {
@@ -272,8 +433,8 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: SizedBox(
-                              width: 72,
-                              height: 72,
+                              width: _artSize,
+                              height: _artSize,
                               child: _artBytes == null
                                   ? ColoredBox(
                                       color: scheme.surfaceContainerHighest,
@@ -328,6 +489,10 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                     ),
                                   ),
                                 const Spacer(),
+                                // Large size: transport buttons for the
+                                // whole playback group (controller role),
+                                // shown only when the server accepts them.
+                                if (_large) _controls(now, playing, scheme),
                                 if (duration > 0) ...[
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(2),

@@ -76,6 +76,7 @@ class SendspinBridge(
     @Volatile private var connected = false
     @Volatile private var serverName: String? = null
     @Volatile private var playbackState: String? = null
+    @Volatile private var supportedCommands: List<String> = emptyList()
     @Volatile private var title: String? = null
     @Volatile private var artist: String? = null
     @Volatile private var album: String? = null
@@ -119,6 +120,18 @@ class SendspinBridge(
                     runDiscover(timeoutMs, result)
                 }
                 "getStatus" -> result.success(buildStatus())
+                "control" -> {
+                    val command = call.argument<String>("command") ?: ""
+                    val allowed = supportedCommands
+                    if (command.isNotEmpty() &&
+                        (allowed.isEmpty() || command in allowed)
+                    ) {
+                        client?.sendControllerCommand(command)
+                        result.success(true)
+                    } else {
+                        result.success(false)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
@@ -605,6 +618,12 @@ class SendspinBridge(
             Log.w(TAG, "Reconnect attempts exhausted")
             if (started && discoveryMode) scheduleDiscoveryRestart()
             emitState()
+        }
+
+        override fun onControllerUpdate(supportedCommands: List<String>) {
+            this@SendspinBridge.supportedCommands = supportedCommands
+            emit("controllerChanged",
+                mapOf("supportedCommands" to supportedCommands))
         }
     }
 }
