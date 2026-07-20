@@ -157,6 +157,44 @@ const secureProxy = SettingDef<bool>(
   hidden: true,
 );
 
+/// Optimizations group: injected scripts that keep the Home Assistant
+/// connection healthy and light. Rendered under one heading in both UIs.
+
+/// Auto-disables Home Assistant's "Suspend background connections" preference
+/// so the kiosk's socket is not dropped after a few minutes off screen (see
+/// disable_suspend_script.dart). On by default: a wall tablet should stay
+/// connected.
+const disableSuspend = SettingDef<bool>(
+  key: 'browser.disable_suspend',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Keep connected in the background',
+  description:
+      'Turns off Home Assistant\'s "Suspend background connections" setting, '
+      'which would otherwise drop the connection a few minutes after the '
+      'screen goes off.',
+  category: 'Home Assistant',
+  section: 'Optimizations',
+);
+
+/// Filters the HA entity-update stream to just the current view's entities, so
+/// low-powered tablets stop processing the whole firehose (see
+/// ws_filter_script.dart / issue #8). Off by default: it is only correct for a
+/// locked, single-view kiosk and can miss dynamically referenced entities.
+const wsFilter = SettingDef<bool>(
+  key: 'browser.ws_filter',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Filter dashboard updates',
+  description:
+      'Only process Home Assistant updates for entities on the current '
+      'dashboard view. Cuts stutter on low-powered tablets. Works best with '
+      'kiosk mode on. Views whose entities cannot be determined are shown '
+      'unfiltered.',
+  category: 'Home Assistant',
+  section: 'Optimizations',
+);
+
 const autoReloadOnError = SettingDef<bool>(
   key: 'browser.auto_reload_on_error',
   type: SettingType.boolean,
@@ -1295,6 +1333,8 @@ const List<SettingDef<Object>> allSettings = [
   themeDarkAt,
   themeLightAt,
   themeAutoApp,
+  disableSuspend,
+  wsFilter,
   haRotationEnabled,
   haRotationDashboards,
   haRotationUrls,

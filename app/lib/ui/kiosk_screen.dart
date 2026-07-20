@@ -14,6 +14,7 @@ import '../core/events.dart';
 import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
+import '../managers/browser/ws_filter_script.dart';
 import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
@@ -165,6 +166,8 @@ class _KioskScreenState extends State<KioskScreen>
         e.key == defs.ignoreSslErrors.key ||
         e.key == defs.disableCache.key ||
         e.key == defs.pinchToZoom.key ||
+        e.key == defs.wsFilter.key ||
+        e.key == defs.disableSuspend.key ||
         e.key == defs.kioskDisableContextMenus.key) {
       setState(() => _webViewEpoch++);
       return;
@@ -329,10 +332,18 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     // Turn off Home Assistant's "Suspend background connections" so it does
     // not deliberately drop the kiosk's socket after 5 minutes off screen.
-    UserScript(
-      source: disableSuspendScript,
-      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-    ),
+    if (c.settings.get(defs.disableSuspend))
+      UserScript(
+        source: disableSuspendScript,
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
+    // Experimental: filter the entity-update firehose to the current view so
+    // low-powered tablets stop doing work for entities they do not show.
+    if (c.settings.get(defs.wsFilter))
+      UserScript(
+        source: wsFilterScript,
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
     // The wizard's satellite choice, handed to Voice Satellite before its
     // code runs: VS reads localStorage['vs-satellite-entity'], selects that
     // assist_satellite, hydrates its server-side profile and starts. Only
