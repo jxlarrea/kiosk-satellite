@@ -1404,6 +1404,19 @@ const sendspinFullscreen = SettingDef<bool>(
   dependsOn: 'sendspin.enabled',
 );
 
+const sendspinFullscreenMotion = SettingDef<bool>(
+  key: 'sendspin.fullscreen_motion',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Dismiss the full-screen player on motion',
+  description:
+      'Let motion dismiss the now-playing view like a regular screensaver. '
+      'Off, only touch dismisses it, so someone walking past does not '
+      'interrupt the music display.',
+  category: 'Sendspin',
+  dependsOn: 'sendspin.fullscreen',
+);
+
 /// The floating player's position as "x,y" fractions of the free area.
 /// Hidden: owned by the drag gesture, not a settings row.
 const sendspinPlayerPos = SettingDef<String>(
@@ -1583,6 +1596,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinPlayerSize,
   sendspinDuckPercent,
   sendspinFullscreen,
+  sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,
   remoteEnabled,

@@ -179,6 +179,17 @@ class KioskBackPressed extends AppEvent {
   const KioskBackPressed();
 }
 
+// ── Sendspin ───────────────────────────────────────────────────────────
+
+/// The Sendspin now-playing display state: true while a track is loaded
+/// (playing, paused, or inside the track-change grace period). The
+/// screensaver consumes it to apply the full-screen player's own motion
+/// dismissal policy.
+class SendspinNowPlayingChanged extends AppEvent {
+  const SendspinNowPlayingChanged({required this.active});
+  final bool active;
+}
+
 // ── Settings ───────────────────────────────────────────────────────────
 
 class SettingChanged extends AppEvent {

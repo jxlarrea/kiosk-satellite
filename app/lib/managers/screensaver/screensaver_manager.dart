@@ -46,6 +46,10 @@ class ScreensaverManager extends Manager {
 
   bool get isActive => _active;
 
+  /// Whether the Sendspin now-playing display is active (a track loaded),
+  /// mirrored from its bus event for the motion-dismiss policy above.
+  bool _sendspinNowPlaying = false;
+
   @override
   Future<void> init() async {
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
@@ -78,10 +82,22 @@ class ScreensaverManager extends Manager {
         _resetIdleTimer();
       }
     });
+    bus.on<SendspinNowPlayingChanged>().listen((e) {
+      _sendspinNowPlaying = e.active;
+    });
     bus.on<MotionDetected>().listen((_) {
-      if (_settings.get(defs.screensaverDismissOnMotion)) {
-        notifyActivity('motion');
+      if (!_settings.get(defs.screensaverDismissOnMotion)) return;
+      // The full-screen now-playing view has its own motion policy: it is
+      // a music display, and someone walking past should not interrupt it
+      // unless explicitly asked to (sendspin.fullscreen_motion).
+      final showingNowPlaying = activeView.value != null &&
+          _sendspinNowPlaying &&
+          _settings.get(defs.sendspinFullscreen);
+      if (showingNowPlaying &&
+          !_settings.get(defs.sendspinFullscreenMotion)) {
+        return;
       }
+      notifyActivity('motion');
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key.startsWith('screensaver.')) _resetIdleTimer();

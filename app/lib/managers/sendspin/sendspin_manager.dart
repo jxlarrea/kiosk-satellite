@@ -55,13 +55,21 @@ class SendspinManager extends Manager {
 
   Timer? _idleGrace;
 
+  void _setNowPlaying(Map<String, Object?>? value) {
+    final wasActive = nowPlaying.value != null;
+    nowPlaying.value = value;
+    if (wasActive != (value != null)) {
+      bus.publish(SendspinNowPlayingChanged(active: value != null));
+    }
+  }
+
   void _publishNowPlaying() {
     final state = '${_status['playbackState'] ?? ''}';
     final active = _playing || (state == 'paused' && _status['title'] != null);
     if (active) {
       _idleGrace?.cancel();
       _idleGrace = null;
-      nowPlaying.value = {..._status, 'playing': _playing};
+      _setNowPlaying({..._status, 'playing': _playing});
       return;
     }
     if (nowPlaying.value == null) return;
@@ -74,7 +82,7 @@ class SendspinManager extends Manager {
       _idleGrace = null;
       final s = '${_status['playbackState'] ?? ''}';
       if (!_playing && !(s == 'paused' && _status['title'] != null)) {
-        nowPlaying.value = null;
+        _setNowPlaying(null);
       }
     });
   }
@@ -172,6 +180,7 @@ class SendspinManager extends Manager {
         'sendspin.player_size',
         'sendspin.player_pos',
         'sendspin.fullscreen',
+        'sendspin.fullscreen_motion',
         'sendspin.duck_percent',
       ];
       final relevant =
@@ -306,6 +315,6 @@ class SendspinManager extends Manager {
     _status = const {};
     _idleGrace?.cancel();
     _idleGrace = null;
-    nowPlaying.value = null;
+    _setNowPlaying(null);
   }
 }
