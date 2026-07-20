@@ -311,7 +311,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   /// The title line's trailing badge slot (the equalizer while playing),
   /// constant in both states so the marquee width never changes.
   double get _corner => _large ? 24.0 : 20.0;
-  double get _cardWidth => _large ? 400.0 : 320.0;
+  double get _cardWidth => _large ? 480.0 : 320.0;
   double get _cardHeight => _large ? 152.0 : 96.0;
   double get _artSize => _large ? 128.0 : 72.0;
 
