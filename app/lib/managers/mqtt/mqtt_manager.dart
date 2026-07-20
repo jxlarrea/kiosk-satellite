@@ -52,6 +52,7 @@ class MqttManager extends Manager {
   int? _lastBattery;
   bool? _lastCharging;
   int? _lastCpu;
+  int? _lastCpuTemp;
   int? _lastRamFreeMb;
   int? _lastRamTotalMb;
 
@@ -418,6 +419,11 @@ class MqttManager extends Manager {
       _lastCpu = cpu;
       _publish('$_base/cpu/state', '$cpu');
     }
+    final temp = (data['temp'] as num?)?.round();
+    if (temp != null && temp != _lastCpuTemp) {
+      _lastCpuTemp = temp;
+      _publish('$_base/cpu_temp/state', '$temp');
+    }
     // RAM rides the same tick from the fuller details read; once a minute
     // is nothing, and it saves a second platform channel.
     final details = await commands.execute('getDeviceDetails', const {});
@@ -446,6 +452,7 @@ class MqttManager extends Manager {
         '$_prefix/binary_sensor/ks_$_deviceId/charging/config',
         '$_prefix/sensor/ks_$_deviceId/url/config',
         '$_prefix/sensor/ks_$_deviceId/cpu/config',
+        '$_prefix/sensor/ks_$_deviceId/cpu_temp/config',
         '$_prefix/sensor/ks_$_deviceId/ram_free/config',
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/switch/ks_$_deviceId/screensaver/config',
@@ -538,6 +545,14 @@ class MqttManager extends Manager {
         'unit_of_measurement': '%',
         'state_class': 'measurement',
         'icon': 'mdi:chip',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/sensor/ks_$_deviceId/cpu_temp/config': {
+        ...common('cpu_temp', 'CPU temperature'),
+        'state_topic': '$_base/cpu_temp/state',
+        'device_class': 'temperature',
+        'unit_of_measurement': '°C',
+        'state_class': 'measurement',
         'entity_category': 'diagnostic',
       },
       '$_prefix/sensor/ks_$_deviceId/ram_free/config': {
