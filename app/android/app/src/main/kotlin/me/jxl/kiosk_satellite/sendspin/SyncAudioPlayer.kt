@@ -1302,8 +1302,12 @@ class SyncAudioPlayer(
         if (isReleased.get()) return
         chunksReceived++
 
-        // Buffer chunks until time sync is ready
-        if (!timeFilter.isReady) {
+        // Buffer chunks until time sync has CONVERGED, not merely produced
+        // a first estimate. Starting on an early estimate cost a fresh
+        // process ~1.5s of clock error, which the sync corrector then
+        // "fixed" with a reanchor seconds into playback — the estimate is
+        // cheap to wait out (about a second) and the reanchor is not.
+        if (!timeFilter.isConverged) {
             synchronized(pendingChunks) {
                 if (pendingChunks.size < MAX_PENDING_CHUNKS) {
                     pendingChunks.add(Pair(serverTimeMicros, pcmData))
@@ -1924,14 +1928,29 @@ class SyncAudioPlayer(
         }
 
         try {
-            AppLog.Sync.w("Triggering reanchor: clearing buffers and resetting state")
+            AppLog.Sync.w("Triggering reanchor: resetting timing, keeping the queue")
 
             lastReanchorTimeUs = nowMicros
             setPlaybackState(PlaybackState.REANCHORING)
 
-            // Clear audio state but keep AudioTrack playing
-            chunkQueue.clear()
-            totalQueuedSamples.set(0)
+            // Keep the buffered queue: those chunks are the NEXT ~30s of
+            // music (the server sends far ahead), and clearing them left a
+            // silence hole until the server's send-cursor caught up — the
+            // classic restart-mid-song death. Drop only chunks whose
+            // deadline has already passed under the corrected clock; the
+            // start gate re-aligns against the queue head.
+            val nowServerUs = timeFilter.clientToServer(nowMicros)
+            var dropped = 0
+            while (true) {
+                val head = chunkQueue.peek() ?: break
+                if (head.serverTimeMicros >= nowServerUs) break
+                chunkQueue.poll()
+                totalQueuedSamples.addAndGet(-head.sampleCount.toLong())
+                dropped++
+            }
+            if (dropped > 0) {
+                AppLog.Sync.i("Reanchor dropped $dropped stale chunks")
+            }
 
             // Safely flush the AudioTrack
             val track = audioSink

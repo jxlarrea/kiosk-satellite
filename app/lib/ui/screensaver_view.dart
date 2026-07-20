@@ -36,8 +36,10 @@ class ScreensaverOverlay extends StatelessWidget {
             // Music playing with the full-screen player enabled: the
             // screensaver slot shows the now-playing view instead of the
             // configured mode, dismissed exactly like any screensaver.
-            // Falls back live when playback ends mid-screensaver.
-            if (nowPlaying != null &&
+            // Falls back live when playback ends mid-screensaver; a track
+            // merely PAUSED gets the regular screensaver, not a frozen
+            // now-playing panel.
+            if (nowPlaying?['playing'] == true &&
                 container.settings.get(defs.sendspinFullscreen)) {
               return Positioned.fill(
                 child: _Dismissable(

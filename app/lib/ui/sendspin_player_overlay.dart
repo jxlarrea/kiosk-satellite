@@ -499,7 +499,14 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                     Expanded(
                                       child: _Marquee(
                                         text: title,
-                                        style: theme.textTheme.titleSmall,
+                                        // The large card earns larger
+                                        // type; compact keeps its fit.
+                                        style: _large
+                                            ? theme.textTheme.titleLarge
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                  )
+                                            : theme.textTheme.titleSmall,
                                       ),
                                     ),
                                     Icon(
@@ -514,9 +521,13 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                 if (artist.isNotEmpty)
                                   _Marquee(
                                     text: artist,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
+                                    style:
+                                        (_large
+                                                ? theme.textTheme.bodyMedium
+                                                : theme.textTheme.bodySmall)
+                                            ?.copyWith(
+                                              color: scheme.onSurfaceVariant,
+                                            ),
                                   ),
                                 const Spacer(),
                                 // Large size: transport buttons for the
@@ -543,17 +554,33 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                     children: [
                                       Text(
                                         _clock(position),
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color: scheme.onSurfaceVariant,
-                                            ),
+                                        style:
+                                            (_large
+                                                    ? theme
+                                                          .textTheme
+                                                          .labelMedium
+                                                    : theme
+                                                          .textTheme
+                                                          .labelSmall)
+                                                ?.copyWith(
+                                                  color:
+                                                      scheme.onSurfaceVariant,
+                                                ),
                                       ),
                                       Text(
                                         _clock(duration),
-                                        style: theme.textTheme.labelSmall
-                                            ?.copyWith(
-                                              color: scheme.onSurfaceVariant,
-                                            ),
+                                        style:
+                                            (_large
+                                                    ? theme
+                                                          .textTheme
+                                                          .labelMedium
+                                                    : theme
+                                                          .textTheme
+                                                          .labelSmall)
+                                                ?.copyWith(
+                                                  color:
+                                                      scheme.onSurfaceVariant,
+                                                ),
                                       ),
                                     ],
                                   ),

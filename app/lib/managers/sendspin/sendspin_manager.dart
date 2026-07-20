@@ -55,33 +55,58 @@ class SendspinManager extends Manager {
 
   Timer? _idleGrace;
 
+  /// The 'playing' flag as published to the UI. Lags reality through the
+  /// grace window: at the instant playback stops, a pause and a track
+  /// change are indistinguishable (both are a stream/end), so the UI keeps
+  /// its playing look until the gap proves persistent.
+  bool _uiPlaying = false;
+
   void _setNowPlaying(Map<String, Object?>? value) {
-    final wasActive = nowPlaying.value != null;
+    final wasShowing = nowPlaying.value?['playing'] == true;
     nowPlaying.value = value;
-    if (wasActive != (value != null)) {
-      bus.publish(SendspinNowPlayingChanged(active: value != null));
+    final showing = value?['playing'] == true;
+    if (wasShowing != showing) {
+      // The screensaver's motion policy tracks the full-screen display,
+      // which only shows while actually playing.
+      bus.publish(SendspinNowPlayingChanged(active: showing));
     }
   }
 
   void _publishNowPlaying() {
-    final state = '${_status['playbackState'] ?? ''}';
-    final active = _playing || (state == 'paused' && _status['title'] != null);
-    if (active) {
+    final connected = _status['connected'] == true;
+    final hasTrack = _status['title'] != null;
+    if (_playing) {
       _idleGrace?.cancel();
       _idleGrace = null;
-      _setNowPlaying({..._status, 'playing': _playing});
+      _uiPlaying = true;
+      _setNowPlaying({..._status, 'playing': true});
       return;
     }
-    if (nowPlaying.value == null) return;
-    // Not playing, but something is on screen: hold it through a grace
-    // period before clearing. Track changes rebuild the stream (a moment
-    // of "not playing" between stream/end and the next stream/start), and
-    // without the hold every song change flashed the dashboard through
-    // the now-playing screensaver and the floating card.
+    if (nowPlaying.value == null) {
+      // Nothing shown yet: a paused track (connected, metadata present)
+      // still gets a card, so playback paused elsewhere is resumable here.
+      if (connected && hasTrack) {
+        _uiPlaying = false;
+        _setNowPlaying({..._status, 'playing': false});
+      }
+      return;
+    }
+    // Something is on screen and playback just is not running: hold the
+    // current look through a grace period. Track changes rebuild the
+    // stream (a moment of "not playing" between stream/end and the next
+    // stream/start); without the hold every song change flashed the
+    // dashboard through the now-playing screensaver and the card.
+    _setNowPlaying({..._status, 'playing': _uiPlaying});
     _idleGrace ??= Timer(const Duration(milliseconds: 2500), () {
       _idleGrace = null;
-      final s = '${_status['playbackState'] ?? ''}';
-      if (!_playing && !(s == 'paused' && _status['title'] != null)) {
+      if (_playing) return;
+      _uiPlaying = false;
+      final conn = _status['connected'] == true;
+      final track = _status['title'] != null;
+      if (conn && track) {
+        // A real pause: the card stays, paused, ready to resume.
+        _setNowPlaying({..._status, 'playing': false});
+      } else {
         _setNowPlaying(null);
       }
     });
@@ -204,12 +229,23 @@ class SendspinManager extends Manager {
         description:
             'The Sendspin player status: connection, server, playback state, '
             'current track and volume.',
-        handler: (_) async => CommandResult.ok({
-          'enabled': _settings.get(defs.sendspinEnabled),
-          'running': _running,
-          'playing': _playing,
-          ..._status,
-        }),
+        handler: (_) async {
+          // The cached snapshot lags fields only re-sent on events (sync
+          // state); the bridge computes them live.
+          var live = const <String, Object?>{};
+          try {
+            live = ((await _channel.invokeMethod<Map>('getStatus')) ??
+                    const {})
+                .cast<String, Object?>();
+          } catch (_) {}
+          return CommandResult.ok({
+            'enabled': _settings.get(defs.sendspinEnabled),
+            'running': _running,
+            'playing': _playing,
+            ..._status,
+            ...live,
+          });
+        },
       ),
     );
 
@@ -315,6 +351,7 @@ class SendspinManager extends Manager {
     _status = const {};
     _idleGrace?.cancel();
     _idleGrace = null;
+    _uiPlaying = false;
     _setNowPlaying(null);
   }
 }
