@@ -291,6 +291,11 @@ class SendspinPlayerOverlay extends StatefulWidget {
 
 class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   bool get _large => c.settings.get(defs.sendspinPlayerSize) == 'large';
+
+  /// Width the title and artist lines leave clear at the card's top-right
+  /// corner, where the floating close button lives while paused (circle
+  /// plus its 8px inset, minus the column's own right padding).
+  double get _corner => _large ? 40.0 : 34.0;
   double get _cardWidth => _large ? 400.0 : 320.0;
   double get _cardHeight => _large ? 152.0 : 96.0;
   double get _artSize => _large ? 128.0 : 72.0;
@@ -550,7 +555,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                         // marquee width never changes
                                         // with the state.
                                         SizedBox(
-                                          width: _large ? 24.0 : 20.0,
+                                          width: _corner,
                                           child: playing
                                               ? Icon(
                                                   Icons.graphic_eq,
@@ -562,16 +567,30 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                       ],
                                     ),
                                     if (artist.isNotEmpty)
-                                      _Marquee(
-                                        text: artist,
-                                        style:
-                                            (_large
-                                                    ? theme.textTheme.bodyMedium
-                                                    : theme.textTheme.bodySmall)
-                                                ?.copyWith(
-                                                  color:
-                                                      scheme.onSurfaceVariant,
-                                                ),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _Marquee(
+                                              text: artist,
+                                              style:
+                                                  (_large
+                                                          ? theme
+                                                                .textTheme
+                                                                .bodyMedium
+                                                          : theme
+                                                                .textTheme
+                                                                .bodySmall)
+                                                      ?.copyWith(
+                                                        color: scheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                            ),
+                                          ),
+                                          // Same corner inset as the title
+                                          // line, so neither runs under
+                                          // the floating close button.
+                                          SizedBox(width: _corner),
+                                        ],
                                       ),
                                     const Spacer(),
                                     // Large size: transport buttons for the
