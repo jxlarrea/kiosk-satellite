@@ -36,6 +36,20 @@ class ScreenManager extends Manager {
   Future<void> init() async {
     await _applyWakelock();
 
+    // External brightness changes (quick settings, adaptive brightness):
+    // pushed by the native observer so every mirror of the value — the
+    // remote admin's slider, the MQTT brightness state — tracks the panel
+    // instead of the last value this app happened to write.
+    _brightness.setMethodCallHandler((call) async {
+      if (call.method == 'brightnessChanged') {
+        final level = (call.arguments as num?)?.toDouble();
+        if (level != null) {
+          bus.publish(BrightnessChanged(level: level));
+        }
+      }
+      return null;
+    });
+
     // The default brightness, applied at start when its gate is on. Also
     // applied live as the slider moves (or the gate turns on) — brightness
     // is the kind of setting whose feedback should be the panel itself.
@@ -138,7 +152,16 @@ class ScreenManager extends Manager {
     }
   }
 
+  /// The panel's actual brightness — the system setting — not the app-window
+  /// override the plugin reads, which stops tracking reality the moment
+  /// anything else (quick settings, adaptive brightness) moves the panel.
   Future<double?> getBrightness() async {
+    try {
+      final level = await _brightness.invokeMethod<double>('get');
+      if (level != null) return level;
+    } catch (_) {
+      // Not Android, or the channel is unavailable: plugin fallback below.
+    }
     try {
       return await ScreenBrightness().application;
     } catch (e) {
@@ -148,10 +171,26 @@ class ScreenManager extends Manager {
   }
 
   Future<bool> setBrightness(double level) async {
+    final clamped = level.clamp(0.0, 1.0);
+    // The real thing first: write the system setting, so the value every
+    // other surface reads (quick settings, the MQTT state) moves too.
+    // Needs the "Modify system settings" grant; false without it.
     try {
-      await ScreenBrightness().setApplicationScreenBrightness(
-          level.clamp(0.0, 1.0));
-      bus.publish(BrightnessChanged(level: level));
+      if (await _brightness.invokeMethod<bool>('set', {'level': clamped}) ==
+          true) {
+        // Drop any app-window override so the system value shows through.
+        try {
+          await ScreenBrightness().resetApplicationScreenBrightness();
+        } catch (_) {}
+        bus.publish(BrightnessChanged(level: clamped));
+        return true;
+      }
+    } catch (_) {}
+    // No grant: the window override still visibly dims the fullscreen
+    // kiosk, it just cannot move the system slider with it.
+    try {
+      await ScreenBrightness().setApplicationScreenBrightness(clamped);
+      bus.publish(BrightnessChanged(level: clamped));
       return true;
     } catch (e) {
       log.warn(name, 'setBrightness failed: $e');
@@ -175,6 +214,10 @@ class ScreenManager extends Manager {
 
   /// Activity-scoped (see MainActivity): the device-admin grant dialog.
   static const _admin = MethodChannel('kiosk_satellite/admin');
+
+  /// System brightness bridge (BrightnessBridge.kt): the real panel value,
+  /// its observer, and the "Modify system settings" grant.
+  static const _brightness = MethodChannel('kiosk_satellite/brightness');
 
   /// True panel off via device-admin lockNow — never a brightness trick;
   /// the brightness slider owns brightness (issue #2). Returns false when

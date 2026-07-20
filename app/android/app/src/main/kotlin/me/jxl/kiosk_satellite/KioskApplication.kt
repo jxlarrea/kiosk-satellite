@@ -32,6 +32,7 @@ class KioskApplication : Application() {
     private lateinit var micRecorder: MicRecorder
     private lateinit var background: BackgroundBridge
     private lateinit var deviceDetails: DeviceDetails
+    private lateinit var brightness: BrightnessBridge
 
     override fun onCreate() {
         super.onCreate()
@@ -50,5 +51,6 @@ class KioskApplication : Application() {
         micRecorder = MicRecorder(messenger)
         background = BackgroundBridge(applicationContext, messenger)
         deviceDetails = DeviceDetails(applicationContext, messenger)
+        brightness = BrightnessBridge(applicationContext, messenger)
     }
 }
