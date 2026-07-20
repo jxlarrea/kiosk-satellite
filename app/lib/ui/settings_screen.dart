@@ -548,6 +548,53 @@ class _CategoryContentState extends State<_CategoryContent> {
 
   /// The app log, mirroring the remote UI's Logs tab: the same buffer the
   /// admin serves, newest at the bottom, with copy for bug reports.
+  /// Which log the App Logs page shows: the app's own ring buffer, or the
+  /// Android logcat tail — where renderer crashes and OS-level kills appear,
+  /// which the in-app log by definition cannot record.
+  String _logSource = 'app';
+  String? _logcatText;
+  bool _logcatLoading = false;
+
+  /// Logcat type filters, so a crash can be copied without 800 lines of
+  /// noise around it. Continuation lines (stack traces) inherit the previous
+  /// line's priority, so a filtered crash keeps its whole trace.
+  bool _lcErrors = true;
+  bool _lcWarnings = true;
+  bool _lcInfo = false;
+
+  static final _lcPriority = RegExp(r'^\d{2}-\d{2} [\d:.]+ ([VDIWEF])/');
+
+  List<(String, String)> _filteredLogcat() {
+    final text = _logcatText;
+    if (text == null) return const [];
+    final out = <(String, String)>[];
+    var last = 'I';
+    for (final line in text.split('\n')) {
+      if (line.trim().isEmpty) continue;
+      final m = _lcPriority.firstMatch(line);
+      final pri = m?.group(1) ?? last;
+      last = pri;
+      final keep = switch (pri) {
+        'E' || 'F' => _lcErrors,
+        'W' => _lcWarnings,
+        _ => _lcInfo,
+      };
+      if (keep) out.add((line, pri));
+    }
+    return out;
+  }
+
+  Future<void> _fetchLogcat(AppContainer container) async {
+    setState(() => _logcatLoading = true);
+    final r = await container.commands.execute('getLogcat', const {});
+    if (!mounted) return;
+    setState(() {
+      _logcatLoading = false;
+      _logcatText =
+          r.ok ? '${r.data}' : 'Could not read logcat: ${r.error ?? 'unknown'}';
+    });
+  }
+
   List<Widget> _logsCards(AppContainer container) {
     final theme = Theme.of(context);
     final entries = container.log.recent;
@@ -559,12 +606,32 @@ class _CategoryContentState extends State<_CategoryContent> {
     };
     String fmt(LogEntry e) =>
         '${e.time.toIso8601String().substring(11, 19)} ${e.tag}: ${e.message}';
+    final isLogcat = _logSource == 'logcat';
     return [
       _SettingsCard(
         children: [
           ListTile(
-            title: const Text('App log'),
-            subtitle: Text('${entries.length} entries'),
+            title: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _logSource,
+                isDense: true,
+                items: const [
+                  DropdownMenuItem(
+                      value: 'app', child: Text('Kiosk Satellite')),
+                  DropdownMenuItem(value: 'logcat', child: Text('Logcat')),
+                ],
+                onChanged: (v) {
+                  if (v == null) return;
+                  setState(() => _logSource = v);
+                  if (v == 'logcat' && _logcatText == null) {
+                    _fetchLogcat(container);
+                  }
+                },
+              ),
+            ),
+            subtitle: Text(isLogcat
+                ? 'Android system log for this app (crashes live here)'
+                : '${entries.length} entries'),
             trailing: Wrap(
               spacing: 4,
               children: [
@@ -574,13 +641,17 @@ class _CategoryContentState extends State<_CategoryContent> {
                   onPressed: () async {
                     await Clipboard.setData(
                       ClipboardData(
-                        text: entries.map(fmt).join('\n'),
+                        text: isLogcat
+                            ? _filteredLogcat()
+                                .map((l) => l.$1)
+                                .join('\n')
+                            : entries.map(fmt).join('\n'),
                       ),
                     );
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('App log copied'),
+                        content: Text('Log copied'),
                         duration: Duration(seconds: 2),
                         behavior: SnackBarBehavior.floating,
                       ),
@@ -590,30 +661,110 @@ class _CategoryContentState extends State<_CategoryContent> {
                 IconButton(
                   tooltip: 'Refresh',
                   icon: const Icon(Icons.refresh, size: 20),
-                  onPressed: () => setState(() {}),
+                  onPressed: () => isLogcat
+                      ? _fetchLogcat(container)
+                      : setState(() {}),
                 ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final e in entries)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 1),
-                    child: Text(
-                      fmt(e),
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                        color: levelColor(e.level),
+          // Type filters, only for logcat: copy exactly the lines shown, so a
+          // crash can go into a GitHub issue without hundreds of noise lines.
+          if (isLogcat)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+              child: Wrap(
+                spacing: 16,
+                children: [
+                  for (final (label, value, set) in [
+                    ('Errors & crashes', _lcErrors,
+                        (bool v) => _lcErrors = v),
+                    ('Warnings', _lcWarnings, (bool v) => _lcWarnings = v),
+                    ('Info & debug', _lcInfo, (bool v) => _lcInfo = v),
+                  ])
+                    InkWell(
+                      onTap: () => setState(() => set(!value)),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Checkbox(
+                            value: value,
+                            visualDensity: VisualDensity.compact,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            onChanged: (v) =>
+                                setState(() => set(v ?? false)),
+                          ),
+                          Text(label, style: theme.textTheme.bodySmall),
+                        ],
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: isLogcat
+                ? (_logcatLoading
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.4),
+                          ),
+                        ),
+                      )
+                    : Builder(builder: (context) {
+                        final lines = _filteredLogcat();
+                        // Errors-only is the default; a quiet log must read
+                        // as good news, not as a broken viewer.
+                        if (lines.isEmpty && _logcatText != null) {
+                          return Text(
+                            'No matching lines. Enable more types above to '
+                            'see the full log.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final (line, pri) in lines)
+                              Text(
+                                line,
+                                style: TextStyle(
+                                  fontFamily: 'monospace',
+                                  fontSize: 11,
+                                  color: switch (pri) {
+                                    'E' || 'F' => Colors.red.shade300,
+                                    'W' => Colors.amber.shade700,
+                                    _ => theme.colorScheme.onSurface,
+                                  },
+                                ),
+                              ),
+                          ],
+                        );
+                      }))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final e in entries)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 1),
+                          child: Text(
+                            fmt(e),
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              color: levelColor(e.level),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
           ),
         ],
       ),

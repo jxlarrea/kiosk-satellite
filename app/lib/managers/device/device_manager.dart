@@ -92,6 +92,34 @@ class DeviceManager extends Manager {
 
     commands.register(
       Command(
+        name: 'getLogcat',
+        description:
+            'The Android logcat tail for this app (main, system and crash '
+            'buffers) — the place renderer crashes and OS-level kills show '
+            'up, which the in-app log cannot see. An app may always read '
+            'its own logcat lines; no permission involved.',
+        params: const {'lines': 'max lines, default 800'},
+        handler: (p) async {
+          final lines = ((p['lines'] as num?)?.toInt() ?? 800).clamp(50, 5000);
+          try {
+            final result = await Process.run('logcat', [
+              '-b', 'main', '-b', 'system', '-b', 'crash',
+              '-d', '-v', 'time', '-t', '$lines',
+            ]);
+            if (result.exitCode != 0) {
+              return CommandResult.fail(
+                  'logcat failed: ${result.stderr ?? result.exitCode}');
+            }
+            return CommandResult.ok('${result.stdout}');
+          } catch (e) {
+            return CommandResult.fail('logcat unavailable: $e');
+          }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
         name: 'getStats',
         description:
             'Battery, CPU load and temperature only: the live header '

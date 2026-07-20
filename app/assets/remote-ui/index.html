@@ -524,7 +524,17 @@
 
     <!-- Logs -->
     <div class="tab" id="tab-logs">
-      <div class="toolbar"><span class="spacer"></span>
+      <div class="toolbar">
+        <select id="logSource" style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); padding:8px 12px;">
+          <option value="app">Kiosk Satellite</option>
+          <option value="logcat">Logcat</option>
+        </select>
+        <span id="logcatFilters" style="display:none; gap:14px; align-items:center; margin-left:14px; font-size:13px; color:var(--muted);">
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcErrors" checked> Errors &amp; crashes</label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcWarnings" checked> Warnings</label>
+          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcInfo"> Info &amp; debug</label>
+        </span>
+        <span class="spacer"></span>
         <button class="btn-ghost" id="copyLogs">Copy</button>
         <button class="btn-ghost" id="refreshLogs">Refresh</button></div>
       <div class="console" id="logsOut"></div>
@@ -2340,13 +2350,62 @@ $('#copyLogs').addEventListener('click', (e) => copyPane($('#logsOut'), e.target
     out.scrollTop = out.scrollHeight;
   });
 }
-async function loadLogs() {
-  const { logs } = await (await api('/api/logs')).json();
+// Render the stored logcat text through the type checkboxes, so Copy grabs
+// exactly the lines on screen — a crash can go into a GitHub issue without
+// hundreds of noise lines around it. Continuation lines (stack traces)
+// inherit the previous line's priority so a filtered crash keeps its trace.
+let _logcatText = '';
+function renderLogcat() {
   const el = $('#logsOut'); el.innerHTML = '';
+  const want = {
+    err: $('#lcErrors').checked,
+    warn: $('#lcWarnings').checked,
+    info: $('#lcInfo').checked,
+  };
+  let last = 'I';
+  let shown = 0;
+  _logcatText.split('\n').forEach((line) => {
+    if (!line.trim()) return;
+    const m = line.match(/^\d{2}-\d{2} [\d:.]+ ([VDIWEF])\//);
+    const pri = m ? m[1] : last;
+    last = pri;
+    const isErr = pri === 'E' || pri === 'F';
+    const keep = isErr ? want.err : pri === 'W' ? want.warn : want.info;
+    if (!keep) return;
+    shown++;
+    appendLine(el, isErr ? 'error' : pri === 'W' ? 'warn' : 'log', line);
+  });
+  // Errors-only is the default; a quiet log must read as good news, not as
+  // a broken viewer.
+  if (!shown && _logcatText.trim()) {
+    appendLine(el, 'debug', 'No matching lines. Enable more types above to see the full log.');
+  }
+}
+async function loadLogs() {
+  // The dropdown picks the source: the app's own log, or the Android logcat
+  // tail — where renderer crashes and OS-level kills show up, which the
+  // in-app log cannot see (Fully Kiosk-style).
+  const logcat = $('#logSource').value === 'logcat';
+  $('#logcatFilters').style.display = logcat ? 'inline-flex' : 'none';
+  const el = $('#logsOut'); el.innerHTML = '';
+  if (logcat) {
+    try {
+      const r = await (await api('/api/commands/getLogcat', {
+        method: 'POST', body: '{}' })).json();
+      if (!r.ok) { appendLine(el, 'error', r.error || 'logcat unavailable'); return; }
+      _logcatText = String(r.data || '');
+      renderLogcat();
+    } catch (_) { appendLine(el, 'error', 'logcat unavailable'); }
+    return;
+  }
+  const { logs } = await (await api('/api/logs')).json();
   (logs || []).forEach((l) =>
     appendLine(el, l.level, `${l.tag}: ${l.message}`, Date.parse(l.time)));
 }
 $('#refreshLogs').addEventListener('click', loadLogs);
+$('#logSource').addEventListener('change', loadLogs);
+['lcErrors', 'lcWarnings', 'lcInfo'].forEach((id) =>
+  $('#' + id).addEventListener('change', renderLogcat));
 
 /* ---- Live state (WebSocket) ---- */
 function connectWs() {
@@ -2363,7 +2422,10 @@ function connectWs() {
     if (msg.type === 'state') applyInfo(msg.device, msg.currentUrl);
     else if (msg.type === 'stats') renderStats(msg);
     else if (msg.type === 'console') appendLine($('#consoleOut'), msg.level, msg.message, msg.time);
-    else if (msg.type === 'log') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
+    else if (msg.type === 'log') {
+      // Live pushes belong to the app log; don't interleave them into logcat.
+      if ($('#logSource').value === 'app') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
+    }
     else if (msg.type === 'event' && msg.event === 'screenon') loadScreenshot();
     // The device's own settings screen updates live off the same event; this
     // panel has to as well, or the two disagree about the same device.
