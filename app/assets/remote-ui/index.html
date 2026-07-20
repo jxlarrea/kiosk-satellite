@@ -741,6 +741,7 @@ const CATEGORY_TABS = [
 
 async function loadSettings() {
   const { settings } = await (await api('/api/settings')).json();
+  state.settings = settings; // kept so a saved row can tell if it changes layout
 
   // A setting can declare that it only means anything while another one is on
   // (dependsOn). The device hides those rows; so must we, or the two disagree
@@ -1059,7 +1060,9 @@ async function loadSettings() {
       // supply.
       const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token'
         && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds'
-        && s.key !== 'ha.rotation_pause_seconds');
+        && s.key !== 'ha.rotation_pause_seconds'
+        // Optimizations are hand-built last so the filter can show telemetry.
+        && s.key !== 'browser.disable_suspend' && s.key !== 'browser.ws_filter');
       const restRoot = document.createElement('div');
       root.appendChild(restRoot);
       const savedHa = byCat['Home Assistant'];
@@ -1229,6 +1232,103 @@ async function loadSettings() {
           inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
           addRow.append(inp, add);
           rcard.appendChild(addRow);
+        }
+      }
+
+      // Optimizations: the connection + performance toggles, hand-built last
+      // so the update filter can show live telemetry beneath it. Re-renders
+      // itself in place (no loadSettings, which would reload the whole tab).
+      {
+        const ds = byKey['browser.disable_suspend'];
+        const wf = byKey['browser.ws_filter'];
+        if (ds || wf) {
+          const oh = document.createElement('h2');
+          oh.className = 'card-title';
+          oh.textContent = 'Optimizations';
+          root.appendChild(oh);
+          const ocard = document.createElement('div');
+          ocard.className = 'card';
+          root.appendChild(ocard);
+          if (state.optTimer) { clearInterval(state.optTimer); state.optTimer = null; }
+
+          const optToggle = (s, onToggle) => {
+            const row = readOnlyRow(s.title, s.description, '');
+            row.querySelector('span').remove();
+            const lbl = document.createElement('label'); lbl.className = 'switch';
+            const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!s.value;
+            const sl = document.createElement('span'); sl.className = 'slider';
+            lbl.append(cb, sl); row.appendChild(lbl);
+            cb.addEventListener('change', async () => {
+              s.value = cb.checked; // keep local state so the re-render agrees
+              await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: cb.checked }) });
+              onToggle();
+            });
+            return row;
+          };
+
+          const renderOpt = () => {
+            ocard.innerHTML = '';
+            if (state.optTimer) { clearInterval(state.optTimer); state.optTimer = null; }
+            if (ds) ocard.appendChild(optToggle(ds, renderOpt));
+            if (wf) ocard.appendChild(optToggle(wf, renderOpt));
+            if (wf && wf.value === true) {
+              const tel = document.createElement('div');
+              tel.className = 'row';
+              const t = document.createElement('div');
+              t.style.cssText = 'color:var(--muted); font-size:13px; line-height:1.5; padding:2px 0';
+              t.textContent = 'Waiting for the dashboard to load…';
+              tel.appendChild(t);
+              ocard.appendChild(tel);
+              // Samples of the wrapper's cumulative counters, kept for the
+              // last minute: the raw counters run since page load, and a
+              // lifetime total ("206980 of 206980") reads as a bug.
+              const hist = [];
+              const poll = async () => {
+                if (!document.getElementById('tab-homeassistant').classList.contains('active')) return;
+                try {
+                  const r = await (await api('/api/commands/evalJs', { method: 'POST',
+                    body: JSON.stringify({ code: 'JSON.stringify(window.__ksWs ? window.__ksWs.stats() : null)' }) })).json();
+                  let st = null;
+                  try { st = JSON.parse(r.data); if (typeof st === 'string') st = JSON.parse(st); } catch (_) {}
+                  if (!st || !st.mode || st.mode === 'boot') {
+                    hist.length = 0;
+                    t.textContent = 'Waiting for the dashboard to load…';
+                    return;
+                  }
+                  if (st.mode === 'passthrough') {
+                    hist.length = 0;
+                    t.textContent = "This view's entities can't be determined, so its updates are not filtered.";
+                    return;
+                  }
+                  const now = Date.now();
+                  const total = st.cTotal || 0, fwd = st.cFwd || 0;
+                  // A page reload resets the counters; discard stale history.
+                  if (hist.length && total < hist[hist.length - 1].total) hist.length = 0;
+                  hist.push({ now, total, fwd });
+                  while (hist.length && now - hist[0].now > 60000) hist.shift();
+                  const dTotal = hist.length > 1 ? total - hist[0].total : 0;
+                  const dFwd = hist.length > 1 ? fwd - hist[0].fwd : 0;
+                  const dropped = dTotal - dFwd;
+                  const pct = dTotal > 0 ? Math.round(100 * dropped / dTotal) : null;
+                  // The watched-entities count is a link: it opens a modal
+                  // listing exactly which entities the filter is forwarding.
+                  t.textContent = '';
+                  const link = document.createElement('span');
+                  link.textContent = `Watching ${st.allow} entities on this view.`;
+                  link.style.cssText = 'color:var(--primary); text-decoration:underline; cursor:pointer;';
+                  link.addEventListener('click', showWatchedEntities);
+                  const rest = document.createElement('span');
+                  rest.textContent = pct == null
+                    ? ' No updates in the last minute.'
+                    : ` Filtered ${pct}% of updates in the last minute (${dropped} of ${dTotal}).`;
+                  t.append(link, rest);
+                } catch (_) {}
+              };
+              poll();
+              state.optTimer = setInterval(poll, 2000);
+            }
+          };
+          renderOpt();
         }
       }
     }
@@ -1824,6 +1924,50 @@ function pickView(urlPath, views, currentRoute) {
   });
 }
 
+// The update filter's watched-entities modal: the current allowlist with
+// friendly names, fetched live from the page (window.__ksWs.allow).
+async function showWatchedEntities() {
+  let items = null;
+  try {
+    const r = await (await api('/api/commands/evalJs', { method: 'POST',
+      body: JSON.stringify({ code: '(function(){var S=window.__ksWs;if(!S||!S.allow)return "null";'
+        + 'var h=document.querySelector("home-assistant");var st=(h&&h.hass&&h.hass.states)||{};'
+        + 'var out=Array.from(S.allow).map(function(id){var s=st[id];'
+        + 'return {id:id,name:(s&&s.attributes&&s.attributes.friendly_name)||""};});'
+        + 'out.sort(function(a,b){return (a.name||a.id).localeCompare(b.name||b.id);});'
+        + 'return JSON.stringify(out);})()' }) })).json();
+    items = JSON.parse(r.data);
+    if (typeof items === 'string') items = JSON.parse(items);
+  } catch (_) {}
+  if (!Array.isArray(items) || !items.length) {
+    messageBox({ title: 'Watched entities', message: 'The entity list is not available right now.' });
+    return;
+  }
+  const back = document.createElement('div');
+  back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+    + 'display:grid; place-items:center; z-index:1000; padding:16px';
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.cssText =
+    'width:100%; max-width:520px; margin:0; padding:24px; max-height:80vh; overflow:auto';
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex; align-items:center; gap:12px; margin:0 0 14px;';
+  const h = document.createElement('h3');
+  h.textContent = `Watched entities (${items.length})`;
+  h.style.cssText = 'margin:0; flex:1; font-size:16px; font-weight:700;';
+  const close = document.createElement('button');
+  close.className = 'btn-ghost';
+  close.setAttribute('aria-label', 'Close');
+  close.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  close.style.cssText = 'width:auto; padding:6px; line-height:0; flex-shrink:0;';
+  close.addEventListener('click', () => back.remove());
+  head.append(h, close);
+  card.appendChild(head);
+  items.forEach((it) => card.appendChild(readOnlyRow(it.name || it.id, it.name ? it.id : '', '')));
+  back.appendChild(card);
+  document.body.appendChild(back);
+}
+
 // A pick-one row (dashboard, satellite): a real radio control instead of a
 // text glyph. The whole row is the click target; the input is the visual,
 // kept in sync by each re-render.
@@ -1848,8 +1992,13 @@ function settingRow(s) {
   row.appendChild(info);
   const save = async (value) => {
     await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
-    // This switch may be the one others depend on: redraw so they appear or go.
-    await loadSettings();
+    // Re-render only when this toggle actually changes what else is shown: a
+    // setting others gate on (dependsOn), or one that reveals a hand-built
+    // section (the rotation views). A blanket re-render re-fetches the
+    // dashboards on the Home Assistant tab, which reads as a jarring reload.
+    const changesLayout = (state.settings || []).some((o) => o.dependsOn === s.key)
+      || s.key === 'ha.rotation_enabled';
+    if (changesLayout) await loadSettings();
   };
 
   // The gallery selection lives on the device (system photo picker); the

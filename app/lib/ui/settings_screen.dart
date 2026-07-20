@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter/services.dart';
@@ -890,11 +891,17 @@ class _CategoryContentState extends State<_CategoryContent> {
               // renderer cannot supply.
               def.key != haRotationEnabled.key &&
               def.key != haRotationSeconds.key &&
-              def.key != haRotationPauseSeconds.key)
+              def.key != haRotationPauseSeconds.key &&
+              // Optimizations are hand-built last so the filter can show live
+              // telemetry beneath its toggle.
+              def.key != disableSuspend.key &&
+              def.key != wsFilter.key)
             def,
       ], () => setState(() {})),
       const _SectionHeading('Dashboard View Rotation'),
       _RotationCard(container: container),
+      const _SectionHeading('Optimizations'),
+      _OptimizationsCard(container: container),
     ];
   }
 
@@ -1133,6 +1140,245 @@ const _githubMark =
     '1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095'
     '.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 '
     '0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>';
+
+/// The Optimizations group: the two connection/performance toggles, with live
+/// telemetry beneath the update filter so it is visible that it is working
+/// (how much of the Home Assistant update stream it is dropping for this view).
+class _OptimizationsCard extends StatefulWidget {
+  const _OptimizationsCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_OptimizationsCard> createState() => _OptimizationsCardState();
+}
+
+class _OptimizationsCardState extends State<_OptimizationsCard> {
+  Timer? _poll;
+  ({int allow, int total, int dropped})? _stats;
+  bool _ready = false;
+
+  /// The wrapper's reported mode: 'filtering', 'passthrough' (this view's
+  /// entities cannot be determined, so it is deliberately unfiltered), or
+  /// 'boot' while the allowlist has not been built yet.
+  String _mode = 'boot';
+
+  /// Tap on the "Watching N entities" link: opens the watched-entities list.
+  late final TapGestureRecognizer _watchLink = TapGestureRecognizer()
+    ..onTap = _showWatched;
+
+  /// Samples of the wrapper's cumulative counters, kept for the last minute
+  /// so the row reports a live rate — the raw counters run since page load
+  /// and a lifetime total ("206980 of 206980") reads as a bug, not a status.
+  final List<(DateTime, int total, int fwd)> _hist = [];
+
+  AppContainer get c => widget.container;
+  bool get _filterOn => c.settings.get(wsFilter);
+
+  @override
+  void initState() {
+    super.initState();
+    _syncPolling();
+  }
+
+  /// Poll the in-page filter's counters only while the filter is on.
+  void _syncPolling() {
+    if (_filterOn && _poll == null) {
+      _poll = Timer.periodic(const Duration(seconds: 2), (_) => _refresh());
+      _refresh();
+    } else if (!_filterOn && _poll != null) {
+      _poll!.cancel();
+      _poll = null;
+      _stats = null;
+      _ready = false;
+      _hist.clear();
+    }
+  }
+
+  Future<void> _refresh() async {
+    final raw = await c.browser.eval(
+      'JSON.stringify(window.__ksWs ? window.__ksWs.stats() : null)',
+    );
+    if (!mounted) return;
+    Object? decoded;
+    try {
+      decoded = raw == null ? null : jsonDecode(raw);
+      if (decoded is String) decoded = jsonDecode(decoded); // some engines double-encode
+    } catch (_) {
+      decoded = null;
+    }
+    if (decoded is! Map || decoded['mode'] == null) {
+      setState(() {
+        _ready = false;
+        _mode = 'boot';
+        _stats = null;
+        _hist.clear();
+      });
+      return;
+    }
+    if (decoded['mode'] != 'filtering') {
+      setState(() {
+        _ready = true;
+        _mode = '${(decoded as Map)['mode']}';
+        _stats = null;
+        _hist.clear();
+      });
+      return;
+    }
+    final total = (decoded['cTotal'] as num?)?.toInt() ?? 0;
+    final fwd = (decoded['cFwd'] as num?)?.toInt() ?? 0;
+    final now = DateTime.now();
+    // A page reload resets the counters; a shrinking total means the history
+    // belongs to a previous page and must be discarded.
+    if (_hist.isNotEmpty && total < _hist.last.$2) _hist.clear();
+    _hist.add((now, total, fwd));
+    _hist.removeWhere((s) => now.difference(s.$1) > const Duration(minutes: 1));
+    // Deltas over the retained window, not lifetime counts.
+    final dTotal = _hist.length > 1 ? total - _hist.first.$2 : 0;
+    final dFwd = _hist.length > 1 ? fwd - _hist.first.$3 : 0;
+    setState(() {
+      _ready = true;
+      _mode = 'filtering';
+      _stats = (
+        allow: decoded is Map && decoded['allow'] is num
+            ? (decoded['allow'] as num).toInt()
+            : 0,
+        total: dTotal,
+        dropped: dTotal - dFwd,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    _watchLink.dispose();
+    super.dispose();
+  }
+
+  void _onToggle() {
+    _syncPolling();
+    if (mounted) setState(() {});
+  }
+
+  /// The filter's current allowlist, with friendly names from the page's own
+  /// state store, shown in a dialog so "Watching N entities" is inspectable.
+  Future<void> _showWatched() async {
+    final raw = await c.browser.eval(
+      '(function(){var S=window.__ksWs;if(!S||!S.allow)return "null";'
+      'var h=document.querySelector("home-assistant");'
+      'var st=(h&&h.hass&&h.hass.states)||{};'
+      'var out=Array.from(S.allow).map(function(id){var s=st[id];'
+      'return {id:id,name:(s&&s.attributes&&s.attributes.friendly_name)||""};});'
+      'out.sort(function(a,b){return (a.name||a.id).localeCompare(b.name||b.id);});'
+      'return JSON.stringify(out);})()',
+    );
+    Object? decoded;
+    try {
+      decoded = raw == null ? null : jsonDecode(raw);
+      if (decoded is String) decoded = jsonDecode(decoded);
+    } catch (_) {
+      decoded = null;
+    }
+    if (!mounted || decoded is! List || decoded.isEmpty) return;
+    final items = [
+      for (final e in decoded)
+        if (e is Map) (id: '${e['id']}', name: '${e['name'] ?? ''}'),
+    ];
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Row(
+          children: [
+            Expanded(child: Text('Watched entities (${items.length})')),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+        children: [
+          for (final it in items)
+            ListTile(
+              dense: true,
+              title: Text(it.name.isEmpty ? it.id : it.name),
+              subtitle: it.name.isEmpty ? null : Text(it.id),
+            ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return _SettingsCard(
+      children: [
+        SettingTile(container: c, def: disableSuspend, onChanged: _onToggle),
+        SettingTile(container: c, def: wsFilter, onChanged: _onToggle),
+        if (_filterOn) _telemetry(theme),
+      ],
+    );
+  }
+
+  Widget _telemetry(ThemeData theme) {
+    final s = _stats;
+    final pct =
+        (s != null && s.total > 0) ? (100 * s.dropped / s.total).round() : null;
+    final base = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    // Filtering with data: the "Watching N entities" sentence is a link that
+    // opens the watched-entities list, so the number is inspectable.
+    if (_ready && _mode == 'filtering' && s != null) {
+      final rest = pct == null
+          ? ' No updates in the last minute.'
+          : ' Filtered $pct% of updates in the last minute '
+              '(${s.dropped} of ${s.total}).';
+      return _telemetryRow(
+        theme,
+        Text.rich(
+          TextSpan(
+            style: base,
+            children: [
+              TextSpan(
+                text: 'Watching ${s.allow} entities on this view.',
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
+                  decoration: TextDecoration.underline,
+                  decorationColor: theme.colorScheme.primary,
+                ),
+                recognizer: _watchLink,
+              ),
+              TextSpan(text: rest),
+            ],
+          ),
+        ),
+      );
+    }
+    final text = _ready && _mode == 'passthrough'
+        ? 'This view\'s entities can\'t be determined, so its updates '
+            'are not filtered.'
+        : 'Waiting for the dashboard to load...';
+    return _telemetryRow(theme, Text(text, style: base));
+  }
+
+  Widget _telemetryRow(ThemeData theme, Widget child) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.insights_outlined,
+          size: 18,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: child),
+      ],
+    ),
+  );
+}
 
 /// The dashboard chooser: every Home Assistant dashboard as a radio row;
 /// the chosen one becomes the start URL. The kiosk navigates immediately —
