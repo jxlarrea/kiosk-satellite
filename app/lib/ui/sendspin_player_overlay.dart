@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -34,6 +36,43 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   /// Ticks the progress bar between metadata pushes.
   Timer? _tick;
 
+  /// Artwork bytes, fetched ourselves rather than via Image.network:
+  /// Music Assistant serves artwork through its image proxy over https
+  /// with a self-signed certificate, which stock fetching rejects. We
+  /// accept a bad certificate ONLY when the artwork host is the same
+  /// host as the configured Sendspin server, the machine this player
+  /// already trusts with its whole audio session.
+  Uint8List? _artBytes;
+  String _artUrl = '';
+
+  Future<void> _loadArtwork(String url) async {
+    _artUrl = url;
+    if (url.isEmpty) {
+      if (mounted) setState(() => _artBytes = null);
+      return;
+    }
+    try {
+      final serverHost = Uri.parse(
+              'ws://${c.settings.get(defs.sendspinServer).trim()}')
+          .host;
+      final client = HttpClient()
+        ..badCertificateCallback =
+            (cert, host, port) => host == serverHost && serverHost.isNotEmpty;
+      final request = await client.getUrl(Uri.parse(url));
+      final response = await request.close();
+      final bytes = <int>[];
+      await for (final part in response) {
+        bytes.addAll(part);
+      }
+      client.close();
+      if (mounted && _artUrl == url && response.statusCode == 200) {
+        setState(() => _artBytes = Uint8List.fromList(bytes));
+      }
+    } catch (_) {
+      if (mounted && _artUrl == url) setState(() => _artBytes = null);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +93,9 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   }
 
   void _onNowPlaying() {
+    final artwork =
+        '${c.sendspin.nowPlaying.value?['artworkUrl'] ?? ''}';
+    if (artwork != _artUrl) _loadArtwork(artwork);
     final playing = c.sendspin.nowPlaying.value?['playing'] == true;
     if (playing && _tick == null) {
       _tick = Timer.periodic(
@@ -85,7 +127,6 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         .where((v) => v != null && '$v'.isNotEmpty)
         .join(' — ')
         .replaceAll(' — ', ' · ');
-    final artwork = '${now['artworkUrl'] ?? ''}';
     final playing = now['playing'] == true;
 
     // Live position: last reported position plus wall time since it was
@@ -130,14 +171,14 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                       child: SizedBox(
                         width: 72,
                         height: 72,
-                        child: artwork.isEmpty
+                        child: _artBytes == null
                             ? ColoredBox(
                                 color: scheme.surfaceContainerHighest,
                                 child: Icon(Icons.music_note,
                                     color: scheme.onSurfaceVariant),
                               )
-                            : Image.network(
-                                artwork,
+                            : Image.memory(
+                                _artBytes!,
                                 fit: BoxFit.cover,
                                 gaplessPlayback: true,
                                 errorBuilder: (_, _, _) => ColoredBox(
