@@ -111,7 +111,6 @@ word and the kiosk brings the dashboard back and answers.
 | Mic acces in non-HTTPS HA instances | ❌ | ✅ |
 | Detection cost | ⚠️ Browser based, heavy on tablets | ✅ Native CPU inference, 10x-30x faster |
 | Wake word on low-end hardware | ⚠️ Struggles | ✅ CPU only, no GPU needed |
-| Voice on a plain http instance | ❌ Browsers block the microphone | ✅ Secure context proxy built in |
 | Survives reboots | ⚠️ Manual relaunch | ✅ Start on boot |
 
 Voice Satellite is not required, since Kiosk Satellite is a complete Home
