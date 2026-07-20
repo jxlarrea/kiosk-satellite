@@ -1379,9 +1379,9 @@ const sendspinFullscreen = SettingDef<bool>(
   title: 'Full-screen player instead of the screensaver',
   description:
       'While music plays, the idle screensaver becomes a full-screen '
-      'now-playing view: album art with large title and artist. Touch or '
-      'motion dismisses it like any screensaver. When off, music holds '
-      'the screensaver off entirely.',
+      'now-playing view: album art with large title and artist. With '
+      'nothing playing, the regular screensaver appears as usual. Touch '
+      'or motion dismisses either.',
   category: 'Sendspin',
   dependsOn: 'sendspin.enabled',
 );
