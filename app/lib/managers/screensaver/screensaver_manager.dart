@@ -49,6 +49,14 @@ class ScreensaverManager extends Manager {
   @override
   Future<void> init() async {
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
+    // Stand down while a page interaction runs (voice turn, ringing timer
+    // alert, media playback), whichever API the page signalled it through:
+    // setInteractionActive, or the legacy pauseScreensaver fallback.
+    bus.on<VoiceInteractionChanged>().listen((e) {
+      _paused = e.active;
+      if (_paused) unawaited(stop());
+      _resetIdleTimer();
+    });
     // A wake word starts a voice turn: wake the screen, then hold the idle
     // timer until the turn actually finishes. Arming it here — as a touch would
     // — is wrong: the countdown would run through the user speaking and the
@@ -102,16 +110,13 @@ class ScreensaverManager extends Manager {
         description: 'Suppress (paused=true) or release the screensaver',
         params: const {'paused': 'true to suppress, false to release'},
         handler: (p) async {
-          _paused = p['paused'] == true;
-          if (_paused) {
-            await stop();
-          }
-          // Voice Satellite calls this on both edges of a turn; surface it
-          // as the app-wide "voice interaction" signal so other ambient
-          // features (view rotation) can stand down too, without any of
-          // them referencing each other.
-          bus.publish(VoiceInteractionChanged(active: _paused));
-          _resetIdleTimer();
+          // Older Voice Satellite versions bracket every interaction with
+          // this screensaver call; newer ones use setInteractionActive. Both
+          // funnel into the same app-wide event, and THIS manager pauses via
+          // its listener on that event like every other ambient feature —
+          // the screensaver is a consumer of the interaction signal, not
+          // its owner.
+          bus.publish(VoiceInteractionChanged(active: p['paused'] == true));
           return const CommandResult.ok();
         },
       ))

@@ -43,12 +43,18 @@ defensive style of Voice Satellite's kiosk wrapper.
 | `screenOn()` / `screenOff()` | `boolean` | Real display power: on wakes a sleeping panel; off needs the device admin permission (see remote API docs) |
 | `isScreenOn()` | `boolean` | Current screen power state |
 
+### Interactions
+
+| Method | Returns | Description |
+|---|---|---|
+| `setInteractionActive(active, reason?)` | `boolean` | Bracket a page interaction: `true` on the way in, `false` on the way out. While one is active, every ambient app feature stands down (the screensaver, dashboard view rotation, and anything added later). `reason` is an optional string describing the kind: `voice`, `announcement`, `ask_question`, `start_conversation`, `timer`, `media` — used for logging today, per-kind behavior later. Prefer this over `pauseScreensaver` for interaction bracketing |
+
 ### Screensaver
 
 | Method | Returns | Description |
 |---|---|---|
 | `stopScreensaver()` | `boolean` | One-shot dismiss (Fully Kiosk semantics) |
-| `pauseScreensaver(paused)` | `boolean` | Suppress (`true`) / release (`false`) the screensaver while the page is busy (Kiosker semantics, both styles supported) |
+| `pauseScreensaver(paused)` | `boolean` | Suppress (`true`) / release (`false`) the screensaver while the page is busy (Kiosker semantics, both styles supported). Legacy note: this also feeds the interaction signal (like `setInteractionActive` without a reason) so older Voice Satellite versions keep pausing rotation |
 | `getScreensaverSuppressed()` | `boolean` | True when the page should stand down its own screensaver: the app's screensaver is enabled and set to take precedence. Re-negotiated per page load (the app reloads the page when the answer changes) |
 
 ### Motion
@@ -170,8 +176,10 @@ function ksPresent() {
 // confirmAvailable() → !!(await window.kioskSatellite.getDeviceInfo())
 // getBrightness()    → window.kioskSatellite.getBrightness()      // already 0..1
 // setBrightness(n)   → window.kioskSatellite.setBrightness(n)
-// stopScreensaver()  → window.kioskSatellite.stopScreensaver()
-// releaseScreensaver() → window.kioskSatellite.pauseScreensaver(false)
+// stopScreensaver(reason)  → window.kioskSatellite.setInteractionActive(true, reason)
+//                            (older app: window.kioskSatellite.pauseScreensaver(true))
+// releaseScreensaver(reason) → window.kioskSatellite.setInteractionActive(false, reason)
+//                            (older app: window.kioskSatellite.pauseScreensaver(false))
 // bindMotion(handlerName) →
 //   window.addEventListener('kiosksatellite:motion', () => window[handlerName]())
 ```

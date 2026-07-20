@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
+import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import 'user_script.dart';
@@ -37,6 +38,7 @@ class JsApiManager extends Manager {
     'isScreenOn': 'isScreenOn',
     'stopScreensaver': 'stopScreensaver',
     'pauseScreensaver': 'pauseScreensaver',
+    'setInteractionActive': 'setInteractionActive',
     'getScreensaverSuppressed': 'getScreensaverSuppressed',
     'bringToFront': 'bringToFront',
     'getMotionEnabled': 'getMotionEnabled',
@@ -51,6 +53,35 @@ class JsApiManager extends Manager {
 
   @override
   Future<void> init() async {
+    // The page's generic "an interaction is running" signal. Voice Satellite
+    // brackets voice turns, ringing timer alerts and media playback with it;
+    // every ambient feature (view rotation, the screensaver) listens for the
+    // resulting event and stands down. Registered here, on the bridge, because
+    // it is an app-wide signal that belongs to no single feature — it used to
+    // be smuggled through pauseScreensaver, which stays as a fallback for
+    // older Voice Satellite versions.
+    commands.register(
+      Command(
+        name: 'setInteractionActive',
+        description:
+            'Signal that a page interaction (voice turn, timer alert, media '
+            'playback) started or ended; ambient features stand down while '
+            'one is active',
+        params: const {
+          'active': 'true while the interaction runs',
+          'reason':
+              "what kind: 'voice', 'announcement', 'ask_question', "
+              "'start_conversation', 'timer', 'media' (optional)",
+        },
+        handler: (p) async {
+          bus.publish(VoiceInteractionChanged(
+            active: p['active'] == true,
+            reason: p['reason'] is String ? p['reason'] as String : '',
+          ));
+          return const CommandResult.ok();
+        },
+      ),
+    );
     bus.stream.listen((event) {
       final wireName = event.wireName;
       if (wireName != null) _dispatchToPage(wireName, event.toJson());

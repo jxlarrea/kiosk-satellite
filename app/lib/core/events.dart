@@ -57,8 +57,15 @@ class ActivityDetected extends AppEvent {
 /// duration of a conversation (the screensaver, the dashboard view
 /// rotation) observe this rather than reaching into each other.
 class VoiceInteractionChanged extends AppEvent {
-  const VoiceInteractionChanged({required this.active});
+  const VoiceInteractionChanged({required this.active, this.reason = ''});
   final bool active;
+
+  /// What kind of interaction, as reported by the page: 'voice',
+  /// 'announcement', 'ask_question', 'start_conversation', 'timer', 'media',
+  /// or '' when the page did not say (the legacy pauseScreensaver fallback).
+  /// Consumers may specialize on it; absence must always behave like the
+  /// plain event.
+  final String reason;
 }
 
 // ── Motion ─────────────────────────────────────────────────────────────

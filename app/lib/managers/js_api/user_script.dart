@@ -33,6 +33,20 @@ String buildKioskSatelliteScript({required String version, required String os}) 
     stopScreensaver: function () { return call('stopScreensaver'); },
     pauseScreensaver: function (paused) { return call('pauseScreensaver', { paused: !!paused }); },
 
+    // The page is running an interaction (a voice turn, a ringing timer
+    // alert, media playback): ambient features (view rotation, the
+    // screensaver) stand down until the matching false. This is the honest
+    // name for what pauseScreensaver was being used for; prefer it.
+    // The optional reason ('voice', 'announcement', 'ask_question',
+    // 'start_conversation', 'timer', 'media') lets the app log and, later,
+    // specialize per interaction kind.
+    setInteractionActive: function (active, reason) {
+      return call('setInteractionActive', {
+        active: !!active,
+        reason: reason == null ? '' : String(reason),
+      });
+    },
+
     // True when the page should stand down its own screensaver: the app's
     // screensaver is enabled and set to take precedence. Re-negotiated per
     // page load (the app reloads the page when the answer changes).
