@@ -474,12 +474,13 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                   }
                 }),
                 onPanEnd: (d) {
-                  // A quick fling on the paused card dismisses it; a slow
-                  // release repositions. No chrome on the card itself: the
-                  // gesture everyone tries IS the close button. Playing
-                  // cards only reposition, and the paused auto-hide is
-                  // the fallback for anyone who never swipes.
-                  if (!playing && d.velocity.pixelsPerSecond.distance > 700) {
+                  // A quick fling dismisses the card; a slow release
+                  // repositions. No chrome on the card itself: the gesture
+                  // everyone tries IS the close button. Flinging away
+                  // active playback also stops the music — a dismissed
+                  // player that keeps playing invisibly would be worse.
+                  if (d.velocity.pixelsPerSecond.distance > 700) {
+                    if (playing) c.sendspin.control('stop');
                     setState(() => _dismissed = true);
                     return;
                   }
@@ -564,6 +565,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                         // empty while paused, so the
                                         // marquee width never changes
                                         // with the state.
+                                        const SizedBox(width: 10),
                                         SizedBox(
                                           width: _corner,
                                           child: playing
