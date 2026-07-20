@@ -61,6 +61,12 @@ class SendspinManager extends Manager {
   /// its playing look until the gap proves persistent.
   bool _uiPlaying = false;
 
+  /// Whether any audio has played this session. Music Assistant reports a
+  /// merely-stopped queue with its last track's metadata, which is
+  /// indistinguishable from a pause; requiring a prior playing state keeps
+  /// the boot sequence from conjuring a paused card out of stale metadata.
+  bool _sawPlayback = false;
+
   void _setNowPlaying(Map<String, Object?>? value) {
     final wasShowing = nowPlaying.value?['playing'] == true;
     nowPlaying.value = value;
@@ -79,13 +85,15 @@ class SendspinManager extends Manager {
       _idleGrace?.cancel();
       _idleGrace = null;
       _uiPlaying = true;
+      _sawPlayback = true;
       _setNowPlaying({..._status, 'playing': true});
       return;
     }
     if (nowPlaying.value == null) {
-      // Nothing shown yet: a paused track (connected, metadata present)
-      // still gets a card, so playback paused elsewhere is resumable here.
-      if (connected && hasTrack) {
+      // Nothing shown yet: a track paused MID-SESSION still gets a card,
+      // so playback paused elsewhere is resumable here. Requires having
+      // actually played first — see _sawPlayback.
+      if (connected && hasTrack && _sawPlayback) {
         _uiPlaying = false;
         _setNowPlaying({..._status, 'playing': false});
       }
