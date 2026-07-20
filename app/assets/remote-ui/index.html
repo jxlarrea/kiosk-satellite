@@ -201,6 +201,12 @@
     background: var(--surface-2); aspect-ratio: 16/10; display: grid;
     place-items: center; margin-top: 10px; }
   .shot-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  /* Once a screenshot is loaded the box follows the IMAGE's aspect instead
+     of a fixed 16/10 — a portrait phone shot in a landscape box rendered as
+     a thin sliver. Height capped so portrait stays a sane size. */
+  .shot-wrap.free { aspect-ratio: auto; }
+  .shot-wrap.free img { width: auto; height: auto; max-width: 100%;
+    max-height: 70vh; display: block; }
   .shot-wrap .placeholder { color: var(--muted); }
 
   .console { background: var(--surface); border-radius: var(--radius);
@@ -720,7 +726,14 @@ async function loadScreenshot() {
     const url = URL.createObjectURL(blob);
     const wrap = $('#shotWrap');
     let img = wrap.querySelector('img');
-    if (!img) { wrap.innerHTML = ''; img = document.createElement('img'); wrap.appendChild(img); }
+    if (!img) {
+      wrap.innerHTML = '';
+      img = document.createElement('img');
+      // Size the box to the screenshot's own aspect once it arrives (a
+      // portrait phone shot must not be squeezed into a 16/10 landscape box).
+      img.addEventListener('load', () => wrap.classList.add('free'));
+      wrap.appendChild(img);
+    }
     const old = img.src; img.src = url; if (old) URL.revokeObjectURL(old);
   } catch (_) { /* ignore */ }
 }
