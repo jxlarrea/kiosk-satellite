@@ -169,16 +169,22 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       children: [
         const ColoredBox(color: Colors.black),
         // Cross-fade the backdrop between songs rather than cutting.
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 700),
-          child: art == null
-              ? const SizedBox.expand(key: ValueKey('no-art'))
-              : Image.memory(
-                  art,
-                  key: ValueKey(_artUrl),
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                ),
+        // Scaled to cover the full screen at its own aspect ratio; the
+        // overflow is cropped, which under this much blur is invisible.
+        Positioned.fill(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 700),
+            child: art == null
+                ? const SizedBox.expand(key: ValueKey('no-art'))
+                : Image.memory(
+                    art,
+                    key: ValueKey(_artUrl),
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                  ),
+          ),
         ),
         // Blur + scrim so the backdrop reads as atmosphere, not content.
         if (art != null)
