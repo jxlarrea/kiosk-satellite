@@ -2454,9 +2454,22 @@ function setStat(cls, text, color) {
     el.style.color = color || '';
   });
 }
+// A flat battery glyph in the UI's stroke-icon language (the emoji clashed
+// with everything else). The body fills to the charge level; charging swaps
+// the fill for a bolt.
+function batterySvg(level, charging) {
+  const inner = charging
+    ? '<path d="M11.2 8.6l-2.7 3.7h2.6l-1.5 3.1 4.2-4.4h-2.5l1.7-2.4z" fill="currentColor" stroke="none"/>'
+    : `<rect x="4.5" y="9.5" width="${Math.max(0.8, 13 * Math.min(1, level / 100)).toFixed(1)}" height="5" rx="1" fill="currentColor" stroke="none"/>`;
+  return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="vertical-align:-3px; margin-right:3px">'
+    + '<rect x="2" y="7" width="18" height="10" rx="2.5"/><path d="M22.5 10.5v3" stroke-linecap="round"/>' + inner + '</svg>';
+}
 function renderStats(o) {
-  if (o.battery != null)
-    setStat('.js-batt', `${o.charging ? '⚡' : '🔋'} ${o.battery}%`);
+  if (o.battery != null) {
+    document.querySelectorAll('.js-batt').forEach((el) => {
+      el.innerHTML = `${batterySvg(o.battery, o.charging)}${o.battery}%`;
+    });
+  }
   setStat('.js-cpu', o.cpu != null ? `CPU ${Math.round(o.cpu)}%` : '');
   if (o.temp == null) { setStat('.js-temp', ''); return; }
   const t = Math.round(o.temp);
