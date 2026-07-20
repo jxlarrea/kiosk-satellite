@@ -1334,7 +1334,9 @@ const deviceName = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Device name',
-  description: 'Friendly name shown in remote management and Home Assistant.',
+  description:
+      'Friendly name shown in remote management and used as the device '
+      'name published over MQTT.',
   category: 'Device',
 );
 
