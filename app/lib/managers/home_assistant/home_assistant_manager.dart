@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show ValueNotifier;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, WidgetsBinding;
 
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -220,14 +222,31 @@ class HomeAssistantManager extends Manager {
         Timer.periodic(const Duration(minutes: 1), (_) => _applyThemeSchedule());
 
     // Dashboard view rotation: an endless loop over the chosen dashboards.
+    // Each setting applies as narrowly as possible — tuning from the remote
+    // UI saves per change, and a full reconfigure on every keystroke made
+    // the ring visibly restart while the user was still editing.
     bus.on<SettingChanged>().listen((e) {
-      if (e.key == defs.haRotationEnabled.key ||
-          e.key == defs.haRotationDashboards.key ||
-          e.key == defs.haRotationUrls.key ||
-          e.key == defs.haRotationSeconds.key ||
-          e.key == defs.haRotationPauseSeconds.key) {
+      if (e.key == defs.haRotationEnabled.key) {
         _configureRotation();
+      } else if (e.key == defs.haRotationDashboards.key ||
+          e.key == defs.haRotationUrls.key) {
+        // Ring contents changed: restart from the top of the new list, but
+        // never yank an active hold (touch pause, voice interaction) — the
+        // new ring takes over when rotation resumes.
+        _rotationIndex = -1;
+        if (_rotationTimer != null) _armRotationTimer();
+      } else if (e.key == defs.haRotationSeconds.key) {
+        // New dwell time, same ring position.
+        if (_rotationTimer != null) _armRotationTimer();
       }
+      // haRotationPauseSeconds is read at pause time; nothing to rebuild.
+    });
+    // While the screensaver is up (or the app is not on screen) rotation
+    // would navigate views nobody sees — and a strategy view's hard load
+    // would churn the Voice Satellite session for nothing. The ring freezes
+    // in place and picks up where it left off.
+    bus.on<ScreensaverStateChanged>().listen((e) {
+      _screensaverActive = e.active;
     });
     // Touch pauses rotation for the configured window so the current view
     // can be used; each touch restarts that window.
@@ -241,7 +260,10 @@ class HomeAssistantManager extends Manager {
       _voiceSafetyTimer?.cancel();
       if (e.active) {
         if (_rotationTimer != null) {
-          log.info(name, 'rotation paused by voice interaction');
+          log.info(
+              name,
+              'rotation paused by interaction'
+              '${e.reason.isEmpty ? '' : ' (${e.reason})'}');
         }
         _rotationTimer?.cancel();
         _rotationTimer = null;
@@ -270,16 +292,25 @@ class HomeAssistantManager extends Manager {
   }
 
   Timer? _rotationTimer;
-  int _rotationIndex = 0;
 
-  /// (Re)arm the rotation timer from the current settings. Any change to the
-  /// rotation settings restarts the loop from the top of the list.
+  /// The slot last shown. -1 = none yet: the tick pre-increments, so the
+  /// first navigation lands on the FIRST slot (0 here made it skip to the
+  /// second, and the first view only ever appeared when the ring wrapped).
+  int _rotationIndex = -1;
+
   Timer? _touchPauseTimer;
   Timer? _voiceSafetyTimer;
   bool _voiceInteracting = false;
+  bool _screensaverActive = false;
 
+  /// Dashboard paths a soft navigation cannot resolve (strategy dashboards,
+  /// redirect aliases), learned once and then hard-loaded directly instead of
+  /// re-discovering them with a spinner-then-reload every single pass.
+  final Set<String> _hardLoadPaths = {};
+
+  /// (Re)arm rotation from scratch: the enable toggle flipped.
   void _configureRotation() {
-    _rotationIndex = 0;
+    _rotationIndex = -1;
     _touchPauseTimer?.cancel();
     _touchPauseTimer = null;
     if (!_settings.get(defs.haRotationEnabled)) {
@@ -291,8 +322,12 @@ class HomeAssistantManager extends Manager {
       return;
     }
     // A voice interaction in progress keeps rotation held until it ends.
-    if (!_voiceInteracting) _armRotationTimer();
-    log.info(name, 'view rotation armed');
+    if (_voiceInteracting) {
+      log.info(name, 'view rotation enabled (held by voice interaction)');
+    } else {
+      _armRotationTimer();
+      log.info(name, 'view rotation armed');
+    }
   }
 
   /// (Re)start the interval countdown from now, without disturbing the
@@ -378,6 +413,16 @@ class HomeAssistantManager extends Manager {
   /// external page shows in the overlay WebView instead, leaving the
   /// dashboard untouched below.
   Future<void> _rotationTick() async {
+    // Nobody is looking: the screensaver is up, or the app is not on
+    // screen. Skip WITHOUT advancing, so the ring freezes in place (and a
+    // strategy view's hard load never churns the page while it is hidden).
+    // lifecycleState is NULL until Android delivers the first transition
+    // (i.e. for the whole first foreground session) — null means resumed.
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (_screensaverActive ||
+        (lifecycle != null && lifecycle != AppLifecycleState.resumed)) {
+      return;
+    }
     final slots = _rotationSlots();
     if (slots.isEmpty || baseUrl.isEmpty) return;
     _rotationIndex = (_rotationIndex + 1) % slots.length;
@@ -388,9 +433,13 @@ class HomeAssistantManager extends Manager {
       });
       return;
     }
-    // Back to a dashboard view: drop any overlay, then navigate the SPA.
-    await commands.execute('hideOverlayPage', const {});
     final viewPath = slot.substring('view:'.length);
+    // A path a soft navigation cannot resolve goes straight to a full load
+    // (loadUrl drops the overlay itself). One-time discovery below.
+    if (_hardLoadPaths.contains(viewPath)) {
+      await commands.execute('loadUrl', {'url': '$baseUrl/$viewPath'});
+      return;
+    }
     // With the secure context proxy on, the page lives on the loopback
     // origin, not baseUrl — guard against what is actually on screen.
     final mappedBase = await commands.execute('proxyMapUrl', {
@@ -399,36 +448,58 @@ class HomeAssistantManager extends Manager {
     final effectiveBase = mappedBase.ok && mappedBase.data is String
         ? mappedBase.data as String
         : baseUrl;
+    // Navigate the SPA FIRST — beneath any overlay — and only then reveal
+    // the dashboard. Hiding first flashed the previous view for the beat
+    // the soft navigation took.
     final js =
         '''
 (function () {
   var base = ${jsonEncode(effectiveBase)};
-  if (!location.href.startsWith(base)) return;
+  if (!location.href.startsWith(base)) return 'off-origin';
   var path = '/' + ${jsonEncode(viewPath)};
-  if (location.pathname === path || location.pathname.indexOf(path + '/') === 0) return;
+  if (location.pathname === path || location.pathname.indexOf(path + '/') === 0) return 'already';
   history.pushState(null, '', path);
   window.dispatchEvent(new CustomEvent('location-changed'));
-  // Self-heal: a soft navigation cannot resolve every dashboard. Strategy
-  // dashboards (Home Assistant's auto "Overview") and redirect aliases
-  // (the legacy /lovelace path when the default lives elsewhere) leave the
-  // panel spinning forever. A full load always resolves them, so if the
-  // view is still spinning shortly after the soft nav — and the rotation
-  // has not already moved on — fall back to one.
-  setTimeout(function () {
-    try {
-      if (location.pathname !== path) return;
-      var ha = document.querySelector('home-assistant');
-      var main = ha && ha.shadowRoot && ha.shadowRoot.querySelector('home-assistant-main');
-      var panel = main && main.shadowRoot && main.shadowRoot.querySelector('ha-panel-lovelace');
-      if (!panel || !panel.shadowRoot) return;
-      if (panel.shadowRoot.querySelector('ha-circular-progress, hui-error-card')) {
-        location.reload();
-      }
-    } catch (e) {}
-  }, 2500);
+  return 'navigated';
 })();
 ''';
-    await commands.execute('evalJs', {'code': js});
+    final nav = await commands.execute('evalJs', {'code': js});
+    await commands.execute('hideOverlayPage', const {});
+    if (!nav.ok || '${nav.data}' != 'navigated') return;
+    // Self-heal, once per path: a soft navigation cannot resolve every
+    // dashboard — strategy dashboards (the auto "Overview") and redirect
+    // aliases leave the panel spinning forever. If it is still spinning
+    // shortly after the soft nav, remember the path as hard-load-only and
+    // do the full load now; every later pass goes straight to loadUrl with
+    // no spinner-then-reload double hit.
+    final tickIndex = _rotationIndex;
+    await Future<void>.delayed(const Duration(milliseconds: 2500));
+    if (_rotationTimer == null || _rotationIndex != tickIndex) return;
+    final check = await commands.execute('evalJs', {
+      'code': '''
+(function () {
+  try {
+    if (location.pathname !== '/' + ${jsonEncode(viewPath)}) return false;
+    var ha = document.querySelector('home-assistant');
+    var main = ha && ha.shadowRoot && ha.shadowRoot.querySelector('home-assistant-main');
+    var panel = main && main.shadowRoot && main.shadowRoot.querySelector('ha-panel-lovelace');
+    if (!panel || !panel.shadowRoot) return false;
+    // Unresolved = the panel never rendered a view root at all. Do NOT match
+    // error cards: a view with one broken card is a rendered view, and
+    // treating it as unresolved put a full reload in every rotation pass.
+    return !panel.shadowRoot.querySelector('hui-root');
+  } catch (e) { return false; }
+})();
+''',
+    });
+    if (check.ok && '${check.data}' == 'true') {
+      _hardLoadPaths.add(viewPath);
+      log.info(
+          name,
+          'rotation: "$viewPath" needs a full load (strategy dashboard or '
+          'alias); remembering for future passes');
+      await commands.execute('loadUrl', {'url': '$baseUrl/$viewPath'});
+    }
   }
 
   Timer? _themeTimer;

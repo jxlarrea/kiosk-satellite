@@ -516,12 +516,7 @@ class _KioskScreenState extends State<KioskScreen>
         // dashboard (and the Voice Satellite session with it) never
         // unloads. A wake detection hides this instantly, revealing the
         // live dashboard underneath (see initState).
-        ValueListenableBuilder<String?>(
-          valueListenable: c.browser.overlayUrl,
-          builder: (context, url, _) => url == null
-              ? const SizedBox.shrink()
-              : _OverlayWebView(url: url, key: ValueKey(url)),
-        ),
+        _OverlayHost(container: c),
         if (_consoleOpen)
           WebConsolePanel(
             browser: c.browser,
@@ -764,6 +759,47 @@ class _KioskScreenState extends State<KioskScreen>
       );
     },
   );
+}
+
+/// Hosts the rotation's external-page overlay and keeps it ALIVE between
+/// passes: hiding used to dispose the WebView, so every cycle cold-loaded the
+/// page again — a visible spinner on each pass on slow tablets. Now hiding
+/// just moves it offstage (loaded, not painted, not hittable) and re-showing
+/// the same page is instant. The WebView is only released when the rotation
+/// feature itself is off, or when a different external URL replaces it.
+class _OverlayHost extends StatefulWidget {
+  const _OverlayHost({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_OverlayHost> createState() => _OverlayHostState();
+}
+
+class _OverlayHostState extends State<_OverlayHost> {
+  String? _lastUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.container;
+    return ValueListenableBuilder<String?>(
+      valueListenable: c.browser.overlayUrl,
+      builder: (context, url, _) {
+        if (url != null) {
+          _lastUrl = url;
+        } else if (!c.settings.get(defs.haRotationEnabled)) {
+          // The feature that put it up is off: release the WebView.
+          _lastUrl = null;
+        }
+        final kept = _lastUrl;
+        if (kept == null) return const SizedBox.shrink();
+        return Offstage(
+          offstage: url == null,
+          child: _OverlayWebView(url: kept, key: ValueKey(kept)),
+        );
+      },
+    );
+  }
 }
 
 /// A bare WebView for a rotation external page, layered over the dashboard.
