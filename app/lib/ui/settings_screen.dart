@@ -1364,7 +1364,7 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
   }
 
   Widget _telemetryRow(ThemeData theme, Widget child) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
+    padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
