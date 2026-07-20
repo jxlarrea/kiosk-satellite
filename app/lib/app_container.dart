@@ -8,6 +8,7 @@ import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
 import 'managers/motion/motion_manager.dart';
+import 'managers/mqtt/mqtt_manager.dart';
 import 'managers/proxy/proxy_manager.dart';
 import 'managers/remote/remote_manager.dart';
 import 'managers/screen/screen_manager.dart';
@@ -36,6 +37,7 @@ class AppContainer {
     motion = MotionManager(bus, commands, log, settings);
     homeAssistant = HomeAssistantManager(bus, commands, log, settings);
     wakeWord = WakeWordManager(bus, commands, log, settings);
+    mqtt = MqttManager(bus, commands, log, settings);
     update = UpdateManager(bus, commands, log);
     remote = RemoteManager(bus, commands, log, settings);
   }
@@ -54,6 +56,7 @@ class AppContainer {
   late final MotionManager motion;
   late final HomeAssistantManager homeAssistant;
   late final WakeWordManager wakeWord;
+  late final MqttManager mqtt;
   late final UpdateManager update;
   late final RemoteManager remote;
 
@@ -72,6 +75,7 @@ class AppContainer {
         motion,
         homeAssistant,
         wakeWord,
+        mqtt,
         update,
         remote,
       ];

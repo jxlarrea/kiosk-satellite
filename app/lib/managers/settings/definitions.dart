@@ -1202,6 +1202,103 @@ const haRotationPauseSeconds = SettingDef<num>(
   dependsOn: 'ha.rotation_enabled',
 );
 
+// ── MQTT ───────────────────────────────────────────────────────────────
+// Ready-made Home Assistant entities over MQTT discovery (issue #11). The
+// broker settings live here; everything the entities do routes through the
+// same CommandRegistry commands and bus events every other surface uses.
+
+const mqttEnabled = SettingDef<bool>(
+  key: 'mqtt.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Publish to MQTT',
+  description:
+      'Connect to your MQTT broker and create ready-made Home Assistant '
+      'entities for this device: screen with brightness, battery, charging '
+      'and the current page. No YAML needed; entities appear automatically '
+      'when Home Assistant has MQTT discovery enabled (it is on by default).',
+  category: 'MQTT',
+);
+
+const mqttHost = SettingDef<String>(
+  key: 'mqtt.host',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Broker host',
+  description:
+      'Hostname or IP of the MQTT broker, for example homeassistant.local '
+      'when using the Mosquitto add-on.',
+  category: 'MQTT',
+  dependsOn: 'mqtt.enabled',
+);
+
+const mqttPort = SettingDef<num>(
+  key: 'mqtt.port',
+  type: SettingType.number,
+  defaultValue: 1883,
+  title: 'Broker port',
+  description: '1883 is the MQTT default; 8883 is the usual TLS port.',
+  category: 'MQTT',
+  dependsOn: 'mqtt.enabled',
+);
+
+const mqttTls = SettingDef<bool>(
+  key: 'mqtt.tls',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Use TLS',
+  description: 'Encrypt the broker connection.',
+  category: 'MQTT',
+  dependsOn: 'mqtt.enabled',
+);
+
+const mqttUsername = SettingDef<String>(
+  key: 'mqtt.username',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Username',
+  description: 'Leave empty when the broker allows anonymous access.',
+  category: 'MQTT',
+  dependsOn: 'mqtt.enabled',
+);
+
+const mqttPassword = SettingDef<String>(
+  key: 'mqtt.password',
+  type: SettingType.password,
+  defaultValue: '',
+  title: 'Password',
+  description: 'Leave empty when the broker allows anonymous access.',
+  category: 'MQTT',
+  secret: true,
+  dependsOn: 'mqtt.enabled',
+);
+
+const mqttDiscoveryPrefix = SettingDef<String>(
+  key: 'mqtt.discovery_prefix',
+  type: SettingType.string,
+  defaultValue: 'homeassistant',
+  title: 'Discovery prefix',
+  description:
+      "Home Assistant's MQTT discovery prefix. Leave at homeassistant "
+      'unless yours was changed.',
+  category: 'MQTT',
+  dependsOn: 'mqtt.enabled',
+);
+
+/// Stable per-install identity behind every MQTT topic and unique_id, so
+/// several tablets on one broker never collide and a reinstalled app gets a
+/// fresh device rather than adopting a stale one. Generated on first MQTT
+/// start; never shown.
+const mqttDeviceId = SettingDef<String>(
+  key: 'mqtt.device_id',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'MQTT device id',
+  description: 'Internal identity for MQTT topics.',
+  category: 'MQTT',
+  hidden: true,
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -1340,6 +1437,14 @@ const List<SettingDef<Object>> allSettings = [
   haRotationUrls,
   haRotationSeconds,
   haRotationPauseSeconds,
+  mqttEnabled,
+  mqttHost,
+  mqttPort,
+  mqttTls,
+  mqttUsername,
+  mqttPassword,
+  mqttDiscoveryPrefix,
+  mqttDeviceId,
   remoteEnabled,
   remotePort,
   remotePassword,

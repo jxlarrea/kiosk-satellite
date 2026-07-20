@@ -140,6 +140,12 @@ const _categories = <(String, String, IconData, String)>[
     'Web console access',
   ),
   (
+    'MQTT',
+    'MQTT',
+    Icons.hub_outlined,
+    'Home Assistant entities',
+  ),
+  (
     'Device',
     'Device',
     Icons.tablet_android_outlined,

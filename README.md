@@ -76,6 +76,13 @@ smooth on the low-powered, older tablets that usually end up on walls.
   views in an endless loop, each on screen for a configurable number of
   seconds. Perfect for flipping between a camera wall, an energy map, and
   the main dashboard.
+- **Ready-made Home Assistant entities over MQTT**: point the app at your
+  broker and every tablet appears in Home Assistant as its own device via
+  MQTT discovery, no YAML needed: a screen light (real display power plus
+  backlight brightness, so automations can dim or wake the panel),
+  battery, charging, current page and screensaver sensors, all with
+  live availability. Any number of tablets can share one broker; give
+  each its own broker login if your broker limits sessions per username.
 - **Kiosk conveniences**: pull-to-refresh with optional cache clearing,
   start on boot, keep screen awake, default brightness, scheduled
   light/dark theme that can flip the dashboard and the app together,

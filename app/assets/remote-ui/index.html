@@ -427,6 +427,10 @@
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="9" width="7" height="12" rx="2"/><path d="M8.2 5.5a6 6 0 0 1 7.6 0M5.8 2.9a10 10 0 0 1 12.4 0"/></svg></span>
           <span class="nav-text"><span class="nav-title">Remote Administration</span><span class="nav-sub">Web console access</span></span>
         </button>
+        <button data-tab="mqtt">
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 6.9 6.3 16m6.8-9.1 4.6 9.1M7.2 18h9.6"/></svg></span>
+          <span class="nav-text"><span class="nav-title">MQTT</span><span class="nav-sub">Home Assistant entities</span></span>
+        </button>
         <button data-tab="device">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
           <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
@@ -502,6 +506,7 @@
     <div class="tab" id="tab-homeassistant"></div>
     <div class="tab" id="tab-voicesatellite"></div>
     <div class="tab" id="tab-remote"></div>
+    <div class="tab" id="tab-mqtt"></div>
     <div class="tab" id="tab-device">
       <div id="device-settings"></div>
       <div id="device-info"></div>
@@ -759,6 +764,7 @@ const CATEGORY_TABS = [
   ['tab-screensaver', ['Screensaver']],
   ['tab-homeassistant', ['Home Assistant']],
   ['tab-remote', ['Remote']],
+  ['tab-mqtt', ['MQTT']],
   ['device-settings', ['Device']],
 ];
 

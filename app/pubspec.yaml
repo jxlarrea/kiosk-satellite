@@ -54,6 +54,7 @@ dependencies:
   ffi: ^2.1.0
   path_provider: ^2.1.5
   tflite_flutter: ^0.12.1
+  mqtt_client: ^10.11.11
 
 dev_dependencies:
   flutter_test:
