@@ -340,7 +340,11 @@ class SendspinBridge(
     private fun deviceMuted(): Boolean =
         audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
 
+    /** Last server-commanded volume, re-applied when playback starts. */
+    private var lastCommandedVolume: Int? = null
+
     private fun setDeviceVolumePct(volume: Int) {
+        lastCommandedVolume = volume
         val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
         val index = (volume.coerceIn(0, 100) / 100.0 * max).roundToInt().coerceIn(0, max)
         try {
@@ -401,6 +405,14 @@ class SendspinBridge(
         val playing = streamActive && playbackState == "playing"
         if (playing != lastPlaying) {
             lastPlaying = playing
+            if (playing) {
+                // Re-apply the commanded volume now that audio is actually
+                // routing: setStreamVolume before playback lands on whatever
+                // output was active at the time (Samsung keeps per-device
+                // volumes), which can leave the speaker at its old level —
+                // classically 0, i.e. playing in silence.
+                lastCommandedVolume?.let { setDeviceVolumePct(it) }
+            }
             emit("playingChanged", mapOf("playing" to playing))
         }
     }
