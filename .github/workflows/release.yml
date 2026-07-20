@@ -47,10 +47,15 @@ jobs:
         working-directory: app
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          # The build number comes from pubspec.yaml, NOT the workflow run
+          # counter: dev builds side-loaded during testing carry the pubspec
+          # number, and a release with a lower versionCode is a downgrade
+          # Android refuses to install over them.
+          BUILD_NUMBER="$(sed -n 's/^version:.*+//p' pubspec.yaml)"
           flutter pub get
           flutter build apk --release \
             --build-name="$VERSION" \
-            --build-number="$GITHUB_RUN_NUMBER"
+            --build-number="$BUILD_NUMBER"
           mv build/app/outputs/flutter-apk/app-release.apk \
              "kiosk-satellite-${GITHUB_REF_NAME}.apk"
 
