@@ -22,3 +22,4 @@ app/android/app/upload-keystore.jks
 .claude/
 .vscode/
 .codex/
+.remember/
