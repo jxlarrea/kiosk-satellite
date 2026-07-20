@@ -52,6 +52,55 @@ class BackgroundListening {
   static Future<bool> isBatteryUnrestricted() async =>
       await _channel.invokeMethod<bool>('isBatteryUnrestricted') ?? false;
 
+  /// Hand a WebView download to Android's DownloadManager. Same app-context
+  /// bridge as the rest: works whether or not an Activity is up. Returns the
+  /// DownloadManager id (-1 on failure), which [onDownloadComplete] reports
+  /// back and [openDownload] accepts.
+  static Future<int> download({
+    required String url,
+    String? filename,
+    String? userAgent,
+    String? mimeType,
+  }) async =>
+      (await _channel.invokeMethod<num>('download', {
+        'url': url,
+        'filename': filename,
+        'userAgent': userAgent,
+        'mimeType': mimeType,
+      }))
+          ?.toInt() ??
+      -1;
+
+  /// Launch a finished download (the snackbar's "Open" action): an APK goes
+  /// to the package installer, anything else to its default viewer.
+  static Future<bool> openDownload(int id) async =>
+      await _channel.invokeMethod<bool>('openDownload', {'id': id}) ?? false;
+
+  /// Completion feedback for [download]. The kiosk hides the status bar, so
+  /// the DownloadManager notification is invisible; the platform side pushes
+  /// completion through the channel instead and this hands it to the UI.
+  /// Setting a handler replaces the previous one.
+  static void Function(int id, bool success, String? filename)?
+      _onDownloadComplete;
+
+  static set onDownloadComplete(
+      void Function(int id, bool success, String? filename)? handler) {
+    _onDownloadComplete = handler;
+    _channel.setMethodCallHandler(handler == null
+        ? null
+        : (call) async {
+            if (call.method == 'downloadComplete') {
+              final args = (call.arguments as Map?) ?? const {};
+              _onDownloadComplete?.call(
+                (args['id'] as num?)?.toInt() ?? -1,
+                args['success'] == true,
+                args['filename'] as String?,
+              );
+            }
+            return null;
+          });
+  }
+
   static Future<void> requestBatteryUnrestricted() =>
       _channel.invokeMethod<void>('requestBatteryUnrestricted');
 }

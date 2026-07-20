@@ -1,14 +1,19 @@
 package me.jxl.kiosk_satellite
 
+import android.app.DownloadManager
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 /**
@@ -50,6 +55,26 @@ class BackgroundBridge(
                 "exit" -> {
                     exitApp()
                     result.success(true)
+                }
+                // WebView downloads (an APK from GitHub, a camera clip):
+                // handed to Android's DownloadManager. The kiosk hides the
+                // status bar, so the system notification is invisible —
+                // completion is pushed BACK to Dart (see the receiver below)
+                // for in-app feedback, and openDownload launches the file.
+                "download" -> {
+                    try {
+                        result.success(download(call))
+                    } catch (e: Exception) {
+                        result.error("download", e.message, null)
+                    }
+                }
+                "openDownload" -> {
+                    try {
+                        result.success(openDownload(
+                            (call.argument<Number>("id"))?.toLong() ?: -1L))
+                    } catch (e: Exception) {
+                        result.error("openDownload", e.message, null)
+                    }
                 }
                 // Can we start our own Activity while another app is in front?
                 // Android 10 forbids it, and "Display over other apps" is the
@@ -102,6 +127,121 @@ class BackgroundBridge(
                 }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    // Completion events for enqueued downloads, pushed to Dart so the kiosk
+    // can show IN-APP feedback: with the status bar hidden by immersive mode,
+    // the DownloadManager notification is never seen.
+    private val downloadReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: return
+            if (id < 0) return
+            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            var status = -1
+            var title: String? = null
+            try {
+                dm.query(DownloadManager.Query().setFilterById(id)).use { c ->
+                    if (c.moveToFirst()) {
+                        status = c.getInt(
+                            c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS),
+                        )
+                        title = c.getString(
+                            c.getColumnIndexOrThrow(DownloadManager.COLUMN_TITLE),
+                        )
+                    }
+                }
+            } catch (_: Exception) {
+            }
+            channel.invokeMethod(
+                "downloadComplete",
+                mapOf(
+                    "id" to id,
+                    "success" to (status == DownloadManager.STATUS_SUCCESSFUL),
+                    "filename" to title,
+                ),
+            )
+        }
+    }
+
+    // A second init block on purpose: initializers run in declaration order,
+    // so downloadReceiver exists by the time this registers it. EXPORTED
+    // because ACTION_DOWNLOAD_COMPLETE is not a protected system broadcast;
+    // NOT_EXPORTED would silently never receive it on Android 14+.
+    init {
+        ContextCompat.registerReceiver(
+            context,
+            downloadReceiver,
+            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+            ContextCompat.RECEIVER_EXPORTED,
+        )
+    }
+
+    // Enqueue a WebView download; returns the DownloadManager id so the
+    // completion broadcast above can be matched back to this request.
+    private fun download(call: MethodCall): Long {
+        val url = call.argument<String>("url")
+            ?: throw IllegalArgumentException("url required")
+        val filename = call.argument<String>("filename").let {
+            if (it.isNullOrBlank()) "download" else it
+        }
+        fun build(publicDir: Boolean): DownloadManager.Request =
+            DownloadManager.Request(Uri.parse(url)).apply {
+                setNotificationVisibility(
+                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED,
+                )
+                setTitle(filename)
+                if (publicDir) {
+                    setDestinationInExternalPublicDir(
+                        android.os.Environment.DIRECTORY_DOWNLOADS, filename,
+                    )
+                } else {
+                    val dir = context.getExternalFilesDir(
+                        android.os.Environment.DIRECTORY_DOWNLOADS,
+                    ) ?: throw IllegalStateException("no external files dir")
+                    setDestinationUri(Uri.fromFile(java.io.File(dir, filename)))
+                }
+                call.argument<String>("userAgent")?.takeIf { it.isNotBlank() }
+                    ?.let { addRequestHeader("User-Agent", it) }
+                // Authenticated hosts (the HA instance itself): forward the
+                // WebView's cookies so the download is the logged-in user's.
+                android.webkit.CookieManager.getInstance().getCookie(url)
+                    ?.let { addRequestHeader("Cookie", it) }
+                call.argument<String>("mimeType")?.takeIf { it.isNotBlank() }
+                    ?.let { setMimeType(it) }
+            }
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        return try {
+            dm.enqueue(build(publicDir = true))
+        } catch (_: Exception) {
+            // Pre-Android-10 without the storage grant cannot write the
+            // public Downloads folder; the app's own external dir always can.
+            dm.enqueue(build(publicDir = false))
+        }
+    }
+
+    // Launch a completed download: the "Open" action on the in-app snackbar.
+    // The DownloadManager hands out a content:// uri with the right grants,
+    // so an APK goes straight to the package installer and anything else to
+    // its default viewer.
+    private fun openDownload(id: Long): Boolean {
+        if (id < 0) return false
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        val uri = dm.getUriForDownloadedFile(id) ?: return false
+        val mime = dm.getMimeTypeForDownloadedFile(id)
+        return try {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, mime ?: "*/*")
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK
+                                or Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                },
+            )
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -225,5 +365,11 @@ class BackgroundBridge(
         )
     }
 
-    fun dispose() = channel.setMethodCallHandler(null)
+    fun dispose() {
+        channel.setMethodCallHandler(null)
+        try {
+            context.unregisterReceiver(downloadReceiver)
+        } catch (_: Exception) {
+        }
+    }
 }

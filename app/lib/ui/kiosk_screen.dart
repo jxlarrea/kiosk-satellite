@@ -15,6 +15,7 @@ import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
 import '../managers/browser/ws_filter_script.dart';
+import '../managers/wake_word/background_listening.dart';
 import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
@@ -252,6 +253,33 @@ class _KioskScreenState extends State<KioskScreen>
       }
     });
 
+    // Download feedback lives in-app: the kiosk hides the status bar, so the
+    // DownloadManager notification is invisible and without this a download
+    // simply appears to do nothing.
+    BackgroundListening.onDownloadComplete = (id, success, filename) {
+      if (!mounted) return;
+      final name = (filename == null || filename.isEmpty)
+          ? 'Download'
+          : filename;
+      ScaffoldMessenger.of(context).showSnackBar(
+        success
+            ? SnackBar(
+                content: Text('$name downloaded'),
+                duration: const Duration(seconds: 10),
+                behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: 'Open',
+                  onPressed: () => BackgroundListening.openDownload(id),
+                ),
+              )
+            : SnackBar(
+                content: Text('$name failed to download'),
+                duration: const Duration(seconds: 6),
+                behavior: SnackBarBehavior.floating,
+              ),
+      );
+    };
+
     if (widget.showMenuHint) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -487,6 +515,7 @@ class _KioskScreenState extends State<KioskScreen>
 
   @override
   void dispose() {
+    BackgroundListening.onDownloadComplete = null;
     _refreshingFailsafe?.cancel();
     _drawer.dispose();
     _settingsSub?.cancel();
@@ -686,6 +715,9 @@ class _KioskScreenState extends State<KioskScreen>
       cacheMode: c.settings.get(defs.disableCache)
           ? CacheMode.LOAD_NO_CACHE
           : CacheMode.LOAD_DEFAULT,
+      // Downloads (an APK update from GitHub, a camera clip): without this
+      // the WebView silently ignores them.
+      useOnDownloadStart: true,
     ),
     onReceivedServerTrustAuthRequest: (controller, challenge) async {
       // Accept untrusted/self-signed certs only when the user opted
@@ -734,6 +766,33 @@ class _KioskScreenState extends State<KioskScreen>
         _pullToRefresh.endRefreshing();
         c.browser.onLoadError(error.description);
       }
+    },
+    onDownloadStarting: (controller, request) async {
+      // Hand downloads to the system DownloadManager. Feedback is in-app
+      // snackbars (started / done with an Open action): the kiosk hides the
+      // status bar, so the DownloadManager notification is never seen.
+      var name = request.suggestedFilename;
+      if (name == null || name.isEmpty) {
+        final segs = request.url.pathSegments.where((s) => s.isNotEmpty);
+        name = segs.isEmpty ? 'download' : segs.last;
+      }
+      c.browser.log.info('browser', 'downloading $name (${request.url})');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Downloading $name'),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      await BackgroundListening.download(
+        url: request.url.toString(),
+        filename: name,
+        userAgent: request.userAgent,
+        mimeType: request.mimeType,
+      );
+      return null; // handled outside the WebView; nothing for it to do
     },
     onRenderProcessGone: (controller, detail) {
       // The WebView's renderer process died — OOM on low-RAM panels (NSPanel
