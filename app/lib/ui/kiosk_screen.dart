@@ -735,6 +735,19 @@ class _KioskScreenState extends State<KioskScreen>
         c.browser.onLoadError(error.description);
       }
     },
+    onRenderProcessGone: (controller, detail) {
+      // The WebView's renderer process died — OOM on low-RAM panels (NSPanel
+      // Pro, Echo Show), GPU faults, classically right at screensaver wake
+      // when the surface recomposites. Handling this callback is what stops
+      // Android from killing the WHOLE APP in response; rebuild the WebView
+      // in place instead, which reloads the current page, and the kiosk
+      // carries on.
+      c.browser.log.warn(
+          'browser',
+          'WebView renderer gone (crashed: ${detail.didCrash}) — rebuilding '
+          'the WebView');
+      if (mounted) setState(() => _webViewEpoch++);
+    },
     onConsoleMessage: (controller, message) {
       c.browser.onConsoleMessage(switch (message.messageLevel) {
         ConsoleMessageLevel.ERROR => 'error',
@@ -795,7 +808,16 @@ class _OverlayHostState extends State<_OverlayHost> {
         if (kept == null) return const SizedBox.shrink();
         return Offstage(
           offstage: url == null,
-          child: _OverlayWebView(url: kept, key: ValueKey(kept)),
+          child: _OverlayWebView(
+            url: kept,
+            key: ValueKey(kept),
+            onRenderGone: () {
+              c.browser.log.warn(
+                  'browser', 'overlay renderer gone — dropping the overlay');
+              c.browser.overlayUrl.value = null;
+              setState(() => _lastUrl = null);
+            },
+          ),
         );
       },
     );
@@ -809,9 +831,13 @@ class _OverlayHostState extends State<_OverlayHost> {
 /// below it stays fully loaded and interactive the instant this is removed,
 /// so the Voice Satellite session and the wake word never pause.
 class _OverlayWebView extends StatelessWidget {
-  const _OverlayWebView({required this.url, super.key});
+  const _OverlayWebView({required this.url, this.onRenderGone, super.key});
 
   final String url;
+
+  /// The overlay's renderer died: the host drops the overlay (rotation puts
+  /// it back on its next pass) instead of Android killing the app.
+  final VoidCallback? onRenderGone;
 
   @override
   Widget build(BuildContext context) {
@@ -824,6 +850,7 @@ class _OverlayWebView extends StatelessWidget {
           transparentBackground: false,
           supportZoom: false,
         ),
+        onRenderProcessGone: (controller, detail) => onRenderGone?.call(),
       ),
     );
   }
