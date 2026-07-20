@@ -164,6 +164,14 @@ class _KioskScreenState extends State<KioskScreen>
     // rebuild it (preserving the current URL) so the change applies without
     // a restart. The rebuild is storage-safe: localStorage is per-origin and
     // outlives the widget, so a page's saved config is not lost.
+    // Zoom applies live via CSS — no rebuild, no reload. CSS zoom, not
+    // the WebView's initial-scale: responsive pages (Home Assistant
+    // included) declare a viewport meta that overrides initial-scale,
+    // while CSS zoom rescales the layout regardless.
+    if (e.key == defs.browserZoom.key) {
+      await c.browser.runJs(_zoomJs);
+      return;
+    }
     if (e.key == defs.allowMixedContent.key ||
         e.key == defs.ignoreSslErrors.key ||
         e.key == defs.disableCache.key ||
@@ -293,6 +301,15 @@ class _KioskScreenState extends State<KioskScreen>
         );
       });
     }
+  }
+
+  /// The zoom-level setting as a CSS zoom on the document root. Idempotent
+  /// and reversible: 1x clears the property entirely.
+  String get _zoomJs {
+    final zoom = c.settings.get(defs.browserZoom);
+    return zoom == 1
+        ? "document.documentElement.style.zoom = '';"
+        : "document.documentElement.style.zoom = '$zoom';";
   }
 
   /// `auto` hedges instead of choosing: the plugin params ride the URL when
@@ -756,6 +773,8 @@ class _KioskScreenState extends State<KioskScreen>
       // Re-apply CSS kiosk mode on every navigation (only does
       // work when the effective mode is 'css').
       if (_useCss) _applyKioskMode();
+      // The zoom-level setting, as CSS zoom on every navigation.
+      if (c.settings.get(defs.browserZoom) != 1) c.browser.runJs(_zoomJs);
       // The user's pasted JavaScript, Fully Kiosk style: runs after every
       // page load. Errors surface in the web console, nowhere else.
       final inject = c.settings.get(defs.browserInjectJs);

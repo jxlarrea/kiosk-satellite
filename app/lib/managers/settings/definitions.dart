@@ -228,6 +228,21 @@ const pullToRefreshClearCache = SettingDef<bool>(
   dependsOn: 'browser.pull_to_refresh',
 );
 
+const browserZoom = SettingDef<num>(
+  key: 'browser.zoom',
+  type: SettingType.number,
+  defaultValue: 1,
+  title: 'Zoom level',
+  description:
+      'Scales the whole page. Useful for wall tablets viewed from a '
+      'distance, or dashboards designed for a different screen density.',
+  category: 'Browser',
+  min: 1,
+  max: 5,
+  step: 0.25,
+  unit: 'x',
+);
+
 const pinchToZoom = SettingDef<bool>(
   key: 'browser.pinch_to_zoom',
   type: SettingType.boolean,
@@ -1519,6 +1534,7 @@ const List<SettingDef<Object>> allSettings = [
   autoReloadOnError,
   pullToRefresh,
   pullToRefreshClearCache,
+  browserZoom,
   pinchToZoom,
   disableCache,
   browserInjectJs,
