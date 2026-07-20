@@ -80,9 +80,8 @@ smooth on the low-powered, older tablets that usually end up on walls.
   broker and every tablet appears in Home Assistant as its own device via
   MQTT discovery, no YAML needed: a screen light (real display power plus
   backlight brightness, so automations can dim or wake the panel),
-  battery, charging, current page and screensaver sensors, all with
-  live availability. Any number of tablets can share one broker; give
-  each its own broker login if your broker limits sessions per username.
+  battery, charging, current page and screensaver sensors all with
+  live availability.
 - **Kiosk conveniences**: pull-to-refresh with optional cache clearing,
   start on boot, keep screen awake, default brightness, scheduled
   light/dark theme that can flip the dashboard and the app together,
