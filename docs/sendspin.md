@@ -16,10 +16,7 @@ that stands in for the screensaver while music plays.
 
 ## Setup
 
-Settings → **Sendspin Player** on the device, or the matching tab in the
-remote admin:
-
-![Sendspin Player settings](../assets/screenshots/sendspin-settings.png)
+Settings → **Sendspin Player** on the device, or the matching tab in the remote admin.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
@@ -39,19 +36,17 @@ server side.
 
 ## The floating media player
 
+![Compact player card](../assets/screenshots/sendspin-cards.png)
+
 While music plays, a small now-playing card floats over the dashboard:
 artwork, title and artist (long lines marquee), and a live progress bar.
 Drag it anywhere; the position is remembered. It follows the app's
 light/dark theme.
 
-![Compact player card](../assets/screenshots/sendspin-card-compact.png)
-
 The Large size adds previous, play/pause and next buttons sized for
 touch. They act on the whole playback group through the Sendspin
 controller role, so skipping a track here skips it on every speaker in
 the group.
-
-![Large player card with controls](../assets/screenshots/sendspin-card-large.png)
 
 Card behavior:
 
