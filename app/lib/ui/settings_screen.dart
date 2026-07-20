@@ -141,9 +141,9 @@ const _categories = <(String, String, IconData, String)>[
   ),
   (
     'MQTT',
-    'MQTT',
+    'MQTT Settings',
     Icons.hub_outlined,
-    'Home Assistant entities',
+    'Publish to an MQTT broker',
   ),
   (
     'Device',

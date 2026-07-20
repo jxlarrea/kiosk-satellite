@@ -1213,10 +1213,8 @@ const mqttEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Publish to MQTT',
   description:
-      'Connect to your MQTT broker and create ready-made Home Assistant '
-      'entities for this device: screen with brightness, battery, charging '
-      'and the current page. No YAML needed; entities appear automatically '
-      'when Home Assistant has MQTT discovery enabled (it is on by default).',
+      'Create ready-made Home Assistant entities for this device via MQTT '
+      'discovery: screen, brightness, battery and more. No YAML needed.',
   category: 'MQTT',
 );
 
@@ -1224,7 +1222,7 @@ const mqttHost = SettingDef<String>(
   key: 'mqtt.host',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Broker host',
+  title: 'Server',
   description:
       'Hostname or IP of the MQTT broker, for example homeassistant.local '
       'when using the Mosquitto add-on.',
@@ -1236,7 +1234,7 @@ const mqttPort = SettingDef<num>(
   key: 'mqtt.port',
   type: SettingType.number,
   defaultValue: 1883,
-  title: 'Broker port',
+  title: 'Port',
   description: '1883 is the MQTT default; 8883 is the usual TLS port.',
   category: 'MQTT',
   dependsOn: 'mqtt.enabled',

@@ -51,6 +51,16 @@ class MqttManager extends Manager {
   String _deviceId = '';
   int? _lastBattery;
   bool? _lastCharging;
+  int? _lastCpu;
+  int? _lastRamFreeMb;
+  int? _lastRamTotalMb;
+
+  /// Mirrored from bus events so the true value survives disconnects: the
+  /// initial publish after (re)connecting must report the state the device
+  /// is actually in, not a hardcoded default — a screensaver already on
+  /// screen when the broker link comes up was previously reported OFF until
+  /// the next transition.
+  bool _screensaverActive = false;
 
   // Retained device metadata for discovery, read once via getDeviceInfo.
   Map<String, Object?> _deviceInfo = const {};
@@ -82,8 +92,10 @@ class MqttManager extends Manager {
         (e.level.clamp(0.0, 1.0) * 255).round().toString())));
     _subs.add(bus.on<PageChanged>().listen(
         (e) => _publish('$_base/url/state', e.url)));
-    _subs.add(bus.on<ScreensaverStateChanged>().listen(
-        (e) => _publish('$_base/screensaver/state', e.active ? 'ON' : 'OFF')));
+    _subs.add(bus.on<ScreensaverStateChanged>().listen((e) {
+      _screensaverActive = e.active;
+      _publish('$_base/screensaver/state', e.active ? 'ON' : 'OFF');
+    }));
 
     if (_settings.get(defs.mqttEnabled)) {
       _transition = _transition.then((_) => _connect());
@@ -99,10 +111,52 @@ class MqttManager extends Manager {
     await _disconnect(clearDiscovery: false);
   }
 
+  /// The setting-backed switches: object id → (setting read, apply). The
+  /// HA-kiosk one is a select underneath ('off'/'auto'/'plugin'/'css'); its
+  /// switch reads "anything but off" and writes auto/off, leaving a
+  /// hand-picked plugin/css choice alone until someone actually flips it.
+  Map<String, (bool Function(), Future<void> Function(bool))>
+      get _settingSwitches => {
+            'kiosk': (
+              () => _settings.get(defs.kioskEnabled),
+              (on) => _settings.set(defs.kioskEnabled, on),
+            ),
+            'ha_kiosk': (
+              () => _settings.get(defs.haKioskMode) != 'off',
+              (on) => _settings.set(defs.haKioskMode, on ? 'auto' : 'off'),
+            ),
+            'keep_screen_on': (
+              () => _settings.get(defs.keepScreenOn),
+              (on) => _settings.set(defs.keepScreenOn, on),
+            ),
+            'remote': (
+              () => _settings.get(defs.remoteEnabled),
+              (on) => _settings.set(defs.remoteEnabled, on),
+            ),
+          };
+
+  static const _switchSettingKeys = [
+    'kiosk.enabled',
+    'ha.kiosk_mode',
+    'screen.keep_on',
+    'remote.enabled',
+  ];
+
+  void _publishSettingSwitchStates() {
+    _settingSwitches.forEach((objectId, actions) =>
+        _publish('$_base/$objectId/state', actions.$1() ? 'ON' : 'OFF'));
+  }
+
   void _onSettingChanged(SettingChanged e) {
     if (e.key == defs.deviceName.key) {
       // The HA device is named after the kiosk; keep them in step.
       if (_connected) _publishDiscovery();
+      return;
+    }
+    if (_switchSettingKeys.contains(e.key)) {
+      // Whatever surface flipped it (device UI, remote admin, MQTT itself),
+      // the switch in HA reflects it.
+      _publishSettingSwitchStates();
       return;
     }
     if (!e.key.startsWith('mqtt.') || e.key == defs.mqttDeviceId.key) return;
@@ -169,8 +223,14 @@ class MqttManager extends Manager {
     }
 
     client.updates?.listen(_onMessage);
-    client.subscribe('$_base/screen/set', MqttQos.atLeastOnce);
-    client.subscribe('$_base/brightness/set', MqttQos.atLeastOnce);
+    for (final topic in [
+      '$_base/screen/set',
+      '$_base/brightness/set',
+      '$_base/screensaver/set',
+      for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
+    ]) {
+      client.subscribe(topic, MqttQos.atLeastOnce);
+    }
   }
 
   DateTime _lastBringUp = DateTime.fromMillisecondsSinceEpoch(0);
@@ -288,6 +348,17 @@ class MqttManager extends Manager {
         if (raw == null) continue;
         await commands.execute(
             'setBrightness', {'level': (raw.clamp(0, 255)) / 255});
+      } else if (topic == '$_base/screensaver/set') {
+        log.info(name, 'command $topic = $text');
+        await commands.execute(
+            text == 'ON' ? 'startScreensaver' : 'stopScreensaver', const {});
+      } else {
+        for (final entry in _settingSwitches.entries) {
+          if (topic != '$_base/${entry.key}/set') continue;
+          log.info(name, 'command $topic = $text');
+          await entry.value.$2(text == 'ON');
+          break;
+        }
       }
     }
   }
@@ -315,7 +386,8 @@ class MqttManager extends Manager {
       _publish('$_base/brightness/state',
           (level.clamp(0.0, 1.0) * 255).round().toString());
     }
-    _publish('$_base/screensaver/state', 'OFF');
+    _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
+    _publishSettingSwitchStates();
   }
 
   Future<void> _pollStats() async {
@@ -325,6 +397,7 @@ class MqttManager extends Manager {
     if (!result.ok || data is! Map) return;
     final battery = (data['battery'] as num?)?.toInt();
     final charging = data['charging'] == true;
+    final cpu = (data['cpu'] as num?)?.round();
     if (battery != null && battery != _lastBattery) {
       _lastBattery = battery;
       _publish('$_base/battery/state', '$battery');
@@ -332,6 +405,28 @@ class MqttManager extends Manager {
     if (charging != _lastCharging) {
       _lastCharging = charging;
       _publish('$_base/charging/state', charging ? 'ON' : 'OFF');
+    }
+    if (cpu != null && cpu != _lastCpu) {
+      _lastCpu = cpu;
+      _publish('$_base/cpu/state', '$cpu');
+    }
+    // RAM rides the same tick from the fuller details read; once a minute
+    // is nothing, and it saves a second platform channel.
+    final details = await commands.execute('getDeviceDetails', const {});
+    final ram = details.ok && details.data is Map
+        ? ((details.data as Map)['ram'] as Map?)
+        : null;
+    if (ram != null) {
+      final freeMb = ((ram['free'] as num?) ?? 0) ~/ (1024 * 1024);
+      final totalMb = ((ram['total'] as num?) ?? 0) ~/ (1024 * 1024);
+      if (freeMb > 0 && freeMb != _lastRamFreeMb) {
+        _lastRamFreeMb = freeMb;
+        _publish('$_base/ram_free/state', '$freeMb');
+      }
+      if (totalMb > 0 && totalMb != _lastRamTotalMb) {
+        _lastRamTotalMb = totalMb;
+        _publish('$_base/ram_total/state', '$totalMb');
+      }
     }
   }
 
@@ -342,6 +437,19 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/battery/config',
         '$_prefix/binary_sensor/ks_$_deviceId/charging/config',
         '$_prefix/sensor/ks_$_deviceId/url/config',
+        '$_prefix/sensor/ks_$_deviceId/cpu/config',
+        '$_prefix/sensor/ks_$_deviceId/ram_free/config',
+        '$_prefix/sensor/ks_$_deviceId/ram_total/config',
+        '$_prefix/switch/ks_$_deviceId/screensaver/config',
+        for (final objectId in _settingSwitches.keys)
+          '$_prefix/switch/ks_$_deviceId/$objectId/config',
+      ];
+
+  /// Config topics of entities that shipped in earlier builds under another
+  /// component and moved since (the screensaver was a binary_sensor before
+  /// it grew a command side). Retracted on every discovery publish so an
+  /// upgraded device does not leave a dead twin behind in HA.
+  List<String> _legacyDiscoveryTopics() => [
         '$_prefix/binary_sensor/ks_$_deviceId/screensaver/config',
       ];
 
@@ -374,8 +482,18 @@ class MqttManager extends Manager {
           'origin': origin,
         };
 
+    Map<String, Object?> settingSwitch(String objectId, String entityName,
+            String icon) =>
+        {
+          ...common(objectId, entityName),
+          'state_topic': '$_base/$objectId/state',
+          'command_topic': '$_base/$objectId/set',
+          'icon': icon,
+          'entity_category': 'config',
+        };
+
     final configs = <String, Map<String, Object?>>{
-      _discoveryTopics()[0]: {
+      '$_prefix/light/ks_$_deviceId/screen/config': {
         ...common('screen', 'Screen'),
         'state_topic': '$_base/screen/state',
         'command_topic': '$_base/screen/set',
@@ -384,7 +502,7 @@ class MqttManager extends Manager {
         'brightness_scale': 255,
         'icon': 'mdi:tablet',
       },
-      _discoveryTopics()[1]: {
+      '$_prefix/sensor/ks_$_deviceId/battery/config': {
         ...common('battery', 'Battery'),
         'state_topic': '$_base/battery/state',
         'device_class': 'battery',
@@ -392,24 +510,61 @@ class MqttManager extends Manager {
         'state_class': 'measurement',
         'entity_category': 'diagnostic',
       },
-      _discoveryTopics()[2]: {
+      '$_prefix/binary_sensor/ks_$_deviceId/charging/config': {
         ...common('charging', 'Charging'),
         'state_topic': '$_base/charging/state',
         'device_class': 'battery_charging',
         'entity_category': 'diagnostic',
       },
-      _discoveryTopics()[3]: {
+      '$_prefix/sensor/ks_$_deviceId/url/config': {
         ...common('url', 'Current page'),
         'state_topic': '$_base/url/state',
         'icon': 'mdi:web',
         'entity_category': 'diagnostic',
       },
-      _discoveryTopics()[4]: {
+      '$_prefix/sensor/ks_$_deviceId/cpu/config': {
+        ...common('cpu', 'CPU usage'),
+        'state_topic': '$_base/cpu/state',
+        'unit_of_measurement': '%',
+        'state_class': 'measurement',
+        'icon': 'mdi:chip',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/sensor/ks_$_deviceId/ram_free/config': {
+        ...common('ram_free', 'Available RAM'),
+        'state_topic': '$_base/ram_free/state',
+        'device_class': 'data_size',
+        'unit_of_measurement': 'MB',
+        'state_class': 'measurement',
+        'icon': 'mdi:memory',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/sensor/ks_$_deviceId/ram_total/config': {
+        ...common('ram_total', 'Total RAM'),
+        'state_topic': '$_base/ram_total/state',
+        'device_class': 'data_size',
+        'unit_of_measurement': 'MB',
+        'icon': 'mdi:memory',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/switch/ks_$_deviceId/screensaver/config': {
         ...common('screensaver', 'Screensaver'),
         'state_topic': '$_base/screensaver/state',
+        'command_topic': '$_base/screensaver/set',
         'icon': 'mdi:sleep',
       },
+      '$_prefix/switch/ks_$_deviceId/kiosk/config':
+          settingSwitch('kiosk', 'Kiosk mode', 'mdi:lock-outline'),
+      '$_prefix/switch/ks_$_deviceId/ha_kiosk/config':
+          settingSwitch('ha_kiosk', 'HA kiosk mode', 'mdi:dock-top'),
+      '$_prefix/switch/ks_$_deviceId/keep_screen_on/config': settingSwitch(
+          'keep_screen_on', 'Keep screen on', 'mdi:lightbulb-on-outline'),
+      '$_prefix/switch/ks_$_deviceId/remote/config': settingSwitch(
+          'remote', 'Remote management', 'mdi:remote-desktop'),
     };
+    for (final topic in _legacyDiscoveryTopics()) {
+      _publish(topic, '');
+    }
     configs.forEach((topic, config) => _publish(topic, jsonEncode(config)));
   }
 }
