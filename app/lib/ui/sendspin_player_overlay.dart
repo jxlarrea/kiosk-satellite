@@ -311,6 +311,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   /// until playback next starts. A paused card is resumable, but it must
   /// not squat on the dashboard forever.
   bool _dismissed = false;
+  bool _wasPlaying = false;
   Timer? _pausedHide;
 
   /// Artwork bytes, fetched ourselves rather than via Image.network:
@@ -371,10 +372,15 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
       _tick?.cancel();
       _tick = null;
     }
-    // Playing again: any dismissal is over. Paused: start the auto-hide
-    // countdown. Gone entirely: reset for the next session.
-    if (playing || now == null) {
+    // A dismissal ends only when playback actually STARTS (false to true
+    // transition) or the session ends. Level-checking `playing` here
+    // un-dismissed a flung card during the stop's grace window, where the
+    // snapshot still reads playing, so it popped back paused.
+    if (now == null || (playing && !_wasPlaying)) {
       _dismissed = false;
+    }
+    _wasPlaying = playing;
+    if (playing || now == null) {
       _pausedHide?.cancel();
       _pausedHide = null;
     } else {
@@ -568,13 +574,13 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                         const SizedBox(width: 10),
                                         SizedBox(
                                           width: _corner,
-                                          child: playing
-                                              ? Icon(
-                                                  Icons.graphic_eq,
-                                                  size: _large ? 20 : 16,
-                                                  color: scheme.primary,
-                                                )
-                                              : null,
+                                          child: Icon(
+                                            playing
+                                                ? Icons.graphic_eq
+                                                : Icons.pause_circle_outline,
+                                            size: _large ? 20 : 16,
+                                            color: scheme.primary,
+                                          ),
                                         ),
                                       ],
                                     ),
