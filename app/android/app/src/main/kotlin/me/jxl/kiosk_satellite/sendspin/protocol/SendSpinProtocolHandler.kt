@@ -671,7 +671,15 @@ abstract class SendSpinProtocolHandler(
         val rolesArray = payload?.get("roles")?.jsonArray
         val roles = rolesArray?.map { it.jsonPrimitive.content }
 
-        if (roles != null && SendSpinProtocol.Roles.PLAYER !in roles) {
+        // Match on the role FAMILY, not the versioned name: the spec uses
+        // unversioned names in message bodies, so Music Assistant sends
+        // ["player"], not ["player@v1"]. Comparing against the versioned
+        // constant made every stream/end look like someone else's, so the
+        // ~30s chunk queue kept playing after a stop and poisoned the next
+        // stream's timeline.
+        val playerFamily = SendSpinProtocol.Roles.PLAYER.substringBefore('@')
+        if (roles != null &&
+            roles.none { it.substringBefore('@') == playerFamily }) {
             Log.d(tag, "Stream end for non-player roles: $roles - ignoring")
             return
         }
