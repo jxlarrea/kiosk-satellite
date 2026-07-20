@@ -518,6 +518,10 @@ class SyncAudioPlayer(
 
     @Volatile private var syncMuted: Boolean = false
 
+    /// Multiplier applied to outgoing samples while a voice interaction
+    /// needs the music quiet; 1.0 = normal.
+    @Volatile var duckFactor: Float = 1f
+
     // 2D Kalman filter for sync error smoothing (tracks offset + drift)
     // Based on Python reference implementation for optimal noise filtering
     private val syncErrorFilter = SyncErrorFilter(
@@ -2410,6 +2414,22 @@ class SyncAudioPlayer(
 
         if (syncMuted && chunk.pcmData.isNotEmpty()) {
             chunk.pcmData.fill(0)
+        } else if (duckFactor < 1f && chunk.pcmData.isNotEmpty()) {
+            // Voice-interaction ducking: scale the samples themselves so the
+            // drain rate, DAC timing and stream volume are all untouched.
+            // 16-bit little-endian interleaved, same layout the corrector
+            // assumes.
+            val factor = duckFactor
+            var i = 0
+            while (i + 1 < chunk.pcmData.size) {
+                val sample = ((chunk.pcmData[i + 1].toInt() shl 8) or
+                        (chunk.pcmData[i].toInt() and 0xFF)).toShort()
+                val ducked = (sample * factor).toInt()
+                    .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt())
+                chunk.pcmData[i] = (ducked and 0xFF).toByte()
+                chunk.pcmData[i + 1] = ((ducked shr 8) and 0xFF).toByte()
+                i += 2
+            }
         }
 
         // Track samples consumed for sync error calculation

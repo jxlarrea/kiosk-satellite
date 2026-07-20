@@ -310,14 +310,20 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         ) ??
         0.98;
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
+    c.sendspin.voiceActive.addListener(_onVoiceActive);
     _onNowPlaying();
   }
 
   @override
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
+    c.sendspin.voiceActive.removeListener(_onVoiceActive);
     _tick?.cancel();
     super.dispose();
+  }
+
+  void _onVoiceActive() {
+    if (mounted) setState(() {});
   }
 
   void _onNowPlaying() {
@@ -373,7 +379,11 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   @override
   Widget build(BuildContext context) {
     final now = c.sendspin.nowPlaying.value;
-    if (now == null || !c.settings.get(defs.sendspinShowPlayer)) {
+    // Hidden during voice interactions: Voice Satellite's own UI owns the
+    // screen for the duration, and the card would sit on top of it.
+    if (now == null ||
+        c.sendspin.voiceActive.value ||
+        !c.settings.get(defs.sendspinShowPlayer)) {
       return const SizedBox.shrink();
     }
 

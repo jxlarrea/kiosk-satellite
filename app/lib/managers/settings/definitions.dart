@@ -1372,6 +1372,24 @@ const sendspinPlayerSize = SettingDef<String>(
   dependsOn: 'sendspin.show_player',
 );
 
+const sendspinDuckPercent = SettingDef<num>(
+  key: 'sendspin.duck_percent',
+  type: SettingType.number,
+  defaultValue: 10,
+  title: 'Duck volume during voice interactions',
+  description:
+      'While the voice assistant is listening or speaking, music drops to '
+      'this fraction of its volume so the microphone hears you, not the '
+      'song. Capped at 25%: any louder and wake word and speech detection '
+      'become unreliable.',
+  category: 'Sendspin',
+  min: 0,
+  max: 25,
+  step: 5,
+  unit: '%',
+  dependsOn: 'sendspin.enabled',
+);
+
 const sendspinFullscreen = SettingDef<bool>(
   key: 'sendspin.fullscreen',
   type: SettingType.boolean,
@@ -1563,6 +1581,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinCodec,
   sendspinShowPlayer,
   sendspinPlayerSize,
+  sendspinDuckPercent,
   sendspinFullscreen,
   sendspinPlayerPos,
   sendspinClientId,

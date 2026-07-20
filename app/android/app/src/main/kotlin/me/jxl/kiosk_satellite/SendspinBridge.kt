@@ -77,6 +77,10 @@ class SendspinBridge(
     @Volatile private var serverName: String? = null
     @Volatile private var playbackState: String? = null
     @Volatile private var supportedCommands: List<String> = emptyList()
+
+    // Persisted across the per-stream player rebuilds so a duck that spans
+    // a track change is not lost.
+    @Volatile private var duckFactor: Float = 1f
     @Volatile private var title: String? = null
     @Volatile private var artist: String? = null
     @Volatile private var album: String? = null
@@ -120,6 +124,12 @@ class SendspinBridge(
                     runDiscover(timeoutMs, result)
                 }
                 "getStatus" -> result.success(buildStatus())
+                "duck" -> {
+                    val factor = call.argument<Number>("factor")?.toFloat() ?: 1f
+                    duckFactor = factor.coerceIn(0f, 1f)
+                    player?.duckFactor = duckFactor
+                    result.success(true)
+                }
                 "control" -> {
                     val command = call.argument<String>("command") ?: ""
                     val allowed = supportedCommands
@@ -473,6 +483,7 @@ class SendspinBridge(
                     maxQueueSamples = BUFFER_CAPACITY_SECONDS * sampleRate,
                     requestClientStateSnapshot = { client?.sendClientStateSnapshot() },
                 ).also {
+                    it.duckFactor = duckFactor
                     it.initialize()
                     it.start()
                 }

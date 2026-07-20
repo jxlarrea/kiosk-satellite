@@ -48,6 +48,11 @@ class SendspinManager extends Manager {
   /// update, for on-screen position extrapolation). Null when idle.
   final nowPlaying = ValueNotifier<Map<String, Object?>?>(null);
 
+  /// True while any non-media interaction (voice, announcement, timer) is
+  /// in progress: the floating player hides and playback ducks.
+  final voiceActive = ValueNotifier<bool>(false);
+  final _voiceReasons = <String>{};
+
   void _publishNowPlaying() {
     final state = '${_status['playbackState'] ?? ''}';
     final active = _playing || (state == 'paused' && _status['title'] != null);
@@ -113,6 +118,24 @@ class SendspinManager extends Manager {
       return null;
     });
 
+    // Voice interactions (anything but media, which is playback itself,
+    // ours included): hide the floating player and duck the audio so the
+    // microphone hears the person, not the song.
+    bus.on<VoiceInteractionChanged>().listen((e) {
+      if (e.reason == 'media') return;
+      if (e.active) {
+        _voiceReasons.add(e.reason);
+      } else {
+        _voiceReasons.remove(e.reason);
+      }
+      final active = _voiceReasons.isNotEmpty;
+      if (active == voiceActive.value) return;
+      voiceActive.value = active;
+      final factor =
+          active ? _settings.get(defs.sendspinDuckPercent) / 100.0 : 1.0;
+      _channel.invokeMethod('duck', {'factor': factor}).catchError((_) {});
+    });
+
     bus.on<SettingChanged>().listen((e) {
       // Only connection-shaping settings restart the client; the UI-only
       // ones (card visibility, size, position, fullscreen mode) must not
@@ -122,6 +145,7 @@ class SendspinManager extends Manager {
         'sendspin.player_size',
         'sendspin.player_pos',
         'sendspin.fullscreen',
+        'sendspin.duck_percent',
       ];
       final relevant = e.key.startsWith('sendspin.') &&
               e.key != defs.sendspinClientId.key &&
