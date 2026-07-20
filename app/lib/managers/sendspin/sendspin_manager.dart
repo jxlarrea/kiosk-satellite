@@ -53,12 +53,30 @@ class SendspinManager extends Manager {
   final voiceActive = ValueNotifier<bool>(false);
   final _voiceReasons = <String>{};
 
+  Timer? _idleGrace;
+
   void _publishNowPlaying() {
     final state = '${_status['playbackState'] ?? ''}';
     final active = _playing || (state == 'paused' && _status['title'] != null);
-    nowPlaying.value = !active
-        ? null
-        : {..._status, 'playing': _playing};
+    if (active) {
+      _idleGrace?.cancel();
+      _idleGrace = null;
+      nowPlaying.value = {..._status, 'playing': _playing};
+      return;
+    }
+    if (nowPlaying.value == null) return;
+    // Not playing, but something is on screen: hold it through a grace
+    // period before clearing. Track changes rebuild the stream (a moment
+    // of "not playing" between stream/end and the next stream/start), and
+    // without the hold every song change flashed the dashboard through
+    // the now-playing screensaver and the floating card.
+    _idleGrace ??= Timer(const Duration(milliseconds: 2500), () {
+      _idleGrace = null;
+      final s = '${_status['playbackState'] ?? ''}';
+      if (!_playing && !(s == 'paused' && _status['title'] != null)) {
+        nowPlaying.value = null;
+      }
+    });
   }
 
   @override
@@ -66,21 +84,26 @@ class SendspinManager extends Manager {
     var clientId = _settings.get(defs.sendspinClientId);
     if (clientId.isEmpty) {
       final rng = Random.secure();
-      clientId =
-          List.generate(32, (_) => rng.nextInt(16).toRadixString(16)).join();
+      clientId = List.generate(
+        32,
+        (_) => rng.nextInt(16).toRadixString(16),
+      ).join();
       await _settings.set(defs.sendspinClientId, clientId);
     }
 
     _channel.setMethodCallHandler((call) async {
       final args = call.arguments;
-      final map = args is Map ? args.cast<String, Object?>() : const <String, Object?>{};
+      final map = args is Map
+          ? args.cast<String, Object?>()
+          : const <String, Object?>{};
       switch (call.method) {
         case 'stateChanged':
           _status = {..._status, ...map};
           log.info(
-              name,
-              'state: connected=${map['connected']} '
-              'server=${map['serverName']} synced=${map['synced']}');
+            name,
+            'state: connected=${map['connected']} '
+            'server=${map['serverName']} synced=${map['synced']}',
+          );
         case 'metadataChanged':
           // Metadata arrives as deltas: a progress-only update carries no
           // title, and the server may send literal "null" strings. Absent
@@ -88,7 +111,8 @@ class SendspinManager extends Manager {
           _status = {
             ..._status,
             for (final e in map.entries)
-              if (e.value != null && '${e.value}' != 'null' &&
+              if (e.value != null &&
+                  '${e.value}' != 'null' &&
                   '${e.value}'.isNotEmpty)
                 e.key: e.value,
             'receivedAt': DateTime.now().millisecondsSinceEpoch,
@@ -107,10 +131,12 @@ class SendspinManager extends Manager {
             // must keep firing, because it IS the now-playing display.
             if (!_settings.get(defs.sendspinFullscreen)) {
               bus.publish(
-                  VoiceInteractionChanged(active: playing, reason: 'media'));
+                VoiceInteractionChanged(active: playing, reason: 'media'),
+              );
             } else if (!playing) {
-              bus.publish(const VoiceInteractionChanged(
-                  active: false, reason: 'media'));
+              bus.publish(
+                const VoiceInteractionChanged(active: false, reason: 'media'),
+              );
             }
           }
       }
@@ -131,8 +157,9 @@ class SendspinManager extends Manager {
       final active = _voiceReasons.isNotEmpty;
       if (active == voiceActive.value) return;
       voiceActive.value = active;
-      final factor =
-          active ? _settings.get(defs.sendspinDuckPercent) / 100.0 : 1.0;
+      final factor = active
+          ? _settings.get(defs.sendspinDuckPercent) / 100.0
+          : 1.0;
       _channel.invokeMethod('duck', {'factor': factor}).catchError((_) {});
     });
 
@@ -147,7 +174,8 @@ class SendspinManager extends Manager {
         'sendspin.fullscreen',
         'sendspin.duck_percent',
       ];
-      final relevant = e.key.startsWith('sendspin.') &&
+      final relevant =
+          e.key.startsWith('sendspin.') &&
               e.key != defs.sendspinClientId.key &&
               !uiOnly.contains(e.key) ||
           e.key == defs.deviceName.key;
@@ -161,51 +189,57 @@ class SendspinManager extends Manager {
       });
     });
 
-    commands.register(Command(
-      name: 'sendspinStatus',
-      description:
-          'The Sendspin player status: connection, server, playback state, '
-          'current track and volume.',
-      handler: (_) async => CommandResult.ok({
-        'enabled': _settings.get(defs.sendspinEnabled),
-        'running': _running,
-        'playing': _playing,
-        ..._status,
-      }),
-    ));
+    commands.register(
+      Command(
+        name: 'sendspinStatus',
+        description:
+            'The Sendspin player status: connection, server, playback state, '
+            'current track and volume.',
+        handler: (_) async => CommandResult.ok({
+          'enabled': _settings.get(defs.sendspinEnabled),
+          'running': _running,
+          'playing': _playing,
+          ..._status,
+        }),
+      ),
+    );
 
-    commands.register(Command(
-      name: 'sendspinControl',
-      description:
-          'Send a transport command to the Sendspin group this player '
-          'belongs to (play, pause, next, previous).',
-      params: const {'command': 'play | pause | next | previous'},
-      handler: (p) async {
-        final ok = await control('${p['command'] ?? ''}');
-        return ok
-            ? const CommandResult.ok()
-            : const CommandResult.fail('command not supported or not sent');
-      },
-    ));
+    commands.register(
+      Command(
+        name: 'sendspinControl',
+        description:
+            'Send a transport command to the Sendspin group this player '
+            'belongs to (play, pause, next, previous).',
+        params: const {'command': 'play | pause | next | previous'},
+        handler: (p) async {
+          final ok = await control('${p['command'] ?? ''}');
+          return ok
+              ? const CommandResult.ok()
+              : const CommandResult.fail('command not supported or not sent');
+        },
+      ),
+    );
 
-    commands.register(Command(
-      name: 'sendspinDiscover',
-      description:
-          'Scan the network for Sendspin servers (mDNS). Returns name, '
-          'host, port and url per server found.',
-      params: const {'timeoutMs': 'scan duration, default 3000'},
-      handler: (p) async {
-        try {
-          final found = await _channel.invokeMethod<List<Object?>>(
-              'discover', {
-            'timeoutMs': (p['timeoutMs'] as num?)?.toInt() ?? 3000,
-          });
-          return CommandResult.ok(found ?? const []);
-        } catch (e) {
-          return CommandResult.fail('discovery failed: $e');
-        }
-      },
-    ));
+    commands.register(
+      Command(
+        name: 'sendspinDiscover',
+        description:
+            'Scan the network for Sendspin servers (mDNS). Returns name, '
+            'host, port and url per server found.',
+        params: const {'timeoutMs': 'scan duration, default 3000'},
+        handler: (p) async {
+          try {
+            final found = await _channel.invokeMethod<List<Object?>>(
+              'discover',
+              {'timeoutMs': (p['timeoutMs'] as num?)?.toInt() ?? 3000},
+            );
+            return CommandResult.ok(found ?? const []);
+          } catch (e) {
+            return CommandResult.fail('discovery failed: $e');
+          }
+        },
+      ),
+    );
 
     if (_settings.get(defs.sendspinEnabled)) {
       _transition = _transition.then((_) => _start());
@@ -222,8 +256,9 @@ class SendspinManager extends Manager {
   /// does not support the command or nothing is connected.
   Future<bool> control(String command) async {
     try {
-      return await _channel.invokeMethod<bool>(
-              'control', {'command': command}) ??
+      return await _channel.invokeMethod<bool>('control', {
+            'command': command,
+          }) ??
           false;
     } catch (e) {
       log.warn(name, 'control $command failed: $e');
@@ -264,9 +299,13 @@ class SendspinManager extends Manager {
     }
     if (_playing) {
       _playing = false;
-      bus.publish(const VoiceInteractionChanged(active: false, reason: 'media'));
+      bus.publish(
+        const VoiceInteractionChanged(active: false, reason: 'media'),
+      );
     }
     _status = const {};
+    _idleGrace?.cancel();
+    _idleGrace = null;
     nowPlaying.value = null;
   }
 }

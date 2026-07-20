@@ -168,65 +168,85 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       fit: StackFit.expand,
       children: [
         const ColoredBox(color: Colors.black),
-        if (art != null) ...[
-          Image.memory(art, fit: BoxFit.cover, gaplessPlayback: true),
-          // Blur + scrim so the backdrop reads as atmosphere, not content.
+        // Cross-fade the backdrop between songs rather than cutting.
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 700),
+          child: art == null
+              ? const SizedBox.expand(key: ValueKey('no-art'))
+              : Image.memory(
+                  art,
+                  key: ValueKey(_artUrl),
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                ),
+        ),
+        // Blur + scrim so the backdrop reads as atmosphere, not content.
+        if (art != null)
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
             child: const ColoredBox(color: Color(0x99000000)),
           ),
-        ],
         Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (art != null)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.memory(
-                    art,
-                    width: 360,
-                    height: 360,
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 700),
+            child: Column(
+              // Keyed on the track so the whole panel (art + text) fades as
+              // one between songs.
+              key: ValueKey('$title|$_artUrl'),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (art != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.memory(
+                      art,
+                      width: 360,
+                      height: 360,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                    ),
+                  )
+                else
+                  const Icon(
+                    Icons.music_note,
+                    size: 160,
+                    color: Colors.white24,
                   ),
-                )
-              else
-                const Icon(Icons.music_note, size: 160, color: Colors.white24),
-              const SizedBox(height: 40),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 48),
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w700,
-                    height: 1.15,
-                  ),
-                ),
-              ),
-              if (artist.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 40),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 48),
                   child: Text(
-                    artist,
+                    title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w700,
+                      height: 1.15,
                     ),
                   ),
                 ),
+                if (artist.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 48),
+                    child: Text(
+                      artist,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ],
