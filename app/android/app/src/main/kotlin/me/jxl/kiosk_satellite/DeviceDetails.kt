@@ -158,6 +158,10 @@ class DeviceDetails(
         for (z in zones) {
             val type = readText(File(z, "type"))?.lowercase() ?: continue
             if (!type.contains("cpu")) continue
+            // Threshold pseudo-zones, not sensors: `cpu-hw-trip-*` and
+            // friends report the constant throttle limit (105°C on Snapdragon
+            // phones), and the hottest-zone pick would return it forever.
+            if (type.contains("trip") || type.contains("limit")) continue
             val raw = readLong(File(z, "temp")) ?: continue
             val c = if (raw > 1000) raw / 1000.0 else raw.toDouble()
             if (c in 20.0..130.0 && (max == null || c > max)) max = c
