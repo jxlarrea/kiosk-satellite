@@ -490,6 +490,16 @@
           <input type="range" id="brightness" min="0" max="100" value="100" style="flex:1">
           <span class="device" id="brightnessValue" style="min-width:3.5em; text-align:right">-</span>
         </div>
+        <!-- Shown only while the "Modify system settings" grant is missing:
+             without it the slider dims the app window, not the panel's
+             actual system brightness. -->
+        <div class="row" id="brightnessGrantRow" style="display:none">
+          <div class="desc" style="flex:1; color:var(--muted); font-size:13px">
+            Brightness is using an app-level fallback. Grant "Modify system
+            settings" so the slider controls the panel's actual brightness.
+          </div>
+          <button class="btn-ghost js-brightness-grant">Grant on device</button>
+        </div>
         <div class="row">
           <input type="text" id="urlInput" placeholder="https://…" style="flex:1; max-width:none">
           <button class="btn-ghost" id="loadUrlBtn">Load URL</button>
@@ -726,6 +736,57 @@ document.querySelectorAll('.action[data-cmd]').forEach((b) =>
       res = await cmd(b.dataset.cmd).catch(() => null);
     }
   }));
+/* Brightness grant notices: shown under the dashboard slider and on the
+   Screen tab only while "Modify system settings" is missing on the device.
+   Without it the slider falls back to dimming the app window; the panel's
+   system brightness (what the MQTT entity reports) never moves. */
+async function updateBrightnessGrantNotices() {
+  let granted;
+  try {
+    const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+    granted = !!(res.data || {}).writeSettings;
+  } catch (_) { return; }
+  $('#brightnessGrantRow').style.display = granted ? 'none' : '';
+  const root = document.getElementById('tab-screen');
+  const existing = root.querySelector('.brightness-grant-card');
+  if (granted) { existing?.remove(); return; }
+  if (existing) return;
+  const heading = document.createElement('h2');
+  heading.className = 'card-title brightness-grant-card';
+  heading.textContent = 'Permission';
+  const card = document.createElement('div');
+  card.className = 'card brightness-grant-card';
+  card.appendChild(readOnlyRow('Brightness is using a fallback',
+    'Without the "Modify system settings" permission, brightness changes only dim the app instead of setting the panel\'s actual brightness.', ''));
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Grant on device';
+  btn.style.cssText = 'margin:0 0 14px';
+  btn.addEventListener('click', requestBrightnessGrant);
+  card.appendChild(btn);
+  root.appendChild(heading);
+  root.appendChild(card);
+}
+
+// The grant is Android's own settings screen on the tablet: launch it there,
+// then keep re-reading until it lands so the notices dismiss themselves.
+async function requestBrightnessGrant() {
+  try {
+    await api('/api/commands/requestOsPermissions', { method: 'POST',
+      body: JSON.stringify({ which: ['writeSettings'] }) });
+  } catch (_) {}
+  for (let i = 0; i < 30; i++) {
+    await new Promise((r) => setTimeout(r, 2500));
+    try {
+      const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+      if ((res.data || {}).writeSettings) break;
+    } catch (_) {}
+  }
+  updateBrightnessGrantNotices();
+}
+document.querySelector('.js-brightness-grant')
+  .addEventListener('click', requestBrightnessGrant);
+
 $('#brightness').addEventListener('input', (e) =>
   $('#brightnessValue').textContent = `${e.target.value}%`);
 $('#brightness').addEventListener('change', (e) =>
@@ -839,6 +900,7 @@ async function loadSettings() {
     if (tabId === 'tab-voicesatellite') continue; // custom render below
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
+  updateBrightnessGrantNotices();
 
   // ── Voice Satellite ───────────────────────────────────────────────────
   // Its own page under Home Assistant Configuration, gated the same way;
@@ -2856,6 +2918,8 @@ function wizardSteps() {
         addRow('displayOverOtherApps', 'Display over other apps',
           'Grant this permission if you want Kiosk Satellite to auto start when your device boots.');
       }
+      addRow('writeSettings', 'Screen brightness',
+        "Allows Kiosk Satellite to set the panel's actual brightness (modify system settings).");
       addRow('deviceAdmin', 'Screen control',
         'Allows Kiosk Satellite to turn the screen off on request (device admin).');
       const refreshStatus = async () => {
@@ -2889,6 +2953,7 @@ function wizardSteps() {
             'microphone',
             ...(background ? ['notifications', 'batteryOptimizations'] : []),
             ...(bootStart ? ['overlay'] : []),
+            'writeSettings',
             'deviceAdmin',
           ] }) });
         btn.textContent = 'Permissions requested on the device';

@@ -31,6 +31,7 @@ class KioskManager extends Manager {
   /// BackgroundBridge; the Activity one shows the proper one-tap dialog).
   static const _adminChannel = MethodChannel('kiosk_satellite/admin');
   static const _backgroundChannel = MethodChannel('kiosk_satellite/background');
+  static const _brightnessChannel = MethodChannel('kiosk_satellite/brightness');
 
   @override
   String get name => 'kiosk';
@@ -84,8 +85,8 @@ class KioskManager extends Manager {
           'full': 'true for the whole recommended set',
           'which':
               'explicit list of permissions to request (microphone, '
-              'notifications, batteryOptimizations, overlay, deviceAdmin); '
-              'overrides full',
+              'notifications, batteryOptimizations, overlay, writeSettings, '
+              'deviceAdmin); overrides full',
         },
         handler: (p) async {
           const known = <String, Permission>{
@@ -109,6 +110,25 @@ class KioskManager extends Manager {
               results[name] = (await known[name]!.request()).isGranted;
             } catch (_) {
               results[name] = false;
+            }
+          }
+          // "Modify system settings" (real brightness writes) is a settings
+          // Activity like the admin screen below; both go after the runtime
+          // dialogs so they cannot bury them.
+          final askWriteSettings =
+              which is List && which.contains('writeSettings');
+          if (askWriteSettings) {
+            try {
+              if (await _brightnessChannel.invokeMethod<bool>('canWrite') ==
+                  true) {
+                results['writeSettings'] = true;
+              } else {
+                await _brightnessChannel.invokeMethod('requestWrite');
+                // Only launched: the user grants (or not) on that screen.
+                results['writeSettings'] = false;
+              }
+            } catch (_) {
+              results['writeSettings'] = false;
             }
           }
           // Device admin (the real "Screen off") is an Activity, not a

@@ -305,6 +305,8 @@ class _SetupScreenState extends State<SetupScreen> {
             ],
             if (_vsStepActive && _recommended['kiosk.start_on_boot']!)
               'overlay',
+            // Real brightness writes; a settings screen like the admin one.
+            'writeSettings',
             // Last: the admin activation screen is a full Activity and
             // would bury the permission dialogs (the handler orders it
             // last regardless).
@@ -834,6 +836,14 @@ class _SetupScreenState extends State<SetupScreen> {
                   'auto start when your device boots.',
                 ),
               ),
+            const ListTile(
+              leading: Icon(Icons.brightness_6_outlined),
+              title: Text('Screen brightness'),
+              subtitle: Text(
+                "Allows Kiosk Satellite to set the panel's actual "
+                'brightness (modify system settings).',
+              ),
+            ),
             const ListTile(
               leading: Icon(Icons.power_settings_new_outlined),
               title: Text('Screen control'),

@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'background_listening.dart';
@@ -22,6 +23,7 @@ class SystemPermissions {
     required this.camera,
     required this.location,
     required this.deviceAdmin,
+    required this.writeSettings,
   });
 
   /// Nothing listens without this one, foreground or not.
@@ -49,6 +51,21 @@ class SystemPermissions {
   /// The device admin grant behind the real "Screen off" (lockNow).
   final bool deviceAdmin;
 
+  /// "Modify system settings": writing the panel's real brightness. Without
+  /// it brightness falls back to an app-window override that the system
+  /// value (and everything mirroring it) never sees.
+  final bool writeSettings;
+
+  static const _brightnessChannel =
+      MethodChannel('kiosk_satellite/brightness');
+
+  static Future<bool> _canWriteSettings() async {
+    try {
+      return await _brightnessChannel.invokeMethod<bool>('canWrite') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
 
   static Future<SystemPermissions> read() async => SystemPermissions(
         microphone: await Permission.microphone.isGranted,
@@ -59,6 +76,7 @@ class SystemPermissions {
         camera: await Permission.camera.isGranted,
         location: await Permission.locationWhenInUse.isGranted,
         deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
+        writeSettings: await _canWriteSettings(),
       );
 
   /// Nothing we could not read. A platform without these channels answers
@@ -73,6 +91,7 @@ class SystemPermissions {
     camera: false,
     location: false,
     deviceAdmin: false,
+    writeSettings: false,
   );
 
   Map<String, Object?> toJson() => {
@@ -84,5 +103,6 @@ class SystemPermissions {
         'camera': camera,
         'location': location,
         'deviceAdmin': deviceAdmin,
+        'writeSettings': writeSettings,
       };
 }

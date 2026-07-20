@@ -871,6 +871,8 @@ class _CategoryContentState extends State<_CategoryContent> {
             _defsFor(widget.category),
             () => setState(() {}),
           ),
+        if (widget.category == 'Screen')
+          _BrightnessGrantCard(container: container),
         if (widget.category == 'Device') ...[
           const _SectionHeading('Configuration'),
           _SettingsCard(
@@ -1297,6 +1299,82 @@ const _githubMark =
     '1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095'
     '.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 '
     '0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>';
+
+/// A notice shown on the Screen page only while the "Modify system settings"
+/// grant is missing: without it, brightness set from the app, the remote
+/// admin or Home Assistant falls back to an app-window override the system
+/// value never reflects. Disappears once granted.
+class _BrightnessGrantCard extends StatefulWidget {
+  const _BrightnessGrantCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_BrightnessGrantCard> createState() => _BrightnessGrantCardState();
+}
+
+class _BrightnessGrantCardState extends State<_BrightnessGrantCard> {
+  bool? _granted;
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _check() async {
+    final permissions = await SystemPermissions.read();
+    if (!mounted) return;
+    setState(() => _granted = permissions.writeSettings);
+    if (permissions.writeSettings) _poll?.cancel();
+  }
+
+  Future<void> _request() async {
+    await widget.container.commands.execute('requestOsPermissions', {
+      'which': ['writeSettings'],
+    });
+    // The grant happens on Android's own settings screen; keep re-reading
+    // until it lands so the notice dismisses itself.
+    _poll?.cancel();
+    _poll = Timer.periodic(const Duration(seconds: 2), (_) => _check());
+    Timer(const Duration(minutes: 2), () => _poll?.cancel());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_granted != false) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _SectionHeading('Permission'),
+        _SettingsCard(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.brightness_6_outlined),
+              title: const Text('Brightness is using a fallback'),
+              subtitle: const Text(
+                'Without the "Modify system settings" permission, '
+                'brightness changes only dim this app instead of setting '
+                "the panel's actual brightness.",
+              ),
+              trailing: FilledButton.tonal(
+                onPressed: _request,
+                child: const Text('Grant'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
 /// The Optimizations group: the two connection/performance toggles, with live
 /// telemetry beneath the update filter so it is visible that it is working
