@@ -207,6 +207,7 @@ class SendspinManager extends Manager {
         'sendspin.fullscreen',
         'sendspin.fullscreen_motion',
         'sendspin.duck_percent',
+        'sendspin.paused_hide_minutes',
       ];
       final relevant =
           e.key.startsWith('sendspin.') &&

@@ -1372,6 +1372,22 @@ const sendspinPlayerSize = SettingDef<String>(
   dependsOn: 'sendspin.show_player',
 );
 
+const sendspinPausedHideMinutes = SettingDef<num>(
+  key: 'sendspin.paused_hide_minutes',
+  type: SettingType.number,
+  defaultValue: 3,
+  title: 'Hide the paused player after',
+  description:
+      'How long a paused player card stays on screen before hiding '
+      'itself. It returns the moment playback resumes.',
+  category: 'Sendspin',
+  min: 1,
+  max: 10,
+  step: 1,
+  unit: 'min',
+  dependsOn: 'sendspin.show_player',
+);
+
 const sendspinDuckPercent = SettingDef<num>(
   key: 'sendspin.duck_percent',
   type: SettingType.number,
@@ -1594,6 +1610,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinCodec,
   sendspinShowPlayer,
   sendspinPlayerSize,
+  sendspinPausedHideMinutes,
   sendspinDuckPercent,
   sendspinFullscreen,
   sendspinFullscreenMotion,

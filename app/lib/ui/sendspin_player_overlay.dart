@@ -308,7 +308,6 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   /// not squat on the dashboard forever.
   bool _dismissed = false;
   Timer? _pausedHide;
-  static const _pausedHideAfter = Duration(minutes: 10);
 
   /// Artwork bytes, fetched ourselves rather than via Image.network:
   /// Music Assistant serves artwork through its image proxy over https
@@ -375,9 +374,14 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
       _pausedHide?.cancel();
       _pausedHide = null;
     } else {
-      _pausedHide ??= Timer(_pausedHideAfter, () {
-        if (mounted) setState(() => _dismissed = true);
-      });
+      _pausedHide ??= Timer(
+        Duration(
+          minutes: c.settings.get(defs.sendspinPausedHideMinutes).toInt(),
+        ),
+        () {
+          if (mounted) setState(() => _dismissed = true);
+        },
+      );
     }
     if (mounted) setState(() {});
   }
@@ -539,13 +543,34 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                                 : theme.textTheme.titleSmall,
                                           ),
                                         ),
-                                        Icon(
-                                          playing
-                                              ? Icons.graphic_eq
-                                              : Icons.pause_circle_outline,
-                                          size: 16,
-                                          color: scheme.primary,
-                                        ),
+                                        // Playing: the equalizer badge.
+                                        // Paused: a touch-sized close
+                                        // button in its place; the play
+                                        // button below already says
+                                        // "paused" louder than any icon.
+                                        if (playing)
+                                          Icon(
+                                            Icons.graphic_eq,
+                                            size: 16,
+                                            color: scheme.primary,
+                                          )
+                                        else
+                                          InkWell(
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            onTap: () => setState(
+                                              () => _dismissed = true,
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(8),
+                                              child: Icon(
+                                                Icons.close,
+                                                size: _large ? 26 : 22,
+                                                color: scheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
                                       ],
                                     ),
                                     if (artist.isNotEmpty)
@@ -622,26 +647,6 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                             ),
                           ],
                         ),
-                        // Paused: a close affordance, painted over the
-                        // content so it stays tappable. Playing manages
-                        // its own lifecycle; paused needs a way out.
-                        if (!playing)
-                          Positioned(
-                            top: 2,
-                            right: 2,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () => setState(() => _dismissed = true),
-                              child: Padding(
-                                padding: const EdgeInsets.all(5),
-                                child: Icon(
-                                  Icons.close,
-                                  size: 15,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
