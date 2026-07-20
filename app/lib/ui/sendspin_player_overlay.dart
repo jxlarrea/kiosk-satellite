@@ -15,6 +15,98 @@ import '../managers/settings/definitions.dart' as defs;
 /// fractions of the free area, so it survives restarts and stays sensible
 /// across orientation changes. Colors come from the app theme, so it
 /// follows the kiosk's light/dark setting like every other app surface.
+/// Single-line text that marquees leftward when it does not fit: hold,
+/// scroll the hidden part into view, hold, loop from the start. Static
+/// (no animation cost) when the text fits.
+class _Marquee extends StatefulWidget {
+  const _Marquee({required this.text, this.style});
+
+  final String text;
+  final TextStyle? style;
+
+  @override
+  State<_Marquee> createState() => _MarqueeState();
+}
+
+class _MarqueeState extends State<_Marquee>
+    with SingleTickerProviderStateMixin {
+  static const _gap = 48.0;
+  static const _pxPerSecond = 24.0;
+  static const _holdSeconds = 2.0;
+
+  late final AnimationController _ctrl = AnimationController(vsync: this);
+
+  @override
+  void didUpdateWidget(_Marquee old) {
+    super.didUpdateWidget(old);
+    if (old.text != widget.text) _ctrl.value = 0;
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: widget.style),
+          maxLines: 1,
+          textDirection: TextDirection.ltr,
+        )..layout();
+        final textWidth = painter.width;
+        if (textWidth <= constraints.maxWidth) {
+          _ctrl.stop();
+          return Text(widget.text, maxLines: 1, style: widget.style);
+        }
+        // Scroll one full copy plus the gap, so the second copy lands where
+        // the first began and the loop is seamless.
+        final distance = textWidth + _gap;
+        final scrollSeconds = distance / _pxPerSecond;
+        final total = _holdSeconds + scrollSeconds;
+        _ctrl.duration = Duration(milliseconds: (total * 1000).round());
+        if (!_ctrl.isAnimating) _ctrl.repeat();
+        // Fixed box of exactly one text line: OverflowBox has no size of its
+        // own and would otherwise absorb all the height the column offers,
+        // pushing the rest of the card out of view.
+        return SizedBox(
+          height: painter.height,
+          width: constraints.maxWidth,
+          child: ClipRect(
+            child: AnimatedBuilder(
+              animation: _ctrl,
+              builder: (context, _) {
+                final t = _ctrl.value * total;
+                final offset = t <= _holdSeconds
+                    ? 0.0
+                    : (t - _holdSeconds) * _pxPerSecond;
+                return Transform.translate(
+                  offset: Offset(-offset, 0),
+                  child: OverflowBox(
+                    maxWidth: double.infinity,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(widget.text, maxLines: 1, style: widget.style),
+                        const SizedBox(width: _gap),
+                        Text(widget.text, maxLines: 1, style: widget.style),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class SendspinPlayerOverlay extends StatefulWidget {
   const SendspinPlayerOverlay({super.key, required this.container});
 
@@ -53,11 +145,11 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
     }
     try {
       final serverHost = Uri.parse(
-              'ws://${c.settings.get(defs.sendspinServer).trim()}')
-          .host;
+        'ws://${c.settings.get(defs.sendspinServer).trim()}',
+      ).host;
       final client = HttpClient()
-        ..badCertificateCallback =
-            (cert, host, port) => host == serverHost && serverHost.isNotEmpty;
+        ..badCertificateCallback = (cert, host, port) =>
+            host == serverHost && serverHost.isNotEmpty;
       final request = await client.getUrl(Uri.parse(url));
       final response = await request.close();
       final bytes = <int>[];
@@ -78,8 +170,11 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
     super.initState();
     final parts = c.settings.get(defs.sendspinPlayerPos).split(',');
     _fx = double.tryParse(parts.first)?.clamp(0.0, 1.0) ?? 0.98;
-    _fy = (parts.length > 1 ? double.tryParse(parts[1]) : null)
-            ?.clamp(0.0, 1.0) ??
+    _fy =
+        (parts.length > 1 ? double.tryParse(parts[1]) : null)?.clamp(
+          0.0,
+          1.0,
+        ) ??
         0.98;
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
     _onNowPlaying();
@@ -93,13 +188,14 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   }
 
   void _onNowPlaying() {
-    final artwork =
-        '${c.sendspin.nowPlaying.value?['artworkUrl'] ?? ''}';
+    final artwork = '${c.sendspin.nowPlaying.value?['artworkUrl'] ?? ''}';
     if (artwork != _artUrl) _loadArtwork(artwork);
     final playing = c.sendspin.nowPlaying.value?['playing'] == true;
     if (playing && _tick == null) {
       _tick = Timer.periodic(
-          const Duration(seconds: 1), (_) => setState(() {}));
+        const Duration(seconds: 1),
+        (_) => setState(() {}),
+      );
     } else if (!playing) {
       _tick?.cancel();
       _tick = null;
@@ -139,125 +235,147 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
     }
     if (duration > 0) position = position.clamp(0, duration);
 
-    return LayoutBuilder(builder: (context, constraints) {
-      final freeW = (constraints.maxWidth - _cardWidth).clamp(0.0, 1e6);
-      final freeH = (constraints.maxHeight - _cardHeight).clamp(0.0, 1e6);
-      return Stack(children: [
-        Positioned(
-          left: _fx * freeW,
-          top: _fy * freeH,
-          child: GestureDetector(
-            onPanUpdate: (d) => setState(() {
-              if (freeW > 0) _fx = (_fx + d.delta.dx / freeW).clamp(0.0, 1.0);
-              if (freeH > 0) _fy = (_fy + d.delta.dy / freeH).clamp(0.0, 1.0);
-            }),
-            onPanEnd: (_) => c.settings.set(
-              defs.sendspinPlayerPos,
-              '${_fx.toStringAsFixed(3)},${_fy.toStringAsFixed(3)}',
-            ),
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(16),
-              color: scheme.surface.withValues(alpha: 0.96),
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                width: _cardWidth,
-                height: _cardHeight,
-                child: Row(children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: SizedBox(
-                        width: 72,
-                        height: 72,
-                        child: _artBytes == null
-                            ? ColoredBox(
-                                color: scheme.surfaceContainerHighest,
-                                child: Icon(Icons.music_note,
-                                    color: scheme.onSurfaceVariant),
-                              )
-                            : Image.memory(
-                                _artBytes!,
-                                fit: BoxFit.cover,
-                                gaplessPlayback: true,
-                                errorBuilder: (_, _, _) => ColoredBox(
-                                  color: scheme.surfaceContainerHighest,
-                                  child: Icon(Icons.music_note,
-                                      color: scheme.onSurfaceVariant),
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 12, 14, 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleSmall,
-                              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final freeW = (constraints.maxWidth - _cardWidth).clamp(0.0, 1e6);
+        final freeH = (constraints.maxHeight - _cardHeight).clamp(0.0, 1e6);
+        return Stack(
+          children: [
+            Positioned(
+              left: _fx * freeW,
+              top: _fy * freeH,
+              child: GestureDetector(
+                onPanUpdate: (d) => setState(() {
+                  if (freeW > 0) {
+                    _fx = (_fx + d.delta.dx / freeW).clamp(0.0, 1.0);
+                  }
+                  if (freeH > 0) {
+                    _fy = (_fy + d.delta.dy / freeH).clamp(0.0, 1.0);
+                  }
+                }),
+                onPanEnd: (_) => c.settings.set(
+                  defs.sendspinPlayerPos,
+                  '${_fx.toStringAsFixed(3)},${_fy.toStringAsFixed(3)}',
+                ),
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(16),
+                  color: scheme.surface.withValues(alpha: 0.96),
+                  clipBehavior: Clip.antiAlias,
+                  child: SizedBox(
+                    width: _cardWidth,
+                    height: _cardHeight,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: SizedBox(
+                              width: 72,
+                              height: 72,
+                              child: _artBytes == null
+                                  ? ColoredBox(
+                                      color: scheme.surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.music_note,
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                    )
+                                  : Image.memory(
+                                      _artBytes!,
+                                      fit: BoxFit.cover,
+                                      gaplessPlayback: true,
+                                      errorBuilder: (_, _, _) => ColoredBox(
+                                        color: scheme.surfaceContainerHighest,
+                                        child: Icon(
+                                          Icons.music_note,
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
                             ),
-                            Icon(
-                              playing
-                                  ? Icons.graphic_eq
-                                  : Icons.pause_circle_outline,
-                              size: 16,
-                              color: scheme.primary,
-                            ),
-                          ]),
-                          if (artist.isNotEmpty)
-                            Text(
-                              artist,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                  color: scheme.onSurfaceVariant),
-                            ),
-                          const Spacer(),
-                          if (duration > 0) ...[
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(2),
-                              child: LinearProgressIndicator(
-                                value: (position / duration).clamp(0.0, 1.0),
-                                minHeight: 3,
-                                backgroundColor:
-                                    scheme.surfaceContainerHighest,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 12, 14, 10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(_clock(position),
-                                    style: theme.textTheme.labelSmall
-                                        ?.copyWith(
-                                            color: scheme.onSurfaceVariant)),
-                                Text(_clock(duration),
-                                    style: theme.textTheme.labelSmall
-                                        ?.copyWith(
-                                            color: scheme.onSurfaceVariant)),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _Marquee(
+                                        text: title,
+                                        style: theme.textTheme.titleSmall,
+                                      ),
+                                    ),
+                                    Icon(
+                                      playing
+                                          ? Icons.graphic_eq
+                                          : Icons.pause_circle_outline,
+                                      size: 16,
+                                      color: scheme.primary,
+                                    ),
+                                  ],
+                                ),
+                                if (artist.isNotEmpty)
+                                  _Marquee(
+                                    text: artist,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                const Spacer(),
+                                if (duration > 0) ...[
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(2),
+                                    child: LinearProgressIndicator(
+                                      value: (position / duration).clamp(
+                                        0.0,
+                                        1.0,
+                                      ),
+                                      minHeight: 3,
+                                      backgroundColor:
+                                          scheme.surfaceContainerHighest,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _clock(position),
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                      Text(
+                                        _clock(duration),
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
-                          ],
-                        ],
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ]),
+                ),
               ),
             ),
-          ),
-        ),
-      ]);
-    });
+          ],
+        );
+      },
+    );
   }
 }
