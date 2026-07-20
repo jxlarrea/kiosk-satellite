@@ -521,16 +521,23 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                 padding: const EdgeInsets.fromLTRB(
                                   0,
                                   12,
-                                  14,
+                                  10,
                                   10,
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                // The status/close element lives in its own
+                                // fixed-width side slot spanning the card:
+                                // playing and paused reserve identical
+                                // space, so the text never jumps when the
+                                // state flips.
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: _Marquee(
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _Marquee(
                                             text: title,
                                             // The large card earns larger
                                             // type; compact keeps its fit.
@@ -542,105 +549,119 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                                       )
                                                 : theme.textTheme.titleSmall,
                                           ),
-                                        ),
-                                        // Playing: the equalizer badge.
-                                        // Paused: a touch-sized close
-                                        // button in its place; the play
-                                        // button below already says
-                                        // "paused" louder than any icon.
-                                        if (playing)
-                                          Icon(
-                                            Icons.graphic_eq,
-                                            size: 16,
-                                            color: scheme.primary,
-                                          )
-                                        else
-                                          InkWell(
-                                            borderRadius: BorderRadius.circular(
-                                              20,
+                                          if (artist.isNotEmpty)
+                                            _Marquee(
+                                              text: artist,
+                                              style:
+                                                  (_large
+                                                          ? theme
+                                                                .textTheme
+                                                                .bodyMedium
+                                                          : theme
+                                                                .textTheme
+                                                                .bodySmall)
+                                                      ?.copyWith(
+                                                        color: scheme
+                                                            .onSurfaceVariant,
+                                                      ),
                                             ),
-                                            onTap: () => setState(
-                                              () => _dismissed = true,
-                                            ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(8),
-                                              child: Icon(
-                                                Icons.close,
-                                                size: _large ? 26 : 22,
-                                                color: scheme.onSurfaceVariant,
+                                          const Spacer(),
+                                          // Large size: transport buttons for the
+                                          // whole playback group (controller role),
+                                          // shown only when the server accepts them.
+                                          if (_large)
+                                            _controls(now, playing, scheme),
+                                          if (duration > 0) ...[
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
+                                              child: LinearProgressIndicator(
+                                                value: (position / duration)
+                                                    .clamp(0.0, 1.0),
+                                                minHeight: 3,
+                                                backgroundColor: scheme
+                                                    .surfaceContainerHighest,
                                               ),
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                    if (artist.isNotEmpty)
-                                      _Marquee(
-                                        text: artist,
-                                        style:
-                                            (_large
-                                                    ? theme.textTheme.bodyMedium
-                                                    : theme.textTheme.bodySmall)
-                                                ?.copyWith(
-                                                  color:
-                                                      scheme.onSurfaceVariant,
+                                            const SizedBox(height: 3),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  _clock(position),
+                                                  style:
+                                                      (_large
+                                                              ? theme
+                                                                    .textTheme
+                                                                    .labelMedium
+                                                              : theme
+                                                                    .textTheme
+                                                                    .labelSmall)
+                                                          ?.copyWith(
+                                                            color: scheme
+                                                                .onSurfaceVariant,
+                                                          ),
                                                 ),
-                                      ),
-                                    const Spacer(),
-                                    // Large size: transport buttons for the
-                                    // whole playback group (controller role),
-                                    // shown only when the server accepts them.
-                                    if (_large) _controls(now, playing, scheme),
-                                    if (duration > 0) ...[
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(2),
-                                        child: LinearProgressIndicator(
-                                          value: (position / duration).clamp(
-                                            0.0,
-                                            1.0,
-                                          ),
-                                          minHeight: 3,
-                                          backgroundColor:
-                                              scheme.surfaceContainerHighest,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            _clock(position),
-                                            style:
-                                                (_large
-                                                        ? theme
-                                                              .textTheme
-                                                              .labelMedium
-                                                        : theme
-                                                              .textTheme
-                                                              .labelSmall)
-                                                    ?.copyWith(
-                                                      color: scheme
-                                                          .onSurfaceVariant,
-                                                    ),
-                                          ),
-                                          Text(
-                                            _clock(duration),
-                                            style:
-                                                (_large
-                                                        ? theme
-                                                              .textTheme
-                                                              .labelMedium
-                                                        : theme
-                                                              .textTheme
-                                                              .labelSmall)
-                                                    ?.copyWith(
-                                                      color: scheme
-                                                          .onSurfaceVariant,
-                                                    ),
-                                          ),
+                                                Text(
+                                                  _clock(duration),
+                                                  style:
+                                                      (_large
+                                                              ? theme
+                                                                    .textTheme
+                                                                    .labelMedium
+                                                              : theme
+                                                                    .textTheme
+                                                                    .labelSmall)
+                                                          ?.copyWith(
+                                                            color: scheme
+                                                                .onSurfaceVariant,
+                                                          ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ],
                                       ),
-                                    ],
+                                    ),
+                                    // The side slot: equalizer while
+                                    // playing, a circled close while
+                                    // paused, same footprint either way.
+                                    SizedBox(
+                                      width: _large ? 52.0 : 44.0,
+                                      child: Center(
+                                        child: playing
+                                            ? Icon(
+                                                Icons.graphic_eq,
+                                                size: _large ? 20 : 16,
+                                                color: scheme.primary,
+                                              )
+                                            : Material(
+                                                color: scheme
+                                                    .surfaceContainerHighest,
+                                                shape: const CircleBorder(),
+                                                clipBehavior: Clip.antiAlias,
+                                                child: InkWell(
+                                                  onTap: () => setState(
+                                                    () => _dismissed = true,
+                                                  ),
+                                                  child: SizedBox(
+                                                    width: _large ? 44.0 : 38.0,
+                                                    height: _large
+                                                        ? 44.0
+                                                        : 38.0,
+                                                    child: Icon(
+                                                      Icons.close,
+                                                      size: _large ? 24 : 20,
+                                                      color: scheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
