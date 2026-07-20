@@ -146,6 +146,12 @@ const _categories = <(String, String, IconData, String)>[
     'Publish to an MQTT broker',
   ),
   (
+    'Sendspin',
+    'Sendspin Player',
+    Icons.speaker_outlined,
+    'Synchronized audio player',
+  ),
+  (
     'Device',
     'Device',
     Icons.tablet_android_outlined,

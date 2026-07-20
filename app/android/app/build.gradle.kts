@@ -81,4 +81,12 @@ dependencies {
     implementation("androidx.camera:camera-core:$cameraxVersion")
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+
+    // SendSpin synchronized-audio player (me.jxl.kiosk_satellite.sendspin).
+    // kotlinx-serialization-json is used only through its JSON tree API
+    // (buildJsonObject / parseToJsonElement), so the serialization compiler
+    // plugin is not required.
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

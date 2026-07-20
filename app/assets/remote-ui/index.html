@@ -431,6 +431,10 @@
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 6.9 6.3 16m6.8-9.1 4.6 9.1M7.2 18h9.6"/></svg></span>
           <span class="nav-text"><span class="nav-title">MQTT Settings</span><span class="nav-sub">Publish to an MQTT broker</span></span>
         </button>
+        <button data-tab="sendspin">
+          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><circle cx="12" cy="14.5" r="3.5"/><circle cx="12" cy="7.5" r="1"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Sendspin Player</span><span class="nav-sub">Synchronized audio player</span></span>
+        </button>
         <button data-tab="device">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
           <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
@@ -517,6 +521,7 @@
     <div class="tab" id="tab-voicesatellite"></div>
     <div class="tab" id="tab-remote"></div>
     <div class="tab" id="tab-mqtt"></div>
+    <div class="tab" id="tab-sendspin"></div>
     <div class="tab" id="tab-device">
       <div id="device-settings"></div>
       <div id="device-info"></div>
@@ -635,7 +640,7 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'screen', 'screensaver',
-  'homeassistant', 'remote', 'mqtt', 'device', 'console', 'logs', 'about'];
+  'homeassistant', 'remote', 'mqtt', 'sendspin', 'device', 'console', 'logs', 'about'];
 const TAB_TITLES = {
   dashboard: 'Dashboard', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', screen: 'Screen', screensaver: 'Screensaver',
@@ -643,6 +648,7 @@ const TAB_TITLES = {
   voicesatellite: 'Voice Satellite',
   remote: 'Remote Administration',
   mqtt: 'MQTT Settings',
+  sendspin: 'Sendspin Player',
   device: 'Device', console: 'Web Console', logs: 'Logs', about: 'About',
 };
 
@@ -827,6 +833,7 @@ const CATEGORY_TABS = [
   ['tab-homeassistant', ['Home Assistant']],
   ['tab-remote', ['Remote']],
   ['tab-mqtt', ['MQTT']],
+  ['tab-sendspin', ['Sendspin']],
   ['device-settings', ['Device']],
 ];
 

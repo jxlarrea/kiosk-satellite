@@ -1297,6 +1297,65 @@ const mqttDeviceId = SettingDef<String>(
   hidden: true,
 );
 
+// ── Sendspin ───────────────────────────────────────────────────────────
+// The device as a synchronized Sendspin audio player (the Music Assistant
+// native protocol). The native client lives in Kotlin (sendspin/); these
+// settings drive its lifecycle through SendspinManager.
+
+const sendspinEnabled = SettingDef<bool>(
+  key: 'sendspin.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable Sendspin player',
+  description:
+      'Turn this device into a synchronized Sendspin audio player. It '
+      'appears as a player in Music Assistant, named after the device '
+      'name, and plays in perfect sync with every other Sendspin speaker.',
+  category: 'Sendspin',
+);
+
+const sendspinServer = SettingDef<String>(
+  key: 'sendspin.server',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Server',
+  description:
+      'Sendspin server address, for example 192.168.1.10:8927. Leave '
+      'empty to find the server on the network automatically.',
+  category: 'Sendspin',
+  dependsOn: 'sendspin.enabled',
+);
+
+const sendspinCodec = SettingDef<String>(
+  key: 'sendspin.codec',
+  type: SettingType.select,
+  defaultValue: 'flac',
+  title: 'Preferred audio codec',
+  description:
+      'FLAC is lossless and ideal on WiFi or ethernet. The server makes '
+      'the final choice from what this device offers.',
+  category: 'Sendspin',
+  options: ['flac', 'opus', 'pcm'],
+  optionLabels: {
+    'flac': 'FLAC (lossless)',
+    'opus': 'Opus (efficient)',
+    'pcm': 'PCM (uncompressed)',
+  },
+  dependsOn: 'sendspin.enabled',
+);
+
+/// Stable per-install player identity, so Music Assistant sees the same
+/// player across restarts. Generated on first start; never shown.
+const sendspinClientId = SettingDef<String>(
+  key: 'sendspin.client_id',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Sendspin client id',
+  description: 'Internal identity for the Sendspin player.',
+  category: 'Sendspin',
+  hidden: true,
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -1445,6 +1504,10 @@ const List<SettingDef<Object>> allSettings = [
   mqttPassword,
   mqttDiscoveryPrefix,
   mqttDeviceId,
+  sendspinEnabled,
+  sendspinServer,
+  sendspinCodec,
+  sendspinClientId,
   remoteEnabled,
   remotePort,
   remotePassword,

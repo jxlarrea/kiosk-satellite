@@ -76,6 +76,11 @@ smooth on the low-powered, older tablets that usually end up on walls.
   views in an endless loop, each on screen for a configurable number of
   seconds. Perfect for flipping between a camera wall, an energy map, and
   the main dashboard.
+- **Sendspin player**: the tablet doubles as a synchronized
+  [Sendspin](https://www.sendspin-audio.com/) speaker for Music
+  Assistant, playing in sample-accurate sync with every other Sendspin
+  player in the house, with lossless FLAC on WiFi and metadata, artwork
+  and volume flowing into Home Assistant.
 - **Ready-made Home Assistant entities over MQTT**: point the app at your
   broker and every tablet appears in Home Assistant as its own device via
   MQTT discovery, no YAML needed: a screen light (real display power plus
@@ -173,6 +178,7 @@ very welcome in the issues.
 - [JavaScript API](docs/js-api.md): `window.kioskSatellite`, wake-word handoff protocol
 - [Remote API](docs/remote-api.md): REST + WebSocket surface
 - [MQTT](docs/mqtt.md): Home Assistant entities via MQTT discovery, topics, troubleshooting
+- [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
 
 ## License
 

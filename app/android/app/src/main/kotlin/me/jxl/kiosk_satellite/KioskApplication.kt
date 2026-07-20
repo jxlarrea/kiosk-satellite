@@ -33,6 +33,7 @@ class KioskApplication : Application() {
     private lateinit var background: BackgroundBridge
     private lateinit var deviceDetails: DeviceDetails
     private lateinit var brightness: BrightnessBridge
+    private lateinit var sendspin: SendspinBridge
 
     override fun onCreate() {
         super.onCreate()
@@ -52,5 +53,6 @@ class KioskApplication : Application() {
         background = BackgroundBridge(applicationContext, messenger)
         deviceDetails = DeviceDetails(applicationContext, messenger)
         brightness = BrightnessBridge(applicationContext, messenger)
+        sendspin = SendspinBridge(applicationContext, messenger)
     }
 }

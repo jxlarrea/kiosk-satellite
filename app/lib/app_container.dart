@@ -13,6 +13,7 @@ import 'managers/proxy/proxy_manager.dart';
 import 'managers/remote/remote_manager.dart';
 import 'managers/screen/screen_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
+import 'managers/sendspin/sendspin_manager.dart';
 import 'managers/settings/provisioning.dart';
 import 'managers/settings/settings_manager.dart';
 import 'managers/update/update_manager.dart';
@@ -38,6 +39,7 @@ class AppContainer {
     homeAssistant = HomeAssistantManager(bus, commands, log, settings);
     wakeWord = WakeWordManager(bus, commands, log, settings);
     mqtt = MqttManager(bus, commands, log, settings);
+    sendspin = SendspinManager(bus, commands, log, settings);
     update = UpdateManager(bus, commands, log);
     remote = RemoteManager(bus, commands, log, settings);
   }
@@ -57,6 +59,7 @@ class AppContainer {
   late final HomeAssistantManager homeAssistant;
   late final WakeWordManager wakeWord;
   late final MqttManager mqtt;
+  late final SendspinManager sendspin;
   late final UpdateManager update;
   late final RemoteManager remote;
 
@@ -76,6 +79,7 @@ class AppContainer {
         homeAssistant,
         wakeWord,
         mqtt,
+        sendspin,
         update,
         remote,
       ];
