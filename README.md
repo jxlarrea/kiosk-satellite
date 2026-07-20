@@ -21,7 +21,8 @@ Assistant**, and the official companion app for
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration).
 Mount a tablet on the wall, run the setup wizard, and you get a locked-down,
 always-on dashboard that listens for your wake word natively, even while
-the screen is off or another app is in front.
+the screen is off or another app is in front. And it is built to stay
+smooth on the low-powered, older tablets that usually end up on walls.
 
 <p align="center">
  <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/drawer.png" alt="Assist" width="94%"/>
@@ -49,6 +50,16 @@ the screen is off or another app is in front.
   and the rest of the https-only browser surface work on an http-only
   instance, with no certificates or reverse proxy to set up. Enabled
   automatically during setup when your URL is plain HTTP.
+- **Fast dashboards on slow tablets**: Home Assistant streams every
+  entity's state change to every open dashboard, and on a large instance
+  that firehose is exactly what makes older tablets lag and stutter. Kiosk
+  Satellite can filter the stream down to just the entities on the view
+  currently on screen. Measured on an Echo Show 5 against a ~4,700-entity
+  instance, the page's main thread went from blocked a third of the time
+  to essentially never: constant stutter became smooth. Filtering is per
+  view, follows navigation and view rotation instantly with no stale data,
+  understands `auto-entities` filter cards, and leaves any view it cannot
+  fully resolve unfiltered, so nothing ever breaks.
 - **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake when someone presses the
   power button, and full lock-task support on device-owner provisioned
