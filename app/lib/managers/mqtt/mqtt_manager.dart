@@ -227,6 +227,8 @@ class MqttManager extends Manager {
       '$_base/screen/set',
       '$_base/brightness/set',
       '$_base/screensaver/set',
+      '$_base/reload/set',
+      '$_base/clear_cache/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
     ]) {
       client.subscribe(topic, MqttQos.atLeastOnce);
@@ -352,6 +354,12 @@ class MqttManager extends Manager {
         log.info(name, 'command $topic = $text');
         await commands.execute(
             text == 'ON' ? 'startScreensaver' : 'stopScreensaver', const {});
+      } else if (topic == '$_base/reload/set') {
+        log.info(name, 'command $topic');
+        await commands.execute('reload', const {});
+      } else if (topic == '$_base/clear_cache/set') {
+        log.info(name, 'command $topic');
+        await commands.execute('clearWebCache', const {});
       } else {
         for (final entry in _settingSwitches.entries) {
           if (topic != '$_base/${entry.key}/set') continue;
@@ -441,6 +449,8 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/ram_free/config',
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/switch/ks_$_deviceId/screensaver/config',
+        '$_prefix/button/ks_$_deviceId/reload/config',
+        '$_prefix/button/ks_$_deviceId/clear_cache/config',
         for (final objectId in _settingSwitches.keys)
           '$_prefix/switch/ks_$_deviceId/$objectId/config',
       ];
@@ -531,7 +541,7 @@ class MqttManager extends Manager {
         'entity_category': 'diagnostic',
       },
       '$_prefix/sensor/ks_$_deviceId/ram_free/config': {
-        ...common('ram_free', 'Available RAM'),
+        ...common('ram_free', 'RAM available'),
         'state_topic': '$_base/ram_free/state',
         'device_class': 'data_size',
         'unit_of_measurement': 'MB',
@@ -540,7 +550,7 @@ class MqttManager extends Manager {
         'entity_category': 'diagnostic',
       },
       '$_prefix/sensor/ks_$_deviceId/ram_total/config': {
-        ...common('ram_total', 'Total RAM'),
+        ...common('ram_total', 'RAM total'),
         'state_topic': '$_base/ram_total/state',
         'device_class': 'data_size',
         'unit_of_measurement': 'MB',
@@ -552,6 +562,17 @@ class MqttManager extends Manager {
         'state_topic': '$_base/screensaver/state',
         'command_topic': '$_base/screensaver/set',
         'icon': 'mdi:sleep',
+      },
+      '$_prefix/button/ks_$_deviceId/reload/config': {
+        ...common('reload', 'Reload page'),
+        'command_topic': '$_base/reload/set',
+        'icon': 'mdi:refresh',
+      },
+      '$_prefix/button/ks_$_deviceId/clear_cache/config': {
+        ...common('clear_cache', 'Clear cache'),
+        'command_topic': '$_base/clear_cache/set',
+        'icon': 'mdi:broom',
+        'entity_category': 'config',
       },
       '$_prefix/switch/ks_$_deviceId/kiosk/config':
           settingSwitch('kiosk', 'Kiosk mode', 'mdi:lock-outline'),
