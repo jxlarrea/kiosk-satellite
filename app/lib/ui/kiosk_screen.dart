@@ -20,6 +20,7 @@ import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kiosk_drawer.dart';
+import 'sendspin_player_overlay.dart';
 import 'settings_screen.dart';
 import 'web_console_panel.dart';
 
@@ -546,6 +547,7 @@ class _KioskScreenState extends State<KioskScreen>
         // unloads. A wake detection hides this instantly, revealing the
         // live dashboard underneath (see initState).
         _OverlayHost(container: c),
+        SendspinPlayerOverlay(container: c),
         if (_consoleOpen)
           WebConsolePanel(
             browser: c.browser,

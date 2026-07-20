@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' show Random;
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/services.dart';
 
 import '../../core/command_registry.dart';
@@ -42,6 +43,19 @@ class SendspinManager extends Manager {
   bool _playing = false;
   Map<String, Object?> _status = const {};
 
+  /// Live now-playing snapshot for the floating player overlay: the merged
+  /// status plus 'playing' and 'receivedAt' (epoch ms of the last metadata
+  /// update, for on-screen position extrapolation). Null when idle.
+  final nowPlaying = ValueNotifier<Map<String, Object?>?>(null);
+
+  void _publishNowPlaying() {
+    final state = '${_status['playbackState'] ?? ''}';
+    final active = _playing || (state == 'paused' && _status['title'] != null);
+    nowPlaying.value = !active
+        ? null
+        : {..._status, 'playing': _playing};
+  }
+
   @override
   Future<void> init() async {
     var clientId = _settings.get(defs.sendspinClientId);
@@ -63,7 +77,17 @@ class SendspinManager extends Manager {
               'state: connected=${map['connected']} '
               'server=${map['serverName']} synced=${map['synced']}');
         case 'metadataChanged':
-          _status = {..._status, ...map};
+          // Metadata arrives as deltas: a progress-only update carries no
+          // title, and the server may send literal "null" strings. Absent
+          // fields must not clobber what an earlier message established.
+          _status = {
+            ..._status,
+            for (final e in map.entries)
+              if (e.value != null && '${e.value}' != 'null' &&
+                  '${e.value}'.isNotEmpty)
+                e.key: e.value,
+            'receivedAt': DateTime.now().millisecondsSinceEpoch,
+          };
         case 'volumeChanged':
           _status = {..._status, ...map};
         case 'playingChanged':
@@ -76,6 +100,7 @@ class SendspinManager extends Manager {
                 VoiceInteractionChanged(active: playing, reason: 'media'));
           }
       }
+      _publishNowPlaying();
       return null;
     });
 
@@ -172,5 +197,6 @@ class SendspinManager extends Manager {
       bus.publish(const VoiceInteractionChanged(active: false, reason: 'media'));
     }
     _status = const {};
+    nowPlaying.value = null;
   }
 }

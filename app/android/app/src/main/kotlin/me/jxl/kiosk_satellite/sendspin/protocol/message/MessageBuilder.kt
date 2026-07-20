@@ -30,9 +30,13 @@ object MessageBuilder {
                 put("client_id", clientId)
                 put("name", deviceName)
                 put("version", SendSpinProtocol.VERSION)
-                // Player role only for now; the kiosk is a headless renderer.
+                // Player plus metadata: the server only sends now-playing
+                // details (title, artist, artwork url, progress) to clients
+                // that declare the metadata role, and the floating media
+                // player on the kiosk shows them.
                 put("supported_roles", buildJsonArray {
                     add(JsonPrimitive(SendSpinProtocol.Roles.PLAYER))
+                    add(JsonPrimitive(SendSpinProtocol.Roles.METADATA))
                 })
                 put("device_info", buildJsonObject {
                     put("product_name", "Kiosk Satellite")

@@ -1344,6 +1344,31 @@ const sendspinCodec = SettingDef<String>(
   dependsOn: 'sendspin.enabled',
 );
 
+const sendspinShowPlayer = SettingDef<bool>(
+  key: 'sendspin.show_player',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show the floating media player',
+  description:
+      'While music plays, show a small now-playing window over the '
+      'dashboard with artwork, track info and progress. Drag it anywhere; '
+      'the position is remembered.',
+  category: 'Sendspin',
+  dependsOn: 'sendspin.enabled',
+);
+
+/// The floating player's position as "x,y" fractions of the free area.
+/// Hidden: owned by the drag gesture, not a settings row.
+const sendspinPlayerPos = SettingDef<String>(
+  key: 'sendspin.player_pos',
+  type: SettingType.string,
+  defaultValue: '0.98,0.98',
+  title: 'Floating player position',
+  description: 'Internal position of the floating media player.',
+  category: 'Sendspin',
+  hidden: true,
+);
+
 /// Stable per-install player identity, so Music Assistant sees the same
 /// player across restarts. Generated on first start; never shown.
 const sendspinClientId = SettingDef<String>(
@@ -1507,6 +1532,8 @@ const List<SettingDef<Object>> allSettings = [
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
+  sendspinShowPlayer,
+  sendspinPlayerPos,
   sendspinClientId,
   remoteEnabled,
   remotePort,
