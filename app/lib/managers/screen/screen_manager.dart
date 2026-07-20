@@ -43,7 +43,10 @@ class ScreenManager extends Manager {
     _brightness.setMethodCallHandler((call) async {
       if (call.method == 'brightnessChanged') {
         final level = (call.arguments as num?)?.toDouble();
-        if (level != null) {
+        // While a window override is up (no-grant fallback), a system value
+        // change does not alter what the panel shows; reporting it would
+        // move every mirror to a number the panel is not displaying.
+        if (level != null && _overrideLevel == null) {
           bus.publish(BrightnessChanged(level: level));
         }
       }
@@ -152,10 +155,19 @@ class ScreenManager extends Manager {
     }
   }
 
-  /// The panel's actual brightness — the system setting — not the app-window
-  /// override the plugin reads, which stops tracking reality the moment
-  /// anything else (quick settings, adaptive brightness) moves the panel.
+  /// The level of the window override currently masking the system value,
+  /// null when none is up. Set only by the no-grant fallback in
+  /// [setBrightness]; while set, IT is what the panel shows, so reads
+  /// report it and system-value observer events are ignored.
+  double? _overrideLevel;
+
+  /// The panel's actual brightness: the window override while one is up
+  /// (the no-grant fallback), else the system setting — never the plugin's
+  /// stale view, which stops tracking reality the moment anything else
+  /// (quick settings, adaptive brightness) moves the panel.
   Future<double?> getBrightness() async {
+    final override = _overrideLevel;
+    if (override != null) return override;
     try {
       final level = await _brightness.invokeMethod<double>('get');
       if (level != null) return level;
@@ -182,6 +194,7 @@ class ScreenManager extends Manager {
         try {
           await ScreenBrightness().resetApplicationScreenBrightness();
         } catch (_) {}
+        _overrideLevel = null;
         bus.publish(BrightnessChanged(level: clamped));
         return true;
       }
@@ -190,6 +203,7 @@ class ScreenManager extends Manager {
     // kiosk, it just cannot move the system slider with it.
     try {
       await ScreenBrightness().setApplicationScreenBrightness(clamped);
+      _overrideLevel = clamped;
       bus.publish(BrightnessChanged(level: clamped));
       return true;
     } catch (e) {
@@ -202,6 +216,7 @@ class ScreenManager extends Manager {
   Future<void> resetBrightness() async {
     try {
       await ScreenBrightness().resetApplicationScreenBrightness();
+      _overrideLevel = null;
     } catch (e) {
       log.warn(name, 'resetBrightness failed: $e');
     }
