@@ -173,6 +173,7 @@ very welcome in the issues.
 
 - [JavaScript API](docs/js-api.md): `window.kioskSatellite`, wake-word handoff protocol
 - [Remote API](docs/remote-api.md): REST + WebSocket surface
+- [MQTT](docs/mqtt.md): Home Assistant entities via MQTT discovery, topics, troubleshooting
 
 ## License
 
