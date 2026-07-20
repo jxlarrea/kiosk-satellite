@@ -18,3 +18,7 @@ app/*.iml
 app/android/key.properties
 app/android/app/upload-keystore.jks
 *.jks
+
+.claude/
+.vscode/
+.codex/
