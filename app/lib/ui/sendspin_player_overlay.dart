@@ -164,6 +164,16 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       now?['album'],
     ].where((v) => v != null && '$v'.isNotEmpty).join(' · ');
     final art = _artBytes;
+    // Sized off the panel, not fixed: a 360px cover with 40px type fits a
+    // tablet but overflows small panels (the Echo Show's 480px-tall
+    // screen). Everything scales from the shortest side and caps at the
+    // tablet design sizes.
+    final screen = MediaQuery.sizeOf(context);
+    final short = screen.shortestSide;
+    final artSize = (short * 0.52).clamp(120.0, 360.0);
+    final titleSize = (short * 0.085).clamp(20.0, 40.0);
+    final artistSize = (short * 0.047).clamp(13.0, 22.0);
+    final gap = (screen.height * 0.05).clamp(12.0, 40.0);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -206,19 +216,19 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                     borderRadius: BorderRadius.circular(24),
                     child: Image.memory(
                       art,
-                      width: 360,
-                      height: 360,
+                      width: artSize,
+                      height: artSize,
                       fit: BoxFit.cover,
                       gaplessPlayback: true,
                     ),
                   )
                 else
-                  const Icon(
+                  Icon(
                     Icons.music_note,
-                    size: 160,
+                    size: artSize * 0.45,
                     color: Colors.white24,
                   ),
-                const SizedBox(height: 40),
+                SizedBox(height: gap),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 48),
                   child: Text(
@@ -226,9 +236,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 40,
+                      fontSize: titleSize,
                       fontWeight: FontWeight.w700,
                       height: 1.15,
                     ),
@@ -243,9 +253,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 22,
+                        fontSize: artistSize,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
