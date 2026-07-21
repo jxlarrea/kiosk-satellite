@@ -155,7 +155,7 @@ const _categories = <(String, String, IconData, String)>[
     'DLNA',
     'DLNA Renderer',
     Icons.cast_outlined,
-    'Media pushed from Home Assistant',
+    'Play images, videos and audio remotely',
   ),
   (
     'Device',
@@ -885,6 +885,9 @@ class _CategoryContentState extends State<_CategoryContent> {
           ),
         if (widget.category == 'Screen')
           _BrightnessGrantCard(container: container),
+        if (widget.category == 'Remote' &&
+            container.settings.get(remoteEnabled))
+          _AdminAddressCard(container: container),
         if (widget.category == 'Device') ...[
           const _SectionHeading('Configuration'),
           _SettingsCard(
@@ -1316,6 +1319,59 @@ const _githubMark =
 /// grant is missing: without it, brightness set from the app, the remote
 /// admin or Home Assistant falls back to an app-window override the system
 /// value never reflects. Disappears once granted.
+/// Where to point the browser: shown under the Remote Administration
+/// settings while the admin is enabled, since the address lives on the
+/// device and nowhere else visible.
+class _AdminAddressCard extends StatefulWidget {
+  const _AdminAddressCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_AdminAddressCard> createState() => _AdminAddressCardState();
+}
+
+class _AdminAddressCardState extends State<_AdminAddressCard> {
+  String? _ip;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.container.device.ipAddress().then((ip) {
+      if (mounted) setState(() => _ip = ip);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final port = widget.container.settings.get(remotePort).toInt();
+    final address = 'http://${_ip ?? '…'}:$port';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _SectionHeading('Access'),
+        _SettingsCard(
+          children: [
+            ListTile(
+              title: const Text('Admin address'),
+              subtitle: const Text(
+                'Open this address in a browser on your computer.',
+              ),
+              trailing: Text(
+                address,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _BrightnessGrantCard extends StatefulWidget {
   const _BrightnessGrantCard({required this.container});
 

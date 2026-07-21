@@ -437,7 +437,7 @@
         </button>
         <button data-tab="dlna">
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h.01M3 15a4 4 0 0 1 4 4M3 11a8 8 0 0 1 8 8"/><path d="M8 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg></span>
-          <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Media pushed from Home Assistant</span></span>
+          <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Play images, videos and audio remotely</span></span>
         </button>
         <button data-tab="device">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
@@ -915,6 +915,21 @@ async function loadSettings() {
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
   updateBrightnessGrantNotices();
+
+  // Mirror of the device's Access card under Remote Administration. Here
+  // the address is simply where this page came from.
+  {
+    const root = document.getElementById('tab-remote');
+    const heading = document.createElement('h2');
+    heading.className = 'card-title';
+    heading.textContent = 'Access';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.appendChild(readOnlyRow('Admin address',
+      'Open this address in a browser on your computer.',
+      `http://${location.host}`));
+    root.append(heading, card);
+  }
 
   // ── Voice Satellite ───────────────────────────────────────────────────
   // Its own page under Home Assistant Configuration, gated the same way;
