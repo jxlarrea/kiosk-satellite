@@ -70,8 +70,12 @@ const _pagePadding = EdgeInsets.fromLTRB(20, 16, 20, 24);
 List<Widget> _sectionedCards(
   AppContainer container,
   List<SettingDef<Object>> defs,
-  VoidCallback onChanged,
-) {
+  VoidCallback onChanged, {
+  // Extra widgets keyed by setting key, rendered inside the card directly
+  // under that setting's row (a permission notice living with the switch
+  // that needs it).
+  Map<String, Widget> after = const {},
+}) {
   final settings = container.settings;
   final visible = [
     for (final d in defs)
@@ -85,8 +89,10 @@ List<Widget> _sectionedCards(
     out.add(
       _SettingsCard(
         children: [
-          for (final def in buffer)
+          for (final def in buffer) ...[
             SettingTile(container: container, def: def, onChanged: onChanged),
+            if (after[def.key] != null) after[def.key]!,
+          ],
         ],
       ),
     );
@@ -882,6 +888,13 @@ class _CategoryContentState extends State<_CategoryContent> {
             container,
             _defsFor(widget.category),
             () => setState(() {}),
+            after: {
+              if (widget.category == 'Screensaver' &&
+                  container.settings.get(screensaverDismissOnMotion))
+                screensaverDismissOnMotion.key: _CameraGrantRow(
+                  key: UniqueKey(),
+                ),
+            },
           ),
         if (widget.category == 'Screen')
           _BrightnessGrantCard(container: container),
@@ -1319,6 +1332,71 @@ const _githubMark =
 /// grant is missing: without it, brightness set from the app, the remote
 /// admin or Home Assistant falls back to an app-window override the system
 /// value never reflects. Disappears once granted.
+/// The camera permission's status, rendered directly under "Dismiss on
+/// motion" while it is enabled: motion detection silently sees nothing
+/// without the grant, and the switch is where that surprise gets noticed.
+/// Hidden once granted; same shape as the permission rows under Voice
+/// Satellite.
+class _CameraGrantRow extends StatefulWidget {
+  const _CameraGrantRow({super.key});
+
+  @override
+  State<_CameraGrantRow> createState() => _CameraGrantRowState();
+}
+
+class _CameraGrantRowState extends State<_CameraGrantRow> {
+  bool? _granted;
+  bool _blocked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final status = await Permission.camera.status;
+    if (!mounted) return;
+    setState(() {
+      _granted = status.isGranted;
+      _blocked = status.isPermanentlyDenied;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_granted != false) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(
+        Icons.no_photography_outlined,
+        color: theme.colorScheme.error,
+      ),
+      title: const Text('Camera'),
+      subtitle: Text(
+        _blocked
+            ? 'Blocked. Android will not ask again, so allow it in the '
+                  'app settings.'
+            : 'Without this motion cannot be detected.',
+      ),
+      trailing: TextButton(
+        onPressed: () async {
+          if (_blocked) {
+            await openOsAppSettings();
+          } else {
+            final outcome = await requestOsPermission(Permission.camera);
+            if (outcome == PermissionOutcome.blocked && mounted) {
+              setState(() => _blocked = true);
+            }
+          }
+          await _refresh();
+        },
+        child: Text(_blocked ? 'App settings' : 'Grant'),
+      ),
+    );
+  }
+}
+
 /// Where to point the browser: shown under the Remote Administration
 /// settings while the admin is enabled, since the address lives on the
 /// device and nowhere else visible.

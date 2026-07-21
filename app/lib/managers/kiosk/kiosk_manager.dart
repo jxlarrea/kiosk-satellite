@@ -84,13 +84,14 @@ class KioskManager extends Manager {
         params: const {
           'full': 'true for the whole recommended set',
           'which':
-              'explicit list of permissions to request (microphone, '
+              'explicit list of permissions to request (microphone, camera, '
               'notifications, batteryOptimizations, overlay, writeSettings, '
               'deviceAdmin); overrides full',
         },
         handler: (p) async {
           const known = <String, Permission>{
             'microphone': Permission.microphone,
+            'camera': Permission.camera,
             'notifications': Permission.notification,
             'batteryOptimizations': Permission.ignoreBatteryOptimizations,
             'overlay': Permission.systemAlertWindow,

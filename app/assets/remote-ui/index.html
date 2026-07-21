@@ -748,6 +748,50 @@ document.querySelectorAll('.action[data-cmd]').forEach((b) =>
       res = await cmd(b.dataset.cmd).catch(() => null);
     }
   }));
+/* Camera grant notice: mirror of the device's row directly under "Dismiss
+   on motion", shown only while that switch is on and the camera permission
+   is missing. Toggling the switch re-renders the tab (its dependants force
+   a layout reload), so visibility follows the setting on its own. */
+async function updateMotionCameraNotice() {
+  const dismissOnMotion = (state.settings || [])
+    .find((s) => s.key === 'screensaver.dismiss_on_motion');
+  if (!dismissOnMotion || dismissOnMotion.value !== true) return;
+  let granted;
+  try {
+    const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+    granted = !!(res.data || {}).camera;
+  } catch (_) { return; }
+  if (granted) return;
+  const tab = document.getElementById('tab-screensaver');
+  const anchor = [...tab.querySelectorAll('.row')]
+    .find((r) => r.querySelector('.name')?.textContent === 'Dismiss on motion');
+  if (!anchor || tab.querySelector('.motion-camera-notice')) return;
+  const row = readOnlyRow('Camera permission missing',
+    'Without it motion cannot be detected. The grant dialog appears on the tablet screen.', '');
+  row.classList.add('motion-camera-notice');
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Grant on device';
+  btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      await api('/api/commands/requestOsPermissions', { method: 'POST',
+        body: JSON.stringify({ which: ['camera'] }) });
+    } catch (_) {}
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      try {
+        const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+        if ((res.data || {}).camera) { row.remove(); return; }
+      } catch (_) {}
+    }
+    btn.disabled = false;
+  });
+  row.appendChild(btn);
+  anchor.insertAdjacentElement('afterend', row);
+}
+
 /* Brightness grant notices: shown under the dashboard slider and on the
    Screen tab only while "Modify system settings" is missing on the device.
    Without it the slider falls back to dimming the app window; the panel's
@@ -915,6 +959,7 @@ async function loadSettings() {
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
   updateBrightnessGrantNotices();
+  updateMotionCameraNotice();
 
   // Mirror of the device's Access card under Remote Administration. Here
   // the address is simply where this page came from.
