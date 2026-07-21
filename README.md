@@ -25,79 +25,60 @@ the screen is off or another app is in front. And it is built to stay
 smooth on the low-powered, older tablets that usually end up on walls.
 
 <p align="center">
- <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/drawer.png" alt="Assist" width="94%"/>
+ <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/drawer.png" alt="Assist" width="650"/>
 </p>
 
 ## What it does
 
-- **Guided setup**: a five-step onboarding wizard connects to your Home
-  Assistant, validates the connection, lets you pick the dashboard to
-  display, detects Voice Satellite, and requests exactly the Android
-  permissions your choices need. Run it on the tablet, or from a web
-  browser on your computer (much nicer for pasting access tokens).
-- **Voice Satellite, natively**: when the wizard finds the Voice Satellite
-  integration on your instance, it assigns this kiosk its own
-  `assist_satellite` entity and hands wake-word detection to the app's
-  built-in engine. Native detection keeps listening with the screen off or
-  the app in the background, uses a fraction of the CPU a browser engine
-  needs, and hands the microphone back to the dashboard the instant you
-  speak. No configuration needed in Voice Satellite; everything is inherited.
-- **Plain HTTP instances, fully unlocked**: browsers withhold the
-  microphone and every other secure-context feature from `http://` pages,
-  which normally cripples voice on a non HTTPS Home Assistant instance. Kiosk
-  Satellite routes the dashboard through a loopback proxy inside the app,
-  making the page a genuine secure context: the microphone, AudioWorklet
-  and the rest of the https-only browser surface work on an http-only
-  instance, with no certificates or reverse proxy to set up. Enabled
-  automatically during setup when your URL is plain HTTP.
-- **Fast dashboards on slow tablets**: Home Assistant streams every
-  entity's state change to every open dashboard, and on a large instance
-  that firehose is exactly what makes older tablets lag and stutter. Kiosk
-  Satellite can filter the stream down to just the entities on the view
-  currently on screen. Measured on an Echo Show 5 against a ~4,700-entity
-  instance, the page's main thread went from blocked a third of the time
-  to essentially never: constant stutter became smooth. Filtering is per
-  view, follows navigation and view rotation instantly with no stale data,
-  understands `auto-entities` filter cards, and leaves any view it cannot
-  fully resolve unfiltered, so nothing ever breaks.
+- **Guided setup**: a five-step wizard connects to Home Assistant, picks
+  the dashboard, detects Voice Satellite, and requests only the Android
+  permissions your choices need. Run it on the tablet or from a browser
+  on your computer.
+- **Voice Satellite, natively**: the kiosk gets its own
+  `assist_satellite` entity and the app's built-in engine takes over
+  wake-word detection: it keeps listening with the screen off, at a
+  fraction of the CPU a browser needs. No configuration in Voice
+  Satellite; everything is inherited.
+- **Plain HTTP instances, fully unlocked**: a loopback proxy inside the
+  app makes an `http://` dashboard a genuine secure context, so the
+  microphone and the rest of the https-only browser surface work with no
+  certificates or reverse proxy. Enabled automatically during setup.
+- **Fast dashboards on slow tablets**: optionally filters Home
+  Assistant's state stream down to just the entities on the view
+  currently on screen, turning constant stutter on older tablets into
+  smooth scrolling. Any view it cannot fully resolve is left unfiltered,
+  so nothing ever breaks.
 - **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
-  buttons, a status-bar shield, instant re-wake when someone presses the
-  power button, and full lock-task support on device-owner provisioned
-  tablets.
+  buttons, a status-bar shield, instant re-wake on power button, and
+  lock-task support on device-owner provisioned tablets.
 - **Screensavers**: dim, black, clock, Home Assistant media, local
-  folders, or a photo gallery picked straight from the system picker, with
-  crossfade / slide / zoom / Ken Burns transitions.
+  folders, or a photo gallery picked straight from the system picker,
+  with crossfade / slide / zoom / Ken Burns transitions.
 - **Remote administration**: an embedded web admin at
-  `http://<device-ip>:2324` mirrors every setting on the device, shows a
-  live screenshot, web console and logs, and can export/import the entire
-  configuration (including the dashboard's local storage) as a single
-  backup file.
+  `http://<device-ip>:2324` mirrors every setting, shows a live
+  screenshot, web console and logs, and exports the entire configuration
+  as a single backup file.
 - **Dashboard view rotation**: cycle through a chosen set of dashboard
   views in an endless loop, each on screen for a configurable number of
-  seconds. Perfect for flipping between a camera wall, an energy map, and
-  the main dashboard.
+  seconds.
 - **Sendspin player**: the tablet doubles as a synchronized
   [Sendspin](https://www.sendspin-audio.com/) speaker for Music
-  Assistant, playing in sample-accurate sync with every other Sendspin
-  player in the house, with lossless FLAC on WiFi and metadata, artwork
-  and volume flowing into Home Assistant.
-- **Ready-made Home Assistant entities over MQTT**: point the app at your
-  broker and every tablet appears in Home Assistant as its own device via
-  MQTT discovery, no YAML needed: a screen light (real display power plus
-  backlight brightness, so automations can dim or wake the panel),
-  battery, charging, current page and screensaver sensors all with
-  live availability.
-- **Kiosk conveniences**: pull-to-refresh with optional cache clearing,
-  start on boot, keep screen awake, default brightness, scheduled
-  light/dark theme that can flip the dashboard and the app together,
-  custom JavaScript injected into every page, and self-signed certificate
-  support out of the box.
-
-## Kiosk Satellite + Voice Satellite
+  Assistant, in sample-accurate sync with every other Sendspin player in
+  the house, with metadata, artwork and volume in Home Assistant.
 
 <p align="center">
- <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/vs-settings.png" alt="Assist" width="94%"/>
+ <img src="assets/screenshots/sendspin-horizontal.png" alt="Assist" width="650"/>
 </p>
+
+- **Ready-made Home Assistant entities over MQTT**: point the app at
+  your broker and every tablet appears as its own device via MQTT
+  discovery, no YAML needed: a screen light, battery, charging, current
+  page and screensaver sensors, all with live availability.
+- **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
+  awake, default brightness, scheduled light/dark theme, custom
+  JavaScript injection, and self-signed certificate support.
+
+## Kiosk Satellite + Voice Satellite
 
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
 turns a Home Assistant dashboard into a full hands-free voice assistant
@@ -111,6 +92,10 @@ wake-word models natively and transparently: Voice Satellite detects it is
 running inside Kiosk Satellite and hands detection over on its own. You keep
 configuring everything in Voice Satellite as usual; the kiosk just makes it
 always-on, cheaper, and screen-independent.
+
+<p align="center">
+ <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/vs-settings.png" alt="Assist" width="650"/>
+</p>
 
 The performance difference is one of the main reasons to use Kiosk
 Satellite. Native inference runs the entire wake-word pipeline many times
