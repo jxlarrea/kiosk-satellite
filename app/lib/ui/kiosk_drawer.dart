@@ -79,7 +79,7 @@ class KioskDrawer extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '${c.device.deviceName} · v${c.device.appVersion}',
+                            c.device.deviceName,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
