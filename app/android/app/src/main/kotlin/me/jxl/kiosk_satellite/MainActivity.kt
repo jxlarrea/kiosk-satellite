@@ -16,6 +16,13 @@ import io.flutter.plugin.common.MethodChannel
  * genuinely need a live Activity — the camera and the launch intent — and tears
  * those down when it detaches; the engine lives on.
  */
+/** Native ground truth for "an Activity is in front", readable from Dart
+ *  through the background bridge. The engine's own lifecycle reporting is
+ *  not trustworthy across a failed re-attach — these callbacks are. */
+object ActivityState {
+    @Volatile var resumed = false
+}
+
 class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
     private var installerChannel: MethodChannel? = null
@@ -26,6 +33,16 @@ class MainActivity : FlutterActivity() {
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? =
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
+
+    override fun onResume() {
+        super.onResume()
+        ActivityState.resumed = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        ActivityState.resumed = false
+    }
 
     // The engine belongs to the process, not this Activity.
     override fun shouldDestroyEngineWithHost(): Boolean = false

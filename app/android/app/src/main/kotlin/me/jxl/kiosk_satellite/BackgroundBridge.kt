@@ -56,6 +56,34 @@ class BackgroundBridge(
                     exitApp()
                     result.success(true)
                 }
+                "isActivityResumed" -> result.success(ActivityState.resumed)
+                // Kill and relaunch the whole process. The recovery of last
+                // resort for a wedged renderer (see the Dart frame watchdog):
+                // an Activity relaunch and a WebView rebuild both leave a
+                // failed engine re-attach stuck on the splash screen, while a
+                // clean process restart reliably comes back.
+                "restartProcess" -> {
+                    val alarm = context.getSystemService(Context.ALARM_SERVICE)
+                        as android.app.AlarmManager
+                    val launch = context.packageManager
+                        .getLaunchIntentForPackage(context.packageName)!!
+                        .addFlags(
+                            Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TASK,
+                        )
+                    val restart = android.app.PendingIntent.getActivity(
+                        context, 7391, launch,
+                        android.app.PendingIntent.FLAG_CANCEL_CURRENT or
+                            android.app.PendingIntent.FLAG_IMMUTABLE,
+                    )
+                    alarm.set(
+                        android.app.AlarmManager.RTC,
+                        System.currentTimeMillis() + 800,
+                        restart,
+                    )
+                    result.success(true)
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                }
                 // WebView downloads (an APK from GitHub, a camera clip):
                 // handed to Android's DownloadManager. The kiosk hides the
                 // status bar, so the system notification is invisible —

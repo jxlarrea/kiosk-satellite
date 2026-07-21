@@ -42,6 +42,11 @@ class BrowserManager extends Manager {
 
   String get currentUrl => _currentUrl;
 
+  /// Whether a live WebView is attached. A configured, foregrounded kiosk
+  /// always has one; the frame watchdog treats its prolonged absence as
+  /// the wedged-renderer signal.
+  bool get hasWebView => _controller != null;
+
   /// JavaScript console ring buffer for the Web Console panel. Bumping
   /// [consoleRevision] notifies listeners of new entries.
   static const _consoleCapacity = 300;

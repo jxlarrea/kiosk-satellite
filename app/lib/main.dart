@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'app_container.dart';
 import 'core/events.dart';
+import 'core/frame_watchdog.dart';
 import 'core/ha_http_overrides.dart';
 import 'managers/settings/definitions.dart' as defs;
 import 'ui/kiosk_screen.dart';
@@ -45,7 +46,13 @@ Future<void> main() async {
   // early by KioskLock's hide() ticker while kiosk mode holds.
   Future<void> applyImmersion() =>
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  await applyImmersion();
+  // Deliberately NOT awaited: this platform call can hang forever when the
+  // process is restarted by the OS mid permission flow (the engine comes up
+  // without an attached window), and awaiting it here stalled main() before
+  // runApp — the launch splash forever, with the Dart isolate alive
+  // underneath. Immersion needs no ordering: the callback below and
+  // KioskLock re-assert it continuously.
+  unawaited(applyImmersion());
   container.bus.on<SettingChanged>().listen((e) {
     if (e.key == defs.kioskEnabled.key) applyImmersion();
   });
@@ -58,6 +65,9 @@ Future<void> main() async {
     await applyImmersion();
   });
 
+  // Armed BEFORE runApp: the watchdog is the recovery for "the UI never
+  // came up", so it must not depend on the UI coming up.
+  FrameWatchdog(container).start();
   runApp(KioskSatelliteApp(container: container));
 }
 
