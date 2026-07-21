@@ -435,6 +435,10 @@
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><circle cx="12" cy="14.5" r="3.5"/><circle cx="12" cy="7.5" r="1"/></svg></span>
           <span class="nav-text"><span class="nav-title">Sendspin Player</span><span class="nav-sub">Synchronized audio player</span></span>
         </button>
+        <button data-tab="dlna">
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h.01M3 15a4 4 0 0 1 4 4M3 11a8 8 0 0 1 8 8"/><path d="M8 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg></span>
+          <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Media pushed from Home Assistant</span></span>
+        </button>
         <button data-tab="device">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
           <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
@@ -522,6 +526,7 @@
     <div class="tab" id="tab-remote"></div>
     <div class="tab" id="tab-mqtt"></div>
     <div class="tab" id="tab-sendspin"></div>
+    <div class="tab" id="tab-dlna"></div>
     <div class="tab" id="tab-device">
       <div id="device-settings"></div>
       <div id="device-info"></div>
@@ -640,7 +645,7 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'screen', 'screensaver',
-  'homeassistant', 'remote', 'mqtt', 'sendspin', 'device', 'console', 'logs', 'about'];
+  'homeassistant', 'remote', 'mqtt', 'sendspin', 'dlna', 'device', 'console', 'logs', 'about'];
 const TAB_TITLES = {
   dashboard: 'Dashboard', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', screen: 'Screen', screensaver: 'Screensaver',
@@ -649,6 +654,7 @@ const TAB_TITLES = {
   remote: 'Remote Administration',
   mqtt: 'MQTT Settings',
   sendspin: 'Sendspin Player',
+  dlna: 'DLNA Renderer',
   device: 'Device', console: 'Web Console', logs: 'Logs', about: 'About',
 };
 
@@ -834,6 +840,7 @@ const CATEGORY_TABS = [
   ['tab-remote', ['Remote']],
   ['tab-mqtt', ['MQTT']],
   ['tab-sendspin', ['Sendspin']],
+  ['tab-dlna', ['DLNA']],
   ['device-settings', ['Device']],
 ];
 

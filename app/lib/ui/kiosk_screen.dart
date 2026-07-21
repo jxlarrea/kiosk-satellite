@@ -19,6 +19,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'dlna_media_overlay.dart';
 import 'kiosk_drawer.dart';
 import 'sendspin_player_overlay.dart';
 import 'settings_screen.dart';
@@ -665,6 +666,10 @@ class _KioskScreenState extends State<KioskScreen>
                         onHorizontalDragEnd: _drawerDragEnd,
                       ),
                     ),
+                  // Media pushed over DLNA covers both planes like the
+                  // screensaver does; the screensaver stays away while it
+                  // plays (playback reports activity).
+                  DlnaMediaOverlay(container: c),
                   // The screensaver covers both planes — it owns the whole
                   // display, drawer open or not.
                   ScreensaverOverlay(container: c),

@@ -152,6 +152,12 @@ const _categories = <(String, String, IconData, String)>[
     'Synchronized audio player',
   ),
   (
+    'DLNA',
+    'DLNA Renderer',
+    Icons.cast_outlined,
+    'Media pushed from Home Assistant',
+  ),
+  (
     'Device',
     'Device',
     Icons.tablet_android_outlined,

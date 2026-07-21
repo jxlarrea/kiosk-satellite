@@ -1471,6 +1471,20 @@ const sendspinClientId = SettingDef<String>(
   hidden: true,
 );
 
+// ── DLNA renderer ──────────────────────────────────────────────────────
+
+const dlnaEnabled = SettingDef<bool>(
+  key: 'dlna.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable DLNA renderer',
+  description:
+      'Show images and play media pushed from Home Assistant or any DLNA '
+      'app. The device appears as a media player named after the device '
+      'name.',
+  category: 'DLNA',
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -1631,6 +1645,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,
+  dlnaEnabled,
   remoteEnabled,
   remotePort,
   remotePassword,

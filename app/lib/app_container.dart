@@ -4,6 +4,7 @@ import 'core/logging.dart';
 import 'core/manager.dart';
 import 'managers/browser/browser_manager.dart';
 import 'managers/device/device_manager.dart';
+import 'managers/dlna/dlna_manager.dart';
 import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
@@ -40,6 +41,7 @@ class AppContainer {
     wakeWord = WakeWordManager(bus, commands, log, settings);
     mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
+    dlna = DlnaManager(bus, commands, log, settings);
     update = UpdateManager(bus, commands, log);
     remote = RemoteManager(bus, commands, log, settings);
   }
@@ -60,6 +62,7 @@ class AppContainer {
   late final WakeWordManager wakeWord;
   late final MqttManager mqtt;
   late final SendspinManager sendspin;
+  late final DlnaManager dlna;
   late final UpdateManager update;
   late final RemoteManager remote;
 
@@ -80,6 +83,7 @@ class AppContainer {
         wakeWord,
         mqtt,
         sendspin,
+        dlna,
         update,
         remote,
       ];
