@@ -1724,7 +1724,7 @@ async function loadDeviceInfo() {
       : st(perms?.microphone) + ' (wake word)'],
     ['Camera', st(perms?.camera) + ' (motion detection)'],
     ['Location', st(perms?.location) + ' (page geolocation)'],
-    ['Notifications', st(perms?.notification) + ' (listening notification)'],
+    ['Notifications', st(perms?.notification) + ' (background listening)'],
     ['Display over other apps', st(perms?.displayOverOtherApps) +
       ' (come forward on a wake word)'],
     ['Unrestricted battery', st(perms?.batteryUnrestricted) +
@@ -1994,9 +1994,9 @@ async function loadPermissions() {
       ['Display over other apps', p.displayOverOtherApps,
         'Can come forward when it hears you.',
         'The wake word is heard and nothing happens.'],
-      ['Listening notification', p.notification,
-        'The device shows that it is listening.',
-        'It listens with nothing on screen to say so.'],
+      ['Notifications', p.notification,
+        'The ongoing notification that enables background listening.',
+        'Needed for background listening to work reliably.'],
       ['Unrestricted battery', p.batteryUnrestricted,
         'Android will leave the listener running.',
         'The listener is stopped after a few hours.'],
@@ -2027,7 +2027,7 @@ async function loadPermissions() {
     note.style.cssText = 'margin-top:12px; color:var(--warn)';
     note.textContent =
       'Grant these on the device itself: swipe in from the left edge → ' +
-      'Settings → Home Assistant → Required system permissions.';
+      'Settings → Voice Satellite → Required system permissions.';
     card.appendChild(note);
   }
 

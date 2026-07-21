@@ -2476,10 +2476,10 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
           _row(
             granted: perms?.notification,
             missingIcon: Icons.notifications_off_outlined,
-            title: 'Listening notification',
-            held: 'The device shows that it is listening.',
-            missing:
-                'Without this it listens with nothing on screen to say so.',
+            title: 'Notifications',
+            held: 'The ongoing notification that enables background '
+                'listening.',
+            missing: 'Needed for background listening to work reliably.',
             onGrant: () async {
               await ensureOsPermission(Permission.notification);
               await _refresh();
