@@ -2800,6 +2800,89 @@ function wizardField(body, id, type, placeholder) {
   return f;
 }
 
+// The restore path on the wizard's first screen: pick an exported backup
+// and skip the setup entirely. The backup's remote.password and
+// remote.enabled are dropped before upload — importing them could lock out
+// the person mid-wizard (they just typed a different password) or disable
+// the very server this page is talking to. The password chosen on THIS
+// device stays in charge; everything else comes from the file.
+function wizardRestoreCard(b) {
+  const card = wizardCard(b);
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex; align-items:center; gap:14px; padding:14px 16px;';
+  const cell = document.createElement('div');
+  cell.style.flex = '1';
+  const t = document.createElement('div');
+  t.textContent = 'Restore from configuration file';
+  t.style.fontWeight = '600';
+  const d = document.createElement('div');
+  d.textContent = 'Import a configuration exported from Kiosk Satellite and skip the rest of this wizard.';
+  d.style.cssText = 'font-size:12.5px; color:var(--muted); margin-top:2px;';
+  cell.append(t, d);
+  const file = document.createElement('input');
+  file.type = 'file';
+  file.accept = '.json,application/json';
+  file.hidden = true;
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Import';
+  btn.style.cssText = 'width:auto; padding:8px 18px; flex-shrink:0;';
+  btn.addEventListener('click', () => file.click());
+  file.addEventListener('change', () => wizardRestore(file, btn));
+  row.append(cell, btn, file);
+  card.appendChild(row);
+}
+
+async function wizardRestore(file, btn) {
+  const f = file.files && file.files[0];
+  file.value = '';
+  if (!f) return;
+  let config;
+  try {
+    config = JSON.parse(await f.text());
+  } catch (_) {
+    wizardShowError(wizFail('Not a backup file', 'That file is not valid JSON.'));
+    return;
+  }
+  if (!config || config.kind !== 'kiosk-satellite-config') {
+    wizardShowError(wizFail('Not a backup file',
+      'Export a configuration from the Settings tab of a set-up Kiosk Satellite.'));
+    return;
+  }
+  if (config.settings) {
+    delete config.settings['remote.password'];
+    delete config.settings['remote.enabled'];
+  }
+  btn.disabled = true;
+  btn.textContent = 'Importing…';
+  try {
+    // No session yet means we are on the password screen: the import runs
+    // authenticated, so the typed password is minted first.
+    if (!state.token) {
+      const password = $('#wzPassword') ? $('#wzPassword').value : '';
+      if (password.length < 4) {
+        throw wizFail('Set the admin password first',
+          'Type an admin password above (at least 4 characters), then import the backup.');
+      }
+      const res = await fetch('api/setup/password', { method: 'POST', body: JSON.stringify({ password }) });
+      const out = await res.json();
+      if (!res.ok) throw wizFail('Could not set the password', out.error || '');
+      state.token = out.token;
+      localStorage.setItem('ks_token', state.token);
+    }
+    const res = await api('/api/config/import', { method: 'POST', body: JSON.stringify(config) });
+    const out = await res.json();
+    if (!res.ok) throw wizFail('Import failed', out.error || 'The file could not be applied.');
+    // Setup is complete (the backup's start URL landed); a reload leaves
+    // the wizard and the stored token walks straight into the admin UI.
+    location.reload();
+  } catch (e) {
+    wizardShowError(e);
+    btn.disabled = false;
+    btn.textContent = 'Import';
+  }
+}
+
 function wizardSteps() {
   const steps = [];
   if (wizard.needPassword) steps.push({
@@ -2808,6 +2891,7 @@ function wizardSteps() {
     lead: 'This tablet is waiting to be set up. First, protect this remote admin with a password.',
     body: (b) => {
       wizardField(wizardCard(b), 'wzPassword', 'password', 'Admin password (min 4 characters)');
+      wizardRestoreCard(b);
     },
     next: async () => {
       const password = $('#wzPassword').value;
@@ -2827,6 +2911,9 @@ function wizardSteps() {
       const card = wizardCard(b);
       wizardField(card, 'wzUrl', 'url', 'https://homeassistant.local:8123');
       wizardField(card, 'wzToken', 'password', 'Long-lived access token');
+      // When a password already exists (set on the device), this is the
+      // wizard's first screen — the restore path belongs here instead.
+      if (!wizard.needPassword) wizardRestoreCard(b);
     },
     next: async () => {
       const url = $('#wzUrl').value.trim(), token = $('#wzToken').value.trim();

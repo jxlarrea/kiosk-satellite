@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
@@ -168,6 +170,57 @@ class _SetupScreenState extends State<SetupScreen> {
   /// Whether the Voice Satellite step (index 3) is part of this run. Unknown
   /// until step 3's detection completes; the rail dims it meanwhile.
   bool get _vsStepActive => _vsDetected == true;
+
+  /// Restore a full backup from the welcome step. A backup from a configured
+  /// device carries the start URL, and applying it fires this screen's
+  /// SettingChanged listener, which enters the kiosk: the import IS the
+  /// setup. Everything is applied verbatim, remote password included — this
+  /// is the clone-a-tablet path, and the person holding the backup knows its
+  /// password.
+  Future<void> _importBackup() async {
+    setState(() {
+      _error = null;
+      _errorHint = null;
+    });
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['json'],
+      withData: true,
+    );
+    final bytes = picked?.files.single.bytes;
+    if (bytes == null) return;
+    Object? config;
+    try {
+      config = jsonDecode(utf8.decode(bytes));
+    } catch (_) {
+      _fail(
+        'Not a backup file',
+        'That file is not valid JSON. Export a configuration from '
+            'Settings on a set-up Kiosk Satellite, or from its remote '
+            'admin.',
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    final result = await c.commands.execute('importConfig', {'config': config});
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!result.ok) {
+      _fail(
+        'Import failed',
+        result.error ?? 'The file could not be applied.',
+      );
+      return;
+    }
+    if (c.settings.get(defs.startUrl).isEmpty) {
+      _fail(
+        'Backup has no dashboard',
+        'The settings were applied, but this backup was taken before its '
+            'device was set up, so there is no dashboard to show. Continue '
+            'the wizard to pick one.',
+      );
+    }
+  }
 
   // ── Step transitions ───────────────────────────────────────────────────
 
@@ -648,6 +701,22 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                 ),
               ),
+          ]),
+          const SizedBox(height: 16),
+          _Card([
+            ListTile(
+              leading: const Icon(Icons.settings_backup_restore_outlined),
+              title: const Text('Restore from configuration file'),
+              subtitle: const Text(
+                'Import a configuration exported from Kiosk Satellite and '
+                'skip the rest of this wizard. Settings, dashboard and '
+                'login all come along.',
+              ),
+              trailing: TextButton(
+                onPressed: _busy ? null : _importBackup,
+                child: const Text('Import'),
+              ),
+            ),
           ]),
         ]);
       case 1:

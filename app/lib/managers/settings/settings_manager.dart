@@ -61,14 +61,51 @@ class SettingsManager extends Manager {
             if (settings is! Map) {
               return const CommandResult.fail('no settings in file');
             }
-            final applied = await import(
-              settings.map((k, v) => MapEntry(k.toString(), v)),
-            );
+            // Whether this device was still unconfigured, read before the
+            // import flips it: it decides the permission pass below.
+            final firstSetup = get(startUrl).isEmpty;
+            final map = settings.map((k, v) => MapEntry(k.toString(), v));
+            // On a first setup the start URL is held back until the very
+            // end, like the wizard does: it is what flips the app to
+            // configured and loads the page, whose wake-word engine
+            // immediately runs its own microphone check. Android allows one
+            // permission request at a time, so a page racing the prompts
+            // below gets some of them silently rejected ("A request for
+            // permissions is already running").
+            final heldStartUrl = firstSetup ? map.remove(startUrl.key) : null;
+            var applied = await import(map);
             // Stash localStorage BEFORE the reload below, so the fresh page
             // load picks it up (see BrowserManager.onPageLoaded).
             final local = config['localStorage'];
             if (local is String && local.isNotEmpty) {
               await commands.execute('setLocalStorage', {'data': local});
+            }
+            // An onboarding import IS the setup, so it also does the
+            // wizard's last chore: fire the OS permission prompts the
+            // imported settings need (the backup carries grants only as
+            // settings; the OS ones must be asked for on this device).
+            // Post-setup imports skip this — that device already ran a
+            // wizard, and permission Activities on every restore would be
+            // noise.
+            if (firstSetup) {
+              await commands.execute('requestOsPermissions', {
+                'which': [
+                  if (get(wakeWordEnabled) || get(webMicrophone))
+                    'microphone',
+                  if (get(wakeWordBackground)) ...[
+                    'notifications',
+                    'batteryOptimizations',
+                  ],
+                  if (get(wakeWordBackground) || get(kioskStartOnBoot))
+                    'overlay',
+                  'writeSettings',
+                  'deviceAdmin',
+                ],
+              });
+            }
+            if (heldStartUrl != null &&
+                await setFromJson(startUrl.key, heldStartUrl)) {
+              applied++;
             }
             // The imported start URL should be what ends up on screen.
             if (settings.containsKey(startUrl.key)) {

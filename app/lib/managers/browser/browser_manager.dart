@@ -350,9 +350,9 @@ class BrowserManager extends Manager {
   }
 
   /// Imported localStorage waits (persisted) until a page is up to receive
-  /// it, then is written and the page reloaded so it takes effect. Cleared
-  /// before the write — the reload lands back here, and a still-pending
-  /// payload would loop forever.
+  /// it, then is written and the page re-navigated so it takes effect.
+  /// Cleared before the write — the next load lands back here, and a
+  /// still-pending payload would loop forever.
   Future<void> _applyPendingLocalStorage() async {
     final pending = _settings.internal('pending_local_storage');
     if (pending.isEmpty) return;
@@ -365,10 +365,19 @@ class BrowserManager extends Manager {
           Object.keys(entries).forEach(function (k) {
             localStorage.setItem(k, entries[k]);
           });
-          location.reload();
         } catch (e) {}
       })();
     ''');
+    // Navigate to the start URL rather than reload: an unauthenticated
+    // first load has already been redirected to the HA login page, and a
+    // reload there re-shows the login form — the frontend only reads the
+    // just-restored auth tokens when it loads a real dashboard URL.
+    final target = _settings.get(defs.startUrl);
+    if (target.isEmpty) {
+      await runJs('location.reload()');
+    } else {
+      await loadUrl(target);
+    }
   }
 
   /// Called by the UI layer on load errors and render-process crashes.
