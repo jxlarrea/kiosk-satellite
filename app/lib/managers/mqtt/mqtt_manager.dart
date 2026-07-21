@@ -75,16 +75,6 @@ class MqttManager extends Manager {
 
   @override
   Future<void> init() async {
-    // The per-install identity every topic hangs off. Generated once;
-    // surviving restarts is what keeps the HA device stable.
-    _deviceId = _settings.get(defs.mqttDeviceId);
-    if (_deviceId.isEmpty) {
-      final rng = Random.secure();
-      _deviceId = List.generate(8, (_) => rng.nextInt(16).toRadixString(16))
-          .join();
-      await _settings.set(defs.mqttDeviceId, _deviceId);
-    }
-
     _subs.add(bus.on<SettingChanged>().listen(_onSettingChanged));
     _subs.add(bus.on<ScreenStateChanged>().listen(
         (e) => _publish('$_base/screen/state', e.on ? 'ON' : 'OFF')));
@@ -168,7 +158,14 @@ class MqttManager extends Manager {
       _publishSettingSwitchStates();
       return;
     }
-    if (!e.key.startsWith('mqtt.') || e.key == defs.mqttDeviceId.key) return;
+    if (e.key == defs.mqttDeviceId.key) {
+      // The echo of our own lazy generation changes nothing; a genuinely
+      // different id (a restored backup, whose whole point is keeping the
+      // HA device) falls through and reconnects under it.
+      if ('${e.value}' == _deviceId) return;
+    } else if (!e.key.startsWith('mqtt.')) {
+      return;
+    }
     // Debounced: the settings UI fires one change per keystroke-commit and
     // a fresh TCP connection per field would hammer the broker.
     _reconnectDebounce?.cancel();
@@ -189,6 +186,19 @@ class MqttManager extends Manager {
     if (host.isEmpty) {
       log.warn(name, 'enabled but no broker host set; not connecting');
       return;
+    }
+    // The per-install identity every topic hangs off. Re-read on EVERY
+    // connect and minted only here, lazily: an eager init-time id on a
+    // freshly set-up device gets replaced moments later by a restored
+    // backup's id — and a cached copy then publishes a ghost HA device
+    // (with retained configs that outlive it) under an id nothing will
+    // ever use again.
+    _deviceId = _settings.get(defs.mqttDeviceId);
+    if (_deviceId.isEmpty) {
+      final rng = Random.secure();
+      _deviceId = List.generate(8, (_) => rng.nextInt(16).toRadixString(16))
+          .join();
+      await _settings.set(defs.mqttDeviceId, _deviceId);
     }
     final port = _settings.get(defs.mqttPort).toInt();
     final client = MqttServerClient.withPort(
