@@ -92,6 +92,8 @@ class SettingsManager extends Manager {
                 'which': [
                   if (get(wakeWordEnabled) || get(webMicrophone))
                     'microphone',
+                  if (get(screensaverDismissOnMotion) || get(webCamera))
+                    'camera',
                   if (get(wakeWordBackground)) ...[
                     'notifications',
                     'batteryOptimizations',
