@@ -41,6 +41,7 @@ own device, named after the **Device name** setting.
 | --- | --- | --- |
 | Screen | light | On/off is real display power; brightness is the panel's actual brightness. Turning the screen off needs the device admin permission (the wizard requests it); without the grant the toggle snaps back and the device shows the grant screen. |
 | Screensaver | switch | Start or dismiss the screensaver. |
+| Volume | number | The device's media volume as a 0-100% slider. Tracks changes from every side, hardware buttons included. |
 | Kiosk mode | switch | The kiosk lockdown (exit gesture, blocked buttons). |
 | HA kiosk mode | switch | Hides the Home Assistant header and sidebar. On maps to the `auto` mode; a hand-picked `plugin`/`css` choice is left alone until the switch is actually flipped. |
 | Keep screen on | switch | The keep-awake setting. |

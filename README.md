@@ -70,10 +70,13 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="assets/screenshots/sendspin-horizontal.png" alt="Assist" width="650"/>
 </p>
 
+- **DLNA renderer**: push images, video and live cameras full screen
+  onto the kiosk with `media_player.play_media`, from Home Assistant
+  automations, the media browser or any DLNA app.
 - **Ready-made Home Assistant entities over MQTT**: point the app at
   your broker and every tablet appears as its own device via MQTT
   discovery, no YAML needed: a screen light, battery, charging, current
-  page and screensaver sensors, all with live availability.
+  page, volume and screensaver sensors, all with live availability.
 - **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
   awake, default brightness, scheduled light/dark theme, custom
   JavaScript injection, and self-signed certificate support.
@@ -164,6 +167,7 @@ very welcome in the issues.
 - [Remote API](docs/remote-api.md): REST + WebSocket surface
 - [MQTT](docs/mqtt.md): Home Assistant entities via MQTT discovery, topics, troubleshooting
 - [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
+- [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
 
 ## License
 
