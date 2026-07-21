@@ -83,22 +83,41 @@ class BackgroundListening {
   static void Function(int id, bool success, String? filename)?
       _onDownloadComplete;
 
+  /// Media volume changed on the device (rocker, another app), pushed from
+  /// the platform's volume receiver. The MQTT manager republishes off it.
+  static void Function()? _onVolumeChanged;
+
   static set onDownloadComplete(
       void Function(int id, bool success, String? filename)? handler) {
     _onDownloadComplete = handler;
-    _channel.setMethodCallHandler(handler == null
-        ? null
-        : (call) async {
-            if (call.method == 'downloadComplete') {
-              final args = (call.arguments as Map?) ?? const {};
-              _onDownloadComplete?.call(
-                (args['id'] as num?)?.toInt() ?? -1,
-                args['success'] == true,
-                args['filename'] as String?,
-              );
-            }
-            return null;
-          });
+    _installHandler();
+  }
+
+  static set onVolumeChanged(void Function()? handler) {
+    _onVolumeChanged = handler;
+    _installHandler();
+  }
+
+  /// One channel, one handler: both native pushes share it, so it is
+  /// (re)installed whenever either callback changes and removed only when
+  /// both are gone.
+  static void _installHandler() {
+    if (_onDownloadComplete == null && _onVolumeChanged == null) {
+      _channel.setMethodCallHandler(null);
+      return;
+    }
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'downloadComplete') {
+        final args = (call.arguments as Map?) ?? const {};
+        _onDownloadComplete?.call(
+          (args['id'] as num?)?.toInt() ?? -1,
+          args['success'] == true,
+          args['filename'] as String?,
+        );
+      }
+      if (call.method == 'volumeChanged') _onVolumeChanged?.call();
+      return null;
+    });
   }
 
   static Future<void> requestBatteryUnrestricted() =>

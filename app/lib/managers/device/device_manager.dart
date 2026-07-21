@@ -2,15 +2,18 @@ import 'dart:convert' show LineSplitter;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/services.dart' show MethodChannel;
 
 import 'package:battery_plus/battery_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/command_registry.dart';
+import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/settings_manager.dart';
 import '../settings/definitions.dart' as defs;
+import '../wake_word/background_listening.dart';
 import 'device_details.dart';
 
 /// Device identity and status: model, OS, app version, battery.
@@ -88,6 +91,43 @@ class DeviceManager extends Manager {
         name: 'getDeviceInfo',
         description: 'Device identity and battery status',
         handler: (_) async => CommandResult.ok(await info()),
+      ),
+    );
+
+    // Media volume, percent both ways. No OS permission involved:
+    // STREAM_MUSIC is freely settable (only ring/notification streams under
+    // Do Not Disturb are gated, and those are never touched).
+    const background = MethodChannel('kiosk_satellite/background');
+    BackgroundListening.onVolumeChanged =
+        () => bus.publish(const VolumeChanged());
+    commands.register(
+      Command(
+        name: 'getVolume',
+        description: 'Media volume as a percentage (0-100)',
+        handler: (_) async {
+          final raw = await background.invokeMethod<Map>('getVolume');
+          final level = (raw?['level'] as num?)?.toInt() ?? 0;
+          final max = (raw?['max'] as num?)?.toInt() ?? 1;
+          return CommandResult.ok((level * 100 / max).round());
+        },
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'setVolume',
+        description: 'Set the media volume',
+        params: const {'percent': 'target volume, 0-100'},
+        handler: (p) async {
+          final percent =
+              ((p['percent'] as num?)?.toDouble() ?? 0).clamp(0.0, 100.0);
+          final raw = await background.invokeMethod<Map>('getVolume');
+          final max = (raw?['max'] as num?)?.toInt() ?? 15;
+          await background.invokeMethod('setVolume', {
+            'level': (percent / 100 * max).round(),
+          });
+          bus.publish(const VolumeChanged());
+          return const CommandResult.ok();
+        },
       ),
     );
 

@@ -97,6 +97,9 @@ class MqttManager extends Manager {
       _screensaverActive = e.active;
       _publish('$_base/screensaver/state', e.active ? 'ON' : 'OFF');
     }));
+    // Covers every path the volume moves: an MQTT command, the hardware
+    // rocker, another app (the platform side broadcasts them all).
+    _subs.add(bus.on<VolumeChanged>().listen((_) => _publishVolume()));
 
     if (_settings.get(defs.mqttEnabled)) {
       _transition = _transition.then((_) => _connect());
@@ -146,6 +149,11 @@ class MqttManager extends Manager {
   void _publishSettingSwitchStates() {
     _settingSwitches.forEach((objectId, actions) =>
         _publish('$_base/$objectId/state', actions.$1() ? 'ON' : 'OFF'));
+  }
+
+  Future<void> _publishVolume() async {
+    final volume = await commands.execute('getVolume', const {});
+    if (volume.ok) _publish('$_base/volume/state', '${volume.data}');
   }
 
   void _onSettingChanged(SettingChanged e) {
@@ -228,6 +236,7 @@ class MqttManager extends Manager {
       '$_base/screen/set',
       '$_base/brightness/set',
       '$_base/screensaver/set',
+      '$_base/volume/set',
       '$_base/reload/set',
       '$_base/clear_cache/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
@@ -355,6 +364,16 @@ class MqttManager extends Manager {
         log.info(name, 'command $topic = $text');
         await commands.execute(
             text == 'ON' ? 'startScreensaver' : 'stopScreensaver', const {});
+      } else if (topic == '$_base/volume/set') {
+        log.info(name, 'command $topic = $text');
+        final percent = num.tryParse(text);
+        if (percent == null) continue;
+        // setVolume publishes VolumeChanged, whose listener republishes
+        // the state — but the granular stream may land on the same step
+        // it already had (no system broadcast); publish here regardless
+        // so the HA slider always settles on the real value.
+        await commands.execute('setVolume', {'percent': percent});
+        await _publishVolume();
       } else if (topic == '$_base/reload/set') {
         log.info(name, 'command $topic');
         await commands.execute('reload', const {});
@@ -397,6 +416,7 @@ class MqttManager extends Manager {
     }
     _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
     _publishSettingSwitchStates();
+    await _publishVolume();
   }
 
   Future<void> _pollStats() async {
@@ -577,6 +597,17 @@ class MqttManager extends Manager {
         'state_topic': '$_base/screensaver/state',
         'command_topic': '$_base/screensaver/set',
         'icon': 'mdi:sleep',
+      },
+      '$_prefix/number/ks_$_deviceId/volume/config': {
+        ...common('volume', 'Volume'),
+        'state_topic': '$_base/volume/state',
+        'command_topic': '$_base/volume/set',
+        'min': 0,
+        'max': 100,
+        'step': 1,
+        'unit_of_measurement': '%',
+        'mode': 'slider',
+        'icon': 'mdi:volume-high',
       },
       '$_prefix/button/ks_$_deviceId/reload/config': {
         ...common('reload', 'Reload page'),

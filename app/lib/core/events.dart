@@ -44,6 +44,15 @@ class ScreensaverStateChanged extends AppEvent {
   String get wireName => active ? 'screensaverstart' : 'screensaverstop';
 }
 
+/// The device's media volume changed, from any side: a command, the
+/// hardware rocker, or another app.
+class VolumeChanged extends AppEvent {
+  const VolumeChanged();
+
+  @override
+  String get wireName => 'volumechanged';
+}
+
 /// Any user/motion/page activity that should reset the idle timer.
 class ActivityDetected extends AppEvent {
   const ActivityDetected({required this.source});

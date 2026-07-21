@@ -57,6 +57,31 @@ class BackgroundBridge(
                     result.success(true)
                 }
                 "isActivityResumed" -> result.success(ActivityState.resumed)
+                // Media volume (STREAM_MUSIC only): no permission involved.
+                // The MQTT volume entity reads and writes through these.
+                "getVolume" -> {
+                    val am = context.getSystemService(Context.AUDIO_SERVICE)
+                        as android.media.AudioManager
+                    result.success(mapOf(
+                        "level" to am.getStreamVolume(
+                            android.media.AudioManager.STREAM_MUSIC),
+                        "max" to am.getStreamMaxVolume(
+                            android.media.AudioManager.STREAM_MUSIC),
+                    ))
+                }
+                "setVolume" -> {
+                    val am = context.getSystemService(Context.AUDIO_SERVICE)
+                        as android.media.AudioManager
+                    val max = am.getStreamMaxVolume(
+                        android.media.AudioManager.STREAM_MUSIC)
+                    val level = (call.argument<Number>("level"))?.toInt() ?: 0
+                    am.setStreamVolume(
+                        android.media.AudioManager.STREAM_MUSIC,
+                        level.coerceIn(0, max),
+                        0,
+                    )
+                    result.success(true)
+                }
                 // Kill and relaunch the whole process. The recovery of last
                 // resort for a wedged renderer (see the Dart frame watchdog):
                 // an Activity relaunch and a WebView rebuild both leave a
@@ -192,6 +217,19 @@ class BackgroundBridge(
         }
     }
 
+    // Hardware volume changes (rocker, other apps), pushed to Dart so the
+    // MQTT volume entity tracks reality instead of drifting until the next
+    // poll. The extra filters to STREAM_MUSIC: ring/alarm changes are not
+    // the media volume the entity models.
+    private val volumeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            val stream = intent?.getIntExtra(
+                "android.media.EXTRA_VOLUME_STREAM_TYPE", -1) ?: return
+            if (stream != android.media.AudioManager.STREAM_MUSIC) return
+            channel.invokeMethod("volumeChanged", null)
+        }
+    }
+
     // A second init block on purpose: initializers run in declaration order,
     // so downloadReceiver exists by the time this registers it. EXPORTED
     // because ACTION_DOWNLOAD_COMPLETE is not a protected system broadcast;
@@ -202,6 +240,14 @@ class BackgroundBridge(
             downloadReceiver,
             IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
             ContextCompat.RECEIVER_EXPORTED,
+        )
+        // VOLUME_CHANGED_ACTION is a system broadcast: NOT_EXPORTED
+        // receivers still get those, and nothing else may spoof it.
+        ContextCompat.registerReceiver(
+            context,
+            volumeReceiver,
+            IntentFilter("android.media.VOLUME_CHANGED_ACTION"),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
         )
     }
 
@@ -397,6 +443,10 @@ class BackgroundBridge(
         channel.setMethodCallHandler(null)
         try {
             context.unregisterReceiver(downloadReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            context.unregisterReceiver(volumeReceiver)
         } catch (_: Exception) {
         }
     }
