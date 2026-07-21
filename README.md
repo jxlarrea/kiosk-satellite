@@ -52,8 +52,10 @@ smooth on the low-powered, older tablets that usually end up on walls.
   buttons, a status-bar shield, instant re-wake on power button, and
   lock-task support on device-owner provisioned tablets.
 - **Screensavers**: dim, black, clock, Home Assistant media, local
-  folders, or a photo gallery picked straight from the system picker,
-  with crossfade / slide / zoom / Ken Burns transitions.
+  folders, a photo gallery picked straight from the system picker, or an
+  [Immich](docs/immich.md) library or album as a full photo frame with
+  metadata overlay, all with crossfade / slide / zoom / Ken Burns
+  transitions and an optional corner clock.
 - **Remote administration**: an embedded web admin at
   `http://<device-ip>:2324` mirrors every setting, shows a live
   screenshot, web console and logs, and exports the entire configuration
@@ -168,6 +170,7 @@ very welcome in the issues.
 - [MQTT](docs/mqtt.md): Home Assistant entities via MQTT discovery, topics, troubleshooting
 - [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
+- [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 
 ## License
 
