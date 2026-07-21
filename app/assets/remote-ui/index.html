@@ -1788,8 +1788,25 @@ async function loadAboutInfo() {
 
   // Which build this is decides where its logs go: a release build reports
   // to this page and stays silent on logcat.
+  // The version doubles as a manual "check now" (the periodic check runs
+  // only twice a day): tap it, the tab re-renders with the outcome.
+  const versionEl = document.createElement('a');
+  versionEl.textContent = `${or(info?.appVersion)} (${or(info?.buildNumber, '-')})`;
+  versionEl.href = '#';
+  versionEl.title = 'Check for updates now';
+  versionEl.addEventListener('click', async (e) => {
+    e.preventDefault();
+    versionEl.textContent = 'Checking…';
+    const res = (await cmd('checkUpdateNow').catch(() => null))?.data;
+    await loadAboutInfo();
+    if (!res?.reachable) {
+      alert('Update check failed. Can the device reach GitHub?');
+    } else if (!res.availableVersion) {
+      messageBox({ title: 'Updates', message: 'You are on the latest version.' });
+    }
+  });
   card('App', [
-    ['App version', `${or(info?.appVersion)} (${or(info?.buildNumber, '-')})`],
+    ['App version', versionEl],
     ['Build', or(info?.buildMode)],
     ['Package', or(info?.package)],
   ]);
@@ -1802,10 +1819,7 @@ async function loadAboutInfo() {
     const btn = document.createElement('button');
     btn.className = 'btn-ghost';
     btn.textContent = `Install version ${upd.availableVersion}`;
-    btn.onclick = async () => {
-      if (!confirm(`Download Kiosk Satellite ${upd.availableVersion} on the ` +
-        'tablet and install it? The installation must be confirmed on the ' +
-        'tablet screen.')) return;
+    const run = async () => {
       btn.disabled = true;
       const res = await cmd('installUpdate').catch(() => null);
       if (!res?.ok) {
@@ -1824,6 +1838,69 @@ async function loadAboutInfo() {
         }
       } while (st && st.progress !== null && st.progress !== undefined);
       btn.textContent = 'Confirm on the tablet screen';
+    };
+    // Release notes first, then the download: the same flow as the
+    // drawer's dialog on the device.
+    btn.onclick = () => {
+      const back = document.createElement('div');
+      back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+        + 'display:grid; place-items:center; z-index:1000; padding:16px';
+      const modal = document.createElement('div');
+      modal.className = 'card';
+      modal.style.cssText =
+        'width:100%; max-width:520px; margin:0; padding:24px; max-height:80vh;'
+        + 'display:flex; flex-direction:column;';
+      const h = document.createElement('h3');
+      h.textContent = `Update to ${upd.availableVersion}`;
+      h.style.cssText = 'margin:0 0 14px; font-size:16px; font-weight:700;';
+      const notes = document.createElement('div');
+      notes.style.cssText = 'overflow:auto; flex:1; font-size:13.5px; line-height:1.5;';
+      // Markdown-lite, DOM-built so the release body stays inert text:
+      // headings bold, list markers as bullets, emphasis/code/links stripped.
+      const inline = (s) => s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/\*\*|__|`/g, '');
+      const body = (upd.availableNotes || '').trim();
+      if (!body) {
+        notes.textContent = 'No release notes.';
+      } else {
+        for (const raw of body.split('\n')) {
+          const line = raw.trimEnd();
+          const p = document.createElement('div');
+          if (!line.trim()) {
+            p.style.height = '10px';
+          } else if (/^#+\s*/.test(line)) {
+            p.textContent = inline(line.replace(/^#+\s*/, ''));
+            p.style.cssText = 'font-weight:700; margin-bottom:4px;';
+          } else if (/^\s*[-*]\s+/.test(line)) {
+            p.textContent = `•  ${inline(line.replace(/^\s*[-*]\s+/, ''))}`;
+            p.style.marginBottom = '3px';
+          } else {
+            p.textContent = inline(line);
+          }
+          notes.appendChild(p);
+        }
+      }
+      const hint = document.createElement('div');
+      hint.textContent = 'The download runs on the tablet; the installation '
+        + 'must be confirmed on the tablet screen.';
+      hint.style.cssText =
+        'margin:14px 0 0; font-size:12.5px; color:var(--muted);';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; gap:10px; justify-content:flex-end; margin-top:16px;';
+      const cancel = document.createElement('button');
+      cancel.className = 'btn-ghost';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => back.remove());
+      const ok = document.createElement('button');
+      ok.className = 'btn-primary';
+      ok.style.width = 'auto';
+      ok.style.padding = '10px 22px';
+      ok.textContent = 'Update';
+      ok.addEventListener('click', () => { back.remove(); run(); });
+      row.append(cancel, ok);
+      modal.append(h, notes, hint, row);
+      back.appendChild(modal);
+      document.body.appendChild(back);
     };
     card('Updates', [['Update available', btn]]);
   } else {

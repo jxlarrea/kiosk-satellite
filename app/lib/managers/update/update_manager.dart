@@ -13,11 +13,18 @@ import '../../core/manager.dart';
 
 /// A newer release on GitHub, ready to fetch.
 class UpdateInfo {
-  const UpdateInfo({required this.version, required this.apkUrl});
+  const UpdateInfo({
+    required this.version,
+    required this.apkUrl,
+    required this.notes,
+  });
 
   /// Bare version, tag with the leading `v` stripped (e.g. `0.2.0`).
   final String version;
   final String apkUrl;
+
+  /// The GitHub release body (markdown), shown before the download starts.
+  final String notes;
 }
 
 /// Watches the GitHub releases for a newer APK and, on request, downloads it
@@ -63,8 +70,29 @@ class UpdateManager extends Manager {
           handler: (_) async => CommandResult.ok({
             'currentVersion': _currentVersion,
             'availableVersion': available.value?.version,
+            'availableNotes': available.value?.notes,
             'progress': progress.value,
           }),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'checkUpdateNow',
+          description:
+              'Query GitHub for the latest release immediately (the '
+              'periodic check runs only twice a day) and report the result '
+              'in getUpdateStatus shape, plus reachable=false when GitHub '
+              'could not be queried',
+          handler: (_) async {
+            final reachable = await check();
+            return CommandResult.ok({
+              'reachable': reachable,
+              'currentVersion': _currentVersion,
+              'availableVersion': available.value?.version,
+              'availableNotes': available.value?.notes,
+              'progress': progress.value,
+            });
+          },
         ),
       )
       ..register(
@@ -100,7 +128,9 @@ class UpdateManager extends Manager {
     _timer?.cancel();
   }
 
-  Future<void> check() async {
+  /// Returns whether GitHub answered; the outcome itself lands in
+  /// [available] either way.
+  Future<bool> check() async {
     try {
       final res = await http.get(
         Uri.parse(_latestUrl),
@@ -108,7 +138,7 @@ class UpdateManager extends Manager {
       );
       if (res.statusCode != 200) {
         log.warn(name, 'release check failed: HTTP ${res.statusCode}');
-        return;
+        return false;
       }
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       final tag = (body['tag_name'] as String? ?? '').replaceFirst(
@@ -122,7 +152,7 @@ class UpdateManager extends Manager {
         orElse: () => const {},
       );
       final url = apk['browser_download_url'] as String?;
-      if (tag.isEmpty || url == null) return;
+      if (tag.isEmpty || url == null) return false;
       final newer = _isNewer(tag, _currentVersion);
       log.info(
         name,
@@ -130,10 +160,16 @@ class UpdateManager extends Manager {
         '${newer ? 'update available' : 'up to date'}',
       );
       available.value = newer
-          ? UpdateInfo(version: tag, apkUrl: url)
+          ? UpdateInfo(
+              version: tag,
+              apkUrl: url,
+              notes: (body['body'] as String? ?? '').trim(),
+            )
           : null;
+      return true;
     } catch (e) {
       log.warn(name, 'release check failed: $e');
+      return false;
     }
   }
 

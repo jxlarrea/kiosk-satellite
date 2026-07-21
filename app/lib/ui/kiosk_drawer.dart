@@ -243,11 +243,21 @@ class KioskDrawer extends StatelessWidget {
                 builder: (context, info, _) => Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
                   child: info == null
-                      ? Text(
-                          'Version ${c.device.appVersion}',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                      // Tappable: a manual "check now" — the periodic check
+                      // runs only twice a day, and the wall is where "did my
+                      // update land?" gets asked.
+                      ? InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () => _checkNow(context),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text(
+                              'Version ${c.device.appVersion}',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                           ),
                         )
                       : Material(
@@ -389,18 +399,70 @@ class KioskDrawer extends StatelessWidget {
     );
   }
 
-  /// Confirm → download (progress dialog) → hand off to the Android
+  /// Manual update check from the version line. An update found swaps the
+  /// line for the notice via its ValueListenableBuilder on its own; the
+  /// other two outcomes only exist as this feedback.
+  Future<void> _checkNow(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Checking for updates…')),
+    );
+    final reachable = await c.update.check();
+    messenger.hideCurrentSnackBar();
+    if (c.update.available.value != null) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          reachable
+              ? 'You are on the latest version.'
+              : 'Update check failed. Is the device online?',
+        ),
+      ),
+    );
+  }
+
+  /// Release notes → download (progress dialog) → hand off to the Android
   /// installer, which asks its own final confirmation. The drawer stays put
   /// underneath so a cancelled install lands somewhere sensible.
   Future<void> _offerUpdate(BuildContext context, UpdateInfo info) async {
-    if (!await _confirm(
-      context,
-      'Install update',
-      'Download Kiosk Satellite ${info.version} and install it? Android '
-          'will ask you to confirm the installation.',
-    )) {
-      return;
-    }
+    final theme = Theme.of(context);
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Update to ${info.version}'),
+        content: SizedBox(
+          width: 440,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ..._releaseNotes(theme, info.notes),
+                const SizedBox(height: 16),
+                Text(
+                  'The download starts on Update; Android asks you to '
+                  'confirm the installation.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+    if (go != true) return;
     if (!context.mounted) return;
     // Not awaited: the dialog is closed from below once the download
     // settles, whichever way it settles.
@@ -447,6 +509,55 @@ class KioskDrawer extends StatelessWidget {
         ),
       );
     }
+  }
+
+  /// The GitHub release body, markdown-lite: headings bold, list markers as
+  /// bullets, emphasis/code/link syntax stripped. A real markdown renderer
+  /// is a dependency this one dialog does not justify.
+  List<Widget> _releaseNotes(ThemeData theme, String notes) {
+    String inline(String s) => s
+        .replaceAllMapped(
+          RegExp(r'\[([^\]]*)\]\([^)]*\)'),
+          (m) => m[1] ?? '',
+        )
+        .replaceAll(RegExp(r'\*\*|__|`'), '');
+    if (notes.isEmpty) {
+      return [
+        Text('No release notes.', style: theme.textTheme.bodyMedium),
+      ];
+    }
+    final out = <Widget>[];
+    for (final raw in notes.split('\n')) {
+      final line = raw.trimRight();
+      if (line.trim().isEmpty) {
+        out.add(const SizedBox(height: 10));
+      } else if (line.startsWith('#')) {
+        out.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              inline(line.replaceFirst(RegExp(r'^#+\s*'), '')),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        );
+      } else if (RegExp(r'^\s*[-*]\s+').hasMatch(line)) {
+        out.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 3),
+            child: Text(
+              '•  ${inline(line.replaceFirst(RegExp(r'^\s*[-*]\s+'), ''))}',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+        );
+      } else {
+        out.add(Text(inline(line), style: theme.textTheme.bodyMedium));
+      }
+    }
+    return out;
   }
 
   Future<bool> _confirm(
