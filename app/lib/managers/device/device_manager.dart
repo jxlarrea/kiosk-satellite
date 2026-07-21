@@ -1,3 +1,4 @@
+import 'dart:convert' show LineSplitter;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -102,15 +103,26 @@ class DeviceManager extends Manager {
         handler: (p) async {
           final lines = ((p['lines'] as num?)?.toInt() ?? 800).clamp(50, 5000);
           try {
+            // The framework logs an I/View setRequestedFrameRate line on
+            // every WebView draw (~100/s), so the buffer is mostly that
+            // spam. The View:W filterspec drops it, but logcat applies -t
+            // to the raw buffer BEFORE filtering, which would leave only
+            // the few real lines among the last N spammy ones. So: dump
+            // the whole buffer filtered and take the tail ourselves.
             final result = await Process.run('logcat', [
               '-b', 'main', '-b', 'system', '-b', 'crash',
-              '-d', '-v', 'time', '-t', '$lines',
+              '-d', '-v', 'time',
+              'View:W', '*:V',
             ]);
             if (result.exitCode != 0) {
               return CommandResult.fail(
                   'logcat failed: ${result.stderr ?? result.exitCode}');
             }
-            return CommandResult.ok('${result.stdout}');
+            final all = const LineSplitter().convert('${result.stdout}');
+            final tail = all.length > lines
+                ? all.sublist(all.length - lines)
+                : all;
+            return CommandResult.ok(tail.join('\n'));
           } catch (e) {
             return CommandResult.fail('logcat unavailable: $e');
           }
