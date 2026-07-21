@@ -415,13 +415,13 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     if (msg is List) {
       // uncaught isolate error: [error, stackTrace]
       log.error(tag, 'isolate error: ${msg.first}');
-      _ready?.complete(false);
+      _completeReady(false);
       return;
     }
     if (msg is! Map) return;
     switch (msg['type']) {
       case WakeMsg.ready:
-        _ready?.complete(true);
+        _completeReady(true);
       case WakeMsg.log:
         final message = '${msg['message']}';
         switch (msg['level']) {
@@ -438,10 +438,18 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
         _onTelemetry?.call(msg.cast<String, Object?>());
       case WakeMsg.error:
         log.error(tag, 'isolate: ${msg['message']}');
-        _ready?.complete(false);
+        _completeReady(false);
       case WakeMsg.stopped:
-        _stopped?.complete();
+        if (_stopped?.isCompleted == false) _stopped?.complete();
     }
+  }
+
+  /// Readiness can be signalled more than once (an isolate that reported
+  /// ready and later hits an uncaught error, or two errors in a row);
+  /// completing an already-completed Future is an unhandled crash in the
+  /// message handler.
+  void _completeReady(bool ok) {
+    if (_ready?.isCompleted == false) _ready?.complete(ok);
   }
 
   Future<void> _onDetectionMessage(Map msg) async {

@@ -79,6 +79,12 @@ class CameraMotion(
     private val analysisExecutor = Executors.newSingleThreadExecutor()
     private var lifecycle: MotionLifecycle? = null
 
+    /** Guards the async camera-ready callback: bumped by every listen and
+     *  cancel (main thread only), so a callback from a session that was
+     *  cancelled while the provider future was still resolving does not
+     *  bind a camera nothing will ever release. */
+    private var session = 0
+
     // Analyzer state (touched only on analysisExecutor).
     private var prevGrid: IntArray? = null
     private var frameCount = 0
@@ -117,8 +123,10 @@ class CameraMotion(
     }
 
     private fun start(facing: CameraSelector, sink: EventChannel.EventSink) {
+        val mySession = ++session
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
+            if (session != mySession) return@addListener
             val cameraProvider = try {
                 future.get()
             } catch (e: Exception) {
@@ -150,6 +158,9 @@ class CameraMotion(
                 owner.resume()
                 Log.i(TAG, "camera bound (fps slot=${frameIntervalNs / 1_000_000}ms, minCells=$minChangedCells)")
             } catch (e: Exception) {
+                // Nothing bound: drop the owner so the eventual cancel has
+                // nothing to tear down (its registry never left INITIALIZED).
+                lifecycle = null
                 sink.error("camera", "could not open camera: ${e.message}", null)
             }
         }, ContextCompat.getMainExecutor(context))
@@ -219,6 +230,7 @@ class CameraMotion(
 
     override fun onCancel(arguments: Any?) {
         mainHandler.post {
+            session++
             analysis?.clearAnalyzer()
             lifecycle?.destroy()
             lifecycle = null
@@ -243,6 +255,16 @@ class CameraMotion(
         private val registry = LifecycleRegistry(this)
         override val lifecycle: Lifecycle get() = registry
         fun resume() { registry.currentState = Lifecycle.State.RESUMED }
-        fun destroy() { registry.currentState = Lifecycle.State.DESTROYED }
+        fun destroy() {
+            // A registry that never left INITIALIZED (bindToLifecycle threw,
+            // so resume() was skipped) cannot move down: AndroidX throws
+            // "no event down from INITIALIZED", a fatal main-thread crash
+            // when the screensaver's motion listening stops. Step up to
+            // CREATED first; from there DESTROYED is legal.
+            if (registry.currentState == Lifecycle.State.INITIALIZED) {
+                registry.currentState = Lifecycle.State.CREATED
+            }
+            registry.currentState = Lifecycle.State.DESTROYED
+        }
     }
 }
