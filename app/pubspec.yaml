@@ -82,6 +82,7 @@ flutter:
     - assets/screensaver/index.html
     - assets/branding/icon.png
     - assets/branding/mark.png
+    - assets/svg/
     - assets/branding/mark_light.png
     - assets/branding/hacs.svg
   fonts:

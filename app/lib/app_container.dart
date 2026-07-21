@@ -13,6 +13,7 @@ import 'managers/mqtt/mqtt_manager.dart';
 import 'managers/proxy/proxy_manager.dart';
 import 'managers/remote/remote_manager.dart';
 import 'managers/screen/screen_manager.dart';
+import 'managers/screensaver/immich_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
 import 'managers/sendspin/sendspin_manager.dart';
 import 'managers/settings/provisioning.dart';
@@ -36,6 +37,7 @@ class AppContainer {
     browser.urlMapper = proxy.mapUrl;
     kiosk = KioskManager(bus, commands, log, settings);
     screensaver = ScreensaverManager(bus, commands, log, settings);
+    immich = ImmichManager(bus, commands, log, settings);
     motion = MotionManager(bus, commands, log, settings);
     homeAssistant = HomeAssistantManager(bus, commands, log, settings);
     wakeWord = WakeWordManager(bus, commands, log, settings);
@@ -57,6 +59,7 @@ class AppContainer {
   late final BrowserManager browser;
   late final KioskManager kiosk;
   late final ScreensaverManager screensaver;
+  late final ImmichManager immich;
   late final MotionManager motion;
   late final HomeAssistantManager homeAssistant;
   late final WakeWordManager wakeWord;
@@ -78,6 +81,7 @@ class AppContainer {
         jsApi,
         kiosk,
         screensaver,
+        immich,
         motion,
         homeAssistant,
         wakeWord,

@@ -540,6 +540,60 @@ const screensaverTimeoutSeconds = SettingDef<num>(
   category: 'Screensaver',
 );
 
+// The four corners an overlay can sit in, shared by the small clock and the
+// Immich metadata panel — one vocabulary, and their dropdowns stay in step.
+const _cornerOptions = ['top_left', 'top_right', 'bottom_left', 'bottom_right'];
+const _cornerLabels = {
+  'top_left': 'Top left',
+  'top_right': 'Top right',
+  'bottom_left': 'Bottom left',
+  'bottom_right': 'Bottom right',
+};
+
+// ── Small clock (every mode except Clock, which is one already) ──
+
+const screensaverMiniClock = SettingDef<bool>(
+  key: 'screensaver.mini_clock',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Small clock',
+  description: 'Show a small clock in a corner of the screensaver.',
+  category: 'Screensaver',
+);
+
+const screensaverMiniClockPosition = SettingDef<String>(
+  key: 'screensaver.mini_clock_position',
+  type: SettingType.select,
+  defaultValue: 'top_right',
+  title: 'Clock position',
+  description: 'Which corner the clock sits in.',
+  category: 'Screensaver',
+  options: _cornerOptions,
+  optionLabels: _cornerLabels,
+  dependsOn: 'screensaver.mini_clock',
+);
+
+const screensaverMiniClockColor = SettingDef<String>(
+  key: 'screensaver.mini_clock_color',
+  type: SettingType.string,
+  // Stored as "r,g,b"; both UIs render a real colour picker for it.
+  defaultValue: '250,250,250',
+  title: 'Clock colour',
+  description: 'The colour of the clock text.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mini_clock',
+);
+
+const screensaverMiniClockDate = SettingDef<bool>(
+  key: 'screensaver.mini_clock_date',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show date',
+  description: 'Add a short date under the clock.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mini_clock',
+);
+
 const screensaverMode = SettingDef<String>(
   key: 'screensaver.mode',
   type: SettingType.select,
@@ -549,7 +603,16 @@ const screensaverMode = SettingDef<String>(
       'What the screensaver shows after the idle timeout. Dim only '
       'lowers the backlight and is the lightest.',
   category: 'Screensaver',
-  options: ['dim', 'black', 'clock', 'media', 'local', 'gallery', 'website'],
+  options: [
+    'dim',
+    'black',
+    'clock',
+    'media',
+    'local',
+    'gallery',
+    'immich',
+    'website',
+  ],
   optionLabels: {
     'dim': 'Dim',
     'black': 'Black',
@@ -557,6 +620,7 @@ const screensaverMode = SettingDef<String>(
     'media': 'Home Assistant Media',
     'local': 'Local Media',
     'gallery': 'Photo Gallery',
+    'immich': 'Immich Media',
     'website': 'Website',
   },
 );
@@ -870,6 +934,178 @@ const screensaverLocalTransition = SettingDef<String>(
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
+);
+
+// ── Immich Media (mode: immich) ──
+//
+// Photos and videos straight from an Immich server over its HTTP API. The
+// connection is validated explicitly (a URL typo should fail at the button,
+// not silently at 2am): the source, playlist and cache settings all gate on
+// immich_validated, which the manager clears whenever the URL or key change.
+
+const screensaverImmichUrl = SettingDef<String>(
+  key: 'screensaver.immich_url',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Server address',
+  description: 'The address of your Immich server, with its port.',
+  placeholder: 'http://immich.local:2283',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'immich',
+);
+
+const screensaverImmichApiKey = SettingDef<String>(
+  key: 'screensaver.immich_api_key',
+  type: SettingType.password,
+  defaultValue: '',
+  title: 'API key',
+  description: 'Created in Immich under Account Settings → API Keys.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  secret: true,
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'immich',
+);
+
+// Set by the immichValidate command, cleared by the manager when the URL or
+// key change. Every row below gates on it, so the picker and playlist
+// controls only exist once the server has actually answered.
+const screensaverImmichValidated = SettingDef<bool>(
+  key: 'screensaver.immich_validated',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Connection validated',
+  description: '',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  hidden: true,
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'immich',
+);
+
+// The album id, or empty for the whole library. Rendered as a dropdown fed
+// by the immichAlbums command in both UIs, never typed.
+const screensaverImmichAlbum = SettingDef<String>(
+  key: 'screensaver.immich_album',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Media source',
+  description: 'The whole library, or a single album.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+// The chosen album's name, for display when the server is unreachable.
+const screensaverImmichAlbumName = SettingDef<String>(
+  key: 'screensaver.immich_album_name',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Album name',
+  description: '',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  hidden: true,
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichInterval = SettingDef<num>(
+  key: 'screensaver.immich_interval_seconds',
+  type: SettingType.number,
+  defaultValue: 10,
+  title: 'Seconds per image',
+  description:
+      'How long each image shows before the next. Videos play in full.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichShuffle = SettingDef<bool>(
+  key: 'screensaver.immich_shuffle',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Shuffle',
+  description: 'Cycle the media in random order.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichTransition = SettingDef<String>(
+  key: 'screensaver.immich_transition',
+  type: SettingType.select,
+  defaultValue: 'fade',
+  title: 'Transition',
+  description: 'How one item hands off to the next.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  options: _transitionOptions,
+  optionLabels: _transitionLabels,
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichFill = SettingDef<bool>(
+  key: 'screensaver.immich_fill',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Fill the screen',
+  description:
+      'Enlarge photos that match the screen shape to cover it fully. '
+      'Others keep their full frame.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichCache = SettingDef<bool>(
+  key: 'screensaver.immich_cache',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Cache media locally',
+  description: 'Keep copies on the device so images load instantly.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichCacheMax = SettingDef<num>(
+  key: 'screensaver.immich_cache_max_items',
+  type: SettingType.number,
+  defaultValue: 500,
+  title: 'Cache size (items)',
+  description: 'The oldest items are deleted once the cache is full.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_cache',
+);
+
+const screensaverImmichMetadata = SettingDef<bool>(
+  key: 'screensaver.immich_metadata',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show metadata',
+  description: 'Album, date, camera and location over the media.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichMetadataPosition = SettingDef<String>(
+  key: 'screensaver.immich_metadata_position',
+  type: SettingType.select,
+  // Opposite default corner to the small clock, so turning both on does not
+  // stack them.
+  defaultValue: 'bottom_left',
+  title: 'Metadata position',
+  description: 'Which corner the details sit in.',
+  category: 'Screensaver',
+  options: _cornerOptions,
+  optionLabels: _cornerLabels,
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_metadata',
 );
 
 const screensaverPixelShift = SettingDef<bool>(
@@ -1575,6 +1811,11 @@ const List<SettingDef<Object>> allSettings = [
   screensaverTimeoutSeconds,
   // Pixel shift sits with the general controls: it applies to every mode.
   screensaverPixelShift,
+  // The small clock too — it overlays every mode except Clock itself.
+  screensaverMiniClock,
+  screensaverMiniClockPosition,
+  screensaverMiniClockColor,
+  screensaverMiniClockDate,
   screensaverMode,
   // One titled panel per mode, in the dropdown's order; only the panel of
   // the selected mode is visible (each setting depends on the mode).
@@ -1599,6 +1840,19 @@ const List<SettingDef<Object>> allSettings = [
   screensaverGalleryInterval,
   screensaverGalleryShuffle,
   screensaverGalleryTransition,
+  screensaverImmichUrl,
+  screensaverImmichApiKey,
+  screensaverImmichValidated,
+  screensaverImmichAlbum,
+  screensaverImmichAlbumName,
+  screensaverImmichInterval,
+  screensaverImmichShuffle,
+  screensaverImmichTransition,
+  screensaverImmichFill,
+  screensaverImmichCache,
+  screensaverImmichCacheMax,
+  screensaverImmichMetadata,
+  screensaverImmichMetadataPosition,
   screensaverWebsiteUrl,
   screensaverDismissOnMotion,
   motionFps,

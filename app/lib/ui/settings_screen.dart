@@ -894,6 +894,16 @@ class _CategoryContentState extends State<_CategoryContent> {
                 screensaverDismissOnMotion.key: _CameraGrantRow(
                   key: UniqueKey(),
                 ),
+              if (widget.category == 'Screensaver') ...{
+                // Rendered only while their anchor rows are (mode: immich).
+                screensaverImmichApiKey.key: _ImmichValidateRow(
+                  container: container,
+                  onChanged: () => setState(() {}),
+                ),
+                screensaverImmichCacheMax.key: _ImmichCacheStatsRow(
+                  container: container,
+                ),
+              },
             },
           ),
         if (widget.category == 'Screen')
@@ -1395,6 +1405,119 @@ class _CameraGrantRowState extends State<_CameraGrantRow> {
       ),
     );
   }
+}
+
+/// The Immich validate row, directly under the API key: mirrors the Home
+/// Assistant connection card's gate. The rows below it only exist once the
+/// server has actually answered with the calls the screensaver needs.
+class _ImmichValidateRow extends StatefulWidget {
+  const _ImmichValidateRow({required this.container, required this.onChanged});
+
+  final AppContainer container;
+  final VoidCallback onChanged;
+
+  @override
+  State<_ImmichValidateRow> createState() => _ImmichValidateRowState();
+}
+
+class _ImmichValidateRowState extends State<_ImmichValidateRow> {
+  bool _validating = false;
+  String? _error;
+
+  Future<void> _validate() async {
+    setState(() {
+      _validating = true;
+      _error = null;
+    });
+    final result = await widget.container.commands.execute(
+      'immichValidate',
+      const {},
+    );
+    if (!mounted) return;
+    setState(() {
+      _validating = false;
+      _error = result.ok ? null : result.error;
+    });
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final validated = widget.container.settings.get(
+      screensaverImmichValidated,
+    );
+    return ListTile(
+      title: const Text('Validate connection'),
+      subtitle: Text(
+        _validating
+            ? 'Checking…'
+            : _error ??
+                  (validated
+                      ? 'Connected'
+                      : 'Not validated yet. The settings below unlock once '
+                            'the connection checks out.'),
+      ),
+      trailing: _validating
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            )
+          : Icon(
+              validated ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+            ),
+      onTap: _validating ? null : _validate,
+    );
+  }
+}
+
+/// Cache usage, directly under the cache size field: how many items sit on
+/// disk and what they weigh, so the cap is a decision, not a guess.
+class _ImmichCacheStatsRow extends StatefulWidget {
+  const _ImmichCacheStatsRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_ImmichCacheStatsRow> createState() => _ImmichCacheStatsRowState();
+}
+
+class _ImmichCacheStatsRowState extends State<_ImmichCacheStatsRow> {
+  Map<String, Object?>? _stats;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.container.immich.cacheStats().then((stats) {
+      if (mounted) setState(() => _stats = stats);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = _stats;
+    final text = stats == null
+        ? '…'
+        : '${stats['items']} cached, ${formatBytes(stats['bytes'] as int)}';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+}
+
+String formatBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+  if (bytes < 1024 * 1024 * 1024) {
+    return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
+  }
+  return '${(bytes / 1024 / 1024 / 1024).toStringAsFixed(2)} GB';
 }
 
 /// Where to point the browser: shown under the Remote Administration
@@ -2857,7 +2980,8 @@ class SettingTile extends StatelessWidget {
                   ? _formatNum(value)
                   : ('$value'.isEmpty ? 'Not set' : '$value'));
         // A colour is picked, not typed.
-        if (def.key == screensaverClockColor.key) {
+        if (def.key == screensaverClockColor.key ||
+            def.key == screensaverMiniClockColor.key) {
           final rgb = value as String;
           final parts = rgb
               .split(',')
@@ -2984,6 +3108,21 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
+        // The Immich source is picked from the server's albums, not typed.
+        if (def.key == screensaverImmichAlbum.key) {
+          final name = c.settings.get(screensaverImmichAlbumName);
+          final label = (value as String).isEmpty
+              ? 'All media'
+              : (name.isEmpty ? 'Album' : name);
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(def.description),
+            trailing: TextButton(
+              onPressed: () => _pickImmichAlbum(context),
+              child: Text(label),
+            ),
+          );
+        }
         // A time of day is picked from a clock, not typed.
         if (def.key == themeDarkAt.key || def.key == themeLightAt.key) {
           final current = value as String;
@@ -3005,6 +3144,54 @@ class SettingTile extends StatelessWidget {
           onTap: () => _editText(context),
         );
     }
+  }
+
+  Future<void> _pickImmichAlbum(BuildContext context) async {
+    final result = await c.commands.execute('immichAlbums', const {});
+    if (!context.mounted) return;
+    if (!result.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.error ?? 'Could not list the albums')),
+      );
+      return;
+    }
+    final albums = (result.data as List).cast<Map>();
+    final current = c.settings.get(screensaverImmichAlbum);
+    final picked = await showDialog<(String, String)>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Media source'),
+        children: [
+          ListTile(
+            leading: Icon(
+              current.isEmpty
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_off,
+            ),
+            title: const Text('All media'),
+            onTap: () => Navigator.pop(context, ('', '')),
+          ),
+          for (final album in albums)
+            ListTile(
+              leading: Icon(
+                current == '${album['id']}'
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_off,
+              ),
+              title: Text('${album['name']}'),
+              subtitle: Text('${album['count']} items'),
+              onTap: () => Navigator.pop(
+                context,
+                ('${album['id']}', '${album['name']}'),
+              ),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await c.settings.setFromJson(screensaverImmichAlbum.key, picked.$1);
+    await c.settings.setFromJson(screensaverImmichAlbumName.key, picked.$2);
+    onChanged();
   }
 
   Future<void> _pickTime(BuildContext context, String current) async {

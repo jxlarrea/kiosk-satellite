@@ -32,6 +32,13 @@ class HaHttpOverrides extends HttpOverrides {
         sawSelfSigned = true;
         return true;
       }
+      // The Immich screensaver server gets the same standing as HA: a LAN
+      // service the user pointed the app at, likely behind a self-signed
+      // certificate. Still host-scoped; everything else verifies normally.
+      final immich = Uri.tryParse(
+        _settings.get(defs.screensaverImmichUrl).trim(),
+      )?.host;
+      if (immich != null && immich.isNotEmpty && host == immich) return true;
       return false;
     };
     return client;

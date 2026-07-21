@@ -792,6 +792,38 @@ async function updateMotionCameraNotice() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
+/* Immich validate row: mirror of the device's row directly under the API
+   key. Every Immich row below gates on immich_validated, so a successful
+   validation reloads the tab and they appear on their own. */
+function updateImmichValidateRow() {
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  if (byKey['screensaver.mode']?.value !== 'immich') return;
+  const tab = document.getElementById('tab-screensaver');
+  const anchor = [...tab.querySelectorAll('.row')]
+    .find((r) => r.querySelector('.name')?.textContent === 'API key');
+  if (!anchor || tab.querySelector('.immich-validate-row')) return;
+  const validated = byKey['screensaver.immich_validated']?.value === true;
+  const row = readOnlyRow('Validate connection',
+    validated ? 'Connected'
+      : 'Not validated yet. The settings below unlock once the connection checks out.', '');
+  row.classList.add('immich-validate-row');
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Validate';
+  btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true; btn.textContent = 'Checking…';
+    let res;
+    try { res = await (await api('/api/commands/immichValidate', { method: 'POST', body: '{}' })).json(); }
+    catch (_) { res = { ok: false, error: 'The device did not answer.' }; }
+    if (res.ok) { await loadSettings(); return; }
+    btn.disabled = false; btn.textContent = 'Validate';
+    row.querySelector('.desc').textContent = res.error || 'Validation failed.';
+  });
+  row.appendChild(btn);
+  anchor.insertAdjacentElement('afterend', row);
+}
+
 /* Brightness grant notices: shown under the dashboard slider and on the
    Screen tab only while "Modify system settings" is missing on the device.
    Without it the slider falls back to dimming the app window; the panel's
@@ -960,6 +992,7 @@ async function loadSettings() {
   }
   updateBrightnessGrantNotices();
   updateMotionCameraNotice();
+  updateImmichValidateRow();
 
   // Mirror of the device's Access card under Remote Administration. Here
   // the address is simply where this page came from.
@@ -2240,7 +2273,11 @@ function settingRow(s) {
     // section (the rotation views). A blanket re-render re-fetches the
     // dashboards on the Home Assistant tab, which reads as a jarring reload.
     const changesLayout = (state.settings || []).some((o) => o.dependsOn === s.key)
-      || s.key === 'ha.rotation_enabled';
+      || s.key === 'ha.rotation_enabled'
+      // Editing either resets immich_validated on the device, which the
+      // dependent rows and the validate row must reflect.
+      || s.key === 'screensaver.immich_url'
+      || s.key === 'screensaver.immich_api_key';
     if (changesLayout) await loadSettings();
   };
 
@@ -2259,7 +2296,7 @@ function settingRow(s) {
   }
 
   // A colour is picked, not typed, the browser has a real picker for it.
-  if (s.key === 'screensaver.clock_color') {
+  if (s.key === 'screensaver.clock_color' || s.key === 'screensaver.mini_clock_color') {
     const [r, g, b] = String(s.value || '250,250,250').split(',').map((n) => +n || 0);
     const hex = '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('');
     const inp = document.createElement('input');
@@ -2299,6 +2336,70 @@ function settingRow(s) {
     controls.style.cssText = 'display:flex; gap:8px; align-items:center; min-width:0';
     controls.append(val, btn);
     row.appendChild(controls);
+    return row;
+  }
+
+  // The Immich source is a dropdown fed by the server's albums, mirroring
+  // the device's picker. The saved choice renders immediately (by its stored
+  // name); the live list replaces it when the server answers.
+  if (s.key === 'screensaver.immich_album') {
+    const byKey = Object.fromEntries((state.settings || []).map((o) => [o.key, o]));
+    const sel = document.createElement('select');
+    const rebuild = (albums) => {
+      sel.innerHTML = '';
+      const all = document.createElement('option');
+      all.value = ''; all.textContent = 'All media';
+      all.selected = !s.value;
+      sel.appendChild(all);
+      for (const a of albums) {
+        const opt = document.createElement('option');
+        opt.value = a.id; opt.textContent = a.name;
+        opt.selected = a.id === s.value;
+        sel.appendChild(opt);
+      }
+    };
+    rebuild(s.value
+      ? [{ id: s.value, name: byKey['screensaver.immich_album_name']?.value || 'Album' }]
+      : []);
+    (async () => {
+      try {
+        const res = await (await api('/api/commands/immichAlbums', { method: 'POST', body: '{}' })).json();
+        if (res.ok) rebuild(res.data || []);
+      } catch (_) {}
+    })();
+    sel.addEventListener('change', async () => {
+      const name = sel.value ? sel.options[sel.selectedIndex].textContent : '';
+      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+        'screensaver.immich_album': sel.value,
+        'screensaver.immich_album_name': name,
+      }) });
+    });
+    row.appendChild(sel);
+    return row;
+  }
+
+  // The cache cap carries its live usage under the description, the same
+  // line the device shows under the field.
+  if (s.key === 'screensaver.immich_cache_max_items') {
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.value = typeof s.value === 'number' ? String(s.value) : '';
+    inp.addEventListener('change', () => save(Number(inp.value)));
+    row.appendChild(inp);
+    const note = document.createElement('div');
+    note.className = 'desc';
+    note.textContent = '…';
+    info.appendChild(note);
+    (async () => {
+      try {
+        const res = await (await api('/api/commands/immichCacheStats', { method: 'POST', body: '{}' })).json();
+        const d = res.data || {};
+        const b = d.bytes ?? 0;
+        const fmt = b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(1)} KB`
+          : b < 1073741824 ? `${(b / 1048576).toFixed(1)} MB` : `${(b / 1073741824).toFixed(2)} GB`;
+        note.textContent = `${d.items ?? 0} cached, ${fmt}`;
+      } catch (_) { note.textContent = ''; }
+    })();
     return row;
   }
 
