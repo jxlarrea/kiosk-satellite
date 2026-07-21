@@ -426,7 +426,11 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
     final corner = _cornerAlignment(s.get(defs.screensaverMiniClockPosition));
     final color = _color();
     final size = MediaQuery.of(context).size;
-    final clockSize = min(size.width, size.height) * 0.063;
+    // Proportional to the panel, but floored: on a small low-density screen
+    // (the Echo Show 5's 480 logical pixels) the proportional size lands
+    // near the metadata's fixed-pixel text and reads absurdly small for a
+    // clock.
+    final clockSize = max(min(size.width, size.height) * 0.063, 44.0);
     // Readable over a bright photo without boxing the text in.
     const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
     return IgnorePointer(
