@@ -256,6 +256,26 @@ const wsFilterScript = '''
     // An empty allowlist would go stale EVERYWHERE on the view — a view whose
     // entities cannot be determined must pass through, not filter to nothing.
     if (!acc.size) { S.allow = null; return; }
+    // Voice Satellite's own device must never go stale, whatever view is on
+    // screen: the card gates its whole wake pipeline on the satellite's
+    // sibling select/switch entities (wake_word_detection, mute, wake_sound,
+    // stop_word), and a page always boots while they read 'unavailable' (the
+    // browser is disconnected until the card registers). Their real states
+    // arrive as `c` updates moments later; dropping those leaves the card
+    // reading wake detection as disabled and voice dead until a full refresh.
+    try {
+      var satId = localStorage.getItem('vs-satellite-entity');
+      if (satId && hass && hass.entities) {
+        acc.add(satId);
+        var se = hass.entities[satId];
+        var dev = se && se.device_id;
+        if (dev) {
+          for (var eid in hass.entities) {
+            if (hass.entities[eid].device_id === dev) acc.add(eid);
+          }
+        }
+      }
+    } catch (e) {}
     S.allow = acc;
     pushAdd(Array.from(acc)); // refresh this view's entities to current state
   }
