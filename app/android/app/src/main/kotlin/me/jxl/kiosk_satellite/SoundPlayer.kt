@@ -3,10 +3,14 @@ package me.jxl.kiosk_satellite
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.media.audiofx.Visualizer
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import kotlin.math.abs
 
 /**
  * Native playback for page-delegated sounds (Voice Satellite chimes and
@@ -29,9 +33,13 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
 
     private val appContext = context.applicationContext
     private val channel = MethodChannel(messenger, CHANNEL)
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     /** Live players by sound id. Channel calls arrive on the main thread. */
     private val players = mutableMapOf<String, MediaPlayer>()
+
+    /** Per-sound level taps, feeding the page's reactive bar. */
+    private val visualizers = mutableMapOf<String, Visualizer>()
 
     init {
         channel.setMethodCallHandler { call, result ->
@@ -78,6 +86,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 // The page times stop-word arming and its speaking UI off
                 // real audio start, not off the play call.
                 channel.invokeMethod("started", mapOf("id" to id))
+                startLevelCapture(id, player)
             }
             mp.setOnCompletionListener { finish(id, null) }
             mp.setOnErrorListener { _, what, extra ->
@@ -93,7 +102,67 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         }
     }
 
+    /**
+     * Stream playback levels to the page at the capture rate (<= 20 Hz) so
+     * its reactive bar can animate to audio it never touches. The measure is
+     * mean |amplitude| normalized 0..1, matching what the page's analyser
+     * computes from getByteTimeDomainData for element playback. Best-effort:
+     * Visualizer needs RECORD_AUDIO and an OEM that implements it - without
+     * either the sound still plays, the bar just stays dark.
+     */
+    private fun startLevelCapture(id: String, mp: MediaPlayer) {
+        try {
+            val vis = Visualizer(mp.audioSessionId)
+            vis.captureSize = Visualizer.getCaptureSizeRange()[0]
+            var last = -1f
+            vis.setDataCaptureListener(
+                object : Visualizer.OnDataCaptureListener {
+                    override fun onWaveFormDataCapture(
+                        v: Visualizer,
+                        waveform: ByteArray,
+                        samplingRate: Int,
+                    ) {
+                        var sum = 0
+                        for (b in waveform) sum += abs((b.toInt() and 0xFF) - 128)
+                        val level = sum.toFloat() / waveform.size / 128f
+                        // Near-identical consecutive levels are visual no-ops;
+                        // skip the bridge round-trip for them.
+                        if (abs(level - last) < 0.008f) return
+                        last = level
+                        mainHandler.post {
+                            if (players[id] != null) {
+                                channel.invokeMethod(
+                                    "level",
+                                    mapOf("id" to id, "level" to level.toDouble()),
+                                )
+                            }
+                        }
+                    }
+
+                    override fun onFftDataCapture(
+                        v: Visualizer,
+                        fft: ByteArray,
+                        samplingRate: Int,
+                    ) {}
+                },
+                minOf(Visualizer.getMaxCaptureRate(), 20000),
+                true,
+                false,
+            )
+            vis.enabled = true
+            visualizers[id] = vis
+        } catch (e: Exception) {
+            Log.w(TAG, "level capture unavailable: ${e.message}")
+        }
+    }
+
     private fun finish(id: String, error: String?) {
+        visualizers.remove(id)?.let {
+            try {
+                it.enabled = false
+                it.release()
+            } catch (_: Exception) {}
+        }
         val mp = players.remove(id) ?: return
         try { mp.release() } catch (_: Exception) {}
         channel.invokeMethod("ended", mapOf("id" to id, "error" to error))

@@ -56,6 +56,11 @@ class SoundManager extends Manager {
       switch (call.method) {
         case 'started':
           bus.publish(SoundStarted(id: id));
+        case 'level':
+          bus.publish(SoundLevel(
+            id: id,
+            level: (args['level'] as num?)?.toDouble() ?? 0,
+          ));
         case 'ended':
           final error = args['error'] as String?;
           if (error != null) log.warn(name, 'sound $id failed: $error');

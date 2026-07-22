@@ -138,6 +138,7 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | Screen power changed |
 | `kiosksatellite:screensaverstart` / `:screensaverstop` | `{}` | Screensaver state changed |
 | `kiosksatellite:sound-started` | `{id}` | A `playSound` sound actually began playing (audio is leaving the speaker). Time stop-word arming and speaking UI off this, not off the `playSound` resolve. |
+| `kiosksatellite:sound-level` | `{id, level}` | Playback level of a playing sound (mean \|amplitude\| 0..1, at most ~20/s, near-duplicate samples skipped) so a page visualizer can animate to audio it never touches. Best-effort: absent on devices without a working `Visualizer`. |
 | `kiosksatellite:sound-ended` | `{id, error?}` | A `playSound` sound finished, failed (`error` says how), or was stopped. Exactly one per sound. |
 
 ```js

@@ -66,6 +66,21 @@ class SoundStarted extends AppEvent {
   Map<String, Object?> toJson() => {'id': id};
 }
 
+/// A playback level sample from a native sound (mean |amplitude|, 0..1, at
+/// most ~20/s). Wire event: the page's reactive bar animates to audio it
+/// never touches.
+class SoundLevel extends AppEvent {
+  const SoundLevel({required this.id, required this.level});
+  final String id;
+  final double level;
+
+  @override
+  String get wireName => 'sound-level';
+
+  @override
+  Map<String, Object?> toJson() => {'id': id, 'level': level};
+}
+
 /// A native sound (playSound) finished, failed, or was stopped. Wire event
 /// so the page can await completion of audio it handed over.
 class SoundEnded extends AppEvent {
