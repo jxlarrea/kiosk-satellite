@@ -53,6 +53,19 @@ class VolumeChanged extends AppEvent {
   String get wireName => 'volumechanged';
 }
 
+/// A native sound (playSound) actually began playing. Wire event: the page
+/// times stop-word arming and its speaking UI off real audio start.
+class SoundStarted extends AppEvent {
+  const SoundStarted({required this.id});
+  final String id;
+
+  @override
+  String get wireName => 'sound-started';
+
+  @override
+  Map<String, Object?> toJson() => {'id': id};
+}
+
 /// A native sound (playSound) finished, failed, or was stopped. Wire event
 /// so the page can await completion of audio it handed over.
 class SoundEnded extends AppEvent {

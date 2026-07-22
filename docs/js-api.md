@@ -123,7 +123,7 @@ running in Kiosk Satellite; browser audio remains the fallback.
 
 | Method | Returns | Description |
 |---|---|---|
-| `playSound(url, {volume, cache})` | `{id}` or `false` | Play `url` natively. `volume` is 0..1 relative to media volume (default 1). `cache: true` keeps the download so replays start instantly — right for fixed assets (chimes), wrong for one-shot URLs (TTS). `false` means the app refused (fetch failed, playback error): fall back to browser audio. |
+| `playSound(url, {volume, cache, stream})` | `{id}` or `false` | Play `url` natively. `volume` is 0..1 relative to media volume (default 1). `cache: true` keeps the download so replays start instantly — right for fixed assets (chimes). `stream: true` plays while downloading, through a loopback relay, for sources still being generated server-side (TTS) — waiting for the whole file would delay speech by the synthesis tail. `false` means the app refused (fetch failed, playback error): fall back to browser audio. |
 | `prefetchSound(url)` | `boolean` | Warm the cache so the first `playSound` of `url` starts with zero fetch delay. |
 | `stopSound(id)` | `boolean` | Stop a playing sound early. A `sound-ended` event still fires. |
 
@@ -137,6 +137,7 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:motion` | `{}` | Camera motion detected (rate-limited to 1/s) |
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | Screen power changed |
 | `kiosksatellite:screensaverstart` / `:screensaverstop` | `{}` | Screensaver state changed |
+| `kiosksatellite:sound-started` | `{id}` | A `playSound` sound actually began playing (audio is leaving the speaker). Time stop-word arming and speaking UI off this, not off the `playSound` resolve. |
 | `kiosksatellite:sound-ended` | `{id, error?}` | A `playSound` sound finished, failed (`error` says how), or was stopped. Exactly one per sound. |
 
 ```js

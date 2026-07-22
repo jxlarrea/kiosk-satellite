@@ -9,16 +9,17 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 
 /**
- * Native playback for page-delegated sounds (Voice Satellite chimes today,
- * TTS later): local files the Dart side already fetched, played through a
- * MediaPlayer that honors the user's speaker selection - the two things the
- * WebView's audio cannot do (no device routing, autoplay-gated).
+ * Native playback for page-delegated sounds (Voice Satellite chimes and
+ * TTS): local files the Dart side fetched, or its loopback relay for
+ * still-streaming sources, played through a MediaPlayer that honors the
+ * user's speaker selection - the things the WebView's audio cannot do
+ * (no device routing, autoplay-gated).
  *
- * Contract: `play {id, path, volume}` starts (replacing any sound already
- * playing under that id), `stop {id}` ends early, and every sound reports
- * back exactly once via an `ended {id, error?}` callback - completion,
- * failure and stop all funnel through it, so the Dart side can clean up
- * uncached files without special cases.
+ * Contract: `play {id, source, volume}` starts (`source` is a file path or
+ * an http URL; same id replaces), `stop {id}` ends early. A `started {id}`
+ * callback fires when audio actually begins, and every sound reports back
+ * exactly once via `ended {id, error?}` - completion, failure and stop all
+ * funnel through it, so the Dart side can clean up without special cases.
  */
 class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     companion object {
@@ -38,7 +39,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 "play" -> result.success(
                     play(
                         call.argument<String>("id") ?: "",
-                        call.argument<String>("path") ?: "",
+                        call.argument<String>("source") ?: "",
                         call.argument<Double>("volume") ?: 1.0,
                     ),
                 )
@@ -51,8 +52,8 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         }
     }
 
-    private fun play(id: String, path: String, volume: Double): Boolean {
-        if (id.isEmpty() || path.isEmpty()) return false
+    private fun play(id: String, source: String, volume: Double): Boolean {
+        if (id.isEmpty() || source.isEmpty()) return false
         // Same id twice = replace: the page re-firing a chime wants the new
         // one, not two overlapped copies.
         players.remove(id)?.release()
@@ -65,7 +66,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build(),
             )
-            mp.setDataSource(path)
+            mp.setDataSource(source)
             val v = volume.toFloat().coerceIn(0f, 1f)
             mp.setVolume(v, v)
             mp.setOnPreparedListener { player ->
@@ -74,6 +75,9 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                     AudioRouting.currentOutput()?.let { player.preferredDevice = it }
                 }
                 player.start()
+                // The page times stop-word arming and its speaking UI off
+                // real audio start, not off the play call.
+                channel.invokeMethod("started", mapOf("id" to id))
             }
             mp.setOnCompletionListener { finish(id, null) }
             mp.setOnErrorListener { _, what, extra ->

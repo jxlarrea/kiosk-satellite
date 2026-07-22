@@ -85,10 +85,12 @@ String buildKioskSatelliteScript({required String version, required String os}) 
 
     // Sound delegation, the output half of the audio handoff: the app plays
     // the URL natively, on the user's selected speaker, with no autoplay
-    // gate. Resolves {id} (or false); a 'kiosksatellite:sound-ended' event
-    // ({id, error?}) follows when it finishes. opts: {volume: 0..1,
-    // cache: bool} - cache keeps the download so replays start instantly
-    // (chimes yes, one-shot TTS no).
+    // gate. Resolves {id} (or false); 'kiosksatellite:sound-started' ({id})
+    // fires when audio begins and 'kiosksatellite:sound-ended' ({id,
+    // error?}) exactly once when it finishes. opts: {volume: 0..1,
+    // cache: bool, stream: bool} - cache keeps the download so replays
+    // start instantly (chimes); stream plays while downloading, for
+    // sources still being generated (TTS).
     playSound: function (url, opts) {
       return call('playSound', Object.assign({ url: url }, opts || {}));
     },
