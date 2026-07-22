@@ -3001,6 +3001,32 @@ function wizFail(title, hint) {
   return err;
 }
 
+// After an onboarding import, the OS permission prompts run on the DEVICE
+// and setup completes there. A full-screen wait (covering the wizard and
+// its Next button - there is nothing to do here) says so and follows along
+// until the device reports itself configured. Shown right after an import
+// and on page load while the device says importPending, so a mid-wait
+// reload does not present an empty wizard as if nothing was imported.
+function showImportPending() {
+  if (document.getElementById('importPending')) return;
+  const ov = document.createElement('div');
+  ov.id = 'importPending';
+  ov.style.cssText = 'position:fixed; inset:0; background:var(--bg);'
+    + 'z-index:1200; display:grid; place-items:center; padding:24px; text-align:center';
+  ov.innerHTML = '<div style="max-width:440px">'
+    + '<h2 style="font-size:21px; font-weight:700; margin-bottom:10px">Finish on the device</h2>'
+    + '<div style="font-size:14px; line-height:1.6; color:var(--muted)">The configuration was imported. '
+    + "Answer the permission prompts on the tablet's screen - this page continues automatically "
+    + 'when the dashboard loads.</div></div>';
+  document.body.appendChild(ov);
+  const poll = setInterval(async () => {
+    try {
+      const setup = await (await fetch('api/setup/status')).json();
+      if (!setup.setupNeeded) { clearInterval(poll); location.reload(); }
+    } catch (_) { /* device may be busy applying; keep polling */ }
+  }, 2000);
+}
+
 function wizConnectFail(error) {
   if (error.includes('invalid token')) {
     return wizFail('Invalid access token',
@@ -3181,24 +3207,8 @@ async function wizardRestore(file, btn) {
     if (!res.ok) throw wizFail('Import failed', out.error || 'The file could not be applied.');
     if (out.data && out.data.pendingSetup) {
       // The settings are in, but the OS permission prompts run on the
-      // DEVICE and the dashboard loads after they are answered there. Say
-      // so - a silent wait reads as a hang - and follow along until the
-      // device reports itself configured.
-      btn.textContent = 'Continue on the device…';
-      const box = $('#wizardError');
-      box.innerHTML =
-        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg>' +
-        '<span><b style="display:block; font-size:14.5px; margin-bottom:2px"></b><span class="hint"></span></span>';
-      box.querySelector('b').textContent = 'Imported - now finish on the device';
-      box.querySelector('.hint').textContent =
-        "Answer the permission prompts on the tablet's screen. This page "
-        + 'continues automatically when the dashboard loads.';
-      const poll = setInterval(async () => {
-        try {
-          const setup = await (await fetch('api/setup/status')).json();
-          if (!setup.setupNeeded) { clearInterval(poll); location.reload(); }
-        } catch (_) { /* device may be busy; keep polling */ }
-      }, 2000);
+      // DEVICE and the dashboard loads after they are answered there.
+      showImportPending();
       return;
     }
     // Setup is complete (the backup's start URL landed); a reload leaves
@@ -3528,6 +3538,9 @@ $('#logoutBtn').addEventListener('click', logout);
   let setup = null;
   try { setup = await (await fetch('api/setup/status')).json(); } catch (_) {}
   if (setup?.setupNeeded) {
+    // An import is finishing on the device (permission prompts); a reload
+    // here must keep saying that, not show an empty wizard.
+    if (setup.importPending) { showImportPending(); return; }
     if (setup.passwordNeeded) { startWizard({ needPassword: true }); return; }
     // A password exists (set in the device wizard's first step): log in
     // first, then continue the setup here.

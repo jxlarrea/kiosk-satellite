@@ -20,6 +20,12 @@ class SettingsManager extends Manager {
 
   static const _prefix = 'ks.';
 
+  /// True while an onboarding import's detached tail (permission prompts on
+  /// the device, then the deferred start URL) is still running. Surfaced in
+  /// the remote setup status so its UI can say "finish on the device"
+  /// instead of presenting an empty wizard.
+  bool importFinishing = false;
+
   @override
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -143,28 +149,33 @@ class SettingsManager extends Manager {
             // prompts (see above); callers see pendingSetup and wait for
             // the device to become configured instead.
             if (firstSetup) {
+              importFinishing = true;
               unawaited(Future(() async {
-                await commands.execute('requestOsPermissions', {
-                  'which': [
-                    if (get(wakeWordEnabled) || get(webMicrophone))
-                      'microphone',
-                    if (get(screensaverDismissOnMotion) || get(webCamera))
-                      'camera',
-                    if (get(wakeWordBackground)) ...[
-                      'notifications',
-                      'batteryOptimizations',
+                try {
+                  await commands.execute('requestOsPermissions', {
+                    'which': [
+                      if (get(wakeWordEnabled) || get(webMicrophone))
+                        'microphone',
+                      if (get(screensaverDismissOnMotion) || get(webCamera))
+                        'camera',
+                      if (get(wakeWordBackground)) ...[
+                        'notifications',
+                        'batteryOptimizations',
+                      ],
+                      if (get(wakeWordBackground) || get(kioskStartOnBoot))
+                        'overlay',
+                      'writeSettings',
+                      'deviceAdmin',
                     ],
-                    if (get(wakeWordBackground) || get(kioskStartOnBoot))
-                      'overlay',
-                    'writeSettings',
-                    'deviceAdmin',
-                  ],
-                });
-                if (heldStartUrl != null) {
-                  await setFromJson(startUrl.key, heldStartUrl);
-                  await commands.execute('loadUrl', {'url': get(startUrl)});
+                  });
+                  if (heldStartUrl != null) {
+                    await setFromJson(startUrl.key, heldStartUrl);
+                    await commands.execute('loadUrl', {'url': get(startUrl)});
+                  }
+                  log.info(name, 'imported setup finished (permissions done)');
+                } finally {
+                  importFinishing = false;
                 }
-                log.info(name, 'imported setup finished (permissions done)');
               }));
               log.info(
                   name,

@@ -199,6 +199,11 @@ class RemoteManager extends Manager {
       return _json(200, {
         'setupNeeded': _setupMode,
         'passwordNeeded': _settings.get(defs.remotePassword).isEmpty,
+        // An import applied its settings but the OS permission prompts are
+        // still being answered on the device; the start URL (what ends
+        // setup) lands after them. The UI shows "finish on the device"
+        // instead of an empty wizard.
+        'importPending': _settings.importFinishing,
       });
     }
     if (path == 'api/setup/password' && request.method == 'POST') {
