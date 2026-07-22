@@ -2584,11 +2584,11 @@ function askImportOptions(backupName) {
       ? `Replace "${backupName.trim()}"` : 'Replace the original device';
 
     card.innerHTML = `
-      <h2 class="card-title" style="margin-top:0">Import configuration</h2>
+      <h2 class="card-title" style="margin-top:0; font-size:19px; font-weight:600">Import configuration</h2>
       <div style="font-size:13.5px; margin-bottom:12px">Replace this device's settings with the file's? The page may reload.</div>
-      <label style="display:block; margin-bottom:8px"><input type="radio" name="impid"> Set up as new device<div class="desc" style="margin-left:22px">Keeps its own name and MQTT identity, so both devices can run.</div></label>
+      <label style="display:block; margin-bottom:8px"><input type="radio" name="impid"> Set up as new device<div class="desc" style="margin-left:22px">Assign its own name and MQTT identity, so both devices are unique.</div></label>
       <label style="display:block; margin-bottom:12px"><input type="radio" name="impid"> <span id="impReplaceLbl"></span><div class="desc" style="margin-left:22px">Keeps the backup's name and MQTT identity; the original device must stay offline.</div></label>
-      <label style="display:block; margin-bottom:16px"><input type="checkbox" id="impLocal"> Restore dashboard data<div class="desc" style="margin-left:22px">Includes the Voice Satellite selection; two devices must not share one satellite.</div></label>
+      <label style="display:block; margin-bottom:16px"><input type="checkbox" id="impLocal"> Restore Webview's local storage<div class="desc" style="margin-left:22px">Includes the Home Assistant signed in session and the Voice Satellite assist_satellite selection - two devices must not share one satellite.</div></label>
       <div style="display:flex; gap:8px; justify-content:flex-end">
         <button class="btn-ghost" id="impCancel">Cancel</button>
         <button class="action" id="impGo">Import</button>

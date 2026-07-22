@@ -59,8 +59,8 @@ Future<ImportOptions?> showImportOptionsDialog(
                   adopt
                       ? 'Keeps the backup\'s name and MQTT identity; the '
                           'original device must stay offline.'
-                      : 'Keeps its own name and MQTT identity, so both '
-                          'devices can run.',
+                      : 'Assign its own name and MQTT identity, so both '
+                          'devices are unique.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -72,10 +72,11 @@ Future<ImportOptions?> showImportOptionsDialog(
                   local = v == true;
                   localTouched = true;
                 }),
-                title: const Text('Restore dashboard data'),
+                title: const Text("Restore Webview's local storage"),
                 subtitle: const Text(
-                  'Includes the Voice Satellite selection; two devices must '
-                  'not share one satellite.',
+                  'Includes the Home Assistant signed in session and the '
+                  'Voice Satellite assist_satellite selection - two devices '
+                  'must not share one satellite.',
                 ),
               ),
             ],
