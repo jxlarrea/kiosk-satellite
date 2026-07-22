@@ -1254,9 +1254,9 @@ const audioSpeakerDevice = SettingDef<String>(
   defaultValue: '',
   title: 'Speaker',
   description:
-      'Output for sound the app plays itself; dashboard audio follows the '
-      'system route. Echo cancellation only works with the microphone and '
-      'speaker on the same device.',
+      'Output for Voice Satellite sounds; media playback follows the system '
+      'route. Echo cancellation only works with the microphone and speaker '
+      'on the same device.',
   category: 'Voice Satellite',
   hidden: true,
 );

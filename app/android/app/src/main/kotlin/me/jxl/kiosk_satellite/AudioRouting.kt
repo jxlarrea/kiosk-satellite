@@ -3,17 +3,15 @@ package me.jxl.kiosk_satellite
 import android.content.Context
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
-import android.media.AudioTrack
-import android.os.Build
 import android.util.Log
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
-import java.util.Collections
-import java.util.WeakHashMap
 
 /**
- * User-selected capture and playback devices, shared by everything that opens
- * audio natively (MicRecorder, the SendSpin player).
+ * User-selected capture and playback devices for Voice Satellite audio: the
+ * wake-word/turn microphone (MicRecorder) and delegated sounds (SoundPlayer).
+ * Deliberately NOT media playback (SendSpin, DLNA) - those are media players
+ * and follow the system's own routing.
  *
  * Selections are stored as a stable selector string "type|address|name" rather
  * than an AudioDeviceInfo id: ids are transient (they change across replugs
@@ -23,19 +21,15 @@ import java.util.WeakHashMap
  * opens, so a speaker that is off tonight simply falls back to the system
  * default and wins again when it reappears.
  *
- * Only audio this app plays natively can be routed: WebView audio (Voice
- * Satellite TTS and chimes) follows the system's own media routing, which
- * Android offers no per-app control over.
+ * WebView audio (Voice Satellite TTS today) also cannot be routed here: it
+ * follows the system's media routing, which Android offers no per-app
+ * control over. It gains routing only as it is handed off to SoundPlayer.
  */
 object AudioRouting {
     private const val TAG = "AudioRouting"
 
     @Volatile private var appContext: Context? = null
     @Volatile private var outputSelector: String? = null
-
-    /** Live AudioTracks to re-route when the output selection changes. */
-    private val liveTracks: MutableSet<AudioTrack> =
-        Collections.newSetFromMap(WeakHashMap())
 
     fun init(context: Context) {
         appContext = context.applicationContext
@@ -44,29 +38,14 @@ object AudioRouting {
     private fun audioManager(): AudioManager? =
         appContext?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
-    /** Change the preferred output and re-route every live track to it. */
+    /** Change the preferred output for Voice Satellite sounds. */
     fun setOutput(selector: String?) {
         outputSelector = selector?.takeIf { it.isNotBlank() }
-        val tracks = synchronized(liveTracks) { liveTracks.toList() }
-        for (track in tracks) {
-            try {
-                track.preferredDevice = resolve(outputSelector, source = false)
-            } catch (e: IllegalStateException) {
-                Log.w(TAG, "re-route failed (released track?): ${e.message}")
-            }
-        }
-        Log.i(TAG, "output selector = ${outputSelector ?: "automatic"} (${tracks.size} live tracks)")
+        Log.i(TAG, "output selector = ${outputSelector ?: "automatic"}")
     }
 
-    /** Apply the current output selection to a newly built track. */
-    fun applyOutput(track: AudioTrack) {
-        synchronized(liveTracks) { liveTracks.add(track) }
-        val device = resolve(outputSelector, source = false) ?: return
-        track.preferredDevice = device
-    }
-
-    /** The selected output as a live device, or null for automatic. For
-     *  players that are not AudioTracks (MediaPlayer) and so pin themselves. */
+    /** The selected output as a live device, or null for automatic. Resolved
+     *  per play, so players pin themselves when a sound starts. */
     fun currentOutput(): AudioDeviceInfo? = resolve(outputSelector, source = false)
 
     /**

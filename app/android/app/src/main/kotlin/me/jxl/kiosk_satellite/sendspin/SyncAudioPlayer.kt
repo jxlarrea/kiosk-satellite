@@ -213,11 +213,7 @@ private fun defaultSinkFactory(
     if (Build.VERSION.SDK_INT >= 26) {
         builder.setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
     }
-    val track = builder.build()
-    // The user's speaker selection, if any; also registers the track so a
-    // later selection change re-routes it live.
-    me.jxl.kiosk_satellite.AudioRouting.applyOutput(track)
-    return AudioTrackSink(track, bytesPerFrame)
+    return AudioTrackSink(builder.build(), bytesPerFrame)
 }
 
 enum class PlaybackState {
