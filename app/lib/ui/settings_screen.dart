@@ -2460,11 +2460,23 @@ class AudioDeviceTile extends StatefulWidget {
 
 class _AudioDeviceTileState extends State<AudioDeviceTile> {
   List<(String, String)>? _devices; // (selector, label), null while loading
+  StreamSubscription<AudioDevicesChanged>? _hotplug;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // A Bluetooth headset connecting while this page is open should appear
+    // without reopening settings.
+    _hotplug = widget.container.bus
+        .on<AudioDevicesChanged>()
+        .listen((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _hotplug?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {

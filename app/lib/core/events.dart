@@ -66,6 +66,19 @@ class SoundStarted extends AppEvent {
   Map<String, Object?> toJson() => {'id': id};
 }
 
+/// The set of audio devices changed (a Bluetooth headset connected, a USB
+/// mic unplugged). Internal: the settings dropdowns refresh their lists,
+/// and the wake-word engine reopens capture when the change moved where
+/// the selected microphone actually resolves.
+class AudioDevicesChanged extends AppEvent {
+  const AudioDevicesChanged({required this.capturePathChanged});
+
+  /// True when the configured mic selector now resolves to a different
+  /// physical device than the capture was opened on (including to or from
+  /// nothing). Only then is an engine restart worth its cost.
+  final bool capturePathChanged;
+}
+
 /// A playback level sample from a native sound (mean |amplitude|, 0..1, at
 /// most ~20/s). Wire event: the page's reactive bar animates to audio it
 /// never touches.

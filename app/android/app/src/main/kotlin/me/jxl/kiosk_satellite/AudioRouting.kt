@@ -137,9 +137,13 @@ object AudioRouting {
 
 /**
  * MethodChannel face of [AudioRouting]: `list` for the settings dropdowns,
- * `setOutput` applied at startup and on every setting change. The microphone
- * selection travels with the mic stream itself (MicRecorder's onListen
- * arguments), so capture needs no call here.
+ * `setOutput` applied at startup and on every setting change, `resolveInput`
+ * for the Dart side's hotplug tracking (which live device a selector lands
+ * on right now, or null). The microphone selection travels with the mic
+ * stream itself (MicRecorder's onListen arguments), so capture needs no call
+ * here. A `devicesChanged` callback fires on every hotplug (a Bluetooth
+ * headset connecting, a USB mic unplugged) so selections can be re-resolved
+ * instead of holding whatever was true at the last stream open.
  */
 class AudioRoutingBridge(context: Context, messenger: BinaryMessenger) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/audio_routing")
@@ -158,8 +162,25 @@ class AudioRoutingBridge(context: Context, messenger: BinaryMessenger) {
                     AudioRouting.setOutput(call.argument<String>("selector"))
                     result.success(true)
                 }
+                "resolveInput" -> result.success(
+                    AudioRouting.resolve(call.argument<String>("selector"), source = true)?.id,
+                )
                 else -> result.notImplemented()
             }
         }
+        val am = context.applicationContext
+            .getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        am.registerAudioDeviceCallback(
+            object : android.media.AudioDeviceCallback() {
+                override fun onAudioDevicesAdded(added: Array<out AudioDeviceInfo>) {
+                    channel.invokeMethod("devicesChanged", null)
+                }
+
+                override fun onAudioDevicesRemoved(removed: Array<out AudioDeviceInfo>) {
+                    channel.invokeMethod("devicesChanged", null)
+                }
+            },
+            android.os.Handler(android.os.Looper.getMainLooper()),
+        )
     }
 }

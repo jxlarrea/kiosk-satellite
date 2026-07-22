@@ -369,7 +369,15 @@ class WakeWordManager extends Manager {
         // selection needs a stop/start. AudioRoutingManager has already
         // updated the selector by the time this listener runs (it inits,
         // and so subscribes, before this manager).
-        _restartForMicChange();
+        _restartForMicChange('microphone selection changed');
+      }
+    });
+
+    // Hotplug: the selected mic connected or vanished, so the open capture
+    // is on the wrong device until it reopens.
+    bus.on<AudioDevicesChanged>().listen((e) {
+      if (e.capturePathChanged) {
+        _restartForMicChange('selected microphone came or went');
       }
     });
 
@@ -720,13 +728,13 @@ class WakeWordManager extends Manager {
         ));
       });
 
-  /// Reopen the mic on the newly selected device. Models come from the disk
-  /// cache on the way back up, so the gap is brief; a rare, user-initiated
+  /// Reopen the mic on the right device. Models come from the disk cache on
+  /// the way back up, so the gap is brief; a rare, user- or hotplug-driven
   /// change is worth it.
-  Future<void> _restartForMicChange() async {
+  Future<void> _restartForMicChange(String reason) async {
     final running = _runningEngine;
     if (running == null || !running.running) return;
-    log.info(name, 'microphone selection changed; restarting the engine');
+    log.info(name, '$reason; restarting the engine');
     await running.stop();
     _runningEngine = null;
     await _sync();

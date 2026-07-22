@@ -155,6 +155,23 @@ class SoundManager extends Manager {
           await _channel.invokeMethod<void>('stop', {'id': '${p['id']}'});
           return const CommandResult.ok();
         },
+      ))
+      ..register(Command(
+        name: 'setSoundVolume',
+        description:
+            'Change the volume of a playing sound (the page applies live '
+            'volume changes mid-utterance, matching browser audio)',
+        params: const {
+          'id': 'id returned by playSound',
+          'volume': '0..1, relative to media volume',
+        },
+        handler: (p) async {
+          await _channel.invokeMethod<void>('setVolume', {
+            'id': '${p['id']}',
+            'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
+          });
+          return const CommandResult.ok();
+        },
       ));
   }
 

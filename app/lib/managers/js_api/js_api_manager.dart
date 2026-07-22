@@ -52,6 +52,7 @@ class JsApiManager extends Manager {
     'playSound': 'playSound',
     'prefetchSound': 'prefetchSound',
     'stopSound': 'stopSound',
+    'setSoundVolume': 'setSoundVolume',
   };
 
   @override

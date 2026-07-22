@@ -126,6 +126,7 @@ running in Kiosk Satellite; browser audio remains the fallback.
 | `playSound(url, {volume, cache, stream})` | `{id}` or `false` | Play `url` natively. `volume` is 0..1 relative to media volume (default 1). `cache: true` keeps the download so replays start instantly — right for fixed assets (chimes). `stream: true` plays while downloading, through a loopback relay, for sources still being generated server-side (TTS) — waiting for the whole file would delay speech by the synthesis tail. `false` means the app refused (fetch failed, playback error): fall back to browser audio. |
 | `prefetchSound(url)` | `boolean` | Warm the cache so the first `playSound` of `url` starts with zero fetch delay. |
 | `stopSound(id)` | `boolean` | Stop a playing sound early. A `sound-ended` event still fires. |
+| `setSoundVolume(id, volume)` | `boolean` | Change a playing sound's volume (0..1) live, so a mid-utterance volume change behaves like it does on a browser Audio element. |
 
 ## Events
 

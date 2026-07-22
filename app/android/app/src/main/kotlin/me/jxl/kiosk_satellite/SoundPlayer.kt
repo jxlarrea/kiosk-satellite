@@ -61,6 +61,14 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                     finish(call.argument<String>("id") ?: "", null)
                     result.success(true)
                 }
+                "setVolume" -> {
+                    val v = (call.argument<Double>("volume") ?: 1.0)
+                        .toFloat().coerceIn(0f, 1f)
+                    players[call.argument<String>("id") ?: ""]?.let {
+                        try { it.setVolume(v, v) } catch (_: IllegalStateException) {}
+                    }
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }

@@ -95,7 +95,10 @@ String buildKioskSatelliteScript({required String version, required String os}) 
       return call('playSound', Object.assign({ url: url }, opts || {}));
     },
     prefetchSound: function (url) { return call('prefetchSound', { url: url }); },
-    stopSound: function (id) { return call('stopSound', { id: id }); }
+    stopSound: function (id) { return call('stopSound', { id: id }); },
+    setSoundVolume: function (id, volume) {
+      return call('setSoundVolume', { id: id, volume: volume });
+    }
   };
 })();
 ''';
