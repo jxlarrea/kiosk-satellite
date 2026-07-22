@@ -163,6 +163,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                         "capture will likely be silent",
                 )
             }
+            AudioRouting.micHoldsCommDevice = commDeviceSet
         } else {
             @Suppress("DEPRECATION")
             am.startBluetoothSco()
@@ -259,6 +260,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             }
             commDeviceSet = false
             scoStarted = false
+            AudioRouting.micHoldsCommDevice = false
         }
     }
 }

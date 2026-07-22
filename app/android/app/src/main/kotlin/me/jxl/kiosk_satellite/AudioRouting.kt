@@ -58,10 +58,6 @@ object AudioRouting {
         val am = audioManager() ?: return null
         val parts = selector.split('|')
         val type = parts.getOrNull(0)?.toIntOrNull() ?: return null
-        // A stored output selection of a call route (possible before those
-        // were filtered from the list): treat as automatic rather than pin
-        // media playback to a route that silently swallows it.
-        if (!source && type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) return null
         val address = parts.getOrNull(1) ?: ""
         val name = parts.getOrNull(2) ?: ""
         val devices = am.getDevices(
@@ -108,13 +104,14 @@ object AudioRouting {
         AudioDeviceInfo.TYPE_REMOTE_SUBMIX,
         24, // TYPE_BUILTIN_SPEAKER_SAFE: the notification duck path, not a choice
         -> false
-        // The Bluetooth CALL route: valid as a microphone, but media
-        // playback cannot target it - Android ignores the pin and the
-        // sound plays into nothing. The same headset's media profile
-        // (A2DP) is the entry that belongs in the speaker list.
-        AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> source
         else -> true
     }
+
+    /** True while MicRecorder owns the communication device (a Bluetooth
+     *  mic is selected, so its SCO link is up for the life of capture).
+     *  SoundPlayer consults this before tearing down a link it brought up
+     *  for a call-route sound - never the mic's. */
+    @Volatile var micHoldsCommDevice = false
 
     private fun label(device: AudioDeviceInfo): String {
         val product = device.productName.toString().trim()

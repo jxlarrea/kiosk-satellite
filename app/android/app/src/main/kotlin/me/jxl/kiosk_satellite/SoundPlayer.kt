@@ -2,6 +2,8 @@ package me.jxl.kiosk_satellite
 
 import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.audiofx.Visualizer
 import android.os.Build
@@ -41,6 +43,10 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     /** Per-sound level taps, feeding the page's reactive bar. */
     private val visualizers = mutableMapOf<String, Visualizer>()
 
+    /** Sounds whose SCO link this player brought up itself (call-route
+     *  output selected while the mic does not hold the link). */
+    private val scoOwnedSounds = mutableSetOf<String>()
+
     init {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -65,22 +71,36 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         // Same id twice = replace: the page re-firing a chime wants the new
         // one, not two overlapped copies.
         players.remove(id)?.release()
+        val target = AudioRouting.currentOutput()
+        // The Bluetooth CALL route only carries communication audio: a
+        // media-usage stream pinned to it plays into nothing (and while the
+        // link is up, the same headset's A2DP profile is suspended, so the
+        // call route is the ONLY way to be heard there). Play call-route
+        // sounds as communication audio; everything else stays media.
+        val callRoute = target != null && target.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
         val mp = MediaPlayer()
         players[id] = mp
         return try {
             mp.setAudioAttributes(
                 AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(
+                        if (callRoute) AudioAttributes.USAGE_VOICE_COMMUNICATION
+                        else AudioAttributes.USAGE_MEDIA,
+                    )
+                    .setContentType(
+                        if (callRoute) AudioAttributes.CONTENT_TYPE_SPEECH
+                        else AudioAttributes.CONTENT_TYPE_MUSIC,
+                    )
                     .build(),
             )
+            if (callRoute) ensureScoLink(id, target!!)
             mp.setDataSource(source)
             val v = volume.toFloat().coerceIn(0f, 1f)
             mp.setVolume(v, v)
             mp.setOnPreparedListener { player ->
                 if (players[id] !== player) return@setOnPreparedListener
                 if (Build.VERSION.SDK_INT >= 28) {
-                    AudioRouting.currentOutput()?.let { player.preferredDevice = it }
+                    target?.let { player.preferredDevice = it }
                 }
                 player.start()
                 // The page times stop-word arming and its speaking UI off
@@ -156,12 +176,41 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         }
     }
 
+    /**
+     * A call-route sound needs the SCO link up. When a Bluetooth mic is
+     * selected the mic already holds it for the life of capture; otherwise
+     * bring it up for this sound and remember to tear it down at its end.
+     * The first moments can be quiet while the link ramps - selecting the
+     * Bluetooth mic alongside is the combination that avoids that.
+     */
+    private fun ensureScoLink(id: String, target: AudioDeviceInfo) {
+        if (Build.VERSION.SDK_INT < 31) return
+        val am = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (am.communicationDevice?.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) return
+        val comm = am.availableCommunicationDevices.firstOrNull {
+            it.type == target.type && it.address == target.address
+        } ?: am.availableCommunicationDevices.firstOrNull { it.type == target.type }
+        val up = try {
+            comm != null && am.setCommunicationDevice(comm)
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "call-route link rejected: ${e.message}")
+            false
+        }
+        if (up) scoOwnedSounds.add(id) else Log.w(TAG, "call-route link unavailable for $id")
+    }
+
     private fun finish(id: String, error: String?) {
         visualizers.remove(id)?.let {
             try {
                 it.enabled = false
                 it.release()
             } catch (_: Exception) {}
+        }
+        if (scoOwnedSounds.remove(id) && scoOwnedSounds.isEmpty() &&
+            !AudioRouting.micHoldsCommDevice && Build.VERSION.SDK_INT >= 31
+        ) {
+            val am = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            am.clearCommunicationDevice()
         }
         val mp = players.remove(id) ?: return
         try { mp.release() } catch (_: Exception) {}
