@@ -636,7 +636,19 @@ async function login() {
 function logout() {
   state.token = null; localStorage.removeItem('ks_token');
   if (state.ws) { state.ws.onclose = null; state.ws.close(); state.ws = null; }
-  $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
+  $('#app').classList.add('hidden');
+  // A wiped or factory-fresh device has no password to log in with - its
+  // login screen is a dead end (empty passwords never match, by design).
+  // That is exactly when a stale browser token 401s: route back into the
+  // wizard instead of stranding the user at login.
+  fetch('api/setup/status').then((r) => r.json()).then((setup) => {
+    if (setup && setup.setupNeeded && setup.passwordNeeded) {
+      $('#login').classList.add('hidden');
+      startWizard({ needPassword: true });
+    } else {
+      $('#login').classList.remove('hidden');
+    }
+  }).catch(() => { $('#login').classList.remove('hidden'); });
 }
 
 /* ---- Tabs ---- */
@@ -3145,9 +3157,12 @@ async function wizardRestore(file, btn) {
   btn.disabled = true;
   btn.textContent = 'Importing…';
   try {
-    // No session yet means we are on the password screen: the import runs
-    // authenticated, so the typed password is minted first.
-    if (!state.token) {
+    // On the password screen the import runs authenticated, so the typed
+    // password is minted first. needPassword overrides a lingering token
+    // deliberately: the device says no password exists, so any token the
+    // browser still holds is from a previous life of the device (wiped and
+    // being set up again) and would only 401.
+    if (!state.token || wizard.needPassword) {
       const password = $('#wzPassword') ? $('#wzPassword').value : '';
       if (password.length < 4) {
         throw wizFail('Set the admin password first',
