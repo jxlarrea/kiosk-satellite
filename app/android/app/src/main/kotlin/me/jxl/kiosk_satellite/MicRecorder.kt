@@ -1,11 +1,15 @@
 package me.jxl.kiosk_satellite
 
+import android.content.Context
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.media.audiofx.AcousticEchoCanceler
 import android.media.audiofx.AutomaticGainControl
 import android.media.audiofx.NoiseSuppressor
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -39,7 +43,7 @@ import kotlin.math.max
  * source also applies the platform's own NS/AGC by default, which is exactly
  * what [applyDsp] turns back off.
  */
-class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
+class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.StreamHandler {
     companion object {
         const val CHANNEL = "kiosk_satellite/mic"
         private const val TAG = "MicRecorder"
@@ -47,6 +51,7 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
         private const val CHUNK_BYTES = 1280 * 2 // 80 ms of 16-bit mono
     }
 
+    private val appContext = context.applicationContext
     private val eventChannel = EventChannel(messenger, CHANNEL)
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -56,6 +61,11 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
     private var aec: AcousticEchoCanceler? = null
     private var ns: NoiseSuppressor? = null
     private var agc: AutomaticGainControl? = null
+
+    // Bluetooth capture routing we brought up and therefore owe a teardown:
+    // the communication device on Android 12+, the SCO link below it.
+    private var commDeviceSet = false
+    private var scoStarted = false
 
     init {
         eventChannel.setStreamHandler(this)
@@ -87,6 +97,9 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
             return
         }
         record = rec
+        val selector = (arguments as? Map<*, *>)?.get("device") as? String
+        Log.i(TAG, "capture opening (device=${selector ?: "automatic"})")
+        applyPreferredDevice(rec, selector)
         applyDsp(rec.audioSessionId)
         recording = true
         rec.startRecording()
@@ -101,6 +114,48 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Pin capture to the user's chosen input, when one is configured and
+     * currently present. A Bluetooth microphone additionally needs its call
+     * audio link brought up - a plain setPreferredDevice quietly keeps
+     * recording from the built-in mic without it. Absent or unmatched
+     * selections fall through to Android's own routing.
+     */
+    private fun applyPreferredDevice(rec: AudioRecord, selector: String?) {
+        if (selector.isNullOrBlank()) return
+        val device = AudioRouting.resolve(selector, source = true)
+        if (device == null) {
+            // Absent device (BT speaker off) or a stale selector: Android
+            // routes. Said out loud because silently-wrong capture routing is
+            // exactly the complaint this feature answers.
+            Log.w(TAG, "selected mic not matched ($selector); automatic routing")
+            return
+        }
+        rec.preferredDevice = device
+        Log.i(TAG, "capture pinned to ${device.productName} (type ${device.type}, ${device.address})")
+        val bluetooth = device.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+            (Build.VERSION.SDK_INT >= 31 && device.type == 26 /* TYPE_BLE_HEADSET */)
+        if (!bluetooth) return
+        val am = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (Build.VERSION.SDK_INT >= 31) {
+            commDeviceSet = try {
+                am.setCommunicationDevice(device)
+            } catch (e: IllegalArgumentException) {
+                Log.w(TAG, "setCommunicationDevice rejected: ${e.message}")
+                false
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            am.startBluetoothSco()
+            @Suppress("DEPRECATION")
+            am.isBluetoothScoOn = true
+            scoStarted = true
+        }
+        if (commDeviceSet || scoStarted) {
+            Log.i(TAG, "bluetooth capture link up (${device.productName})")
         }
     }
 
@@ -175,5 +230,19 @@ class MicRecorder(messenger: BinaryMessenger) : EventChannel.StreamHandler {
             it.release()
         }
         record = null
+        // Only tear down Bluetooth routing this recorder brought up; a stop
+        // with automatic routing must not disturb whatever else holds it.
+        if (commDeviceSet || scoStarted) {
+            val am = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            if (commDeviceSet && Build.VERSION.SDK_INT >= 31) am.clearCommunicationDevice()
+            if (scoStarted) {
+                @Suppress("DEPRECATION")
+                am.isBluetoothScoOn = false
+                @Suppress("DEPRECATION")
+                am.stopBluetoothSco()
+            }
+            commDeviceSet = false
+            scoStarted = false
+        }
     }
 }

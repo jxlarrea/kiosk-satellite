@@ -34,6 +34,7 @@ class KioskApplication : Application() {
     private lateinit var deviceDetails: DeviceDetails
     private lateinit var brightness: BrightnessBridge
     private lateinit var sendspin: SendspinBridge
+    private lateinit var audioRouting: AudioRoutingBridge
 
     override fun onCreate() {
         super.onCreate()
@@ -49,7 +50,10 @@ class KioskApplication : Application() {
         FlutterEngineCache.getInstance().put(ENGINE_ID, engine)
 
         val messenger = engine.dartExecutor.binaryMessenger
-        micRecorder = MicRecorder(messenger)
+        // Before the mic: MicRecorder resolves its preferred device through
+        // AudioRouting, which the bridge initializes.
+        audioRouting = AudioRoutingBridge(applicationContext, messenger)
+        micRecorder = MicRecorder(applicationContext, messenger)
         background = BackgroundBridge(applicationContext, messenger)
         deviceDetails = DeviceDetails(applicationContext, messenger)
         brightness = BrightnessBridge(applicationContext, messenger)

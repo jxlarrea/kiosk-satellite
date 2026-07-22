@@ -2,6 +2,7 @@ import 'core/command_registry.dart';
 import 'core/event_bus.dart';
 import 'core/logging.dart';
 import 'core/manager.dart';
+import 'managers/audio/audio_routing_manager.dart';
 import 'managers/browser/browser_manager.dart';
 import 'managers/device/device_manager.dart';
 import 'managers/dlna/dlna_manager.dart';
@@ -40,6 +41,10 @@ class AppContainer {
     immich = ImmichManager(bus, commands, log, settings);
     motion = MotionManager(bus, commands, log, settings);
     homeAssistant = HomeAssistantManager(bus, commands, log, settings);
+    // Before wakeWord: its init seeds the mic selector the engine reads at
+    // start, and its SettingChanged subscription must run before wakeWord's
+    // restart re-opens capture.
+    audio = AudioRoutingManager(bus, commands, log, settings);
     wakeWord = WakeWordManager(bus, commands, log, settings);
     mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
@@ -62,6 +67,7 @@ class AppContainer {
   late final ImmichManager immich;
   late final MotionManager motion;
   late final HomeAssistantManager homeAssistant;
+  late final AudioRoutingManager audio;
   late final WakeWordManager wakeWord;
   late final MqttManager mqtt;
   late final SendspinManager sendspin;
@@ -84,6 +90,7 @@ class AppContainer {
         immich,
         motion,
         homeAssistant,
+        audio,
         wakeWord,
         mqtt,
         sendspin,

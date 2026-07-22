@@ -1234,6 +1234,32 @@ const wakeWordResumeTimeoutSeconds = SettingDef<num>(
   dependsOn: 'wake_word.enabled',
 );
 
+// Hidden: rendered as hand-built dropdowns (device settings screen and the
+// remote UI both) because the option lists are live hardware, not constants.
+// Value is AudioRouting's stable selector "type|address|name"; empty means
+// automatic (Android routes).
+const audioMicDevice = SettingDef<String>(
+  key: 'audio.mic_device',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Microphone',
+  description: 'The microphone wake word detection and voice turns capture from.',
+  category: 'Voice Satellite',
+  hidden: true,
+);
+
+const audioSpeakerDevice = SettingDef<String>(
+  key: 'audio.speaker_device',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Speaker',
+  description:
+      'Output for sound the app plays itself; dashboard audio follows the '
+      'system route.',
+  category: 'Voice Satellite',
+  hidden: true,
+);
+
 const vsSuppressScreensaver = SettingDef<bool>(
   key: 'vs.suppress_screensaver',
   type: SettingType.boolean,
@@ -1861,6 +1887,8 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordEnabled,
   wakeWordBackground,
   wakeWordResumeTimeoutSeconds,
+  audioMicDevice,
+  audioSpeakerDevice,
   vsSuppressScreensaver,
   haUrl,
   haToken,

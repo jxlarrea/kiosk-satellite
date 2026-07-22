@@ -1287,6 +1287,21 @@ class _CategoryContentState extends State<_CategoryContent> {
                         def: def,
                         onChanged: () => setState(() {}),
                       ),
+                  // Device pickers are hand-built (their options are live
+                  // hardware); the remote UI mirrors both rows. The mic one
+                  // only while detection is on — with it off this app never
+                  // opens the microphone, the browser does.
+                  if (container.settings.get(wakeWordEnabled))
+                    AudioDeviceTile(
+                      container: container,
+                      def: audioMicDevice,
+                      inputs: true,
+                    ),
+                  AudioDeviceTile(
+                    container: container,
+                    def: audioSpeakerDevice,
+                    inputs: false,
+                  ),
                   // Not a setting, but a row on the same card, so it sits
                   // behind the same line as the rest. Gone with the rest
                   // when detection is off: there is no state to report
@@ -2416,6 +2431,94 @@ class _SectionHeading extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+}
+
+/// A microphone or speaker picker over the live device list ([def] selects
+/// which). Options come from getAudioDevices at open; the stored value is
+/// AudioRouting's stable selector, so a device that is currently off still
+/// shows (by the name embedded in its selector) instead of being silently
+/// forgotten.
+class AudioDeviceTile extends StatefulWidget {
+  const AudioDeviceTile({
+    super.key,
+    required this.container,
+    required this.def,
+    required this.inputs,
+  });
+
+  final AppContainer container;
+  final SettingDef<String> def;
+
+  /// True lists capture devices, false playback devices.
+  final bool inputs;
+
+  @override
+  State<AudioDeviceTile> createState() => _AudioDeviceTileState();
+}
+
+class _AudioDeviceTileState extends State<AudioDeviceTile> {
+  List<(String, String)>? _devices; // (selector, label), null while loading
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final result = await widget.container.commands.execute(
+      'getAudioDevices',
+      const {},
+    );
+    if (!mounted) return;
+    final data = result.data;
+    final list = (data is Map ? data[widget.inputs ? 'inputs' : 'outputs'] : null);
+    setState(() {
+      _devices = [
+        if (list is List)
+          for (final d in list)
+            if (d is Map) ('${d['selector']}', '${d['label']}'),
+      ];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.container;
+    final current = c.settings.get(widget.def);
+    final devices = _devices;
+    final options = <(String, String)>[
+      ('', 'Automatic'),
+      ...?devices,
+      // A configured device that is not present right now: keep it choosable
+      // (it comes back when the device does), named from its selector.
+      if (devices != null &&
+          current.isNotEmpty &&
+          !devices.any((d) => d.$1 == current))
+        (
+          current,
+          '${current.split('|').length > 2 && current.split('|')[2].isNotEmpty ? current.split('|')[2] : 'Selected device'} (not connected)',
+        ),
+    ];
+    return ListTile(
+      title: Text(widget.def.title),
+      subtitle: Text(widget.def.description),
+      trailing: devices == null
+          ? const Text('…')
+          : DropdownButton<String>(
+              value: options.any((o) => o.$1 == current) ? current : '',
+              items: [
+                for (final (selector, label) in options)
+                  DropdownMenuItem(value: selector, child: Text(label)),
+              ],
+              onChanged: (v) async {
+                if (v == null) return;
+                await c.settings.setFromJson(widget.def.key, v);
+                if (mounted) setState(() {});
+              },
+            ),
     );
   }
 }

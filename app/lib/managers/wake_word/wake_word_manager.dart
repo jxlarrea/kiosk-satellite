@@ -364,6 +364,12 @@ class WakeWordManager extends Manager {
       if (e.key == defs.wakeWordEnabled.key ||
           e.key == defs.wakeWordBackground.key) {
         _sync();
+      } else if (e.key == defs.audioMicDevice.key) {
+        // The engine reads its capture device when the mic opens, so a new
+        // selection needs a stop/start. AudioRoutingManager has already
+        // updated the selector by the time this listener runs (it inits,
+        // and so subscribes, before this manager).
+        _restartForMicChange();
       }
     });
 
@@ -569,13 +575,8 @@ class WakeWordManager extends Manager {
           if (!_engine.running) {
             return const CommandResult.fail('engine not running');
           }
-          await _engine.startAudioStream((pcm, preRoll) {
-            bus.publish(AudioChunk(
-              base64: base64Encode(pcm),
-              sampleRate: 16000,
-              preRoll: preRoll,
-            ));
-          });
+          _pageAudioActive = true;
+          await _openPageAudioStream();
           return const CommandResult.ok({'sampleRate': 16000});
         },
       ))
@@ -583,6 +584,7 @@ class WakeWordManager extends Manager {
         name: 'stopAudioStream',
         description: 'Stop streaming mic audio to the page',
         handler: (_) async {
+          _pageAudioActive = false;
           await _engine.stopAudioStream();
           return const CommandResult.ok();
         },
@@ -702,6 +704,40 @@ class WakeWordManager extends Manager {
   /// Bring the engine up (or down) with the config, then pause/resume
   /// *detection* to match [_active].
   ///
+  /// Whether the page asked for the mic audio stream and has not released
+  /// it. Owned here (not by the engine) so a restart can restore the stream:
+  /// the delivery callback is this manager's, the page only consumes events.
+  bool _pageAudioActive = false;
+
+  /// Feed the page: every chunk (pre-roll first) as a kiosksatellite:audio
+  /// event. Shared by the startAudioStream command and the restart path.
+  Future<void> _openPageAudioStream() =>
+      _engine.startAudioStream((pcm, preRoll) {
+        bus.publish(AudioChunk(
+          base64: base64Encode(pcm),
+          sampleRate: 16000,
+          preRoll: preRoll,
+        ));
+      });
+
+  /// Reopen the mic on the newly selected device. Models come from the disk
+  /// cache on the way back up, so the gap is brief; a rare, user-initiated
+  /// change is worth it.
+  Future<void> _restartForMicChange() async {
+    final running = _runningEngine;
+    if (running == null || !running.running) return;
+    log.info(name, 'microphone selection changed; restarting the engine');
+    await running.stop();
+    _runningEngine = null;
+    await _sync();
+    // The page's audio stream (an idle-held one included) died with the old
+    // engine; put it back so the next turn is not a 60-second hang against a
+    // stream the page still believes is open.
+    if (_pageAudioActive && _engine.running) {
+      await _openPageAudioStream();
+    }
+  }
+
   /// The engine stays running — mic open, models loaded — for the whole time
   /// wake word detection is enabled. Suspending during a voice turn only
   /// pauses detection: tearing the engine down per wake would re-download and
@@ -838,6 +874,7 @@ class WakeWordManager extends Manager {
           // The page that opened the audio stream is gone with the turn;
           // without closing it every mic chunk keeps being base64-encoded
           // and published to a listener that no longer exists.
+          _pageAudioActive = false;
           await _engine.stopAudioStream();
           setActive(true);
         }

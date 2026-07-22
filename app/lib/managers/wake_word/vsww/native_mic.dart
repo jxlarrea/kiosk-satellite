@@ -8,6 +8,15 @@ import 'package:flutter/services.dart';
 class NativeMic {
   static const _channel = EventChannel('kiosk_satellite/mic');
 
-  Stream<Uint8List> stream() =>
-      _channel.receiveBroadcastStream().map((e) => e as Uint8List);
+  /// The user's capture device as an AudioRouting selector
+  /// ("type|address|name", empty = Android routes). Set by AudioRoutingManager
+  /// at startup and on setting changes; read when a stream opens, so it must
+  /// be current before the engine (re)starts.
+  static String deviceSelector = '';
+
+  Stream<Uint8List> stream() => _channel
+      .receiveBroadcastStream(
+        deviceSelector.isEmpty ? null : {'device': deviceSelector},
+      )
+      .map((e) => e as Uint8List);
 }

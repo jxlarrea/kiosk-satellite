@@ -1062,6 +1062,17 @@ async function loadSettings() {
       // render() clears the container, so it goes first and the assigned
       // satellite card is prepended on top as the page's first item.
       render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length));
+      // Microphone / speaker pickers on the same card as the wake word
+      // settings, mirroring the device's rows in the same place.
+      {
+        const vsCard = root.querySelector('.card');
+        if (vsCard) {
+          await appendAudioDeviceRows(
+            vsCard,
+            byKey['wake_word.enabled']?.value !== false,
+          );
+        }
+      }
       // The satellite this kiosk identifies as: the page's own choice wins
       // (localStorage, changeable in the Voice Satellite panel); the
       // wizard's stored pick is the fallback before the page has booted.
@@ -2146,6 +2157,59 @@ function readOnlyRow(name, desc, value) {
   v.textContent = value;
   row.appendChild(v);
   return row;
+}
+
+// The microphone / speaker pickers on the Voice Satellite page, mirroring the
+// device's rows: hand-built because their options are live hardware from
+// getAudioDevices, not declared constants. Values are the app's stable device
+// selectors; empty means automatic. A configured device that is currently
+// absent stays choosable under the name embedded in its selector. The mic row
+// only while detection is on (with it off this app never opens the mic).
+async function appendAudioDeviceRows(card, wakeWordOn) {
+  let data = null;
+  try {
+    const r = await cmd('getAudioDevices');
+    if (r.ok) data = r.data;
+  } catch (_) {}
+  if (!data) return;
+  const rows = [];
+  if (wakeWordOn) {
+    rows.push({
+      key: 'audio.mic_device',
+      title: 'Microphone',
+      desc: 'The microphone wake word detection and voice turns capture from.',
+      list: data.inputs || [],
+      current: data.micSelected || '',
+    });
+  }
+  rows.push({
+    key: 'audio.speaker_device',
+    title: 'Speaker',
+    desc: 'Output for sound the app plays itself; dashboard audio follows the system route.',
+    list: data.outputs || [],
+    current: data.speakerSelected || '',
+  });
+  for (const spec of rows) {
+    const row = readOnlyRow(spec.title, spec.desc, '');
+    row.querySelector('span').remove();
+    const sel = document.createElement('select');
+    const opts = [{ selector: '', label: 'Automatic' }, ...spec.list];
+    if (spec.current && !opts.some((o) => o.selector === spec.current)) {
+      const name = spec.current.split('|')[2] || 'Selected device';
+      opts.push({ selector: spec.current, label: `${name} (not connected)` });
+    }
+    for (const o of opts) {
+      const opt = document.createElement('option');
+      opt.value = o.selector;
+      opt.textContent = o.label;
+      opt.selected = o.selector === spec.current;
+      sel.appendChild(opt);
+    }
+    sel.addEventListener('change', () =>
+      api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [spec.key]: sel.value }) }));
+    row.appendChild(sel);
+    card.appendChild(row);
+  }
 }
 // The navigation path of a view within a dashboard: "url_path/route", or
 // just the dashboard when the route is empty (its default first view).
