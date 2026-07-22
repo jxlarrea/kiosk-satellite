@@ -62,6 +62,15 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+        // Same signing as release so a profile build installs OVER the
+        // release app (keeping its data) when profiling on a test device.
+        getByName("profile") {
+            signingConfig = if (signing("storeFile") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+        }
     }
 }
 

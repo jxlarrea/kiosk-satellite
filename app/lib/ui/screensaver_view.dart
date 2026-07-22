@@ -1525,8 +1525,7 @@ class _KenBurnsDrift extends StatefulWidget {
   State<_KenBurnsDrift> createState() => _KenBurnsDriftState();
 }
 
-class _KenBurnsDriftState extends State<_KenBurnsDrift>
-    with SingleTickerProviderStateMixin {
+class _KenBurnsDriftState extends State<_KenBurnsDrift> {
   static const _anchors = [
     Alignment.topLeft,
     Alignment.bottomRight,
@@ -1534,23 +1533,44 @@ class _KenBurnsDriftState extends State<_KenBurnsDrift>
     Alignment.bottomLeft,
   ];
 
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: widget.duration,
-  )..forward();
+  /// A timer at ~12fps, deliberately NOT an AnimationController: a ticker
+  /// demands a frame every vsync for its whole life, and this zoom moves
+  /// 0.1 scale over the slide's many seconds — under a pixel per step even
+  /// at this cadence. At 60fps it kept a full CPU core busy around the
+  /// clock on weak panels (measured on an Echo Show 5: the "idle" kiosk at
+  /// 40+fps, 60C, and a GC sawtooth in available RAM, because a kiosk's
+  /// idle hours ARE screensaver hours).
+  static const _step = Duration(milliseconds: 80);
+
+  final _progress = ValueNotifier<double>(0);
+  final _clock = Stopwatch()..start();
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(_step, (_) {
+      final ms = widget.duration.inMilliseconds;
+      final t = ms <= 0 ? 1.0 : _clock.elapsedMilliseconds / ms;
+      _progress.value = t.clamp(0.0, 1.0);
+      // Fully zoomed: stop asking for frames at all.
+      if (t >= 1) _timer?.cancel();
+    });
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _timer?.cancel();
+    _progress.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => ClipRect(
     child: AnimatedBuilder(
-      animation: _controller,
+      animation: _progress,
       builder: (context, child) => Transform.scale(
-        scale: 1 + 0.1 * _controller.value,
+        scale: 1 + 0.1 * _progress.value,
         alignment: _anchors[widget.index % _anchors.length],
         child: child,
       ),

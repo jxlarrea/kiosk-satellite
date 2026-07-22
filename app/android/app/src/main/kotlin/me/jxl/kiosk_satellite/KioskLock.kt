@@ -155,6 +155,16 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
 
     private fun hideBars() {
         if (Build.VERSION.SDK_INT >= 30) {
+            // Only when a bar is actually showing: an unconditional hide()
+            // kicks a no-op insets animation even when everything is already
+            // hidden, and at this ticker's cadence that renders the whole
+            // window at ~20fps forever - measured as a third of the app's
+            // constant CPU burn (and its allocation churn) on an Echo Show 5.
+            val insets = activity.window.decorView.rootWindowInsets
+            val visible = insets == null ||
+                insets.isVisible(WindowInsets.Type.statusBars()) ||
+                insets.isVisible(WindowInsets.Type.navigationBars())
+            if (!visible) return
             activity.window.insetsController?.hide(
                 WindowInsets.Type.statusBars()
                         or WindowInsets.Type.navigationBars())
