@@ -141,11 +141,27 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         if (!bluetooth) return
         val am = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (Build.VERSION.SDK_INT >= 31) {
+            // setCommunicationDevice only accepts entries from
+            // availableCommunicationDevices - the route handle, not the
+            // input device we resolved. Passing the input is silently
+            // refused (returns false) and capture stays on a dead SCO
+            // input, which reads as a mic that hears nothing.
+            val comm = am.availableCommunicationDevices.firstOrNull {
+                it.type == device.type && it.address == device.address
+            } ?: am.availableCommunicationDevices.firstOrNull { it.type == device.type }
             commDeviceSet = try {
-                am.setCommunicationDevice(device)
+                comm != null && am.setCommunicationDevice(comm)
             } catch (e: IllegalArgumentException) {
                 Log.w(TAG, "setCommunicationDevice rejected: ${e.message}")
                 false
+            }
+            if (!commDeviceSet) {
+                Log.w(
+                    TAG,
+                    "bluetooth capture link refused (comm device " +
+                        "${if (comm == null) "not offered" else "rejected"}); " +
+                        "capture will likely be silent",
+                )
             }
         } else {
             @Suppress("DEPRECATION")
