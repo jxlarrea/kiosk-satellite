@@ -135,6 +135,16 @@ class SettingsManager extends Manager {
             // permissions is already running").
             final heldStartUrl = firstSetup ? map.remove(startUrl.key) : null;
             var applied = await import(map);
+            // A stale backup can carry Immich credentials with the
+            // validated flag off (exported after something reset it).
+            // The user's remedy was a manual re-validate that a machine
+            // can do: same check the settings button runs, and the flag
+            // ends up honest either way.
+            if (get(screensaverImmichUrl).isNotEmpty &&
+                get(screensaverImmichApiKey).isNotEmpty &&
+                !get(screensaverImmichValidated)) {
+              unawaited(commands.execute('immichValidate', const {}));
+            }
             // Stash localStorage BEFORE the reload below, so the fresh page
             // load picks it up (see BrowserManager.onPageLoaded).
             final local = config['localStorage'];
