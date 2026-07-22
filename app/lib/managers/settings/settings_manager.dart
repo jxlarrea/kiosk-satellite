@@ -46,7 +46,18 @@ class SettingsManager extends Manager {
         Command(
           name: 'importConfig',
           description: 'Apply a configuration produced by exportConfig.',
-          params: const {'config': 'The exported JSON object'},
+          params: const {
+            'config': 'The exported JSON object',
+            'adoptIdentity':
+                "take over the backup's device identity (device name, MQTT "
+                'device id) as a replacement device; false keeps this '
+                "device's own so the two can run side by side (default true)",
+            'importLocalStorage':
+                "apply the backup's page localStorage, which carries the "
+                'Voice Satellite selection; false leaves it (and the '
+                'satellite entity setting) alone so this device answers as '
+                'its own satellite (default true)',
+          },
           handler: (p) async {
             final config = p['config'];
             if (config is! Map) {
@@ -61,10 +72,44 @@ class SettingsManager extends Manager {
             if (settings is! Map) {
               return const CommandResult.fail('no settings in file');
             }
+            final adoptIdentity = p['adoptIdentity'] != false;
+            final importLocal = p['importLocalStorage'] != false;
             // Whether this device was still unconfigured, read before the
             // import flips it: it decides the permission pass below.
             final firstSetup = get(startUrl).isEmpty;
             final map = settings.map((k, v) => MapEntry(k.toString(), v));
+            // Side-by-side clone: the backup's identity must not come
+            // along, or the two devices contend for one MQTT client id
+            // and one discovered HA device, each override the other's
+            // discovery on launch (issue #25). Dropping the keys keeps
+            // this device's own name and id; a fresh device simply
+            // generates a new id at the next MQTT connect.
+            if (!adoptIdentity) {
+              final importedId = map.remove(mqttDeviceId.key);
+              final importedName = map.remove(deviceName.key);
+              // A device that inherited this very identity from an older
+              // verbatim clone would keep colliding by "keeping its own";
+              // equality with the backup is that inheritance, so shed it
+              // (the id regenerates at the next MQTT connect, the name is
+              // the user's to re-set).
+              if (importedId is String &&
+                  importedId.isNotEmpty &&
+                  get(mqttDeviceId) == importedId) {
+                await set(mqttDeviceId, '');
+              }
+              if (importedName is String &&
+                  importedName.isNotEmpty &&
+                  get(deviceName) == importedName) {
+                await set(deviceName, '');
+              }
+            }
+            // Same idea for the satellite: the entity selection lives in
+            // the page's localStorage plus this seed setting, and two
+            // devices answering as one assist_satellite displace each
+            // other mid-turn.
+            if (!importLocal) {
+              map.remove(haSatelliteEntity.key);
+            }
             // On a first setup the start URL is held back until the very
             // end, like the wizard does: it is what flips the app to
             // configured and loads the page, whose wake-word engine
@@ -77,7 +122,7 @@ class SettingsManager extends Manager {
             // Stash localStorage BEFORE the reload below, so the fresh page
             // load picks it up (see BrowserManager.onPageLoaded).
             final local = config['localStorage'];
-            if (local is String && local.isNotEmpty) {
+            if (importLocal && local is String && local.isNotEmpty) {
               await commands.execute('setLocalStorage', {'data': local});
             }
             // An onboarding import IS the setup, so it also does the

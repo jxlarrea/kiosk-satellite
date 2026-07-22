@@ -1601,9 +1601,12 @@ async function loadSettings() {
       try { config = JSON.parse(await f.text()); } catch (_) {
         imp.desc.textContent = 'That file is not valid JSON.'; return;
       }
-      if (!confirm("Replace this device's settings with the file's?")) return;
-      const res = await api('/api/config/import', {
-        method: 'POST', body: JSON.stringify(config) });
+      const opts = await askImportOptions(
+        config && config.settings && config.settings['device.name']);
+      if (!opts) return;
+      const res = await api(
+        `/api/config/import?adoptIdentity=${opts.adopt ? 1 : 0}&importLocalStorage=${opts.local ? 1 : 0}`,
+        { method: 'POST', body: JSON.stringify(config) });
       const out = await res.json().catch(() => ({}));
       imp.desc.textContent = res.ok
         ? `Applied ${out.data && out.data.applied} settings. The page may reload.`
@@ -2556,6 +2559,57 @@ function settingRow(s) {
 // A modal that walks the Home Assistant media tree over haBrowseMedia, the
 // same command and the same shape the device's native picker uses. Resolves to
 // the chosen media-source id, or null if cancelled.
+// The two questions a configuration import must ask (issue #25): does this
+// device become the backup's device (name + MQTT identity) or stay itself,
+// and does the page's saved data (which carries the Voice Satellite
+// selection) come along. Resolves {adopt, local} or null on cancel. The
+// checkbox default follows the choice until the user touches it.
+function askImportOptions(backupName) {
+  return new Promise((resolve) => {
+    const back = document.createElement('div');
+    back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+      + 'display:grid; place-items:center; z-index:1000; padding:16px';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'width:100%; max-width:460px; margin:0; padding:18px';
+    back.appendChild(card);
+    document.body.appendChild(back);
+    const close = (val) => { back.remove(); resolve(val); };
+    back.addEventListener('click', (e) => { if (e.target === back) close(null); });
+
+    let adopt = false;
+    let local = false;
+    let localTouched = false;
+    const replaceLabel = backupName && backupName.trim()
+      ? `Replace "${backupName.trim()}"` : 'Replace the original device';
+
+    card.innerHTML = `
+      <h2 class="card-title" style="margin-top:0">Import configuration</h2>
+      <div style="font-size:13.5px; margin-bottom:12px">Replace this device's settings with the file's? The page may reload.</div>
+      <label style="display:block; margin-bottom:8px"><input type="radio" name="impid"> Set up as new device<div class="desc" style="margin-left:22px">Keeps its own name and MQTT identity, so both devices can run.</div></label>
+      <label style="display:block; margin-bottom:12px"><input type="radio" name="impid"> <span id="impReplaceLbl"></span><div class="desc" style="margin-left:22px">Keeps the backup's name and MQTT identity; the original device must stay offline.</div></label>
+      <label style="display:block; margin-bottom:16px"><input type="checkbox" id="impLocal"> Restore dashboard data<div class="desc" style="margin-left:22px">Includes the Voice Satellite selection; two devices must not share one satellite.</div></label>
+      <div style="display:flex; gap:8px; justify-content:flex-end">
+        <button class="btn-ghost" id="impCancel">Cancel</button>
+        <button class="action" id="impGo">Import</button>
+      </div>`;
+    card.querySelector('#impReplaceLbl').textContent = replaceLabel;
+    const radios = card.querySelectorAll('input[type=radio]');
+    const localCb = card.querySelector('#impLocal');
+    radios[0].checked = true;
+    radios.forEach((r, i) => r.addEventListener('change', () => {
+      adopt = i === 1;
+      if (!localTouched) { local = adopt; localCb.checked = adopt; }
+    }));
+    localCb.addEventListener('change', () => {
+      local = localCb.checked;
+      localTouched = true;
+    });
+    card.querySelector('#impCancel').addEventListener('click', () => close(null));
+    card.querySelector('#impGo').addEventListener('click', () => close({ adopt, local }));
+  });
+}
+
 function openMediaBrowser() {
   return new Promise((resolve) => {
     const trail = [{ id: undefined, title: 'Media' }];
@@ -3085,6 +3139,9 @@ async function wizardRestore(file, btn) {
     delete config.settings['remote.password'];
     delete config.settings['remote.enabled'];
   }
+  const opts = await askImportOptions(
+    config.settings && config.settings['device.name']);
+  if (!opts) return;
   btn.disabled = true;
   btn.textContent = 'Importing…';
   try {
@@ -3102,7 +3159,9 @@ async function wizardRestore(file, btn) {
       state.token = out.token;
       localStorage.setItem('ks_token', state.token);
     }
-    const res = await api('/api/config/import', { method: 'POST', body: JSON.stringify(config) });
+    const res = await api(
+      `/api/config/import?adoptIdentity=${opts.adopt ? 1 : 0}&importLocalStorage=${opts.local ? 1 : 0}`,
+      { method: 'POST', body: JSON.stringify(config) });
     const out = await res.json();
     if (!res.ok) throw wizFail('Import failed', out.error || 'The file could not be applied.');
     // Setup is complete (the backup's start URL landed); a reload leaves

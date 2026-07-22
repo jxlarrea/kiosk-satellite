@@ -22,6 +22,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
 import 'color_picker.dart';
+import 'import_options_dialog.dart';
 import 'media_picker.dart';
 import 'wake_word_tester.dart';
 
@@ -532,29 +533,17 @@ class _CategoryContentState extends State<_CategoryContent> {
       return;
     }
     if (!mounted) return;
-    final sure = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Import configuration'),
-        content: const Text(
-          "Replace this device's settings with the file's? The page may "
-          'reload.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Import'),
-          ),
-        ],
-      ),
+    final options = await showImportOptionsDialog(
+      context,
+      backupDeviceName: config is Map
+          ? '${(config['settings'] as Map?)?['device.name'] ?? ''}'
+          : null,
     );
-    if (sure != true) return;
+    if (options == null) return;
     final result = await widget.container.commands.execute('importConfig', {
       'config': config,
+      'adoptIdentity': options.adoptIdentity,
+      'importLocalStorage': options.importLocalStorage,
     });
     if (result.ok) {
       _toast('Applied ${(result.data as Map)['applied']} settings');

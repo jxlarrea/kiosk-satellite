@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'import_options_dialog.dart';
 import 'kiosk_screen.dart';
 
 /// First-run onboarding: a five-step wizard, Home Assistant-oriented from
@@ -174,9 +175,11 @@ class _SetupScreenState extends State<SetupScreen> {
   /// Restore a full backup from the welcome step. A backup from a configured
   /// device carries the start URL, and applying it fires this screen's
   /// SettingChanged listener, which enters the kiosk: the import IS the
-  /// setup. Everything is applied verbatim, remote password included — this
-  /// is the clone-a-tablet path, and the person holding the backup knows its
-  /// password.
+  /// setup. Settings are applied verbatim, remote password included (the
+  /// person holding the backup knows its password) — except device identity
+  /// and the page data, which the options dialog decides: cloning a second
+  /// tablet must not inherit the original's MQTT identity or satellite
+  /// (issue #25), while replacing a dead tablet should.
   Future<void> _importBackup() async {
     setState(() {
       _error = null;
@@ -201,8 +204,23 @@ class _SetupScreenState extends State<SetupScreen> {
       );
       return;
     }
+    if (!mounted) return;
+    // The clone-vs-replace question (issue #25): a backup applied verbatim
+    // to a second live device makes the two contend for one MQTT identity
+    // and one Voice Satellite entity.
+    final options = await showImportOptionsDialog(
+      context,
+      backupDeviceName: config is Map
+          ? '${(config['settings'] as Map?)?['device.name'] ?? ''}'
+          : null,
+    );
+    if (options == null) return;
     setState(() => _busy = true);
-    final result = await c.commands.execute('importConfig', {'config': config});
+    final result = await c.commands.execute('importConfig', {
+      'config': config,
+      'adoptIdentity': options.adoptIdentity,
+      'importLocalStorage': options.importLocalStorage,
+    });
     if (!mounted) return;
     setState(() => _busy = false);
     if (!result.ok) {

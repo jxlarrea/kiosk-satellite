@@ -244,8 +244,16 @@ class RemoteManager extends Manager {
       case ('POST', 'api/config/import'):
         final body = await _body(request);
         if (body == null) return _json(400, {'error': 'invalid JSON'});
+        // The body is the config file itself, so the import options ride
+        // as query parameters ("0"/"false" = off, anything else = on).
+        bool flag(String name) {
+          final v = request.url.queryParameters[name];
+          return v != '0' && v != 'false';
+        }
         final imported = await commands.execute('importConfig', {
           'config': body,
+          'adoptIdentity': flag('adoptIdentity'),
+          'importLocalStorage': flag('importLocalStorage'),
         });
         return _json(
           imported.ok ? 200 : 400,
