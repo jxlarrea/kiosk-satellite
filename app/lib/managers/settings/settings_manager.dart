@@ -26,6 +26,14 @@ class SettingsManager extends Manager {
   /// instead of presenting an empty wizard.
   bool importFinishing = false;
 
+  /// True while an import batch is applying (and briefly after, until its
+  /// asynchronously delivered SettingChanged events have settled).
+  /// Derived-state listeners that INVALIDATE things when their inputs
+  /// change (the Immich validation reset) must stand down during it: an
+  /// imported validation flag arrives together with the very credentials
+  /// it validated, and the reset would stomp it after the fact.
+  bool importing = false;
+
   @override
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -336,10 +344,22 @@ class SettingsManager extends Manager {
   };
 
   Future<int> import(Map<String, Object?> config) async {
-    var applied = 0;
-    for (final entry in config.entries) {
-      if (await setFromJson(entry.key, entry.value)) applied++;
+    importing = true;
+    try {
+      var applied = 0;
+      for (final entry in config.entries) {
+        if (await setFromJson(entry.key, entry.value)) applied++;
+      }
+      return applied;
+    } finally {
+      // The bus delivers SettingChanged asynchronously, so listeners for
+      // this batch can still be running when the loop ends; hold the flag
+      // through a generous settle window rather than dropping it on a
+      // microtask boundary nobody can reason about.
+      unawaited(Future<void>.delayed(
+        const Duration(seconds: 1),
+        () => importing = false,
+      ));
     }
-    return applied;
   }
 }

@@ -63,9 +63,13 @@ class ImmichManager extends Manager {
   Future<void> init() async {
     bus.on<SettingChanged>().listen((e) {
       // A changed server or key invalidates the validation — and with it
-      // every dependent row, until the user validates again.
-      if (e.key == defs.screensaverImmichUrl.key ||
-          e.key == defs.screensaverImmichApiKey.key) {
+      // every dependent row, until the user validates again. NOT during an
+      // import: the backup's validated flag arrives together with the very
+      // credentials it validated, and resetting after the fact forced a
+      // pointless re-validate on every restored device.
+      if ((e.key == defs.screensaverImmichUrl.key ||
+              e.key == defs.screensaverImmichApiKey.key) &&
+          !_settings.importing) {
         if (_settings.get(defs.screensaverImmichValidated)) {
           unawaited(_settings.set(defs.screensaverImmichValidated, false));
         }
