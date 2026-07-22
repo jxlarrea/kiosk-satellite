@@ -2185,7 +2185,7 @@ async function appendAudioDeviceRows(card, wakeWordOn) {
   rows.push({
     key: 'audio.speaker_device',
     title: 'Speaker',
-    desc: 'Output for sound the app plays itself; dashboard audio follows the system route.',
+    desc: 'Output for sound the app plays itself; dashboard audio follows the system route. Echo cancellation only works with the microphone and speaker on the same device.',
     list: data.outputs || [],
     current: data.speakerSelected || '',
   });

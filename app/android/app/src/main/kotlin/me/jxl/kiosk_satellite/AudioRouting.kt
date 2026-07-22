@@ -65,6 +65,10 @@ object AudioRouting {
         track.preferredDevice = device
     }
 
+    /** The selected output as a live device, or null for automatic. For
+     *  players that are not AudioTracks (MediaPlayer) and so pin themselves. */
+    fun currentOutput(): AudioDeviceInfo? = resolve(outputSelector, source = false)
+
     /**
      * Match a selector against the live device list: type+address first (the
      * stable pin for BT/USB), then type+name, then the first device of the

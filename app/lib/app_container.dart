@@ -17,6 +17,7 @@ import 'managers/screen/screen_manager.dart';
 import 'managers/screensaver/immich_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
 import 'managers/sendspin/sendspin_manager.dart';
+import 'managers/sound/sound_manager.dart';
 import 'managers/settings/provisioning.dart';
 import 'managers/settings/settings_manager.dart';
 import 'managers/update/update_manager.dart';
@@ -49,6 +50,7 @@ class AppContainer {
     mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
     dlna = DlnaManager(bus, commands, log, settings);
+    sound = SoundManager(bus, commands, log);
     update = UpdateManager(bus, commands, log);
     remote = RemoteManager(bus, commands, log, settings);
   }
@@ -72,6 +74,7 @@ class AppContainer {
   late final MqttManager mqtt;
   late final SendspinManager sendspin;
   late final DlnaManager dlna;
+  late final SoundManager sound;
   late final UpdateManager update;
   late final RemoteManager remote;
 
@@ -95,6 +98,7 @@ class AppContainer {
         mqtt,
         sendspin,
         dlna,
+        sound,
         update,
         remote,
       ];

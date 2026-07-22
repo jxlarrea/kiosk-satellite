@@ -49,6 +49,9 @@ class JsApiManager extends Manager {
     'getWakeWordState': 'getWakeWordState',
     'startAudioStream': 'startAudioStream',
     'stopAudioStream': 'stopAudioStream',
+    'playSound': 'playSound',
+    'prefetchSound': 'prefetchSound',
+    'stopSound': 'stopSound',
   };
 
   @override

@@ -53,6 +53,23 @@ class VolumeChanged extends AppEvent {
   String get wireName => 'volumechanged';
 }
 
+/// A native sound (playSound) finished, failed, or was stopped. Wire event
+/// so the page can await completion of audio it handed over.
+class SoundEnded extends AppEvent {
+  const SoundEnded({required this.id, this.error});
+  final String id;
+  final String? error;
+
+  @override
+  String get wireName => 'sound-ended';
+
+  @override
+  Map<String, Object?> toJson() => {
+        'id': id,
+        if (error != null) 'error': error,
+      };
+}
+
 /// Any user/motion/page activity that should reset the idle timer.
 class ActivityDetected extends AppEvent {
   const ActivityDetected({required this.source});

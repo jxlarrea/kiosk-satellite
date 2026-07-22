@@ -81,7 +81,19 @@ String buildKioskSatelliteScript({required String version, required String os}) 
     // beginning with a short pre-roll so speech right after a wake word is
     // not lost.
     startAudioStream: function () { return call('startAudioStream'); },
-    stopAudioStream: function () { return call('stopAudioStream'); }
+    stopAudioStream: function () { return call('stopAudioStream'); },
+
+    // Sound delegation, the output half of the audio handoff: the app plays
+    // the URL natively, on the user's selected speaker, with no autoplay
+    // gate. Resolves {id} (or false); a 'kiosksatellite:sound-ended' event
+    // ({id, error?}) follows when it finishes. opts: {volume: 0..1,
+    // cache: bool} - cache keeps the download so replays start instantly
+    // (chimes yes, one-shot TTS no).
+    playSound: function (url, opts) {
+      return call('playSound', Object.assign({ url: url }, opts || {}));
+    },
+    prefetchSound: function (url) { return call('prefetchSound', { url: url }); },
+    stopSound: function (id) { return call('stopSound', { id: id }); }
   };
 })();
 ''';

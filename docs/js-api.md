@@ -112,6 +112,21 @@ disagree about the same device:
 state, deliberately with no catch-all. `statusLabel` is the sentence to show;
 derive nothing from `status` that the label already says.
 
+### Sound
+
+The output half of the audio handoff: the page hands a URL over and the app
+plays it natively — on the user's selected speaker (Settings → Voice
+Satellite → Speaker), with no WebView autoplay gate. The app fetches the URL
+itself through its own HTTP stack, so a self-signed HA certificate the user
+accepted works here too. Voice Satellite uses this for its chimes when
+running in Kiosk Satellite; browser audio remains the fallback.
+
+| Method | Returns | Description |
+|---|---|---|
+| `playSound(url, {volume, cache})` | `{id}` or `false` | Play `url` natively. `volume` is 0..1 relative to media volume (default 1). `cache: true` keeps the download so replays start instantly — right for fixed assets (chimes), wrong for one-shot URLs (TTS). `false` means the app refused (fetch failed, playback error): fall back to browser audio. |
+| `prefetchSound(url)` | `boolean` | Warm the cache so the first `playSound` of `url` starts with zero fetch delay. |
+| `stopSound(id)` | `boolean` | Stop a playing sound early. A `sound-ended` event still fires. |
+
 ## Events
 
 Dispatched on `window` as `CustomEvent`s:
@@ -122,6 +137,7 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:motion` | `{}` | Camera motion detected (rate-limited to 1/s) |
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | Screen power changed |
 | `kiosksatellite:screensaverstart` / `:screensaverstop` | `{}` | Screensaver state changed |
+| `kiosksatellite:sound-ended` | `{id, error?}` | A `playSound` sound finished, failed (`error` says how), or was stopped. Exactly one per sound. |
 
 ```js
 window.addEventListener('kiosksatellite:wakeword', (e) => {
