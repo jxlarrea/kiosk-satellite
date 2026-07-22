@@ -91,6 +91,9 @@ class MqttManager extends Manager {
     // Covers every path the volume moves: an MQTT command, the hardware
     // rocker, another app (the platform side broadcasts them all).
     _subs.add(bus.on<VolumeChanged>().listen((_) => _publishVolume()));
+    // The updater already throttles progress to whole percents.
+    _subs.add(
+        bus.on<UpdateStateChanged>().listen((_) => _publishUpdateState()));
 
     if (_settings.get(defs.mqttEnabled)) {
       _transition = _transition.then((_) => _connect());
@@ -256,6 +259,7 @@ class MqttManager extends Manager {
       '$_base/volume/set',
       '$_base/reload/set',
       '$_base/clear_cache/set',
+      '$_base/update/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
     ]) {
       client.subscribe(topic, MqttQos.atLeastOnce);
@@ -399,6 +403,15 @@ class MqttManager extends Manager {
       } else if (topic == '$_base/clear_cache/set') {
         log.info(name, 'command $topic');
         await commands.execute('clearWebCache', const {});
+      } else if (topic == '$_base/update/set') {
+        log.info(name, 'command $topic');
+        final result = await commands.execute('installUpdate', const {});
+        if (!result.ok) {
+          // Nothing started (no update, or one already running): republish
+          // so HA's "installing" spinner does not sit on a lie.
+          log.warn(name, 'installUpdate over MQTT failed: ${result.error}');
+          await _publishUpdateState();
+        }
       } else {
         for (final entry in _settingSwitches.entries) {
           if (topic != '$_base/${entry.key}/set') continue;
@@ -436,6 +449,37 @@ class MqttManager extends Manager {
     _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
     _publishSettingSwitchStates();
     await _publishVolume();
+    await _publishUpdateState();
+  }
+
+  /// The HA update entity's whole world in one JSON payload: versions, the
+  /// release page, and the download progress while an install runs.
+  Future<void> _publishUpdateState() async {
+    final result = await commands.execute('getUpdateStatus', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map) return;
+    final current = data['currentVersion'] as String?;
+    if (current == null || current.isEmpty) return;
+    final latest = data['availableVersion'] as String? ?? current;
+    final notes = (data['availableNotes'] as String? ?? '').trim();
+    final progress = data['progress'] as num?;
+    _publish(
+        '$_base/update/state',
+        jsonEncode({
+          'installed_version': current,
+          'latest_version': latest,
+          'title': 'Kiosk Satellite',
+          if (data['releaseUrl'] is String) 'release_url': data['releaseUrl'],
+          // HA renders the summary as markdown but caps the payload; the
+          // full notes stay one tap away behind the release link.
+          if (notes.isNotEmpty)
+            'release_summary': notes.length > 255
+                ? '${notes.substring(0, 252)}...'
+                : notes,
+          'in_progress': progress != null,
+          if (progress != null)
+            'update_percentage': (progress.clamp(0, 1) * 100).round(),
+        }));
   }
 
   Future<void> _pollStats() async {
@@ -497,6 +541,7 @@ class MqttManager extends Manager {
         '$_prefix/switch/ks_$_deviceId/screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
+        '$_prefix/update/ks_$_deviceId/update/config',
         for (final objectId in _settingSwitches.keys)
           '$_prefix/switch/ks_$_deviceId/$objectId/config',
       ];
@@ -638,6 +683,13 @@ class MqttManager extends Manager {
         'command_topic': '$_base/clear_cache/set',
         'icon': 'mdi:broom',
         'entity_category': 'config',
+      },
+      '$_prefix/update/ks_$_deviceId/update/config': {
+        ...common('update', 'Update'),
+        'state_topic': '$_base/update/state',
+        'command_topic': '$_base/update/set',
+        'payload_install': 'install',
+        'device_class': 'firmware',
       },
       '$_prefix/switch/ks_$_deviceId/kiosk/config':
           settingSwitch('kiosk', 'Kiosk mode', 'mdi:lock-outline'),

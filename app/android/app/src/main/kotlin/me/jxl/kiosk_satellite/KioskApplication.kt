@@ -36,6 +36,7 @@ class KioskApplication : Application() {
     private lateinit var sendspin: SendspinBridge
     private lateinit var audioRouting: AudioRoutingBridge
     private lateinit var soundPlayer: SoundPlayer
+    private lateinit var apkInstaller: ApkInstaller
 
     override fun onCreate() {
         super.onCreate()
@@ -60,5 +61,6 @@ class KioskApplication : Application() {
         brightness = BrightnessBridge(applicationContext, messenger)
         sendspin = SendspinBridge(applicationContext, messenger)
         soundPlayer = SoundPlayer(applicationContext, messenger)
+        apkInstaller = ApkInstaller(applicationContext, messenger)
     }
 }

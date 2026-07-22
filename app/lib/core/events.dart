@@ -53,6 +53,15 @@ class VolumeChanged extends AppEvent {
   String get wireName => 'volumechanged';
 }
 
+// ── Updates ────────────────────────────────────────────────────────────
+
+/// The updater's picture of the world moved: a newer release appeared or
+/// went away, a download started, made progress, or ended. Internal-only;
+/// listeners read the details through getUpdateStatus.
+class UpdateStateChanged extends AppEvent {
+  const UpdateStateChanged();
+}
+
 /// A native sound (playSound) actually began playing. Wire event: the page
 /// times stop-word arming and its speaking UI off real audio start.
 class SoundStarted extends AppEvent {

@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/command_registry.dart';
+import '../../core/events.dart';
 import '../../core/manager.dart';
 
 /// A newer release on GitHub, ready to fetch.
@@ -17,6 +18,7 @@ class UpdateInfo {
     required this.version,
     required this.apkUrl,
     required this.notes,
+    required this.releaseUrl,
   });
 
   /// Bare version, tag with the leading `v` stripped (e.g. `0.2.0`).
@@ -25,22 +27,29 @@ class UpdateInfo {
 
   /// The GitHub release body (markdown), shown before the download starts.
   final String notes;
+
+  /// The release's GitHub page, linked from the HA update entity.
+  final String releaseUrl;
 }
 
 /// Watches the GitHub releases for a newer APK and, on request, downloads it
 /// and hands it to the Android package installer.
 ///
 /// A wall tablet has no Play Store nudging it, so the app checks on its own:
-/// once shortly after start and then twice a day. The result only feeds the
-/// drawer's notice — nothing downloads or installs without a tap.
+/// once shortly after start and then twice a day. The result feeds the
+/// drawer's notice and the Home Assistant update entity (over MQTT); nothing
+/// downloads or installs until a tap in either place asks for it.
 class UpdateManager extends Manager {
   UpdateManager(super.bus, super.commands, super.log);
 
   static const _latestUrl =
       'https://api.github.com/repos/jxlarrea/kiosk-satellite/releases/latest';
 
-  /// Activity-scoped (see MainActivity): the installer intent needs a live
-  /// Activity, which is fine — the drawer that triggers it lives in one.
+  /// App-scoped (see ApkInstaller): installs go through a PackageInstaller
+  /// session, which needs no Activity. On Android 12+ the session installs
+  /// silently once this app is the installer of record (i.e. from the second
+  /// update installed through here onward); everywhere else Android shows its
+  /// confirmation screen on the device.
   static const _installer = MethodChannel('kiosk_satellite/installer');
 
   @override
@@ -56,9 +65,37 @@ class UpdateManager extends Manager {
   late final String _currentVersion;
   Timer? _timer;
 
+  /// Last whole percent pushed onto the bus; keeps the progress stream from
+  /// flooding listeners (MQTT republishes every event it hears).
+  int _lastPercent = -1;
+
   @override
   Future<void> init() async {
     _currentVersion = (await PackageInfo.fromPlatform()).version;
+    // The installer's asynchronous outcomes. Success never arrives: Android
+    // kills the process as it swaps the code, and the relaunch receiver
+    // brings the app back already running the new version.
+    _installer.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'installDeclined':
+          log.info(name, 'install declined on the device screen');
+        case 'installFailed':
+          log.warn(name, 'install failed: ${call.arguments}');
+      }
+      bus.publish(const UpdateStateChanged());
+      return null;
+    });
+    available.addListener(() {
+      _lastPercent = -1;
+      bus.publish(const UpdateStateChanged());
+    });
+    progress.addListener(() {
+      final p = progress.value;
+      final percent = p == null ? -1 : (p * 100).floor();
+      if (percent == _lastPercent) return;
+      _lastPercent = percent;
+      bus.publish(const UpdateStateChanged());
+    });
     // The remote admin mirrors the drawer's notice through these.
     commands
       ..register(
@@ -71,6 +108,7 @@ class UpdateManager extends Manager {
             'currentVersion': _currentVersion,
             'availableVersion': available.value?.version,
             'availableNotes': available.value?.notes,
+            'releaseUrl': available.value?.releaseUrl,
             'progress': progress.value,
           }),
         ),
@@ -99,9 +137,10 @@ class UpdateManager extends Manager {
         Command(
           name: 'installUpdate',
           description:
-              'Download the newer release APK and open the Android package '
-              'installer (the install itself is confirmed on the device '
-              'screen)',
+              'Download the newer release APK and install it. Silent on '
+              'Android 12+ once the app is the installer of record (from the '
+              'second in-app update onward); otherwise Android asks for '
+              'confirmation on the device screen',
           handler: (_) async {
             if (available.value == null) {
               return CommandResult.fail('no update available');
@@ -164,6 +203,8 @@ class UpdateManager extends Manager {
               version: tag,
               apkUrl: url,
               notes: (body['body'] as String? ?? '').trim(),
+              releaseUrl: body['html_url'] as String? ??
+                  'https://github.com/jxlarrea/kiosk-satellite/releases',
             )
           : null;
       return true;
@@ -227,9 +268,16 @@ class UpdateManager extends Manager {
       log.info(
         name,
         'downloaded v${info.version} (${(got / 1048576).toStringAsFixed(1)} '
-        'MB), launching installer',
+        'MB), handing to the installer',
       );
-      await _installer.invokeMethod('installApk', {'path': file.path});
+      final mode =
+          await _installer.invokeMethod<String>('installApk', {'path': file.path});
+      log.info(
+        name,
+        mode == 'silent'
+            ? 'installing silently; the app restarts itself when done'
+            : 'waiting for the install to be confirmed on the device screen',
+      );
       return null;
     } catch (e) {
       log.warn(name, 'update failed: $e');

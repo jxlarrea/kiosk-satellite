@@ -25,7 +25,6 @@ object ActivityState {
 
 class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
-    private var installerChannel: MethodChannel? = null
     private var adminChannel: MethodChannel? = null
     private var cameraMotion: CameraMotion? = null
     private var screenCapture: ScreenCapture? = null
@@ -58,30 +57,6 @@ class MainActivity : FlutterActivity() {
         provisionChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "getProvisionJson" -> result.success(intent?.getStringExtra("ks.provision"))
-                else -> result.notImplemented()
-            }
-        }
-        // In-app updates (UpdateManager): the downloaded APK is handed to the
-        // system package installer through the manifest's FileProvider. On the
-        // first use the installer itself walks the user through the "install
-        // unknown apps" grant, so no preflight is needed here.
-        installerChannel = MethodChannel(messenger, "kiosk_satellite/installer")
-        installerChannel?.setMethodCallHandler { call, result ->
-            when (call.method) {
-                "installApk" -> {
-                    try {
-                        val path = call.argument<String>("path")!!
-                        val uri = androidx.core.content.FileProvider.getUriForFile(
-                            this, "$packageName.updates", java.io.File(path))
-                        startActivity(Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, "application/vnd.android.package-archive")
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        })
-                        result.success(true)
-                    } catch (e: Exception) {
-                        result.error("install", e.message, null)
-                    }
-                }
                 else -> result.notImplemented()
             }
         }
@@ -133,8 +108,6 @@ class MainActivity : FlutterActivity() {
         kioskLock = null
         provisionChannel?.setMethodCallHandler(null)
         provisionChannel = null
-        installerChannel?.setMethodCallHandler(null)
-        installerChannel = null
         adminChannel?.setMethodCallHandler(null)
         adminChannel = null
     }

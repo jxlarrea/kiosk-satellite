@@ -100,6 +100,15 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED"/>
             </intent-filter>
         </receiver>
+        <!-- A silent self-update (ApkInstaller) kills the process as Android
+             swaps the code; this brings the kiosk back afterwards. -->
+        <receiver
+            android:name=".UpdateRelaunchReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
         <!-- In-app updates: exposes the downloaded APK (app cache, updates/)
              to the system package installer. -->
         <provider
