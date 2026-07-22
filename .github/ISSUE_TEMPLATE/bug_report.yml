@@ -1,0 +1,116 @@
+name: Bug Report
+description: Report a bug with the Kiosk Satellite app
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill in as much of this as you can. The logs sections at the bottom are what usually make the difference between a quick fix and a long back-and-forth.
+
+        **Never paste your configuration export here.** It contains your Home Assistant token, passwords and API keys.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites checklist
+      description: Please confirm these before opening an issue.
+      options:
+        - label: I am running the **latest Kiosk Satellite release** (check Settings or the About tab of the remote admin against the latest GitHub release).
+          required: true
+        - label: I have **searched the existing issues** and this has not been reported already.
+          required: true
+        - label: If the issue is voice related, the **Voice Satellite integration** is installed in Home Assistant and my Assist pipeline works independently (e.g. via the Assist dialog in the HA sidebar).
+          required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area affected
+      description: Pick the closest match. This decides which logs we will ask you for below.
+      options:
+        - Voice / wake word (Voice Satellite)
+        - Crash, freeze, white screen, or restart
+        - Browser / dashboard display
+        - Screensaver (clock, photos, Immich, media)
+        - Audio output (chimes, TTS, Bluetooth, speaker/mic selection)
+        - MQTT / Home Assistant entities
+        - Media (SendSpin, DLNA, cameras)
+        - Remote administration
+        - Setup wizard / configuration import
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of what happens, and how often (every time, after a few hours, once so far).
+      placeholder: "After a few hours the dashboard goes white, but the remote admin still responds..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: If you can trigger it on demand, list the steps. If it just happens over time, describe the conditions (screensaver active, overnight, during music playback, ...).
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: All of these matter. App version and Android version are in Settings and in the remote admin's About tab.
+      value: |
+        - Kiosk Satellite version:
+        - Device (exact model, e.g. Fire HD 8 2020, Echo Show 5 2nd gen, Galaxy Tab A8):
+        - Android version (and OS flavor if not stock, e.g. Fire OS, LineageOS):
+        - Home Assistant version:
+        - Voice Satellite version (if installed):
+        - Dashboard URL scheme (https, or http with the secure context proxy):
+        - Relevant settings (wake word on/off, WebSocket filter on/off, screensaver mode, Bluetooth devices in use):
+    validations:
+      required: true
+
+  - type: textarea
+    id: app-logs
+    attributes:
+      label: App logs
+      description: |
+        On the device: **Settings > App Logs**. From a browser: enable Remote Administration, open `http://<device-ip>:2324`, **Logs** tab. Paste the lines around the time the problem happened.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: console-logs
+    attributes:
+      label: Web console logs (required for voice or dashboard issues)
+      description: |
+        The dashboard page's own JavaScript console, where the Voice Satellite integration logs everything it does (lines prefixed `[VS]`). From a browser: remote admin at `http://<device-ip>:2324`, **Console** tab. Reproduce the issue, then paste the lines around it. For a voice issue, include a full attempt from the wake word onward.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: logcat
+    attributes:
+      label: Logcat (required for crashes, freezes, white screens, or restarts)
+      description: |
+        The Android system log, which records renderer crashes and OS-level kills the app's own log cannot see. On the device: **Settings > App Logs**, switch the source to **Logcat**. From a browser: remote admin **Logs** tab, switch the source to **Logcat**. Paste the section around the crash (error and warning filters on is fine).
+      render: text
+    validations:
+      required: false

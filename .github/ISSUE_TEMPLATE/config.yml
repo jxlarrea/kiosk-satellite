@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Voice Satellite issues
+    url: https://github.com/jxlarrea/voice-satellite-card-integration/issues
+    about: For bugs in the Voice Satellite integration itself (the voice UI on the dashboard), rather than the Kiosk Satellite app.
