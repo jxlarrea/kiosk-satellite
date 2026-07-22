@@ -58,6 +58,10 @@ object AudioRouting {
         val am = audioManager() ?: return null
         val parts = selector.split('|')
         val type = parts.getOrNull(0)?.toIntOrNull() ?: return null
+        // A stored output selection of a call route (possible before those
+        // were filtered from the list): treat as automatic rather than pin
+        // media playback to a route that silently swallows it.
+        if (!source && type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) return null
         val address = parts.getOrNull(1) ?: ""
         val name = parts.getOrNull(2) ?: ""
         val devices = am.getDevices(
@@ -75,7 +79,7 @@ object AudioRouting {
             if (source) AudioManager.GET_DEVICES_INPUTS else AudioManager.GET_DEVICES_OUTPUTS,
         )
         val rows = devices
-            .filter { selectable(it.type) }
+            .filter { selectable(it.type, source) }
             .map {
                 Triple("${it.type}|${it.address}|${it.productName}", label(it), it)
             }
@@ -97,13 +101,18 @@ object AudioRouting {
     }
 
     /** Internal/virtual routes nobody would pick from a settings dropdown. */
-    private fun selectable(type: Int): Boolean = when (type) {
+    private fun selectable(type: Int, source: Boolean): Boolean = when (type) {
         AudioDeviceInfo.TYPE_TELEPHONY,
         AudioDeviceInfo.TYPE_FM_TUNER,
         AudioDeviceInfo.TYPE_TV_TUNER,
         AudioDeviceInfo.TYPE_REMOTE_SUBMIX,
         24, // TYPE_BUILTIN_SPEAKER_SAFE: the notification duck path, not a choice
         -> false
+        // The Bluetooth CALL route: valid as a microphone, but media
+        // playback cannot target it - Android ignores the pin and the
+        // sound plays into nothing. The same headset's media profile
+        // (A2DP) is the entry that belongs in the speaker list.
+        AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> source
         else -> true
     }
 
