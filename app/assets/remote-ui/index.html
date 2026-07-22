@@ -3179,6 +3179,28 @@ async function wizardRestore(file, btn) {
       { method: 'POST', body: JSON.stringify(config) });
     const out = await res.json();
     if (!res.ok) throw wizFail('Import failed', out.error || 'The file could not be applied.');
+    if (out.data && out.data.pendingSetup) {
+      // The settings are in, but the OS permission prompts run on the
+      // DEVICE and the dashboard loads after they are answered there. Say
+      // so - a silent wait reads as a hang - and follow along until the
+      // device reports itself configured.
+      btn.textContent = 'Continue on the device…';
+      const box = $('#wizardError');
+      box.innerHTML =
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg>' +
+        '<span><b style="display:block; font-size:14.5px; margin-bottom:2px"></b><span class="hint"></span></span>';
+      box.querySelector('b').textContent = 'Imported - now finish on the device';
+      box.querySelector('.hint').textContent =
+        "Answer the permission prompts on the tablet's screen. This page "
+        + 'continues automatically when the dashboard loads.';
+      const poll = setInterval(async () => {
+        try {
+          const setup = await (await fetch('api/setup/status')).json();
+          if (!setup.setupNeeded) { clearInterval(poll); location.reload(); }
+        } catch (_) { /* device may be busy; keep polling */ }
+      }, 2000);
+      return;
+    }
     // Setup is complete (the backup's start URL landed); a reload leaves
     // the wizard and the stored token walks straight into the admin UI.
     location.reload();

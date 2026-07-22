@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/command_registry.dart';
@@ -132,27 +134,46 @@ class SettingsManager extends Manager {
             // Post-setup imports skip this — that device already ran a
             // wizard, and permission Activities on every restore would be
             // noise.
+            //
+            // Detached, NOT awaited: the prompts are answered by a human
+            // at the DEVICE, and an import that came over the remote API
+            // must not hold its HTTP response hostage to them — that reads
+            // as "Importing…" forever in a browser while the tablet sits
+            // on a system dialog. The start URL stays sequenced after the
+            // prompts (see above); callers see pendingSetup and wait for
+            // the device to become configured instead.
             if (firstSetup) {
-              await commands.execute('requestOsPermissions', {
-                'which': [
-                  if (get(wakeWordEnabled) || get(webMicrophone))
-                    'microphone',
-                  if (get(screensaverDismissOnMotion) || get(webCamera))
-                    'camera',
-                  if (get(wakeWordBackground)) ...[
-                    'notifications',
-                    'batteryOptimizations',
+              unawaited(Future(() async {
+                await commands.execute('requestOsPermissions', {
+                  'which': [
+                    if (get(wakeWordEnabled) || get(webMicrophone))
+                      'microphone',
+                    if (get(screensaverDismissOnMotion) || get(webCamera))
+                      'camera',
+                    if (get(wakeWordBackground)) ...[
+                      'notifications',
+                      'batteryOptimizations',
+                    ],
+                    if (get(wakeWordBackground) || get(kioskStartOnBoot))
+                      'overlay',
+                    'writeSettings',
+                    'deviceAdmin',
                   ],
-                  if (get(wakeWordBackground) || get(kioskStartOnBoot))
-                    'overlay',
-                  'writeSettings',
-                  'deviceAdmin',
-                ],
+                });
+                if (heldStartUrl != null) {
+                  await setFromJson(startUrl.key, heldStartUrl);
+                  await commands.execute('loadUrl', {'url': get(startUrl)});
+                }
+                log.info(name, 'imported setup finished (permissions done)');
+              }));
+              log.info(
+                  name,
+                  'imported configuration ($applied settings); permission '
+                  'prompts continue on the device');
+              return CommandResult.ok({
+                'applied': applied,
+                'pendingSetup': heldStartUrl != null,
               });
-            }
-            if (heldStartUrl != null &&
-                await setFromJson(startUrl.key, heldStartUrl)) {
-              applied++;
             }
             // The imported start URL should be what ends up on screen.
             if (settings.containsKey(startUrl.key)) {

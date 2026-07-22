@@ -230,6 +230,10 @@ class _SetupScreenState extends State<SetupScreen> {
       );
       return;
     }
+    // pendingSetup: the permission prompts are running and the start URL
+    // applies after them; the SettingChanged listener enters the kiosk the
+    // moment it lands, so this screen just stays put until then.
+    if ((result.data as Map?)?['pendingSetup'] == true) return;
     if (c.settings.get(defs.startUrl).isEmpty) {
       _fail(
         'Backup has no dashboard',
