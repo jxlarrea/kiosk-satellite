@@ -343,6 +343,13 @@ class SyncAudioPlayer(
         // Silence keepalive: write silence when pending-to-DAC drops below this threshold
         private const val SILENCE_KEEPALIVE_THRESHOLD_US = 200_000L  // 200ms
 
+        // Idle keepalive time bound. After a stream ends the loop keeps the
+        // DAC warm with real-time silence for this grace window; past it, the
+        // AudioTrack is paused and the loop drops to a coarse poll until a
+        // new stream arrives, instead of burning CPU and DAC power 24/7.
+        private const val IDLE_KEEPALIVE_GRACE_US = 120_000_000L  // 2 minutes
+        private const val DEEP_IDLE_POLL_MS = 500L
+
         // Playback loop timing (milliseconds)
         private const val STATE_POLL_DELAY_MS = 10L   // Polling interval during state transitions
         private const val BUFFER_EMPTY_DELAY_MS = 5L  // Short delay when buffer is empty/draining
@@ -350,6 +357,15 @@ class SyncAudioPlayer(
         // Gap/overlap detection
         private const val GAP_THRESHOLD_US = 10_000L  // 10ms minimum gap before filling with silence
         private const val DISCONTINUITY_THRESHOLD_US = 100_000L  // 100ms gap indicates discontinuity (for logging)
+
+        // Gap-fill clamp. Silence is only materialized for gaps up to this
+        // long (real jitter is far below it); anything larger is a stream
+        // discontinuity (reconnect after outage, server timeline jump) and is
+        // realigned via start gating/reanchor instead. Without the clamp the
+        // fill allocation is proportional to the outage (a 10-minute outage
+        // would be ~115MB of silence: instant OOM on low-RAM devices).
+        private const val MAX_GAP_FILL_US = 2_000_000L  // 2 seconds
+        private const val GAP_FILL_SLICE_US = 100_000L  // queue silence in <=100ms chunks
 
         // Symmetric crossfade window around each correction (frames before + after)
         private const val CROSSFADE_FRAMES = 4  // 4 frames each side = 83µs at 48kHz
@@ -444,6 +460,14 @@ class SyncAudioPlayer(
     // clicks/pops and incorrect frame accounting.
     private val isFlushPending = AtomicBoolean(false)
     @Volatile private var pausedAtUs: Long = 0L  // Timestamp when pause() was called, for long-pause detection
+
+    // Idle keepalive time bound. idleSinceUs is set when the player goes idle
+    // (enterIdle, or buffer exhaustion in DRAINING) and cleared when a stream
+    // starts; 0 = no idle timer. deepIdleActive is owned by the playback loop
+    // thread (volatile only for visibility across loop restarts) and marks
+    // that the AudioTrack has been paused after the grace window expired.
+    @Volatile private var idleSinceUs: Long = 0L
+    @Volatile private var deepIdleActive = false
 
     // Playback state machine (from Python reference)
     @Volatile private var playbackState = PlaybackState.INITIALIZING
@@ -761,6 +785,8 @@ class SyncAudioPlayer(
 
             isPlaying.set(true)
             isPaused.set(false)
+            idleSinceUs = 0L
+            deepIdleActive = false  // Fresh session; loop is not running yet
             track.play()
 
             // Start the playback loop
@@ -935,6 +961,10 @@ class SyncAudioPlayer(
             consecutiveValidTimestamps = 0
             dacTimestampsStable = false
 
+            // Reset idle keepalive tracking (loop has already exited)
+            idleSinceUs = 0L
+            deepIdleActive = false
+
             AppLog.Audio.i("Playback stopped")
         }
     }
@@ -1028,7 +1058,10 @@ class SyncAudioPlayer(
 
             // NOTE: Do NOT stop AudioTrack or cancel playback loop.
             // The loop will continue in INITIALIZING state, writing silence
-            // to keep DAC timestamps warm.
+            // to keep DAC timestamps warm. The keepalive is time-bounded:
+            // after IDLE_KEEPALIVE_GRACE_US without a new stream, the loop
+            // pauses the track and drops to a coarse poll.
+            idleSinceUs = nowNs() / 1000
 
             AppLog.Audio.i("Entered idle mode - continuing silence for DAC keepalive")
         }
@@ -1267,6 +1300,10 @@ class SyncAudioPlayer(
             // Reset gap/overlap tracking
             expectedNextTimestampUs = null
 
+            // Stop the idle keepalive timer - new chunks are expected shortly.
+            // If the loop is in deep idle, the cleared timer wakes it.
+            idleSinceUs = 0L
+
             AppLog.Audio.d("Buffer cleared, generation=$streamGeneration, state=$playbackState")
         }
     }
@@ -1392,20 +1429,41 @@ class SyncAudioPlayer(
             if (serverTimeMicros > expectedNext) {
                 val gapUs = serverTimeMicros - expectedNext
 
+                if (gapUs > MAX_GAP_FILL_US) {
+                    // Discontinuity, not jitter (expectedNextTimestampUs survives
+                    // reconnects, so this fires after any real outage). Do NOT
+                    // materialize the gap as silence; re-anchor the expected
+                    // timeline at this chunk and let the state machine realign:
+                    // in INITIALIZING/REANCHORING the chunk becomes the new
+                    // anchor via start gating, and in PLAYING/DRAINING the
+                    // cursor snap in playChunkWithCorrection surfaces the jump
+                    // as a large sync error that triggers the existing reanchor.
+                    AppLog.Audio.w("Gap of ${gapUs / 1000}ms exceeds fill limit " +
+                        "(${MAX_GAP_FILL_US / 1000}ms) - treating as discontinuity")
+                    expectedNextTimestampUs = serverTimeMicros
+                }
                 // Only fill gaps larger than threshold (small gaps are normal network jitter)
-                if (gapUs > GAP_THRESHOLD_US) {
+                else if (gapUs > GAP_THRESHOLD_US) {
                     val gapFrames = ((gapUs * sampleRate) / 1_000_000).toInt()
-                    val silenceBytes = gapFrames * bytesPerFrame
-                    val silenceData = ByteArray(silenceBytes)  // Zeros = silence
+                    val sliceFrames = ((GAP_FILL_SLICE_US * sampleRate) / 1_000_000)
+                        .toInt().coerceAtLeast(1)
 
-                    val silenceChunk = AudioChunk(
-                        serverTimeMicros = expectedNext,
-                        pcmData = silenceData,
-                        sampleCount = gapFrames
-                    )
-                    evictIfOverCapacity(gapFrames.toLong())
-                    chunkQueue.add(silenceChunk)
-                    totalQueuedSamples.addAndGet(gapFrames.toLong())
+                    // Queue the silence in bounded slices rather than one
+                    // gap-sized allocation.
+                    var framesFilled = 0
+                    while (framesFilled < gapFrames) {
+                        val frames = minOf(sliceFrames, gapFrames - framesFilled)
+                        val silenceChunk = AudioChunk(
+                            serverTimeMicros = expectedNext +
+                                (framesFilled.toLong() * 1_000_000L) / sampleRate,
+                            pcmData = ByteArray(frames * bytesPerFrame),  // Zeros = silence
+                            sampleCount = frames
+                        )
+                        evictIfOverCapacity(frames.toLong())
+                        chunkQueue.add(silenceChunk)
+                        totalQueuedSamples.addAndGet(frames.toLong())
+                        framesFilled += frames
+                    }
 
                     // Update statistics
                     gapsFilled++
@@ -1503,6 +1561,7 @@ class SyncAudioPlayer(
                     //         compute scheduled client-time start, begin buffer filling
                     firstServerTimestampUs = workingServerTimeMicros
                     scheduledStartLoopTimeUs = clientPlayTime
+                    idleSinceUs = 0L  // Stream started; stop the idle keepalive timer
                     setPlaybackState(PlaybackState.WAITING_FOR_START)
                     AppLog.Audio.i("First chunk received: serverTime=${workingServerTimeMicros/1000}ms, " +
                             "scheduled start at ${clientPlayTime/1000}ms, transitioning to WAITING_FOR_START")
@@ -1904,6 +1963,42 @@ class SyncAudioPlayer(
     }
 
     /**
+     * Pause the AudioTrack after the idle grace window expires. Called only
+     * from the playback loop thread.
+     *
+     * DAC timestamps and calibrations go stale across the pause (frame
+     * position freezes while loop time keeps advancing), so stability and
+     * calibration state are reset; the normal pre-calibration warm-up
+     * re-establishes them when the next stream arrives.
+     */
+    private fun enterDeepIdle() {
+        deepIdleActive = true
+        consecutiveValidTimestamps = 0
+        dacTimestampsStable = false
+        clearDacCalibrations()
+        try {
+            audioSink?.pause()
+        } catch (e: IllegalStateException) {
+            AppLog.Audio.w("Failed to pause AudioTrack for deep idle", e)
+        }
+        AppLog.Audio.i("Idle grace expired - AudioTrack paused, dropping to ${DEEP_IDLE_POLL_MS}ms poll")
+    }
+
+    /**
+     * Resume the AudioTrack after deep idle. Called only from the playback
+     * loop thread, before any silence or chunk write.
+     */
+    private fun resumeFromDeepIdle() {
+        deepIdleActive = false
+        try {
+            audioSink?.play()
+        } catch (e: IllegalStateException) {
+            AppLog.Audio.w("Failed to resume AudioTrack from deep idle", e)
+        }
+        AppLog.Audio.i("Resuming AudioTrack from deep idle")
+    }
+
+    /**
      * Trigger a reanchor - reset sync state due to large error.
      *
      * Called when sync error exceeds REANCHOR_THRESHOLD_US.
@@ -2053,9 +2148,34 @@ class SyncAudioPlayer(
                     }
                 }
 
+                // Wake from deep idle as soon as a new stream moves the state
+                // machine off INITIALIZING; every write below expects a playing
+                // track.
+                if (deepIdleActive && playbackState != PlaybackState.INITIALIZING) {
+                    resumeFromDeepIdle()
+                }
+
                 // State machine for synchronized playback
                 when (playbackState) {
                     PlaybackState.INITIALIZING -> {
+                        // Time-bounded idle keepalive: once the grace window
+                        // after stream end expires, pause the track and drop to
+                        // a coarse poll instead of writing real-time silence
+                        // and reading DAC timestamps forever.
+                        val idleSince = idleSinceUs
+                        if (idleSince != 0L && nowNs() / 1000 - idleSince >= IDLE_KEEPALIVE_GRACE_US) {
+                            if (!deepIdleActive) {
+                                enterDeepIdle()
+                            }
+                            delay(DEEP_IDLE_POLL_MS)
+                            continue
+                        }
+                        if (deepIdleActive) {
+                            // Idle timer restarted (enterIdle again) or cleared
+                            // (clearBuffer) while paused; resume warm keepalive.
+                            resumeFromDeepIdle()
+                        }
+
                         // Write silence to keep DAC timestamps warm while waiting
                         // for first chunk. Once stable, reduced-rate keepalive.
                         if (!dacTimestampsStable) {
@@ -2119,6 +2239,10 @@ class SyncAudioPlayer(
                             // Buffer exhausted - notify and stop
                             AppLog.Audio.e("Buffer exhausted during DRAINING - stopping playback")
                             stateCallback?.onBufferExhausted()
+                            // Start the idle keepalive timer: if reconnection
+                            // never brings a new stream, the INITIALIZING
+                            // branch stops burning CPU after the grace window.
+                            idleSinceUs = nowNs() / 1000
                             setPlaybackState(PlaybackState.INITIALIZING)
                             delay(STATE_POLL_DELAY_MS)
                             continue
@@ -2496,6 +2620,17 @@ class SyncAudioPlayer(
         // by input frames consumed. This matches Python CLI's _server_ts_cursor_us.
         if (serverTimelineCursor == 0L) {
             serverTimelineCursor = chunk.serverTimeMicros
+        } else if (chunk.serverTimeMicros - serverTimelineCursor > MAX_GAP_FILL_US) {
+            // The chunk carries an unfilled timeline discontinuity (see the
+            // gap clamp in processChunk). Snap the cursor so the jump shows
+            // up in the cursor-based sync error; the reanchor check in the
+            // playback loop then realigns via the normal start-gating path.
+            // Never hit by continuous streams: filled gaps and trimmed
+            // overlaps keep chunk timestamps within jitter of the cursor.
+            AppLog.Sync.w("Timeline discontinuity at consumption: cursor=${serverTimelineCursor}us, " +
+                "chunk=${chunk.serverTimeMicros}us - snapping cursor")
+            serverTimelineCursor = chunk.serverTimeMicros
+            serverTimelineCursorRemainder = 0L
         }
         // Input frames consumed = chunk sample count (all input frames are read).
         // Drops consume extra input without outputting (already counted in sampleCount).
@@ -2638,10 +2773,34 @@ class SyncAudioPlayer(
     }
 
     /**
+     * Update the two-frame output history to reflect a bulk-written span,
+     * matching the net effect of the per-frame secondLast <- last <- current
+     * shuffle: last = final frame of the span, secondLast = the one before it
+     * (or the previous last frame when the span is a single frame).
+     */
+    private fun updateFrameHistoryAfterBulkWrite(pcmData: ByteArray, baseOffset: Int, frames: Int) {
+        if (frames <= 0) return
+        if (frames >= 2) {
+            System.arraycopy(
+                pcmData, baseOffset + (frames - 2) * bytesPerFrame,
+                secondLastOutputFrame, 0, bytesPerFrame
+            )
+        } else {
+            System.arraycopy(lastOutputFrame, 0, secondLastOutputFrame, 0, bytesPerFrame)
+        }
+        System.arraycopy(
+            pcmData, baseOffset + (frames - 1) * bytesPerFrame,
+            lastOutputFrame, 0, bytesPerFrame
+        )
+    }
+
+    /**
      * Write PCM data with sample insert/drop corrections applied.
      *
      * For 16-bit PCM, uses 3-point weighted interpolation and symmetric crossfade
-     * windows for smooth waveform transitions at correction points.
+     * windows for smooth waveform transitions at correction points. Contiguous
+     * frames between correction points are written in bulk; per-frame writes
+     * happen only inside crossfade windows and at correction events.
      *
      * For 24-bit and 32-bit PCM, sample-level crossfade is skipped because the
      * blending helpers operate on 16-bit samples. Insert/drop corrections still
@@ -2661,7 +2820,35 @@ class SyncAudioPlayer(
         var totalWritten = 0
         var inputOffset = 0
 
-        for (i in 0 until inputFrameCount) {
+        var i = 0
+        while (i < inputFrameCount) {
+            // --- Bulk fast path between correction points ---
+            // While no crossfade is running and every active correction
+            // counter is still outside its pre-correction fade-in window
+            // (counter > CROSSFADE_FRAMES), the per-frame body below reduces
+            // to a plain write plus counter decrements. Write that whole span
+            // with one AudioTrack.write() instead of one JNI call per frame;
+            // the emitted samples are byte-identical.
+            if (crossfadeState == CrossfadeState.IDLE) {
+                val dropHeadroom =
+                    if (dropEveryNFrames > 0) framesUntilNextDrop - CROSSFADE_FRAMES else Int.MAX_VALUE
+                val insertHeadroom =
+                    if (insertEveryNFrames > 0) framesUntilNextInsert - CROSSFADE_FRAMES else Int.MAX_VALUE
+                val span = minOf(dropHeadroom, insertHeadroom, inputFrameCount - i)
+                if (span > 0) {
+                    val written = track.write(pcmData, inputOffset, span * bytesPerFrame)
+                    if (written > 0) {
+                        totalWritten += written
+                        updateFrameHistoryAfterBulkWrite(pcmData, inputOffset, written / bytesPerFrame)
+                    }
+                    if (dropEveryNFrames > 0) framesUntilNextDrop -= span
+                    if (insertEveryNFrames > 0) framesUntilNextInsert -= span
+                    inputOffset += span * bytesPerFrame
+                    i += span
+                    continue
+                }
+            }
+
             // --- Pre-correction fade-in: anticipate upcoming corrections ---
             if (crossfadeState == CrossfadeState.IDLE) {
                 if (dropEveryNFrames > 0 && framesUntilNextDrop <= CROSSFADE_FRAMES && framesUntilNextDrop > 1) {
@@ -2706,6 +2893,7 @@ class SyncAudioPlayer(
 
                     // Skip this input frame (the actual drop)
                     inputOffset += bytesPerFrame
+                    i++
                     continue
                 }
             }
@@ -2755,6 +2943,7 @@ class SyncAudioPlayer(
                 System.arraycopy(pcmData, inputOffset, lastOutputFrame, 0, bytesPerFrame)
             }
             inputOffset += bytesPerFrame
+            i++
         }
 
         return totalWritten
@@ -2772,7 +2961,30 @@ class SyncAudioPlayer(
         var totalWritten = 0
         var inputOffset = 0
 
-        for (i in 0 until inputFrameCount) {
+        var i = 0
+        while (i < inputFrameCount) {
+            // --- Bulk fast path between correction points ---
+            // No crossfade in the simple variant, so every frame before the
+            // next insert/drop event (which fires when a counter reaches 1)
+            // is a plain write. Write the span in one call.
+            val dropHeadroom =
+                if (dropEveryNFrames > 0) framesUntilNextDrop - 1 else Int.MAX_VALUE
+            val insertHeadroom =
+                if (insertEveryNFrames > 0) framesUntilNextInsert - 1 else Int.MAX_VALUE
+            val span = minOf(dropHeadroom, insertHeadroom, inputFrameCount - i)
+            if (span > 0) {
+                val written = track.write(pcmData, inputOffset, span * bytesPerFrame)
+                if (written > 0) {
+                    totalWritten += written
+                    updateFrameHistoryAfterBulkWrite(pcmData, inputOffset, written / bytesPerFrame)
+                }
+                if (dropEveryNFrames > 0) framesUntilNextDrop -= span
+                if (insertEveryNFrames > 0) framesUntilNextInsert -= span
+                inputOffset += span * bytesPerFrame
+                i += span
+                continue
+            }
+
             // --- DROP: skip this frame ---
             if (dropEveryNFrames > 0) {
                 framesUntilNextDrop--
@@ -2781,6 +2993,7 @@ class SyncAudioPlayer(
                     framesDropped++
                     // Skip this input frame
                     inputOffset += bytesPerFrame
+                    i++
                     continue
                 }
             }
@@ -2805,6 +3018,7 @@ class SyncAudioPlayer(
                 System.arraycopy(pcmData, inputOffset, lastOutputFrame, 0, bytesPerFrame)
             }
             inputOffset += bytesPerFrame
+            i++
         }
 
         return totalWritten

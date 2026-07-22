@@ -36,6 +36,8 @@ final _ctc = VswwCtcConfig(
   minMatchedConfidence: 3.2,
   targetMaxEditDistance: [1, 0],
   targetMinMatchedConfidence: [3.2, 6.0],
+  inventory: [],
+  targetPhonemes: [],
 );
 
 /// Build a [tOut, vocab] logits buffer that greedily decodes to [phonemes]

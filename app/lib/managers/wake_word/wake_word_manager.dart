@@ -832,9 +832,13 @@ class WakeWordManager extends Manager {
     final timeout =
         _settings.get(defs.wakeWordResumeTimeoutSeconds).toInt();
     if (timeout > 0) {
-      _resumeTimer = Timer(Duration(seconds: timeout), () {
+      _resumeTimer = Timer(Duration(seconds: timeout), () async {
         if (!_active) {
           log.warn(name, 'page never resumed listening; self-healing');
+          // The page that opened the audio stream is gone with the turn;
+          // without closing it every mic chunk keeps being base64-encoded
+          // and published to a listener that no longer exists.
+          await _engine.stopAudioStream();
           setActive(true);
         }
       });

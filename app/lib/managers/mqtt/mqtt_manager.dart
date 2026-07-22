@@ -41,6 +41,7 @@ class MqttManager extends Manager {
 
   MqttServerClient? _client;
   Timer? _pollTimer;
+  StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? _updatesSub;
   Timer? _reconnectDebounce;
   final _subs = <StreamSubscription>[];
 
@@ -238,10 +239,16 @@ class MqttManager extends Manager {
     if (!_connected) {
       log.warn(name,
           'connect to $host:$port refused: ${client.connectionStatus}');
+      // Tear the client down like the exception branch does: left alive
+      // with autoReconnect on, it would hammer a refusing broker (bad
+      // credentials, ACL) on its own timer forever.
+      client.autoReconnect = false;
+      client.disconnect();
+      _client = null;
       return;
     }
 
-    client.updates?.listen(_onMessage);
+    _updatesSub = client.updates?.listen(_onMessage);
     for (final topic in [
       '$_base/screen/set',
       '$_base/brightness/set',
@@ -316,6 +323,8 @@ class MqttManager extends Manager {
   Future<void> _disconnect({required bool clearDiscovery}) async {
     _pollTimer?.cancel();
     _pollTimer = null;
+    await _updatesSub?.cancel();
+    _updatesSub = null;
     final client = _client;
     _client = null;
     if (client == null) return;

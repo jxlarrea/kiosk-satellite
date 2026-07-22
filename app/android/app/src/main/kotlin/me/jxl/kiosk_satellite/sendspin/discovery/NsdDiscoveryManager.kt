@@ -60,6 +60,27 @@ class NsdDiscoveryManager(
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private var multicastLock: WifiManager.MulticastLock? = null
 
+    // Shared executor for API 34+ ServiceInfoCallback dispatch. One executor
+    // per manager instead of one per resolve; lazy so browse sessions that
+    // never resolve don't spin up a thread. Shut down in cleanup().
+    private val resolveExecutorDelegate = lazy { Executors.newSingleThreadExecutor() }
+
+    // Rejection-safe view handed to NsdManager: after cleanup() shuts the
+    // executor down, late dispatches (e.g. unregistered confirmations) are
+    // dropped instead of throwing inside NsdManager's handler thread.
+    private val resolveExecutor = java.util.concurrent.Executor { task ->
+        try {
+            resolveExecutorDelegate.value.execute(task)
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.d(TAG, "Resolve executor rejected task after shutdown")
+        }
+    }
+
+    // Outstanding API 34+ callbacks so onServiceLost and cleanup() can
+    // unregister them. NsdManager retains a registered callback (and its
+    // executor) until unregistration, leaking otherwise.
+    private val activeServiceInfoCallbacks = mutableSetOf<NsdManager.ServiceInfoCallback>()
+
     // These flags are accessed from both the main thread (start/stop calls) and the
     // NSD binder thread (callbacks). @Volatile ensures cross-thread visibility (C-15).
     @Volatile private var isDiscovering = false
@@ -196,13 +217,17 @@ class NsdDiscoveryManager(
      */
     @android.annotation.TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun resolveServiceApi34(serviceInfo: NsdServiceInfo, serviceName: String) {
-        val executor = Executors.newSingleThreadExecutor()
         val callback = object : NsdManager.ServiceInfoCallback {
             override fun onServiceInfoCallbackRegistrationFailed(errorCode: Int) {
                 val errorMsg = nsdErrorToString(errorCode)
                 Log.e(TAG, "ServiceInfoCallback registration failed for $serviceName: $errorMsg")
                 synchronized(resolvingServices) {
                     resolvingServices.remove(serviceName)
+                }
+                // Registration failed: onServiceInfoCallbackUnregistered will
+                // never fire, so drop the tracking entry here.
+                synchronized(activeServiceInfoCallbacks) {
+                    activeServiceInfoCallbacks.remove(this)
                 }
             }
 
@@ -212,11 +237,7 @@ class NsdDiscoveryManager(
                 }
 
                 // Unregister after first successful resolution -- we only need one result
-                try {
-                    nsdManager?.unregisterServiceInfoCallback(this)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to unregister ServiceInfoCallback", e)
-                }
+                unregisterServiceInfoCallbackQuietly(this)
 
                 val host = resolvedInfo.hostAddresses.firstOrNull()?.hostAddress
                 val port = resolvedInfo.port
@@ -228,20 +249,51 @@ class NsdDiscoveryManager(
                 synchronized(resolvingServices) {
                     resolvingServices.remove(serviceName)
                 }
+                // Must unregister here too: NsdManager keeps a lost-service
+                // callback registered forever, leaking it (and the executor)
+                // on every AP flap or server restart.
+                unregisterServiceInfoCallbackQuietly(this)
             }
 
             override fun onServiceInfoCallbackUnregistered() {
-                // No-op; cleanup already handled in onServiceUpdated
+                synchronized(activeServiceInfoCallbacks) {
+                    activeServiceInfoCallbacks.remove(this)
+                }
             }
         }
 
+        synchronized(activeServiceInfoCallbacks) {
+            activeServiceInfoCallbacks.add(callback)
+        }
         try {
-            nsdManager?.registerServiceInfoCallback(serviceInfo, executor, callback)
+            // Force-create the shared executor before registering so cleanup()
+            // sees it as initialized even if no dispatch ever runs.
+            resolveExecutorDelegate.value
+            nsdManager?.registerServiceInfoCallback(serviceInfo, resolveExecutor, callback)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register ServiceInfoCallback", e)
             synchronized(resolvingServices) {
                 resolvingServices.remove(serviceName)
             }
+            synchronized(activeServiceInfoCallbacks) {
+                activeServiceInfoCallbacks.remove(callback)
+            }
+        }
+    }
+
+    /**
+     * Unregisters a ServiceInfoCallback, tolerating double unregistration.
+     * NsdManager throws IllegalArgumentException when the callback is not
+     * (or no longer) registered.
+     */
+    @android.annotation.TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun unregisterServiceInfoCallbackQuietly(callback: NsdManager.ServiceInfoCallback) {
+        try {
+            nsdManager?.unregisterServiceInfoCallback(callback)
+        } catch (e: IllegalArgumentException) {
+            // Already unregistered
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to unregister ServiceInfoCallback", e)
         }
     }
 
@@ -419,6 +471,21 @@ class NsdDiscoveryManager(
             discoveryListener?.let { nsdManager?.stopServiceDiscovery(it) }
         } catch (e: Exception) {
             Log.d(TAG, "cleanup: stopServiceDiscovery ignored (likely not started): ${e.message}")
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            // Unregister any resolves still in flight so NsdManager releases
+            // the callbacks and our executor.
+            val outstanding = synchronized(activeServiceInfoCallbacks) {
+                val snapshot = activeServiceInfoCallbacks.toList()
+                activeServiceInfoCallbacks.clear()
+                snapshot
+            }
+            for (callback in outstanding) {
+                unregisterServiceInfoCallbackQuietly(callback)
+            }
+        }
+        if (resolveExecutorDelegate.isInitialized()) {
+            resolveExecutorDelegate.value.shutdown()
         }
         isDiscovering = false
         releaseMulticastLock()

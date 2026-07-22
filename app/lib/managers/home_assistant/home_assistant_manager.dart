@@ -810,10 +810,11 @@ class HomeAssistantManager extends Manager {
         .replaceFirst('http://', 'ws://');
     final wsUrl = '$wsBase/api/websocket';
     final channel = WebSocketChannel.connect(Uri.parse(wsUrl));
+    StreamSubscription<dynamic>? sub;
     try {
       final completer = Completer<Object?>();
-      late StreamSubscription<dynamic> sub;
       sub = channel.stream.listen((raw) {
+        if (completer.isCompleted) return;
         final msg = jsonDecode(raw as String) as Map<String, dynamic>;
         switch (msg['type']) {
           case 'auth_required':
@@ -832,14 +833,17 @@ class HomeAssistantManager extends Manager {
               completer.completeError(StateError('${msg['error']}'));
             }
         }
-      }, onError: completer.completeError);
+      }, onError: (Object e, StackTrace s) {
+        // Guarded: an error after the result (or a second result frame)
+        // must not throw "Future already completed" into the stream zone.
+        if (!completer.isCompleted) completer.completeError(e, s);
+      });
 
-      final result = await completer.future.timeout(
+      return await completer.future.timeout(
         const Duration(seconds: 10),
       );
-      await sub.cancel();
-      return result;
     } finally {
+      await sub?.cancel();
       await channel.sink.close();
     }
   }

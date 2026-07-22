@@ -172,7 +172,9 @@ class RemoteManager extends Manager {
 
   Future<void> _stop() async {
     for (final client in _wsClients.toList()) {
-      await client.sink.close();
+      // Not awaited: a dead peer's close never completes and would stall
+      // the settings-driven restart behind it.
+      unawaited(client.sink.close());
     }
     _wsClients.clear();
     await _server?.close();
@@ -364,30 +366,42 @@ class RemoteManager extends Manager {
     if (!_auth.validate(request.url.queryParameters['token'])) {
       return _json(401, {'error': 'unauthorized'});
     }
-    return webSocketHandler((WebSocketChannel channel, String? protocol) {
-      _wsClients.add(channel);
-      _sendState(channel);
-      channel.stream.listen((raw) async {
-        try {
-          final msg = jsonDecode(raw as String) as Map<String, dynamic>;
-          if (msg['type'] == 'command' && msg['name'] is String) {
-            final result = await commands.execute(
-              msg['name'] as String,
-              (msg['params'] as Map?)?.cast<String, Object?>() ?? const {},
-            );
-            channel.sink.add(
-              jsonEncode({
-                'type': 'result',
-                'name': msg['name'],
-                ...result.toJson(),
-              }),
-            );
-          }
-        } catch (e) {
-          log.debug(name, 'bad ws message: $e');
-        }
-      }, onDone: () => _wsClients.remove(channel));
-    })(request);
+    return webSocketHandler(
+      // Pings reap silently-vanished peers (phone left wifi, laptop lid
+      // closed). Without them the channel never errors, the client stays
+      // in _wsClients, and every broadcast queues into a socket nobody
+      // reads — an unbounded buffer on exactly the feed that carries the
+      // page's whole console output.
+      pingInterval: const Duration(seconds: 30),
+      (WebSocketChannel channel, String? protocol) {
+        _wsClients.add(channel);
+        _sendState(channel);
+        channel.stream.listen(
+          (raw) async {
+            try {
+              final msg = jsonDecode(raw as String) as Map<String, dynamic>;
+              if (msg['type'] == 'command' && msg['name'] is String) {
+                final result = await commands.execute(
+                  msg['name'] as String,
+                  (msg['params'] as Map?)?.cast<String, Object?>() ?? const {},
+                );
+                channel.sink.add(
+                  jsonEncode({
+                    'type': 'result',
+                    'name': msg['name'],
+                    ...result.toJson(),
+                  }),
+                );
+              }
+            } catch (e) {
+              log.debug(name, 'bad ws message: $e');
+            }
+          },
+          onDone: () => _wsClients.remove(channel),
+          onError: (_) => _wsClients.remove(channel),
+        );
+      },
+    )(request);
   }
 
   Future<void> _sendState(WebSocketChannel channel) async {

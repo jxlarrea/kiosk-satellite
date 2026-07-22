@@ -32,11 +32,20 @@ abstract class MediaCodecDecoder(
          * the codec time to free a buffer by processing output.
          */
         private const val MAX_INPUT_RETRIES = 3
+
+        // Initial capacity for the reusable output buffers; grows on demand.
+        private const val INITIAL_OUTPUT_CAPACITY = 16 * 1024
     }
 
     protected var mediaCodec: MediaCodec? = null
     protected var outputFormat: MediaFormat? = null
     private var _isConfigured = false
+
+    // Reused across decode() calls to avoid per-call and per-drain allocation
+    // churn on the hot audio path. decode() is single-threaded.
+    private val bufferInfo = MediaCodec.BufferInfo()
+    private val outputAccumulator = ByteArrayOutputStream(INITIAL_OUTPUT_CAPACITY)
+    private var drainScratch = ByteArray(INITIAL_OUTPUT_CAPACITY)
 
     override val isConfigured: Boolean
         get() = _isConfigured
@@ -86,7 +95,8 @@ abstract class MediaCodecDecoder(
         val codec = mediaCodec
             ?: throw IllegalStateException("Decoder not configured")
 
-        val outputBuffer = ByteArrayOutputStream()
+        val outputBuffer = outputAccumulator
+        outputBuffer.reset()
 
         // Submit input with retry.
         // When all input buffers are occupied (codec backpressure), we drain
@@ -120,6 +130,9 @@ abstract class MediaCodecDecoder(
         // Drain all available output
         drainOutput(codec, outputBuffer)
 
+        // toByteArray() copies deliberately: the caller owns the returned
+        // array (SyncAudioPlayer queues and mutates it in place), so it must
+        // not alias the reusable accumulator.
         return outputBuffer.toByteArray()
     }
 
@@ -133,8 +146,6 @@ abstract class MediaCodecDecoder(
      * - INFO_TRY_AGAIN_LATER: No more output available, stop draining
      */
     private fun drainOutput(codec: MediaCodec, outputBuffer: ByteArrayOutputStream) {
-        val bufferInfo = MediaCodec.BufferInfo()
-
         while (true) {
             val outputIndex = codec.dequeueOutputBuffer(bufferInfo, TIMEOUT_US)
 
@@ -142,10 +153,12 @@ abstract class MediaCodecDecoder(
                 outputIndex >= 0 -> {
                     val outBuffer = codec.getOutputBuffer(outputIndex)
                     if (outBuffer != null && bufferInfo.size > 0) {
-                        val pcmData = ByteArray(bufferInfo.size)
+                        if (drainScratch.size < bufferInfo.size) {
+                            drainScratch = ByteArray(bufferInfo.size)
+                        }
                         outBuffer.position(bufferInfo.offset)
-                        outBuffer.get(pcmData, 0, bufferInfo.size)
-                        outputBuffer.write(pcmData)
+                        outBuffer.get(drainScratch, 0, bufferInfo.size)
+                        outputBuffer.write(drainScratch, 0, bufferInfo.size)
                     }
                     codec.releaseOutputBuffer(outputIndex, false)
                 }

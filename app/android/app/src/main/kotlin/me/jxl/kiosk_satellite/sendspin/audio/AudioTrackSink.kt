@@ -21,6 +21,12 @@ class AudioTrackSink(
 
     private val ts = AudioTimestamp()
 
+    // getTimestamp() is polled at high rate from the playback loop, and the
+    // HAL often reports the same (framePosition, nanoTime) pair across polls.
+    // Cache the last snapshot and only allocate when the value changes.
+    // SinkTimestamp is immutable, so returning a shared instance is safe.
+    private var lastTimestamp: SinkTimestamp? = null
+
     override fun play() = track.play()
     override fun pause() = track.pause()
     override fun stop() = track.stop()
@@ -30,9 +36,19 @@ class AudioTrackSink(
     override fun write(buffer: ByteArray, offset: Int, size: Int): Int =
         track.write(buffer, offset, size)
 
-    override fun getTimestamp(): SinkTimestamp? =
-        if (track.getTimestamp(ts)) SinkTimestamp(ts.framePosition, ts.nanoTime)
-        else null
+    override fun getTimestamp(): SinkTimestamp? {
+        if (!track.getTimestamp(ts)) return null
+        val cached = lastTimestamp
+        if (cached != null &&
+            cached.framePosition == ts.framePosition &&
+            cached.nanoTime == ts.nanoTime
+        ) {
+            return cached
+        }
+        val fresh = SinkTimestamp(ts.framePosition, ts.nanoTime)
+        lastTimestamp = fresh
+        return fresh
+    }
 
     override val playbackHeadPosition: Int
         get() = track.playbackHeadPosition

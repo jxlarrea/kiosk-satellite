@@ -86,6 +86,10 @@ class _KioskScreenState extends State<KioskScreen>
   /// creation (mixed content, SSL trust). Rebuilding re-reads initialSettings.
   int _webViewEpoch = 0;
 
+  /// Consecutive renderer-unresponsive callbacks; two in a row means a
+  /// wedged renderer, not a transient stall, and earns a terminate.
+  int _unresponsiveStrikes = 0;
+
   /// Pull-to-refresh, Fully style. The native wrapper handles pages that fit
   /// the screen; scrollable pages never hand it the gesture (Chromium claims
   /// every vertical drag), so those report their pulls through the JS probe
@@ -831,7 +835,33 @@ class _KioskScreenState extends State<KioskScreen>
           'browser',
           'WebView renderer gone (crashed: ${detail.didCrash}) — rebuilding '
           'the WebView');
+      _unresponsiveStrikes = 0;
       if (mounted) setState(() => _webViewEpoch++);
+    },
+    onRenderProcessUnresponsive: (controller, url) async {
+      // The renderer HUNG rather than died — the other way a memory-starved
+      // device loses the dashboard (the renderer thrashes, stalls, and
+      // Chromium waits for us to act; unhandled, the page sits white
+      // forever while the rest of the app runs on). One strike is grace
+      // for a transient stall; on the second, terminate the renderer,
+      // which fires onRenderProcessGone above and rebuilds the WebView.
+      _unresponsiveStrikes++;
+      c.browser.log.warn(
+          'browser',
+          'WebView renderer unresponsive '
+          '(strike $_unresponsiveStrikes) at $url');
+      if (_unresponsiveStrikes >= 2) {
+        _unresponsiveStrikes = 0;
+        return WebViewRenderProcessAction.TERMINATE;
+      }
+      return null;
+    },
+    onRenderProcessResponsive: (controller, url) async {
+      if (_unresponsiveStrikes > 0) {
+        c.browser.log.info('browser', 'WebView renderer responsive again');
+      }
+      _unresponsiveStrikes = 0;
+      return null;
     },
     onConsoleMessage: (controller, message) {
       c.browser.onConsoleMessage(switch (message.messageLevel) {
@@ -896,6 +926,7 @@ class _OverlayHostState extends State<_OverlayHost> {
           child: _OverlayWebView(
             url: kept,
             key: ValueKey(kept),
+            paused: url == null,
             onRenderGone: () {
               c.browser.log.warn(
                   'browser', 'overlay renderer gone — dropping the overlay');
@@ -915,27 +946,59 @@ class _OverlayHostState extends State<_OverlayHost> {
 /// no pull-to-refresh — it only displays a page. The dashboard WebView
 /// below it stays fully loaded and interactive the instant this is removed,
 /// so the Voice Satellite session and the wake word never pause.
-class _OverlayWebView extends StatelessWidget {
-  const _OverlayWebView({required this.url, this.onRenderGone, super.key});
+class _OverlayWebView extends StatefulWidget {
+  const _OverlayWebView({
+    required this.url,
+    required this.paused,
+    this.onRenderGone,
+    super.key,
+  });
 
   final String url;
+
+  /// Offstage: the page is loaded but hidden. Pausing the WebView (per-view
+  /// onPause, NOT the process-wide pauseTimers) stops its JS, animations and
+  /// media from burning CPU behind the dashboard for the whole gap between
+  /// rotation passes — typical targets (weather pages, dashboards) animate
+  /// continuously.
+  final bool paused;
 
   /// The overlay's renderer died: the host drops the overlay (rotation puts
   /// it back on its next pass) instead of Android killing the app.
   final VoidCallback? onRenderGone;
 
   @override
+  State<_OverlayWebView> createState() => _OverlayWebViewState();
+}
+
+class _OverlayWebViewState extends State<_OverlayWebView> {
+  InAppWebViewController? _controller;
+
+  @override
+  void didUpdateWidget(_OverlayWebView old) {
+    super.didUpdateWidget(old);
+    if (widget.paused != old.paused) {
+      widget.paused ? _controller?.pause() : _controller?.resume();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.black,
       child: InAppWebView(
-        initialUrlRequest: URLRequest(url: WebUri(url)),
+        initialUrlRequest: URLRequest(url: WebUri(widget.url)),
         initialSettings: InAppWebViewSettings(
           useHybridComposition: true,
           transparentBackground: false,
           supportZoom: false,
         ),
-        onRenderProcessGone: (controller, detail) => onRenderGone?.call(),
+        onWebViewCreated: (controller) {
+          _controller = controller;
+          if (widget.paused) controller.pause();
+        },
+        onRenderProcessGone: (controller, detail) =>
+            widget.onRenderGone?.call(),
       ),
     );
   }

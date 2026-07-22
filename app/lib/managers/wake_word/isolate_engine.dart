@@ -512,5 +512,8 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
     _detectionPaused = false;
     _wakeEndSample = null;
     _preRoll.reset();
+    // The page's audio stream too: left set, the next run would base64 every
+    // mic chunk into the bridge for a listener that died with the old page.
+    _onAudioChunk = null;
   }
 }

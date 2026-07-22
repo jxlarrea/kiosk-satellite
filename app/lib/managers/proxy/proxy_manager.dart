@@ -272,20 +272,25 @@ class ProxyManager extends Manager {
       await page.close(WebSocketStatus.internalServerError, 'upstream');
       rethrow;
     }
-    page.listen(
-      upstream.add,
-      onDone: () =>
-          upstream.close(_sendableCode(page.closeCode), page.closeReason),
-      onError: (_) => upstream.close(WebSocketStatus.internalServerError),
-      cancelOnError: true,
-    );
-    upstream.listen(
-      page.add,
-      onDone: () =>
-          page.close(_sendableCode(upstream.closeCode), upstream.closeReason),
-      onError: (_) => page.close(WebSocketStatus.internalServerError),
-      cancelOnError: true,
-    );
+    // addStream, not listen-and-add: piping applies backpressure, so when
+    // one side stops reading (Android freezing the renderer with the
+    // screen off is the common case) the other side is paused instead of
+    // every HA state frame accumulating in this process's heap for as
+    // long as the freeze lasts. HA dropping a stalled client is the
+    // strictly better failure.
+    unawaited(_pump(page, upstream));
+    unawaited(_pump(upstream, page));
+  }
+
+  Future<void> _pump(WebSocket from, WebSocket to) async {
+    try {
+      await to.addStream(from);
+      await to.close(_sendableCode(from.closeCode), from.closeReason);
+    } catch (_) {
+      try {
+        await to.close(WebSocketStatus.internalServerError);
+      } catch (_) {}
+    }
   }
 
   /// 1005/1006 are receive-side markers ("no status", "abnormal") that must

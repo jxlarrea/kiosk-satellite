@@ -16,6 +16,13 @@ import 'ui/theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // The engine's decoded-image cache defaults to 100MB — a quarter of a
+  // low-RAM device's whole app budget, sitting alongside the Chromium
+  // WebView that IS the product. This app's Flutter UI is chrome around
+  // that WebView plus one screensaver slide at a time (slides evict
+  // themselves as they leave); 32MB is generous for all of it.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 32 << 20;
+
   final container = AppContainer();
   await container.init();
 

@@ -1,4 +1,5 @@
-import 'dart:convert' show LineSplitter;
+import 'dart:collection' show ListQueue;
+import 'dart:convert' show LineSplitter, utf8;
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -149,19 +150,33 @@ class DeviceManager extends Manager {
             // to the raw buffer BEFORE filtering, which would leave only
             // the few real lines among the last N spammy ones. So: dump
             // the whole buffer filtered and take the tail ourselves.
-            final result = await Process.run('logcat', [
+            final proc = await Process.start('logcat', [
               '-b', 'main', '-b', 'system', '-b', 'crash',
               '-d', '-v', 'time',
               'View:W', '*:V',
             ]);
-            if (result.exitCode != 0) {
+            // Tail through a bounded queue while the dump streams:
+            // Process.run would hold the whole multi-MB buffer dump in
+            // memory (twice, as a UTF-16 string) just to keep its tail.
+            final tail = ListQueue<String>(lines + 1);
+            final stderrTail = StringBuffer();
+            await Future.wait([
+              proc.stdout
+                  .transform(utf8.decoder)
+                  .transform(const LineSplitter())
+                  .forEach((line) {
+                    if (tail.length >= lines) tail.removeFirst();
+                    tail.add(line);
+                  }),
+              proc.stderr
+                  .transform(utf8.decoder)
+                  .forEach(stderrTail.write),
+            ]);
+            final exitCode = await proc.exitCode;
+            if (exitCode != 0) {
               return CommandResult.fail(
-                  'logcat failed: ${result.stderr ?? result.exitCode}');
+                  'logcat failed: ${stderrTail.isEmpty ? exitCode : stderrTail}');
             }
-            final all = const LineSplitter().convert('${result.stdout}');
-            final tail = all.length > lines
-                ? all.sublist(all.length - lines)
-                : all;
             return CommandResult.ok(tail.join('\n'));
           } catch (e) {
             return CommandResult.fail('logcat unavailable: $e');

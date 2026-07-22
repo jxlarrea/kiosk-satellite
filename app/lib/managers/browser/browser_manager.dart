@@ -327,6 +327,12 @@ class BrowserManager extends Manager {
   /// Called by the UI layer from the WebView's onConsoleMessage.
   void onConsoleMessage(String level, String message) {
     final now = DateTime.now();
+    // The ring caps entries, not bytes: a dashboard dumping serialized
+    // state objects could pin 300 megabyte-strings (and push each one to
+    // every remote admin client). 8KB keeps any real diagnostic readable.
+    if (message.length > 8192) {
+      message = '${message.substring(0, 8192)}… [truncated]';
+    }
     if (consoleEntries.length >= _consoleCapacity) {
       consoleEntries.removeAt(0);
     }

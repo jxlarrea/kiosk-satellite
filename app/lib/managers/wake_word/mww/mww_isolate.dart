@@ -40,8 +40,10 @@ void mwwIsolateEntry(SendPort mainPort) {
 
 class _Kw {
   _Kw(this.id, this.wakeWord, this.interpreter, this.gate, this.framesPerInfer,
-      this.inputScale, this.inputZeroPoint, this.inputShape, this.outputShape,
-      {this.isStop = false});
+      this.inputScale, this.inputZeroPoint, int inputElements,
+      {this.isStop = false})
+      : accum = List.generate(framesPerInfer, (_) => Float32List(kFeatureSize)),
+        inputBuf = Int8List(inputElements);
 
   final String id;
   final String wakeWord;
@@ -58,10 +60,24 @@ class _Kw {
   final int framesPerInfer;
   final double inputScale;
   final int inputZeroPoint;
-  final List<int> inputShape;
-  final List<int> outputShape;
 
-  final List<Float32List> accum = [];
+  /// Preallocated frame slots, [accumLen] of them filled. Frames are copied in
+  /// because the frontend reuses its buffers on the next feed.
+  final List<Float32List> accum;
+  int accumLen = 0;
+
+  /// Reusable flat quantized-input buffer (tensor element count) plus its byte
+  /// view for the copy into the input tensor. int8 and uint8 tensors store the
+  /// same byte patterns, so one Int8List serves both.
+  final Int8List inputBuf;
+  late final Uint8List inputBytes = inputBuf.buffer.asUint8List();
+
+  late final Tensor inputTensor = interpreter.getInputTensor(0);
+  late final Tensor outputTensor = interpreter.getOutputTensor(0);
+
+  /// int8 output bytes must be sign-extended before scaling; uint8 read as is.
+  /// Matches how the plugin's own decoding treated each type.
+  late final bool outputSigned = outputTensor.type == TensorType.int8;
 }
 
 class _MwwWorker {
@@ -112,13 +128,13 @@ class _MwwWorker {
       for (final md in (msg['models'] as List)) {
         final interpreter = Interpreter.fromBuffer(md['tflite'] as Uint8List);
         final inT = interpreter.getInputTensors().first;
-        final outT = interpreter.getOutputTensors().first;
 
         // The tensor is authoritative about frames-per-invoke and
         // quantization; the manifest is not, and tfweb could not read either,
         // which is why the card probes the input buffer length instead.
         final inputShape = inT.shape; // e.g. [1, 3, 40]
-        final framesPerInfer = inputShape.fold<int>(1, (a, b) => a * b) ~/ kFeatureSize;
+        final inputElements = inputShape.fold<int>(1, (a, b) => a * b);
+        final framesPerInfer = inputElements ~/ kFeatureSize;
         final params = inT.params;
         final scale = params.scale > 0 ? params.scale : 0.10196078568696976;
         final zeroPoint = params.zeroPoint;
@@ -133,8 +149,7 @@ class _MwwWorker {
           framesPerInfer < 1 ? 1 : framesPerInfer,
           scale,
           zeroPoint,
-          inputShape,
-          outT.shape,
+          inputElements,
           isStop: md['stop'] == true,
         ));
         _log(
@@ -202,16 +217,18 @@ class _MwwWorker {
         // classifier only runs while the card says playback is interruptible,
         // or while a tester is watching it (telemetry, no real detection).
         if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
-        k.accum.add(feature);
-        if (k.accum.length < k.framesPerInfer) continue;
+        // Copied, not referenced: the frontend reuses its frame buffers.
+        k.accum[k.accumLen].setAll(0, feature);
+        k.accumLen++;
+        if (k.accumLen < k.framesPerInfer) continue;
         if (!scoreThisChunk) {
-          k.accum.clear();
+          k.accumLen = 0;
           continue;
         }
         final sw = _telemetry ? (Stopwatch()..start()) : null;
         final probability = _invoke(k);
         sw?.stop();
-        k.accum.clear();
+        k.accumLen = 0;
         if (probability == null) continue;
 
         final trigger = k.gate.update(probability, _absSamples ~/ 16);
@@ -293,7 +310,7 @@ class _MwwWorker {
     _sleeping = true;
     for (final k in _kws) {
       k.gate.reset();
-      k.accum.clear();
+      k.accumLen = 0;
     }
     _log('info', 'energy gate: asleep (rms ${rms.toStringAsFixed(4)})');
     return false;
@@ -307,7 +324,7 @@ class _MwwWorker {
     for (final k in _kws) {
       if (!k.isStop) continue;
       k.gate.reset();
-      k.accum.clear();
+      k.accumLen = 0;
     }
     _log('info', active ? 'stop word armed' : 'stop word disarmed');
   }
@@ -320,27 +337,31 @@ class _MwwWorker {
   /// zero point is negative, so Dart's `.round()` would be wrong here).
   double? _invoke(_Kw k) {
     try {
-      // Nested lists shaped like the tensor, e.g. [1, 3, 40].
-      final input = _zeros(k.inputShape);
-      final flat = <int>[];
+      final input = k.inputBuf;
+      final n = input.length;
       final scaleF32 = _fround32(k.inputScale);
       final zpF32 = _fround32(k.inputZeroPoint.toDouble());
-      for (final frame in k.accum) {
-        for (var j = 0; j < frame.length; j++) {
+      var idx = 0;
+      for (var f = 0; f < k.accumLen && idx < n; f++) {
+        final frame = k.accum[f];
+        for (var j = 0; j < frame.length && idx < n; j++) {
           final divided = _fround32(frame[j] / scaleF32);
           final shifted = _fround32(divided + zpF32);
           var q = roundBankers(shifted);
           if (q < -128) q = -128;
           if (q > 127) q = 127;
-          flat.add(q);
+          input[idx++] = q;
         }
       }
-      _fill(input, flat.iterator);
+      if (idx < n) input.fillRange(idx, n, 0);
 
-      final output = _zeros(k.outputShape);
-      k.interpreter.runForMultipleInputs([input], {0: output});
-      final raw = _firstScalar(output);
-      if (raw == null) return null;
+      // Byte copies straight into/out of the tensors; the nested boxed lists
+      // runForMultipleInputs marshals through cost more than the invoke.
+      k.inputTensor.data = k.inputBytes;
+      k.interpreter.invoke();
+      final out = k.outputTensor.data;
+      if (out.isEmpty) return null;
+      final raw = k.outputSigned ? out[0].toSigned(8) : out[0];
       // Output is uint8 [0, 255].
       return raw / 255.0;
     } catch (e) {
@@ -360,7 +381,7 @@ class _MwwWorker {
     _frontend?.reset();
     for (final k in _kws) {
       if (k.isStop) continue; // armed independently; not ours to reset
-      k.accum.clear();
+      k.accumLen = 0;
       k.gate.reset();
     }
     _log('info', 're-armed');
@@ -381,34 +402,4 @@ final Float32List _f32scratch = Float32List(1);
 double _fround32(double x) {
   _f32scratch[0] = x;
   return _f32scratch[0];
-}
-
-/// Nested zero-filled lists matching a tensor shape, e.g. [1, 3, 40].
-Object _zeros(List<int> shape) {
-  if (shape.length == 1) return List<int>.filled(shape.first, 0);
-  return List<Object>.generate(shape.first, (_) => _zeros(shape.sublist(1)));
-}
-
-/// Write [values] into the innermost lists of [nested], in order.
-void _fill(Object nested, Iterator<int> values) {
-  if (nested is List<int>) {
-    for (var i = 0; i < nested.length; i++) {
-      if (!values.moveNext()) return;
-      nested[i] = values.current;
-    }
-    return;
-  }
-  for (final child in nested as List<Object>) {
-    _fill(child, values);
-  }
-}
-
-/// The first scalar in a nested list, e.g. [[7]] -> 7.
-num? _firstScalar(Object nested) {
-  var cur = nested;
-  while (cur is List) {
-    if (cur.isEmpty) return null;
-    cur = cur.first as Object;
-  }
-  return cur is num ? cur : null;
 }

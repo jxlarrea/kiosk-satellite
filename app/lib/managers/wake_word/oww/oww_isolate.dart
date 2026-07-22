@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:onnxruntime/onnxruntime.dart';
 
 import '../vsww/ort_init.dart';
+import '../vsww/ort_tensor_io.dart';
 import 'oww_gate.dart';
 import 'oww_pipeline.dart';
 import '../wake_msg.dart';
@@ -44,6 +45,10 @@ class _Kw {
   final String inputName;
   final OwwGate gate;
   final bool isStop;
+
+  /// Whether the classifier's output tensor was verified non-empty (checked on
+  /// the first inference, then read directly).
+  bool outputChecked = false;
 }
 
 class _OwwWorker {
@@ -57,6 +62,12 @@ class _OwwWorker {
   final _pending = BytesBuilder(copy: false);
   final Float32List _chunk = Float32List(_chunkSamples);
   final List<OrtSession> _sharedSessions = [];
+
+  // One run-options handle and one classifier input tensor for the worker's
+  // lifetime (created in init, released in stop), as in the vsww isolate.
+  OrtRunOptions? _runOptions;
+  ReusableInputTensor? _clsInput;
+  final Float32List _clsOut = Float32List(1);
   bool _stopped = false;
   bool _detected = false;
   bool _stopArmed = false;
@@ -96,6 +107,9 @@ class _OwwWorker {
       final mel = load(msg['melspectrogram'] as Uint8List);
       final emb = load(msg['embedding'] as Uint8List);
       _pipeline = OwwPipeline(melSession: mel, embeddingSession: emb);
+      _runOptions = OrtRunOptions();
+      _clsInput = ReusableInputTensor.create(
+          [1, OwwPipeline.embeddingWindow, OwwPipeline.embeddingDim]);
 
       for (final md in (msg['models'] as List)) {
         final session = load(md['onnx'] as Uint8List);
@@ -177,12 +191,15 @@ class _OwwWorker {
     // only the per-model head runs per wake word.
     final window = pipeline.process(chunk);
     if (window == null) return;
+    // Every classifier scores the same window, so it is written once into the
+    // shared persistent input tensor.
+    _clsInput!.write(window);
 
     for (final k in _kws) {
       // Stop classifier runs while armed, or while a tester watches it.
       if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
       final sw = _telemetry ? (Stopwatch()..start()) : null;
-      final probability = _classify(k, window);
+      final probability = _classify(k);
       sw?.stop();
       if (probability == null) continue;
       final trigger = k.gate.update(probability, _absSamples ~/ 16);
@@ -226,26 +243,22 @@ class _OwwWorker {
     }
   }
 
-  double? _classify(_Kw k, Float32List window) {
-    OrtValueTensor? input;
+  double? _classify(_Kw k) {
     List<OrtValue?>? outputs;
     try {
-      input = OrtValueTensor.createTensorWithDataList(
-          window, [1, OwwPipeline.embeddingWindow, OwwPipeline.embeddingDim]);
-      outputs = k.session.run(OrtRunOptions(), {k.inputName: input});
-      final value = outputs.isNotEmpty ? outputs[0]?.value : null;
-      if (value == null) return null;
-      Object? cur = value;
-      while (cur is List) {
-        if (cur.isEmpty) return null;
-        cur = cur.first;
+      outputs = k.session.run(_runOptions!, {k.inputName: _clsInput!.tensor});
+      final out = outputs.isNotEmpty ? outputs[0] : null;
+      if (out == null) return null;
+      if (!k.outputChecked) {
+        if (tensorElementCount(out) < 1) return null;
+        k.outputChecked = true;
       }
-      return cur is num ? cur.toDouble() : null;
+      readFloatTensor(out, _clsOut);
+      return _clsOut[0];
     } catch (e) {
       _log('warn', 'inference error: $e');
       return null;
     } finally {
-      input?.release();
       outputs?.forEach((o) => o?.release());
     }
   }
@@ -307,7 +320,12 @@ class _OwwWorker {
     }
     _sharedSessions.clear();
     _kws.clear();
+    _pipeline?.dispose();
     _pipeline = null;
+    _clsInput?.release();
+    _clsInput = null;
+    _runOptions?.release();
+    _runOptions = null;
     _main.send({'type': WakeMsg.stopped});
   }
 }

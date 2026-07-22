@@ -398,11 +398,24 @@ const wsFilterScript = '''
       }
       return rm(type, fn, opts);
     };
-    var _om = null;
+    var _om = null, _omWrapped = null;
     Object.defineProperty(ws, 'onmessage', {
       configurable: true,
       get: function () { return _om; },
-      set: function (fn) { _om = fn; if (typeof fn === 'function') { S.listeners.push(fn); add('message', wrap(fn)); } },
+      set: function (fn) {
+        // Real onmessage semantics are replace, not append: without
+        // removing the previous wrapper every reassignment adds one more
+        // native listener that still calls its captured old handler, so
+        // each frame is processed once per historical handler.
+        if (_omWrapped) {
+          rm('message', _omWrapped); _omWrapped = null;
+          var i = S.listeners.indexOf(_om); if (i >= 0) S.listeners.splice(i, 1);
+        }
+        _om = fn;
+        if (typeof fn === 'function') {
+          _omWrapped = wrap(fn); S.listeners.push(fn); add('message', _omWrapped);
+        }
+      },
     });
 
     return ws;

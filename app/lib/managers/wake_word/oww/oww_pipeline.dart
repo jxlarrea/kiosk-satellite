@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:onnxruntime/onnxruntime.dart';
 
+import '../vsww/ort_tensor_io.dart';
+
 /// openWakeWord's three-stage streaming pipeline.
 ///
 ///   raw 16 kHz audio -> melspectrogram -> embedding -> classifier
@@ -50,6 +52,22 @@ class OwwPipeline {
   final Float32List _melBuffer = Float32List(_melBufferMax * melBins);
   int _melBufferLen = 0;
   final Float32List _classifierInput = Float32List(embeddingWindow * embeddingDim);
+  final Float32List _scaled = Float32List(chunkSamples);
+
+  // Persistent native input tensors and one run-options handle, following the
+  // vsww isolate: the plugin's per-run tensor create/box/release cycle (and
+  // the OrtRunOptions it never released) dominates a chain this cheap. See
+  // ort_tensor_io.dart.
+  final ReusableInputTensor _melTensor =
+      ReusableInputTensor.create([1, chunkSamples + melPrefixSamples]);
+  final ReusableInputTensor _embTensor =
+      ReusableInputTensor.create([1, melWindow, melBins, 1]);
+  final OrtRunOptions _runOptions = OrtRunOptions();
+
+  // Reusable per-stage output buffers, sized from the session on first use
+  // (the mel output length is not knowable ahead of the first run).
+  Float32List? _melOut;
+  Float32List? _embOut;
 
   /// The noise-warmed classifier window, snapshotted after [warmup].
   ///
@@ -93,11 +111,10 @@ class OwwPipeline {
   /// Feed one 1280-sample chunk of +/-1 audio; returns the classifier input
   /// window to score, or null if the pipeline could not run.
   Float32List? process(Float32List samples) {
-    final scaled = Float32List(chunkSamples);
     for (var i = 0; i < chunkSamples; i++) {
-      scaled[i] = samples[i] * 32768;
+      _scaled[i] = samples[i] * 32768;
     }
-    final emb = _runFrontend(scaled);
+    final emb = _runFrontend(_scaled);
     if (emb == null) return null;
     _appendEmbedding(emb);
     return _classifierInput;
@@ -111,8 +128,8 @@ class OwwPipeline {
     _audioHistory.setRange(
         0, melPrefixSamples, scaledChunk, chunkSamples - melPrefixSamples);
 
-    final mel = _run(melSession, _melInputName, _melInput,
-        [1, chunkSamples + melPrefixSamples]);
+    final mel =
+        _melOut = _runStage(melSession, _melInputName, _melTensor, _melInput, _melOut);
     if (mel == null) return null;
     _appendMel(mel);
 
@@ -120,7 +137,8 @@ class OwwPipeline {
     final start = (_melBufferLen - melWindow) * melBins;
     final window = Float32List.sublistView(
         _melBuffer, start, start + melWindow * melBins);
-    return _run(embeddingSession, _embInputName, window, [1, melWindow, melBins, 1]);
+    return _embOut =
+        _runStage(embeddingSession, _embInputName, _embTensor, window, _embOut);
   }
 
   /// Apply `x / 10 + 2` and append each frame to the rolling mel buffer.
@@ -149,37 +167,24 @@ class OwwPipeline {
         (embeddingWindow - 1) * embeddingDim, embeddingWindow * embeddingDim, emb);
   }
 
-  Float32List? _run(
-      OrtSession session, String inputName, Float32List data, List<int> shape) {
-    OrtValueTensor? input;
+  /// Run one stage through its persistent input tensor, reading the float32
+  /// output straight out of ORT's buffer into the stage's reusable [out]
+  /// (allocated on the first run; the count is fixed after that because the
+  /// input shape never changes).
+  Float32List? _runStage(OrtSession session, String inputName,
+      ReusableInputTensor input, Float32List data, Float32List? out) {
+    input.write(data);
     List<OrtValue?>? outputs;
     try {
-      input = OrtValueTensor.createTensorWithDataList(data, shape);
-      outputs = session.run(OrtRunOptions(), {inputName: input});
-      final value = outputs.isNotEmpty ? outputs[0]?.value : null;
-      return value == null ? null : _flatten(value);
+      outputs = session.run(_runOptions, {inputName: input.tensor});
+      final value = outputs.isNotEmpty ? outputs[0] : null;
+      if (value == null) return null;
+      out ??= Float32List(tensorElementCount(value));
+      readFloatTensor(value, out);
+      return out;
     } finally {
-      input?.release();
       outputs?.forEach((o) => o?.release());
     }
-  }
-
-  /// ONNX outputs come back as nested lists; the shapes vary per stage, so
-  /// flatten whatever arrives.
-  static Float32List _flatten(Object value) {
-    final out = <double>[];
-    void walk(Object? v) {
-      if (v is num) {
-        out.add(v.toDouble());
-      } else if (v is List) {
-        for (final e in v) {
-          walk(e);
-        }
-      }
-    }
-
-    walk(value);
-    return Float32List.fromList(out);
   }
 
   /// Wipe per-stream history so the next chunk is treated as a cold start,
@@ -189,6 +194,14 @@ class OwwPipeline {
     _initMelBuffer();
     final warm = _warmClassifierInput;
     if (warm != null) _classifierInput.setAll(0, warm);
+  }
+
+  /// Release the pipeline's native input tensors and run options. The two
+  /// sessions stay alive; they belong to the caller.
+  void dispose() {
+    _melTensor.release();
+    _embTensor.release();
+    _runOptions.release();
   }
 
   /// Chunk RMS, for the card's energy gate.

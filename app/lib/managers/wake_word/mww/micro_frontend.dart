@@ -632,13 +632,23 @@ class MicroFrontend {
   final Uint32List _noiseEstimate = Uint32List(kFeatureSize);
   final Float64List _signal = Float64List(kFeatureSize);
 
+  /// Reusable frame buffers handed out by [_processWindow], grown to the most
+  /// frames one [feed] call has produced, and the reusable results list.
+  final List<Float32List> _frames = [];
+  int _framesUsed = 0;
+  final List<Float32List> _results = [];
+
   MicroFrontendTables get tables => _tables;
 
   /// Feed float samples in [-1, 1]; returns one 40-feature frame per completed
   /// 10 ms step (so usually 1 per 160 samples, 0 while the first window fills).
+  ///
+  /// The returned list and the frames in it are owned by the frontend and
+  /// reused by the next [feed] call: copy anything kept across calls.
   List<Float32List> feed(List<double> samples) {
     if (samples.isEmpty) return const [];
-    final results = <Float32List>[];
+    _framesUsed = 0;
+    _results.clear();
     var offset = 0;
 
     while (offset < samples.length) {
@@ -652,12 +662,12 @@ class MicroFrontend {
 
       if (_inputUsed < kWindowSize) continue;
 
-      results.add(_processWindow());
+      _results.add(_processWindow());
       _input.setRange(0, kWindowSize - kStepSize, _input, kStepSize);
       _inputUsed -= kStepSize;
     }
 
-    return results;
+    return _results;
   }
 
   void reset() {
@@ -734,8 +744,10 @@ class MicroFrontend {
 
     // Pre-quantization float features; each model applies its own
     // (scale, zero_point) on the way into its input tensor, so two models with
-    // different quantization can share one feature stream.
-    final feature = Float32List(kFeatureSize);
+    // different quantization can share one feature stream. The buffer comes
+    // from the reusable ring (see [feed]) and is fully overwritten below.
+    if (_framesUsed == _frames.length) _frames.add(Float32List(kFeatureSize));
+    final feature = _frames[_framesUsed++];
     for (var i = 0; i < kFeatureSize; i++) {
       final corrected = (_signal[i] * (1 << kInputCorrectionBits)).toInt();
       final logged = corrected > 1 ? _logScale(corrected) : 0;

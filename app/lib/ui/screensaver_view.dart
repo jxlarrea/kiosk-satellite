@@ -154,10 +154,18 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     }
   }
 
-  // Re-align to each wall-clock second rather than drifting off a fixed period.
+  // Re-align to each wall-clock second (or minute, when seconds are not
+  // shown — the face only changes once a minute then, and a per-second
+  // rebuild would be 60x the wakeups for identical pixels) rather than
+  // drifting off a fixed period.
   void _scheduleTick() {
-    final ms = DateTime.now().millisecondsSinceEpoch % 1000;
-    _tick = Timer(Duration(milliseconds: 1000 - ms), () {
+    final now = DateTime.now();
+    final delay = widget.container.settings.get(defs.screensaverClockSeconds)
+        ? Duration(milliseconds: 1000 - now.millisecond)
+        : Duration(
+            milliseconds: 60000 - now.second * 1000 - now.millisecond,
+          );
+    _tick = Timer(delay, () {
       if (!mounted) return;
       setState(() => _now = DateTime.now());
       _scheduleTick();
@@ -615,6 +623,13 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
   Timer? _timer;
   VideoPlayerController? _video;
 
+  /// The current slide's provider, decoded at screen size. Held so the
+  /// previous slide's decoded bitmap can be evicted from the engine's
+  /// image cache when it leaves — otherwise every slide parks another
+  /// full bitmap there until the cache's 100MB cap, which alone can OOM
+  /// a low-RAM device running the WebView alongside.
+  ImageProvider? _image;
+
   /// Set when the folder is missing, unreadable, or empty — the message is
   /// the screensaver then, because a silently black screen looks like a
   /// crash and teaches nothing.
@@ -725,12 +740,17 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       try {
         await video.initialize();
         await video.setVolume(0);
+        var ended = false;
         video.addListener(() {
           final v = video.value;
-          if (v.isInitialized &&
+          if (!ended &&
+              v.isInitialized &&
               !v.isPlaying &&
               v.position >= v.duration &&
               v.duration > Duration.zero) {
+            // Once only: the controller keeps notifying while it retires,
+            // and a second _advance would skip a slide.
+            ended = true;
             _advance();
           }
         });
@@ -740,7 +760,12 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
           return;
         }
         _video = video;
-        setState(() => _index = next);
+        final oldImage = _image;
+        setState(() {
+          _index = next;
+          _image = null;
+        });
+        if (oldImage != null) unawaited(oldImage.evict());
         await video.play();
       } catch (e) {
         // A codec the device lacks must not stall the slideshow. Skip past
@@ -753,7 +778,12 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         return;
       }
     } else {
-      setState(() => _index = next);
+      final oldImage = _image;
+      setState(() {
+        _index = next;
+        _image = _screenSizedFile(file);
+      });
+      if (oldImage != null) unawaited(oldImage.evict());
       final seconds = c.settings
           .get(
             _gallery
@@ -767,17 +797,32 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
     _retire(old);
   }
 
+  /// Decode capped at the panel's physical width: originals can be 48MP
+  /// phone shots that decode to ~190MB of RGBA at full size, and the
+  /// screen can never show more pixels than it has.
+  ImageProvider _screenSizedFile(File file) {
+    final mq = MediaQuery.of(context);
+    return ResizeImage(
+      FileImage(file),
+      width: (mq.size.width * mq.devicePixelRatio).round(),
+    );
+  }
+
   /// Outgoing video controllers live until every transition that could
   /// still be painting them has finished, then die.
   final _retiring = <VideoPlayerController>[];
+  final _retireTimers = <Timer>[];
 
   void _retire(VideoPlayerController? old) {
     if (old == null) return;
     _retiring.add(old);
-    Timer(const Duration(milliseconds: 1200), () {
+    late final Timer t;
+    t = Timer(const Duration(milliseconds: 1200), () {
+      _retireTimers.remove(t);
       _retiring.remove(old);
       old.dispose();
     });
+    _retireTimers.add(t);
   }
 
   void _advance() {
@@ -788,10 +833,14 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
   @override
   void dispose() {
     _timer?.cancel();
+    for (final t in _retireTimers) {
+      t.cancel();
+    }
     _video?.dispose();
     for (final v in _retiring) {
       v.dispose();
     }
+    _image?.evict();
     super.dispose();
   }
 
@@ -822,7 +871,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
           style: const TextStyle(color: Colors.white54, fontSize: 16),
         ),
       );
-    } else if (_files.isEmpty) {
+    } else if (_files.isEmpty || (_image == null && video == null)) {
       body = const SizedBox.expand();
     } else {
       final transition = _transition;
@@ -837,8 +886,8 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
               ),
             )
           : SizedBox.expand(
-              child: Image.file(
-                _files[_index],
+              child: Image(
+                image: _image!,
                 fit: BoxFit.contain,
                 gaplessPlayback: true,
                 errorBuilder: (_, _, _) => const SizedBox.expand(),
@@ -907,6 +956,12 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   List<ImmichAsset> _assets = const [];
   int _index = 0;
   Uint8List? _imageBytes;
+
+  /// The current slide's provider, decoded at screen size and evicted
+  /// from the engine's image cache when the slide leaves. Without the
+  /// eviction every slide is a fresh never-hit cache key, so the cache
+  /// ratchets to its 100MB cap and stays there for the process life.
+  ImageProvider? _image;
 
   /// Width over height of the current image, or null when unknown; feeds
   /// the fill-the-screen decision.
@@ -986,12 +1041,17 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       try {
         await video.initialize();
         await video.setVolume(0);
+        var ended = false;
         video.addListener(() {
           final v = video.value;
-          if (v.isInitialized &&
+          if (!ended &&
+              v.isInitialized &&
               !v.isPlaying &&
               v.position >= v.duration &&
               v.duration > Duration.zero) {
+            // Once only: the controller keeps notifying while it retires,
+            // and a second _advance would skip a slide.
+            ended = true;
             _advance();
           }
         });
@@ -1002,10 +1062,17 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         }
         _failures = 0;
         _video = video;
+        final oldImage = _image;
         setState(() {
           _index = next;
           _imageBytes = null;
+          _image = null;
         });
+        if (oldImage != null) unawaited(oldImage.evict());
+        // A warmed buffer for a slide we already passed would sit through
+        // the whole video for nothing.
+        _prefetchedIndex = null;
+        _prefetchedBytes = null;
         await video.play();
       } catch (e) {
         c.log.warn('screensaver', 'immich video failed (${asset.id}): $e');
@@ -1028,17 +1095,30 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         await old?.dispose();
         return;
       }
+      // Consumed (or stale): drop the warm buffer so it never outlives
+      // its one use.
+      _prefetchedIndex = null;
+      _prefetchedBytes = null;
       final aspect = await _aspectOf(bytes);
       if (!mounted) {
         await old?.dispose();
         return;
       }
       _failures = 0;
+      final oldImage = _image;
+      final mq = MediaQuery.of(context);
       setState(() {
         _index = next;
         _imageBytes = bytes;
         _imageAspect = aspect;
+        // Screen-width decode cap: server previews can still out-size a
+        // small panel (Echo Show class) several times over.
+        _image = ResizeImage(
+          MemoryImage(bytes),
+          width: (mq.size.width * mq.devicePixelRatio).round(),
+        );
       });
+      if (oldImage != null) unawaited(oldImage.evict());
       final seconds = c.settings
           .get(defs.screensaverImmichInterval)
           .toInt()
@@ -1090,14 +1170,18 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   }
 
   final _retiring = <VideoPlayerController>[];
+  final _retireTimers = <Timer>[];
 
   void _retire(VideoPlayerController? old) {
     if (old == null) return;
     _retiring.add(old);
-    Timer(const Duration(milliseconds: 1200), () {
+    late final Timer t;
+    t = Timer(const Duration(milliseconds: 1200), () {
+      _retireTimers.remove(t);
       _retiring.remove(old);
       old.dispose();
     });
+    _retireTimers.add(t);
   }
 
   void _advance() {
@@ -1108,10 +1192,14 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   @override
   void dispose() {
     _timer?.cancel();
+    for (final t in _retireTimers) {
+      t.cancel();
+    }
     _video?.dispose();
     for (final v in _retiring) {
       v.dispose();
     }
+    _image?.evict();
     super.dispose();
   }
 
@@ -1135,7 +1223,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
           style: const TextStyle(color: Colors.white54, fontSize: 16),
         ),
       );
-    } else if (_imageBytes == null && video == null) {
+    } else if (_image == null && video == null) {
       body = const SizedBox.expand();
     } else {
       final transition = _transition;
@@ -1167,49 +1255,67 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
           ),
         );
       } else {
-        final picture = Image.memory(
-          _imageBytes!,
+        Widget picture = Image(
+          image: _image!,
           fit: covers ? BoxFit.cover : BoxFit.contain,
           gaplessPlayback: true,
           errorBuilder: (_, _, _) => const SizedBox.expand(),
         );
+        if (transition == 'kenburns') {
+          // The drift wraps only the photo: the blurred backdrop stays
+          // static behind it, so it rasterizes once per slide instead of
+          // re-blurring the whole screen on every animation frame.
+          picture = _KenBurnsDrift(
+            index: _index,
+            duration:
+                Duration(
+                  seconds: c.settings
+                      .get(defs.screensaverImmichInterval)
+                      .toInt()
+                      .clamp(2, 3600),
+                ) +
+                const Duration(seconds: 2),
+            child: SizedBox.expand(child: picture),
+          );
+        }
         inner = fillWanted && !covers
             ? Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.memory(
-                    _imageBytes!,
-                    fit: BoxFit.cover,
-                    gaplessPlayback: true,
-                    errorBuilder: (_, _, _) => const SizedBox.expand(),
-                  ),
                   // Blur + scrim so the backdrop reads as atmosphere, not
                   // a second copy of the photo (sendspin_player_overlay
-                  // established the recipe).
-                  BackdropFilter(
-                    filter: ui.ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-                    child: const ColoredBox(color: Color(0x99000000)),
+                  // established the recipe). ImageFiltered over the same
+                  // provider, not BackdropFilter: a backdrop filter must
+                  // re-sample the scene every frame it composites, which
+                  // on weak tablet GPUs is a standing 60fps blur tax.
+                  RepaintBoundary(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ImageFiltered(
+                          imageFilter: ui.ImageFilter.blur(
+                            sigmaX: 40,
+                            sigmaY: 40,
+                            tileMode: ui.TileMode.clamp,
+                          ),
+                          child: Image(
+                            image: _image!,
+                            fit: BoxFit.cover,
+                            gaplessPlayback: true,
+                            errorBuilder: (_, _, _) =>
+                                const SizedBox.expand(),
+                          ),
+                        ),
+                        const ColoredBox(color: Color(0x99000000)),
+                      ],
+                    ),
                   ),
                   picture,
                 ],
               )
             : SizedBox.expand(child: picture);
       }
-      final Widget slide = transition == 'kenburns' && !isVideoSlide
-          ? _KenBurnsDrift(
-              key: key,
-              index: _index,
-              duration:
-                  Duration(
-                    seconds: c.settings
-                        .get(defs.screensaverImmichInterval)
-                        .toInt()
-                        .clamp(2, 3600),
-                  ) +
-                  const Duration(seconds: 2),
-              child: inner,
-            )
-          : KeyedSubtree(key: key, child: inner);
+      final Widget slide = KeyedSubtree(key: key, child: inner);
       body = transition == 'none'
           ? slide
           : ClipRect(

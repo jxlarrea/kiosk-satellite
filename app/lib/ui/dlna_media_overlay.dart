@@ -194,7 +194,7 @@ class _DlnaImage extends StatefulWidget {
 }
 
 class _DlnaImageState extends State<_DlnaImage> {
-  Uint8List? _bytes;
+  ImageProvider? _image;
   bool _failed = false;
   http.Client? _client;
   StreamSubscription<Uint8List>? _frames;
@@ -216,24 +216,29 @@ class _DlnaImageState extends State<_DlnaImage> {
       if (res.statusCode != 200) throw http.ClientException('${res.statusCode}');
       final type = res.headers['content-type'] ?? '';
       if (type.startsWith('multipart/x-mixed-replace')) {
-        final boundary =
+        var boundary =
             RegExp(r'boundary=([^;\s]+)').firstMatch(type)?[1] ?? '';
+        // RFC 2045 allows the boundary parameter to be quoted; the quotes
+        // are not part of the marker.
+        if (boundary.length > 1 &&
+            boundary.startsWith('"') &&
+            boundary.endsWith('"')) {
+          boundary = boundary.substring(1, boundary.length - 1);
+        }
         _firstFrameTimeout = Timer(const Duration(seconds: 20), () {
-          if (_bytes == null && mounted) setState(() => _failed = true);
+          if (_image == null && mounted) setState(() => _failed = true);
         });
         _frames = _multipartFrames(res.stream, boundary).listen(
-          (frame) {
-            if (mounted) setState(() => _bytes = frame);
-          },
+          _setFrame,
           onError: (Object _) {
-            if (_bytes == null && mounted) setState(() => _failed = true);
+            if (_image == null && mounted) setState(() => _failed = true);
           },
         );
       } else {
         final bytes = await res.stream.toBytes();
         client.close();
         _client = null;
-        if (mounted) setState(() => _bytes = bytes);
+        _setFrame(bytes);
       }
     } catch (_) {
       if (mounted) setState(() => _failed = true);
@@ -247,37 +252,114 @@ class _DlnaImageState extends State<_DlnaImage> {
     http.ByteStream body,
     String boundary,
   ) async* {
+    // 16 MB is generous for any camera frame; a part that outgrows it has
+    // a bogus Content-Length or a boundary that will never match, so the
+    // buffered bytes are dropped and parsing resyncs at the next marker.
+    const maxBuffer = 16 * 1024 * 1024;
+    const headerSep = [13, 10, 13, 10];
     final marker = '--$boundary'.codeUnits;
-    var buf = <int>[];
-    await for (final chunk in body) {
-      buf.addAll(chunk);
-      while (true) {
-        final headerEnd = _indexOf(buf, const [13, 10, 13, 10]);
-        if (headerEnd < 0) break;
-        final headers = String.fromCharCodes(buf.sublist(0, headerEnd));
-        final lengthMatch = RegExp(
-          r'content-length:\s*(\d+)',
-          caseSensitive: false,
-        ).firstMatch(headers);
-        final bodyStart = headerEnd + 4;
-        int frameEnd;
-        if (lengthMatch != null) {
-          frameEnd = bodyStart + int.parse(lengthMatch[1]!);
-          if (buf.length < frameEnd) break;
-        } else {
-          final next = _indexOf(buf, marker, from: bodyStart);
-          if (next < 0) break;
-          frameEnd = next;
+    var buf = Uint8List(64 * 1024);
+    var len = 0;
+    var headerEnd = -1; // Separator position once found, -1 while scanning.
+    var frameEnd = -1; // Known end when the part declared Content-Length.
+    var scanFrom = 0; // Searches resume here instead of rescanning old bytes.
+    var resyncing = false;
+
+    // Drop the first n bytes; the remainder moves to the front.
+    void consume(int n) {
+      buf.setRange(0, len - n, buf, n);
+      len -= n;
+      headerEnd = -1;
+      frameEnd = -1;
+      scanFrom = 0;
+    }
+
+    void append(List<int> chunk) {
+      if (len + chunk.length > buf.length) {
+        var cap = buf.length;
+        while (cap < len + chunk.length) {
+          cap *= 2;
         }
-        yield Uint8List.fromList(buf.sublist(bodyStart, frameEnd));
-        buf = buf.sublist(frameEnd);
+        final grown = Uint8List(cap);
+        grown.setRange(0, len, buf);
+        buf = grown;
+      }
+      buf.setRange(len, len + chunk.length, chunk);
+      len += chunk.length;
+    }
+
+    await for (final chunk in body) {
+      if (len + chunk.length > maxBuffer) {
+        if (boundary.isEmpty) {
+          // No marker to resync on.
+          throw const FormatException('unbounded multipart part');
+        }
+        final keep = marker.length - 1;
+        if (len > keep) consume(len - keep);
+        resyncing = true;
+      }
+      append(chunk);
+      if (resyncing) {
+        final next = _indexOf(buf, len, marker);
+        if (next < 0) {
+          // Keep a marker-sized tail so a boundary split across chunks
+          // still matches.
+          final keep = marker.length - 1;
+          if (len > keep) consume(len - keep);
+          continue;
+        }
+        consume(next);
+        resyncing = false;
+      }
+      while (true) {
+        if (headerEnd < 0) {
+          headerEnd = _indexOf(buf, len, headerSep, from: scanFrom);
+          if (headerEnd < 0) {
+            scanFrom = len > 3 ? len - 3 : 0;
+            break;
+          }
+          final headers = String.fromCharCodes(buf, 0, headerEnd);
+          final lengthMatch = RegExp(
+            r'content-length:\s*(\d+)',
+            caseSensitive: false,
+          ).firstMatch(headers);
+          if (lengthMatch != null) {
+            final length = int.parse(lengthMatch[1]!);
+            if (headerEnd + 4 + length > maxBuffer) {
+              throw const FormatException('multipart frame exceeds cap');
+            }
+            frameEnd = headerEnd + 4 + length;
+          } else {
+            scanFrom = headerEnd + 4;
+          }
+        }
+        final bodyStart = headerEnd + 4;
+        int end;
+        if (frameEnd >= 0) {
+          if (len < frameEnd) break;
+          end = frameEnd;
+        } else {
+          end = _indexOf(buf, len, marker, from: scanFrom);
+          if (end < 0) {
+            final resume = len - marker.length + 1;
+            scanFrom = resume > bodyStart ? resume : bodyStart;
+            break;
+          }
+        }
+        yield buf.sublist(bodyStart, end);
+        consume(end);
       }
     }
   }
 
-  static int _indexOf(List<int> haystack, List<int> needle, {int from = 0}) {
+  static int _indexOf(
+    Uint8List haystack,
+    int length,
+    List<int> needle, {
+    int from = 0,
+  }) {
     outer:
-    for (var i = from; i <= haystack.length - needle.length; i++) {
+    for (var i = from; i <= length - needle.length; i++) {
       for (var j = 0; j < needle.length; j++) {
         if (haystack[i + j] != needle[j]) continue outer;
       }
@@ -286,11 +368,31 @@ class _DlnaImageState extends State<_DlnaImage> {
     return -1;
   }
 
+  /// Swap in a new frame. The provider is built once per frame so the
+  /// evict below hits the same cache key, and ResizeImage bounds the
+  /// decode to the screen instead of the camera's native resolution.
+  void _setFrame(Uint8List bytes) {
+    if (!mounted) return;
+    final width = (MediaQuery.sizeOf(context).width *
+            MediaQuery.devicePixelRatioOf(context))
+        .round();
+    final previous = _image;
+    setState(() {
+      _image = width > 0
+          ? ResizeImage(MemoryImage(bytes), width: width)
+          : MemoryImage(bytes);
+    });
+    // Without the evict every multipart frame stays in the global
+    // imageCache forever.
+    unawaited(previous?.evict());
+  }
+
   @override
   void dispose() {
     _firstFrameTimeout?.cancel();
     unawaited(_frames?.cancel());
     _client?.close();
+    unawaited(_image?.evict());
     super.dispose();
   }
 
@@ -305,16 +407,16 @@ class _DlnaImageState extends State<_DlnaImage> {
         ),
       );
     }
-    final bytes = _bytes;
-    if (bytes == null) {
+    final image = _image;
+    if (image == null) {
       return const Center(
         child: CircularProgressIndicator(color: Colors.white54),
       );
     }
     // gaplessPlayback: a multipart frame update swaps the picture without
     // flashing through a blank decode gap.
-    return Image.memory(
-      bytes,
+    return Image(
+      image: image,
       fit: BoxFit.contain,
       width: double.infinity,
       height: double.infinity,

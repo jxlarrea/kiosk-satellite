@@ -125,6 +125,11 @@ class DlnaManager extends Manager {
 
   HttpServer? _server;
   RawDatagramSocket? _ssdp;
+
+  /// One client for all GENA notifies; a client per notify would leak its
+  /// connection pool and idle timer.
+  http.Client? _notifyClient;
+  StreamSubscription<SettingChanged>? _settingsSub;
   Timer? _aliveTimer;
   Timer? _restartDebounce;
   Timer? _activityTick;
@@ -141,7 +146,7 @@ class DlnaManager extends Manager {
   @override
   Future<void> init() async {
     _uuid = await _settings.secret('dlna_uuid', _newUuid);
-    bus.on<SettingChanged>().listen((e) {
+    _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('dlna.') && e.key != defs.deviceName.key) return;
       _restartDebounce?.cancel();
       _restartDebounce = Timer(const Duration(milliseconds: 500), () {
@@ -176,6 +181,8 @@ class DlnaManager extends Manager {
   @override
   Future<void> dispose() async {
     _restartDebounce?.cancel();
+    await _settingsSub?.cancel();
+    _settingsSub = null;
     await _stop();
   }
 
@@ -187,6 +194,7 @@ class DlnaManager extends Manager {
   Future<void> _start() async {
     try {
       _ip = await _localIp();
+      _notifyClient = http.Client();
       _server = await shelf_io.serve(_route, InternetAddress.anyIPv4, _port);
       await _startSsdp();
       log.info(name, 'renderer up at http://$_ip:$_port (uuid $_uuid)');
@@ -208,6 +216,8 @@ class DlnaManager extends Manager {
     }
     await _server?.close(force: true);
     _server = null;
+    _notifyClient?.close();
+    _notifyClient = null;
     for (final list in _subs.values) {
       list.clear();
     }
@@ -273,7 +283,12 @@ class DlnaManager extends Manager {
     Timer(const Duration(milliseconds: 400), _sendAlive);
     _aliveTimer = Timer.periodic(
       const Duration(seconds: 600),
-      (_) => _sendAlive(),
+      (_) {
+        // Purge here too: _notifyAll only runs for services that event,
+        // so ConnectionManager subscriptions would otherwise pile up.
+        _purgeSubs();
+        _sendAlive();
+      },
     );
   }
 
@@ -668,6 +683,15 @@ class DlnaManager extends Manager {
   /// future completes when this change has been DELIVERED everywhere, so
   /// action handlers can hold their SOAP response until subscribers are
   /// up to date.
+  /// Drop expired or repeatedly failing subscriptions.
+  void _purgeSubs() {
+    for (final list in _subs.values) {
+      list.removeWhere(
+        (s) => s.expiry.isBefore(DateTime.now()) || s.failures >= 3,
+      );
+    }
+  }
+
   Future<void> _notifyAll(String service) {
     final subs = _subs[service]!;
     subs.removeWhere(
@@ -692,8 +716,11 @@ class DlnaManager extends Manager {
       })
       ..body = propertySet(_eventProps(service));
     sub.seq++;
+    // Stopped between queueing and delivery; nothing to send with.
+    final client = _notifyClient;
+    if (client == null) return;
     try {
-      await http.Client()
+      await client
           .send(req)
           .timeout(const Duration(seconds: 5))
           .then((r) => r.stream.drain<void>());
