@@ -225,17 +225,24 @@ class ImmichManager extends Manager {
 
   /// The playlist: every image and video of the configured source, in the
   /// server's order (newest first). The view shuffles if asked to.
+  ///
+  /// "Photos only" drops the videos here, at the source: motion/live photos
+  /// often land in Immich as short video assets, and a two-second clip
+  /// between stills makes the whole slideshow feel broken (issue #32).
   Future<List<ImmichAsset>> listAssets() async {
     final albumId = _settings.get(defs.screensaverImmichAlbum);
+    final photosOnly = _settings.get(defs.screensaverImmichPhotosOnly);
     final assets = <ImmichAsset>[];
     var page = 1;
     while (assets.length < _maxPlaylist) {
       final result = await _search(page: page, size: 500, albumId: albumId);
       for (final item in (result['items'] as List).cast<Map>()) {
+        final isVideo = item['type'] == 'VIDEO';
+        if (photosOnly && isVideo) continue;
         assets.add(
           ImmichAsset(
             id: item['id'] as String,
-            isVideo: item['type'] == 'VIDEO',
+            isVideo: isVideo,
           ),
         );
       }

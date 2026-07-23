@@ -998,6 +998,19 @@ const screensaverImmichAlbum = SettingDef<String>(
   dependsOn: 'screensaver.immich_validated',
 );
 
+// Motion/Live photos often land in Immich as short video assets, which make
+// for a choppy slideshow next to stills (issue #32).
+const screensaverImmichPhotosOnly = SettingDef<bool>(
+  key: 'screensaver.immich_photos_only',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Photos only',
+  description: 'Skip videos in the slideshow.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
 // The chosen album's name, for display when the server is unreachable.
 const screensaverImmichAlbumName = SettingDef<String>(
   key: 'screensaver.immich_album_name',
@@ -1915,6 +1928,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichApiKey,
   screensaverImmichValidated,
   screensaverImmichAlbum,
+  screensaverImmichPhotosOnly,
   screensaverImmichAlbumName,
   screensaverImmichInterval,
   screensaverImmichShuffle,
