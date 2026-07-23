@@ -131,6 +131,10 @@ class MqttManager extends Manager {
               () => _settings.get(defs.remoteEnabled),
               (on) => _settings.set(defs.remoteEnabled, on),
             ),
+            'screensaver_brightness': (
+              () => _settings.get(defs.screensaverBrightnessEnabled),
+              (on) => _settings.set(defs.screensaverBrightnessEnabled, on),
+            ),
           };
 
   static const _switchSettingKeys = [
@@ -138,11 +142,18 @@ class MqttManager extends Manager {
     'ha.kiosk_mode',
     'screen.keep_on',
     'remote.enabled',
+    'screensaver.brightness_enabled',
   ];
 
   void _publishSettingSwitchStates() {
     _settingSwitches.forEach((objectId, actions) =>
         _publish('$_base/$objectId/state', actions.$1() ? 'ON' : 'OFF'));
+  }
+
+  void _publishScreensaverBrightnessLevel() {
+    final level = _settings.get(defs.screensaverBrightnessLevel).toDouble();
+    _publish('$_base/screensaver_brightness_level/state',
+        (level.clamp(0.0, 1.0) * 100).round().toString());
   }
 
   Future<void> _publishVolume() async {
@@ -160,6 +171,10 @@ class MqttManager extends Manager {
       // Whatever surface flipped it (device UI, remote admin, MQTT itself),
       // the switch in HA reflects it.
       _publishSettingSwitchStates();
+      return;
+    }
+    if (e.key == defs.screensaverBrightnessLevel.key) {
+      _publishScreensaverBrightnessLevel();
       return;
     }
     if (e.key == defs.mqttDeviceId.key) {
@@ -260,6 +275,7 @@ class MqttManager extends Manager {
       '$_base/reload/set',
       '$_base/clear_cache/set',
       '$_base/update/set',
+      '$_base/screensaver_brightness_level/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
     ]) {
       client.subscribe(topic, MqttQos.atLeastOnce);
@@ -403,6 +419,12 @@ class MqttManager extends Manager {
       } else if (topic == '$_base/clear_cache/set') {
         log.info(name, 'command $topic');
         await commands.execute('clearWebCache', const {});
+      } else if (topic == '$_base/screensaver_brightness_level/set') {
+        log.info(name, 'command $topic = $text');
+        final percent = num.tryParse(text);
+        if (percent == null) continue;
+        await _settings.set(defs.screensaverBrightnessLevel,
+            percent.clamp(0, 100) / 100);
       } else if (topic == '$_base/update/set') {
         log.info(name, 'command $topic');
         final result = await commands.execute('installUpdate', const {});
@@ -448,6 +470,7 @@ class MqttManager extends Manager {
     }
     _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
     _publishSettingSwitchStates();
+    _publishScreensaverBrightnessLevel();
     await _publishVolume();
     await _publishUpdateState();
   }
@@ -542,6 +565,7 @@ class MqttManager extends Manager {
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
         '$_prefix/update/ks_$_deviceId/update/config',
+        '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
         for (final objectId in _settingSwitches.keys)
           '$_prefix/switch/ks_$_deviceId/$objectId/config',
       ];
@@ -691,6 +715,19 @@ class MqttManager extends Manager {
         'payload_install': 'install',
         'device_class': 'firmware',
       },
+      '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config': {
+        ...common(
+            'screensaver_brightness_level', 'Screensaver brightness level'),
+        'state_topic': '$_base/screensaver_brightness_level/state',
+        'command_topic': '$_base/screensaver_brightness_level/set',
+        'min': 0,
+        'max': 100,
+        'step': 5,
+        'unit_of_measurement': '%',
+        'mode': 'slider',
+        'icon': 'mdi:brightness-6',
+        'entity_category': 'config',
+      },
       '$_prefix/switch/ks_$_deviceId/kiosk/config':
           settingSwitch('kiosk', 'Kiosk mode', 'mdi:lock-outline'),
       '$_prefix/switch/ks_$_deviceId/ha_kiosk/config':
@@ -699,6 +736,9 @@ class MqttManager extends Manager {
           'keep_screen_on', 'Keep screen on', 'mdi:lightbulb-on-outline'),
       '$_prefix/switch/ks_$_deviceId/remote/config': settingSwitch(
           'remote', 'Remote management', 'mdi:remote-desktop'),
+      '$_prefix/switch/ks_$_deviceId/screensaver_brightness/config':
+          settingSwitch('screensaver_brightness', 'Screensaver brightness',
+              'mdi:brightness-4'),
     };
     for (final topic in _legacyDiscoveryTopics()) {
       _publish(topic, '');

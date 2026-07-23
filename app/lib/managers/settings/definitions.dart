@@ -1135,6 +1135,45 @@ const screensaverDimLevel = SettingDef<num>(
   unit: '%',
 );
 
+// Content modes (clock, photos, website) hold normal brightness by default:
+// dimming a display someone reads is opt-in, unlike Dim/Black whose whole
+// point is darkness (issue #31: a clock that glows all night).
+const screensaverBrightnessEnabled = SettingDef<bool>(
+  key: 'screensaver.brightness_enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Screensaver brightness',
+  description: 'Use a separate brightness while the screensaver is showing.',
+  category: 'Screensaver',
+);
+
+const screensaverBrightnessLevel = SettingDef<num>(
+  key: 'screensaver.brightness_level',
+  type: SettingType.number,
+  defaultValue: 0.2,
+  title: 'Brightness level',
+  description: 'Applies to every mode except Dim and Black.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.brightness_enabled',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+);
+
+/// The brightness to restore when the screensaver ends, persisted so a
+/// process death mid-screensaver cannot turn the dim level into the new
+/// normal. -1 means no restore pending.
+const screensaverSavedBrightness = SettingDef<num>(
+  key: 'screensaver.saved_brightness',
+  type: SettingType.number,
+  defaultValue: -1,
+  title: 'Saved screensaver brightness',
+  description: 'Internal restore point for the screensaver brightness.',
+  category: 'Screensaver',
+  hidden: true,
+);
+
 // Motion detection exists only to wake the screensaver for now, so this one
 // switch is its whole on/off — no separate "motion detection" toggle. Off by
 // default because turning it on asks for the camera. When on, the camera runs
@@ -1836,6 +1875,10 @@ const List<SettingDef<Object>> allSettings = [
   defaultBrightness,
   screensaverEnabled,
   screensaverTimeoutSeconds,
+  // The separate brightness applies to every content mode, so it lives with
+  // the general controls rather than a per-mode panel.
+  screensaverBrightnessEnabled,
+  screensaverBrightnessLevel,
   // Pixel shift sits with the general controls: it applies to every mode.
   screensaverPixelShift,
   // The small clock too — it overlays every mode except Clock itself.
@@ -1847,6 +1890,7 @@ const List<SettingDef<Object>> allSettings = [
   // One titled panel per mode, in the dropdown's order; only the panel of
   // the selected mode is visible (each setting depends on the mode).
   screensaverDimLevel,
+  screensaverSavedBrightness,
   screensaverClock24h,
   screensaverClockSeconds,
   screensaverClockDate,

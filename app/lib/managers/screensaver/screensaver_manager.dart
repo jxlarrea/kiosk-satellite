@@ -104,7 +104,24 @@ class ScreensaverManager extends Manager {
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key.startsWith('screensaver.')) _resetIdleTimer();
+      // Moving the screensaver-brightness controls while the screensaver is
+      // showing applies immediately: the slider doubles as a live preview.
+      if (_active &&
+          (e.key == defs.screensaverBrightnessEnabled.key ||
+              e.key == defs.screensaverBrightnessLevel.key)) {
+        unawaited(_onBrightnessSettingChanged());
+      }
     });
+
+    // A process death mid-screensaver loses the in-memory restore point; the
+    // persisted copy keeps the dim level from becoming the new normal. Runs
+    // before any screensaver can start, so a pending value is always stale.
+    final orphaned = _settings.get(defs.screensaverSavedBrightness).toDouble();
+    if (orphaned >= 0) {
+      log.info(name, 'restoring brightness after an interrupted screensaver');
+      await commands.execute('setBrightness', {'level': orphaned});
+      await _settings.set(defs.screensaverSavedBrightness, -1);
+    }
 
     commands
       ..register(
@@ -196,10 +213,15 @@ class ScreensaverManager extends Manager {
     log.info(name, 'start ($mode)');
     // Modes that change brightness get their restore point saved up front,
     // once — _applyVisuals may re-dim and re-brighten several times in one
-    // screensaver session as music starts and stops.
-    if (mode == 'dim' || mode == 'black') {
+    // screensaver session as music starts and stops. Content modes join in
+    // when the separate screensaver brightness is enabled (issue #31).
+    if (mode == 'dim' || mode == 'black' || _contentDimEnabled(mode)) {
       final brightness = await commands.execute('getBrightness', const {});
       _savedBrightness = (brightness.data as num?)?.toDouble();
+      if (_savedBrightness != null) {
+        await _settings.set(
+            defs.screensaverSavedBrightness, _savedBrightness!);
+      }
     }
     await _applyVisuals();
     bus.publish(const ScreensaverStateChanged(active: true));
@@ -237,9 +259,46 @@ class ScreensaverManager extends Manager {
         activeView.value = 'black';
         await commands.execute('setBrightness', {'level': 0});
       default:
-        // clock / media / website: a lit overlay showing content. The screen
-        // stays at its normal brightness — dimming a clock to 10% defeats it.
+        // clock / media / website: a lit overlay showing content, at normal
+        // brightness unless the separate screensaver brightness asks for its
+        // own level (a clock that must not glow all night).
         activeView.value = mode;
+        if (_contentDimEnabled(mode)) {
+          final level =
+              _settings.get(defs.screensaverBrightnessLevel).toDouble();
+          await commands.execute('setBrightness', {'level': level});
+        }
+    }
+  }
+
+  /// Whether the opt-in screensaver brightness applies to [mode]: every
+  /// content mode, never Dim (its own level) or Black (always zero).
+  bool _contentDimEnabled(String mode) =>
+      mode != 'dim' &&
+      mode != 'black' &&
+      _settings.get(defs.screensaverBrightnessEnabled);
+
+  /// Live tweak while the screensaver shows: apply the new level, saving the
+  /// restore point first when the toggle just turned on; turning it off
+  /// restores the pre-screensaver brightness right away.
+  Future<void> _onBrightnessSettingChanged() async {
+    final mode = _settings.get(defs.screensaverMode);
+    if (mode == 'dim' || mode == 'black' || _nowPlayingTakeover) return;
+    if (_settings.get(defs.screensaverBrightnessEnabled)) {
+      if (_savedBrightness == null) {
+        final brightness = await commands.execute('getBrightness', const {});
+        _savedBrightness = (brightness.data as num?)?.toDouble();
+        if (_savedBrightness != null) {
+          await _settings.set(
+              defs.screensaverSavedBrightness, _savedBrightness!);
+        }
+      }
+      await commands.execute('setBrightness',
+          {'level': _settings.get(defs.screensaverBrightnessLevel).toDouble()});
+    } else if (_savedBrightness != null) {
+      await commands.execute('setBrightness', {'level': _savedBrightness});
+      _savedBrightness = null;
+      await _settings.set(defs.screensaverSavedBrightness, -1);
     }
   }
 
@@ -254,6 +313,7 @@ class ScreensaverManager extends Manager {
     if (_savedBrightness != null) {
       await commands.execute('setBrightness', {'level': _savedBrightness});
       _savedBrightness = null;
+      await _settings.set(defs.screensaverSavedBrightness, -1);
     }
     bus.publish(const ScreensaverStateChanged(active: false));
   }

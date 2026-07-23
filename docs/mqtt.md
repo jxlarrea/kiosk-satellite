@@ -46,6 +46,7 @@ own device, named after the **Device name** setting.
 | HA kiosk mode | switch | Hides the Home Assistant header and sidebar. On maps to the `auto` mode; a hand-picked `plugin`/`css` choice is left alone until the switch is actually flipped. |
 | Keep screen on | switch | The keep-awake setting. |
 | Remote management | switch | The embedded admin web server. Turning it off from Home Assistant closes the remote admin. |
+| Screensaver brightness, Screensaver brightness level | switch, number | The separate screensaver brightness (issue #31): the switch enables it, the slider sets the level. Changes apply live while the screensaver is showing. |
 | Reload page | button | Reload the current dashboard. |
 | Clear cache | button | Clear the WebView cache. |
 | Update | update | Shows in Home Assistant's Updates UI when a newer release is on GitHub, with the release notes and a link to the release page. Install triggers the download and installation on the device. On Android 12+ the install is fully hands-free from the second in-app update onward (the first one makes the app its own installer, which is what Android's silent-update rule keys on); before that, and on older Android versions, the device shows its usual install confirmation screen. The app relaunches itself after a silent update. |
@@ -70,7 +71,8 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../screen/state`, `.../screen/set` | out / in | `ON` / `OFF` |
 | `.../brightness/state`, `.../brightness/set` | out / in | `0`..`255` |
 | `.../screensaver/state`, `.../screensaver/set` | out / in | `ON` / `OFF` |
-| `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
+| `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…`, `.../screensaver_brightness/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
+| `.../screensaver_brightness_level/state`, `.../screensaver_brightness_level/set` | out / in | `0`..`100` |
 | `.../reload/set`, `.../clear_cache/set` | in | any payload presses the button |
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state` | out, retained | numbers |
