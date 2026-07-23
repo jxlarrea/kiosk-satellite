@@ -67,6 +67,14 @@ class MqttManager extends Manager {
   // Retained device metadata for discovery, read once via getDeviceInfo.
   Map<String, Object?> _deviceInfo = const {};
 
+  /// Whether this device has an ambient light sensor (read at connect).
+  bool _lightSensorPresent = false;
+
+  /// Rate limiting for the illuminance publishes: the recorder does not need
+  /// every damped native event, but big swings (lights on) should land now.
+  double? _lastLuxPublished;
+  DateTime _lastLuxPublishedAt = DateTime.fromMillisecondsSinceEpoch(0);
+
   String get _base => 'kiosksatellite/$_deviceId';
   String get _availabilityTopic => '$_base/availability';
   String get _prefix {
@@ -94,6 +102,20 @@ class MqttManager extends Manager {
     // The updater already throttles progress to whole percents.
     _subs.add(
         bus.on<UpdateStateChanged>().listen((_) => _publishUpdateState()));
+    // The native side damps flicker; this only guards the recorder's disk:
+    // at most one publish per 15s, unless the level swung hard (lights on).
+    _subs.add(bus.on<LightLevelChanged>().listen((e) {
+      if (!_lightSensorPresent) return;
+      final last = _lastLuxPublished;
+      final delta = last == null ? double.infinity : (e.lux - last).abs();
+      final elapsed = DateTime.now().difference(_lastLuxPublishedAt);
+      if (elapsed.inSeconds < 15 && delta < 50 && delta < (last ?? 0) * 0.5) {
+        return;
+      }
+      _lastLuxPublished = e.lux;
+      _lastLuxPublishedAt = DateTime.now();
+      _publish('$_base/illuminance/state', e.lux.round().toString());
+    }));
 
     if (_settings.get(defs.mqttEnabled)) {
       _transition = _transition.then((_) => _connect());
@@ -331,6 +353,11 @@ class MqttManager extends Manager {
         _deviceInfo = (info.data as Map).cast<String, Object?>();
       }
     }
+    // Hardware without a light sensor gets no illuminance entity at all: an
+    // absent row beats a permanently unavailable one.
+    final light = await commands.execute('getLightLevel', const {});
+    _lightSensorPresent =
+        light.ok && light.data is Map && (light.data as Map)['present'] == true;
     _publish(_availabilityTopic, 'online');
     _publishDiscovery();
     await _publishInitialStates();
@@ -473,6 +500,17 @@ class MqttManager extends Manager {
     _publishScreensaverBrightnessLevel();
     await _publishVolume();
     await _publishUpdateState();
+    if (_lightSensorPresent) {
+      final light = await commands.execute('getLightLevel', const {});
+      final lux = light.ok && light.data is Map
+          ? ((light.data as Map)['lux'] as num?)
+          : null;
+      if (lux != null) {
+        _lastLuxPublished = lux.toDouble();
+        _lastLuxPublishedAt = DateTime.now();
+        _publish('$_base/illuminance/state', lux.round().toString());
+      }
+    }
   }
 
   /// The HA update entity's whole world in one JSON payload: versions, the
@@ -565,6 +603,10 @@ class MqttManager extends Manager {
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
         '$_prefix/update/ks_$_deviceId/update/config',
+        // Always in the retraction list even though it is published
+        // conditionally: a config export moved to sensor-less hardware must
+        // still clean the entity up.
+        '$_prefix/sensor/ks_$_deviceId/illuminance/config',
         '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
         for (final objectId in _settingSwitches.keys)
           '$_prefix/switch/ks_$_deviceId/$objectId/config',
@@ -680,6 +722,14 @@ class MqttManager extends Manager {
         'icon': 'mdi:memory',
         'entity_category': 'diagnostic',
       },
+      if (_lightSensorPresent)
+        '$_prefix/sensor/ks_$_deviceId/illuminance/config': {
+          ...common('illuminance', 'Ambient light'),
+          'state_topic': '$_base/illuminance/state',
+          'device_class': 'illuminance',
+          'unit_of_measurement': 'lx',
+          'state_class': 'measurement',
+        },
       '$_prefix/switch/ks_$_deviceId/screensaver/config': {
         ...common('screensaver', 'Screensaver'),
         'state_topic': '$_base/screensaver/state',

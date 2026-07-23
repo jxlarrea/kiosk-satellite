@@ -53,6 +53,14 @@ class VolumeChanged extends AppEvent {
   String get wireName => 'volumechanged';
 }
 
+/// A meaningfully different ambient light reading from the device's light
+/// sensor (damped at the native side). Internal-only; MQTT mirrors it into
+/// the Home Assistant illuminance sensor.
+class LightLevelChanged extends AppEvent {
+  const LightLevelChanged({required this.lux});
+  final double lux;
+}
+
 // ── Updates ────────────────────────────────────────────────────────────
 
 /// The updater's picture of the world moved: a newer release appeared or

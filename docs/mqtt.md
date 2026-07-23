@@ -51,6 +51,7 @@ own device, named after the **Device name** setting.
 | Clear cache | button | Clear the WebView cache. |
 | Update | update | Shows in Home Assistant's Updates UI when a newer release is on GitHub, with the release notes and a link to the release page. Install triggers the download and installation on the device. On Android 12+ the install is fully hands-free from the second in-app update onward (the first one makes the app its own installer, which is what Android's silent-update rule keys on); before that, and on older Android versions, the device shows its usual install confirmation screen. The app relaunches itself after a silent update. |
 | Battery, Charging | sensor | Polled once a minute. |
+| Ambient light | sensor | The device's light sensor in lux, for automating screen brightness from the room's light. Only devices with the hardware get the entity. Readings are damped (small flicker is ignored, big swings publish immediately) so the recorder is not flooded. If you automate brightness from this, turn the Android adaptive brightness off or the two will fight. |
 | CPU usage, CPU temperature | sensor | Polled once a minute. |
 | RAM available, RAM total | sensor | Polled once a minute. |
 | Current page | sensor | The URL the kiosk is showing. |
@@ -75,7 +76,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../screensaver_brightness_level/state`, `.../screensaver_brightness_level/set` | out / in | `0`..`100` |
 | `.../reload/set`, `.../clear_cache/set` | in | any payload presses the button |
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
-| `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state` | out, retained | numbers |
+| `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
 | `.../url/state` | out, retained | the current URL |
 
 Discovery configs are published retained under

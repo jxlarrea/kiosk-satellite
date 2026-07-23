@@ -2,8 +2,10 @@ import 'dart:collection' show ListQueue;
 import 'dart:convert' show LineSplitter, utf8;
 import 'dart:io';
 
+import 'dart:async' show StreamSubscription;
+
 import 'package:flutter/foundation.dart' show kDebugMode;
-import 'package:flutter/services.dart' show MethodChannel;
+import 'package:flutter/services.dart' show EventChannel, MethodChannel;
 
 import 'package:battery_plus/battery_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -44,6 +46,14 @@ class DeviceManager extends Manager {
   /// to logcat (see Logger._add), so someone holding an adb cable and seeing
   /// silence needs to know which of the two they are looking at.
   String get buildMode => kDebugMode ? 'debug' : 'release';
+
+  /// Whether the device has an ambient light sensor; several budget tablets
+  /// (Fire HD 8 among them) ship without one.
+  bool hasLightSensor = false;
+
+  /// Latest ambient light reading in lux, or null before the first event.
+  double? lightLux;
+  StreamSubscription<dynamic>? _lightSub;
 
   String get os => Platform.isAndroid ? 'android' : 'ios';
 
@@ -92,6 +102,20 @@ class DeviceManager extends Manager {
         name: 'getDeviceInfo',
         description: 'Device identity and battery status',
         handler: (_) async => CommandResult.ok(await info()),
+      ),
+    );
+
+    await _initLightSensor();
+    commands.register(
+      Command(
+        name: 'getLightLevel',
+        description:
+            'The ambient light sensor: whether the device has one, and the '
+            'latest reading in lux',
+        handler: (_) async => CommandResult.ok({
+          'present': hasLightSensor,
+          'lux': lightLux,
+        }),
       ),
     );
 
@@ -257,6 +281,39 @@ class DeviceManager extends Manager {
       log.warn(name, 'ipAddress failed: $e');
     }
     return null;
+  }
+
+  /// Hook up the ambient light stream when the hardware exists. The native
+  /// side damps the event rate (5 lx / 10% deadband, 2s minimum spacing);
+  /// listeners downstream (MQTT) add their own coarser limits.
+  Future<void> _initLightSensor() async {
+    if (!Platform.isAndroid) return;
+    try {
+      const methods = MethodChannel('kiosk_satellite/light_sensor');
+      hasLightSensor = await methods.invokeMethod<bool>('hasSensor') ?? false;
+      if (!hasLightSensor) {
+        log.info(name, 'no ambient light sensor');
+        return;
+      }
+      const stream = EventChannel('kiosk_satellite/light_sensor_stream');
+      _lightSub = stream.receiveBroadcastStream().listen((v) {
+        final lux = (v as num?)?.toDouble();
+        if (lux == null) return;
+        lightLux = lux;
+        bus.publish(LightLevelChanged(lux: lux));
+      }, onError: (Object e) {
+        log.warn(name, 'light sensor stream failed: $e');
+      });
+      log.info(name, 'ambient light sensor streaming');
+    } catch (e) {
+      // A host without the channel (tests, older platform code): no sensor.
+      log.warn(name, 'light sensor unavailable: $e');
+    }
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _lightSub?.cancel();
   }
 
   Future<Map<String, Object?>> info() async {
