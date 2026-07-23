@@ -49,6 +49,7 @@ own device, named after the **Device name** setting.
 | Screensaver brightness, Screensaver brightness level | switch, number | The separate screensaver brightness (issue #31): the switch enables it, the slider sets the level. Changes apply live while the screensaver is showing. |
 | Reload page | button | Reload the current dashboard. |
 | Clear cache | button | Clear the WebView cache. |
+| Restart app | button | Kill and relaunch the app. The device drops offline for a few seconds and returns on its own. On Android 10+ the relaunch needs the "display over other apps" permission; without it the press is refused and the grant screen opens on the device (the setup wizard requests it up front). |
 | Update | update | Shows in Home Assistant's Updates UI when a newer release is on GitHub, with the release notes and a link to the release page. Install triggers the download and installation on the device. On Android 12+ the install is fully hands-free from the second in-app update onward (the first one makes the app its own installer, which is what Android's silent-update rule keys on); before that, and on older Android versions, the device shows its usual install confirmation screen. The app relaunches itself after a silent update. |
 | Battery, Charging | sensor | Polled once a minute. |
 | Ambient light | sensor | The device's light sensor in lux, for automating screen brightness from the room's light. Only devices with the hardware get the entity. Readings are damped (small flicker is ignored, big swings publish immediately) so the recorder is not flooded. If you automate brightness from this, turn the Android adaptive brightness off or the two will fight. |
@@ -74,7 +75,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../screensaver/state`, `.../screensaver/set` | out / in | `ON` / `OFF` |
 | `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…`, `.../screensaver_brightness/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
 | `.../screensaver_brightness_level/state`, `.../screensaver_brightness_level/set` | out / in | `0`..`100` |
-| `.../reload/set`, `.../clear_cache/set` | in | any payload presses the button |
+| `.../reload/set`, `.../clear_cache/set`, `.../restart/set` | in | any payload presses the button |
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
 | `.../url/state` | out, retained | the current URL |

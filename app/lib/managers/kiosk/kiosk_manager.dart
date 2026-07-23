@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -81,6 +82,30 @@ class KioskManager extends Manager {
             'anything a page reload cannot fix; the same mechanism the frame '
             'watchdog uses',
         handler: (_) async {
+          // The relaunch is a background activity start from a process that
+          // has just died, which Android 10+ only honors with the
+          // draw-over-apps grant. Refuse up front rather than killing an app
+          // that cannot come back, and send the grant screen to the device -
+          // the same dance as Screen off and its admin grant. Android 9 and
+          // older restart fine without it.
+          final device = await commands.execute('getDeviceInfo', const {});
+          final sdk = (device.data is Map)
+              ? ((device.data as Map)['sdkInt'] as num?)?.toInt()
+              : null;
+          if (sdk != null && sdk >= 29) {
+            final canReturn = await _backgroundChannel
+                    .invokeMethod<bool>('canBringToFront') ??
+                false;
+            if (!canReturn) {
+              unawaited(commands.execute('requestOsPermissions', {
+                'which': ['overlay'],
+              }));
+              return const CommandResult.fail(
+                  'Restarting needs the "Display over other apps" permission '
+                  'or the app cannot bring itself back. The grant screen is '
+                  'opening on the device; allow it there and retry.');
+            }
+          }
           log.info(name, 'restarting application');
           try {
             await _backgroundChannel.invokeMethod<void>('restartProcess');

@@ -296,6 +296,7 @@ class MqttManager extends Manager {
       '$_base/volume/set',
       '$_base/reload/set',
       '$_base/clear_cache/set',
+      '$_base/restart/set',
       '$_base/update/set',
       '$_base/screensaver_brightness_level/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
@@ -446,6 +447,16 @@ class MqttManager extends Manager {
       } else if (topic == '$_base/clear_cache/set') {
         log.info(name, 'command $topic');
         await commands.execute('clearWebCache', const {});
+      } else if (topic == '$_base/restart/set') {
+        // The process dies mid-restart; the broker's will flips the device
+        // offline and the relaunch brings everything back on its own.
+        log.info(name, 'command $topic');
+        final result = await commands.execute('restartApp', const {});
+        if (!result.ok) {
+          // Missing overlay grant: the command already sent the grant
+          // screen to the device; all MQTT can do is say why nothing moved.
+          log.warn(name, 'restartApp over MQTT refused: ${result.error}');
+        }
       } else if (topic == '$_base/screensaver_brightness_level/set') {
         log.info(name, 'command $topic = $text');
         final percent = num.tryParse(text);
@@ -602,6 +613,7 @@ class MqttManager extends Manager {
         '$_prefix/switch/ks_$_deviceId/screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
+        '$_prefix/button/ks_$_deviceId/restart/config',
         '$_prefix/update/ks_$_deviceId/update/config',
         // Always in the retraction list even though it is published
         // conditionally: a config export moved to sensor-less hardware must
@@ -756,6 +768,12 @@ class MqttManager extends Manager {
         ...common('clear_cache', 'Clear cache'),
         'command_topic': '$_base/clear_cache/set',
         'icon': 'mdi:broom',
+        'entity_category': 'config',
+      },
+      '$_prefix/button/ks_$_deviceId/restart/config': {
+        ...common('restart', 'Restart app'),
+        'command_topic': '$_base/restart/set',
+        'device_class': 'restart',
         'entity_category': 'config',
       },
       '$_prefix/update/ks_$_deviceId/update/config': {
