@@ -439,6 +439,10 @@
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h.01M3 15a4 4 0 0 1 4 4M3 11a8 8 0 0 1 8 8"/><path d="M8 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg></span>
           <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Play images, videos and audio remotely</span></span>
         </button>
+        <button data-tab="files">
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+          <span class="nav-text"><span class="nav-title">File Manager</span><span class="nav-sub">Browse, download and upload files</span></span>
+        </button>
         <button data-tab="device">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
           <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
@@ -491,6 +495,8 @@
           <button class="action" data-cmd="clearWebCache">Clear cache</button>
           <button class="action" data-cmd="screenOn">Screen on</button>
           <button class="action" data-cmd="screenOff">Screen off</button>
+          <button class="action" data-cmd="stopScreensaver">Dismiss screensaver</button>
+          <button class="action" data-cmd="restartApp">Restart app</button>
           <button class="action" data-cmd="exitApp">Exit app</button>
         </div>
         <div class="row" style="margin-top:6px">
@@ -527,6 +533,7 @@
     <div class="tab" id="tab-mqtt"></div>
     <div class="tab" id="tab-sendspin"></div>
     <div class="tab" id="tab-dlna"></div>
+    <div class="tab" id="tab-files"></div>
     <div class="tab" id="tab-device">
       <div id="device-settings"></div>
       <div id="device-info"></div>
@@ -657,7 +664,7 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'screen', 'screensaver',
-  'homeassistant', 'remote', 'mqtt', 'sendspin', 'dlna', 'device', 'console', 'logs', 'about'];
+  'homeassistant', 'remote', 'mqtt', 'sendspin', 'dlna', 'files', 'device', 'console', 'logs', 'about'];
 const TAB_TITLES = {
   dashboard: 'Dashboard', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', screen: 'Screen', screensaver: 'Screensaver',
@@ -666,7 +673,7 @@ const TAB_TITLES = {
   remote: 'Remote Administration',
   mqtt: 'MQTT Settings',
   sendspin: 'Sendspin Player',
-  dlna: 'DLNA Renderer',
+  dlna: 'DLNA Renderer', files: 'File Manager',
   device: 'Device', console: 'Web Console', logs: 'Logs', about: 'About',
 };
 
@@ -683,6 +690,7 @@ function showTab(name, { push = true } = {}) {
   if (glyph) titleEl.prepend(glyph.cloneNode(true));
   if (push && location.hash.slice(1) !== tab) location.hash = tab;
   if (tab === 'logs') loadLogs();
+  if (tab === 'files') loadFiles();
   if (tab === 'device') loadDeviceInfo();
   if (tab === 'about') loadAboutInfo();
 }
@@ -802,6 +810,174 @@ async function updateMotionCameraNotice() {
   });
   row.appendChild(btn);
   anchor.insertAdjacentElement('afterend', row);
+}
+
+/* File Manager (remote admin only): browse device folders, download,
+   upload and delete files. Two roots from the app: shared storage (gated
+   on the "All files access" grant, requested on the device) and the app's
+   own folder, which always works. */
+const filesState = { root: null, crumbs: [] };
+
+function fileSizeLabel(bytes) {
+  if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+  if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+  if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return bytes + ' B';
+}
+
+async function loadFiles() {
+  const tab = document.getElementById('tab-files');
+  tab.innerHTML = '<div class="card"><div class="desc" style="color:var(--muted)">Reading…</div></div>';
+  let roots = [];
+  try { roots = ((await cmd('fileRoots')).data || {}).roots || []; } catch (_) {}
+  if (!filesState.root) {
+    const shared = roots.find((r) => r.id === 'shared');
+    filesState.root = shared && shared.available ? 'shared' : 'app';
+  }
+  const active = roots.find((r) => r.id === filesState.root);
+  if (active && active.available !== true) { filesState.root = 'app'; filesState.crumbs = []; }
+  const relPath = filesState.crumbs.join('/');
+  let entries = null; let listErr = null;
+  try {
+    const res = await cmd('fileList', { root: filesState.root, path: relPath });
+    if (res.ok) entries = (res.data || {}).entries || [];
+    else listErr = res.error || 'could not read the folder';
+  } catch (_) { listErr = 'device unreachable'; }
+
+  tab.innerHTML = '';
+  const head = document.createElement('div'); head.className = 'card';
+
+  // Root picker plus upload, one row.
+  const pick = document.createElement('div'); pick.className = 'row';
+  const info = document.createElement('div'); info.className = 'info';
+  info.innerHTML = '<div class="name">Location</div><div class="desc"></div>';
+  pick.appendChild(info);
+  for (const r of roots) {
+    const b = document.createElement('button');
+    b.className = 'btn-ghost';
+    b.textContent = r.label;
+    b.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0; margin-left:8px;'
+      + (r.id === filesState.root ? 'outline:2px solid var(--accent);' : '');
+    b.disabled = r.available !== true;
+    b.addEventListener('click', () => {
+      filesState.root = r.id; filesState.crumbs = []; loadFiles();
+    });
+    pick.appendChild(b);
+  }
+  const uploadBtn = document.createElement('button');
+  uploadBtn.className = 'btn-ghost';
+  uploadBtn.textContent = 'Upload file';
+  uploadBtn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0; margin-left:8px;';
+  const picker = document.createElement('input');
+  picker.type = 'file'; picker.hidden = true;
+  picker.addEventListener('change', async () => {
+    const file = picker.files && picker.files[0];
+    if (!file) return;
+    uploadBtn.disabled = true;
+    uploadBtn.textContent = 'Uploading…';
+    const target = [...filesState.crumbs, file.name].join('/');
+    try {
+      const q = `root=${encodeURIComponent(filesState.root)}&path=${encodeURIComponent(target)}`;
+      const res = await api(`/api/files/upload?${q}`, { method: 'POST', body: file });
+      if (!res.ok) alert('Upload failed: ' + (((await res.json()) || {}).error || res.status));
+    } catch (e) { alert('Upload failed: ' + e); }
+    picker.value = '';
+    loadFiles();
+  });
+  uploadBtn.addEventListener('click', () => picker.click());
+  pick.appendChild(uploadBtn);
+  pick.appendChild(picker);
+  head.appendChild(pick);
+
+  // Shared storage gated: the grant screen lives on the device.
+  const shared = roots.find((r) => r.id === 'shared');
+  if (shared && shared.grantNeeded) {
+    const row = readOnlyRow('"All files access" permission missing',
+      'Without it only the app folder can be browsed. The grant screen opens on the tablet.', '');
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Grant on device';
+    btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await cmd('requestAllFilesAccess'); } catch (_) {}
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 2500));
+        try {
+          const res = await cmd('fileRoots');
+          const sh = ((res.data || {}).roots || []).find((r) => r.id === 'shared');
+          if (sh && sh.available) { loadFiles(); return; }
+        } catch (_) {}
+      }
+      btn.disabled = false;
+    });
+    row.appendChild(btn);
+    head.appendChild(row);
+  }
+  tab.appendChild(head);
+
+  // Listing card: breadcrumb row, then the entries.
+  const card = document.createElement('div'); card.className = 'card';
+  const crumb = readOnlyRow('/' + filesState.crumbs.join('/'), '', '');
+  if (filesState.crumbs.length) {
+    const up = document.createElement('button');
+    up.className = 'btn-ghost';
+    up.title = 'Up one folder';
+    up.setAttribute('aria-label', 'Up one folder');
+    up.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
+    up.style.cssText = 'width:auto; padding:8px 12px; flex-shrink:0;';
+    up.addEventListener('click', () => { filesState.crumbs.pop(); loadFiles(); });
+    crumb.appendChild(up);
+  }
+  card.appendChild(crumb);
+  if (listErr) {
+    card.appendChild(readOnlyRow(listErr, '', ''));
+  } else if (!entries.length) {
+    card.appendChild(readOnlyRow('Empty folder', '', ''));
+  } else {
+    for (const e of entries) {
+      const desc = e.dir ? 'Folder'
+        : `${fileSizeLabel(e.size || 0)} · ${new Date(e.modified || 0).toLocaleString()}`;
+      const row = readOnlyRow(e.name, desc, '');
+      if (e.dir) {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => { filesState.crumbs.push(e.name); loadFiles(); });
+      } else {
+        const rel = [...filesState.crumbs, e.name].join('/');
+        const dl = document.createElement('button');
+        dl.className = 'btn-ghost';
+        dl.textContent = 'Download';
+        dl.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0; margin-left:8px;';
+        dl.addEventListener('click', async () => {
+          dl.disabled = true;
+          try {
+            const q = `root=${encodeURIComponent(filesState.root)}&path=${encodeURIComponent(rel)}`;
+            const res = await api(`/api/files/download?${q}`);
+            const blob = await res.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = e.name;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          } catch (err) { alert('Download failed: ' + err); }
+          dl.disabled = false;
+        });
+        const del = document.createElement('button');
+        del.className = 'btn-ghost';
+        del.textContent = 'Delete';
+        del.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0; margin-left:8px;';
+        del.addEventListener('click', async () => {
+          if (!confirm(`Delete ${e.name}?`)) return;
+          await cmd('fileDelete', { root: filesState.root, path: rel });
+          loadFiles();
+        });
+        row.appendChild(dl);
+        row.appendChild(del);
+      }
+      card.appendChild(row);
+    }
+  }
+  tab.appendChild(card);
 }
 
 /* Overlay grant notice: mirror of the device's row directly under

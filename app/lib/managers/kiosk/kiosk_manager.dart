@@ -75,6 +75,27 @@ class KioskManager extends Manager {
 
     commands.register(
       Command(
+        name: 'restartApp',
+        description:
+            'Kill and relaunch the whole app. The clean-slate recovery for '
+            'anything a page reload cannot fix; the same mechanism the frame '
+            'watchdog uses',
+        handler: (_) async {
+          log.info(name, 'restarting application');
+          try {
+            await _backgroundChannel.invokeMethod<void>('restartProcess');
+          } on PlatformException catch (e) {
+            return CommandResult.fail('restart failed: $e');
+          } on MissingPluginException {
+            return const CommandResult.fail('restart is Android-only');
+          }
+          return const CommandResult.ok();
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
         name: 'requestOsPermissions',
         description:
             'Fire the OS permission prompts on the device: microphone '
