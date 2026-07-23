@@ -378,7 +378,10 @@ class _SetupScreenState extends State<SetupScreen> {
               'notifications',
               'batteryOptimizations',
             ],
-            if (_vsStepActive && _recommended['kiosk.start_on_boot']!)
+            // Auto-reload on error (default on) needs it to bring the app
+            // back after a crash; start-on-boot needs it for the boot launch.
+            if (c.settings.get(defs.autoReloadOnError) ||
+                (_vsStepActive && _recommended['kiosk.start_on_boot']!))
               'overlay',
             // Real brightness writes; a settings screen like the admin one.
             'writeSettings',
@@ -918,13 +921,16 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
             ],
-            if (bootStart)
-              const ListTile(
-                leading: Icon(Icons.layers_outlined),
-                title: Text('Display over other apps'),
+            if (bootStart || c.settings.get(defs.autoReloadOnError))
+              ListTile(
+                leading: const Icon(Icons.layers_outlined),
+                title: const Text('Display over other apps'),
                 subtitle: Text(
-                  'Grant this permission if you want Kiosk Satellite to '
-                  'auto start when your device boots.',
+                  bootStart
+                      ? 'Lets Kiosk Satellite come back after a crash and '
+                            'start when your device boots.'
+                      : 'Lets Kiosk Satellite come back on screen after a '
+                            'crash.',
                 ),
               ),
             const ListTile(

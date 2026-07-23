@@ -97,10 +97,49 @@ class WakeWordService : Service() {
         }
     }
 
-    // Nothing to do on each start: being alive is the whole job. START_STICKY so
-    // a process death that Android recovers from brings the exemption back with
-    // it, rather than leaving a satellite that is running but cannot hear.
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    // Being alive is most of the job. START_STICKY so a process death that
+    // Android recovers from brings the exemption back with it, rather than
+    // leaving a satellite that is running but cannot hear. A null intent is
+    // the sticky-restart signature (Android redelivers no intent after a
+    // crash), which is exactly when the kiosk UI may need bringing back too.
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) maybeRelaunchAfterCrash()
+        return START_STICKY
+    }
+
+    /**
+     * The crash self-heal: a WebView browser-component crash (crashpad) takes
+     * the whole process down; this service comes back via START_STICKY, but
+     * nothing brings the Activity with it - the kiosk stays a black nothing
+     * while the admin server hums along underneath. Relaunch it, but only
+     * when all of these hold:
+     *  - the auto-reload toggle is on (it already covers renderer crashes;
+     *    a whole-process crash is the same promise kept one level deeper),
+     *  - the app was on screen when it died (never yank whatever app the
+     *    user deliberately switched to - background listening exists so
+     *    other apps can be in front),
+     *  - no Activity is up yet (boot receiver may have won the race),
+     *  - the last self-heal was over two minutes ago, so an app broken
+     *    enough to crash at startup cannot relaunch-loop forever.
+     */
+    private fun maybeRelaunchAfterCrash() {
+        if (ActivityState.resumed) return
+        val prefs = getSharedPreferences(
+            "FlutterSharedPreferences", MODE_PRIVATE)
+        if (!prefs.getBoolean("flutter.ks.browser.auto_reload_on_error", true)) return
+        if (!prefs.getBoolean("flutter.ks.crash.was_foreground", false)) return
+        val now = System.currentTimeMillis()
+        val last = prefs.getLong("flutter.ks.crash.last_self_heal", 0L)
+        if (now - last < 120_000) return
+        prefs.edit().putLong("flutter.ks.crash.last_self_heal", now).apply()
+        val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return
+        try {
+            startActivity(launch)
+            android.util.Log.i("WakeWordService", "relaunched the kiosk after a crash")
+        } catch (e: Exception) {
+            android.util.Log.w("WakeWordService", "crash self-heal failed: $e")
+        }
+    }
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return

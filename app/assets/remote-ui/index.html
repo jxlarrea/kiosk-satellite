@@ -804,6 +804,50 @@ async function updateMotionCameraNotice() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
+/* Overlay grant notice: mirror of the device's row directly under
+   "Auto-reload on error", shown only while that switch is on and the
+   "display over other apps" grant is missing - without it the crash
+   self-heal cannot bring the kiosk back on Android 10+. */
+async function updateAutoReloadOverlayNotice() {
+  const autoReload = (state.settings || [])
+    .find((s) => s.key === 'browser.auto_reload_on_error');
+  if (!autoReload || autoReload.value !== true) return;
+  let granted;
+  try {
+    const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+    granted = !!(res.data || {}).displayOverOtherApps;
+  } catch (_) { return; }
+  if (granted) return;
+  const tab = document.getElementById('tab-browser');
+  const anchor = [...tab.querySelectorAll('.row')]
+    .find((r) => r.querySelector('.name')?.textContent === 'Auto-reload on error');
+  if (!anchor || tab.querySelector('.autoreload-overlay-notice')) return;
+  const row = readOnlyRow('"Display over other apps" permission missing',
+    'Without it the kiosk cannot bring itself back after a crash. The grant screen appears on the tablet.', '');
+  row.classList.add('autoreload-overlay-notice');
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Grant on device';
+  btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      await api('/api/commands/requestOsPermissions', { method: 'POST',
+        body: JSON.stringify({ which: ['overlay'] }) });
+    } catch (_) {}
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      try {
+        const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+        if ((res.data || {}).displayOverOtherApps) { row.remove(); return; }
+      } catch (_) {}
+    }
+    btn.disabled = false;
+  });
+  row.appendChild(btn);
+  anchor.insertAdjacentElement('afterend', row);
+}
+
 /* Immich validate row: mirror of the device's row directly under the API
    key. Every Immich row below gates on immich_validated, so a successful
    validation reloads the tab and they appear on their own. */
@@ -1004,6 +1048,7 @@ async function loadSettings() {
   }
   updateBrightnessGrantNotices();
   updateMotionCameraNotice();
+  updateAutoReloadOverlayNotice();
   updateImmichValidateRow();
 
   // Mirror of the device's Access card under Remote Administration. Here
@@ -3423,10 +3468,10 @@ function wizardSteps() {
         addRow('batteryUnrestricted', 'Ignore battery optimizations',
           'Allows Kiosk Satellite to run in the background permanently');
       }
-      if (bootStart) {
-        addRow('displayOverOtherApps', 'Display over other apps',
-          'Grant this permission if you want Kiosk Satellite to auto start when your device boots.');
-      }
+      addRow('displayOverOtherApps', 'Display over other apps',
+        bootStart
+          ? 'Lets Kiosk Satellite come back after a crash and start when your device boots.'
+          : 'Lets Kiosk Satellite come back on screen after a crash.');
       addRow('writeSettings', 'Screen brightness',
         "Allows Kiosk Satellite to set the panel's actual brightness (modify system settings).");
       addRow('deviceAdmin', 'Screen control',
@@ -3461,7 +3506,9 @@ function wizardSteps() {
           body: JSON.stringify({ which: [
             'microphone',
             ...(background ? ['notifications', 'batteryOptimizations'] : []),
-            ...(bootStart ? ['overlay'] : []),
+            // Auto-reload on error (default on) needs the overlay grant to
+            // bring the app back after a crash; boot start rides the same one.
+            'overlay',
             'writeSettings',
             'deviceAdmin',
           ] }) });

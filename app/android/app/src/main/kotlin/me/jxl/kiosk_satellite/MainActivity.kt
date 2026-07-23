@@ -36,11 +36,22 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         ActivityState.resumed = true
+        // Persisted so the crash self-heal (WakeWordService) can tell "died
+        // while on screen" from "user left for another app": only the former
+        // may bring the kiosk back on its own. A clean exit and a Home press
+        // both pass through onPause first, so the flag is false for those.
+        setWasForeground(true)
     }
 
     override fun onPause() {
         super.onPause()
         ActivityState.resumed = false
+        setWasForeground(false)
+    }
+
+    private fun setWasForeground(value: Boolean) {
+        getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            .edit().putBoolean("flutter.ks.crash.was_foreground", value).apply()
     }
 
     // The engine belongs to the process, not this Activity.

@@ -200,7 +200,7 @@ const autoReloadOnError = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: true,
   title: 'Auto-reload on error',
-  description: 'Reload the page automatically after a load failure or crash.',
+  description: 'Recover automatically from page failures and app crashes.',
   category: 'Browser',
 );
 

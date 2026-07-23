@@ -878,6 +878,9 @@ class _CategoryContentState extends State<_CategoryContent> {
             _defsFor(widget.category),
             () => setState(() {}),
             after: {
+              if (widget.category == 'Browser' &&
+                  container.settings.get(autoReloadOnError))
+                autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
               if (widget.category == 'Screensaver' &&
                   container.settings.get(screensaverDismissOnMotion))
                 screensaverDismissOnMotion.key: _CameraGrantRow(
@@ -1351,6 +1354,54 @@ const _githubMark =
 /// without the grant, and the switch is where that surprise gets noticed.
 /// Hidden once granted; same shape as the permission rows under Voice
 /// Satellite.
+/// The "Display over other apps" status, rendered directly under "Auto-reload
+/// on error" while it is enabled: without the grant the app cannot bring
+/// itself back after a whole-process crash on Android 10+, and the toggle is
+/// where that surprise gets noticed. Hidden once granted; same shape as the
+/// camera row below.
+class _OverlayGrantRow extends StatefulWidget {
+  const _OverlayGrantRow({super.key});
+
+  @override
+  State<_OverlayGrantRow> createState() => _OverlayGrantRowState();
+}
+
+class _OverlayGrantRowState extends State<_OverlayGrantRow> {
+  bool? _granted;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final status = await Permission.systemAlertWindow.status;
+    if (!mounted) return;
+    setState(() => _granted = status.isGranted);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_granted != false) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(Icons.layers_outlined, color: theme.colorScheme.error),
+      title: const Text('Display over other apps'),
+      subtitle: const Text(
+        'Without this the kiosk cannot come back after a crash.',
+      ),
+      trailing: TextButton(
+        onPressed: () async {
+          await requestOsPermission(Permission.systemAlertWindow);
+          await _refresh();
+        },
+        child: const Text('Grant'),
+      ),
+    );
+  }
+}
+
 class _CameraGrantRow extends StatefulWidget {
   const _CameraGrantRow({super.key});
 

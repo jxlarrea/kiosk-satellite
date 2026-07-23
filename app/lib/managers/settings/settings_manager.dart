@@ -180,7 +180,9 @@ class SettingsManager extends Manager {
                         'notifications',
                         'batteryOptimizations',
                       ],
-                      if (get(wakeWordBackground) || get(kioskStartOnBoot))
+                      if (get(wakeWordBackground) ||
+                          get(kioskStartOnBoot) ||
+                          get(autoReloadOnError))
                         'overlay',
                       'writeSettings',
                       'deviceAdmin',
