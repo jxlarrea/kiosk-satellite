@@ -75,7 +75,28 @@ class DeviceDetails(
         val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val info = ActivityManager.MemoryInfo()
         am.getMemoryInfo(info)
-        return mapOf("free" to info.availMem, "total" to info.totalMem, "low" to info.lowMemory)
+        // Prefer the kernel's MemAvailable over availMem: availMem subtracts
+        // every mapped file page (APK, dex, framework code), so for hours
+        // after a start it "declines" as code faults in - a leak-shaped
+        // artifact that had users (and us) chasing phantoms. MemAvailable is
+        // the kernel's own estimate of what could be reclaimed without
+        // swapping, which is what "available" should mean on a graph.
+        return mapOf(
+            "free" to (memAvailable() ?: info.availMem),
+            "total" to info.totalMem,
+            "low" to info.lowMemory,
+        )
+    }
+
+    private fun memAvailable(): Long? = try {
+        File("/proc/meminfo").useLines { lines ->
+            lines.firstOrNull { it.startsWith("MemAvailable") }
+                ?.replace(Regex("[^0-9]"), "")
+                ?.toLongOrNull()
+                ?.times(1024)
+        }
+    } catch (e: Exception) {
+        null
     }
 
     private fun storage(): Map<String, Any> {
