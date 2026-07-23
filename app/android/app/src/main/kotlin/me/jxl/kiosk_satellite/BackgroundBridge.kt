@@ -57,6 +57,27 @@ class BackgroundBridge(
                     result.success(true)
                 }
                 "isActivityResumed" -> result.success(ActivityState.resumed)
+                // The File Manager's shared-storage root. "All files access"
+                // is a settings screen, not a runtime dialog: request() opens
+                // it for this app and the person toggles it there.
+                "hasAllFilesAccess" -> result.success(
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
+                        android.os.Environment.isExternalStorageManager(),
+                )
+                "requestAllFilesAccess" -> {
+                    try {
+                        context.startActivity(
+                            Intent(
+                                android.provider.Settings
+                                    .ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                android.net.Uri.parse("package:${context.packageName}"),
+                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("files", e.message, null)
+                    }
+                }
                 // Media volume (STREAM_MUSIC only): no permission involved.
                 // The MQTT volume entity reads and writes through these.
                 "getVolume" -> {

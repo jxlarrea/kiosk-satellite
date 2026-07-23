@@ -39,6 +39,12 @@
          the confirm screen even for an installer-of-record self-update
          (see ApkInstaller). Normal protection: granted at install. -->
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION"/>
+    <!-- The File Manager's shared-storage root. A special settings-screen
+         grant ("All files access"), only ever requested from the File
+         Manager itself; without it the manager still works on the app's
+         own folder. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage"/>
     <!-- Writing the real system brightness (the value quick-settings moves),
          so brightness set from the remote admin or Home Assistant matches
          what every other surface reports. Granted via the special "Modify

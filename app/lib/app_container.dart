@@ -6,6 +6,7 @@ import 'managers/audio/audio_routing_manager.dart';
 import 'managers/browser/browser_manager.dart';
 import 'managers/device/device_manager.dart';
 import 'managers/dlna/dlna_manager.dart';
+import 'managers/files/files_manager.dart';
 import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
@@ -50,6 +51,7 @@ class AppContainer {
     mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
     dlna = DlnaManager(bus, commands, log, settings);
+    files = FilesManager(bus, commands, log);
     sound = SoundManager(bus, commands, log);
     update = UpdateManager(bus, commands, log);
     remote = RemoteManager(bus, commands, log, settings);
@@ -74,6 +76,7 @@ class AppContainer {
   late final MqttManager mqtt;
   late final SendspinManager sendspin;
   late final DlnaManager dlna;
+  late final FilesManager files;
   late final SoundManager sound;
   late final UpdateManager update;
   late final RemoteManager remote;
@@ -98,6 +101,7 @@ class AppContainer {
         mqtt,
         sendspin,
         dlna,
+        files,
         sound,
         update,
         remote,

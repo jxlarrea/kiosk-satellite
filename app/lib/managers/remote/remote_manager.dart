@@ -284,6 +284,10 @@ class RemoteManager extends Manager {
         return _json(200, {'console': console.data});
       case ('GET', 'api/screenshot'):
         return _screenshot();
+      case ('GET', 'api/files/download'):
+        return _fileDownload(request);
+      case ('POST', 'api/files/upload'):
+        return _fileUpload(request);
     }
 
     // POST /api/commands/<name>
@@ -362,6 +366,52 @@ class RemoteManager extends Manager {
     final params = await _body(request) ?? const <String, Object?>{};
     final result = await commands.execute(commandName, params);
     return _json(result.ok ? 200 : 400, result.toJson());
+  }
+
+  /// Path safety for both file endpoints lives in the files manager
+  /// (fileResolve refuses anything escaping its root); these only stream.
+  Future<String?> _resolveFilePath(Request request) async {
+    final resolved = await commands.execute('fileResolve', {
+      'root': request.url.queryParameters['root'],
+      'path': request.url.queryParameters['path'],
+    });
+    final data = resolved.data;
+    return resolved.ok && data is Map ? data['path'] as String? : null;
+  }
+
+  Future<Response> _fileDownload(Request request) async {
+    final path = await _resolveFilePath(request);
+    if (path == null) return _json(400, {'error': 'invalid path'});
+    final file = File(path);
+    if (!await file.exists()) return _json(404, {'error': 'no such file'});
+    final name = Uri.encodeComponent(file.uri.pathSegments.last);
+    return Response.ok(
+      file.openRead(),
+      headers: {
+        'content-type': 'application/octet-stream',
+        'content-length': '${await file.length()}',
+        'content-disposition': 'attachment; filename="$name"',
+      },
+    );
+  }
+
+  Future<Response> _fileUpload(Request request) async {
+    final path = await _resolveFilePath(request);
+    if (path == null) return _json(400, {'error': 'invalid path'});
+    final file = File(path);
+    try {
+      await file.parent.create(recursive: true);
+      final sink = file.openWrite();
+      try {
+        await sink.addStream(request.read());
+      } finally {
+        await sink.close();
+      }
+    } on FileSystemException catch (e) {
+      return _json(500, {'error': 'write failed: ${e.osError?.message ?? e.message}'});
+    }
+    log.info(name, 'uploaded ${file.path} (${await file.length()} bytes)');
+    return _json(200, {'ok': true, 'size': await file.length()});
   }
 
   Future<Response> _screenshot() async {

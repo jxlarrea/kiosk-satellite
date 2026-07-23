@@ -53,8 +53,16 @@ is administrable here by construction.
 | `/api/commands` | GET | List registered commands + param schemas |
 | `/api/commands/<name>` | POST | Execute a command with JSON params |
 | `/api/screenshot` | GET | PNG of the current screen |
+| `/api/files/download` | GET | Stream a device file. Query params: `root` (`shared` or `app`), `path` (relative to the root) |
+| `/api/files/upload` | POST | Write the raw request body to a device file, same `root`/`path` query params. Parent folders are created |
 | `/api/logs` | GET | Recent app log ring buffer |
 | `/api/console` | GET | Current WebView JS console buffer |
+
+The File Manager tab drives these plus the `fileRoots`, `fileList` and
+`fileDelete` commands. The `shared` root is the device's shared storage and
+needs the "All files access" grant (a settings screen on the device, offered
+from the tab); the `app` root is the app's own folder and always works. Paths
+are canonicalized against their root, so `..` cannot escape it.
 
 Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 `loadDashboard {dashboard}`, `reload`, `screenOn` / `screenOff`,
