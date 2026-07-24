@@ -551,6 +551,16 @@ class _KioskScreenState extends State<KioskScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
+    // One physical pixel of overdraw on the kiosk plane. On displays whose
+    // density is not a clean multiple of 160 (Tab S9: 340dpi, ratio 2.125)
+    // the logical screen size is a repeating fraction, and converting it
+    // back to physical pixels lands just under the true size (1600 becomes
+    // 1599.9999...), which the engine floors: the WebView's platform view
+    // ends up one pixel short and the scaffold's black shows as a hairline
+    // at that edge. Oversizing by one physical pixel guarantees the floor
+    // lands past the screen edge; the overhang is clipped by the window
+    // (the Stack below deliberately does not clip, see clipBehavior).
+    final overdraw = 1 / MediaQuery.devicePixelRatioOf(context);
     // Built once per build(), NOT once per animation tick. The
     // AnimatedBuilder below runs its builder every frame of the drawer
     // slide; the planes themselves never change during it — only their
@@ -634,8 +644,8 @@ class _KioskScreenState extends State<KioskScreen>
                   Positioned(
                     left: dx,
                     top: 0,
-                    bottom: 0,
-                    width: size.width,
+                    width: size.width + overdraw,
+                    height: size.height + overdraw,
                     child: kioskPlane,
                   ),
                   // The drawer plane, sliding in from the same seam.
