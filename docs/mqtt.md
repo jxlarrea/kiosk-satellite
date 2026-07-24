@@ -33,7 +33,9 @@ is connected to, and discovery must be enabled there (it is by default).
 Any number of tablets can share one broker and one set of credentials. Each
 install generates a permanent random id that namespaces its topics and
 entity ids, so devices never collide; each appears in Home Assistant as its
-own device, named after the **Device name** setting.
+own device, named after the **Device name** setting. Each device also
+carries a "Visit" link on its Home Assistant device page pointing at the
+tablet's remote admin (while remote administration is enabled).
 
 ## Entities
 
@@ -56,6 +58,7 @@ own device, named after the **Device name** setting.
 | CPU usage, CPU temperature | sensor | Polled once a minute. |
 | RAM available, RAM total | sensor | Polled once a minute. |
 | Current page | sensor | The URL the kiosk is showing. |
+| Remote admin | sensor | The remote admin's URL for this device, or `disabled` when remote administration is off. Handy for deep-linking from a dashboard. |
 
 All entities carry availability: they go unavailable the moment the tablet
 drops off the broker (broker-side last will, so it works however the
@@ -79,6 +82,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
 | `.../url/state` | out, retained | the current URL |
+| `.../admin_url/state` | out, retained | the remote admin URL, or `disabled` |
 
 Discovery configs are published retained under
 `<prefix>/<component>/ks_<device id>/<object>/config` and are retracted

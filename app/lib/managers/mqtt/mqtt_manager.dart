@@ -178,6 +178,23 @@ class MqttManager extends Manager {
         (level.clamp(0.0, 1.0) * 100).round().toString());
   }
 
+  /// The remote admin's address as a sensor, so a dashboard can deep-link
+  /// straight into a device's admin from Home Assistant. 'disabled' when the
+  /// remote admin is off.
+  Future<void> _publishAdminUrl() async {
+    if (!_settings.get(defs.remoteEnabled)) {
+      _publish('$_base/admin_url/state', 'disabled');
+      return;
+    }
+    final info = await commands.execute('getDeviceInfo', const {});
+    final ip = info.ok && info.data is Map
+        ? (info.data as Map)['ip'] as String?
+        : null;
+    if (ip == null || ip.isEmpty) return;
+    final port = _settings.get(defs.remotePort).toInt();
+    _publish('$_base/admin_url/state', 'http://$ip:$port');
+  }
+
   Future<void> _publishVolume() async {
     final volume = await commands.execute('getVolume', const {});
     if (volume.ok) _publish('$_base/volume/state', '${volume.data}');
@@ -193,10 +210,21 @@ class MqttManager extends Manager {
       // Whatever surface flipped it (device UI, remote admin, MQTT itself),
       // the switch in HA reflects it.
       _publishSettingSwitchStates();
+      if (e.key == defs.remoteEnabled.key) {
+        // The admin URL sensor and the device page's "Visit" link
+        // (configuration_url in the discovery device block) both follow it.
+        unawaited(_publishAdminUrl());
+        if (_connected) _publishDiscovery();
+      }
       return;
     }
     if (e.key == defs.screensaverBrightnessLevel.key) {
       _publishScreensaverBrightnessLevel();
+      return;
+    }
+    if (e.key == defs.remotePort.key) {
+      unawaited(_publishAdminUrl());
+      if (_connected) _publishDiscovery();
       return;
     }
     if (e.key == defs.mqttDeviceId.key) {
@@ -509,6 +537,7 @@ class MqttManager extends Manager {
     _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
     _publishSettingSwitchStates();
     _publishScreensaverBrightnessLevel();
+    await _publishAdminUrl();
     await _publishVolume();
     await _publishUpdateState();
     if (_lightSensorPresent) {
@@ -619,6 +648,7 @@ class MqttManager extends Manager {
         // conditionally: a config export moved to sensor-less hardware must
         // still clean the entity up.
         '$_prefix/sensor/ks_$_deviceId/illuminance/config',
+        '$_prefix/sensor/ks_$_deviceId/admin_url/config',
         '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
         for (final objectId in _settingSwitches.keys)
           '$_prefix/switch/ks_$_deviceId/$objectId/config',
@@ -646,6 +676,13 @@ class MqttManager extends Manager {
       if (model is String && model.isNotEmpty) 'model': model,
       if (_deviceInfo['appVersion'] is String)
         'sw_version': _deviceInfo['appVersion'],
+      // The HA device page's "Visit" link: straight into this tablet's
+      // remote admin. Only offered while the remote admin is actually on.
+      if (_settings.get(defs.remoteEnabled) &&
+          _deviceInfo['ip'] is String &&
+          (_deviceInfo['ip'] as String).isNotEmpty)
+        'configuration_url':
+            'http://${_deviceInfo['ip']}:${_settings.get(defs.remotePort).toInt()}',
     };
     final origin = {
       'name': 'Kiosk Satellite',
@@ -742,6 +779,12 @@ class MqttManager extends Manager {
           'unit_of_measurement': 'lx',
           'state_class': 'measurement',
         },
+      '$_prefix/sensor/ks_$_deviceId/admin_url/config': {
+        ...common('admin_url', 'Remote admin'),
+        'state_topic': '$_base/admin_url/state',
+        'icon': 'mdi:remote-desktop',
+        'entity_category': 'diagnostic',
+      },
       '$_prefix/switch/ks_$_deviceId/screensaver/config': {
         ...common('screensaver', 'Screensaver'),
         'state_topic': '$_base/screensaver/state',
