@@ -56,6 +56,8 @@ class MqttManager extends Manager {
   int? _lastCpuTemp;
   int? _lastRamFreeMb;
   int? _lastRamTotalMb;
+  List<Map<String, Object?>> _cameraViews = const [];
+  Set<String> _publishedCameraViewIds = {};
 
   /// Mirrored from bus events so the true value survives disconnects: the
   /// initial publish after (re)connecting must report the state the device
@@ -102,6 +104,11 @@ class MqttManager extends Manager {
     // The updater already throttles progress to whole percents.
     _subs.add(
         bus.on<UpdateStateChanged>().listen((_) => _publishUpdateState()));
+    _subs.add(bus.on<CameraConfigurationChanged>().listen((_) async {
+      await _refreshCameraViews();
+      if (_connected) await _publishDiscovery();
+    }));
+    _subs.add(bus.on<CameraViewStateChanged>().listen(_publishCameraViewState));
     // The native side damps flicker; this only guards the recorder's disk:
     // at most one publish per 15s, unless the level swung hard (lights on).
     _subs.add(bus.on<LightLevelChanged>().listen((e) {
@@ -116,6 +123,17 @@ class MqttManager extends Manager {
       _lastLuxPublishedAt = DateTime.now();
       _publish('$_base/illuminance/state', e.lux.round().toString());
     }));
+
+    await _refreshCameraViews();
+    try {
+      final persisted = jsonDecode(_settings.internal('mqtt_camera_view_ids'));
+      if (persisted is List) {
+        _publishedCameraViewIds = {
+          for (final id in persisted)
+            if (id is String) id,
+        };
+      }
+    } catch (_) {}
 
     if (_settings.get(defs.mqttEnabled)) {
       _transition = _transition.then((_) => _connect());
@@ -203,7 +221,7 @@ class MqttManager extends Manager {
   void _onSettingChanged(SettingChanged e) {
     if (e.key == defs.deviceName.key) {
       // The HA device is named after the kiosk; keep them in step.
-      if (_connected) _publishDiscovery();
+      if (_connected) unawaited(_publishDiscovery());
       return;
     }
     if (_switchSettingKeys.contains(e.key)) {
@@ -214,7 +232,7 @@ class MqttManager extends Manager {
         // The admin URL sensor and the device page's "Visit" link
         // (configuration_url in the discovery device block) both follow it.
         unawaited(_publishAdminUrl());
-        if (_connected) _publishDiscovery();
+        if (_connected) unawaited(_publishDiscovery());
       }
       return;
     }
@@ -224,7 +242,7 @@ class MqttManager extends Manager {
     }
     if (e.key == defs.remotePort.key) {
       unawaited(_publishAdminUrl());
-      if (_connected) _publishDiscovery();
+      if (_connected) unawaited(_publishDiscovery());
       return;
     }
     if (e.key == defs.mqttDeviceId.key) {
@@ -327,6 +345,8 @@ class MqttManager extends Manager {
       '$_base/restart/set',
       '$_base/update/set',
       '$_base/screensaver_brightness_level/set',
+      '$_base/camera/view/set',
+      '$_base/camera/close/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
     ]) {
       client.subscribe(topic, MqttQos.atLeastOnce);
@@ -388,7 +408,7 @@ class MqttManager extends Manager {
     _lightSensorPresent =
         light.ok && light.data is Map && (light.data as Map)['present'] == true;
     _publish(_availabilityTopic, 'online');
-    _publishDiscovery();
+    await _publishDiscovery();
     await _publishInitialStates();
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(
@@ -500,6 +520,26 @@ class MqttManager extends Manager {
           log.warn(name, 'installUpdate over MQTT failed: ${result.error}');
           await _publishUpdateState();
         }
+      } else if (topic == '$_base/camera/view/set') {
+        if (payload.header?.retain == true) {
+          log.warn(name, 'ignored retained camera view command');
+          continue;
+        }
+        log.info(name, 'camera view command');
+        final result = await commands.execute('showCameraView', {
+          'viewId': text,
+        });
+        if (!result.ok) {
+          log.warn(name, 'showCameraView over MQTT failed: ${result.error}');
+          await _publishCurrentCameraViewState();
+        }
+      } else if (topic == '$_base/camera/close/set') {
+        if (payload.header?.retain == true) {
+          log.warn(name, 'ignored retained camera close command');
+          continue;
+        }
+        log.info(name, 'camera close command');
+        await commands.execute('hideCameraView', const {});
       } else {
         for (final entry in _settingSwitches.entries) {
           if (topic != '$_base/${entry.key}/set') continue;
@@ -540,6 +580,7 @@ class MqttManager extends Manager {
     await _publishAdminUrl();
     await _publishVolume();
     await _publishUpdateState();
+    await _publishCurrentCameraViewState();
     if (_lightSensorPresent) {
       final light = await commands.execute('getLightLevel', const {});
       final lux = light.ok && light.data is Map
@@ -650,6 +691,13 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/illuminance/config',
         '$_prefix/sensor/ks_$_deviceId/admin_url/config',
         '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
+        '$_prefix/sensor/ks_$_deviceId/active_camera_view/config',
+        '$_prefix/button/ks_$_deviceId/close_camera_view/config',
+        for (final id in {
+          ..._publishedCameraViewIds,
+          for (final view in _cameraViews) '${view['id']}',
+        })
+          '$_prefix/button/ks_$_deviceId/camera_view_$id/config',
         for (final objectId in _settingSwitches.keys)
           '$_prefix/switch/ks_$_deviceId/$objectId/config',
       ];
@@ -662,7 +710,7 @@ class MqttManager extends Manager {
         '$_prefix/binary_sensor/ks_$_deviceId/screensaver/config',
       ];
 
-  void _publishDiscovery() {
+  Future<void> _publishDiscovery() async {
     final configuredName = _settings.get(defs.deviceName).trim();
     final model = _deviceInfo['model'];
     final deviceBlock = {
@@ -785,6 +833,28 @@ class MqttManager extends Manager {
         'icon': 'mdi:remote-desktop',
         'entity_category': 'diagnostic',
       },
+      '$_prefix/sensor/ks_$_deviceId/active_camera_view/config': {
+        ...common('active_camera_view', 'Active camera view'),
+        'state_topic': '$_base/camera/view/state',
+        'json_attributes_topic': '$_base/camera/view/attributes',
+        'icon': 'mdi:cctv',
+      },
+      '$_prefix/button/ks_$_deviceId/close_camera_view/config': {
+        ...common('close_camera_view', 'Close camera view'),
+        'command_topic': '$_base/camera/close/set',
+        'payload_press': 'CLOSE',
+        'icon': 'mdi:close-box-outline',
+      },
+      for (final view in _cameraViews)
+        '$_prefix/button/ks_$_deviceId/camera_view_${view['id']}/config': {
+          ...common(
+            'camera_view_${view['id']}',
+            'Show ${view['name']}',
+          ),
+          'command_topic': '$_base/camera/view/set',
+          'payload_press': '${view['id']}',
+          'icon': 'mdi:cctv',
+        },
       '$_prefix/switch/ks_$_deviceId/screensaver/config': {
         ...common('screensaver', 'Screensaver'),
         'state_topic': '$_base/screensaver/state',
@@ -854,6 +924,52 @@ class MqttManager extends Manager {
     for (final topic in _legacyDiscoveryTopics()) {
       _publish(topic, '');
     }
+    final currentIds = {
+      for (final view in _cameraViews) '${view['id']}',
+    };
+    for (final staleId in _publishedCameraViewIds.difference(currentIds)) {
+      _publish(
+        '$_prefix/button/ks_$_deviceId/camera_view_$staleId/config',
+        '',
+      );
+    }
     configs.forEach((topic, config) => _publish(topic, jsonEncode(config)));
+    _publishedCameraViewIds = currentIds;
+    await _settings.setInternal(
+      'mqtt_camera_view_ids',
+      jsonEncode(currentIds.toList()),
+    );
+  }
+
+  Future<void> _refreshCameraViews() async {
+    final result = await commands.execute('cameraGetConfig', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map || data['views'] is! List) {
+      _cameraViews = const [];
+      return;
+    }
+    _cameraViews = [
+      for (final view in data['views'] as List)
+        if (view is Map) view.cast<String, Object?>(),
+    ];
+  }
+
+  void _publishCameraViewState(CameraViewStateChanged event) {
+    _publish('$_base/camera/view/state', event.viewName ?? 'none');
+    _publish(
+      '$_base/camera/view/attributes',
+      jsonEncode(event.toJson()),
+    );
+  }
+
+  Future<void> _publishCurrentCameraViewState() async {
+    final result = await commands.execute('cameraStatus', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map) return;
+    _publish(
+      '$_base/camera/view/state',
+      data['viewName'] is String ? '${data['viewName']}' : 'none',
+    );
+    _publish('$_base/camera/view/attributes', jsonEncode(data));
   }
 }

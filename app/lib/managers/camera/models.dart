@@ -1,0 +1,233 @@
+import 'dart:convert';
+
+class CameraServer {
+  const CameraServer({
+    required this.id,
+    required this.name,
+    required this.baseUrl,
+    this.username = '',
+    this.password = '',
+    this.allowInvalidCertificate = false,
+  });
+
+  final String id;
+  final String name;
+  final String baseUrl;
+  final String username;
+  final String password;
+  final bool allowInvalidCertificate;
+
+  CameraServer copyWith({
+    String? name,
+    String? baseUrl,
+    String? username,
+    String? password,
+    bool? allowInvalidCertificate,
+  }) => CameraServer(
+    id: id,
+    name: name ?? this.name,
+    baseUrl: baseUrl ?? this.baseUrl,
+    username: username ?? this.username,
+    password: password ?? this.password,
+    allowInvalidCertificate:
+        allowInvalidCertificate ?? this.allowInvalidCertificate,
+  );
+
+  Map<String, Object?> toJson({bool includePassword = true}) => {
+    'id': id,
+    'name': name,
+    'baseUrl': baseUrl,
+    if (username.isNotEmpty) 'username': username,
+    if (includePassword && password.isNotEmpty) 'password': password,
+    if (!includePassword) 'passwordSet': password.isNotEmpty,
+    if (allowInvalidCertificate)
+      'allowInvalidCertificate': allowInvalidCertificate,
+  };
+
+  static CameraServer fromJson(Map<Object?, Object?> json) => CameraServer(
+    id: '${json['id'] ?? ''}',
+    name: '${json['name'] ?? ''}',
+    baseUrl: '${json['baseUrl'] ?? ''}',
+    username: '${json['username'] ?? ''}',
+    password: '${json['password'] ?? ''}',
+    allowInvalidCertificate: json['allowInvalidCertificate'] == true,
+  );
+}
+
+class CameraSource {
+  const CameraSource({
+    required this.id,
+    required this.name,
+    required this.kind,
+    this.serverId,
+    this.streamName,
+    this.whepUrl,
+    this.fullscreenStreamName,
+    this.imported = false,
+    this.missing = false,
+  });
+
+  final String id;
+  final String name;
+
+  /// `go2rtc` or `whep`.
+  final String kind;
+  final String? serverId;
+  final String? streamName;
+  final String? whepUrl;
+  final String? fullscreenStreamName;
+  final bool imported;
+  final bool missing;
+
+  CameraSource copyWith({
+    String? name,
+    String? serverId,
+    String? streamName,
+    String? whepUrl,
+    String? fullscreenStreamName,
+    bool? imported,
+    bool? missing,
+  }) => CameraSource(
+    id: id,
+    name: name ?? this.name,
+    kind: kind,
+    serverId: serverId ?? this.serverId,
+    streamName: streamName ?? this.streamName,
+    whepUrl: whepUrl ?? this.whepUrl,
+    fullscreenStreamName: fullscreenStreamName ?? this.fullscreenStreamName,
+    imported: imported ?? this.imported,
+    missing: missing ?? this.missing,
+  );
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'kind': kind,
+    if (serverId != null) 'serverId': serverId,
+    if (streamName != null) 'streamName': streamName,
+    if (whepUrl != null) 'whepUrl': whepUrl,
+    if (fullscreenStreamName != null && fullscreenStreamName!.isNotEmpty)
+      'fullscreenStreamName': fullscreenStreamName,
+    if (imported) 'imported': imported,
+    if (missing) 'missing': missing,
+  };
+
+  static CameraSource fromJson(Map<Object?, Object?> json) => CameraSource(
+    id: '${json['id'] ?? ''}',
+    name: '${json['name'] ?? ''}',
+    kind: '${json['kind'] ?? 'go2rtc'}',
+    serverId: json['serverId'] as String?,
+    streamName: json['streamName'] as String?,
+    whepUrl: json['whepUrl'] as String?,
+    fullscreenStreamName: json['fullscreenStreamName'] as String?,
+    imported: json['imported'] == true,
+    missing: json['missing'] == true,
+  );
+}
+
+class CameraViewConfig {
+  const CameraViewConfig({
+    required this.id,
+    required this.name,
+    required this.cameraIds,
+    this.showCameraNames = true,
+  });
+
+  final String id;
+  final String name;
+  final List<String> cameraIds;
+  final bool showCameraNames;
+
+  CameraViewConfig copyWith({
+    String? name,
+    List<String>? cameraIds,
+    bool? showCameraNames,
+  }) => CameraViewConfig(
+    id: id,
+    name: name ?? this.name,
+    cameraIds: cameraIds ?? this.cameraIds,
+    showCameraNames: showCameraNames ?? this.showCameraNames,
+  );
+
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'name': name,
+    'cameraIds': cameraIds,
+    'showCameraNames': showCameraNames,
+  };
+
+  static CameraViewConfig fromJson(Map<Object?, Object?> json) =>
+      CameraViewConfig(
+        id: '${json['id'] ?? ''}',
+        name: '${json['name'] ?? ''}',
+        cameraIds: [
+          for (final id in json['cameraIds'] as List? ?? const [])
+            if (id is String) id,
+        ],
+        showCameraNames: json['showCameraNames'] != false,
+      );
+}
+
+class CameraConfiguration {
+  const CameraConfiguration({
+    this.version = 1,
+    this.servers = const [],
+    this.cameras = const [],
+    this.views = const [],
+  });
+
+  final int version;
+  final List<CameraServer> servers;
+  final List<CameraSource> cameras;
+  final List<CameraViewConfig> views;
+
+  CameraConfiguration copyWith({
+    List<CameraServer>? servers,
+    List<CameraSource>? cameras,
+    List<CameraViewConfig>? views,
+  }) => CameraConfiguration(
+    version: version,
+    servers: servers ?? this.servers,
+    cameras: cameras ?? this.cameras,
+    views: views ?? this.views,
+  );
+
+  Map<String, Object?> toJson({bool includePasswords = true}) => {
+    'version': version,
+    'servers': [
+      for (final server in servers)
+        server.toJson(includePassword: includePasswords),
+    ],
+    'cameras': [for (final camera in cameras) camera.toJson()],
+    'views': [for (final view in views) view.toJson()],
+  };
+
+  String encode() => jsonEncode(toJson());
+
+  static CameraConfiguration decode(String raw) {
+    if (raw.trim().isEmpty) return const CameraConfiguration();
+    final json = jsonDecode(raw);
+    if (json is! Map) {
+      throw const FormatException('camera config is not an object');
+    }
+    final version = json['version'];
+    if (version != 1) {
+      throw FormatException('unsupported camera config version: $version');
+    }
+    return CameraConfiguration(
+      version: 1,
+      servers: [
+        for (final item in json['servers'] as List? ?? const [])
+          if (item is Map) CameraServer.fromJson(item),
+      ],
+      cameras: [
+        for (final item in json['cameras'] as List? ?? const [])
+          if (item is Map) CameraSource.fromJson(item),
+      ],
+      views: [
+        for (final item in json['views'] as List? ?? const [])
+          if (item is Map) CameraViewConfig.fromJson(item),
+      ],
+    );
+  }
+}

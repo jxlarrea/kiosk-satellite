@@ -22,6 +22,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
 import 'color_picker.dart';
+import 'camera_settings.dart';
 import 'import_options_dialog.dart';
 import 'media_picker.dart';
 import 'wake_word_tester.dart';
@@ -151,6 +152,12 @@ const _categories = <(String, String, IconData, String)>[
     'MQTT Settings',
     Icons.hub_outlined,
     'Publish to an MQTT broker',
+  ),
+  (
+    'Cameras',
+    'WebRTC Cameras',
+    Icons.videocam_outlined,
+    'Go2RTC cameras and views',
   ),
   (
     'Sendspin',
@@ -872,6 +879,8 @@ class _CategoryContentState extends State<_CategoryContent> {
               children: _vsContent(container),
             ),
           )
+        else if (widget.category == 'Cameras')
+          CameraSettingsPanel(container: container)
         else
           ..._sectionedCards(
             container,

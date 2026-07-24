@@ -67,7 +67,8 @@ are canonicalized against their root, so `..` cannot escape it.
 Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 `loadDashboard {dashboard}`, `reload`, `screenOn` / `screenOff`,
 `setBrightness {level}`, `startScreensaver` / `stopScreensaver`,
-`setWakeWordActive {active}`, `restartApp`, `tts {text}`.
+`setWakeWordActive {active}`, `showCameraView {viewId}`,
+`hideCameraView`, `cameraGetConfig`, `restartApp`, `tts {text}`.
 
 ## WebSocket
 

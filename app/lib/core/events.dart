@@ -249,6 +249,37 @@ class PageChanged extends AppEvent {
   Map<String, Object?> toJson() => {'url': url};
 }
 
+// ── Camera views ───────────────────────────────────────────────────────
+
+class CameraConfigurationChanged extends AppEvent {
+  const CameraConfigurationChanged();
+}
+
+class CameraViewStateChanged extends AppEvent {
+  const CameraViewStateChanged({
+    required this.viewId,
+    required this.viewName,
+    this.focusedCameraId,
+  });
+
+  final String? viewId;
+  final String? viewName;
+  final String? focusedCameraId;
+
+  bool get active => viewId != null;
+
+  @override
+  String get wireName => 'cameraview';
+
+  @override
+  Map<String, Object?> toJson() => {
+        'active': active,
+        'viewId': viewId,
+        'viewName': viewName,
+        'focusedCameraId': focusedCameraId,
+      };
+}
+
 // ── Kiosk lockdown ─────────────────────────────────────────────────────
 
 /// The kiosk exit gesture (N fast taps, counted natively) fired. The kiosk

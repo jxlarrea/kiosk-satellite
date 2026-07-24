@@ -80,6 +80,7 @@ flutter:
   assets:
     - assets/remote-ui/index.html
     - assets/screensaver/index.html
+    - assets/camera-view/index.html
     - assets/branding/icon.png
     - assets/branding/mark.png
     - assets/svg/

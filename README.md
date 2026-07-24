@@ -172,6 +172,7 @@ very welcome in the issues.
 - [JavaScript API](docs/js-api.md): `window.kioskSatellite`, wake-word handoff protocol
 - [Remote API](docs/remote-api.md): REST + WebSocket surface
 - [MQTT](docs/mqtt.md): Home Assistant entities via MQTT discovery, topics, troubleshooting
+- [WebRTC cameras](docs/cameras.md): Go2RTC import, camera views, and Home Assistant controls
 - [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.

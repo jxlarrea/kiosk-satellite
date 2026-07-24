@@ -1,0 +1,574 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../app_container.dart';
+import '../core/events.dart';
+import '../managers/camera/models.dart';
+
+class CameraSettingsPanel extends StatefulWidget {
+  const CameraSettingsPanel({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<CameraSettingsPanel> createState() => _CameraSettingsPanelState();
+}
+
+class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
+  StreamSubscription<CameraConfigurationChanged>? _subscription;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscription = widget.container.bus
+        .on<CameraConfigurationChanged>()
+        .listen((_) => mounted ? setState(() {}) : null);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _message(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final config = widget.container.camera.config;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _heading('Go2RTC servers'),
+        _card([
+          for (final server in config.servers)
+            ListTile(
+              leading: const Icon(Icons.dns_outlined),
+              title: Text(server.name),
+              subtitle: Text(server.baseUrl),
+              onTap: () => _editServer(server),
+              trailing: Wrap(
+                spacing: 2,
+                children: [
+                  IconButton(
+                    tooltip: 'Import streams',
+                    icon: const Icon(Icons.download_outlined),
+                    onPressed: _busy ? null : () => _import(server),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete server',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: _busy ? null : () => _deleteServer(server),
+                  ),
+                ],
+              ),
+            ),
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('Add Go2RTC server'),
+            subtitle: const Text('Connect to a server and import its streams.'),
+            onTap: _busy ? null : () => _editServer(null),
+          ),
+        ]),
+        _heading('Cameras'),
+        _card([
+          if (config.cameras.isEmpty)
+            const ListTile(
+              leading: Icon(Icons.videocam_off_outlined),
+              title: Text('No cameras configured'),
+              subtitle: Text('Import Go2RTC streams or add one manually.'),
+            ),
+          for (final camera in config.cameras)
+            ListTile(
+              leading: Icon(
+                camera.missing
+                    ? Icons.link_off_outlined
+                    : Icons.videocam_outlined,
+              ),
+              title: Text(camera.name),
+              subtitle: Text(_cameraSubtitle(camera, config)),
+              onTap: () => _editCamera(camera),
+              trailing: IconButton(
+                tooltip: 'Delete camera',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: _busy ? null : () => _deleteCamera(camera),
+              ),
+            ),
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('Add camera manually'),
+            subtitle: const Text('Use a Go2RTC stream name or a WHEP URL.'),
+            onTap: _busy ? null : () => _editCamera(null),
+          ),
+        ]),
+        _heading('Views'),
+        _card([
+          if (config.views.isEmpty)
+            const ListTile(
+              leading: Icon(Icons.grid_view_outlined),
+              title: Text('No camera views'),
+              subtitle: Text('A view contains up to four cameras.'),
+            ),
+          for (final view in config.views)
+            ListTile(
+              leading: const Icon(Icons.grid_view_outlined),
+              title: Text(view.name),
+              subtitle: Text(
+                '${view.cameraIds.length} camera'
+                '${view.cameraIds.length == 1 ? '' : 's'}'
+                ' · Names ${view.showCameraNames ? 'shown' : 'hidden'}',
+              ),
+              onTap: () => _editView(view),
+              trailing: Wrap(
+                spacing: 2,
+                children: [
+                  IconButton(
+                    tooltip: 'Show view',
+                    icon: const Icon(Icons.play_arrow),
+                    onPressed: () => _showView(view),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete view',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: _busy ? null : () => _deleteView(view),
+                  ),
+                ],
+              ),
+            ),
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('Create camera view'),
+            subtitle: Text(
+              config.cameras.isEmpty
+                  ? 'Add a camera first.'
+                  : 'Choose and order up to four cameras.',
+            ),
+            enabled: config.cameras.isNotEmpty && !_busy,
+            onTap: config.cameras.isEmpty || _busy
+                ? null
+                : () => _editView(null),
+          ),
+        ]),
+        const SizedBox(height: 16),
+        Text(
+          'Grid playback is video-only. For low-power devices, use lower '
+          'resolution Go2RTC streams in views and optionally set a separate '
+          'fullscreen stream.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _heading(String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: Theme.of(context).colorScheme.primary,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
+
+  Widget _card(List<Widget> children) => Card(
+    margin: EdgeInsets.zero,
+    clipBehavior: Clip.antiAlias,
+    child: Column(children: children),
+  );
+
+  Future<void> _showView(CameraViewConfig view) async {
+    final result = await widget.container.camera.showView(view.id);
+    if (!result.ok) {
+      _message('Could not show view: ${result.error}');
+      return;
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  String _cameraSubtitle(
+    CameraSource camera,
+    CameraConfiguration configuration,
+  ) {
+    if (camera.kind == 'whep') return camera.whepUrl ?? 'WHEP';
+    final server = configuration.servers
+        .where((item) => item.id == camera.serverId)
+        .firstOrNull;
+    final status = camera.missing ? ' (missing)' : '';
+    return '${server?.name ?? 'Unknown server'}: '
+        '${camera.streamName ?? ''}$status';
+  }
+
+  Future<void> _import(CameraServer server) => _run(() async {
+    final result = await widget.container.commands.execute(
+      'cameraImportGo2Rtc',
+      {'serverId': server.id},
+    );
+    if (!result.ok) {
+      _message('Import failed: ${result.error}');
+      return;
+    }
+    final data = result.data as Map;
+    _message(
+      'Import complete: ${data['added']} added, '
+      '${data['missing']} missing.',
+    );
+  });
+
+  Future<void> _editServer(CameraServer? server) async {
+    final name = TextEditingController(text: server?.name ?? 'Go2RTC');
+    final url = TextEditingController(text: server?.baseUrl ?? '');
+    final username = TextEditingController(text: server?.username ?? '');
+    final password = TextEditingController();
+    var invalidCertificate = server?.allowInvalidCertificate ?? false;
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(server == null ? 'Add Go2RTC server' : 'Edit server'),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: name,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  TextField(
+                    controller: url,
+                    keyboardType: TextInputType.url,
+                    decoration: const InputDecoration(
+                      labelText: 'Base URL',
+                      hintText: 'http://192.168.1.10:1984',
+                    ),
+                  ),
+                  TextField(
+                    controller: username,
+                    decoration: const InputDecoration(
+                      labelText: 'Username (optional)',
+                    ),
+                  ),
+                  TextField(
+                    controller: password,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: server?.password.isNotEmpty == true
+                          ? 'New password (leave blank to keep)'
+                          : 'Password (optional)',
+                    ),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Allow invalid TLS certificate'),
+                    value: invalidCertificate,
+                    onChanged: (value) =>
+                        setDialogState(() => invalidCertificate = value),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (submitted != true) return;
+    await _run(() async {
+      final params = <String, Object?>{
+        'id': server?.id ?? '',
+        'name': name.text,
+        'baseUrl': url.text,
+        'username': username.text,
+        'allowInvalidCertificate': invalidCertificate,
+        if (password.text.isNotEmpty || server == null)
+          'password': password.text,
+      };
+      final result = await widget.container.commands.execute(
+        'cameraPutServer',
+        params,
+      );
+      if (!result.ok) _message('Could not save server: ${result.error}');
+    });
+  }
+
+  Future<void> _editCamera(CameraSource? camera) async {
+    final config = widget.container.camera.config;
+    final name = TextEditingController(text: camera?.name ?? '');
+    final stream = TextEditingController(text: camera?.streamName ?? '');
+    final whep = TextEditingController(text: camera?.whepUrl ?? '');
+    final fullscreen = TextEditingController(
+      text: camera?.fullscreenStreamName ?? '',
+    );
+    var kind = camera?.kind ?? 'go2rtc';
+    var serverId =
+        camera?.serverId ??
+        (config.servers.isEmpty ? '' : config.servers.first.id);
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(camera == null ? 'Add camera' : 'Edit camera'),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: name,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  DropdownButtonFormField<String>(
+                    initialValue: kind,
+                    decoration: const InputDecoration(labelText: 'Type'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'go2rtc',
+                        child: Text('Go2RTC stream'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'whep',
+                        child: Text('Direct WHEP URL'),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setDialogState(() => kind = value ?? kind),
+                  ),
+                  if (kind == 'go2rtc') ...[
+                    DropdownButtonFormField<String>(
+                      initialValue:
+                          config.servers.any((server) => server.id == serverId)
+                          ? serverId
+                          : null,
+                      decoration: const InputDecoration(labelText: 'Server'),
+                      items: [
+                        for (final server in config.servers)
+                          DropdownMenuItem(
+                            value: server.id,
+                            child: Text(server.name),
+                          ),
+                      ],
+                      onChanged: (value) =>
+                          setDialogState(() => serverId = value ?? ''),
+                    ),
+                    TextField(
+                      controller: stream,
+                      decoration: const InputDecoration(
+                        labelText: 'Stream name',
+                      ),
+                    ),
+                    TextField(
+                      controller: fullscreen,
+                      decoration: const InputDecoration(
+                        labelText: 'Fullscreen stream (optional)',
+                      ),
+                    ),
+                  ] else
+                    TextField(
+                      controller: whep,
+                      keyboardType: TextInputType.url,
+                      decoration: const InputDecoration(labelText: 'WHEP URL'),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (submitted != true) return;
+    await _run(() async {
+      final result = await widget.container.commands
+          .execute('cameraPutSource', {
+            'id': camera?.id ?? '',
+            'name': name.text,
+            'kind': kind,
+            'serverId': serverId,
+            'streamName': stream.text,
+            'whepUrl': whep.text,
+            'fullscreenStreamName': fullscreen.text,
+          });
+      if (!result.ok) _message('Could not save camera: ${result.error}');
+    });
+  }
+
+  Future<void> _editView(CameraViewConfig? view) async {
+    final cameras = widget.container.camera.config.cameras;
+    final name = TextEditingController(text: view?.name ?? '');
+    final selected = [...?view?.cameraIds];
+    var showCameraNames = view?.showCameraNames ?? true;
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(view == null ? 'Create camera view' : 'Edit view'),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: name,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Show camera names'),
+                    value: showCameraNames,
+                    onChanged: (value) =>
+                        setDialogState(() => showCameraNames = value),
+                  ),
+                  const SizedBox(height: 12),
+                  for (final camera in cameras)
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(camera.name),
+                      subtitle: Text(
+                        selected.contains(camera.id)
+                            ? 'Position ${selected.indexOf(camera.id) + 1}'
+                            : camera.missing
+                            ? 'Missing from Go2RTC'
+                            : 'Not selected',
+                      ),
+                      value: selected.contains(camera.id),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          if (value == true && selected.length < 4) {
+                            selected.add(camera.id);
+                          } else if (value != true) {
+                            selected.remove(camera.id);
+                          }
+                        });
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: selected.isEmpty
+                  ? null
+                  : () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (submitted != true) return;
+    await _run(() async {
+      final result = await widget.container.commands.execute('cameraPutView', {
+        'id': view?.id ?? '',
+        'name': name.text,
+        'cameraIds': selected,
+        'showCameraNames': showCameraNames,
+      });
+      if (!result.ok) _message('Could not save view: ${result.error}');
+    });
+  }
+
+  Future<bool> _confirm(String title, String message) async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  Future<void> _deleteServer(CameraServer server) async {
+    if (!await _confirm(
+      'Delete ${server.name}?',
+      'Its cameras will be removed from every view.',
+    )) {
+      return;
+    }
+    await _run(() async {
+      await widget.container.commands.execute('cameraDeleteServer', {
+        'id': server.id,
+      });
+    });
+  }
+
+  Future<void> _deleteCamera(CameraSource camera) async {
+    if (!await _confirm(
+      'Delete ${camera.name}?',
+      'It will be removed from every view.',
+    )) {
+      return;
+    }
+    await _run(() async {
+      await widget.container.commands.execute('cameraDeleteSource', {
+        'id': camera.id,
+      });
+    });
+  }
+
+  Future<void> _deleteView(CameraViewConfig view) async {
+    if (!await _confirm('Delete ${view.name}?', 'This cannot be undone.')) {
+      return;
+    }
+    await _run(() async {
+      await widget.container.commands.execute('cameraDeleteView', {
+        'id': view.id,
+      });
+    });
+  }
+}

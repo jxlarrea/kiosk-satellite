@@ -36,6 +36,7 @@ class ScreensaverManager extends Manager {
   /// idle timer is held the whole time, so the screensaver cannot return while
   /// the user is mid-interaction.
   bool _voiceTurn = false;
+  bool _cameraViewActive = false;
   double? _savedBrightness;
 
   /// The visual overlay the UI should render, or null for none.
@@ -60,6 +61,15 @@ class ScreensaverManager extends Manager {
       _paused = e.active;
       if (_paused) unawaited(stop());
       _resetIdleTimer();
+    });
+    bus.on<CameraViewStateChanged>().listen((event) {
+      _cameraViewActive = event.active;
+      if (event.active) {
+        unawaited(stop());
+        _idleTimer?.cancel();
+      } else {
+        _resetIdleTimer();
+      }
     });
     // A wake word starts a voice turn: wake the screen, then hold the idle
     // timer until the turn actually finishes. Arming it here — as a touch would
@@ -188,6 +198,7 @@ class ScreensaverManager extends Manager {
 
   void _resetIdleTimer() {
     _idleTimer?.cancel();
+    if (_cameraViewActive) return;
     if (!_settings.get(defs.screensaverEnabled) || _paused || _voiceTurn) {
       return;
     }

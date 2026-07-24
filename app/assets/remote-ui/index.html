@@ -271,6 +271,31 @@
     .row input[type=text], .row input[type=password], .row select { max-width: 48vw; }
     .row input[type=number] { max-width: 90px; }
   }
+
+  .modal-form { display: flex; flex-direction: column; gap: 18px; }
+  .modal-form .field { margin-bottom: 0; }
+  .row.camera-list-row { display: flex; align-items: center; gap: 14px; }
+  .camera-row-main { display: flex; align-items: center; gap: 14px;
+    flex: 1; min-width: 0; }
+  .row.camera-list-row .info { display: block; min-width: 0; }
+  .camera-row-icon { width: 24px; height: 24px; flex: none;
+    display: grid; place-items: center; color: var(--muted); }
+  .camera-row-icon svg { width: 22px; height: 22px; display: block; }
+  .camera-row-actions { display: flex; align-items: center; gap: 4px;
+    flex: none; }
+  .camera-icon-action { width: 38px !important; height: 38px;
+    padding: 8px !important; display: grid; place-items: center; line-height: 0; }
+  .camera-icon-action svg { width: 20px; height: 20px; display: block; }
+  .camera-row-clickable { cursor: pointer; }
+  .camera-row-clickable:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: -2px; }
+  .camera-list-row.disabled { cursor: default; opacity: .5; }
+
+  @media (max-width: 640px) {
+    .row.camera-list-row, .camera-row-main { gap: 10px; }
+    .camera-row-actions { gap: 2px; }
+  }
+
   /* ---- Onboarding wizard: the settings split layout, the step list on
      a One UI rail, the current step's work on the right. */
   #wizard { min-height: 100vh; display: flex; }
@@ -428,35 +453,39 @@
           <span class="nav-text"><span class="nav-title">Remote Administration</span><span class="nav-sub">Web console access</span></span>
         </button>
         <button data-tab="mqtt">
-          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 6.9 6.3 16m6.8-9.1 4.6 9.1M7.2 18h9.6"/></svg></span>
+          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 6.9 6.3 16m6.8-9.1 4.6 9.1M7.2 18h9.6"/></svg></span>
           <span class="nav-text"><span class="nav-title">MQTT Settings</span><span class="nav-sub">Publish to an MQTT broker</span></span>
         </button>
         <button data-tab="sendspin">
-          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><circle cx="12" cy="14.5" r="3.5"/><circle cx="12" cy="7.5" r="1"/></svg></span>
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><circle cx="12" cy="14.5" r="3.5"/><circle cx="12" cy="7.5" r="1"/></svg></span>
           <span class="nav-text"><span class="nav-title">Sendspin Player</span><span class="nav-sub">Synchronized audio player</span></span>
+        </button>
+        <button data-tab="cameras">
+          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="14" rx="2.5"/><path d="m17 10 4-2v8l-4-2z"/></svg></span>
+          <span class="nav-text"><span class="nav-title">WebRTC Cameras</span><span class="nav-sub">Go2RTC cameras and views</span></span>
         </button>
         <button data-tab="dlna">
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h.01M3 15a4 4 0 0 1 4 4M3 11a8 8 0 0 1 8 8"/><path d="M8 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg></span>
           <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Play images, videos and audio remotely</span></span>
         </button>
         <button data-tab="files">
-          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
+          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>
           <span class="nav-text"><span class="nav-title">File Manager</span><span class="nav-sub">Browse, download and upload files</span></span>
         </button>
         <button data-tab="device">
-          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
           <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
         </button>
         <button data-tab="about">
-          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></span>
+          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></span>
           <span class="nav-text"><span class="nav-title">About</span><span class="nav-sub">Version, author, license</span></span>
         </button>
         <button data-tab="console">
-          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></svg></span>
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></svg></span>
           <span class="nav-text"><span class="nav-title">Web Console</span><span class="nav-sub">Live from the WebView</span></span>
         </button>
         <button data-tab="logs">
-          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
           <span class="nav-text"><span class="nav-title">Logs</span><span class="nav-sub">App log</span></span>
         </button>
       </nav>
@@ -532,6 +561,7 @@
     <div class="tab" id="tab-remote"></div>
     <div class="tab" id="tab-mqtt"></div>
     <div class="tab" id="tab-sendspin"></div>
+    <div class="tab" id="tab-cameras"></div>
     <div class="tab" id="tab-dlna"></div>
     <div class="tab" id="tab-files"></div>
     <div class="tab" id="tab-device">
@@ -664,7 +694,7 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'screen', 'screensaver',
-  'homeassistant', 'remote', 'mqtt', 'sendspin', 'dlna', 'files', 'device', 'console', 'logs', 'about'];
+  'remote', 'mqtt', 'sendspin', 'cameras', 'dlna', 'files', 'device', 'console', 'logs', 'about'];
 const TAB_TITLES = {
   dashboard: 'Dashboard', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', screen: 'Screen', screensaver: 'Screensaver',
@@ -672,6 +702,7 @@ const TAB_TITLES = {
   voicesatellite: 'Voice Satellite',
   remote: 'Remote Administration',
   mqtt: 'MQTT Settings',
+  cameras: 'WebRTC Cameras',
   sendspin: 'Sendspin Player',
   dlna: 'DLNA Renderer', files: 'File Manager',
   device: 'Device', console: 'Web Console', logs: 'Logs', about: 'About',
@@ -691,6 +722,7 @@ function showTab(name, { push = true } = {}) {
   if (push && location.hash.slice(1) !== tab) location.hash = tab;
   if (tab === 'logs') loadLogs();
   if (tab === 'files') loadFiles();
+  if (tab === 'cameras') loadCameras();
   if (tab === 'device') loadDeviceInfo();
   if (tab === 'about') loadAboutInfo();
 }
@@ -1140,6 +1172,524 @@ async function loadScreenshot() {
     }
     const old = img.src; img.src = url; if (old) URL.revokeObjectURL(old);
   } catch (_) { /* ignore */ }
+}
+
+function cameraField(label, value = '', type = 'text') {
+  const wrap = document.createElement('label');
+  wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px;';
+  const title = document.createElement('span');
+  title.className = 'desc';
+  title.textContent = label;
+  const input = document.createElement('input');
+  input.type = type;
+  input.value = value;
+  input.className = 'field';
+  input.style.maxWidth = 'none';
+  wrap.append(title, input);
+  return { wrap, input };
+}
+
+const CAMERA_ICONS = {
+  dns: '<rect x="3" y="4" width="18" height="6" rx="2"/>'
+    + '<rect x="3" y="14" width="18" height="6" rx="2"/>'
+    + '<path d="M7 7h.01M7 17h.01M11 7h7M11 17h7"/>',
+  download: '<path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/>',
+  delete: '<path d="M4 7h16M9 7V4h6v3m-8 0 1 14h8l1-14M10 11v6m4-6v6"/>',
+  add: '<path d="M12 5v14M5 12h14"/>',
+  video: '<rect x="3" y="6" width="14" height="12" rx="2"/>'
+    + '<path d="m17 10 4-2v8l-4-2z"/>',
+  videoOff: '<path d="M3 3l18 18"/>'
+    + '<path d="M7 6H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1"/>'
+    + '<path d="m17 10 4-2v8l-2-1"/>',
+  linkOff: '<path d="M10 13a4 4 0 0 0 5.7.3l2-2a4 4 0 0 0-5.7-5.6l-1.1 1.1"/>'
+    + '<path d="M14 11a4 4 0 0 0-5.7-.3l-2 2a4 4 0 0 0 5.7 5.6l1.1-1.1M3 3l18 18"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/>'
+    + '<rect x="14" y="3" width="7" height="7" rx="1"/>'
+    + '<rect x="3" y="14" width="7" height="7" rx="1"/>'
+    + '<rect x="14" y="14" width="7" height="7" rx="1"/>',
+  play: '<path d="m8 5 11 7-11 7z" fill="currentColor" stroke="none"/>',
+};
+
+function cameraIcon(name) {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
+    + ' aria-hidden="true">' + CAMERA_ICONS[name] + '</svg>';
+}
+
+function cameraAction(label, action, primary = false, icon = '') {
+  const button = document.createElement('button');
+  button.className = primary ? 'btn-primary' : 'btn-ghost';
+  button.style.width = 'auto';
+  if (icon) {
+    button.classList.add('camera-icon-action');
+    button.innerHTML = cameraIcon(icon);
+    button.title = label;
+    button.setAttribute('aria-label', label);
+  } else {
+    button.textContent = label;
+  }
+  button.addEventListener('click', action);
+  return button;
+}
+
+function cameraListRow(title, description, actions, options = {}) {
+  const row = document.createElement('div');
+  row.className = 'row camera-list-row';
+  const main = document.createElement('div');
+  main.className = 'camera-row-main';
+  if (options.icon) {
+    const icon = document.createElement('span');
+    icon.className = 'camera-row-icon';
+    icon.innerHTML = cameraIcon(options.icon);
+    main.appendChild(icon);
+  }
+  const info = document.createElement('div');
+  info.className = 'info';
+  const name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = title;
+  const desc = document.createElement('div');
+  desc.className = 'desc';
+  desc.textContent = description;
+  info.append(name, desc);
+  main.appendChild(info);
+  const buttons = document.createElement('div');
+  buttons.className = 'camera-row-actions';
+  buttons.addEventListener('click', (event) => event.stopPropagation());
+  actions.forEach((button) => buttons.appendChild(button));
+  row.append(main, buttons);
+  if (options.onClick && !options.disabled) {
+    row.classList.add('camera-row-clickable');
+    row.tabIndex = 0;
+    row.setAttribute('role', 'button');
+    row.addEventListener('click', options.onClick);
+    row.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      options.onClick();
+    });
+  } else if (options.disabled) {
+    row.classList.add('disabled');
+    row.setAttribute('aria-disabled', 'true');
+  }
+  return row;
+}
+
+function cameraSelectField(label, options, value) {
+  const wrap = document.createElement('label');
+  wrap.style.cssText =
+    'display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px;';
+  const title = document.createElement('span');
+  title.className = 'desc';
+  title.textContent = label;
+  const select = document.createElement('select');
+  select.className = 'field';
+  select.style.maxWidth = 'none';
+  for (const optionValue of options) {
+    const option = document.createElement('option');
+    option.value = optionValue.value;
+    option.textContent = optionValue.label;
+    option.selected = optionValue.value === value;
+    select.appendChild(option);
+  }
+  wrap.append(title, select);
+  return { wrap, select };
+}
+
+function cameraToggle(label, checked, description = '') {
+  const wrap = document.createElement('div');
+  wrap.className = 'row';
+  const info = document.createElement('div');
+  info.className = 'info';
+  const name = document.createElement('div');
+  name.className = 'name';
+  name.textContent = label;
+  const desc = document.createElement('div');
+  desc.className = 'desc';
+  desc.textContent = description;
+  info.append(name, desc);
+  const toggle = document.createElement('label');
+  toggle.className = 'switch';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = checked;
+  const slider = document.createElement('span');
+  slider.className = 'slider';
+  toggle.append(input, slider);
+  wrap.append(info, toggle);
+  return { wrap, input };
+}
+
+function cameraEditor({ title, body, save }) {
+  return new Promise((resolve) => {
+    const back = document.createElement('div');
+    back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+      + 'display:grid; place-items:center; z-index:1000; padding:16px';
+    const panel = document.createElement('div');
+    panel.className = 'card';
+    panel.style.cssText = 'width:100%; max-width:620px; max-height:90vh;'
+      + 'overflow:auto; margin:0; padding:28px';
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    heading.style.cssText = 'margin:0 0 20px; font-size:18px; font-weight:700;';
+    body.classList.add('modal-form');
+    body.style.marginBottom = '20px';
+    const error = document.createElement('div');
+    error.className = 'msg-error';
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex; justify-content:flex-end; gap:10px;';
+    const cancel = cameraAction('Cancel', () => {
+      back.remove();
+      resolve(false);
+    });
+    const submit = cameraAction('Save', async () => {
+      submit.disabled = true;
+      error.textContent = '';
+      try {
+        const result = await save();
+        if (!result || !result.ok) {
+          error.textContent = result?.error || 'Could not save';
+          submit.disabled = false;
+          return;
+        }
+        back.remove();
+        resolve(true);
+      } catch (exception) {
+        error.textContent = String(exception);
+        submit.disabled = false;
+      }
+    }, true);
+    actions.append(cancel, submit);
+    panel.append(heading, body, error, actions);
+    back.appendChild(panel);
+    document.body.appendChild(back);
+  });
+}
+
+async function editCameraServer(server) {
+  const body = document.createElement('div');
+  const name = cameraField('Name', server?.name || 'Go2RTC');
+  const url = cameraField('Base URL', server?.baseUrl || '');
+  url.input.placeholder = 'http://192.168.1.10:1984';
+  const username = cameraField('Username (optional)', server?.username || '');
+  const password = cameraField(
+    server?.passwordSet ? 'New password (leave blank to keep)' : 'Password (optional)',
+    '',
+    'password',
+  );
+  const invalidCertificate = cameraToggle(
+    'Allow invalid TLS certificate',
+    server?.allowInvalidCertificate === true,
+  );
+  body.append(
+    name.wrap,
+    url.wrap,
+    username.wrap,
+    password.wrap,
+    invalidCertificate.wrap,
+  );
+  return cameraEditor({
+    title: server ? 'Edit server' : 'Add Go2RTC server',
+    body,
+    save: () => {
+      const params = {
+        id: server?.id || '',
+        name: name.input.value,
+        baseUrl: url.input.value,
+        username: username.input.value,
+        allowInvalidCertificate: invalidCertificate.input.checked,
+      };
+      if (!server || password.input.value) params.password = password.input.value;
+      return cmd('cameraPutServer', params);
+    },
+  });
+}
+
+async function editCameraSource(config, camera) {
+  const body = document.createElement('div');
+  const name = cameraField('Name', camera?.name || '');
+  const initialKind = camera?.kind || (config.servers.length ? 'go2rtc' : 'whep');
+  const kind = cameraSelectField('Type', [
+    { value: 'go2rtc', label: 'Go2RTC stream' },
+    { value: 'whep', label: 'Direct WHEP URL' },
+  ], initialKind);
+  const server = cameraSelectField(
+    'Server',
+    config.servers.map((item) => ({ value: item.id, label: item.name })),
+    camera?.serverId || config.servers[0]?.id || '',
+  );
+  const stream = cameraField('Go2RTC stream name', camera?.streamName || '');
+  const fullscreen = cameraField(
+    'Fullscreen stream (optional)',
+    camera?.fullscreenStreamName || '',
+  );
+  const whep = cameraField('WHEP URL', camera?.whepUrl || '');
+  body.append(
+    name.wrap,
+    kind.wrap,
+    server.wrap,
+    stream.wrap,
+    fullscreen.wrap,
+    whep.wrap,
+  );
+  const updateKind = () => {
+    const go2rtc = kind.select.value === 'go2rtc';
+    server.wrap.style.display = go2rtc ? '' : 'none';
+    stream.wrap.style.display = go2rtc ? '' : 'none';
+    fullscreen.wrap.style.display = go2rtc ? '' : 'none';
+    whep.wrap.style.display = go2rtc ? 'none' : '';
+  };
+  kind.select.addEventListener('change', updateKind);
+  updateKind();
+  return cameraEditor({
+    title: camera ? 'Edit camera' : 'Add camera',
+    body,
+    save: () => cmd('cameraPutSource', {
+      id: camera?.id || '',
+      name: name.input.value,
+      kind: kind.select.value,
+      serverId: server.select.value,
+      streamName: stream.input.value,
+      fullscreenStreamName: fullscreen.input.value,
+      whepUrl: whep.input.value,
+    }),
+  });
+}
+
+async function editCameraView(config, view) {
+  const body = document.createElement('div');
+  const name = cameraField('Name', view?.name || '');
+  const showNames = cameraToggle(
+    'Show camera names',
+    view?.showCameraNames !== false,
+    'Display a label over each camera.',
+  );
+  const selected = [...(view?.cameraIds || [])];
+  const list = document.createElement('div');
+  list.className = 'card';
+  list.style.cssText = 'margin:0; padding:0 16px;';
+  const renderCameras = () => {
+    list.innerHTML = '';
+    for (const camera of config.cameras) {
+      const position = selected.indexOf(camera.id);
+      const row = document.createElement('label');
+      row.className = 'row';
+      row.style.cursor = 'pointer';
+      const info = document.createElement('div');
+      info.className = 'info';
+      const cameraName = document.createElement('div');
+      cameraName.className = 'name';
+      cameraName.textContent = camera.name;
+      const description = document.createElement('div');
+      description.className = 'desc';
+      description.textContent = position >= 0
+        ? `Position ${position + 1}`
+        : camera.missing ? 'Missing from Go2RTC' : 'Not selected';
+      info.append(cameraName, description);
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = position >= 0;
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          if (selected.length >= 4) {
+            checkbox.checked = false;
+            return;
+          }
+          selected.push(camera.id);
+        } else {
+          selected.splice(selected.indexOf(camera.id), 1);
+        }
+        renderCameras();
+      });
+      row.append(info, checkbox);
+      list.appendChild(row);
+    }
+  };
+  renderCameras();
+  body.append(name.wrap, showNames.wrap, list);
+  return cameraEditor({
+    title: view ? 'Edit view' : 'Create camera view',
+    body,
+    save: () => cmd('cameraPutView', {
+      id: view?.id || '',
+      name: name.input.value,
+      cameraIds: selected,
+      showCameraNames: showNames.input.checked,
+    }),
+  });
+}
+
+async function loadCameras() {
+  const root = document.getElementById('tab-cameras');
+  const result = await cmd('cameraGetConfig').catch(() => null);
+  if (!result || !result.ok) {
+    root.innerHTML = '<div class="card"><div class="desc">Could not load cameras.</div></div>';
+    return;
+  }
+  const config = result.data;
+  root.innerHTML = '';
+
+  const heading = (text) => {
+    const h = document.createElement('h2');
+    h.className = 'card-title';
+    h.textContent = text;
+    root.appendChild(h);
+  };
+  const card = () => {
+    const value = document.createElement('div');
+    value.className = 'card';
+    root.appendChild(value);
+    return value;
+  };
+  const refresh = () => loadCameras();
+
+  heading('Go2RTC servers');
+  const serversCard = card();
+  for (const server of config.servers) {
+    serversCard.appendChild(cameraListRow(server.name, server.baseUrl, [
+      cameraAction('Import', async () => {
+        const imported = await cmd('cameraImportGo2Rtc', { serverId: server.id });
+        if (!imported.ok) {
+          await messageBox({ title: 'Import failed', message: imported.error });
+        } else {
+          await messageBox({
+            title: 'Import complete',
+            message: `${imported.data.added} added, ${imported.data.missing} missing.`,
+          });
+        }
+        refresh();
+      }, false, 'download'),
+      cameraAction('Delete', async () => {
+        const choice = await messageBox({
+          title: `Delete ${server.name}?`,
+          message: 'Its cameras will be removed from every view.',
+          buttons: ['Cancel', 'Delete'],
+        });
+        if (choice !== 'Delete') return;
+        await cmd('cameraDeleteServer', { id: server.id });
+        refresh();
+      }, false, 'delete'),
+    ], {
+      icon: 'dns',
+      onClick: async () => {
+        if (await editCameraServer(server)) refresh();
+      },
+    }));
+  }
+  serversCard.appendChild(cameraListRow(
+    'Add Go2RTC server',
+    'Connect to a server and import its streams.',
+    [],
+    {
+      icon: 'add',
+      onClick: async () => {
+        if (await editCameraServer(null)) refresh();
+      },
+    },
+  ));
+
+  heading('Cameras');
+  const camerasCard = card();
+  if (!config.cameras.length) {
+    camerasCard.appendChild(cameraListRow(
+      'No cameras configured',
+      'Import Go2RTC streams or add one manually.',
+      [],
+      { icon: 'videoOff' },
+    ));
+  }
+  const serverNames = Object.fromEntries(config.servers.map((server) => [server.id, server.name]));
+  for (const camera of config.cameras) {
+    const description = camera.kind === 'whep'
+      ? camera.whepUrl
+      : `${serverNames[camera.serverId] || 'Unknown server'}: ${camera.streamName}`
+        + (camera.missing ? ' (missing)' : '');
+    camerasCard.appendChild(cameraListRow(camera.name, description, [
+      cameraAction('Delete', async () => {
+        const choice = await messageBox({
+          title: `Delete ${camera.name}?`,
+          message: 'It will be removed from every view.',
+          buttons: ['Cancel', 'Delete'],
+        });
+        if (choice !== 'Delete') return;
+        await cmd('cameraDeleteSource', { id: camera.id });
+        refresh();
+      }, false, 'delete'),
+    ], {
+      icon: camera.missing ? 'linkOff' : 'video',
+      onClick: async () => {
+        if (await editCameraSource(config, camera)) refresh();
+      },
+    }));
+  }
+  camerasCard.appendChild(cameraListRow(
+    'Add camera manually',
+    'Use a Go2RTC stream name or a WHEP URL.',
+    [],
+    {
+      icon: 'add',
+      onClick: async () => {
+        if (await editCameraSource(config, null)) refresh();
+      },
+    },
+  ));
+
+  heading('Views');
+  const viewsCard = card();
+  if (!config.views.length) {
+    viewsCard.appendChild(cameraListRow(
+      'No camera views',
+      'A view contains up to four cameras.',
+      [],
+      { icon: 'grid' },
+    ));
+  }
+  const cameraNames = Object.fromEntries(config.cameras.map((camera) => [camera.id, camera.name]));
+  for (const view of config.views) {
+    viewsCard.appendChild(cameraListRow(
+      view.name,
+      view.cameraIds.map((id) => cameraNames[id] || id).join(', ')
+        + ` · Names ${view.showCameraNames === false ? 'hidden' : 'shown'}`,
+      [
+        cameraAction('Show', async () => {
+          const shown = await cmd('showCameraView', { viewId: view.id });
+          if (!shown.ok) {
+            await messageBox({ title: 'Could not show view', message: shown.error });
+          }
+        }, false, 'play'),
+        cameraAction('Delete', async () => {
+          const choice = await messageBox({
+            title: `Delete ${view.name}?`,
+            message: 'This cannot be undone.',
+            buttons: ['Cancel', 'Delete'],
+          });
+          if (choice !== 'Delete') return;
+          await cmd('cameraDeleteView', { id: view.id });
+          refresh();
+        }, false, 'delete'),
+      ],
+      {
+        icon: 'grid',
+        onClick: async () => {
+          if (await editCameraView(config, view)) refresh();
+        },
+      },
+    ));
+  }
+  viewsCard.appendChild(cameraListRow(
+    'Create camera view',
+    config.cameras.length
+      ? 'Choose and order up to four cameras.'
+      : 'Add a camera first.',
+    [],
+    {
+      icon: 'add',
+      disabled: !config.cameras.length,
+      onClick: async () => {
+        if (await editCameraView(config, null)) refresh();
+      },
+    },
+  ));
 }
 
 /* ---- Settings ---- */

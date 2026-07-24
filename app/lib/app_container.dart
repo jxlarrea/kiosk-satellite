@@ -4,6 +4,7 @@ import 'core/logging.dart';
 import 'core/manager.dart';
 import 'managers/audio/audio_routing_manager.dart';
 import 'managers/browser/browser_manager.dart';
+import 'managers/camera/camera_manager.dart';
 import 'managers/device/device_manager.dart';
 import 'managers/dlna/dlna_manager.dart';
 import 'managers/files/files_manager.dart';
@@ -34,6 +35,7 @@ class AppContainer {
     screen = ScreenManager(bus, commands, log, settings);
     proxy = ProxyManager(bus, commands, log, settings);
     browser = BrowserManager(bus, commands, log, settings);
+    camera = CameraManager(bus, commands, log, settings);
     // Composition-root wiring, not a manager-to-manager reference: every
     // page load funnels through BrowserManager.loadUrl, and the proxy is
     // the one that knows whether the URL must move to the loopback origin.
@@ -66,6 +68,7 @@ class AppContainer {
   late final ScreenManager screen;
   late final ProxyManager proxy;
   late final BrowserManager browser;
+  late final CameraManager camera;
   late final KioskManager kiosk;
   late final ScreensaverManager screensaver;
   late final ImmichManager immich;
@@ -90,6 +93,7 @@ class AppContainer {
         screen,
         proxy,
         browser,
+        camera,
         jsApi,
         kiosk,
         screensaver,

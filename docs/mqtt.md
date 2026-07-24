@@ -59,6 +59,8 @@ tablet's remote admin (while remote administration is enabled).
 | RAM available, RAM total | sensor | Polled once a minute. |
 | Current page | sensor | The URL the kiosk is showing. |
 | Remote admin | sensor | The remote admin's URL for this device, or `disabled` when remote administration is off. Handy for deep-linking from a dashboard. |
+| Camera view buttons | button | One **Show &lt;view name&gt;** button per configured camera view, plus **Close camera view**. View buttons keep a stable identity when a view is renamed. |
+| Active camera view | sensor | The displayed camera view name, or `none`. Attributes include the stable view ID and focused camera ID. |
 
 All entities carry availability: they go unavailable the moment the tablet
 drops off the broker (broker-side last will, so it works however the
@@ -83,6 +85,10 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
 | `.../url/state` | out, retained | the current URL |
 | `.../admin_url/state` | out, retained | the remote admin URL, or `disabled` |
+| `.../camera/view/set` | in | Stable camera view ID; shows that view |
+| `.../camera/close/set` | in | Any non-retained payload closes the camera view |
+| `.../camera/view/state` | out, retained | Active camera view name, or `none` |
+| `.../camera/view/attributes` | out, retained | JSON with active state, view ID, name and focused camera ID |
 
 Discovery configs are published retained under
 `<prefix>/<component>/ks_<device id>/<object>/config` and are retracted

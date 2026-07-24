@@ -282,6 +282,16 @@ class HomeAssistantManager extends Manager {
         _resumeRotationIfIdle();
       }
     });
+    bus.on<CameraViewStateChanged>().listen((event) {
+      _cameraViewActive = event.active;
+      if (event.active) {
+        _rotationTimer?.cancel();
+        _rotationTimer = null;
+        unawaited(commands.execute('hideOverlayPage', const {}));
+      } else {
+        _resumeRotationIfIdle();
+      }
+    });
     _configureRotation();
 
     // "auto" kiosk mode needs to know up front whether the plugin exists so
@@ -301,6 +311,7 @@ class HomeAssistantManager extends Manager {
   Timer? _touchPauseTimer;
   Timer? _voiceSafetyTimer;
   bool _voiceInteracting = false;
+  bool _cameraViewActive = false;
   bool _screensaverActive = false;
 
   /// Dashboard paths a soft navigation cannot resolve (strategy dashboards,
@@ -366,7 +377,9 @@ class HomeAssistantManager extends Manager {
   /// interaction and no pending touch-pause window.
   void _resumeRotationIfIdle() {
     if (!_settings.get(defs.haRotationEnabled)) return;
-    if (_voiceInteracting || _touchPauseTimer != null) return;
+    if (_voiceInteracting || _cameraViewActive || _touchPauseTimer != null) {
+      return;
+    }
     log.info(name, 'rotation resumed');
     _armRotationTimer();
   }
@@ -793,10 +806,13 @@ class HomeAssistantManager extends Manager {
   Future<Map<String, Object?>?> browseMedia([String? mediaContentId]) async {
     if (!configured) return null;
     try {
-      final result = await _wsCommand({
+      final command = <String, Object?>{
         'type': 'media_source/browse_media',
-        if (mediaContentId != null) 'media_content_id': mediaContentId,
-      });
+      };
+      if (mediaContentId != null) {
+        command['media_content_id'] = mediaContentId;
+      }
+      final result = await _wsCommand(command);
       return result is Map ? result.cast<String, Object?>() : null;
     } catch (e) {
       log.warn(name, 'browseMedia failed: $e');

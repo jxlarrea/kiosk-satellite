@@ -1627,6 +1627,20 @@ const mqttDeviceId = SettingDef<String>(
   hidden: true,
 );
 
+// Hidden because Cameras has a purpose-built editor on the device and in the
+// remote admin. Marking the versioned document secret keeps server credentials
+// out of the generic settings API while still including them in full backups.
+const cameraConfig = SettingDef<String>(
+  key: 'camera.config',
+  type: SettingType.string,
+  defaultValue: '{"version":1,"servers":[],"cameras":[],"views":[]}',
+  title: 'Camera configuration',
+  description: 'Go2RTC servers, camera sources, and camera views.',
+  category: 'Cameras',
+  hidden: true,
+  secret: true,
+);
+
 // ── Sendspin ───────────────────────────────────────────────────────────
 // The device as a synchronized Sendspin audio player (the Music Assistant
 // native protocol). The native client lives in Kotlin (sendspin/); these
@@ -1975,6 +1989,7 @@ const List<SettingDef<Object>> allSettings = [
   mqttPassword,
   mqttDiscoveryPrefix,
   mqttDeviceId,
+  cameraConfig,
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,

@@ -1,0 +1,208 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/core/command_registry.dart';
+import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
+import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/camera/camera_manager.dart';
+import 'package:kiosk_satellite/managers/camera/models.dart';
+import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('camera configuration round trips credentials and ordered views', () {
+    const config = CameraConfiguration(
+      servers: [
+        CameraServer(
+          id: 'server',
+          name: 'Local',
+          baseUrl: 'https://go2rtc.example',
+          username: 'user',
+          password: 'secret',
+        ),
+      ],
+      cameras: [
+        CameraSource(
+          id: 'camera',
+          name: 'Front door',
+          kind: 'go2rtc',
+          serverId: 'server',
+          streamName: 'front_sub',
+          fullscreenStreamName: 'front_main',
+        ),
+      ],
+      views: [
+        CameraViewConfig(
+          id: 'view',
+          name: 'Outside',
+          cameraIds: ['camera'],
+          showCameraNames: false,
+        ),
+      ],
+    );
+
+    final decoded = CameraConfiguration.decode(config.encode());
+    expect(decoded.servers.single.password, 'secret');
+    expect(decoded.cameras.single.fullscreenStreamName, 'front_main');
+    expect(decoded.views.single.cameraIds, ['camera']);
+    expect(decoded.views.single.showCameraNames, isFalse);
+    expect(
+      decoded.toJson(includePasswords: false)['servers'],
+      contains(containsPair('passwordSet', true)),
+    );
+  });
+
+  test(
+    'commands create a view, mask passwords, and validate membership',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final bus = EventBus();
+      final logger = Logger();
+      final commands = CommandRegistry(logger);
+      final settings = SettingsManager(bus, commands, logger);
+      await settings.init();
+      final cameras = CameraManager(bus, commands, logger, settings);
+      await cameras.init();
+
+      final server = await commands.execute('cameraPutServer', {
+        'name': 'Local',
+        'baseUrl': 'https://go2rtc.example/',
+        'username': 'user',
+        'password': 'secret',
+      });
+      expect(server.ok, isTrue);
+      final serverId = (server.data as Map)['id'];
+
+      final source = await commands.execute('cameraPutSource', {
+        'name': 'Front door',
+        'kind': 'go2rtc',
+        'serverId': serverId,
+        'streamName': 'front',
+      });
+      expect(source.ok, isTrue);
+      final cameraId = (source.data as Map)['id'];
+
+      final view = await commands.execute('cameraPutView', {
+        'name': 'Outside',
+        'cameraIds': [cameraId],
+        'showCameraNames': false,
+      });
+      expect(view.ok, isTrue);
+      final viewId = (view.data as Map)['id'];
+
+      final duplicate = await commands.execute('cameraPutView', {
+        'name': 'outside',
+        'cameraIds': [cameraId],
+      });
+      expect(duplicate.ok, isFalse);
+
+      final shown = await commands.execute('showCameraView', {
+        'viewId': viewId,
+      });
+      expect(shown.ok, isTrue);
+      expect(cameras.activeViewId.value, viewId);
+      expect(cameras.activeView?.showCameraNames, isFalse);
+      expect(cameras.focusCamera('$cameraId').ok, isTrue);
+      expect(cameras.focusCamera('unknown').ok, isFalse);
+
+      final public = await commands.execute('cameraGetConfig', const {});
+      final publicServer =
+          ((public.data as Map)['servers'] as List).single as Map;
+      expect(publicServer['password'], isNull);
+      expect(publicServer['passwordSet'], isTrue);
+
+      bus.publish(const VoiceInteractionChanged(active: true));
+      await Future<void>.delayed(Duration.zero);
+      expect(cameras.activeViewId.value, isNull);
+
+      bus.publish(const VoiceInteractionChanged(active: false));
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, viewId);
+      expect(cameras.focusedCameraId.value, cameraId);
+
+      bus.publish(const VoiceInteractionChanged(active: true));
+      await Future<void>.delayed(Duration.zero);
+      cameras.hideView();
+      bus.publish(const VoiceInteractionChanged(active: false));
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, isNull);
+
+      await commands.execute('showCameraView', {'viewId': viewId});
+      expect(cameras.focusCamera('$cameraId').ok, isTrue);
+      cameras.interruptForVoice();
+      expect(cameras.activeViewId.value, isNull);
+      bus.publish(const VoiceInteractionChanged(active: false));
+      await pumpEventQueue();
+      expect(cameras.activeViewId.value, viewId);
+      expect(cameras.focusedCameraId.value, cameraId);
+
+      await cameras.dispose();
+      await logger.dispose();
+      await bus.dispose();
+    },
+  );
+
+  test('Go2RTC import merges streams and marks missing imports', () async {
+    var streams = ['front', 'garage'];
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => server.close(force: true));
+    server.listen((request) {
+      expect(request.uri.path, '/api/streams');
+      request.response
+        ..headers.contentType = ContentType.json
+        ..write(jsonEncode({for (final stream in streams) stream: {}}))
+        ..close();
+    });
+
+    SharedPreferences.setMockInitialValues({});
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final cameras = CameraManager(bus, commands, logger, settings);
+    await cameras.init();
+
+    final addedServer = await commands.execute('cameraPutServer', {
+      'name': 'Local',
+      'baseUrl': 'http://127.0.0.1:${server.port}',
+    });
+    final serverId = (addedServer.data as Map)['id'];
+    final realHttp = _RealHttpOverrides();
+    final first = await HttpOverrides.runZoned(
+      () => commands.execute('cameraImportGo2Rtc', {'serverId': serverId}),
+      createHttpClient: realHttp.createHttpClient,
+    );
+    expect(first.ok, isTrue);
+    expect(first.data, containsPair('added', 2));
+    expect(cameras.config.cameras.map((camera) => camera.streamName), {
+      'front',
+      'garage',
+    });
+
+    streams = ['front', 'side'];
+    final second = await HttpOverrides.runZoned(
+      () => commands.execute('cameraImportGo2Rtc', {'serverId': serverId}),
+      createHttpClient: realHttp.createHttpClient,
+    );
+    expect(second.ok, isTrue);
+    expect(second.data, containsPair('added', 1));
+    expect(second.data, containsPair('missing', 1));
+    expect(
+      cameras.config.cameras
+          .singleWhere((camera) => camera.streamName == 'garage')
+          .missing,
+      isTrue,
+    );
+
+    await cameras.dispose();
+    await logger.dispose();
+    await bus.dispose();
+  });
+}
+
+class _RealHttpOverrides extends HttpOverrides {}

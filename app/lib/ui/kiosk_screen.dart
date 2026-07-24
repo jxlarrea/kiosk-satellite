@@ -20,6 +20,7 @@ import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'dlna_media_overlay.dart';
+import 'camera_view_overlay.dart';
 import 'kiosk_drawer.dart';
 import 'sendspin_player_overlay.dart';
 import 'settings_screen.dart';
@@ -53,6 +54,7 @@ class _KioskScreenState extends State<KioskScreen>
   StreamSubscription<KioskExitGesture>? _gestureSub;
   StreamSubscription<KioskBackPressed>? _backSub;
   StreamSubscription<WakeWordDetected>? _wakeSub;
+  StreamSubscription<CameraViewStateChanged>? _cameraSub;
 
   /// Guards the exit gesture while the settings route sits on top.
   bool _settingsOpen = false;
@@ -257,11 +259,21 @@ class _KioskScreenState extends State<KioskScreen>
     // lives in the always-loaded dashboard below) is instantly on screen.
     _wakeSub = c.bus.on<WakeWordDetected>().listen((_) {
       c.browser.overlayUrl.value = null;
+      c.camera.interruptForVoice();
+    });
+    _cameraSub = c.bus.on<CameraViewStateChanged>().listen((_) {
+      if (mounted) setState(() {});
     });
     _backSub = c.bus.on<KioskBackPressed>().listen((_) {
       if (!mounted || _settingsOpen) return;
       if (_drawer.value > 0) {
         _closeDrawer();
+      } else if (c.camera.activeViewId.value != null) {
+        if (c.camera.focusedCameraId.value != null) {
+          c.camera.focusCamera(null);
+        } else {
+          c.camera.hideView();
+        }
       } else {
         c.browser.goBack();
       }
@@ -545,6 +557,7 @@ class _KioskScreenState extends State<KioskScreen>
     _gestureSub?.cancel();
     _backSub?.cancel();
     _wakeSub?.cancel();
+    _cameraSub?.cancel();
     super.dispose();
   }
 
@@ -619,11 +632,20 @@ class _KioskScreenState extends State<KioskScreen>
               // still deliver Back as a KeyEvent are caught in KioskLock
               // before it ever reaches here, and land in the same handling
               // via KioskBackPressed.
-              canPop: !open && !c.kiosk.locked,
+              canPop:
+                  !open &&
+                  !c.kiosk.locked &&
+                  c.camera.activeViewId.value == null,
               onPopInvokedWithResult: (didPop, _) {
                 if (didPop) return;
                 if (open) {
                   _closeDrawer();
+                } else if (c.camera.activeViewId.value != null) {
+                  if (c.camera.focusedCameraId.value != null) {
+                    c.camera.focusCamera(null);
+                  } else {
+                    c.camera.hideView();
+                  }
                 } else {
                   c.browser.goBack();
                 }
@@ -694,6 +716,7 @@ class _KioskScreenState extends State<KioskScreen>
                   // The screensaver covers both planes — it owns the whole
                   // display, drawer open or not.
                   ScreensaverOverlay(container: c),
+                  CameraViewOverlay(container: c),
                 ],
               ),
             );
@@ -849,9 +872,10 @@ class _KioskScreenState extends State<KioskScreen>
       // in place instead, which reloads the current page, and the kiosk
       // carries on.
       c.browser.log.warn(
-          'browser',
-          'WebView renderer gone (crashed: ${detail.didCrash}) — rebuilding '
-          'the WebView');
+        'browser',
+        'WebView renderer gone (crashed: ${detail.didCrash}) — rebuilding '
+            'the WebView',
+      );
       _unresponsiveStrikes = 0;
       if (mounted) setState(() => _webViewEpoch++);
     },
@@ -864,9 +888,10 @@ class _KioskScreenState extends State<KioskScreen>
       // which fires onRenderProcessGone above and rebuilds the WebView.
       _unresponsiveStrikes++;
       c.browser.log.warn(
-          'browser',
-          'WebView renderer unresponsive '
-          '(strike $_unresponsiveStrikes) at $url');
+        'browser',
+        'WebView renderer unresponsive '
+            '(strike $_unresponsiveStrikes) at $url',
+      );
       if (_unresponsiveStrikes >= 2) {
         _unresponsiveStrikes = 0;
         return WebViewRenderProcessAction.TERMINATE;
@@ -946,7 +971,9 @@ class _OverlayHostState extends State<_OverlayHost> {
             paused: url == null,
             onRenderGone: () {
               c.browser.log.warn(
-                  'browser', 'overlay renderer gone — dropping the overlay');
+                'browser',
+                'overlay renderer gone — dropping the overlay',
+              );
               c.browser.overlayUrl.value = null;
               setState(() => _lastUrl = null);
             },
