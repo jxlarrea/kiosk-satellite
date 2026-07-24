@@ -213,7 +213,7 @@ class ScreensaverManager extends Manager {
       _sendspinNowPlaying && _settings.get(defs.sendspinFullscreen);
 
   Future<void> start() async {
-    if (_active || _paused) return;
+    if (_active || _paused || _cameraViewActive) return;
     _active = true;
     // Hold the panel on for the whole screensaver, every mode. The screensaver
     // owns the display while it is up — black means brightness 0 under a black

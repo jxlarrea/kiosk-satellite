@@ -8,6 +8,7 @@ import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/camera/camera_manager.dart';
 import 'package:kiosk_satellite/managers/camera/models.dart';
+import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -145,6 +146,54 @@ void main() {
       await bus.dispose();
     },
   );
+
+  test('camera views dismiss and suppress the screensaver', () async {
+    SharedPreferences.setMockInitialValues({});
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final cameras = CameraManager(bus, commands, logger, settings);
+    await cameras.init();
+    final screensaver = ScreensaverManager(bus, commands, logger, settings);
+    await screensaver.init();
+
+    final source = await commands.execute('cameraPutSource', {
+      'name': 'Front door',
+      'kind': 'whep',
+      'whepUrl': 'https://camera.example/whep',
+    });
+    final cameraId = (source.data as Map)['id'];
+    final view = await commands.execute('cameraPutView', {
+      'name': 'Outside',
+      'cameraIds': [cameraId],
+    });
+    final viewId = (view.data as Map)['id'];
+
+    await screensaver.start();
+    expect(screensaver.isActive, isTrue);
+
+    final shown = await commands.execute('showCameraView', {'viewId': viewId});
+    expect(shown.ok, isTrue);
+    expect(cameras.activeViewId.value, viewId);
+    expect(screensaver.isActive, isFalse);
+
+    await pumpEventQueue();
+    await screensaver.start();
+    expect(screensaver.isActive, isFalse);
+
+    cameras.hideView();
+    await pumpEventQueue();
+    await screensaver.start();
+    expect(screensaver.isActive, isTrue);
+
+    await screensaver.stop();
+    await screensaver.dispose();
+    await cameras.dispose();
+    await logger.dispose();
+    await bus.dispose();
+  });
 
   test('Go2RTC import merges streams and marks missing imports', () async {
     var streams = ['front', 'garage'];
