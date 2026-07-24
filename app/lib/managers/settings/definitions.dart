@@ -238,8 +238,8 @@ const browserZoom = SettingDef<num>(
       'distance, or dashboards designed for a different screen density.',
   category: 'Browser',
   min: 1,
-  max: 5,
-  step: 0.25,
+  max: 4,
+  step: 0.05,
   unit: 'x',
 );
 

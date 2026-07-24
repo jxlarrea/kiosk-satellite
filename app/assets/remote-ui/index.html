@@ -939,6 +939,13 @@ async function loadFiles() {
       const desc = e.dir ? 'Folder'
         : `${fileSizeLabel(e.size || 0)} · ${new Date(e.modified || 0).toLocaleString()}`;
       const row = readOnlyRow(e.name, desc, '');
+      const icon = document.createElement('span');
+      icon.style.cssText = 'flex-shrink:0; display:flex; align-items:center; '
+        + 'margin-right:12px; color:var(--muted);';
+      icon.innerHTML = e.dir
+        ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+      row.insertBefore(icon, row.firstChild);
       if (e.dir) {
         row.style.cursor = 'pointer';
         row.addEventListener('click', () => { filesState.crumbs.push(e.name); loadFiles(); });
@@ -1153,6 +1160,10 @@ const CATEGORY_TABS = [
 ];
 
 async function loadSettings() {
+  // A re-render rebuilds every row; without restoring scroll, flipping a
+  // mid-page toggle that reveals dependants yanks the view back to the top.
+  const scroller = document.scrollingElement || document.documentElement;
+  const keepScroll = scroller.scrollTop;
   const { settings } = await (await api('/api/settings')).json();
   state.settings = settings; // kept so a saved row can tell if it changes layout
 
@@ -1418,7 +1429,7 @@ async function loadSettings() {
       vbtn.disabled = true; vbtn.textContent = 'Checking\u2026';
       const out = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json().catch(() => ({}));
       vbtn.disabled = false; vbtn.textContent = 'Validate';
-      if (out.ok) { await loadSettings(); await loadWakeWord(); }
+      if (out.ok) { state.dashboardsCache = null; await loadSettings(); await loadWakeWord(); }
       else vdesc.textContent = out.error || 'Could not connect.';
     });
 
@@ -1441,7 +1452,14 @@ async function loadSettings() {
       root.appendChild(dcard);
       let dashList = [];
       try {
-        const dashboards = (await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json()).data || [];
+        // Cached across re-renders: a dependant toggle elsewhere on the tab
+        // triggers loadSettings(), and re-fetching the dashboard list from
+        // Home Assistant every time blanked the pane for seconds - the
+        // "whole page refreshed" feel. Validate clears the cache.
+        if (!state.dashboardsCache) {
+          state.dashboardsCache = (await (await api('/api/commands/haListDashboards', { method: 'POST', body: '{}' })).json()).data || [];
+        }
+        const dashboards = state.dashboardsCache;
         dashList = dashboards;
         const rawBase = (byKey['ha.url']?.value || '').trim().replace(/\/$/, '');
         const current = byKey['browser.start_url']?.value || '';
@@ -1851,6 +1869,11 @@ async function loadSettings() {
   // The on-device settings screen shows the wake-word config inherited from
   // Voice Satellite under the same heading. This tab mirrors it.
   await loadWakeWord();
+
+  // Counterpart to the capture at the top: put the view back where the
+  // person was. One extra frame so late async renders have laid out.
+  scroller.scrollTop = keepScroll;
+  requestAnimationFrame(() => { scroller.scrollTop = keepScroll; });
 }
 
 /* ---- Voice Satellite wake word (read-only, pushed by the VS card) ---- */
