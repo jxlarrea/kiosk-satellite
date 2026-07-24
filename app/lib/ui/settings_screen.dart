@@ -909,6 +909,10 @@ class _CategoryContentState extends State<_CategoryContent> {
                   container: container,
                 ),
               },
+              // Under the last credential field, where the Home Assistant
+              // and Immich cards put theirs.
+              if (widget.category == 'MQTT')
+                mqttPassword.key: _MqttValidateRow(container: container),
             },
           ),
         if (widget.category == 'Screen')
@@ -1537,6 +1541,68 @@ class _ImmichValidateRowState extends State<_ImmichValidateRow> {
       onTap: _validating ? null : _validate,
     );
   }
+}
+
+/// The broker check, mirroring the Home Assistant and Immich rows: unlike
+/// those it gates nothing, since MQTT publishes on its own schedule. It is
+/// here to answer "are these credentials right?" without watching the log.
+class _MqttValidateRow extends StatefulWidget {
+  const _MqttValidateRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_MqttValidateRow> createState() => _MqttValidateRowState();
+}
+
+class _MqttValidateRowState extends State<_MqttValidateRow> {
+  bool _validating = false;
+  bool? _ok;
+  String? _error;
+
+  Future<void> _validate() async {
+    setState(() {
+      _validating = true;
+      _error = null;
+    });
+    final result = await widget.container.commands.execute(
+      'mqttValidate',
+      const {},
+    );
+    if (!mounted) return;
+    setState(() {
+      _validating = false;
+      _ok = result.ok;
+      _error = result.ok ? null : result.error;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    title: const Text('Validate connection'),
+    subtitle: Text(
+      _validating
+          ? 'Checking…'
+          : _error ??
+                (_ok == true
+                    ? 'Connected'
+                    : 'Check the broker accepts these settings.'),
+    ),
+    trailing: _validating
+        ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2.4),
+          )
+        : Icon(
+            _ok == null
+                ? Icons.cloud_queue_outlined
+                : _ok!
+                ? Icons.cloud_done_outlined
+                : Icons.cloud_off_outlined,
+          ),
+    onTap: _validating ? null : _validate,
+  );
 }
 
 /// Cache usage, directly under the cache size field: how many items sit on

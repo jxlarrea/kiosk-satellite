@@ -135,9 +135,90 @@ class MqttManager extends Manager {
       }
     } catch (_) {}
 
+    commands.register(
+      Command(
+        name: 'mqttValidate',
+        description:
+            'Open a throwaway connection to the configured broker and '
+            'report whether it accepts these settings. Reports the live '
+            'connection instead when MQTT is already running.',
+        handler: (_) async => _validate(),
+      ),
+    );
+
     if (_settings.get(defs.mqttEnabled)) {
       _transition = _transition.then((_) => _connect());
     }
+  }
+
+  /// A one-shot credentials check, on its own client id so it never knocks
+  /// the running session off a broker that allows a single session per user.
+  /// While MQTT is on and up, the live connection is the honest answer.
+  Future<CommandResult> _validate() async {
+    final host = _settings.get(defs.mqttHost).trim();
+    if (host.isEmpty) return const CommandResult.fail('No broker set.');
+    final port = _settings.get(defs.mqttPort).toInt();
+    if (_connected) {
+      return CommandResult.ok({'connected': true, 'host': host, 'port': port});
+    }
+    final probe = MqttServerClient.withPort(
+      host,
+      'kiosksatellite_probe_${DateTime.now().millisecondsSinceEpoch}',
+      port,
+    );
+    probe.secure = _settings.get(defs.mqttTls);
+    probe.autoReconnect = false;
+    probe.keepAlivePeriod = 10;
+    probe.connectTimeoutPeriod = 8000;
+    probe.setProtocolV311();
+    probe.logging(on: false);
+    probe.connectionMessage = MqttConnectMessage().startClean();
+    final username = _settings.get(defs.mqttUsername).trim();
+    final password = _settings.get(defs.mqttPassword);
+    try {
+      await probe.connect(
+        username.isEmpty ? null : username,
+        password.isEmpty ? null : password,
+      );
+      final state = probe.connectionStatus?.state;
+      if (state != MqttConnectionState.connected) {
+        return CommandResult.fail(
+          _validationError(probe.connectionStatus?.returnCode),
+        );
+      }
+      return CommandResult.ok({'connected': true, 'host': host, 'port': port});
+    } catch (e) {
+      log.warn(name, 'validation against $host:$port failed: $e');
+      return CommandResult.fail(_connectException(e, host, port));
+    } finally {
+      probe.disconnect();
+    }
+  }
+
+  String _validationError(MqttConnectReturnCode? code) => switch (code) {
+    MqttConnectReturnCode.badUsernameOrPassword =>
+      'The broker rejected the username or password.',
+    MqttConnectReturnCode.notAuthorized =>
+      'The broker refused this client. Check its access control rules.',
+    MqttConnectReturnCode.identifierRejected =>
+      'The broker rejected the client id.',
+    MqttConnectReturnCode.brokerUnavailable => 'The broker is unavailable.',
+    MqttConnectReturnCode.unacceptedProtocolVersion =>
+      'The broker does not accept MQTT 3.1.1.',
+    _ => 'The broker refused the connection.',
+  };
+
+  String _connectException(Object error, String host, int port) {
+    final text = '$error';
+    if (text.contains('SocketException') || text.contains('timed out')) {
+      return 'Could not reach $host:$port.';
+    }
+    if (text.contains('HandshakeException') ||
+        text.contains('CertificateException')) {
+      return 'TLS handshake failed. Check the Use TLS setting and the '
+          "broker's certificate.";
+    }
+    return 'Could not connect to $host:$port.';
   }
 
   @override

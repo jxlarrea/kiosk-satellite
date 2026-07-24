@@ -29,6 +29,9 @@ remote admin:
 
 The broker must be the one your Home Assistant instance's MQTT integration
 is connected to, and discovery must be enabled there (it is by default).
+**Validate connection**, under the credentials, opens a throwaway connection
+and reports what the broker says, so a wrong password or a blocked port is
+visible without reading the log.
 
 Any number of tablets can share one broker and one set of credentials. Each
 install generates a permanent random id that namespaces its topics and

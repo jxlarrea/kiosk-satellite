@@ -1095,6 +1095,34 @@ function updateImmichValidateRow() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
+/* MQTT validate row: mirror of the device's row, under the last credential
+   field. Unlike Home Assistant and Immich it gates nothing — it answers
+   "does the broker accept these settings?" without reading the log. */
+function updateMqttValidateRow() {
+  const tab = document.getElementById('tab-mqtt');
+  const anchor = [...tab.querySelectorAll('.row')]
+    .find((r) => r.querySelector('.name')?.textContent === 'Password');
+  if (!anchor || tab.querySelector('.mqtt-validate-row')) return;
+  const row = readOnlyRow('Validate connection',
+    'Check the broker accepts these settings.', '');
+  row.classList.add('mqtt-validate-row');
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Validate';
+  btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true; btn.textContent = 'Checking…';
+    let res;
+    try { res = await (await api('/api/commands/mqttValidate', { method: 'POST', body: '{}' })).json(); }
+    catch (_) { res = { ok: false, error: 'The device did not answer.' }; }
+    btn.disabled = false; btn.textContent = 'Validate';
+    row.querySelector('.desc').textContent = res.ok
+      ? 'Connected' : (res.error || 'Validation failed.');
+  });
+  row.appendChild(btn);
+  anchor.insertAdjacentElement('afterend', row);
+}
+
 /* Brightness grant notices: shown under the dashboard slider and on the
    Screen tab only while "Modify system settings" is missing on the device.
    Without it the slider falls back to dimming the app window; the panel's
@@ -1825,6 +1853,7 @@ async function loadSettings() {
   updateMotionCameraNotice();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();
+  updateMqttValidateRow();
 
   // Mirror of the device's Access card under Remote Administration. Here
   // the address is simply where this page came from.
