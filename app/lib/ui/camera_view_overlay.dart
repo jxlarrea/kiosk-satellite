@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
@@ -16,47 +17,192 @@ class CameraViewOverlay extends StatelessWidget {
   Widget build(BuildContext context) => ValueListenableBuilder<String?>(
     valueListenable: container.camera.activeViewId,
     builder: (context, viewId, _) {
-      if (viewId == null) return const SizedBox.shrink();
-      final view = container.camera.config.views
-          .where((item) => item.id == viewId)
-          .firstOrNull;
-      if (view == null) return const SizedBox.shrink();
+      final view = viewId == null
+          ? null
+          : container.camera.config.views
+                .where((item) => item.id == viewId)
+                .firstOrNull;
       return Positioned.fill(
-        child: _CameraPlayer(
-          key: ValueKey(view.id),
-          container: container,
-          view: view,
-        ),
+        child: ClosingCameraPlayer(container: container, view: view),
       );
     },
   );
 }
 
-class _CameraPlayer extends StatefulWidget {
-  const _CameraPlayer({super.key, required this.container, required this.view});
+/// Renders [view], and when it goes away keeps the player alive offstage
+/// just long enough to shut its streams down.
+///
+/// Dropping the player the instant the view closes looks right and is
+/// wrong: the teardown calls it makes on the way out are asynchronous
+/// platform-channel messages, and a platform view destroyed in the same
+/// frame never receives them. The page then survives the widget with every
+/// peer connection and decoder still running (measured on an Echo Show:
+/// four live sessions and four decoding videos long after the grid left
+/// the screen). Offstage the WebView keeps running JavaScript but paints
+/// nothing, so the close is instant on screen and the streams still get a
+/// real chance to stop.
+class ClosingCameraPlayer extends StatefulWidget {
+  const ClosingCameraPlayer({
+    super.key,
+    required this.container,
+    required this.view,
+    this.interactive = true,
+    this.onDismiss,
+  });
 
   final AppContainer container;
-  final CameraViewConfig view;
+  final CameraViewConfig? view;
+  final bool interactive;
+  final VoidCallback? onDismiss;
 
   @override
-  State<_CameraPlayer> createState() => _CameraPlayerState();
+  State<ClosingCameraPlayer> createState() => _ClosingCameraPlayerState();
 }
 
-class _CameraPlayerState extends State<_CameraPlayer> {
-  late final String _configJson = _buildConfig();
-  InAppWebViewController? _controller;
+class _ClosingCameraPlayerState extends State<ClosingCameraPlayer> {
+  /// The view still mounted, which lags [widget.view] while one closes.
+  CameraViewConfig? _mounted;
+  bool _closing = false;
+  Timer? _drop;
+
+  static const _shutdownGrace = Duration(milliseconds: 600);
 
   @override
   void initState() {
     super.initState();
-    widget.container.camera.focusedCameraId.addListener(_syncFocus);
+    _mounted = widget.view;
+  }
+
+  @override
+  void didUpdateWidget(ClosingCameraPlayer old) {
+    super.didUpdateWidget(old);
+    final next = widget.view;
+    if (next?.id == _mounted?.id && (next == null) == (_mounted == null)) {
+      return;
+    }
+    _drop?.cancel();
+    if (next == null) {
+      // Closing: hide it now, let it shut down, drop it shortly after.
+      if (_mounted == null) return;
+      setState(() => _closing = true);
+      _drop = Timer(_shutdownGrace, () {
+        if (mounted) setState(() => _mounted = null);
+      });
+    } else {
+      setState(() {
+        _mounted = next;
+        _closing = false;
+      });
+    }
   }
 
   @override
   void dispose() {
-    widget.container.camera.focusedCameraId.removeListener(_syncFocus);
-    _controller?.evaluateJavascript(source: 'shutdown();');
-    _controller?.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
+    _drop?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final view = _mounted;
+    if (view == null) return const SizedBox.shrink();
+    return Offstage(
+      offstage: _closing,
+      child: CameraPlayer(
+        key: ValueKey('${view.id}-${widget.interactive}'),
+        container: widget.container,
+        view: view,
+        interactive: widget.interactive,
+        onDismiss: widget.onDismiss,
+        closing: _closing,
+      ),
+    );
+  }
+}
+
+/// The WebRTC grid itself: one WebView playing every camera in [view].
+///
+/// Interactive by default (tap to focus, double tap or edge swipe to close),
+/// which is what an opened camera view is. The screensaver builds the same
+/// player with [interactive] off, where the grid is scenery and any touch
+/// wakes the kiosk instead.
+class CameraPlayer extends StatefulWidget {
+  const CameraPlayer({
+    super.key,
+    required this.container,
+    required this.view,
+    this.interactive = true,
+    this.onDismiss,
+    this.closing = false,
+  });
+
+  final AppContainer container;
+  final CameraViewConfig view;
+  final bool interactive;
+
+  /// Called for a touch while [interactive] is false.
+  final VoidCallback? onDismiss;
+
+  /// The view is on its way out: stop the streams now, while this widget is
+  /// still mounted and its channel still delivers. See [ClosingCameraPlayer].
+  final bool closing;
+
+  @override
+  State<CameraPlayer> createState() => _CameraPlayerState();
+}
+
+class _CameraPlayerState extends State<CameraPlayer> {
+  late final String _configJson = _buildConfig();
+  InAppWebViewController? _controller;
+  bool _tornDown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.interactive) {
+      widget.container.camera.focusedCameraId.addListener(_syncFocus);
+    }
+  }
+
+  /// Stop the streams from inside the page.
+  ///
+  /// Disposing the widget does NOT do this on its own: the Android WebView
+  /// outlives the platform view long enough to keep every peer connection
+  /// and decoder running (measured: four live sessions and four decoding
+  /// videos after the view had already left the screen). Worse, whether the
+  /// teardown lands is a race — closing from an async path gave the channel
+  /// call time to arrive, closing synchronously did not.
+  ///
+  /// So it runs from deactivate(), while the element is still in the tree
+  /// and the channel is certainly live, and again from dispose() for the
+  /// paths that skip deactivate. shutdown() is idempotent; the about:blank
+  /// navigation is the backstop that fires pagehide for anything it missed.
+  void _teardown() {
+    final controller = _controller;
+    if (controller == null || _tornDown) return;
+    _tornDown = true;
+    controller.evaluateJavascript(source: 'shutdown();');
+    controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
+  }
+
+  @override
+  void didUpdateWidget(CameraPlayer old) {
+    super.didUpdateWidget(old);
+    if (widget.closing && !old.closing) _teardown();
+  }
+
+  @override
+  void deactivate() {
+    _teardown();
+    super.deactivate();
+  }
+
+  @override
+  void dispose() {
+    if (widget.interactive) {
+      widget.container.camera.focusedCameraId.removeListener(_syncFocus);
+    }
+    _teardown();
     super.dispose();
   }
 
@@ -76,11 +222,24 @@ class _CameraPlayerState extends State<_CameraPlayer> {
       'viewId': widget.view.id,
       'viewName': widget.view.name,
       'showCameraNames': widget.view.showCameraNames,
-      'focusedCameraId': widget.container.camera.focusedCameraId.value,
+      'interactive': widget.interactive,
+      'focusedCameraId': widget.interactive
+          ? widget.container.camera.focusedCameraId.value
+          : null,
       'cameras': [
         for (final id in widget.view.cameraIds)
           if (camerasById[id] case final camera?)
-            {'id': camera.id, 'name': camera.name, 'missing': camera.missing},
+            {
+              'id': camera.id,
+              'name': camera.name,
+              'missing': camera.missing,
+              // Whether focusing this camera is worth a renegotiation: only
+              // a genuinely different stream changes what is on screen.
+              'hasFullscreen':
+                  camera.fullscreenStreamName != null &&
+                  camera.fullscreenStreamName!.isNotEmpty &&
+                  camera.fullscreenStreamName != camera.streamName,
+            },
       ],
     });
   }
@@ -137,6 +296,13 @@ class _CameraPlayerState extends State<_CameraPlayer> {
           handlerName: 'cameraClose',
           callback: (_) {
             widget.container.camera.hideView();
+            return null;
+          },
+        );
+        controller.addJavaScriptHandler(
+          handlerName: 'cameraDismiss',
+          callback: (_) {
+            widget.onDismiss?.call();
             return null;
           },
         );

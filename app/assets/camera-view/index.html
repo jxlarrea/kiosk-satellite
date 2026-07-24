@@ -48,7 +48,15 @@ let swipeStart = null;
 let lastTap = null;
 let tapTimer = null;
 let closing = false;
+let hiddenTimer = null;
 const DOUBLE_TAP_MS = 350;
+// A view left open when the panel times off keeps every decoder running for
+// nothing. Give the page a grace period first: a passing drawer or dialog
+// must not cost a full renegotiation round.
+const HIDDEN_STOP_MS = 10000;
+// An ICE 'disconnected' usually heals itself within a couple of seconds;
+// tearing the session down on sight turns a blip into a visible reconnect.
+const DISCONNECT_GRACE_MS = 4000;
 
 function log(message) {
   try { bridge('cameraLog', String(message)); } catch (_) {}
@@ -95,6 +103,7 @@ function stop(cameraId) {
   if (!session) return;
   session.wanted = false;
   clearTimeout(session.retry);
+  clearTimeout(session.grace);
   if (session.pc) {
     session.pc.ontrack = null;
     session.pc.onconnectionstatechange = null;
@@ -136,11 +145,36 @@ function closeView() {
 
 async function start(cameraId, fullscreen) {
   stop(cameraId);
-  const session = { wanted: true, pc: null, video: null, retry: null, attempt: 0 };
+  const session = {
+    wanted: true, pc: null, video: null, retry: null, grace: null,
+    attempt: 0, fullscreen: !!fullscreen,
+  };
   sessions.set(cameraId, session);
+
+  // Retire a peer connection without letting its own teardown come back as
+  // another failure: closing fires connectionstatechange one last time, and
+  // a live handler there would count a second strike and double the backoff
+  // for what was a single drop.
+  const discard = (pc) => {
+    pc.ontrack = null;
+    pc.onconnectionstatechange = null;
+    pc.close();
+  };
+
+  const retry = (pc, message) => {
+    discard(pc);
+    if (!session.wanted) return;
+    session.attempt++;
+    const delay = Math.min(30000, 1000 * Math.pow(2, session.attempt));
+    setStatus(cameraId, message(Math.round(delay / 1000)));
+    clearTimeout(session.retry);
+    session.retry = setTimeout(connect, delay);
+  };
 
   const connect = async () => {
     if (!session.wanted || sessions.get(cameraId) !== session) return;
+    clearTimeout(session.grace);
+    session.grace = null;
     setStatus(cameraId, 'Connecting...');
     const pc = new RTCPeerConnection();
     session.pc = pc;
@@ -165,18 +199,27 @@ async function start(cameraId, fullscreen) {
       setStatus(cameraId, '');
     };
     pc.onconnectionstatechange = () => {
-      if (!session.wanted) return;
-      if (pc.connectionState === 'failed' ||
-          pc.connectionState === 'disconnected' ||
-          pc.connectionState === 'closed') {
-        pc.close();
-        session.attempt++;
-        const delay = Math.min(30000, 1000 * Math.pow(2, session.attempt));
+      if (!session.wanted || session.pc !== pc) return;
+      const state = pc.connectionState;
+      if (state === 'failed' || state === 'closed') {
+        retry(pc, () => 'Reconnecting...');
+      } else if (state === 'disconnected') {
+        // Ride it out: WebRTC recovers most of these on its own, and a
+        // renegotiation costs a visibly black tile for a second or two.
+        if (session.grace) return;
         setStatus(cameraId, 'Reconnecting...');
-        clearTimeout(session.retry);
-        session.retry = setTimeout(connect, delay);
-      } else if (pc.connectionState === 'connected') {
+        session.grace = setTimeout(() => {
+          session.grace = null;
+          if (session.wanted && session.pc === pc &&
+              pc.connectionState === 'disconnected') {
+            retry(pc, () => 'Reconnecting...');
+          }
+        }, DISCONNECT_GRACE_MS);
+      } else if (state === 'connected') {
+        clearTimeout(session.grace);
+        session.grace = null;
         session.attempt = 0;
+        setStatus(cameraId, '');
       }
     };
     try {
@@ -198,12 +241,7 @@ async function start(cameraId, fullscreen) {
       await pc.setRemoteDescription({ type: 'answer', sdp: result.answer });
     } catch (error) {
       log(`connect ${cameraId}: ${error}`);
-      pc.close();
-      if (!session.wanted) return;
-      session.attempt++;
-      const delay = Math.min(30000, 1000 * Math.pow(2, session.attempt));
-      setStatus(cameraId, `Connection failed. Retrying in ${Math.round(delay / 1000)}s`);
-      session.retry = setTimeout(connect, delay);
+      retry(pc, (seconds) => `Connection failed. Retrying in ${seconds}s`);
     }
   };
   connect();
@@ -212,10 +250,17 @@ async function start(cameraId, fullscreen) {
 function syncPeers() {
   for (const camera of CFG.cameras) {
     const wanted = !focusId || camera.id === focusId;
+    const fullscreen = !!focusId && camera.id === focusId;
+    const session = sessions.get(camera.id);
     if (!wanted) {
       stop(camera.id);
-    } else if (!sessions.has(camera.id)) {
-      start(camera.id, !!focusId);
+    } else if (!session) {
+      start(camera.id, fullscreen);
+    } else if (session.fullscreen !== fullscreen && camera.hasFullscreen) {
+      // Focusing a camera that is already streaming has to renegotiate, or
+      // the grid's deliberately small stream is what fills the screen. Only
+      // worth the interruption for a camera that has a separate one.
+      start(camera.id, fullscreen);
     }
   }
 }
@@ -239,6 +284,13 @@ for (const camera of CFG.cameras) {
 }
 
 grid.addEventListener('click', (event) => {
+  // As a screensaver the grid is scenery, not a control surface: focus and
+  // the close gestures belong to the view someone opened deliberately, and
+  // here any touch simply wakes the kiosk like any other screensaver.
+  if (CFG.interactive === false) {
+    bridge('cameraDismiss');
+    return;
+  }
   const tile = event.target.closest('.tile');
   if (!tile) return;
 
@@ -268,6 +320,7 @@ grid.addEventListener('click', (event) => {
   }, DOUBLE_TAP_MS);
 });
 document.addEventListener('pointerdown', (event) => {
+  if (CFG.interactive === false) return;
   swipeStart = event.clientX <= 36 ? { x: event.clientX, y: event.clientY } : null;
 }, true);
 document.addEventListener('pointerup', (event) => {
@@ -288,6 +341,24 @@ document.addEventListener('pointercancel', () => {
 }, true);
 addEventListener('resize', applyLayout);
 addEventListener('pagehide', shutdown);
+// The screen going off does not close the view, and four decoders running
+// behind a dark panel is pure drain. Drop the streams once the page has been
+// hidden long enough to mean it, and pick them up again on the way back.
+document.addEventListener('visibilitychange', () => {
+  if (closing) return;
+  if (document.visibilityState === 'hidden') {
+    clearTimeout(hiddenTimer);
+    hiddenTimer = setTimeout(() => {
+      hiddenTimer = null;
+      log('hidden: releasing camera streams');
+      shutdown();
+    }, HIDDEN_STOP_MS);
+  } else {
+    clearTimeout(hiddenTimer);
+    hiddenTimer = null;
+    syncPeers();
+  }
+});
 applyLayout();
 syncPeers();
 </script>

@@ -84,7 +84,12 @@ not replace its Home Assistant entity.
 
 The camera player is created only while a view is visible. One WebView owns all
 peer connections, camera audio is not negotiated, and hidden cameras are
-disconnected in focus mode.
+disconnected in focus mode. Streams are released once the page has been hidden
+for ten seconds, so a view left open when the panel turns off stops decoding,
+and they come back when the screen does.
+
+A brief ICE disconnect is given a few seconds to heal before the session is
+renegotiated, so a flaky network costs a stutter rather than a black tile.
 
 Four high-resolution streams can exceed the hardware decoder capacity of older
 tablets. Prefer H.264 substreams at 720p or lower, with a reduced frame rate,
