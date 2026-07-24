@@ -64,10 +64,15 @@ class SendSpin(
         private const val MAX_RECONNECT_DELAY_MS = 10000L
         private const val STEADY_RECONNECT_DELAY_MS = 30_000L
 
-        // Hard ceiling on reconnect attempts per cycle. Reset to 0 on every
-        // successful handshake. On exhaustion the failure is surfaced via
-        // Callback.onReconnectExhausted and no more attempts are scheduled.
+        // Soft ceiling on eager reconnect attempts per cycle. Reset to 0 on
+        // every successful handshake. Crossing it surfaces the failure once
+        // via Callback.onReconnectExhausted (FAILED state, and a fresh mDNS
+        // browse in discovery mode) - but attempts never stop: they park at
+        // PARKED_RECONNECT_DELAY_MS forever. A wall tablet must outlive any
+        // server outage, however long; the old permanent give-up left the
+        // player dead until an app restart after ~8 minutes of downtime.
         private const val MAX_TOTAL_RECONNECT_ATTEMPTS = 20
+        private const val PARKED_RECONNECT_DELAY_MS = 300_000L  // 5 minutes
 
         // Stall watchdog: while connected+handshake-complete, if no bytes arrive
         // for this long, force-close the transport so the reconnect path kicks in.
@@ -471,7 +476,16 @@ class SendSpin(
         if (reconnecting.get()) return
         if (!handshakeComplete) return
         val t = transport ?: return
-        if (!t.isConnected) return
+        if (!t.isConnected) {
+            // The transport died without delivering onClosed/onFailure (seen
+            // with abrupt server stops): sends fail with state=Closed while
+            // no callback ever fires, leaving a zombie that neither
+            // reconnects nor rediscovers. A dead transport under a completed
+            // handshake IS the stall - kick the reconnect path directly.
+            Log.w(TAG, "Stall watchdog: transport closed without a close event - attempting reconnection")
+            attemptReconnect()
+            return
+        }
 
         val streaming = streamActive.get()
         val threshold = if (streaming) STALL_TIMEOUT_MS else IDLE_STALL_TIMEOUT_MS
@@ -502,18 +516,16 @@ class SendSpin(
             return
         }
 
-        val prior = reconnectAttempts.get()
-        if (prior >= MAX_TOTAL_RECONNECT_ATTEMPTS) {
-            Log.w(TAG, "Reconnect cap reached ($prior >= $MAX_TOTAL_RECONNECT_ATTEMPTS) - giving up")
-            reconnecting.set(false)
-            reconnectJob?.cancel()
-            reconnectJob = null
+        val attempts = reconnectAttempts.incrementAndGet()
+        if (attempts == MAX_TOTAL_RECONNECT_ATTEMPTS + 1) {
+            // Crossing the cap: report once (FAILED state; discovery mode
+            // kicks off a fresh browse) and fall through - the attempts
+            // below continue at the parked cadence instead of stopping.
+            Log.w(TAG, "Reconnect cap reached ($MAX_TOTAL_RECONNECT_ATTEMPTS) - " +
+                "parking at ${PARKED_RECONNECT_DELAY_MS / 1000}s retries")
             setConnectionState(ConnectionState.FAILED)
             callback.onReconnectExhausted()
-            return
         }
-
-        val attempts = reconnectAttempts.incrementAndGet()
 
         // On first reconnection attempt, freeze the time filter so a
         // successful reconnect to the same server can restore sync.
@@ -523,10 +535,10 @@ class SendSpin(
         }
         stopStallWatchdog() // watchdog restarts on next successful handshake
 
-        val delayMs = if (attempts > MAX_RECONNECT_ATTEMPTS) {
-            STEADY_RECONNECT_DELAY_MS
-        } else {
-            (INITIAL_RECONNECT_DELAY_MS * (1 shl (attempts - 1)))
+        val delayMs = when {
+            attempts > MAX_TOTAL_RECONNECT_ATTEMPTS -> PARKED_RECONNECT_DELAY_MS
+            attempts > MAX_RECONNECT_ATTEMPTS -> STEADY_RECONNECT_DELAY_MS
+            else -> (INITIAL_RECONNECT_DELAY_MS * (1 shl (attempts - 1)))
                 .coerceAtMost(MAX_RECONNECT_DELAY_MS)
         }
 
@@ -585,17 +597,18 @@ class SendSpin(
         override fun onClosed(code: Int, reason: String) {
             Log.d(TAG, "Transport closed: $code $reason")
 
-            // Code 1000 = Normal Closure - server intentionally ended the
-            // session; NOT an error that should trigger reconnection.
-            val isNormalClosure = code == 1000
-
-            if (!userInitiatedDisconnect.get() && !isNormalClosure && serverAddress != null) {
-                Log.i(TAG, "Abnormal closure (code=$code, handshakeComplete=$handshakeComplete), attempting reconnection")
+            // Any close we did not ask for gets the reconnect path - clean
+            // 1000 closes included. A Music Assistant restart or update ends
+            // every session with a polite 1000, and treating that as "the
+            // server does not want us" left the player dead until an app
+            // restart (the exact always-on failure a wall tablet cannot
+            // have). A server that truly does not want us back simply
+            // refuses the reconnect, which then parks at slow retries.
+            if (!userInitiatedDisconnect.get() && serverAddress != null) {
+                Log.i(TAG, "Connection closed (code=$code, handshakeComplete=$handshakeComplete), attempting reconnection")
                 attemptReconnect()
             } else {
-                if (isNormalClosure && !userInitiatedDisconnect.get()) {
-                    Log.i(TAG, "Server closed connection normally (code 1000) - session ended")
-                }
+                stopTimeSync()
                 reconnecting.set(false)
                 setConnectionState(ConnectionState.IDLE)
             }
@@ -604,14 +617,24 @@ class SendSpin(
         override fun onFailure(error: Throwable, isRecoverable: Boolean) {
             Log.e(TAG, "Transport failure: ${error.message}")
 
+            // As long as we have a server and the user did not ask to stop,
+            // keep the ladder alive no matter how the failure is classified.
+            // "Connection refused" reads like a config error but is exactly
+            // what a restarting server returns for a few seconds - and one
+            // refused attempt used to kill all recovery for good, leaving
+            // the player dead until an app restart. The parked cadence makes
+            // retrying forever cost nothing; a genuinely wrong address just
+            // parks quietly until the user fixes it.
             val shouldReconnect = !userInitiatedDisconnect.get() &&
-                    serverAddress != null &&
-                    isRecoverable
+                    serverAddress != null
 
             if (shouldReconnect) {
-                Log.i(TAG, "Recoverable error, attempting reconnection: ${error.message}")
+                if (!isRecoverable) {
+                    Log.w(TAG, "Failure classified unrecoverable (${error.message}) - retrying anyway")
+                }
                 attemptReconnect()
             } else {
+                stopTimeSync()
                 reconnecting.set(false)
                 setConnectionState(ConnectionState.FAILED)
             }

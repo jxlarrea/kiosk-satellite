@@ -47,6 +47,8 @@ class SendspinBridge(
         private const val DEFAULT_PORT = 8927
         private const val DEFAULT_DISCOVER_TIMEOUT_MS = 4000
         private const val DISCOVERY_RETRY_MS = 5_000L
+        // Recycle a fruitless mDNS browse after this long (see discoveryRestart).
+        private const val DISCOVERY_REBROWSE_MS = 600_000L  // 10 minutes
         private const val BUFFER_CAPACITY_SECONDS = 35L
     }
 
@@ -96,9 +98,21 @@ class SendspinBridge(
         }
     }
 
-    private val discoveryRestart = Runnable {
-        if (started && discoveryMode && client?.isConnected != true) {
-            startAutoDiscovery()
+    private val discoveryRestart: Runnable = object : Runnable {
+        override fun run() {
+            if (started && discoveryMode && client?.isConnected != true) {
+                // Recycle any existing browse rather than trusting it:
+                // Android's NSD can wedge silently after a wifi drop (no
+                // callbacks, no error), and startAutoDiscovery's null guard
+                // would then turn every restart into a no-op forever - a
+                // dead player until app restart. A fresh browse is cheap.
+                autoDiscovery?.cleanup()
+                autoDiscovery = null
+                startAutoDiscovery()
+                // Self-arming: if this browse finds nothing either, recycle
+                // it again in a while. Disarmed by the connected guard.
+                mainHandler.postDelayed(this, DISCOVERY_REBROWSE_MS)
+            }
         }
     }
 
@@ -180,6 +194,8 @@ class SendspinBridge(
             discoveryMode = true
             Log.i(TAG, "start: no serverUrl, using mDNS discovery")
             startAutoDiscovery()
+            // Arm the browse recycler from the very first browse too.
+            mainHandler.postDelayed(discoveryRestart, DISCOVERY_REBROWSE_MS)
         } else {
             discoveryMode = false
             val (address, path) = parseServerUrl(serverUrl)
