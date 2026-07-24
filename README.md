@@ -51,6 +51,15 @@ smooth on the low-powered, older tablets that usually end up on walls.
 - **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake on power button, and
   lock-task support on device-owner provisioned tablets.
+- **Sendspin player**: the tablet doubles as a synchronized
+  [Sendspin](https://www.sendspin-audio.com/) speaker for Music
+  Assistant, in sample-accurate sync with every other Sendspin player in
+  the house, with metadata, artwork and volume in Home Assistant.
+
+<p align="center">
+ <img src="assets/screenshots/sendspin-horizontal.png" alt="Assist" width="650"/>
+</p>
+
 - **Screensavers**: dim, black, clock, Home Assistant media, local
   folders, a photo gallery picked straight from the system picker, or an
   [Immich](docs/immich.md) library or album as a full photo frame with
@@ -63,18 +72,14 @@ smooth on the low-powered, older tablets that usually end up on walls.
 - **Dashboard view rotation**: cycle through a chosen set of dashboard
   views in an endless loop, each on screen for a configurable number of
   seconds.
-- **Sendspin player**: the tablet doubles as a synchronized
-  [Sendspin](https://www.sendspin-audio.com/) speaker for Music
-  Assistant, in sample-accurate sync with every other Sendspin player in
-  the house, with metadata, artwork and volume in Home Assistant.
-
-<p align="center">
- <img src="assets/screenshots/sendspin-horizontal.png" alt="Assist" width="650"/>
-</p>
-
 - **DLNA renderer**: push images, video and live cameras full screen
   onto the kiosk with `media_player.play_media`, from Home Assistant
   automations, the media browser or any DLNA app.
+
+<p align="center">
+ <img src="assets/screenshots/dashboard.png" alt="Assist" width="650"/>
+</p>
+
 - **Ready-made Home Assistant entities over MQTT**: point the app at
   your broker and every tablet appears as its own device via MQTT
   discovery, no YAML needed: a screen light, battery, charging, current
@@ -82,10 +87,15 @@ smooth on the low-powered, older tablets that usually end up on walls.
 - **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
   awake, default brightness, scheduled light/dark theme, custom
   JavaScript injection, and self-signed certificate support.
+- **WebRTC cameras**: import streams from Go2RTC or add WHEP cameras
+  manually, then arrange up to four cameras into responsive
+  [camera views](docs/cameras.md) that can be opened from the tablet,
+  Remote Admin or Home Assistant through MQTT.
 
 <p align="center">
- <img src="assets/screenshots/dashboard.png" alt="Assist" width="650"/>
-</p>
+ <img src="assets/screenshots/camera-1.png" alt="Assist" width="650"/>
+</p>  
+
 
 ## Kiosk Satellite + Voice Satellite
 
