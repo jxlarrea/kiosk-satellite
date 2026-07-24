@@ -202,13 +202,17 @@ class CameraManager extends Manager {
       log.error(name, 'invalid persisted configuration: $error');
       _config = const CameraConfiguration();
     }
+    // Materialized in memory, not written back: an install that never touches
+    // cameras keeps an untouched (and un-exported) camera document, and the
+    // first real edit persists the default along with it.
+    _config = _config.withDefaultView();
   }
 
   Future<void> _save(CameraConfiguration next) async {
-    _config = next;
+    _config = next.withDefaultView();
     _saving = true;
     try {
-      await _settings.set(defs.cameraConfig, next.encode());
+      await _settings.set(defs.cameraConfig, _config.encode());
     } finally {
       _saving = false;
     }
@@ -269,7 +273,11 @@ class CameraManager extends Manager {
         for (final cameraId in view.cameraIds)
           if (!removedCameraIds.contains(cameraId)) cameraId,
       ];
-      if (ids.isNotEmpty) views.add(view.copyWith(cameraIds: ids));
+      // A view emptied by the delete goes with it, except the default, which
+      // is permanent and keeps whatever name it was given.
+      if (ids.isNotEmpty || view.isDefault) {
+        views.add(view.copyWith(cameraIds: ids));
+      }
     }
     await _save(
       _config.copyWith(
@@ -414,7 +422,9 @@ class CameraManager extends Manager {
     final views = <CameraViewConfig>[];
     for (final view in _config.views) {
       final ids = view.cameraIds.where((cameraId) => cameraId != id).toList();
-      if (ids.isNotEmpty) views.add(view.copyWith(cameraIds: ids));
+      if (ids.isNotEmpty || view.isDefault) {
+        views.add(view.copyWith(cameraIds: ids));
+      }
     }
     await _save(
       _config.copyWith(
@@ -440,7 +450,12 @@ class CameraManager extends Manager {
       return const CommandResult.fail('cameraIds must be a list');
     }
     final ids = [for (final id in rawIds) '$id'];
-    if (ids.isEmpty || ids.length > 4) {
+    // The default view is allowed to stand empty: it exists before any camera
+    // does, and emptying it is how you retire it without deleting it.
+    if (ids.isEmpty && existing?.isDefault != true) {
+      return const CommandResult.fail('a view must contain 1 to 4 cameras');
+    }
+    if (ids.length > 4) {
       return const CommandResult.fail('a view must contain 1 to 4 cameras');
     }
     if (ids.toSet().length != ids.length) {
@@ -482,6 +497,11 @@ class CameraManager extends Manager {
     if (!_config.views.any((view) => view.id == id)) {
       return const CommandResult.fail('view not found');
     }
+    if (id == CameraViewConfig.defaultId) {
+      return const CommandResult.fail(
+        'the default view cannot be deleted; empty it instead',
+      );
+    }
     if (activeViewId.value == id) hideView();
     await _save(
       _config.copyWith(
@@ -497,6 +517,9 @@ class CameraManager extends Manager {
   Future<CommandResult> showView(String viewId) async {
     final view = _config.views.where((item) => item.id == viewId).firstOrNull;
     if (view == null) return const CommandResult.fail('view not found');
+    if (view.cameraIds.isEmpty) {
+      return const CommandResult.fail('view has no cameras');
+    }
     _clearInterruptedView();
     await _prepareToShowView();
     focusedCameraId.value = null;

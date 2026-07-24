@@ -120,20 +120,21 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         ]),
         _heading('Views'),
         _card([
-          if (config.views.isEmpty)
-            const ListTile(
-              leading: Icon(Icons.grid_view_outlined),
-              title: Text('No camera views'),
-              subtitle: Text('A view contains up to four cameras.'),
-            ),
           for (final view in config.views)
             ListTile(
-              leading: const Icon(Icons.grid_view_outlined),
+              leading: Icon(
+                view.isDefault
+                    ? Icons.star_outline
+                    : Icons.grid_view_outlined,
+              ),
               title: Text(view.name),
               subtitle: Text(
-                '${view.cameraIds.length} camera'
-                '${view.cameraIds.length == 1 ? '' : 's'}'
-                ' · Names ${view.showCameraNames ? 'shown' : 'hidden'}',
+                view.cameraIds.isEmpty
+                    ? 'No cameras yet'
+                    : '${view.cameraIds.length} camera'
+                          '${view.cameraIds.length == 1 ? '' : 's'}'
+                          ' · Names '
+                          '${view.showCameraNames ? 'shown' : 'hidden'}',
               ),
               onTap: () => _editView(view),
               trailing: Wrap(
@@ -142,13 +143,18 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                   IconButton(
                     tooltip: 'Show view',
                     icon: const Icon(Icons.play_arrow),
-                    onPressed: () => _showView(view),
+                    onPressed: view.cameraIds.isEmpty
+                        ? null
+                        : () => _showView(view),
                   ),
-                  IconButton(
-                    tooltip: 'Delete view',
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: _busy ? null : () => _deleteView(view),
-                  ),
+                  // The default view is permanent: emptying it is how it
+                  // gets retired, so it carries no delete.
+                  if (!view.isDefault)
+                    IconButton(
+                      tooltip: 'Delete view',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: _busy ? null : () => _deleteView(view),
+                    ),
                 ],
               ),
             ),
@@ -195,6 +201,25 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     clipBehavior: Clip.antiAlias,
     child: Column(children: children),
   );
+
+  Widget _sectionLabel(BuildContext context, String text) => Align(
+    alignment: Alignment.centerLeft,
+    child: Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    ),
+  );
+
+  String _cameraName(List<CameraSource> cameras, String id) => cameras
+      .where((camera) => camera.id == id)
+      .map((camera) => camera.name)
+      .firstOrNull ??
+      'Unknown camera';
 
   Future<void> _showView(CameraViewConfig view) async {
     final result = await widget.container.camera.showView(view.id);
@@ -460,28 +485,70 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                         setDialogState(() => showCameraNames = value),
                   ),
                   const SizedBox(height: 12),
-                  for (final camera in cameras)
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(camera.name),
-                      subtitle: Text(
-                        selected.contains(camera.id)
-                            ? 'Position ${selected.indexOf(camera.id) + 1}'
-                            : camera.missing
-                            ? 'Missing from Go2RTC'
-                            : 'Not selected',
-                      ),
-                      value: selected.contains(camera.id),
-                      onChanged: (value) {
-                        setDialogState(() {
-                          if (value == true && selected.length < 4) {
-                            selected.add(camera.id);
-                          } else if (value != true) {
-                            selected.remove(camera.id);
-                          }
-                        });
-                      },
+                  // Order is the grid order, so the chosen cameras get their
+                  // own list you can drag: reading position off a checkbox
+                  // list meant re-ticking everything to move one tile.
+                  if (selected.isNotEmpty) ...[
+                    _sectionLabel(context, 'In this view'),
+                    ReorderableListView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      buildDefaultDragHandles: false,
+                      // onReorderItem: newIndex is already adjusted for the
+                      // removal, unlike the deprecated onReorder.
+                      onReorderItem: (oldIndex, newIndex) =>
+                          setDialogState(() {
+                            selected.insert(
+                              newIndex,
+                              selected.removeAt(oldIndex),
+                            );
+                          }),
+                      children: [
+                        for (final (index, id) in selected.indexed)
+                          ListTile(
+                            key: ValueKey(id),
+                            contentPadding: EdgeInsets.zero,
+                            leading: ReorderableDragStartListener(
+                              index: index,
+                              child: const Icon(Icons.drag_handle),
+                            ),
+                            title: Text(_cameraName(cameras, id)),
+                            subtitle: Text('Position ${index + 1}'),
+                            trailing: IconButton(
+                              tooltip: 'Remove',
+                              icon: const Icon(Icons.remove_circle_outline),
+                              onPressed: () =>
+                                  setDialogState(() => selected.remove(id)),
+                            ),
+                          ),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (cameras.any((c) => !selected.contains(c.id))) ...[
+                    _sectionLabel(context, 'Available'),
+                    for (final camera in cameras)
+                      if (!selected.contains(camera.id))
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            camera.missing
+                                ? Icons.link_off_outlined
+                                : Icons.videocam_outlined,
+                          ),
+                          title: Text(camera.name),
+                          subtitle: camera.missing
+                              ? const Text('Missing from Go2RTC')
+                              : null,
+                          trailing: const Icon(Icons.add_circle_outline),
+                          enabled: selected.length < 4,
+                          onTap: selected.length >= 4
+                              ? null
+                              : () => setDialogState(
+                                  () => selected.add(camera.id),
+                                ),
+                        ),
+                  ],
                 ],
               ),
             ),
@@ -492,7 +559,9 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: selected.isEmpty
+              // The default view may be saved empty — that is how it is
+              // retired, since it cannot be deleted.
+              onPressed: selected.isEmpty && view?.isDefault != true
                   ? null
                   : () => Navigator.pop(context, true),
               child: const Text('Save'),

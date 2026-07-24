@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../core/logging.dart';
+import '../managers/camera/models.dart' show CameraViewConfig;
 import '../managers/settings/definitions.dart';
 import '../managers/settings/export_filename.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -3357,6 +3358,30 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
+        // The camera screensaver's view is picked from the ones configured
+        // under Cameras, never typed — the value is an opaque view id.
+        if (def.key == screensaverCameraView.key) {
+          final views = c.camera.config.views
+              .where((view) => view.cameraIds.isNotEmpty)
+              .toList();
+          final current = views
+              .where((view) => view.id == value as String)
+              .firstOrNull;
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(
+              views.isEmpty
+                  ? 'No camera view has cameras yet. Add one under Cameras.'
+                  : def.description,
+            ),
+            trailing: TextButton(
+              onPressed: views.isEmpty
+                  ? null
+                  : () => _pickCameraView(context, views),
+              child: Text(current?.name ?? 'Not set'),
+            ),
+          );
+        }
         // A time of day is picked from a clock, not typed.
         if (def.key == themeDarkAt.key || def.key == themeLightAt.key) {
           final current = value as String;
@@ -3378,6 +3403,39 @@ class SettingTile extends StatelessWidget {
           onTap: () => _editText(context),
         );
     }
+  }
+
+  Future<void> _pickCameraView(
+    BuildContext context,
+    List<CameraViewConfig> views,
+  ) async {
+    final current = c.settings.get(screensaverCameraView);
+    final picked = await showDialog<CameraViewConfig>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Camera view'),
+        children: [
+          for (final view in views)
+            ListTile(
+              leading: Icon(
+                current == view.id
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_off,
+              ),
+              title: Text(view.name),
+              subtitle: Text(
+                '${view.cameraIds.length} camera'
+                '${view.cameraIds.length == 1 ? '' : 's'}',
+              ),
+              onTap: () => Navigator.pop(context, view),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    await c.settings.setFromJson(screensaverCameraView.key, picked.id);
+    await c.settings.setFromJson(screensaverCameraViewName.key, picked.name);
+    onChanged();
   }
 
   Future<void> _pickImmichAlbum(BuildContext context) async {

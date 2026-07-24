@@ -252,6 +252,76 @@ void main() {
     await logger.dispose();
     await bus.dispose();
   });
+
+  test('the default view always exists and survives every delete', () async {
+    SharedPreferences.setMockInitialValues({});
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final cameras = CameraManager(bus, commands, logger, settings);
+    await cameras.init();
+
+    // Present on a configuration that has never been touched.
+    expect(cameras.config.defaultView, isNotNull);
+    expect(cameras.config.defaultView!.cameraIds, isEmpty);
+    expect(cameras.config.views.first.isDefault, isTrue);
+
+    final source = await commands.execute('cameraPutSource', {
+      'name': 'Front door',
+      'kind': 'whep',
+      'whepUrl': 'https://camera.example/whep',
+    });
+    final cameraId = (source.data as Map)['id'];
+
+    // Empty is a valid state for the default, and only for the default.
+    final emptied = await commands.execute('cameraPutView', {
+      'id': CameraViewConfig.defaultId,
+      'name': 'Default',
+      'cameraIds': <String>[],
+    });
+    expect(emptied.ok, isTrue);
+    final other = await commands.execute('cameraPutView', {
+      'name': 'Outside',
+      'cameraIds': <String>[],
+    });
+    expect(other.ok, isFalse);
+
+    // An empty view has nothing to show.
+    expect(
+      (await commands.execute('showCameraView', {
+        'viewId': CameraViewConfig.defaultId,
+      })).ok,
+      isFalse,
+    );
+
+    final filled = await commands.execute('cameraPutView', {
+      'id': CameraViewConfig.defaultId,
+      'name': 'Default',
+      'cameraIds': [cameraId],
+    });
+    expect(filled.ok, isTrue);
+
+    expect(
+      (await commands.execute('cameraDeleteView', {
+        'id': CameraViewConfig.defaultId,
+      })).ok,
+      isFalse,
+    );
+
+    // Deleting its last camera empties it rather than taking it with them.
+    expect(
+      (await commands.execute('cameraDeleteSource', {'id': cameraId})).ok,
+      isTrue,
+    );
+    expect(cameras.config.defaultView, isNotNull);
+    expect(cameras.config.defaultView!.cameraIds, isEmpty);
+
+    await cameras.dispose();
+    await logger.dispose();
+    await bus.dispose();
+  });
 }
 
 class _RealHttpOverrides extends HttpOverrides {}

@@ -14,6 +14,7 @@ import 'package:video_player/video_player.dart';
 import '../app_container.dart';
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
 import '../managers/settings/definitions.dart' as defs;
+import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
 
 /// The screensaver overlay: whichever of the four views the manager says is
@@ -78,6 +79,10 @@ class ScreensaverOverlay extends StatelessWidget {
                     container: container,
                     child: ImmichScreensaver(container: container),
                   ),
+                  // The camera grid reports its own touches (the WebView
+                  // swallows Flutter gestures), so it dismisses itself
+                  // rather than sitting under _Dismissable.
+                  'camera' => CameraScreensaver(container: container),
                   // 'black' and anything unexpected: the safe, opaque cover.
                   _ => _Dismissable(
                     container: container,
@@ -85,8 +90,10 @@ class ScreensaverOverlay extends StatelessWidget {
                   ),
                 },
                 // The small corner clock rides over every mode except Clock,
-                // which is a clock already.
+                // which is a clock already, and the camera grid, where a
+                // clock sitting over a live camera is in the way.
                 if (view != 'clock' &&
+                    view != 'camera' &&
                     container.settings.get(defs.screensaverMiniClock))
                   MiniClockOverlay(container: container),
               ],
@@ -1577,4 +1584,44 @@ class _KenBurnsDriftState extends State<_KenBurnsDrift> {
       child: widget.child,
     ),
   );
+}
+
+/// The WebRTC camera grid as a screensaver: the configured camera view,
+/// non-interactive, dismissed by a touch anywhere like every other mode.
+///
+/// This is deliberately its own player rather than the camera manager's
+/// active view. A view someone opened is an interaction and holds the
+/// screensaver off; the screensaver showing cameras is the opposite, and
+/// letting the two share state would have each cancel the other.
+class CameraScreensaver extends StatelessWidget {
+  const CameraScreensaver({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) {
+    final viewId = container.settings.get(defs.screensaverCameraView);
+    final view = container.camera.config.views
+        .where((item) => item.id == viewId)
+        .firstOrNull;
+    // No view chosen, one that has since been deleted, or one left empty:
+    // black, the same safe cover an unknown mode gets.
+    if (view == null || view.cameraIds.isEmpty) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => container.screensaver.notifyActivity('touch'),
+        child: const ColoredBox(color: Colors.black),
+      );
+    }
+    // Through the closing wrapper like the camera view overlay, so the
+    // streams are shut down from a mounted widget rather than on the way
+    // out (see ClosingCameraPlayer).
+    return ClosingCameraPlayer(
+      key: ValueKey('screensaver-${view.id}'),
+      container: container,
+      view: view,
+      interactive: false,
+      onDismiss: () => container.screensaver.notifyActivity('touch'),
+    );
+  }
 }

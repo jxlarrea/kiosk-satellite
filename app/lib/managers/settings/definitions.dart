@@ -557,7 +557,9 @@ const screensaverMiniClock = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Small clock',
-  description: 'Show a small clock in a corner of the screensaver.',
+  description:
+      'Show a small clock in a corner of the screensaver. Not for the '
+      'Clock and WebRTC Camera modes.',
   category: 'Screensaver',
 );
 
@@ -612,6 +614,7 @@ const screensaverMode = SettingDef<String>(
     'gallery',
     'immich',
     'website',
+    'camera',
   ],
   optionLabels: {
     'dim': 'Dim',
@@ -622,6 +625,7 @@ const screensaverMode = SettingDef<String>(
     'gallery': 'Photo Gallery',
     'immich': 'Immich Media',
     'website': 'Website',
+    'camera': 'WebRTC Camera',
   },
 );
 
@@ -1130,6 +1134,31 @@ const screensaverPixelShift = SettingDef<bool>(
       'Nudge the image every minute to protect OLED panels. Not for '
       'the black screensaver, whose pixels are already off.',
   category: 'Screensaver',
+);
+
+// ── WebRTC Camera (mode: camera) ──
+// The chosen view id, and its name alongside so both UIs can label the row
+// without waiting on the camera configuration to load.
+const screensaverCameraView = SettingDef<String>(
+  key: 'screensaver.camera_view',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Camera view',
+  description: 'Which camera view the screensaver shows.',
+  category: 'Screensaver',
+  section: 'WebRTC Camera',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'camera',
+);
+
+const screensaverCameraViewName = SettingDef<String>(
+  key: 'screensaver.camera_view_name',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Camera view name',
+  description: 'The name of the selected camera view.',
+  category: 'Screensaver',
+  hidden: true,
 );
 
 const screensaverDimLevel = SettingDef<num>(
@@ -1953,6 +1982,8 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichMetadata,
   screensaverImmichMetadataPosition,
   screensaverWebsiteUrl,
+  screensaverCameraView,
+  screensaverCameraViewName,
   screensaverDismissOnMotion,
   motionFps,
   motionSensitivity,

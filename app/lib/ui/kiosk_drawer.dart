@@ -163,6 +163,22 @@ class KioskDrawer extends StatelessWidget {
                                   }
                                 },
                               ),
+                              // Only once the default view actually holds
+                              // cameras: an empty one is the placeholder
+                              // every install starts with, and a menu entry
+                              // that can only fail is worse than no entry.
+                              if (c.camera.config.defaultView
+                                  case final view?
+                                      when view.cameraIds.isNotEmpty)
+                                _item(
+                                  context,
+                                  Icons.videocam_outlined,
+                                  'Default Camera View',
+                                  () {
+                                    onClose();
+                                    c.camera.showView(view.id);
+                                  },
+                                ),
                               _item(
                                 context,
                                 Icons.terminal_outlined,

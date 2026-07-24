@@ -525,6 +525,7 @@
           <button class="action" data-cmd="screenOn">Screen on</button>
           <button class="action" data-cmd="screenOff">Screen off</button>
           <button class="action" data-cmd="stopScreensaver">Dismiss screensaver</button>
+          <button class="action" data-cmd="hideCameraView">Dismiss camera view</button>
           <button class="action" data-cmd="restartApp">Restart app</button>
           <button class="action" data-cmd="exitApp">Exit app</button>
         </div>
@@ -1236,6 +1237,51 @@ const CAMERA_ICONS = {
     + '<rect x="3" y="14" width="7" height="7" rx="1"/>'
     + '<rect x="14" y="14" width="7" height="7" rx="1"/>',
   play: '<path d="m8 5 11 7-11 7z" fill="currentColor" stroke="none"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="1.5"'
+    + ' fill="currentColor" stroke="none"/>',
+  star: '<path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5'
+    + '.9-5.4L4.2 9.7l5.4-.8z"/>',
+  drag: '<path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/>',
+  up: '<path d="M12 19V5m0 0-6 6m6-6 6 6"/>',
+  down: '<path d="M12 5v14m0 0 6-6m-6 6-6-6"/>',
+};
+
+/* The name an exported configuration downloads under. Mirror of the device's
+   exportFileName (managers/settings/export_filename.dart): a fleet of tablets
+   used to produce identical kiosk-satellite-config.json files, unidentifiable
+   once saved. Falls back to this browser's clock only when an older device
+   sends an export without its own timestamp. */
+function exportFileName(deviceName, exportedAt) {
+  const at = exportedAt ? new Date(exportedAt) : new Date();
+  const when = isNaN(at.getTime()) ? new Date() : at;
+  const two = (value) => String(value).padStart(2, '0');
+  const stamp = `${when.getFullYear()}${two(when.getMonth() + 1)}`
+    + `${two(when.getDate())}_${two(when.getHours())}`
+    + `${two(when.getMinutes())}${two(when.getSeconds())}`;
+  let slug = String(deviceName || '')
+    .replace(/[^\x00-\x7F]/g, (ch) => EXPORT_FOLDED_LATIN[ch] || ch)
+    .replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  if (slug.length > 40) slug = slug.slice(0, 40).replace(/-+$/, '');
+  return slug ? `ks-backup_${slug}_${stamp}.json` : `ks-backup_${stamp}.json`;
+}
+
+/* Mirror of _foldedLatin in export_filename.dart. Deliberately the same
+   explicit table rather than NFD normalization, which Dart has no built-in
+   equivalent for: both surfaces must name the same device identically. */
+const EXPORT_FOLDED_LATIN = {
+  'á':'a','à':'a','â':'a','ä':'a','ã':'a','å':'a','ā':'a',
+  'Á':'A','À':'A','Â':'A','Ä':'A','Ã':'A','Å':'A','Ā':'A',
+  'é':'e','è':'e','ê':'e','ë':'e','ē':'e',
+  'É':'E','È':'E','Ê':'E','Ë':'E','Ē':'E',
+  'í':'i','ì':'i','î':'i','ï':'i','ī':'i',
+  'Í':'I','Ì':'I','Î':'I','Ï':'I','Ī':'I',
+  'ó':'o','ò':'o','ô':'o','ö':'o','õ':'o','ø':'o','ō':'o',
+  'Ó':'O','Ò':'O','Ô':'O','Ö':'O','Õ':'O','Ø':'O','Ō':'O',
+  'ú':'u','ù':'u','û':'u','ü':'u','ū':'u',
+  'Ú':'U','Ù':'U','Û':'U','Ü':'U','Ū':'U',
+  'ñ':'n','Ñ':'N','ç':'c','Ç':'C','ý':'y','ÿ':'y','Ý':'Y',
+  'š':'s','Š':'S','ž':'z','Ž':'Z','ł':'l','Ł':'L',
+  'đ':'d','Đ':'D','ß':'ss','æ':'ae','Æ':'AE','œ':'oe','Œ':'OE',
 };
 
 /* The name an exported configuration downloads under. Mirror of the device's
@@ -1282,10 +1328,11 @@ function cameraIcon(name) {
     + ' aria-hidden="true">' + CAMERA_ICONS[name] + '</svg>';
 }
 
-function cameraAction(label, action, primary = false, icon = '') {
+function cameraAction(label, action, primary = false, icon = '', disabled = false) {
   const button = document.createElement('button');
   button.className = primary ? 'btn-primary' : 'btn-ghost';
   button.style.width = 'auto';
+  button.disabled = !!disabled;
   if (icon) {
     button.classList.add('camera-icon-action');
     button.innerHTML = cameraIcon(icon);
@@ -1531,16 +1578,102 @@ async function editCameraView(config, view) {
     'Display a label over each camera.',
   );
   const selected = [...(view?.cameraIds || [])];
-  const list = document.createElement('div');
-  list.className = 'card';
-  list.style.cssText = 'margin:0; padding:0 16px;';
-  const renderCameras = () => {
-    list.innerHTML = '';
-    for (const camera of config.cameras) {
-      const position = selected.indexOf(camera.id);
-      const row = document.createElement('label');
+  const byId = Object.fromEntries(config.cameras.map((c) => [c.id, c]));
+
+  // Two lists: the ones in the view, in grid order and draggable, and the
+  // rest waiting to be added. Selection order used to be the only way to
+  // order tiles, which meant unticking everything to move one.
+  const chosen = document.createElement('div');
+  chosen.className = 'card';
+  chosen.style.cssText = 'margin:0; padding:0 16px;';
+  const available = document.createElement('div');
+  available.className = 'card';
+  available.style.cssText = 'margin:0; padding:0 16px;';
+  const label = (text) => {
+    const el = document.createElement('div');
+    el.className = 'desc';
+    el.style.cssText = 'margin:14px 2px 6px; font-weight:600;';
+    el.textContent = text;
+    return el;
+  };
+  const chosenLabel = label('In this view');
+  const availableLabel = label('Available');
+
+  let dragId = null;
+  const render = () => {
+    chosen.innerHTML = '';
+    available.innerHTML = '';
+    selected.forEach((id, index) => {
+      const camera = byId[id];
+      const row = document.createElement('div');
       row.className = 'row';
-      row.style.cursor = 'pointer';
+      row.draggable = true;
+      row.dataset.id = id;
+      row.style.cssText = 'cursor:grab; gap:10px;';
+      const handle = document.createElement('span');
+      handle.className = 'camera-row-icon';
+      handle.innerHTML = cameraIcon('drag');
+      handle.style.flexShrink = '0';
+      const info = document.createElement('div');
+      info.className = 'info';
+      const cameraName = document.createElement('div');
+      cameraName.className = 'name';
+      cameraName.textContent = camera ? camera.name : id;
+      const description = document.createElement('div');
+      description.className = 'desc';
+      description.textContent = `Position ${index + 1}`;
+      info.append(cameraName, description);
+      const remove = cameraAction('Remove', () => {
+        selected.splice(selected.indexOf(id), 1);
+        render();
+      }, false, 'delete');
+      row.append(handle, info, remove);
+      // Drop onto a row: the dragged camera takes that row's place, and
+      // everything from there shifts down. Touch devices use the arrows.
+      row.addEventListener('dragstart', (event) => {
+        dragId = id;
+        row.style.opacity = '.45';
+        event.dataTransfer.effectAllowed = 'move';
+        // Firefox refuses to start a drag without payload.
+        event.dataTransfer.setData('text/plain', id);
+      });
+      row.addEventListener('dragend', () => {
+        dragId = null;
+        row.style.opacity = '';
+      });
+      row.addEventListener('dragover', (event) => {
+        if (!dragId || dragId === id) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      });
+      row.addEventListener('drop', (event) => {
+        if (!dragId || dragId === id) return;
+        event.preventDefault();
+        const from = selected.indexOf(dragId);
+        const to = selected.indexOf(id);
+        selected.splice(from, 1);
+        selected.splice(to, 0, dragId);
+        dragId = null;
+        render();
+      });
+      // A tablet has no drag: the same reordering, one step at a time.
+      const move = (delta) => {
+        const to = index + delta;
+        if (to < 0 || to >= selected.length) return;
+        selected.splice(to, 0, selected.splice(index, 1)[0]);
+        render();
+      };
+      const up = cameraAction('Move up', () => move(-1), false, 'up', index === 0);
+      const down = cameraAction('Move down', () => move(1), false, 'down',
+        index === selected.length - 1);
+      row.insertBefore(down, remove);
+      row.insertBefore(up, down);
+      chosen.appendChild(row);
+    });
+    for (const camera of config.cameras) {
+      if (selected.includes(camera.id)) continue;
+      const row = document.createElement('div');
+      row.className = 'row';
       const info = document.createElement('div');
       info.className = 'info';
       const cameraName = document.createElement('div');
@@ -1548,31 +1681,25 @@ async function editCameraView(config, view) {
       cameraName.textContent = camera.name;
       const description = document.createElement('div');
       description.className = 'desc';
-      description.textContent = position >= 0
-        ? `Position ${position + 1}`
-        : camera.missing ? 'Missing from Go2RTC' : 'Not selected';
+      description.textContent = camera.missing ? 'Missing from Go2RTC' : '';
       info.append(cameraName, description);
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = position >= 0;
-      checkbox.addEventListener('change', () => {
-        if (checkbox.checked) {
-          if (selected.length >= 4) {
-            checkbox.checked = false;
-            return;
-          }
-          selected.push(camera.id);
-        } else {
-          selected.splice(selected.indexOf(camera.id), 1);
-        }
-        renderCameras();
-      });
-      row.append(info, checkbox);
-      list.appendChild(row);
+      const add = cameraAction('Add', () => {
+        if (selected.length >= 4) return;
+        selected.push(camera.id);
+        render();
+      }, false, 'add', selected.length >= 4);
+      row.append(info, add);
+      available.appendChild(row);
     }
+    chosenLabel.style.display = selected.length ? '' : 'none';
+    chosen.style.display = selected.length ? '' : 'none';
+    const hasAvailable = config.cameras.some((c) => !selected.includes(c.id));
+    availableLabel.style.display = hasAvailable ? '' : 'none';
+    available.style.display = hasAvailable ? '' : 'none';
   };
-  renderCameras();
-  body.append(name.wrap, showNames.wrap, list);
+  render();
+  body.append(name.wrap, showNames.wrap, chosenLabel, chosen,
+    availableLabel, available);
   return cameraEditor({
     title: view ? 'Edit view' : 'Create camera view',
     body,
@@ -1702,40 +1829,42 @@ async function loadCameras() {
 
   heading('Views');
   const viewsCard = card();
-  if (!config.views.length) {
-    viewsCard.appendChild(cameraListRow(
-      'No camera views',
-      'A view contains up to four cameras.',
-      [],
-      { icon: 'grid' },
-    ));
-  }
   const cameraNames = Object.fromEntries(config.cameras.map((camera) => [camera.id, camera.name]));
   for (const view of config.views) {
+    const empty = !view.cameraIds.length;
+    const actions = [
+      cameraAction('Show', async () => {
+        const shown = await cmd('showCameraView', { viewId: view.id });
+        if (!shown.ok) {
+          await messageBox({ title: 'Could not show view', message: shown.error });
+        }
+      }, false, 'play', empty),
+      cameraAction('Stop', async () => {
+        await cmd('hideCameraView');
+      }, false, 'stop'),
+    ];
+    // The default view is permanent: emptying it retires it.
+    if (!view.isDefault) {
+      actions.push(cameraAction('Delete', async () => {
+        const choice = await messageBox({
+          title: `Delete ${view.name}?`,
+          message: 'This cannot be undone.',
+          buttons: ['Cancel', 'Delete'],
+        });
+        if (choice !== 'Delete') return;
+        await cmd('cameraDeleteView', { id: view.id });
+        refresh();
+      }, false, 'delete'));
+    }
     viewsCard.appendChild(cameraListRow(
       view.name,
-      view.cameraIds.map((id) => cameraNames[id] || id).join(', ')
-        + ` · Names ${view.showCameraNames === false ? 'hidden' : 'shown'}`,
-      [
-        cameraAction('Show', async () => {
-          const shown = await cmd('showCameraView', { viewId: view.id });
-          if (!shown.ok) {
-            await messageBox({ title: 'Could not show view', message: shown.error });
-          }
-        }, false, 'play'),
-        cameraAction('Delete', async () => {
-          const choice = await messageBox({
-            title: `Delete ${view.name}?`,
-            message: 'This cannot be undone.',
-            buttons: ['Cancel', 'Delete'],
-          });
-          if (choice !== 'Delete') return;
-          await cmd('cameraDeleteView', { id: view.id });
-          refresh();
-        }, false, 'delete'),
-      ],
+      empty
+        ? 'No cameras yet'
+        : view.cameraIds.map((id) => cameraNames[id] || id).join(', ')
+          + ` · Names ${view.showCameraNames === false ? 'hidden' : 'shown'}`,
+      actions,
       {
-        icon: 'grid',
+        icon: view.isDefault ? 'star' : 'grid',
         onClick: async () => {
           if (await editCameraView(config, view)) refresh();
         },
@@ -3350,6 +3479,52 @@ function settingRow(s) {
       await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
         'screensaver.immich_album': sel.value,
         'screensaver.immich_album_name': name,
+      }) });
+    });
+    row.appendChild(sel);
+    return row;
+  }
+
+  // The camera screensaver's view comes from the ones configured under
+  // WebRTC Cameras, mirroring the device's picker. Views without cameras
+  // are left out: there would be nothing to show.
+  if (s.key === 'screensaver.camera_view') {
+    const sel = document.createElement('select');
+    const rebuild = (views) => {
+      sel.innerHTML = '';
+      if (!views.length) {
+        const none = document.createElement('option');
+        none.value = '';
+        none.textContent = 'No camera views with cameras';
+        sel.appendChild(none);
+        sel.disabled = true;
+        return;
+      }
+      sel.disabled = false;
+      const unset = document.createElement('option');
+      unset.value = ''; unset.textContent = 'Not set';
+      unset.selected = !s.value;
+      sel.appendChild(unset);
+      for (const view of views) {
+        const opt = document.createElement('option');
+        opt.value = view.id;
+        opt.textContent = view.name;
+        opt.selected = view.id === s.value;
+        sel.appendChild(opt);
+      }
+    };
+    rebuild([]);
+    (async () => {
+      try {
+        const res = await (await api('/api/commands/cameraGetConfig', { method: 'POST', body: '{}' })).json();
+        rebuild((res.data?.views || []).filter((v) => (v.cameraIds || []).length));
+      } catch (_) {}
+    })();
+    sel.addEventListener('change', async () => {
+      const name = sel.value ? sel.options[sel.selectedIndex].textContent : '';
+      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+        'screensaver.camera_view': sel.value,
+        'screensaver.camera_view_name': name,
       }) });
     });
     row.appendChild(sel);

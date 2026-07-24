@@ -46,8 +46,11 @@ fullscreen focus.
 
 ## Create a view
 
-A view contains one to four cameras. Camera order is preserved. The view's
-**Show camera names** option controls whether labels appear over the video.
+A view contains one to four cameras, in the order you arrange them. In the
+view editor the chosen cameras sit in their own list: drag a row by its handle
+to reorder it (or use the arrows on a touch screen), and add or remove cameras
+from the list below. The view's **Show camera names** option controls whether
+labels appear over the video.
 
 - One camera fills the display.
 - Two cameras use columns in landscape and rows in portrait.
@@ -65,6 +68,26 @@ interaction temporarily closes the camera view so the Voice Satellite
 integration is visible, including follow-up turns that do not start with a new
 wake word. The same view and focused camera return when the interaction ends.
 Explicitly closing or changing the camera view cancels that return.
+
+## The default view
+
+Every install has a view named **Default**. It cannot be deleted, and it is
+allowed to stand empty; emptying it is how you retire it. Once it holds at
+least one camera, a **Default Camera View** entry appears in the kiosk menu,
+so the cameras are one swipe and one tap away without any automation.
+
+## Camera screensaver
+
+Set the screensaver mode to **WebRTC Camera** to have the screensaver show a
+camera view after the idle timeout, then pick which view under it. Touching
+the screen wakes the kiosk as it does for every other mode: the grid is
+scenery here, so it has no focus or close gestures of its own. The
+screensaver's small corner clock stays off in this mode, so nothing sits
+over the cameras.
+
+A camera view you opened yourself still holds the screensaver off, and the
+screensaver only ever shows the view configured for it, so the two never
+fight over the display.
 
 ## Home Assistant
 

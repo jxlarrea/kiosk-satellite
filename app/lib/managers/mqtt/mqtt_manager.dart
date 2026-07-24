@@ -1031,7 +1031,10 @@ class MqttManager extends Manager {
     }
     _cameraViews = [
       for (final view in data['views'] as List)
-        if (view is Map) view.cast<String, Object?>(),
+        // A view with no cameras (the empty default every install starts
+        // with) has nothing to select: keep it out of the HA options.
+        if (view is Map && (view['cameraIds'] as List?)?.isNotEmpty == true)
+          view.cast<String, Object?>(),
     ];
   }
 

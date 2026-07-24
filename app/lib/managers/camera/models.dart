@@ -133,10 +133,18 @@ class CameraViewConfig {
     this.showCameraNames = true,
   });
 
+  /// The view every install has. It is created on first load, survives
+  /// deletion, and is allowed to stand empty — it is what the drawer, the
+  /// screensaver and an automation reach for when nothing else is set up.
+  static const defaultId = 'default';
+  static const defaultName = 'Default';
+
   final String id;
   final String name;
   final List<String> cameraIds;
   final bool showCameraNames;
+
+  bool get isDefault => id == defaultId;
 
   CameraViewConfig copyWith({
     String? name,
@@ -154,6 +162,7 @@ class CameraViewConfig {
     'name': name,
     'cameraIds': cameraIds,
     'showCameraNames': showCameraNames,
+    if (isDefault) 'isDefault': true,
   };
 
   static CameraViewConfig fromJson(Map<Object?, Object?> json) =>
@@ -180,6 +189,48 @@ class CameraConfiguration {
   final List<CameraServer> servers;
   final List<CameraSource> cameras;
   final List<CameraViewConfig> views;
+
+  CameraViewConfig? get defaultView {
+    for (final view in views) {
+      if (view.isDefault) return view;
+    }
+    return null;
+  }
+
+  /// This configuration with the default view guaranteed present, first in
+  /// the list. Every load goes through here, so nothing downstream has to
+  /// wonder whether it exists.
+  CameraConfiguration withDefaultView() {
+    final existing = defaultView;
+    return CameraConfiguration(
+      version: version,
+      servers: servers,
+      cameras: cameras,
+      views: [
+        existing ??
+            CameraViewConfig(
+              id: CameraViewConfig.defaultId,
+              // View names are unique, and someone may already have made
+              // their own "Default" by hand. Step aside rather than create
+              // a pair that neither can be renamed out of.
+              name: _freeName(CameraViewConfig.defaultName),
+              cameraIds: const [],
+            ),
+        for (final view in views)
+          if (!view.isDefault) view,
+      ],
+    );
+  }
+
+  String _freeName(String preferred) {
+    final taken = {for (final view in views) view.name.toLowerCase()};
+    if (!taken.contains(preferred.toLowerCase())) return preferred;
+    for (var suffix = 2; suffix < 100; suffix++) {
+      final candidate = '$preferred $suffix';
+      if (!taken.contains(candidate.toLowerCase())) return candidate;
+    }
+    return preferred;
+  }
 
   CameraConfiguration copyWith({
     List<CameraServer>? servers,
