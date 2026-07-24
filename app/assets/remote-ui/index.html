@@ -2136,11 +2136,17 @@ async function loadAboutInfo() {
     h.textContent = title;
     root.appendChild(h);
     const c = document.createElement('div'); c.className = 'card';
-    for (const [k, v] of rows) {
+    for (const [k, v, d] of rows) {
       const row = document.createElement('div'); row.className = 'row';
       const cell = document.createElement('div'); cell.className = 'info';
       const n = document.createElement('div'); n.className = 'name'; n.textContent = k;
-      cell.appendChild(n); row.appendChild(cell);
+      cell.appendChild(n);
+      if (d) {
+        const dd = document.createElement('div');
+        dd.className = 'desc'; dd.textContent = d;
+        cell.appendChild(dd);
+      }
+      row.appendChild(cell);
       const val = document.createElement('span');
       val.style.cssText = 'text-align:right; word-break:break-all; max-width:60%';
       if (v instanceof Node) val.appendChild(v); else val.textContent = String(v);
@@ -2272,7 +2278,34 @@ async function loadAboutInfo() {
       back.appendChild(modal);
       document.body.appendChild(back);
     };
-    card('Updates', [['Update available', btn]]);
+    const updRows = [['Update available', btn]];
+    // No draw-over-apps grant means the relaunch receiver's activity start
+    // is a background launch Android will abort: the update installs but
+    // the kiosk stays closed. Same grant flow as the Auto-reload notice.
+    if (upd.canRelaunch === false) {
+      const grant = document.createElement('button');
+      grant.className = 'btn-ghost';
+      grant.textContent = 'Grant on device';
+      grant.style.cssText = 'width:auto; padding:8px 16px;';
+      grant.addEventListener('click', async () => {
+        grant.disabled = true;
+        try {
+          await api('/api/commands/requestOsPermissions', { method: 'POST',
+            body: JSON.stringify({ which: ['overlay'] }) });
+        } catch (_) {}
+        for (let i = 0; i < 30; i++) {
+          await new Promise((r) => setTimeout(r, 2500));
+          try {
+            const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+            if ((res.data || {}).displayOverOtherApps) { loadAboutInfo(); return; }
+          } catch (_) {}
+        }
+        grant.disabled = false;
+      });
+      updRows.push(['"Display over other apps" permission missing', grant,
+        'Without it the app cannot reopen itself after updating. The grant screen appears on the tablet.']);
+    }
+    card('Updates', updRows);
   } else {
     card('Updates', [['Updates',
       upd ? 'Up to date' : or(null)]]);

@@ -426,6 +426,8 @@ class KioskDrawer extends StatelessWidget {
   /// underneath so a cancelled install lands somewhere sensible.
   Future<void> _offerUpdate(BuildContext context, UpdateInfo info) async {
     final theme = Theme.of(context);
+    final canRelaunch = await c.update.canRelaunch();
+    if (!context.mounted) return;
     final go = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -446,6 +448,16 @@ class KioskDrawer extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
+                if (!canRelaunch) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Without the "Display over other apps" permission the '
+                    'app cannot reopen itself after updating.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

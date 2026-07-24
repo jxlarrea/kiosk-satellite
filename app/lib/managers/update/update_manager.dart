@@ -52,6 +52,11 @@ class UpdateManager extends Manager {
   /// confirmation screen on the device.
   static const _installer = MethodChannel('kiosk_satellite/installer');
 
+  /// Same channel the kiosk manager's restart preflight uses: whether the
+  /// draw-over-apps grant is in place, which is what lets the relaunch
+  /// receiver reopen the app after the installer kills the process.
+  static const _background = MethodChannel('kiosk_satellite/background');
+
   @override
   String get name => 'update';
 
@@ -110,6 +115,7 @@ class UpdateManager extends Manager {
             'availableNotes': available.value?.notes,
             'releaseUrl': available.value?.releaseUrl,
             'progress': progress.value,
+            'canRelaunch': await canRelaunch(),
           }),
         ),
       )
@@ -214,6 +220,25 @@ class UpdateManager extends Manager {
     }
   }
 
+  /// Whether the app can reopen itself after the installer kills it. On
+  /// Android 10+ the relaunch receiver's activity start is a background
+  /// launch, only honored with the draw-over-apps grant; without it the
+  /// update installs but the kiosk stays closed until someone taps the icon.
+  /// Android 9 and older restart fine regardless.
+  Future<bool> canRelaunch() async {
+    try {
+      final device = await commands.execute('getDeviceInfo', const {});
+      final sdk = (device.data is Map)
+          ? ((device.data as Map)['sdkInt'] as num?)?.toInt()
+          : null;
+      if (sdk == null || sdk < 29) return true;
+      return await _background.invokeMethod<bool>('canBringToFront') ?? false;
+    } catch (_) {
+      // Unknown (tests, non-Android): claim yes rather than nag.
+      return true;
+    }
+  }
+
   /// Numeric-triple comparison; suffixes (`-beta`) are ignored, so a
   /// re-tagged `v0.1.0-beta` never counts as newer than the running `0.1.0`.
   static bool _isNewer(String remote, String current) {
@@ -270,6 +295,13 @@ class UpdateManager extends Manager {
         'downloaded v${info.version} (${(got / 1048576).toStringAsFixed(1)} '
         'MB), handing to the installer',
       );
+      if (!await canRelaunch()) {
+        log.warn(
+          name,
+          'the "Display over other apps" permission is missing: the update '
+          'will install but the app cannot reopen itself afterwards',
+        );
+      }
       final mode =
           await _installer.invokeMethod<String>('installApk', {'path': file.path});
       log.info(
