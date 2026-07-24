@@ -620,6 +620,13 @@ class _KioskScreenState extends State<KioskScreen>
               },
               child: Stack(
                 fit: StackFit.expand,
+                // No clip: the default hard-edge clip is floored to whole
+                // logical pixels when the engine applies it to the WebView's
+                // platform view, which on fractional-ratio displays (Echo
+                // Show, 1.21875) shaved the last physical pixel off the right
+                // and bottom edges. Nothing here needs clipping - every child
+                // either fills the screen or slides fully off it.
+                clipBehavior: Clip.none,
                 children: [
                   // The kiosk plane, pushed right in step with the drawer.
                   // It keeps its full size — it slides, it is never squeezed
