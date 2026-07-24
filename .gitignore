@@ -23,3 +23,5 @@ app/android/app/upload-keystore.jks
 .vscode/
 .codex/
 .remember/
+
+AGENTS.md
