@@ -15,6 +15,7 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/logging.dart';
 import '../managers/settings/definitions.dart';
+import '../managers/settings/export_filename.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../core/permissions.dart';
@@ -516,7 +517,10 @@ class _CategoryContentState extends State<_CategoryContent> {
     // saveFile with bytes writes the file itself on Android; the system
     // dialog picks the destination.
     final path = await FilePicker.platform.saveFile(
-      fileName: 'kiosk-satellite-config.json',
+      fileName: exportFileName(
+        widget.container.settings.get(deviceName),
+        DateTime.now(),
+      ),
       type: FileType.custom,
       allowedExtensions: const ['json'],
       bytes: Uint8List.fromList(bytes),

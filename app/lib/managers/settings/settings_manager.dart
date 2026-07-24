@@ -51,6 +51,11 @@ class SettingsManager extends Manager {
             return CommandResult.ok({
               'kind': 'kiosk-satellite-config',
               'version': 1,
+              // Which device this came from and when. Both UIs put them in
+              // the filename, and they keep the file identifiable after
+              // someone renames it. Ignored on import.
+              'deviceName': get(deviceName),
+              'exportedAt': DateTime.now().toIso8601String(),
               'settings': export(withSecrets: true),
               if (local.ok && local.data is String)
                 'localStorage': local.data,
