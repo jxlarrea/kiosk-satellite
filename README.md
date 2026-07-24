@@ -83,6 +83,10 @@ smooth on the low-powered, older tablets that usually end up on walls.
   awake, default brightness, scheduled light/dark theme, custom
   JavaScript injection, and self-signed certificate support.
 
+<p align="center">
+ <img src="assets/screenshots/dashboard.png" alt="Assist" width="650"/>
+</p>
+
 ## Kiosk Satellite + Voice Satellite
 
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
