@@ -37,24 +37,35 @@ class GlanceRow extends StatelessWidget {
           if (entities.isEmpty) return const SizedBox.shrink();
           return LayoutBuilder(
             builder: (context, constraints) {
-              // Four items across a phone-width panel would be four columns
-              // of clipped words; below the threshold they stack instead,
-              // which is also what the portrait mockup shows.
+              // Below roughly 150 logical pixels apiece the names stop
+              // fitting and the row becomes columns of clipped words, so
+              // they stack instead. Note this is in LOGICAL pixels: a 540px
+              // portrait panel at this density is only 443 of them, which is
+              // why three entities stack there and four do not fit anywhere
+              // but a tablet.
               final wide = constraints.maxWidth >= entities.length * 150 * scale;
               final items = [
                 for (final entity in entities)
                   _GlanceItem(entity: entity, scale: scale),
               ];
               if (!wide) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (var i = 0; i < items.length; i++) ...[
-                      if (i > 0) SizedBox(height: 14 * scale),
-                      items[i],
-                    ],
-                  ],
+                // The block is centred on the display and the entities are
+                // aligned with each other inside it: left as a plain column
+                // it sat against the left edge of whatever box it was given,
+                // which under the clock meant hugging the corner.
+                return Center(
+                  child: IntrinsicWidth(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = 0; i < items.length; i++) ...[
+                          if (i > 0) SizedBox(height: 14 * scale),
+                          items[i],
+                        ],
+                      ],
+                    ),
+                  ),
                 );
               }
               // Equal-width slots, each item centred in its own. Sizing the
