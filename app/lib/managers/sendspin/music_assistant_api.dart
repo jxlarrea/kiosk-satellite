@@ -154,6 +154,104 @@ class MusicAssistantApi {
     final uri = _socketUri;
     return '${uri.host}:${uri.port}';
   }
+
+  /// The synced lyrics for a track, or null when there are none.
+  ///
+  /// Two calls on one connection: Sendspin only tells us what is playing by
+  /// name, so the track has to be found in Music Assistant first
+  /// (`music/track_by_name`), and the lyrics lookup wants that whole track
+  /// object. Music Assistant asks its own metadata providers, so whatever
+  /// the user configured there — LRCLIB and the rest — is what answers.
+  ///
+  /// Only the LRC half of the reply is used. The plain-text half cannot be
+  /// followed along with, and a wall of untimed text is not what a
+  /// now-playing screen is for.
+  Future<String?> fetchLyrics({
+    required String title,
+    required String artist,
+    String album = '',
+  }) async {
+    if (title.trim().isEmpty) return null;
+    final client = _client();
+    WebSocket? socket;
+    try {
+      socket = await WebSocket.connect(
+        _socketUri.toString(),
+        customClient: client,
+      ).timeout(const Duration(seconds: 15));
+      final session = _Session(socket);
+      await session.send('auth', {'token': token});
+      final track = await session.send('music/track_by_name', {
+        'track_name': title,
+        if (artist.isNotEmpty) 'artist_name': artist,
+        if (album.isNotEmpty) 'album_name': album,
+      });
+      if (track == null) return null;
+      final result = await session.send('metadata/get_track_lyrics', {
+        'track': track,
+      });
+      // The reply is (plain lyrics, LRC lyrics).
+      if (result is! List || result.length < 2) return null;
+      final lrc = result[1];
+      return lrc is String && lrc.trim().isNotEmpty ? lrc : null;
+    } catch (_) {
+      return null;
+    } finally {
+      await socket?.close();
+      client.close(force: true);
+    }
+  }
+}
+
+/// Request/response bookkeeping for one open connection.
+class _Session {
+  _Session(this._socket) {
+    _socket.listen(
+      (raw) {
+        final decoded = jsonDecode('$raw');
+        if (decoded is! Map) return;
+        final message = decoded.cast<String, Object?>();
+        final id = message['message_id'];
+        if (id == null) return;
+        final completer = _pending.remove('$id');
+        if (completer == null || completer.isCompleted) return;
+        if (message.containsKey('error_code')) {
+          completer.completeError(
+            MusicAssistantError('${message['details'] ?? message['error_code']}'),
+          );
+        } else {
+          completer.complete(message['result']);
+        }
+      },
+      onDone: () {
+        for (final completer in _pending.values) {
+          if (!completer.isCompleted) {
+            completer.completeError(
+              const MusicAssistantError('the server closed the connection'),
+            );
+          }
+        }
+        _pending.clear();
+      },
+      onError: (Object _) {},
+    );
+  }
+
+  final WebSocket _socket;
+  final _pending = <String, Completer<Object?>>{};
+  var _nextId = 0;
+
+  Future<Object?> send(String command, Map<String, Object?> args) {
+    final id = '${++_nextId}';
+    final completer = Completer<Object?>();
+    _pending[id] = completer;
+    _socket.add(jsonEncode({
+      'message_id': id,
+      'command': command,
+      if (args.isNotEmpty) 'args': args,
+    }));
+    return completer.future.timeout(const Duration(seconds: 20));
+  }
 }
 
 class MusicAssistantResult {

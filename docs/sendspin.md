@@ -30,6 +30,19 @@ Settings → **Sendspin Player** on the device, or the matching tab in the remot
 | "Now Playing" instead of the screensaver | off | The full-screen view described below. |
 | Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
 
+### Music Assistant
+
+The Sendspin protocol carries the audio and the track's name, artist and
+album, and nothing beyond that. Anything richer comes from Music Assistant's
+own API, which is a separate address with its own token.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Server address | | The Music Assistant server's address as its web interface shows it, usually https on port 8095. A self-signed certificate is accepted. |
+| Auth token | | A long-lived token from Music Assistant, under Settings then Users. Read access is enough. |
+| Validate connection | | Opens the API and authenticates, so a wrong port and a wrong token report differently. |
+| Show lyrics | off | Synced lyrics on the "Now Playing" screen, described below. |
+
 Music Assistant's Sendspin provider is built in and always enabled, and
 players register themselves on connection: there is nothing to add on the
 server side.
@@ -73,6 +86,25 @@ It behaves like a screensaver, deliberately without controls: touch
 dismisses it, motion only if allowed by its setting. With nothing
 playing, the regular screensaver appears as usual, and a pause swaps the
 view back to the regular screensaver live.
+
+### Lyrics
+
+With **Show lyrics** on, the view splits: the cover and track to one side,
+the song's lyrics to the other, the current line lit and the rest receding as
+it scrolls itself in time with the music. The line follows Sendspin's own
+synced position, the same one that keeps the audio aligned, so it tracks what
+is coming out of the speaker.
+
+Lyrics come from Music Assistant, so **Music Assistant needs a lyrics
+provider of its own** — add one under its Settings, then Providers; LRCLIB is
+free and needs no account. Kiosk Satellite asks Music Assistant for the
+playing track and its lyrics; nothing is fetched from anywhere else.
+
+Only timed lyrics are shown. A track whose provider returns plain, untimed
+words shows none, since there is no honest way to follow along with them, and
+tracks with no lyrics at all simply keep the ordinary layout. Lyrics are
+looked up once per track, and the row needs a landscape screen with the width
+for two columns.
 
 ## Voice Satellite interplay
 

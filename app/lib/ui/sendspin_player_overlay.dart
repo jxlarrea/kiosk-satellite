@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'lyrics_view.dart';
 
 import '../app_container.dart';
 import '../managers/settings/definitions.dart' as defs;
@@ -132,12 +133,14 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
   void initState() {
     super.initState();
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
+    c.sendspin.lyrics.addListener(_onNowPlaying);
     _onNowPlaying();
   }
 
   @override
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
+    c.sendspin.lyrics.removeListener(_onNowPlaying);
     super.dispose();
   }
 
@@ -174,6 +177,12 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     final titleSize = (short * 0.085).clamp(20.0, 40.0);
     final artistSize = (short * 0.047).clamp(13.0, 22.0);
     final gap = (screen.height * 0.05).clamp(12.0, 40.0);
+    // Lyrics need a second column, so only on a landscape panel with room
+    // for one. A narrow screen keeps the plain now-playing look.
+    final showLyrics = c.settings.get(defs.sendspinLyrics) &&
+        c.sendspin.lyrics.value.isNotEmpty &&
+        screen.width >= 560 &&
+        screen.width > screen.height;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -202,9 +211,74 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
             filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
             child: const ColoredBox(color: Color(0x99000000)),
           ),
-        Center(
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 700),
+        if (showLyrics)
+          // Art and words to one side, lyrics to the other: a lyric needs
+          // the height, and stacking it under a 360px cover leaves room for
+          // about two lines.
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: (screen.width * 0.06).clamp(16.0, 64.0),
+              vertical: 12,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  flex: 5,
+                  child: _nowPlayingPanel(
+                    art: art,
+                    title: title,
+                    artist: artist,
+                    artSize: artSize * 0.62,
+                    titleSize: titleSize * 0.7,
+                    artistSize: artistSize * 0.85,
+                    gap: gap * 0.5,
+                    horizontalPadding: 8,
+                  ),
+                ),
+                SizedBox(width: (screen.width * 0.04).clamp(12.0, 48.0)),
+                Expanded(
+                  flex: 6,
+                  child: LyricsView(
+                    container: c,
+                    fontSize: (short * 0.055).clamp(15.0, 26.0),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Center(
+            child: _nowPlayingPanel(
+              art: art,
+              title: title,
+              artist: artist,
+              artSize: artSize,
+              titleSize: titleSize,
+              artistSize: artistSize,
+              gap: gap,
+              horizontalPadding: 48,
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// The cover, title and artist as one block. Shared by both layouts so a
+  /// change to the look lands in each: on its own in the middle, or beside
+  /// the lyrics at reduced size.
+  Widget _nowPlayingPanel({
+    required Uint8List? art,
+    required String title,
+    required String artist,
+    required double artSize,
+    required double titleSize,
+    required double artistSize,
+    required double gap,
+    required double horizontalPadding,
+  }) {
+    return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 700),
             child: Column(
               // Keyed on the track so the whole panel (art + text) fades as
               // one between songs.
@@ -230,7 +304,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   ),
                 SizedBox(height: gap),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 48),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: horizontalPadding),
                   child: Text(
                     title,
                     maxLines: 2,
@@ -247,7 +322,8 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                 if (artist.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 48),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: horizontalPadding),
                     child: Text(
                       artist,
                       maxLines: 2,
@@ -263,10 +339,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                 ],
               ],
             ),
-          ),
-        ),
-      ],
-    );
+        );
   }
 }
 

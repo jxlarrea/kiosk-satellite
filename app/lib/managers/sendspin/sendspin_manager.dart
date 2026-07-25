@@ -9,6 +9,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'lyrics.dart';
 import 'music_assistant_api.dart';
 
 /// The device as a synchronized Sendspin audio player.
@@ -67,6 +68,55 @@ class SendspinManager extends Manager {
   /// indistinguishable from a pause; requiring a prior playing state keeps
   /// the boot sequence from conjuring a paused card out of stale metadata.
   bool _sawPlayback = false;
+
+  /// The current track's synced lyrics, empty when there are none, the
+  /// feature is off, or the lookup has not finished. The full-screen player
+  /// follows it; nothing else does.
+  final lyrics = ValueNotifier<List<LyricLine>>(const []);
+
+  /// The track the lyrics in [lyrics] belong to, so a reply that arrives
+  /// after the song has already changed can be discarded.
+  String _lyricsKey = '';
+
+  /// Ask Music Assistant for the playing track's lyrics.
+  ///
+  /// One lookup per track, not per metadata update: Sendspin sends progress
+  /// constantly and only the title/artist pair matters here. A track with no
+  /// lyrics is remembered as such by its key, so it is not asked for again
+  /// every few seconds for the length of the song.
+  Future<void> _refreshLyrics() async {
+    if (!_settings.get(defs.sendspinLyrics)) {
+      if (lyrics.value.isNotEmpty) lyrics.value = const [];
+      _lyricsKey = '';
+      return;
+    }
+    final title = '${_status['title'] ?? ''}';
+    final artist = '${_status['artist'] ?? ''}';
+    final key = '$artist|$title';
+    if (key == _lyricsKey) return;
+    _lyricsKey = key;
+    lyrics.value = const [];
+    if (title.isEmpty) return;
+    final api = MusicAssistantApi(
+      baseUrl: _settings.get(defs.sendspinMaUrl),
+      token: _settings.get(defs.sendspinMaToken),
+    );
+    final lrc = await api.fetchLyrics(
+      title: title,
+      artist: artist,
+      album: '${_status['album'] ?? ''}',
+    );
+    // The song may have moved on while Music Assistant was looking.
+    if (_lyricsKey != key) return;
+    final parsed = parseLrc(lrc);
+    log.info(
+      name,
+      parsed.isEmpty
+          ? 'no synced lyrics for $artist - $title'
+          : 'lyrics for $artist - $title (${parsed.length} lines)',
+    );
+    lyrics.value = parsed;
+  }
 
   void _setNowPlaying(Map<String, Object?>? value) {
     final wasShowing = nowPlaying.value?['playing'] == true;
@@ -183,6 +233,7 @@ class SendspinManager extends Manager {
           }
       }
       _publishNowPlaying();
+      unawaited(_refreshLyrics());
       return null;
     });
 
