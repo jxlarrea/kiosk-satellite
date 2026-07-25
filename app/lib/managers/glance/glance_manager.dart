@@ -166,8 +166,13 @@ class GlanceManager extends Manager {
     entities.value = next;
   }
 
+  /// The row only renders on these, so nothing else has any reason to hold
+  /// a subscription open.
+  static const _rowModes = {'black', 'clock'};
+
   Future<void> _open() async {
     _close();
+    if (!_rowModes.contains(_settings.get(defs.screensaverMode))) return;
     final ids = [for (final entity in entities.value) entity.entityId];
     if (ids.isEmpty) return;
     final live = await _ha.subscribeEntities(ids, _applyState);
