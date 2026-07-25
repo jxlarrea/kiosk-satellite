@@ -1865,6 +1865,55 @@ const sendspinClientId = SettingDef<String>(
   hidden: true,
 );
 
+// ── Music Assistant (Sendspin section) ─────────────────────────────────
+// The Sendspin player speaks Music Assistant's player protocol, which
+// carries the track but nothing about it beyond title, artist and album.
+// Anything richer — lyrics today — comes from Music Assistant's own API,
+// which is a separate connection with its own address and token.
+
+const sendspinMaUrl = SettingDef<String>(
+  key: 'sendspin.ma_url',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Server address',
+  description:
+      "The Music Assistant server's address, as its web interface shows "
+      'it. Usually https and port 8095.',
+  category: 'Sendspin',
+  section: 'Music Assistant',
+  placeholder: 'https://192.168.1.10:8095',
+);
+
+const sendspinMaToken = SettingDef<String>(
+  key: 'sendspin.ma_token',
+  type: SettingType.password,
+  defaultValue: '',
+  title: 'Auth token',
+  description:
+      'A long-lived token from Music Assistant (Settings, then Users). '
+      'Read access is enough.',
+  category: 'Sendspin',
+  section: 'Music Assistant',
+  // As with the Home Assistant token: masks the row on a wall-mounted
+  // screen, and keeps the token out of a configuration export unless the
+  // export was explicitly asked to carry secrets.
+  secret: true,
+);
+
+const sendspinLyrics = SettingDef<bool>(
+  key: 'sendspin.lyrics',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show lyrics',
+  description:
+      'Show the current track\'s lyrics on the Now Playing screen, in time '
+      'with the music. Music Assistant supplies them, so it needs a lyrics '
+      'provider of its own (LRCLIB, for instance) and only tracks it finds '
+      'lyrics for will show any.',
+  category: 'Sendspin',
+  section: 'Music Assistant',
+);
+
 // ── DLNA renderer ──────────────────────────────────────────────────────
 
 const dlnaEnabled = SettingDef<bool>(
@@ -2070,6 +2119,9 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,
+  sendspinMaUrl,
+  sendspinMaToken,
+  sendspinLyrics,
   dlnaEnabled,
   remoteEnabled,
   remotePort,

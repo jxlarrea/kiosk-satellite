@@ -9,6 +9,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'music_assistant_api.dart';
 
 /// The device as a synchronized Sendspin audio player.
 ///
@@ -291,6 +292,35 @@ class SendspinManager extends Manager {
           } catch (e) {
             return CommandResult.fail('discovery failed: $e');
           }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'maValidate',
+        description:
+            "Check the Music Assistant address and token by opening its API "
+            'and authenticating. Reports the server version on success.',
+        handler: (_) async {
+          final api = MusicAssistantApi(
+            baseUrl: _settings.get(defs.sendspinMaUrl),
+            token: _settings.get(defs.sendspinMaToken),
+          );
+          // 'auth' alone: it is the whole question being asked, and it needs
+          // no scope, so a read-only token validates as happily as an admin
+          // one.
+          final result = await api.call('auth');
+          if (!result.ok) {
+            log.warn(name, 'Music Assistant validation failed: ${result.error}');
+            return CommandResult.fail(result.error!);
+          }
+          final info = result.serverInfo;
+          return CommandResult.ok({
+            'version': info['server_version'],
+            'schemaVersion': info['schema_version'],
+            'name': info['name'],
+          });
         },
       ),
     );

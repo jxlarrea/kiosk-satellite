@@ -915,6 +915,8 @@ class _CategoryContentState extends State<_CategoryContent> {
               // and Immich cards put theirs.
               if (widget.category == 'MQTT')
                 mqttPassword.key: _MqttValidateRow(container: container),
+              if (widget.category == 'Sendspin')
+                sendspinMaToken.key: _MaValidateRow(container: container),
             },
           ),
         if (widget.category == 'Screen')
@@ -1589,6 +1591,73 @@ class _MqttValidateRowState extends State<_MqttValidateRow> {
                 (_ok == true
                     ? 'Connected'
                     : 'Check the broker accepts these settings.'),
+    ),
+    trailing: _validating
+        ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2.4),
+          )
+        : Icon(
+            _ok == null
+                ? Icons.cloud_queue_outlined
+                : _ok!
+                ? Icons.cloud_done_outlined
+                : Icons.cloud_off_outlined,
+          ),
+    onTap: _validating ? null : _validate,
+  );
+}
+
+/// The Music Assistant check, mirroring the Home Assistant, Immich and MQTT
+/// rows: it opens the API with the address and token above and authenticates,
+/// which is the only way to tell a wrong port from a wrong token.
+class _MaValidateRow extends StatefulWidget {
+  const _MaValidateRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_MaValidateRow> createState() => _MaValidateRowState();
+}
+
+class _MaValidateRowState extends State<_MaValidateRow> {
+  bool _validating = false;
+  bool? _ok;
+  String? _message;
+
+  Future<void> _validate() async {
+    setState(() {
+      _validating = true;
+      _message = null;
+    });
+    final result = await widget.container.commands.execute(
+      'maValidate',
+      const {},
+    );
+    if (!mounted) return;
+    setState(() {
+      _validating = false;
+      _ok = result.ok;
+      if (result.ok) {
+        final data = result.data;
+        final version = data is Map ? data['version'] : null;
+        _message = version == null
+            ? 'Connected'
+            : 'Connected to Music Assistant $version';
+      } else {
+        _message = result.error;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    title: const Text('Validate connection'),
+    subtitle: Text(
+      _validating
+          ? 'Checking…'
+          : _message ?? 'Check the address and token before turning on lyrics.',
     ),
     trailing: _validating
         ? const SizedBox(
