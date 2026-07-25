@@ -1914,6 +1914,25 @@ const sendspinLyrics = SettingDef<bool>(
   section: 'Music Assistant',
 );
 
+const sendspinLyricsOffset = SettingDef<num>(
+  key: 'sendspin.lyrics_offset',
+  type: SettingType.number,
+  defaultValue: 0.3,
+  title: 'Lyrics timing',
+  description:
+      'Shift the lyrics against the music. Positive shows each line '
+      'earlier, which most people prefer since a line has to be read '
+      'before it is sung; negative shows it later. Sync quality varies by '
+      'track, so this is worth a nudge if one reads consistently off.',
+  category: 'Sendspin',
+  section: 'Music Assistant',
+  dependsOn: 'sendspin.lyrics',
+  min: -3,
+  max: 3,
+  step: 0.1,
+  unit: 's',
+);
+
 // ── DLNA renderer ──────────────────────────────────────────────────────
 
 const dlnaEnabled = SettingDef<bool>(
@@ -2122,6 +2141,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinMaUrl,
   sendspinMaToken,
   sendspinLyrics,
+  sendspinLyricsOffset,
   dlnaEnabled,
   remoteEnabled,
   remotePort,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../app_container.dart';
 import '../managers/sendspin/lyrics.dart';
+import '../managers/settings/definitions.dart' as defs;
 
 /// The playing track's lyrics, the current line lit and the rest receding,
 /// scrolling itself so the current line stays put (issue #43).
@@ -40,10 +41,11 @@ class _LyricsViewState extends State<LyricsView> {
   void initState() {
     super.initState();
     widget.container.sendspin.lyrics.addListener(_onLyricsChanged);
-    // Four times a second: a line change lands within a quarter of a second
-    // of the voice, which reads as immediate, and it is four rebuilds of a
-    // handful of text lines.
-    _tick = Timer.periodic(const Duration(milliseconds: 250), (_) => _sync());
+    // Ten times a second. At four the line could land a quarter second late
+    // on its own, which is enough to read as lagging the voice; the work is
+    // an integer comparison and a rebuild only when the line actually
+    // changes.
+    _tick = Timer.periodic(const Duration(milliseconds: 100), (_) => _sync());
     _sync();
   }
 
@@ -71,6 +73,12 @@ class _LyricsViewState extends State<LyricsView> {
     if (now['playing'] == true && receivedAt != null) {
       ms += DateTime.now().millisecondsSinceEpoch - receivedAt;
     }
+    // The user's nudge. Positive runs the lyrics ahead of the music, which
+    // is what a reader wants: the line has to be read before it is sung,
+    // and LRC timestamps mark where a line STARTS being sung.
+    final offset =
+        widget.container.settings.get(defs.sendspinLyricsOffset).toDouble();
+    ms += (offset * 1000).round();
     return Duration(milliseconds: ms < 0 ? 0 : ms);
   }
 

@@ -37,6 +37,17 @@ void main() {
     expect(parseLrc('[00:01:50] x').single.at, const Duration(milliseconds: 1500));
   });
 
+  test("the format's own offset tag shifts every line", () {
+    // Positive offset means the lines belong later in the track.
+    final later = parseLrc('[offset:+500]\n[00:10.00] one\n[00:20.00] two');
+    expect(later[0].at, const Duration(milliseconds: 10500));
+    expect(later[1].at, const Duration(milliseconds: 20500));
+    final earlier = parseLrc('[offset:-2000]\n[00:10.00] one');
+    expect(earlier.single.at, const Duration(seconds: 8));
+    // A shift past the start of the track clamps rather than going negative.
+    expect(parseLrc('[offset:-5000]\n[00:01.00] x').single.at, Duration.zero);
+  });
+
   test('unsynced lyrics yield nothing, since they cannot be followed', () {
     expect(parseLrc('Just some words\nAnd more words'), isEmpty);
     expect(parseLrc(''), isEmpty);

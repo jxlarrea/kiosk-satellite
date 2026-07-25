@@ -22,10 +22,21 @@ List<LyricLine> parseLrc(String? lrc) {
   if (lrc == null || lrc.isEmpty) return const [];
   final timestamp = RegExp(r'\[(\d+):([0-5]\d)(?:[.:](\d{1,3}))?\]');
   final metadataOnly = RegExp(r'^\[[a-zA-Z]+:[^\]]*\]$');
+  // The format's own correction tag, in milliseconds, which some providers
+  // use to fix a file they know runs early or late. Positive means the
+  // lyrics should appear LATER, per the LRC convention.
+  final offsetTag = RegExp(r'^\[offset:\s*([+-]?\d+)\s*\]$', caseSensitive: false);
+  var offsetMs = 0;
   final lines = <LyricLine>[];
   for (final raw in lrc.split(RegExp(r'\r?\n'))) {
     final line = raw.trim();
-    if (line.isEmpty || metadataOnly.hasMatch(line)) continue;
+    if (line.isEmpty) continue;
+    final offsetMatch = offsetTag.firstMatch(line);
+    if (offsetMatch != null) {
+      offsetMs = int.tryParse(offsetMatch.group(1)!) ?? 0;
+      continue;
+    }
+    if (metadataOnly.hasMatch(line)) continue;
     final matches = timestamp.allMatches(line).toList();
     if (matches.isEmpty) continue;
     final text = line.replaceAll(timestamp, '').trim();
@@ -40,10 +51,13 @@ List<LyricLine> parseLrc(String? lrc) {
           : fraction.length == 3
               ? int.parse(fraction)
               : int.parse(fraction) * 10;
-      lines.add(LyricLine(
-        Duration(minutes: minutes, seconds: seconds, milliseconds: milliseconds),
-        text,
-      ));
+      final at = Duration(
+            minutes: minutes,
+            seconds: seconds,
+            milliseconds: milliseconds,
+          ) +
+          Duration(milliseconds: offsetMs);
+      lines.add(LyricLine(at < Duration.zero ? Duration.zero : at, text));
     }
   }
   lines.sort((a, b) => a.at.compareTo(b.at));

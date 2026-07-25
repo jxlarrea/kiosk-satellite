@@ -42,6 +42,7 @@ own API, which is a separate address with its own token.
 | Auth token | | A long-lived token from Music Assistant, under Settings then Users. Read access is enough. |
 | Validate connection | | Opens the API and authenticates, so a wrong port and a wrong token report differently. |
 | Show lyrics | off | Synced lyrics on the "Now Playing" screen, described below. |
+| Lyrics timing | +0.3s | Shifts the lyrics against the music. Positive shows each line earlier. |
 
 Music Assistant's Sendspin provider is built in and always enabled, and
 players register themselves on connection: there is nothing to add on the
@@ -99,6 +100,14 @@ Lyrics come from Music Assistant, so **Music Assistant needs a lyrics
 provider of its own** — add one under its Settings, then Providers; LRCLIB is
 free and needs no account. Kiosk Satellite asks Music Assistant for the
 playing track and its lyrics; nothing is fetched from anywhere else.
+
+**Lyrics timing** nudges the lines against the music, and defaults to
+showing them 0.3 seconds early: an LRC timestamp marks where a line starts
+being sung, so displaying it at exactly that moment leaves no time to read it
+first. Sync quality also varies from track to track, so raise it if the lines
+consistently arrive too late for comfort, or go negative if they run ahead.
+Files that carry the format's own `[offset:]` correction are honoured on top
+of this.
 
 Only timed lyrics are shown. A track whose provider returns plain, untimed
 words shows none, since there is no honest way to follow along with them, and
