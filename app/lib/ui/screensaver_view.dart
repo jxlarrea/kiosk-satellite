@@ -15,6 +15,7 @@ import '../app_container.dart';
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
 import '../managers/settings/definitions.dart' as defs;
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
+import 'glance_row.dart';
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
 
 /// The screensaver overlay: whichever of the four views the manager says is
@@ -83,10 +84,13 @@ class ScreensaverOverlay extends StatelessWidget {
                   // swallows Flutter gestures), so it dismisses itself
                   // rather than sitting under _Dismissable.
                   'camera' => CameraScreensaver(container: container),
-                  // 'black' and anything unexpected: the safe, opaque cover.
+                  // 'black' and anything unexpected: the safe, opaque cover,
+                  // carrying the At a Glance row when there is one.
                   _ => _Dismissable(
                     container: container,
-                    child: const ColoredBox(color: Colors.black),
+                    child: container.settings.get(defs.screensaverGlanceEnabled)
+                        ? GlanceScreensaver(container: container)
+                        : const ColoredBox(color: Colors.black),
                   ),
                 },
                 // The small corner clock rides over every mode except Clock,
@@ -253,9 +257,17 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     final scale = (s.get(defs.screensaverClockScale) / 100).clamp(0.5, 3.0);
     final color = _color();
     final size = MediaQuery.of(context).size;
+    // The At a Glance row sits under the clock and needs room for itself,
+    // so the clock gives some back rather than pushing the row off a short
+    // panel. Only when the row actually has something to show.
+    final glance = widget.container.glance.entities.value.isNotEmpty;
+    final glanceScale = min(1.0, size.height / 480).clamp(0.75, 1.0);
+    final clockShrink = glance ? 0.72 : 1.0;
     // min(20vw, 30vh), the same basis Voice Satellite uses, then scaled.
-    final clockSize = min(size.width * 0.20, size.height * 0.30) * scale;
-    final dateSize = min(size.width * 0.05, size.height * 0.07) * scale;
+    final clockSize =
+        min(size.width * 0.20, size.height * 0.30) * scale * clockShrink;
+    final dateSize =
+        min(size.width * 0.05, size.height * 0.07) * scale * clockShrink;
 
     return ColoredBox(
       color: Colors.black,
@@ -292,7 +304,39 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                   ),
                 ),
               ],
+              if (glance) ...[
+                SizedBox(height: clockSize * 0.42),
+                GlanceRow(
+                  container: widget.container,
+                  scale: glanceScale,
+                ),
+              ],
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The At a Glance row on its own, centred: the Black screensaver has no
+/// clock to hang it under, so the row is the whole display.
+class GlanceScreensaver extends StatelessWidget {
+  const GlanceScreensaver({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) {
+    final height = MediaQuery.of(context).size.height;
+    return ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GlanceRow(
+            container: container,
+            scale: min(1.0, height / 480).clamp(0.75, 1.25),
           ),
         ),
       ),

@@ -173,6 +173,19 @@ class HomeAssistantManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'haSearchEntities',
+        description:
+            'Search entities by id or friendly name, for the At a Glance '
+            'picker. Returns at most 50, closest matches first.',
+        params: const {'query': 'text to match against id and name'},
+        handler: (p) async {
+          final matches = await searchEntities('${p['query'] ?? ''}');
+          return matches == null
+              ? const CommandResult.fail('could not list entities')
+              : CommandResult.ok(matches);
+        },
+      ))
+      ..register(Command(
         name: 'haListDashboards',
         description: 'List Home Assistant dashboards',
         handler: (_) async {
@@ -642,6 +655,178 @@ class HomeAssistantManager extends Manager {
     }
   }
 
+  /// A live subscription to a handful of entities, for the At a Glance row.
+  ///
+  /// `subscribe_entities` takes an entity list, so Home Assistant sends only
+  /// these — the filtering is server-side and the socket carries nothing
+  /// else. That is the whole reason this exists rather than reading the
+  /// dashboard's own stream: the page's update filter (issue #8) is there to
+  /// stop a weak tablet processing entities it does not show, and feeding
+  /// these back into it would undo exactly that.
+  ///
+  /// Returns null when Home Assistant is not configured or the socket cannot
+  /// be opened. The caller owns the returned subscription and must close it.
+  Future<GlanceSubscription?> subscribeEntities(
+    List<String> entityIds,
+    void Function(String entityId, Map<String, Object?> state) onState,
+  ) async {
+    if (!configured || entityIds.isEmpty) return null;
+    final wsBase = baseUrl
+        .replaceFirst('https://', 'wss://')
+        .replaceFirst('http://', 'ws://');
+    try {
+      final channel = WebSocketChannel.connect(
+        Uri.parse('$wsBase/api/websocket'),
+      );
+      final subscription = GlanceSubscription._(channel);
+      channel.stream.listen(
+        (raw) {
+          try {
+            final msg = jsonDecode(raw as String) as Map<String, dynamic>;
+            switch (msg['type']) {
+              case 'auth_required':
+                channel.sink.add(jsonEncode({
+                  'type': 'auth',
+                  'access_token': _settings.get(defs.haToken),
+                }));
+              case 'auth_ok':
+                channel.sink.add(jsonEncode({
+                  'id': 1,
+                  'type': 'subscribe_entities',
+                  'entity_ids': entityIds,
+                }));
+              case 'auth_invalid':
+                log.warn(name, 'glance subscription rejected: bad token');
+                subscription.close();
+              case 'event':
+                _handleEntityEvent(msg['event'], onState);
+            }
+          } catch (e) {
+            log.warn(name, 'glance frame ignored: $e');
+          }
+        },
+        onError: (Object e) => log.warn(name, 'glance socket error: $e'),
+        onDone: subscription._markClosed,
+        cancelOnError: true,
+      );
+      return subscription;
+    } catch (e) {
+      log.warn(name, 'glance subscription failed: $e');
+      return null;
+    }
+  }
+
+  /// The compressed `subscribe_entities` payload: `a` is the full state of
+  /// everything subscribed (sent once, on subscribe), `c` is a per-entity
+  /// diff with `+` for what changed. Attributes only arrive when they change,
+  /// so the caller merges rather than replaces.
+  void _handleEntityEvent(
+    Object? event,
+    void Function(String entityId, Map<String, Object?> state) onState,
+  ) {
+    if (event is! Map) return;
+    final added = event['a'];
+    if (added is Map) {
+      for (final entry in added.entries) {
+        final value = entry.value;
+        if (value is! Map) continue;
+        onState('${entry.key}', {
+          'state': value['s'],
+          'attributes': value['a'] ?? const {},
+        });
+      }
+    }
+    final changed = event['c'];
+    if (changed is Map) {
+      for (final entry in changed.entries) {
+        final diff = entry.value;
+        if (diff is! Map) continue;
+        final plus = diff['+'];
+        if (plus is! Map) continue;
+        onState('${entry.key}', {
+          if (plus.containsKey('s')) 'state': plus['s'],
+          if (plus['a'] is Map) 'attributes': plus['a'],
+        });
+      }
+    }
+  }
+
+  /// Entities matching [query], for the At a Glance picker.
+  ///
+  /// `/api/states` is the whole instance in one response, which is why the
+  /// result is capped and why this is called per search rather than kept:
+  /// a big instance is a few hundred kilobytes and there is no reason to
+  /// hold it on a device this feature exists to keep light.
+  ///
+  /// An exact id or a name that starts with the query sorts first, so
+  /// typing "gara" puts Garage Door above Front Garage Light Sensor.
+  Future<List<Map<String, Object?>>?> searchEntities(String query) async {
+    final states = await fetchStates();
+    if (states == null) return null;
+    final needle = query.trim().toLowerCase();
+    final matches = <(int, String, Map<String, Object?>)>[];
+    for (final state in states) {
+      final id = '${state['entity_id'] ?? ''}';
+      if (id.isEmpty) continue;
+      final attributes = (state['attributes'] as Map?) ?? const {};
+      final name = '${attributes['friendly_name'] ?? _prettifyEntityId(id)}';
+      if (needle.isNotEmpty &&
+          !id.toLowerCase().contains(needle) &&
+          !name.toLowerCase().contains(needle)) {
+        continue;
+      }
+      final rank = needle.isEmpty
+          ? 2
+          : name.toLowerCase().startsWith(needle) ||
+                  id.split('.').last.toLowerCase().startsWith(needle)
+              ? 0
+              : 1;
+      matches.add((rank, name.toLowerCase(), {
+        'entity_id': id,
+        'name': name,
+        'state': state['state'],
+      }));
+    }
+    matches.sort((a, b) {
+      final byRank = a.$1.compareTo(b.$1);
+      return byRank != 0 ? byRank : a.$2.compareTo(b.$2);
+    });
+    return [for (final match in matches.take(50)) match.$3];
+  }
+
+  /// Every entity's current state, or null when Home Assistant cannot be
+  /// reached. Also the At a Glance fallback for kiosks whose page is not a
+  /// Home Assistant dashboard and so cannot report states itself.
+  Future<List<Map<String, Object?>>?> fetchStates() async {
+    if (!configured) return null;
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/states'),
+        headers: {'Authorization': 'Bearer ${_settings.get(defs.haToken)}'},
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        log.warn(name, 'states fetch failed: HTTP ${response.statusCode}');
+        return null;
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return null;
+      return [
+        for (final item in decoded)
+          if (item is Map) item.cast<String, Object?>(),
+      ];
+    } catch (e) {
+      log.warn(name, 'states fetch failed: $e');
+      return null;
+    }
+  }
+
+  static String _prettifyEntityId(String entityId) => entityId
+      .split('.')
+      .last
+      .split('_')
+      .map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+
   /// The voice_satellite integration's assist_satellite entities, via the
   /// entity registry (the only place platform ownership is recorded).
   Future<List<Map<String, Object?>>?> listVoiceSatellites() async {
@@ -871,5 +1056,25 @@ class HomeAssistantManager extends Manager {
     _rotationTimer?.cancel();
     _touchPauseTimer?.cancel();
     _voiceSafetyTimer?.cancel();
+  }
+}
+
+/// A live entity subscription, closed by whoever opened it.
+class GlanceSubscription {
+  GlanceSubscription._(this._channel);
+
+  final WebSocketChannel _channel;
+  bool _closed = false;
+
+  bool get isClosed => _closed;
+
+  void _markClosed() => _closed = true;
+
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    try {
+      await _channel.sink.close();
+    } catch (_) {}
   }
 }

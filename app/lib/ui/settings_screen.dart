@@ -24,6 +24,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
 import 'color_picker.dart';
+import 'glance_entity_picker.dart';
 import 'camera_settings.dart';
 import 'import_options_dialog.dart';
 import 'media_picker.dart';
@@ -3358,6 +3359,21 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
+        // The At a Glance entities: a list, edited in its own screen rather
+        // than typed as JSON.
+        if (def.key == screensaverGlanceEntities.key) {
+          final chosen = _glanceEntities(c);
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(
+              chosen.isEmpty
+                  ? 'None yet. Up to $screensaverGlanceMax entities.'
+                  : chosen.map((e) => e['name']).join(', '),
+            ),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: () => _editGlanceEntities(context),
+          );
+        }
         // The camera screensaver's view is picked from the ones configured
         // under Cameras, never typed — the value is an opaque view id.
         if (def.key == screensaverCameraView.key) {
@@ -3403,6 +3419,38 @@ class SettingTile extends StatelessWidget {
           onTap: () => _editText(context),
         );
     }
+  }
+
+  List<Map<String, Object?>> _glanceEntities(AppContainer container) {
+    try {
+      final decoded = jsonDecode(container.settings.get(
+        screensaverGlanceEntities,
+      ));
+      if (decoded is! List) return [];
+      return [
+        for (final item in decoded)
+          if (item is Map) item.cast<String, Object?>(),
+      ];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _editGlanceEntities(BuildContext context) async {
+    final saved = await Navigator.of(context).push<List<Map<String, Object?>>>(
+      MaterialPageRoute(
+        builder: (_) => GlanceEntityPicker(
+          container: c,
+          initial: _glanceEntities(c),
+        ),
+      ),
+    );
+    if (saved == null) return;
+    await c.settings.setFromJson(
+      screensaverGlanceEntities.key,
+      jsonEncode(saved),
+    );
+    onChanged();
   }
 
   Future<void> _pickCameraView(

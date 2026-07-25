@@ -3447,6 +3447,113 @@ function settingRow(s) {
     return row;
   }
 
+  // The At a Glance entities, mirroring the device's picker: chosen ones on
+  // top in display order, a Home Assistant search below for adding more.
+  if (s.key === 'screensaver.glance_entities') {
+    const MAX = 4;
+    let chosen = [];
+    try { chosen = JSON.parse(s.value || '[]') || []; } catch (_) { chosen = []; }
+    const panel = document.createElement('div');
+    panel.style.cssText = 'display:flex; flex-direction:column; gap:8px; width:100%';
+    const list = document.createElement('div');
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.placeholder = 'Search entities by name or id';
+    const results = document.createElement('div');
+    results.style.cssText = 'max-height:260px; overflow:auto;';
+
+    const save = async () => {
+      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+        'screensaver.glance_entities': JSON.stringify(chosen),
+      }) });
+    };
+    const renderChosen = () => {
+      list.innerHTML = '';
+      chosen.forEach((entity, index) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.style.cssText = 'gap:8px;';
+        const info = document.createElement('div');
+        info.className = 'info';
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = entity.name || entity.entity_id;
+        const desc = document.createElement('div');
+        desc.className = 'desc';
+        desc.textContent = entity.entity_id;
+        info.append(name, desc);
+        const move = (delta) => {
+          const to = index + delta;
+          if (to < 0 || to >= chosen.length) return;
+          chosen.splice(to, 0, chosen.splice(index, 1)[0]);
+          renderChosen(); save();
+        };
+        const up = cameraAction('Move up', () => move(-1), false, 'up', index === 0);
+        const down = cameraAction('Move down', () => move(1), false, 'down',
+          index === chosen.length - 1);
+        const remove = cameraAction('Remove', () => {
+          chosen.splice(index, 1); renderChosen(); renderResults(lastResults); save();
+        }, false, 'delete');
+        row.append(info, up, down, remove);
+        list.appendChild(row);
+      });
+    };
+    let lastResults = [];
+    const renderResults = (entities) => {
+      lastResults = entities;
+      results.innerHTML = '';
+      for (const entity of entities) {
+        const picked = chosen.some((e) => e.entity_id === entity.entity_id);
+        const row = document.createElement('div');
+        row.className = 'row';
+        const info = document.createElement('div');
+        info.className = 'info';
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = entity.name;
+        const desc = document.createElement('div');
+        desc.className = 'desc';
+        desc.textContent = `${entity.entity_id} · ${entity.state}`;
+        info.append(name, desc);
+        const btn = cameraAction(picked ? 'Remove' : 'Add', () => {
+          if (picked) {
+            chosen = chosen.filter((e) => e.entity_id !== entity.entity_id);
+          } else if (chosen.length < MAX) {
+            chosen.push({ entity_id: entity.entity_id, name: entity.name });
+          } else {
+            return;
+          }
+          renderChosen(); renderResults(lastResults); save();
+        }, false, picked ? 'delete' : 'add', !picked && chosen.length >= MAX);
+        row.append(info, btn);
+        results.appendChild(row);
+      }
+    };
+    const runSearch = async (query) => {
+      try {
+        const res = await (await api('/api/commands/haSearchEntities', {
+          method: 'POST', body: JSON.stringify({ query }) })).json();
+        renderResults(res.ok ? (res.data || []) : []);
+        if (!res.ok) results.innerHTML = '<div class="desc">Could not reach Home Assistant.</div>';
+      } catch (_) {
+        results.innerHTML = '<div class="desc">The device did not answer.</div>';
+      }
+    };
+    let debounce;
+    search.addEventListener('input', () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => runSearch(search.value), 350);
+    });
+    renderChosen();
+    runSearch('');
+    panel.append(list, search, results);
+    // Full width under the label rather than squeezed into the value cell.
+    row.style.flexDirection = 'column';
+    row.style.alignItems = 'stretch';
+    row.appendChild(panel);
+    return row;
+  }
+
   // The camera screensaver's view comes from the ones configured under
   // WebRTC Cameras, mirroring the device's picker. Views without cameras
   // are left out: there would be nothing to show.

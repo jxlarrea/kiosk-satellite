@@ -1218,6 +1218,42 @@ const screensaverSavedBrightness = SettingDef<num>(
 
 // Motion detection exists only to wake the screensaver for now, so this one
 // switch is its whole on/off — no separate "motion detection" toggle. Off by
+// ── At a Glance (modes: black, clock) ──
+// A row of entity states under the clock, for the things people check in
+// passing: is the garage still open, is the door locked (issue #37). Only the
+// two plain modes carry it — the photo and camera modes have their own
+// imagery, and a status row over a photo is neither subtle nor readable.
+const screensaverGlanceEnabled = SettingDef<bool>(
+  key: 'screensaver.glance_enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'At a glance',
+  description:
+      'Show a row of Home Assistant entity states on the Black and Clock '
+      'screensavers.',
+  category: 'Screensaver',
+  section: 'At a Glance',
+);
+
+// The chosen entities as a JSON list of {entity_id, name}. Hand-built pickers
+// on the device and in the remote admin write it; the generic settings
+// renderer skips it (a raw JSON field is not something to type).
+const screensaverGlanceEntities = SettingDef<String>(
+  key: 'screensaver.glance_entities',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Entities',
+  description: 'Up to four entities to show. Their names come from Home '
+      'Assistant.',
+  category: 'Screensaver',
+  section: 'At a Glance',
+  dependsOn: 'screensaver.glance_enabled',
+);
+
+/// The most entities the row will hold: past four the labels stop being
+/// readable across a room, which is the whole point of the row.
+const screensaverGlanceMax = 4;
+
 // default because turning it on asks for the camera. When on, the camera runs
 // only while the screensaver is showing.
 const screensaverDismissOnMotion = SettingDef<bool>(
@@ -1984,6 +2020,8 @@ const List<SettingDef<Object>> allSettings = [
   screensaverWebsiteUrl,
   screensaverCameraView,
   screensaverCameraViewName,
+  screensaverGlanceEnabled,
+  screensaverGlanceEntities,
   screensaverDismissOnMotion,
   motionFps,
   motionSensitivity,

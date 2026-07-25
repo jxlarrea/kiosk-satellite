@@ -8,6 +8,7 @@ import 'managers/camera/camera_manager.dart';
 import 'managers/device/device_manager.dart';
 import 'managers/dlna/dlna_manager.dart';
 import 'managers/files/files_manager.dart';
+import 'managers/glance/glance_manager.dart';
 import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
@@ -56,6 +57,8 @@ class AppContainer {
     files = FilesManager(bus, commands, log);
     sound = SoundManager(bus, commands, log);
     update = UpdateManager(bus, commands, log);
+    // After homeAssistant: it reads states through it for the fallback.
+    glance = GlanceManager(bus, commands, log, settings, homeAssistant);
     remote = RemoteManager(bus, commands, log, settings);
   }
 
@@ -80,6 +83,7 @@ class AppContainer {
   late final SendspinManager sendspin;
   late final DlnaManager dlna;
   late final FilesManager files;
+  late final GlanceManager glance;
   late final SoundManager sound;
   late final UpdateManager update;
   late final RemoteManager remote;
@@ -106,6 +110,7 @@ class AppContainer {
         sendspin,
         dlna,
         files,
+        glance,
         sound,
         update,
         remote,
