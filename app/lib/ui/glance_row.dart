@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
@@ -22,6 +24,11 @@ class GlanceRow extends StatelessWidget {
   /// already taken what space there is.
   final double scale;
 
+  /// The width one entity gets. Every entity gets the same, so the row's
+  /// geometry depends on how many there are and never on how long their
+  /// names happen to be.
+  static const _slotWidth = 210.0;
+
   @override
   Widget build(BuildContext context) =>
       ValueListenableBuilder<List<GlanceEntity>>(
@@ -36,30 +43,42 @@ class GlanceRow extends StatelessWidget {
               final wide = constraints.maxWidth >= entities.length * 150 * scale;
               final items = [
                 for (final entity in entities)
-                  _GlanceItem(entity: entity, scale: scale, inRow: wide),
+                  _GlanceItem(entity: entity, scale: scale),
               ];
-              return wide
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        for (var i = 0; i < items.length; i++) ...[
-                          if (i > 0) SizedBox(width: 34 * scale),
-                          Flexible(child: items[i]),
-                        ],
-                      ],
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var i = 0; i < items.length; i++) ...[
-                          if (i > 0) SizedBox(height: 14 * scale),
-                          items[i],
-                        ],
-                      ],
-                    );
+              if (!wide) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      if (i > 0) SizedBox(height: 14 * scale),
+                      items[i],
+                    ],
+                  ],
+                );
+              }
+              // Equal-width slots, each item centred in its own. Sizing the
+              // items to their content instead let a long name drag the
+              // whole row sideways, so the row's centre stopped agreeing
+              // with the clock's above it. With even slots the geometry is
+              // fixed: an odd count puts the middle item dead centre, an
+              // even count straddles the centre symmetrically, and the name
+              // lengths no longer come into it at all.
+              final slot = min(
+                _slotWidth * scale,
+                constraints.maxWidth / entities.length,
+              );
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  for (final item in items)
+                    SizedBox(
+                      width: slot,
+                      child: Center(child: item),
+                    ),
+                ],
+              );
             },
           );
         },
@@ -67,15 +86,10 @@ class GlanceRow extends StatelessWidget {
 }
 
 class _GlanceItem extends StatelessWidget {
-  const _GlanceItem({
-    required this.entity,
-    required this.scale,
-    required this.inRow,
-  });
+  const _GlanceItem({required this.entity, required this.scale});
 
   final GlanceEntity entity;
   final double scale;
-  final bool inRow;
 
   @override
   Widget build(BuildContext context) {

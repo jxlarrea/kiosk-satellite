@@ -306,9 +306,21 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
               ],
               if (glance) ...[
                 SizedBox(height: clockSize * 0.42),
-                GlanceRow(
-                  container: widget.container,
-                  scale: glanceScale,
+                // Dropped a further fifth of the display, and by a transform
+                // rather than more spacing: spacing would push the row down
+                // and pull the clock up in equal measure (the column is
+                // centred as one block), and the clock is where it should
+                // be. Clamped so a short panel cannot slide the row off the
+                // bottom edge.
+                Transform.translate(
+                  offset: Offset(
+                    0,
+                    min(size.height * 0.20, size.height * 0.5 - 60 * glanceScale),
+                  ),
+                  child: GlanceRow(
+                    container: widget.container,
+                    scale: glanceScale,
+                  ),
                 ),
               ],
             ],
