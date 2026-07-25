@@ -29,6 +29,15 @@ class GlanceRow extends StatelessWidget {
   /// names happen to be.
   static const _slotWidth = 210.0;
 
+  /// The most entities placed side by side on a portrait panel. Past two
+  /// there is no width left for a name.
+  static const _portraitColumns = 2;
+
+  /// The most the type is allowed to shrink when the slots are squeezed.
+  /// Below this it stops being readable from across a room, which is the
+  /// only reason the row exists.
+  static const _minFit = 0.72;
+
   @override
   Widget build(BuildContext context) =>
       ValueListenableBuilder<List<GlanceEntity>>(
@@ -37,62 +46,62 @@ class GlanceRow extends StatelessWidget {
           if (entities.isEmpty) return const SizedBox.shrink();
           return LayoutBuilder(
             builder: (context, constraints) {
-              // Below roughly 150 logical pixels apiece the names stop
-              // fitting and the row becomes columns of clipped words, so
-              // they stack instead. Note this is in LOGICAL pixels: a 540px
-              // portrait panel at this density is only 443 of them, which is
-              // why three entities stack there and four do not fit anywhere
-              // but a tablet.
-              final wide = constraints.maxWidth >= entities.length * 150 * scale;
-              final items = [
-                for (final entity in entities)
-                  _GlanceItem(entity: entity, scale: scale),
+              // Two across at most on a portrait panel, wrapping onto
+              // further rows; a landscape one takes them all in a single
+              // row. Three squeezed across a portrait screen left every
+              // name truncated to a stub.
+              final size = MediaQuery.sizeOf(context);
+              final perRow = size.height > size.width
+                  ? min(_portraitColumns, entities.length)
+                  : entities.length;
+              final rows = <List<GlanceEntity>>[
+                for (var i = 0; i < entities.length; i += perRow)
+                  entities.sublist(i, min(i + perRow, entities.length)),
               ];
-              if (!wide) {
-                // The block is centred on the display and the entities are
-                // aligned with each other inside it: left as a plain column
-                // it sat against the left edge of whatever box it was given,
-                // which under the clock meant hugging the corner.
-                return Center(
-                  child: IntrinsicWidth(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        for (var i = 0; i < items.length; i++) ...[
-                          if (i > 0) SizedBox(height: 14 * scale),
-                          items[i],
-                        ],
-                      ],
-                    ),
-                  ),
-                );
-              }
-              // Equal-width slots, each item centred in its own. Sizing the
-              // items to their content instead let a long name drag the
-              // whole row sideways, so the row's centre stopped agreeing
-              // with the clock's above it. With even slots the geometry is
-              // fixed: an odd count puts the middle item dead centre, an
-              // even count straddles the centre symmetrically, and the name
-              // lengths no longer come into it at all.
+              // Widths here are LOGICAL pixels: a 540px portrait panel at
+              // this density is only 443 of them. The slot is shared by
+              // every row so the columns line up down the grid.
               final slot = min(
                 _slotWidth * scale,
-                constraints.maxWidth / entities.length,
+                constraints.maxWidth / perRow,
               );
-              return Row(
+              // How much the slot had to give up, floored so the type never
+              // shrinks past reading distance; past that point the names
+              // truncate rather than the row becoming unreadable.
+              final fit = (slot / (_slotWidth * scale)).clamp(_minFit, 1.0);
+              return Column(
                 mainAxisSize: MainAxisSize.min,
-                // Explicit, because this row is handed a full-width box when
-                // it is pinned to the bottom of the clock screensaver: left
-                // to the default it would lay the slots out from the left
-                // edge and the centre entity would no longer meet the clock.
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  for (final item in items)
-                    SizedBox(
-                      width: slot,
-                      child: Center(child: item),
+                  for (final (index, row) in rows.indexed) ...[
+                    if (index > 0) SizedBox(height: 16 * scale * fit),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      // Explicit, because this row is handed a full-width
+                      // box when pinned to the bottom of the clock
+                      // screensaver: left to the default it would lay the
+                      // slots out from the left edge and the centre entity
+                      // would no longer meet the clock. A short final row
+                      // centres under the ones above it.
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Equal-width slots, each entity centred in its own.
+                        // Sizing them to their content instead let a long
+                        // name drag the row sideways, so its centre stopped
+                        // agreeing with the clock's above it.
+                        for (final entity in row)
+                          SizedBox(
+                            width: slot,
+                            child: Center(
+                              child: _GlanceItem(
+                                entity: entity,
+                                scale: scale * fit,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
+                  ],
                 ],
               );
             },

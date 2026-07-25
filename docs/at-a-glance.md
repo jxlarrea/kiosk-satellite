@@ -33,10 +33,11 @@ The photo modes (Home Assistant Media, Local Media, Photo Gallery, Immich) and
 the WebRTC Camera mode do not carry it. They already have something to look
 at, and a status row over a photo is neither subtle nor readable.
 
-On a narrow screen the entities stack into a centred column instead of a row,
-which is what fits a tablet held in portrait. Roughly 150 points of width per
-entity are needed for a row, so a portrait panel generally stacks three or
-more.
+A landscape screen shows the entities in one row. A portrait one takes two
+side by side and wraps the rest onto further rows, since three across a narrow
+panel leaves every name truncated to a stub. The entities keep equal-width
+columns either way, and the type shrinks a little when the columns are tight
+before any name is shortened.
 
 ## What it shows
 
