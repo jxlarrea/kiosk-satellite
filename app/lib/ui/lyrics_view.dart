@@ -19,12 +19,18 @@ class LyricsView extends StatefulWidget {
     super.key,
     required this.container,
     required this.fontSize,
+    this.centred = false,
   });
 
   final AppContainer container;
 
   /// The current line's size; the others are drawn slightly smaller.
   final double fontSize;
+
+  /// Centre the lines rather than ranging them left. Beside the cover they
+  /// read as a column of text and want a left edge; stacked underneath a
+  /// centred cover they want to share its axis.
+  final bool centred;
 
   @override
   State<LyricsView> createState() => _LyricsViewState();
@@ -153,7 +159,9 @@ class _LyricsViewState extends State<LyricsView> {
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(vertical: 90),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: widget.centred
+                  ? CrossAxisAlignment.center
+                  : CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 for (final (index, line) in lines.indexed)
@@ -177,7 +185,11 @@ class _LyricsViewState extends State<LyricsView> {
                             : FontWeight.w500,
                         height: 1.3,
                       ),
-                      child: Text(line.text, textAlign: TextAlign.left),
+                      child: Text(
+                        line.text,
+                        textAlign:
+                            widget.centred ? TextAlign.center : TextAlign.left,
+                      ),
                     ),
                   ),
               ],

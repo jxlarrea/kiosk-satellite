@@ -177,12 +177,15 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     final titleSize = (short * 0.085).clamp(20.0, 40.0);
     final artistSize = (short * 0.047).clamp(13.0, 22.0);
     final gap = (screen.height * 0.05).clamp(12.0, 40.0);
-    // Lyrics need a second column, so only on a landscape panel with room
-    // for one. A narrow screen keeps the plain now-playing look.
-    final showLyrics = c.settings.get(defs.sendspinLyrics) &&
-        c.sendspin.lyrics.value.isNotEmpty &&
-        screen.width >= 560 &&
-        screen.width > screen.height;
+    // Lyrics take whatever spare axis the panel has: a second column on a
+    // landscape screen, the space under the cover on a portrait one. A panel
+    // too small for either keeps the plain now-playing look rather than
+    // squeezing two lines of lyric into a corner.
+    final haveLyrics = c.settings.get(defs.sendspinLyrics) &&
+        c.sendspin.lyrics.value.isNotEmpty;
+    final landscape = screen.width > screen.height;
+    final showLyrics = haveLyrics && landscape && screen.width >= 560;
+    final stackLyrics = haveLyrics && !landscape && screen.height >= 620;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -242,6 +245,40 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   child: LyricsView(
                     container: c,
                     fontSize: (short * 0.055).clamp(15.0, 26.0),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (stackLyrics)
+          // Portrait: cover and track up top, the lyrics filling everything
+          // below them. Left as the plain centred view, a tall panel spends
+          // its whole lower half on nothing.
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              (screen.height * 0.05).clamp(12.0, 48.0),
+              20,
+              12,
+            ),
+            child: Column(
+              children: [
+                _nowPlayingPanel(
+                  art: art,
+                  title: title,
+                  artist: artist,
+                  artSize: artSize * 0.66,
+                  titleSize: titleSize * 0.8,
+                  artistSize: artistSize * 0.9,
+                  gap: gap * 0.6,
+                  horizontalPadding: 12,
+                ),
+                SizedBox(height: (screen.height * 0.03).clamp(10.0, 32.0)),
+                Expanded(
+                  child: LyricsView(
+                    container: c,
+                    fontSize: (short * 0.052).clamp(15.0, 24.0),
+                    centred: true,
                   ),
                 ),
               ],

@@ -109,11 +109,15 @@ consistently arrive too late for comfort, or go negative if they run ahead.
 Files that carry the format's own `[offset:]` correction are honoured on top
 of this.
 
+The layout follows the panel: side by side on a landscape screen, and on a
+portrait one the cover and track sit at the top with the lyrics filling the
+space below them. A panel too small for either keeps the ordinary centred
+view rather than squeezing a couple of lines into a corner.
+
 Only timed lyrics are shown. A track whose provider returns plain, untimed
 words shows none, since there is no honest way to follow along with them, and
 tracks with no lyrics at all simply keep the ordinary layout. Lyrics are
-looked up once per track, and the row needs a landscape screen with the width
-for two columns.
+looked up once per track.
 
 ## Voice Satellite interplay
 
