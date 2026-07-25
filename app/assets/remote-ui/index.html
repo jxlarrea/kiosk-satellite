@@ -1284,44 +1284,6 @@ const EXPORT_FOLDED_LATIN = {
   'đ':'d','Đ':'D','ß':'ss','æ':'ae','Æ':'AE','œ':'oe','Œ':'OE',
 };
 
-/* The name an exported configuration downloads under. Mirror of the device's
-   exportFileName (managers/settings/export_filename.dart): a fleet of tablets
-   used to produce identical kiosk-satellite-config.json files, unidentifiable
-   once saved. Falls back to this browser's clock only when an older device
-   sends an export without its own timestamp. */
-function exportFileName(deviceName, exportedAt) {
-  const at = exportedAt ? new Date(exportedAt) : new Date();
-  const when = isNaN(at.getTime()) ? new Date() : at;
-  const two = (value) => String(value).padStart(2, '0');
-  const stamp = `${when.getFullYear()}${two(when.getMonth() + 1)}`
-    + `${two(when.getDate())}_${two(when.getHours())}`
-    + `${two(when.getMinutes())}${two(when.getSeconds())}`;
-  let slug = String(deviceName || '')
-    .replace(/[^\x00-\x7F]/g, (ch) => EXPORT_FOLDED_LATIN[ch] || ch)
-    .replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  if (slug.length > 40) slug = slug.slice(0, 40).replace(/-+$/, '');
-  return slug ? `ks-backup_${slug}_${stamp}.json` : `ks-backup_${stamp}.json`;
-}
-
-/* Mirror of _foldedLatin in export_filename.dart. Deliberately the same
-   explicit table rather than NFD normalization, which Dart has no built-in
-   equivalent for: both surfaces must name the same device identically. */
-const EXPORT_FOLDED_LATIN = {
-  'á':'a','à':'a','â':'a','ä':'a','ã':'a','å':'a','ā':'a',
-  'Á':'A','À':'A','Â':'A','Ä':'A','Ã':'A','Å':'A','Ā':'A',
-  'é':'e','è':'e','ê':'e','ë':'e','ē':'e',
-  'É':'E','È':'E','Ê':'E','Ë':'E','Ē':'E',
-  'í':'i','ì':'i','î':'i','ï':'i','ī':'i',
-  'Í':'I','Ì':'I','Î':'I','Ï':'I','Ī':'I',
-  'ó':'o','ò':'o','ô':'o','ö':'o','õ':'o','ø':'o','ō':'o',
-  'Ó':'O','Ò':'O','Ô':'O','Ö':'O','Õ':'O','Ø':'O','Ō':'O',
-  'ú':'u','ù':'u','û':'u','ü':'u','ū':'u',
-  'Ú':'U','Ù':'U','Û':'U','Ü':'U','Ū':'U',
-  'ñ':'n','Ñ':'N','ç':'c','Ç':'C','ý':'y','ÿ':'y','Ý':'Y',
-  'š':'s','Š':'S','ž':'z','Ž':'Z','ł':'l','Ł':'L',
-  'đ':'d','Đ':'D','ß':'ss','æ':'ae','Æ':'AE','œ':'oe','Œ':'OE',
-};
-
 function cameraIcon(name) {
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
     + ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'
