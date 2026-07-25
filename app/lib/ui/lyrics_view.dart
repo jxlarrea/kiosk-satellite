@@ -59,6 +59,7 @@ class _LyricsViewState extends State<LyricsView> {
 
   void _onLyricsChanged() {
     _index = -1;
+    _lineContexts.clear();
     if (mounted) setState(() {});
     _sync();
   }
@@ -87,22 +88,33 @@ class _LyricsViewState extends State<LyricsView> {
     if (lines.isEmpty) return;
     final next = currentLyricIndex(lines, _position());
     if (next == _index) return;
+    // A jump of more than a line is not the song advancing: it is a track
+    // joined mid-way, a seek, or the lyrics arriving late. Land there
+    // rather than scrolling the whole way through the song.
+    final jumped = (next - _index).abs() > 1;
     setState(() => _index = next);
-    _scrollToCurrent();
+    _scrollToCurrent(animate: !jumped);
   }
 
-  void _scrollToCurrent() {
+  void _scrollToCurrent({required bool animate}) {
     if (_index < 0) return;
-    final context = _lineContexts[_index]?.currentContext;
-    if (context == null) return;
-    // Centre the current line in the view rather than scrolling it to an
-    // edge: on a wall panel the eye is already in the middle.
-    Scrollable.ensureVisible(
-      context,
-      alignment: 0.5,
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
-    );
+    // After the frame: a line that has just become current may not have
+    // been laid out yet, and its context would not exist to scroll to.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final context = _lineContexts[_index]?.currentContext;
+      if (context == null) return;
+      // Centre the current line in the view rather than scrolling it to an
+      // edge: on a wall panel the eye is already in the middle.
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.5,
+        duration: animate
+            ? const Duration(milliseconds: 450)
+            : Duration.zero,
+        curve: Curves.easeOutCubic,
+      );
+    });
   }
 
   final _lineContexts = <int, GlobalKey>{};
@@ -128,36 +140,48 @@ class _LyricsViewState extends State<LyricsView> {
             stops: [0.0, 0.18, 0.82, 1.0],
           ).createShader(bounds),
           blendMode: BlendMode.dstIn,
-          child: ListView.builder(
+          // Every line is built, not just the visible ones. A lazy list only
+          // creates what is on screen, so the key of a line further down
+          // resolves to nothing and there is no context to scroll to — which
+          // left a track joined mid-way sitting on its first verse forever,
+          // highlighting a line nobody could see. A song is a few dozen
+          // short Text widgets; building them all costs nothing.
+          child: SingleChildScrollView(
             controller: _scroll,
             // No dragging: this is a screensaver, and a lyric scrolled by a
             // passing hand would never find its way back.
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(vertical: 90),
-            itemCount: lines.length,
-            itemBuilder: (context, index) {
-              final key = _lineContexts.putIfAbsent(
-                index,
-                () => GlobalKey(debugLabel: '$_lineKeyPrefix$index'),
-              );
-              final current = index == _index;
-              return Padding(
-                key: key,
-                padding: const EdgeInsets.symmetric(vertical: 7),
-                child: AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 250),
-                  style: TextStyle(
-                    color: current ? Colors.white : Colors.white38,
-                    fontSize: current
-                        ? widget.fontSize
-                        : widget.fontSize * 0.88,
-                    fontWeight: current ? FontWeight.w700 : FontWeight.w500,
-                    height: 1.3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final (index, line) in lines.indexed)
+                  Padding(
+                    key: _lineContexts.putIfAbsent(
+                      index,
+                      () => GlobalKey(debugLabel: '$_lineKeyPrefix$index'),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 7),
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 250),
+                      style: TextStyle(
+                        color: index == _index
+                            ? Colors.white
+                            : Colors.white38,
+                        fontSize: index == _index
+                            ? widget.fontSize
+                            : widget.fontSize * 0.88,
+                        fontWeight: index == _index
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        height: 1.3,
+                      ),
+                      child: Text(line.text, textAlign: TextAlign.left),
+                    ),
                   ),
-                  child: Text(lines[index].text, textAlign: TextAlign.left),
-                ),
-              );
-            },
+              ],
+            ),
           ),
         );
       },
