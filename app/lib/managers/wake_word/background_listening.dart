@@ -91,6 +91,10 @@ class BackgroundListening {
   /// screen receiver. The screen manager owns the resulting state.
   static void Function(bool on)? _onScreenStateChanged;
 
+  /// The device's next alarm changed: set, moved or dismissed in whichever
+  /// clock app owns it. Null when there is no longer one.
+  static void Function(Map<String, Object?>? alarm)? _onNextAlarmChanged;
+
   static set onDownloadComplete(
       void Function(int id, bool success, String? filename)? handler) {
     _onDownloadComplete = handler;
@@ -107,6 +111,12 @@ class BackgroundListening {
     _installHandler();
   }
 
+  static set onNextAlarmChanged(
+      void Function(Map<String, Object?>? alarm)? handler) {
+    _onNextAlarmChanged = handler;
+    _installHandler();
+  }
+
   /// One channel, one handler: every native push shares it, so it is
   /// (re)installed whenever any callback changes and removed only when they
   /// are all gone. Setting a handler directly on the channel from elsewhere
@@ -114,7 +124,8 @@ class BackgroundListening {
   static void _installHandler() {
     if (_onDownloadComplete == null &&
         _onVolumeChanged == null &&
-        _onScreenStateChanged == null) {
+        _onScreenStateChanged == null &&
+        _onNextAlarmChanged == null) {
       _channel.setMethodCallHandler(null);
       return;
     }
@@ -131,6 +142,12 @@ class BackgroundListening {
       if (call.method == 'screenStateChanged') {
         final args = (call.arguments as Map?) ?? const {};
         _onScreenStateChanged?.call(args['on'] == true);
+      }
+      if (call.method == 'nextAlarmChanged') {
+        final args = call.arguments;
+        _onNextAlarmChanged?.call(
+          args is Map ? args.cast<String, Object?>() : null,
+        );
       }
       return null;
     });

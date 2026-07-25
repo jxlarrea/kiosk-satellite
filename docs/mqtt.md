@@ -61,6 +61,7 @@ tablet's remote admin (while remote administration is enabled).
 | CPU usage, CPU temperature | sensor | Polled once a minute. |
 | RAM available, RAM total | sensor | Polled once a minute. |
 | Current page | sensor | The URL the kiosk is showing. |
+| Next alarm | sensor | The device's next alarm clock, as a timestamp, or unknown when none is set. It reads whatever the system considers the next alarm, so any clock app counts, and it follows alarms set, moved, disabled or dismissed outside this app. The `package` attribute names the app that owns it and `local_time` gives the device's own wall-clock reading. |
 | Remote admin | sensor | The remote admin's URL for this device, or `disabled` when remote administration is off. Handy for deep-linking from a dashboard. |
 | Camera view buttons | button | One **Show &lt;view name&gt;** button per configured camera view, plus **Close camera view**. View buttons keep a stable identity when a view is renamed. |
 | Active camera view | sensor | The displayed camera view name, or `none`. Attributes include the stable view ID and focused camera ID. |
@@ -87,6 +88,8 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
 | `.../url/state` | out, retained | the current URL |
+| `.../next_alarm/state` | out, retained | the next alarm as an ISO 8601 UTC timestamp, or `None` when there is no alarm |
+| `.../next_alarm/attributes` | out, retained | JSON with `package` and `local_time` |
 | `.../admin_url/state` | out, retained | the remote admin URL, or `disabled` |
 | `.../camera/view/set` | in | Stable camera view ID; shows that view |
 | `.../camera/close/set` | in | Any non-retained payload closes the camera view |

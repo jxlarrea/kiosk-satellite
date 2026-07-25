@@ -62,6 +62,35 @@ class DeviceManager extends Manager {
     return configured.isNotEmpty ? configured : model;
   }
 
+  /// When the device's next alarm goes off, or null when none is set.
+  /// Whichever app set it: this is the alarm the status bar's icon shows.
+  DateTime? nextAlarm;
+
+  /// The package that set [nextAlarm], so an automation can tell the clock
+  /// app's alarm from some other app's.
+  String? nextAlarmPackage;
+
+  void _setNextAlarm(Map<String, Object?>? alarm) {
+    final triggerTime = (alarm?['triggerTime'] as num?)?.toInt();
+    // A trigger time of zero means no alarm, not the epoch.
+    nextAlarm = triggerTime == null || triggerTime <= 0
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(triggerTime);
+    nextAlarmPackage = alarm?['package'] as String?;
+  }
+
+  /// The next alarm as Home Assistant wants a timestamp: ISO 8601 in UTC,
+  /// or null when there is none.
+  Map<String, Object?>? nextAlarmJson() {
+    final at = nextAlarm;
+    if (at == null) return null;
+    return {
+      'at': at.toUtc().toIso8601String(),
+      'local': at.toIso8601String(),
+      'package': nextAlarmPackage,
+    };
+  }
+
   @override
   Future<void> init() async {
     final packageInfo = await PackageInfo.fromPlatform();
@@ -119,10 +148,35 @@ class DeviceManager extends Manager {
       ),
     );
 
+    const background = MethodChannel('kiosk_satellite/background');
+
+    // The device's next alarm, as set in whichever clock app owns it
+    // (issue #42). Read once at start and then pushed by the system's own
+    // change broadcast, so an alarm set, moved or dismissed is reflected
+    // without polling.
+    BackgroundListening.onNextAlarmChanged = (alarm) {
+      _setNextAlarm(alarm);
+      bus.publish(const NextAlarmChanged());
+    };
+    try {
+      _setNextAlarm(
+        (await background.invokeMethod<Map>('nextAlarm'))
+            ?.cast<String, Object?>(),
+      );
+    } catch (_) {}
+    commands.register(
+      Command(
+        name: 'getNextAlarm',
+        description:
+            "The device's next alarm: an ISO 8601 UTC timestamp and the "
+            'package that set it, or null when none is set.',
+        handler: (_) async => CommandResult.ok(nextAlarmJson()),
+      ),
+    );
+
     // Media volume, percent both ways. No OS permission involved:
     // STREAM_MUSIC is freely settable (only ring/notification streams under
     // Do Not Disturb are gated, and those are never touched).
-    const background = MethodChannel('kiosk_satellite/background');
     BackgroundListening.onVolumeChanged =
         () => bus.publish(const VolumeChanged());
     commands.register(

@@ -46,6 +46,12 @@ class ScreensaverStateChanged extends AppEvent {
 
 /// The device's media volume changed, from any side: a command, the
 /// hardware rocker, or another app.
+/// The device's next alarm was set, moved or dismissed, in whichever clock
+/// app owns it. Internal: the MQTT sensor republishes off it.
+class NextAlarmChanged extends AppEvent {
+  const NextAlarmChanged();
+}
+
 class VolumeChanged extends AppEvent {
   const VolumeChanged();
 

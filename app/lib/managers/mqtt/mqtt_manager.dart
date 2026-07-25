@@ -109,6 +109,7 @@ class MqttManager extends Manager {
       if (_connected) await _publishDiscovery();
     }));
     _subs.add(bus.on<CameraViewStateChanged>().listen(_publishCameraViewState));
+    _subs.add(bus.on<NextAlarmChanged>().listen((_) => _publishNextAlarm()));
     // The native side damps flicker; this only guards the recorder's disk:
     // at most one publish per 15s, unless the level swung hard (lights on).
     _subs.add(bus.on<LightLevelChanged>().listen((e) {
@@ -646,9 +647,32 @@ class MqttManager extends Manager {
     }
   }
 
+  /// The next alarm, or 'None' when there is not one. Home Assistant reads
+  /// an empty payload as "no change", so the absence has to be said out loud
+  /// for the sensor to clear; 'None' is what its timestamp device class
+  /// treats as unknown.
+  Future<void> _publishNextAlarm() async {
+    final result = await commands.execute('getNextAlarm', const {});
+    final data = result.ok ? result.data : null;
+    if (data is Map) {
+      _publish('$_base/next_alarm/state', '${data['at']}');
+      _publish(
+        '$_base/next_alarm/attributes',
+        jsonEncode({
+          'local_time': data['local'],
+          'package': data['package'],
+        }),
+      );
+    } else {
+      _publish('$_base/next_alarm/state', 'None');
+      _publish('$_base/next_alarm/attributes', jsonEncode(const {}));
+    }
+  }
+
   Future<void> _publishInitialStates() async {
     final on = await commands.execute('isScreenOn', const {});
     if (on.ok) _publish('$_base/screen/state', on.data == true ? 'ON' : 'OFF');
+    await _publishNextAlarm();
     final brightness = await commands.execute('getBrightness', const {});
     final level = brightness.data;
     if (brightness.ok && level is num) {
@@ -908,6 +932,17 @@ class MqttManager extends Manager {
           'unit_of_measurement': 'lx',
           'state_class': 'measurement',
         },
+      // The device's own alarm clock (issue #42), so a wake-up automation
+      // can run off the alarm someone set on the tablet itself. A timestamp
+      // sensor: Home Assistant renders it as a time and templates can do
+      // arithmetic on it.
+      '$_prefix/sensor/ks_$_deviceId/next_alarm/config': {
+        ...common('next_alarm', 'Next alarm'),
+        'state_topic': '$_base/next_alarm/state',
+        'json_attributes_topic': '$_base/next_alarm/attributes',
+        'device_class': 'timestamp',
+        'icon': 'mdi:alarm',
+      },
       '$_prefix/sensor/ks_$_deviceId/admin_url/config': {
         ...common('admin_url', 'Remote admin'),
         'state_topic': '$_base/admin_url/state',

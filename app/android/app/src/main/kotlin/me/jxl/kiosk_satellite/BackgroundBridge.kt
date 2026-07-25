@@ -1,5 +1,6 @@
 package me.jxl.kiosk_satellite
 
+import android.app.AlarmManager
 import android.app.DownloadManager
 import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
@@ -57,6 +58,16 @@ class BackgroundBridge(
                     result.success(true)
                 }
                 "isActivityResumed" -> result.success(ActivityState.resumed)
+                // Open another app by package name (issue #44). The kiosk
+                // stays running behind it; whatever brings the kiosk back —
+                // the return gesture, a wake word, an automation — finds it
+                // where it was.
+                "launchApp" -> result.success(
+                    launchApp(call.argument<String>("package")),
+                )
+                // The device's next alarm, as the clock app set it
+                // (issue #42).
+                "nextAlarm" -> result.success(nextAlarm())
                 // The panel's real state, for seeding the logical flag at
                 // start: a device that boots (or reinstalls) with its screen
                 // already off must not report it as on.
@@ -279,6 +290,14 @@ class BackgroundBridge(
         }
     }
 
+    // The system tells us when the next alarm changes, so the sensor follows
+    // an alarm set, moved or dismissed without polling for it.
+    private val alarmReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            channel.invokeMethod("nextAlarmChanged", nextAlarm())
+        }
+    }
+
     // A second init block on purpose: initializers run in declaration order,
     // so downloadReceiver exists by the time this registers it. EXPORTED
     // because ACTION_DOWNLOAD_COMPLETE is not a protected system broadcast;
@@ -296,6 +315,13 @@ class BackgroundBridge(
             context,
             volumeReceiver,
             IntentFilter("android.media.VOLUME_CHANGED_ACTION"),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        // ACTION_NEXT_ALARM_CLOCK_CHANGED is a protected system broadcast.
+        ContextCompat.registerReceiver(
+            context,
+            alarmReceiver,
+            IntentFilter(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED),
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
         // Screen on/off are protected system broadcasts, and they are only
@@ -411,6 +437,43 @@ class BackgroundBridge(
         }
     }
 
+    /// Bring another app to the front. Returns false when the package is
+    /// not installed or exposes no launchable activity, so the caller can
+    /// say so rather than appearing to do nothing.
+    private fun launchApp(packageName: String?): Boolean {
+        if (packageName.isNullOrBlank()) return false
+        val intent = context.packageManager.getLaunchIntentForPackage(packageName)
+            ?: return false
+        return try {
+            // NEW_TASK because this may be launched with no Activity of ours
+            // on screen at all (an automation over MQTT, the remote admin).
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            android.util.Log.w("kiosk_satellite", "launchApp $packageName failed", e)
+            false
+        }
+    }
+
+    /// The next alarm clock set on the device, whichever app set it: this is
+    /// the same value the status bar's alarm icon reflects. Null when none is
+    /// set. The package is reported alongside so an automation can tell the
+    /// clock app's alarm from some other app's.
+    private fun nextAlarm(): Map<String, Any?>? {
+        return try {
+            val alarms = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val info = alarms.nextAlarmClock ?: return null
+            mapOf(
+                "triggerTime" to info.triggerTime,
+                "package" to info.showIntent?.creatorPackage,
+            )
+        } catch (e: Exception) {
+            android.util.Log.w("kiosk_satellite", "nextAlarm read failed", e)
+            null
+        }
+    }
+
     private fun canDrawOverlays(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
 
@@ -511,6 +574,10 @@ class BackgroundBridge(
         }
         try {
             context.unregisterReceiver(screenReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            context.unregisterReceiver(alarmReceiver)
         } catch (_: Exception) {
         }
     }
