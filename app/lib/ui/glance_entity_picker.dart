@@ -33,11 +33,9 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
   bool _searching = false;
   String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    _search('');
-  }
+  /// Nothing is listed until something is typed. The unfiltered list is
+  /// every entity in the instance — thousands of rows nobody asked to
+  /// browse, and a full state fetch to produce them.
 
   @override
   void dispose() {
@@ -47,12 +45,21 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
   }
 
   void _onQueryChanged(String value) {
-    // One search per pause, not per keystroke: each is a full state fetch.
     _debounce?.cancel();
+    if (value.trim().isEmpty) {
+      setState(() {
+        _results = const [];
+        _searching = false;
+        _error = null;
+      });
+      return;
+    }
+    // One search per pause, not per keystroke: each is a full state fetch.
     _debounce = Timer(const Duration(milliseconds: 350), () => _search(value));
   }
 
   Future<void> _search(String query) async {
+    if (query.trim().isEmpty) return;
     setState(() {
       _searching = true;
       _error = null;
@@ -170,6 +177,23 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Text(_error!, textAlign: TextAlign.center),
+                    ),
+                  )
+                : _results.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        _searching
+                            ? 'Searching…'
+                            : _query.text.trim().isEmpty
+                                ? 'Type to search entities.'
+                                : 'Nothing matched.',
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
                   )
                 : ListView.builder(
