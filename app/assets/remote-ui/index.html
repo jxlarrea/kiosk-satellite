@@ -1464,7 +1464,8 @@ async function glanceEntityPicker(initial) {
   const search = document.createElement('input');
   search.type = 'search';
   search.placeholder = 'Search by name or entity id';
-  search.style.width = '100%';
+  search.className = 'field';
+  search.style.margin = '0';
   const results = document.createElement('div');
   results.style.cssText = 'max-height:320px; overflow:auto; margin-top:8px;';
   const hint = (text) => {
@@ -3586,39 +3587,62 @@ function settingRow(s) {
     return row;
   }
 
-  // The At a Glance entities, mirroring the device's picker. The row shows
-  // what is chosen and opens a modal to change it: the search and its
-  // results belong in a dialog, not inline where they would swamp the
-  // settings group around them.
+  // The At a Glance entities, mirroring the device's picker. The picker row
+  // holds only the button; the chosen entities get a row each below it, so
+  // the group reads like every other list in this admin instead of cramming
+  // four names into one value cell.
   if (s.key === 'screensaver.glance_entities') {
     let chosen = [];
     try { chosen = JSON.parse(s.value || '[]') || []; } catch (_) { chosen = []; }
-    const summary = document.createElement('span');
-    summary.style.cssText = 'text-align:right; word-break:break-word; max-width:55%';
-    const paint = () => {
-      summary.textContent = chosen.length
-        ? chosen.map((e) => e.name || e.entity_id).join(', ')
-        : 'None yet';
-    };
-    paint();
     const btn = document.createElement('button');
     btn.className = 'btn-ghost';
     btn.textContent = 'Choose\u2026';
     btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+    row.appendChild(btn);
+
+    // Real siblings, not a wrapper: the card's dividers are drawn between
+    // adjacent .row elements, and a wrapping element would break the chain.
+    // The caller appends whatever is returned, so a fragment delivers them
+    // all into the same card.
+    const frag = document.createDocumentFragment();
+    frag.appendChild(row);
+    let entityRows = [];
+    const build = () => {
+      if (!chosen.length) {
+        return [readOnlyRow('None yet', `Up to ${GLANCE_MAX} entities.`, '')];
+      }
+      // Numbered so the display order is readable without opening the modal.
+      return chosen.map((entity, index) => readOnlyRow(
+        entity.name || entity.entity_id, entity.entity_id, `${index + 1}`));
+    };
+    const repaint = () => {
+      const parent = row.parentNode;
+      const fresh = build();
+      if (!parent) {
+        entityRows.forEach((el) => el.remove());
+        fresh.forEach((el) => frag.appendChild(el));
+      } else {
+        entityRows.forEach((el) => el.remove());
+        let after = row;
+        fresh.forEach((el) => {
+          after.insertAdjacentElement('afterend', el);
+          after = el;
+        });
+      }
+      entityRows = fresh;
+    };
+    repaint();
+
     btn.addEventListener('click', async () => {
       const picked = await glanceEntityPicker(chosen);
       if (!picked) return;
       chosen = picked;
-      paint();
+      repaint();
       await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
         'screensaver.glance_entities': JSON.stringify(chosen),
       }) });
     });
-    const controls = document.createElement('div');
-    controls.style.cssText = 'display:flex; gap:8px; align-items:center; min-width:0';
-    controls.append(summary, btn);
-    row.appendChild(controls);
-    return row;
+    return frag;
   }
 
   // The camera screensaver's view comes from the ones configured under
