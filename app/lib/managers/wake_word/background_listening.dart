@@ -87,6 +87,10 @@ class BackgroundListening {
   /// the platform's volume receiver. The MQTT manager republishes off it.
   static void Function()? _onVolumeChanged;
 
+  /// The display woke or slept by any route, pushed from the platform's
+  /// screen receiver. The screen manager owns the resulting state.
+  static void Function(bool on)? _onScreenStateChanged;
+
   static set onDownloadComplete(
       void Function(int id, bool success, String? filename)? handler) {
     _onDownloadComplete = handler;
@@ -98,11 +102,19 @@ class BackgroundListening {
     _installHandler();
   }
 
-  /// One channel, one handler: both native pushes share it, so it is
-  /// (re)installed whenever either callback changes and removed only when
-  /// both are gone.
+  static set onScreenStateChanged(void Function(bool on)? handler) {
+    _onScreenStateChanged = handler;
+    _installHandler();
+  }
+
+  /// One channel, one handler: every native push shares it, so it is
+  /// (re)installed whenever any callback changes and removed only when they
+  /// are all gone. Setting a handler directly on the channel from elsewhere
+  /// would silently replace this one and take the others down with it.
   static void _installHandler() {
-    if (_onDownloadComplete == null && _onVolumeChanged == null) {
+    if (_onDownloadComplete == null &&
+        _onVolumeChanged == null &&
+        _onScreenStateChanged == null) {
       _channel.setMethodCallHandler(null);
       return;
     }
@@ -116,6 +128,10 @@ class BackgroundListening {
         );
       }
       if (call.method == 'volumeChanged') _onVolumeChanged?.call();
+      if (call.method == 'screenStateChanged') {
+        final args = (call.arguments as Map?) ?? const {};
+        _onScreenStateChanged?.call(args['on'] == true);
+      }
       return null;
     });
   }

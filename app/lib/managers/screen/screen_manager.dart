@@ -7,6 +7,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import '../wake_word/background_listening.dart';
 
 /// Brightness, keep-awake, and screen power.
 ///
@@ -28,6 +29,18 @@ class ScreenManager extends Manager {
 
   bool get isScreenOn => _screenOn;
 
+  /// Move the logical state and tell everyone, once. Both the app's own
+  /// screenOn/screenOff and the system's broadcasts land here, so a change
+  /// is announced exactly once no matter which of them saw it first: the
+  /// broadcast that follows this app's own lockNow finds the flag already
+  /// moved and stays quiet.
+  void _setScreenOn(bool on, {required String source}) {
+    if (_screenOn == on) return;
+    _screenOn = on;
+    log.debug(name, 'screen ${on ? 'on' : 'off'} ($source)');
+    bus.publish(ScreenStateChanged(on: on));
+  }
+
   /// The screensaver asks the screen to stay on while its overlay is up (see
   /// [_applyWakelock]).
   bool _screensaverHold = false;
@@ -35,6 +48,25 @@ class ScreenManager extends Manager {
   @override
   Future<void> init() async {
     await _applyWakelock();
+
+    // The panel's real state, however it got there. Without this the flag
+    // below only ever moved when this app itself turned the screen on or
+    // off, so the power button, the OS idle timeout or another app left
+    // every mirror of it stale — the MQTT light stuck on, the remote admin
+    // disagreeing with the tablet in front of you (issue #41).
+    // Through BackgroundListening, which multiplexes this channel: setting a
+    // handler on it directly would replace the one carrying download and
+    // volume pushes.
+    BackgroundListening.onScreenStateChanged =
+        (on) => _setScreenOn(on, source: 'system');
+    // Seed from reality rather than assuming on: a device whose screen is
+    // already off when the app starts would otherwise report on until
+    // something happened to change it.
+    try {
+      final interactive =
+          await _background.invokeMethod<bool>('isScreenInteractive');
+      if (interactive != null) _screenOn = interactive;
+    } catch (_) {}
 
     // External brightness changes (quick settings, adaptive brightness):
     // pushed by the native observer so every mirror of the value — the
@@ -243,10 +275,7 @@ class ScreenManager extends Manager {
     try {
       ok = await _background.invokeMethod('screenOff') == true;
     } catch (_) {}
-    if (ok && _screenOn) {
-      _screenOn = false;
-      bus.publish(const ScreenStateChanged(on: false));
-    }
+    if (ok) _setScreenOn(false, source: 'app');
     return ok;
   }
 
@@ -259,8 +288,8 @@ class ScreenManager extends Manager {
     try {
       await _background.invokeMethod('wakeScreen');
     } catch (_) {}
-    if (_screenOn) return;
-    _screenOn = true;
-    bus.publish(const ScreenStateChanged(on: true));
+    // The ACTION_SCREEN_ON broadcast reports this too; whichever arrives
+    // first moves the flag and the other becomes a no-op.
+    _setScreenOn(true, source: 'app');
   }
 }

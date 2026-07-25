@@ -57,6 +57,13 @@ class BackgroundBridge(
                     result.success(true)
                 }
                 "isActivityResumed" -> result.success(ActivityState.resumed)
+                // The panel's real state, for seeding the logical flag at
+                // start: a device that boots (or reinstalls) with its screen
+                // already off must not report it as on.
+                "isScreenInteractive" -> result.success(
+                    (context.getSystemService(Context.POWER_SERVICE)
+                        as android.os.PowerManager).isInteractive,
+                )
                 // The File Manager's shared-storage root. "All files access"
                 // is a settings screen, not a runtime dialog: request() opens
                 // it for this app and the person toggles it there.
@@ -251,6 +258,27 @@ class BackgroundBridge(
         }
     }
 
+    // The display going to sleep or waking by any route other than this app:
+    // the power button, the OS idle timeout, another app, a lock screen. Dart
+    // keeps a logical on/off flag that only its own screenOn/screenOff moved,
+    // so every mirror of it (the MQTT light, the remote admin) went stale the
+    // moment someone touched the power button (issue #41).
+    //
+    // ACTION_SCREEN_ON/OFF report interactivity rather than literal panel
+    // power, which is the honest signal here: a dozing panel is off to the
+    // person looking at it, and doze-capable hardware keeps reporting its
+    // display as powered while dozing.
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context?, intent: Intent?) {
+            val on = when (intent?.action) {
+                Intent.ACTION_SCREEN_ON -> true
+                Intent.ACTION_SCREEN_OFF -> false
+                else -> return
+            }
+            channel.invokeMethod("screenStateChanged", mapOf("on" to on))
+        }
+    }
+
     // A second init block on purpose: initializers run in declaration order,
     // so downloadReceiver exists by the time this registers it. EXPORTED
     // because ACTION_DOWNLOAD_COMPLETE is not a protected system broadcast;
@@ -268,6 +296,17 @@ class BackgroundBridge(
             context,
             volumeReceiver,
             IntentFilter("android.media.VOLUME_CHANGED_ACTION"),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        // Screen on/off are protected system broadcasts, and they are only
+        // ever delivered to receivers registered in code like this one.
+        ContextCompat.registerReceiver(
+            context,
+            screenReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+            },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
     }
@@ -468,6 +507,10 @@ class BackgroundBridge(
         }
         try {
             context.unregisterReceiver(volumeReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            context.unregisterReceiver(screenReceiver)
         } catch (_: Exception) {
         }
     }
