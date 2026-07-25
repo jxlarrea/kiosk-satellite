@@ -50,6 +50,38 @@ class KioskManager extends Manager {
   Future<void> init() async {
     commands.register(
       Command(
+        name: 'launchApp',
+        description:
+            'Open another Android app by package name, leaving the kiosk '
+            'running behind it (issue #44). Fails when the package is not '
+            'installed or has nothing launchable.',
+        params: const {'package': 'Android package, e.g. com.android.deskclock'},
+        handler: (p) async {
+          final package = '${p['package'] ?? ''}'.trim();
+          if (package.isEmpty) {
+            return const CommandResult.fail('package required');
+          }
+          try {
+            final launched = await _backgroundChannel
+                .invokeMethod<bool>('launchApp', {'package': package});
+            if (launched != true) {
+              return CommandResult.fail(
+                '$package is not installed, or has no app to open',
+              );
+            }
+            log.info(name, 'opened $package');
+            return const CommandResult.ok();
+          } on PlatformException catch (e) {
+            return CommandResult.fail('could not open $package: $e');
+          } on MissingPluginException {
+            return const CommandResult.fail('opening apps is Android-only');
+          }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
         name: 'exitApp',
         description: 'Close Kiosk Satellite',
         handler: (_) async {

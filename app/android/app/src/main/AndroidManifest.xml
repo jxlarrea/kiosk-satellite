@@ -146,5 +146,14 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Launching another app from an app:// link in the dashboard. Without
+             this, package visibility hides every other app from us and
+             getLaunchIntentForPackage returns null for all of them. Scoped to
+             apps that have a launcher entry: enough to start them, and no more
+             than a launcher already sees. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
     </queries>
 </manifest>

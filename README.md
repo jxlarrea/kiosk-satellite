@@ -87,6 +87,15 @@ smooth on the low-powered, older tablets that usually end up on walls.
 - **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
   awake, default brightness, scheduled light/dark theme, custom
   JavaScript injection, and self-signed certificate support.
+- **Open other apps from the dashboard**: point any card's tap action at
+  `app://<package>` and the tablet opens that app, with the kiosk still
+  running behind it.
+
+  ```yaml
+  tap_action:
+    action: url
+    url_path: app://com.android.deskclock
+  ```
 - **WebRTC cameras**: import streams from Go2RTC or add WHEP cameras
   manually, then arrange up to four cameras into responsive
   [camera views](docs/cameras.md) that can be opened from the tablet,

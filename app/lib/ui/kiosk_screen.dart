@@ -15,6 +15,7 @@ import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
 import '../managers/browser/ws_filter_script.dart';
+import '../managers/kiosk/app_link.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
@@ -755,6 +756,10 @@ class _KioskScreenState extends State<KioskScreen>
       // only for the brief drawer slide; settings is an opaque route, so
       // the view is not even composited while it is open.
       useHybridComposition: true,
+      // Required for shouldOverrideUrlLoading to be called at all: without
+      // it the callback is simply never invoked, and app:// navigations
+      // would fall through to Chromium as an unknown scheme.
+      useShouldOverrideUrlLoading: true,
       // Long-press menus and text selection, when kiosk mode says so.
       disableContextMenu:
           c.kiosk.locked && c.settings.get(defs.kioskDisableContextMenus),
@@ -799,6 +804,38 @@ class _KioskScreenState extends State<KioskScreen>
       return ServerTrustAuthResponse(
         action: ServerTrustAuthResponseAction.CANCEL,
       );
+    },
+    // A dashboard button can open another Android app by navigating to
+    // app://<package> (issue #44): the clock app to set an alarm, a music
+    // app, whatever is installed. Everything else loads as usual.
+    //
+    // Only this app's own scheme is claimed. Chromium's intent:// URLs are
+    // deliberately not honoured: they can carry an arbitrary component and
+    // extras, and a kiosk pointed at a page is not the place to hand a web
+    // document that much reach.
+    shouldOverrideUrlLoading: (controller, action) async {
+      final url = action.request.url;
+      if (url == null || url.scheme != 'app') {
+        return NavigationActionPolicy.ALLOW;
+      }
+      final package = appLinkPackage(url.toString());
+      if (package == null) {
+        // Ours by scheme but not a package name: cancel anyway, or Chromium
+        // shows its own error page over the dashboard.
+        return NavigationActionPolicy.CANCEL;
+      }
+      final result = await c.commands.execute('launchApp', {
+        'package': package,
+      });
+      if (!result.ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Could not open $package'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return NavigationActionPolicy.CANCEL;
     },
     onWebViewCreated: (controller) {
       c.browser.attach(controller);
