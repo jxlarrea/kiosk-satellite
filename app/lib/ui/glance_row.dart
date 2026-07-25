@@ -70,6 +70,11 @@ class GlanceRow extends StatelessWidget {
               );
               return Row(
                 mainAxisSize: MainAxisSize.min,
+                // Explicit, because this row is handed a full-width box when
+                // it is pinned to the bottom of the clock screensaver: left
+                // to the default it would lay the slots out from the left
+                // edge and the centre entity would no longer meet the clock.
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   for (final item in items)

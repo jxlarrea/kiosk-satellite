@@ -150,6 +150,15 @@ class ClockScreensaver extends StatefulWidget {
 }
 
 class _ClockScreensaverState extends State<ClockScreensaver> {
+  /// How far the At a Glance row sits above the bottom edge, as a fraction
+  /// of the display height. Measured from the display, not from the clock,
+  /// so the clock's size slider cannot move it.
+  static const _glanceBottomInset = 0.06;
+
+  /// Where the clock block sits while the row is showing. It gives up the
+  /// centre so the two are not crowded, matching the mockups in issue #37.
+  static const _clockAnchorWithGlance = -0.2;
+
   Timer? _tick;
   Timer? _shift;
   DateTime _now = DateTime.now();
@@ -271,12 +280,34 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
 
     return ColoredBox(
       color: Colors.black,
-      child: Center(
-        child: Transform.translate(
-          offset: _offset,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+      // Expand: both children are pinned to the display, so the stack must
+      // be the display rather than sized to whatever the clock happens to
+      // measure.
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // The row is pinned to the bottom of the display, NOT laid out
+          // below the clock. Stacked under it, its position moved with the
+          // clock's height, so turning the size slider up walked the row
+          // down the screen and off the bottom by about 130%. Pinned, the
+          // slider only ever resizes the clock.
+          if (glance)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: size.height * _glanceBottomInset,
+              child: GlanceRow(
+                container: widget.container,
+                scale: glanceScale,
+              ),
+            ),
+          Align(
+            alignment: Alignment(0, glance ? _clockAnchorWithGlance : 0),
+            child: Transform.translate(
+              offset: _offset,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
               Text(
                 _time(),
                 style: TextStyle(
@@ -304,28 +335,11 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                   ),
                 ),
               ],
-              if (glance) ...[
-                SizedBox(height: clockSize * 0.42),
-                // Dropped a further fifth of the display, and by a transform
-                // rather than more spacing: spacing would push the row down
-                // and pull the clock up in equal measure (the column is
-                // centred as one block), and the clock is where it should
-                // be. Clamped so a short panel cannot slide the row off the
-                // bottom edge.
-                Transform.translate(
-                  offset: Offset(
-                    0,
-                    min(size.height * 0.20, size.height * 0.5 - 60 * glanceScale),
-                  ),
-                  child: GlanceRow(
-                    container: widget.container,
-                    scale: glanceScale,
-                  ),
-                ),
-              ],
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
