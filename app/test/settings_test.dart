@@ -59,6 +59,22 @@ void main() {
     expect(pw['default'], isNull);
   });
 
+  test('the DLNA port starts empty, for the renderer to fill in', () async {
+    await build({});
+    expect(settings.get(defs.dlnaPort), '');
+  });
+
+  test('the DLNA port rejects values a server cannot bind', () async {
+    await build({});
+    // Empty is the unstarted state, not an error.
+    expect(defs.dlnaPort.validator!(''), isNull);
+    expect(defs.dlnaPort.validator!('  '), isNull);
+    expect(defs.dlnaPort.validator!('2325'), isNull);
+    expect(defs.dlnaPort.validator!('80'), isNotNull);
+    expect(defs.dlnaPort.validator!('70000'), isNotNull);
+    expect(defs.dlnaPort.validator!('nonsense'), isNotNull);
+  });
+
   test('microphone capture defaults are the long-standing behaviour', () async {
     await build({});
     // An untouched install must capture exactly as it did before these

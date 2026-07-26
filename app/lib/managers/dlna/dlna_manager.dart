@@ -36,6 +36,39 @@ class DlnaMedia {
   final bool hls;
 }
 
+/// Where the renderer starts looking when the port setting is empty, which
+/// it is until the first successful start writes the real one in.
+///
+/// Still 2325 for continuity: Home Assistant stores the renderer's URL in
+/// its config entry and does not follow a device that reappears on another
+/// port, so a different number here would take every working install offline
+/// until its owner re-added the integration by hand.
+const defaultDlnaPort = 2325;
+
+/// Serve [handler] on the first free port at or above [preferred].
+///
+/// The renderer binds every interface, so it loses the port to anything
+/// already holding it — including this app's own secure context proxy, which
+/// takes the same number on loopback and left the renderer dead on arrival
+/// for every http instance (issue #49). Stepping up rather than taking an
+/// ephemeral port keeps the choice stable across restarts, which matters
+/// because a manually added Home Assistant entry stores the URL.
+Future<HttpServer> serveWithFallback(
+  Handler handler,
+  int preferred, {
+  int tries = 4,
+}) async {
+  SocketException? failure;
+  for (var port = preferred; port < preferred + tries; port++) {
+    try {
+      return await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
+    } on SocketException catch (e) {
+      failure = e;
+    }
+  }
+  throw failure!;
+}
+
 class _Subscription {
   _Subscription(this.sid, this.callback, this.expiry);
   final String sid;
@@ -68,7 +101,10 @@ class DlnaManager extends Manager {
 
   final SettingsManager _settings;
 
-  static const _port = 2325;
+  /// The port the running server actually bound, which is what SSDP must
+  /// advertise. Zero while stopped.
+  int _livePort = 0;
+
   static const _ssdpAddress = '239.255.255.250';
   static const _ssdpPort = 1900;
 
@@ -148,6 +184,16 @@ class DlnaManager extends Manager {
     _uuid = await _settings.secret('dlna_uuid', _newUuid);
     _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('dlna.') && e.key != defs.deviceName.key) return;
+      // The port row is written by [_start] itself, to report where the
+      // renderer landed. Restarting on our own write would restart the
+      // server every time it starts, and a port that had to move would do
+      // it twice. A value that already matches the running server is
+      // nothing to act on however it was written, user included.
+      if (e.key == defs.dlnaPort.key &&
+          _livePort != 0 &&
+          _settings.get(defs.dlnaPort).trim() == '$_livePort') {
+        return;
+      }
       _restartDebounce?.cancel();
       _restartDebounce = Timer(const Duration(milliseconds: 500), () {
         _transition = _transition.then((_) => _restart());
@@ -192,12 +238,39 @@ class DlnaManager extends Manager {
   }
 
   Future<void> _start() async {
+    final configured = _settings.get(defs.dlnaPort).trim();
+    final port = int.tryParse(configured) ?? defaultDlnaPort;
     try {
       _ip = await _localIp();
       _notifyClient = http.Client();
-      _server = await shelf_io.serve(_route, InternetAddress.anyIPv4, _port);
+      _server = await serveWithFallback(_route, port);
+      _livePort = _server!.port;
       await _startSsdp();
-      log.info(name, 'renderer up at http://$_ip:$_port (uuid $_uuid)');
+      if (_livePort != port) {
+        // Controllers find the renderer by SSDP, which advertises the live
+        // port, so this needs no action — but a manual integration entry
+        // pointing at the old number does, and silence would leave that
+        // looking like a bug.
+        log.warn(
+          name,
+          'port $port is in use by something else on this device, so the '
+          'renderer took $_livePort instead',
+        );
+      }
+      // Write the port back so the settings row names where the renderer
+      // actually is, rather than where it was asked to be. The listener
+      // above ignores this write, so it does not restart what just started.
+      if (configured != '$_livePort') {
+        await _settings.set(defs.dlnaPort, '$_livePort');
+      }
+      log.info(name, 'renderer up at http://$_ip:$_livePort (uuid $_uuid)');
+    } on SocketException catch (e) {
+      log.error(
+        name,
+        'no free port from $port upwards, so the renderer could not start. '
+        'Set a different one under Settings → DLNA Renderer. ($e)',
+      );
+      await _stop();
     } catch (e) {
       log.error(name, 'failed to start: $e');
       await _stop();
@@ -216,6 +289,7 @@ class DlnaManager extends Manager {
     }
     await _server?.close(force: true);
     _server = null;
+    _livePort = 0;
     _notifyClient?.close();
     _notifyClient = null;
     for (final list in _subs.values) {
@@ -315,7 +389,7 @@ class DlnaManager extends Manager {
         final response = 'HTTP/1.1 200 OK\r\n'
             'CACHE-CONTROL: max-age=1800\r\n'
             'EXT:\r\n'
-            'LOCATION: http://$_ip:$_port/device.xml\r\n'
+            'LOCATION: http://$_ip:$_livePort/device.xml\r\n'
             'SERVER: $_serverHeader\r\n'
             'ST: ${m.key}\r\n'
             'USN: ${m.value}\r\n'
@@ -333,7 +407,7 @@ class DlnaManager extends Manager {
       final msg = 'NOTIFY * HTTP/1.1\r\n'
           'HOST: $_ssdpAddress:$_ssdpPort\r\n'
           'CACHE-CONTROL: max-age=1800\r\n'
-          'LOCATION: http://$_ip:$_port/device.xml\r\n'
+          'LOCATION: http://$_ip:$_livePort/device.xml\r\n'
           'NT: ${t.key}\r\n'
           'NTS: $nts\r\n'
           'SERVER: $_serverHeader\r\n'

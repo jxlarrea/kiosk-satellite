@@ -23,7 +23,9 @@ code on screen, photos from the HA media library.
    named after the kiosk's device name.
 3. On segmented networks (the tablet and Home Assistant on different
    VLANs), discovery multicast does not cross over: add the integration
-   manually instead, with the URL `http://<device-ip>:2325/device.xml`.
+   manually instead, with the URL `http://<device-ip>:<port>/device.xml`,
+   where the port is the one shown in Settings → DLNA Renderer → Server
+   port (2325 unless something else on the device had it).
 
 ## What plays
 
@@ -69,7 +71,20 @@ and play.
 
 - **The kiosk is not discovered**: Home Assistant and the tablet are
   probably on different subnets. Add the DLNA Digital Media Renderer
-  integration manually with `http://<device-ip>:2325/device.xml`.
+  integration manually with `http://<device-ip>:<port>/device.xml`, taking
+  the port from Settings → DLNA Renderer → Server port.
+- **The renderer is on a port you did not expect**: 2325 was taken by
+  something else on the device, so it stepped to the next free one.
+  Settings → DLNA Renderer → **Server port** always shows where it
+  actually is, which is the number a manual Home Assistant entry needs.
+  On a plain http instance this is normal, because the secure context
+  proxy holds 2325. Type a different port there to move it, or clear the
+  field to let it pick again.
+- **The renderer does not start**: nothing was free from the configured
+  port upwards. The log names it; set a different one under Settings →
+  DLNA Renderer → Server port. Releases up to and including 0.18.0-beta
+  failed here instead of stepping, so on http instances the renderer
+  never started at all.
 - **A camera takes long to appear**: Home Assistant prepares the camera's
   HLS stream before anything reaches the kiosk, which can take 10 to 15
   seconds for a cold stream. Enabling **Preload stream** in the camera's

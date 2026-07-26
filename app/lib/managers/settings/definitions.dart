@@ -2009,6 +2009,48 @@ const dlnaEnabled = SettingDef<bool>(
   category: 'DLNA',
 );
 
+// Still 2325, deliberately. It collides with the secure context proxy, which
+// binds the same number on loopback and wins the race on every http instance
+// (issue #49) — but the renderer now steps to the next free port instead of
+// failing, and moving the default would take every working install with it:
+// Home Assistant stores the renderer's URL in its config entry and does not
+// follow a device that reappears on another port, so the media_player would
+// go unavailable until the user re-added it by hand.
+//
+// The proxy is the one that cannot move: its port is baked into the page's
+// origin, so changing it signs the user out of Home Assistant and loses the
+// dashboard's saved data.
+/// Empty until the renderer starts, which writes in the port it took and
+/// keeps it true from then on. A field that names the port the renderer is
+/// actually on is worth more than one that names the port it asked for: it
+/// is the number a manually added Home Assistant entry needs, and without it
+/// the only place that number appears is the log.
+const dlnaPort = SettingDef<String>(
+  key: 'dlna.port',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Server port',
+  description:
+      'The port the renderer is on, filled in when it starts. Change it to '
+      'move the renderer, or clear it to let it pick again.',
+  category: 'DLNA',
+  placeholder: 'Set when the renderer starts',
+  dependsOn: 'dlna.enabled',
+  validator: validatePort,
+);
+
+/// A port a server can actually bind: below 1024 needs root, which no app on
+/// Android has. Empty is valid and means "pick one".
+String? validatePort(Object? value) {
+  final text = '${value ?? ''}'.trim();
+  if (text.isEmpty) return null;
+  final port = int.tryParse(text);
+  if (port == null || port < 1024 || port > 65535) {
+    return 'Enter a port between 1024 and 65535, or leave it empty';
+  }
+  return null;
+}
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -2210,6 +2252,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinLyrics,
   sendspinLyricsOffset,
   dlnaEnabled,
+  dlnaPort,
   remoteEnabled,
   remotePort,
   remotePassword,

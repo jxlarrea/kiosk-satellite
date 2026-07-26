@@ -3867,9 +3867,14 @@ function settingRow(s) {
     const inp = document.createElement('input');
     inp.type = s.type === 'password' ? 'password' : s.type === 'number' ? 'number' : 'text';
     if (s.type === 'password') inp.placeholder = s.value === '__set__' ? '•••••• (set)' : 'Not set';
-    else inp.value = (s.type === 'number' && typeof s.value === 'number')
-      ? String(s.value)  // JS prints an integer-valued number without a .0
-      : (s.value ?? '');
+    else {
+      inp.value = (s.type === 'number' && typeof s.value === 'number')
+        ? String(s.value)  // JS prints an integer-valued number without a .0
+        : (s.value ?? '');
+      // Same hint the device shows in an empty field (the DLNA port before
+      // the renderer has filled it in).
+      if (s.placeholder) inp.placeholder = s.placeholder;
+    }
     inp.addEventListener('change', () =>
       save(s.type === 'number' ? Number(inp.value) : inp.value));
     row.appendChild(inp);
