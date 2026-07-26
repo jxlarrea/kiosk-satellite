@@ -17,6 +17,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import kotlin.concurrent.thread
 import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Streams 16 kHz mono PCM16 microphone audio to Dart over an EventChannel.
@@ -42,6 +43,13 @@ import kotlin.math.max
  * usually attaches and then silently does nothing. The tradeoff is that this
  * source also applies the platform's own NS/AGC by default, which is exactly
  * what [applyDsp] turns back off.
+ *
+ * All three of those choices are overridable from settings, because on custom
+ * ROMs they are exactly what goes wrong: VOICE_COMMUNICATION is the phone-call
+ * capture path, and a ROM that never had its call audio calibrated can deliver
+ * it 20 dB down while a recorder app on plain MIC sounds fine. The defaults are
+ * the behaviour described above; the overrides arrive as stream arguments,
+ * which is why a change of any of them reopens capture.
  */
 class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.StreamHandler {
     companion object {
@@ -79,9 +87,15 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             AudioFormat.ENCODING_PCM_16BIT,
         )
         val bufSize = max(minBuf, CHUNK_BYTES * 4)
+        val args = arguments as? Map<*, *>
+        val source = audioSource(args?.get("source") as? String)
+        val wantAgc = args?.get("agc") == true
+        // A gain of 0 dB is the overwhelmingly common case, and a factor of
+        // exactly 1 lets the read loop skip the sample walk entirely.
+        val gain = gainFactor((args?.get("gainDb") as? Number)?.toDouble() ?: 0.0)
         val rec = try {
             AudioRecord(
-                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+                source,
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
@@ -97,10 +111,15 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             return
         }
         record = rec
-        val selector = (arguments as? Map<*, *>)?.get("device") as? String
-        Log.i(TAG, "capture opening (device=${selector ?: "automatic"})")
+        val selector = args?.get("device") as? String
+        Log.i(
+            TAG,
+            "capture opening (device=${selector ?: "automatic"} " +
+                "source=${sourceName(source)} gain=${"%.1f".format(gainDbOf(gain))}dB " +
+                "agc=$wantAgc)",
+        )
         applyPreferredDevice(rec, selector)
-        applyDsp(rec.audioSessionId)
+        applyDsp(rec.audioSessionId, wantAgc)
         recording = true
         rec.startRecording()
         worker = thread(name = "vsww-mic") {
@@ -109,6 +128,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                 val read = rec.read(buf, 0, buf.size)
                 if (read > 0) {
                     val chunk = buf.copyOf(read)
+                    if (gain != 1.0) amplify(chunk, read, gain)
                     mainHandler.post {
                         if (recording) sink.success(chunk)
                     }
@@ -116,6 +136,51 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             }
         }
     }
+
+    /**
+     * Multiply 16-bit little-endian samples in place, saturating at full
+     * scale. Clipping rather than wrapping matters: a wrapped sample flips
+     * sign and reads to a wake word model as an impulse, which is worse than
+     * the flat top clipping gives.
+     */
+    private fun amplify(buf: ByteArray, length: Int, gain: Double) {
+        var i = 0
+        val end = length - 1
+        while (i < end) {
+            val sample = ((buf[i + 1].toInt() shl 8) or (buf[i].toInt() and 0xFF)).toShort()
+            var scaled = (sample * gain).toInt()
+            if (scaled > Short.MAX_VALUE.toInt()) scaled = Short.MAX_VALUE.toInt()
+            if (scaled < Short.MIN_VALUE.toInt()) scaled = Short.MIN_VALUE.toInt()
+            buf[i] = (scaled and 0xFF).toByte()
+            buf[i + 1] = ((scaled shr 8) and 0xFF).toByte()
+            i += 2
+        }
+    }
+
+    /** Settings value to AudioSource, defaulting to the one we have always used. */
+    private fun audioSource(name: String?): Int = when (name) {
+        "mic" -> MediaRecorder.AudioSource.MIC
+        "voice_recognition" -> MediaRecorder.AudioSource.VOICE_RECOGNITION
+        else -> MediaRecorder.AudioSource.VOICE_COMMUNICATION
+    }
+
+    private fun sourceName(source: Int): String = when (source) {
+        MediaRecorder.AudioSource.MIC -> "mic"
+        MediaRecorder.AudioSource.VOICE_RECOGNITION -> "voice_recognition"
+        else -> "voice_communication"
+    }
+
+    /**
+     * Decibels to a linear factor, clamped to the range the settings slider
+     * offers so a bad value from an import cannot blow the signal apart.
+     */
+    private fun gainFactor(db: Double): Double {
+        if (db <= 0.0) return 1.0
+        return Math.pow(10.0, min(db, 24.0) / 20.0)
+    }
+
+    private fun gainDbOf(factor: Double): Double =
+        if (factor <= 1.0) 0.0 else 20.0 * Math.log10(factor)
 
     /**
      * Pin capture to the user's chosen input, when one is configured and
@@ -184,7 +249,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
      * "created the effect" and "the effect is actually running" are different
      * things on Android and vary by OEM.
      */
-    private fun applyDsp(sessionId: Int) {
+    private fun applyDsp(sessionId: Int, wantAgc: Boolean) {
         if (AcousticEchoCanceler.isAvailable()) {
             aec = try {
                 AcousticEchoCanceler.create(sessionId)?.also { it.setEnabled(true) }
@@ -204,9 +269,13 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                 null
             }
         }
+        // AGC is off unless the user asked for it: it pumps the level between
+        // utterances, which is exactly what the wake models were not trained
+        // on. It exists as a setting for devices whose capture is so quiet
+        // that a shifting level beats an inaudible one.
         if (AutomaticGainControl.isAvailable()) {
             agc = try {
-                AutomaticGainControl.create(sessionId)?.also { it.setEnabled(false) }
+                AutomaticGainControl.create(sessionId)?.also { it.setEnabled(wantAgc) }
             } catch (e: RuntimeException) {
                 Log.w(TAG, "AGC control unavailable: ${e.message}")
                 null

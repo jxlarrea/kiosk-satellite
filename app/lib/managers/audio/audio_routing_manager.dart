@@ -43,6 +43,7 @@ class AudioRoutingManager extends Manager {
   @override
   Future<void> init() async {
     NativeMic.deviceSelector = _settings.get(defs.audioMicDevice);
+    _pushCaptureTuning();
     await _pushOutput(_settings.get(defs.audioSpeakerDevice));
     _micDeviceId = await _resolveMicId();
 
@@ -66,6 +67,12 @@ class AudioRoutingManager extends Manager {
         // because this manager inits (and so subscribes) first.
         NativeMic.deviceSelector = _settings.get(defs.audioMicDevice);
         _micDeviceId = await _resolveMicId();
+      } else if (e.key == defs.micAudioSource.key ||
+          e.key == defs.micGainDb.key ||
+          e.key == defs.micAgc.key) {
+        // Same contract as the device selector above: the values must be
+        // current before the wake-word manager reopens capture on this key.
+        _pushCaptureTuning();
       } else if (e.key == defs.audioSpeakerDevice.key) {
         _pushOutput(_settings.get(defs.audioSpeakerDevice));
       }
@@ -140,6 +147,17 @@ class AudioRoutingManager extends Manager {
     } on PlatformException {
       return null;
     }
+  }
+
+  /// Hand the Microphone settings to the capture side. Nothing is applied
+  /// until the next capture opens, which is the point: the platform fixes
+  /// the source, the gain and the effect chain when the session is created.
+  void _pushCaptureTuning() {
+    NativeMic.source = _settings.get(defs.micAudioSource);
+    NativeMic.agc = _settings.get(defs.micAgc);
+    // A gain under an adaptive AGC is two controls on one number; the setting
+    // is hidden in that state, so ignore whatever value it holds.
+    NativeMic.gainDb = NativeMic.agc ? 0 : _settings.get(defs.micGainDb);
   }
 
   Future<void> _pushOutput(String selector) async {

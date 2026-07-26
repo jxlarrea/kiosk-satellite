@@ -1311,6 +1311,68 @@ const motionCamera = SettingDef<String>(
   dependsOn: 'screensaver.dismiss_on_motion',
 );
 
+// ── Microphone ─────────────────────────────────────────────────────────
+//
+// Escape hatches for devices whose audio stack does not behave: custom ROMs
+// and cheap tablets where the mic reads far quieter through the app than it
+// does through a recorder app. Every default here is what the app has always
+// done, so an untouched install is bit-for-bit the old behaviour.
+
+const micAudioSource = SettingDef<String>(
+  key: 'audio.mic_source',
+  type: SettingType.select,
+  defaultValue: 'voice_communication',
+  options: ['voice_communication', 'voice_recognition', 'mic'],
+  optionLabels: {
+    'voice_communication': 'Voice communication (default)',
+    'voice_recognition': 'Voice recognition',
+    'mic': 'Raw microphone',
+  },
+  title: 'Capture mode',
+  description:
+      'Voice communication is the only mode echo cancellation works on, so '
+      'leave it unless the microphone reads far quieter here than in a '
+      'recorder app. On the other two the device may hear its own speech and '
+      'talk over itself.',
+  category: 'Voice Satellite',
+  section: 'Microphone settings',
+);
+
+const micAgc = SettingDef<bool>(
+  key: 'audio.mic_agc',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Automatic gain control',
+  description:
+      'Let Android level the microphone instead of setting a fixed gain. It '
+      'adapts on its own, but it also lifts room noise when nobody is '
+      'speaking, and on some devices it does nothing at all.',
+  category: 'Voice Satellite',
+  section: 'Microphone settings',
+);
+
+const micGainDb = SettingDef<num>(
+  key: 'audio.mic_gain_db',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: 0,
+  max: 24,
+  step: 1,
+  unit: ' dB',
+  title: 'Microphone gain',
+  description:
+      'Amplify the captured audio before anything hears it. Use the wake word '
+      'tester: aim for a mic level around 0.05 while speaking normally from '
+      'where you use the device. Too much gain distorts loud speech and makes '
+      'detection worse, not better.',
+  category: 'Voice Satellite',
+  section: 'Microphone settings',
+  // Hidden while Android is doing the levelling: a fixed gain under an
+  // adaptive one is two controls fighting over the same number.
+  dependsOn: 'audio.mic_agc',
+  dependsOnValue: false,
+);
+
 // ── Wake word ──────────────────────────────────────────────────────────
 
 const wakeWordEnabled = SettingDef<bool>(
@@ -2100,6 +2162,11 @@ const List<SettingDef<Object>> allSettings = [
   audioMicDevice,
   audioSpeakerDevice,
   vsSuppressScreensaver,
+  // After the wake word settings they feed: both UIs render this category in
+  // this order, and the group sits below them on the page.
+  micAudioSource,
+  micAgc,
+  micGainDb,
   haUrl,
   haToken,
   haSatelliteEntity,

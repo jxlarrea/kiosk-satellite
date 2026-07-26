@@ -14,9 +14,19 @@ class NativeMic {
   /// be current before the engine (re)starts.
   static String deviceSelector = '';
 
+  /// The capture tuning from Microphone settings, set alongside
+  /// [deviceSelector] and read at the same moment: the platform applies all
+  /// of it when the session opens, so changing any of them needs a restart.
+  static String source = 'voice_communication';
+  static num gainDb = 0;
+  static bool agc = false;
+
   Stream<Uint8List> stream() => _channel
-      .receiveBroadcastStream(
-        deviceSelector.isEmpty ? null : {'device': deviceSelector},
-      )
+      .receiveBroadcastStream({
+        if (deviceSelector.isNotEmpty) 'device': deviceSelector,
+        'source': source,
+        'gainDb': gainDb,
+        'agc': agc,
+      })
       .map((e) => e as Uint8List);
 }

@@ -58,4 +58,24 @@ void main() {
     expect(pw['value'], '__set__');
     expect(pw['default'], isNull);
   });
+
+  test('microphone capture defaults are the long-standing behaviour', () async {
+    await build({});
+    // An untouched install must capture exactly as it did before these
+    // settings existed: the call-audio source, no gain, platform AGC off.
+    expect(settings.get(defs.micAudioSource), 'voice_communication');
+    expect(settings.get(defs.micGainDb), 0);
+    expect(settings.get(defs.micAgc), isFalse);
+  });
+
+  test('the mic gain slider hides while AGC is levelling', () async {
+    await build({});
+    expect(settings.visible(defs.micGainDb), isTrue);
+    await settings.set(defs.micAgc, true);
+    // dependsOnValue: false — the inverse gate, which is the only one of its
+    // kind in the definitions.
+    expect(settings.visible(defs.micGainDb), isFalse);
+    await settings.set(defs.micAgc, false);
+    expect(settings.visible(defs.micGainDb), isTrue);
+  });
 }

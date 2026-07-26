@@ -1300,7 +1300,7 @@ class _CategoryContentState extends State<_CategoryContent> {
               _SettingsCard(
                 children: [
                   for (final def in _defsFor('Voice Satellite'))
-                    if (container.settings.visible(def))
+                    if (def.section == null && container.settings.visible(def))
                       SettingTile(
                         container: container,
                         def: def,
@@ -1328,6 +1328,24 @@ class _CategoryContentState extends State<_CategoryContent> {
                   // already said by the switch above.
                   if (container.settings.get(wakeWordEnabled))
                     WakeWordStatusTile(container: container),
+                ],
+              ),
+              // Capture tuning, under the wake word settings it feeds. Its
+              // own group because none of it is a preference: it is there
+              // for devices whose audio stack misbehaves, and every default
+              // is what the app has always done.
+              const _SectionHeading('Microphone settings'),
+              const _GroupNote(_micGroupNote),
+              _SettingsCard(
+                children: [
+                  for (final def in _defsFor('Voice Satellite'))
+                    if (def.section == 'Microphone settings' &&
+                        container.settings.visible(def))
+                      SettingTile(
+                        container: container,
+                        def: def,
+                        onChanged: () => setState(() {}),
+                      ),
                 ],
               ),
               // The tester: a live look at what the engine hears and scores,
@@ -2625,6 +2643,35 @@ class _SectionHeading extends StatelessWidget {
         style: theme.textTheme.titleSmall?.copyWith(
           color: theme.colorScheme.primary,
           fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+/// Wording for the Microphone settings group, shared with the remote admin
+/// (which carries its own copy in the HTML).
+const _micGroupNote =
+    'Only for devices that capture too quietly. Wrong values make wake word '
+    'detection worse.';
+
+/// A line under a [_SectionHeading], for a group that needs a word of warning
+/// before its first control. Sits between the heading and the card, on the
+/// heading's inset, so it reads as part of the heading rather than as a row.
+class _GroupNote extends StatelessWidget {
+  const _GroupNote(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+      child: Text(
+        text,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
         ),
       ),
     );

@@ -1480,6 +1480,12 @@ function cameraEditor({ title, body, save }) {
    null when cancelled. */
 const GLANCE_MAX = 4;
 
+/* The Microphone settings warning. Kept identical to the device's copy in
+   settings_screen.dart, which is the one users read on the tablet. */
+const MIC_GROUP_NOTE =
+  'Only for devices that capture too quietly. Wrong values make wake word ' +
+  'detection worse.';
+
 async function glanceEntityPicker(initial) {
   const chosen = (initial || []).map((e) => ({ ...e }));
   const body = document.createElement('div');
@@ -2186,16 +2192,41 @@ async function loadSettings() {
       // render() clears the container, so it goes first and the assigned
       // satellite card is prepended on top as the page's first item.
       render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length));
+      // Two cards come out of that: the unsectioned wake word settings, then
+      // the "Microphone settings" section under them. Found by content
+      // rather than position, so reordering the definitions cannot silently
+      // send these rows to the wrong card.
+      const vsCards = [...root.querySelectorAll('.card')];
+      const micCard = vsCards.find((c) => c.querySelector('[data-key="audio.mic_source"]'));
+      const wakeCard = vsCards.find((c) => c !== micCard);
+      // The warning the device shows under the group's heading. Same words,
+      // same place: between the heading and the card, not a row inside it.
+      if (micCard) {
+        const note = document.createElement('div');
+        note.style.cssText =
+          'font-size:12.5px; color:var(--muted); margin:-6px 20px 10px';
+        note.textContent = MIC_GROUP_NOTE;
+        micCard.before(note);
+        // AGC hides the gain slider, but the row is built either way and
+        // simply kept out of view, so flipping the switch can reveal it in
+        // place instead of reloading the whole tab (see save()).
+        if (!micCard.querySelector('[data-key="audio.mic_gain_db"]')) {
+          const gain = (state.settings || [])
+            .find((o) => o.key === 'audio.mic_gain_db');
+          if (gain) {
+            const gainRow = settingRow(gain);
+            gainRow.style.display = 'none';
+            micCard.appendChild(gainRow);
+          }
+        }
+      }
       // Microphone / speaker pickers on the same card as the wake word
       // settings, mirroring the device's rows in the same place.
-      {
-        const vsCard = root.querySelector('.card');
-        if (vsCard) {
-          await appendAudioDeviceRows(
-            vsCard,
-            byKey['wake_word.enabled']?.value !== false,
-          );
-        }
+      if (wakeCard) {
+        await appendAudioDeviceRows(
+          wakeCard,
+          byKey['wake_word.enabled']?.value !== false,
+        );
       }
       // The satellite this kiosk identifies as: the page's own choice wins
       // (localStorage, changeable in the Voice Satellite panel); the
@@ -3502,6 +3533,8 @@ function radioRow(name, desc, selected, onPick) {
 }
 function settingRow(s) {
   const row = document.createElement('div'); row.className = 'row';
+  // Lets a saved row find another row without a re-render (see save()).
+  row.dataset.key = s.key;
   const info = document.createElement('div'); info.className = 'info';
   info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
   info.querySelector('.name').textContent = s.title;
@@ -3509,6 +3542,17 @@ function settingRow(s) {
   row.appendChild(info);
   const save = async (value) => {
     await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
+    // AGC gates exactly one row, the gain slider next to it. Showing or
+    // hiding that in place beats the reload below, which re-runs the
+    // satellite lookup and the audio device probe and reads as the page
+    // jumping under the switch you just flipped.
+    if (s.key === 'audio.mic_agc') {
+      const cached = (state.settings || []).find((o) => o.key === s.key);
+      if (cached) cached.value = value;
+      const gain = document.querySelector('[data-key="audio.mic_gain_db"]');
+      if (gain) gain.style.display = value ? 'none' : '';
+      return;
+    }
     // Re-render only when this toggle actually changes what else is shown: a
     // setting others gate on (dependsOn), or one that reveals a hand-built
     // section (the rotation views). A blanket re-render re-fetches the

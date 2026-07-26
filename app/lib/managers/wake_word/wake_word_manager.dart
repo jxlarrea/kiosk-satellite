@@ -370,6 +370,12 @@ class WakeWordManager extends Manager {
         // updated the selector by the time this listener runs (it inits,
         // and so subscribes, before this manager).
         _restartForMicChange('microphone selection changed');
+      } else if (e.key == defs.micAudioSource.key ||
+          e.key == defs.micGainDb.key ||
+          e.key == defs.micAgc.key) {
+        // Source, gain and AGC are all fixed when the capture session opens,
+        // so they land the same way the device selection does.
+        _restartForMicChange('microphone settings changed');
       }
     });
 
