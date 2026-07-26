@@ -489,11 +489,17 @@ class _CategoryContent extends StatefulWidget {
 class _CategoryContentState extends State<_CategoryContent> {
   Future<bool>? _vsDetected;
 
+  /// Held rather than started in build(): a fresh Future on every rebuild
+  /// sends the row back to "…" and re-runs the page query, so flipping any
+  /// switch on this page made the card above it blink.
+  Future<String>? _satellite;
+
   @override
   void initState() {
     super.initState();
     if (widget.category == 'Voice Satellite') {
       _vsDetected = widget.container.homeAssistant.detectVoiceSatellite();
+      _satellite = _assignedSatellite(widget.container);
     }
   }
 
@@ -1270,7 +1276,7 @@ class _CategoryContentState extends State<_CategoryContent> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               FutureBuilder<String>(
-                future: _assignedSatellite(container),
+                future: _satellite,
                 builder: (context, snap) => _SettingsCard(
                   children: [
                     ListTile(
