@@ -487,6 +487,10 @@ class BackgroundBridge(
     private fun screenOff(): Boolean = try {
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
         if (dpm.isAdminActive(ComponentName(context, KioskAdminReceiver::class.java))) {
+            // Before the lock, not after: the SCREEN_OFF broadcast it causes
+            // is what kiosk mode's power-button defence listens for, and it
+            // must recognise this one as ours and leave the panel off.
+            KioskLock.noteAppScreenOff()
             dpm.lockNow()
             true
         } else {

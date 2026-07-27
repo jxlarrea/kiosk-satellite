@@ -453,7 +453,8 @@ const kioskDisablePower = SettingDef<bool>(
   title: 'Disable power button',
   description:
       'Android does not let apps block the power button; when it switches '
-      'the screen off, Kiosk Satellite turns it right back on.',
+      'the screen off, Kiosk Satellite turns it right back on. Turning the '
+      'screen off from Home Assistant or the remote admin still works.',
   category: 'Kiosk',
   dependsOn: 'kiosk.enabled',
 );

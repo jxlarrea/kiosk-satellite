@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.Gravity
 import android.view.KeyEvent
@@ -42,6 +43,36 @@ import io.flutter.plugin.common.MethodChannel
  *               back to Dart, which owns the PIN prompt and the menu.
  */
 class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
+    companion object {
+        /**
+         * When this app last powered the screen off on purpose, on the
+         * elapsed-realtime clock (0 = never).
+         *
+         * The power-button defence below cannot tell a button press from any
+         * other reason the display went dark, because Android reports both as
+         * the same broadcast. Without this, "turn the screen off" from Home
+         * Assistant, the remote admin or a schedule was undone a second later
+         * by our own re-wake, leaving the panel back on and showing the lock
+         * screen (issue #51).
+         */
+        @Volatile private var appScreenOffAt = 0L
+
+        /** Called by [BackgroundBridge] immediately before its lockNow. */
+        fun noteAppScreenOff() {
+            appScreenOffAt = SystemClock.elapsedRealtime()
+        }
+
+        /**
+         * Whether the screen-off now being reported is the one this app just
+         * asked for. The broadcast follows lockNow within milliseconds; the
+         * window is wide only so a busy device cannot squeeze past it.
+         */
+        private fun screenOffWasOurs(): Boolean {
+            val at = appScreenOffAt
+            return at != 0L && SystemClock.elapsedRealtime() - at < 5_000
+        }
+    }
+
     private val channel = MethodChannel(messenger, "kiosk_satellite/kiosk_lock")
     private val main = Handler(Looper.getMainLooper())
 
@@ -181,6 +212,11 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
             }
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(context: Context, intent: Intent) {
+                    // Not every screen-off is a power-button press: this app
+                    // turns the display off itself on request, and undoing
+                    // that would make the feature impossible to use while
+                    // kiosk mode is armed (issue #51).
+                    if (screenOffWasOurs()) return
                     // ACQUIRE_CAUSES_WAKEUP is the entire point; the
                     // deprecated full-wake-lock combination is still the only
                     // way to relight the panel without device-owner powers.
