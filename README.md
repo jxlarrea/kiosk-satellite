@@ -30,12 +30,12 @@ smooth on the low-powered, older tablets that usually end up on walls.
 
 ## Main Features
 
-**Guided setup**: a five-step wizard connects to Home Assistant, picks
+&bull; **Guided setup**: a five-step wizard connects to Home Assistant, picks
   the dashboard, detects Voice Satellite, and requests only the Android
   permissions your choices need. Run it on the tablet or from a browser
   on your computer.
 
-**Voice Satellite, natively**: the kiosk gets its own
+&bull; **Voice Satellite, natively**: the kiosk gets its own
   `assist_satellite` entity and the app's built-in engine takes over
   wake-word detection: it keeps listening with the screen off, at a
   fraction of the CPU a browser needs. No configuration in Voice
@@ -45,22 +45,22 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="assets/vs-demo.gif" alt="Voice Satellite" width="650"/>
 </p>
 
-**Plain HTTP instances, fully unlocked**: a loopback proxy inside the
+&bull; **Plain HTTP instances, fully unlocked**: a loopback proxy inside the
   app makes an `http://` dashboard a genuine secure context, so the
   microphone and the rest of the https-only browser surface work with no
   certificates or reverse proxy. Enabled automatically during setup.
   
-**Fast dashboards on slow tablets**: optionally filters Home
+&bull; **Fast dashboards on slow tablets**: optionally filters Home
   Assistant's state stream down to just the entities on the view
   currently on screen, turning constant stutter on older tablets into
   smooth scrolling. Any view it cannot fully resolve is left unfiltered,
   so nothing ever breaks.
 
-**Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
+&bull; **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake on power button, and
   lock-task support on device-owner provisioned tablets.
 
-**Sendspin player**: the tablet doubles as a synchronized
+&bull; **Sendspin player**: the tablet doubles as a synchronized
   [Sendspin](https://www.sendspin-audio.com/) speaker for Music
   Assistant, in sample-accurate sync with every other Sendspin player in
   the house, with metadata, artwork and volume in Home Assistant.
@@ -69,22 +69,22 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="assets/screenshots/sendspin-horizontal.png" alt="Assist" width="650"/>
 </p>
 
-**Screensavers**: dim, black, clock, Home Assistant media, local
+&bull; **Screensavers**: dim, black, clock, Home Assistant media, local
   folders, a photo gallery picked straight from the system picker, or an
   [Immich](docs/immich.md) library or album as a full photo frame with
   metadata overlay, all with crossfade / slide / zoom / Ken Burns
   transitions and an optional corner clock.
 
-**Remote administration**: an embedded web admin at
+&bull; **Remote administration**: an embedded web admin at
   `http://<device-ip>:2324` mirrors every setting, shows a live
   screenshot, web console and logs, and exports the entire configuration
   as a single backup file.
 
-**Dashboard view rotation**: cycle through a chosen set of dashboard
+&bull; **Dashboard view rotation**: cycle through a chosen set of dashboard
   views in an endless loop, each on screen for a configurable number of
   seconds.
 
-**DLNA renderer**: push images, video and live cameras full screen
+&bull; **DLNA renderer**: push images, video and live cameras full screen
   onto the kiosk with `media_player.play_media`, from Home Assistant
   automations, the media browser or any DLNA app.
 
@@ -92,16 +92,16 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="assets/screenshots/dashboard.png" alt="Assist" width="650"/>
 </p>
 
-**Ready-made Home Assistant entities over MQTT**: point the app at
+&bull; **Ready-made Home Assistant entities over MQTT**: point the app at
   your broker and every tablet appears as its own device via MQTT
   discovery, no YAML needed: a screen light, battery, charging, current
   page, volume and screensaver sensors, all with live availability.
 
-**Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
+&bull; **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
   awake, default brightness, scheduled light/dark theme, custom
   JavaScript injection, and self-signed certificate support.
 
-**Open other apps from the dashboard**: point any card's tap action at
+&bull; **Open other apps from the dashboard**: point any card's tap action at
   `app://<package>` and the tablet opens that app, with the kiosk still
   running behind it.
 
@@ -110,7 +110,8 @@ smooth on the low-powered, older tablets that usually end up on walls.
     action: url
     url_path: app://com.android.deskclock
   ```
-- **WebRTC cameras**: import streams from Go2RTC or add WHEP cameras
+  
+&bull; **WebRTC cameras**: import streams from Go2RTC or add WHEP cameras
   manually, then arrange up to four cameras into responsive
   [camera views](docs/cameras.md) that can be opened from the tablet,
   Remote Admin or Home Assistant through MQTT.
