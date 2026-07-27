@@ -44,7 +44,7 @@ tablet's remote admin (while remote administration is enabled).
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Screen | light | On/off is real display power; brightness is the panel's actual brightness. The state follows the panel whatever moves it, including the power button, the device's own idle timeout and other apps, not only this entity. Turning the screen off needs the device admin permission (the wizard requests it); without the grant the toggle snaps back and the device shows the grant screen. |
+| Screen | light | On/off is real display power; brightness is the panel's actual brightness. Unavailable on devices with an always-on display: there the screen-off puts the device to sleep and the ROM lights the lock screen straight back up, which no app can override, so the entity withdraws rather than report an off screen you can plainly see is lit. Turn the always-on display off in Android's display settings ("Always show time and info", under Display near the lock screen options) and the entity returns. The state follows the panel whatever moves it, including the power button, the device's own idle timeout and other apps, not only this entity. Turning the screen off needs the device admin permission (the wizard requests it); without the grant the toggle snaps back and the device shows the grant screen. |
 | Screensaver | switch | Start or dismiss the screensaver. |
 | Volume | number | The device's media volume as a 0-100% slider. Tracks changes from every side, hardware buttons included. |
 | Kiosk mode | switch | The kiosk lockdown (exit gesture, blocked buttons). |

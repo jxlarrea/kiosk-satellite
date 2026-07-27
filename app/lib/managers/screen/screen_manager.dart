@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -68,6 +70,17 @@ class ScreenManager extends Manager {
       if (interactive != null) _screenOn = interactive;
     } catch (_) {}
 
+    // An explicitly set always-on preference answers the question without
+    // waiting for a screen-off to observe. Unset (-1) says nothing: the ROM
+    // default applies and is not readable, so that case waits for the probe.
+    // Watched as well as read: it is changed in Android's settings while
+    // this app runs, and nothing else would ever tell us.
+    BackgroundListening.onAmbientDisplayChanged = _applyAmbientSetting;
+    try {
+      _applyAmbientSetting(
+          await _background.invokeMethod<int>('ambientDisplaySetting') ?? -1);
+    } catch (_) {}
+
     // External brightness changes (quick settings, adaptive brightness):
     // pushed by the native observer so every mirror of the value — the
     // remote admin's slider, the MQTT brightness state — tracks the panel
@@ -113,6 +126,13 @@ class ScreenManager extends Manager {
         name: 'isScreenOn',
         description: 'Whether the screen is (logically) on',
         handler: (_) async => CommandResult.ok(isScreenOn),
+      ))
+      ..register(Command(
+        name: 'getAmbientDisplay',
+        description:
+            'Whether this device leaves an ambient lock screen lit after the '
+            'screen is turned off, which no app can override',
+        handler: (_) async => CommandResult.ok(ambientDisplay),
       ))
       ..register(Command(
         name: 'setBrightness',
@@ -275,8 +295,69 @@ class ScreenManager extends Manager {
     try {
       ok = await _background.invokeMethod('screenOff') == true;
     } catch (_) {}
-    if (ok) _setScreenOn(false, source: 'app');
+    if (ok) {
+      _setScreenOn(false, source: 'app');
+      unawaited(_probeAmbientDisplay());
+    }
     return ok;
+  }
+
+  /// Whether this device leaves its panel lit after a screen-off.
+  ///
+  /// lockNow is everything an app is allowed to do, and on a device with an
+  /// always-on display that is not enough: it sleeps and locks, then the ROM
+  /// lights a dim clock (issue #51). Nothing distinguishes that from a real
+  /// power-off except looking at the panel afterwards, which is what
+  /// [_probeAmbientDisplay] does.
+  bool get ambientDisplay => _settings.get(defs.screenAmbientDisplay);
+
+  /// Take the always-on display preference as read: 1 on, 0 off, -1 unset
+  /// (the ROM's own default, which is not readable and is on for some, so
+  /// that case is left to [_probeAmbientDisplay]).
+  void _applyAmbientSetting(int setting) {
+    if (setting != 0 && setting != 1) return;
+    _setAmbientDisplay(setting == 1);
+  }
+
+  Future<void> _setAmbientDisplay(bool on) async {
+    if (on == ambientDisplay) return;
+    await _settings.set(defs.screenAmbientDisplay, on);
+    log.info(
+      name,
+      on
+          ? 'this device keeps its panel lit after a screen off (always-on '
+              'display); the Home Assistant screen entity is withdrawn'
+          : 'the panel goes dark on a screen off; the Home Assistant screen '
+              'entity is back',
+    );
+    bus.publish(AmbientDisplayChanged(on: on));
+  }
+
+  /// Display.STATE_OFF, the one value that means the panel is dark.
+  static const _displayStateOff = 1;
+
+  /// Look at the panel shortly after a screen-off and remember what we find.
+  ///
+  /// Twice, and seconds apart: the sleep transition takes a moment, and a
+  /// panel that is going to stay lit is lit for good, so a single early
+  /// reading would call every device ambient.
+  Future<void> _probeAmbientDisplay() async {
+    var lit = false;
+    for (final delay in const [Duration(milliseconds: 1500), Duration(seconds: 5)]) {
+      await Future<void>.delayed(delay);
+      // A wake in the meantime makes the reading meaningless: the panel is
+      // on because the screen is on.
+      if (_screenOn) return;
+      try {
+        final state = await _background.invokeMethod<int>('displayState');
+        if (state == null || state == 0) return; // unknown, nothing learned
+        lit = state != _displayStateOff;
+      } catch (_) {
+        return;
+      }
+      if (!lit) break;
+    }
+    await _setAmbientDisplay(lit);
   }
 
   Future<void> screenOn() async {

@@ -484,6 +484,24 @@ const kioskDisableContextMenus = SettingDef<bool>(
 
 // ── Screen ─────────────────────────────────────────────────────────────
 
+// What the last screen-off actually did to the panel: on some devices the
+// display never goes dark, because the ROM lights an always-on clock the
+// moment lockNow puts the device to sleep (issue #51). Learned by looking
+// rather than asked, because the setting behind it reads as "unset" while
+// the ROM default has it on. Hidden: it reports the device, it does not
+// configure it.
+const screenAmbientDisplay = SettingDef<bool>(
+  key: 'screen.ambient_display',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Device keeps the panel lit',
+  description:
+      'Whether turning the screen off leaves this device showing an ambient '
+      'lock screen.',
+  category: 'Screen',
+  hidden: true,
+);
+
 const keepScreenOn = SettingDef<bool>(
   key: 'screen.keep_on',
   type: SettingType.boolean,
@@ -2155,6 +2173,7 @@ const List<SettingDef<Object>> allSettings = [
   // One titled panel per mode, in the dropdown's order; only the panel of
   // the selected mode is visible (each setting depends on the mode).
   screensaverDimLevel,
+  screenAmbientDisplay,
   screensaverSavedBrightness,
   screensaverClock24h,
   screensaverClockSeconds,

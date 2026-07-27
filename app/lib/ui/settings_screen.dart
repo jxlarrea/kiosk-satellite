@@ -925,8 +925,10 @@ class _CategoryContentState extends State<_CategoryContent> {
                 sendspinMaToken.key: _MaValidateRow(container: container),
             },
           ),
-        if (widget.category == 'Screen')
+        if (widget.category == 'Screen') ...[
           _BrightnessGrantCard(container: container),
+          _AmbientDisplayCard(container: container),
+        ],
         if (widget.category == 'Remote' &&
             container.settings.get(remoteEnabled))
           _AdminAddressCard(container: container),
@@ -1865,6 +1867,67 @@ class _BrightnessGrantCardState extends State<_BrightnessGrantCard> {
               trailing: FilledButton.tonal(
                 onPressed: _request,
                 child: const Text('Grant'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Shown on the Screen page only on a device that keeps its panel lit after
+/// a screen-off: an always-on lock screen the app has no way to override.
+/// The row exists because the alternative is a "Screen off" that appears not
+/// to work, and a Home Assistant entity that has quietly withdrawn itself
+/// with no explanation anywhere (issue #51).
+class _AmbientDisplayCard extends StatefulWidget {
+  const _AmbientDisplayCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_AmbientDisplayCard> createState() => _AmbientDisplayCardState();
+}
+
+class _AmbientDisplayCardState extends State<_AmbientDisplayCard> {
+  StreamSubscription<AmbientDisplayChanged>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    // The switch is flipped in Android's settings, not here, so the row has
+    // to appear and disappear on its own while this page is open.
+    _sub = widget.container.bus
+        .on<AmbientDisplayChanged>()
+        .listen((_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.container.screen.ambientDisplay) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: const [
+        _SectionHeading('Always-on display'),
+        _SettingsCard(
+          children: [
+            ListTile(
+              leading: Icon(Icons.brightness_low_outlined),
+              title: Text('This device keeps a dim clock on'),
+              subtitle: Text(
+                'Turning the screen off puts the device to sleep, but the '
+                'always-on display lights the lock screen back up and no app '
+                'can stop it. Turn off "Always show time and info" in '
+                'Android settings under Display, near the lock screen '
+                'options; some ROMs call it always-on display. The Home '
+                'Assistant screen entity stays unavailable until you do.',
               ),
             ),
           ],

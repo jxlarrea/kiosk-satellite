@@ -726,6 +726,13 @@ function showTab(name, { push = true } = {}) {
   if (tab === 'cameras') loadCameras();
   if (tab === 'device') loadDeviceInfo();
   if (tab === 'about') loadAboutInfo();
+  // Both notices track something changed on the tablet in Android's own
+  // settings, so opening the tab is the moment to re-ask rather than
+  // trusting whatever was true when the page loaded.
+  if (tab === 'screen') {
+    updateBrightnessGrantNotices();
+    updateAmbientDisplayNotice();
+  }
 }
 
 // Mobile drawer: the hamburger toggles the nav in/out; the backdrop and picking
@@ -1153,6 +1160,30 @@ function updateMaValidateRow() {
   });
   row.appendChild(btn);
   anchor.insertAdjacentElement('afterend', row);
+}
+
+/* The always-on display notice on the Screen tab, mirroring the device's
+   card. Shown only where a screen-off leaves the panel showing a dim lock
+   screen, which no app can override and which is why the Home Assistant
+   screen entity withdraws itself there (issue #51). */
+async function updateAmbientDisplayNotice() {
+  let ambient = false;
+  try {
+    const res = await (await api('/api/commands/getAmbientDisplay', { method: 'POST', body: '{}' })).json();
+    ambient = res.data === true;
+  } catch (_) { return; }
+  const root = document.getElementById('tab-screen');
+  const existing = root.querySelector('.ambient-display-card');
+  if (!ambient) { root.querySelectorAll('.ambient-display-card').forEach((el) => el.remove()); return; }
+  if (existing) return;
+  const heading = document.createElement('h2');
+  heading.className = 'card-title ambient-display-card';
+  heading.textContent = 'Always-on display';
+  const card = document.createElement('div');
+  card.className = 'card ambient-display-card';
+  card.appendChild(readOnlyRow('This device keeps a dim clock on',
+    'Turning the screen off puts the device to sleep, but the always-on display lights the lock screen back up and no app can stop it. Turn off "Always show time and info" in Android settings under Display, near the lock screen options; some ROMs call it always-on display. The Home Assistant screen entity stays unavailable until you do.', ''));
+  root.append(heading, card);
 }
 
 /* Brightness grant notices: shown under the dashboard slider and on the
@@ -2118,6 +2149,7 @@ async function loadSettings() {
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
   updateBrightnessGrantNotices();
+  updateAmbientDisplayNotice();
   updateMotionCameraNotice();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();

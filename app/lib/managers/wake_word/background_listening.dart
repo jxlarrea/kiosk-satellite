@@ -95,6 +95,10 @@ class BackgroundListening {
   /// clock app owns it. Null when there is no longer one.
   static void Function(Map<String, Object?>? alarm)? _onNextAlarmChanged;
 
+  /// The always-on display preference was changed in Android's settings.
+  /// The argument is 1 on, 0 off, -1 never set (the ROM decides).
+  static void Function(int setting)? _onAmbientDisplayChanged;
+
   static set onDownloadComplete(
       void Function(int id, bool success, String? filename)? handler) {
     _onDownloadComplete = handler;
@@ -117,6 +121,11 @@ class BackgroundListening {
     _installHandler();
   }
 
+  static set onAmbientDisplayChanged(void Function(int setting)? handler) {
+    _onAmbientDisplayChanged = handler;
+    _installHandler();
+  }
+
   /// One channel, one handler: every native push shares it, so it is
   /// (re)installed whenever any callback changes and removed only when they
   /// are all gone. Setting a handler directly on the channel from elsewhere
@@ -125,7 +134,8 @@ class BackgroundListening {
     if (_onDownloadComplete == null &&
         _onVolumeChanged == null &&
         _onScreenStateChanged == null &&
-        _onNextAlarmChanged == null) {
+        _onNextAlarmChanged == null &&
+        _onAmbientDisplayChanged == null) {
       _channel.setMethodCallHandler(null);
       return;
     }
@@ -142,6 +152,12 @@ class BackgroundListening {
       if (call.method == 'screenStateChanged') {
         final args = (call.arguments as Map?) ?? const {};
         _onScreenStateChanged?.call(args['on'] == true);
+      }
+      if (call.method == 'ambientDisplayChanged') {
+        final args = (call.arguments as Map?) ?? const {};
+        _onAmbientDisplayChanged?.call(
+          (args['setting'] as num?)?.toInt() ?? -1,
+        );
       }
       if (call.method == 'nextAlarmChanged') {
         final args = call.arguments;

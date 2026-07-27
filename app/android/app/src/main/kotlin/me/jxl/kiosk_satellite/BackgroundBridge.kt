@@ -8,10 +8,15 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.ContentObserver
+import android.hardware.display.DisplayManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.Display
 import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -75,6 +80,12 @@ class BackgroundBridge(
                     (context.getSystemService(Context.POWER_SERVICE)
                         as android.os.PowerManager).isInteractive,
                 )
+                // Whether the panel is lit, as opposed to whether the device
+                // is awake. They disagree on anything with an always-on or
+                // ambient display: lockNow sleeps the device and the ROM
+                // keeps the panel showing a dim clock (issue #51).
+                "displayState" -> result.success(displayState())
+                "ambientDisplaySetting" -> result.success(ambientDisplaySetting())
                 // The File Manager's shared-storage root. "All files access"
                 // is a settings screen, not a runtime dialog: request() opens
                 // it for this app and the person toggles it there.
@@ -290,6 +301,19 @@ class BackgroundBridge(
         }
     }
 
+    // The always-on display preference, watched rather than read once: it is
+    // changed in Android's own settings while this app is running, and the
+    // Home Assistant screen entity withdraws or returns on the answer
+    // (issue #51).
+    private val dozeObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            channel.invokeMethod(
+                "ambientDisplayChanged",
+                mapOf("setting" to ambientDisplaySetting()),
+            )
+        }
+    }
+
     // The system tells us when the next alarm changes, so the sensor follows
     // an alarm set, moved or dismissed without polling for it.
     private val alarmReceiver = object : BroadcastReceiver() {
@@ -324,6 +348,15 @@ class BackgroundBridge(
             IntentFilter(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED),
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+        try {
+            context.contentResolver.registerContentObserver(
+                Settings.Secure.getUriFor("doze_always_on"),
+                false,
+                dozeObserver,
+            )
+        } catch (e: Exception) {
+            android.util.Log.w("kiosk_satellite", "doze observer failed", e)
+        }
         // Screen on/off are protected system broadcasts, and they are only
         // ever delivered to receivers registered in code like this one.
         ContextCompat.registerReceiver(
@@ -500,6 +533,30 @@ class BackgroundBridge(
         false
     }
 
+    /**
+     * The default display's power state: [Display.STATE_OFF] when the panel
+     * is genuinely dark, DOZE or ON when something is still lighting it.
+     */
+    private fun displayState(): Int = try {
+        val displays = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+        displays.getDisplay(Display.DEFAULT_DISPLAY)?.state ?: Display.STATE_UNKNOWN
+    } catch (e: Exception) {
+        Display.STATE_UNKNOWN
+    }
+
+    /**
+     * The always-on display preference: 1 on, 0 off, -1 never set.
+     *
+     * -1 is the interesting case and the reason [displayState] exists: it
+     * means the ROM's own default applies, which is not readable and is on
+     * for some (the Echo Show 5 among them).
+     */
+    private fun ambientDisplaySetting(): Int = try {
+        Settings.Secure.getInt(context.contentResolver, "doze_always_on", -1)
+    } catch (e: Exception) {
+        -1
+    }
+
     private fun wakeScreen(): Boolean {
         return try {
             val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -582,6 +639,10 @@ class BackgroundBridge(
         }
         try {
             context.unregisterReceiver(alarmReceiver)
+        } catch (_: Exception) {
+        }
+        try {
+            context.contentResolver.unregisterContentObserver(dozeObserver)
         } catch (_: Exception) {
         }
     }

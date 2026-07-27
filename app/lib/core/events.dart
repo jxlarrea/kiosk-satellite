@@ -16,6 +16,14 @@ sealed class AppEvent {
 
 // ── Screen ─────────────────────────────────────────────────────────────
 
+/// The device turned out to keep its panel lit through a screen-off, or
+/// stopped doing so. Internal: the MQTT screen entity withdraws itself while
+/// it holds, and the Screen settings page explains why.
+class AmbientDisplayChanged extends AppEvent {
+  const AmbientDisplayChanged({required this.on});
+  final bool on;
+}
+
 class ScreenStateChanged extends AppEvent {
   const ScreenStateChanged({required this.on});
   final bool on;

@@ -110,6 +110,8 @@ class MqttManager extends Manager {
     }));
     _subs.add(bus.on<CameraViewStateChanged>().listen(_publishCameraViewState));
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _publishNextAlarm()));
+    _subs.add(bus.on<AmbientDisplayChanged>().listen(
+        (e) => _publishScreenAvailability(ambient: e.on)));
     // The native side damps flicker; this only guards the recorder's disk:
     // at most one publish per 15s, unless the level swung hard (lights on).
     _subs.add(bus.on<LightLevelChanged>().listen((e) {
@@ -669,7 +671,15 @@ class MqttManager extends Manager {
     }
   }
 
+  /// Withdraw the screen entity on a device whose panel stays lit through a
+  /// screen-off. Retained, so Home Assistant knows before the app is even
+  /// running again.
+  void _publishScreenAvailability({required bool ambient}) =>
+      _publish('$_base/screen/available', ambient ? 'offline' : 'online');
+
   Future<void> _publishInitialStates() async {
+    final ambient = await commands.execute('getAmbientDisplay', const {});
+    _publishScreenAvailability(ambient: ambient.ok && ambient.data == true);
     final on = await commands.execute('isScreenOn', const {});
     if (on.ok) _publish('$_base/screen/state', on.data == true ? 'ON' : 'OFF');
     await _publishNextAlarm();
@@ -864,13 +874,23 @@ class MqttManager extends Manager {
     final configs = <String, Map<String, Object?>>{
       '$_prefix/light/ks_$_deviceId/screen/config': {
         ...common('screen', 'Screen'),
+        // Available only while the app is online AND this device can
+        // actually power its panel off. On one with an always-on display,
+        // lockNow leaves a dim clock burning and the entity would be
+        // reporting an off screen nobody can see is off (issue #51), so it
+        // withdraws instead of lying.
+        'availability': [
+          {'topic': _availabilityTopic},
+          {'topic': '$_base/screen/available'},
+        ],
+        'availability_mode': 'all',
         'state_topic': '$_base/screen/state',
         'command_topic': '$_base/screen/set',
         'brightness_state_topic': '$_base/brightness/state',
         'brightness_command_topic': '$_base/brightness/set',
         'brightness_scale': 255,
         'icon': 'mdi:tablet',
-      },
+      }..remove('availability_topic'),
       '$_prefix/sensor/ks_$_deviceId/battery/config': {
         ...common('battery', 'Battery'),
         'state_topic': '$_base/battery/state',
