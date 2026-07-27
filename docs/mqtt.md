@@ -48,7 +48,10 @@ tablet's remote admin (while remote administration is enabled).
 | Screensaver | switch | Start or dismiss the screensaver. |
 | Volume | number | The device's media volume as a 0-100% slider. Tracks changes from every side, hardware buttons included. |
 | Kiosk mode | switch | The kiosk lockdown (exit gesture, blocked buttons). |
-| HA kiosk mode | switch | Hides the Home Assistant header and sidebar. On maps to the `auto` mode; a hand-picked `plugin`/`css` choice is left alone until the switch is actually flipped. |
+| HA kiosk mode | switch | Hides the Home Assistant header and sidebar. On maps to the `auto` mode; a hand-picked `plugin`/`css` choice is left alone until the switch is actually flipped. The HA kiosk method select below is where a specific strategy can be picked. |
+| Screensaver mode | select | What the screensaver shows after the idle timeout, as a dropdown of the same modes the Screensaver settings page offers (Clock, Immich Media, Website and so on). Handy for automations that, say, switch to a camera at night and back to photos in the morning. |
+| Clock style | select | The face of the Clock screensaver: Digital Clock, Flip Clock or Roller Clock. Only takes effect while the screensaver mode is Clock. |
+| HA kiosk method | select | The full HA kiosk mode choice (Off, Auto, Plugin, CSS). The HA kiosk mode switch is the simple toggle; this is the dropdown for picking a specific strategy. |
 | Keep screen on | switch | The keep-awake setting. |
 | Remote management | switch | The embedded admin web server. Turning it off from Home Assistant closes the remote admin. |
 | Screensaver brightness, Screensaver brightness level | switch, number | The separate screensaver brightness (issue #31): the switch enables it, the slider sets the level. Changes apply live while the screensaver is showing. |
@@ -84,6 +87,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../screensaver/state`, `.../screensaver/set` | out / in | `ON` / `OFF` |
 | `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…`, `.../screensaver_brightness/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
 | `.../screensaver_brightness_level/state`, `.../screensaver_brightness_level/set` | out / in | `0`..`100` |
+| `.../screensaver_mode/…`, `.../screensaver_clock_style/…`, `.../ha_kiosk_method/…` | out / in | the selected option (`state` and `set` each). State carries the display label (e.g. `Immich Media`); `set` accepts the label or the stored value (e.g. `immich`). |
 | `.../reload/set`, `.../clear_cache/set`, `.../restart/set` | in | any payload presses the button |
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |

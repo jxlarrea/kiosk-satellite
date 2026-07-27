@@ -269,9 +269,46 @@ class MqttManager extends Manager {
     'screensaver.brightness_enabled',
   ];
 
+  /// The setting-backed dropdowns: object id → (definition, entity name,
+  /// icon). HA shows the definition's display labels; state publishes are
+  /// mapped to labels and incoming commands mapped back to the stored value,
+  /// so the stored vocabulary never leaks into the HA UI. The HA-kiosk one
+  /// deliberately sits NEXT TO its switch: the switch stays the simple
+  /// toggle, the select is where a plugin/css strategy can actually be
+  /// picked from Home Assistant.
+  static const _settingSelects =
+      <String, (defs.SettingDef<String>, String, String)>{
+    'screensaver_mode': (
+      defs.screensaverMode,
+      'Screensaver mode',
+      'mdi:monitor-shimmer',
+    ),
+    'screensaver_clock_style': (
+      defs.screensaverClockStyle,
+      'Clock style',
+      'mdi:clock-digital',
+    ),
+    'ha_kiosk_method': (
+      defs.haKioskMode,
+      'HA kiosk method',
+      'mdi:page-layout-header',
+    ),
+  };
+
+  bool _isSelectSettingKey(String key) =>
+      _settingSelects.values.any((s) => s.$1.key == key);
+
   void _publishSettingSwitchStates() {
     _settingSwitches.forEach((objectId, actions) =>
         _publish('$_base/$objectId/state', actions.$1() ? 'ON' : 'OFF'));
+  }
+
+  void _publishSettingSelectStates() {
+    _settingSelects.forEach((objectId, entry) {
+      final (def, _, _) = entry;
+      final value = _settings.get(def);
+      _publish('$_base/$objectId/state', def.optionLabels?[value] ?? value);
+    });
   }
 
   void _publishScreensaverBrightnessLevel() {
@@ -308,10 +345,13 @@ class MqttManager extends Manager {
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
-    if (_switchSettingKeys.contains(e.key)) {
+    if (_switchSettingKeys.contains(e.key) || _isSelectSettingKey(e.key)) {
       // Whatever surface flipped it (device UI, remote admin, MQTT itself),
-      // the switch in HA reflects it.
+      // the switch in HA reflects it. Both flavors publish together:
+      // ha.kiosk_mode is switch- AND select-backed, and the others are
+      // cheap retained no-ops.
       _publishSettingSwitchStates();
+      _publishSettingSelectStates();
       if (e.key == defs.remoteEnabled.key) {
         // The admin URL sensor and the device page's "Visit" link
         // (configuration_url in the discovery device block) both follow it.
@@ -432,6 +472,7 @@ class MqttManager extends Manager {
       '$_base/camera/view/set',
       '$_base/camera/close/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
+      for (final objectId in _settingSelects.keys) '$_base/$objectId/set',
     ]) {
       client.subscribe(topic, MqttQos.atLeastOnce);
     }
@@ -631,6 +672,29 @@ class MqttManager extends Manager {
           await entry.value.$2(text == 'ON');
           break;
         }
+        for (final entry in _settingSelects.entries) {
+          if (topic != '$_base/${entry.key}/set') continue;
+          log.info(name, 'command $topic = $text');
+          final (def, _, _) = entry.value;
+          // HA sends the display label; the stored value is accepted too
+          // so automations outside HA can use the raw vocabulary.
+          String? value;
+          for (final option in def.options ?? const <String>[]) {
+            if (text == option || text == (def.optionLabels?[option] ?? '')) {
+              value = option;
+              break;
+            }
+          }
+          if (value == null) {
+            // Republish the truth so the HA dropdown snaps back instead of
+            // sitting on a choice that never landed.
+            log.warn(name, 'unknown option "$text" for ${def.key}');
+            _publishSettingSelectStates();
+          } else {
+            await _settings.set(def, value);
+          }
+          break;
+        }
       }
     }
   }
@@ -691,6 +755,7 @@ class MqttManager extends Manager {
     }
     _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
     _publishSettingSwitchStates();
+    _publishSettingSelectStates();
     _publishScreensaverBrightnessLevel();
     await _publishAdminUrl();
     await _publishVolume();
@@ -815,6 +880,8 @@ class MqttManager extends Manager {
           '$_prefix/button/ks_$_deviceId/camera_view_$id/config',
         for (final objectId in _settingSwitches.keys)
           '$_prefix/switch/ks_$_deviceId/$objectId/config',
+        for (final objectId in _settingSelects.keys)
+          '$_prefix/select/ks_$_deviceId/$objectId/config',
       ];
 
   /// Config topics of entities that shipped in earlier builds under another
@@ -870,6 +937,25 @@ class MqttManager extends Manager {
           'icon': icon,
           'entity_category': 'config',
         };
+
+    Map<String, Object?> settingSelect(
+            String objectId, (defs.SettingDef<String>, String, String) entry) {
+      final (def, entityName, icon) = entry;
+      return {
+        ...common(objectId, entityName),
+        'state_topic': '$_base/$objectId/state',
+        'command_topic': '$_base/$objectId/set',
+        // The dropdown shows the display labels; the payload contract is
+        // that state matches one of these exactly, so both sides publish
+        // labels and the command handler maps back to the stored value.
+        'options': [
+          for (final option in def.options ?? const <String>[])
+            def.optionLabels?[option] ?? option,
+        ],
+        'icon': icon,
+        'entity_category': 'config',
+      };
+    }
 
     final configs = <String, Map<String, Object?>>{
       '$_prefix/light/ks_$_deviceId/screen/config': {
@@ -1056,6 +1142,9 @@ class MqttManager extends Manager {
       '$_prefix/switch/ks_$_deviceId/screensaver_brightness/config':
           settingSwitch('screensaver_brightness', 'Screensaver brightness',
               'mdi:brightness-4'),
+      for (final entry in _settingSelects.entries)
+        '$_prefix/select/ks_$_deviceId/${entry.key}/config':
+            settingSelect(entry.key, entry.value),
     };
     for (final topic in _legacyDiscoveryTopics()) {
       _publish(topic, '');
