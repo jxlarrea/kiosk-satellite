@@ -28,13 +28,14 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/drawer.png" alt="Assist" width="650"/>
 </p>
 
-## What it does
+## Main Features
 
-- **Guided setup**: a five-step wizard connects to Home Assistant, picks
+**Guided setup**: a five-step wizard connects to Home Assistant, picks
   the dashboard, detects Voice Satellite, and requests only the Android
   permissions your choices need. Run it on the tablet or from a browser
   on your computer.
-- **Voice Satellite, natively**: the kiosk gets its own
+
+**Voice Satellite, natively**: the kiosk gets its own
   `assist_satellite` entity and the app's built-in engine takes over
   wake-word detection: it keeps listening with the screen off, at a
   fraction of the CPU a browser needs. No configuration in Voice
@@ -44,19 +45,22 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="assets/vs-demo.gif" alt="Voice Satellite" width="650"/>
 </p>
 
-- **Plain HTTP instances, fully unlocked**: a loopback proxy inside the
+**Plain HTTP instances, fully unlocked**: a loopback proxy inside the
   app makes an `http://` dashboard a genuine secure context, so the
   microphone and the rest of the https-only browser surface work with no
   certificates or reverse proxy. Enabled automatically during setup.
-- **Fast dashboards on slow tablets**: optionally filters Home
+  
+**Fast dashboards on slow tablets**: optionally filters Home
   Assistant's state stream down to just the entities on the view
   currently on screen, turning constant stutter on older tablets into
   smooth scrolling. Any view it cannot fully resolve is left unfiltered,
   so nothing ever breaks.
-- **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
+
+**Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake on power button, and
   lock-task support on device-owner provisioned tablets.
-- **Sendspin player**: the tablet doubles as a synchronized
+
+**Sendspin player**: the tablet doubles as a synchronized
   [Sendspin](https://www.sendspin-audio.com/) speaker for Music
   Assistant, in sample-accurate sync with every other Sendspin player in
   the house, with metadata, artwork and volume in Home Assistant.
@@ -65,19 +69,22 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="assets/screenshots/sendspin-horizontal.png" alt="Assist" width="650"/>
 </p>
 
-- **Screensavers**: dim, black, clock, Home Assistant media, local
+**Screensavers**: dim, black, clock, Home Assistant media, local
   folders, a photo gallery picked straight from the system picker, or an
   [Immich](docs/immich.md) library or album as a full photo frame with
   metadata overlay, all with crossfade / slide / zoom / Ken Burns
   transitions and an optional corner clock.
-- **Remote administration**: an embedded web admin at
+
+**Remote administration**: an embedded web admin at
   `http://<device-ip>:2324` mirrors every setting, shows a live
   screenshot, web console and logs, and exports the entire configuration
   as a single backup file.
-- **Dashboard view rotation**: cycle through a chosen set of dashboard
+
+**Dashboard view rotation**: cycle through a chosen set of dashboard
   views in an endless loop, each on screen for a configurable number of
   seconds.
-- **DLNA renderer**: push images, video and live cameras full screen
+
+**DLNA renderer**: push images, video and live cameras full screen
   onto the kiosk with `media_player.play_media`, from Home Assistant
   automations, the media browser or any DLNA app.
 
@@ -85,14 +92,16 @@ smooth on the low-powered, older tablets that usually end up on walls.
  <img src="assets/screenshots/dashboard.png" alt="Assist" width="650"/>
 </p>
 
-- **Ready-made Home Assistant entities over MQTT**: point the app at
+**Ready-made Home Assistant entities over MQTT**: point the app at
   your broker and every tablet appears as its own device via MQTT
   discovery, no YAML needed: a screen light, battery, charging, current
   page, volume and screensaver sensors, all with live availability.
-- **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
+
+**Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
   awake, default brightness, scheduled light/dark theme, custom
   JavaScript injection, and self-signed certificate support.
-- **Open other apps from the dashboard**: point any card's tap action at
+
+**Open other apps from the dashboard**: point any card's tap action at
   `app://<package>` and the tablet opens that app, with the kiosk still
   running behind it.
 
@@ -176,14 +185,6 @@ Security → Long-lived access tokens). For voice, install
 [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration)
 from the default HACS repository.
 
-## Everyday use
-
-- **Menu**: swipe from the left edge for Dashboard, Settings, Web Console,
-  Clear web cache, Log out, Exit.
-- **Remote admin**: `http://<device-ip>:2324` in any browser on your
-  network, protected by the password you chose during setup.
-- **Kiosk mode**: once enabled, the menu swipe is replaced by the exit
-  gesture (fast taps) and your PIN.
 
 ## Status
 
