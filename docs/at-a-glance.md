@@ -46,7 +46,7 @@ one set on the entity in Home Assistant; entities without one get the icon
 Home Assistant itself would draw for that kind of entity, so a lock looks like
 a lock and an open garage looks open.
 
-Everything is drawn in one muted tone. State is never colour coded: the row is
+Everything is drawn in one muted tone. State is never color coded: the row is
 meant to be read across a dark room without competing with the clock.
 
 States are shown the way they read in Home Assistant, capitalised (`Open`,

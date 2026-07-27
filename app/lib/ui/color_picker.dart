@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Pick an RGB colour: a live preview, three channel sliders, and a row of
-/// presets for the common clock colours. Returns "r,g,b" (matching how the
+/// Pick an RGB color: a live preview, three channel sliders, and a row of
+/// presets for the common clock colors. Returns "r,g,b" (matching how the
 /// setting is stored), or null if cancelled.
 ///
-/// Built from sliders rather than a package: it is the one colour control in
+/// Built from sliders rather than a package: it is the one color control in
 /// the app, and a dependency-free RGB dialog is plenty for choosing a legible
 /// clock tint.
 Future<String?> pickColor(
@@ -110,7 +110,7 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
               child: Text(
                 '$_r, $_g, $_b',
                 style: TextStyle(
-                  // Contrast the label against the chosen colour.
+                  // Contrast the label against the chosen color.
                   color: _color.computeLuminance() > 0.5
                       ? Colors.black
                       : Colors.white,

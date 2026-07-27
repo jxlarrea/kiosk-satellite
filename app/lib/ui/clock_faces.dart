@@ -14,8 +14,8 @@ import 'package:flutter/material.dart';
 const _fontFamily = 'Google Sans';
 const _fontFallback = <String>['Google Sans Text', 'Product Sans', 'Rubik'];
 
-/// The screen behind the flip cards, derived from the card colour rather
-/// than picked: the reference face is three colours — digits, cards, and a
+/// The screen behind the flip cards, derived from the card color rather
+/// than picked: the reference face is three colors — digits, cards, and a
 /// backdrop just far enough from the cards to outline them. A bright card
 /// gets a slightly darker backdrop, a dark card a slightly lighter one, so
 /// the cards always read as cards without a third picker to keep in tune.
@@ -208,7 +208,7 @@ class _FlipCardState extends State<_FlipCard>
                   child: _half(widget.value, top: false),
                 ),
               ),
-            // The hinge line across the middle, in the backdrop colour so
+            // The hinge line across the middle, in the backdrop color so
             // the three surfaces stay one palette.
             Container(
               width: widget.width,

@@ -597,10 +597,10 @@ const screensaverMiniClockPosition = SettingDef<String>(
 const screensaverMiniClockColor = SettingDef<String>(
   key: 'screensaver.mini_clock_color',
   type: SettingType.string,
-  // Stored as "r,g,b"; both UIs render a real colour picker for it.
+  // Stored as "r,g,b"; both UIs render a real color picker for it.
   defaultValue: '250,250,250',
-  title: 'Clock colour',
-  description: 'The colour of the clock text.',
+  title: 'Clock color',
+  description: 'The color of the clock text.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mini_clock',
 );
@@ -653,8 +653,8 @@ const screensaverMode = SettingDef<String>(
 // The face the clock draws (issue #56). Digital is the original text clock;
 // Flip is the split-flap card clock; Roller is the oversized cropped digits
 // that roll upward as time advances (as on the Lenovo Smart Clock 2). The
-// digital-only rows (seconds, date, colour) key their visibility off this,
-// and each of the other faces brings its own colour pair.
+// digital-only rows (seconds, date, color) key their visibility off this,
+// and each of the other faces brings its own color pair.
 const screensaverClockStyle = SettingDef<String>(
   key: 'screensaver.clock_style',
   type: SettingType.select,
@@ -728,17 +728,17 @@ const screensaverClockScale = SettingDef<num>(
 const screensaverClockColor = SettingDef<String>(
   key: 'screensaver.clock_color',
   type: SettingType.string,
-  // Stored as "r,g,b"; both UIs render a real colour picker for it.
+  // Stored as "r,g,b"; both UIs render a real color picker for it.
   defaultValue: '250,250,250',
-  title: 'Clock colour',
-  description: 'The colour of the clock text.',
+  title: 'Clock color',
+  description: 'The color of the clock text.',
   category: 'Screensaver',
   section: 'Clock',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'digital',
 );
 
-// One colour pair per face rather than a shared one: visibility can only
+// One color pair per face rather than a shared one: visibility can only
 // key off a single setting value, and the two faces want opposite defaults
 // (dark digits on light cards for Flip, light digits on black for Roller).
 
@@ -746,8 +746,8 @@ const screensaverFlipDigitColor = SettingDef<String>(
   key: 'screensaver.flip_digit_color',
   type: SettingType.string,
   defaultValue: '33,33,33',
-  title: 'Digit colour',
-  description: 'The colour of the flip digits.',
+  title: 'Digit color',
+  description: 'The color of the flip digits.',
   category: 'Screensaver',
   section: 'Clock',
   dependsOn: 'screensaver.clock_style',
@@ -758,8 +758,8 @@ const screensaverFlipBgColor = SettingDef<String>(
   key: 'screensaver.flip_bg_color',
   type: SettingType.string,
   defaultValue: '245,245,245',
-  title: 'Card colour',
-  description: 'The colour of the cards. The backdrop shades itself to '
+  title: 'Card color',
+  description: 'The color of the cards. The backdrop shades itself to '
       'match.',
   category: 'Screensaver',
   section: 'Clock',
@@ -771,8 +771,8 @@ const screensaverRollerDigitColor = SettingDef<String>(
   key: 'screensaver.roller_digit_color',
   type: SettingType.string,
   defaultValue: '250,250,250',
-  title: 'Digit colour',
-  description: 'The colour of the rolling digits.',
+  title: 'Digit color',
+  description: 'The color of the rolling digits.',
   category: 'Screensaver',
   section: 'Clock',
   dependsOn: 'screensaver.clock_style',
@@ -783,8 +783,8 @@ const screensaverRollerBgColor = SettingDef<String>(
   key: 'screensaver.roller_bg_color',
   type: SettingType.string,
   defaultValue: '0,0,0',
-  title: 'Background colour',
-  description: 'The colour behind the digits.',
+  title: 'Background color',
+  description: 'The color behind the digits.',
   category: 'Screensaver',
   section: 'Clock',
   dependsOn: 'screensaver.clock_style',

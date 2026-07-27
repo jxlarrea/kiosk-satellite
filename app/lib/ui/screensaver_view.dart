@@ -314,7 +314,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     return ColoredBox(
       color: switch (style) {
         'roller' => _rgb(defs.screensaverRollerBgColor, Colors.black),
-        // The flip backdrop follows the card colour (see flipBackdrop).
+        // The flip backdrop follows the card color (see flipBackdrop).
         'flip' => flipBackdrop(
             _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5))),
         _ => Colors.black,
@@ -338,9 +338,9 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
               child: GlanceRow(
                 container: widget.container,
                 scale: glanceScale,
-                // The row wears the face's digit colour so it reads as part
+                // The row wears the face's digit color so it reads as part
                 // of the clock — and stays legible on the flip and roller
-                // faces, whose backdrops follow the user's colours. The
+                // faces, whose backdrops follow the user's colors. The
                 // digital face keeps the standalone grey-on-black palette.
                 tint: switch (style) {
                   'flip' => _rgb(

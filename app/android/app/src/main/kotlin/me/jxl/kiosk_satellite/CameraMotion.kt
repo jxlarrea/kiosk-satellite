@@ -31,7 +31,7 @@ import kotlin.math.roundToInt
  *
  *  - asks CameraX for the smallest analysis resolution the device offers and
  *    reads only the Y (luminance) plane of the YUV frame, so there is no bitmap
- *    allocation and no colour conversion at all;
+ *    allocation and no color conversion at all;
  *  - throttles to a configurable frame rate (default a couple per second) by
  *    dropping every frame that arrives before the next slot is due;
  *  - reduces each processed frame to a small grid of sparsely-sampled cell

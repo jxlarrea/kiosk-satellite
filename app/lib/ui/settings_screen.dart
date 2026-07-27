@@ -189,8 +189,8 @@ List<SettingDef<Object>> _defsFor(String category) => [
     if (def.category == category && !def.hidden) def,
 ];
 
-/// A category icon the way One UI paints them: a solid colour disc with a
-/// white glyph. The disc colours cycle the four brand accents (already
+/// A category icon the way One UI paints them: a solid color disc with a
+/// white glyph. The disc colors cycle the four brand accents (already
 /// light/dark-adapted by the scheme).
 class _CategoryIcon extends StatelessWidget {
   const _CategoryIcon({required this.index, required this.icon});
@@ -2847,7 +2847,7 @@ class _MadeByFooter extends StatelessWidget {
         children: [
           Text('Made with ', style: muted),
           // An icon, not the \u2665 character: Android renders that
-          // codepoint as the emoji glyph, which ignores text colour
+          // codepoint as the emoji glyph, which ignores text color
           // entirely and always shows its own saturated red.
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 1),
@@ -3583,7 +3583,7 @@ class SettingTile extends StatelessWidget {
             : (value is num
                   ? _formatNum(value)
                   : ('$value'.isEmpty ? 'Not set' : '$value'));
-        // A colour is picked, not typed. Every "r,g,b" setting ends in
+        // A color is picked, not typed. Every "r,g,b" setting ends in
         // _color by convention; the remote UI keys off the same suffix.
         if (def.key.endsWith('_color')) {
           final rgb = value as String;

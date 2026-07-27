@@ -1049,7 +1049,7 @@ class _ErrorCard extends StatelessWidget {
 
 /// The step's numbered badge: a filled disc with the number, a check once
 /// the step is done, or a dash when it was skipped; muted before it is
-/// reached. Mirrors the colour-disc language of the settings rail.
+/// reached. Mirrors the color-disc language of the settings rail.
 class _StepDisc extends StatelessWidget {
   const _StepDisc({
     required this.number,

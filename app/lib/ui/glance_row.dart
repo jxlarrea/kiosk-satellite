@@ -8,7 +8,7 @@ import '../managers/glance/glance_manager.dart';
 /// The screensaver's At a Glance row: a few entity states, icon over name
 /// over value, in one muted tone (issue #37).
 ///
-/// Deliberately colourless. The point is a row you can read across a dark
+/// Deliberately colorless. The point is a row you can read across a dark
 /// room without it competing with the clock, so state never tints the text —
 /// an open garage door reads "Open", it does not glow orange.
 class GlanceRow extends StatelessWidget {
@@ -25,7 +25,7 @@ class GlanceRow extends StatelessWidget {
   /// already taken what space there is.
   final double scale;
 
-  /// The clock face's digit colour, so the row reads as part of the face —
+  /// The clock face's digit color, so the row reads as part of the face —
   /// and stays legible when the face's backdrop is bright (a flip clock
   /// with light cards would swallow the default light grey). Null keeps
   /// the standalone grey-on-black palette.
@@ -129,7 +129,7 @@ class _GlanceItem extends StatelessWidget {
   Widget build(BuildContext context) {
     // The date's tone for the name, a brighter one for the value: the value
     // is the thing being checked, the label only says what it belongs to.
-    // A tinted row keeps the same two-tone reading in the face's colour.
+    // A tinted row keeps the same two-tone reading in the face's color.
     final label = tint?.withValues(alpha: 0.65) ?? const Color(0xFF9E9E9E);
     final value = tint ?? const Color(0xFFE8E8E8);
     return Row(
