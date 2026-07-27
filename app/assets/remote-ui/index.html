@@ -176,10 +176,15 @@
   .row .info { flex: 1; min-width: 0; }
   .row .info .name { font-size: 16px; font-weight: 500; }
   .row .info .desc { color: var(--muted); font-size: 13.5px; }
-  .row input[type=text], .row input[type=password], .row input[type=number], .row select {
+  .row input[type=text], .row input[type=password], .row input[type=number],
+  .row input[type=time], .row select {
     background: var(--surface-2); border: 1px solid var(--border);
     color: var(--text); border-radius: var(--radius-sm); padding: 8px 11px;
     max-width: 220px; }
+  /* The time picker's clock glyph follows the theme instead of staying
+     black on a dark surface. */
+  :root[data-theme="dark"] .row input[type=time]::-webkit-calendar-picker-indicator {
+    filter: invert(1); }
   .row input:focus, .row select:focus { outline: none; border-color: var(--accent); }
   .switch { position: relative; width: 46px; height: 26px; flex: none; }
   .switch input { opacity: 0; width: 0; height: 0; }
@@ -3609,7 +3614,9 @@ function settingRow(s) {
   }
 
   // A colour is picked, not typed, the browser has a real picker for it.
-  if (s.key === 'screensaver.clock_color' || s.key === 'screensaver.mini_clock_color') {
+  // Every "r,g,b" setting ends in _color by convention; the device UI keys
+  // off the same suffix.
+  if (s.key.endsWith('_color')) {
     const [r, g, b] = String(s.value || '250,250,250').split(',').map((n) => +n || 0);
     const hex = '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('');
     const inp = document.createElement('input');
@@ -3695,6 +3702,114 @@ function settingRow(s) {
   // holds only the button; the chosen entities get a row each below it, so
   // the group reads like every other list in this admin instead of cramming
   // four names into one value cell.
+  // The screensaver schedule, mirroring the device's editor: one row per
+  // entry - time, mode, brightness - plus an add button. Each entry
+  // applies from its time until the next one's.
+  if (s.key === 'screensaver.schedule') {
+    let entries = [];
+    try { entries = JSON.parse(s.value || '[]') || []; } catch (_) { entries = []; }
+    const modeDef = (state.settings || []).find((x) => x.key === 'screensaver.mode');
+    const modes = (modeDef && modeDef.options) || [];
+    const labels = (modeDef && modeDef.optionLabels) || {};
+    const label = (m) => labels[m] || (m ? m[0].toUpperCase() + m.slice(1) : m);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Add time';
+    btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+    row.appendChild(btn);
+
+    // Real siblings, not a wrapper: the card's dividers are drawn between
+    // adjacent .row elements (see the glance editor above).
+    const frag = document.createDocumentFragment();
+    frag.appendChild(row);
+    let entryRows = [];
+
+    const persist = async () => {
+      entries.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+      const json = JSON.stringify(entries);
+      const cached = (state.settings || []).find((o) => o.key === s.key);
+      if (cached) cached.value = json;
+      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+        'screensaver.schedule': json,
+      }) });
+      repaint();
+    };
+
+    const entryRow = (e, i) => {
+      const r = document.createElement('div');
+      r.className = 'row';
+      r.style.gap = '10px';
+      const time = document.createElement('input');
+      time.type = 'time';
+      time.value = e.at || '19:00';
+      time.style.cssText = 'width:auto; flex-shrink:0;';
+      time.addEventListener('change', () => { e.at = time.value || e.at; persist(); });
+      const sel = document.createElement('select');
+      sel.style.cssText = 'flex:1 1 30%; min-width:110px;';
+      modes.forEach((m) => {
+        const o = document.createElement('option');
+        o.value = m; o.textContent = label(m);
+        sel.appendChild(o);
+      });
+      sel.value = modes.includes(e.mode) ? e.mode : (modeDef && modeDef.value) || 'clock';
+      sel.addEventListener('change', () => { e.mode = sel.value; persist(); });
+      // The brightness glyph in front of the slider, mirroring the
+      // device's row: without it the slider reads as "some percentage".
+      const sun = document.createElement('span');
+      sun.style.cssText = 'flex-shrink:0; display:flex; color:var(--muted);';
+      sun.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12,18V6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,15.31L23.31,12L20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31Z"/></svg>';
+      sun.title = 'Screensaver brightness while this entry is active';
+      const rng = document.createElement('input');
+      rng.type = 'range'; rng.min = '0'; rng.max = '100'; rng.step = '5';
+      rng.value = String(Math.round(((typeof e.brightness === 'number') ? e.brightness : 0.2) * 100));
+      rng.style.cssText = 'flex:1 1 25%; min-width:80px;';
+      const pct = document.createElement('span');
+      pct.className = 'device';
+      pct.style.cssText = 'width:38px; text-align:right; flex-shrink:0;';
+      pct.textContent = rng.value + '%';
+      rng.addEventListener('input', () => { pct.textContent = rng.value + '%'; });
+      rng.addEventListener('change', () => { e.brightness = (+rng.value) / 100; persist(); });
+      const del = document.createElement('button');
+      del.className = 'btn-ghost';
+      del.textContent = '×';
+      del.style.cssText = 'width:auto; padding:6px 12px; flex-shrink:0;';
+      del.addEventListener('click', () => { entries.splice(i, 1); persist(); });
+      r.appendChild(time); r.appendChild(sel); r.appendChild(sun);
+      r.appendChild(rng); r.appendChild(pct); r.appendChild(del);
+      return r;
+    };
+
+    const repaint = () => {
+      const parent = row.parentNode;
+      const fresh = entries.map(entryRow);
+      if (!parent) {
+        entryRows.forEach((el) => el.remove());
+        fresh.forEach((el) => frag.appendChild(el));
+      } else {
+        entryRows.forEach((el) => el.remove());
+        let after = row;
+        fresh.forEach((el) => {
+          after.insertAdjacentElement('afterend', el);
+          after = el;
+        });
+      }
+      entryRows = fresh;
+    };
+    repaint();
+
+    btn.addEventListener('click', () => {
+      const level = (state.settings || []).find((o) => o.key === 'screensaver.brightness_level');
+      entries.push({
+        at: '19:00',
+        mode: (modeDef && modeDef.value) || 'clock',
+        brightness: (level && typeof level.value === 'number') ? level.value : 0.2,
+      });
+      persist();
+    });
+    return frag;
+  }
+
   if (s.key === 'screensaver.glance_entities') {
     let chosen = [];
     try { chosen = JSON.parse(s.value || '[]') || []; } catch (_) { chosen = []; }

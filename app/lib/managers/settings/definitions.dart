@@ -650,6 +650,29 @@ const screensaverMode = SettingDef<String>(
 
 // ── Clock (mode: clock) ──
 
+// The face the clock draws (issue #56). Digital is the original text clock;
+// Flip is the split-flap card clock; Roller is the oversized cropped digits
+// that roll upward as time advances (as on the Lenovo Smart Clock 2). The
+// digital-only rows (seconds, date, colour) key their visibility off this,
+// and each of the other faces brings its own colour pair.
+const screensaverClockStyle = SettingDef<String>(
+  key: 'screensaver.clock_style',
+  type: SettingType.select,
+  defaultValue: 'digital',
+  title: 'Style',
+  description: 'How the clock is drawn.',
+  category: 'Screensaver',
+  section: 'Clock',
+  options: ['digital', 'flip', 'roller'],
+  optionLabels: {
+    'digital': 'Digital Clock',
+    'flip': 'Flip Clock',
+    'roller': 'Roller Clock',
+  },
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
 const screensaverClock24h = SettingDef<bool>(
   key: 'screensaver.clock_24h',
   type: SettingType.boolean,
@@ -670,8 +693,8 @@ const screensaverClockSeconds = SettingDef<bool>(
   description: 'Include seconds in the clock.',
   category: 'Screensaver',
   section: 'Clock',
-  dependsOn: 'screensaver.mode',
-  dependsOnValue: 'clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'digital',
 );
 
 const screensaverClockDate = SettingDef<bool>(
@@ -682,8 +705,8 @@ const screensaverClockDate = SettingDef<bool>(
   description: 'Show the weekday and date under the clock.',
   category: 'Screensaver',
   section: 'Clock',
-  dependsOn: 'screensaver.mode',
-  dependsOnValue: 'clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'digital',
 );
 
 const screensaverClockScale = SettingDef<num>(
@@ -711,8 +734,61 @@ const screensaverClockColor = SettingDef<String>(
   description: 'The colour of the clock text.',
   category: 'Screensaver',
   section: 'Clock',
-  dependsOn: 'screensaver.mode',
-  dependsOnValue: 'clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'digital',
+);
+
+// One colour pair per face rather than a shared one: visibility can only
+// key off a single setting value, and the two faces want opposite defaults
+// (dark digits on light cards for Flip, light digits on black for Roller).
+
+const screensaverFlipDigitColor = SettingDef<String>(
+  key: 'screensaver.flip_digit_color',
+  type: SettingType.string,
+  defaultValue: '33,33,33',
+  title: 'Digit colour',
+  description: 'The colour of the flip digits.',
+  category: 'Screensaver',
+  section: 'Clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'flip',
+);
+
+const screensaverFlipBgColor = SettingDef<String>(
+  key: 'screensaver.flip_bg_color',
+  type: SettingType.string,
+  defaultValue: '245,245,245',
+  title: 'Card colour',
+  description: 'The colour of the cards. The backdrop shades itself to '
+      'match.',
+  category: 'Screensaver',
+  section: 'Clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'flip',
+);
+
+const screensaverRollerDigitColor = SettingDef<String>(
+  key: 'screensaver.roller_digit_color',
+  type: SettingType.string,
+  defaultValue: '250,250,250',
+  title: 'Digit colour',
+  description: 'The colour of the rolling digits.',
+  category: 'Screensaver',
+  section: 'Clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'roller',
+);
+
+const screensaverRollerBgColor = SettingDef<String>(
+  key: 'screensaver.roller_bg_color',
+  type: SettingType.string,
+  defaultValue: '0,0,0',
+  title: 'Background colour',
+  description: 'The colour behind the digits.',
+  category: 'Screensaver',
+  section: 'Clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'roller',
 );
 
 // ── Media (mode: media) ──
@@ -1328,6 +1404,39 @@ const motionCamera = SettingDef<String>(
   options: ['front', 'back'],
   optionLabels: {'front': 'Front', 'back': 'Back'},
   dependsOn: 'screensaver.dismiss_on_motion',
+);
+
+// ── Schedule ───────────────────────────────────────────────────────────
+// Time-of-day screensaver switching, the same idea as the Home Assistant
+// theme schedule: each entry names a time, the mode to show from then on,
+// and the brightness to hold while it is active. The entry list is custom
+// UI in both settings surfaces (times, mode dropdowns and sliders per
+// row), so only the JSON list is stored.
+
+const screensaverScheduleEnabled = SettingDef<bool>(
+  key: 'screensaver.schedule_enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Scheduled screensavers',
+  description: 'Switch to a different screensaver at set times of day.',
+  category: 'Screensaver',
+  section: 'Schedule',
+);
+
+/// JSON list of `{"at": "HH:MM", "mode": "...", "brightness": 0..1}`
+/// entries, kept sorted by time. Each entry applies from its
+/// time until the next entry's; the latest entry of the day carries over
+/// past midnight. The brightness overrides the global screensaver
+/// brightness while the entry is active.
+const screensaverSchedule = SettingDef<String>(
+  key: 'screensaver.schedule',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Times',
+  description: 'Each time switches the screensaver from then on.',
+  category: 'Screensaver',
+  section: 'Schedule',
+  dependsOn: 'screensaver.schedule_enabled',
 );
 
 // ── Microphone ─────────────────────────────────────────────────────────
@@ -2175,11 +2284,16 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDimLevel,
   screenAmbientDisplay,
   screensaverSavedBrightness,
+  screensaverClockStyle,
   screensaverClock24h,
   screensaverClockSeconds,
   screensaverClockDate,
   screensaverClockScale,
   screensaverClockColor,
+  screensaverFlipDigitColor,
+  screensaverFlipBgColor,
+  screensaverRollerDigitColor,
+  screensaverRollerBgColor,
   screensaverMediaId,
   screensaverMediaIsFolder,
   screensaverMediaInterval,
@@ -2218,6 +2332,8 @@ const List<SettingDef<Object>> allSettings = [
   motionFps,
   motionSensitivity,
   motionCamera,
+  screensaverScheduleEnabled,
+  screensaverSchedule,
   wakeWordEnabled,
   wakeWordBackground,
   wakeWordResumeTimeoutSeconds,

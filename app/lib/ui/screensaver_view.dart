@@ -15,6 +15,7 @@ import '../app_container.dart';
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
 import '../managers/settings/definitions.dart' as defs;
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
+import 'clock_faces.dart';
 import 'glance_row.dart';
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
 
@@ -180,7 +181,14 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   // drifting off a fixed period.
   void _scheduleTick() {
     final now = DateTime.now();
-    final delay = widget.container.settings.get(defs.screensaverClockSeconds)
+    // Seconds only exist on the digital face. The flip face changes once a
+    // minute, so ticking it per second would be 60x the wakeups (and 60x
+    // the flip animations) for identical output; the roller runs its own
+    // per-frame ticker and ignores this timer entirely.
+    final s = widget.container.settings;
+    final secs = s.get(defs.screensaverClockStyle) == 'digital' &&
+        s.get(defs.screensaverClockSeconds);
+    final delay = secs
         ? Duration(milliseconds: 1000 - now.millisecond)
         : Duration(
             milliseconds: 60000 - now.second * 1000 - now.millisecond,
@@ -211,14 +219,16 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     super.dispose();
   }
 
-  Color _color() {
-    final raw = widget.container.settings.get(defs.screensaverClockColor);
+  Color _rgb(defs.SettingDef<String> def, Color orElse) {
+    final raw = widget.container.settings.get(def);
     final parts = raw.split(',').map((p) => int.tryParse(p.trim())).toList();
     if (parts.length == 3 && parts.every((p) => p != null)) {
       return Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!);
     }
-    return const Color(0xFFFAFAFA);
+    return orElse;
   }
+
+  Color _color() => _rgb(defs.screensaverClockColor, const Color(0xFFFAFAFA));
 
   String _time() {
     final s = widget.container.settings;
@@ -260,9 +270,32 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   String _date() =>
       '${_weekdays[_now.weekday - 1]}, ${_months[_now.month - 1]} ${_now.day}';
 
+  /// The center of the face for the non-digital styles (issue #56). The
+  /// shell around it — glance row, pixel shift, anchor — is shared, so the
+  /// style only swaps what sits in the middle.
+  Widget _styledFace(String style, double scale) {
+    if (style == 'flip') {
+      return FlipClockFace(
+        now: _now,
+        use24h: widget.container.settings.get(defs.screensaverClock24h),
+        digitColor:
+            _rgb(defs.screensaverFlipDigitColor, const Color(0xFF212121)),
+        cardColor: _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
+        scale: scale,
+      );
+    }
+    return RollerClockFace(
+      use24h: widget.container.settings.get(defs.screensaverClock24h),
+      digitColor:
+          _rgb(defs.screensaverRollerDigitColor, const Color(0xFFFAFAFA)),
+      scale: scale,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.container.settings;
+    final style = s.get(defs.screensaverClockStyle);
     final scale = (s.get(defs.screensaverClockScale) / 100).clamp(0.5, 3.0);
     final color = _color();
     final size = MediaQuery.of(context).size;
@@ -279,7 +312,13 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         min(size.width * 0.05, size.height * 0.07) * scale * clockShrink;
 
     return ColoredBox(
-      color: Colors.black,
+      color: switch (style) {
+        'roller' => _rgb(defs.screensaverRollerBgColor, Colors.black),
+        // The flip backdrop follows the card colour (see flipBackdrop).
+        'flip' => flipBackdrop(
+            _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5))),
+        _ => Colors.black,
+      },
       // Expand: both children are pinned to the display, so the stack must
       // be the display rather than sized to whatever the clock happens to
       // measure.
@@ -299,13 +338,26 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
               child: GlanceRow(
                 container: widget.container,
                 scale: glanceScale,
+                // The row wears the face's digit colour so it reads as part
+                // of the clock — and stays legible on the flip and roller
+                // faces, whose backdrops follow the user's colours. The
+                // digital face keeps the standalone grey-on-black palette.
+                tint: switch (style) {
+                  'flip' => _rgb(
+                      defs.screensaverFlipDigitColor, const Color(0xFF212121)),
+                  'roller' => _rgb(defs.screensaverRollerDigitColor,
+                      const Color(0xFFFAFAFA)),
+                  _ => null,
+                },
               ),
             ),
           Align(
             alignment: Alignment(0, glance ? _clockAnchorWithGlance : 0),
             child: Transform.translate(
               offset: _offset,
-              child: Column(
+              child: style != 'digital'
+                  ? _styledFace(style, scale * clockShrink)
+                  : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
               Text(

@@ -1449,6 +1449,189 @@ class _OverlayGrantRowState extends State<_OverlayGrantRow> {
   }
 }
 
+/// The screensaver schedule editor (mirrored in the remote UI): one row per
+/// entry — time, mode, brightness — plus an add button. Each entry applies
+/// from its time until the next one's.
+class _ScheduleEditor extends StatefulWidget {
+  const _ScheduleEditor({required this.container, required this.onChanged});
+
+  final AppContainer container;
+  final VoidCallback onChanged;
+
+  @override
+  State<_ScheduleEditor> createState() => _ScheduleEditorState();
+}
+
+class _ScheduleEditorState extends State<_ScheduleEditor> {
+  /// Live slider preview while a drag is in flight; saved on release so a
+  /// drag does not spam the settings store.
+  int? _dragIndex;
+  double? _dragLevel;
+
+  List<Map<String, Object?>> _entries() {
+    try {
+      final decoded =
+          jsonDecode(widget.container.settings.get(screensaverSchedule));
+      if (decoded is! List) return [];
+      return [
+        for (final e in decoded)
+          if (e is Map) e.cast<String, Object?>(),
+      ];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  int _minutes(String at) {
+    final parts = at.split(':');
+    return (int.tryParse(parts[0]) ?? 0) * 60 +
+        (int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0);
+  }
+
+  Future<void> _save(List<Map<String, Object?>> entries) async {
+    entries.sort((a, b) =>
+        _minutes('${a['at']}').compareTo(_minutes('${b['at']}')));
+    await widget.container.settings
+        .setFromJson(screensaverSchedule.key, jsonEncode(entries));
+    if (mounted) setState(() {});
+    widget.onChanged();
+  }
+
+  Future<String?> _pickTime(String current) async {
+    final parts = current.split(':');
+    final initial = TimeOfDay(
+      hour: int.tryParse(parts.isNotEmpty ? parts[0] : '')?.clamp(0, 23) ?? 19,
+      minute: int.tryParse(parts.length > 1 ? parts[1] : '')?.clamp(0, 59) ?? 0,
+    );
+    final picked = await showTimePicker(context: context, initialTime: initial);
+    if (picked == null) return null;
+    return '${picked.hour.toString().padLeft(2, '0')}:'
+        '${picked.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _add() async {
+    final at = await _pickTime('19:00');
+    if (at == null) return;
+    final s = widget.container.settings;
+    final entries = _entries()
+      ..add({
+        'at': at,
+        'mode': s.get(screensaverMode),
+        'brightness': s.get(screensaverBrightnessLevel).toDouble(),
+      });
+    await _save(entries);
+  }
+
+  String _modeLabel(String mode) =>
+      screensaverMode.optionLabels?[mode] ??
+      (mode.isEmpty ? mode : mode[0].toUpperCase() + mode.substring(1));
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = _entries();
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (entries.isEmpty)
+          ListTile(
+            title: const Text('No times yet'),
+            subtitle: Text(screensaverSchedule.description),
+          ),
+        for (var i = 0; i < entries.length; i++)
+          ListTile(
+            title: Row(
+              children: [
+                TextButton(
+                  onPressed: () async {
+                    final at = await _pickTime('${entries[i]['at']}');
+                    if (at == null) return;
+                    entries[i]['at'] = at;
+                    await _save(entries);
+                  },
+                  child: Text('${entries[i]['at']}'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    underline: const SizedBox.shrink(),
+                    value: screensaverMode.options!
+                            .contains(entries[i]['mode'])
+                        ? entries[i]['mode'] as String
+                        : screensaverMode.defaultValue,
+                    items: [
+                      for (final mode in screensaverMode.options!)
+                        DropdownMenuItem(
+                          value: mode,
+                          child: Text(_modeLabel(mode)),
+                        ),
+                    ],
+                    onChanged: (mode) async {
+                      if (mode == null) return;
+                      entries[i]['mode'] = mode;
+                      await _save(entries);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            subtitle: Row(
+              children: [
+                Icon(
+                  Icons.brightness_6_outlined,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                Expanded(
+                  child: Slider(
+                    value: _dragIndex == i
+                        ? _dragLevel!
+                        : ((entries[i]['brightness'] as num?) ?? 0.2)
+                            .toDouble()
+                            .clamp(0.0, 1.0),
+                    onChanged: (v) => setState(() {
+                      _dragIndex = i;
+                      _dragLevel = v;
+                    }),
+                    onChangeEnd: (v) async {
+                      _dragIndex = null;
+                      _dragLevel = null;
+                      entries[i]['brightness'] = v;
+                      await _save(entries);
+                    },
+                  ),
+                ),
+                Text(
+                  '${(((_dragIndex == i ? _dragLevel! : ((entries[i]['brightness'] as num?) ?? 0.2).toDouble())) * 100).round()}%',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                entries.removeAt(i);
+                await _save(entries);
+              },
+            ),
+          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8, bottom: 4),
+            child: TextButton.icon(
+              onPressed: _add,
+              icon: const Icon(Icons.add),
+              label: const Text('Add time'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _CameraGrantRow extends StatefulWidget {
   const _CameraGrantRow({super.key});
 
@@ -3400,9 +3583,9 @@ class SettingTile extends StatelessWidget {
             : (value is num
                   ? _formatNum(value)
                   : ('$value'.isEmpty ? 'Not set' : '$value'));
-        // A colour is picked, not typed.
-        if (def.key == screensaverClockColor.key ||
-            def.key == screensaverMiniClockColor.key) {
+        // A colour is picked, not typed. Every "r,g,b" setting ends in
+        // _color by convention; the remote UI keys off the same suffix.
+        if (def.key.endsWith('_color')) {
           final rgb = value as String;
           final parts = rgb
               .split(',')
@@ -3582,6 +3765,11 @@ class SettingTile extends StatelessWidget {
               child: Text(current?.name ?? 'Not set'),
             ),
           );
+        }
+        // The screensaver schedule: times with a mode and brightness each,
+        // edited in place rather than typed as JSON.
+        if (def.key == screensaverSchedule.key) {
+          return _ScheduleEditor(container: c, onChanged: onChanged);
         }
         // A time of day is picked from a clock, not typed.
         if (def.key == themeDarkAt.key || def.key == themeLightAt.key) {

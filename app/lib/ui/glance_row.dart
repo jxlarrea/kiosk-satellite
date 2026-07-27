@@ -16,6 +16,7 @@ class GlanceRow extends StatelessWidget {
     super.key,
     required this.container,
     this.scale = 1,
+    this.tint,
   });
 
   final AppContainer container;
@@ -23,6 +24,12 @@ class GlanceRow extends StatelessWidget {
   /// Shrinks the whole row on small panels, where the clock above it has
   /// already taken what space there is.
   final double scale;
+
+  /// The clock face's digit colour, so the row reads as part of the face —
+  /// and stays legible when the face's backdrop is bright (a flip clock
+  /// with light cards would swallow the default light grey). Null keeps
+  /// the standalone grey-on-black palette.
+  final Color? tint;
 
   /// The width one entity gets. Every entity gets the same, so the row's
   /// geometry depends on how many there are and never on how long their
@@ -96,6 +103,7 @@ class GlanceRow extends StatelessWidget {
                               child: _GlanceItem(
                                 entity: entity,
                                 scale: scale * fit,
+                                tint: tint,
                               ),
                             ),
                           ),
@@ -111,17 +119,19 @@ class GlanceRow extends StatelessWidget {
 }
 
 class _GlanceItem extends StatelessWidget {
-  const _GlanceItem({required this.entity, required this.scale});
+  const _GlanceItem({required this.entity, required this.scale, this.tint});
 
   final GlanceEntity entity;
   final double scale;
+  final Color? tint;
 
   @override
   Widget build(BuildContext context) {
     // The date's tone for the name, a brighter one for the value: the value
     // is the thing being checked, the label only says what it belongs to.
-    const label = Color(0xFF9E9E9E);
-    const value = Color(0xFFE8E8E8);
+    // A tinted row keeps the same two-tone reading in the face's colour.
+    final label = tint?.withValues(alpha: 0.65) ?? const Color(0xFF9E9E9E);
+    final value = tint ?? const Color(0xFFE8E8E8);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
