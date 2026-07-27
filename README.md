@@ -1,5 +1,5 @@
 <h1 align="center" style="border-bottom: none">
-   <img alt="Kiosk Satellite for Home Assistant" src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/banners/kiosk_satellite_banner.png" width="650" />
+   <img alt="Kiosk Satellite for Home Assistant" src="assets/banners/kiosk_satellite_banner.png" width="650" />
 </h1>
 
 <p align="center">
@@ -66,7 +66,7 @@ smooth on the low-powered, older tablets that usually end up on walls.
   the house, with metadata, artwork and volume in Home Assistant.
 
 <p align="center">
- <img src="assets/screenshots/sendspin-horizontal.png" alt="Assist" width="650"/>
+ <img src="assets/screenshots/sendspin-horizontal.png" alt="Sendspin" width="650"/>
 </p>
 
 &bull; **Screensavers**: dim, black, clock, Home Assistant media, local
@@ -89,7 +89,7 @@ smooth on the low-powered, older tablets that usually end up on walls.
   automations, the media browser or any DLNA app.
 
 <p align="center">
- <img src="assets/screenshots/dashboard.png" alt="Assist" width="650"/>
+ <img src="assets/screenshots/dashboard.png" alt="Dashboard" width="650"/>
 </p>
 
 &bull; **Ready-made Home Assistant entities over MQTT**: point the app at
@@ -117,9 +117,8 @@ smooth on the low-powered, older tablets that usually end up on walls.
   Remote Admin or Home Assistant through MQTT.
 
 <p align="center">
- <img src="assets/screenshots/camera-1.png" alt="Assist" width="650"/>
-</p>  
-
+ <img src="assets/screenshots/camera-1.png" alt="Cameras" width="650"/>
+</p>
 
 ## Kiosk Satellite + Voice Satellite
 
@@ -137,7 +136,7 @@ configuring everything in Voice Satellite as usual; the kiosk just makes it
 always-on, cheaper, and screen-independent.
 
 <p align="center">
- <img src="https://raw.githubusercontent.com/jxlarrea/kiosk-satellite/refs/heads/main/assets/screenshots/vs-settings.png" alt="Assist" width="650"/>
+ <img src="assets/screenshots/vs-settings.png" alt="Voice Satellite Settings" width="650"/>
 </p>
 
 The performance difference is one of the main reasons to use Kiosk
@@ -158,7 +157,7 @@ word and the kiosk brings the dashboard back and answers.
 | Wake word with the dashboard on screen | ✅ | ✅ |
 | Wake word with the screen off | ❌ | ✅ |
 | Wake word with another app in front | ❌ | ✅ Returns to the dashboard on trigger |
-| Mic acces in non-HTTPS HA instances | ❌ | ✅ |
+| Mic access in non-HTTPS HA instances | ❌ | ✅ |
 | Detection cost | ⚠️ Browser based, heavy on tablets | ✅ Native CPU inference, 10x-30x faster |
 | Wake word on low-end hardware | ⚠️ Struggles | ✅ CPU only, no GPU needed |
 | Survives reboots | ⚠️ Manual relaunch | ✅ Start on boot |
