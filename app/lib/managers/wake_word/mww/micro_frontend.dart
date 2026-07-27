@@ -694,7 +694,11 @@ class MicroFrontend {
       if (absValue > maxAbs) maxAbs = absValue;
     }
 
-    final inputShift = 15 - _mostSignificantBit32(_u32(maxAbs));
+    // maxAbs can reach 32768 (a -32768 sample under the window's peak 4096
+    // coefficient), making the raw shift -1. C leaves that shift undefined and
+    // happens not to trap; Dart throws, so clamp and pass the window through
+    // unscaled.
+    final inputShift = math.max(0, 15 - _mostSignificantBit32(_u32(maxAbs)));
 
     // C: fft_input[i] = (int16_t)((uint16_t)input[i] << input_scale_shift).
     // Zero-extend to uint16 first, then shift; the Int16List store wraps.

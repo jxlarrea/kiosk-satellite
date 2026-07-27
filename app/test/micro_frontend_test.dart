@@ -108,4 +108,24 @@ void main() {
       }
     });
   });
+
+  test('full-scale negative clipping does not crash the frontend', () {
+    // A -1.0 sample quantizes to -32768; under the window's peak 4096
+    // coefficient the windowed value is -32768 again, whose MSB is 16 and the
+    // raw input shift is -1. Dart throws on negative shifts (issue #52), so
+    // the shift is clamped to 0. Feed enough clipped windows to guarantee the
+    // peak coefficient meets a full-scale sample.
+    final frontend = MicroFrontend();
+    final clipped = List<double>.filled(160, -1.0);
+    final frames = <List<double>>[];
+    for (var chunk = 0; chunk < 10; chunk++) {
+      for (final f in frontend.feed(clipped)) {
+        frames.add(f.toList());
+      }
+    }
+    expect(frames, isNotEmpty);
+    for (final frame in frames) {
+      expect(frame.every((v) => v.isFinite), isTrue);
+    }
+  });
 }
