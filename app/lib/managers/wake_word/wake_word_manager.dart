@@ -213,7 +213,65 @@ class WakeWordManager extends Manager {
     }
   }
 
+  /// Crashes seen in the current window, and when that window opened. A
+  /// detector that dies once is worth restarting silently; one that dies
+  /// over and over is a device this build cannot listen on, and pretending
+  /// otherwise costs the user their voice assistant either way.
+  int _crashes = 0;
+  DateTime? _crashWindowStart;
+  Timer? _crashRestart;
+
+  static const _maxCrashRestarts = 3;
+  static const _crashWindow = Duration(hours: 1);
+
+  /// A dead detector, brought back rather than reported.
+  ///
+  /// The alternative is what issue #52 describes: the isolate dies, the app
+  /// keeps saying "listening natively", and the device is deaf until someone
+  /// notices and restarts it by hand. Voice Satellite is not told anything,
+  /// because from its side nothing changed and a restart takes seconds.
+  void _onEngineCrash(String detail) {
+    final now = DateTime.now();
+    if (_crashWindowStart == null ||
+        now.difference(_crashWindowStart!) > _crashWindow) {
+      _crashWindowStart = now;
+      _crashes = 0;
+    }
+    _crashes++;
+    if (_crashes > _maxCrashRestarts) {
+      log.error(
+          name,
+          'the detector has crashed $_crashes times in the last hour; '
+          'giving up on restarting it');
+      _onEngineFailure(EngineFailure.crashed, detail);
+      return;
+    }
+    log.warn(
+        name,
+        'the detector crashed ($detail); restarting it '
+        '($_crashes of $_maxCrashRestarts this hour)');
+    _runningEngine = null;
+    // A beat before retrying: an immediate respawn against whatever killed
+    // the last one just burns the allowance.
+    _crashRestart?.cancel();
+    _crashRestart = Timer(const Duration(seconds: 2), () async {
+      await _runningEngine?.stop();
+      await _engine.stop();
+      _runningEngine = null;
+      await _sync();
+      // The page's audio stream died with the old engine; the mic-change
+      // path does the same thing for the same reason.
+      if (_pageAudioActive && _engine.running) {
+        await _openPageAudioStream();
+      }
+    });
+  }
+
   void _onEngineFailure(EngineFailure kind, String detail) {
+    if (kind == EngineFailure.crashed && _crashes <= _maxCrashRestarts) {
+      _onEngineCrash(detail);
+      return;
+    }
     _failed = true;
     _failure = kind;
     _runningEngine = null;
@@ -312,6 +370,12 @@ class WakeWordManager extends Manager {
             code: 'modelsUnavailable',
             label: 'Could not download the models from Home Assistant. Retry '
                 'once it is reachable.',
+          ),
+        EngineFailure.crashed => (
+            code: 'crashed',
+            label: 'The detector kept crashing on this device, so it was '
+                'stopped. Voice Satellite is listening in the browser '
+                'instead. Retry, or restart the app.',
           ),
         null => (
             code: 'failed',

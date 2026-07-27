@@ -413,8 +413,23 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       return;
     }
     if (msg is List) {
-      // uncaught isolate error: [error, stackTrace]
+      // Uncaught isolate error: [error, stackTrace]. The isolate is gone —
+      // spawn's errorsAreFatal defaults to true — so this is not a passing
+      // complaint, it is the detector dying. The stack goes to the log too:
+      // without it a crash inside a plugin is a single unattributable line,
+      // and the next person to hit it has nothing to report (issue #52).
       log.error(tag, 'isolate error: ${msg.first}');
+      if (msg.length > 1 && '${msg.last}'.isNotEmpty) {
+        log.error(tag, 'isolate stack: ${msg.last}');
+      }
+      if (_running) {
+        // Mid-run: nothing will ever be detected again on this isolate, and
+        // the mic subscription is now feeding a dead port. Say so, so the
+        // manager can bring a fresh one up instead of leaving the app
+        // reporting that it is listening.
+        _running = false;
+        _onFailure?.call(EngineFailure.crashed, 'detector isolate died');
+      }
       _completeReady(false);
       return;
     }

@@ -34,6 +34,11 @@ enum EngineFailure {
 
   /// No model could be loaded, so there is nothing to listen with.
   modelsUnavailable,
+
+  /// The detector died while running: an uncaught error killed its isolate.
+  /// Recoverable by starting a new one, and the manager tries exactly that
+  /// before reporting the engine unavailable (issue #52).
+  crashed,
 }
 
 /// The engine cannot run this config, or can no longer run it.

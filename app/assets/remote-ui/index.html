@@ -2853,7 +2853,7 @@ async function loadWakeWord() {
   // Status first: it is the answer to "is this thing working?".
   const status = document.createElement('div');
   status.className = 'row';
-  const bad = ['micBlocked', 'micDeclined', 'micLost', 'modelsUnavailable', 'unavailable'];
+  const bad = ['micBlocked', 'micDeclined', 'micLost', 'modelsUnavailable', 'crashed', 'unavailable'];
   const dot = s.status === 'listening' ? 'var(--ok)'
     : bad.includes(s.status) ? 'var(--error)'
     : 'var(--muted)';

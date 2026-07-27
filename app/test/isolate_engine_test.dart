@@ -123,12 +123,43 @@ void main() {
       await mic.close();
     });
 
-    Future<void> start({WakeWordConfig? config}) async {
+    Future<void> start({
+      WakeWordConfig? config,
+      void Function(EngineFailure, String)? onFailure,
+    }) async {
       await engine.start(
         config: config ?? _config,
         onDetection: (m) async => engine.detections.add(m),
+        onFailure: onFailure,
       );
     }
+
+    test('a dying isolate is reported, not swallowed', () async {
+      // Issue #52: an uncaught error kills the worker, and the engine used to
+      // keep reporting itself as running. The device then looked like it was
+      // listening and heard nothing until someone restarted the app by hand.
+      final failures = <EngineFailure>[];
+      await start(onFailure: (kind, _) => failures.add(kind));
+      expect(engine.running, isTrue);
+
+      engine.isolate.crash();
+      await settle();
+
+      expect(failures, [EngineFailure.crashed]);
+      expect(engine.running, isFalse);
+    });
+
+    test('a crashed engine can be started again', () async {
+      await start();
+      engine.isolate.crash();
+      await settle();
+      expect(engine.running, isFalse);
+
+      // The recovery the manager performs: stop the wreckage, start afresh.
+      await engine.stop();
+      await start();
+      expect(engine.running, isTrue);
+    });
 
     /// Push a mic chunk and let it reach the isolate. The delay is real, not
     /// cosmetic: a SendPort delivers on the event loop, so a zero-duration
@@ -504,6 +535,12 @@ class _FakeIsolate {
     // No real isolate: the base has nothing to kill, which is what null means.
     return null;
   }
+
+  /// An uncaught error in the worker. Isolate.spawn reports these as a
+  /// two-element list on the same port, and the isolate is dead afterwards
+  /// (errorsAreFatal defaults to true).
+  void crash() =>
+      _toMain?.send(['Invalid argument(s): -1', '#0 somewhere (file.dart:1)']);
 
   void detect({required int? wakeEndSample}) => _toMain?.send({
         'type': WakeMsg.detection,
