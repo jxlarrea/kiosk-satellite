@@ -15,7 +15,8 @@ import me.jxl.kiosk_satellite.sendspin.protocol.SendSpinProtocol
  */
 object AudioDecoderFactory {
 
-    private const val TAG = "AudioDecoderFactory"
+    // The shared sendspin tag: see MediaCodecDecoder.
+    private const val TAG = "sendspin"
 
     /**
      * Create a decoder for the specified codec.

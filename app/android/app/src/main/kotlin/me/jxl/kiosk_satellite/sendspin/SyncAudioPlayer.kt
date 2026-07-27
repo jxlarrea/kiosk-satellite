@@ -383,6 +383,7 @@ class SyncAudioPlayer(
 
         // Logging and diagnostics
         private const val CHUNK_DROP_LOG_INTERVAL = 100  // Log every Nth dropped chunk when time sync not ready
+        private const val OVERLAP_SKIP_LOG_INTERVAL = 50L  // Log every Nth fully-overlapped chunk skip
         private const val DAC_PACING_LOG_INTERVAL_US = 10_000_000L  // Log DAC pacing stats every 10 seconds
 
         // Stuck-state watchdog: detects when the state machine wedges in a
@@ -618,6 +619,7 @@ class SyncAudioPlayer(
     private var gapsFilled = 0L           // Count of gaps filled with silence
     private var gapSilenceMs = 0L         // Total milliseconds of silence inserted
     private var overlapsTrimmed = 0L      // Count of overlaps trimmed
+    private var overlapsSkipped = 0L      // Chunks discarded whole as overlap
     private var overlapTrimmedMs = 0L     // Total milliseconds of audio trimmed
 
     // Bytes per sample (e.g., 2 channels * 2 bytes = 4 bytes per sample frame)
@@ -628,8 +630,6 @@ class SyncAudioPlayer(
     private val silenceFrameCount = sampleRate / 100  // 10ms of silence
     private val silenceBuffer = ByteArray(silenceFrameCount * bytesPerFrame)
 
-    // Microseconds per sample frame
-    private val microsPerSample = 1_000_000.0 / sampleRate
 
     /**
      * Initialize the audio player with the specified format.
@@ -1420,6 +1420,22 @@ class SyncAudioPlayer(
         var workingServerTimeMicros = serverTimeMicros
         var workingPcmData = pcmData
 
+        // Receive-side continuity check, BEFORE gap/overlap handling so every
+        // arriving chunk is measured — the old placement sat after an early
+        // return (full-overlap skip), which both hid those skips from this
+        // metric and inflated the next chunk's reported gap.
+        if (lastChunkServerTime > 0) {
+            val serverGap = serverTimeMicros - lastChunkServerTime
+            val expectedGapUs =
+                (pcmData.size.toLong() / bytesPerFrame) * 1_000_000L / sampleRate
+
+            // If gap is more than threshold different from expected, log it
+            if (abs(serverGap - expectedGapUs) > DISCONTINUITY_THRESHOLD_US) {
+                AppLog.Audio.w("Discontinuity detected: gap=${serverGap}us, expected=${expectedGapUs}us")
+            }
+        }
+        lastChunkServerTime = serverTimeMicros
+
         // Initialize expected next timestamp on first chunk
         val expectedNext = expectedNextTimestampUs
         if (expectedNext == null) {
@@ -1491,25 +1507,19 @@ class SyncAudioPlayer(
                     val overlapMs = overlapUs / 1000
                     overlapTrimmedMs += overlapMs
                 } else {
-                    // Entire chunk is overlap - skip it entirely
-                    overlapsTrimmed++
+                    // Entire chunk is overlap - skip it entirely. Counted and
+                    // logged on its own: a run of these is a whole span of
+                    // audible audio thrown away, not routine trimming.
+                    overlapsSkipped++
                     overlapTrimmedMs += overlapUs / 1000
+                    if (overlapsSkipped % OVERLAP_SKIP_LOG_INTERVAL == 1L) {
+                        AppLog.Audio.w("Chunk fully overlapped, skipped " +
+                            "(${overlapUs / 1000}ms behind, total skipped: $overlapsSkipped)")
+                    }
                     return
                 }
             }
         }
-
-        // Check for large discontinuity (new stream or seek) - for logging only
-        if (lastChunkServerTime > 0) {
-            val serverGap = serverTimeMicros - lastChunkServerTime
-            val expectedGapUs = (pcmData.size.toLong() / bytesPerFrame) * microsPerSample.toLong()
-
-            // If gap is more than threshold different from expected, log it
-            if (abs(serverGap - expectedGapUs) > DISCONTINUITY_THRESHOLD_US) {
-                AppLog.Audio.w("Discontinuity detected: gap=${serverGap}us, expected=${expectedGapUs}us")
-            }
-        }
-        lastChunkServerTime = serverTimeMicros
 
         // Calculate sample count for the (possibly trimmed) chunk
         val sampleCount = workingPcmData.size / bytesPerFrame
@@ -3517,6 +3527,7 @@ class SyncAudioPlayer(
             gapsFilled = gapsFilled,
             gapSilenceMs = gapSilenceMs,
             overlapsTrimmed = overlapsTrimmed,
+            overlapsSkipped = overlapsSkipped,
             overlapTrimmedMs = overlapTrimmedMs,
             // New stats for comprehensive debugging
             reanchorCount = reanchorCount,
@@ -3555,6 +3566,7 @@ class SyncAudioPlayer(
         val gapsFilled: Long = 0,
         val gapSilenceMs: Long = 0,
         val overlapsTrimmed: Long = 0,
+        val overlapsSkipped: Long = 0,
         val overlapTrimmedMs: Long = 0,
         // New stats for comprehensive debugging
         val reanchorCount: Long = 0,

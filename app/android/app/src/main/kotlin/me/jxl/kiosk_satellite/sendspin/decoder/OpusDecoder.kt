@@ -18,7 +18,8 @@ import java.nio.ByteOrder
 class OpusDecoder : MediaCodecDecoder(MediaFormat.MIMETYPE_AUDIO_OPUS) {
 
     companion object {
-        private const val TAG = "OpusDecoder"
+        // The shared sendspin tag: see MediaCodecDecoder.
+        private const val TAG = "sendspin"
 
         // Default pre-skip for 48kHz (3840 samples = 80ms)
         private const val DEFAULT_PRE_SKIP: Long = 3840

@@ -4,9 +4,13 @@ import android.content.Context
 import android.database.ContentObserver
 import android.media.AudioManager
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
+import android.os.Process
 import android.provider.Settings
 import android.util.Log
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import kotlin.math.roundToInt
@@ -50,10 +54,32 @@ class SendspinBridge(
         // Recycle a fruitless mDNS browse after this long (see discoveryRestart).
         private const val DISCOVERY_REBROWSE_MS = 600_000L  // 10 minutes
         private const val BUFFER_CAPACITY_SECONDS = 35L
+
+        /**
+         * Most chunks allowed to wait for the decode thread (~25s of audio
+         * at the server's 96ms cadence). Purely an OOM backstop: a device
+         * that falls this far behind cannot play glitch-free anyway, and
+         * dropping with a counter beats growing without bound.
+         */
+        private const val MAX_PENDING_DECODES = 256
+        private const val DECODE_DROP_LOG_INTERVAL = 100L
     }
 
     private val channel = MethodChannel(messenger, "kiosk_satellite/sendspin")
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    // Decoding runs on its own audio-priority thread, NOT the WebSocket
+    // reader thread (issue #59): a MediaCodec decode blocks up to tens of
+    // milliseconds, and doing that inline on the socket thread at default
+    // priority let a slow CPU starve the reader until frames were dropped.
+    // Everything that touches the decoder — chunks, stream start/clear/end —
+    // is posted here in arrival order, so the decoder stays effectively
+    // single-threaded and stream events never overtake in-flight audio.
+    private val decodeThread =
+        HandlerThread("SendSpinDecode", Process.THREAD_PRIORITY_AUDIO).also { it.start() }
+    private val decodeHandler = Handler(decodeThread.looper)
+    private val pendingDecodes = AtomicInteger(0)
+    private val decodeQueueDrops = AtomicLong(0)
     private val audioManager =
         context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
@@ -63,8 +89,9 @@ class SendspinBridge(
         "unknown"
     }
 
-    // Session objects. pipelineLock guards player/decoder swaps, which happen
-    // on the WebSocket thread while stop() can run on the main thread.
+    // Session objects. pipelineLock guards player/decoder swaps and decoder
+    // use, which happen on the decode thread while stop() can run on the
+    // main thread.
     private val pipelineLock = Any()
     @Volatile private var client: SendSpin? = null
     @Volatile private var player: SyncAudioPlayer? = null
@@ -466,6 +493,24 @@ class SendspinBridge(
         "volume" to deviceVolumePct(),
         "muted" to deviceMuted(),
         "synced" to (client?.isSynchronized() ?: false),
+        // Pipeline health, for diagnosing stutter reports (issue #59)
+        // without an adb cable: every counter that marks lost audio.
+        "stats" to player?.getStats()?.let { s ->
+            mapOf(
+                "chunksReceived" to s.chunksReceived,
+                "chunksPlayed" to s.chunksPlayed,
+                "chunksDropped" to s.chunksDropped,
+                "gapsFilled" to s.gapsFilled,
+                "gapSilenceMs" to s.gapSilenceMs,
+                "overlapsTrimmed" to s.overlapsTrimmed,
+                "overlapTrimmedMs" to s.overlapTrimmedMs,
+                "overlapsSkipped" to s.overlapsSkipped,
+                "bufferUnderruns" to s.bufferUnderrunCount,
+                "reanchors" to s.reanchorCount,
+                "decoderInputDropped" to (decoder?.inputFramesDropped ?: 0L),
+                "decodeQueueDrops" to decodeQueueDrops.get(),
+            )
+        },
     )
 
     // ==================================================================
@@ -513,6 +558,31 @@ class SendspinBridge(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to configure $codec decoder", e)
                 null
+            }
+        }
+    }
+
+    /**
+     * Decode one chunk and queue its output. Decode thread only. The
+     * pipeline lock covers the decode so stopSession()/configurePipeline()
+     * cannot release the MediaCodec out from under it; each output span
+     * carries its own timestamp (see [me.jxl.kiosk_satellite.sendspin.decoder.DecodedAudio]),
+     * so output the codec delivers late is queued at its true time instead
+     * of being lost or mis-stamped.
+     */
+    private fun decodeAndQueue(serverTimeMicros: Long, audioData: ByteArray) {
+        synchronized(pipelineLock) {
+            val d = decoder ?: return
+            val spans = try {
+                d.decode(serverTimeMicros, audioData)
+            } catch (e: Exception) {
+                Log.e(TAG, "Decode failed (${audioData.size} bytes)", e)
+                return
+            }
+            for (span in spans) {
+                if (span.pcm.isNotEmpty()) {
+                    player?.queueChunk(span.serverTimeMicros, span.pcm)
+                }
             }
         }
     }
@@ -595,35 +665,48 @@ class SendspinBridge(
             bitDepth: Int,
             codecHeader: ByteArray?,
         ) {
-            configurePipeline(codec, sampleRate, channels, bitDepth, codecHeader)
+            // On the decode thread, behind any still-queued chunks of the
+            // previous stream, so the old decoder finishes its audio before
+            // being replaced.
+            decodeHandler.post {
+                configurePipeline(codec, sampleRate, channels, bitDepth, codecHeader)
+            }
             streamActive = true
             recomputePlaying()
         }
 
         override fun onStreamClear() {
-            decoder?.flush()
-            player?.clearBuffer()
+            // Ordered behind pending chunk decodes: clearing first and
+            // decoding after would re-queue the audio the clear removed.
+            decodeHandler.post {
+                synchronized(pipelineLock) { decoder?.flush() }
+                player?.clearBuffer()
+            }
         }
 
         override fun onStreamEnd() {
             streamActive = false
-            // Keep the AudioTrack alive writing silence so DAC timestamps stay
-            // warm for the next stream.
-            player?.enterIdle()
-            decoder?.flush()
+            decodeHandler.post {
+                // Keep the AudioTrack alive writing silence so DAC timestamps
+                // stay warm for the next stream.
+                player?.enterIdle()
+                synchronized(pipelineLock) { decoder?.flush() }
+            }
             recomputePlaying()
         }
 
         override fun onAudioChunk(serverTimeMicros: Long, audioData: ByteArray) {
-            val d = decoder ?: return
-            val pcm = try {
-                d.decode(audioData)
-            } catch (e: Exception) {
-                Log.e(TAG, "Decode failed (${audioData.size} bytes)", e)
+            if (pendingDecodes.get() >= MAX_PENDING_DECODES) {
+                val dropped = decodeQueueDrops.incrementAndGet()
+                if (dropped % DECODE_DROP_LOG_INTERVAL == 1L) {
+                    Log.w(TAG, "Decode queue full, dropping chunk (total $dropped)")
+                }
                 return
             }
-            if (pcm.isNotEmpty()) {
-                player?.queueChunk(serverTimeMicros, pcm)
+            pendingDecodes.incrementAndGet()
+            decodeHandler.post {
+                pendingDecodes.decrementAndGet()
+                decodeAndQueue(serverTimeMicros, audioData)
             }
         }
 

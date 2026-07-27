@@ -16,7 +16,9 @@ import java.nio.ByteBuffer
 class FlacDecoder : MediaCodecDecoder(MediaFormat.MIMETYPE_AUDIO_FLAC) {
 
     companion object {
-        private const val TAG = "FlacDecoder"
+        // The shared sendspin tag: a "logcat -s sendspin" capture (what issue
+        // templates ask for) must include decoder drops, not hide them.
+        private const val TAG = "sendspin"
     }
 
     override fun configureFormat(

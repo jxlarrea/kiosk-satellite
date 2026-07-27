@@ -3,8 +3,6 @@ package me.jxl.kiosk_satellite.sendspin.decoder
 import android.media.MediaCodec
 import android.media.MediaFormat
 import android.util.Log
-import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
 
 /**
  * Base class for MediaCodec-based audio decoders.
@@ -16,13 +14,21 @@ import java.nio.ByteBuffer
  * - Input buffers are submitted via dequeueInputBuffer/queueInputBuffer
  * - Output buffers are drained via dequeueOutputBuffer/releaseOutputBuffer
  * - flush() returns to the Flushed sub-state without needing start()
+ *
+ * The codec is a queue, not a function: on a slow device the PCM for an
+ * input can surface a decode() call or two later. The server timestamp
+ * therefore travels through the codec as presentationTimeUs, and every
+ * output span is stamped with the time the codec reports for it — never
+ * with "the timestamp of whatever input happened to be submitted last".
  */
 abstract class MediaCodecDecoder(
     protected val mimeType: String
 ) : AudioDecoder {
 
     companion object {
-        private const val TAG = "MediaCodecDecoder"
+        // The shared sendspin tag: a "logcat -s sendspin" capture (what issue
+        // templates ask for) must include decoder drops, not hide them.
+        private const val TAG = "sendspin"
         private const val TIMEOUT_US = 10_000L  // 10ms timeout for buffer operations
 
         /**
@@ -32,20 +38,26 @@ abstract class MediaCodecDecoder(
          * the codec time to free a buffer by processing output.
          */
         private const val MAX_INPUT_RETRIES = 3
-
-        // Initial capacity for the reusable output buffers; grows on demand.
-        private const val INITIAL_OUTPUT_CAPACITY = 16 * 1024
     }
 
     protected var mediaCodec: MediaCodec? = null
     protected var outputFormat: MediaFormat? = null
     private var _isConfigured = false
 
-    // Reused across decode() calls to avoid per-call and per-drain allocation
-    // churn on the hot audio path. decode() is single-threaded.
+    // Reused across decode() calls to avoid per-call allocation churn on the
+    // hot audio path. decode() is single-threaded.
     private val bufferInfo = MediaCodec.BufferInfo()
-    private val outputAccumulator = ByteArrayOutputStream(INITIAL_OUTPUT_CAPACITY)
-    private var drainScratch = ByteArray(INITIAL_OUTPUT_CAPACITY)
+
+    /** Frames thrown away because the codec refused input; see interface. */
+    private var _inputFramesDropped = 0L
+    override val inputFramesDropped: Long get() = _inputFramesDropped
+
+    /**
+     * Where the next output span should start if the codec reports no usable
+     * presentation time of its own (some decoders zero it out). Follows the
+     * emitted spans; re-seeded from the input timestamp on flush/start.
+     */
+    private var fallbackPtsUs = -1L
 
     override val isConfigured: Boolean
         get() = _isConfigured
@@ -91,12 +103,15 @@ abstract class MediaCodecDecoder(
         codecHeader: ByteArray?
     )
 
-    override fun decode(compressedData: ByteArray): ByteArray {
+    override fun decode(
+        serverTimeMicros: Long,
+        compressedData: ByteArray
+    ): List<DecodedAudio> {
         val codec = mediaCodec
             ?: throw IllegalStateException("Decoder not configured")
 
-        val outputBuffer = outputAccumulator
-        outputBuffer.reset()
+        if (fallbackPtsUs < 0) fallbackPtsUs = serverTimeMicros
+        val spans = ArrayList<DecodedAudio>(2)
 
         // Submit input with retry.
         // When all input buffers are occupied (codec backpressure), we drain
@@ -110,7 +125,8 @@ abstract class MediaCodecDecoder(
                 if (inputBuffer != null) {
                     inputBuffer.clear()
                     inputBuffer.put(compressedData)
-                    codec.queueInputBuffer(inputIndex, 0, compressedData.size, 0, 0)
+                    codec.queueInputBuffer(
+                        inputIndex, 0, compressedData.size, serverTimeMicros, 0)
                     submitted = true
                 }
                 break
@@ -118,26 +134,25 @@ abstract class MediaCodecDecoder(
 
             // No input buffer available -- drain output to free a slot, then retry.
             if (attempt < MAX_INPUT_RETRIES) {
-                drainOutput(codec, outputBuffer)
+                drainOutput(codec, spans)
             }
         }
 
         if (!submitted) {
+            _inputFramesDropped++
             Log.e(TAG, "Failed to submit input after ${MAX_INPUT_RETRIES + 1} attempts, " +
-                    "frame dropped (${compressedData.size} bytes)")
+                    "frame dropped (${compressedData.size} bytes, " +
+                    "total dropped: $_inputFramesDropped)")
         }
 
         // Drain all available output
-        drainOutput(codec, outputBuffer)
+        drainOutput(codec, spans)
 
-        // toByteArray() copies deliberately: the caller owns the returned
-        // array (SyncAudioPlayer queues and mutates it in place), so it must
-        // not alias the reusable accumulator.
-        return outputBuffer.toByteArray()
+        return spans
     }
 
     /**
-     * Drain all available output buffers from the codec.
+     * Drain all available output buffers from the codec into [spans].
      *
      * Handles all dequeueOutputBuffer status codes correctly:
      * - >= 0: Valid output buffer with PCM data to collect
@@ -145,7 +160,7 @@ abstract class MediaCodecDecoder(
      * - INFO_OUTPUT_BUFFERS_CHANGED: Deprecated but harmless, continue draining
      * - INFO_TRY_AGAIN_LATER: No more output available, stop draining
      */
-    private fun drainOutput(codec: MediaCodec, outputBuffer: ByteArrayOutputStream) {
+    private fun drainOutput(codec: MediaCodec, spans: MutableList<DecodedAudio>) {
         while (true) {
             val outputIndex = codec.dequeueOutputBuffer(bufferInfo, TIMEOUT_US)
 
@@ -153,12 +168,21 @@ abstract class MediaCodecDecoder(
                 outputIndex >= 0 -> {
                     val outBuffer = codec.getOutputBuffer(outputIndex)
                     if (outBuffer != null && bufferInfo.size > 0) {
-                        if (drainScratch.size < bufferInfo.size) {
-                            drainScratch = ByteArray(bufferInfo.size)
-                        }
+                        // A fresh array per span: the caller owns it
+                        // (SyncAudioPlayer queues and mutates it in place).
+                        val pcm = ByteArray(bufferInfo.size)
                         outBuffer.position(bufferInfo.offset)
-                        outBuffer.get(drainScratch, 0, bufferInfo.size)
-                        outputBuffer.write(drainScratch, 0, bufferInfo.size)
+                        outBuffer.get(pcm, 0, bufferInfo.size)
+                        // The codec echoes the input's presentationTimeUs;
+                        // fall back to the running continuation for the odd
+                        // decoder that reports none.
+                        val pts = if (bufferInfo.presentationTimeUs > 0) {
+                            bufferInfo.presentationTimeUs
+                        } else {
+                            fallbackPtsUs
+                        }
+                        spans.add(DecodedAudio(pts, pcm))
+                        fallbackPtsUs = pts + pcmDurationUs(pcm.size)
                     }
                     codec.releaseOutputBuffer(outputIndex, false)
                 }
@@ -183,6 +207,16 @@ abstract class MediaCodecDecoder(
         }
     }
 
+    /** Duration of [bytes] of output PCM, from the codec's reported format. */
+    private fun pcmDurationUs(bytes: Int): Long {
+        val format = outputFormat
+        val sampleRate = format?.getInteger(MediaFormat.KEY_SAMPLE_RATE) ?: 48000
+        val channels = format?.getInteger(MediaFormat.KEY_CHANNEL_COUNT) ?: 2
+        val bytesPerFrame = channels * 2  // MediaCodec outputs 16-bit PCM
+        if (sampleRate <= 0 || bytesPerFrame <= 0) return 0
+        return (bytes.toLong() / bytesPerFrame) * 1_000_000L / sampleRate
+    }
+
     /**
      * Flush the decoder to reset internal state.
      *
@@ -195,6 +229,7 @@ abstract class MediaCodecDecoder(
     override fun flush() {
         try {
             mediaCodec?.flush()
+            fallbackPtsUs = -1L
             Log.d(TAG, "Decoder flushed")
         } catch (e: Exception) {
             Log.e(TAG, "Error flushing decoder", e)
