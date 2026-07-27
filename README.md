@@ -25,7 +25,7 @@ the screen is off or another app is in front. And it is built to stay
 smooth on the low-powered, older tablets that usually end up on walls.
 
 <p align="center">
- <img src="assets/ks-demo.gif" alt="Kiosk Satellite" width="650"/>
+ <img src="assets/ks-demo-lossy.gif" alt="Kiosk Satellite" width="650"/>
 </p>
 
 ## Main Features
