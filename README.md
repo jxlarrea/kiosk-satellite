@@ -39,6 +39,11 @@ smooth on the low-powered, older tablets that usually end up on walls.
   wake-word detection: it keeps listening with the screen off, at a
   fraction of the CPU a browser needs. No configuration in Voice
   Satellite; everything is inherited.
+
+<p align="center">
+ <img src="assets/vs-demo.gif" alt="Voice Satellite" width="650"/>
+</p>
+
 - **Plain HTTP instances, fully unlocked**: a loopback proxy inside the
   app makes an `http://` dashboard a genuine secure context, so the
   microphone and the rest of the https-only browser surface work with no
