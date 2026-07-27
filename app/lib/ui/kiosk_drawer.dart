@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../app_container.dart';
 import '../managers/settings/definitions.dart' as defs;
@@ -56,14 +57,10 @@ class KioskDrawer extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
                 child: Row(
                   children: [
-                    // The bare brand mark, not the app-icon tile — cropped
-                    // of its adaptive safe-zone padding at build time. White
-                    // as designed on dark; on light the body is teal but the
-                    // bubble keeps its three brand dots (mark_light.png).
-                    Image.asset(
-                      theme.brightness == Brightness.dark
-                          ? 'assets/branding/mark.png'
-                          : 'assets/branding/mark_light.png',
+                    // The app-icon tile, as vectors. It carries its own teal
+                    // background, so the same asset reads on both themes.
+                    SvgPicture.asset(
+                      'assets/branding/icon_rounded.svg',
                       width: 48,
                       height: 48,
                     ),

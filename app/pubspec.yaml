@@ -86,6 +86,7 @@ flutter:
     - assets/svg/
     - assets/branding/mark_light.png
     - assets/branding/hacs.svg
+    - assets/branding/icon_rounded.svg
   fonts:
     # Rubik (SIL Open Font License) — an open geometric sans that gives the
     # clock the clean, friendly feel of Google Sans without the licensing.
