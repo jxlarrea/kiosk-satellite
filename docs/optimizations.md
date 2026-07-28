@@ -56,6 +56,11 @@ camera cards, ~5000 subscribed entities) under a clock screensaver:
 | Browser renderer CPU | 130% of one core | 35% |
 | GPU | 70% busy | 0% |
 
+All of that saved work is heat: on the same busy dashboard the CPU ran more
+than 20 degrees Celsius cooler with the setting on. For a tablet mounted
+flat against a wall, running warm around the clock, that is the difference
+that matters for comfort and hardware longevity.
+
 The gain scales with how busy the dashboard is. A mostly static dashboard,
 or one already running the update filter below, has little rendering work to
 save, and the numbers barely move; that is the expected result, not a fault.
