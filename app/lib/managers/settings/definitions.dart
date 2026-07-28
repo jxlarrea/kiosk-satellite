@@ -1652,6 +1652,24 @@ const audioSpeakerDevice = SettingDef<String>(
   hidden: true,
 );
 
+// Hidden: hand-placed directly under the Speaker picker in both UIs, so it
+// reads as part of the output choice rather than a free-floating slider.
+const assistantVolume = SettingDef<num>(
+  key: 'audio.assistant_volume',
+  type: SettingType.number,
+  defaultValue: 100,
+  min: 0,
+  max: 100,
+  step: 5,
+  unit: '%',
+  title: 'Assistant volume',
+  description:
+      'Voice responses and chimes play at this level regardless of the '
+      'media volume.',
+  category: 'Voice Satellite',
+  hidden: true,
+);
+
 const vsSuppressScreensaver = SettingDef<bool>(
   key: 'vs.suppress_screensaver',
   type: SettingType.boolean,
@@ -2430,6 +2448,7 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordResumeTimeoutSeconds,
   audioMicDevice,
   audioSpeakerDevice,
+  assistantVolume,
   vsSuppressScreensaver,
   // After the wake word settings they feed: both UIs render this category in
   // this order, and the group sits below them on the page.

@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../settings/definitions.dart' as defs;
+import '../settings/settings_manager.dart';
 
 /// Page-delegated sound playback (Voice Satellite chimes and TTS).
 ///
@@ -28,12 +30,29 @@ import '../../core/manager.dart';
 ///    relay here, which pipes the remote response through as it arrives
 ///    (same certificate story as downloads).
 class SoundManager extends Manager {
-  SoundManager(super.bus, super.commands, super.log);
+  SoundManager(super.bus, super.commands, super.log, this._settings);
 
   static const _channel = MethodChannel('kiosk_satellite/sound');
 
+  final SettingsManager _settings;
+
   @override
   String get name => 'sound';
+
+  /// id -> the caller's own volume, before the assistant volume scales it.
+  /// Kept so moving the slider mid-utterance can re-derive every live
+  /// sound's effective level (issue #69).
+  final _baseVolumes = <String, double>{};
+
+  /// The assistant volume as a linear gain. Squared taper, same as the
+  /// fixed-volume software gain: player APIs are linear amplitude, and a
+  /// linear slider crams all the audible change into its bottom fifth.
+  double get _assistantGain {
+    final pct =
+        _settings.get(defs.assistantVolume).toDouble().clamp(0.0, 100.0);
+    final p = pct / 100.0;
+    return p * p;
+  }
 
   /// url -> local file path, for cache:true fetches.
   final _cached = <String, String>{};
@@ -64,6 +83,7 @@ class SoundManager extends Manager {
         case 'ended':
           final error = args['error'] as String?;
           if (error != null) log.warn(name, 'sound $id failed: $error');
+          _baseVolumes.remove(id);
           final stale = _ephemeral.remove(id);
           if (stale != null) {
             try {
@@ -114,12 +134,15 @@ class SoundManager extends Manager {
             }
             if (!cache) _ephemeral[id] = source;
           }
+          final base = (p['volume'] as num?)?.toDouble() ?? 1.0;
+          _baseVolumes[id] = base;
           final ok = await _channel.invokeMethod<bool>('play', {
             'id': id,
             'source': source,
-            'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
+            'volume': base * _assistantGain,
           });
           if (ok != true) {
+            _baseVolumes.remove(id);
             _ephemeral.remove(id);
             final token = _streamTokens.remove(id);
             if (token != null) _relayTargets.remove(token);
@@ -166,13 +189,28 @@ class SoundManager extends Manager {
           'volume': '0..1, relative to media volume',
         },
         handler: (p) async {
+          final id = '${p['id']}';
+          final base = (p['volume'] as num?)?.toDouble() ?? 1.0;
+          if (_baseVolumes.containsKey(id)) _baseVolumes[id] = base;
           await _channel.invokeMethod<void>('setVolume', {
-            'id': '${p['id']}',
-            'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
+            'id': id,
+            'volume': base * _assistantGain,
           });
           return const CommandResult.ok();
         },
       ));
+
+    // Moving the assistant volume mid-utterance reaches the sound already
+    // playing, exactly like the page's own live volume changes do.
+    bus.on<SettingChanged>().listen((e) {
+      if (e.key != defs.assistantVolume.key) return;
+      for (final entry in _baseVolumes.entries) {
+        unawaited(_channel.invokeMethod<void>('setVolume', {
+          'id': entry.key,
+          'volume': entry.value * _assistantGain,
+        }));
+      }
+    });
   }
 
   Future<String> _fetch(String url, {required bool cache}) async {

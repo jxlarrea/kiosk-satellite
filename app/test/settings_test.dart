@@ -86,6 +86,16 @@ void main() {
     expect(settings.get(defs.micAgc), isFalse);
   });
 
+  test('the assistant volume defaults to full, matching old behavior',
+      () async {
+    await build({});
+    // An untouched install must sound exactly as it did before the slider
+    // existed: responses and chimes at the media volume.
+    expect(settings.get(defs.assistantVolume), 100);
+    // Hand-placed under the Speaker picker; the generic loops must skip it.
+    expect(defs.assistantVolume.hidden, isTrue);
+  });
+
   test(
     'kiosk quick actions are opt-in, with every action on by default',
     () async {

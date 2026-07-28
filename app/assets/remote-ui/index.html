@@ -2260,6 +2260,12 @@ async function loadSettings() {
           wakeCard,
           byKey['wake_word.enabled']?.value !== false,
         );
+        // Assistant volume directly under the Speaker picker it belongs to,
+        // mirroring the device's hand-placed row (the def is hidden, so the
+        // generic loop skips it).
+        const av = (state.settings || [])
+          .find((o) => o.key === 'audio.assistant_volume');
+        if (av) wakeCard.appendChild(settingRow(av));
       }
       // The satellite this kiosk identifies as: the page's own choice wins
       // (localStorage, changeable in the Voice Satellite panel); the

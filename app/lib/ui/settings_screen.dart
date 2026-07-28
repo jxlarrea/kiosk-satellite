@@ -1323,6 +1323,14 @@ class _CategoryContentState extends State<_CategoryContent> {
                     def: audioSpeakerDevice,
                     inputs: false,
                   ),
+                  // Hand-placed under the Speaker picker it belongs to (the
+                  // def is hidden, so the generic loop above skips it). The
+                  // remote UI mirrors this row in the same spot.
+                  SettingTile(
+                    container: container,
+                    def: assistantVolume,
+                    onChanged: () => setState(() {}),
+                  ),
                   // Not a setting, but a row on the same card, so it sits
                   // behind the same line as the rest. Gone with the rest
                   // when detection is off: there is no state to report

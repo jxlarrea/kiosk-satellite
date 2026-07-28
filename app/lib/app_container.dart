@@ -55,7 +55,7 @@ class AppContainer {
     sendspin = SendspinManager(bus, commands, log, settings);
     dlna = DlnaManager(bus, commands, log, settings);
     files = FilesManager(bus, commands, log);
-    sound = SoundManager(bus, commands, log);
+    sound = SoundManager(bus, commands, log, settings);
     update = UpdateManager(bus, commands, log);
     // After homeAssistant: it reads states through it for the fallback.
     glance = GlanceManager(bus, commands, log, settings, homeAssistant);
