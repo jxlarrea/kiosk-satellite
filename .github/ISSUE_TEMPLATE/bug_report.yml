@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report a bug! Please fill in as much of this as you can. The logs sections at the bottom are what usually make the difference between a quick fix and a long back-and-forth.
+        Thanks for taking the time to report a bug! The logs sections at the bottom are not optional: reports without the logs their category requires are labeled `needs-logs` automatically and closed if the logs are not added.
 
         **Never paste your configuration export here.** It contains your Home Assistant token, passwords and API keys.
 
