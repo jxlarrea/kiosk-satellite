@@ -413,12 +413,19 @@ class _RollingDigitState extends State<_RollingDigit>
   }
 
   Widget _glyph(String d) {
-    // OverflowBox: the glyph is wider than the column on purpose — the
-    // column crops its sides against its neighbours. The RepaintBoundary
-    // keeps the per-frame drift a compositor move rather than a text
-    // re-rasterisation.
+    // OverflowBox: the glyph is bigger than the column on purpose — the
+    // column crops its sides against its neighbours and its ends against
+    // the screen edges. BOTH axes must be unbounded: with only the width
+    // freed, the Text overflowed its height-constrained box and clipped
+    // ITSELF (TextOverflow.clip), and since that clip travels with the
+    // drift transform it squared digits off in mid-air at a height that
+    // followed each digit's progress (issue #68). Unbounded, the paragraph
+    // never overflows and the only clip left is the column's own.
+    // The RepaintBoundary keeps the per-frame drift a compositor move
+    // rather than a text re-rasterisation.
     return OverflowBox(
       maxWidth: double.infinity,
+      maxHeight: double.infinity,
       child: RepaintBoundary(
         child: Text(
           d,
