@@ -55,6 +55,7 @@ camera cards, ~5000 subscribed entities) under a clock screensaver:
 | App process CPU | 152% of one core | 57% |
 | Browser renderer CPU | 130% of one core | 35% |
 | GPU | 70% busy | 0% |
+| CPU temperature | 68°C | 41°C |
 
 All of that saved work is heat: on the same busy dashboard the CPU ran more
 than 20°C cooler with the setting on. For a tablet mounted
