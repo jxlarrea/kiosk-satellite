@@ -57,7 +57,7 @@ camera cards, ~5000 subscribed entities) under a clock screensaver:
 | GPU | 70% busy | 0% |
 
 All of that saved work is heat: on the same busy dashboard the CPU ran more
-than 20 degrees Celsius cooler with the setting on. For a tablet mounted
+than 20°C cooler with the setting on. For a tablet mounted
 flat against a wall, running warm around the clock, that is the difference
 that matters for comfort and hardware longevity.
 
