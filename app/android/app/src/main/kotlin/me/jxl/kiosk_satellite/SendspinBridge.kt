@@ -2,7 +2,6 @@ package me.jxl.kiosk_satellite
 
 import android.content.Context
 import android.database.ContentObserver
-import android.media.AudioManager
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -13,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
-import kotlin.math.roundToInt
 import me.jxl.kiosk_satellite.sendspin.PlaybackState
 import me.jxl.kiosk_satellite.sendspin.SendSpin
 import me.jxl.kiosk_satellite.sendspin.SyncAudioPlayer
@@ -29,9 +27,11 @@ import me.jxl.kiosk_satellite.sendspin.protocol.SendSpinProtocol
  *
  * Owns the whole native pipeline: the SendSpin protocol client (WebSocket,
  * time sync, reconnect), the codec decoder, the DAC-gated SyncAudioPlayer,
- * and mDNS discovery. Volume commands map onto the device's media stream
- * (AudioManager STREAM_MUSIC), never per-track gain, and hardware volume
- * changes are observed and reported back to the server via client/state.
+ * and mDNS discovery. Volume commands go through [VolumeController]: the
+ * device's media stream (AudioManager STREAM_MUSIC) on ordinary Android,
+ * a per-track software gain on fixed-volume devices where setStreamVolume
+ * is a platform no-op (Chromebooks, issue #62). Hardware volume changes
+ * are observed and reported back to the server via client/state.
  *
  * Methods:
  * - start {serverUrl?, playerName, clientId, preferredCodec}
@@ -80,8 +80,6 @@ class SendspinBridge(
     private val decodeHandler = Handler(decodeThread.looper)
     private val pendingDecodes = AtomicInteger(0)
     private val decodeQueueDrops = AtomicLong(0)
-    private val audioManager =
-        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     private val versionName: String = try {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
@@ -185,6 +183,13 @@ class SendspinBridge(
                 }
                 else -> result.notImplemented()
             }
+        }
+        // Fixed-volume devices only (the listener never fires elsewhere):
+        // a software-gain move must reach the live AudioTrack and be
+        // reported to the server, no matter which surface moved it.
+        VolumeController.addListener {
+            player?.setVolume(VolumeController.gain)
+            if (started) publishVolumeIfChanged()
         }
     }
 
@@ -397,39 +402,20 @@ class SendspinBridge(
     // Device volume (STREAM_MUSIC)
     // ==================================================================
 
-    private fun deviceVolumePct(): Int {
-        val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
-        val cur = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        return (cur * 100.0 / max).roundToInt().coerceIn(0, 100)
-    }
+    private fun deviceVolumePct(): Int = VolumeController.percent()
 
-    private fun deviceMuted(): Boolean =
-        audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+    private fun deviceMuted(): Boolean = VolumeController.muted()
 
     /** Last server-commanded volume, re-applied when playback starts. */
     private var lastCommandedVolume: Int? = null
 
     private fun setDeviceVolumePct(volume: Int) {
         lastCommandedVolume = volume
-        val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
-        val index = (volume.coerceIn(0, 100) / 100.0 * max).roundToInt().coerceIn(0, max)
-        try {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, index, 0)
-        } catch (e: SecurityException) {
-            Log.w(TAG, "setStreamVolume rejected: ${e.message}")
-        }
+        VolumeController.setPercent(volume)
     }
 
     private fun setDeviceMuted(muted: Boolean) {
-        try {
-            audioManager.adjustStreamVolume(
-                AudioManager.STREAM_MUSIC,
-                if (muted) AudioManager.ADJUST_MUTE else AudioManager.ADJUST_UNMUTE,
-                0,
-            )
-        } catch (e: SecurityException) {
-            Log.w(TAG, "adjustStreamVolume rejected: ${e.message}")
-        }
+        VolumeController.setMuted(muted)
     }
 
     /**
@@ -546,6 +532,7 @@ class SendspinBridge(
                 ).also {
                     it.duckFactor = duckFactor
                     it.initialize()
+                    it.setVolume(VolumeController.gain)
                     it.start()
                 }
             }

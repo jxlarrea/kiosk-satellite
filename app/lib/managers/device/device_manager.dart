@@ -2,9 +2,9 @@ import 'dart:collection' show ListQueue;
 import 'dart:convert' show LineSplitter, utf8;
 import 'dart:io';
 
-import 'dart:async' show StreamSubscription;
+import 'dart:async' show StreamSubscription, unawaited;
 
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show ValueNotifier, kDebugMode;
 import 'package:flutter/services.dart' show EventChannel, MethodChannel;
 
 import 'package:battery_plus/battery_plus.dart';
@@ -54,6 +54,13 @@ class DeviceManager extends Manager {
   /// Latest ambient light reading in lux, or null before the first event.
   double? lightLux;
   StreamSubscription<dynamic>? _lightSub;
+
+  /// Software media gain (0..1) that in-app players apply on fixed-volume
+  /// devices, where the OS ignores stream volume writes (Chromebooks,
+  /// issue #62). 1.0 on ordinary Android, where the stream volume does the
+  /// attenuating. Native computes it (one curve, one owner); this mirrors.
+  final mediaGain = ValueNotifier<double>(1.0);
+  StreamSubscription<VolumeChanged>? _volumeSub;
 
   String get os => Platform.isAndroid ? 'android' : 'ios';
 
@@ -179,6 +186,8 @@ class DeviceManager extends Manager {
     // Do Not Disturb are gated, and those are never touched).
     BackgroundListening.onVolumeChanged =
         () => bus.publish(const VolumeChanged());
+    _volumeSub = bus.on<VolumeChanged>().listen((_) => _refreshMediaGain());
+    unawaited(_refreshMediaGain());
     commands.register(
       Command(
         name: 'getVolume',
@@ -365,9 +374,18 @@ class DeviceManager extends Manager {
     }
   }
 
+  Future<void> _refreshMediaGain() async {
+    try {
+      const background = MethodChannel('kiosk_satellite/background');
+      final raw = await background.invokeMethod<Map>('getVolume');
+      mediaGain.value = (raw?['gain'] as num?)?.toDouble() ?? 1.0;
+    } catch (_) {}
+  }
+
   @override
   Future<void> dispose() async {
     await _lightSub?.cancel();
+    await _volumeSub?.cancel();
   }
 
   Future<Map<String, Object?>> info() async {

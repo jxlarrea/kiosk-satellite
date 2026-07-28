@@ -42,6 +42,9 @@ class KioskApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // Before any bridge: they all read volume state through it.
+        VolumeController.init(applicationContext)
+
         val engine = FlutterEngine(this)
         // Plugins before the entrypoint: Dart main() starts the admin server and
         // reads shared_preferences immediately, so shared_preferences,

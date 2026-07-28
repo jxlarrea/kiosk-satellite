@@ -25,6 +25,13 @@ interface AudioSink {
     fun release()
 
     /**
+     * Set the track gain, 0.0..1.0. Mirrors AudioTrack.setVolume(). Only
+     * moved off 1.0 on fixed-volume devices (Chromebooks), where the
+     * stream volume cannot attenuate; default no-op keeps fakes honest.
+     */
+    fun setVolume(gain: Float) {}
+
+    /**
      * Write PCM data. Mirrors AudioTrack.write(buffer, offset, size) in
      * blocking mode. Returns the number of bytes written, or a negative
      * error code.

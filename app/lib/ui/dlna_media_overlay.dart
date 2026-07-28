@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
@@ -54,10 +55,12 @@ class DlnaMediaOverlay extends StatelessWidget {
                         dlna: dlna,
                         media: media,
                         paused: state == 'PAUSED_PLAYBACK',
+                        mediaGain: container.device.mediaGain,
                       ),
                     _ => _DlnaPlayer(
                         key: ValueKey(media.uri),
                         dlna: dlna,
+                        mediaGain: container.device.mediaGain,
                         media: media,
                         paused: state == 'PAUSED_PLAYBACK',
                       ),
@@ -80,11 +83,13 @@ class _DlnaProbe extends StatefulWidget {
     required this.dlna,
     required this.media,
     required this.paused,
+    required this.mediaGain,
   });
 
   final DlnaManager dlna;
   final DlnaMedia media;
   final bool paused;
+  final ValueListenable<double> mediaGain;
 
   @override
   State<_DlnaProbe> createState() => _DlnaProbeState();
@@ -139,6 +144,7 @@ class _DlnaProbeState extends State<_DlnaProbe> {
       'image' => _DlnaImage(uri: widget.media.uri),
       _ => _DlnaPlayer(
           dlna: widget.dlna,
+          mediaGain: widget.mediaGain,
           media: DlnaMedia(
             uri: widget.media.uri,
             kind: 'video',
@@ -441,11 +447,17 @@ class _DlnaPlayer extends StatefulWidget {
     required this.dlna,
     required this.media,
     required this.paused,
+    required this.mediaGain,
   });
 
   final DlnaManager dlna;
   final DlnaMedia media;
   final bool paused;
+
+  /// Master software gain from the device manager: 1.0 everywhere except
+  /// fixed-volume devices (Chromebooks), where the player must do its own
+  /// attenuating because the stream volume is out of reach (issue #62).
+  final ValueListenable<double> mediaGain;
 
   @override
   State<_DlnaPlayer> createState() => _DlnaPlayerState();
@@ -462,6 +474,7 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
     _start();
     widget.dlna.volume.addListener(_applyVolume);
     widget.dlna.muted.addListener(_applyVolume);
+    widget.mediaGain.addListener(_applyVolume);
     widget.dlna.seekTo.addListener(_applySeek);
   }
 
@@ -506,7 +519,9 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
   }
 
   void _applyVolume() {
-    final v = widget.dlna.muted.value ? 0.0 : widget.dlna.volume.value / 100;
+    final v = widget.dlna.muted.value
+        ? 0.0
+        : widget.dlna.volume.value / 100 * widget.mediaGain.value;
     _controller?.setVolume(v);
   }
 
@@ -530,6 +545,7 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
   void dispose() {
     widget.dlna.volume.removeListener(_applyVolume);
     widget.dlna.muted.removeListener(_applyVolume);
+    widget.mediaGain.removeListener(_applyVolume);
     widget.dlna.seekTo.removeListener(_applySeek);
     _progress?.cancel();
     _controller?.removeListener(_onPlayerEvent);

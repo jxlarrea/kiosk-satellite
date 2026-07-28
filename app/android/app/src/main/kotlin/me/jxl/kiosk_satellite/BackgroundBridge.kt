@@ -107,28 +107,24 @@ class BackgroundBridge(
                         result.error("files", e.message, null)
                     }
                 }
-                // Media volume (STREAM_MUSIC only): no permission involved.
-                // The MQTT volume entity reads and writes through these.
+                // Media volume: no permission involved. The MQTT volume
+                // entity reads and writes through these. VolumeController
+                // decides whether that means STREAM_MUSIC or, on
+                // fixed-volume devices (Chromebooks), the software gain
+                // every in-app player applies (issue #62). The gain rides
+                // along for the Dart-side players (the DLNA overlay).
                 "getVolume" -> {
-                    val am = context.getSystemService(Context.AUDIO_SERVICE)
-                        as android.media.AudioManager
+                    val (level, max) = VolumeController.levelAndMax()
                     result.success(mapOf(
-                        "level" to am.getStreamVolume(
-                            android.media.AudioManager.STREAM_MUSIC),
-                        "max" to am.getStreamMaxVolume(
-                            android.media.AudioManager.STREAM_MUSIC),
+                        "level" to level,
+                        "max" to max,
+                        "fixed" to VolumeController.isFixed,
+                        "gain" to VolumeController.gain.toDouble(),
                     ))
                 }
                 "setVolume" -> {
-                    val am = context.getSystemService(Context.AUDIO_SERVICE)
-                        as android.media.AudioManager
-                    val max = am.getStreamMaxVolume(
-                        android.media.AudioManager.STREAM_MUSIC)
-                    val level = (call.argument<Number>("level"))?.toInt() ?: 0
-                    am.setStreamVolume(
-                        android.media.AudioManager.STREAM_MUSIC,
-                        level.coerceIn(0, max),
-                        0,
+                    VolumeController.setLevel(
+                        (call.argument<Number>("level"))?.toInt() ?: 0,
                     )
                     result.success(true)
                 }
@@ -341,6 +337,13 @@ class BackgroundBridge(
             IntentFilter("android.media.VOLUME_CHANGED_ACTION"),
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+        // Software-gain changes on fixed-volume devices never hit the
+        // system broadcast above (there is no stream change to announce),
+        // so relay them to Dart the same way - one path regardless of who
+        // moved the volume (MQTT, remote admin, SendSpin server).
+        VolumeController.addListener {
+            channel.invokeMethod("volumeChanged", null)
+        }
         // ACTION_NEXT_ALARM_CLOCK_CHANGED is a protected system broadcast.
         ContextCompat.registerReceiver(
             context,

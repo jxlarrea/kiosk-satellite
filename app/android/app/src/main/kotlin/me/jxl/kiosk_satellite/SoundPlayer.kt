@@ -40,6 +40,13 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     /** Live players by sound id. Channel calls arrive on the main thread. */
     private val players = mutableMapOf<String, MediaPlayer>()
 
+    /**
+     * Each sound's own volume, before the master gain. Kept so a
+     * software-volume change on a fixed-volume device (Chromebooks,
+     * issue #62) can re-derive every live player's effective level.
+     */
+    private val baseVolumes = mutableMapOf<String, Float>()
+
     /** Per-sound level taps, feeding the page's reactive bar. */
     private val visualizers = mutableMapOf<String, Visualizer>()
 
@@ -62,14 +69,26 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                     result.success(true)
                 }
                 "setVolume" -> {
+                    val id = call.argument<String>("id") ?: ""
                     val v = (call.argument<Double>("volume") ?: 1.0)
                         .toFloat().coerceIn(0f, 1f)
-                    players[call.argument<String>("id") ?: ""]?.let {
-                        try { it.setVolume(v, v) } catch (_: IllegalStateException) {}
+                    players[id]?.let {
+                        baseVolumes[id] = v
+                        val e = v * VolumeController.gain
+                        try { it.setVolume(e, e) } catch (_: IllegalStateException) {}
                     }
                     result.success(true)
                 }
                 else -> result.notImplemented()
+            }
+        }
+        // Fixed-volume devices only: a master gain move mid-utterance must
+        // reach the sound already playing, matching how the media stream
+        // level would have moved it everywhere else.
+        VolumeController.addListener {
+            for ((id, mp) in players) {
+                val e = (baseVolumes[id] ?: 1f) * VolumeController.gain
+                try { mp.setVolume(e, e) } catch (_: IllegalStateException) {}
             }
         }
     }
@@ -104,7 +123,9 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             if (callRoute) ensureScoLink(id, target!!)
             mp.setDataSource(source)
             val v = volume.toFloat().coerceIn(0f, 1f)
-            mp.setVolume(v, v)
+            baseVolumes[id] = v
+            val e = v * VolumeController.gain
+            mp.setVolume(e, e)
             mp.setOnPreparedListener { player ->
                 if (players[id] !== player) return@setOnPreparedListener
                 if (Build.VERSION.SDK_INT >= 28) {
@@ -220,6 +241,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             val am = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
             am.clearCommunicationDevice()
         }
+        baseVolumes.remove(id)
         val mp = players.remove(id) ?: return
         try { mp.release() } catch (_: Exception) {}
         channel.invokeMethod("ended", mapOf("id" to id, "error" to error))

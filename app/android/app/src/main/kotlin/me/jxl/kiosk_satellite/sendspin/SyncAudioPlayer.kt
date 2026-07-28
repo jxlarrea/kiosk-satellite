@@ -547,6 +547,10 @@ class SyncAudioPlayer(
     /// needs the music quiet; 1.0 = normal.
     @Volatile var duckFactor: Float = 1f
 
+    /// Track gain on fixed-volume devices (see setVolume); 1.0 elsewhere.
+    /// Re-applied whenever a new AudioTrack is built.
+    @Volatile private var masterGain: Float = 1f
+
     // 2D Kalman filter for sync error smoothing (tracks offset + drift)
     // Based on Python reference implementation for optimal noise filtering
     private val syncErrorFilter = SyncErrorFilter(
@@ -683,6 +687,7 @@ class SyncAudioPlayer(
 
         try {
             audioSink = sinkFactory(sampleRate, channels, bitDepth, bufferSize)
+            audioSink?.setVolume(masterGain)
 
             // Pre-allocate frame buffers for sync correction (avoids GC in audio callback)
             lastOutputFrame = ByteArray(bytesPerFrame)
@@ -884,20 +889,19 @@ class SyncAudioPlayer(
     }
 
     /**
-     * Set the playback volume.
+     * Set the AudioTrack gain, 0.0 (mute) to 1.0 (full).
      *
-     * Note: Volume is now controlled via device STREAM_MUSIC (AudioManager),
-     * not per-AudioTrack gain. This method is kept for API compatibility but
-     * AudioTrack always plays at full volume. Device volume handles attenuation.
-     *
-     * @param volume Volume level from 0.0 (mute) to 1.0 (full volume) - ignored
+     * On ordinary Android this stays at 1.0 for the life of the player:
+     * volume is the device's STREAM_MUSIC level, which keeps hardware
+     * volume buttons working (the Spotify/Plexamp convention). Fixed-volume
+     * devices (Chromebooks) are the exception - setStreamVolume is a
+     * platform no-op there, so VolumeController drives this gain instead
+     * (issue #62). Track gain is applied downstream of the DAC clock:
+     * drain rate and sync timing are untouched.
      */
-    @Suppress("UNUSED_PARAMETER")
     fun setVolume(volume: Float) {
-        // Volume is now controlled via device STREAM_MUSIC, not AudioTrack gain.
-        // AudioTrack plays at full volume; device media stream handles attenuation.
-        // This follows Spotify/Plexamp best practices for hardware volume button support.
-        AppLog.Audio.d("setVolume called (ignored - using device volume): $volume")
+        masterGain = volume.coerceIn(0f, 1f)
+        audioSink?.setVolume(masterGain)
     }
 
     /**
