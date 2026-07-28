@@ -50,11 +50,15 @@ smooth on the low-powered, older tablets that usually end up on walls.
   microphone and the rest of the https-only browser surface work with no
   certificates or reverse proxy. Enabled automatically during setup.
   
-&bull; **Fast dashboards on slow tablets**: optionally filters Home
-  Assistant's state stream down to just the entities on the view
-  currently on screen, turning constant stutter on older tablets into
-  smooth scrolling. Any view it cannot fully resolve is left unfiltered,
-  so nothing ever breaks.
+&bull; **Fast dashboards on slow tablets**: optional
+  [optimizations](docs/optimizations.md) filter Home Assistant's state
+  stream down to just the entities on the view currently on screen,
+  turning constant stutter on older tablets into smooth scrolling, and
+  pause the dashboard's rendering while the screensaver covers it, taking
+  a busy dashboard's browser from over two full cores and 70% GPU to a
+  fraction of one core and 0%. The connection and Voice Satellite keep
+  working throughout, and any view the filter cannot fully resolve is
+  left unfiltered, so nothing ever breaks.
 
 &bull; **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake on power button, and
@@ -203,6 +207,7 @@ very welcome in the issues.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the Black and Clock screensavers.
 - [Microphone](docs/microphone.md): capture mode, gain and AGC, for devices whose microphone reads too quiet.
+- [Optimizations](docs/optimizations.md): the connection and performance switches, what each one does and when to use it.
 
 ## License
 
