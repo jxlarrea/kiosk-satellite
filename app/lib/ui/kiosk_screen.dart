@@ -907,6 +907,11 @@ class _KioskScreenState extends State<KioskScreen>
         callback: (_) => _triggerRefresh(),
       );
     },
+    onUpdateVisitedHistory: (controller, url, isReload) {
+      // SPA navigations inside HA (view switches, rotation's pushState)
+      // surface here and nowhere else.
+      if (url != null) c.browser.onUrlChanged(url.toString());
+    },
     onLoadStop: (controller, url) {
       _refreshing = false;
       _refreshingFailsafe?.cancel();

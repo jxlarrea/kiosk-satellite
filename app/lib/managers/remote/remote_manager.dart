@@ -53,6 +53,7 @@ class RemoteManager extends Manager {
     }
 
     bus.on<PageChanged>().listen((e) => _currentUrl = e.url);
+    bus.on<UrlChanged>().listen((e) => _currentUrl = e.url);
 
     // Live event feed for connected WS clients.
     bus.stream.listen((event) {

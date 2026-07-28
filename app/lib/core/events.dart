@@ -263,6 +263,17 @@ class PageChanged extends AppEvent {
   Map<String, Object?> toJson() => {'url': url};
 }
 
+/// The WebView's visible URL moved, including SPA navigations (Home
+/// Assistant's pushState routing) that [PageChanged] never sees — that one
+/// only fires on full document loads.
+class UrlChanged extends AppEvent {
+  const UrlChanged({required this.url});
+  final String url;
+
+  @override
+  Map<String, Object?> toJson() => {'url': url};
+}
+
 // ── Camera views ───────────────────────────────────────────────────────
 
 class CameraConfigurationChanged extends AppEvent {

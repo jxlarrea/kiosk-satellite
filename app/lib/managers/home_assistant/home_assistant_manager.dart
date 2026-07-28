@@ -207,6 +207,29 @@ class HomeAssistantManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'haNavigate',
+        description:
+            'Navigate the kiosk to a dashboard view path, dismissing the '
+            'screensaver and any overlays so the view is actually seen.',
+        params: const {'path': 'the navigation path ("url_path/view-route")'},
+        handler: (p) async {
+          final path = '${p['path'] ?? ''}'
+              .trim()
+              .replaceAll(RegExp(r'^/+|/+$'), '');
+          if (path.isEmpty) return const CommandResult.fail('no path');
+          if (!configured) {
+            return const CommandResult.fail('Home Assistant not configured');
+          }
+          await commands.execute('stopScreensaver', const {});
+          await commands.execute('hideCameraView', const {});
+          // A commanded view should not instantly rotate away: give it the
+          // same grace window a touch gets.
+          if (_rotationTimer != null) _pauseRotationForTouch();
+          await navigateToViewPath(path);
+          return const CommandResult.ok(null);
+        },
+      ))
+      ..register(Command(
         name: 'haBrowseMedia',
         description: 'Browse a Home Assistant media node for the screensaver '
             'picker. Omit mediaContentId for the root of every media source.',
@@ -459,7 +482,20 @@ class HomeAssistantManager extends Manager {
       });
       return;
     }
-    final viewPath = slot.substring('view:'.length);
+    await navigateToViewPath(slot.substring('view:'.length));
+  }
+
+  /// Monotonic navigation stamp: the delayed self-heal check in
+  /// [navigateToViewPath] only acts while no newer navigation has started.
+  int _navSeq = 0;
+
+  /// Navigate the on-screen HA frontend to [viewPath] ("url_path" or
+  /// "url_path/view-route"): a soft SPA navigation so nothing reloads,
+  /// with a learned hard-load fallback for paths the SPA cannot resolve.
+  /// Drops any external overlay page so the dashboard is actually seen.
+  Future<void> navigateToViewPath(String viewPath) async {
+    if (baseUrl.isEmpty || viewPath.isEmpty) return;
+    final seq = ++_navSeq;
     // A path a soft navigation cannot resolve goes straight to a full load
     // (loadUrl drops the overlay itself). One-time discovery below.
     if (_hardLoadPaths.contains(viewPath)) {
@@ -498,9 +534,8 @@ class HomeAssistantManager extends Manager {
     // shortly after the soft nav, remember the path as hard-load-only and
     // do the full load now; every later pass goes straight to loadUrl with
     // no spinner-then-reload double hit.
-    final tickIndex = _rotationIndex;
     await Future<void>.delayed(const Duration(milliseconds: 2500));
-    if (_rotationTimer == null || _rotationIndex != tickIndex) return;
+    if (_navSeq != seq) return;
     final check = await commands.execute('evalJs', {
       'code': '''
 (function () {
@@ -522,7 +557,7 @@ class HomeAssistantManager extends Manager {
       _hardLoadPaths.add(viewPath);
       log.info(
           name,
-          'rotation: "$viewPath" needs a full load (strategy dashboard or '
+          '"$viewPath" needs a full load (strategy dashboard or '
           'alias); remembering for future passes');
       await commands.execute('loadUrl', {'url': '$baseUrl/$viewPath'});
     }

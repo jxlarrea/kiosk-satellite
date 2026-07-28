@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' show Random;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 
@@ -59,6 +60,16 @@ class MqttManager extends Manager {
   List<Map<String, Object?>> _cameraViews = const [];
   Set<String> _publishedCameraViewIds = {};
 
+  /// The dashboard view select's options: navigation paths
+  /// ("url_path/view-route", or a bare "url_path" for a dashboard whose
+  /// view list cannot be read). Refreshed from HA and persisted so the
+  /// entity survives a restart that comes up before HA does.
+  List<String> _dashboardViews = const [];
+
+  /// Guards concurrent refreshes (bring-up, page loads, and the poll
+  /// timer can all ask at once).
+  bool _refreshingDashboardViews = false;
+
   /// Mirrored from bus events so the true value survives disconnects: the
   /// initial publish after (re)connecting must report the state the device
   /// is actually in, not a hardcoded default — a screensaver already on
@@ -92,8 +103,22 @@ class MqttManager extends Manager {
     _subs.add(bus.on<BrightnessChanged>().listen((e) => _publish(
         '$_base/brightness/state',
         (e.level.clamp(0.0, 1.0) * 255).round().toString())));
-    _subs.add(bus.on<PageChanged>().listen(
-        (e) => _publish('$_base/url/state', e.url)));
+    _subs.add(bus.on<PageChanged>().listen((e) {
+      _publish('$_base/url/state', e.url);
+      _publishDashboardViewState(e.url);
+      // A full load means HA may have just come up (login, reload): a good
+      // moment to learn the view list. Slightly deferred so the frontend
+      // has a hass to answer with.
+      Timer(const Duration(seconds: 5), () {
+        if (_connected) unawaited(_refreshDashboardViews());
+      });
+    }));
+    // SPA navigations (view switches) never hit PageChanged; this keeps
+    // the url sensor and the dashboard view select honest between loads.
+    _subs.add(bus.on<UrlChanged>().listen((e) {
+      _publish('$_base/url/state', e.url);
+      _publishDashboardViewState(e.url);
+    }));
     _subs.add(bus.on<ScreensaverStateChanged>().listen((e) {
       _screensaverActive = e.active;
       _publish('$_base/screensaver/state', e.active ? 'ON' : 'OFF');
@@ -128,6 +153,15 @@ class MqttManager extends Manager {
     }));
 
     await _refreshCameraViews();
+    try {
+      final views = jsonDecode(_settings.internal('mqtt_dashboard_views'));
+      if (views is List) {
+        _dashboardViews = [
+          for (final v in views)
+            if (v is String && v.isNotEmpty) v,
+        ];
+      }
+    } catch (_) {}
     try {
       final persisted = jsonDecode(_settings.internal('mqtt_camera_view_ids'));
       if (persisted is List) {
@@ -484,6 +518,7 @@ class MqttManager extends Manager {
       '$_base/assistant_volume/set',
       '$_base/camera/view/set',
       '$_base/camera/close/set',
+      '$_base/dashboard_view/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
       for (final objectId in _settingSelects.keys) '$_base/$objectId/set',
     ]) {
@@ -548,6 +583,9 @@ class MqttManager extends Manager {
     _publish(_availabilityTopic, 'online');
     await _publishDiscovery();
     await _publishInitialStates();
+    // Learn the view list once the link is up; republishes discovery on
+    // its own when the list moved.
+    unawaited(_refreshDashboardViews());
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(
         const Duration(seconds: 60), (_) => _pollStats());
@@ -675,6 +713,20 @@ class MqttManager extends Manager {
         if (!result.ok) {
           log.warn(name, 'showCameraView over MQTT failed: ${result.error}');
           await _publishCurrentCameraViewState();
+        }
+      } else if (topic == '$_base/dashboard_view/set') {
+        if (payload.header?.retain == true) {
+          log.warn(name, 'ignored retained dashboard view command');
+          continue;
+        }
+        log.info(name, 'command $topic = $text');
+        final result = await commands.execute('haNavigate', {'path': text});
+        if (!result.ok) {
+          log.warn(name, 'haNavigate over MQTT failed: ${result.error}');
+        } else {
+          // Optimistic; the URL change event corrects it if the SPA lands
+          // somewhere else (redirect, auth bounce).
+          _publish('$_base/dashboard_view/state', text);
         }
       } else if (topic == '$_base/camera/close/set') {
         if (payload.header?.retain == true) {
@@ -823,8 +875,17 @@ class MqttManager extends Manager {
         }));
   }
 
+  /// Minute ticks since the last dashboard view refresh; every fifth poll
+  /// re-reads the list so an added or removed dashboard shows up in the
+  /// select within a few minutes with no page load needed.
+  int _viewRefreshTicks = 0;
+
   Future<void> _pollStats() async {
     if (!_connected) return;
+    if (++_viewRefreshTicks >= 5) {
+      _viewRefreshTicks = 0;
+      unawaited(_refreshDashboardViews());
+    }
     final result = await commands.execute('getStats', const {});
     final data = result.data;
     if (!result.ok || data is! Map) return;
@@ -888,6 +949,7 @@ class MqttManager extends Manager {
         // conditionally: a config export moved to sensor-less hardware must
         // still clean the entity up.
         '$_prefix/sensor/ks_$_deviceId/illuminance/config',
+        '$_prefix/select/ks_$_deviceId/dashboard_view/config',
         '$_prefix/sensor/ks_$_deviceId/admin_url/config',
         '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
         '$_prefix/number/ks_$_deviceId/assistant_volume/config',
@@ -1097,6 +1159,17 @@ class MqttManager extends Manager {
           'payload_press': '${view['id']}',
           'icon': 'mdi:cctv',
         },
+      // Published only once a view list has been learned from HA; an
+      // empty options array would render a useless dropdown. The retraction
+      // for a list gone empty rides _discoveryTopics like everything else.
+      if (_dashboardViews.isNotEmpty)
+        '$_prefix/select/ks_$_deviceId/dashboard_view/config': {
+          ...common('dashboard_view', 'Dashboard view'),
+          'state_topic': '$_base/dashboard_view/state',
+          'command_topic': '$_base/dashboard_view/set',
+          'options': _dashboardViews,
+          'icon': 'mdi:view-dashboard-outline',
+        },
       '$_prefix/switch/ks_$_deviceId/screensaver/config': {
         ...common('screensaver', 'Screensaver'),
         'state_topic': '$_base/screensaver/state',
@@ -1196,6 +1269,79 @@ class MqttManager extends Manager {
       'mqtt_camera_view_ids',
       jsonEncode(currentIds.toList()),
     );
+  }
+
+  /// (Re)learn the dashboard view list from HA and republish discovery
+  /// when it changed, so the select's dropdown follows dashboards being
+  /// added and removed. A failed read keeps the last known list — HA being
+  /// unreachable does not mean the dashboards are gone.
+  Future<void> _refreshDashboardViews() async {
+    if (_refreshingDashboardViews) return;
+    _refreshingDashboardViews = true;
+    try {
+      final result = await commands.execute('haListDashboards', const {});
+      final data = result.data;
+      if (!result.ok || data is! List) return;
+      final options = <String>[];
+      for (final d in data) {
+        if (d is! Map) continue;
+        final urlPath = '${d['url_path'] ?? ''}';
+        if (urlPath.isEmpty) continue;
+        final views = await commands.execute('haListDashboardViews', {
+          'url_path': urlPath,
+        });
+        final viewData = views.ok ? views.data : null;
+        if (viewData is List && viewData.isNotEmpty) {
+          for (final v in viewData) {
+            if (v is Map) options.add('$urlPath/${v['route']}');
+          }
+        } else {
+          // A dashboard whose config cannot be read (auto-generated
+          // strategy dashboards) still navigates by its bare path.
+          options.add(urlPath);
+        }
+      }
+      if (options.isEmpty || jsonEncode(options) == jsonEncode(_dashboardViews)) {
+        return;
+      }
+      _dashboardViews = options;
+      await _settings.setInternal(
+        'mqtt_dashboard_views',
+        jsonEncode(options),
+      );
+      if (_connected) await _publishDiscovery();
+    } finally {
+      _refreshingDashboardViews = false;
+    }
+  }
+
+  /// Map the on-screen URL to a select option and publish it. A page that
+  /// is no dashboard view at all (settings, an external site) keeps the
+  /// last state — a select can only speak in its own options.
+  void _publishDashboardViewState(String url) {
+    final match = matchDashboardView(url, _dashboardViews);
+    if (match == null) return;
+    _publish('$_base/dashboard_view/state', match);
+  }
+
+  /// The select option a URL corresponds to, or null when it is none of
+  /// them. A bare dashboard url renders that dashboard's first view, so it
+  /// maps to the first option under that url_path. Origin-agnostic on
+  /// purpose: with the secure context proxy on, the page lives on a
+  /// loopback origin and only the path is trustworthy.
+  @visibleForTesting
+  static String? matchDashboardView(String url, List<String> options) {
+    if (options.isEmpty) return null;
+    final path =
+        Uri.tryParse(url)?.path.replaceAll(RegExp(r'^/+|/+$'), '') ?? '';
+    if (path.isEmpty) return null;
+    if (options.contains(path)) return path;
+    if (path.contains('/')) return null;
+    final first = options.firstWhere(
+      (o) => o.startsWith('$path/'),
+      orElse: () => '',
+    );
+    return first.isEmpty ? null : first;
   }
 
   Future<void> _refreshCameraViews() async {

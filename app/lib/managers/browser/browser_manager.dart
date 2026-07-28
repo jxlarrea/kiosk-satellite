@@ -352,6 +352,15 @@ class BrowserManager extends Manager {
     consoleRevision.value++;
   }
 
+  /// Called by the UI layer from the WebView's onUpdateVisitedHistory,
+  /// which fires on SPA navigations (pushState) that never reach
+  /// onLoadStop. Deduped: a pushState with an unchanged URL says nothing.
+  void onUrlChanged(String url) {
+    if (url == _currentUrl) return;
+    _currentUrl = url;
+    bus.publish(UrlChanged(url: url));
+  }
+
   /// Called by the UI layer from the WebView's onLoadStop.
   void onPageLoaded(String url) {
     _currentUrl = url;
