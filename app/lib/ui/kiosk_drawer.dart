@@ -188,6 +188,20 @@ class KioskDrawer extends StatelessWidget {
                                       c.camera.showView(view.id);
                                     },
                                   ),
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowScreensaver))
+                                _item(
+                                  context,
+                                  Icons.dark_mode_outlined,
+                                  'Start Screensaver',
+                                  () {
+                                    onClose();
+                                    c.commands.execute(
+                                      'startScreensaver',
+                                      const {},
+                                    );
+                                  },
+                                ),
                               if (!restricted)
                                 _item(
                                   context,

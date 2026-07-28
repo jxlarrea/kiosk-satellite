@@ -86,8 +86,23 @@ class _KioskScreenState extends State<KioskScreen>
     final hasCameras =
         c.camera.config.defaultView?.cameraIds.isNotEmpty ?? false;
     return c.settings.get(defs.kioskAllowDashboard) ||
+        c.settings.get(defs.kioskAllowScreensaver) ||
         c.settings.get(defs.kioskAllowTheme) ||
         (c.settings.get(defs.kioskAllowCamera) && hasCameras);
+  }
+
+  /// Pull-to-refresh as the user experiences it: the Web Browsing toggle,
+  /// minus the kiosk protection that switches the gesture off while the
+  /// device is locked.
+  bool get _ptrEnabled =>
+      c.settings.get(defs.pullToRefresh) &&
+      !(c.kiosk.locked && c.settings.get(defs.kioskDisablePullRefresh));
+
+  /// Push the current effective pull-to-refresh state onto the live WebView:
+  /// the native wrapper and the JS probe both hold their own copy.
+  Future<void> _syncPullToRefresh() async {
+    await _pullToRefresh.setEnabled(_ptrEnabled);
+    await c.browser.runJs('window.__ksPtrEnabled = $_ptrEnabled;');
   }
 
   void _drawerDragUpdate(DragUpdateDetails details) {
@@ -119,7 +134,7 @@ class _KioskScreenState extends State<KioskScreen>
   /// never on a timer.
   late final PullToRefreshController _pullToRefresh = PullToRefreshController(
     settings: PullToRefreshSettings(
-      enabled: c.settings.get(defs.pullToRefresh),
+      enabled: _ptrEnabled,
       color: const Color(0xFF749C6F), // brand sage on the stock spinner
     ),
     onRefresh: _triggerRefresh,
@@ -141,10 +156,9 @@ class _KioskScreenState extends State<KioskScreen>
   Future<bool> _triggerRefresh() async {
     c.log.info(
       'kiosk',
-      'pull trigger: refreshing=$_refreshing '
-          'enabled=${c.settings.get(defs.pullToRefresh)}',
+      'pull trigger: refreshing=$_refreshing enabled=$_ptrEnabled',
     );
-    if (_refreshing || !c.settings.get(defs.pullToRefresh)) return false;
+    if (_refreshing || !_ptrEnabled) return false;
     _refreshing = true;
     _refreshingFailsafe?.cancel();
     _refreshingFailsafe = Timer(const Duration(seconds: 8), () {
@@ -219,6 +233,9 @@ class _KioskScreenState extends State<KioskScreen>
         // drawer regains its full menu in place.
         if (!c.kiosk.locked) _drawerRestricted = false;
       });
+      // Locking also arms the pull-to-refresh protection (and unlocking
+      // disarms it), so the effective state changes with this key too.
+      await _syncPullToRefresh();
       return;
     }
     // The quick-actions toggles decide whether the locked kiosk mounts the
@@ -245,10 +262,11 @@ class _KioskScreenState extends State<KioskScreen>
       return;
     }
     // Pull-to-refresh toggles live on the existing WebView; the clear-cache
-    // companion is read at pull time and needs nothing here.
-    if (e.key == defs.pullToRefresh.key) {
-      await _pullToRefresh.setEnabled(e.value == true);
-      await c.browser.runJs('window.__ksPtrEnabled = ${e.value == true};');
+    // companion is read at pull time and needs nothing here. The kiosk
+    // protection folds into the same effective state.
+    if (e.key == defs.pullToRefresh.key ||
+        e.key == defs.kioskDisablePullRefresh.key) {
+      await _syncPullToRefresh();
       return;
     }
     // Wake word detection is negotiated with the Voice Satellite card at page
@@ -421,7 +439,7 @@ class _KioskScreenState extends State<KioskScreen>
     // and re-asserted every load in onLoadStop for pages loaded after a
     // toggle.
     UserScript(
-      source: 'window.__ksPtrEnabled = ${c.settings.get(defs.pullToRefresh)};',
+      source: 'window.__ksPtrEnabled = $_ptrEnabled;',
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     UserScript(
@@ -895,9 +913,7 @@ class _KioskScreenState extends State<KioskScreen>
       _pullToRefresh.endRefreshing();
       // The document-start seed of this flag is frozen at WebView creation;
       // re-assert per load so a toggled setting reaches pages loaded later.
-      c.browser.runJs(
-        'window.__ksPtrEnabled = ${c.settings.get(defs.pullToRefresh)};',
-      );
+      c.browser.runJs('window.__ksPtrEnabled = $_ptrEnabled;');
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
       // work when the effective mode is 'css').

@@ -482,6 +482,16 @@ const kioskDisableContextMenus = SettingDef<bool>(
   dependsOn: 'kiosk.enabled',
 );
 
+const kioskDisablePullRefresh = SettingDef<bool>(
+  key: 'kiosk.disable_pull_to_refresh',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable pull to refresh',
+  description: 'Ignore the pull-to-refresh gesture while kiosk mode is on.',
+  category: 'Kiosk',
+  dependsOn: 'kiosk.enabled',
+);
+
 // The quick-actions escape hatch (issue #64): a wall-mounted kiosk in
 // lockdown still wants "back to the dashboard" and "show the camera" to
 // be one swipe away. Off by default — kiosk mode keeps its full lock
@@ -519,6 +529,17 @@ const kioskAllowCamera = SettingDef<bool>(
   defaultValue: true,
   title: 'Default Camera View',
   description: 'Open the default camera view.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
+const kioskAllowScreensaver = SettingDef<bool>(
+  key: 'kiosk.allow_screensaver',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Start Screensaver',
+  description: 'Start the screensaver now.',
   category: 'Kiosk',
   section: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
@@ -2326,9 +2347,11 @@ const List<SettingDef<Object>> allSettings = [
   kioskDisablePower,
   kioskDisableHome,
   kioskDisableContextMenus,
+  kioskDisablePullRefresh,
   kioskAllowDrawer,
   kioskAllowDashboard,
   kioskAllowCamera,
+  kioskAllowScreensaver,
   kioskAllowTheme,
   keepScreenOn,
   setBrightnessOnLaunch,
