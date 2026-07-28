@@ -29,6 +29,7 @@ class MainActivity : FlutterActivity() {
     private var cameraMotion: CameraMotion? = null
     private var screenCapture: ScreenCapture? = null
     private var kioskLock: KioskLock? = null
+    private var webViewFreeze: WebViewFreeze? = null
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? =
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
@@ -64,6 +65,7 @@ class MainActivity : FlutterActivity() {
         cameraMotion = CameraMotion(this, messenger)
         screenCapture = ScreenCapture(this, messenger)
         kioskLock = KioskLock(this, messenger)
+        webViewFreeze = WebViewFreeze(this, messenger)
         provisionChannel = MethodChannel(messenger, "kiosk_satellite/provision")
         provisionChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -117,6 +119,8 @@ class MainActivity : FlutterActivity() {
         screenCapture = null
         kioskLock?.dispose()
         kioskLock = null
+        webViewFreeze?.dispose()
+        webViewFreeze = null
         provisionChannel?.setMethodCallHandler(null)
         provisionChannel = null
         adminChannel?.setMethodCallHandler(null)

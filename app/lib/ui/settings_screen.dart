@@ -2302,6 +2302,11 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
     return _SettingsCard(
       children: [
         SettingTile(container: c, def: disableSuspend, onChanged: _onToggle),
+        SettingTile(
+          container: c,
+          def: freezeOnScreensaver,
+          onChanged: _onToggle,
+        ),
         SettingTile(container: c, def: wsFilter, onChanged: _onToggle),
         if (_filterOn) _telemetry(theme),
       ],

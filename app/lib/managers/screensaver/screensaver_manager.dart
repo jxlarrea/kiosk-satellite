@@ -431,6 +431,10 @@ class ScreensaverManager extends Manager {
     if (!_active) return;
     _active = false;
     log.info(name, 'stop');
+    // Thaw the dashboard while the overlay still covers it, so the wake
+    // never shows a blank hole where the page is (a no-op unless the
+    // rendering freeze optimization hid it).
+    await commands.execute('unfreezeRendering', const {});
     activeView.value = null;
     await commands.execute('screenOn', const {});
     // Release the hold; the keep-awake setting (if any) still applies.

@@ -2473,7 +2473,8 @@ async function loadSettings() {
         && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds'
         && s.key !== 'ha.rotation_pause_seconds'
         // Optimizations are hand-built last so the filter can show telemetry.
-        && s.key !== 'browser.disable_suspend' && s.key !== 'browser.ws_filter');
+        && s.key !== 'browser.disable_suspend' && s.key !== 'browser.ws_filter'
+        && s.key !== 'browser.freeze_on_screensaver');
       const restRoot = document.createElement('div');
       root.appendChild(restRoot);
       const savedHa = byCat['Home Assistant'];
@@ -2651,8 +2652,9 @@ async function loadSettings() {
       // itself in place (no loadSettings, which would reload the whole tab).
       {
         const ds = byKey['browser.disable_suspend'];
+        const fz = byKey['browser.freeze_on_screensaver'];
         const wf = byKey['browser.ws_filter'];
-        if (ds || wf) {
+        if (ds || fz || wf) {
           const oh = document.createElement('h2');
           oh.className = 'card-title';
           oh.textContent = 'Optimizations';
@@ -2681,6 +2683,12 @@ async function loadSettings() {
             ocard.innerHTML = '';
             if (state.optTimer) { clearInterval(state.optTimer); state.optTimer = null; }
             if (ds) ocard.appendChild(optToggle(ds, renderOpt));
+            if (fz) ocard.appendChild(optToggle(fz, (() => {
+              // Freezing requires the suspend-disabling script; the device
+              // enables it too, so reflect that in the local state.
+              if (fz.value === true && ds) ds.value = true;
+              renderOpt();
+            })));
             if (wf) ocard.appendChild(optToggle(wf, renderOpt));
             if (wf && wf.value === true) {
               const tel = document.createElement('div');

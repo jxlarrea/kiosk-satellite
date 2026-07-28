@@ -177,6 +177,26 @@ const disableSuspend = SettingDef<bool>(
   section: 'Optimizations',
 );
 
+/// Stops the dashboard WebView's rendering while the screensaver covers it,
+/// by hiding the native view (see WebViewFreeze.kt) so Chromium stops
+/// compositing a page nobody can see. The page itself drops to ordinary
+/// hidden-document behavior: timers throttled but running, events delivered,
+/// websocket consumed — only drawing stops. Enabling it also enables
+/// [disableSuspend]: a hidden page is exactly what Home Assistant's suspend
+/// preference reacts to.
+const freezeOnScreensaver = SettingDef<bool>(
+  key: 'browser.freeze_on_screensaver',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Pause dashboard during screensaver',
+  description:
+      'Stops drawing the dashboard while the screensaver covers it, cutting '
+      'CPU and GPU use. The connection stays active. Turns on "Keep '
+      'connected in the background".',
+  category: 'Home Assistant',
+  section: 'Optimizations',
+);
+
 /// Filters the HA entity-update stream to just the current view's entities, so
 /// low-powered tablets stop processing the whole firehose (see
 /// ws_filter_script.dart / issue #8). Off by default: it is only correct for a
@@ -2467,6 +2487,7 @@ const List<SettingDef<Object>> allSettings = [
   themeLightAt,
   themeAutoApp,
   disableSuspend,
+  freezeOnScreensaver,
   wsFilter,
   haRotationEnabled,
   haRotationDashboards,

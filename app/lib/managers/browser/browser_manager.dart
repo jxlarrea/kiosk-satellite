@@ -10,6 +10,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../device/screen_capture.dart';
+import '../device/webview_freeze.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -63,7 +64,59 @@ class BrowserManager extends Manager {
 
   @override
   Future<void> init() async {
+    // Rendering freeze (browser.freeze_on_screensaver): while the screensaver
+    // covers the dashboard, Chromium keeps compositing at full rate — the
+    // occlusion lives in Flutter's layer tree, which Android knows nothing
+    // about. Hiding the native view (WebViewFreeze) stops that: the page
+    // drops to ordinary hidden-document behavior, where rendering halts but
+    // timers, events and the websocket all keep running. WebView.onPause()
+    // is deliberately not used — it suspends the page's task queues
+    // wholesale, so the unread HA socket gets dropped by the server as a
+    // slow consumer within minutes (and a dormant page would miss Voice
+    // Satellite announcements and timer alerts anyway).
+    bus.on<ScreensaverStateChanged>().listen((e) {
+      _screensaverActive = e.active;
+      _freezeDelay?.cancel();
+      if (e.active) {
+        // Hide only after the overlay has had time to paint, or the
+        // dashboard blinks to black just before the screensaver appears.
+        _freezeDelay = Timer(
+          const Duration(seconds: 1),
+          () => unawaited(_syncFreeze()),
+        );
+      } else {
+        // Backup path: the screensaver's stop() already thawed synchronously
+        // (unfreezeRendering) before lifting the overlay.
+        unawaited(_syncFreeze());
+      }
+    });
+    bus.on<SettingChanged>().listen((e) {
+      if (e.key != defs.freezeOnScreensaver.key) return;
+      // A paused page reports itself hidden, and Home Assistant suspends a
+      // hidden page's connection after a few minutes — so freezing requires
+      // the suspend-disabling script (its own change triggers the usual
+      // WebView rebuild).
+      if (e.value == true && !_settings.get(defs.disableSuspend)) {
+        unawaited(_settings.set(defs.disableSuspend, true));
+      }
+      unawaited(_syncFreeze());
+    });
     commands
+      ..register(
+        Command(
+          name: 'unfreezeRendering',
+          description:
+              'Restore the dashboard WebView rendering paused under the '
+              'screensaver (the screensaver runs this before lifting its '
+              'overlay, so the page is drawing again by the time it shows)',
+          handler: (_) async {
+            _screensaverActive = false;
+            _freezeDelay?.cancel();
+            await _syncFreeze();
+            return const CommandResult.ok();
+          },
+        ),
+      )
       ..register(
         Command(
           name: 'showOverlayPage',
@@ -313,6 +366,71 @@ class BrowserManager extends Manager {
 
   void attach(InAppWebViewController controller) {
     _controller = controller;
+    // A rebuilt WebView is a fresh, visible native view. Its URL is not up
+    // yet (the freeze matches by URL, so this sync usually finds nothing);
+    // onPageLoaded retries once the page — and its URL — exist.
+    _frozen = false;
+    unawaited(_syncFreeze());
+  }
+
+  bool _screensaverActive = false;
+  bool _frozen = false;
+  Timer? _freezeDelay;
+
+  /// Keepalive while frozen: a hidden page's timers are throttled (hard,
+  /// after ~5 minutes), which can starve the HA websocket's own keepalive
+  /// until the server drops it — the same failure the backgrounded-app
+  /// keepalive in main.dart covers; freezing is a second way to be hidden
+  /// while the Dart isolate stays fully alive. JS pushed in from Dart is not
+  /// throttled, so the same ping keeps the socket warm. Best-effort like its
+  /// sibling: the wake path's ensureHaConnected stays the guarantee.
+  Timer? _freezeKeepAlive;
+  static const _freezeKeepAliveEvery = Duration(seconds: 20);
+
+  /// Whether the WebView's rendering is currently paused under the
+  /// screensaver.
+  bool get renderingFrozen => _frozen;
+
+  /// Reconcile the WebView's native visibility with (screensaver up) AND
+  /// (the freeze optimization on). Called from every edge that can change
+  /// either. Only the dashboard is touched — the native side matches views
+  /// by this page's origin, leaving the screensaver's own media WebView and
+  /// rotation overlays alone.
+  Future<void> _syncFreeze() async {
+    final want =
+        _screensaverActive && _settings.get(defs.freezeOnScreensaver);
+    if (want == _frozen) return;
+    final prefix = _origin(_currentUrl);
+    if (prefix == null) {
+      _frozen = false;
+      return;
+    }
+    if (want) {
+      final n = await WebViewFreeze.setHidden(hidden: true, urlPrefix: prefix);
+      if (n == 0) return; // dashboard not found (mid-rebuild); retried on load
+      _frozen = true;
+      _freezeKeepAlive?.cancel();
+      _freezeKeepAlive = Timer.periodic(
+        _freezeKeepAliveEvery,
+        (_) => pingHaConnection(),
+      );
+      log.info(name, 'rendering paused under screensaver');
+    } else {
+      _frozen = false;
+      _freezeKeepAlive?.cancel();
+      _freezeKeepAlive = null;
+      await WebViewFreeze.setHidden(hidden: false, urlPrefix: prefix);
+      log.info(name, 'rendering resumed');
+    }
+  }
+
+  /// scheme://host[:port] of [url], or null when it has none (no page yet).
+  String? _origin(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
+    return uri.hasPort
+        ? '${uri.scheme}://${uri.host}:${uri.port}'
+        : '${uri.scheme}://${uri.host}';
   }
 
   /// Step the page's history back if it can. Returns whether it moved.
@@ -367,6 +485,9 @@ class BrowserManager extends Manager {
     log.info(name, 'loaded $url');
     bus.publish(PageChanged(url: url));
     unawaited(_applyPendingLocalStorage());
+    // A WebView rebuilt under an active screensaver reappears visible, and
+    // attach() could not re-hide it (no URL to match yet). Now there is one.
+    unawaited(_syncFreeze());
   }
 
   /// Imported localStorage waits (persisted) until a page is up to receive
