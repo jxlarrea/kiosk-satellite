@@ -100,7 +100,7 @@ body:
     attributes:
       label: Web console logs (required for voice or dashboard issues)
       description: |
-        The dashboard page's own JavaScript console, where the Voice Satellite integration logs everything it does (lines prefixed `[VS]`). From a browser: remote admin at `http://<device-ip>:2324`, **Console** tab. Reproduce the issue, then paste the lines around it. For a voice issue, include a full attempt from the wake word onward.
+        The dashboard page's own JavaScript console, where the Voice Satellite integration logs everything it does (lines prefixed `[VS]`). For a voice issue, first enable **Debug Logging** in the Voice Satellite sidepanel in Home Assistant. From a browser: remote admin at `http://<device-ip>:2324`, **Console** tab. Reproduce the issue, then paste the lines around it. For a voice issue, include a full attempt from the wake word onward.
       render: text
     validations:
       required: false

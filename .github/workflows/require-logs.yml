@@ -1,0 +1,113 @@
+name: Require logs on bug reports
+
+# The bug report form can mark "App logs" as required, but GitHub forms cannot
+# conditionally require the console or logcat sections based on the area
+# dropdown, and a required textarea accepts "N/A" just fine. This workflow
+# closes that gap: it parses new and edited bug reports, checks that the log
+# sections the selected area calls for actually contain logs, and if not it
+# labels the issue "needs-logs" and posts one comment explaining exactly what
+# to attach. The existing stale workflow then closes it if the reporter never
+# follows up. When an edit fills in the logs, the label and nothing else is
+# removed automatically.
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  check-logs:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'bug')
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || "";
+            const MARKER = "<!-- needs-logs-bot -->";
+            const LABEL = "needs-logs";
+
+            // Pull the content of one form section by its heading.
+            function section(label) {
+              const re = new RegExp(`### ${label}\\s*\\n([\\s\\S]*?)(?=\\n### |$)`);
+              const m = body.match(re);
+              return m ? m[1].trim() : "";
+            }
+
+            // A section counts as filled only if it holds something that
+            // plausibly is a log, not a placeholder or a one-liner.
+            function hasLogs(text) {
+              const cleaned = text
+                .replace(/_No response_/gi, "")
+                .replace(/```/g, "")
+                .trim();
+              if (cleaned.length < 80) return false;
+              if (/^(n\/?a|none|nothing|no logs?|see above|-+)\.?$/i.test(cleaned)) return false;
+              // Real log excerpts span multiple lines.
+              return cleaned.split("\n").filter(l => l.trim()).length >= 3;
+            }
+
+            const area = section("Area affected").toLowerCase();
+            const missing = [];
+
+            if (!hasLogs(section("App logs"))) {
+              missing.push(
+                "**App logs**: on the device under **Settings > App Logs**, or from a browser via the remote admin at `http://<device-ip>:2324` on the **Logs** tab. Paste the lines around the time the problem happened."
+              );
+            }
+
+            if (area.includes("voice") || area.includes("browser") || area.includes("dashboard")) {
+              if (!hasLogs(section("Web console logs (required for voice or dashboard issues)"))) {
+                missing.push(
+                  "**Web console logs**: remote admin **Console** tab. For a voice issue, first enable **Debug Logging** in the Voice Satellite sidepanel in Home Assistant, then reproduce the issue and paste a full attempt from the wake word onward (lines prefixed `[VS]`). For other dashboard issues, reproduce the issue and paste the lines around it."
+                );
+              }
+            }
+
+            if (area.includes("crash")) {
+              if (!hasLogs(section("Logcat (required for crashes, freezes, white screens, or restarts)"))) {
+                missing.push(
+                  "**Logcat**: **Settings > App Logs** with the source switched to **Logcat**, or the same switch on the remote admin **Logs** tab. Paste the section around the crash."
+                );
+              }
+            }
+
+            const { owner, repo } = context.repo;
+            const labels = issue.labels.map(l => l.name);
+
+            if (missing.length === 0) {
+              if (labels.includes(LABEL)) {
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: issue.number, name: LABEL,
+                });
+              }
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: issue.number, labels: [LABEL],
+            });
+
+            // Only comment once per issue, even across multiple edits.
+            const comments = await github.rest.issues.listComments({
+              owner, repo, issue_number: issue.number, per_page: 100,
+            });
+            if (comments.data.some(c => c.body && c.body.includes(MARKER))) return;
+
+            const bodyText = [
+              MARKER,
+              "Thanks for the report. It is missing logs that are required for this kind of issue, and without them it cannot be investigated:",
+              "",
+              ...missing.map(m => `- ${m}`),
+              "",
+              "Please edit the issue and paste them into the matching sections. The `needs-logs` label will be removed automatically once they are in. Issues without logs are closed as stale after a few days.",
+              "",
+              "**Never paste your configuration export.** It contains your Home Assistant token, passwords and API keys.",
+            ].join("\n");
+
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: issue.number, body: bodyText,
+            });
