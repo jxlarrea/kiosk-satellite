@@ -72,6 +72,24 @@ class _KioskScreenState extends State<KioskScreen>
 
   void _closeDrawer() => _drawer.fling(velocity: -1);
 
+  /// Whether the drawer, when open, shows only the kiosk-allowed quick
+  /// actions. Set at the moment it opens: an edge swipe while kiosk mode is
+  /// locked opens it restricted (kiosk.allow_drawer); the exit gesture (and
+  /// its PIN) always earns the full menu.
+  bool _drawerRestricted = false;
+
+  /// Whether the locked kiosk still offers the edge swipe: the owner opted
+  /// in, and at least one allowed action would actually show — a menu with
+  /// nothing in it is worse than no menu.
+  bool get _quickMenuAvailable {
+    if (!c.settings.get(defs.kioskAllowDrawer)) return false;
+    final hasCameras =
+        c.camera.config.defaultView?.cameraIds.isNotEmpty ?? false;
+    return c.settings.get(defs.kioskAllowDashboard) ||
+        c.settings.get(defs.kioskAllowTheme) ||
+        (c.settings.get(defs.kioskAllowCamera) && hasCameras);
+  }
+
   void _drawerDragUpdate(DragUpdateDetails details) {
     _drawer.value += details.delta.dx / _drawerWidth;
   }
@@ -197,7 +215,23 @@ class _KioskScreenState extends State<KioskScreen>
     if (e.key == defs.kioskEnabled.key) {
       setState(() {
         if (c.settings.get(defs.kioskDisableContextMenus)) _webViewEpoch++;
+        // Leaving kiosk mode lifts the quick-actions restriction; an open
+        // drawer regains its full menu in place.
+        if (!c.kiosk.locked) _drawerRestricted = false;
       });
+      return;
+    }
+    // The quick-actions toggles decide whether the locked kiosk mounts the
+    // edge swipe at all; revoking the master toggle from the remote admin
+    // also takes an open restricted menu away.
+    if (e.key.startsWith('kiosk.allow_')) {
+      setState(() {});
+      if (e.key == defs.kioskAllowDrawer.key &&
+          e.value != true &&
+          _drawerRestricted &&
+          _drawer.value > 0) {
+        _closeDrawer();
+      }
       return;
     }
     // The secure context proxy changes the page's ORIGIN and its media
@@ -498,6 +532,7 @@ class _KioskScreenState extends State<KioskScreen>
       final ok = await _askPin();
       if (!ok || !mounted) return;
     }
+    setState(() => _drawerRestricted = false);
     _drawer.fling(velocity: 1);
   }
 
@@ -613,6 +648,7 @@ class _KioskScreenState extends State<KioskScreen>
         onClose: _closeDrawer,
         onWebConsole: () => setState(() => _consoleOpen = true),
         onSettings: _openSettings,
+        restricted: _drawerRestricted,
       ),
     );
     return Scaffold(
@@ -697,8 +733,10 @@ class _KioskScreenState extends State<KioskScreen>
                     ),
                   // Closed: the edge strip that swipes it open — unless
                   // kiosk mode holds the door; then only the exit gesture
-                  // (and its PIN) opens the menu.
-                  if (!open && !c.kiosk.locked)
+                  // (and its PIN) opens the menu, or, when the owner opted
+                  // into quick actions, the same swipe opens the restricted
+                  // one (which mode is decided as the drag starts).
+                  if (!open && (!c.kiosk.locked || _quickMenuAvailable))
                     Positioned(
                       left: 0,
                       top: 0,
@@ -706,6 +744,11 @@ class _KioskScreenState extends State<KioskScreen>
                       width: 48,
                       child: GestureDetector(
                         behavior: HitTestBehavior.translucent,
+                        onHorizontalDragStart: (_) {
+                          if (_drawerRestricted != c.kiosk.locked) {
+                            setState(() => _drawerRestricted = c.kiosk.locked);
+                          }
+                        },
                         onHorizontalDragUpdate: _drawerDragUpdate,
                         onHorizontalDragEnd: _drawerDragEnd,
                       ),

@@ -84,6 +84,36 @@ void main() {
     expect(settings.get(defs.micAgc), isFalse);
   });
 
+  test('kiosk quick actions are opt-in, with every action on by default',
+      () async {
+    await build({});
+    // The gate itself must start closed: enabling kiosk mode alone must not
+    // open any PIN-free path into the menu.
+    expect(settings.get(defs.kioskAllowDrawer), isFalse);
+    // The per-action toggles default on, so opting in is one switch.
+    expect(settings.get(defs.kioskAllowDashboard), isTrue);
+    expect(settings.get(defs.kioskAllowCamera), isTrue);
+    expect(settings.get(defs.kioskAllowTheme), isTrue);
+  });
+
+  test('the quick-action toggles surface only behind their two gates',
+      () async {
+    await build({});
+    // Transitive dependsOn: action -> allow_drawer -> kiosk.enabled.
+    expect(settings.visible(defs.kioskAllowDrawer), isFalse);
+    expect(settings.visible(defs.kioskAllowDashboard), isFalse);
+    await settings.set(defs.kioskEnabled, true);
+    expect(settings.visible(defs.kioskAllowDrawer), isTrue);
+    expect(settings.visible(defs.kioskAllowDashboard), isFalse);
+    await settings.set(defs.kioskAllowDrawer, true);
+    expect(settings.visible(defs.kioskAllowDashboard), isTrue);
+    expect(settings.visible(defs.kioskAllowCamera), isTrue);
+    expect(settings.visible(defs.kioskAllowTheme), isTrue);
+    // Closing the outer gate hides the whole group again.
+    await settings.set(defs.kioskEnabled, false);
+    expect(settings.visible(defs.kioskAllowDashboard), isFalse);
+  });
+
   test('the mic gain slider hides while AGC is levelling', () async {
     await build({});
     expect(settings.visible(defs.micGainDb), isTrue);

@@ -21,9 +21,16 @@ class KioskDrawer extends StatelessWidget {
     required this.onClose,
     required this.onWebConsole,
     required this.onSettings,
+    this.restricted = false,
   });
 
   final AppContainer container;
+
+  /// Quick-actions mode: the drawer was opened by an edge swipe while kiosk
+  /// mode holds the door (kiosk.allow_drawer). Only the harmless actions the
+  /// owner allowed are shown; everything that changes state or escapes the
+  /// kiosk stays behind the exit gesture and PIN.
+  final bool restricted;
 
   /// Slides the drawer (and the kiosk) back. Every action starts with this,
   /// mirroring how the old overlay drawer popped itself before acting.
@@ -105,26 +112,29 @@ class KioskDrawer extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _item(
-                                context,
-                                Icons.dashboard_outlined,
-                                'Dashboard',
-                                () {
-                                  onClose();
-                                  c.commands.execute('loadUrl', {
-                                    'url': c.browser.startUrl,
-                                  });
-                                },
-                              ),
-                              _item(
-                                context,
-                                Icons.settings_outlined,
-                                'Settings',
-                                () {
-                                  onClose();
-                                  onSettings();
-                                },
-                              ),
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowDashboard))
+                                _item(
+                                  context,
+                                  Icons.dashboard_outlined,
+                                  'Dashboard',
+                                  () {
+                                    onClose();
+                                    c.commands.execute('loadUrl', {
+                                      'url': c.browser.startUrl,
+                                    });
+                                  },
+                                ),
+                              if (!restricted)
+                                _item(
+                                  context,
+                                  Icons.settings_outlined,
+                                  'Settings',
+                                  () {
+                                    onClose();
+                                    onSettings();
+                                  },
+                                ),
                               // One tap between off and the user's chosen
                               // strategy (auto/plugin/css, remembered in the
                               // hidden ha.kiosk_mode_last) — showing the HA
@@ -132,114 +142,124 @@ class KioskDrawer extends StatelessWidget {
                               // thing done at the wall, without a trip into
                               // Settings. The kiosk screen reacts to the
                               // setting change and reloads the page.
-                              _item(
-                                context,
-                                c.settings.get(defs.haKioskMode) == 'off'
-                                    ? Icons.fullscreen
-                                    : Icons.fullscreen_exit,
-                                'Toggle HA Kiosk Mode',
-                                () async {
-                                  onClose();
-                                  final mode = c.settings.get(
-                                    defs.haKioskMode,
-                                  );
-                                  if (mode == 'off') {
-                                    await c.settings.setFromJson(
-                                      defs.haKioskMode.key,
-                                      c.settings.get(defs.haKioskModeLast),
+                              if (!restricted)
+                                _item(
+                                  context,
+                                  c.settings.get(defs.haKioskMode) == 'off'
+                                      ? Icons.fullscreen
+                                      : Icons.fullscreen_exit,
+                                  'Toggle HA Kiosk Mode',
+                                  () async {
+                                    onClose();
+                                    final mode = c.settings.get(
+                                      defs.haKioskMode,
                                     );
-                                  } else {
-                                    await c.settings.setFromJson(
-                                      defs.haKioskModeLast.key,
-                                      mode,
-                                    );
-                                    await c.settings.setFromJson(
-                                      defs.haKioskMode.key,
-                                      'off',
-                                    );
-                                  }
-                                },
-                              ),
+                                    if (mode == 'off') {
+                                      await c.settings.setFromJson(
+                                        defs.haKioskMode.key,
+                                        c.settings.get(defs.haKioskModeLast),
+                                      );
+                                    } else {
+                                      await c.settings.setFromJson(
+                                        defs.haKioskModeLast.key,
+                                        mode,
+                                      );
+                                      await c.settings.setFromJson(
+                                        defs.haKioskMode.key,
+                                        'off',
+                                      );
+                                    }
+                                  },
+                                ),
                               // Only once the default view actually holds
                               // cameras: an empty one is the placeholder
                               // every install starts with, and a menu entry
                               // that can only fail is worse than no entry.
-                              if (c.camera.config.defaultView
-                                  case final view?
-                                      when view.cameraIds.isNotEmpty)
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowCamera))
+                                if (c.camera.config.defaultView case final view?
+                                    when view.cameraIds.isNotEmpty)
+                                  _item(
+                                    context,
+                                    Icons.videocam_outlined,
+                                    'Default Camera View',
+                                    () {
+                                      onClose();
+                                      c.camera.showView(view.id);
+                                    },
+                                  ),
+                              if (!restricted)
                                 _item(
                                   context,
-                                  Icons.videocam_outlined,
-                                  'Default Camera View',
+                                  Icons.terminal_outlined,
+                                  'Web Console',
                                   () {
                                     onClose();
-                                    c.camera.showView(view.id);
+                                    onWebConsole();
                                   },
                                 ),
-                              _item(
-                                context,
-                                Icons.terminal_outlined,
-                                'Web Console',
-                                () {
-                                  onClose();
-                                  onWebConsole();
-                                },
-                              ),
-                              _item(
-                                context,
-                                Icons.cleaning_services_outlined,
-                                'Clear web cache',
-                                () {
-                                  onClose();
-                                  c.commands.execute('clearWebCache', const {});
-                                },
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
+                              if (!restricted)
+                                _item(
+                                  context,
+                                  Icons.cleaning_services_outlined,
+                                  'Clear web cache',
+                                  () {
+                                    onClose();
+                                    c.commands.execute(
+                                      'clearWebCache',
+                                      const {},
+                                    );
+                                  },
                                 ),
-                                child: Divider(),
-                              ),
-                              _item(
-                                context,
-                                Icons.logout_outlined,
-                                'Log out',
-                                () async {
-                                  onClose();
-                                  if (context.mounted &&
-                                      await _confirm(
-                                        context,
-                                        'Log out',
-                                        'Clear cookies and site data, then reload the '
-                                            'start page?',
-                                      )) {
-                                    await c.commands.execute(
-                                      'logout',
-                                      const {},
-                                    );
-                                  }
-                                },
-                              ),
-                              _item(
-                                context,
-                                Icons.power_settings_new_outlined,
-                                'Exit Application',
-                                () async {
-                                  onClose();
-                                  if (context.mounted &&
-                                      await _confirm(
-                                        context,
-                                        'Exit Application',
-                                        'Close Kiosk Satellite?',
-                                      )) {
-                                    await c.commands.execute(
-                                      'exitApp',
-                                      const {},
-                                    );
-                                  }
-                                },
-                              ),
+                              if (!restricted)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Divider(),
+                                ),
+                              if (!restricted)
+                                _item(
+                                  context,
+                                  Icons.logout_outlined,
+                                  'Log out',
+                                  () async {
+                                    onClose();
+                                    if (context.mounted &&
+                                        await _confirm(
+                                          context,
+                                          'Log out',
+                                          'Clear cookies and site data, then reload the '
+                                              'start page?',
+                                        )) {
+                                      await c.commands.execute(
+                                        'logout',
+                                        const {},
+                                      );
+                                    }
+                                  },
+                                ),
+                              if (!restricted)
+                                _item(
+                                  context,
+                                  Icons.power_settings_new_outlined,
+                                  'Exit Application',
+                                  () async {
+                                    onClose();
+                                    if (context.mounted &&
+                                        await _confirm(
+                                          context,
+                                          'Exit Application',
+                                          'Close Kiosk Satellite?',
+                                        )) {
+                                      await c.commands.execute(
+                                        'exitApp',
+                                        const {},
+                                      );
+                                    }
+                                  },
+                                ),
                             ],
                           ),
                         ),
@@ -250,126 +270,131 @@ class KioskDrawer extends StatelessWidget {
               ),
               // Above the theme switcher: the update notice when GitHub has
               // a newer release, the running version otherwise — the wall is
-              // where an update is noticed, not the repo page.
-              ValueListenableBuilder<UpdateInfo?>(
-                valueListenable: c.update.available,
-                builder: (context, info, _) => Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-                  child: info == null
-                      // Tappable: a manual "check now" — the periodic check
-                      // runs only twice a day, and the wall is where "did my
-                      // update land?" gets asked.
-                      ? InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () => _checkNow(context),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Text(
-                              'Version ${c.device.appVersion}',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        )
-                      : Material(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(16),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () => _offerUpdate(context, info),
+              // where an update is noticed, not the repo page. Not in the
+              // restricted menu: installing an update is not a quick action.
+              if (!restricted)
+                ValueListenableBuilder<UpdateInfo?>(
+                  valueListenable: c.update.available,
+                  builder: (context, info, _) => Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                    child: info == null
+                        // Tappable: a manual "check now" — the periodic check
+                        // runs only twice a day, and the wall is where "did my
+                        // update land?" gets asked.
+                        ? InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => _checkNow(context),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
+                              padding: const EdgeInsets.symmetric(vertical: 6),
+                              child: Text(
+                                'Version ${c.device.appVersion}',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
                               ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.system_update_outlined,
-                                    color:
-                                        theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Update available',
-                                          style: theme.textTheme.titleSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w600,
-                                                color: theme.colorScheme
-                                                    .onPrimaryContainer,
-                                              ),
-                                        ),
-                                        Text(
-                                          'Version ${info.version} · tap to '
-                                          'install',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: theme.colorScheme
-                                                    .onPrimaryContainer,
-                                              ),
-                                        ),
-                                      ],
+                            ),
+                          )
+                        : Material(
+                            color: theme.colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(16),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () => _offerUpdate(context, info),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.system_update_outlined,
+                                      color:
+                                          theme.colorScheme.onPrimaryContainer,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Update available',
+                                            style: theme.textTheme.titleSmall
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onPrimaryContainer,
+                                                ),
+                                          ),
+                                          Text(
+                                            'Version ${info.version} · tap to '
+                                            'install',
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onPrimaryContainer,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
-              ),
               // The theme switcher, docked at the foot of the menu. Icons
               // only — no label or separator: the card above already bounds
               // the actions, and the compact pill is the whole footer.
               // Flipping it is the kind of thing done at the wall, at night,
               // without a trip into Settings; it applies live (main.dart
               // listens for the setting) and the drawer stays open.
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
-                child: Center(
-                  child: SegmentedButton<String>(
-                    showSelectedIcon: false,
-                    style: const ButtonStyle(
-                      visualDensity: VisualDensity(
-                        horizontal: -2,
-                        vertical: -2,
+              if (!restricted || c.settings.get(defs.kioskAllowTheme))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+                  child: Center(
+                    child: SegmentedButton<String>(
+                      showSelectedIcon: false,
+                      style: const ButtonStyle(
+                        visualDensity: VisualDensity(
+                          horizontal: -2,
+                          vertical: -2,
+                        ),
+                        padding: WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 12),
+                        ),
                       ),
-                      padding: WidgetStatePropertyAll(
-                        EdgeInsets.symmetric(horizontal: 12),
+                      segments: const [
+                        ButtonSegment(
+                          value: 'dark',
+                          icon: Icon(Icons.dark_mode_outlined),
+                          tooltip: 'Dark',
+                        ),
+                        ButtonSegment(
+                          value: 'light',
+                          icon: Icon(Icons.light_mode_outlined),
+                          tooltip: 'Light',
+                        ),
+                        ButtonSegment(
+                          value: 'system',
+                          icon: Icon(Icons.brightness_auto_outlined),
+                          tooltip: 'Follow Android',
+                        ),
+                      ],
+                      selected: {c.settings.get(defs.uiTheme)},
+                      onSelectionChanged: (selection) => c.settings.setFromJson(
+                        defs.uiTheme.key,
+                        selection.first,
                       ),
-                    ),
-                    segments: const [
-                      ButtonSegment(
-                        value: 'dark',
-                        icon: Icon(Icons.dark_mode_outlined),
-                        tooltip: 'Dark',
-                      ),
-                      ButtonSegment(
-                        value: 'light',
-                        icon: Icon(Icons.light_mode_outlined),
-                        tooltip: 'Light',
-                      ),
-                      ButtonSegment(
-                        value: 'system',
-                        icon: Icon(Icons.brightness_auto_outlined),
-                        tooltip: 'Follow Android',
-                      ),
-                    ],
-                    selected: {c.settings.get(defs.uiTheme)},
-                    onSelectionChanged: (selection) => c.settings.setFromJson(
-                      defs.uiTheme.key,
-                      selection.first,
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -506,9 +531,7 @@ class KioskDrawer extends StatelessWidget {
                 LinearProgressIndicator(value: p),
                 const SizedBox(height: 12),
                 Text(
-                  p == null
-                      ? 'Starting…'
-                      : '${(p * 100).toStringAsFixed(0)}%',
+                  p == null ? 'Starting…' : '${(p * 100).toStringAsFixed(0)}%',
                 ),
               ],
             ),
@@ -541,15 +564,10 @@ class KioskDrawer extends StatelessWidget {
   /// is a dependency this one dialog does not justify.
   List<Widget> _releaseNotes(ThemeData theme, String notes) {
     String inline(String s) => s
-        .replaceAllMapped(
-          RegExp(r'\[([^\]]*)\]\([^)]*\)'),
-          (m) => m[1] ?? '',
-        )
+        .replaceAllMapped(RegExp(r'\[([^\]]*)\]\([^)]*\)'), (m) => m[1] ?? '')
         .replaceAll(RegExp(r'\*\*|__|`'), '');
     if (notes.isEmpty) {
-      return [
-        Text('No release notes.', style: theme.textTheme.bodyMedium),
-      ];
+      return [Text('No release notes.', style: theme.textTheme.bodyMedium)];
     }
     final out = <Widget>[];
     for (final raw in notes.split('\n')) {

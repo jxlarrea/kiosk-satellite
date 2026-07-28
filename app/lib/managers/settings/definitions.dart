@@ -482,6 +482,59 @@ const kioskDisableContextMenus = SettingDef<bool>(
   dependsOn: 'kiosk.enabled',
 );
 
+// The quick-actions escape hatch (issue #64): a wall-mounted kiosk in
+// lockdown still wants "back to the dashboard" and "show the camera" to
+// be one swipe away. Off by default — kiosk mode keeps its full lock
+// until the owner opts in — and the menu it opens is restricted to the
+// harmless subset picked below; everything else stays behind the exit
+// gesture and PIN.
+
+const kioskAllowDrawer = SettingDef<bool>(
+  key: 'kiosk.allow_drawer',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Allow menu with quick actions',
+  description:
+      'An edge swipe opens the menu without the exit gesture or PIN, '
+      'limited to the actions selected below.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.enabled',
+);
+
+const kioskAllowDashboard = SettingDef<bool>(
+  key: 'kiosk.allow_dashboard',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Dashboard',
+  description: 'Reload the start page.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
+const kioskAllowCamera = SettingDef<bool>(
+  key: 'kiosk.allow_camera',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Default Camera View',
+  description: 'Open the default camera view.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
+const kioskAllowTheme = SettingDef<bool>(
+  key: 'kiosk.allow_theme',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Theme picker',
+  description: 'Switch between the light and dark themes.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
 // ── Screen ─────────────────────────────────────────────────────────────
 
 // What the last screen-off actually did to the panel: on some devices the
@@ -759,7 +812,8 @@ const screensaverFlipBgColor = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '245,245,245',
   title: 'Card color',
-  description: 'The color of the cards. The backdrop shades itself to '
+  description:
+      'The color of the cards. The backdrop shades itself to '
       'match.',
   category: 'Screensaver',
   section: 'Clock',
@@ -866,7 +920,14 @@ const screensaverMediaRecursive = SettingDef<bool>(
 // crossfade.
 // 'random' rolls one of the real transitions per hand-off ('none' is
 // excluded from the pool — a surprise hard cut just reads as a glitch).
-const _transitionOptions = ['none', 'fade', 'slide', 'zoom', 'kenburns', 'random'];
+const _transitionOptions = [
+  'none',
+  'fade',
+  'slide',
+  'zoom',
+  'kenburns',
+  'random',
+];
 const _transitionLabels = {
   'none': 'None',
   'fade': 'Crossfade',
@@ -1338,7 +1399,8 @@ const screensaverGlanceEntities = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '[]',
   title: 'Entities',
-  description: 'Up to four entities to show. Their names come from Home '
+  description:
+      'Up to four entities to show. Their names come from Home '
       'Assistant.',
   category: 'Screensaver',
   section: 'At a Glance',
@@ -1550,7 +1612,8 @@ const audioMicDevice = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Microphone',
-  description: 'The microphone wake word detection and voice turns capture from.',
+  description:
+      'The microphone wake word detection and voice turns capture from.',
   category: 'Voice Satellite',
   hidden: true,
 );
@@ -1588,7 +1651,8 @@ const haUrl = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '',
   title: 'Home Assistant Base URL',
-  description: 'e.g. https://homeassistant.local:8123, without a dashboard path.',
+  description:
+      'e.g. https://homeassistant.local:8123, without a dashboard path.',
   category: 'Home Assistant',
   validator: validateBaseUrl,
 );
@@ -2262,6 +2326,10 @@ const List<SettingDef<Object>> allSettings = [
   kioskDisablePower,
   kioskDisableHome,
   kioskDisableContextMenus,
+  kioskAllowDrawer,
+  kioskAllowDashboard,
+  kioskAllowCamera,
+  kioskAllowTheme,
   keepScreenOn,
   setBrightnessOnLaunch,
   defaultBrightness,
