@@ -701,10 +701,17 @@ class HomeAssistantManager extends Manager {
   ///
   /// Returns null when Home Assistant is not configured or the socket cannot
   /// be opened. The caller owns the returned subscription and must close it.
+  ///
+  /// [onPrecision] receives each entity's display precision from the entity
+  /// registry, looked up over the subscription's own socket so it costs one
+  /// extra frame rather than a second connection (issue #74). States arrive
+  /// raw; without this the row shows 69.44 where the entity's own card,
+  /// honoring the Display precision setting, shows 69.
   Future<GlanceSubscription?> subscribeEntities(
     List<String> entityIds,
-    void Function(String entityId, Map<String, Object?> state) onState,
-  ) async {
+    void Function(String entityId, Map<String, Object?> state) onState, {
+    void Function(Map<String, int> precisions)? onPrecision,
+  }) async {
     if (!configured || entityIds.isEmpty) return null;
     final wsBase = baseUrl
         .replaceFirst('https://', 'wss://')
@@ -730,9 +737,24 @@ class HomeAssistantManager extends Manager {
                   'type': 'subscribe_entities',
                   'entity_ids': entityIds,
                 }));
+                if (onPrecision != null) {
+                  channel.sink.add(jsonEncode({
+                    'id': 2,
+                    'type': 'config/entity_registry/get_entries',
+                    'entity_ids': entityIds,
+                  }));
+                }
               case 'auth_invalid':
                 log.warn(name, 'glance subscription rejected: bad token');
                 subscription.close();
+              case 'result':
+                // The subscribe command confirms itself here too; only the
+                // registry lookup's reply carries anything to read. A failure
+                // (an old Home Assistant without get_entries) just leaves
+                // states unrounded, which is what the row always did.
+                if (msg['id'] == 2 && msg['success'] == true) {
+                  onPrecision?.call(_displayPrecisions(msg['result']));
+                }
               case 'event':
                 _handleEntityEvent(msg['event'], onState);
             }
@@ -784,6 +806,26 @@ class HomeAssistantManager extends Manager {
         });
       }
     }
+  }
+
+  /// Each entity's display precision out of a `get_entries` reply: the
+  /// Display precision a person set on the entity when there is one, else
+  /// the integration's suggestion, which is the same order Home Assistant's
+  /// own frontend resolves before rounding a sensor. Entities with neither
+  /// (or no registry entry at all) are simply absent.
+  static Map<String, int> _displayPrecisions(Object? result) {
+    final precisions = <String, int>{};
+    if (result is! Map) return precisions;
+    for (final entry in result.entries) {
+      final value = entry.value;
+      if (value is! Map) continue;
+      final sensor = (value['options'] as Map?)?['sensor'];
+      if (sensor is! Map) continue;
+      final precision =
+          sensor['display_precision'] ?? sensor['suggested_display_precision'];
+      if (precision is int) precisions['${entry.key}'] = precision;
+    }
+    return precisions;
   }
 
   /// Entities matching [query], for the At a Glance picker.

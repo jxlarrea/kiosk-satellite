@@ -184,11 +184,23 @@ String glanceStateText(GlanceEntity entity) {
   if (state == null || state.isEmpty) return '…';
   if (state == 'unavailable') return 'Unavailable';
   if (state == 'unknown') return 'Unknown';
+  final unit = entity.unit;
+  // A numeric state rounds to the entity's Display precision, padded the
+  // same way Home Assistant's own cards pad it, so the row and the
+  // dashboard never disagree about the same sensor (issue #74). States
+  // arrive raw over the socket; the registry is where the setting lives.
+  final precision = entity.precision;
+  if (precision != null) {
+    final number = double.tryParse(state);
+    if (number != null) {
+      final rounded = number.toStringAsFixed(precision);
+      return unit == null || unit.isEmpty ? rounded : '$rounded $unit';
+    }
+  }
   final pretty = state
       .split('_')
       .map((word) => word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
       .join(' ');
-  final unit = entity.unit;
   return unit == null || unit.isEmpty ? pretty : '$pretty $unit';
 }
 

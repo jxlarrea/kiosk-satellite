@@ -19,6 +19,7 @@ class GlanceEntity {
     this.icon,
     this.deviceClass,
     this.unit,
+    this.precision,
   });
 
   final String entityId;
@@ -34,12 +35,18 @@ class GlanceEntity {
   final String? deviceClass;
   final String? unit;
 
+  /// The entity's Display precision from Home Assistant's entity registry,
+  /// so a numeric state rounds the way the entity's own card would (issue
+  /// #74). Null means none is set and the raw state shows as-is.
+  final int? precision;
+
   GlanceEntity merge({
     String? name,
     String? state,
     String? icon,
     String? deviceClass,
     String? unit,
+    int? precision,
   }) => GlanceEntity(
     entityId: entityId,
     name: name ?? this.name,
@@ -47,6 +54,7 @@ class GlanceEntity {
     icon: icon ?? this.icon,
     deviceClass: deviceClass ?? this.deviceClass,
     unit: unit ?? this.unit,
+    precision: precision ?? this.precision,
   );
 
   Map<String, Object?> toJson() => {'entity_id': entityId, 'name': name};
@@ -175,7 +183,11 @@ class GlanceManager extends Manager {
     if (!_rowModes.contains(_settings.get(defs.screensaverMode))) return;
     final ids = [for (final entity in entities.value) entity.entityId];
     if (ids.isEmpty) return;
-    final live = await _ha.subscribeEntities(ids, _applyState);
+    final live = await _ha.subscribeEntities(
+      ids,
+      _applyState,
+      onPrecision: _applyPrecisions,
+    );
     if (live == null) {
       // Home Assistant unreachable, mid-restart, whatever: the row keeps
       // showing what it last knew and tries again shortly, for as long as
@@ -201,6 +213,18 @@ class GlanceManager extends Manager {
     final live = _live;
     _live = null;
     if (live != null) unawaited(live.close());
+  }
+
+  /// Display precisions from the entity registry, fetched over the
+  /// subscription's own socket when it opens. Entities absent from the map
+  /// keep whatever they had; a fetched precision survives later state
+  /// updates the same way a known icon does.
+  void _applyPrecisions(Map<String, int> precisions) {
+    if (precisions.isEmpty) return;
+    entities.value = [
+      for (final entity in entities.value)
+        entity.merge(precision: precisions[entity.entityId]),
+    ];
   }
 
   /// One entity's state from the subscription. Attributes arrive only when

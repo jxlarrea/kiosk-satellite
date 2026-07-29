@@ -10,6 +10,7 @@ void main() {
     String? icon,
     String? deviceClass,
     String? unit,
+    int? precision,
   }) =>
       GlanceEntity(
         entityId: id,
@@ -18,6 +19,7 @@ void main() {
         icon: icon,
         deviceClass: deviceClass,
         unit: unit,
+        precision: precision,
       );
 
   group('state text', () {
@@ -34,6 +36,50 @@ void main() {
       expect(
         glanceStateText(entity('sensor.t', state: '21.5', unit: '°C')),
         '21.5 °C',
+      );
+    });
+
+    test('display precision rounds the way the entity card would (#74)', () {
+      expect(
+        glanceStateText(
+          entity('sensor.t', state: '69.44', unit: '°F', precision: 0),
+        ),
+        '69 °F',
+      );
+      expect(
+        glanceStateText(
+          entity('sensor.t', state: '69.44', unit: '°F', precision: 1),
+        ),
+        '69.4 °F',
+      );
+      // Padded, not just truncated: Home Assistant shows 69.0 at
+      // precision 1, so the row does too.
+      expect(
+        glanceStateText(entity('sensor.t', state: '69', precision: 1)),
+        '69.0',
+      );
+    });
+
+    test('a fetched precision survives later state updates', () {
+      final before = entity('sensor.t', state: '69.44', unit: '°F', precision: 0);
+      final after = before.merge(state: '70.12');
+      expect(glanceStateText(after), '70 °F');
+    });
+
+    test('precision leaves everything non-numeric alone', () {
+      // No precision known: the raw state, exactly as before.
+      expect(
+        glanceStateText(entity('sensor.t', state: '69.44', unit: '°F')),
+        '69.44 °F',
+      );
+      // A precision on a non-numeric state changes nothing.
+      expect(
+        glanceStateText(entity('cover.g', state: 'open', precision: 1)),
+        'Open',
+      );
+      expect(
+        glanceStateText(entity('sensor.t', state: 'unavailable', precision: 0)),
+        'Unavailable',
       );
     });
 
