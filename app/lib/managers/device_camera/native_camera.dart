@@ -32,8 +32,7 @@ class NativeCamera {
 /// whichever way a frame is taken. Unknown values (a downgrade, an edited
 /// import) fall back to the default tier.
 (int, int) snapshotResolution(String value) => switch (value) {
-      '480' => (640, 480),
+      '720' => (960, 720),
       '1080' => (1440, 1080),
-      '1440' => (1920, 1440),
-      _ => (960, 720),
+      _ => (640, 480),
     };

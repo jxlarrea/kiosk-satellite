@@ -29,12 +29,12 @@ void main() {
   DeviceCameraManager camera() =>
       DeviceCameraManager(bus, commands, log, settings);
 
-  test('camera defaults: off, front, 720p, no snapshots, 60s interval',
+  test('camera defaults: off, front, 480p, no snapshots, 60s interval',
       () async {
     await build({});
     expect(settings.get(defs.cameraEnabled), isFalse);
     expect(settings.get(defs.cameraDevice), 'front');
-    expect(settings.get(defs.cameraSnapshotResolution), '720');
+    expect(settings.get(defs.cameraSnapshotResolution), '480');
     expect(settings.get(defs.cameraSnapshots), isFalse);
     expect(settings.get(defs.cameraSnapshotInterval), 60);
   });
@@ -43,10 +43,10 @@ void main() {
     expect(snapshotResolution('480'), (640, 480));
     expect(snapshotResolution('720'), (960, 720));
     expect(snapshotResolution('1080'), (1440, 1080));
-    expect(snapshotResolution('1440'), (1920, 1440));
-    // An unknown stored value (a downgrade, a hand-edited import) must
+    // An unknown stored value (a retired tier, a hand-edited import) must
     // fall back to the default tier, not crash the capture path.
-    expect(snapshotResolution('nonsense'), (960, 720));
+    expect(snapshotResolution('1440'), (640, 480));
+    expect(snapshotResolution('nonsense'), (640, 480));
   });
 
   test('migration: a device using motion detection keeps it working',
