@@ -157,7 +157,7 @@ const _categories = <(String, String, IconData, String)>[
     'Camera',
     'Camera',
     Icons.photo_camera_outlined,
-    'Device camera, Home Assistant snapshots',
+    'Device camera, MQTT snapshots',
   ),
   (
     'Remote',
