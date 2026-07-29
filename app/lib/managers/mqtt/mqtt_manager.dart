@@ -956,6 +956,11 @@ class MqttManager extends Manager {
 
   Future<void> _pollStats() async {
     if (!_connected) return;
+    // Unconditionally, unlike everything below: proving the device alive is
+    // this timestamp's whole job, so "nothing changed" is not a reason to
+    // skip it (issue #75).
+    _publish(
+        '$_base/last_seen/state', DateTime.now().toUtc().toIso8601String());
     if (++_viewRefreshTicks >= 5) {
       _viewRefreshTicks = 0;
       unawaited(_refreshDashboardViews());
@@ -1014,6 +1019,7 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/cpu_temp/config',
         '$_prefix/sensor/ks_$_deviceId/ram_free/config',
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
+        '$_prefix/sensor/ks_$_deviceId/last_seen/config',
         '$_prefix/switch/ks_$_deviceId/screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
@@ -1191,6 +1197,18 @@ class MqttManager extends Manager {
         'icon': 'mdi:memory',
         'entity_category': 'diagnostic',
       },
+      // When the device last reported in (issue #75): republished every
+      // stats tick whether or not anything changed, retained so it stays
+      // readable across an HA restart. Deliberately no availability topic —
+      // the timestamp exists to be read after the device has dropped, which
+      // is exactly when an availability-gated entity would hide it.
+      '$_prefix/sensor/ks_$_deviceId/last_seen/config': {
+        ...common('last_seen', 'Last seen'),
+        'state_topic': '$_base/last_seen/state',
+        'device_class': 'timestamp',
+        'icon': 'mdi:clock-check-outline',
+        'entity_category': 'diagnostic',
+      }..remove('availability_topic'),
       if (_lightSensorPresent)
         '$_prefix/sensor/ks_$_deviceId/illuminance/config': {
           ...common('illuminance', 'Ambient light'),

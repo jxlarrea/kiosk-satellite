@@ -65,6 +65,7 @@ tablet's remote admin (while remote administration is enabled).
 | Ambient light | sensor | The device's light sensor in lux, for automating screen brightness from the room's light. Only devices with the hardware get the entity. Readings are damped (small flicker is ignored, big swings publish immediately) so the recorder is not flooded. If you automate brightness from this, turn the Android adaptive brightness off or the two will fight. |
 | CPU usage, CPU temperature | sensor | Polled once a minute. |
 | RAM available, RAM total | sensor | Polled once a minute. |
+| Last seen | sensor | When the device last reported in, as a timestamp, republished once a minute. The one entity that does not go unavailable when the device drops: it exists so the drop shows up in history and the timestamp stays readable while the device is gone (issue #75). |
 | Current page | sensor | The URL the kiosk is showing. |
 | Next alarm | sensor | The device's next alarm clock, as a timestamp, or unknown when none is set. It reads whatever the system considers the next alarm, so any clock app counts, and it follows alarms set, moved, disabled or dismissed outside this app. The `package` attribute names the app that owns it and `local_time` gives the device's own wall-clock reading. |
 | Remote admin | sensor | The remote admin's URL for this device, or `disabled` when remote administration is off. Handy for deep-linking from a dashboard. |
@@ -76,7 +77,9 @@ tablet's remote admin (while remote administration is enabled).
 
 All entities carry availability: they go unavailable the moment the tablet
 drops off the broker (broker-side last will, so it works however the
-connection dies) and recover automatically when it returns.
+connection dies) and recover automatically when it returns. The one
+deliberate exception is Last seen, which stays readable while the device
+is gone; that is its job.
 
 ## Topics
 
@@ -97,6 +100,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../reload/set`, `.../clear_cache/set`, `.../restart/set` | in | any payload presses the button |
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
+| `.../last_seen/state` | out, retained | when the device last reported in, ISO 8601 UTC, once a minute |
 | `.../url/state` | out, retained | the current URL |
 | `.../next_alarm/state` | out, retained | the next alarm as an ISO 8601 UTC timestamp, or `None` when there is no alarm |
 | `.../next_alarm/attributes` | out, retained | JSON with `package` and `local_time` |
