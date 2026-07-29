@@ -11,9 +11,6 @@ import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
 import android.util.Size
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
@@ -41,10 +38,16 @@ import kotlin.math.roundToInt
  * Only a "motion" tick ever crosses the channel, rate-limited to one per second.
  * The Dart side decides what motion means (waking the screensaver); the camera
  * is bound only while something is listening, and [onCancel] frees it.
+ *
+ * The camera is shared with [DeviceCamera]: an ImageCapture use case is
+ * pre-bound into this session so a Home Assistant snapshot rides it instead
+ * of contending for the sensor (see DeviceCamera for why pre-binding, not
+ * on-demand binding, is the part that matters).
  */
 class CameraMotion(
     private val context: Context,
     messenger: BinaryMessenger,
+    private val deviceCamera: DeviceCamera? = null,
 ) : EventChannel.StreamHandler {
     companion object {
         const val CHANNEL = "kiosk_satellite/motion"
@@ -77,7 +80,7 @@ class CameraMotion(
     private var provider: ProcessCameraProvider? = null
     private var analysis: ImageAnalysis? = null
     private val analysisExecutor = Executors.newSingleThreadExecutor()
-    private var lifecycle: MotionLifecycle? = null
+    private var lifecycle: CameraLifecycle? = null
 
     /** Guards the async camera-ready callback: bumped by every listen and
      *  cancel (main thread only), so a callback from a session that was
@@ -151,16 +154,36 @@ class CameraMotion(
             imageAnalysis.setAnalyzer(analysisExecutor) { image -> analyze(image, sink) }
             analysis = imageAnalysis
 
-            val owner = MotionLifecycle().also { lifecycle = it }
+            val owner = CameraLifecycle().also { lifecycle = it }
+            // Pre-bound so a snapshot never reconfigures this session (an
+            // AE resettle would read as motion and wake the screensaver).
+            val imageCapture = deviceCamera?.buildCapture()
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(owner, facing, imageAnalysis)
+                if (imageCapture != null) {
+                    try {
+                        cameraProvider.bindToLifecycle(
+                            owner, facing, imageAnalysis, imageCapture)
+                        deviceCamera.sharedCapture = imageCapture
+                    } catch (e: Exception) {
+                        // Hardware that cannot run analysis and JPEG capture
+                        // in one session: motion wins, snapshots report busy
+                        // while it runs.
+                        Log.w(TAG, "no capture alongside analysis: ${e.message}")
+                        cameraProvider.bindToLifecycle(owner, facing, imageAnalysis)
+                    }
+                } else {
+                    cameraProvider.bindToLifecycle(owner, facing, imageAnalysis)
+                }
+                deviceCamera?.motionSessionActive = true
                 owner.resume()
                 Log.i(TAG, "camera bound (fps slot=${frameIntervalNs / 1_000_000}ms, minCells=$minChangedCells)")
             } catch (e: Exception) {
                 // Nothing bound: drop the owner so the eventual cancel has
                 // nothing to tear down (its registry never left INITIALIZED).
                 lifecycle = null
+                deviceCamera?.sharedCapture = null
+                deviceCamera?.motionSessionActive = false
                 sink.error("camera", "could not open camera: ${e.message}", null)
             }
         }, ContextCompat.getMainExecutor(context))
@@ -231,6 +254,8 @@ class CameraMotion(
     override fun onCancel(arguments: Any?) {
         mainHandler.post {
             session++
+            deviceCamera?.sharedCapture = null
+            deviceCamera?.motionSessionActive = false
             analysis?.clearAnalyzer()
             lifecycle?.destroy()
             lifecycle = null
@@ -247,24 +272,4 @@ class CameraMotion(
         analysisExecutor.shutdown()
     }
 
-    /**
-     * A self-driven lifecycle so the camera's lifetime is exactly the listen
-     * span, independent of the activity. Mutated only on the main thread.
-     */
-    private class MotionLifecycle : LifecycleOwner {
-        private val registry = LifecycleRegistry(this)
-        override val lifecycle: Lifecycle get() = registry
-        fun resume() { registry.currentState = Lifecycle.State.RESUMED }
-        fun destroy() {
-            // A registry that never left INITIALIZED (bindToLifecycle threw,
-            // so resume() was skipped) cannot move down: AndroidX throws
-            // "no event down from INITIALIZED", a fatal main-thread crash
-            // when the screensaver's motion listening stops. Step up to
-            // CREATED first; from there DESTROYED is legal.
-            if (registry.currentState == Lifecycle.State.INITIALIZED) {
-                registry.currentState = Lifecycle.State.CREATED
-            }
-            registry.currentState = Lifecycle.State.DESTROYED
-        }
-    }
 }

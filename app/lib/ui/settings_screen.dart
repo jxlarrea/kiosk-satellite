@@ -80,6 +80,10 @@ List<Widget> _sectionedCards(
   // under that setting's row (a permission notice living with the switch
   // that needs it).
   Map<String, Widget> after = const {},
+  // Full replacements keyed by setting key: the widget renders instead of
+  // the generic tile (the motion switch shown disabled while the Camera
+  // section's master switch is off).
+  Map<String, Widget> replace = const {},
 }) {
   final settings = container.settings;
   final visible = [
@@ -95,7 +99,12 @@ List<Widget> _sectionedCards(
       _SettingsCard(
         children: [
           for (final def in buffer) ...[
-            SettingTile(container: container, def: def, onChanged: onChanged),
+            replace[def.key] ??
+                SettingTile(
+                  container: container,
+                  def: def,
+                  onChanged: onChanged,
+                ),
             if (after[def.key] != null) after[def.key]!,
           ],
         ],
@@ -143,6 +152,12 @@ const _categories = <(String, String, IconData, String)>[
     'Screensaver',
     Icons.dark_mode_outlined,
     'Idle timeout, modes, motion wake',
+  ),
+  (
+    'Camera',
+    'Camera',
+    Icons.photo_camera_outlined,
+    'Device camera, Home Assistant snapshots',
   ),
   (
     'Remote',
@@ -896,16 +911,43 @@ class _CategoryContentState extends State<_CategoryContent> {
         else
           ..._sectionedCards(
             container,
-            _defsFor(widget.category),
+            // With the Camera master switch off, motion detection cannot
+            // run: its tuning rows disappear and the switch itself renders
+            // disabled (below) with the reason, instead of lying enabled.
+            widget.category == 'Screensaver' &&
+                    !container.settings.get(cameraEnabled)
+                ? [
+                    for (final def in _defsFor('Screensaver'))
+                      if (!def.key.startsWith('motion.')) def,
+                  ]
+                : _defsFor(widget.category),
             () => setState(() {}),
+            replace: {
+              if (widget.category == 'Screensaver' &&
+                  !container.settings.get(cameraEnabled))
+                screensaverDismissOnMotion.key: const SwitchListTile(
+                  title: Text('Dismiss on motion'),
+                  subtitle: Text(
+                    'Requires the camera. Turn it on in the Camera '
+                    'settings first.',
+                  ),
+                  value: false,
+                  onChanged: null,
+                ),
+            },
             after: {
               if (widget.category == 'Browser' &&
                   container.settings.get(autoReloadOnError))
                 autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
-              if (widget.category == 'Screensaver' &&
-                  container.settings.get(screensaverDismissOnMotion))
-                screensaverDismissOnMotion.key: _CameraGrantRow(
-                  key: UniqueKey(),
+              if (widget.category == 'Camera' &&
+                  container.settings.get(cameraEnabled))
+                cameraEnabled.key: _CameraGrantRow(key: UniqueKey()),
+              // Where the motion camera picker used to be: the camera pick
+              // is a Camera-settings decision now.
+              if (widget.category == 'Screensaver')
+                motionSensitivity.key: const _HintRow(
+                  'Motion detection uses the camera selected in the '
+                  'Camera settings.',
                 ),
               if (widget.category == 'Screensaver') ...{
                 // Rendered only while their anchor rows are (mode: immich).
@@ -1640,6 +1682,36 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
   }
 }
 
+/// A muted explanatory line inside a settings card, for context that is
+/// not a control (where the motion camera picker used to be).
+class _HintRow extends StatelessWidget {
+  const _HintRow(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 18, color: muted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: muted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CameraGrantRow extends StatefulWidget {
   const _CameraGrantRow({super.key});
 
@@ -1680,7 +1752,7 @@ class _CameraGrantRowState extends State<_CameraGrantRow> {
         _blocked
             ? 'Blocked. Android will not ask again, so allow it in the '
                   'app settings.'
-            : 'Without this motion cannot be detected.',
+            : 'Without this the camera cannot be used.',
       ),
       trailing: TextButton(
         onPressed: () async {

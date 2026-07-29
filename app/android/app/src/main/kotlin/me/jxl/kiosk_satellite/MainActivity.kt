@@ -26,6 +26,7 @@ object ActivityState {
 class MainActivity : FlutterActivity() {
     private var provisionChannel: MethodChannel? = null
     private var adminChannel: MethodChannel? = null
+    private var deviceCamera: DeviceCamera? = null
     private var cameraMotion: CameraMotion? = null
     private var screenCapture: ScreenCapture? = null
     private var kioskLock: KioskLock? = null
@@ -62,7 +63,10 @@ class MainActivity : FlutterActivity() {
         // Deliberately not calling super: plugins are registered once on the
         // cached engine in KioskApplication. Only Activity-scoped bridges here.
         val messenger = flutterEngine.dartExecutor.binaryMessenger
-        cameraMotion = CameraMotion(this, messenger)
+        // The snapshot bridge first: motion detection pre-binds its capture
+        // use case so the two share one camera session.
+        deviceCamera = DeviceCamera(this, messenger)
+        cameraMotion = CameraMotion(this, messenger, deviceCamera)
         screenCapture = ScreenCapture(this, messenger)
         kioskLock = KioskLock(this, messenger)
         webViewFreeze = WebViewFreeze(this, messenger)
@@ -115,6 +119,8 @@ class MainActivity : FlutterActivity() {
         // bridges as we detach. The engine (and its Dart isolate) stays.
         cameraMotion?.dispose()
         cameraMotion = null
+        deviceCamera?.dispose()
+        deviceCamera = null
         screenCapture?.dispose()
         screenCapture = null
         kioskLock?.dispose()

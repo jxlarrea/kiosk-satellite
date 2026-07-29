@@ -6,6 +6,7 @@ import 'managers/audio/audio_routing_manager.dart';
 import 'managers/browser/browser_manager.dart';
 import 'managers/camera/camera_manager.dart';
 import 'managers/device/device_manager.dart';
+import 'managers/device_camera/device_camera_manager.dart';
 import 'managers/dlna/dlna_manager.dart';
 import 'managers/files/files_manager.dart';
 import 'managers/glance/glance_manager.dart';
@@ -44,6 +45,9 @@ class AppContainer {
     kiosk = KioskManager(bus, commands, log, settings);
     screensaver = ScreensaverManager(bus, commands, log, settings);
     immich = ImmichManager(bus, commands, log, settings);
+    // Before motion: its init runs the legacy motion-camera migration the
+    // motion manager's gate reads.
+    deviceCamera = DeviceCameraManager(bus, commands, log, settings);
     motion = MotionManager(bus, commands, log, settings);
     homeAssistant = HomeAssistantManager(bus, commands, log, settings);
     // Before wakeWord: its init seeds the mic selector the engine reads at
@@ -75,6 +79,7 @@ class AppContainer {
   late final KioskManager kiosk;
   late final ScreensaverManager screensaver;
   late final ImmichManager immich;
+  late final DeviceCameraManager deviceCamera;
   late final MotionManager motion;
   late final HomeAssistantManager homeAssistant;
   late final AudioRoutingManager audio;
@@ -102,6 +107,7 @@ class AppContainer {
         kiosk,
         screensaver,
         immich,
+        deviceCamera,
         motion,
         homeAssistant,
         audio,

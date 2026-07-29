@@ -55,6 +55,9 @@ dependencies:
   path_provider: ^2.1.5
   tflite_flutter: ^0.12.1
   mqtt_client: ^10.11.11
+  # Uint8Buffer for the MQTT camera entity's binary JPEG payloads (already
+  # a transitive dependency of mqtt_client; direct so we can import it).
+  typed_data: ^1.4.0
 
 dev_dependencies:
   flutter_test:

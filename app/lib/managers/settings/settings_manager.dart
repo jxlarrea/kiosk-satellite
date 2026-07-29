@@ -131,6 +131,18 @@ class SettingsManager extends Manager {
             if (!importLocal) {
               map.remove(haSatelliteEntity.key);
             }
+            // Backups from builds before the Camera section carry motion
+            // detection but no camera master switch; enable the camera for
+            // them (carrying the old camera pick along) so motion detection
+            // still works after the restore.
+            if (map[screensaverDismissOnMotion.key] == true &&
+                !map.containsKey(cameraEnabled.key)) {
+              map[cameraEnabled.key] = true;
+              final legacy = map[motionCamera.key];
+              if (legacy is String && !map.containsKey(cameraDevice.key)) {
+                map[cameraDevice.key] = legacy;
+              }
+            }
             // On a first setup the start URL is held back until the very
             // end, like the wizard does: it is what flips the app to
             // configured and loads the page, whose wake-word engine
@@ -179,8 +191,7 @@ class SettingsManager extends Manager {
                     'which': [
                       if (get(wakeWordEnabled) || get(webMicrophone))
                         'microphone',
-                      if (get(screensaverDismissOnMotion) || get(webCamera))
-                        'camera',
+                      if (get(cameraEnabled) || get(webCamera)) 'camera',
                       if (get(wakeWordBackground)) ...[
                         'notifications',
                         'batteryOptimizations',

@@ -5,6 +5,7 @@ import 'dart:math' show Random;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:typed_data/typed_data.dart' show Uint8Buffer;
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
@@ -134,6 +135,17 @@ class MqttManager extends Manager {
       if (_connected) await _publishDiscovery();
     }));
     _subs.add(bus.on<CameraViewStateChanged>().listen(_publishCameraViewState));
+    // Every capture the device camera manager makes (interval, the HA
+    // button, the remote admin) lands on the camera entity. Retained, so
+    // the entity has a picture right after an HA restart. The timestamp
+    // rides along: the camera entity's own state never moves (a still
+    // camera is forever "idle"), so the Last snapshot sensor is how HA can
+    // see, and automate on, frame freshness.
+    _subs.add(bus.on<CameraSnapshotTaken>().listen((e) {
+      _publishBytes('$_base/camera_snapshot/image', e.jpeg);
+      _publish('$_base/camera_snapshot/at',
+          DateTime.now().toUtc().toIso8601String());
+    }));
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _publishNextAlarm()));
     _subs.add(bus.on<AmbientDisplayChanged>().listen(
         (e) => _publishScreenAvailability(ambient: e.on)));
@@ -415,6 +427,23 @@ class MqttManager extends Manager {
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
+    if (e.key == defs.cameraEnabled.key) {
+      if (!_connected) return;
+      if (e.value == true) {
+        unawaited(_publishDiscovery().then(
+            (_) => commands.execute('takeCameraSnapshot', const {})));
+      } else {
+        // Retract the entities and drop the retained frame: a disabled
+        // camera should leave neither a dead entity nor a stale picture
+        // parked on the broker.
+        _publish('$_prefix/camera/ks_$_deviceId/device_camera/config', '');
+        _publish('$_prefix/button/ks_$_deviceId/take_snapshot/config', '');
+        _publish('$_prefix/sensor/ks_$_deviceId/last_snapshot/config', '');
+        _publishBytes('$_base/camera_snapshot/image', const []);
+        _publish('$_base/camera_snapshot/at', '');
+      }
+      return;
+    }
     if (e.key == defs.mqttDeviceId.key) {
       // The echo of our own lazy generation changes nothing; a genuinely
       // different id (a restored backup, whose whole point is keeping the
@@ -518,6 +547,7 @@ class MqttManager extends Manager {
       '$_base/assistant_volume/set',
       '$_base/camera/view/set',
       '$_base/camera/close/set',
+      '$_base/camera_snapshot/set',
       '$_base/dashboard_view/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
       for (final objectId in _settingSelects.keys) '$_base/$objectId/set',
@@ -583,6 +613,12 @@ class MqttManager extends Manager {
     _publish(_availabilityTopic, 'online');
     await _publishDiscovery();
     await _publishInitialStates();
+    // A fresh frame for the camera entity on every connect, so it never
+    // shows a picture older than the link. Detached: a capture takes a
+    // moment and the bring-up should not wait on the sensor.
+    if (_settings.get(defs.cameraEnabled)) {
+      unawaited(commands.execute('takeCameraSnapshot', const {}));
+    }
     // Learn the view list once the link is up; republishes discovery on
     // its own when the list moved.
     unawaited(_refreshDashboardViews());
@@ -728,6 +764,17 @@ class MqttManager extends Manager {
           // somewhere else (redirect, auth bounce).
           _publish('$_base/dashboard_view/state', text);
         }
+      } else if (topic == '$_base/camera_snapshot/set') {
+        if (payload.header?.retain == true) {
+          log.warn(name, 'ignored retained snapshot command');
+          continue;
+        }
+        log.info(name, 'snapshot command');
+        final result = await commands.execute('takeCameraSnapshot', const {});
+        if (!result.ok) {
+          log.warn(name, 'takeCameraSnapshot over MQTT failed: '
+              '${result.error}');
+        }
       } else if (topic == '$_base/camera/close/set') {
         if (payload.header?.retain == true) {
           log.warn(name, 'ignored retained camera close command');
@@ -777,6 +824,19 @@ class MqttManager extends Manager {
     try {
       client.publishMessage(topic, MqttQos.atLeastOnce,
           (MqttClientPayloadBuilder()..addUTF8String(payload)).payload!,
+          retain: true);
+    } catch (e) {
+      log.warn(name, 'publish to $topic failed: $e');
+    }
+  }
+
+  /// Binary sibling of [_publish], for the camera entity's JPEG frames.
+  void _publishBytes(String topic, List<int> bytes) {
+    final client = _client;
+    if (client == null || !_connected) return;
+    try {
+      client.publishMessage(
+          topic, MqttQos.atLeastOnce, Uint8Buffer()..addAll(bytes),
           retain: true);
     } catch (e) {
       log.warn(name, 'publish to $topic failed: $e');
@@ -955,6 +1015,11 @@ class MqttManager extends Manager {
         '$_prefix/number/ks_$_deviceId/assistant_volume/config',
         '$_prefix/sensor/ks_$_deviceId/active_camera_view/config',
         '$_prefix/button/ks_$_deviceId/close_camera_view/config',
+        // Conditional like illuminance: published only with the camera
+        // enabled, always retracted so turning it off cleans up.
+        '$_prefix/camera/ks_$_deviceId/device_camera/config',
+        '$_prefix/button/ks_$_deviceId/take_snapshot/config',
+        '$_prefix/sensor/ks_$_deviceId/last_snapshot/config',
         for (final id in {
           ..._publishedCameraViewIds,
           for (final view in _cameraViews) '${view['id']}',
@@ -1148,6 +1213,29 @@ class MqttManager extends Manager {
         'command_topic': '$_base/camera/close/set',
         'payload_press': 'CLOSE',
         'icon': 'mdi:close-box-outline',
+      },
+      // The device's own camera (discussion #72): a still camera fed by
+      // retained JPEG publishes — the interval snapshots and the button
+      // below. Nothing streams; the entity always shows the last frame.
+      if (_settings.get(defs.cameraEnabled)) ...{
+        '$_prefix/camera/ks_$_deviceId/device_camera/config': {
+          ...common('device_camera', 'Camera'),
+          'topic': '$_base/camera_snapshot/image',
+        },
+        '$_prefix/button/ks_$_deviceId/take_snapshot/config': {
+          ...common('take_snapshot', 'Take camera snapshot'),
+          'command_topic': '$_base/camera_snapshot/set',
+          'payload_press': 'SNAPSHOT',
+          'icon': 'mdi:camera-iris',
+        },
+        // When the last frame was captured. The camera entity's state is
+        // permanently "idle" (nothing streams), so freshness lives here.
+        '$_prefix/sensor/ks_$_deviceId/last_snapshot/config': {
+          ...common('last_snapshot', 'Last camera snapshot'),
+          'state_topic': '$_base/camera_snapshot/at',
+          'device_class': 'timestamp',
+          'icon': 'mdi:camera-timer',
+        },
       },
       for (final view in _cameraViews)
         '$_prefix/button/ks_$_deviceId/camera_view_${view['id']}/config': {

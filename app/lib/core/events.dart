@@ -4,6 +4,8 @@
 /// carry no behavior and no references to managers.
 library;
 
+import 'dart:typed_data';
+
 sealed class AppEvent {
   const AppEvent();
 
@@ -173,6 +175,16 @@ class MotionDetected extends AppEvent {
 
   @override
   String get wireName => 'motion';
+}
+
+// ── Device camera ──────────────────────────────────────────────────────
+
+/// A fresh still from the device's own camera (JPEG bytes). Internal-only
+/// (no wireName), like [AudioChunk]: a binary payload must never enter the
+/// generic wire-event feed. MQTT publishes it to the camera entity's topic.
+class CameraSnapshotTaken extends AppEvent {
+  const CameraSnapshotTaken({required this.jpeg});
+  final Uint8List jpeg;
 }
 
 // ── Wake word ──────────────────────────────────────────────────────────

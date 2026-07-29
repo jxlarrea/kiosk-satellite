@@ -1496,6 +1496,9 @@ const motionSensitivity = SettingDef<num>(
   step: 1,
 );
 
+// Legacy: superseded by [cameraDevice] when the Camera category arrived —
+// one camera choice for every camera feature, picked there. Kept hidden so
+// old exports still import and the one-time migration can read the choice.
 const motionCamera = SettingDef<String>(
   key: 'motion.camera',
   type: SettingType.select,
@@ -1506,7 +1509,63 @@ const motionCamera = SettingDef<String>(
   section: 'Motion Detection',
   options: ['front', 'back'],
   optionLabels: {'front': 'Front', 'back': 'Back'},
-  dependsOn: 'screensaver.dismiss_on_motion',
+  hidden: true,
+);
+
+// ── Camera ─────────────────────────────────────────────────────────────
+// The device's own camera as a Home Assistant feature (discussion #72):
+// snapshots published over MQTT, and the sensor the screensaver's motion
+// detection watches. One master switch so a kiosk that does not need the
+// camera never spends a cycle (or a degree) on it; livestreaming will build
+// on this same section.
+
+const cameraEnabled = SettingDef<bool>(
+  key: 'camera.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable camera',
+  description:
+      'Camera use adds CPU load and heat, which can shorten the battery '
+      'and device lifespan.',
+  category: 'Camera',
+);
+
+const cameraDevice = SettingDef<String>(
+  key: 'camera.device',
+  type: SettingType.select,
+  defaultValue: 'front',
+  title: 'Camera',
+  description: 'Which camera to use.',
+  category: 'Camera',
+  options: ['front', 'back'],
+  optionLabels: {'front': 'Front', 'back': 'Back'},
+  dependsOn: 'camera.enabled',
+);
+
+const cameraSnapshots = SettingDef<bool>(
+  key: 'camera.snapshots',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Continuous snapshots',
+  description:
+      'Publish a fresh camera snapshot to Home Assistant over MQTT at a '
+      'fixed interval.',
+  category: 'Camera',
+  dependsOn: 'camera.enabled',
+);
+
+const cameraSnapshotInterval = SettingDef<num>(
+  key: 'camera.snapshot_interval',
+  type: SettingType.number,
+  defaultValue: 60,
+  title: 'Snapshot interval',
+  description: 'Seconds between snapshots.',
+  category: 'Camera',
+  dependsOn: 'camera.snapshots',
+  min: 5,
+  max: 300,
+  step: 5,
+  unit: 's',
 );
 
 // ── Schedule ───────────────────────────────────────────────────────────
@@ -2461,6 +2520,10 @@ const List<SettingDef<Object>> allSettings = [
   motionFps,
   motionSensitivity,
   motionCamera,
+  cameraEnabled,
+  cameraDevice,
+  cameraSnapshots,
+  cameraSnapshotInterval,
   screensaverScheduleEnabled,
   screensaverSchedule,
   wakeWordEnabled,

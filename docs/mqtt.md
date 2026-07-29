@@ -70,6 +70,9 @@ tablet's remote admin (while remote administration is enabled).
 | Remote admin | sensor | The remote admin's URL for this device, or `disabled` when remote administration is off. Handy for deep-linking from a dashboard. |
 | Camera view buttons | button | One **Show &lt;view name&gt;** button per configured camera view, plus **Close camera view**. View buttons keep a stable identity when a view is renamed. |
 | Active camera view | sensor | The displayed camera view name, or `none`. Attributes include the stable view ID and focused camera ID. |
+| Camera | camera | The device's own camera as a still camera (discussion #72), fed by JPEG snapshots: on demand via the **Take camera snapshot** button below, at a fixed interval with **Continuous snapshots** on (Camera settings), and once on every broker connect. The entity shows the last published frame; nothing streams. It only exists while the camera is enabled in the Camera settings, and it shares the sensor with the screensaver's motion detection, so one never blocks the other. Frames are retained on the broker, so the picture survives a Home Assistant restart. |
+| Take camera snapshot | button | Capture a fresh frame and publish it to the Camera entity. An automation that wants a current picture presses this, then reads the entity a moment later (`camera.snapshot` saves it to a file). |
+| Last camera snapshot | sensor | When the Camera entity's frame was captured, as a timestamp. The camera entity's own state never leaves `idle` (nothing streams), so this is what shows, and lets automations react to, a fresh frame arriving. |
 
 All entities carry availability: they go unavailable the moment the tablet
 drops off the broker (broker-side last will, so it works however the
@@ -103,6 +106,9 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../camera/close/set` | in | Any non-retained payload closes the camera view |
 | `.../camera/view/state` | out, retained | Active camera view name, or `none` |
 | `.../camera/view/attributes` | out, retained | JSON with active state, view ID, name and focused camera ID |
+| `.../camera_snapshot/set` | in | Any non-retained payload captures a fresh frame |
+| `.../camera_snapshot/image` | out, retained | The latest snapshot as raw JPEG bytes |
+| `.../camera_snapshot/at` | out, retained | When that snapshot was captured, ISO 8601 UTC |
 
 Discovery configs are published retained under
 `<prefix>/<component>/ks_<device id>/<object>/config` and are retracted

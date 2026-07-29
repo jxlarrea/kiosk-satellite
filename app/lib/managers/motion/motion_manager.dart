@@ -29,9 +29,14 @@ class MotionManager extends Manager {
   @override
   String get name => 'motion';
 
-  /// Motion detection is on exactly when the screensaver's "dismiss on motion"
-  /// switch is — that single toggle is the whole feature's on/off.
-  bool get enabled => _settings.get(defs.screensaverDismissOnMotion);
+  /// Motion detection needs the screensaver's "dismiss on motion" switch AND
+  /// the Camera section's master switch: the camera choice lives there, and a
+  /// disabled camera means no camera feature runs, this one included. The
+  /// dismiss switch keeps its value while the camera is off, so re-enabling
+  /// the camera brings motion detection back without re-setup.
+  bool get enabled =>
+      _settings.get(defs.screensaverDismissOnMotion) &&
+      _settings.get(defs.cameraEnabled);
 
   StreamSubscription<void>? _camera;
   bool _screensaverActive = false;
@@ -43,12 +48,18 @@ class MotionManager extends Manager {
       _screensaverActive = e.active;
       _sync();
     });
-    // A tuning change (fps / sensitivity / camera) restarts the stream so the
-    // native analyzer picks up the new arguments; turning the feature on prompts
-    // for the camera up front so the first dim can start it without a pause.
+    // A tuning change (fps / sensitivity / the Camera section's camera pick)
+    // restarts the stream so the native analyzer picks up the new arguments;
+    // turning the feature on prompts for the camera up front so the first dim
+    // can start it without a pause.
     bus.on<SettingChanged>().listen((e) {
-      final isGate = e.key == defs.screensaverDismissOnMotion.key;
-      if (!isGate && !e.key.startsWith('motion.')) return;
+      final isGate = e.key == defs.screensaverDismissOnMotion.key ||
+          e.key == defs.cameraEnabled.key;
+      if (!isGate &&
+          !e.key.startsWith('motion.') &&
+          e.key != defs.cameraDevice.key) {
+        return;
+      }
       if (isGate && enabled) unawaited(_ensurePermission());
       _stop();
       _sync();
@@ -85,7 +96,7 @@ class MotionManager extends Manager {
       final fps = _settings.get(defs.motionFps).toDouble().clamp(0.5, 30.0);
       final sensitivity =
           _settings.get(defs.motionSensitivity).toInt().clamp(1, 100);
-      final camera = _settings.get(defs.motionCamera);
+      final camera = _settings.get(defs.cameraDevice);
       log.info(name, 'camera on (fps=$fps sensitivity=$sensitivity cam=$camera)');
       _camera = NativeMotion.stream(
         fps: fps,
