@@ -516,6 +516,13 @@ class _CategoryContentState extends State<_CategoryContent> {
       _vsDetected = widget.container.homeAssistant.detectVoiceSatellite();
       _satellite = _assignedSatellite(widget.container);
     }
+    // These panes render differently on a camera-less device (disabled
+    // switch, hidden rows); rebuild once the async probe has its answer.
+    if (widget.category == 'Camera' || widget.category == 'Screensaver') {
+      widget.container.deviceCamera.cameraPresent().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   void _toast(String message) {
@@ -911,26 +918,39 @@ class _CategoryContentState extends State<_CategoryContent> {
         else
           ..._sectionedCards(
             container,
-            // With the Camera master switch off, motion detection cannot
-            // run: its tuning rows disappear and the switch itself renders
-            // disabled (below) with the reason, instead of lying enabled.
+            // With the Camera master switch off (or no camera on the
+            // device at all), motion detection cannot run: its tuning rows
+            // disappear and the switch itself renders disabled (below)
+            // with the reason, instead of lying enabled. A camera-less
+            // device likewise keeps only the disabled master switch.
             widget.category == 'Screensaver' &&
-                    !container.settings.get(cameraEnabled)
+                    !container.deviceCamera.effectiveEnabled
                 ? [
                     for (final def in _defsFor('Screensaver'))
                       if (!def.key.startsWith('motion.')) def,
                   ]
+                : widget.category == 'Camera' &&
+                      container.deviceCamera.cameraKnownAbsent
+                ? const [cameraEnabled]
                 : _defsFor(widget.category),
             () => setState(() {}),
             replace: {
               if (widget.category == 'Screensaver' &&
-                  !container.settings.get(cameraEnabled))
+                  !container.deviceCamera.effectiveEnabled)
                 screensaverDismissOnMotion.key: const SwitchListTile(
                   title: Text('Dismiss on motion'),
                   subtitle: Text(
                     'Requires the camera. Turn it on in the Camera '
                     'settings first.',
                   ),
+                  value: false,
+                  onChanged: null,
+                ),
+              if (widget.category == 'Camera' &&
+                  container.deviceCamera.cameraKnownAbsent)
+                cameraEnabled.key: SwitchListTile(
+                  title: Text(cameraEnabled.title),
+                  subtitle: Text(cameraEnabled.description),
                   value: false,
                   onChanged: null,
                 ),
@@ -943,7 +963,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                 cameraEnabled.key: Column(
                   children: [
                     _NoCameraRow(container: container),
-                    if (container.settings.get(cameraEnabled))
+                    if (container.deviceCamera.effectiveEnabled)
                       _CameraGrantRow(key: UniqueKey()),
                   ],
                 ),

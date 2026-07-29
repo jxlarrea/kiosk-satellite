@@ -84,6 +84,14 @@ class MqttManager extends Manager {
   /// Whether this device has an ambient light sensor (read at connect).
   bool _lightSensorPresent = false;
 
+  /// Whether this device has a usable camera (read at connect, like the
+  /// light sensor). A ROM without a camera HAL gets no camera entities at
+  /// all, whatever the camera settings say.
+  bool _cameraPresent = true;
+
+  bool get _cameraEntitiesWanted =>
+      _settings.get(defs.cameraEnabled) && _cameraPresent;
+
   /// Rate limiting for the illuminance publishes: the recorder does not need
   /// every damped native event, but big swings (lights on) should land now.
   double? _lastLuxPublished;
@@ -429,9 +437,12 @@ class MqttManager extends Manager {
     }
     if (e.key == defs.cameraEnabled.key) {
       if (!_connected) return;
-      if (e.value == true) {
+      if (e.value == true && _cameraPresent) {
         unawaited(_publishDiscovery().then(
             (_) => commands.execute('takeCameraSnapshot', const {})));
+      } else if (e.value == true) {
+        // Enabled on a camera-less device: nothing to publish.
+        return;
       } else {
         // Retract the entities and drop the retained frame: a disabled
         // camera should leave neither a dead entity nor a stale picture
@@ -610,13 +621,16 @@ class MqttManager extends Manager {
     final light = await commands.execute('getLightLevel', const {});
     _lightSensorPresent =
         light.ok && light.data is Map && (light.data as Map)['present'] == true;
+    // Same rule for the camera: no hardware, no entities.
+    final cam = await commands.execute('hasDeviceCamera', const {});
+    _cameraPresent = !(cam.ok && cam.data == false);
     _publish(_availabilityTopic, 'online');
     await _publishDiscovery();
     await _publishInitialStates();
     // A fresh frame for the camera entity on every connect, so it never
     // shows a picture older than the link. Detached: a capture takes a
     // moment and the bring-up should not wait on the sensor.
-    if (_settings.get(defs.cameraEnabled)) {
+    if (_cameraEntitiesWanted) {
       unawaited(commands.execute('takeCameraSnapshot', const {}));
     }
     // Learn the view list once the link is up; republishes discovery on
@@ -1217,7 +1231,7 @@ class MqttManager extends Manager {
       // The device's own camera (discussion #72): a still camera fed by
       // retained JPEG publishes — the interval snapshots and the button
       // below. Nothing streams; the entity always shows the last frame.
-      if (_settings.get(defs.cameraEnabled)) ...{
+      if (_cameraEntitiesWanted) ...{
         '$_prefix/camera/ks_$_deviceId/device_camera/config': {
           ...common('device_camera', 'Camera'),
           'topic': '$_base/camera_snapshot/image',
@@ -1341,6 +1355,14 @@ class MqttManager extends Manager {
     };
     for (final topic in _legacyDiscoveryTopics()) {
       _publish(topic, '');
+    }
+    // Self-correcting: a camera config published before the presence probe
+    // answered (or before the feature was turned off) is retracted on the
+    // next discovery pass instead of lingering as a dead entity.
+    if (!_cameraEntitiesWanted) {
+      _publish('$_prefix/camera/ks_$_deviceId/device_camera/config', '');
+      _publish('$_prefix/button/ks_$_deviceId/take_snapshot/config', '');
+      _publish('$_prefix/sensor/ks_$_deviceId/last_snapshot/config', '');
     }
     final currentIds = {
       for (final view in _cameraViews) '${view['id']}',

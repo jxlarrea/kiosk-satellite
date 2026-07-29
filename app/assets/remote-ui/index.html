@@ -835,20 +835,27 @@ document.querySelectorAll('.action[data-cmd]').forEach((b) =>
    camera", shown only while that switch is on and the camera permission is
    missing. Toggling the switch re-renders the tab (its dependants force a
    layout reload), so visibility follows the setting on its own. */
-/* No-camera notice: mirror of the device's row under "Enable camera",
-   shown when the hardware has no camera at all (a ROM without a camera
-   HAL, e.g. LineageOS on an Echo Show). The switches would save fine, the
-   camera never works, so say it up front. */
+/* No-camera notice: mirror of the device's page when the hardware has no
+   camera at all (a ROM without a camera HAL, e.g. LineageOS on an Echo
+   Show). The master switch renders off and disabled, its dependent rows
+   disappear, and the notice says why. Runs (awaited) before the other
+   camera panels, which read state.cameraPresent to stand down. */
 async function updateNoCameraNotice() {
-  let present = true;
   try {
     const res = await (await api('/api/commands/hasDeviceCamera', { method: 'POST', body: '{}' })).json();
-    present = res.data !== false;
-  } catch (_) { return; }
-  if (present) return;
+    state.cameraPresent = res.data !== false;
+  } catch (_) { state.cameraPresent = true; return; }
+  if (state.cameraPresent) return;
   const tab = document.getElementById('tab-camera');
   const anchor = tab.querySelector('[data-key="camera.enabled"]');
-  if (!anchor || tab.querySelector('.camera-missing-notice')) return;
+  if (!anchor) return;
+  const input = anchor.querySelector('.switch input');
+  if (input) { input.checked = false; input.disabled = true; }
+  for (const key of ['camera.device', 'camera.snapshot_resolution',
+    'camera.snapshots', 'camera.snapshot_interval']) {
+    tab.querySelector(`[data-key="${key}"]`)?.remove();
+  }
+  if (tab.querySelector('.camera-missing-notice')) return;
   const row = readOnlyRow('No camera detected',
     'This device has no usable camera, so these settings cannot work.', '');
   row.classList.add('camera-missing-notice');
@@ -856,6 +863,7 @@ async function updateNoCameraNotice() {
 }
 
 async function updateCameraGrantNotice() {
+  if (state.cameraPresent === false) return;
   const cameraEnabled = (state.settings || [])
     .find((s) => s.key === 'camera.enabled');
   if (!cameraEnabled || cameraEnabled.value !== true) return;
@@ -919,6 +927,7 @@ async function updateCameraSnapshotPanel() {
   cameraSnapshotTimer = null;
   const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
   if (byKey['camera.enabled']?.value !== true) return;
+  if (state.cameraPresent === false) return;
   const anchor = tab.querySelector('[data-key="camera.snapshot_interval"]')
     || tab.querySelector('[data-key="camera.snapshots"]')
     || tab.querySelector('[data-key="camera.device"]');
@@ -978,7 +987,8 @@ async function updateCameraSnapshotPanel() {
    Camera-settings decision now. */
 function updateMotionCameraRows() {
   const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
-  const camOn = byKey['camera.enabled']?.value === true;
+  const camOn = byKey['camera.enabled']?.value === true
+    && state.cameraPresent !== false;
   const tab = document.getElementById('tab-screensaver');
   const dismiss = tab.querySelector('[data-key="screensaver.dismiss_on_motion"]');
   if (!dismiss) return;
@@ -2352,7 +2362,8 @@ async function loadSettings() {
   }
   updateBrightnessGrantNotices();
   updateAmbientDisplayNotice();
-  updateNoCameraNotice();
+  // Awaited: the panels below read state.cameraPresent from it.
+  await updateNoCameraNotice();
   updateCameraGrantNotice();
   updateCameraSnapshotPanel();
   updateMotionCameraRows();

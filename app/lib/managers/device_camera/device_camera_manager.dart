@@ -57,9 +57,23 @@ class DeviceCameraManager extends Manager {
     }
   }
 
+  /// True once the probe has answered "no camera". Synchronous, for UI
+  /// code deciding what to render; false while the answer is unknown.
+  bool get cameraKnownAbsent => _present == false;
+
+  /// The camera master switch as the rest of the app should read it: on
+  /// AND backed by real hardware. A stored "on" on a camera-less device
+  /// counts as off everywhere.
+  bool get effectiveEnabled => enabled && _present != false;
+
   @override
   Future<void> init() async {
     await _migrateLegacyMotionCamera();
+
+    // Probe early so the settings surfaces and MQTT discovery have the
+    // answer by the time they ask. Unawaited: with no Activity yet the
+    // probe simply resolves later, on the first ask that finds one.
+    unawaited(cameraPresent());
 
     bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('camera.')) return;
