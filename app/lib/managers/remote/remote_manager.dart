@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' show Random;
+import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shelf/shelf.dart';
@@ -34,6 +35,12 @@ class RemoteManager extends Manager {
   final _wsClients = <WebSocketChannel>{};
   String? _indexHtml;
 
+  /// The newest device-camera frame, for the admin's snapshot preview.
+  /// Mirrored off the bus rather than fetched on request: serving a cached
+  /// frame is free, and the admin page refreshing must not drive captures.
+  Uint8List? _lastSnapshot;
+  DateTime? _lastSnapshotAt;
+
   @override
   Future<void> init() async {
     // Persistent signing secret → tokens survive app restarts.
@@ -54,6 +61,10 @@ class RemoteManager extends Manager {
 
     bus.on<PageChanged>().listen((e) => _currentUrl = e.url);
     bus.on<UrlChanged>().listen((e) => _currentUrl = e.url);
+    bus.on<CameraSnapshotTaken>().listen((e) {
+      _lastSnapshot = e.jpeg;
+      _lastSnapshotAt = DateTime.now();
+    });
 
     // Live event feed for connected WS clients.
     bus.stream.listen((event) {
@@ -285,6 +296,16 @@ class RemoteManager extends Manager {
         return _json(200, {'console': console.data});
       case ('GET', 'api/screenshot'):
         return _screenshot();
+      case ('GET', 'api/camera/snapshot'):
+        final snapshot = _lastSnapshot;
+        if (snapshot == null) {
+          return _json(404, {'error': 'no snapshot has been taken yet'});
+        }
+        return Response.ok(snapshot, headers: {
+          'Content-Type': 'image/jpeg',
+          'Cache-Control': 'no-store',
+          'X-Snapshot-At': _lastSnapshotAt!.toUtc().toIso8601String(),
+        });
       case ('GET', 'api/files/download'):
         return _fileDownload(request);
       case ('POST', 'api/files/upload'):

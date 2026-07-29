@@ -36,6 +36,7 @@ class DeviceCameraManager extends Manager {
 
   Timer? _timer;
   bool _capturing = false;
+  DateTime? _lastMotionShot;
 
   bool get enabled => _settings.get(defs.cameraEnabled);
 
@@ -51,6 +52,21 @@ class DeviceCameraManager extends Manager {
         unawaited(_ensurePermission());
       }
       _syncTimer();
+    });
+
+    // Motion refreshes the picture: the tick that wakes the screensaver is
+    // someone stepping up to the kiosk, which is exactly the moment worth
+    // having on the Home Assistant camera. Cooled down so a busy room
+    // cannot turn the retained snapshot topic into a frame hose.
+    bus.on<MotionDetected>().listen((_) {
+      if (!enabled) return;
+      final now = DateTime.now();
+      final last = _lastMotionShot;
+      if (last != null && now.difference(last) < const Duration(seconds: 10)) {
+        return;
+      }
+      _lastMotionShot = now;
+      unawaited(_motionSnapshot());
     });
 
     commands.register(
@@ -97,6 +113,18 @@ class DeviceCameraManager extends Manager {
     );
     // The first frame should not be a whole interval away.
     unawaited(_snapshot());
+  }
+
+  /// The same motion tick that triggers this also dismisses the
+  /// screensaver, which tears the motion camera session down within
+  /// milliseconds — a capture fired immediately always loses that race
+  /// ("Camera is closed"). So wait the teardown out and take one clean
+  /// frame on the idle open-capture-close path; whoever tripped the motion
+  /// is still in front of the kiosk a second later.
+  Future<void> _motionSnapshot() async {
+    await Future<void>.delayed(const Duration(seconds: 1));
+    final result = await _snapshot();
+    if (!result.ok) log.warn(name, 'motion snapshot failed: ${result.error}');
   }
 
   Future<CommandResult> _snapshot() async {

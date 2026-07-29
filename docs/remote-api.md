@@ -53,6 +53,7 @@ is administrable here by construction.
 | `/api/commands` | GET | List registered commands + param schemas |
 | `/api/commands/<name>` | POST | Execute a command with JSON params |
 | `/api/screenshot` | GET | PNG of the current screen |
+| `/api/camera/snapshot` | GET | The latest device-camera frame as JPEG (404 until one has been captured). `X-Snapshot-At` carries the capture time as ISO 8601 UTC. Serves the cached frame; it never triggers a capture (use the `takeCameraSnapshot` command for that). |
 | `/api/files/download` | GET | Stream a device file. Query params: `root` (`shared` or `app`), `path` (relative to the root) |
 | `/api/files/upload` | POST | Write the raw request body to a device file, same `root`/`path` query params. Parent folders are created |
 | `/api/logs` | GET | Recent app log ring buffer |

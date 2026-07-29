@@ -874,6 +874,71 @@ async function updateCameraGrantNotice() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
+/* Latest snapshot preview (remote admin only): the newest frame the device
+   published, under the snapshot interval, with how long ago it was taken.
+   Serves the server's cached frame - rendering this panel never drives a
+   capture. While the Camera tab is on screen the "ago" label ticks and the
+   frame is re-fetched every 15s so motion- and interval-driven snapshots
+   show up on their own. */
+let cameraSnapshotTimer = null;
+function agoLabel(date) {
+  const s = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
+  if (s < 5) return 'just now';
+  if (s < 60) return `${s} seconds ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return m === 1 ? '1 minute ago' : `${m} minutes ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return h === 1 ? '1 hour ago' : `${h} hours ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? '1 day ago' : `${d} days ago`;
+}
+async function updateCameraSnapshotPanel() {
+  const tab = document.getElementById('tab-camera');
+  tab.querySelector('.camera-snapshot-row')?.remove();
+  clearInterval(cameraSnapshotTimer);
+  cameraSnapshotTimer = null;
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  if (byKey['camera.enabled']?.value !== true) return;
+  const anchor = tab.querySelector('[data-key="camera.snapshot_interval"]')
+    || tab.querySelector('[data-key="camera.snapshots"]')
+    || tab.querySelector('[data-key="camera.device"]');
+  if (!anchor) return;
+  let res;
+  try { res = await api('/api/camera/snapshot'); } catch (_) { return; }
+  if (!res.ok) return; // 404: nothing captured yet, no row
+  let at = new Date(res.headers.get('X-Snapshot-At'));
+  const row = document.createElement('div');
+  row.className = 'row camera-snapshot-row';
+  row.style.flexWrap = 'wrap';
+  const info = document.createElement('div');
+  info.className = 'info';
+  info.innerHTML = '<div class="name">Latest snapshot</div><div class="desc"></div>';
+  const desc = info.querySelector('.desc');
+  desc.textContent = agoLabel(at);
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(await res.blob());
+  img.alt = 'Latest camera snapshot';
+  img.style.cssText = 'width:100%; border-radius:12px; margin-top:10px;';
+  row.append(info, img);
+  anchor.insertAdjacentElement('afterend', row);
+  let ticks = 0;
+  cameraSnapshotTimer = setInterval(async () => {
+    if (!row.isConnected) { clearInterval(cameraSnapshotTimer); return; }
+    if (!tab.classList.contains('active')) return;
+    desc.textContent = agoLabel(at);
+    if (++ticks % 3 !== 0) return; // re-fetch the frame every third tick
+    try {
+      const fresh = await api('/api/camera/snapshot');
+      if (!fresh.ok) return;
+      at = new Date(fresh.headers.get('X-Snapshot-At'));
+      const old = img.src;
+      img.src = URL.createObjectURL(await fresh.blob());
+      URL.revokeObjectURL(old);
+      desc.textContent = agoLabel(at);
+    } catch (_) {}
+  }, 5000);
+}
+
 /* The screensaver's motion rows follow the Camera section, mirroring the
    device: with the camera master switch off, "Dismiss on motion" renders
    disabled with the reason and its tuning rows disappear; with it on, a
@@ -2256,6 +2321,7 @@ async function loadSettings() {
   updateBrightnessGrantNotices();
   updateAmbientDisplayNotice();
   updateCameraGrantNotice();
+  updateCameraSnapshotPanel();
   updateMotionCameraRows();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();
