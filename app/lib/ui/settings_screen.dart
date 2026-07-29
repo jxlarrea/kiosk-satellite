@@ -939,9 +939,14 @@ class _CategoryContentState extends State<_CategoryContent> {
               if (widget.category == 'Browser' &&
                   container.settings.get(autoReloadOnError))
                 autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
-              if (widget.category == 'Camera' &&
-                  container.settings.get(cameraEnabled))
-                cameraEnabled.key: _CameraGrantRow(key: UniqueKey()),
+              if (widget.category == 'Camera')
+                cameraEnabled.key: Column(
+                  children: [
+                    _NoCameraRow(container: container),
+                    if (container.settings.get(cameraEnabled))
+                      _CameraGrantRow(key: UniqueKey()),
+                  ],
+                ),
               // Where the motion camera picker used to be: the camera pick
               // is a Camera-settings decision now.
               if (widget.category == 'Screensaver')
@@ -1708,6 +1713,36 @@ class _HintRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Shown under "Enable camera" when the device has no camera at all
+/// (a ROM without a camera HAL, e.g. LineageOS on an Echo Show): the
+/// switches would work, the camera never will, so say it up front.
+class _NoCameraRow extends StatelessWidget {
+  const _NoCameraRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: container.deviceCamera.cameraPresent(),
+      builder: (context, snapshot) {
+        if (snapshot.data != false) return const SizedBox.shrink();
+        return ListTile(
+          leading: Icon(
+            Icons.no_photography_outlined,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          title: const Text('No camera detected'),
+          subtitle: const Text(
+            'This device has no usable camera, so these settings cannot '
+            'work.',
+          ),
+        );
+      },
     );
   }
 }

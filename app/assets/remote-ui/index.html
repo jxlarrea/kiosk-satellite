@@ -835,6 +835,26 @@ document.querySelectorAll('.action[data-cmd]').forEach((b) =>
    camera", shown only while that switch is on and the camera permission is
    missing. Toggling the switch re-renders the tab (its dependants force a
    layout reload), so visibility follows the setting on its own. */
+/* No-camera notice: mirror of the device's row under "Enable camera",
+   shown when the hardware has no camera at all (a ROM without a camera
+   HAL, e.g. LineageOS on an Echo Show). The switches would save fine, the
+   camera never works, so say it up front. */
+async function updateNoCameraNotice() {
+  let present = true;
+  try {
+    const res = await (await api('/api/commands/hasDeviceCamera', { method: 'POST', body: '{}' })).json();
+    present = res.data !== false;
+  } catch (_) { return; }
+  if (present) return;
+  const tab = document.getElementById('tab-camera');
+  const anchor = tab.querySelector('[data-key="camera.enabled"]');
+  if (!anchor || tab.querySelector('.camera-missing-notice')) return;
+  const row = readOnlyRow('No camera detected',
+    'This device has no usable camera, so these settings cannot work.', '');
+  row.classList.add('camera-missing-notice');
+  anchor.insertAdjacentElement('afterend', row);
+}
+
 async function updateCameraGrantNotice() {
   const cameraEnabled = (state.settings || [])
     .find((s) => s.key === 'camera.enabled');
@@ -2332,6 +2352,7 @@ async function loadSettings() {
   }
   updateBrightnessGrantNotices();
   updateAmbientDisplayNotice();
+  updateNoCameraNotice();
   updateCameraGrantNotice();
   updateCameraSnapshotPanel();
   updateMotionCameraRows();

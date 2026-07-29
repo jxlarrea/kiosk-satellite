@@ -23,6 +23,11 @@ class NativeCamera {
         'width': width,
         'height': height,
       });
+
+  /// Whether the device has any camera at all. False on hardware whose ROM
+  /// ships no camera HAL (LineageOS ports on Echo Shows).
+  static Future<bool> hasCamera() async =>
+      await _channel.invokeMethod<bool>('hasCamera') ?? false;
 }
 
 /// The capture target for a snapshot-resolution setting value (the tier's

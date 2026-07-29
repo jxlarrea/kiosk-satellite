@@ -117,6 +117,23 @@ class DeviceCamera(
                 )
                 mainHandler.post { snapshot(facing, target, result) }
             }
+            // Whether any camera exists at all. False on hardware whose ROM
+            // ships no camera HAL (LineageOS ports on Echo Shows) - the
+            // settings surfaces warn instead of offering switches that can
+            // only fail.
+            "hasCamera" -> {
+                mainHandler.post {
+                    val future = ProcessCameraProvider.getInstance(context)
+                    future.addListener({
+                        val has = try {
+                            future.get().availableCameraInfos.isNotEmpty()
+                        } catch (_: Exception) {
+                            false
+                        }
+                        result.success(has)
+                    }, ContextCompat.getMainExecutor(context))
+                }
+            }
             else -> result.notImplemented()
         }
     }

@@ -38,7 +38,24 @@ class DeviceCameraManager extends Manager {
   bool _capturing = false;
   DateTime? _lastMotionShot;
 
+  /// Probed once, lazily. Null until the first ask.
+  bool? _present;
+
   bool get enabled => _settings.get(defs.cameraEnabled);
+
+  /// Whether this device has a usable camera at all. Hardware whose ROM
+  /// ships no camera HAL (LineageOS ports on Echo Shows) has none, and
+  /// both settings surfaces warn instead of offering switches that can
+  /// only fail. Unknown (no Activity attached) counts as present, so a
+  /// probe hiccup never false-alarms.
+  Future<bool> cameraPresent() async {
+    if (_present != null) return _present!;
+    try {
+      return _present = await NativeCamera.hasCamera();
+    } catch (_) {
+      return true;
+    }
+  }
 
   @override
   Future<void> init() async {
@@ -68,6 +85,14 @@ class DeviceCameraManager extends Manager {
       _lastMotionShot = now;
       unawaited(_motionSnapshot());
     });
+
+    commands.register(
+      Command(
+        name: 'hasDeviceCamera',
+        description: 'Whether this device has a usable camera.',
+        handler: (_) async => CommandResult.ok(await cameraPresent()),
+      ),
+    );
 
     commands.register(
       Command(
