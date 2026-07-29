@@ -64,7 +64,11 @@ class WebViewFreeze(
             val view = stack.removeLast()
             if (view is WebView) {
                 if (view.url?.startsWith(prefix) == true && view.visibility != target) {
-                    view.visibility = target
+                    if (target == View.VISIBLE) {
+                        revealWithoutScrollbarFlash(view)
+                    } else {
+                        view.visibility = target
+                    }
                     changed++
                 }
                 continue
@@ -74,6 +78,39 @@ class WebViewFreeze(
             }
         }
         return changed
+    }
+
+    /** Scrollbar state saved across a reveal, and the restore that puts it
+     *  back, per view. One pending restore at a time: a re-reveal inside the
+     *  suppression window must not re-read the (suppressed) state as the
+     *  thing to restore, or the bars would come back disabled for good. */
+    private val savedBars = HashMap<WebView, Pair<Boolean, Boolean>>()
+    private val pendingRestore = HashMap<WebView, Runnable>()
+
+    /**
+     * Make the view visible without the scrollbar blink.
+     *
+     * Android "awakens" a scrollable view's scrollbars when it reappears, so
+     * every screensaver dismissal flashed a gray bar down the dashboard's
+     * edge for a second. Disabling the bars across the reveal suppresses the
+     * awaken; they are handed back shortly after, so a finger scroll shows
+     * them exactly as it always did.
+     */
+    private fun revealWithoutScrollbarFlash(view: WebView) {
+        pendingRestore.remove(view)?.let { view.removeCallbacks(it) }
+            ?: run { savedBars[view] = view.isVerticalScrollBarEnabled to
+                view.isHorizontalScrollBarEnabled }
+        view.isVerticalScrollBarEnabled = false
+        view.isHorizontalScrollBarEnabled = false
+        view.visibility = View.VISIBLE
+        val restore = Runnable {
+            pendingRestore.remove(view)
+            val (vertical, horizontal) = savedBars.remove(view) ?: (true to true)
+            view.isVerticalScrollBarEnabled = vertical
+            view.isHorizontalScrollBarEnabled = horizontal
+        }
+        pendingRestore[view] = restore
+        view.postDelayed(restore, 1500)
     }
 
     fun dispose() {
