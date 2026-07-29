@@ -51,11 +51,11 @@ class DeviceCamera(
         const val CHANNEL = "kiosk_satellite/camera"
         private const val TAG = "DeviceCamera"
 
-        // The default target (the Medium setting): plenty for a Home
-        // Assistant still, small enough that the JPEG stays a lightweight
-        // MQTT payload. The Dart side passes the configured tier's size
-        // with every call, so this only backstops missing arguments.
-        private val DEFAULT_TARGET = Size(1280, 960)
+        // The default target (the 720p tier): plenty for a Home Assistant
+        // still, small enough that the JPEG stays a lightweight MQTT
+        // payload. The Dart side passes the configured tier's size with
+        // every call, so this only backstops missing arguments.
+        private val DEFAULT_TARGET = Size(960, 720)
         private const val JPEG_QUALITY = 80
     }
 

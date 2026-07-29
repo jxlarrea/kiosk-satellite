@@ -1542,23 +1542,25 @@ const cameraDevice = SettingDef<String>(
   dependsOn: 'camera.enabled',
 );
 
-// Stored as an abstract tier, not pixels: CameraX maps the tier's target
-// size onto the nearest resolution the device's camera actually offers, so
-// the same setting is valid on every device. Medium by default: sharp
-// enough for a dashboard still, cheap enough (40-100 KB a frame) that the
+// The tiers are the standard 4:3 ladder (640x480, 960x720, 1440x1080,
+// 1920x1440) that Android cameras virtually always offer, so the "p"
+// labels match what actually comes out; CameraX still lands on the
+// nearest size on hardware missing a rung. 720p by default: sharp enough
+// for a dashboard still, cheap enough (40-100 KB a frame) that the
 // default settings stay light on CPU and broker alike.
 const cameraSnapshotResolution = SettingDef<String>(
   key: 'camera.snapshot_resolution',
   type: SettingType.select,
-  defaultValue: 'medium',
+  defaultValue: '720',
   title: 'Snapshot resolution',
   description: 'Higher looks sharper but costs more CPU and bandwidth.',
   category: 'Camera',
-  options: ['low', 'medium', 'high'],
+  options: ['480', '720', '1080', '1440'],
   optionLabels: {
-    'low': 'Low (640x480)',
-    'medium': 'Medium (1280x960)',
-    'high': 'High (1920x1440)',
+    '480': '480p',
+    '720': '720p',
+    '1080': '1080p',
+    '1440': '1440p',
   },
   dependsOn: 'camera.enabled',
 );
