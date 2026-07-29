@@ -151,6 +151,15 @@ class CameraMotion(
             }
             provider = cameraProvider
 
+            // Same resolution rules as snapshots: honor the configured
+            // facing, fall back to the only camera present, say plainly
+            // when there is none (a closed privacy shutter unplugs it).
+            val selector = resolveCameraSelector(cameraProvider, facing)
+            if (selector == null) {
+                sink.error("camera", NO_CAMERA_MESSAGE, null)
+                return@addListener
+            }
+
             val resolution = ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     ResolutionStrategy(
@@ -179,17 +188,17 @@ class CameraMotion(
                 if (imageCapture != null) {
                     try {
                         cameraProvider.bindToLifecycle(
-                            owner, facing, imageAnalysis, imageCapture)
+                            owner, selector, imageAnalysis, imageCapture)
                         deviceCamera.sharedCapture = imageCapture
                     } catch (e: Exception) {
                         // Hardware that cannot run analysis and JPEG capture
                         // in one session: motion wins, snapshots report busy
                         // while it runs.
                         Log.w(TAG, "no capture alongside analysis: ${e.message}")
-                        cameraProvider.bindToLifecycle(owner, facing, imageAnalysis)
+                        cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
                     }
                 } else {
-                    cameraProvider.bindToLifecycle(owner, facing, imageAnalysis)
+                    cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
                 }
                 deviceCamera?.motionSessionActive = true
                 owner.resume()

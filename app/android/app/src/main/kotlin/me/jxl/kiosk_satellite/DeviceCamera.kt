@@ -170,10 +170,15 @@ class DeviceCamera(
                 else done(null, "camera busy with motion detection")
                 return@addListener
             }
+            val selector = resolveCameraSelector(provider, facing)
+            if (selector == null) {
+                done(null, NO_CAMERA_MESSAGE)
+                return@addListener
+            }
             val capture = buildCapture(target)
             val owner = CameraLifecycle()
             try {
-                provider.bindToLifecycle(owner, facing, capture)
+                provider.bindToLifecycle(owner, selector, capture)
                 owner.resume()
             } catch (e: Exception) {
                 owner.destroy()
@@ -236,6 +241,33 @@ class DeviceCamera(
     } catch (_: Exception) {
         Surface.ROTATION_0
     }
+}
+
+/** What a missing camera means in practice, said plainly: on devices with
+ *  a hardware privacy shutter (Echo Show), the switch disconnects the
+ *  camera so completely that Android enumerates zero cameras. */
+internal const val NO_CAMERA_MESSAGE =
+    "no camera is available on this device (a camera privacy shutter, " +
+        "if there is one, disconnects it completely)"
+
+/** The requested selector when the device can satisfy it, the only camera
+ *  present otherwise (single-camera hardware where the configured facing
+ *  does not exist), or null when no camera is usable at all. */
+internal fun resolveCameraSelector(
+    provider: ProcessCameraProvider,
+    requested: CameraSelector,
+): CameraSelector? {
+    val hasRequested = try {
+        provider.hasCamera(requested)
+    } catch (_: Exception) {
+        false
+    }
+    if (hasRequested) return requested
+    val fallback = provider.availableCameraInfos.firstOrNull()?.cameraSelector
+    if (fallback != null) {
+        Log.w("DeviceCamera", "configured camera missing; using the camera present")
+    }
+    return fallback
 }
 
 /**
