@@ -183,11 +183,14 @@ const disableSuspend = SettingDef<bool>(
 /// hidden-document behavior: timers throttled but running, events delivered,
 /// websocket consumed — only drawing stops. Enabling it also enables
 /// [disableSuspend]: a hidden page is exactly what Home Assistant's suspend
-/// preference reacts to.
+/// preference reacts to. On by default since 0.28: proven across
+/// Snapdragon and MediaTek hardware, and the savings (a Tab S8 dropped
+/// from 152% to 57% CPU under the screensaver) are what a wall tablet is
+/// for.
 const freezeOnScreensaver = SettingDef<bool>(
   key: 'browser.freeze_on_screensaver',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Pause dashboard during screensaver',
   description:
       'Stops drawing the dashboard while the screensaver covers it, cutting '
@@ -199,12 +202,13 @@ const freezeOnScreensaver = SettingDef<bool>(
 
 /// Filters the HA entity-update stream to just the current view's entities, so
 /// low-powered tablets stop processing the whole firehose (see
-/// ws_filter_script.dart / issue #8). Off by default: it is only correct for a
-/// locked, single-view kiosk and can miss dynamically referenced entities.
+/// ws_filter_script.dart / issue #8). On by default since 0.28: views whose
+/// entities cannot be determined pass through unfiltered, so the worst case
+/// is the stock behavior.
 const wsFilter = SettingDef<bool>(
   key: 'browser.ws_filter',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Filter dashboard updates',
   description:
       'Only process Home Assistant updates for entities on the current '

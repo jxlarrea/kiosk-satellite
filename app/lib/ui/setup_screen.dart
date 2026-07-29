@@ -125,6 +125,9 @@ class _SetupScreenState extends State<SetupScreen> {
     ('screen.keep_on', 'Keep screen on'),
     ('wake_word.background', 'Keep listening in the background'),
     ('remote.enabled', 'Remote management'),
+    ('browser.disable_suspend', 'Keep connected in the background'),
+    ('browser.freeze_on_screensaver', 'Pause dashboard during screensaver'),
+    ('browser.ws_filter', 'Filter dashboard updates'),
   ];
   late final Map<String, bool> _recommended = {
     for (final (key, _) in _optionalRecommended) key: true,

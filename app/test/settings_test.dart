@@ -99,6 +99,15 @@ void main() {
     expect(defs.assistantVolume.section, 'Audio Volume');
   });
 
+  test('the dashboard optimizations are on by default', () async {
+    await build({});
+    // Proven across devices (0.28): every optimization defaults on. A
+    // stored false from someone who turned one off is untouched.
+    expect(settings.get(defs.disableSuspend), isTrue);
+    expect(settings.get(defs.freezeOnScreensaver), isTrue);
+    expect(settings.get(defs.wsFilter), isTrue);
+  });
+
   test(
     'kiosk quick actions are opt-in, with every action on by default',
     () async {

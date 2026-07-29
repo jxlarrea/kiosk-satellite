@@ -13,8 +13,8 @@ remote admin's Home Assistant tab.
 | Setting | Default | What it does |
 | --- | --- | --- |
 | Keep connected in the background | On | Stops Home Assistant from suspending the connection while the page is hidden. |
-| Pause dashboard during screensaver | Off | Stops rendering the dashboard while the screensaver covers it. |
-| Filter dashboard updates | Off | Drops entity updates that the current view does not display. |
+| Pause dashboard during screensaver | On | Stops rendering the dashboard while the screensaver covers it. |
+| Filter dashboard updates | On | Drops entity updates that the current view does not display. |
 
 ## Keep connected in the background
 
@@ -32,7 +32,7 @@ Assistant's stock suspend behavior back.
 
 ## Pause dashboard during screensaver
 
-**Experimental.** The screensaver is drawn by the app, in front of the
+The screensaver is drawn by the app, in front of the
 dashboard, and the browser engine underneath never learns it is covered: it
 keeps rasterizing and compositing every animation, chart and camera refresh
 at full rate, for a page nobody can see. On a busy dashboard that is real
@@ -69,9 +69,8 @@ save, and the numbers barely move; that is the expected result, not a fault.
 Turning it on also turns on **Keep connected in the background**, since a
 covered dashboard must not be one Home Assistant chooses to disconnect.
 
-Off by default while it collects mileage across devices. It has been
-verified on Snapdragon and MediaTek hardware from Android 11 up, but
-WebView builds vary; if a dashboard ever comes back wrong after the
+On by default, verified on Snapdragon and MediaTek hardware from Android 11
+up. WebView builds vary; if a dashboard ever comes back wrong after the
 screensaver, turn it off and please report what the device and Android
 version were.
 
@@ -93,5 +92,6 @@ inspectable rather than taken on faith.
 Views change, and the filter follows navigation. Any view whose entities it
 cannot fully work out (heavily templated cards, custom cards that reference
 entities dynamically) is deliberately left unfiltered, so nothing ever
-breaks; the telemetry line says when that is the case. It works best on a
-locked, single-view kiosk, which is why it is off by default.
+breaks; the telemetry line says when that is the case. That safe fallback is
+why it is on by default: the worst a view can get is the stock, unfiltered
+behavior. It works best on a locked, single-view kiosk.

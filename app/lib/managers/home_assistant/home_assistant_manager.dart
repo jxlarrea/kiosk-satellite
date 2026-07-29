@@ -133,7 +133,8 @@ class HomeAssistantManager extends Manager {
         description:
             'Apply the recommended settings for a Voice Satellite kiosk: '
             'resilience, refresh, mixed content, mic, autoplay, boot '
-            'start, keep-awake, wake word and remote management.',
+            'start, keep-awake, wake word, remote management and the '
+            'dashboard optimizations.',
         handler: (_) async {
           const recommended = <String, Object>{
             'browser.auto_reload_on_error': true,
@@ -148,6 +149,9 @@ class HomeAssistantManager extends Manager {
             'wake_word.enabled': true,
             'wake_word.background': true,
             'remote.enabled': true,
+            'browser.disable_suspend': true,
+            'browser.freeze_on_screensaver': true,
+            'browser.ws_filter': true,
           };
           var applied = 0;
           for (final entry in recommended.entries) {

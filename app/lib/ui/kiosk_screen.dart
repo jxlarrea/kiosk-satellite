@@ -453,7 +453,7 @@ class _KioskScreenState extends State<KioskScreen>
         source: disableSuspendScript,
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
       ),
-    // Experimental: filter the entity-update firehose to the current view so
+    // Filter the entity-update firehose to the current view so
     // low-powered tablets stop doing work for entities they do not show.
     if (c.settings.get(defs.wsFilter))
       UserScript(
