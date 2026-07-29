@@ -903,10 +903,6 @@ async function updateCameraSnapshotPanel() {
     || tab.querySelector('[data-key="camera.snapshots"]')
     || tab.querySelector('[data-key="camera.device"]');
   if (!anchor) return;
-  let res;
-  try { res = await api('/api/camera/snapshot'); } catch (_) { return; }
-  if (!res.ok) return; // 404: nothing captured yet, no row
-  let at = new Date(res.headers.get('X-Snapshot-At'));
   const row = document.createElement('div');
   row.className = 'row camera-snapshot-row';
   row.style.flexWrap = 'wrap';
@@ -914,28 +910,44 @@ async function updateCameraSnapshotPanel() {
   info.className = 'info';
   info.innerHTML = '<div class="name">Latest snapshot</div><div class="desc"></div>';
   const desc = info.querySelector('.desc');
-  desc.textContent = agoLabel(at);
+  desc.textContent = 'No snapshot yet.';
   const img = document.createElement('img');
-  img.src = URL.createObjectURL(await res.blob());
   img.alt = 'Latest camera snapshot';
-  img.style.cssText = 'width:100%; border-radius:12px; margin-top:10px;';
-  row.append(info, img);
+  img.style.cssText = 'width:100%; border-radius:12px; margin-top:10px; display:none;';
+  let at = null;
+  const refresh = async () => {
+    const res = await api('/api/camera/snapshot');
+    if (!res.ok) return; // 404: nothing captured yet
+    at = new Date(res.headers.get('X-Snapshot-At'));
+    const old = img.src;
+    img.src = URL.createObjectURL(await res.blob());
+    img.style.display = '';
+    if (old) URL.revokeObjectURL(old);
+    desc.textContent = agoLabel(at);
+  };
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Take snapshot';
+  btn.style.cssText = 'width:auto; padding:8px 16px; flex-shrink:0;';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      const res = await (await api('/api/commands/takeCameraSnapshot', {
+        method: 'POST', body: '{}' })).json();
+      if (res.ok) await refresh();
+      else desc.textContent = res.error || 'Snapshot failed.';
+    } catch (_) {} finally { btn.disabled = false; }
+  });
+  row.append(info, btn, img);
   anchor.insertAdjacentElement('afterend', row);
+  try { await refresh(); } catch (_) {}
   let ticks = 0;
   cameraSnapshotTimer = setInterval(async () => {
     if (!row.isConnected) { clearInterval(cameraSnapshotTimer); return; }
     if (!tab.classList.contains('active')) return;
-    desc.textContent = agoLabel(at);
+    if (at) desc.textContent = agoLabel(at);
     if (++ticks % 3 !== 0) return; // re-fetch the frame every third tick
-    try {
-      const fresh = await api('/api/camera/snapshot');
-      if (!fresh.ok) return;
-      at = new Date(fresh.headers.get('X-Snapshot-At'));
-      const old = img.src;
-      img.src = URL.createObjectURL(await fresh.blob());
-      URL.revokeObjectURL(old);
-      desc.textContent = agoLabel(at);
-    } catch (_) {}
+    try { await refresh(); } catch (_) {}
   }, 5000);
 }
 
