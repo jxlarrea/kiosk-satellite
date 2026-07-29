@@ -1,12 +1,10 @@
 package me.jxl.kiosk_satellite
 
 import android.content.Context
-import android.database.ContentObserver
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.Process
-import android.provider.Settings
 import android.util.Log
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -27,11 +25,10 @@ import me.jxl.kiosk_satellite.sendspin.protocol.SendSpinProtocol
  *
  * Owns the whole native pipeline: the SendSpin protocol client (WebSocket,
  * time sync, reconnect), the codec decoder, the DAC-gated SyncAudioPlayer,
- * and mDNS discovery. Volume commands go through [VolumeController]: the
- * device's media stream (AudioManager STREAM_MUSIC) on ordinary Android,
- * a per-track software gain on fixed-volume devices where setStreamVolume
- * is a platform no-op (Chromebooks, issue #62). Hardware volume changes
- * are observed and reported back to the server via client/state.
+ * and mDNS discovery. Server volume commands move [VolumeController]'s
+ * MEDIA fader (AudioTrack gain under the master ceiling, issue #79) - the
+ * Music Assistant slider is the music's, never the device's - and media
+ * fader moves from any surface are reported back via client/state.
  *
  * Methods:
  * - start {serverUrl?, playerName, clientId, preferredCodec}
@@ -117,12 +114,6 @@ class SendspinBridge(
     @Volatile private var lastReportedVolume = -1
     @Volatile private var lastReportedMuted = false
 
-    private val volumeObserver = object : ContentObserver(mainHandler) {
-        override fun onChange(selfChange: Boolean) {
-            if (started) publishVolumeIfChanged()
-        }
-    }
-
     private val discoveryRestart: Runnable = object : Runnable {
         override fun run() {
             if (started && discoveryMode && client?.isConnected != true) {
@@ -184,11 +175,11 @@ class SendspinBridge(
                 else -> result.notImplemented()
             }
         }
-        // Fixed-volume devices only (the listener never fires elsewhere):
-        // a software-gain move must reach the live AudioTrack and be
-        // reported to the server, no matter which surface moved it.
+        // Any fader move (media, fixed-volume master, a server command)
+        // must reach the live AudioTrack and be reported to the server,
+        // no matter which surface moved it.
         VolumeController.addListener {
-            player?.setVolume(VolumeController.gain)
+            player?.setVolume(VolumeController.mediaGain)
             if (started) publishVolumeIfChanged()
         }
     }
@@ -205,10 +196,6 @@ class SendspinBridge(
     ) {
         if (started) stopSession()
         started = true
-
-        context.contentResolver.registerContentObserver(
-            Settings.System.CONTENT_URI, true, volumeObserver,
-        )
 
         val newClient = SendSpin(
             deviceName = playerName,
@@ -243,11 +230,6 @@ class SendspinBridge(
 
         autoDiscovery?.cleanup()
         autoDiscovery = null
-
-        try {
-            context.contentResolver.unregisterContentObserver(volumeObserver)
-        } catch (_: Exception) {
-        }
 
         // Goodbye + disconnect + release, in dependency order.
         client?.destroy()
@@ -402,20 +384,19 @@ class SendspinBridge(
     // Device volume (STREAM_MUSIC)
     // ==================================================================
 
-    private fun deviceVolumePct(): Int = VolumeController.percent()
+    // The server's volume is the MEDIA fader, not the device volume: the
+    // Music Assistant slider is the music's. Master stays with the MQTT
+    // Volume entity and the hardware buttons.
+    private fun deviceVolumePct(): Int = VolumeController.mediaPercent()
 
-    private fun deviceMuted(): Boolean = VolumeController.muted()
-
-    /** Last server-commanded volume, re-applied when playback starts. */
-    private var lastCommandedVolume: Int? = null
+    private fun deviceMuted(): Boolean = VolumeController.mediaMuted()
 
     private fun setDeviceVolumePct(volume: Int) {
-        lastCommandedVolume = volume
-        VolumeController.setPercent(volume)
+        VolumeController.setMediaPercent(volume)
     }
 
     private fun setDeviceMuted(muted: Boolean) {
-        VolumeController.setMuted(muted)
+        VolumeController.setMediaMuted(muted)
     }
 
     /**
@@ -457,14 +438,9 @@ class SendspinBridge(
         val playing = streamActive && playbackState == "playing"
         if (playing != lastPlaying) {
             lastPlaying = playing
-            if (playing) {
-                // Re-apply the commanded volume now that audio is actually
-                // routing: setStreamVolume before playback lands on whatever
-                // output was active at the time (Samsung keeps per-device
-                // volumes), which can leave the speaker at its old level —
-                // classically 0, i.e. playing in silence.
-                lastCommandedVolume?.let { setDeviceVolumePct(it) }
-            }
+            // No volume re-apply on start anymore: the server's volume is
+            // AudioTrack gain now, not the stream, so Samsung's per-output
+            // stream volumes cannot strand it on the wrong device.
             emit("playingChanged", mapOf("playing" to playing))
         }
     }
@@ -532,7 +508,7 @@ class SendspinBridge(
                 ).also {
                     it.duckFactor = duckFactor
                     it.initialize()
-                    it.setVolume(VolumeController.gain)
+                    it.setVolume(VolumeController.mediaGain)
                     it.start()
                 }
             }

@@ -471,6 +471,10 @@
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg></span>
           <span class="nav-text"><span class="nav-title">Screen</span><span class="nav-sub">Brightness, keep awake</span></span>
         </button>
+        <button data-tab="audio">
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Audio</span><span class="nav-sub">Master, media and assistant volume</span></span>
+        </button>
         <button data-tab="screensaver">
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
           <span class="nav-text"><span class="nav-title">Screensaver</span><span class="nav-sub">Idle timeout, modes, motion wake</span></span>
@@ -590,6 +594,7 @@
     <div class="tab" id="tab-browser"></div>
     <div class="tab" id="tab-kiosk"></div>
     <div class="tab" id="tab-screen"></div>
+    <div class="tab" id="tab-audio"></div>
     <div class="tab" id="tab-screensaver"></div>
     <div class="tab" id="tab-camera"></div>
     <div class="tab" id="tab-homeassistant"></div>
@@ -729,11 +734,11 @@ function logout() {
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'screen', 'screensaver',
+const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'screen', 'audio', 'screensaver',
   'camera', 'remote', 'mqtt', 'sendspin', 'cameras', 'dlna', 'files', 'device', 'console', 'logs', 'about'];
 const TAB_TITLES = {
   dashboard: 'Dashboard', browser: 'Web Browsing',
-  kiosk: 'Kiosk Mode', screen: 'Screen', screensaver: 'Screensaver',
+  kiosk: 'Kiosk Mode', screen: 'Screen', audio: 'Audio', screensaver: 'Screensaver',
   camera: 'Camera',
   homeassistant: 'Home Assistant Configuration',
   voicesatellite: 'Voice Satellite',
@@ -2289,6 +2294,7 @@ const CATEGORY_TABS = [
   ['tab-browser', ['Browser']],
   ['tab-kiosk', ['Kiosk']],
   ['tab-screen', ['Screen']],
+  ['tab-audio', ['Audio']],
   ['tab-screensaver', ['Screensaver']],
   ['tab-camera', ['Camera']],
   ['tab-homeassistant', ['Home Assistant']],
@@ -2373,6 +2379,10 @@ async function loadSettings() {
     if (tabId === 'tab-voicesatellite') continue; // custom render below
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
+  // The master fader tops the Audio Volume card, mirroring the device: the
+  // live device volume, not a setting, so it is hand-built over the
+  // getVolume/setVolume commands.
+  prependMasterVolumeRow();
   updateBrightnessGrantNotices();
   updateAmbientDisplayNotice();
   // Awaited: the panels below read state.cameraPresent from it.
@@ -2488,12 +2498,6 @@ async function loadSettings() {
           wakeCard,
           byKey['wake_word.enabled']?.value !== false,
         );
-        // Assistant volume directly under the Speaker picker it belongs to,
-        // mirroring the device's hand-placed row (the def is hidden, so the
-        // generic loop skips it).
-        const av = (state.settings || [])
-          .find((o) => o.key === 'audio.assistant_volume');
-        if (av) wakeCard.appendChild(settingRow(av));
       }
       // The satellite this kiosk identifies as: the page's own choice wins
       // (localStorage, changeable in the Voice Satellite panel); the
@@ -3655,6 +3659,44 @@ function readOnlyRow(name, desc, value) {
   v.textContent = value;
   row.appendChild(v);
   return row;
+}
+
+// The master volume fader on the Audio page, mirroring the device's row:
+// hand-built because it is the device's live volume (getVolume/setVolume
+// commands), not a setting. Media and assistant scale under it.
+async function prependMasterVolumeRow() {
+  const card = document.querySelector('#tab-audio .card');
+  if (!card || card.querySelector('[data-key="master-volume"]')) return;
+  let percent = null;
+  try {
+    const r = await cmd('getVolume');
+    if (r.ok && typeof r.data === 'number') percent = r.data;
+  } catch (_) {}
+  if (percent == null) return;
+  const row = document.createElement('div'); row.className = 'row';
+  row.dataset.key = 'master-volume';
+  const info = document.createElement('div'); info.className = 'info';
+  info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+  info.querySelector('.name').textContent = 'Master volume';
+  info.querySelector('.desc').textContent =
+    'The device volume. Media and assistant volume scale under it.';
+  row.appendChild(info);
+  const controls = document.createElement('div');
+  controls.style.cssText = 'display:flex; align-items:center; gap:10px; min-width:0';
+  const inp = document.createElement('input');
+  inp.type = 'range'; inp.min = '0'; inp.max = '100'; inp.step = '5';
+  inp.value = String(Math.round(percent));
+  inp.style.width = '190px';
+  const val = document.createElement('span');
+  val.className = 'device';
+  val.style.cssText = 'min-width:3.5em; text-align:right; font-variant-numeric:tabular-nums';
+  val.textContent = `${Math.round(percent)}%`;
+  inp.addEventListener('input', () => (val.textContent = `${inp.value}%`));
+  inp.addEventListener('change', () =>
+    cmd('setVolume', { percent: Number(inp.value) }));
+  controls.append(inp, val);
+  row.appendChild(controls);
+  card.prepend(row);
 }
 
 // The microphone / speaker pickers on the Voice Satellite page, mirroring the

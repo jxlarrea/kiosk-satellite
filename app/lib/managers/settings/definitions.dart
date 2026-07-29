@@ -633,6 +633,43 @@ const defaultBrightness = SettingDef<num>(
   dependsOn: 'screen.set_brightness_on_launch',
 );
 
+// ── Audio ──────────────────────────────────────────────────────────────
+// The mixer model (issue #79): the master volume is the device's own (a
+// live hardware level, not a setting - the Audio page hand-builds its
+// slider), and these two faders scale under it, independent of each other.
+
+const mediaVolume = SettingDef<num>(
+  key: 'audio.media_volume',
+  type: SettingType.number,
+  defaultValue: 100,
+  min: 0,
+  max: 100,
+  step: 5,
+  unit: '%',
+  title: 'Media volume',
+  description:
+      'Music and video play at this share of the master volume. The '
+      'Sendspin player volume in Music Assistant moves this slider.',
+  category: 'Audio',
+  section: 'Audio Volume',
+);
+
+const assistantVolume = SettingDef<num>(
+  key: 'audio.assistant_volume',
+  type: SettingType.number,
+  defaultValue: 100,
+  min: 0,
+  max: 100,
+  step: 5,
+  unit: '%',
+  title: 'Assistant volume',
+  description:
+      'Voice responses and chimes play at this share of the master '
+      'volume, independent of the media volume.',
+  category: 'Audio',
+  section: 'Audio Volume',
+);
+
 // ── Screensaver ────────────────────────────────────────────────────────
 
 const screensaverEnabled = SettingDef<bool>(
@@ -1753,24 +1790,6 @@ const audioSpeakerDevice = SettingDef<String>(
   hidden: true,
 );
 
-// Hidden: hand-placed directly under the Speaker picker in both UIs, so it
-// reads as part of the output choice rather than a free-floating slider.
-const assistantVolume = SettingDef<num>(
-  key: 'audio.assistant_volume',
-  type: SettingType.number,
-  defaultValue: 100,
-  min: 0,
-  max: 100,
-  step: 5,
-  unit: '%',
-  title: 'Assistant volume',
-  description:
-      'Voice responses and chimes play at this level regardless of the '
-      'media volume.',
-  category: 'Voice Satellite',
-  hidden: true,
-);
-
 const vsSuppressScreensaver = SettingDef<bool>(
   key: 'vs.suppress_screensaver',
   type: SettingType.boolean,
@@ -2554,6 +2573,7 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordResumeTimeoutSeconds,
   audioMicDevice,
   audioSpeakerDevice,
+  mediaVolume,
   assistantVolume,
   vsSuppressScreensaver,
   // After the wake word settings they feed: both UIs render this category in

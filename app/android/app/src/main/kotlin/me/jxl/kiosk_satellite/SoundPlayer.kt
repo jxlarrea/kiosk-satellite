@@ -45,9 +45,10 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     private val players = mutableMapOf<String, MediaPlayer>()
 
     /**
-     * Each sound's own volume, before the master gain. Kept so a
-     * software-volume change on a fixed-volume device (Chromebooks,
-     * issue #62) can re-derive every live player's effective level.
+     * Each sound's own volume, before the assistant fader. Kept so a
+     * fader move mid-utterance (the assistant slider, a fixed-volume
+     * master change) can re-derive every live player's effective level
+     * (issues #62, #79).
      */
     private val baseVolumes = mutableMapOf<String, Float>()
 
@@ -92,7 +93,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                     val id = call.argument<String>("id") ?: ""
                     val v = (call.argument<Double>("volume") ?: 1.0)
                         .toFloat().coerceIn(0f, 1f)
-                    val e = v * VolumeController.gain
+                    val e = v * VolumeController.assistGain
                     players[id]?.let {
                         baseVolumes[id] = v
                         try { it.setVolume(e, e) } catch (_: IllegalStateException) {}
@@ -106,17 +107,17 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 else -> result.notImplemented()
             }
         }
-        // Fixed-volume devices only: a master gain move mid-utterance must
-        // reach the sound already playing, matching how the media stream
-        // level would have moved it everywhere else.
+        // A fader moved mid-utterance - the assistant slider, or a
+        // fixed-volume master change - and must reach the sound already
+        // playing.
         VolumeController.addListener {
             for ((id, mp) in players) {
-                val e = (baseVolumes[id] ?: 1f) * VolumeController.gain
+                val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
                 try { mp.setVolume(e, e) } catch (_: IllegalStateException) {}
             }
             val live = synchronized(tracks) { tracks.toMap() }
             for ((id, track) in live) {
-                val e = (baseVolumes[id] ?: 1f) * VolumeController.gain
+                val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
                 try { track.setVolume(e.coerceIn(0f, 1f)) } catch (_: Exception) {}
             }
         }
@@ -179,7 +180,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             )
             if (callRoute) ensureScoLink(id, target!!)
             mp.setDataSource(source)
-            val e = (baseVolumes[id] ?: 1f) * VolumeController.gain
+            val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
             mp.setVolume(e, e)
             mp.setOnPreparedListener { player ->
                 if (players[id] !== player) return@setOnPreparedListener
@@ -250,7 +251,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         }
         try {
             track.write(clip.pcm, 0, clip.pcm.size)
-            val v = (baseVolumes[id] ?: 1f) * VolumeController.gain
+            val v = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
             track.setVolume(v.coerceIn(0f, 1f))
             if (Build.VERSION.SDK_INT >= 28) target?.let { track.preferredDevice = it }
             synchronized(tracks) { tracks[id] = track }

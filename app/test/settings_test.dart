@@ -86,14 +86,17 @@ void main() {
     expect(settings.get(defs.micAgc), isFalse);
   });
 
-  test('the assistant volume defaults to full, matching old behavior',
-      () async {
+  test('the audio faders default to full, matching old behavior', () async {
     await build({});
-    // An untouched install must sound exactly as it did before the slider
-    // existed: responses and chimes at the media volume.
+    // An untouched install must sound exactly as it did before the mixer
+    // existed: everything at the master (device) volume.
+    expect(settings.get(defs.mediaVolume), 100);
     expect(settings.get(defs.assistantVolume), 100);
-    // Hand-placed under the Speaker picker; the generic loops must skip it.
-    expect(defs.assistantVolume.hidden, isTrue);
+    // Both render on the Audio page's Audio Volume card, in both UIs.
+    expect(defs.mediaVolume.category, 'Audio');
+    expect(defs.assistantVolume.category, 'Audio');
+    expect(defs.mediaVolume.section, 'Audio Volume');
+    expect(defs.assistantVolume.section, 'Audio Volume');
   });
 
   test(

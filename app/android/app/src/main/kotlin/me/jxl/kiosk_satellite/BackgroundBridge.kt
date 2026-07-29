@@ -107,24 +107,34 @@ class BackgroundBridge(
                         result.error("files", e.message, null)
                     }
                 }
-                // Media volume: no permission involved. The MQTT volume
+                // MASTER volume: no permission involved. The MQTT volume
                 // entity reads and writes through these. VolumeController
                 // decides whether that means STREAM_MUSIC or, on
-                // fixed-volume devices (Chromebooks), the software gain
-                // every in-app player applies (issue #62). The gain rides
-                // along for the Dart-side players (the DLNA overlay).
+                // fixed-volume devices (Chromebooks), the software master
+                // every in-app player applies (issue #62). The media gain
+                // rides along for the Dart-side players (the DLNA overlay),
+                // media fader and fixed master included.
                 "getVolume" -> {
                     val (level, max) = VolumeController.levelAndMax()
                     result.success(mapOf(
                         "level" to level,
                         "max" to max,
                         "fixed" to VolumeController.isFixed,
-                        "gain" to VolumeController.gain.toDouble(),
+                        "gain" to VolumeController.mediaGain.toDouble(),
                     ))
                 }
                 "setVolume" -> {
                     VolumeController.setLevel(
                         (call.argument<Number>("level"))?.toInt() ?: 0,
+                    )
+                    result.success(true)
+                }
+                // The media and assistant faders, pushed from the Dart
+                // settings at start and on every slider move (issue #79).
+                "setVolumeMix" -> {
+                    VolumeController.setMix(
+                        (call.argument<Number>("media"))?.toInt() ?: 100,
+                        (call.argument<Number>("assistant"))?.toInt() ?: 100,
                     )
                     result.success(true)
                 }

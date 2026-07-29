@@ -9,27 +9,31 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.roundToInt
 
 /**
- * The single authority for the device's media volume.
+ * The single authority for volume, modeled as a three-fader mixer
+ * (issues #62, #69, #79):
  *
- * On ordinary Android the percent maps straight onto STREAM_MUSIC, exactly
- * as it always has. On fixed-volume devices (Chromebooks, Android
- * Automotive: [AudioManager.isVolumeFixed]) setStreamVolume is a silent
- * no-op by platform design - ChromeOS routes audio through its own mixer
- * and only the system UI moves the output level. There the percent becomes
- * a persisted software gain that every in-app audio sink applies itself:
- * SendSpin's AudioTrack, SoundPlayer's MediaPlayers (Voice Satellite TTS,
- * chimes, page sounds), and the DLNA overlay's player on the Dart side
- * (issue #62).
+ *  - MASTER is the device volume: STREAM_MUSIC on ordinary Android, a
+ *    persisted software gain on fixed-volume devices (Chromebooks,
+ *    Android Automotive: [AudioManager.isVolumeFixed]) where
+ *    setStreamVolume is a platform no-op. Hardware buttons and the MQTT
+ *    Volume entity move this and only this.
+ *  - MEDIA scales playback under the master ceiling: SendSpin's
+ *    AudioTrack, the DLNA overlay's player. Music Assistant's volume
+ *    commands land here - its slider is the music's, not the device's.
+ *  - ASSISTANT scales Voice Satellite sounds (TTS, chimes) under the same
+ *    ceiling, independent of MEDIA, so music can roam quiet or loud
+ *    without the assistant whispering or shouting along with it.
  *
- * Both bridges (BackgroundBridge for the MQTT entity and remote admin,
- * SendspinBridge for server-commanded volume) read and write through here,
- * so every control surface sees one number wherever it lives.
+ * Media and assistant live in Dart settings (persisted, exported,
+ * rendered by both settings UIs); Dart pushes them here so the values are
+ * available synchronously on the audio paths and to SendSpin's native
+ * volume reporting. Nothing but master ever touches the stream: no
+ * temporary overrides, no compensation, and therefore none of the level
+ * wobble those caused.
  *
- * [gain] maps the percent to linear amplitude through a squared taper:
- * sink gain APIs are linear, and a linear slider crams all the audible
- * change into its bottom fifth. On non-fixed devices gain is always 1.0 -
- * the stream volume does the attenuating - so sinks may apply it
- * unconditionally.
+ * All percents map to linear amplitude through a squared taper: sink gain
+ * APIs are linear, and a linear slider crams all the audible change into
+ * its bottom fifth.
  */
 object VolumeController {
     private const val PREFS = "volume_controller"
@@ -45,8 +49,17 @@ object VolumeController {
     var isFixed: Boolean = false
         private set
 
+    // Master, fixed-volume devices only (ordinary devices keep master in
+    // the stream itself).
     @Volatile private var softPercent = DEFAULT_PERCENT
     @Volatile private var softMuted = false
+
+    // The media and assistant faders, pushed from Dart settings. Media
+    // mute is SendSpin's server-commanded mute: volatile, not persisted,
+    // never the stream's.
+    @Volatile private var mediaPct = 100
+    @Volatile private var assistPct = 100
+    @Volatile private var mediaMutedFlag = false
 
     fun init(context: Context) {
         audioManager =
@@ -62,15 +75,27 @@ object VolumeController {
     }
 
     /**
-     * Notified on the main thread whenever the software gain moved (fixed
-     * mode only; on ordinary devices the platform's own volume broadcast
-     * already covers changes). Listeners re-read [gain].
+     * Notified on the main thread whenever any gain a sink applies may
+     * have moved (a fader push from Dart, a SendSpin media command, a
+     * fixed-volume master change). Listeners re-read [mediaGain] or
+     * [assistGain]. Called inline when already on the main thread.
      */
     fun addListener(listener: () -> Unit) {
         listeners.add(listener)
     }
 
-    /** Current volume as 0-100, whichever mode. */
+    private fun curve(pct: Int): Float = (pct / 100f).let { it * it }
+
+    /** The master multiplier software sinks owe on fixed-volume devices;
+     *  1.0 elsewhere, where the stream applies master in hardware. */
+    private fun masterSoftGain(): Float = when {
+        !isFixed -> 1f
+        softMuted -> 0f
+        else -> curve(softPercent)
+    }
+
+    // ── Master ────────────────────────────────────────────────────────
+
     fun percent(): Int {
         if (isFixed) return softPercent
         val max = audioManager
@@ -150,20 +175,56 @@ object VolumeController {
         }
     }
 
+    // ── Media and assistant faders ────────────────────────────────────
+
+    /** The Dart settings arriving; both at once, one notification. */
+    fun setMix(media: Int, assistant: Int) {
+        val m = media.coerceIn(0, 100)
+        val a = assistant.coerceIn(0, 100)
+        if (m == mediaPct && a == assistPct) return
+        mediaPct = m
+        assistPct = a
+        notifyChanged()
+    }
+
+    /** SendSpin's server-commanded media volume, applied natively for
+     *  snappiness; Dart persists it into the setting on the echo. */
+    fun setMediaPercent(percent: Int) {
+        val pct = percent.coerceIn(0, 100)
+        if (pct == mediaPct) return
+        mediaPct = pct
+        notifyChanged()
+    }
+
+    fun mediaPercent(): Int = mediaPct
+
+    fun setMediaMuted(muted: Boolean) {
+        if (muted == mediaMutedFlag) return
+        mediaMutedFlag = muted
+        notifyChanged()
+    }
+
+    fun mediaMuted(): Boolean = mediaMutedFlag
+
     /**
-     * Linear amplitude every in-app sink multiplies in. 1.0 on ordinary
-     * devices; the squared software percent (0 when soft-muted) on fixed
-     * ones.
+     * Linear amplitude every MEDIA sink multiplies in: SendSpin's
+     * AudioTrack, the DLNA overlay's player (via getVolume's gain field).
      */
-    val gain: Float
+    val mediaGain: Float
         get() {
-            if (!isFixed) return 1f
-            if (softMuted) return 0f
-            val p = softPercent / 100f
-            return p * p
+            if (mediaMutedFlag) return 0f
+            return masterSoftGain() * curve(mediaPct)
         }
 
+    /** Linear amplitude for Voice Satellite sounds (SoundPlayer). */
+    val assistGain: Float
+        get() = masterSoftGain() * curve(assistPct)
+
     private fun notifyChanged() {
-        mainHandler.post { for (l in listeners) l() }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            for (l in listeners) l()
+        } else {
+            mainHandler.post { for (l in listeners) l() }
+        }
     }
 }

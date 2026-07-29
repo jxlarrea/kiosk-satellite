@@ -148,6 +148,12 @@ const _categories = <(String, String, IconData, String)>[
   ),
   ('Screen', 'Screen', Icons.brightness_6_outlined, 'Brightness, keep awake'),
   (
+    'Audio',
+    'Audio',
+    Icons.volume_up_outlined,
+    'Master, media and assistant volume',
+  ),
+  (
     'Screensaver',
     'Screensaver',
     Icons.dark_mode_outlined,
@@ -915,7 +921,23 @@ class _CategoryContentState extends State<_CategoryContent> {
           )
         else if (widget.category == 'Cameras')
           CameraSettingsPanel(container: container)
-        else
+        else if (widget.category == 'Audio') ...[
+          // One card, mixer-style: the master fader (live device volume,
+          // not a setting) with the media and assistant faders that scale
+          // under it. The remote UI mirrors this page.
+          const _SectionHeading('Audio Volume'),
+          _SettingsCard(
+            children: [
+              _MasterVolumeTile(container: container),
+              for (final def in _defsFor('Audio'))
+                SettingTile(
+                  container: container,
+                  def: def,
+                  onChanged: () => setState(() {}),
+                ),
+            ],
+          ),
+        ] else
           ..._sectionedCards(
             container,
             // With the Camera master switch off (or no camera on the
@@ -1389,14 +1411,6 @@ class _CategoryContentState extends State<_CategoryContent> {
                     container: container,
                     def: audioSpeakerDevice,
                     inputs: false,
-                  ),
-                  // Hand-placed under the Speaker picker it belongs to (the
-                  // def is hidden, so the generic loop above skips it). The
-                  // remote UI mirrors this row in the same spot.
-                  SettingTile(
-                    container: container,
-                    def: assistantVolume,
-                    onChanged: () => setState(() {}),
                   ),
                   // Not a setting, but a row on the same card, so it sits
                   // behind the same line as the rest. Gone with the rest
@@ -3563,6 +3577,81 @@ class _ClearModelCacheTileState extends State<ClearModelCacheTile> {
 /// setting is written once, on release, so a drag is one change event rather
 /// than a stream of them (settings changes can restart cameras and reload
 /// pages — see KioskScreen._onSettingChanged).
+/// The master volume fader: the device's live volume, not a setting, so
+/// it is read and written through the getVolume/setVolume commands and
+/// follows outside moves (hardware buttons, MQTT) while the page is open.
+class _MasterVolumeTile extends StatefulWidget {
+  const _MasterVolumeTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_MasterVolumeTile> createState() => _MasterVolumeTileState();
+}
+
+class _MasterVolumeTileState extends State<_MasterVolumeTile> {
+  /// Value under the finger mid-drag; null shows the device's own level.
+  double? _drag;
+  double _percent = 0;
+  StreamSubscription<VolumeChanged>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _read();
+    _sub = widget.container.bus.on<VolumeChanged>().listen((_) => _read());
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _read() async {
+    final r = await widget.container.commands.execute('getVolume', const {});
+    if (!mounted || !r.ok || r.data is! num) return;
+    setState(() => _percent = (r.data as num).toDouble().clamp(0, 100));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = _drag ?? _percent;
+    return Column(
+      children: [
+        ListTile(
+          title: const Text('Master volume'),
+          subtitle: const Text(
+            'The device volume. Media and assistant volume scale under it.',
+          ),
+          trailing: Text(
+            '${value.round()}%',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Slider(
+            value: value,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            onChanged: (v) => setState(() => _drag = v),
+            onChangeEnd: (v) async {
+              setState(() {
+                _drag = null;
+                _percent = v;
+              });
+              await widget.container.commands
+                  .execute('setVolume', {'percent': v.round()});
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SliderTile extends StatefulWidget {
   const _SliderTile({
     required this.container,

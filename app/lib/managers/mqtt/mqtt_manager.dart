@@ -377,6 +377,12 @@ class MqttManager extends Manager {
         pct.clamp(0.0, 100.0).round().toString());
   }
 
+  void _publishMediaVolume() {
+    final pct = _settings.get(defs.mediaVolume).toDouble();
+    _publish(
+        '$_base/media_volume/state', pct.clamp(0.0, 100.0).round().toString());
+  }
+
   /// The remote admin's address as a sensor, so a dashboard can deep-link
   /// straight into a device's admin from Home Assistant. 'disabled' when the
   /// remote admin is off.
@@ -428,6 +434,11 @@ class MqttManager extends Manager {
       // Whatever surface moved it (device UI, remote admin, MQTT itself),
       // the HA slider reflects it.
       _publishAssistantVolume();
+      return;
+    }
+    if (e.key == defs.mediaVolume.key) {
+      // Same, plus the Sendspin server's commands land on this fader.
+      _publishMediaVolume();
       return;
     }
     if (e.key == defs.remotePort.key) {
@@ -556,6 +567,7 @@ class MqttManager extends Manager {
       '$_base/update/set',
       '$_base/screensaver_brightness_level/set',
       '$_base/assistant_volume/set',
+      '$_base/media_volume/set',
       '$_base/camera/view/set',
       '$_base/camera/close/set',
       '$_base/camera_snapshot/set',
@@ -742,6 +754,11 @@ class MqttManager extends Manager {
         final percent = num.tryParse(text);
         if (percent == null) continue;
         await _settings.set(defs.assistantVolume, percent.clamp(0, 100));
+      } else if (topic == '$_base/media_volume/set') {
+        log.info(name, 'command $topic = $text');
+        final percent = num.tryParse(text);
+        if (percent == null) continue;
+        await _settings.set(defs.mediaVolume, percent.clamp(0, 100));
       } else if (topic == '$_base/update/set') {
         log.info(name, 'command $topic');
         final result = await commands.execute('installUpdate', const {});
@@ -902,6 +919,7 @@ class MqttManager extends Manager {
     _publishSettingSelectStates();
     _publishScreensaverBrightnessLevel();
     _publishAssistantVolume();
+    _publishMediaVolume();
     await _publishAdminUrl();
     await _publishVolume();
     await _publishUpdateState();
@@ -1033,6 +1051,7 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/admin_url/config',
         '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
         '$_prefix/number/ks_$_deviceId/assistant_volume/config',
+        '$_prefix/number/ks_$_deviceId/media_volume/config',
         '$_prefix/sensor/ks_$_deviceId/active_camera_view/config',
         '$_prefix/button/ks_$_deviceId/close_camera_view/config',
         // Conditional like illuminance: published only with the camera
@@ -1354,6 +1373,18 @@ class MqttManager extends Manager {
         'unit_of_measurement': '%',
         'mode': 'slider',
         'icon': 'mdi:account-voice',
+        'entity_category': 'config',
+      },
+      '$_prefix/number/ks_$_deviceId/media_volume/config': {
+        ...common('media_volume', 'Media volume'),
+        'state_topic': '$_base/media_volume/state',
+        'command_topic': '$_base/media_volume/set',
+        'min': 0,
+        'max': 100,
+        'step': 5,
+        'unit_of_measurement': '%',
+        'mode': 'slider',
+        'icon': 'mdi:music-note',
         'entity_category': 'config',
       },
       '$_prefix/switch/ks_$_deviceId/kiosk/config':

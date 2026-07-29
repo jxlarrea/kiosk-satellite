@@ -55,12 +55,13 @@ class DeviceManager extends Manager {
   double? lightLux;
   StreamSubscription<dynamic>? _lightSub;
 
-  /// Software media gain (0..1) that in-app players apply on fixed-volume
-  /// devices, where the OS ignores stream volume writes (Chromebooks,
-  /// issue #62). 1.0 on ordinary Android, where the stream volume does the
-  /// attenuating. Native computes it (one curve, one owner); this mirrors.
+  /// The composed media gain (0..1) the Dart players apply (the DLNA
+  /// overlay): the media fader, times the software master on fixed-volume
+  /// devices (Chromebooks, issue #62). Native computes it (one curve, one
+  /// owner); this mirrors.
   final mediaGain = ValueNotifier<double>(1.0);
   StreamSubscription<VolumeChanged>? _volumeSub;
+  StreamSubscription<SettingChanged>? _mixSub;
 
   String get os => Platform.isAndroid ? 'android' : 'ios';
 
@@ -187,7 +188,20 @@ class DeviceManager extends Manager {
     BackgroundListening.onVolumeChanged =
         () => bus.publish(const VolumeChanged());
     _volumeSub = bus.on<VolumeChanged>().listen((_) => _refreshMediaGain());
-    unawaited(_refreshMediaGain());
+    // The media and assistant faders live in settings; the platform side
+    // applies them (issue #79), so hand them down at start and on every
+    // slider move, then re-read the composed gain for the Dart players.
+    _mixSub = bus.on<SettingChanged>().listen((e) async {
+      if (e.key != defs.mediaVolume.key && e.key != defs.assistantVolume.key) {
+        return;
+      }
+      await _pushVolumeMix();
+      await _refreshMediaGain();
+    });
+    unawaited(() async {
+      await _pushVolumeMix();
+      await _refreshMediaGain();
+    }());
     commands.register(
       Command(
         name: 'getVolume',
@@ -382,10 +396,21 @@ class DeviceManager extends Manager {
     } catch (_) {}
   }
 
+  Future<void> _pushVolumeMix() async {
+    try {
+      const background = MethodChannel('kiosk_satellite/background');
+      await background.invokeMethod<void>('setVolumeMix', {
+        'media': _settings.get(defs.mediaVolume).toInt(),
+        'assistant': _settings.get(defs.assistantVolume).toInt(),
+      });
+    } catch (_) {}
+  }
+
   @override
   Future<void> dispose() async {
     await _lightSub?.cancel();
     await _volumeSub?.cancel();
+    await _mixSub?.cancel();
   }
 
   Future<Map<String, Object?>> info() async {
