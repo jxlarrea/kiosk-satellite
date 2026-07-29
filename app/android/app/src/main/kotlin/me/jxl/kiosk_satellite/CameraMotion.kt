@@ -88,6 +88,10 @@ class CameraMotion(
      *  bind a camera nothing will ever release. */
     private var session = 0
 
+    /** Target for the pre-bound snapshot capture, from the listen args
+     *  (the Camera settings' resolution tier). Main thread only. */
+    private var snapshotTarget: Size? = null
+
     // Analyzer state (touched only on analysisExecutor).
     private var prevGrid: IntArray? = null
     private var frameCount = 0
@@ -110,6 +114,8 @@ class CameraMotion(
         } else {
             CameraSelector.DEFAULT_FRONT_CAMERA
         }
+        val snapW = (args?.get("snapshotWidth") as? Number)?.toInt()
+        val snapH = (args?.get("snapshotHeight") as? Number)?.toInt()
 
         frameIntervalNs = (1_000_000_000.0 / fps).toLong()
         // Sensitivity → how many of the grid's cells must change. High
@@ -122,7 +128,14 @@ class CameraMotion(
         lastEmitNs = 0L
 
         // CameraX binding must happen on the main thread.
-        mainHandler.post { start(facing, sink) }
+        mainHandler.post {
+            snapshotTarget = if (snapW != null && snapH != null) {
+                Size(snapW, snapH)
+            } else {
+                null
+            }
+            start(facing, sink)
+        }
     }
 
     private fun start(facing: CameraSelector, sink: EventChannel.EventSink) {
@@ -157,7 +170,10 @@ class CameraMotion(
             val owner = CameraLifecycle().also { lifecycle = it }
             // Pre-bound so a snapshot never reconfigures this session (an
             // AE resettle would read as motion and wake the screensaver).
-            val imageCapture = deviceCamera?.buildCapture()
+            val imageCapture = deviceCamera?.let {
+                val target = snapshotTarget
+                if (target != null) it.buildCapture(target) else it.buildCapture()
+            }
             try {
                 cameraProvider.unbindAll()
                 if (imageCapture != null) {

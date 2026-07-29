@@ -143,8 +143,13 @@ class DeviceCameraManager extends Manager {
     }
     _capturing = true;
     try {
-      final jpeg =
-          await NativeCamera.snapshot(camera: _settings.get(defs.cameraDevice));
+      final (width, height) =
+          snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
+      final jpeg = await NativeCamera.snapshot(
+        camera: _settings.get(defs.cameraDevice),
+        width: width,
+        height: height,
+      );
       if (jpeg == null || jpeg.isEmpty) {
         return const CommandResult.fail('The camera returned no image.');
       }

@@ -3,6 +3,7 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/device_camera/device_camera_manager.dart';
+import 'package:kiosk_satellite/managers/device_camera/native_camera.dart';
 import 'package:kiosk_satellite/managers/motion/motion_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
@@ -28,12 +29,23 @@ void main() {
   DeviceCameraManager camera() =>
       DeviceCameraManager(bus, commands, log, settings);
 
-  test('camera defaults: off, front, no snapshots, 60s interval', () async {
+  test('camera defaults: off, front, medium, no snapshots, 60s interval',
+      () async {
     await build({});
     expect(settings.get(defs.cameraEnabled), isFalse);
     expect(settings.get(defs.cameraDevice), 'front');
+    expect(settings.get(defs.cameraSnapshotResolution), 'medium');
     expect(settings.get(defs.cameraSnapshots), isFalse);
     expect(settings.get(defs.cameraSnapshotInterval), 60);
+  });
+
+  test('each resolution tier maps to its capture target', () {
+    expect(snapshotResolution('low'), (640, 480));
+    expect(snapshotResolution('medium'), (1280, 960));
+    expect(snapshotResolution('high'), (1920, 1440));
+    // An unknown stored value (a downgrade, a hand-edited import) must
+    // fall back to the default tier, not crash the capture path.
+    expect(snapshotResolution('nonsense'), (1280, 960));
   });
 
   test('migration: a device using motion detection keeps it working',

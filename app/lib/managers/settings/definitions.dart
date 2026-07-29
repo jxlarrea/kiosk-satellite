@@ -1542,6 +1542,27 @@ const cameraDevice = SettingDef<String>(
   dependsOn: 'camera.enabled',
 );
 
+// Stored as an abstract tier, not pixels: CameraX maps the tier's target
+// size onto the nearest resolution the device's camera actually offers, so
+// the same setting is valid on every device. Medium by default: sharp
+// enough for a dashboard still, cheap enough (40-100 KB a frame) that the
+// default settings stay light on CPU and broker alike.
+const cameraSnapshotResolution = SettingDef<String>(
+  key: 'camera.snapshot_resolution',
+  type: SettingType.select,
+  defaultValue: 'medium',
+  title: 'Snapshot resolution',
+  description: 'Higher looks sharper but costs more CPU and bandwidth.',
+  category: 'Camera',
+  options: ['low', 'medium', 'high'],
+  optionLabels: {
+    'low': 'Low (640x480)',
+    'medium': 'Medium (1280x960)',
+    'high': 'High (1920x1440)',
+  },
+  dependsOn: 'camera.enabled',
+);
+
 const cameraSnapshots = SettingDef<bool>(
   key: 'camera.snapshots',
   type: SettingType.boolean,
@@ -2522,6 +2543,7 @@ const List<SettingDef<Object>> allSettings = [
   motionCamera,
   cameraEnabled,
   cameraDevice,
+  cameraSnapshotResolution,
   cameraSnapshots,
   cameraSnapshotInterval,
   screensaverScheduleEnabled,

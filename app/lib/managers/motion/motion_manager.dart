@@ -6,6 +6,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../core/permissions.dart';
+import '../device_camera/native_camera.dart' show snapshotResolution;
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'native_motion.dart';
@@ -57,7 +58,10 @@ class MotionManager extends Manager {
           e.key == defs.cameraEnabled.key;
       if (!isGate &&
           !e.key.startsWith('motion.') &&
-          e.key != defs.cameraDevice.key) {
+          e.key != defs.cameraDevice.key &&
+          // The pre-bound snapshot capture is sized at bind time; a new
+          // resolution needs a rebind to take effect mid-screensaver.
+          e.key != defs.cameraSnapshotResolution.key) {
         return;
       }
       if (isGate && enabled) unawaited(_ensurePermission());
@@ -97,11 +101,15 @@ class MotionManager extends Manager {
       final sensitivity =
           _settings.get(defs.motionSensitivity).toInt().clamp(1, 100);
       final camera = _settings.get(defs.cameraDevice);
+      final (snapW, snapH) =
+          snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
       log.info(name, 'camera on (fps=$fps sensitivity=$sensitivity cam=$camera)');
       _camera = NativeMotion.stream(
         fps: fps,
         sensitivity: sensitivity,
         camera: camera,
+        snapshotWidth: snapW,
+        snapshotHeight: snapH,
       ).listen(
         (_) {
           log.debug(name, 'motion');

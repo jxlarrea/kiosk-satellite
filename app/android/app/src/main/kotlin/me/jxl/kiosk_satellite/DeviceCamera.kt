@@ -51,9 +51,11 @@ class DeviceCamera(
         const val CHANNEL = "kiosk_satellite/camera"
         private const val TAG = "DeviceCamera"
 
-        // Plenty for a Home Assistant still, small enough that the JPEG
-        // stays a lightweight MQTT payload (roughly 100-200 KB).
-        private val TARGET = Size(1280, 960)
+        // The default target (the Medium setting): plenty for a Home
+        // Assistant still, small enough that the JPEG stays a lightweight
+        // MQTT payload. The Dart side passes the configured tier's size
+        // with every call, so this only backstops missing arguments.
+        private val DEFAULT_TARGET = Size(1280, 960)
         private const val JPEG_QUALITY = 80
     }
 
@@ -83,21 +85,23 @@ class DeviceCamera(
     }
 
     /** The capture use case both the ephemeral path and [CameraMotion]'s
-     *  pre-bind use, so the output is identical either way. */
-    fun buildCapture(): ImageCapture = ImageCapture.Builder()
-        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-        .setResolutionSelector(
-            ResolutionSelector.Builder()
-                .setResolutionStrategy(
-                    ResolutionStrategy(
-                        TARGET,
-                        ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
-                    ),
-                )
-                .build(),
-        )
-        .setJpegQuality(JPEG_QUALITY)
-        .build()
+     *  pre-bind use, so the output is identical either way. CameraX maps
+     *  [target] to the nearest size the camera actually offers. */
+    fun buildCapture(target: Size = DEFAULT_TARGET): ImageCapture =
+        ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .setResolutionSelector(
+                ResolutionSelector.Builder()
+                    .setResolutionStrategy(
+                        ResolutionStrategy(
+                            target,
+                            ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
+                        ),
+                    )
+                    .build(),
+            )
+            .setJpegQuality(JPEG_QUALITY)
+            .build()
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
@@ -107,13 +111,21 @@ class DeviceCamera(
                 } else {
                     CameraSelector.DEFAULT_FRONT_CAMERA
                 }
-                mainHandler.post { snapshot(facing, result) }
+                val target = Size(
+                    call.argument<Int>("width") ?: DEFAULT_TARGET.width,
+                    call.argument<Int>("height") ?: DEFAULT_TARGET.height,
+                )
+                mainHandler.post { snapshot(facing, target, result) }
             }
             else -> result.notImplemented()
         }
     }
 
-    private fun snapshot(facing: CameraSelector, result: MethodChannel.Result) {
+    private fun snapshot(
+        facing: CameraSelector,
+        target: Size,
+        result: MethodChannel.Result,
+    ) {
         if (busy) {
             result.error("busy", "a snapshot is already in progress", null)
             return
@@ -128,9 +140,10 @@ class DeviceCamera(
             }
         }
 
-        // Motion session up: ride it. The selector is ignored on purpose;
-        // motion and snapshots share one camera choice (Camera settings),
-        // so the bound camera IS the requested one.
+        // Motion session up: ride it. The selector and target are ignored
+        // on purpose; motion and snapshots share one camera choice and one
+        // resolution setting (Camera settings), so the pre-bound capture
+        // already matches the request.
         sharedCapture?.let {
             take(it, cleanup = null, done)
             return
@@ -157,7 +170,7 @@ class DeviceCamera(
                 else done(null, "camera busy with motion detection")
                 return@addListener
             }
-            val capture = buildCapture()
+            val capture = buildCapture(target)
             val owner = CameraLifecycle()
             try {
                 provider.bindToLifecycle(owner, facing, capture)

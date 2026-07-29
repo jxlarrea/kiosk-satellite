@@ -13,11 +13,17 @@ class NativeMotion {
     required double fps,
     required int sensitivity,
     required String camera,
+    required int snapshotWidth,
+    required int snapshotHeight,
   }) {
     return _channel.receiveBroadcastStream(<String, Object?>{
       'fps': fps,
       'sensitivity': sensitivity,
       'camera': camera,
+      // For the snapshot capture use case pre-bound into this session, so
+      // a frame taken mid-screensaver matches the configured resolution.
+      'snapshotWidth': snapshotWidth,
+      'snapshotHeight': snapshotHeight,
     }).map((_) {});
   }
 }
