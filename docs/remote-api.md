@@ -31,6 +31,9 @@ adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
   expire after 7 days, so a session survives the app/kiosk restarting.
 - WS: `?token=` query parameter.
 - Failed logins are rate-limited (exponential backoff per client IP).
+- `GET /api/health` is the one unauthenticated endpoint: it exists for
+  external monitoring to poll, and a monitor cannot do a login dance. It
+  serves read-only hardware facts only.
 - Optional TLS with a self-signed cert (off by default; LAN-only assumption
   documented).
 
@@ -44,7 +47,7 @@ is administrable here by construction.
 |---|---|---|
 | `/api/login` | POST | `{password}` → `{token}` |
 | `/api/info` | GET | Device info, app version, battery, screen, current URL |
-| `/api/health` | GET | The Device Info tab's Hardware section as one JSON object: identity, addresses, battery, screen, RAM, storage, CPU usage and temperature, and uptimes (`uptime.app` and `uptime.network`, seconds; `network` is null while offline and starts counting at app start at the earliest). Meant for external monitoring to poll |
+| `/api/health` | GET | The Device Info tab's Hardware section as one JSON object: identity, addresses, battery, screen, RAM, storage, CPU usage and temperature, and uptimes (`uptime.app` and `uptime.network`, seconds; `network` is null while offline and starts counting at app start at the earliest). Meant for external monitoring to poll, so it is the one endpoint that needs no token |
 | `/api/settings` | GET | All setting definitions + current values |
 | `/api/settings` | PATCH | `{key: value, ...}` partial update |
 | `/api/settings/export` | GET | Full config as JSON (for provisioning) |

@@ -233,6 +233,12 @@ class RemoteManager extends Manager {
       return _json(200, {'token': _auth.issueToken()});
     }
 
+    // Deliberately public (issue #75): the point of a health check is a
+    // monitor polling it every minute, and a monitor cannot do a login
+    // dance around a 7-day token. Read-only hardware facts; no settings,
+    // no secrets, no page content.
+    if (path == 'api/health' && request.method == 'GET') return _health();
+
     if (!path.startsWith('api/')) return Response.notFound('not found');
 
     // Everything else under /api/ requires a bearer token.
@@ -243,8 +249,6 @@ class RemoteManager extends Manager {
     switch ((request.method, path)) {
       case ('GET', 'api/info'):
         return _info();
-      case ('GET', 'api/health'):
-        return _health();
       case ('GET', 'api/settings'):
         return _json(200, {'settings': _settings.describe()});
       case ('PATCH', 'api/settings'):
