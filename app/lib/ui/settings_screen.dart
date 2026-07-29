@@ -1757,10 +1757,7 @@ class _NoCameraRow extends StatelessWidget {
             color: Theme.of(context).colorScheme.error,
           ),
           title: const Text('No camera detected'),
-          subtitle: const Text(
-            'This device has no usable camera, so these settings cannot '
-            'work.',
-          ),
+          subtitle: const Text('This device does not report any usable camera.'),
         );
       },
     );

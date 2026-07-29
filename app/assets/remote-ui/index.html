@@ -857,7 +857,7 @@ async function updateNoCameraNotice() {
   }
   if (tab.querySelector('.camera-missing-notice')) return;
   const row = readOnlyRow('No camera detected',
-    'This device has no usable camera, so these settings cannot work.', '');
+    'This device does not report any usable camera.', '');
   row.classList.add('camera-missing-notice');
   anchor.insertAdjacentElement('afterend', row);
 }
