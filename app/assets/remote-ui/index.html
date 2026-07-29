@@ -51,6 +51,19 @@
   }
   button { font: inherit; cursor: pointer; }
   input, select { font: inherit; }
+
+  /* Scrollbars: slim, themed, no buttons. The browser default's gray
+     track-and-arrows widget reads as foreign next to the One UI cards,
+     most visibly on the nav rail. Chrome 121+ honors the standard
+     properties and ignores the -webkit pseudos; older Chromium takes the
+     pseudos. Both end at the same look. */
+  * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+  ::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
+  ::-webkit-scrollbar-corner { background: transparent; }
   input[type=range], input[type=checkbox], input[type=radio] {
     accent-color: var(--primary-fill); }
   .hidden { display: none !important; }
