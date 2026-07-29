@@ -44,6 +44,7 @@ is administrable here by construction.
 |---|---|---|
 | `/api/login` | POST | `{password}` → `{token}` |
 | `/api/info` | GET | Device info, app version, battery, screen, current URL |
+| `/api/health` | GET | The Device Info tab's Hardware section as one JSON object: identity, addresses, battery, screen, RAM, storage, CPU usage and temperature, and uptimes (`uptime.app` and `uptime.network`, seconds; `network` is null while offline and starts counting at app start at the earliest). Meant for external monitoring to poll |
 | `/api/settings` | GET | All setting definitions + current values |
 | `/api/settings` | PATCH | `{key: value, ...}` partial update |
 | `/api/settings/export` | GET | Full config as JSON (for provisioning) |

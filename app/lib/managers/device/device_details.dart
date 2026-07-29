@@ -44,6 +44,20 @@ class DeviceDetails {
     }
   }
 
+  /// Seconds since the process started (`app`) and since the default network
+  /// last came up (`network`, null while offline). The network clock starts
+  /// at app start at the earliest: Android tells an app about the network
+  /// from registration onward, not since association — so it reads as "how
+  /// long since a drop was last seen" (issue #75). Empty off-Android.
+  static Future<Map<String, Object?>> uptime() async {
+    try {
+      return await _channel.invokeMapMethod<String, Object?>('uptime') ??
+          const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
   Map<String, Object?>? _map(String key) {
     final v = _raw[key];
     return v is Map ? v.cast<String, Object?>() : null;

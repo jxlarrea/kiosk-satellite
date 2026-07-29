@@ -2,11 +2,15 @@ package me.jxl.kiosk_satellite
 
 import android.app.ActivityManager
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Build
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
 import android.os.StatFs
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.DisplayMetrics
 import android.view.WindowManager
@@ -35,10 +39,50 @@ class DeviceDetails(
 ) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/device_details")
 
+    /**
+     * When the current default network came up, on the elapsedRealtime clock,
+     * or `null` while there is none. An app only learns about the network from
+     * callback registration onward, so this clock starts at app start at the
+     * earliest — "network uptime" reads as "how long since this app last saw
+     * the network come up", which is the drop-detection number issue #75 asks
+     * for, not the router's association time (Android does not expose that).
+     */
+    @Volatile private var networkSince: Long? = null
+
+    /**
+     * The network [networkSince] belongs to. On a switch (WiFi to ethernet)
+     * the new default's onAvailable can arrive before the old network's
+     * onLost; without this the late onLost would zero a clock that belongs
+     * to the network we are happily using.
+     */
+    @Volatile private var currentNetwork: Network? = null
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            currentNetwork = network
+            networkSince = SystemClock.elapsedRealtime()
+        }
+
+        override fun onLost(network: Network) {
+            if (network == currentNetwork) {
+                currentNetwork = null
+                networkSince = null
+            }
+        }
+    }
+
     init {
+        try {
+            (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
+                .registerDefaultNetworkCallback(networkCallback)
+        } catch (e: Exception) {
+            // Too many callbacks registered on this device, or no such
+            // service: network uptime stays null rather than wrong.
+        }
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "read" -> result.success(read())
+                "uptime" -> result.success(uptime())
                 // The SSAID: stable per device + app signing key, surviving
                 // reinstalls (a factory reset changes it). The seed for the
                 // licensing Device ID — a value that has to outlive app data.
@@ -57,7 +101,26 @@ class DeviceDetails(
         }
     }
 
-    fun dispose() = channel.setMethodCallHandler(null)
+    fun dispose() {
+        channel.setMethodCallHandler(null)
+        try {
+            (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
+                .unregisterNetworkCallback(networkCallback)
+        } catch (e: Exception) {
+            // Never registered; nothing to undo.
+        }
+    }
+
+    /**
+     * Seconds this process has been alive (`app`) and seconds since the
+     * default network last came up (`network`, `null` while offline — see
+     * [networkSince] for what "came up" can mean). Both from the
+     * elapsedRealtime clock, so a wall-clock change cannot bend either.
+     */
+    private fun uptime(): Map<String, Any?> = mapOf(
+        "app" to (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime()) / 1000,
+        "network" to networkSince?.let { (SystemClock.elapsedRealtime() - it) / 1000 },
+    )
 
     private fun read(): Map<String, Any?> = mapOf(
         "brand" to Build.BRAND,

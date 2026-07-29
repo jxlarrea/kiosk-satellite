@@ -243,6 +243,8 @@ class RemoteManager extends Manager {
     switch ((request.method, path)) {
       case ('GET', 'api/info'):
         return _info();
+      case ('GET', 'api/health'):
+        return _health();
       case ('GET', 'api/settings'):
         return _json(200, {'settings': _settings.describe()});
       case ('PATCH', 'api/settings'):
@@ -347,6 +349,42 @@ class RemoteManager extends Manager {
 
   Future<Response> _info() async {
     return _json(200, await _deviceState());
+  }
+
+  /// The Device Info tab's Hardware section as one JSON read (issue #75):
+  /// identity, addresses, battery, screen, memory, storage, CPU load and
+  /// temperature, and the app and network uptimes. One stable shape for
+  /// external monitoring to poll, instead of the three command calls the
+  /// admin UI assembles the same rows from.
+  Future<Response> _health() async {
+    final device = await commands.execute('getDeviceInfo', const {});
+    final details = await commands.execute('getDeviceDetails', const {});
+    final screenOn = await commands.execute('isScreenOn', const {});
+    final brightness = await commands.execute('getBrightness', const {});
+    final info = (device.data as Map?)?.cast<String, Object?>() ?? const {};
+    final det = (details.data as Map?)?.cast<String, Object?>() ?? const {};
+    return _json(200, {
+      'name': info['name'],
+      'model': info['model'],
+      'brand': det['brand'],
+      'androidVersion': info['osVersion'],
+      'sdkInt': info['sdkInt'],
+      'androidBuild': det['androidBuild'],
+      'appVersion': info['appVersion'],
+      'ip': info['ip'],
+      'ipv6': info['ipv6'],
+      'battery': info['battery'],
+      'charging': info['charging'],
+      'screenOn': screenOn.ok ? screenOn.data : null,
+      'brightness': (brightness.data as num?)?.toDouble(),
+      'screen': det['screen'],
+      'ram': det['ram'],
+      'storage': det['storage'],
+      'cpu': {'usage': info['cpu'], 'temp': info['temp']},
+      // Seconds. `network` is null while offline; its clock starts at app
+      // start at the earliest (see DeviceDetails.uptime).
+      'uptime': info['uptime'],
+    });
   }
 
   /// What the device is doing, as the admin's dashboard draws it.

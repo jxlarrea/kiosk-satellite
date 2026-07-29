@@ -391,6 +391,7 @@ class DeviceManager extends Manager {
   Future<Map<String, Object?>> info() async {
     return {
       ...await stats(),
+      'uptime': await DeviceDetails.uptime(),
       'name': deviceName,
       'ip': await ipAddress(),
       'ipv6': await ipv6Addresses(),
