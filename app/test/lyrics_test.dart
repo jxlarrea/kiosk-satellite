@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/managers/sendspin/lrclib.dart';
 import 'package:kiosk_satellite/managers/sendspin/lyrics.dart';
 import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
 
@@ -65,6 +66,82 @@ void main() {
     // Past the end it stays on the last line rather than clearing.
     expect(currentLyricIndex(lines, const Duration(minutes: 5)), 2);
     expect(currentLyricIndex(const [], const Duration(seconds: 5)), -1);
+  });
+
+  group('pickLrclibLyrics (issue #90 fallback)', () {
+    test('a sloppy credit still matches the primary artist, duration first',
+        () {
+      final results = <Object?>[
+        {'syncedLyrics': null, 'plainLyrics': 'words', 'duration': 197.0},
+        {
+          'syncedLyrics': '[00:01.00] wrong edition',
+          'artistName': "The Porter's Gate",
+          'duration': 240.0,
+        },
+        {
+          'syncedLyrics': '[00:27.32] Brother sun',
+          'artistName': "The Porter's Gate, ve, Liz Vice",
+          'duration': 198.0,
+        },
+      ];
+      expect(
+        pickLrclibLyrics(
+          results,
+          artist: "The Porter's Gate",
+          durationSeconds: 197,
+        ),
+        '[00:27.32] Brother sun',
+      );
+    });
+
+    test('artist match beats duration match when both cannot hold', () {
+      final results = <Object?>[
+        {
+          'syncedLyrics': '[00:01.00] same length, someone else',
+          'artistName': 'Somebody Else',
+          'duration': 197.0,
+        },
+        {
+          'syncedLyrics': '[00:02.00] right artist, other edition',
+          'artistName': 'Phoebe Bridgers',
+          'duration': 260.0,
+        },
+      ];
+      expect(
+        pickLrclibLyrics(
+          results,
+          artist: 'Phoebe Bridgers',
+          durationSeconds: 197,
+        ),
+        '[00:02.00] right artist, other edition',
+      );
+    });
+
+    test('a bare title never takes an unconstrained match', () {
+      final results = <Object?>[
+        {
+          'syncedLyrics': '[00:01.00] wrong song entirely',
+          'artistName': 'Somebody Else',
+          'duration': 500.0,
+        },
+      ];
+      expect(
+        pickLrclibLyrics(results, artist: 'Adele', durationSeconds: 197),
+        isNull,
+      );
+      expect(pickLrclibLyrics(results), isNull);
+    });
+
+    test('nothing synced means nothing', () {
+      expect(
+        pickLrclibLyrics(<Object?>[
+          {'plainLyrics': 'text only', 'duration': 100.0},
+          'junk',
+        ], durationSeconds: 100),
+        isNull,
+      );
+      expect(pickLrclibLyrics(const []), isNull);
+    });
   });
 
   group('lyricsRetryArtist (issue #90)', () {

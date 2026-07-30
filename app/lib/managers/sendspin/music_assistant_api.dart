@@ -208,9 +208,15 @@ class MusicAssistantApi {
         });
       }
       if (track == null) return null;
-      final result = await session.send('metadata/get_track_lyrics', {
-        'track': track,
-      });
+      // Generous: the lyrics answer rides Music Assistant's own provider
+      // lookups (LRCLIB et al), measured north of 30s when a provider is
+      // slow — and lyrics arriving late still beat lyrics never arriving,
+      // on a track that runs minutes.
+      final result = await session.send(
+        'metadata/get_track_lyrics',
+        {'track': track},
+        timeout: const Duration(seconds: 45),
+      );
       // The reply is (plain lyrics, LRC lyrics).
       if (result is! List || result.length < 2) return null;
       final lrc = result[1];
@@ -262,7 +268,11 @@ class _Session {
   final _pending = <String, Completer<Object?>>{};
   var _nextId = 0;
 
-  Future<Object?> send(String command, Map<String, Object?> args) {
+  Future<Object?> send(
+    String command,
+    Map<String, Object?> args, {
+    Duration timeout = const Duration(seconds: 20),
+  }) {
     final id = '${++_nextId}';
     final completer = Completer<Object?>();
     _pending[id] = completer;
@@ -271,7 +281,7 @@ class _Session {
       'command': command,
       if (args.isNotEmpty) 'args': args,
     }));
-    return completer.future.timeout(const Duration(seconds: 20));
+    return completer.future.timeout(timeout);
   }
 }
 

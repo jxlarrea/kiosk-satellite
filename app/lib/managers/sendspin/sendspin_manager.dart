@@ -9,6 +9,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'lrclib.dart';
 import 'lyrics.dart';
 import 'music_assistant_api.dart';
 
@@ -101,19 +102,34 @@ class SendspinManager extends Manager {
       baseUrl: _settings.get(defs.sendspinMaUrl),
       token: _settings.get(defs.sendspinMaToken),
     );
-    final lrc = await api.fetchLyrics(
+    var lrc = await api.fetchLyrics(
       title: title,
       artist: artist,
       album: '${_status['album'] ?? ''}',
     );
     // The song may have moved on while Music Assistant was looking.
     if (_lyricsKey != key) return;
+    var source = 'Music Assistant';
+    if (lrc == null || lrc.trim().isEmpty) {
+      // Music Assistant's providers found nothing — often strict matching
+      // losing to a lyrics database's sloppy credits (issue #90). Ask
+      // LRCLIB's own, looser search directly before giving up; the user's
+      // local .lrc files stayed authoritative above.
+      final durationMs = (_status['durationMs'] as num?)?.toInt() ?? 0;
+      lrc = await LrclibApi().fetchSyncedLyrics(
+        title: title,
+        artist: artist,
+        durationSeconds: durationMs > 0 ? (durationMs / 1000).round() : null,
+      );
+      if (_lyricsKey != key) return;
+      source = 'LRCLIB';
+    }
     final parsed = parseLrc(lrc);
     log.info(
       name,
       parsed.isEmpty
           ? 'no synced lyrics for $artist - $title'
-          : 'lyrics for $artist - $title (${parsed.length} lines)',
+          : 'lyrics for $artist - $title (${parsed.length} lines, $source)',
     );
     lyrics.value = parsed;
   }

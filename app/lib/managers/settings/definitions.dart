@@ -2356,9 +2356,8 @@ const sendspinLyrics = SettingDef<bool>(
   title: 'Show lyrics',
   description:
       'Show the current track\'s lyrics on the Now Playing screen, in time '
-      'with the music. Music Assistant supplies them, so it needs a lyrics '
-      'provider of its own (LRCLIB, for instance) and only tracks it finds '
-      'lyrics for will show any.',
+      'with the music. Music Assistant supplies them (local .lrc files '
+      'included); tracks it cannot match are looked up on LRCLIB directly.',
   category: 'Sendspin',
   section: 'Music Assistant',
 );
