@@ -2749,8 +2749,9 @@ async function loadSettings() {
         && s.key !== 'ha.rotation_pause_seconds'
         // Rendered below the rotation group, which its switch is gated on.
         && s.key !== 'ha.return_home_enabled' && s.key !== 'ha.return_home_seconds'
-        // The Theme card is hand-built below: its master toggle swaps the
+        // The Theme card is hand-built below: its toggles swap the
         // dependent rows in place instead of reloading the tab.
+        && s.key !== 'ha.theme_match_app'
         && s.key !== 'ha.theme_auto' && s.key !== 'ha.theme_dark_at'
         && s.key !== 'ha.theme_light_at' && s.key !== 'ha.theme_auto_app'
         // Optimizations are hand-built last so the filter can show telemetry.
@@ -2763,10 +2764,11 @@ async function loadSettings() {
       render(restRoot, ['Home Assistant'].filter((c) => (byCat[c] || []).length));
       byCat['Home Assistant'] = savedHa;
 
-      // Theme, hand-built: the master toggle re-renders only this card,
-      // showing or hiding its dependent rows in place.
+      // Theme, hand-built: the toggles re-render only this card, showing
+      // or hiding their dependent rows in place.
       {
         const thAuto = byKey['ha.theme_auto'];
+        const thMatch = byKey['ha.theme_match_app'];
         if (thAuto) {
           const th = document.createElement('h2');
           th.className = 'card-title';
@@ -2777,17 +2779,24 @@ async function loadSettings() {
           root.appendChild(tcard);
           const renderThemeCard = () => {
             tcard.innerHTML = '';
-            tcard.appendChild(toggleRow(thAuto.title, thAuto.description,
-              thAuto.value === true, async (on) => {
-                thAuto.value = on;
+            const themeToggle = (s) => toggleRow(s.title, s.description,
+              s.value === true, async (on) => {
+                s.value = on;
                 await api('/api/settings', { method: 'PATCH',
-                  body: JSON.stringify({ 'ha.theme_auto': on }) });
+                  body: JSON.stringify({ [s.key]: on }) });
                 renderThemeCard();
-              }));
+              });
+            // The mirror first, matching the device: with it on, the
+            // schedule targets the app theme and "Also switch the app
+            // theme" is redundant, so that row hides (issue #92).
+            if (thMatch) tcard.appendChild(themeToggle(thMatch));
+            tcard.appendChild(themeToggle(thAuto));
             if (thAuto.value === true) {
-              for (const k of ['ha.theme_dark_at', 'ha.theme_light_at',
-                'ha.theme_auto_app']) {
+              for (const k of ['ha.theme_dark_at', 'ha.theme_light_at']) {
                 if (byKey[k]) tcard.appendChild(settingRow(byKey[k]));
+              }
+              if (thMatch?.value !== true && byKey['ha.theme_auto_app']) {
+                tcard.appendChild(settingRow(byKey['ha.theme_auto_app']));
               }
             }
           };

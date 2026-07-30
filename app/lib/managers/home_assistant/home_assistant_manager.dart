@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'dart:ui' show Brightness;
+
 import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/widgets.dart'
-    show AppLifecycleState, WidgetsBinding;
+    show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -253,6 +255,8 @@ class HomeAssistantManager extends Manager {
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.themeAuto.key ||
           e.key == defs.themeAutoApp.key ||
+          e.key == defs.themeMatchApp.key ||
+          e.key == defs.uiTheme.key ||
           e.key == defs.themeDarkAt.key ||
           e.key == defs.themeLightAt.key) {
         _applyThemeSchedule(force: true);
@@ -260,6 +264,11 @@ class HomeAssistantManager extends Manager {
     });
     _themeTimer =
         Timer.periodic(const Duration(minutes: 1), (_) => _applyThemeSchedule());
+    // Android flips its own dark mode on its schedule (typically sunset and
+    // sunrise); with the theme mirror on and the App theme on System, that
+    // flip is the theme source (issue #92) and must reach the dashboard the
+    // moment it lands, not on the next minute tick.
+    WidgetsBinding.instance.addObserver(_brightnessWatch);
 
     // Dashboard view rotation: an endless loop over the chosen dashboards.
     // Each setting applies as narrowly as possible — tuning from the remote
@@ -666,24 +675,55 @@ class HomeAssistantManager extends Manager {
   /// only flips its dark variant. HA persists this per browser (localStorage),
   /// so it survives SPA navigation; we re-assert on full loads that reset it.
   Future<void> _applyThemeSchedule({bool force = false}) async {
-    if (!_settings.get(defs.themeAuto)) {
-      _lastDark = null;
-      return;
-    }
-    final dark = _desiredDark(DateTime.now());
-    if (!force && dark == _lastDark) return;
-    _lastDark = dark;
-    await commands.execute('evalJs', {'code': _themeJs(dark)});
-    // The app's own theme follows the same clock when asked to. Through the
-    // settings store, not directly: main.dart already listens for ui.theme
-    // and applies it live, remote UI included.
-    if (_settings.get(defs.themeAutoApp)) {
-      final want = dark ? 'dark' : 'light';
-      if (_settings.get(defs.uiTheme) != want) {
-        await _settings.setFromJson(defs.uiTheme.key, want);
+    final matchApp = _settings.get(defs.themeMatchApp);
+    if (_settings.get(defs.themeAuto)) {
+      final dark = _desiredDark(DateTime.now());
+      // The app's own theme follows the schedule when asked to — via the
+      // legacy toggle, or via the mirror, under which the schedule targets
+      // the app and the mirror below carries it on to the dashboard.
+      // Through the settings store, not directly: main.dart already
+      // listens for ui.theme and applies it live, remote UI included.
+      if (matchApp || _settings.get(defs.themeAutoApp)) {
+        final want = dark ? 'dark' : 'light';
+        if (_settings.get(defs.uiTheme) != want) {
+          await _settings.setFromJson(defs.uiTheme.key, want);
+        }
+      }
+      if (!matchApp) {
+        if (!force && dark == _lastDark) return;
+        _lastDark = dark;
+        await commands.execute('evalJs', {'code': _themeJs(dark)});
+        return;
       }
     }
+    // The mirror (issue #92): the dashboard follows the app's EFFECTIVE
+    // theme — the App theme setting, or the device's own dark mode when it
+    // is System, which Android flips at its own sunset/sunrise.
+    if (matchApp) {
+      final dark = _effectiveAppDark();
+      if (!force && dark == _lastDark) return;
+      _lastDark = dark;
+      await commands.execute('evalJs', {'code': _themeJs(dark)});
+      return;
+    }
+    _lastDark = null;
   }
+
+  /// Whether the app is effectively dark right now: the App theme setting,
+  /// deferring to the platform for System.
+  bool _effectiveAppDark() => switch (_settings.get(defs.uiTheme)) {
+        'dark' => true,
+        'light' => false,
+        _ => WidgetsBinding
+                .instance.platformDispatcher.platformBrightness ==
+            Brightness.dark,
+      };
+
+  /// Relays the platform's dark-mode flips into the theme logic; see the
+  /// observer registration in [init].
+  late final _brightnessWatch = _PlatformBrightnessWatch(
+    () => _applyThemeSchedule(force: true),
+  );
 
   /// Whether [now] falls in the dark window between the two configured times.
   /// The usual case (dark 19:00 → light 07:00) wraps midnight.
@@ -1222,6 +1262,7 @@ class HomeAssistantManager extends Manager {
     _touchPauseTimer?.cancel();
     _voiceSafetyTimer?.cancel();
     _returnHomeTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(_brightnessWatch);
   }
 }
 
@@ -1243,4 +1284,17 @@ class GlanceSubscription {
       await _channel.sink.close();
     } catch (_) {}
   }
+}
+
+/// A minimal binding observer that forwards platform dark-mode flips.
+/// Its own object rather than a mixin on the manager: the manager needs
+/// exactly one callback from the widgets binding, not the whole observer
+/// surface.
+class _PlatformBrightnessWatch with WidgetsBindingObserver {
+  _PlatformBrightnessWatch(this.onChanged);
+
+  final void Function() onChanged;
+
+  @override
+  void didChangePlatformBrightness() => onChanged();
 }

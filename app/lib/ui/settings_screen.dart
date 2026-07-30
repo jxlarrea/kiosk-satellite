@@ -1213,6 +1213,10 @@ class _CategoryContentState extends State<_CategoryContent> {
         for (final def in _defsFor('Home Assistant'))
           if (def.key != haUrl.key &&
               def.key != haToken.key &&
+              // Redundant while the theme mirror is on: the schedule
+              // already targets the app theme then (issue #92).
+              (def.key != themeAutoApp.key ||
+                  !container.settings.get(themeMatchApp)) &&
               // The rotation group is hand-built below: its dashboard list
               // needs the live dashboards from HA, which the generic
               // renderer cannot supply.

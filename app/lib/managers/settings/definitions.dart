@@ -1899,6 +1899,25 @@ const haKioskHideSidebar = SettingDef<bool>(
   category: 'Home Assistant',
 );
 
+/// Mirror the app's effective theme onto the Home Assistant dashboard
+/// (issue #92): with the App theme on "System", Android flips dark mode on
+/// its own schedule (typically sunset/sunrise), and the dashboard follows.
+/// With this on, the time schedule below drives the APP theme and the
+/// mirror carries it to the dashboard, so every source stays consistent:
+/// schedule -> app -> dashboard. Supersedes "Also switch the app theme",
+/// which hides while this holds.
+const themeMatchApp = SettingDef<bool>(
+  key: 'ha.theme_match_app',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Sync Home Assistant Themes with Kiosk Satellite',
+  description:
+      'Automatically match your Home Assistant theme to your Kiosk '
+      'Satellite interface.',
+  category: 'Home Assistant',
+  section: 'Theme',
+);
+
 const themeAuto = SettingDef<bool>(
   key: 'ha.theme_auto',
   type: SettingType.boolean,
@@ -2623,6 +2642,7 @@ const List<SettingDef<Object>> allSettings = [
   haKioskModeLast,
   haKioskHideHeader,
   haKioskHideSidebar,
+  themeMatchApp,
   themeAuto,
   themeDarkAt,
   themeLightAt,
