@@ -195,7 +195,8 @@ const freezeOnScreensaver = SettingDef<bool>(
   description:
       'Stops drawing the dashboard while the screensaver covers it, cutting '
       'CPU and GPU use. The connection stays active. Turns on "Keep '
-      'connected in the background".',
+      'connected in the background". Does not apply to the Dim screensaver, '
+      'which keeps the dashboard visible.',
   category: 'Home Assistant',
   section: 'Optimizations',
 );
@@ -757,7 +758,7 @@ const screensaverMode = SettingDef<String>(
   title: 'Screensaver mode',
   description:
       'What the screensaver shows after the idle timeout. Dim only '
-      'lowers the backlight and is the lightest.',
+      'lowers the backlight and leaves the dashboard on screen.',
   category: 'Screensaver',
   options: [
     'dim',

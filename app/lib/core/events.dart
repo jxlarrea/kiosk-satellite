@@ -54,6 +54,18 @@ class ScreensaverStateChanged extends AppEvent {
   String get wireName => active ? 'screensaverstart' : 'screensaverstop';
 }
 
+/// The overlay the screensaver shows changed: a mode's view came up, a
+/// mid-session flip swapped it, or it went away (Dim shows none; stop clears
+/// it). Internal: the browser's rendering freeze keys off whether an overlay
+/// actually covers the dashboard — Dim leaves the page visible, so hiding
+/// its WebView would blank the screen (issue #82).
+class ScreensaverViewChanged extends AppEvent {
+  const ScreensaverViewChanged({required this.view});
+
+  /// Same values as ScreensaverManager.activeView; null when no overlay.
+  final String? view;
+}
+
 /// The device's media volume changed, from any side: a command, the
 /// hardware rocker, or another app.
 /// The device's next alarm was set, moved or dismissed, in whichever clock

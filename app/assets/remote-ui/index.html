@@ -1034,6 +1034,25 @@ function updateMotionCameraRows() {
   }
 }
 
+/* The Dim screensaver warning, mirroring the device: Dim is the one mode
+   the pause-dashboard optimization cannot help - there is no overlay, the
+   page IS the display. Kept identical to the device's copy in
+   settings_screen.dart. */
+function updateDimModeNotice() {
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  if (byKey['screensaver.mode']?.value !== 'dim') return;
+  const tab = document.getElementById('tab-screensaver');
+  const anchor = tab.querySelector('[data-key="screensaver.dim_level"]');
+  if (!anchor || tab.querySelector('.dim-mode-note')) return;
+  const div = document.createElement('div');
+  div.className = 'row dim-mode-note';
+  div.style.cssText = 'font-size:12.5px; color:var(--warn);';
+  div.textContent = 'WARNING: Dim keeps the dashboard visible, so the '
+    + '"Pause dashboard during screensaver" optimization will not be applied '
+    + 'and the dashboard keeps using CPU, GPU and battery.';
+  anchor.insertAdjacentElement('afterend', div);
+}
+
 /* File Manager (remote admin only): browse device folders, download,
    upload and delete files. Two roots from the app: shared storage (gated
    on the "All files access" grant, requested on the device) and the app's
@@ -2390,6 +2409,7 @@ async function loadSettings() {
   updateCameraGrantNotice();
   updateCameraSnapshotPanel();
   updateMotionCameraRows();
+  updateDimModeNotice();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();
   updateMqttValidateRow();

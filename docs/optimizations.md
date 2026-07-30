@@ -69,6 +69,12 @@ save, and the numbers barely move; that is the expected result, not a fault.
 Turning it on also turns on **Keep connected in the background**, since a
 covered dashboard must not be one Home Assistant chooses to disconnect.
 
+The one screensaver it cannot help is **Dim**: that mode keeps the dashboard
+itself on screen, just darker, so there is nothing to stop drawing. The pause
+simply does not engage there, and the dashboard keeps its normal CPU, GPU and
+battery use. Every other mode puts its own overlay in front and benefits in
+full.
+
 On by default, verified on Snapdragon and MediaTek hardware from Android 11
 up. WebView builds vary; if a dashboard ever comes back wrong after the
 screensaver, turn it off and please report what the device and Android

@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -65,8 +66,11 @@ void main() {
   test('screensaver events without a WebView never mark the page frozen',
       () async {
     await build({'ks.browser.freeze_on_screensaver': true});
+    bus.publish(const ScreensaverViewChanged(view: 'clock'));
     bus.publish(const ScreensaverStateChanged(active: true));
-    await pumpEventQueue();
+    // Past the paint delay: the freeze timer fires into a browser with no
+    // page loaded and must leave the state alone.
+    await Future<void>.delayed(const Duration(milliseconds: 1300));
     expect(browser.renderingFrozen, isFalse);
     bus.publish(const ScreensaverStateChanged(active: false));
     await pumpEventQueue();
@@ -76,8 +80,61 @@ void main() {
   test('the screensaver alone does not freeze with the setting off',
       () async {
     await build({});
+    bus.publish(const ScreensaverViewChanged(view: 'clock'));
     bus.publish(const ScreensaverStateChanged(active: true));
     await pumpEventQueue();
     expect(browser.renderingFrozen, isFalse);
+  });
+
+  // The native visibility switch, mocked at the platform channel: what the
+  // Dart side actually asks of it per screensaver mode (issue #82).
+  group('with a dashboard loaded', () {
+    const channel = MethodChannel('kiosk_satellite/webview_freeze');
+    late List<MethodCall> calls;
+
+    setUp(() {
+      calls = [];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return 1;
+      });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    test('dim shows no overlay and leaves the dashboard rendering', () async {
+      await build({'ks.browser.freeze_on_screensaver': true});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      bus.publish(const ScreensaverViewChanged(view: null));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls, isEmpty);
+    });
+
+    test('a covering mode freezes after the paint delay; a mid-session '
+        'flip to dim thaws immediately', () async {
+      await build({'ks.browser.freeze_on_screensaver': true});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      bus.publish(const ScreensaverViewChanged(view: 'clock'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pumpEventQueue();
+      // Not yet: the overlay gets a beat to paint first.
+      expect(browser.renderingFrozen, isFalse);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+      expect(calls.last.arguments['hidden'], isTrue);
+
+      // A schedule boundary swaps the clock for dim: the dashboard is the
+      // display now, so it must come back without the paint delay.
+      bus.publish(const ScreensaverViewChanged(view: null));
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls.last.arguments['hidden'], isFalse);
+    });
   });
 }

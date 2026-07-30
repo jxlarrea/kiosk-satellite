@@ -74,21 +74,19 @@ class BrowserManager extends Manager {
     // wholesale, so the unread HA socket gets dropped by the server as a
     // slow consumer within minutes (and a dormant page would miss Voice
     // Satellite announcements and timer alerts anyway).
+    //
+    // Hiding is further gated on an overlay actually covering the dashboard:
+    // the Dim screensaver shows none — the page IS its display — so freezing
+    // there blanks the screen (issue #82). Coverage arrives on its own event
+    // because it can flip mid-session (a schedule boundary swapping Dim for
+    // a content mode, or the Now Playing takeover).
     bus.on<ScreensaverStateChanged>().listen((e) {
       _screensaverActive = e.active;
-      _freezeDelay?.cancel();
-      if (e.active) {
-        // Hide only after the overlay has had time to paint, or the
-        // dashboard blinks to black just before the screensaver appears.
-        _freezeDelay = Timer(
-          const Duration(seconds: 1),
-          () => unawaited(_syncFreeze()),
-        );
-      } else {
-        // Backup path: the screensaver's stop() already thawed synchronously
-        // (unfreezeRendering) before lifting the overlay.
-        unawaited(_syncFreeze());
-      }
+      _scheduleFreezeSync();
+    });
+    bus.on<ScreensaverViewChanged>().listen((e) {
+      _dashboardCovered = e.view != null;
+      _scheduleFreezeSync();
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key != defs.freezeOnScreensaver.key) return;
@@ -374,8 +372,28 @@ class BrowserManager extends Manager {
   }
 
   bool _screensaverActive = false;
+  bool _dashboardCovered = false;
   bool _frozen = false;
   Timer? _freezeDelay;
+
+  /// Every freeze edge from the bus lands here: freezing waits a beat so the
+  /// overlay has had time to paint (or the dashboard blinks to black just
+  /// before the screensaver appears), thawing applies immediately — the
+  /// dashboard must be drawing again by the time it is uncovered.
+  void _scheduleFreezeSync() {
+    _freezeDelay?.cancel();
+    final want = _screensaverActive &&
+        _dashboardCovered &&
+        _settings.get(defs.freezeOnScreensaver);
+    if (want && !_frozen) {
+      _freezeDelay = Timer(
+        const Duration(seconds: 1),
+        () => unawaited(_syncFreeze()),
+      );
+    } else {
+      unawaited(_syncFreeze());
+    }
+  }
 
   /// Keepalive while frozen: a hidden page's timers are throttled (hard,
   /// after ~5 minutes), which can starve the HA websocket's own keepalive
@@ -392,13 +410,15 @@ class BrowserManager extends Manager {
   bool get renderingFrozen => _frozen;
 
   /// Reconcile the WebView's native visibility with (screensaver up) AND
-  /// (the freeze optimization on). Called from every edge that can change
-  /// either. Only the dashboard is touched — the native side matches views
-  /// by this page's origin, leaving the screensaver's own media WebView and
-  /// rotation overlays alone.
+  /// (an overlay covering the dashboard) AND (the freeze optimization on).
+  /// Called from every edge that can change any of the three. Only the
+  /// dashboard is touched — the native side matches views by this page's
+  /// origin, leaving the screensaver's own media WebView and rotation
+  /// overlays alone.
   Future<void> _syncFreeze() async {
-    final want =
-        _screensaverActive && _settings.get(defs.freezeOnScreensaver);
+    final want = _screensaverActive &&
+        _dashboardCovered &&
+        _settings.get(defs.freezeOnScreensaver);
     if (want == _frozen) return;
     final prefix = _origin(_currentUrl);
     if (prefix == null) {

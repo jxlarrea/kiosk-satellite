@@ -996,6 +996,12 @@ class _CategoryContentState extends State<_CategoryContent> {
                   'Motion detection uses the camera selected in the '
                   'Camera settings.',
                 ),
+              // Dim is the one mode the pause-dashboard optimization cannot
+              // help: there is no overlay, the page IS the display. Lives in
+              // the Dim group, whose rows only render while Dim is selected.
+              if (widget.category == 'Screensaver' &&
+                  container.settings.get(screensaverMode) == 'dim')
+                screensaverDimLevel.key: const _WarnRow(_dimModeNote),
               if (widget.category == 'Screensaver') ...{
                 // Rendered only while their anchor rows are (mode: immich).
                 screensaverImmichApiKey.key: _ImmichValidateRow(
@@ -1723,6 +1729,44 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
 
 /// A muted explanatory line inside a settings card, for context that is
 /// not a control (where the motion camera picker used to be).
+/// Wording for the Dim screensaver warning, shared with the remote admin
+/// (which carries its own copy in the HTML).
+const _dimModeNote =
+    'WARNING: Dim keeps the dashboard visible, so the "Pause dashboard '
+    'during screensaver" optimization will not be applied and the dashboard '
+    'keeps using CPU, GPU and battery.';
+
+/// A warning line under a setting's row, for a choice that carries a cost
+/// the row itself does not show. Same shape as [_HintRow], in the theme's
+/// warning color.
+class _WarnRow extends StatelessWidget {
+  const _WarnRow(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final warn = Theme.of(context).colorScheme.tertiary;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, size: 18, color: warn),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: warn),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _HintRow extends StatelessWidget {
   const _HintRow(this.text);
 

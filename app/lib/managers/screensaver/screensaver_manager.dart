@@ -342,6 +342,15 @@ class ScreensaverManager extends Manager {
     }
   }
 
+  /// Set the overlay and tell the bus: the browser manager freezes the
+  /// dashboard's rendering only while an overlay actually covers it, and
+  /// coverage can flip mid-session (a schedule boundary swapping Dim for a
+  /// content mode, music starting under Dim).
+  void _setView(String? view) {
+    activeView.value = view;
+    bus.publish(ScreensaverViewChanged(view: view));
+  }
+
   /// Apply what the screensaver session should currently look like: the
   /// configured mode, or the Sendspin "Now Playing" takeover. Called at
   /// start and again whenever the takeover flips mid-session (music
@@ -358,7 +367,7 @@ class ScreensaverManager extends Manager {
     if (_nowPlayingTakeover) {
       // A non-null view gives the override a slot to render into ('dim'
       // normally shows no overlay at all), at full brightness.
-      activeView.value = (mode == 'dim') ? 'black' : mode;
+      _setView((mode == 'dim') ? 'black' : mode);
       if (_savedBrightness != null) {
         await commands.execute('setBrightness', {'level': _savedBrightness});
       }
@@ -368,7 +377,7 @@ class ScreensaverManager extends Manager {
       case 'dim':
         // Backlight only — no overlay. stop() restores the saved level.
         // A scheduled brightness wins over the configured dim level.
-        activeView.value = null;
+        _setView(null);
         final dim = _scheduleBrightness ??
             _settings.get(defs.screensaverDimLevel).toDouble();
         await commands.execute('setBrightness', {'level': dim});
@@ -378,14 +387,14 @@ class ScreensaverManager extends Manager {
         // lockNow) and would freeze the app with it. The black screensaver
         // must stay alive: motion wake, the wake word UI and the admin's
         // live view all keep running behind the dark glass.
-        activeView.value = 'black';
+        _setView('black');
         await commands.execute('setBrightness', {'level': 0});
       default:
         // clock / media / website: a lit overlay showing content, at normal
         // brightness unless the separate screensaver brightness — or the
         // active schedule entry — asks for its own level (a clock that must
         // not glow all night).
-        activeView.value = mode;
+        _setView(mode);
         if (_contentDimEnabled(mode)) {
           final level = _scheduleBrightness ??
               _settings.get(defs.screensaverBrightnessLevel).toDouble();
@@ -435,7 +444,7 @@ class ScreensaverManager extends Manager {
     // never shows a blank hole where the page is (a no-op unless the
     // rendering freeze optimization hid it).
     await commands.execute('unfreezeRendering', const {});
-    activeView.value = null;
+    _setView(null);
     await commands.execute('screenOn', const {});
     // Release the hold; the keep-awake setting (if any) still applies.
     await commands.execute('keepScreenAwake', {'enabled': false});
