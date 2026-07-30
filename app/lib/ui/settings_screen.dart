@@ -1701,6 +1701,61 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                   '${(((_dragIndex == i ? _dragLevel! : ((entries[i]['brightness'] as num?) ?? 0.2).toDouble())) * 100).round()}%',
                   style: theme.textTheme.bodySmall,
                 ),
+                const SizedBox(width: 12),
+                // Tri-state motion override (issue #89): a Black entry
+                // overnight can keep the camera off, a Clock entry can
+                // watch even with the global switch off. Rendered disabled
+                // when the Camera master switch is off (or the device has
+                // no camera), same as the Dismiss on motion switch: no
+                // camera means no motion detection to override.
+                Icon(
+                  Icons.directions_run,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Tooltip(
+                  message: widget.container.deviceCamera.effectiveEnabled
+                      ? 'Dismiss on motion while this entry is active'
+                      : 'Requires the camera. Turn it on in the Camera '
+                          'settings first.',
+                  child: DropdownButton<String>(
+                    underline: const SizedBox.shrink(),
+                    isDense: true,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.onSurface),
+                    value: switch (entries[i]['motion']) {
+                      true => 'on',
+                      false => 'off',
+                      _ => 'default',
+                    },
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'default',
+                        child: Text('Motion: default'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'on',
+                        child: Text('Motion: on'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'off',
+                        child: Text('Motion: off'),
+                      ),
+                    ],
+                    onChanged: !widget.container.deviceCamera.effectiveEnabled
+                        ? null
+                        : (choice) async {
+                            if (choice == null) return;
+                            if (choice == 'default') {
+                              entries[i].remove('motion');
+                            } else {
+                              entries[i]['motion'] = choice == 'on';
+                            }
+                            await _save(entries);
+                          },
+                  ),
+                ),
               ],
             ),
             trailing: IconButton(

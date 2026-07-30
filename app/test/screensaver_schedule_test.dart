@@ -28,6 +28,18 @@ void main() {
       expect(entries.single.containsKey('brightness'), isFalse);
     });
 
+    test('the motion override passes through only as a bool', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"08:00","mode":"clock","motion":true},'
+          '{"at":"20:00","mode":"black","motion":false},'
+          '{"at":"22:00","mode":"black","motion":"yes"},'
+          '{"at":"23:00","mode":"black"}]');
+      expect(entries[0]['motion'], isTrue);
+      expect(entries[1]['motion'], isFalse);
+      expect(entries[2].containsKey('motion'), isFalse);
+      expect(entries[3].containsKey('motion'), isFalse);
+    });
+
     test('garbage input is an empty schedule', () {
       expect(parseScreensaverSchedule('not json'), isEmpty);
       expect(parseScreensaverSchedule('{"at":"08:00"}'), isEmpty);

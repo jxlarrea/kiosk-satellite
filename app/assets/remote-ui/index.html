@@ -4022,8 +4022,8 @@ function settingRow(s) {
   // the group reads like every other list in this admin instead of cramming
   // four names into one value cell.
   // The screensaver schedule, mirroring the device's editor: one row per
-  // entry - time, mode, brightness - plus an add button. Each entry
-  // applies from its time until the next one's.
+  // entry - time, mode, brightness, motion override - plus an add button.
+  // Each entry applies from its time until the next one's.
   if (s.key === 'screensaver.schedule') {
     let entries = [];
     try { entries = JSON.parse(s.value || '[]') || []; } catch (_) { entries = []; }
@@ -4089,13 +4089,39 @@ function settingRow(s) {
       pct.textContent = rng.value + '%';
       rng.addEventListener('input', () => { pct.textContent = rng.value + '%'; });
       rng.addEventListener('change', () => { e.brightness = (+rng.value) / 100; persist(); });
+      // Tri-state motion override, mirroring the device (issue #89): a
+      // Black entry overnight can keep the camera off, a Clock entry can
+      // watch even with the global switch off. Disabled while the Camera
+      // master switch is off (or the device has no camera), same as the
+      // Dismiss on motion switch: no camera, nothing to override.
+      const camOn = ((state.settings || []).find((x) => x.key === 'camera.enabled') || {}).value === true
+        && state.cameraPresent !== false;
+      const motion = document.createElement('select');
+      motion.style.cssText = 'flex:0 1 auto; min-width:110px;';
+      motion.disabled = !camOn;
+      motion.title = camOn
+        ? 'Dismiss on motion while this entry is active'
+        : 'Requires the camera. Turn it on in the Camera settings first.';
+      [['', 'Motion: default'], ['on', 'Motion: on'], ['off', 'Motion: off']]
+        .forEach(([v, text]) => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = text;
+          motion.appendChild(o);
+        });
+      motion.value = (typeof e.motion === 'boolean') ? (e.motion ? 'on' : 'off') : '';
+      motion.addEventListener('change', () => {
+        if (motion.value === '') delete e.motion;
+        else e.motion = motion.value === 'on';
+        persist();
+      });
       const del = document.createElement('button');
       del.className = 'btn-ghost';
       del.textContent = '×';
       del.style.cssText = 'width:auto; padding:6px 12px; flex-shrink:0;';
       del.addEventListener('click', () => { entries.splice(i, 1); persist(); });
       r.appendChild(time); r.appendChild(sel); r.appendChild(sun);
-      r.appendChild(rng); r.appendChild(pct); r.appendChild(del);
+      r.appendChild(rng); r.appendChild(pct); r.appendChild(motion);
+      r.appendChild(del);
       return r;
     };
 

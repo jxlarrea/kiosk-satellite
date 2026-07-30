@@ -40,6 +40,9 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
         'mode': mode,
         if (e['brightness'] is num)
           'brightness': (e['brightness'] as num).clamp(0, 1),
+        // Tri-state motion override (issue #89): absent follows the
+        // "Dismiss on motion" switch.
+        if (e['motion'] is bool) 'motion': e['motion'],
       });
     }
     entries.sort((a, b) => scheduleMinutes(a['at'] as String)!
@@ -159,7 +162,12 @@ class ScreensaverManager extends Manager {
       if (_active) unawaited(_applyVisuals());
     });
     bus.on<MotionDetected>().listen((_) {
-      if (!_settings.get(defs.screensaverDismissOnMotion)) return;
+      // The active schedule entry's motion override (issue #89) wins over
+      // the switch, matching the camera's own gating in MotionManager.
+      if (!(_motionPolicy ??
+          _settings.get(defs.screensaverDismissOnMotion))) {
+        return;
+      }
       // The full-screen now-playing view has its own motion policy: it is
       // a music display, and someone walking past should not interrupt it
       // unless explicitly asked to (sendspin.fullscreen_motion).
@@ -306,6 +314,18 @@ class ScreensaverManager extends Manager {
   double? get _scheduleBrightness =>
       (_scheduleEntry?['brightness'] as num?)?.toDouble();
 
+  /// The motion policy last announced to the bus, so boundary ticks only
+  /// publish actual changes. Applied during a session, null between them.
+  bool? _motionPolicy;
+
+  /// Announce the active entry's motion override (issue #89), [policy]
+  /// itself being null between sessions and for entries without one.
+  void _publishMotionPolicy(bool? policy) {
+    if (policy == _motionPolicy) return;
+    _motionPolicy = policy;
+    bus.publish(ScreensaverMotionPolicyChanged(dismissOnMotion: policy));
+  }
+
   void _scheduleTick() {
     if (!_active) return;
     final at = _scheduleEntry?['at'] as String?;
@@ -359,7 +379,9 @@ class ScreensaverManager extends Manager {
   /// music display and must not inherit dim's backlight or black's zero.
   Future<void> _applyVisuals() async {
     final mode = _effectiveMode;
-    _appliedScheduleAt = _scheduleEntry?['at'] as String?;
+    final entry = _scheduleEntry;
+    _appliedScheduleAt = entry?['at'] as String?;
+    _publishMotionPolicy(entry?['motion'] as bool?);
     // Modes that change brightness save their restore point first.
     if (mode == 'dim' || mode == 'black' || _contentDimEnabled(mode)) {
       await _ensureSavedBrightness();
@@ -453,6 +475,7 @@ class ScreensaverManager extends Manager {
       _savedBrightness = null;
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }
+    _publishMotionPolicy(null);
     bus.publish(const ScreensaverStateChanged(active: false));
   }
 

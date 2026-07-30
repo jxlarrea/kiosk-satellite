@@ -54,6 +54,16 @@ class ScreensaverStateChanged extends AppEvent {
   String get wireName => active ? 'screensaverstart' : 'screensaverstop';
 }
 
+/// The motion policy the active screensaver schedule entry imposes (issue
+/// #89): true/false overrides the "Dismiss on motion" switch for the
+/// entry's duration, null returns to the switch. Published at session start
+/// and on every schedule boundary, cleared on stop. Internal: the motion
+/// manager starts and stops the camera off it.
+class ScreensaverMotionPolicyChanged extends AppEvent {
+  const ScreensaverMotionPolicyChanged({required this.dismissOnMotion});
+  final bool? dismissOnMotion;
+}
+
 /// The overlay the screensaver shows changed: a mode's view came up, a
 /// mid-session flip swapped it, or it went away (Dim shows none; stop clears
 /// it). Internal: the browser's rendering freeze keys off whether an overlay

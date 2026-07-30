@@ -34,19 +34,33 @@ class MotionManager extends Manager {
   /// the Camera section's master switch: the camera choice lives there, and a
   /// disabled camera means no camera feature runs, this one included. The
   /// dismiss switch keeps its value while the camera is off, so re-enabling
-  /// the camera brings motion detection back without re-setup.
+  /// the camera brings motion detection back without re-setup. An active
+  /// schedule entry's motion override (issue #89) stands in for the dismiss
+  /// switch while it holds — a Black entry overnight can keep the camera off
+  /// entirely.
   bool get enabled =>
-      _settings.get(defs.screensaverDismissOnMotion) &&
+      (_schedulePolicy ??
+          _settings.get(defs.screensaverDismissOnMotion)) &&
       _settings.get(defs.cameraEnabled);
 
   StreamSubscription<void>? _camera;
   bool _screensaverActive = false;
   bool _starting = false;
 
+  /// The screensaver schedule's motion override, null when none holds.
+  bool? _schedulePolicy;
+
   @override
   Future<void> init() async {
     bus.on<ScreensaverStateChanged>().listen((e) {
       _screensaverActive = e.active;
+      _sync();
+    });
+    // Session start publishes the policy before the active event above, and
+    // boundary crossings mid-session publish on their own — either way the
+    // camera starts or stops to match within a tick.
+    bus.on<ScreensaverMotionPolicyChanged>().listen((e) {
+      _schedulePolicy = e.dismissOnMotion;
       _sync();
     });
     // A tuning change (fps / sensitivity / the Camera section's camera pick)
