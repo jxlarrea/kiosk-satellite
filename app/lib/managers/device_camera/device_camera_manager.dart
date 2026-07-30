@@ -61,6 +61,21 @@ class DeviceCameraManager extends Manager {
   /// code deciding what to render; false while the answer is unknown.
   bool get cameraKnownAbsent => _present == false;
 
+  /// The lens facings this device actually has, or null before the probe
+  /// answers. A single-camera device (Echo Show 5: front only) should not
+  /// be offered a Front/Back picker.
+  List<String>? _facings;
+  List<String>? get knownFacings => _facings;
+
+  Future<List<String>> cameraFacings() async {
+    if (_facings != null) return _facings!;
+    try {
+      return _facings = await NativeCamera.facings();
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// The camera master switch as the rest of the app should read it: on
   /// AND backed by real hardware. A stored "on" on a camera-less device
   /// counts as off everywhere.
@@ -74,6 +89,7 @@ class DeviceCameraManager extends Manager {
     // answer by the time they ask. Unawaited: with no Activity yet the
     // probe simply resolves later, on the first ask that finds one.
     unawaited(cameraPresent());
+    unawaited(cameraFacings());
 
     bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('camera.')) return;
@@ -105,6 +121,17 @@ class DeviceCameraManager extends Manager {
         name: 'hasDeviceCamera',
         description: 'Whether this device has a usable camera.',
         handler: (_) async => CommandResult.ok(await cameraPresent()),
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'getCameraFacings',
+        description:
+            "The camera facings this device has, e.g. ['front'] on "
+            'single-camera hardware. The remote admin hides the '
+            'front/back picker when there is no choice to make.',
+        handler: (_) async => CommandResult.ok(await cameraFacings()),
       ),
     );
 
@@ -184,16 +211,21 @@ class DeviceCameraManager extends Manager {
     try {
       final (width, height) =
           snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
+      // The native side carries its own watchdog; this one backstops it so
+      // a wedged platform call can never pin _capturing until app restart.
       final jpeg = await NativeCamera.snapshot(
         camera: _settings.get(defs.cameraDevice),
         width: width,
         height: height,
-      );
+      ).timeout(const Duration(seconds: 30));
       if (jpeg == null || jpeg.isEmpty) {
         return const CommandResult.fail('The camera returned no image.');
       }
       bus.publish(CameraSnapshotTaken(jpeg: jpeg));
       return CommandResult.ok({'bytes': jpeg.length});
+    } on TimeoutException {
+      log.warn(name, 'snapshot timed out');
+      return const CommandResult.fail('The camera did not answer in time.');
     } on PlatformException catch (e) {
       log.warn(name, 'snapshot failed: ${e.message}');
       return CommandResult.fail('Snapshot failed: ${e.message}');

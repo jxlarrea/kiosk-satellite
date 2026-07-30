@@ -880,6 +880,28 @@ async function updateNoCameraNotice() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
+/* Single-camera hardware (Echo Show 5: front only) gets no front/back
+   picker, mirroring the device: the camera.device select is replaced by a
+   plain row naming the only camera. The capture falls back to the camera
+   present regardless of the stored value. */
+async function updateCameraFacingsRow() {
+  if (state.cameraPresent === false) return;
+  if (state.cameraFacings === undefined) {
+    try {
+      const res = await (await api('/api/commands/getCameraFacings', { method: 'POST', body: '{}' })).json();
+      state.cameraFacings = Array.isArray(res.data) ? res.data : null;
+    } catch (_) { state.cameraFacings = null; }
+  }
+  if (!state.cameraFacings || state.cameraFacings.length !== 1) return;
+  const tab = document.getElementById('tab-camera');
+  const sel = tab.querySelector('[data-key="camera.device"]');
+  if (!sel) return;
+  const label = state.cameraFacings[0] === 'back' ? 'Back' : 'Front';
+  const row = readOnlyRow('Camera', 'The only camera this device has.', label);
+  row.dataset.key = 'camera.device';
+  sel.replaceWith(row);
+}
+
 async function updateCameraGrantNotice() {
   if (state.cameraPresent === false) return;
   const cameraEnabled = (state.settings || [])
@@ -2406,6 +2428,7 @@ async function loadSettings() {
   updateAmbientDisplayNotice();
   // Awaited: the panels below read state.cameraPresent from it.
   await updateNoCameraNotice();
+  await updateCameraFacingsRow();
   updateCameraGrantNotice();
   updateCameraSnapshotPanel();
   updateMotionCameraRows();

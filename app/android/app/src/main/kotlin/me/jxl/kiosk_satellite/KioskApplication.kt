@@ -1,6 +1,12 @@
 package me.jxl.kiosk_satellite
 
 import android.app.Application
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.util.Log
+import androidx.camera.camera2.Camera2Config
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.CameraXConfig
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
@@ -24,9 +30,35 @@ import io.flutter.plugins.GeneratedPluginRegistrant
  * need a live Activity (the camera, the launch intent) are set up in
  * [MainActivity] instead.
  */
-class KioskApplication : Application() {
+class KioskApplication : Application(), CameraXConfig.Provider {
     companion object {
         const val ENGINE_ID = "main"
+    }
+
+    /**
+     * CameraX's default init validates every camera facing the device
+     * claims — and single-camera hardware whose ROM still advertises both
+     * (LineageOS on the Echo Show 5: one front camera, the back-camera
+     * feature flag left on) fails that check forever. The
+     * ProcessCameraProvider future then never resolves, so snapshots and
+     * the hasCamera probe hang with nothing in the app's own log. Limiting
+     * CameraX to the facing Camera2 actually reports makes the validator
+     * check only what exists; devices with both cameras get no limiter and
+     * keep both.
+     */
+    override fun getCameraXConfig(): CameraXConfig {
+        val builder = CameraXConfig.Builder.fromConfig(Camera2Config.defaultConfig())
+        try {
+            val facings = cameraFacings(this)
+            if ("front" in facings && "back" !in facings) {
+                builder.setAvailableCamerasLimiter(CameraSelector.DEFAULT_FRONT_CAMERA)
+            } else if ("back" in facings && "front" !in facings) {
+                builder.setAvailableCamerasLimiter(CameraSelector.DEFAULT_BACK_CAMERA)
+            }
+        } catch (e: Exception) {
+            Log.w("KioskApplication", "camera facings probe failed", e)
+        }
+        return builder.build()
     }
 
     private lateinit var micRecorder: MicRecorder

@@ -28,6 +28,14 @@ class NativeCamera {
   /// ships no camera HAL (LineageOS ports on Echo Shows).
   static Future<bool> hasCamera() async =>
       await _channel.invokeMethod<bool>('hasCamera') ?? false;
+
+  /// The lens facings the device offers ('front'/'back'). Probed through
+  /// Camera2 directly, so it answers even where CameraX cannot initialize.
+  static Future<List<String>> facings() async =>
+      (await _channel.invokeMethod<List<Object?>>('facings'))
+          ?.whereType<String>()
+          .toList() ??
+      const [];
 }
 
 /// The capture target for a snapshot-resolution setting value (the tier's

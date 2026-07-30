@@ -976,6 +976,20 @@ class _CategoryContentState extends State<_CategoryContent> {
                   value: false,
                   onChanged: null,
                 ),
+              // One camera means no front/back choice to offer (the
+              // capture falls back to the camera present regardless of
+              // the stored value).
+              if (widget.category == 'Camera' &&
+                  container.deviceCamera.knownFacings?.length == 1)
+                cameraDevice.key: ListTile(
+                  title: Text(cameraDevice.title),
+                  subtitle: const Text('The only camera this device has.'),
+                  trailing: Text(
+                    cameraDevice.optionLabels?[
+                            container.deviceCamera.knownFacings!.single] ??
+                        container.deviceCamera.knownFacings!.single,
+                  ),
+                ),
             },
             after: {
               if (widget.category == 'Browser' &&

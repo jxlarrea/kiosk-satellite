@@ -179,10 +179,15 @@ class CameraMotion(
             val owner = CameraLifecycle().also { lifecycle = it }
             // Pre-bound so a snapshot never reconfigures this session (an
             // AE resettle would read as motion and wake the screensaver).
-            val imageCapture = deviceCamera?.let {
-                val target = snapshotTarget
-                if (target != null) it.buildCapture(target) else it.buildCapture()
-            }
+            // Not on LEGACY hardware: its takePicture path never delivers
+            // (see isLegacyHardware), so a pre-bound capture would only
+            // wedge — snapshots report busy while motion runs there.
+            val imageCapture = deviceCamera
+                ?.takeIf { !isLegacyHardware(context, null) }
+                ?.let {
+                    val target = snapshotTarget
+                    if (target != null) it.buildCapture(target) else it.buildCapture()
+                }
             try {
                 cameraProvider.unbindAll()
                 if (imageCapture != null) {
