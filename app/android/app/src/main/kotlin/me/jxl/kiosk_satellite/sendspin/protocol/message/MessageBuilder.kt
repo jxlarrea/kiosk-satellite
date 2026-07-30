@@ -164,9 +164,17 @@ object MessageBuilder {
     /**
      * Calculate buffer_capacity (wire bytes) from target duration and format list.
      *
-     * Uses the highest-bitrate PCM entry we advertise as the basis, so the cap
-     * is tight for PCM and gives compressed codecs proportionally more seconds
-     * of look-ahead (but bounded decoded memory).
+     * Sized by the MOST COMPRESSED codec we advertise. The server's
+     * BufferTracker paces delivery by wire bytes, so the cap must bound the
+     * look-ahead DURATION for whichever codec the server picks. The old
+     * PCM-based cap gave Opus a 20x duration allowance: the server pushed
+     * whole tracks at line speed, the decode pipeline shed most of the
+     * chunks, and playback ground through the holes as a garbled
+     * fast-forward a few seconds into every song. With the cap sized for
+     * the smallest wire rate, the worst case for every codec is a modest
+     * multiple of the target, and the least-compressed pick (PCM) still
+     * gets several seconds of lead, comfortably past the 500 ms minimum
+     * buffer the player reports.
      */
     fun calculateBufferCapacity(formats: List<FormatEntry>, durationSec: Int): Int {
         val maxPcmBytesPerSec = formats
@@ -175,7 +183,20 @@ object MessageBuilder {
             ?: (SendSpinProtocol.AudioFormat.SAMPLE_RATE
                     * SendSpinProtocol.AudioFormat.CHANNELS
                     * (SendSpinProtocol.AudioFormat.BIT_DEPTH / 8))
-        return durationSec * maxPcmBytesPerSec
+        val minBytesPerSec = formats.minOfOrNull {
+            when (it.codec) {
+                // ~96 kbps. Deliberately a LOW estimate: the cap divided by
+                // the actual bitrate is the look-ahead duration, so
+                // underestimating keeps the burst short (a higher-bitrate
+                // reality just means fewer seconds of lead, which is fine),
+                // while overestimating re-opens the flood.
+                "opus" -> 12_000
+                // FLAC lands near half the PCM rate on real music.
+                "flac" -> maxPcmBytesPerSec / 2
+                else -> it.sampleRate * it.channels * (it.bitDepth / 8)
+            }
+        } ?: maxPcmBytesPerSec
+        return durationSec * minBytesPerSec
     }
 
     /**

@@ -53,12 +53,19 @@ class SendspinBridge(
         private const val BUFFER_CAPACITY_SECONDS = 35L
 
         /**
-         * Most chunks allowed to wait for the decode thread (~25s of audio
-         * at the server's 96ms cadence). Purely an OOM backstop: a device
-         * that falls this far behind cannot play glitch-free anyway, and
-         * dropping with a counter beats growing without bound.
+         * Most chunks allowed to wait for the decode thread. Sized to hold
+         * a FULL buffer-capacity burst in compressed form (~3 minutes of
+         * audio at the server's 96ms cadence, a few MB of Opus): at stream
+         * start the server sends the whole negotiated capacity at line
+         * speed, and Opus decode cannot keep wire pace the way FLAC can —
+         * with a 256 cap the overflow was shed, and playback ground
+         * through the missing seconds as a garbled fast-forward. Chunks
+         * waiting here are cheap (compressed bytes); the decoded queue
+         * below is the memory that matters and has its own cap. Still an
+         * OOM backstop against a dead decoder, just no longer one a
+         * healthy stream start can hit.
          */
-        private const val MAX_PENDING_DECODES = 256
+        private const val MAX_PENDING_DECODES = 2048
         private const val DECODE_DROP_LOG_INTERVAL = 100L
     }
 
@@ -659,6 +666,13 @@ class SendspinBridge(
         }
 
         override fun onAudioChunk(serverTimeMicros: Long, audioData: ByteArray) {
+            // Deliberately NOT blocking here when the backlog is full: this
+            // is the socket reader thread, and stalling it also stalls the
+            // time-sync messages sharing the websocket — the sync state
+            // then degrades to error and the player mutes itself (tried,
+            // reverted). With buffer_capacity sized per codec the server
+            // never overruns the backlog in normal play; a drop is the
+            // last-resort shed it always was.
             if (pendingDecodes.get() >= MAX_PENDING_DECODES) {
                 val dropped = decodeQueueDrops.incrementAndGet()
                 if (dropped % DECODE_DROP_LOG_INTERVAL == 1L) {

@@ -863,6 +863,10 @@ class SyncAudioPlayer(
             // Reset DAC timestamp stability -- must re-establish after resume
             consecutiveValidTimestamps = 0
             dacTimestampsStable = false
+            // pause() flushed the track and reset its frame counter; drop
+            // the wrap guard's high-water mark or it rejects every reading
+            // the recalibration below is waiting for.
+            lastValidFramePosition = 0L
 
             // Reset sync error filter and server-time baseline - pre-pause state is no longer relevant
             syncErrorFilter.reset()
@@ -947,6 +951,7 @@ class SyncAudioPlayer(
             isFlushPending.set(false)  // Clear any pending flush since we flush directly below
             audioSink?.stop()
             audioSink?.flush()
+            lastValidFramePosition = 0L  // Flushed track resets its frame counter
             chunkQueue.clear()
             totalQueuedSamples.set(0)
 
@@ -1028,6 +1033,12 @@ class SyncAudioPlayer(
             consecutiveValidTimestamps = 0
             dacTimestampsStable = false
             lastDacPacingLogTimeUs = 0L
+            // And the wrap guard: the flush resets the track's frame counter,
+            // and a stale high-water mark here made the guard discard every
+            // AudioTimestamp reading until the counter caught back up -
+            // minutes of sync flying blind after a track restart, heard as a
+            // garbled catch-up a few seconds into the next song.
+            lastValidFramePosition = 0L
 
             // Reset sample insert/drop correction state
             insertEveryNFrames = 0
