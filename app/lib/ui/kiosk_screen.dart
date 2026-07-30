@@ -311,7 +311,7 @@ class _KioskScreenState extends State<KioskScreen>
     // drops the overlay at once, so the Voice Satellite interaction (which
     // lives in the always-loaded dashboard below) is instantly on screen.
     _wakeSub = c.bus.on<WakeWordDetected>().listen((_) {
-      c.browser.overlayUrl.value = null;
+      c.browser.dismissOverlay();
       c.camera.interruptForVoice();
     });
     _cameraSub = c.bus.on<CameraViewStateChanged>().listen((_) {
@@ -321,6 +321,9 @@ class _KioskScreenState extends State<KioskScreen>
       if (!mounted || _settingsOpen) return;
       if (_drawer.value > 0) {
         _closeDrawer();
+      } else if (c.browser.overlayUrl.value != null) {
+        // A link or rotation page covers the dashboard: back uncovers it.
+        c.browser.dismissOverlay();
       } else if (c.camera.activeViewId.value != null) {
         if (c.camera.focusedCameraId.value != null) {
           c.camera.focusCamera(null);
@@ -331,6 +334,8 @@ class _KioskScreenState extends State<KioskScreen>
         c.browser.goBack();
       }
     });
+    // canPop below depends on the overlay's presence.
+    c.browser.overlayUrl.addListener(_onOverlayChanged);
 
     // Download feedback lives in-app: the kiosk hides the status bar, so the
     // DownloadManager notification is invisible and without this a download
@@ -612,7 +617,12 @@ class _KioskScreenState extends State<KioskScreen>
     _backSub?.cancel();
     _wakeSub?.cancel();
     _cameraSub?.cancel();
+    c.browser.overlayUrl.removeListener(_onOverlayChanged);
     super.dispose();
+  }
+
+  void _onOverlayChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -690,11 +700,16 @@ class _KioskScreenState extends State<KioskScreen>
               canPop:
                   !open &&
                   !c.kiosk.locked &&
+                  c.browser.overlayUrl.value == null &&
                   c.camera.activeViewId.value == null,
               onPopInvokedWithResult: (didPop, _) {
                 if (didPop) return;
                 if (open) {
                   _closeDrawer();
+                } else if (c.browser.overlayUrl.value != null) {
+                  // A link or rotation page covers the dashboard: back
+                  // uncovers it.
+                  c.browser.dismissOverlay();
                 } else if (c.camera.activeViewId.value != null) {
                   if (c.camera.focusedCameraId.value != null) {
                     c.camera.focusCamera(null);
@@ -876,7 +891,20 @@ class _KioskScreenState extends State<KioskScreen>
     // document that much reach.
     shouldOverrideUrlLoading: (controller, action) async {
       final url = action.request.url;
-      if (url == null || url.scheme != 'app') {
+      if (url == null) return NavigationActionPolicy.ALLOW;
+      // A link leaving the dashboard's origin must not replace the dashboard
+      // page: pagehide would tear down the Voice Satellite session, and the
+      // wake word and the device's HA entities die with it (issue #86). The
+      // tap gets the same fullscreen page on the rotation overlay instead,
+      // with the dashboard alive underneath. Subframes stay untouched, and
+      // programmatic loads (the loadUrl command) never pass through here.
+      if ((url.scheme == 'http' || url.scheme == 'https') &&
+          action.isForMainFrame &&
+          !c.browser.isDashboardOrigin(url)) {
+        c.browser.showLinkOverlay(url.toString());
+        return NavigationActionPolicy.CANCEL;
+      }
+      if (url.scheme != 'app') {
         return NavigationActionPolicy.ALLOW;
       }
       final package = appLinkPackage(url.toString());
@@ -1038,6 +1066,11 @@ class _KioskScreenState extends State<KioskScreen>
 /// just moves it offstage (loaded, not painted, not hittable) and re-showing
 /// the same page is instant. The WebView is only released when the rotation
 /// feature itself is off, or when a different external URL replaces it.
+///
+/// Link-opened overlays (issue #86) are the exception: dismissal — the close
+/// button, back, a wake word — destroys the WebView outright. Nothing will
+/// re-show that page, and keeping a spare renderer warm is exactly what a
+/// low-RAM device cannot afford.
 class _OverlayHost extends StatefulWidget {
   const _OverlayHost({required this.container});
 
@@ -1050,6 +1083,11 @@ class _OverlayHost extends StatefulWidget {
 class _OverlayHostState extends State<_OverlayHost> {
   String? _lastUrl;
 
+  /// Whether the page being kept came from a link tap. Recorded while the
+  /// overlay is up: by the time dismissal rebuilds this widget,
+  /// overlayDismissible has already been reset.
+  bool _linkOverlay = false;
+
   @override
   Widget build(BuildContext context) {
     final c = widget.container;
@@ -1058,26 +1096,58 @@ class _OverlayHostState extends State<_OverlayHost> {
       builder: (context, url, _) {
         if (url != null) {
           _lastUrl = url;
-        } else if (!c.settings.get(defs.haRotationEnabled)) {
-          // The feature that put it up is off: release the WebView.
+          _linkOverlay = c.browser.overlayDismissible.value;
+        } else if (_linkOverlay ||
+            !c.settings.get(defs.haRotationEnabled)) {
+          // A dismissed link page, or the rotation feature being off:
+          // release the WebView instead of keeping it warm.
           _lastUrl = null;
+          _linkOverlay = false;
         }
         final kept = _lastUrl;
         if (kept == null) return const SizedBox.shrink();
         return Offstage(
           offstage: url == null,
-          child: _OverlayWebView(
-            url: kept,
-            key: ValueKey(kept),
-            paused: url == null,
-            onRenderGone: () {
-              c.browser.log.warn(
-                'browser',
-                'overlay renderer gone — dropping the overlay',
-              );
-              c.browser.overlayUrl.value = null;
-              setState(() => _lastUrl = null);
-            },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _OverlayWebView(
+                url: kept,
+                key: ValueKey(kept),
+                paused: url == null,
+                onRenderGone: () {
+                  c.browser.log.warn(
+                    'browser',
+                    'overlay renderer gone — dropping the overlay',
+                  );
+                  c.browser.dismissOverlay();
+                  setState(() => _lastUrl = null);
+                },
+              ),
+              // A link-opened overlay has no rotation pass to move it along
+              // (issue #86): the floating close is the visible way back to
+              // the dashboard. The back button and a wake word work too.
+              if (c.browser.overlayDismissible.value)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: SafeArea(
+                    child: Material(
+                      color: Colors.black45,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: c.browser.dismissOverlay,
+                        child: const Padding(
+                          padding: EdgeInsets.all(10),
+                          child:
+                              Icon(Icons.close, color: Colors.white, size: 24),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         );
       },

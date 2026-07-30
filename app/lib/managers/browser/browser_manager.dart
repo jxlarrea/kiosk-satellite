@@ -62,6 +62,46 @@ class BrowserManager extends Manager {
   /// Satellite session and the wake word never pay for the excursion.
   final ValueNotifier<String?> overlayUrl = ValueNotifier(null);
 
+  /// Whether the current overlay carries its own close button. Rotation
+  /// overlays do not (the rotation moves on by itself); an overlay opened by
+  /// tapping a dashboard link does — a close control and the back button are
+  /// the only ways back from it.
+  final ValueNotifier<bool> overlayDismissible = ValueNotifier(false);
+
+  /// Show a dashboard link's target over the dashboard (issue #86). Letting
+  /// the link replace the dashboard page fires pagehide: the Voice Satellite
+  /// session tears down, the wake word dies with it, and the entities drop
+  /// unavailable. The overlay gives the tap the same fullscreen page while
+  /// the dashboard — and everything living in it — stays loaded underneath.
+  void showLinkOverlay(String url) {
+    log.info(name, 'link opens over the dashboard: $url');
+    overlayDismissible.value = true;
+    overlayUrl.value = url;
+  }
+
+  /// Drop the overlay, whoever put it up.
+  void dismissOverlay() {
+    overlayDismissible.value = false;
+    overlayUrl.value = null;
+  }
+
+  /// Whether [url] belongs to the dashboard's own web origin — the page
+  /// currently loaded (its proxied loopback form when the secure context
+  /// proxy is on) or the configured start URL. Navigations inside these keep
+  /// the main WebView; anything else is an external link.
+  bool isDashboardOrigin(Uri url) {
+    bool sameOrigin(String other) {
+      final uri = Uri.tryParse(other);
+      return uri != null &&
+          uri.hasScheme &&
+          uri.scheme == url.scheme &&
+          uri.host == url.host &&
+          uri.port == url.port;
+    }
+
+    return sameOrigin(_currentUrl) || sameOrigin(startUrl);
+  }
+
   @override
   Future<void> init() async {
     // Rendering freeze (browser.freeze_on_screensaver): while the screensaver
@@ -127,6 +167,7 @@ class BrowserManager extends Manager {
             if (url == null || url.isEmpty) {
               return const CommandResult.fail('url required');
             }
+            overlayDismissible.value = false;
             overlayUrl.value = url;
             return const CommandResult.ok();
           },
@@ -138,7 +179,7 @@ class BrowserManager extends Manager {
           description:
               'Dismiss the overlay page and reveal the dashboard again',
           handler: (_) async {
-            overlayUrl.value = null;
+            dismissOverlay();
             return const CommandResult.ok();
           },
         ),
@@ -558,7 +599,7 @@ class BrowserManager extends Manager {
   Future<void> loadUrl(String url) async {
     // An explicit navigation targets the main WebView; an overlay page
     // sitting above it would make the navigation invisible.
-    overlayUrl.value = null;
+    dismissOverlay();
     final mapped = urlMapper?.call(url) ?? url;
     await _controller?.loadUrl(urlRequest: URLRequest(url: WebUri(mapped)));
   }
