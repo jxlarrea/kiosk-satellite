@@ -14,14 +14,24 @@ class AuthStore {
   final String _secret;
 
   static const _tokenTtl = Duration(days: 7);
+
+  /// Ceiling for a caller-chosen expiry (issue #84): ten years is
+  /// "permanent" for an automation token without literally never expiring.
+  static const maxTtl = Duration(days: 3650);
   static const _maxFailures = 5;
   static const _throttleWindow = Duration(minutes: 5);
 
   // Throttling is fine to keep in memory (resetting on restart is harmless).
   final _failures = <String, List<DateTime>>{};
 
-  String issueToken() {
-    final exp = DateTime.now().add(_tokenTtl).millisecondsSinceEpoch;
+  /// A signed token. The default week suits the admin UI's session; an
+  /// automation (a Home Assistant rest_command firing for years) passes its
+  /// own [ttl], clamped to [maxTtl].
+  String issueToken({Duration? ttl}) {
+    final effective = ttl == null || ttl <= Duration.zero
+        ? _tokenTtl
+        : (ttl > maxTtl ? maxTtl : ttl);
+    final exp = DateTime.now().add(effective).millisecondsSinceEpoch;
     final payload = base64Url.encode(utf8.encode(jsonEncode({'exp': exp})));
     return '$payload.${_sign(payload)}';
   }

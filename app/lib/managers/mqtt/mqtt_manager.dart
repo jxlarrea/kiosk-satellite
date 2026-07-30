@@ -564,6 +564,7 @@ class MqttManager extends Manager {
       '$_base/reload/set',
       '$_base/clear_cache/set',
       '$_base/restart/set',
+      '$_base/bring_to_front/set',
       '$_base/update/set',
       '$_base/screensaver_brightness_level/set',
       '$_base/assistant_volume/set',
@@ -733,6 +734,16 @@ class MqttManager extends Manager {
       } else if (topic == '$_base/clear_cache/set') {
         log.info(name, 'command $topic');
         await commands.execute('clearWebCache', const {});
+      } else if (topic == '$_base/bring_to_front/set') {
+        // Return from another app to the dashboard (issue #84): the button
+        // face of the same bringToFront the REST automation recipe uses.
+        log.info(name, 'command $topic');
+        final result = await commands.execute('bringToFront', const {});
+        if (result.data == false) {
+          // Cannot come forward without the "Display over other apps"
+          // grant; all MQTT can do is say why nothing moved.
+          log.warn(name, 'bringToFront needs the overlay grant');
+        }
       } else if (topic == '$_base/restart/set') {
         // The process dies mid-restart; the broker's will flips the device
         // offline and the relaunch brings everything back on its own.
@@ -1042,6 +1053,7 @@ class MqttManager extends Manager {
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
         '$_prefix/button/ks_$_deviceId/restart/config',
+        '$_prefix/button/ks_$_deviceId/bring_to_front/config',
         '$_prefix/update/ks_$_deviceId/update/config',
         // Always in the retraction list even though it is published
         // conditionally: a config export moved to sensor-less hardware must
@@ -1342,6 +1354,11 @@ class MqttManager extends Manager {
         'command_topic': '$_base/restart/set',
         'device_class': 'restart',
         'entity_category': 'config',
+      },
+      '$_prefix/button/ks_$_deviceId/bring_to_front/config': {
+        ...common('bring_to_front', 'Bring to front'),
+        'command_topic': '$_base/bring_to_front/set',
+        'icon': 'mdi:flip-to-front',
       },
       '$_prefix/update/ks_$_deviceId/update/config': {
         ...common('update', 'Update'),

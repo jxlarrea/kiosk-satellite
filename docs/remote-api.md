@@ -29,6 +29,11 @@ adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
 - REST: `Authorization: Bearer <token>` obtained from `POST /api/login
   {password}`. Tokens are HMAC-signed (stateless) with a persisted secret and
   expire after 7 days, so a session survives the app/kiosk restarting.
+- Automations that cannot redo the login dance pass `ttl_days` to get a
+  long-lived token (clamped to 10 years): `POST /api/login
+  {password, ttl_days: 3650}`. Tokens are stateless, so changing the admin
+  password does not revoke ones already issued — treat a long-lived token
+  like a password.
 - WS: `?token=` query parameter.
 - Failed logins are rate-limited (exponential backoff per client IP).
 - `GET /api/health` is the one unauthenticated endpoint: it exists for
@@ -45,7 +50,7 @@ is administrable here by construction.
 
 | Endpoint | Method | Description |
 |---|---|---|
-| `/api/login` | POST | `{password}` → `{token}` |
+| `/api/login` | POST | `{password}` → `{token}`. Optional `ttl_days` for a long-lived automation token (max 3650) |
 | `/api/info` | GET | Device info, app version, battery, screen, current URL |
 | `/api/health` | GET | The Device Info tab's Hardware section as one JSON object: identity, addresses, battery, screen, RAM, storage, CPU usage and temperature, and uptimes (`uptime.app` and `uptime.network`, seconds; `network` is null while offline and starts counting at app start at the earliest). Meant for external monitoring to poll, so it is the one endpoint that needs no token |
 | `/api/settings` | GET | All setting definitions + current values |
@@ -73,7 +78,46 @@ Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 `loadDashboard {dashboard}`, `reload`, `screenOn` / `screenOff`,
 `setBrightness {level}`, `startScreensaver` / `stopScreensaver`,
 `setWakeWordActive {active}`, `showCameraView {viewId}`,
-`hideCameraView`, `cameraGetConfig`, `restartApp`, `tts {text}`.
+`hideCameraView`, `cameraGetConfig`, `restartApp`, `tts {text}`,
+`launchApp {package}` (open another Android app over the kiosk),
+`bringToFront` (come back in front of it).
+
+## Calling from Home Assistant automations
+
+The Fully Kiosk pattern — one URL per action, fired from an automation —
+maps onto two `rest_command` entries and a token obtained once. Get the
+long-lived token from any machine on the LAN:
+
+```sh
+curl -X POST http://<device-ip>:2324/api/login \
+  -H 'Content-Type: application/json' \
+  -d '{"password": "<admin password>", "ttl_days": 3650}'
+```
+
+Paste the returned token into `configuration.yaml` (or a `!secret`):
+
+```yaml
+rest_command:
+  tablet_open_doorbell:
+    url: "http://<device-ip>:2324/api/commands/launchApp"
+    method: post
+    headers:
+      authorization: "Bearer <token>"
+    content_type: "application/json"
+    payload: '{"package": "com.mcu.reolink"}'
+  tablet_back_to_dashboard:
+    url: "http://<device-ip>:2324/api/commands/bringToFront"
+    method: post
+    headers:
+      authorization: "Bearer <token>"
+```
+
+An automation then calls `rest_command.tablet_open_doorbell` when the
+doorbell rings and `rest_command.tablet_back_to_dashboard` when done.
+`launchApp` leaves the kiosk running behind the other app, so coming back
+lands on the live dashboard, not a reload. With the MQTT integration
+connected, the return half needs no REST at all: the device discovers a
+**Bring to front** button entity (see [mqtt.md](mqtt.md)).
 
 ## WebSocket
 

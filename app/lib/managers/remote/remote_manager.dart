@@ -344,7 +344,15 @@ class RemoteManager extends Manager {
         password.isNotEmpty &&
         password == _settings.get(defs.remotePassword)) {
       _auth.clearFailures(ip);
-      return _json(200, {'token': _auth.issueToken()});
+      // ttl_days (issue #84): a Home Assistant rest_command cannot redo the
+      // login dance every week, so an automation logs in once with a long
+      // expiry and pastes the token into its config for good.
+      final days = (body?['ttl_days'] as num?)?.toInt();
+      return _json(200, {
+        'token': _auth.issueToken(
+          ttl: days == null ? null : Duration(days: days),
+        ),
+      });
     }
     _auth.recordFailure(ip);
     log.warn(name, 'failed login from $ip');
