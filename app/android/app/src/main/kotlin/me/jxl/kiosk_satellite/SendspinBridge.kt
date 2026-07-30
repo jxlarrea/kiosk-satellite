@@ -67,6 +67,9 @@ class SendspinBridge(
          */
         private const val MAX_PENDING_DECODES = 2048
         private const val DECODE_DROP_LOG_INTERVAL = 100L
+
+        /** Cadence of the audible-position re-emit (see positionCorrector). */
+        private const val POSITION_CORRECT_INTERVAL_MS = 5_000L
     }
 
     private val channel = MethodChannel(messenger, "kiosk_satellite/sendspin")
@@ -139,7 +142,34 @@ class SendspinBridge(
         }
     }
 
+    /**
+     * Every few seconds while playing, re-emit the audible position (see
+     * onMetadataUpdate): a track's metadata usually arrives before playback
+     * has calibrated, so the first report carries the server's inflated
+     * send-cursor position, and the next natural update could be a whole
+     * track away. Also keeps the Dart side's extrapolation anchor fresh
+     * across pauses. A no-op while nothing plays.
+     */
+    private val positionCorrector = object : Runnable {
+        override fun run() {
+            player?.audiblePositionInStreamMs()?.let {
+                emit(
+                    "metadataChanged",
+                    mapOf("positionMs" to (it + (streamBaseMs ?: 0L))),
+                )
+            }
+            mainHandler.postDelayed(this, POSITION_CORRECT_INTERVAL_MS)
+        }
+    }
+
+    /** The track position of the current stream's first chunk (see
+     *  onMetadataUpdate). Null until the first real metadata after connect.
+     *  Volatile: written on the socket callback thread, read by the
+     *  main-thread corrector. */
+    @Volatile private var streamBaseMs: Long? = null
+
     init {
+        mainHandler.postDelayed(positionCorrector, POSITION_CORRECT_INTERVAL_MS)
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "start" -> {
@@ -615,6 +645,27 @@ class SendspinBridge(
             this@SendspinBridge.title = title.ifEmpty { null }
             this@SendspinBridge.artist = artist.ifEmpty { null }
             this@SendspinBridge.album = album.ifEmpty { null }
+            // The track position of the stream's first chunk. The reported
+            // position and the sent-so-far span both measure the server's
+            // send cursor, so their difference is the stream's base:
+            // invariant across a stream, hence recomputed on every real
+            // metadata (guarded on duration; progress-less placeholder
+            // frames must not zero it). Zero for a track played from its
+            // start; the join position for an app restarted into a group
+            // already mid-song — the rejoin's metadata arrives BEFORE its
+            // stream/start, which is why nothing here resets on stream
+            // boundaries: the wipe erased exactly that capture, and lyrics
+            // restarted from scratch after every relaunch.
+            if (durationMs > 0 && positionMs >= 0) {
+                streamBaseMs =
+                    (positionMs - (player?.streamSentSoFarMs() ?: 0L))
+                        .coerceAtLeast(0L)
+            }
+            // The audible position beats the metadata's: Music Assistant
+            // reports its send cursor, a whole buffer ahead of the speaker,
+            // and the lyrics and progress bar would read the future.
+            val audible = player?.audiblePositionInStreamMs()
+                ?.plus(streamBaseMs ?: 0L)
             emit(
                 "metadataChanged",
                 mapOf(
@@ -622,7 +673,7 @@ class SendspinBridge(
                     "artist" to artist,
                     "album" to album,
                     "artworkUrl" to artworkUrl,
-                    "positionMs" to positionMs,
+                    "positionMs" to (audible ?: positionMs),
                     "durationMs" to durationMs,
                 ),
             )

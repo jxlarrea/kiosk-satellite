@@ -475,6 +475,47 @@ class SyncAudioPlayer(
     @Volatile private var stateCallback: SyncAudioPlayerCallback? = null
     private var scheduledStartLoopTimeUs: Long? = null   // When to start in loop time
     private var firstServerTimestampUs: Long? = null     // First chunk's server timestamp
+
+    /** Last known audible position on the server timeline (see
+     *  updateSyncError), with the loop time it was measured at so callers
+     *  can extrapolate. Volatile: read from binder/main threads. */
+    @Volatile private var lastDacCursorServerUs = 0L
+    @Volatile private var lastDacCursorAtLoopUs = 0L
+
+    /**
+     * Where the audio audibly is in the CURRENT stream, in milliseconds
+     * since the stream's first chunk — the track position, for a track
+     * streamed from its start. Derived from the write cursor and the DAC,
+     * NOT from server metadata: Music Assistant's reported progress tracks
+     * its send cursor, which runs a whole buffer ahead of what the speaker
+     * is saying, and lyrics driven by it read the future (about ten
+     * seconds of it, measured). Null until playback has calibrated.
+     */
+    fun audiblePositionInStreamMs(): Long? {
+        if (!isPlaying.get() || isPaused.get()) return null
+        val first = firstServerTimestampUs ?: return null
+        val anchor = lastDacCursorServerUs
+        if (anchor <= 0L) return null
+        val elapsedUs = nowNs() / 1000 - lastDacCursorAtLoopUs
+        val position = (anchor + elapsedUs - first) / 1000
+        return if (position >= 0) position else null
+    }
+
+    /**
+     * How much of the CURRENT stream the server has sent, in milliseconds
+     * (last received chunk relative to the first). Paired with the
+     * metadata's reported position at the same instant, the difference is
+     * the track position of the stream's first chunk — how the bridge
+     * anchors a mid-track join (an app restarted into a playing group)
+     * without trusting the server's inflated cursor. Null before the
+     * stream's first chunk.
+     */
+    fun streamSentSoFarMs(): Long? {
+        val first = firstServerTimestampUs ?: return null
+        val last = lastChunkServerTime
+        if (last <= 0L) return null
+        return ((last - first) / 1000).coerceAtLeast(0)
+    }
     private var lastReanchorTimeUs: Long = 0             // Cooldown tracking for reanchor
 
     // DAC timestamp stability tracking for start gating
@@ -867,6 +908,7 @@ class SyncAudioPlayer(
             // the wrap guard's high-water mark or it rejects every reading
             // the recalibration below is waiting for.
             lastValidFramePosition = 0L
+            lastDacCursorServerUs = 0L
 
             // Reset sync error filter and server-time baseline - pre-pause state is no longer relevant
             syncErrorFilter.reset()
@@ -951,7 +993,8 @@ class SyncAudioPlayer(
             isFlushPending.set(false)  // Clear any pending flush since we flush directly below
             audioSink?.stop()
             audioSink?.flush()
-            lastValidFramePosition = 0L  // Flushed track resets its frame counter
+            lastValidFramePosition = 0L
+            lastDacCursorServerUs = 0L  // Flushed track resets its frame counter
             chunkQueue.clear()
             totalQueuedSamples.set(0)
 
@@ -1039,6 +1082,7 @@ class SyncAudioPlayer(
             // minutes of sync flying blind after a track restart, heard as a
             // garbled catch-up a few seconds into the next song.
             lastValidFramePosition = 0L
+            lastDacCursorServerUs = 0L
 
             // Reset sample insert/drop correction state
             insertEveryNFrames = 0
@@ -1297,7 +1341,8 @@ class SyncAudioPlayer(
             consecutiveValidTimestamps = 0
             dacTimestampsStable = false
             lastDacPacingLogTimeUs = 0L
-            lastValidFramePosition = 0L  // Reset frame position wrap detection
+            lastValidFramePosition = 0L
+            lastDacCursorServerUs = 0L  // Reset frame position wrap detection
 
             // Reset sample insert/drop correction state
             insertEveryNFrames = 0
@@ -2114,7 +2159,8 @@ class SyncAudioPlayer(
             // Reset DAC timestamp stability tracking
             consecutiveValidTimestamps = 0
             dacTimestampsStable = false
-            lastValidFramePosition = 0L  // Reset frame position wrap detection
+            lastValidFramePosition = 0L
+            lastDacCursorServerUs = 0L  // Reset frame position wrap detection
 
             // Transition to INITIALIZING to wait for new chunks
             setPlaybackState(PlaybackState.INITIALIZING)
@@ -3210,6 +3256,12 @@ class SyncAudioPlayer(
             val loopAtDac = estimateLoopTimeForDacTime(dacTimeMicros)
             if (loopAtDac <= 0) return
             val dacPlaybackServerTimeUs = computeServerTime(loopAtDac)
+
+            // Publish the write-cursor-derived audible position for
+            // [audiblePositionInStreamMs]: what the speaker is saying right
+            // now, on the server timeline.
+            lastDacCursorServerUs = cursorAtDacUs
+            lastDacCursorAtLoopUs = loopTimeUs
 
             // Sync error = actual - expected (matching Python CLI sign convention)
             // Positive = DAC ahead (fast) -> DROP, Negative = DAC behind (slow) -> INSERT
