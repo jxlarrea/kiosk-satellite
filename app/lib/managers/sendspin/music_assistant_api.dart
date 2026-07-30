@@ -2,6 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+/// The primary artist of a Sendspin slash-joined credit, or null when
+/// [artist] offers no different name to retry a track lookup with.
+String? lyricsRetryArtist(String artist) {
+  if (!artist.contains('/')) return null;
+  final primary = artist.split('/').first.trim();
+  return primary.isEmpty || primary == artist.trim() ? null : primary;
+}
+
 /// A single request/response against Music Assistant's own API.
 ///
 /// Separate from the Sendspin connection on purpose: Sendspin is the player
@@ -181,11 +189,24 @@ class MusicAssistantApi {
       ).timeout(const Duration(seconds: 15));
       final session = _Session(socket);
       await session.send('auth', {'token': token});
-      final track = await session.send('music/track_by_name', {
+      var track = await session.send('music/track_by_name', {
         'track_name': title,
         if (artist.isNotEmpty) 'artist_name': artist,
         if (album.isNotEmpty) 'album_name': album,
       });
+      // Sendspin credits a multi-artist track as one slash-joined string
+      // ("The Porter's Gate/Liz Vice"), which track_by_name does not match
+      // — the primary artist alone does (issue #90). Retry only on a miss,
+      // so an artist with a real slash in the name (AC/DC) still matches
+      // whole on the first attempt.
+      final primary = lyricsRetryArtist(artist);
+      if (track == null && primary != null) {
+        track = await session.send('music/track_by_name', {
+          'track_name': title,
+          'artist_name': primary,
+          if (album.isNotEmpty) 'album_name': album,
+        });
+      }
       if (track == null) return null;
       final result = await session.send('metadata/get_track_lyrics', {
         'track': track,

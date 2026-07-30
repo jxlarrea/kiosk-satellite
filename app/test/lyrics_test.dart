@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/managers/sendspin/lyrics.dart';
+import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
 
 void main() {
   test('parses the format providers actually send', () {
@@ -64,5 +65,25 @@ void main() {
     // Past the end it stays on the last line rather than clearing.
     expect(currentLyricIndex(lines, const Duration(minutes: 5)), 2);
     expect(currentLyricIndex(const [], const Duration(seconds: 5)), -1);
+  });
+
+  group('lyricsRetryArtist (issue #90)', () {
+    test('a slash-joined credit yields the primary artist', () {
+      expect(
+        lyricsRetryArtist("The Porter's Gate/Liz Vice"),
+        "The Porter's Gate",
+      );
+      expect(lyricsRetryArtist('Phoenix/Clairo/Someone'), 'Phoenix');
+      expect(lyricsRetryArtist('A / B'), 'A');
+    });
+
+    test('a single artist offers no retry, slash in the name or not', () {
+      expect(lyricsRetryArtist('Adele'), isNull);
+      // "AC/DC" only reaches the retry after the whole name missed, and
+      // "AC" is a different string, so a retry is still offered.
+      expect(lyricsRetryArtist('AC/DC'), 'AC');
+      expect(lyricsRetryArtist(''), isNull);
+      expect(lyricsRetryArtist('/leading'), isNull);
+    });
   });
 }
