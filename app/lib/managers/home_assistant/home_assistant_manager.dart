@@ -267,7 +267,18 @@ class HomeAssistantManager extends Manager {
     // the ring visibly restart while the user was still editing.
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.haRotationEnabled.key) {
+        // Rotation and the return-home timer both want to own navigation
+        // on an idle kiosk: turning rotation on forces the return off
+        // (issue #83), and both UIs render its switch disabled meanwhile.
+        if (e.value == true && _settings.get(defs.haReturnHomeEnabled)) {
+          log.info(name, 'rotation on: return to the dashboard turned off');
+          unawaited(_settings.set(defs.haReturnHomeEnabled, false));
+        }
         _configureRotation();
+        _configureReturnHome();
+      } else if (e.key == defs.haReturnHomeEnabled.key ||
+          e.key == defs.haReturnHomeSeconds.key) {
+        _configureReturnHome();
       } else if (e.key == defs.haRotationDashboards.key ||
           e.key == defs.haRotationUrls.key) {
         // Ring contents changed: restart from the top of the new list, but
@@ -287,12 +298,29 @@ class HomeAssistantManager extends Manager {
     // in place and picks up where it left off.
     bus.on<ScreensaverStateChanged>().listen((e) {
       _screensaverActive = e.active;
+      if (e.active) {
+        // The screensaver reached idle first: do the return now, quietly
+        // behind the cover, so the wake reveals the home dashboard with no
+        // visible navigation. Only rendering is frozen under the pause
+        // optimization — JS pushed from Dart still executes — so this
+        // works with the dashboard WebView hidden.
+        _returnHomeTimer?.cancel();
+        _returnHomeTimer = null;
+        if (_returnHomeConfigured) unawaited(_returnHome());
+      } else {
+        _configureReturnHome();
+      }
     });
     // Touch pauses rotation for the configured window so the current view
     // can be used; each touch restarts that window.
     bus.on<ActivityDetected>().listen((e) {
       if (e.source == 'touch') _pauseRotationForTouch();
+      _configureReturnHome();
     });
+    // Any navigation counts as activity for the return-home clock: the
+    // user moving through views is exactly the "in use" it must not
+    // interrupt (our own return resets it too, harmlessly).
+    bus.on<UrlChanged>().listen((_) => _configureReturnHome());
     // A voice interaction pauses rotation for its whole duration: Voice
     // Satellite drives VoiceInteractionChanged on both edges of the turn.
     bus.on<VoiceInteractionChanged>().listen((e) {
@@ -317,10 +345,12 @@ class HomeAssistantManager extends Manager {
         _voiceSafetyTimer = Timer(const Duration(minutes: 3), () {
           _voiceInteracting = false;
           _resumeRotationIfIdle();
+          _configureReturnHome();
         });
       } else {
         _resumeRotationIfIdle();
       }
+      _configureReturnHome();
     });
     bus.on<CameraViewStateChanged>().listen((event) {
       _cameraViewActive = event.active;
@@ -331,8 +361,10 @@ class HomeAssistantManager extends Manager {
       } else {
         _resumeRotationIfIdle();
       }
+      _configureReturnHome();
     });
     _configureRotation();
+    _configureReturnHome();
 
     // "auto" kiosk mode needs to know up front whether the plugin exists so
     // the initial URL can carry ?kiosk. Detect before the kiosk screen builds.
@@ -487,6 +519,58 @@ class HomeAssistantManager extends Manager {
       return;
     }
     await navigateToViewPath(slot.substring('view:'.length));
+  }
+
+  // ── Return to the dashboard (issue #83) ─────────────────────────────
+  // An independent idle clock, deliberately not the screensaver's: it must
+  // work with the screensaver off or set long. Reset by touch, navigation
+  // and voice; held while a voice turn or camera view runs; and handed to
+  // the screensaver when that fires first (the return then happens behind
+  // the cover at start). Stands down while view rotation is on — rotation
+  // owns navigation on an idle kiosk.
+
+  Timer? _returnHomeTimer;
+
+  /// Whether the feature applies at all right now (regardless of holds).
+  bool get _returnHomeConfigured =>
+      configured &&
+      _settings.get(defs.haReturnHomeEnabled) &&
+      !_settings.get(defs.haRotationEnabled);
+
+  /// The start URL's navigation path ("url_path/view-route"), or null when
+  /// it carries none (a bare origin has no view to soft-navigate to).
+  /// Public: the settings UIs show it as the return target.
+  String? homeViewPath() {
+    final uri = Uri.tryParse(_settings.get(defs.startUrl));
+    if (uri == null) return null;
+    final path = uri.path.replaceAll(RegExp(r'^/+|/+$'), '');
+    return path.isEmpty ? null : path;
+  }
+
+  /// (Re)start the idle countdown, or stop it while it cannot apply: every
+  /// activity edge and every gate change lands here.
+  void _configureReturnHome() {
+    _returnHomeTimer?.cancel();
+    _returnHomeTimer = null;
+    if (!_returnHomeConfigured) return;
+    if (_screensaverActive || _voiceInteracting || _cameraViewActive) return;
+    final seconds =
+        _settings.get(defs.haReturnHomeSeconds).toInt().clamp(10, 86400);
+    _returnHomeTimer = Timer(Duration(seconds: seconds), () {
+      _returnHomeTimer = null;
+      log.info(name, 'idle: returning to the dashboard');
+      unawaited(_returnHome());
+    });
+  }
+
+  /// Navigate home: the same soft SPA path rotation uses, which never
+  /// touches the screensaver (unlike haNavigate, which dismisses it — the
+  /// behind-the-cover return must not wake the kiosk) and drops a
+  /// forgotten link overlay on the way.
+  Future<void> _returnHome() async {
+    final path = homeViewPath();
+    if (path == null) return;
+    await navigateToViewPath(path);
   }
 
   /// Monotonic navigation stamp: the delayed self-heal check in
@@ -1137,6 +1221,7 @@ class HomeAssistantManager extends Manager {
     _rotationTimer?.cancel();
     _touchPauseTimer?.cancel();
     _voiceSafetyTimer?.cancel();
+    _returnHomeTimer?.cancel();
   }
 }
 

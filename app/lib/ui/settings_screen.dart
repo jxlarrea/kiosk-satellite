@@ -1205,6 +1205,10 @@ class _CategoryContentState extends State<_CategoryContent> {
               def.key != haRotationEnabled.key &&
               def.key != haRotationSeconds.key &&
               def.key != haRotationPauseSeconds.key &&
+              // Rendered below the rotation group, which its switch is
+              // gated on.
+              def.key != haReturnHomeEnabled.key &&
+              def.key != haReturnHomeSeconds.key &&
               // Optimizations are hand-built last so the filter can show live
               // telemetry beneath its toggle.
               def.key != disableSuspend.key &&
@@ -1212,10 +1216,44 @@ class _CategoryContentState extends State<_CategoryContent> {
             def,
       ], () => setState(() {})),
       const _SectionHeading('Dashboard View Rotation'),
-      _RotationCard(container: container),
+      _RotationCard(container: container, onChanged: () => setState(() {})),
+      // Return to the dashboard (issue #83): mutually exclusive with
+      // rotation, which owns navigation on an idle kiosk — the manager
+      // forces the switch off when rotation turns on, and it renders
+      // disabled with the reason here.
+      ..._sectionedCards(
+        container,
+        [haReturnHomeEnabled, haReturnHomeSeconds],
+        () => setState(() {}),
+        replace: {
+          if (container.settings.get(haRotationEnabled))
+            haReturnHomeEnabled.key: const SwitchListTile(
+              title: Text('Return to Home Dashboard View'),
+              subtitle:
+                  Text('Turned off while Dashboard view rotation is on.'),
+              value: false,
+              onChanged: null,
+            ),
+        },
+        after: {
+          if (!container.settings.get(haRotationEnabled))
+            haReturnHomeEnabled.key:
+                _HintRow(_returnHomeTargetHint(container)),
+        },
+      ),
       const _SectionHeading('Optimizations'),
       _OptimizationsCard(container: container),
     ];
+  }
+
+  /// Where the return-home timeout lands, so nobody has to guess which
+  /// view "the dashboard" means. Wording shared with the remote admin
+  /// (which carries its own copy in the HTML).
+  String _returnHomeTargetHint(AppContainer container) {
+    final path = container.homeAssistant.homeViewPath();
+    return path == null
+        ? 'The configured dashboard has no view path to return to.'
+        : 'Returns to "$path" after the timeout.';
   }
 
   /// The Voice Satellite page: gated on the proven HA connection like the
@@ -1831,7 +1869,7 @@ class _HintRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Row(
         children: [
           Icon(Icons.info_outline, size: 18, color: muted),
@@ -2823,9 +2861,13 @@ class _DashboardPickerCardState extends State<_DashboardPickerCard> {
 /// paths ("url_path/view-route") in the hidden ha.rotation_dashboards
 /// setting; the rotation itself runs in HomeAssistantManager.
 class _RotationCard extends StatefulWidget {
-  const _RotationCard({required this.container});
+  const _RotationCard({required this.container, this.onChanged});
 
   final AppContainer container;
+
+  /// Fired when the enable toggle flips, so the parent pane can refresh
+  /// what gates on it (the Return to Dashboard switch below).
+  final VoidCallback? onChanged;
 
   @override
   State<_RotationCard> createState() => _RotationCardState();
@@ -2938,7 +2980,10 @@ class _RotationCardState extends State<_RotationCard> {
         SettingTile(
           container: c,
           def: haRotationEnabled,
-          onChanged: () => setState(() {}),
+          onChanged: () {
+            setState(() {});
+            widget.onChanged?.call();
+          },
         ),
         if (enabled) ...[
           SettingTile(

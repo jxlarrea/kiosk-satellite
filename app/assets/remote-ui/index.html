@@ -2724,6 +2724,12 @@ async function loadSettings() {
       const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token'
         && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds'
         && s.key !== 'ha.rotation_pause_seconds'
+        // Rendered below the rotation group, which its switch is gated on.
+        && s.key !== 'ha.return_home_enabled' && s.key !== 'ha.return_home_seconds'
+        // The Theme card is hand-built below: its master toggle swaps the
+        // dependent rows in place instead of reloading the tab.
+        && s.key !== 'ha.theme_auto' && s.key !== 'ha.theme_dark_at'
+        && s.key !== 'ha.theme_light_at' && s.key !== 'ha.theme_auto_app'
         // Optimizations are hand-built last so the filter can show telemetry.
         && s.key !== 'browser.disable_suspend' && s.key !== 'browser.ws_filter'
         && s.key !== 'browser.freeze_on_screensaver');
@@ -2733,6 +2739,43 @@ async function loadSettings() {
       byCat['Home Assistant'] = rest;
       render(restRoot, ['Home Assistant'].filter((c) => (byCat[c] || []).length));
       byCat['Home Assistant'] = savedHa;
+
+      // Theme, hand-built: the master toggle re-renders only this card,
+      // showing or hiding its dependent rows in place.
+      {
+        const thAuto = byKey['ha.theme_auto'];
+        if (thAuto) {
+          const th = document.createElement('h2');
+          th.className = 'card-title';
+          th.textContent = 'Theme';
+          root.appendChild(th);
+          const tcard = document.createElement('div');
+          tcard.className = 'card';
+          root.appendChild(tcard);
+          const renderThemeCard = () => {
+            tcard.innerHTML = '';
+            tcard.appendChild(toggleRow(thAuto.title, thAuto.description,
+              thAuto.value === true, async (on) => {
+                thAuto.value = on;
+                await api('/api/settings', { method: 'PATCH',
+                  body: JSON.stringify({ 'ha.theme_auto': on }) });
+                renderThemeCard();
+              }));
+            if (thAuto.value === true) {
+              for (const k of ['ha.theme_dark_at', 'ha.theme_light_at',
+                'ha.theme_auto_app']) {
+                if (byKey[k]) tcard.appendChild(settingRow(byKey[k]));
+              }
+            }
+          };
+          renderThemeCard();
+        }
+      }
+
+      // Return-home card renderer, assigned further below; the rotation
+      // toggle re-renders it in place (its disabled state gates on
+      // rotation).
+      let renderReturnCard = () => {};
 
       // Dashboard view rotation: toggle, then each dashboard as a plain
       // header with a checkbox per view beneath it, and the dwell time,
@@ -2747,7 +2790,25 @@ async function loadSettings() {
         const rcard = document.createElement('div');
         rcard.className = 'card';
         root.appendChild(rcard);
-        rcard.appendChild(settingRow(rotEnabled));
+        // The card re-renders itself in place on toggle, like the Theme
+        // and Return-home cards: the shared settingRow save would reload
+        // the whole tab.
+        const renderRotationCard = async () => {
+        rcard.innerHTML = '';
+        rcard.appendChild(toggleRow(rotEnabled.title, rotEnabled.description,
+          rotEnabled.value === true, async (on) => {
+            rotEnabled.value = on;
+            // The device forces the return-home switch off the moment
+            // rotation turns on (mutually exclusive); mirror it locally so
+            // the card below re-renders right.
+            if (on && byKey['ha.return_home_enabled']) {
+              byKey['ha.return_home_enabled'].value = false;
+            }
+            await api('/api/settings', { method: 'PATCH',
+              body: JSON.stringify({ 'ha.rotation_enabled': on }) });
+            await renderRotationCard();
+            renderReturnCard();
+          }));
         if (rotEnabled.value === true) {
           // Seconds saved in place: the shared settingRow re-renders the
           // whole tab (and re-fetches every dashboard) on save, which reads
@@ -2896,6 +2957,66 @@ async function loadSettings() {
           inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAdd(); });
           addRow.append(inp, add);
           rcard.appendChild(addRow);
+        }
+        };
+        await renderRotationCard();
+      }
+
+      // Return to the dashboard (issue #83), mirroring the device: below
+      // the rotation group it is mutually exclusive with. While rotation
+      // is on the switch renders disabled with the reason (the manager
+      // also forces the setting off the moment rotation turns on).
+      {
+        const rhEnabled = byKey['ha.return_home_enabled'];
+        const rhSeconds = byKey['ha.return_home_seconds'];
+        if (rhEnabled) {
+          const hh = document.createElement('h2');
+          hh.className = 'card-title';
+          hh.textContent = 'Return to Home Dashboard View';
+          root.appendChild(hh);
+          const hcard = document.createElement('div');
+          hcard.className = 'card';
+          root.appendChild(hcard);
+          // The card re-renders itself in place on toggle: the shared
+          // settingRow's save would loadSettings() (the seconds row gates
+          // on the switch), and on this tab that re-fetches every
+          // dashboard — a full-page flash for one checkbox.
+          renderReturnCard = () => {
+            hcard.innerHTML = '';
+            if (byKey['ha.rotation_enabled']?.value === true) {
+              hcard.appendChild(toggleRow(rhEnabled.title,
+                'Turned off while Dashboard view rotation is on.',
+                false, null));
+              return;
+            }
+            hcard.appendChild(toggleRow(rhEnabled.title,
+              rhEnabled.description, rhEnabled.value === true,
+              async (on) => {
+                rhEnabled.value = on;
+                await api('/api/settings', { method: 'PATCH',
+                  body: JSON.stringify({ 'ha.return_home_enabled': on }) });
+                renderReturnCard();
+              }));
+            // The target, so nobody has to guess which view "the
+            // dashboard" means. Kept identical to the device's copy in
+            // settings_screen.dart.
+            let homePath = null;
+            try {
+              const u = new URL(byKey['browser.start_url']?.value || '');
+              homePath = u.pathname.replace(/^\/+|\/+$/g, '') || null;
+            } catch (_) {}
+            const note = document.createElement('div');
+            note.className = 'row';
+            note.style.cssText = 'font-size:12.5px; color:var(--muted);';
+            note.textContent = homePath
+              ? `Returns to "${homePath}" after the timeout.`
+              : 'The configured dashboard has no view path to return to.';
+            hcard.appendChild(note);
+            if (rhEnabled.value === true && rhSeconds) {
+              hcard.appendChild(settingRow(rhSeconds));
+            }
+          };
+          renderReturnCard();
         }
       }
 
@@ -3678,6 +3799,23 @@ function readOnlyRow(name, desc, value) {
   v.style.whiteSpace = 'nowrap';
   v.textContent = value;
   row.appendChild(v);
+  return row;
+}
+
+// A hand-built switch row for cards that re-render themselves in place:
+// the shared settingRow's save calls loadSettings() whenever other rows
+// gate on the switch, and on the Home Assistant tab that reads as a
+// full-page refresh. onChange (absent for a disabled switch) receives the
+// new value; the caller re-renders its own card.
+function toggleRow(name, desc, checked, onChange) {
+  const row = readOnlyRow(name, desc, '');
+  row.querySelector('span').remove();
+  const lbl = document.createElement('label'); lbl.className = 'switch';
+  const cb = document.createElement('input');
+  cb.type = 'checkbox'; cb.checked = checked; cb.disabled = !onChange;
+  const sl = document.createElement('span'); sl.className = 'slider';
+  lbl.append(cb, sl); row.appendChild(lbl);
+  if (onChange) cb.addEventListener('change', () => onChange(cb.checked));
   return row;
 }
 

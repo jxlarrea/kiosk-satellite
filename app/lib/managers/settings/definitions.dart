@@ -2015,6 +2015,37 @@ const haRotationPauseSeconds = SettingDef<num>(
   dependsOn: 'ha.rotation_enabled',
 );
 
+/// Return to the configured dashboard after inactivity (issue #83): the
+/// Fully Kiosk "Return to Start URL" for people who wander to a lights
+/// page and walk away. Runs its own idle clock, independent of the
+/// screensaver's; when the screensaver fires first, the return happens
+/// quietly behind it at start. Stands down entirely — and is forced off —
+/// while dashboard view rotation is on: rotation owns navigation on an
+/// idle kiosk.
+const haReturnHomeEnabled = SettingDef<bool>(
+  key: 'ha.return_home_enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Return to Home Dashboard View',
+  description:
+      'Go back to the dashboard configured above after a period of '
+      'inactivity.',
+  category: 'Home Assistant',
+  section: 'Return to Home Dashboard View',
+);
+
+const haReturnHomeSeconds = SettingDef<num>(
+  key: 'ha.return_home_seconds',
+  type: SettingType.number,
+  defaultValue: 120,
+  min: 10,
+  title: 'Return after (seconds)',
+  description: 'Inactivity period before the kiosk goes back.',
+  category: 'Home Assistant',
+  section: 'Return to Home Dashboard View',
+  dependsOn: 'ha.return_home_enabled',
+);
+
 // ── MQTT ───────────────────────────────────────────────────────────────
 // Ready-made Home Assistant entities over MQTT discovery (issue #11). The
 // broker settings live here; everything the entities do routes through the
@@ -2605,6 +2636,8 @@ const List<SettingDef<Object>> allSettings = [
   haRotationUrls,
   haRotationSeconds,
   haRotationPauseSeconds,
+  haReturnHomeEnabled,
+  haReturnHomeSeconds,
   mqttEnabled,
   mqttHost,
   mqttPort,
