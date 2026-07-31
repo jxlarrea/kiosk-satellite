@@ -86,6 +86,16 @@
             android:name=".WakeWordService"
             android:exported="false"
             android:foregroundServiceType="microphone"/>
+        <!-- Crash recovery (issue #94): the sticky restart of this empty
+             service is what relaunches the kiosk after a native crash, and
+             the heartbeat alarm below is its backstop on OEMs that restart
+             sticky background services lazily. See CrashSelfHeal. -->
+        <service
+            android:name=".CrashGuardService"
+            android:exported="false"/>
+        <receiver
+            android:name=".CrashHeartbeatReceiver"
+            android:exported="false"/>
         <!-- Start on boot (kiosk.start_on_boot; RECEIVE_BOOT_COMPLETED is
              declared above). -->
         <receiver

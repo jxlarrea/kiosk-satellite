@@ -462,15 +462,28 @@ class BackgroundBridge(
         } catch (_: Exception) {
         }
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
+        // A real quit also stands down the crash recovery hooks, or the
+        // heartbeat alarm would count the kill as a crash worth undoing.
+        CrashSelfHeal.disarm(context)
         if (WakeWordService.isRunning) {
             // The keep-alive foreground service is what fights a clean exit: kill
             // the process on a timer while it is still started and START_STICKY
             // revives everything. So stop it and let its onDestroy end the
             // process, by which point it has left its started state for good.
+            // The guard service was stopped first (disarm above), so by the
+            // time this onDestroy runs, both have left their started state.
             WakeWordService.exiting = true
             WakeWordService.stop(context)
             // Safety net only: if onDestroy never lands, still leave. Long enough
             // that the clean path always wins the race.
+            handler.postDelayed({
+                android.os.Process.killProcess(android.os.Process.myPid())
+            }, 2000)
+        } else if (CrashGuardService.isRunning) {
+            // Same dance when only the crash guard holds a started state:
+            // its onDestroy ends the process once the stop has landed.
+            CrashGuardService.exiting = true
+            CrashGuardService.stop(context)
             handler.postDelayed({
                 android.os.Process.killProcess(android.os.Process.myPid())
             }, 2000)

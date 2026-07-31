@@ -38,11 +38,15 @@ class MainActivity : FlutterActivity() {
     override fun onResume() {
         super.onResume()
         ActivityState.resumed = true
-        // Persisted so the crash self-heal (WakeWordService) can tell "died
+        // Persisted so the crash self-heal (CrashSelfHeal) can tell "died
         // while on screen" from "user left for another app": only the former
         // may bring the kiosk back on its own. A clean exit and a Home press
         // both pass through onPause first, so the flag is false for those.
         setWasForeground(true)
+        // Arm the recovery hooks for a native crash (issue #94): a sticky
+        // guard service plus a heartbeat alarm, both no-ops until the process
+        // dies with the flag above still true.
+        CrashSelfHeal.arm(this)
     }
 
     override fun onPause() {
