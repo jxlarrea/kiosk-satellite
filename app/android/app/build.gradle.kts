@@ -91,6 +91,13 @@ dependencies {
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
 
+    // Media3 ExoPlayer for streamed Voice Satellite sounds (TTS): its whole
+    // pipeline runs in-process, so the output is an app-owned AudioTrack
+    // whose device pin OEM audio policies honor where MediaPlayer's is
+    // ignored (issue #93). Only the core module: sounds are progressive
+    // audio, no DASH/HLS/UI.
+    implementation("androidx.media3:media3-exoplayer:1.10.1")
+
     // SendSpin synchronized-audio player (me.jxl.kiosk_satellite.sendspin).
     // kotlinx-serialization-json is used only through its JSON tree API
     // (buildJsonObject / parseToJsonElement), so the serialization compiler
