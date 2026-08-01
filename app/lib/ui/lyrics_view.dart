@@ -67,6 +67,12 @@ class _LyricsViewState extends State<LyricsView> {
     _index = -1;
     _lineContexts.clear();
     if (mounted) setState(() {});
+    // A fresh song's lyrics must not inherit the previous song's scroll:
+    // with no line lit yet there is nothing to center on, and the view
+    // sat wherever the last track finished until the first line fired.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _scroll.hasClients) _scroll.jumpTo(0);
+    });
     _sync();
   }
 

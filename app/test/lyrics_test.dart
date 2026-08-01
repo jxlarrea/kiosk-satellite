@@ -132,6 +132,31 @@ void main() {
       expect(pickLrclibLyrics(results), isNull);
     });
 
+    test('with a known artist, a right-length namesake is never taken', () {
+      // The "Souvenir" case: an Italian song of the same title and nearly
+      // the same runtime must not pass just because the duration fits.
+      final results = <Object?>[
+        {
+          'syncedLyrics': '[00:05.00] parole in italiano',
+          'artistName': 'Cantante Italiano',
+          'duration': 198.0,
+        },
+      ];
+      expect(
+        pickLrclibLyrics(
+          results,
+          artist: 'Phoebe Bridgers',
+          durationSeconds: 197,
+        ),
+        isNull,
+      );
+      // Without an artist to check, the duration remains the only signal.
+      expect(
+        pickLrclibLyrics(results, durationSeconds: 197),
+        '[00:05.00] parole in italiano',
+      );
+    });
+
     test('nothing synced means nothing', () {
       expect(
         pickLrclibLyrics(<Object?>[

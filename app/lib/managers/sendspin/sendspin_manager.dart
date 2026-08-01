@@ -284,6 +284,14 @@ class SendspinManager extends Manager {
       // Only connection-shaping settings restart the client; the UI-only
       // ones (card visibility, size, position, fullscreen mode) must not
       // interrupt playback when toggled.
+      // The sync offset applies live inside the running player: a slider
+      // being tuned by ear must not restart the music it is tuned against.
+      if (e.key == defs.sendspinSyncOffset.key) {
+        unawaited(_channel.invokeMethod('setSyncOffset', {
+          'ms': _settings.get(defs.sendspinSyncOffset).toInt(),
+        }).catchError((_) {}));
+        return;
+      }
       const uiOnly = [
         'sendspin.show_player',
         'sendspin.player_size',
@@ -440,6 +448,7 @@ class SendspinManager extends Manager {
         'playerName': playerName,
         'clientId': _settings.get(defs.sendspinClientId),
         'preferredCodec': _settings.get(defs.sendspinCodec),
+        'syncOffsetMs': _settings.get(defs.sendspinSyncOffset).toInt(),
       });
       _running = true;
       log.info(name, 'player started as "$playerName"');

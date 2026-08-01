@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.Process
+import android.os.SystemClock
 import android.util.Log
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -152,11 +153,32 @@ class SendspinBridge(
      */
     private val positionCorrector = object : Runnable {
         override fun run() {
-            player?.audiblePositionInStreamMs()?.let {
-                emit(
-                    "metadataChanged",
-                    mapOf("positionMs" to (it + (streamBaseMs ?: 0L))),
-                )
+            player?.audiblePositionInStreamMs()?.let { audible ->
+                var base = currentStreamBaseMs()
+                val duration = lastDurationMs
+                if (streamBaseMs == null && lastMetaPosMs >= 0) {
+                    // Deferred pairing: the anchor metadata arrived before
+                    // audio ran (a rejoin's metadata precedes its stream).
+                    // Extrapolate it to now and pair against the audible
+                    // clock, still a same-instant comparison.
+                    val extrapolated = lastMetaPosMs +
+                        (SystemClock.elapsedRealtime() - lastMetaAtMs)
+                    if (duration <= 0 || extrapolated < duration - 2_000) {
+                        streamBaseMs = extrapolated - audible
+                        base = extrapolated - audible
+                    }
+                }
+                if (duration > 0 && audible + base > duration + 2_000) {
+                    // Self-heal a poisoned anchor (a malformed metadata
+                    // frame that slipped the guards): without this, a bad
+                    // base pins the display past the end of the track for
+                    // the whole song.
+                    Log.w(TAG, "position anchor beyond the track end, dropping it")
+                    streamBaseMs = null
+                    lastMetaPosMs = -1L
+                    base = 0L
+                }
+                emit("metadataChanged", mapOf("positionMs" to (audible + base)))
             }
             mainHandler.postDelayed(this, POSITION_CORRECT_INTERVAL_MS)
         }
@@ -168,6 +190,37 @@ class SendspinBridge(
      *  main-thread corrector. */
     @Volatile private var streamBaseMs: Long? = null
 
+    /** The configured audio sync offset, held here so a player built at
+     *  the next stream start inherits it (see configurePipeline). */
+    @Volatile private var syncOffsetMs = 0L
+
+    /** The current track's duration from its last real metadata, for the
+     *  corrector's sanity check on the position anchor. */
+    @Volatile private var lastDurationMs = 0L
+
+    /** The player's positionAnchorGeneration last seen here. */
+    @Volatile private var seenAnchorGeneration = 0L
+
+    /** The last sane metadata position and when it arrived, for the
+     *  corrector's deferred base pairing (a rejoin's metadata arrives
+     *  before its stream has an audible clock to pair against). */
+    @Volatile private var lastMetaPosMs = -1L
+    @Volatile private var lastMetaAtMs = 0L
+
+    /** The stream base, invalidated first whenever the player re-anchored
+     *  at an in-stream track boundary: a base paired against the previous
+     *  track's timeline reads minutes ahead on the new one, and so does
+     *  its stale metadata sample. */
+    private fun currentStreamBaseMs(): Long {
+        val generation = player?.positionAnchorGeneration ?: 0L
+        if (generation != seenAnchorGeneration) {
+            seenAnchorGeneration = generation
+            streamBaseMs = null
+            lastMetaPosMs = -1L
+        }
+        return streamBaseMs ?: 0L
+    }
+
     init {
         mainHandler.postDelayed(positionCorrector, POSITION_CORRECT_INTERVAL_MS)
         channel.setMethodCallHandler { call, result ->
@@ -178,7 +231,15 @@ class SendspinBridge(
                     val clientId = call.argument<String>("clientId") ?: "kiosk-satellite"
                     val preferredCodec =
                         (call.argument<String>("preferredCodec") ?: "flac").lowercase()
+                    syncOffsetMs = (call.argument<Number>("syncOffsetMs") ?: 0).toLong()
                     startSession(serverUrl, playerName, clientId, preferredCodec)
+                    result.success(true)
+                }
+                // Applied live, no session restart: a slider being tuned by
+                // ear must not interrupt the music it is tuning against.
+                "setSyncOffset" -> {
+                    syncOffsetMs = (call.argument<Number>("ms") ?: 0).toLong()
+                    player?.setPlaybackOffsetMs(syncOffsetMs)
                     result.success(true)
                 }
                 "stop" -> {
@@ -544,6 +605,7 @@ class SendspinBridge(
                     requestClientStateSnapshot = { client?.sendClientStateSnapshot() },
                 ).also {
                     it.duckFactor = duckFactor
+                    it.setPlaybackOffsetMs(syncOffsetMs)
                     it.initialize()
                     it.setVolume(VolumeController.mediaGain)
                     it.start()
@@ -645,37 +707,54 @@ class SendspinBridge(
             this@SendspinBridge.title = title.ifEmpty { null }
             this@SendspinBridge.artist = artist.ifEmpty { null }
             this@SendspinBridge.album = album.ifEmpty { null }
-            // The track position of the stream's first chunk. The reported
-            // position and the sent-so-far span both measure the server's
-            // send cursor, so their difference is the stream's base:
-            // invariant across a stream, hence recomputed on every real
-            // metadata (guarded on duration; progress-less placeholder
-            // frames must not zero it). Zero for a track played from its
-            // start; the join position for an app restarted into a group
-            // already mid-song — the rejoin's metadata arrives BEFORE its
-            // stream/start, which is why nothing here resets on stream
-            // boundaries: the wipe erased exactly that capture, and lyrics
-            // restarted from scratch after every relaunch.
-            if (durationMs > 0 && positionMs >= 0) {
-                streamBaseMs =
-                    (positionMs - (player?.streamSentSoFarMs() ?: 0L))
-                        .coerceAtLeast(0L)
+            if (durationMs > 0) lastDurationMs = durationMs
+            // The base maps our stream-anchored audible clock onto TRACK
+            // time: base = (reported position) - (audible position), both
+            // read at this same instant, so it holds regardless of how far
+            // the server has buffered ahead, in which order boundary
+            // messages arrived, or whether the server's progress tracks its
+            // cursor or its playback clock — all of which have varied.
+            // Guarded to positions that fit inside the track and not within
+            // its final seconds: placeholder frames, end-of-track boundary
+            // frames, and the server's stream-end frames with progress in
+            // MICROSECONDS (one anchored the display 42 hours in) must not
+            // become anchors. The base may legitimately be negative.
+            //
+            // With no audible clock yet (metadata before the stream, the
+            // rejoin case), the pairing is deferred: the position corrector
+            // picks it up from lastMetaPosMs once audio runs.
+            currentStreamBaseMs() // sync the anchor generation first
+            val saneAnchor =
+                durationMs > 2_000 && positionMs in 0 until durationMs - 2_000
+            val audibleRaw = player?.audiblePositionInStreamMs()
+            if (saneAnchor) {
+                lastMetaPosMs = positionMs
+                lastMetaAtMs = SystemClock.elapsedRealtime()
+                if (audibleRaw != null) {
+                    streamBaseMs = positionMs - audibleRaw
+                }
             }
-            // The audible position beats the metadata's: Music Assistant
-            // reports its send cursor, a whole buffer ahead of the speaker,
-            // and the lyrics and progress bar would read the future.
-            val audible = player?.audiblePositionInStreamMs()
-                ?.plus(streamBaseMs ?: 0L)
+            // The audible clock beats the metadata's value: it is what the
+            // speaker is saying, smooth and unaffected by the server's
+            // buffering. With no audible clock yet, the metadata's own
+            // value passes through only when sane against the duration;
+            // otherwise the field is omitted and the Dart side keeps what
+            // it had.
+            val audible = audibleRaw?.plus(currentStreamBaseMs())
+            val reported = audible
+                ?: positionMs.takeIf {
+                    it >= 0 && (durationMs <= 0 || it <= durationMs + 2_000)
+                }
             emit(
                 "metadataChanged",
-                mapOf(
-                    "title" to title,
-                    "artist" to artist,
-                    "album" to album,
-                    "artworkUrl" to artworkUrl,
-                    "positionMs" to (audible ?: positionMs),
-                    "durationMs" to durationMs,
-                ),
+                buildMap {
+                    put("title", title)
+                    put("artist", artist)
+                    put("album", album)
+                    put("artworkUrl", artworkUrl)
+                    if (reported != null) put("positionMs", reported)
+                    put("durationMs", durationMs)
+                },
             )
         }
 

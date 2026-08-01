@@ -60,11 +60,13 @@ class LrclibApi {
 }
 
 /// The best synced lyric among LRCLIB search results for a title-only
-/// query. Tiered, strictest first, and never entirely unconstrained — a
-/// bare title matches too much of the catalog to take just anything:
+/// query. Tiered, strictest first, and with a KNOWN artist that artist
+/// must appear in the credit — a common title with a matching runtime is
+/// not the same song ("Souvenir" served up an Italian namesake of the
+/// right length):
 ///  1. the artist appears in the credit AND the duration fits,
-///  2. the artist appears in the credit,
-///  3. the duration fits.
+///  2. the artist appears in the credit.
+/// Only with no artist to check does the duration alone qualify a result.
 /// Within a tier the first entry wins (LRCLIB orders by relevance). The
 /// duration window is a few seconds; a different edition's timings drift
 /// off the vocal within a verse.
@@ -87,11 +89,12 @@ String? pickLrclibLyrics(
         (duration - durationSeconds).abs() <= 7;
   }
 
-  final tiers = <bool Function(Map<Object?, Object?>)>[
-    (e) => artistFits(e) && durationFits(e),
-    artistFits,
-    durationFits,
-  ];
+  final tiers = wantedArtist.isNotEmpty
+      ? <bool Function(Map<Object?, Object?>)>[
+          (e) => artistFits(e) && durationFits(e),
+          artistFits,
+        ]
+      : <bool Function(Map<Object?, Object?>)>[durationFits];
   for (final fits in tiers) {
     for (final entry in results) {
       if (entry is! Map) continue;

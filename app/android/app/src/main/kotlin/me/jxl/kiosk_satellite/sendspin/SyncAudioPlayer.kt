@@ -356,6 +356,10 @@ class SyncAudioPlayer(
 
         // Gap/overlap detection
         private const val GAP_THRESHOLD_US = 10_000L  // 10ms minimum gap before filling with silence
+
+        /** Forward stamp jumps at least this large re-anchor the position
+         *  baseline (an in-stream track boundary; see processChunk). */
+        private const val POSITION_ANCHOR_GAP_US = 5_000_000L
         private const val DISCONTINUITY_THRESHOLD_US = 100_000L  // 100ms gap indicates discontinuity (for logging)
 
         // Gap-fill clamp. Silence is only materialized for gaps up to this
@@ -482,6 +486,56 @@ class SyncAudioPlayer(
     @Volatile private var lastDacCursorServerUs = 0L
     @Volatile private var lastDacCursorAtLoopUs = 0L
 
+    /** Bumped whenever the position baseline re-anchors at an in-stream
+     *  track boundary (see the discontinuity handling in processChunk).
+     *  The bridge watches it to invalidate its metadata-derived stream
+     *  base, which was paired against the previous track's timeline. */
+    @Volatile var positionAnchorGeneration = 0L
+        private set
+
+    /** Per-device playback offset, baked into chunk timestamps at intake
+     *  (see queueChunk): a chunk stamped T plays at server time T + offset.
+     *  Negative brings this device FORWARD — for output latency the DAC
+     *  timestamps cannot see, like a Bluetooth speaker's own buffer — so
+     *  one slow endpoint aligns to the group instead of the group being
+     *  delayed to match it. Volatile: set from the main thread, read on
+     *  the socket and playback threads. */
+    @Volatile private var playbackOffsetUs = 0L
+
+    /**
+     * Change the playback offset, live. Everything already queued is
+     * re-stamped by the delta so the whole timeline shifts as one; the
+     * sync loop then reads the resulting error and trims or reanchors to
+     * it — a brief, bounded correction. Deliberately NOT a rebuffer: the
+     * server never resends audio, so clearing the queue would trade a
+     * slider nudge for a hole in the music.
+     */
+    fun setPlaybackOffsetMs(offsetMs: Long) {
+        stateLock.withLock {
+            val newUs = offsetMs * 1000
+            val delta = newUs - playbackOffsetUs
+            if (delta == 0L) return
+            playbackOffsetUs = newUs
+            val restamped = chunkQueue.map {
+                it.copy(serverTimeMicros = it.serverTimeMicros + delta)
+            }
+            chunkQueue.clear()
+            chunkQueue.addAll(restamped)
+            firstServerTimestampUs = firstServerTimestampUs?.plus(delta)
+            expectedNextTimestampUs = expectedNextTimestampUs?.plus(delta)
+            if (lastChunkServerTime > 0) lastChunkServerTime += delta
+            synchronized(pendingChunks) {
+                if (pendingChunks.isNotEmpty()) {
+                    val shifted =
+                        pendingChunks.map { Pair(it.first + delta, it.second) }
+                    pendingChunks.clear()
+                    pendingChunks.addAll(shifted)
+                }
+            }
+            AppLog.Sync.i("Playback offset set to ${offsetMs}ms")
+        }
+    }
+
     /**
      * Where the audio audibly is in the CURRENT stream, in milliseconds
      * since the stream's first chunk — the track position, for a track
@@ -501,21 +555,6 @@ class SyncAudioPlayer(
         return if (position >= 0) position else null
     }
 
-    /**
-     * How much of the CURRENT stream the server has sent, in milliseconds
-     * (last received chunk relative to the first). Paired with the
-     * metadata's reported position at the same instant, the difference is
-     * the track position of the stream's first chunk — how the bridge
-     * anchors a mid-track join (an app restarted into a playing group)
-     * without trusting the server's inflated cursor. Null before the
-     * stream's first chunk.
-     */
-    fun streamSentSoFarMs(): Long? {
-        val first = firstServerTimestampUs ?: return null
-        val last = lastChunkServerTime
-        if (last <= 0L) return null
-        return ((last - first) / 1000).coerceAtLeast(0)
-    }
     private var lastReanchorTimeUs: Long = 0             // Cooldown tracking for reanchor
 
     // DAC timestamp stability tracking for start gating
@@ -1398,6 +1437,11 @@ class SyncAudioPlayer(
     fun queueChunk(serverTimeMicros: Long, pcmData: ByteArray) {
         if (isReleased.get()) return
         chunksReceived++
+        // The per-device playback offset is baked in at the door: one shift
+        // here and every consumer downstream — start gating, sync error,
+        // gap detection, reanchor staleness — stays internally consistent
+        // for free. A chunk stamped T plays at server time T + offset.
+        val stampedServerTimeMicros = serverTimeMicros + playbackOffsetUs
 
         // Buffer chunks until time sync has CONVERGED, not merely produced
         // a first estimate. Starting on an early estimate cost a fresh
@@ -1407,7 +1451,7 @@ class SyncAudioPlayer(
         if (!timeFilter.isConverged) {
             synchronized(pendingChunks) {
                 if (pendingChunks.size < MAX_PENDING_CHUNKS) {
-                    pendingChunks.add(Pair(serverTimeMicros, pcmData))
+                    pendingChunks.add(Pair(stampedServerTimeMicros, pcmData))
                     hasPendingChunks = true
                     if (pendingChunks.size == 1) {
                         AppLog.Audio.d("Buffering chunks while waiting for time sync...")
@@ -1426,7 +1470,7 @@ class SyncAudioPlayer(
         processPendingChunks()
 
         // Now process the current chunk
-        processChunk(serverTimeMicros, pcmData)
+        processChunk(stampedServerTimeMicros, pcmData)
     }
 
     /**
@@ -1517,6 +1561,23 @@ class SyncAudioPlayer(
                     AppLog.Audio.w("Gap of ${gapUs / 1000}ms exceeds fill limit " +
                         "(${MAX_GAP_FILL_US / 1000}ms) - treating as discontinuity")
                     expectedNextTimestampUs = serverTimeMicros
+                    // A LARGE forward jump inside a live stream is a track
+                    // boundary the server crossed without cycling the stream
+                    // (replaying a finished queue, repeat-one): the position
+                    // baseline moves to the boundary chunk and the bridge's
+                    // metadata-derived base is invalidated via the
+                    // generation counter — a base paired against the old
+                    // track's timeline read minutes ahead. Trade-off, on
+                    // purpose: a mid-track outage this long also resets the
+                    // display to the outage point, which the next metadata
+                    // corrects; the boundary case has no later metadata to
+                    // correct WITH, so it must win the default.
+                    if (gapUs >= POSITION_ANCHOR_GAP_US) {
+                        firstServerTimestampUs = serverTimeMicros
+                        positionAnchorGeneration++
+                        AppLog.Sync.i("Position re-anchored at in-stream boundary " +
+                            "(gap ${gapUs / 1000}ms)")
+                    }
                 }
                 // Only fill gaps larger than threshold (small gaps are normal network jitter)
                 else if (gapUs > GAP_THRESHOLD_US) {

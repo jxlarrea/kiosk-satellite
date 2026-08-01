@@ -2413,6 +2413,26 @@ const sendspinLyrics = SettingDef<bool>(
   section: 'Music Assistant',
 );
 
+/// Per-device playback offset (issue: Bluetooth speakers). The sync engine
+/// can only align what it can measure, and a Bluetooth speaker's own buffer
+/// sits past the DAC where Android's timestamps cannot see it — so that one
+/// endpoint lags the group and the only remedy used to be delaying twenty
+/// others. Negative plays this device earlier by the same amount instead.
+const sendspinSyncOffset = SettingDef<num>(
+  key: 'sendspin.sync_offset_ms',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: -1000,
+  max: 1000,
+  step: 10,
+  unit: 'ms',
+  title: 'Audio sync offset (ms)',
+  description:
+      'Negative plays this device earlier, for speakers that lag behind '
+      'the group (Bluetooth). Tune by ear; applies live.',
+  category: 'Sendspin',
+);
+
 const sendspinLyricsOffset = SettingDef<num>(
   key: 'sendspin.lyrics_offset',
   type: SettingType.number,
@@ -2703,6 +2723,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
+  sendspinSyncOffset,
   sendspinDuckPercent,
   sendspinShowPlayer,
   sendspinPlayerSize,
