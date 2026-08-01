@@ -72,8 +72,22 @@ class CrashGuardService : Service() {
 
     // A null intent is Android redelivering nothing after a crash: the
     // sticky-restart signature, and the only event this service exists for.
+    //
+    // The restart path returns START_NOT_STICKY, and that asymmetry is
+    // deliberate (issue #94 follow-up): on a dozing Fire tablet, app standby
+    // kills each post-crash restart at birth ("Stopping service due to app
+    // idle") before the relaunch can land, and STICKY made Android retry
+    // that doomed spin-up every ~32 seconds for 21 minutes, each cycle
+    // paying a full engine start - a RAM sawtooth that thrashed the whole
+    // device. One restart attempt is taken here; if the OS strangles it,
+    // the heartbeat alarm (delivered even in doze, at the next maintenance
+    // window) is the retry. A successful relaunch re-arms stickiness via
+    // the Activity's onResume.
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null) CrashSelfHeal.maybeRelaunch(this)
+        if (intent == null) {
+            CrashSelfHeal.maybeRelaunch(this)
+            return START_NOT_STICKY
+        }
         return START_STICKY
     }
 }

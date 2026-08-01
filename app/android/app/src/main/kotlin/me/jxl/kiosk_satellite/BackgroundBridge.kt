@@ -151,6 +151,23 @@ class BackgroundBridge(
                 // failed engine re-attach stuck on the splash screen, while a
                 // clean process restart reliably comes back.
                 "restartProcess" -> {
+                    // A restart wants the app BACK, so the self-heal throttle
+                    // must not stand in its way. This matters most on the
+                    // watchdog path: an Activity that attaches to an engine
+                    // that settled headless (a heartbeat relaunch minutes
+                    // after a crash) wedges on the splash, and only an attach
+                    // during engine boot recovers - which is exactly what the
+                    // crash guard's instant fresh-process relaunch provides,
+                    // unless a self-heal within the last two minutes (the
+                    // wedged relaunch itself) throttles it. On Android 12+
+                    // the alarm below is deferred for minutes, so the guard
+                    // is the relaunch that actually lands; throttled, the
+                    // wedge repeats every heartbeat instead of ending here.
+                    // commit(), not apply(): the process dies on the next
+                    // line but one.
+                    context.getSharedPreferences(
+                        "FlutterSharedPreferences", Context.MODE_PRIVATE)
+                        .edit().remove("flutter.ks.crash.last_self_heal").commit()
                     val alarm = context.getSystemService(Context.ALARM_SERVICE)
                         as android.app.AlarmManager
                     val launch = context.packageManager
