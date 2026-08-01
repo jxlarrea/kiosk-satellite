@@ -9,6 +9,7 @@ import 'managers/device/device_manager.dart';
 import 'managers/device_camera/device_camera_manager.dart';
 import 'managers/dlna/dlna_manager.dart';
 import 'managers/files/files_manager.dart';
+import 'managers/gestures/gestures_manager.dart';
 import 'managers/glance/glance_manager.dart';
 import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
@@ -43,6 +44,7 @@ class AppContainer {
     // the one that knows whether the URL must move to the loopback origin.
     browser.urlMapper = proxy.mapUrl;
     kiosk = KioskManager(bus, commands, log, settings);
+    gestures = GesturesManager(bus, commands, log, settings);
     screensaver = ScreensaverManager(bus, commands, log, settings);
     immich = ImmichManager(bus, commands, log, settings);
     // Before motion: its init runs the legacy motion-camera migration the
@@ -77,6 +79,7 @@ class AppContainer {
   late final BrowserManager browser;
   late final CameraManager camera;
   late final KioskManager kiosk;
+  late final GesturesManager gestures;
   late final ScreensaverManager screensaver;
   late final ImmichManager immich;
   late final DeviceCameraManager deviceCamera;
@@ -105,6 +108,9 @@ class AppContainer {
         camera,
         jsApi,
         kiosk,
+        // After kiosk and before the action surfaces it drives: it only
+        // listens for GestureDetected and runs registered commands.
+        gestures,
         screensaver,
         immich,
         deviceCamera,

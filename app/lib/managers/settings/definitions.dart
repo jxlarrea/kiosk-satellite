@@ -517,6 +517,38 @@ const kioskDisablePullRefresh = SettingDef<bool>(
   dependsOn: 'kiosk.enabled',
 );
 
+// Gestures themselves are not a kiosk feature: anything configured on the
+// Gestures page works whenever the app is running. This is the kiosk-time
+// opt-out for the locked-down tablet whose owner wants nothing hidden
+// armed while guests hold it.
+const kioskDisableGestures = SettingDef<bool>(
+  key: 'kiosk.disable_gestures',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable Gestures',
+  description:
+      'Ignore the gestures from the Gestures page while kiosk mode is on.',
+  category: 'Kiosk',
+  dependsOn: 'kiosk.enabled',
+);
+
+// ── Gestures (issue #99) ───────────────────────────────────────────────
+//
+// The configured mappings as a JSON list of
+//   {"id": "...", "trigger": {"type": ..., ...}, "action": {"type": ..., ...}}
+// entries. Hand-built editors on the device and in the remote admin write
+// it; the generic settings renderer skips it. Trigger shapes and action
+// types are documented in managers/gestures/gesture_mappings.dart.
+const gestureMappings = SettingDef<String>(
+  key: 'gestures.mappings',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Gestures',
+  description: 'Gestures and the actions they trigger.',
+  category: 'Gestures',
+  hidden: true,
+);
+
 // The quick-actions escape hatch (issue #64): a wall-mounted kiosk in
 // lockdown still wants "back to the dashboard" and "show the camera" to
 // be one swipe away. Off by default — kiosk mode keeps its full lock
@@ -2540,6 +2572,8 @@ const List<SettingDef<Object>> allSettings = [
   kioskDisableHome,
   kioskDisableContextMenus,
   kioskDisablePullRefresh,
+  kioskDisableGestures,
+  gestureMappings,
   kioskAllowDrawer,
   kioskAllowDashboard,
   kioskAllowCamera,

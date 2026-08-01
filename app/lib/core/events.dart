@@ -353,6 +353,17 @@ class KioskBackPressed extends AppEvent {
   const KioskBackPressed();
 }
 
+// ── Gestures (issue #99) ───────────────────────────────────────────────
+
+/// A configured hidden gesture was detected natively. [id] is the mapping
+/// id from gestures.mappings; the gestures manager resolves and runs the
+/// mapped action.
+class GestureDetected extends AppEvent {
+  const GestureDetected({required this.id});
+  final String id;
+}
+
+
 // ── Sendspin ───────────────────────────────────────────────────────────
 
 /// The Sendspin now-playing display state: true while a track is loaded

@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -75,6 +76,58 @@ class KioskManager extends Manager {
             return CommandResult.fail('could not open $package: $e');
           } on MissingPluginException {
             return const CommandResult.fail('opening apps is Android-only');
+          }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'openUri',
+        description:
+            'Open a deep link or custom URI with whatever app claims it '
+            '(gesture actions, issue #99). Fails when nothing on the device '
+            'handles the scheme.',
+        params: const {'uri': 'URI to open, e.g. myapp://path or geo:0,0'},
+        handler: (p) async {
+          final uri = '${p['uri'] ?? ''}'.trim();
+          if (uri.isEmpty) return const CommandResult.fail('uri required');
+          try {
+            final opened = await _backgroundChannel
+                .invokeMethod<bool>('openUri', {'uri': uri});
+            if (opened != true) {
+              return CommandResult.fail('nothing on the device opens $uri');
+            }
+            log.info(name, 'opened uri $uri');
+            return const CommandResult.ok();
+          } on PlatformException catch (e) {
+            return CommandResult.fail('could not open $uri: $e');
+          } on MissingPluginException {
+            return const CommandResult.fail('opening URIs is Android-only');
+          }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'openSystemSettings',
+        description: 'Open the Android Settings app over the kiosk.',
+        handler: (_) async {
+          try {
+            final opened = await _backgroundChannel
+                .invokeMethod<bool>('openSystemSettings');
+            if (opened != true) {
+              return const CommandResult.fail('could not open settings');
+            }
+            log.info(name, 'opened Android settings');
+            return const CommandResult.ok();
+          } on PlatformException catch (e) {
+            return CommandResult.fail('could not open settings: $e');
+          } on MissingPluginException {
+            return const CommandResult.fail(
+              'Android settings is Android-only',
+            );
           }
         },
       ),
@@ -248,6 +301,10 @@ class KioskManager extends Manager {
         case 'exitGesture':
           log.info(name, 'exit gesture detected');
           bus.publish(const KioskExitGesture());
+        case 'gesture':
+          final id = '${call.arguments}';
+          log.info(name, 'gesture detected: $id');
+          bus.publish(GestureDetected(id: id));
         case 'backPressed':
           bus.publish(const KioskBackPressed());
       }
@@ -255,7 +312,9 @@ class KioskManager extends Manager {
     });
 
     bus.on<SettingChanged>().listen((e) async {
-      if (!e.key.startsWith('kiosk.')) return;
+      if (!e.key.startsWith('kiosk.') && !e.key.startsWith('gestures.')) {
+        return;
+      }
       // Enabling the shield needs the draw-over-apps grant; fire the system
       // settings page the first time so the person is standing in front of
       // the right screen.
@@ -295,6 +354,15 @@ class KioskManager extends Manager {
               'taps7' => 7,
               _ => 0,
             },
+      // Configurable gestures (issue #99): armed whenever any are
+      // configured, kiosk mode or not. Disable Gestures is the kiosk-time
+      // opt-out; the force=false bundle (app exit) disarms them like
+      // everything else.
+      'gestures': !force || (on && _settings.get(defs.kioskDisableGestures))
+          ? const <Map<String, Object?>>[]
+          : nativeGestureTriggers(
+              decodeGestureMappings(_settings.get(defs.gestureMappings)),
+            ),
     });
   }
 

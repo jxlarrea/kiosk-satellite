@@ -236,6 +236,114 @@ class HomeAssistantManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'haCallService',
+        description:
+            'Call a Home Assistant service (covers scripts, scenes and '
+            'automation triggers). data is the service data object.',
+        params: const {
+          'domain': 'service domain, e.g. light',
+          'service': 'service name, e.g. turn_on',
+          'entity_id': 'optional target entity',
+          'data': 'optional service data (JSON object)',
+        },
+        handler: (p) async {
+          final domain = '${p['domain'] ?? ''}'.trim();
+          final service = '${p['service'] ?? ''}'.trim();
+          if (domain.isEmpty || service.isEmpty) {
+            return const CommandResult.fail('domain and service required');
+          }
+          if (!configured) {
+            return const CommandResult.fail('Home Assistant not configured');
+          }
+          final entity = '${p['entity_id'] ?? ''}'.trim();
+          final data = p['data'];
+          try {
+            await _wsCommand({
+              'type': 'call_service',
+              'domain': domain,
+              'service': service,
+              if (data is Map) 'service_data': data,
+              if (entity.isNotEmpty)
+                'target': {'entity_id': entity},
+            });
+            log.info(name, 'called $domain.$service');
+            return const CommandResult.ok();
+          } catch (e) {
+            return CommandResult.fail('$domain.$service failed: $e');
+          }
+        },
+      ))
+      ..register(Command(
+        name: 'haValidateAction',
+        description:
+            'Check that a service (and an optional entity) exists in Home '
+            'Assistant. Backs the Validate button in the gesture editors.',
+        params: const {
+          'domain': 'service domain to check, e.g. light',
+          'service': 'service name to check, e.g. turn_on',
+          'entity_id': 'optional entity to check',
+        },
+        handler: (p) async {
+          final domain = '${p['domain'] ?? ''}'.trim();
+          final service = '${p['service'] ?? ''}'.trim();
+          final entity = '${p['entity_id'] ?? ''}'.trim();
+          if (!configured) {
+            return const CommandResult.fail('Home Assistant not configured');
+          }
+          try {
+            final results = <String, Object?>{};
+            if (domain.isNotEmpty) {
+              final services = await _wsCommand({'type': 'get_services'});
+              final domainMap = services is Map ? services[domain] : null;
+              results['domain'] = domainMap != null;
+              results['service'] =
+                  domainMap is Map && domainMap.containsKey(service);
+            }
+            if (entity.isNotEmpty) {
+              final response = await http.get(
+                Uri.parse('$baseUrl/api/states/$entity'),
+                headers: {
+                  'Authorization': 'Bearer ${_settings.get(defs.haToken)}',
+                },
+              ).timeout(const Duration(seconds: 10));
+              results['entity'] = response.statusCode == 200;
+            }
+            return CommandResult.ok(results);
+          } catch (e) {
+            return CommandResult.fail('validation failed: $e');
+          }
+        },
+      ))
+      ..register(Command(
+        name: 'haFireEvent',
+        description:
+            'Fire an event on the Home Assistant event bus, for automations '
+            'to listen to.',
+        params: const {
+          'event': 'event type, e.g. kiosk_satellite_gesture',
+          'data': 'optional event data (JSON object)',
+        },
+        handler: (p) async {
+          final event = '${p['event'] ?? ''}'.trim();
+          if (event.isEmpty) return const CommandResult.fail('event required');
+          if (!configured) {
+            return const CommandResult.fail('Home Assistant not configured');
+          }
+          final data = p['data'];
+          try {
+            await _wsCommand({
+              'type': 'fire_event',
+              'event_type': event,
+              if (data is Map) 'event_data': data,
+            });
+            log.info(name, 'fired event $event');
+            return const CommandResult.ok();
+          } catch (e) {
+            return CommandResult.fail('firing $event failed: $e');
+          }
+        },
+      ))
+      ..register(Command(
         name: 'haBrowseMedia',
         description: 'Browse a Home Assistant media node for the screensaver '
             'picker. Omit mediaContentId for the root of every media source.',

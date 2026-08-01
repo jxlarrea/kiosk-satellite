@@ -24,6 +24,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import '../managers/wake_word/engine.dart';
 import 'color_picker.dart';
+import 'gesture_settings.dart';
 import 'glance_entity_picker.dart';
 import 'camera_settings.dart';
 import 'import_options_dialog.dart';
@@ -194,6 +195,12 @@ const _categories = <(String, String, IconData, String)>[
     'DLNA Renderer',
     Icons.cast_outlined,
     'Play images, videos and audio remotely',
+  ),
+  (
+    'Gestures',
+    'Gestures',
+    Icons.gesture,
+    'Touch gestures that trigger actions',
   ),
   (
     'Device',
@@ -921,6 +928,8 @@ class _CategoryContentState extends State<_CategoryContent> {
           )
         else if (widget.category == 'Cameras')
           CameraSettingsPanel(container: container)
+        else if (widget.category == 'Gestures')
+          GestureSettingsPanel(container: container)
         else if (widget.category == 'Audio') ...[
           // One card, mixer-style: the master fader (live device volume,
           // not a setting) with the media and assistant faders that scale

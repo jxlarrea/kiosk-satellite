@@ -41,6 +41,9 @@ import io.flutter.plugin.common.MethodChannel
  *  - gestureTaps: N fast taps anywhere (counted in [onTouch], which sees
  *               every pointer before the WebView does) fire "exitGesture"
  *               back to Dart, which owns the PIN prompt and the menu.
+ *  - gestures:  configurable hidden gestures (issue #99), detected by
+ *               [GestureEngine] on the same observe-only feed; each hit
+ *               fires "gesture" with the mapping id back to Dart.
  */
 class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     companion object {
@@ -89,6 +92,10 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     private var tapCount = 0
     private var lastTapAt = 0L
 
+    private val gestures = GestureEngine(activity) { id ->
+        main.post { channel.invokeMethod("gesture", id) }
+    }
+
     init {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -96,6 +103,8 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     blockVolume = call.argument<Boolean>("volume") ?: false
                     blockBack = call.argument<Boolean>("back") ?: false
                     gestureTaps = call.argument<Int>("gestureTaps") ?: 0
+                    gestures.configure(
+                        call.argument<List<Map<String, Any?>>>("gestures"))
                     setWakeOnScreenOff(call.argument<Boolean>("power") ?: false)
                     setShield(call.argument<Boolean>("statusBar") ?: false)
                     setPinned(call.argument<Boolean>("home") ?: false)
@@ -147,6 +156,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
      * fast, and a false positive only costs a PIN prompt.
      */
     fun onTouch(event: MotionEvent) {
+        gestures.onTouch(event)
         val needed = gestureTaps
         if (needed <= 0 || event.actionMasked != MotionEvent.ACTION_DOWN) return
         val now = event.eventTime
@@ -305,6 +315,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     }
 
     fun dispose() {
+        gestures.reset()
         setBarWatch(false)
         setShield(false)
         screenOffReceiver?.let { activity.unregisterReceiver(it) }

@@ -70,6 +70,13 @@ class BackgroundBridge(
                 "launchApp" -> result.success(
                     launchApp(call.argument<String>("package")),
                 )
+                // A deep link or custom URI for a gesture action (issue #99):
+                // whatever app claims the scheme opens over the kiosk.
+                "openUri" -> result.success(
+                    openUri(call.argument<String>("uri")),
+                )
+                // The system settings app, for a gesture action (issue #99).
+                "openSystemSettings" -> result.success(openSystemSettings())
                 // The device's next alarm, as the clock app set it
                 // (issue #42).
                 "nextAlarm" -> result.success(nextAlarm())
@@ -513,6 +520,32 @@ class BackgroundBridge(
             android.util.Log.w("kiosk_satellite", "launchApp $packageName failed", e)
             false
         }
+    }
+
+    /// Open a URI with whatever app claims it (ACTION_VIEW). Returns false
+    /// when nothing on the device can handle it, so the caller can say so.
+    private fun openUri(uri: String?): Boolean {
+        if (uri.isNullOrBlank()) return false
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri))
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            android.util.Log.w("kiosk_satellite", "openUri $uri failed", e)
+            false
+        }
+    }
+
+    /// Open the Android Settings app.
+    private fun openSystemSettings(): Boolean = try {
+        val intent = Intent(Settings.ACTION_SETTINGS)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+        true
+    } catch (e: Exception) {
+        android.util.Log.w("kiosk_satellite", "openSystemSettings failed", e)
+        false
     }
 
     /// The next alarm clock set on the device, whichever app set it: this is

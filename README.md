@@ -64,6 +64,12 @@ smooth on the low-powered, older tablets that usually end up on walls.
   buttons, a status-bar shield, instant re-wake on power button, and
   lock-task support on device-owner provisioned tablets.
 
+&bull; **Gestures**: map corner taps, corner holds, multi-finger taps and
+  holds, or a knock-code corner sequence to
+  [configurable actions](docs/gestures.md): jump to a dashboard view,
+  call a Home Assistant service or script, open another app and more,
+  all invisible to guests.
+
 &bull; **Sendspin player**: the tablet doubles as a synchronized
   [Sendspin](https://www.sendspin-audio.com/) speaker for Music
   Assistant, in sample-accurate sync with every other Sendspin player in
@@ -206,6 +212,7 @@ very welcome in the issues.
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the Black and Clock screensavers.
+- [Gestures](docs/gestures.md): touch gestures mapped to configurable actions.
 - [Microphone](docs/microphone.md): capture mode, gain and AGC, for devices whose microphone reads too quiet.
 - [Optimizations](docs/optimizations.md): the connection and performance switches, what each one does and when to use it.
 

@@ -175,6 +175,24 @@ class BrowserManager extends Manager {
       )
       ..register(
         Command(
+          name: 'showLinkPage',
+          description:
+              'Show an external page in the overlay WebView with its close '
+              'button, the same surface a tapped dashboard link gets (used '
+              'by gesture actions, issue #99)',
+          params: const {'url': 'Absolute URL to show'},
+          handler: (p) async {
+            final url = p['url'] as String?;
+            if (url == null || url.isEmpty) {
+              return const CommandResult.fail('url required');
+            }
+            showLinkOverlay(url);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'hideOverlayPage',
           description:
               'Dismiss the overlay page and reveal the dashboard again',
