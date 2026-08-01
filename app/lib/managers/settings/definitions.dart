@@ -259,10 +259,10 @@ const browserZoom = SettingDef<num>(
   defaultValue: 1,
   title: 'Zoom level',
   description:
-      'Scales the whole page. Useful for wall tablets viewed from a '
-      'distance, or dashboards designed for a different screen density.',
+      'Scales the whole page. Above 1x for wall tablets viewed from a '
+      'distance; below 1x fits more dashboard on a small screen.',
   category: 'Browser',
-  min: 1,
+  min: 0.5,
   max: 4,
   step: 0.05,
   unit: 'x',
