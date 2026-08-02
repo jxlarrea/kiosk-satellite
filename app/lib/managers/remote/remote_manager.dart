@@ -96,6 +96,14 @@ class RemoteManager extends Manager {
       _broadcast({'type': 'brightness', 'level': e.level});
     });
 
+    // Mic level samples for the admin settings meter. No wireName (the page
+    // computes its own levels), and they only flow while a client holds a
+    // mic-level watch, so this is not a standing 10 Hz feed.
+    bus.on<MicLevelSample>().listen((e) {
+      if (_wsClients.isEmpty) return;
+      _broadcast({'type': 'micLevel', 'rms': e.rms});
+    });
+
     // Wake-word state, likewise: no wireName, so the generic feed skips it.
     //
     // The admin shows the same wake-word panel as the device's own settings

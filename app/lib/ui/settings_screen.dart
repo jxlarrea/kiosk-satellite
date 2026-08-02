@@ -29,6 +29,7 @@ import 'glance_entity_picker.dart';
 import 'camera_settings.dart';
 import 'import_options_dialog.dart';
 import 'media_picker.dart';
+import 'mic_level_meter.dart';
 import 'wake_word_tester.dart';
 
 /// A line between rows, and never after the last one. Inset from the card
@@ -1508,6 +1509,11 @@ class _CategoryContentState extends State<_CategoryContent> {
                         def: def,
                         onChanged: () => setState(() {}),
                       ),
+                  // Live capture level under the gain it verifies. Only with
+                  // detection on: it reads the engine's telemetry, and with
+                  // detection off this app never opens the microphone.
+                  if (container.settings.get(wakeWordEnabled))
+                    MicLevelTile(container: container),
                 ],
               ),
               // The tester: a live look at what the engine hears and scores,

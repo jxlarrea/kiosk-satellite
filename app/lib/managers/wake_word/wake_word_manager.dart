@@ -111,6 +111,36 @@ class WakeWordManager extends Manager {
     if (_testers == 0) _applyTelemetry();
   }
 
+  // Remote mic-level watch. The admin UI cannot hold an in-process telemetry
+  // subscription, so it re-arms this while its meter is visible and the
+  // watch self-expires - a browser that vanishes mid-watch can never leave
+  // telemetry running.
+  Timer? _micLevelExpiry;
+  StreamSubscription<Map<String, Object?>>? _micLevelSub;
+  int _lastMicLevelPushMs = 0;
+
+  void _watchMicLevel() {
+    _micLevelExpiry?.cancel();
+    _micLevelExpiry = Timer(const Duration(seconds: 15), _stopMicLevelWatch);
+    if (_micLevelSub != null) return;
+    startTest();
+    _micLevelSub = telemetry.listen((m) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (now - _lastMicLevelPushMs < 100) return;
+      _lastMicLevelPushMs = now;
+      bus.publish(MicLevelSample(rms: (m['rms'] as num?)?.toDouble() ?? 0));
+    });
+  }
+
+  void _stopMicLevelWatch() {
+    _micLevelExpiry?.cancel();
+    _micLevelExpiry = null;
+    if (_micLevelSub == null) return;
+    _micLevelSub!.cancel();
+    _micLevelSub = null;
+    stopTest();
+  }
+
   /// Point the active engine's telemetry at our stream (or unhook it).
   /// Re-run whenever the running engine changes, so requesting a test
   /// before the engine is up — or across an engine switch — still lands on
@@ -616,6 +646,20 @@ class WakeWordManager extends Manager {
             'background': _settings.get(defs.wakeWordBackground),
             ...perms.toJson(),
           });
+        },
+      ))
+      ..register(Command(
+        name: 'watchMicLevel',
+        description: 'Stream microphone level samples to admin clients for '
+            'the settings meter. Expires after 15 s: callers re-arm it while '
+            'their meter is visible, so a closed browser stops the stream '
+            'on its own.',
+        handler: (_) async {
+          if (!_engine.running) {
+            return const CommandResult.fail('wake word engine not running');
+          }
+          _watchMicLevel();
+          return const CommandResult.ok();
         },
       ))
       ..register(Command(

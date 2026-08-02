@@ -3234,6 +3234,13 @@ async function loadSettings() {
             micCard.appendChild(gainRow);
           }
         }
+        // Live capture level under the gain it verifies - mirrors the
+        // device's Microphone settings row. Only with detection on: it
+        // reads the engine's telemetry, and with detection off the device
+        // never opens the microphone.
+        if (byKey['wake_word.enabled']?.value !== false) {
+          micCard.appendChild(micLevelRow());
+        }
       }
       // Microphone / speaker pickers on the same card as the wake word
       // settings, mirroring the device's rows in the same place.
@@ -4535,6 +4542,75 @@ function readOnlyRow(name, desc, value) {
   return row;
 }
 
+// ── Microphone level meter ────────────────────────────────────────────
+// Mirrors the device's segmented meter: 24 segments on a dB scale
+// (-60..-6 dBFS), green up to the 0.05-RMS gain target, amber to about
+// -15 dBFS, red above. Levels arrive as {type:'micLevel', rms} WS frames
+// while the watchMicLevel command stays re-armed; the watch self-expires
+// on the device, so the keepalive below only runs while the row is
+// actually on screen.
+const MIC_METER_SEGMENTS = 24;
+let micMeterEl = null;
+let micMeterLastFrame = 0;
+let micMeterLastArm = 0;
+
+function micLevelFraction(rms) {
+  if (!rms || rms <= 0) return 0;
+  const db = 20 * Math.log10(rms);
+  return Math.min(1, Math.max(0, (db + 60) / 54));
+}
+
+function micLevelRow() {
+  const row = document.createElement('div'); row.className = 'row';
+  const info = document.createElement('div'); info.className = 'info';
+  info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
+  info.querySelector('.name').textContent = 'Microphone level';
+  info.querySelector('.desc').textContent =
+    'Speak from where you use the device; adjust the gain until normal ' +
+    'speech tops out around the end of the green.';
+  row.appendChild(info);
+  const bar = document.createElement('div');
+  bar.style.cssText =
+    'display:flex; gap:3px; width:180px; height:12px; flex:none; align-self:center';
+  for (let i = 0; i < MIC_METER_SEGMENTS; i++) {
+    const seg = document.createElement('div');
+    seg.style.cssText = 'flex:1; border-radius:2px; background:var(--border)';
+    bar.appendChild(seg);
+  }
+  micMeterEl = bar;
+  row.appendChild(bar);
+  return row;
+}
+
+function renderMicLevel(rms) {
+  if (!micMeterEl || !micMeterEl.isConnected) return;
+  micMeterLastFrame = Date.now();
+  const lit = Math.round(micLevelFraction(rms) * MIC_METER_SEGMENTS);
+  [...micMeterEl.children].forEach((seg, i) => {
+    seg.style.background = i >= lit ? 'var(--border)'
+      : i < 15 ? 'var(--ok)' : i < 20 ? 'var(--warn)' : 'var(--error)';
+  });
+}
+
+// Keepalive: re-arm the device-side watch while the meter is visible.
+setInterval(() => {
+  if (!micMeterEl || !micMeterEl.isConnected || !micMeterEl.offsetParent) return;
+  if (Date.now() - micMeterLastArm < 6000) return;
+  micMeterLastArm = Date.now();
+  api('/api/commands/watchMicLevel', { method: 'POST', body: '{}' })
+    .catch(() => {});
+}, 1000);
+
+// Telemetry stops when detection pauses (a voice turn) or the watch
+// lapses; decay to dark instead of freezing on the last value.
+setInterval(() => {
+  if (micMeterEl && micMeterEl.isConnected && micMeterLastFrame &&
+      Date.now() - micMeterLastFrame > 600) {
+    renderMicLevel(0);
+    micMeterLastFrame = 0;
+  }
+}, 300);
+
 // A hand-built switch row for cards that re-render themselves in place:
 // the shared settingRow's save calls loadSettings() whenever other rows
 // gate on the switch, and on the Home Assistant tab that reads as a
@@ -5557,6 +5633,7 @@ function connectWs() {
     else if (msg.type === 'wakeword-state') loadWakeWord();
     // The screensaver and the card both dim behind our back.
     else if (msg.type === 'brightness') showBrightness(msg.level);
+    else if (msg.type === 'micLevel') renderMicLevel(msg.rms);
   };
 }
 function setConn(s) { $('#connDot').className = `dot ${s}`; }

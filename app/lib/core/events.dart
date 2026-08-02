@@ -134,6 +134,15 @@ class AudioDevicesChanged extends AppEvent {
   final bool capturePathChanged;
 }
 
+/// A microphone capture level sample (RMS, 0..1, at most ~10/s), published
+/// only while a remote admin client holds a mic-level watch. No wireName:
+/// the page computes its own mic levels, this exists for the admin UI's
+/// meter and is relayed explicitly by the remote manager.
+class MicLevelSample extends AppEvent {
+  const MicLevelSample({required this.rms});
+  final double rms;
+}
+
 /// A playback level sample from a native sound (mean |amplitude|, 0..1, at
 /// most ~20/s). Wire event: the page's reactive bar animates to audio it
 /// never touches.
