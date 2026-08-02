@@ -2,10 +2,12 @@ package me.jxl.kiosk_satellite
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Insets
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.WindowInsets
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -65,6 +67,28 @@ class MainActivity : FlutterActivity() {
                     WindowManager.LayoutParams
                         .LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                 }
+            }
+        }
+        // The two settings above hand the cutout row to the window, but the
+        // modern inset dispatch then carries the cutout inset down to every
+        // child, including the dashboard WebView. Chromium republishes it to
+        // the page as env(safe-area-inset-top), and Home Assistant's frontend
+        // pads its header by that value: on a punch-hole device the gap
+        // reappears inside the page. A kiosk fills the screen unconditionally,
+        // so strip the cutout from the dispatch; bar and IME insets pass
+        // through untouched for Flutter's own padding and keyboard handling.
+        if (Build.VERSION.SDK_INT >= 28) {
+            window.decorView.setOnApplyWindowInsetsListener { view, insets ->
+                val stripped = if (Build.VERSION.SDK_INT >= 30) {
+                    WindowInsets.Builder(insets)
+                        .setInsets(WindowInsets.Type.displayCutout(), Insets.NONE)
+                        .setDisplayCutout(null)
+                        .build()
+                } else {
+                    @Suppress("DEPRECATION")
+                    insets.consumeDisplayCutout()
+                }
+                view.onApplyWindowInsets(stripped)
             }
         }
     }
