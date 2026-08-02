@@ -29,4 +29,14 @@ void main() {
       }
     });
   });
+
+  group('micLevelLabel', () {
+    test('silence reads empty, not a stale number', () {
+      expect(micLevelLabel(0), '');
+    });
+
+    test('the gain target reads back as the number the hint names', () {
+      expect(micLevelLabel(0.05), '0.050 (-26 dB)');
+    });
+  });
 }

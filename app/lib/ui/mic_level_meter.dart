@@ -17,6 +17,16 @@ double micLevelFraction(double rms) {
   return ((db + 60) / 54).clamp(0.0, 1.0);
 }
 
+/// Numeric readout beside the bar: the RMS the gain hint's 0.05 target is
+/// written in, with its dBFS equivalent. Empty at silence or when no
+/// telemetry is flowing, so the row reads idle rather than pinned at a
+/// stale number.
+String micLevelLabel(double rms) {
+  if (rms <= 0) return '';
+  final db = (20 * math.log(rms) / math.ln10).round();
+  return '${rms.toStringAsFixed(3)} ($db dB)';
+}
+
 /// Segment count and color boundaries, shared wording with the remote UI:
 /// green to the 0.05-RMS target, amber to -12 dBFS, red above.
 const micMeterSegments = 24;
@@ -39,7 +49,7 @@ class MicLevelTile extends StatefulWidget {
 class _MicLevelTileState extends State<MicLevelTile> {
   StreamSubscription<Map<String, Object?>>? _sub;
   Timer? _staleness;
-  final _level = ValueNotifier<double>(0);
+  final _rms = ValueNotifier<double>(0);
   int _lastSampleMs = 0;
 
   @override
@@ -48,14 +58,14 @@ class _MicLevelTileState extends State<MicLevelTile> {
     widget.container.wakeWord.startTest();
     _sub = widget.container.wakeWord.telemetry.listen((m) {
       _lastSampleMs = DateTime.now().millisecondsSinceEpoch;
-      _level.value = micLevelFraction((m['rms'] as num?)?.toDouble() ?? 0);
+      _rms.value = (m['rms'] as num?)?.toDouble() ?? 0;
     });
     // Telemetry stops when detection pauses (a voice turn) or the engine
     // drops; decay to dark instead of freezing on the last value.
     _staleness = Timer.periodic(const Duration(milliseconds: 250), (_) {
-      if (_level.value > 0 &&
+      if (_rms.value > 0 &&
           DateTime.now().millisecondsSinceEpoch - _lastSampleMs > 500) {
-        _level.value = 0;
+        _rms.value = 0;
       }
     });
   }
@@ -65,7 +75,7 @@ class _MicLevelTileState extends State<MicLevelTile> {
     _staleness?.cancel();
     _sub?.cancel();
     widget.container.wakeWord.stopTest();
-    _level.dispose();
+    _rms.dispose();
     super.dispose();
   }
 
@@ -84,19 +94,37 @@ class _MicLevelTileState extends State<MicLevelTile> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: SizedBox(
-            height: 14,
-            child: ValueListenableBuilder<double>(
-              valueListenable: _level,
-              builder: (_, level, _) => CustomPaint(
-                painter: _SegmentBarPainter(
-                  level: level,
-                  offColor: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.12),
+          child: ValueListenableBuilder<double>(
+            valueListenable: _rms,
+            builder: (_, rms, _) => Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 14,
+                    child: CustomPaint(
+                      painter: _SegmentBarPainter(
+                        level: micLevelFraction(rms),
+                        offColor: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.12),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                // Fixed-width readout so the bar does not jitter as digit
+                // counts change.
+                SizedBox(
+                  width: 104,
+                  child: Text(
+                    micLevelLabel(rms),
+                    textAlign: TextAlign.right,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

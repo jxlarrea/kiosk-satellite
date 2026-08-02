@@ -4551,6 +4551,7 @@ function readOnlyRow(name, desc, value) {
 // actually on screen.
 const MIC_METER_SEGMENTS = 24;
 let micMeterEl = null;
+let micMeterLabelEl = null;
 let micMeterLastFrame = 0;
 let micMeterLastArm = 0;
 
@@ -4569,16 +4570,26 @@ function micLevelRow() {
     'Speak from where you use the device; adjust the gain until normal ' +
     'speech tops out around the end of the green.';
   row.appendChild(info);
+  const wrap = document.createElement('div');
+  wrap.style.cssText =
+    'display:flex; gap:10px; align-items:center; flex:none; align-self:center';
   const bar = document.createElement('div');
-  bar.style.cssText =
-    'display:flex; gap:3px; width:180px; height:12px; flex:none; align-self:center';
+  bar.style.cssText = 'display:flex; gap:3px; width:180px; height:12px';
   for (let i = 0; i < MIC_METER_SEGMENTS; i++) {
     const seg = document.createElement('div');
     seg.style.cssText = 'flex:1; border-radius:2px; background:var(--border)';
     bar.appendChild(seg);
   }
+  // Fixed-width readout so the bar does not jitter as digit counts change.
+  const label = document.createElement('span');
+  label.style.cssText =
+    'width:92px; text-align:right; font-size:12px; color:var(--muted); ' +
+    'font-variant-numeric:tabular-nums; white-space:nowrap';
+  wrap.appendChild(bar);
+  wrap.appendChild(label);
   micMeterEl = bar;
-  row.appendChild(bar);
+  micMeterLabelEl = label;
+  row.appendChild(wrap);
   return row;
 }
 
@@ -4590,6 +4601,11 @@ function renderMicLevel(rms) {
     seg.style.background = i >= lit ? 'var(--border)'
       : i < 15 ? 'var(--ok)' : i < 20 ? 'var(--warn)' : 'var(--error)';
   });
+  if (micMeterLabelEl) {
+    micMeterLabelEl.textContent = rms > 0
+      ? `${rms.toFixed(3)} (${Math.round(20 * Math.log10(rms))} dB)`
+      : '';
+  }
 }
 
 // Keepalive: re-arm the device-side watch while the meter is visible.
