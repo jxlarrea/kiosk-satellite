@@ -312,7 +312,9 @@ class KioskManager extends Manager {
     });
 
     bus.on<SettingChanged>().listen((e) async {
-      if (!e.key.startsWith('kiosk.') && !e.key.startsWith('gestures.')) {
+      if (!e.key.startsWith('kiosk.') &&
+          !e.key.startsWith('gestures.') &&
+          e.key != defs.browserCutoutMode.key) {
         return;
       }
       // Enabling the shield needs the draw-over-apps grant; fire the system
@@ -363,6 +365,9 @@ class KioskManager extends Manager {
           : nativeGestureTriggers(
               decodeGestureMappings(_settings.get(defs.gestureMappings)),
             ),
+      // Window layout, not lockdown: applied whatever the kiosk switch says,
+      // including the force=false bundle on exit (the window keeps its shape).
+      'cutout': _settings.get(defs.browserCutoutMode),
     });
   }
 

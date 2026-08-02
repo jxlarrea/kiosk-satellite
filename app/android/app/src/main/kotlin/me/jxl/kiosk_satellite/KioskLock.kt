@@ -109,6 +109,13 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     setShield(call.argument<Boolean>("statusBar") ?: false)
                     setPinned(call.argument<Boolean>("home") ?: false)
                     setBarWatch(call.argument<Boolean>("bars") ?: false)
+                    // Not a lockdown flag; it rides this channel because the
+                    // channel already re-pushes on every settings change and
+                    // to every new Activity. MainActivity.onCreate seeds the
+                    // same value from the settings mirror.
+                    call.argument<String>("cutout")?.let {
+                        CutoutLayout.apply(activity, it)
+                    }
                     result.success(null)
                 }
                 "hasOverlayPermission" ->

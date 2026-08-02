@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## v0.31.4-beta - 2026-08-02
 
+### Added
+- Display cutout setting in the new User Interface group under Web Browsing, next to the Zoom level which moved there. By default the dashboard uses the screen area around a punch-hole camera or notch; dashboards with buttons at the very top can pick Avoid the cutout to keep the page below the camera instead, with Short edges only and System default also available.
+
 ### Fixed
 - On Lenovo tablets (and other ROMs that reserve the status bar row even after the bar is hidden), the dashboard no longer shows a permanent gap at the top of the screen: the app now lays its window out edge to edge through the modern Android inset pipeline instead of relying on the legacy fullscreen flags those ROMs ignore. Devices with a punch-hole camera also get the cutout row back. (#102)
 

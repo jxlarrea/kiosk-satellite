@@ -262,10 +262,38 @@ const browserZoom = SettingDef<num>(
       'Scales the whole page. Above 1x for wall tablets viewed from a '
       'distance; below 1x fits more dashboard on a small screen.',
   category: 'Browser',
+  section: 'User Interface',
   min: 0.5,
   max: 4,
   step: 0.05,
   unit: 'x',
+);
+
+/// How the window treats a camera cutout (punch hole, notch). The kiosk
+/// default is to claim the cutout row and withhold the safe-area inset from
+/// the page (see CutoutLayout.kt), so Home Assistant never pads its header;
+/// dashboards with controls at the very top can avoid the cutout instead
+/// (discussion #102). Applied live through the kiosk_lock channel, and read
+/// natively from SharedPreferences at Activity creation so the window is
+/// right from the first frame.
+const browserCutoutMode = SettingDef<String>(
+  key: 'browser.cutout_mode',
+  type: SettingType.select,
+  defaultValue: 'always',
+  title: 'Display cutout',
+  description:
+      'What to do with the screen area around a camera cutout or punch '
+      'hole. Pick Avoid the cutout if the camera sits on top of buttons at '
+      'the top of the dashboard.',
+  category: 'Browser',
+  section: 'User Interface',
+  options: ['always', 'short_edges', 'default', 'never'],
+  optionLabels: {
+    'always': 'Use the cutout area',
+    'short_edges': 'Short edges only',
+    'default': 'System default',
+    'never': 'Avoid the cutout',
+  },
 );
 
 const pinchToZoom = SettingDef<bool>(
@@ -2571,12 +2599,15 @@ const List<SettingDef<Object>> allSettings = [
   autoReloadOnError,
   pullToRefresh,
   pullToRefreshClearCache,
-  browserZoom,
   pinchToZoom,
   disableCache,
   browserInjectJs,
   allowMixedContent,
   ignoreSslErrors,
+  // The User Interface group closes the Web Browsing page; consecutive so
+  // both UIs render them under the one heading.
+  browserZoom,
+  browserCutoutMode,
   webMicrophone,
   webCamera,
   webGeolocation,
