@@ -2,8 +2,11 @@ package me.jxl.kiosk_satellite
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
@@ -34,6 +37,37 @@ class MainActivity : FlutterActivity() {
 
     override fun provideFlutterEngine(context: Context): FlutterEngine? =
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Lay the window out edge to edge ourselves. Flutter's immersive mode
+        // hides the bars through the legacy systemUiVisibility layout flags,
+        // and Lenovo's ZUI ROMs honor the hide but not the layout: the status
+        // bar strip stays reserved, a permanent gap above the dashboard
+        // (discussion #102). Opting into the modern inset pipeline makes those
+        // ROMs extend the window under the bars. Everywhere else this is the
+        // layout the legacy flags already produced; either way the insets
+        // still reach Flutter as viewPadding (zero while the bars are hidden),
+        // so on-app screens keep their SafeArea behavior. Flutter never
+        // reverts the flag: its disableEdgeToEdge only fires if Dart had
+        // requested SystemUiMode.edgeToEdge, which this app never does.
+        if (Build.VERSION.SDK_INT >= 30) {
+            window.setDecorFitsSystemWindows(false)
+        }
+        // Punch-hole devices letterbox a bars-hidden window out of the cutout
+        // row unless told otherwise, which reads as the same gap.
+        if (Build.VERSION.SDK_INT >= 28) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode = if (Build.VERSION.SDK_INT >= 30) {
+                    WindowManager.LayoutParams
+                        .LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                } else {
+                    WindowManager.LayoutParams
+                        .LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
+            }
+        }
+    }
 
     override fun onResume() {
         super.onResume()
