@@ -455,6 +455,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             private var envelope = 0.0
             private var streamStartUptime = 0L
             private var windowsEmitted = 0L
+            private var lastSent = -1.0
 
             override fun flush(sampleRate: Int, channelCount: Int, encoding: Int) {
                 this.sampleRate = sampleRate
@@ -464,6 +465,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 count = 0
                 streamStartUptime = 0
                 windowsEmitted = 0
+                lastSent = -1.0
             }
 
             override fun handleBuffer(buffer: ByteBuffer) {
@@ -492,6 +494,14 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                         val due = streamStartUptime +
                             windowsEmitted * SoundClips.LEVEL_WINDOW_MS
                         windowsEmitted++
+                        // Near-identical consecutive levels are visual no-ops
+                        // (the page quantizes to 0.05 steps); skip the bridge
+                        // round-trip for them, like the Visualizer path does.
+                        if (abs(level - lastSent) < 0.008) {
+                            i += 2
+                            continue
+                        }
+                        lastSent = level
                         mainHandler.postAtTime({
                             if (exoPlayers.containsKey(id)) {
                                 channel.invokeMethod(
@@ -514,7 +524,13 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
      */
     private fun emitClipLevels(id: String, clip: SoundClips.Clip) {
         val step = SoundClips.LEVEL_WINDOW_MS.toLong()
+        var lastSent = -1f
         for ((i, level) in clip.levels.withIndex()) {
+            // Near-identical consecutive levels are visual no-ops (the page
+            // quantizes to 0.05 steps); don't schedule a bridge round-trip
+            // for them.
+            if (abs(level - lastSent) < 0.008f) continue
+            lastSent = level
             workerHandler.postDelayed({
                 val live = synchronized(tracks) { tracks.containsKey(id) }
                 if (!live) return@postDelayed

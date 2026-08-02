@@ -66,10 +66,14 @@ class RemoteManager extends Manager {
       _lastSnapshotAt = DateTime.now();
     });
 
-    // Live event feed for connected WS clients.
+    // Live event feed for connected WS clients. sound-level is excluded:
+    // it fires at up to 20 Hz for the page's reactive bar and the admin
+    // UI has no use for it.
     bus.stream.listen((event) {
       final wireName = event.wireName;
-      if (wireName == null || _wsClients.isEmpty) return;
+      if (wireName == null || wireName == 'sound-level' || _wsClients.isEmpty) {
+        return;
+      }
       _broadcast({'type': 'event', 'event': wireName, 'data': event.toJson()});
     });
     log.stream.listen((entry) {
