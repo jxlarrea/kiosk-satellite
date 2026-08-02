@@ -2,6 +2,17 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v0.31.3-beta - 2026-08-02
+
+### Added
+- Live Microphone level meter in the Voice Satellite Microphone settings, on the device and in the remote admin: a segmented bar with an RMS and dBFS readout, so the microphone gain can be tuned by watching normal speech land at the top of the green. Useful on devices whose ROM captures audio far quieter than it should.
+
+### Changed
+- Playback level updates for the reactive bar skip near-duplicate values and no longer stream to remote admin clients, cutting bridge and WebSocket traffic during TTS and chimes.
+
+### Fixed
+- A microphone capture stuck delivering pure silence (a wedged recorder after an audio server crash, or a ROM whose direct 16 kHz record path is broken) is now detected within 2 seconds and reopened through a path that works, instead of leaving wake word detection silently deaf.
+
 ## v0.31.2-beta - 2026-08-01
 
 ### Changed
