@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## v0.31.4-beta - 2026-08-02
+## v0.32.0-beta - 2026-08-02
 
 ### Added
 - Display cutout setting in the new User Interface group under Web Browsing, next to the Zoom level which moved there. By default the dashboard uses the screen area around a punch-hole camera or notch; dashboards with buttons at the very top can pick Avoid the cutout to keep the page below the camera instead, with Short edges only and System default also available.
