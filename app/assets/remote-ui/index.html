@@ -711,7 +711,15 @@ async function login() {
   const res = await fetch('/api/login', {
     method: 'POST', body: JSON.stringify({ password: $('#password').value }),
   });
-  if (!res.ok) { $('#loginError').textContent = 'Invalid password'; return; }
+  if (!res.ok) {
+    // The throttle rejects even the right password; calling that "Invalid
+    // password" convinces someone with a typo behind them that their real
+    // password is broken, on every device they try next.
+    $('#loginError').textContent = res.status === 429
+      ? 'Too many attempts. Wait 5 minutes and try again.'
+      : 'Invalid password';
+    return;
+  }
   state.token = (await res.json()).token;
   localStorage.setItem('ks_token', state.token);
   start();
