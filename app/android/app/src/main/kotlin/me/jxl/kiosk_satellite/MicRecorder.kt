@@ -57,6 +57,23 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         private const val TAG = "MicRecorder"
         private const val SAMPLE_RATE = 16000
         private const val CHUNK_BYTES = 1280 * 2 // 80 ms of 16-bit mono
+
+        /**
+         * Deafness guard: a capture stuck on all-zero frames (a wedged
+         * AudioRecord after an audioserver death, or a ROM whose direct
+         * 16 kHz record path is broken) cannot be fixed in place, so it is
+         * reopened once at this rate - the mismatch against the usual
+         * 16 kHz device forces AudioFlinger's record converter path and a
+         * fresh server-side track - and decimated back to 16 kHz here.
+         */
+        private const val FALLBACK_RATE = 48000
+
+        /**
+         * How much all-zero audio after open before concluding the capture
+         * is broken (2 s at 16 kHz). Real capture never does this - even a
+         * silent room floors at nonzero ADC noise.
+         */
+        private const val SILENT_FALLBACK_BYTES = 2L * SAMPLE_RATE * 2
     }
 
     private val appContext = context.applicationContext
@@ -123,18 +140,123 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         recording = true
         rec.startRecording()
         worker = thread(name = "vsww-mic") {
-            val buf = ByteArray(CHUNK_BYTES)
+            var cur = rec
+            var decimate = false
+            var fellBack = false
+            var announcedFallbackAudio = false
+            // Rolling, not since-open: a capture can emit a startup
+            // transient before going silent, so any single nonzero frame
+            // must not disarm the watchdog for good.
+            var zeroRun = 0L
+            var buf = ByteArray(CHUNK_BYTES)
             while (recording) {
-                val read = rec.read(buf, 0, buf.size)
-                if (read > 0) {
-                    val chunk = buf.copyOf(read)
-                    if (gain != 1.0) amplify(chunk, read, gain)
-                    mainHandler.post {
-                        if (recording) sink.success(chunk)
+                val read = cur.read(buf, 0, buf.size)
+                if (read <= 0) continue
+                if (allZero(buf, read)) {
+                    zeroRun += read
+                    if (!fellBack && zeroRun >= SILENT_FALLBACK_BYTES) {
+                        fellBack = true
+                        val next = openRecord(source, FALLBACK_RATE)
+                        if (next != null) {
+                            Log.w(
+                                TAG,
+                                "capture read only zeros for 2s - reopening at " +
+                                    "$FALLBACK_RATE Hz for a fresh track through " +
+                                    "the record converter path",
+                            )
+                            aec?.release()
+                            ns?.release()
+                            agc?.release()
+                            aec = null
+                            ns = null
+                            agc = null
+                            try { cur.stop() } catch (_: IllegalStateException) {}
+                            cur.release()
+                            applyPreferredDevice(next, selector)
+                            applyDsp(next.audioSessionId, wantAgc)
+                            next.startRecording()
+                            cur = next
+                            record = next
+                            decimate = true
+                            zeroRun = 0
+                            buf = ByteArray(CHUNK_BYTES * 3)
+                            continue
+                        }
+                        Log.w(TAG, "silent capture and the $FALLBACK_RATE Hz fallback failed to open; keeping the silent capture")
                     }
+                } else {
+                    zeroRun = 0
+                    if (decimate && !announcedFallbackAudio) {
+                        announcedFallbackAudio = true
+                        Log.i(TAG, "$FALLBACK_RATE Hz fallback capture is delivering audio")
+                    }
+                }
+                val chunk = if (decimate) decimate3(buf, read) else buf.copyOf(read)
+                if (gain != 1.0) amplify(chunk, chunk.size, gain)
+                mainHandler.post {
+                    if (recording) sink.success(chunk)
                 }
             }
         }
+    }
+
+    /** Open a capture at the given rate, or null when it cannot be had. */
+    private fun openRecord(source: Int, rateHz: Int): AudioRecord? {
+        val minBuf = AudioRecord.getMinBufferSize(
+            rateHz,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT,
+        )
+        val chunk = CHUNK_BYTES * (rateHz / SAMPLE_RATE)
+        val rec = try {
+            AudioRecord(
+                source,
+                rateHz,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                max(minBuf, chunk * 4),
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "AudioRecord open at $rateHz Hz failed: ${e.message}")
+            return null
+        }
+        if (rec.state != AudioRecord.STATE_INITIALIZED) {
+            rec.release()
+            return null
+        }
+        return rec
+    }
+
+    private fun allZero(buf: ByteArray, length: Int): Boolean {
+        for (i in 0 until length) {
+            if (buf[i] != 0.toByte()) return false
+        }
+        return true
+    }
+
+    /**
+     * 48 kHz mono PCM16 to 16 kHz by averaging sample triplets. The fallback
+     * stream is AudioFlinger's 3x upsample of a 16 kHz device, so the average
+     * is near-transparent; on a genuinely 48 kHz device it doubles as a mild
+     * anti-alias filter.
+     */
+    private fun decimate3(buf: ByteArray, length: Int): ByteArray {
+        val outSamples = length / 2 / 3
+        val out = ByteArray(outSamples * 2)
+        var si = 0
+        var oi = 0
+        repeat(outSamples) {
+            var acc = 0
+            repeat(3) {
+                acc += ((buf[si + 1].toInt() shl 8) or (buf[si].toInt() and 0xFF)).toShort().toInt()
+                si += 2
+            }
+            val v = acc / 3
+            out[oi] = (v and 0xFF).toByte()
+            out[oi + 1] = ((v shr 8) and 0xFF).toByte()
+            oi += 2
+        }
+        return out
     }
 
     /**
