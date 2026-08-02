@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v0.32.1-beta - 2026-08-02
+
+### Fixed
+- The last piece of the Lenovo fullscreen gap (#102): some ROMs, notably Lenovo's ZUI, keep reporting the status bar as occupying space even while it is hidden, and the dashboard page dutifully padded itself by one bar height through its safe-area insets. Those insets are now withheld from the page on every Display cutout setting, since the bars are permanently hidden anyway. No effect on ROMs that report the insets correctly.
+- The remote admin login now says "Too many attempts. Wait 5 minutes and try again." when the brute-force throttle is active, instead of reporting the password as invalid. The throttle rejects even the correct password, so the old message sent anyone with a typo behind them into a loop of retries that looked like a broken password on every device.
+
 ## v0.32.0-beta - 2026-08-02
 
 ### Added
