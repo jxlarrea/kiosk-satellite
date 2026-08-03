@@ -499,7 +499,7 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
   }
 
   String _time() {
-    final h24 = widget.container.settings.get(defs.screensaverClock24h);
+    final h24 = widget.container.settings.get(defs.screensaverMiniClock24h);
     final h = h24 ? _now.hour : (_now.hour % 12 == 0 ? 12 : _now.hour % 12);
     final hh = h24 ? h.toString().padLeft(2, '0') : h.toString();
     final mm = _now.minute.toString().padLeft(2, '0');

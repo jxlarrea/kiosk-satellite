@@ -116,6 +116,7 @@ class ScreensaverManager extends Manager {
 
   @override
   Future<void> init() async {
+    await _migrateMiniClock24h();
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
     // Stand down while a page interaction runs (voice turn, ringing timer
     // alert, media playback), whichever API the page signalled it through:
@@ -477,6 +478,21 @@ class ScreensaverManager extends Manager {
     }
     _publishMotionPolicy(null);
     bus.publish(const ScreensaverStateChanged(active: false));
+  }
+
+  /// One-time carry-over for the small clock's own 24-hour switch (issue
+  /// #116): it used to follow the Clock mode's, so a device that had that
+  /// on keeps its 24-hour small clock instead of silently flipping to
+  /// AM/PM on update.
+  Future<void> _migrateMiniClock24h() async {
+    if (_settings.internal('screensaver.mini_clock_24h.migrated').isNotEmpty) {
+      return;
+    }
+    if (_settings.get(defs.screensaverClock24h)) {
+      await _settings.set(defs.screensaverMiniClock24h, true);
+      log.info(name, 'small clock keeps its 24-hour format');
+    }
+    await _settings.setInternal('screensaver.mini_clock_24h.migrated', '1');
   }
 
   @override

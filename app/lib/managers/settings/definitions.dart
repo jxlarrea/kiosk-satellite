@@ -894,6 +894,20 @@ const screensaverMiniClockColor = SettingDef<String>(
   dependsOn: 'screensaver.mini_clock',
 );
 
+// Its own switch, not the Clock mode's (issue #116): the mini clock used
+// to read screensaver.clock_24h, whose settings row only shows while the
+// mode is Clock — on every other mode the format was steered by a setting
+// the person could not see.
+const screensaverMiniClock24h = SettingDef<bool>(
+  key: 'screensaver.mini_clock_24h',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: '24-hour clock',
+  description: 'Show a 24-hour time instead of AM/PM.',
+  category: 'Screensaver',
+  dependsOn: 'screensaver.mini_clock',
+);
+
 const screensaverMiniClockDate = SettingDef<bool>(
   key: 'screensaver.mini_clock_date',
   type: SettingType.boolean,
@@ -2757,6 +2771,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMiniClock,
   screensaverMiniClockPosition,
   screensaverMiniClockColor,
+  screensaverMiniClock24h,
   screensaverMiniClockDate,
   screensaverMode,
   // One titled panel per mode, in the dropdown's order; only the panel of
