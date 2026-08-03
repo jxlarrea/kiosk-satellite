@@ -73,6 +73,15 @@ class SendspinBridge(
 
         /** Cadence of the audible-position re-emit (see positionCorrector). */
         private const val POSITION_CORRECT_INTERVAL_MS = 5_000L
+
+        /**
+         * Metadata progress below this means the track started from the top:
+         * the reported progress is only the server's read-ahead (Music
+         * Assistant's progress tracks its send cursor, which led the audible
+         * timeline by a measured 4.7s on FLAC), so the correct stream base is
+         * zero, not a pairing that bakes that lead into every lyric line.
+         */
+        private const val FRESH_TRACK_MAX_PROGRESS_MS = 8_000L
     }
 
     private val channel = MethodChannel(messenger, "kiosk_satellite/sendspin")
@@ -217,13 +226,20 @@ class SendspinBridge(
                 if (streamBaseMs == null && lastMetaPosMs >= 0) {
                     // Deferred pairing: the anchor metadata arrived before
                     // audio ran (a rejoin's metadata precedes its stream).
-                    // Extrapolate it to now and pair against the audible
-                    // clock, still a same-instant comparison.
-                    val extrapolated = lastMetaPosMs +
-                        (SystemClock.elapsedRealtime() - lastMetaAtMs)
-                    if (duration <= 0 || extrapolated < duration - 2_000) {
-                        streamBaseMs = extrapolated - audible
-                        base = extrapolated - audible
+                    // Pair its raw value against the audible clock, with the
+                    // same fresh-track clamp as the live pairing. Deliberately
+                    // NOT extrapolated by wall time: the track does not
+                    // advance while this device buffers its stream start, and
+                    // extrapolating baked that whole startup wait into the
+                    // base (measured +4.7s, lyrics ahead by the same amount).
+                    val anchored = if (lastMetaPosMs < FRESH_TRACK_MAX_PROGRESS_MS) {
+                        0L
+                    } else {
+                        lastMetaPosMs - audible
+                    }
+                    if (duration <= 0 || lastMetaPosMs < duration - 2_000) {
+                        streamBaseMs = anchored
+                        base = anchored
                     }
                 }
                 if (duration > 0 && audible + base > duration + 2_000) {
@@ -791,7 +807,15 @@ class SendspinBridge(
             if (saneAnchor) {
                 lastMetaPosMs = positionMs
                 lastMetaAtMs = SystemClock.elapsedRealtime()
-                if (audibleRaw != null) {
+                if (positionMs < FRESH_TRACK_MAX_PROGRESS_MS &&
+                    (audibleRaw == null || audibleRaw < FRESH_TRACK_MAX_PROGRESS_MS)
+                ) {
+                    // Track started from the top: the audible clock IS the
+                    // track position. Pairing here instead would absorb the
+                    // send-cursor lead and run the lyrics seconds ahead of
+                    // the speaker for the whole song.
+                    streamBaseMs = 0L
+                } else if (audibleRaw != null) {
                     streamBaseMs = positionMs - audibleRaw
                 }
             }

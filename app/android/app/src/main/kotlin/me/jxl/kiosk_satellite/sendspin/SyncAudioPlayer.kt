@@ -324,6 +324,12 @@ class SyncAudioPlayer(
         // Sync error update interval
         private const val SYNC_ERROR_UPDATE_INTERVAL = 5  // Update every N chunks
 
+        // Staleness bound for the audible-position clock. The DAC cursor
+        // refreshes every SYNC_ERROR_UPDATE_INTERVAL chunks (~125ms of
+        // audio) while genuinely playing, so an anchor this old means the
+        // stream stopped; see audiblePositionInStreamMs.
+        private const val AUDIBLE_CLOCK_STALE_US = 2_000_000L  // 2s
+
         // Start gating configuration (from Python reference)
         private const val MIN_BUFFER_BEFORE_START_MS = 200  // Wait for 200ms buffer before scheduling
         private const val REANCHOR_THRESHOLD_US = 500_000L  // 500ms error triggers reanchor
@@ -560,6 +566,12 @@ class SyncAudioPlayer(
         val anchor = lastDacCursorServerUs
         if (anchor <= 0L) return null
         val elapsedUs = nowNs() / 1000 - lastDacCursorAtLoopUs
+        // A live playback refreshes the cursor sub-second (updateSyncError);
+        // an anchor older than this belongs to a stream that stopped, was
+        // cleared, or is rebuilding after a resume. Extrapolating it reads
+        // seconds ahead of nothing, and a base paired against it anchored
+        // the display a whole track off (observed -86s after pause/resume).
+        if (elapsedUs > AUDIBLE_CLOCK_STALE_US) return null
         val position = (anchor + elapsedUs - first) / 1000
         return if (position >= 0) position else null
     }
