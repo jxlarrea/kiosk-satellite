@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v0.33.2-beta - 2026-08-03
+
+### Added
+- Two new Kiosk exit gesture options, 5 fast taps holding the last and 7 fast taps holding the last (#120). With one of these selected the menu only opens when the final tap is held down for a second, so rapidly tapping a dashboard button, like a TV remote's volume control, can no longer trigger the exit gesture. The hold shape does not collide with anything on the Gestures screen: a corner hold needs a corner and a finger hold needs two or three fingers, while the exit hold is one finger anywhere after the tap chain. Existing installs keep their current setting.
+
 ## v0.33.1-beta - 2026-08-03
 
 ### Added
