@@ -582,13 +582,22 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
   }
 }
 
-/// Media and website, rendered by a bundled HTML page in its own WebView.
+/// Media and website, rendered in their own WebView.
 ///
-/// The page ports Voice Satellite's screensaver: an iframe for a website, and
-/// for media the whole HA playlist path — browse, resolve, image slideshow,
-/// video, and camera WebRTC with an MJPEG fallback — using Chromium's native
-/// engines. We hand it the HA URL and token and the chosen options; it does the
-/// rest and calls back on a tap so we can dismiss.
+/// Media loads a bundled HTML page porting Voice Satellite's screensaver:
+/// the whole HA playlist path — browse, resolve, image slideshow, video,
+/// and camera WebRTC with an MJPEG fallback — using Chromium's native
+/// engines. We hand it the HA URL and token and the chosen options; it
+/// does the rest and calls back on a tap so we can dismiss.
+///
+/// A website loads TOP-LEVEL, not through the bundled page's iframe
+/// (issue #118): sites gated by a SameSite=Lax/Strict session cookie
+/// (DAKboard private URLs) serve their login page to a cross-site
+/// subframe — the WebView withholds third-party cookies there, and Lax
+/// cookies never flow into one anyway. First-party top-level navigation
+/// shares the app's cookie jar and renders like the dashboard WebView.
+/// The bundled page's tap-to-dismiss and pixel shift come along as
+/// injected scripts.
 class ScreensaverWebView extends StatefulWidget {
   const ScreensaverWebView({
     super.key,
@@ -622,16 +631,55 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
     });
   }
 
+  /// Any tap dismisses, like every screensaver. The WebView swallows
+  /// Flutter's gestures, so the page reports the tap itself; capture
+  /// phase and every frame, so a site that stops propagation (or hosts
+  /// its content in its own iframes) still dismisses.
+  static const _dismissScript = '''
+document.addEventListener('pointerdown', function () {
+  if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+    window.flutter_inappwebview.callHandler('dismiss');
+  }
+}, true);''';
+
+  /// The bundled page's burn-in shift, applied to the site's root instead.
+  static const _pixelShiftScript = '''
+setInterval(function () {
+  var max = Math.min(24, window.innerWidth * 0.015);
+  var x = (Math.random() * 2 - 1) * max, y = (Math.random() * 2 - 1) * max;
+  document.documentElement.style.transform =
+      'translate(' + x + 'px,' + y + 'px)';
+}, 60000);''';
+
   @override
   Widget build(BuildContext context) {
+    final website = widget.mode == 'website'
+        ? widget.container.settings.get(defs.screensaverWebsiteUrl).trim()
+        : '';
+    // An empty URL falls through to the bundled page, whose website mode
+    // shows the same black screen it always has.
+    final topLevel = website.isNotEmpty;
     return InAppWebView(
-      initialFile: 'assets/screensaver/index.html',
+      initialUrlRequest: topLevel ? URLRequest(url: WebUri(website)) : null,
+      initialFile: topLevel ? null : 'assets/screensaver/index.html',
       initialUserScripts: UnmodifiableListView([
-        // The config has to exist before the page's own script runs.
-        UserScript(
-          source: 'window.__ksScreensaver = $_configJson;',
-          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-        ),
+        if (topLevel) ...[
+          UserScript(
+            source: _dismissScript,
+            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+            forMainFrameOnly: false,
+          ),
+          if (widget.container.settings.get(defs.screensaverPixelShift))
+            UserScript(
+              source: _pixelShiftScript,
+              injectionTime: UserScriptInjectionTime.AT_DOCUMENT_END,
+            ),
+        ] else
+          // The config has to exist before the page's own script runs.
+          UserScript(
+            source: 'window.__ksScreensaver = $_configJson;',
+            injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+          ),
       ]),
       initialSettings: InAppWebViewSettings(
         transparentBackground: false,
