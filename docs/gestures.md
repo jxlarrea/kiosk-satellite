@@ -81,4 +81,7 @@ rhythm, about a second and a half between taps.
   menu unless **Disable context menus** (Kiosk Mode) is on.
 - The exit gesture's fast-tap counter is position blind and unchanged: five
   or seven fast taps anywhere still open the menu, whatever is configured
-  here.
+  here. Its hold variants (the last tap held down for a second) do not
+  collide with these gestures either: a corner hold needs a corner box and
+  a finger hold needs two or three fingers, while the exit hold is one
+  finger anywhere after a chain of fast taps.

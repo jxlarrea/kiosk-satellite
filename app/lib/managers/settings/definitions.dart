@@ -451,13 +451,17 @@ const kioskExitGesture = SettingDef<String>(
   title: 'Kiosk exit gesture',
   description:
       'Fast taps anywhere on the screen open the menu, after the PIN '
-      'if one is set. With the gesture disabled, only the remote admin '
+      'if one is set. The hold variants only fire when the last tap is '
+      'held down for a second, so rapid taps on dashboard buttons cannot '
+      'open the menu. With the gesture disabled, only the remote admin '
       'can reach the settings.',
   category: 'Kiosk',
-  options: ['taps5', 'taps7', 'none'],
+  options: ['taps5', 'taps7', 'taps5hold', 'taps7hold', 'none'],
   optionLabels: {
     'taps5': '5 fast taps',
     'taps7': '7 fast taps',
+    'taps5hold': '5 fast taps, holding the last',
+    'taps7hold': '7 fast taps, holding the last',
     'none': 'Disabled (remote admin only)',
   },
   dependsOn: 'kiosk.enabled',

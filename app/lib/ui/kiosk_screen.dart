@@ -549,10 +549,10 @@ class _KioskScreenState extends State<KioskScreen>
     return false;
   }
 
-  /// The kiosk exit gesture: N fast taps, counted natively so they land
-  /// even though the WebView swallows its pointers. PIN first when one is
-  /// set; the prize is just the menu — every escape route stays behind its
-  /// own confirmation.
+  /// The kiosk exit gesture: N fast taps (optionally holding the last),
+  /// counted natively so they land even though the WebView swallows its
+  /// pointers. PIN first when one is set; the prize is just the menu —
+  /// every escape route stays behind its own confirmation.
   Future<void> _onExitGesture(KioskExitGesture _) async {
     if (!mounted || _settingsOpen || _drawer.value > 0) return;
     if (c.kiosk.pinRequired) {

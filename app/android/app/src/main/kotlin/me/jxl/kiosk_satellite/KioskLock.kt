@@ -20,10 +20,12 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.WindowInsets
 import android.view.WindowManager
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import kotlin.math.abs
 
 /**
  * The Activity-scoped half of kiosk lockdown. Dart pushes the armed flags via
@@ -41,6 +43,8 @@ import io.flutter.plugin.common.MethodChannel
  *  - gestureTaps: N fast taps anywhere (counted in [onTouch], which sees
  *               every pointer before the WebView does) fire "exitGesture"
  *               back to Dart, which owns the PIN prompt and the menu.
+ *               With gestureTapHold set the last tap must also be held
+ *               still for a second (issue #120).
  *  - gestures:  configurable hidden gestures (issue #99), detected by
  *               [GestureEngine] on the same observe-only feed; each hit
  *               fires "gesture" with the mapping id back to Dart.
@@ -82,6 +86,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     @Volatile private var blockVolume = false
     @Volatile private var blockBack = false
     @Volatile private var gestureTaps = 0
+    @Volatile private var gestureTapHold = false
     private var barWatch = false
     private var barTicker: Runnable? = null
 
@@ -91,6 +96,10 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
 
     private var tapCount = 0
     private var lastTapAt = 0L
+    private var exitHold: Runnable? = null
+    private var exitHoldX = 0f
+    private var exitHoldY = 0f
+    private val slop = ViewConfiguration.get(activity).scaledTouchSlop * 2
 
     private val gestures = GestureEngine(activity) { id ->
         main.post { channel.invokeMethod("gesture", id) }
@@ -103,6 +112,8 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     blockVolume = call.argument<Boolean>("volume") ?: false
                     blockBack = call.argument<Boolean>("back") ?: false
                     gestureTaps = call.argument<Int>("gestureTaps") ?: 0
+                    gestureTapHold =
+                        call.argument<Boolean>("gestureTapHold") ?: false
                     gestures.configure(
                         call.argument<List<Map<String, Any?>>>("gestures"))
                     setWakeOnScreenOff(call.argument<Boolean>("power") ?: false)
@@ -161,18 +172,54 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
      * consecutive DOWNs — under 400 ms apart — count toward the exit gesture;
      * a pause resets. Normal dashboard use never chains that many taps that
      * fast, and a false positive only costs a PIN prompt.
+     *
+     * With [gestureTapHold] set, reaching the count arms a one-second
+     * deadline on the tap that got there instead of firing: the finger must
+     * stay down and still (issue #120). Tapping a dashboard button
+     * repeatedly can reach any count, but every mash ends in a lift, never
+     * a hold. An early lift keeps the chain, so the next fast tap re-arms.
      */
     fun onTouch(event: MotionEvent) {
         gestures.onTouch(event)
         val needed = gestureTaps
-        if (needed <= 0 || event.actionMasked != MotionEvent.ACTION_DOWN) return
-        val now = event.eventTime
-        tapCount = if (now - lastTapAt <= 400) tapCount + 1 else 1
-        lastTapAt = now
-        if (tapCount >= needed) {
-            tapCount = 0
-            main.post { channel.invokeMethod("exitGesture", null) }
+        if (needed <= 0) return
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                val now = event.eventTime
+                tapCount = if (now - lastTapAt <= 400) tapCount + 1 else 1
+                lastTapAt = now
+                if (tapCount < needed) return
+                if (!gestureTapHold) {
+                    tapCount = 0
+                    main.post { channel.invokeMethod("exitGesture", null) }
+                    return
+                }
+                exitHoldX = event.x
+                exitHoldY = event.y
+                val fire = Runnable {
+                    exitHold = null
+                    tapCount = 0
+                    channel.invokeMethod("exitGesture", null)
+                }
+                cancelExitHold()
+                exitHold = fire
+                main.postDelayed(fire, 1000)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (exitHold != null &&
+                    (abs(event.x - exitHoldX) > slop ||
+                        abs(event.y - exitHoldY) > slop)
+                ) cancelExitHold()
+            }
+            MotionEvent.ACTION_POINTER_DOWN,
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL -> cancelExitHold()
         }
+    }
+
+    private fun cancelExitHold() {
+        exitHold?.let { main.removeCallbacks(it) }
+        exitHold = null
     }
 
     /**
@@ -322,6 +369,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     }
 
     fun dispose() {
+        cancelExitHold()
         gestures.reset()
         setBarWatch(false)
         setShield(false)

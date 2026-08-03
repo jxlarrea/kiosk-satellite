@@ -353,10 +353,14 @@ class KioskManager extends Manager {
       'gestureTaps': !on
           ? 0
           : switch (gesture) {
-              'taps5' => 5,
-              'taps7' => 7,
+              'taps5' || 'taps5hold' => 5,
+              'taps7' || 'taps7hold' => 7,
               _ => 0,
             },
+      // Hold-the-last-tap variants (issue #120): tapping a dashboard
+      // button repeatedly can reach any count, but never ends in a
+      // deliberate hold.
+      'gestureTapHold': gesture.endsWith('hold'),
       // Configurable gestures (issue #99): armed whenever any are
       // configured, kiosk mode or not. Disable Gestures is the kiosk-time
       // opt-out; the force=false bundle (app exit) disarms them like

@@ -350,8 +350,9 @@ class CameraViewStateChanged extends AppEvent {
 
 // ── Kiosk lockdown ─────────────────────────────────────────────────────
 
-/// The kiosk exit gesture (N fast taps, counted natively) fired. The kiosk
-/// screen answers with the PIN prompt and the menu.
+/// The kiosk exit gesture (N fast taps, optionally holding the last,
+/// counted natively) fired. The kiosk screen answers with the PIN prompt
+/// and the menu.
 class KioskExitGesture extends AppEvent {
   const KioskExitGesture();
 }
