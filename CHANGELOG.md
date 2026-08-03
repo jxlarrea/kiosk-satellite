@@ -2,6 +2,15 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v0.33.0-beta - 2026-08-03
+
+### Added
+- App Launcher (#114): a minimal app selector for kiosks that double as media players or alarm clocks. A new App Launcher settings page holds the enable toggle (off by default), the app whitelist picked from the device's installed apps (from the device settings or the remote admin), a grid or list layout choice and an icons toggle. The launcher opens from the kiosk menu, the quick actions panel (with its own Allowed Actions entry), a new Open app launcher MQTT button, and the showAppLauncher remote command. An optional Return automatically setting brings the kiosk back to the front after a configurable time in the other app; the existing Bring to front MQTT button works too. While the launcher is disabled it is gone everywhere: no menu entry, the commands refuse, and the MQTT button is retracted from Home Assistant.
+
+### Fixed
+- The small screensaver clock has its own 24-hour toggle (#116). Its format silently followed the Clock mode's 24-hour switch, which is only visible while the screensaver mode is Clock, so on Immich and every other mode there was no way to see or change it. Devices that had the Clock mode set to 24 hours keep their 24-hour small clock after the update.
+- The Website screensaver loads the URL as a top-level page instead of an iframe (#118). Sites gated by a session cookie, like DAKboard private URLs, served their login page to the iframe because browsers withhold SameSite cookies from cross-site frames; top-level the site is first-party, shares the app's cookie jar, and renders like it does in the dashboard WebView. Tap-to-dismiss and pixel shift carry over unchanged.
+
 ## v0.32.2-beta - 2026-08-03
 
 ### Added
