@@ -562,6 +562,7 @@ class MqttManager extends Manager {
       '$_base/screensaver/set',
       '$_base/volume/set',
       '$_base/reload/set',
+      '$_base/load_start_url/set',
       '$_base/clear_cache/set',
       '$_base/restart/set',
       '$_base/bring_to_front/set',
@@ -731,6 +732,14 @@ class MqttManager extends Manager {
       } else if (topic == '$_base/reload/set') {
         log.info(name, 'command $topic');
         await commands.execute('reload', const {});
+      } else if (topic == '$_base/load_start_url/set') {
+        // Back to the device's own dashboard (discussion #110): navigates
+        // to the Start URL, unlike reload which re-shows the current page.
+        log.info(name, 'command $topic');
+        final result = await commands.execute('loadStartUrl', const {});
+        if (!result.ok) {
+          log.warn(name, 'loadStartUrl over MQTT failed: ${result.error}');
+        }
       } else if (topic == '$_base/clear_cache/set') {
         log.info(name, 'command $topic');
         await commands.execute('clearWebCache', const {});
@@ -1051,6 +1060,7 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
         '$_prefix/switch/ks_$_deviceId/screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
+        '$_prefix/button/ks_$_deviceId/load_start_url/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
         '$_prefix/button/ks_$_deviceId/restart/config',
         '$_prefix/button/ks_$_deviceId/bring_to_front/config',
@@ -1342,6 +1352,11 @@ class MqttManager extends Manager {
         ...common('reload', 'Reload page'),
         'command_topic': '$_base/reload/set',
         'icon': 'mdi:refresh',
+      },
+      '$_prefix/button/ks_$_deviceId/load_start_url/config': {
+        ...common('load_start_url', 'Go to dashboard'),
+        'command_topic': '$_base/load_start_url/set',
+        'icon': 'mdi:view-dashboard',
       },
       '$_prefix/button/ks_$_deviceId/clear_cache/config': {
         ...common('clear_cache', 'Clear cache'),

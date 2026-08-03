@@ -237,6 +237,23 @@ class BrowserManager extends Manager {
       )
       ..register(
         Command(
+          name: 'loadStartUrl',
+          description:
+              "Navigate back to the configured Start URL, the device's own "
+              'dashboard (discussion #110). Unlike reload, this leaves '
+              'whatever page is currently shown.',
+          handler: (_) async {
+            final target = _settings.get(defs.startUrl);
+            if (target.isEmpty) {
+              return const CommandResult.fail('no Start URL configured');
+            }
+            await loadUrl(target);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'getLocalStorage',
           description:
               "The page's localStorage as a JSON string (current origin).",

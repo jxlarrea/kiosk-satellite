@@ -75,7 +75,8 @@ from the tab); the `app` root is the app's own folder and always works. Paths
 are canonicalized against their root, so `..` cannot escape it.
 
 Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
-`loadDashboard {dashboard}`, `reload`, `screenOn` / `screenOff`,
+`loadDashboard {dashboard}`, `loadStartUrl` (back to the configured
+Start URL), `reload`, `screenOn` / `screenOff`,
 `setBrightness {level}`, `startScreensaver` / `stopScreensaver`,
 `setWakeWordActive {active}`, `showCameraView {viewId}`,
 `hideCameraView`, `cameraGetConfig`, `restartApp`, `tts {text}`,
