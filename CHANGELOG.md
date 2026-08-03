@@ -2,6 +2,19 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v0.32.2-beta - 2026-08-03
+
+### Added
+- Keep playing when dismissed toggle in the Sendspin settings (off by default): flinging the floating player away hides it without stopping the music.
+- Go to dashboard button in the MQTT device, and a matching loadStartUrl remote command: navigates back to the configured Start URL, the device's own dashboard. Unlike Reload page it leaves whatever page is currently shown, so it is the quick way home after temporarily sending the device to another dashboard. (#110)
+- The Immich screensaver's album picker now lists albums shared with the user, not just their own. (#109)
+
+### Fixed
+- Sendspin resilience on devices with unreliable audio hardware (#106): a frozen playback position report from the audio HAL could silently starve the player, leaving the track "playing" with no sound until a manual pause and resume. The player now detects the stall within seconds and recovers on its own, stops trusting timestamps that do not advance, and escapes a start alignment that stops converging. Reconnection is faster and sturdier too: the client retries the moment the network returns instead of waiting out a parked backoff, a connection stuck waiting for the server's handshake times out, and a race that double-counted reconnect attempts is gone.
+- Synced lyrics now actually follow the music. They ran several seconds ahead of the singer on every track (the position anchored to the server's read-ahead cursor during stream startup) and could break entirely after a pause and resume, a track change or a rejoin. The position now anchors to what the speaker is playing, survives every stream rebuild, and ignores the garbage progress value the server sends while pausing.
+- Adjusting the Show lyrics toggle, the Lyrics offset or the new dismiss toggle no longer restarts the Sendspin player mid song; they apply live.
+- Dates on the clock screensaver and in the Immich photo details follow the device language instead of always being in English: a Dutch device now shows "zondag 1 augustus" where it used to show "Sunday, August 1". (#108)
+
 ## v0.32.1-beta - 2026-08-02
 
 ### Fixed
