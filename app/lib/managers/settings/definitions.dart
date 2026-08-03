@@ -2369,6 +2369,18 @@ const sendspinFullscreenMotion = SettingDef<bool>(
   dependsOn: 'sendspin.fullscreen',
 );
 
+const sendspinDismissKeepsPlaying = SettingDef<bool>(
+  key: 'sendspin.dismiss_keeps_playing',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Keep playing when dismissed',
+  description:
+      'Flinging the floating player away hides it without stopping the '
+      'music.',
+  category: 'Sendspin',
+  dependsOn: 'sendspin.enabled',
+);
+
 /// The floating player's position as "x,y" fractions of the free area.
 /// Hidden: owned by the drag gesture, not a settings row.
 const sendspinPlayerPos = SettingDef<String>(
@@ -2759,6 +2771,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinShowPlayer,
   sendspinPlayerSize,
   sendspinPausedHideMinutes,
+  sendspinDismissKeepsPlaying,
   sendspinFullscreen,
   sendspinFullscreenMotion,
   sendspinPlayerPos,

@@ -609,10 +609,15 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                   // A quick fling dismisses the card; a slow release
                   // repositions. No chrome on the card itself: the gesture
                   // everyone tries IS the close button. Flinging away
-                  // active playback also stops the music — a dismissed
-                  // player that keeps playing invisibly would be worse.
+                  // active playback also stops the music by default — a
+                  // dismissed player that keeps playing invisibly would be
+                  // worse — unless the user opted into exactly that
+                  // (sendspin.dismiss_keeps_playing).
                   if (d.velocity.pixelsPerSecond.distance > 700) {
-                    if (playing) c.sendspin.control('stop');
+                    if (playing &&
+                        !c.settings.get(defs.sendspinDismissKeepsPlaying)) {
+                      c.sendspin.control('stop');
+                    }
                     setState(() => _dismissed = true);
                     return;
                   }
