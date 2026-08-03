@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v0.33.1-beta - 2026-08-03
+
+### Added
+- The Microphone gain slider now goes down to -24 dB to attenuate overly sensitive microphones, like the Meta Portal's. Negative gain quiets the capture before the wake word engine or Home Assistant hears it. Note that attenuation happens after capture, so a microphone that clips at the hardware stage stays distorted; it helps the common case of a mic that is loud but clean.
+
+### Fixed
+- Dismiss on motion now works in the dark. The detector compared frames against one fixed change threshold that dim scenes never reached, so the screensaver only woke in a lit room. Each analysis cell now learns its own sensor noise and flags change just above it, and the camera is asked for the longest exposures it offers, gathering several times more light per frame at no extra CPU cost. Because a detector this sensitive would otherwise wake on light alone, a change that pushes the scene in one direction, like a TV or monitor lighting the room differently, a lamp toggling, or the camera's exposure settling, is recognized as illumination and ignored; a moving person brightens some cells while darkening others and still triggers.
+
 ## v0.33.0-beta - 2026-08-03
 
 ### Added
