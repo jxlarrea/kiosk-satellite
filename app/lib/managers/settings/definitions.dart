@@ -1876,15 +1876,16 @@ const micGainDb = SettingDef<num>(
   key: 'audio.mic_gain_db',
   type: SettingType.number,
   defaultValue: 0,
-  min: 0,
+  min: -24,
   max: 24,
   step: 1,
   unit: ' dB',
   title: 'Microphone gain',
   description:
-      'Amplify the captured audio before anything hears it. Use the wake word '
-      'tester: aim for a mic level around 0.05 while speaking normally from '
-      'where you use the device. Too much gain distorts loud speech and makes '
+      'Amplify or attenuate the captured audio before anything hears it. Use '
+      'the wake word tester: aim for a mic level around 0.05 while speaking '
+      'normally from where you use the device. Go negative for an overly '
+      'sensitive microphone; too much gain distorts loud speech and makes '
       'detection worse, not better.',
   category: 'Voice Satellite',
   section: 'Microphone settings',

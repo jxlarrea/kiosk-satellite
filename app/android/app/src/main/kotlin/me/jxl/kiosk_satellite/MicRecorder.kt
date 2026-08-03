@@ -17,7 +17,6 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import kotlin.concurrent.thread
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  * Streams 16 kHz mono PCM16 microphone audio to Dart over an EventChannel.
@@ -295,14 +294,15 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
     /**
      * Decibels to a linear factor, clamped to the range the settings slider
      * offers so a bad value from an import cannot blow the signal apart.
+     * Negative values attenuate, for microphones that run too hot.
      */
     private fun gainFactor(db: Double): Double {
-        if (db <= 0.0) return 1.0
-        return Math.pow(10.0, min(db, 24.0) / 20.0)
+        if (db == 0.0) return 1.0
+        return Math.pow(10.0, db.coerceIn(-24.0, 24.0) / 20.0)
     }
 
     private fun gainDbOf(factor: Double): Double =
-        if (factor <= 1.0) 0.0 else 20.0 * Math.log10(factor)
+        if (factor == 1.0) 0.0 else 20.0 * Math.log10(factor)
 
     /**
      * Pin capture to the user's chosen input, when one is configured and
