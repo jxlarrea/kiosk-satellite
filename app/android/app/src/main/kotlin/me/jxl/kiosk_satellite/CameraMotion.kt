@@ -1,9 +1,15 @@
 package me.jxl.kiosk_satellite
 
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CaptureRequest
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -16,6 +22,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -34,6 +41,18 @@ import kotlin.math.roundToInt
  *  - reduces each processed frame to a small grid of sparsely-sampled cell
  *    averages and diffs that against the previous grid — a few hundred byte
  *    reads, not a per-pixel sweep.
+ *
+ * Dark rooms get two extra measures, both still cheap. Each cell learns its
+ * own frame-to-frame jitter (a sigma-delta noise model) and flags change at a
+ * multiple of it, so the few-count deltas a dim scene produces are detectable
+ * without lowering the bright-room bar into sensor noise. And AE is asked for
+ * the slowest frame-rate range the sensor offers, trading frame rate nobody
+ * needs (analysis is throttled far below it) for longer exposures, which means
+ * more photons per frame instead of cranked gain. Because adaptive thresholds
+ * would otherwise fire on lighting itself, a same-signed change (lights
+ * toggling, AE hunting, a monitor or the screensaver content lighting the room
+ * differently) is vetoed as illumination, not motion; a moving body always
+ * diffs with both signs at once.
  *
  * Only a "motion" tick ever crosses the channel, rate-limited to one per second.
  * The Dart side decides what motion means (waking the screensaver); the camera
@@ -63,9 +82,39 @@ class CameraMotion(
         // a cell average from 4 points is stable enough at this grid size.
         private const val SAMPLES = 2
 
-        // A cell counts as "changed" when its average luminance moves by this
-        // much (0..255). Above sensor noise, below a real body-sized change.
-        private const val CELL_DELTA = 16
+        // Per-cell change thresholds (0..255 luminance). A cell counts as
+        // "changed" when its average moves by NOISE_K times its own observed
+        // frame-to-frame jitter, clamped to this band. The ceiling matches the
+        // old fixed delta so bright rooms behave as before; the floor keeps a
+        // dark scene's tiny-but-real deltas detectable without dropping into
+        // per-sample quantization noise.
+        private const val THRESHOLD_FLOOR = 4f
+        private const val THRESHOLD_CEILING = 16f
+        private const val NOISE_K = 4f
+
+        // EMA rate of the per-cell jitter estimate; only quiet cells feed it.
+        // At ~2 processed fps this settles in a handful of seconds.
+        private const val NOISE_ALPHA = 0.08f
+
+        // First threshold is the ceiling (old behavior) until jitter is learned.
+        private const val INITIAL_NOISE = THRESHOLD_CEILING / NOISE_K
+
+        // Illumination veto: when SAME_SIGN_PERCENT of the changed cells moved
+        // in the same direction, the cause is lighting, not a body. Light is
+        // monotone within a frame (a lamp toggling, AE hunting, a monitor or
+        // the screensaver lighting the room differently brightens or darkens
+        // everything it reaches), while a frame-diff of a moving body has both
+        // signs at once: its leading edge gains what the space it left loses.
+        // Measured on device: reflected monitor flicker in a 1 lux room flags
+        // 30..90 percent of the grid at exactly 100 percent sign purity.
+        // VETO_MIN_CELLS keeps small counts out of the rule, where purity is
+        // likely by chance.
+        private const val SAME_SIGN_PERCENT = 85
+        private const val VETO_MIN_CELLS = 12
+
+        // CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY,
+        // spelled as a literal so this compiles against pre-35 SDKs.
+        private const val AE_MODE_LOW_LIGHT_BOOST = 6
 
         // Auto-exposure settles over the first frames after the camera opens and
         // swings luminance globally; skip them so it does not read as motion.
@@ -94,11 +143,16 @@ class CameraMotion(
 
     // Analyzer state (touched only on analysisExecutor).
     private var prevGrid: IntArray? = null
+    private var noiseGrid: FloatArray? = null
     private var frameCount = 0
     private var lastProcessedNs = 0L
     private var lastEmitNs = 0L
     private var frameIntervalNs = 0L
     private var minChangedCells = 1
+
+    /** Requested processing rate, kept for AE fps-range selection. Main
+     *  thread only. */
+    private var requestedFps = 2.0
 
     init {
         eventChannel.setStreamHandler(this)
@@ -123,9 +177,12 @@ class CameraMotion(
         // half the frame. Never zero.
         minChangedCells = max(1, ((100 - sensitivity) * CELLS / 200.0).roundToInt())
         prevGrid = null
+        noiseGrid = null
         frameCount = 0
         lastProcessedNs = 0L
         lastEmitNs = 0L
+
+        requestedFps = fps
 
         // CameraX binding must happen on the main thread.
         mainHandler.post {
@@ -169,10 +226,11 @@ class CameraMotion(
                 )
                 .build()
 
-            val imageAnalysis = ImageAnalysis.Builder()
+            val analysisBuilder = ImageAnalysis.Builder()
                 .setResolutionSelector(resolution)
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
+            applyLowLightExposure(analysisBuilder, cameraProvider, selector)
+            val imageAnalysis = analysisBuilder.build()
             imageAnalysis.setAnalyzer(analysisExecutor) { image -> analyze(image, sink) }
             analysis = imageAnalysis
 
@@ -227,16 +285,101 @@ class CameraMotion(
             frameCount++
             if (prev == null || frameCount <= WARMUP_FRAMES) return
 
+            val noise = noiseGrid ?: FloatArray(CELLS) { INITIAL_NOISE }.also { noiseGrid = it }
             var changed = 0
+            var brighter = 0
+            var changedMagnitude = 0
             for (i in 0 until CELLS) {
-                if (abs(grid[i] - prev[i]) >= CELL_DELTA) changed++
+                val delta = grid[i] - prev[i]
+                val magnitude = abs(delta)
+                val threshold = (NOISE_K * noise[i])
+                    .coerceIn(THRESHOLD_FLOOR, THRESHOLD_CEILING)
+                if (magnitude >= threshold) {
+                    changed++
+                    changedMagnitude += magnitude
+                    if (delta > 0) brighter++
+                } else {
+                    // Quiet cells teach the jitter model what "still" looks
+                    // like at the current gain; changed cells stay out so
+                    // motion does not desensitize the detector.
+                    noise[i] += NOISE_ALPHA * (magnitude - noise[i])
+                }
             }
-            if (changed >= minChangedCells && now - lastEmitNs >= EMIT_INTERVAL_NS) {
+
+            // A same-signed change is illumination, not a body; see the veto
+            // constants. The known cost: something arriving entirely between
+            // two frames (or looming right over the camera) reads one-signed
+            // and is vetoed for that frame, but its next movement mixes signs
+            // and emits, so a real person costs at most a frame of latency.
+            val sameSign = max(brighter, changed - brighter)
+            val illumination = changed >= VETO_MIN_CELLS &&
+                sameSign * 100 >= changed * SAME_SIGN_PERCENT
+
+            if (changed > 0) {
+                Log.d(TAG, "frame: changed=$changed brighter=$brighter " +
+                    "meanMag=${changedMagnitude / changed} veto=$illumination")
+            }
+
+            if (!illumination && changed >= minChangedCells &&
+                now - lastEmitNs >= EMIT_INTERVAL_NS
+            ) {
                 lastEmitNs = now
                 mainHandler.post { sink.success(mapOf("cells" to changed)) }
             }
         } finally {
             image.close()
+        }
+    }
+
+    /**
+     * Ask AE for the slowest frame-rate range the sensor offers so dark
+     * scenes get long exposures (more photons per frame) instead of cranked
+     * gain (more noise). Analysis is throttled far below the sensor rate, so
+     * the slower delivery costs nothing; in bright light AE still picks short
+     * exposures and the range is irrelevant. Where the device supports it
+     * (Android 15+), low-light boost AE mode is enabled on top.
+     *
+     * Best effort: any failure here just leaves the default AE behavior.
+     */
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun applyLowLightExposure(
+        builder: ImageAnalysis.Builder,
+        cameraProvider: ProcessCameraProvider,
+        selector: CameraSelector,
+    ) {
+        try {
+            val info = selector.filter(cameraProvider.availableCameraInfos).firstOrNull() ?: return
+            val camera2Info = Camera2CameraInfo.from(info)
+            // Sanity-clamp guards against the legacy quirk of ranges
+            // misreported in millifps (7000..30000).
+            val ranges = camera2Info.getCameraCharacteristic(
+                CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
+            )?.filter { it.lower >= 1 && it.upper <= 120 }
+            if (ranges.isNullOrEmpty()) return
+            val minLower = ranges.minOf { it.lower }
+            val candidates = ranges.filter { it.lower == minLower }
+            // Prefer the tightest range that can still deliver the requested
+            // processing rate; fall back to the widest one.
+            val want = ceil(requestedFps).toInt()
+            val range = candidates.filter { it.upper >= want }.minByOrNull { it.upper }
+                ?: candidates.maxByOrNull { it.upper }
+                ?: return
+            val extender = Camera2Interop.Extender(builder)
+            extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, range)
+            var boost = false
+            if (Build.VERSION.SDK_INT >= 35) {
+                val modes = camera2Info.getCameraCharacteristic(
+                    CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES,
+                )
+                if (modes?.contains(AE_MODE_LOW_LIGHT_BOOST) == true) {
+                    extender.setCaptureRequestOption(
+                        CaptureRequest.CONTROL_AE_MODE, AE_MODE_LOW_LIGHT_BOOST)
+                    boost = true
+                }
+            }
+            Log.i(TAG, "AE fps range $range of ${ranges.joinToString()}, low-light boost=$boost")
+        } catch (e: Exception) {
+            Log.w(TAG, "low-light exposure setup skipped: ${e.message}")
         }
     }
 
@@ -287,6 +430,7 @@ class CameraMotion(
             provider?.unbindAll()
             analysis = null
             prevGrid = null
+            noiseGrid = null
             Log.i(TAG, "camera released")
         }
     }
