@@ -12,6 +12,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
+import '../core/locale_dates.dart';
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
 import '../managers/settings/definitions.dart' as defs;
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
@@ -243,32 +244,10 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     return t;
   }
 
-  static const _weekdays = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
-  static const _months = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
-  String _date() =>
-      '${_weekdays[_now.weekday - 1]}, ${_months[_now.month - 1]} ${_now.day}';
+  // Localized via the device locale, names and word order both (issue #108):
+  // "Sunday, August 2" on an American device, "zondag 2 augustus" on a
+  // Dutch one.
+  String _date() => fullDate(_now);
 
   /// The center of the face for the non-digital styles (issue #56). The
   /// shell around it — glance row, pixel shift, anchor — is shared, so the
@@ -529,33 +508,9 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
     return t;
   }
 
-  static const _shortWeekdays = [
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-    'Sun',
-  ];
-  static const _shortMonths = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-
-  String _date() =>
-      '${_shortWeekdays[_now.weekday - 1]}, '
-      '${_shortMonths[_now.month - 1]} ${_now.day}';
+  // Localized like the big clock's date (issue #108): "Sun, Aug 2" or
+  // "zo 2 aug", per the device locale.
+  String _date() => shortDate(_now);
 
   @override
   Widget build(BuildContext context) {

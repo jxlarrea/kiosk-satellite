@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
+import '../../core/locale_dates.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
@@ -376,13 +377,9 @@ class ImmichManager extends Manager {
     return out;
   }
 
-  static const _months = [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December',
-  ];
-
-  static String _formatDate(DateTime date) =>
-      '${_months[date.month - 1]} ${date.day}, ${date.year}';
+  // Localized via the device locale (issue #108): "August 2, 2026" on an
+  // American device, "2 augustus 2026" on a Dutch one.
+  static String _formatDate(DateTime date) => longDate(date);
 
   /// 6.0 → "6", 1.7 → "1.7": EXIF numbers read like camera markings.
   static String _trimNum(num value) => value == value.toInt()

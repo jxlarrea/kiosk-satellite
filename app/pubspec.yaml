@@ -58,6 +58,7 @@ dependencies:
   # Uint8Buffer for the MQTT camera entity's binary JPEG payloads (already
   # a transitive dependency of mqtt_client; direct so we can import it).
   typed_data: ^1.4.0
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:

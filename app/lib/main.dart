@@ -8,6 +8,7 @@ import 'app_container.dart';
 import 'core/events.dart';
 import 'core/frame_watchdog.dart';
 import 'core/ha_http_overrides.dart';
+import 'core/locale_dates.dart';
 import 'managers/settings/definitions.dart' as defs;
 import 'ui/kiosk_screen.dart';
 import 'ui/setup_screen.dart';
@@ -22,6 +23,10 @@ Future<void> main() async {
   // that WebView plus one screensaver slide at a time (slides evict
   // themselves as they leave); 32MB is generous for all of it.
   PaintingBinding.instance.imageCache.maximumSizeBytes = 32 << 20;
+
+  // Date strings (clock screensaver, photo metadata) follow the device's
+  // locale (issue #108).
+  await initLocaleDates();
 
   final container = AppContainer();
   await container.init();
