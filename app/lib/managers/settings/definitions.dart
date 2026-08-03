@@ -641,6 +641,87 @@ const kioskAllowTheme = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
+const kioskAllowApps = SettingDef<bool>(
+  key: 'kiosk.allow_apps',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Apps',
+  description: 'Open the app launcher.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
+// ── App Launcher ───────────────────────────────────────────────────────
+// The minimal app selector (issue #114): a dedicated kiosk that doubles as
+// a media player or alarm clock needs a sanctioned way into a few other
+// apps without leaving lockdown. The owner picks the apps; the launcher
+// overlay offers exactly those and nothing else. No master switch — an
+// empty list is off.
+
+// The chosen apps as a JSON list of {package, label}. Hand-built pickers
+// on the device and in the remote admin write it; the generic settings
+// renderer skips it (a raw JSON field is not something to type). Labels
+// are cached at pick time so both UIs can show names offline.
+const launcherApps = SettingDef<String>(
+  key: 'launcher.apps',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Apps',
+  description: 'The apps the launcher offers.',
+  category: 'Kiosk',
+  section: 'App Launcher',
+);
+
+const launcherLayout = SettingDef<String>(
+  key: 'launcher.layout',
+  type: SettingType.select,
+  defaultValue: 'grid',
+  options: ['grid', 'list'],
+  optionLabels: {'grid': 'Grid', 'list': 'List'},
+  title: 'Layout',
+  description: 'How the launcher arranges the apps.',
+  category: 'Kiosk',
+  section: 'App Launcher',
+);
+
+const launcherShowIcons = SettingDef<bool>(
+  key: 'launcher.show_icons',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show icons',
+  description: 'Show app icons in the launcher.',
+  category: 'Kiosk',
+  section: 'App Launcher',
+);
+
+// The way back without a gesture or a hand: after an app opened through
+// launchApp (the launcher, a gesture, MQTT), an idle clock brings the
+// kiosk to the front again. Uses the same bringToFront as the wake word,
+// so on Android 10+ it needs the draw-over-apps grant; enabling this
+// fires the grant screen when it is missing (see AppLauncherManager).
+const launcherAutoReturn = SettingDef<bool>(
+  key: 'launcher.auto_return',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Return automatically',
+  description: 'Come back to the kiosk after time spent in another app.',
+  category: 'Kiosk',
+  section: 'App Launcher',
+);
+
+const launcherAutoReturnSeconds = SettingDef<num>(
+  key: 'launcher.auto_return_seconds',
+  type: SettingType.number,
+  defaultValue: 300,
+  min: 10,
+  title: 'Return after (seconds)',
+  description: 'Time in the other app before the kiosk comes back.',
+  category: 'Kiosk',
+  section: 'App Launcher',
+  dependsOn: 'launcher.auto_return',
+);
+
 // ── Screen ─────────────────────────────────────────────────────────────
 
 // What the last screen-off actually did to the panel: on some devices the
@@ -2642,6 +2723,12 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowCamera,
   kioskAllowScreensaver,
   kioskAllowTheme,
+  kioskAllowApps,
+  launcherApps,
+  launcherLayout,
+  launcherShowIcons,
+  launcherAutoReturn,
+  launcherAutoReturnSeconds,
   keepScreenOn,
   setBrightnessOnLaunch,
   defaultBrightness,

@@ -70,6 +70,24 @@ class BackgroundBridge(
                 "launchApp" -> result.success(
                     launchApp(call.argument<String>("package")),
                 )
+                // Every launchable app on the device, for the app launcher's
+                // whitelist pickers (issue #114). Visibility comes from the
+                // manifest's LAUNCHER <queries> filter, no QUERY_ALL_PACKAGES.
+                // Off the main thread: loading a label per app across a
+                // hundred packages is a noticeable stall.
+                "listApps" -> Thread {
+                    val apps = listApps()
+                    Handler(Looper.getMainLooper()).post { result.success(apps) }
+                }.start()
+                // One app's launcher icon as PNG bytes, for the launcher grid
+                // and the on-device picker. Null when the package is gone.
+                "appIcon" -> {
+                    val pkg = call.argument<String>("package")
+                    Thread {
+                        val bytes = appIcon(pkg)
+                        Handler(Looper.getMainLooper()).post { result.success(bytes) }
+                    }.start()
+                }
                 // A deep link or custom URI for a gesture action (issue #99):
                 // whatever app claims the scheme opens over the kiosk.
                 "openUri" -> result.success(
@@ -536,6 +554,54 @@ class BackgroundBridge(
         } catch (e: Exception) {
             android.util.Log.w("kiosk_satellite", "launchApp $packageName failed", e)
             false
+        }
+    }
+
+    /// Every app with a launcher activity, as [{package, label}] sorted by
+    /// label. The set a home screen shows — which is also exactly the set
+    /// [launchApp] can start, so nothing offered here can fail to open.
+    private fun listApps(): List<Map<String, String>> = try {
+        val pm = context.packageManager
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        @Suppress("DEPRECATION")
+        val activities = pm.queryIntentActivities(launcher, 0)
+        activities
+            .mapNotNull { info ->
+                val pkg = info.activityInfo?.packageName ?: return@mapNotNull null
+                if (pkg == context.packageName) return@mapNotNull null
+                pkg to info.loadLabel(pm).toString()
+            }
+            // Apps with several launcher activities appear once, by their
+            // first (usually main) entry, matching what launchApp opens.
+            .distinctBy { it.first }
+            .sortedBy { it.second.lowercase() }
+            .map { mapOf("package" to it.first, "label" to it.second) }
+    } catch (e: Exception) {
+        android.util.Log.w("kiosk_satellite", "listApps failed", e)
+        emptyList()
+    }
+
+    /// One app's launcher icon rendered to PNG bytes, or null when the
+    /// package is missing. Rendered through a canvas rather than read as a
+    /// resource because adaptive icons are layered drawables, not bitmaps.
+    private fun appIcon(packageName: String?): ByteArray? {
+        if (packageName.isNullOrBlank()) return null
+        return try {
+            val drawable = context.packageManager.getApplicationIcon(packageName)
+            val size = 96
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                size, size, android.graphics.Bitmap.Config.ARGB_8888,
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            drawable.setBounds(0, 0, size, size)
+            drawable.draw(canvas)
+            val out = java.io.ByteArrayOutputStream()
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+            bitmap.recycle()
+            out.toByteArray()
+        } catch (e: Exception) {
+            android.util.Log.w("kiosk_satellite", "appIcon $packageName failed", e)
+            null
         }
     }
 

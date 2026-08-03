@@ -20,6 +20,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'app_launcher_overlay.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'kiosk_drawer.dart';
@@ -321,6 +322,8 @@ class _KioskScreenState extends State<KioskScreen>
       if (!mounted || _settingsOpen) return;
       if (_drawer.value > 0) {
         _closeDrawer();
+      } else if (c.launcher.visible.value) {
+        c.launcher.visible.value = false;
       } else if (c.browser.overlayUrl.value != null) {
         // A link or rotation page covers the dashboard: back uncovers it.
         c.browser.dismissOverlay();
@@ -336,6 +339,7 @@ class _KioskScreenState extends State<KioskScreen>
     });
     // canPop below depends on the overlay's presence.
     c.browser.overlayUrl.addListener(_onOverlayChanged);
+    c.launcher.visible.addListener(_onOverlayChanged);
 
     // Download feedback lives in-app: the kiosk hides the status bar, so the
     // DownloadManager notification is invisible and without this a download
@@ -618,6 +622,7 @@ class _KioskScreenState extends State<KioskScreen>
     _wakeSub?.cancel();
     _cameraSub?.cancel();
     c.browser.overlayUrl.removeListener(_onOverlayChanged);
+    c.launcher.visible.removeListener(_onOverlayChanged);
     super.dispose();
   }
 
@@ -701,11 +706,14 @@ class _KioskScreenState extends State<KioskScreen>
                   !open &&
                   !c.kiosk.locked &&
                   c.browser.overlayUrl.value == null &&
+                  !c.launcher.visible.value &&
                   c.camera.activeViewId.value == null,
               onPopInvokedWithResult: (didPop, _) {
                 if (didPop) return;
                 if (open) {
                   _closeDrawer();
+                } else if (c.launcher.visible.value) {
+                  c.launcher.visible.value = false;
                 } else if (c.browser.overlayUrl.value != null) {
                   // A link or rotation page covers the dashboard: back
                   // uncovers it.
@@ -790,6 +798,9 @@ class _KioskScreenState extends State<KioskScreen>
                   // screensaver does; the screensaver stays away while it
                   // plays (playback reports activity).
                   DlnaMediaOverlay(container: c),
+                  // Below the screensaver: an abandoned launcher gives way
+                  // to it (the manager also closes on screensaver start).
+                  AppLauncherOverlay(container: c),
                   // The screensaver covers both planes — it owns the whole
                   // display, drawer open or not.
                   ScreensaverOverlay(container: c),

@@ -4988,6 +4988,34 @@ function settingRow(s) {
     return row;
   }
 
+  // The launcher whitelist, mirroring the device's checkbox picker. The
+  // summary renders from the labels cached in the setting; the picker asks
+  // the device for the live app list.
+  if (s.key === 'launcher.apps') {
+    let chosen = [];
+    try { chosen = JSON.parse(s.value || '[]') || []; } catch (_) {}
+    const val = document.createElement('span');
+    val.className = 'device';
+    val.style.cssText = 'max-width:45%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
+    val.textContent = chosen.length ? chosen.map((a) => a.label).join(', ') : 'None yet';
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost'; btn.textContent = 'Edit';
+    btn.addEventListener('click', async () => {
+      const picked = await openLauncherAppsPicker(chosen);
+      if (picked) {
+        await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+          'launcher.apps': JSON.stringify(picked),
+        }) });
+        await loadSettings();
+      }
+    });
+    const controls = document.createElement('div');
+    controls.style.cssText = 'display:flex; gap:8px; align-items:center; min-width:0';
+    controls.append(val, btn);
+    row.appendChild(controls);
+    return row;
+  }
+
   // The At a Glance entities, mirroring the device's picker. The picker row
   // holds only the button; the chosen entities get a row each below it, so
   // the group reads like every other list in this admin instead of cramming
@@ -5468,6 +5496,85 @@ function openMediaBrowser() {
       }
     }
     open(undefined, 'Media', false);
+  });
+}
+
+// The launcher whitelist picker: every launchable app on the device with a
+// checkbox, resolving to the chosen [{package, label}] or null on cancel.
+// Saving rebuilds the value from the device's list, so labels refresh and
+// uninstalled leftovers drop out, same as the on-device picker.
+function openLauncherAppsPicker(current) {
+  return new Promise((resolve) => {
+    const selected = new Set((current || []).map((a) => a.package));
+
+    const back = document.createElement('div');
+    back.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6);'
+      + 'display:grid; place-items:center; z-index:1000; padding:16px';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'width:100%; max-width:520px; max-height:80vh;'
+      + 'display:flex; flex-direction:column; margin:0';
+    back.appendChild(card);
+    document.body.appendChild(back);
+    const close = (val) => { back.remove(); resolve(val); };
+    back.addEventListener('click', (e) => { if (e.target === back) close(null); });
+
+    const title = document.createElement('div');
+    title.className = 'card-title'; title.textContent = 'Apps';
+    const list = document.createElement('div');
+    list.style.cssText = 'overflow:auto; flex:1';
+    list.innerHTML = '<div class="desc" style="color:var(--muted)">Loading…</div>';
+    const foot = document.createElement('div');
+    foot.className = 'toolbar'; foot.style.marginTop = '12px';
+    card.append(title, list, foot);
+
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-ghost'; cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => close(null));
+    const spacer = document.createElement('span'); spacer.className = 'spacer';
+    const okBtn = document.createElement('button');
+    okBtn.className = 'btn-ghost'; okBtn.textContent = 'Save'; okBtn.disabled = true;
+    foot.append(cancel, spacer, okBtn);
+
+    (async () => {
+      let apps = [];
+      try {
+        const r = await cmd('installedApps');
+        if (!r.ok) throw new Error(r.error || 'listing failed');
+        apps = r.data || [];
+      } catch (e) {
+        list.innerHTML = `<div class="desc" style="color:var(--error)">Could not list the apps: ${e}</div>`;
+        return;
+      }
+      list.innerHTML = '';
+      for (const app of apps) {
+        const r = document.createElement('label');
+        r.className = 'row';
+        r.style.cursor = 'pointer';
+        const info = document.createElement('div'); info.className = 'info';
+        info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
+        info.querySelector('.name').textContent = app.label;
+        info.querySelector('.desc').textContent = app.package;
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = selected.has(app.package);
+        box.addEventListener('change', () => {
+          if (box.checked) selected.add(app.package);
+          else selected.delete(app.package);
+        });
+        r.append(info, box);
+        list.appendChild(r);
+      }
+      if (!apps.length) {
+        list.innerHTML = '<div class="desc" style="color:var(--muted)">No launchable apps found.</div>';
+        return;
+      }
+      okBtn.disabled = false;
+      okBtn.addEventListener('click', () => close(
+        apps.filter((a) => selected.has(a.package))
+          .map((a) => ({ package: a.package, label: a.label })),
+      ));
+    })();
   });
 }
 

@@ -202,6 +202,17 @@ class KioskDrawer extends StatelessWidget {
                                     );
                                   },
                                 ),
+                              // Only once apps are actually whitelisted: an
+                              // empty launcher is the placeholder every
+                              // install starts with, and a menu entry that
+                              // can only fail is worse than no entry.
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowApps))
+                                if (c.launcher.apps.isNotEmpty)
+                                  _item(context, Icons.apps_outlined, 'Apps', () {
+                                    onClose();
+                                    c.launcher.visible.value = true;
+                                  }),
                               if (!restricted)
                                 _item(
                                   context,

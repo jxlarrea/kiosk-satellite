@@ -1,0 +1,240 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+
+import '../../core/command_registry.dart';
+import '../../core/events.dart';
+import '../../core/manager.dart';
+import '../settings/definitions.dart' as defs;
+import '../settings/settings_manager.dart';
+
+/// One entry in the launcher whitelist: the package to open and the label
+/// cached at pick time, so both UIs can name it without asking the device.
+class LauncherApp {
+  const LauncherApp({required this.package, required this.label});
+
+  final String package;
+  final String label;
+
+  Map<String, Object?> toJson() => {'package': package, 'label': label};
+}
+
+/// Decode launcher.apps, dropping anything malformed rather than failing:
+/// the setting is written by the pickers but can arrive over the API.
+List<LauncherApp> decodeLauncherApps(String json) {
+  try {
+    final raw = jsonDecode(json);
+    if (raw is! List) return const [];
+    return [
+      for (final item in raw)
+        if (item is Map && '${item['package'] ?? ''}'.trim().isNotEmpty)
+          LauncherApp(
+            package: '${item['package']}'.trim(),
+            label: '${item['label'] ?? item['package']}',
+          ),
+    ];
+  } catch (_) {
+    return const [];
+  }
+}
+
+/// The minimal app launcher (issue #114): a whitelisted set of installed
+/// apps the kiosk can open, and the clock that brings the kiosk back.
+///
+/// The overlay itself is AppLauncherOverlay in the kiosk screen's stack;
+/// this manager owns its visibility, the installed-apps enumeration the
+/// pickers read, the icon cache, and auto-return: after any launchApp
+/// (this launcher, a gesture, MQTT), an armed timer calls bringToFront
+/// once the configured time has passed with the app still backgrounded.
+class AppLauncherManager extends Manager with WidgetsBindingObserver {
+  AppLauncherManager(super.bus, super.commands, super.log, this._settings);
+
+  final SettingsManager _settings;
+
+  static const _channel = MethodChannel('kiosk_satellite/background');
+
+  /// Whether the launcher overlay is up. The overlay widget listens.
+  final visible = ValueNotifier<bool>(false);
+
+  /// PNG bytes per package, null cached too (missing app, no icon). Cleared
+  /// never: icons are stable and the set is bounded by the whitelist.
+  final _icons = <String, Uint8List?>{};
+
+  StreamSubscription<AppLaunched>? _launchSub;
+  StreamSubscription<SettingChanged>? _settingSub;
+  StreamSubscription<ScreensaverStateChanged>? _saverSub;
+  Timer? _returnTimer;
+
+  /// Set by [AppLaunched] and consumed by the pause that follows it. The
+  /// window keeps an old launch from arming a return on some unrelated
+  /// background trip minutes later (the drawer, a permission screen).
+  DateTime? _launchedAt;
+  static const _armWindow = Duration(seconds: 15);
+
+  @override
+  String get name => 'launcher';
+
+  /// The configured whitelist, decoded fresh so setting changes apply live.
+  List<LauncherApp> get apps =>
+      decodeLauncherApps(_settings.get(defs.launcherApps));
+
+  @override
+  Future<void> init() async {
+    commands.register(
+      Command(
+        name: 'installedApps',
+        description:
+            'Every launchable app on the device, alphabetical: '
+            '[{package, label}]. What the whitelist pickers choose from.',
+        handler: (_) async {
+          try {
+            final raw = await _channel.invokeMethod<List<Object?>>('listApps');
+            return CommandResult.ok([
+              for (final item in raw ?? const [])
+                if (item is Map)
+                  {
+                    'package': '${item['package']}',
+                    'label': '${item['label']}',
+                  },
+            ]);
+          } on MissingPluginException {
+            return const CommandResult.fail('listing apps is Android-only');
+          } on PlatformException catch (e) {
+            return CommandResult.fail('could not list apps: $e');
+          }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'showAppLauncher',
+        description:
+            'Open the app launcher overlay. Fails when no apps are '
+            'configured, so a caller can say so instead of showing nothing.',
+        handler: (_) async {
+          if (apps.isEmpty) {
+            return const CommandResult.fail('no launcher apps configured');
+          }
+          // Same choreography as a camera view: an MQTT open must land on a
+          // lit, frontmost kiosk, not behind a dark panel or screensaver.
+          await commands.execute('screenOn', const {});
+          await commands.execute('bringToFront', const {});
+          await commands.execute('stopScreensaver', const {});
+          visible.value = true;
+          return const CommandResult.ok();
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'hideAppLauncher',
+        description: 'Close the app launcher overlay.',
+        handler: (_) async {
+          visible.value = false;
+          return const CommandResult.ok();
+        },
+      ),
+    );
+
+    _launchSub = bus.on<AppLaunched>().listen((_) {
+      _launchedAt = DateTime.now();
+      // The overlay's job ended the moment another app came up over it.
+      visible.value = false;
+    });
+
+    // An abandoned launcher gives way to the screensaver rather than
+    // greeting whoever walks past at 3am.
+    _saverSub = bus.on<ScreensaverStateChanged>().listen((e) {
+      if (e.active) visible.value = false;
+    });
+
+    // Auto-return rides on bringToFront, which Android 10+ only honors
+    // with the draw-over-apps grant: send the grant screen when the switch
+    // goes on without it, the same dance as restartApp and the status-bar
+    // shield.
+    _settingSub = bus.on<SettingChanged>().listen((e) async {
+      if (e.key != defs.launcherAutoReturn.key || e.value != true) return;
+      try {
+        final can =
+            await _channel.invokeMethod<bool>('canBringToFront') ?? false;
+        if (!can) {
+          unawaited(commands.execute('requestOsPermissions', {
+            'which': ['overlay'],
+          }));
+        }
+      } on MissingPluginException {
+        // Not Android; nothing to grant.
+      } on PlatformException catch (e) {
+        log.warn(name, 'overlay grant check failed: $e');
+      }
+    });
+
+    if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      final launched = _launchedAt;
+      if (launched == null ||
+          DateTime.now().difference(launched) > _armWindow ||
+          !_settings.get(defs.launcherAutoReturn)) {
+        return;
+      }
+      final seconds = _settings.get(defs.launcherAutoReturnSeconds).toInt();
+      log.info(name, 'auto-return armed: ${seconds}s');
+      _returnTimer?.cancel();
+      _returnTimer = Timer(Duration(seconds: seconds), () async {
+        // The state may have moved since the timer was set; only pull the
+        // kiosk forward if it is genuinely still behind the other app.
+        if (WidgetsBinding.instance.lifecycleState ==
+            AppLifecycleState.resumed) {
+          return;
+        }
+        log.info(name, 'auto-return: bringing the kiosk back');
+        final result = await commands.execute('bringToFront', const {});
+        if (result.data == false) {
+          log.warn(name, 'auto-return needs the draw-over-apps grant');
+        }
+      });
+    } else if (state == AppLifecycleState.resumed) {
+      _returnTimer?.cancel();
+      _returnTimer = null;
+      _launchedAt = null;
+    }
+  }
+
+  /// The launcher icon for [package] as PNG bytes, memoized. Null when the
+  /// app is gone or the platform cannot render one.
+  Future<Uint8List?> icon(String package) async {
+    if (_icons.containsKey(package)) return _icons[package];
+    Uint8List? bytes;
+    try {
+      bytes = await _channel.invokeMethod<Uint8List>('appIcon', {
+        'package': package,
+      });
+    } on MissingPluginException {
+      bytes = null;
+    } on PlatformException catch (e) {
+      log.warn(name, 'icon for $package failed: $e');
+      bytes = null;
+    }
+    _icons[package] = bytes;
+    return bytes;
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
+    await _launchSub?.cancel();
+    await _settingSub?.cancel();
+    await _saverSub?.cancel();
+    _returnTimer?.cancel();
+    visible.dispose();
+  }
+}

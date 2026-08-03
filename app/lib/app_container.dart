@@ -14,6 +14,7 @@ import 'managers/glance/glance_manager.dart';
 import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
+import 'managers/launcher/app_launcher_manager.dart';
 import 'managers/motion/motion_manager.dart';
 import 'managers/mqtt/mqtt_manager.dart';
 import 'managers/proxy/proxy_manager.dart';
@@ -44,6 +45,7 @@ class AppContainer {
     // the one that knows whether the URL must move to the loopback origin.
     browser.urlMapper = proxy.mapUrl;
     kiosk = KioskManager(bus, commands, log, settings);
+    launcher = AppLauncherManager(bus, commands, log, settings);
     gestures = GesturesManager(bus, commands, log, settings);
     screensaver = ScreensaverManager(bus, commands, log, settings);
     immich = ImmichManager(bus, commands, log, settings);
@@ -79,6 +81,7 @@ class AppContainer {
   late final BrowserManager browser;
   late final CameraManager camera;
   late final KioskManager kiosk;
+  late final AppLauncherManager launcher;
   late final GesturesManager gestures;
   late final ScreensaverManager screensaver;
   late final ImmichManager immich;
@@ -108,6 +111,9 @@ class AppContainer {
         camera,
         jsApi,
         kiosk,
+        // After kiosk: it listens for the AppLaunched its launchApp emits,
+        // and its bringToFront/screenOn calls resolve at execute time.
+        launcher,
         // After kiosk and before the action surfaces it drives: it only
         // listens for GestureDetected and runs registered commands.
         gestures,

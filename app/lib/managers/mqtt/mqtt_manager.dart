@@ -566,6 +566,7 @@ class MqttManager extends Manager {
       '$_base/clear_cache/set',
       '$_base/restart/set',
       '$_base/bring_to_front/set',
+      '$_base/open_launcher/set',
       '$_base/update/set',
       '$_base/screensaver_brightness_level/set',
       '$_base/assistant_volume/set',
@@ -752,6 +753,20 @@ class MqttManager extends Manager {
           // Cannot come forward without the "Display over other apps"
           // grant; all MQTT can do is say why nothing moved.
           log.warn(name, 'bringToFront needs the overlay grant');
+        }
+      } else if (topic == '$_base/open_launcher/set') {
+        // The app launcher overlay (issue #114). The command wakes the
+        // screen and pulls the kiosk forward first, so the launcher lands
+        // on a visible dashboard — which is exactly why a stale retained
+        // press replayed on reconnect must not fire it.
+        if (payload.header?.retain == true) {
+          log.warn(name, 'ignored retained open launcher command');
+          continue;
+        }
+        log.info(name, 'command $topic');
+        final result = await commands.execute('showAppLauncher', const {});
+        if (!result.ok) {
+          log.warn(name, 'showAppLauncher over MQTT failed: ${result.error}');
         }
       } else if (topic == '$_base/restart/set') {
         // The process dies mid-restart; the broker's will flips the device
@@ -1064,6 +1079,7 @@ class MqttManager extends Manager {
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
         '$_prefix/button/ks_$_deviceId/restart/config',
         '$_prefix/button/ks_$_deviceId/bring_to_front/config',
+        '$_prefix/button/ks_$_deviceId/open_launcher/config',
         '$_prefix/update/ks_$_deviceId/update/config',
         // Always in the retraction list even though it is published
         // conditionally: a config export moved to sensor-less hardware must
@@ -1374,6 +1390,11 @@ class MqttManager extends Manager {
         ...common('bring_to_front', 'Bring to front'),
         'command_topic': '$_base/bring_to_front/set',
         'icon': 'mdi:flip-to-front',
+      },
+      '$_prefix/button/ks_$_deviceId/open_launcher/config': {
+        ...common('open_launcher', 'Open app launcher'),
+        'command_topic': '$_base/open_launcher/set',
+        'icon': 'mdi:apps',
       },
       '$_prefix/update/ks_$_deviceId/update/config': {
         ...common('update', 'Update'),

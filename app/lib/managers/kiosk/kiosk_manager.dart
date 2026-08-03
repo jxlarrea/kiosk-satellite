@@ -71,6 +71,7 @@ class KioskManager extends Manager {
               );
             }
             log.info(name, 'opened $package');
+            bus.publish(AppLaunched(package: package));
             return const CommandResult.ok();
           } on PlatformException catch (e) {
             return CommandResult.fail('could not open $package: $e');

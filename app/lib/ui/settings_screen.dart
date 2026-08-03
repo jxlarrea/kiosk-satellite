@@ -15,6 +15,8 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/logging.dart';
 import '../managers/camera/models.dart' show CameraViewConfig;
+import '../managers/launcher/app_launcher_manager.dart'
+    show decodeLauncherApps;
 import '../managers/settings/definitions.dart';
 import '../managers/settings/export_filename.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -4145,6 +4147,21 @@ class SettingTile extends StatelessWidget {
             onTap: () => _editGlanceEntities(context),
           );
         }
+        // The launcher whitelist: ticked off the device's launchable apps,
+        // never typed as JSON.
+        if (def.key == launcherApps.key) {
+          final chosen = decodeLauncherApps(value as String);
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(
+              chosen.isEmpty
+                  ? 'None yet. Pick the apps the launcher offers.'
+                  : chosen.map((a) => a.label).join(', '),
+            ),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: () => _pickLauncherApps(context),
+          );
+        }
         // The camera screensaver's view is picked from the ones configured
         // under Cameras, never typed — the value is an opaque view id.
         if (def.key == screensaverCameraView.key) {
@@ -4307,6 +4324,79 @@ class SettingTile extends StatelessWidget {
     if (picked == null) return;
     await c.settings.setFromJson(screensaverImmichAlbum.key, picked.$1);
     await c.settings.setFromJson(screensaverImmichAlbumName.key, picked.$2);
+    onChanged();
+  }
+
+  Future<void> _pickLauncherApps(BuildContext context) async {
+    final result = await c.commands.execute('installedApps', const {});
+    if (!context.mounted) return;
+    if (!result.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.error ?? 'Could not list the apps')),
+      );
+      return;
+    }
+    final apps = (result.data as List).cast<Map>();
+    final selected = {
+      for (final app in decodeLauncherApps(c.settings.get(launcherApps)))
+        app.package,
+    };
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Apps'),
+          content: SizedBox(
+            width: 400,
+            child: apps.isEmpty
+                ? const Text('No launchable apps found.')
+                : ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final app in apps)
+                        CheckboxListTile(
+                          value: selected.contains('${app['package']}'),
+                          title: Text('${app['label']}'),
+                          subtitle: Text(
+                            '${app['package']}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onChanged: (on) => setState(() {
+                            if (on == true) {
+                              selected.add('${app['package']}');
+                            } else {
+                              selected.remove('${app['package']}');
+                            }
+                          }),
+                        ),
+                    ],
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (saved != true) return;
+    // Rebuilt from the device's list, so labels refresh and uninstalled
+    // leftovers drop out on every save.
+    await c.settings.setFromJson(
+      launcherApps.key,
+      jsonEncode([
+        for (final app in apps)
+          if (selected.contains('${app['package']}'))
+            {'package': '${app['package']}', 'label': '${app['label']}'},
+      ]),
+    );
     onChanged();
   }
 

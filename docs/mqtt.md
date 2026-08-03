@@ -61,6 +61,7 @@ tablet's remote admin (while remote administration is enabled).
 | Reload page | button | Reload the current dashboard. |
 | Go to dashboard | button | Navigate back to the configured Start URL, the device's own dashboard. Unlike Reload page, this leaves whatever page is currently shown, so it is the way home after temporarily sending the device to another dashboard. |
 | Bring to front | button | Bring Kiosk Satellite back in front of whatever app covers it (issue #84), typically after the `launchApp` REST command opened another app. Does nothing when already in front, so it is safe to press blind. On Android 10+ it needs the "display over other apps" permission (the setup wizard requests it up front). |
+| Open app launcher | button | Open the app launcher overlay (issue #114) with the apps whitelisted under Kiosk settings. Wakes the screen and brings the app to the front first, so the launcher is actually visible when it opens. Refused with a log line when no apps are whitelisted. |
 | Clear cache | button | Clear the WebView cache. |
 | Restart app | button | Kill and relaunch the app. The device drops offline for a few seconds and returns on its own. On Android 10+ the relaunch needs the "display over other apps" permission; without it the press is refused and the grant screen opens on the device (the setup wizard requests it up front). |
 | Update | update | Shows in Home Assistant's Updates UI when a newer release is on GitHub, with the release notes and a link to the release page. Install triggers the download and installation on the device. On Android 12+ the install is fully hands-free from the second in-app update onward (the first one makes the app its own installer, which is what Android's silent-update rule keys on); before that, and on older Android versions, the device shows its usual install confirmation screen. The app relaunches itself after the install, but on Android 10+ only with the "display over other apps" permission granted (the setup wizard requests it; without it the update still installs and the app stays closed). |
@@ -102,6 +103,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../media_volume/state`, `.../media_volume/set` | out / in | `0`..`100` |
 | `.../screensaver_mode/…`, `.../screensaver_clock_style/…`, `.../ha_kiosk_method/…` | out / in | the selected option (`state` and `set` each). State carries the display label (e.g. `Immich Media`); `set` accepts the label or the stored value (e.g. `immich`). |
 | `.../reload/set`, `.../clear_cache/set`, `.../restart/set` | in | any payload presses the button |
+| `.../open_launcher/set` | in | Any non-retained payload opens the app launcher overlay |
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
 | `.../last_seen/state` | out, retained | when the device last reported in, ISO 8601 UTC, once a minute |

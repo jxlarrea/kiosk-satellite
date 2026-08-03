@@ -362,6 +362,14 @@ class KioskBackPressed extends AppEvent {
   const KioskBackPressed();
 }
 
+/// Another app was opened over the kiosk through launchApp — the app
+/// launcher, a gesture action, MQTT, the remote admin. Internal: the
+/// launcher manager arms its auto-return clock off it (issue #114).
+class AppLaunched extends AppEvent {
+  const AppLaunched({required this.package});
+  final String package;
+}
+
 // ── Gestures (issue #99) ───────────────────────────────────────────────
 
 /// A configured hidden gesture was detected natively. [id] is the mapping
