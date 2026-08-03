@@ -395,6 +395,15 @@ class SyncAudioPlayer(
         private const val STUCK_STATE_WARNING_US = 5_000_000L         // 5s
         private const val STUCK_STATE_WARNING_INTERVAL_US = 10_000_000L  // 10s between warnings
 
+        // Write-starvation watchdog: recovers PLAYING/DRAINING when no frames
+        // reach the AudioTrack while chunks are queued. A frozen DAC frame
+        // position (flaky OEM HALs, e.g. Portal Plus) keeps pendingToDacUs
+        // permanently above target, so the pacing gate stops writing forever
+        // while queue-cap eviction silently discards the stream. Normal pacing
+        // pauses last well under a second (the 250ms pending target drains in
+        // real time), so 2s of zero writes with a backlog is a wedge.
+        private const val WRITE_STARVATION_RECOVERY_US = 2_000_000L   // 2s
+
         // Pre-sync buffering - buffer chunks while waiting for time sync to be ready
         private const val MAX_PENDING_CHUNKS = 500  // ~10 seconds at 48kHz/20ms chunks
 
@@ -560,6 +569,11 @@ class SyncAudioPlayer(
     // DAC timestamp stability tracking for start gating
     private var consecutiveValidTimestamps = 0       // counts consecutive valid getTimestamp() reads
     private var dacTimestampsStable = false           // true once TIMESTAMP_STABLE_READS reached
+    private var stabilityStreakStartFramePos = -1L   // framePosition at the start of the current streak
+
+    // Write-starvation watchdog state (playback-loop thread only)
+    private var starvationBaselineFrames = -1L       // totalFramesWritten at window start
+    private var starvationWindowStartUs = 0L         // when the no-write window began
 
     // DAC-aware alignment wait: rate-limit the per-iteration "waiting for alignment"
     // log so a 2-12s wait emits ~3-13 lines instead of 200-1200. Entry log fires once
@@ -568,6 +582,7 @@ class SyncAudioPlayer(
     // on successful transition to PLAYING so the next alignment wait emits fresh logs.
     @Volatile private var alignmentWaitStartedAtUs: Long = 0L
     @Volatile private var alignmentWaitLastLoggedUs: Long = 0L
+    private var alignmentWaitLastErrUs: Long = 0L  // startErr at the last progress tick
 
     // DRAINING state tracking - for seamless reconnection
     private var drainingStartTimeUs: Long = 0            // When we entered DRAINING state
@@ -1382,6 +1397,7 @@ class SyncAudioPlayer(
             lastDacPacingLogTimeUs = 0L
             lastValidFramePosition = 0L
             lastDacCursorServerUs = 0L  // Reset frame position wrap detection
+            starvationBaselineFrames = -1L  // Fresh starvation window for the new stream
 
             // Reset sample insert/drop correction state
             insertEveryNFrames = 0
@@ -1849,9 +1865,35 @@ class SyncAudioPlayer(
             if (alignmentWaitStartedAtUs == 0L) {
                 alignmentWaitStartedAtUs = nowMicros
                 alignmentWaitLastLoggedUs = nowMicros
+                alignmentWaitLastErrUs = startErrUs
                 AppLog.Sync.d("DAC-aware start: waiting for alignment, startErr=${startErrUs/1000}ms > ${START_ALIGN_TOL_US/1000}ms")
             } else if (nowMicros - alignmentWaitLastLoggedUs > 1_000_000L) {
+                // Livelock check: a healthy wait shrinks startErr at wall-clock
+                // rate (the DAC consumes silence in real time while the queue
+                // head stays put). Two things break that: a frozen DAC frame
+                // position (desiredHead stops advancing), and a queue saturated
+                // at the eviction cap (the head advances at exactly the incoming
+                // stream rate, cancelling the DAC's progress). Both freeze
+                // startErr forever while eviction discards the stream (#106).
+                // If a whole progress interval shrank the error by less than a
+                // fifth of the elapsed time, stop trusting the DAC and start
+                // via the Kalman path - the same state the user's pause/unpause
+                // workaround produces.
+                val intervalUs = nowMicros - alignmentWaitLastLoggedUs
+                val shrunkUs = alignmentWaitLastErrUs - startErrUs
                 alignmentWaitLastLoggedUs = nowMicros
+                alignmentWaitLastErrUs = startErrUs
+                if (shrunkUs < intervalUs / 5) {
+                    AppLog.Sync.w("DAC-aware start: alignment stalled " +
+                        "(startErr=${startErrUs/1000}ms shrank only ${shrunkUs/1000}ms in ${intervalUs/1000}ms) " +
+                        "- dropping DAC trust, starting via Kalman")
+                    consecutiveValidTimestamps = 0
+                    dacTimestampsStable = false
+                    clearDacCalibrations()
+                    alignmentWaitStartedAtUs = 0L
+                    alignmentWaitLastLoggedUs = 0L
+                    return handleStartGatingKalman()
+                }
                 val elapsedMs = (nowMicros - alignmentWaitStartedAtUs) / 1000
                 AppLog.Sync.d("DAC-aware start: still waiting, startErr=${startErrUs/1000}ms, elapsed=${elapsedMs}ms")
             }
@@ -2054,11 +2096,25 @@ class SyncAudioPlayer(
                 storeDacCalibration(dacTimeUs, loopTimeUs)
                 latencyEstimator.recordDacTimestamp(ts.framePosition, ts.nanoTime)
 
-                // Track consecutive valid reads for DAC-aware start gating
+                // Track consecutive valid reads for DAC-aware start gating.
+                // Stability additionally requires the frame position to have
+                // ADVANCED over the streak: a frozen-but-nonzero position
+                // (flaky OEM HALs after an audioserver hiccup) passes the
+                // per-read validity check yet makes every DAC-derived value a
+                // lie, and trusting it wedges the pacing gate (#106). The DAC
+                // may legitimately report the same position across adjacent
+                // 10ms polls (mixer-period granularity), so advancement is
+                // judged across the whole streak, not between reads.
+                if (consecutiveValidTimestamps == 0) {
+                    stabilityStreakStartFramePos = ts.framePosition
+                }
                 consecutiveValidTimestamps++
-                if (consecutiveValidTimestamps >= TIMESTAMP_STABLE_READS && !dacTimestampsStable) {
+                if (consecutiveValidTimestamps >= TIMESTAMP_STABLE_READS && !dacTimestampsStable &&
+                    ts.framePosition > stabilityStreakStartFramePos
+                ) {
                     dacTimestampsStable = true
-                    AppLog.Sync.i("DAC timestamps stable after $consecutiveValidTimestamps consecutive reads")
+                    AppLog.Sync.i("DAC timestamps stable after $consecutiveValidTimestamps consecutive reads " +
+                        "(advanced ${ts.framePosition - stabilityStreakStartFramePos} frames)")
                 }
             } else {
                 // Invalid framePosition resets stability counter
@@ -2222,6 +2278,7 @@ class SyncAudioPlayer(
             dacTimestampsStable = false
             lastValidFramePosition = 0L
             lastDacCursorServerUs = 0L  // Reset frame position wrap detection
+            starvationBaselineFrames = -1L  // Fresh starvation window after recovery
 
             // Transition to INITIALIZING to wait for new chunks
             setPlaybackState(PlaybackState.INITIALIZING)
@@ -2260,6 +2317,7 @@ class SyncAudioPlayer(
 
             while (isActive && isPlaying.get()) {
                 if (isPaused.get()) {
+                    starvationBaselineFrames = -1L  // Don't count paused time as starvation
                     delay(STATE_POLL_DELAY_MS)
                     continue
                 }
@@ -2425,6 +2483,9 @@ class SyncAudioPlayer(
                 // cadence so stuck-state warnings come out on the same log tick.
                 val nowMicros = nowNs() / 1000
                 checkStuckState()
+                if (checkWriteStarvation(nowMicros)) {
+                    continue  // Recovered via reanchor; state machine restarts
+                }
                 if (dacTimestampsStable && nowMicros - lastDacPacingLogTimeUs > DAC_PACING_LOG_INTERVAL_US) {
                     lastDacPacingLogTimeUs = nowMicros
                     AppLog.Sync.d("DAC pacing: pending=${pendingToDacUs/1000}ms, syncErr=${syncErrorUs/1000}ms")
@@ -2496,6 +2557,50 @@ class SyncAudioPlayer(
                 "estimatorStatus=${latencyEstimator.status}, " +
                 "dacTimestampsStable=$dacTimestampsStable"
         )
+    }
+
+    /**
+     * Write-starvation watchdog for PLAYING/DRAINING. Called from the playback
+     * loop after the head chunk is known to exist, so a positive detection
+     * means chunks are queued but nothing has reached the AudioTrack for
+     * [WRITE_STARVATION_RECOVERY_US].
+     *
+     * The known trigger is a frozen DAC frame position (flaky OEM audio HALs):
+     * a frozen value passes the wrap and sanity checks as "valid", so
+     * getPendingToDacUs() stays above the pacing target forever and the gate
+     * never writes again, while queue-cap eviction silently discards the
+     * incoming stream and the UI keeps showing playback (#106).
+     *
+     * Recovery is triggerReanchor(): it flushes the track, drops DAC timestamp
+     * trust (so pacing falls back to blocking writes until stability is
+     * re-earned), and re-gates playback from the queue head.
+     *
+     * @return true if a reanchor was performed (caller should restart the loop
+     *   iteration), false to continue normally
+     */
+    private fun checkWriteStarvation(nowMicros: Long): Boolean {
+        val frames = totalFramesWritten.get()
+        if (frames != starvationBaselineFrames) {
+            starvationBaselineFrames = frames
+            starvationWindowStartUs = nowMicros
+            return false
+        }
+        if (nowMicros - starvationWindowStartUs < WRITE_STARVATION_RECOVERY_US) {
+            return false
+        }
+
+        val bufferedMs = (totalQueuedSamples.get() * 1000) / sampleRate
+        AppLog.Audio.w(
+            "WATCHDOG: write starvation in $playbackState - no frames written for " +
+                "${(nowMicros - starvationWindowStartUs) / 1000}ms with ${bufferedMs}ms buffered " +
+                "(capDrops=$queueCapDrops, dacTimestampsStable=$dacTimestampsStable), " +
+                "forcing reanchor"
+        )
+
+        // On failure (cooldown or lock contention) keep the window open so the
+        // next loop iteration retries; on success the reanchor resets frame
+        // accounting and the baseline resets naturally on the next call.
+        return triggerReanchor()
     }
 
     /**

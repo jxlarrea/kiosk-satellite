@@ -83,6 +83,14 @@ class SendSpin(
         // during idle the only regular server->client traffic is server/time
         // responses to our TimeSyncManager bursts.
         private const val IDLE_STALL_TIMEOUT_MS = 20_000L
+
+        // Pre-handshake tier. A socket that opens but never receives
+        // server/hello (server accepted the upgrade but its sendspin provider
+        // never answered) has no other timeout: readTimeout is disabled and
+        // the 15s pings keep the TCP alive, so without this the connection
+        // wedges in CONNECTING forever. Comfortably above the 5s connect
+        // timeout plus a slow server's hello.
+        private const val HANDSHAKE_TIMEOUT_MS = 15_000L
     }
 
     /** Connection state exposed to the bridge. */
@@ -473,9 +481,26 @@ class SendSpin(
      */
     private fun checkStall() {
         if (userInitiatedDisconnect.get()) return
-        if (reconnecting.get()) return
-        if (!handshakeComplete) return
         val t = transport ?: return
+        if (!handshakeComplete) {
+            // Pre-handshake tier: nothing else times out a socket that opens
+            // but never completes the hello exchange. Runs during reconnect
+            // cycles too (reconnecting is true until handshake completes),
+            // which is exactly when a half-recovered server can accept the
+            // socket and then go quiet.
+            val sinceLastByte = System.currentTimeMillis() - lastByteReceivedAtMs.get()
+            if (sinceLastByte > HANDSHAKE_TIMEOUT_MS) {
+                Log.w(TAG, "Stall watchdog: handshake not complete after ${sinceLastByte}ms - forcing transport close")
+                if (t.isConnected) {
+                    t.close(1001, "handshake timeout")
+                } else {
+                    // Died without a close event pre-handshake - kick directly
+                    attemptReconnect()
+                }
+            }
+            return
+        }
+        if (reconnecting.get()) return
         if (!t.isConnected) {
             // The transport died without delivering onClosed/onFailure (seen
             // with abrupt server stops): sends fail with state=Closed while
@@ -546,6 +571,11 @@ class SendSpin(
         reconnecting.set(true)
         setConnectionState(ConnectionState.CONNECTING)
 
+        // Cancel any previously scheduled attempt instead of orphaning it.
+        // attemptReconnect() can race in from three threads (both transport
+        // callbacks and the stall watchdog); two live jobs mean two parallel
+        // transports for the same client_id and a double-counted ladder.
+        reconnectJob?.cancel()
         reconnectJob = timerScope.launch {
             delay(delayMs)
 
@@ -557,7 +587,10 @@ class SendSpin(
             handshakeComplete = false
             stopTimeSync()
 
-            // Clean up old transport
+            // Clean up old transport. Clear the listener first: destroy()
+            // cancels the socket, and without this the late onFailure lands
+            // on the live listener and schedules a duplicate reconnect.
+            transport?.setListener(null)
             transport?.destroy()
             transport = null
 
@@ -571,12 +604,42 @@ class SendSpin(
         }
     }
 
+    /**
+     * Fast-track reconnection when connectivity returns.
+     *
+     * Without this, a wifi drop longer than ~8 minutes leaves the ladder
+     * parked at one attempt per 5 minutes, so the player stays invisible in
+     * Music Assistant for up to 5 minutes after the network is healthy again.
+     * A fresh network gets a fresh ladder: reset the attempt counter and
+     * replace any pending (possibly parked) delay with an immediate retry.
+     *
+     * No-op while healthy: a connected transport is left alone (a zombie
+     * socket after a network flap is the stall watchdog's job to detect).
+     */
+    fun onNetworkAvailable() {
+        if (userInitiatedDisconnect.get()) return
+        if (serverAddress == null) return
+        if (!reconnecting.get() && transport?.isConnected == true) return
+        if (!reconnecting.get() && connectionState == ConnectionState.IDLE) return
+
+        Log.i(TAG, "Network available - fast-tracking reconnection " +
+            "(was attempt ${reconnectAttempts.get()})")
+        reconnectAttempts.set(0)
+        reconnectJob?.cancel()
+        attemptReconnect()
+    }
+
     // ========== Transport Event Listener ==========
 
     private inner class TransportEventListener : SendSpinTransport.Listener {
 
         override fun onConnected() {
             Log.d(TAG, "Transport connected")
+            // Arm the watchdog from socket-open so the pre-handshake tier in
+            // checkStall() covers a server that accepts the socket but never
+            // answers client/hello. Restarted (harmlessly) on handshake
+            // completion with the post-handshake thresholds.
+            startStallWatchdog()
             sendClientHello()
         }
 

@@ -1,6 +1,8 @@
 package me.jxl.kiosk_satellite
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -124,6 +126,62 @@ class SendspinBridge(
 
     @Volatile private var lastReportedVolume = -1
     @Volatile private var lastReportedMuted = false
+
+    // Connectivity kick: when a network (re)appears, retry the connection
+    // immediately instead of waiting out the reconnect ladder's current
+    // delay. Without this, an outage longer than ~8 minutes leaves the
+    // ladder parked at 5-minute retries, so the player stays unavailable in
+    // Music Assistant for minutes after wifi is back. Registered per
+    // session; the registration-time callback for the already-present
+    // network is skipped so session start does not self-nudge.
+    @Volatile private var networkCallback: ConnectivityManager.NetworkCallback? = null
+
+    private fun registerNetworkCallback() {
+        if (networkCallback != null) return
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        if (cm == null) {
+            Log.w(TAG, "No ConnectivityManager; network kick disabled")
+            return
+        }
+        val cb = object : ConnectivityManager.NetworkCallback() {
+            private var sawInitialNetwork = false
+            override fun onAvailable(network: Network) {
+                mainHandler.post {
+                    if (!sawInitialNetwork) {
+                        sawInitialNetwork = true
+                        return@post
+                    }
+                    if (!started) return@post
+                    Log.i(TAG, "Network available - nudging Sendspin recovery")
+                    client?.onNetworkAvailable()
+                    if (discoveryMode && client?.isConnected != true) {
+                        // Recycle the browse now rather than at the next
+                        // 10-minute tick; a wedged NSD browse cannot see the
+                        // server that just became reachable.
+                        mainHandler.removeCallbacks(discoveryRestart)
+                        discoveryRestart.run()
+                    }
+                }
+            }
+        }
+        try {
+            cm.registerDefaultNetworkCallback(cb)
+            networkCallback = cb
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to register network callback", e)
+        }
+    }
+
+    private fun unregisterNetworkCallback() {
+        val cb = networkCallback ?: return
+        networkCallback = null
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+        try {
+            cm?.unregisterNetworkCallback(cb)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to unregister network callback", e)
+        }
+    }
 
     private val discoveryRestart: Runnable = object : Runnable {
         override fun run() {
@@ -319,11 +377,14 @@ class SendspinBridge(
             Log.i(TAG, "start: connecting to $address$path")
             newClient.connect(address, path)
         }
+
+        registerNetworkCallback()
     }
 
     private fun stopSession() {
         started = false
         discoveryMode = false
+        unregisterNetworkCallback()
         mainHandler.removeCallbacks(discoveryRestart)
 
         autoDiscovery?.cleanup()
