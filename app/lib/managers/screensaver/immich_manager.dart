@@ -172,19 +172,31 @@ class ImmichManager extends Manager {
   }
 
   Future<List<Map<String, Object?>>> _albums() async {
-    final response = await http
-        .get(Uri.parse('$_base/api/albums'), headers: _headers)
-        .timeout(const Duration(seconds: 10));
-    _throwUnlessOk(response);
-    final list = jsonDecode(response.body) as List;
-    final albums = [
-      for (final album in list.cast<Map<String, dynamic>>())
-        {
+    // Two calls, not one: /api/albums returns only the key owner's own
+    // albums, and albums shared WITH the user come from the same endpoint
+    // with ?shared=true (discussion #109). An album can appear in both
+    // (owned and shared out), so the merge dedupes by id.
+    final responses = await Future.wait([
+      http
+          .get(Uri.parse('$_base/api/albums'), headers: _headers)
+          .timeout(const Duration(seconds: 10)),
+      http
+          .get(Uri.parse('$_base/api/albums?shared=true'), headers: _headers)
+          .timeout(const Duration(seconds: 10)),
+    ]);
+    final merged = <String, Map<String, Object?>>{};
+    for (final response in responses) {
+      _throwUnlessOk(response);
+      final list = jsonDecode(response.body) as List;
+      for (final album in list.cast<Map<String, dynamic>>()) {
+        merged['${album['id']}'] = {
           'id': album['id'],
           'name': album['albumName'] ?? '',
           'count': album['assetCount'] ?? 0,
-        },
-    ];
+        };
+      }
+    }
+    final albums = merged.values.toList();
     albums.sort(
       (a, b) => '${a['name']}'.toLowerCase().compareTo(
         '${b['name']}'.toLowerCase(),
