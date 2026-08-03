@@ -225,17 +225,22 @@ class SendspinBridge(
                 val duration = lastDurationMs
                 if (streamBaseMs == null && lastMetaPosMs >= 0) {
                     // Deferred pairing: the anchor metadata arrived before
-                    // audio ran (a rejoin's metadata precedes its stream).
-                    // Pair its raw value against the audible clock, with the
-                    // same fresh-track clamp as the live pairing. Deliberately
-                    // NOT extrapolated by wall time: the track does not
-                    // advance while this device buffers its stream start, and
-                    // extrapolating baked that whole startup wait into the
-                    // base (measured +4.7s, lyrics ahead by the same amount).
+                    // audio ran (a resume's or rejoin's metadata precedes its
+                    // stream). The metadata named the track position where
+                    // the stream STARTS, and the audible clock counts audio
+                    // played since that same point, so the base IS the
+                    // metadata value. Deliberately NOT extrapolated by wall
+                    // time and NOT reduced by the audible clock: the track
+                    // does not advance while this device buffers (wall
+                    // extrapolation baked the startup wait in, +4.7s
+                    // measured), and subtracting the audible clock paid the
+                    // corrector's tick latency twice (up to 5s behind after
+                    // a resume). The fresh clamp matches the live pairing:
+                    // a from-the-top start's progress is only send lead.
                     val anchored = if (lastMetaPosMs < FRESH_TRACK_MAX_PROGRESS_MS) {
                         0L
                     } else {
-                        lastMetaPosMs - audible
+                        lastMetaPosMs
                     }
                     if (duration <= 0 || lastMetaPosMs < duration - 2_000) {
                         streamBaseMs = anchored
@@ -807,7 +812,16 @@ class SendspinBridge(
             if (saneAnchor) {
                 lastMetaPosMs = positionMs
                 lastMetaAtMs = SystemClock.elapsedRealtime()
-                if (positionMs < FRESH_TRACK_MAX_PROGRESS_MS &&
+                // Live pairing only while a stream is actually running: the
+                // metadata riding a pause's stream/end can carry a garbage
+                // progress (observed 2985ms against a track at 44s), and the
+                // audible clock is still within its staleness window at that
+                // moment, so pairing there anchored the display 41s off. The
+                // value still lands in lastMetaPosMs above, where the
+                // deferred pairing vets it against the next stream instead.
+                if (!streamActive) {
+                    // No stream to pair against.
+                } else if (positionMs < FRESH_TRACK_MAX_PROGRESS_MS &&
                     (audibleRaw == null || audibleRaw < FRESH_TRACK_MAX_PROGRESS_MS)
                 ) {
                     // Track started from the top: the audible clock IS the
@@ -856,6 +870,13 @@ class SendspinBridge(
             decodeHandler.post {
                 configurePipeline(codec, sampleRate, channels, bitDepth, codecHeader)
             }
+            // A new stream is a new timeline: whatever base mapped the old
+            // stream's audible clock onto track time is meaningless against
+            // the new clock, and a survivor here anchored the display a
+            // whole pause off after resume. Keep lastMetaPosMs: the pairing
+            // re-derives from it (fresh clamp included) once the new
+            // stream's audible clock is live.
+            streamBaseMs = null
             streamActive = true
             recomputePlaying()
         }
@@ -867,6 +888,8 @@ class SendspinBridge(
                 synchronized(pipelineLock) { decoder?.flush() }
                 player?.clearBuffer()
             }
+            // The cleared stream's timeline dies with it (see onStreamStart).
+            streamBaseMs = null
         }
 
         override fun onStreamEnd() {

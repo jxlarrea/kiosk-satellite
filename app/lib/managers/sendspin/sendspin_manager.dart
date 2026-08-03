@@ -301,6 +301,12 @@ class SendspinManager extends Manager {
         'sendspin.duck_percent',
         'sendspin.paused_hide_minutes',
         'sendspin.dismiss_keeps_playing',
+        // The lyric system lives on the Dart side and reads both of these
+        // live (the fetch checks the toggle per track, the view reads the
+        // offset every tick). An offset being tuned by ear must not restart
+        // the music it is tuned against.
+        'sendspin.lyrics',
+        'sendspin.lyrics_offset',
       ];
       final relevant =
           e.key.startsWith('sendspin.') &&
