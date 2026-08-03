@@ -656,8 +656,21 @@ const kioskAllowApps = SettingDef<bool>(
 // The minimal app selector (issue #114): a dedicated kiosk that doubles as
 // a media player or alarm clock needs a sanctioned way into a few other
 // apps without leaving lockdown. The owner picks the apps; the launcher
-// overlay offers exactly those and nothing else. No master switch — an
-// empty list is off.
+// overlay offers exactly those and nothing else. Its own settings page:
+// the launcher works with or without kiosk mode, so it does not live
+// under the lockdown settings.
+
+// Master switch, off by default. While off the launcher is genuinely
+// gone, not just empty: no menu entry, showAppLauncher refuses (which
+// covers the remote API), and the MQTT button is retracted from HA.
+const launcherEnabled = SettingDef<bool>(
+  key: 'launcher.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable App Launcher',
+  description: 'Open a picked set of installed apps from the kiosk.',
+  category: 'Launcher',
+);
 
 // The chosen apps as a JSON list of {package, label}. Hand-built pickers
 // on the device and in the remote admin write it; the generic settings
@@ -669,8 +682,8 @@ const launcherApps = SettingDef<String>(
   defaultValue: '[]',
   title: 'Apps',
   description: 'The apps the launcher offers.',
-  category: 'Kiosk',
-  section: 'App Launcher',
+  category: 'Launcher',
+  dependsOn: 'launcher.enabled',
 );
 
 const launcherLayout = SettingDef<String>(
@@ -681,8 +694,8 @@ const launcherLayout = SettingDef<String>(
   optionLabels: {'grid': 'Grid', 'list': 'List'},
   title: 'Layout',
   description: 'How the launcher arranges the apps.',
-  category: 'Kiosk',
-  section: 'App Launcher',
+  category: 'Launcher',
+  dependsOn: 'launcher.enabled',
 );
 
 const launcherShowIcons = SettingDef<bool>(
@@ -691,8 +704,8 @@ const launcherShowIcons = SettingDef<bool>(
   defaultValue: true,
   title: 'Show icons',
   description: 'Show app icons in the launcher.',
-  category: 'Kiosk',
-  section: 'App Launcher',
+  category: 'Launcher',
+  dependsOn: 'launcher.enabled',
 );
 
 // The way back without a gesture or a hand: after an app opened through
@@ -706,8 +719,8 @@ const launcherAutoReturn = SettingDef<bool>(
   defaultValue: false,
   title: 'Return automatically',
   description: 'Come back to the kiosk after time spent in another app.',
-  category: 'Kiosk',
-  section: 'App Launcher',
+  category: 'Launcher',
+  dependsOn: 'launcher.enabled',
 );
 
 const launcherAutoReturnSeconds = SettingDef<num>(
@@ -717,8 +730,7 @@ const launcherAutoReturnSeconds = SettingDef<num>(
   min: 10,
   title: 'Return after (seconds)',
   description: 'Time in the other app before the kiosk comes back.',
-  category: 'Kiosk',
-  section: 'App Launcher',
+  category: 'Launcher',
   dependsOn: 'launcher.auto_return',
 );
 
@@ -2724,6 +2736,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowScreensaver,
   kioskAllowTheme,
   kioskAllowApps,
+  launcherEnabled,
   launcherApps,
   launcherLayout,
   launcherShowIcons,

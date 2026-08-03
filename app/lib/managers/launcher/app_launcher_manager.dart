@@ -116,6 +116,11 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
             'Open the app launcher overlay. Fails when no apps are '
             'configured, so a caller can say so instead of showing nothing.',
         handler: (_) async {
+          // The master switch is a hard gate for every opener — the menu
+          // checks it itself, and MQTT and the remote API both land here.
+          if (!_settings.get(defs.launcherEnabled)) {
+            return const CommandResult.fail('the app launcher is disabled');
+          }
           if (apps.isEmpty) {
             return const CommandResult.fail('no launcher apps configured');
           }
@@ -158,6 +163,11 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
     // goes on without it, the same dance as restartApp and the status-bar
     // shield.
     _settingSub = bus.on<SettingChanged>().listen((e) async {
+      // Turning the launcher off closes an overlay already on screen.
+      if (e.key == defs.launcherEnabled.key && e.value != true) {
+        visible.value = false;
+        return;
+      }
       if (e.key != defs.launcherAutoReturn.key || e.value != true) return;
       try {
         final can =
@@ -181,8 +191,11 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
       final launched = _launchedAt;
+      // Both flags at runtime: the stored auto-return switch survives the
+      // master switch going off, and must not act while it is.
       if (launched == null ||
           DateTime.now().difference(launched) > _armWindow ||
+          !_settings.get(defs.launcherEnabled) ||
           !_settings.get(defs.launcherAutoReturn)) {
         return;
       }

@@ -71,8 +71,18 @@ void main() {
   });
 
   group('showAppLauncher', () {
+    test('refuses while the launcher is disabled, whitelist or not', () async {
+      await build({'ks.launcher.apps': twoApps});
+      final result =
+          await launcher.commands.execute('showAppLauncher', const {});
+      expect(result.ok, isFalse);
+      expect(result.error, contains('disabled'));
+      expect(launcher.visible.value, isFalse);
+      expect(executed, isEmpty);
+    });
+
     test('refuses with an empty whitelist', () async {
-      await build({});
+      await build({'ks.launcher.enabled': true});
       final result =
           await launcher.commands.execute('showAppLauncher', const {});
       expect(result.ok, isFalse);
@@ -81,7 +91,7 @@ void main() {
     });
 
     test('wakes, fronts, stops the screensaver, then shows', () async {
-      await build({'ks.launcher.apps': twoApps});
+      await build({'ks.launcher.enabled': true, 'ks.launcher.apps': twoApps});
       final result =
           await launcher.commands.execute('showAppLauncher', const {});
       expect(result.ok, isTrue);
@@ -90,16 +100,24 @@ void main() {
     });
 
     test('hideAppLauncher closes it', () async {
-      await build({'ks.launcher.apps': twoApps});
+      await build({'ks.launcher.enabled': true, 'ks.launcher.apps': twoApps});
       await launcher.commands.execute('showAppLauncher', const {});
       await launcher.commands.execute('hideAppLauncher', const {});
+      expect(launcher.visible.value, isFalse);
+    });
+
+    test('turning the launcher off closes an open overlay', () async {
+      await build({'ks.launcher.enabled': true, 'ks.launcher.apps': twoApps});
+      await launcher.commands.execute('showAppLauncher', const {});
+      await settings.setFromJson('launcher.enabled', false);
+      await pumpEventQueue();
       expect(launcher.visible.value, isFalse);
     });
   });
 
   group('the overlay closes on its own', () {
     test('when another app opens over it', () async {
-      await build({'ks.launcher.apps': twoApps});
+      await build({'ks.launcher.enabled': true, 'ks.launcher.apps': twoApps});
       await launcher.commands.execute('showAppLauncher', const {});
       bus.publish(const AppLaunched(package: 'com.a'));
       await pumpEventQueue();
@@ -107,7 +125,7 @@ void main() {
     });
 
     test('when the screensaver starts', () async {
-      await build({'ks.launcher.apps': twoApps});
+      await build({'ks.launcher.enabled': true, 'ks.launcher.apps': twoApps});
       await launcher.commands.execute('showAppLauncher', const {});
       bus.publish(const ScreensaverStateChanged(active: true));
       await pumpEventQueue();

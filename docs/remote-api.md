@@ -83,7 +83,9 @@ Start URL), `reload`, `screenOn` / `screenOff`,
 `launchApp {package}` (open another Android app over the kiosk),
 `bringToFront` (come back in front of it), `installedApps` (every
 launchable app as `[{package, label}]`), `showAppLauncher` /
-`hideAppLauncher` (the app launcher overlay, issue #114).
+`hideAppLauncher` (the app launcher overlay, issue #114;
+`showAppLauncher` refuses while the App Launcher is disabled in
+settings).
 
 ## Calling from Home Assistant automations
 

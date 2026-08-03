@@ -150,6 +150,12 @@ const _categories = <(String, String, IconData, String)>[
     Icons.lock_outline,
     'Exit gesture, PIN, hardware buttons',
   ),
+  (
+    'Launcher',
+    'App Launcher',
+    Icons.apps_outlined,
+    'Open other apps from the kiosk',
+  ),
   ('Screen', 'Screen', Icons.brightness_6_outlined, 'Brightness, keep awake'),
   (
     'Audio',

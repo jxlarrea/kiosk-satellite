@@ -446,6 +446,13 @@ class MqttManager extends Manager {
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
+    if (e.key == defs.launcherEnabled.key) {
+      // The Open app launcher button follows the master switch: published
+      // when it goes on, retracted when it goes off (the dispatch side is
+      // gated too — showAppLauncher refuses while disabled).
+      if (_connected) unawaited(_publishDiscovery());
+      return;
+    }
     if (e.key == defs.cameraEnabled.key) {
       if (!_connected) return;
       if (e.value == true && _cameraPresent) {
@@ -1391,11 +1398,14 @@ class MqttManager extends Manager {
         'command_topic': '$_base/bring_to_front/set',
         'icon': 'mdi:flip-to-front',
       },
-      '$_prefix/button/ks_$_deviceId/open_launcher/config': {
-        ...common('open_launcher', 'Open app launcher'),
-        'command_topic': '$_base/open_launcher/set',
-        'icon': 'mdi:apps',
-      },
+      // Only while the launcher is enabled: a disabled launcher leaves no
+      // button in HA (retraction below, and in _discoveryTopics).
+      if (_settings.get(defs.launcherEnabled))
+        '$_prefix/button/ks_$_deviceId/open_launcher/config': {
+          ...common('open_launcher', 'Open app launcher'),
+          'command_topic': '$_base/open_launcher/set',
+          'icon': 'mdi:apps',
+        },
       '$_prefix/update/ks_$_deviceId/update/config': {
         ...common('update', 'Update'),
         'state_topic': '$_base/update/state',
@@ -1457,6 +1467,10 @@ class MqttManager extends Manager {
     };
     for (final topic in _legacyDiscoveryTopics()) {
       _publish(topic, '');
+    }
+    // Same for the app launcher's button while the launcher is off.
+    if (!_settings.get(defs.launcherEnabled)) {
+      _publish('$_prefix/button/ks_$_deviceId/open_launcher/config', '');
     }
     // Self-correcting: a camera config published before the presence probe
     // answered (or before the feature was turned off) is retracted on the
