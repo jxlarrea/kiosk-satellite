@@ -615,6 +615,32 @@ class ScreensaverWebView extends StatefulWidget {
 class _ScreensaverWebViewState extends State<ScreensaverWebView> {
   late final String _configJson = _buildConfig();
 
+  /// Bumped to recreate the WebView after its renderer dies. Without the
+  /// onRenderProcessGone handler below, Android answers a renderer death
+  /// in an unhandling WebView by killing the whole app — the dashboard
+  /// WebView has survived that path for a long time while this one, on
+  /// low-RAM devices exactly when the screensaver recomposites, had not.
+  int _epoch = 0;
+
+  /// One pending retry at a time for a website that failed to load (the
+  /// network dropped mid-session). Previously an error page just sat for
+  /// the whole session; a paced reload brings the site back on its own.
+  Timer? _retry;
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleRetry(InAppWebViewController controller, String why) {
+    if (_retry?.isActive ?? false) return;
+    widget.container.log.warn('screensaver', '$why; retrying in 10s');
+    _retry = Timer(const Duration(seconds: 10), () {
+      if (mounted) unawaited(controller.reload());
+    });
+  }
+
   String _buildConfig() {
     final s = widget.container.settings;
     return jsonEncode({
@@ -660,6 +686,7 @@ setInterval(function () {
     // shows the same black screen it always has.
     final topLevel = website.isNotEmpty;
     return InAppWebView(
+      key: ValueKey(_epoch),
       initialUrlRequest: topLevel ? URLRequest(url: WebUri(website)) : null,
       initialFile: topLevel ? null : 'assets/screensaver/index.html',
       initialUserScripts: UnmodifiableListView([
@@ -699,6 +726,27 @@ setInterval(function () {
         return ServerTrustAuthResponse(
           action: ServerTrustAuthResponseAction.CANCEL,
         );
+      },
+      onReceivedError: (controller, request, error) {
+        if (request.isForMainFrame ?? true) {
+          _scheduleRetry(controller, 'load error: ${error.description}');
+        }
+      },
+      onReceivedHttpError: (controller, request, errorResponse) {
+        // Server errors only, like the dashboard WebView: a 4xx is the
+        // site answering (login page, missing path), not an outage.
+        final status = errorResponse.statusCode ?? 0;
+        if ((request.isForMainFrame ?? true) && status >= 500) {
+          _scheduleRetry(controller, 'HTTP $status');
+        }
+      },
+      onRenderProcessGone: (controller, detail) {
+        widget.container.log.warn(
+          'screensaver',
+          'WebView renderer gone (crashed: ${detail.didCrash}) — '
+              'rebuilding the WebView',
+        );
+        if (mounted) setState(() => _epoch++);
       },
       onWebViewCreated: (controller) {
         controller.addJavaScriptHandler(

@@ -759,6 +759,18 @@ class MqttManager extends Manager {
       final text = MqttPublishPayload.bytesToStringAsString(
           payload.payload.message);
       final topic = received.topic;
+      // Every subscription here is a /set command topic, and commands are
+      // imperative: a payload delivered with the retain flag is the broker
+      // replaying a stored press at (re)subscribe time, which resubscribe-
+      // on-reconnect turns into "again on every network flap" (a retained
+      // reload would reload the page on each one). Live publishes arrive
+      // with the flag clear even when sent retained, so dropping these
+      // loses nothing. One guard here instead of the old per-topic ones,
+      // which missed the riskiest topics (reload, restart, clear_cache).
+      if (payload.header?.retain == true) {
+        log.warn(name, 'ignored retained command on $topic');
+        continue;
+      }
       if (topic == '$_base/screen/set') {
         log.info(name, 'command $topic = $text');
         if (text == 'ON') {
@@ -821,12 +833,8 @@ class MqttManager extends Manager {
       } else if (topic == '$_base/open_launcher/set') {
         // The app launcher overlay (issue #114). The command wakes the
         // screen and pulls the kiosk forward first, so the launcher lands
-        // on a visible dashboard — which is exactly why a stale retained
-        // press replayed on reconnect must not fire it.
-        if (payload.header?.retain == true) {
-          log.warn(name, 'ignored retained open launcher command');
-          continue;
-        }
+        // on a visible dashboard — which is exactly why the retained-replay
+        // guard above must never weaken.
         log.info(name, 'command $topic');
         final result = await commands.execute('showAppLauncher', const {});
         if (!result.ok) {
@@ -868,10 +876,6 @@ class MqttManager extends Manager {
           await _publishUpdateState();
         }
       } else if (topic == '$_base/camera/view/set') {
-        if (payload.header?.retain == true) {
-          log.warn(name, 'ignored retained camera view command');
-          continue;
-        }
         log.info(name, 'camera view command');
         final result = await commands.execute('showCameraView', {
           'viewId': text,
@@ -881,10 +885,6 @@ class MqttManager extends Manager {
           await _publishCurrentCameraViewState();
         }
       } else if (topic == '$_base/dashboard_view/set') {
-        if (payload.header?.retain == true) {
-          log.warn(name, 'ignored retained dashboard view command');
-          continue;
-        }
         log.info(name, 'command $topic = $text');
         final result = await commands.execute('haNavigate', {'path': text});
         if (!result.ok) {
@@ -895,10 +895,6 @@ class MqttManager extends Manager {
           _publish('$_base/dashboard_view/state', text);
         }
       } else if (topic == '$_base/camera_snapshot/set') {
-        if (payload.header?.retain == true) {
-          log.warn(name, 'ignored retained snapshot command');
-          continue;
-        }
         log.info(name, 'snapshot command');
         final result = await commands.execute('takeCameraSnapshot', const {});
         if (!result.ok) {
@@ -906,10 +902,6 @@ class MqttManager extends Manager {
               '${result.error}');
         }
       } else if (topic == '$_base/camera/close/set') {
-        if (payload.header?.retain == true) {
-          log.warn(name, 'ignored retained camera close command');
-          continue;
-        }
         log.info(name, 'camera close command');
         await commands.execute('hideCameraView', const {});
       } else {

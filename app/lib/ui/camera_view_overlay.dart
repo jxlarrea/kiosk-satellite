@@ -156,6 +156,12 @@ class _CameraPlayerState extends State<CameraPlayer> {
   InAppWebViewController? _controller;
   bool _tornDown = false;
 
+  /// Bumped to recreate the WebView after its renderer dies (WebRTC video
+  /// decoding is exactly the kind of load that kills renderers on low-RAM
+  /// devices). An unhandled renderer death here would take the whole app
+  /// down; a rebuilt WebView just renegotiates its streams.
+  int _epoch = 0;
+
   @override
   void initState() {
     super.initState();
@@ -248,6 +254,18 @@ class _CameraPlayerState extends State<CameraPlayer> {
   Widget build(BuildContext context) => ColoredBox(
     color: Colors.black,
     child: InAppWebView(
+      key: ValueKey(_epoch),
+      onRenderProcessGone: (controller, detail) {
+        widget.container.log.warn(
+          'camera',
+          'WebView renderer gone (crashed: ${detail.didCrash}) — '
+              'rebuilding the camera view',
+        );
+        // The old renderer took its streams with it; a fresh page
+        // renegotiates from the injected config. _tornDown stays false so
+        // the eventual real teardown still runs against the new page.
+        if (mounted) setState(() => _epoch++);
+      },
       initialFile: 'assets/camera-view/index.html',
       initialUserScripts: UnmodifiableListView([
         UserScript(

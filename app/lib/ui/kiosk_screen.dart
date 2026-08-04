@@ -977,6 +977,15 @@ class _KioskScreenState extends State<KioskScreen>
         c.browser.onLoadError(error.description);
       }
     },
+    onReceivedHttpError: (controller, request, errorResponse) {
+      // Server errors only: a 4xx main document (an HA auth bounce, a 404
+      // dashboard) is the page saying something, not an outage, and
+      // reloading it would loop on the same answer.
+      final status = errorResponse.statusCode ?? 0;
+      if ((request.isForMainFrame ?? true) && status >= 500) {
+        c.browser.onHttpError(status);
+      }
+    },
     onDownloadStarting: (controller, request) async {
       // Hand downloads to the system DownloadManager. Feedback is in-app
       // snackbars (started / done with an Open action): the kiosk hides the
@@ -1200,12 +1209,30 @@ class _OverlayWebView extends StatefulWidget {
 class _OverlayWebViewState extends State<_OverlayWebView> {
   InAppWebViewController? _controller;
 
+  /// One pending retry for a load the network failed (this page has no
+  /// other recovery: a rotation overlay that errored used to show the
+  /// error until the rotation moved on, a link overlay until dismissed).
+  Timer? _retry;
+
   @override
   void didUpdateWidget(_OverlayWebView old) {
     super.didUpdateWidget(old);
     if (widget.paused != old.paused) {
       widget.paused ? _controller?.pause() : _controller?.resume();
     }
+  }
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleRetry() {
+    if (_retry?.isActive ?? false) return;
+    _retry = Timer(const Duration(seconds: 10), () {
+      if (mounted) unawaited(_controller?.reload());
+    });
   }
 
   @override
@@ -1222,6 +1249,15 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
         onWebViewCreated: (controller) {
           _controller = controller;
           if (widget.paused) controller.pause();
+        },
+        onReceivedError: (controller, request, error) {
+          if (request.isForMainFrame ?? true) _scheduleRetry();
+        },
+        onReceivedHttpError: (controller, request, errorResponse) {
+          final status = errorResponse.statusCode ?? 0;
+          if ((request.isForMainFrame ?? true) && status >= 500) {
+            _scheduleRetry();
+          }
         },
         onRenderProcessGone: (controller, detail) =>
             widget.onRenderGone?.call(),

@@ -231,7 +231,17 @@ class ProxyManager extends Manager {
       try {
         req.response.statusCode = HttpStatus.badGateway;
         await req.response.close();
-      } catch (_) {}
+      } catch (_) {
+        // Headers already flushed (an upstream that died mid-stream, the
+        // camera MJPEG case): no status can be written, and close() would
+        // just end the chunked body politely. Tear the socket down so the
+        // page-side request errors NOW instead of hanging on a stream that
+        // will never resume.
+        try {
+          final socket = await req.response.detachSocket();
+          socket.destroy();
+        } catch (_) {}
+      }
     }
   }
 
@@ -284,6 +294,12 @@ class ProxyManager extends Manager {
       await page.close(WebSocketStatus.internalServerError, 'upstream');
       rethrow;
     }
+    // The page's socket lives on loopback, so the page can never see an
+    // outage directly — only this leg can. Without a ping a silently dead
+    // upstream (AP drop, no RST) leaves both pumps parked forever while
+    // the frontend believes its OPEN loopback socket; the ping turns that
+    // into a close within ~20s, which propagates and makes it reconnect.
+    upstream.pingInterval = const Duration(seconds: 20);
     // addStream, not listen-and-add: piping applies backpressure, so when
     // one side stops reading (Android freezing the renderer with the
     // screen off is the common case) the other side is paused instead of

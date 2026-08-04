@@ -584,6 +584,8 @@ class BrowserManager extends Manager {
 
   /// Called by the UI layer from the WebView's onLoadStop.
   void onPageLoaded(String url) {
+    _lastLoadHadHttpError = _httpErrorThisLoad;
+    _httpErrorThisLoad = false;
     _currentUrl = url;
     log.info(name, 'loaded $url');
     bus.publish(PageChanged(url: url));
@@ -627,6 +629,32 @@ class BrowserManager extends Manager {
   /// Called by the UI layer on load errors and render-process crashes.
   Future<void> onLoadError(String description) async {
     log.warn(name, 'load error: $description');
+    if (_settings.get(defs.autoReloadOnError)) {
+      await Future<void>.delayed(const Duration(seconds: 5));
+      await _controller?.reload();
+    }
+  }
+
+  /// Set when the current load's main document came back with a server
+  /// error, shifted into [_lastLoadHadHttpError] when the load finishes
+  /// (the error always precedes its onLoadStop). Together they let the
+  /// network-return probe tell a committed 502 page from a healthy non-HA
+  /// page, which look identical from JavaScript.
+  bool _httpErrorThisLoad = false;
+  bool _lastLoadHadHttpError = false;
+
+  /// Called by the UI layer on a main-frame HTTP failure (>= 500).
+  ///
+  /// Chromium commits these as successful navigations — the proxy's 502
+  /// when Home Assistant is unreachable, a reverse proxy's 502/504 during
+  /// an outage — so onReceivedError never fires and, without this path,
+  /// the error body sat on screen until an app restart (wifi-resilience
+  /// review). Same policy as [onLoadError]: the reload re-requests the
+  /// same URL, and a still-failing answer lands back here, so the retry
+  /// chain keeps itself alive until one succeeds.
+  Future<void> onHttpError(int statusCode) async {
+    _httpErrorThisLoad = true;
+    log.warn(name, 'main-frame HTTP $statusCode');
     if (_settings.get(defs.autoReloadOnError)) {
       await Future<void>.delayed(const Duration(seconds: 5));
       await _controller?.reload();
@@ -732,6 +760,12 @@ class BrowserManager extends Manager {
           }
         case 'shell':
         case 'error-page':
+          await _renavigate();
+        case 'other' when _lastLoadHadHttpError:
+          // Looks like an ordinary non-HA page to the probe, but the last
+          // load's main document was a server error (a 502 body commits as
+          // a perfectly normal page). Re-navigate now that upstream may be
+          // back.
           await _renavigate();
         default:
           // A non-HA page that probes healthy, or a probe that failed:
