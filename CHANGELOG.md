@@ -2,13 +2,17 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v0.33.4-beta - 2026-08-04
+
+### Fixed
+- The microphone level meter no longer disables wake word detection. The meter rides the wake word tester's telemetry feed, and telemetry mode suppressed real detections by design (a tester hit must not start a voice interaction), so simply having the Voice Satellite settings open with the meter visible, on the device or in the remote admin, made the device deaf, and a remote admin tab left open on that page kept it deaf indefinitely. Telemetry now distinguishes a tester from a meter: the meter only reads levels and detections keep firing while it is on screen.
+
 ## v0.33.3-beta - 2026-08-03
 
 ### Added
 - Start the screensaver is a new gesture action, next to the other Kiosk Satellite actions in the gesture editor on the device and in the remote admin. Start only: any tap already dismisses a running screensaver, so a stop action would duplicate what every touch does.
 
 ### Fixed
-- The microphone level meter no longer disables wake word detection. The meter rides the wake word tester's telemetry feed, and telemetry mode suppressed real detections by design (a tester hit must not start a voice interaction), so simply having the Voice Satellite settings open with the meter visible, on the device or in the remote admin, made the device deaf, and a remote admin tab left open on that page kept it deaf indefinitely. Telemetry now distinguishes a tester from a meter: the meter only reads levels and detections keep firing while it is on screen.
 - Momentary Wi-Fi drops no longer leave parts of the app dead until a restart. The app now watches Android's network state and repairs everything the moment connectivity returns: the dashboard reconnects a dead or half-open Home Assistant websocket, retries Home Assistant's "Unable to connect" screen immediately instead of waiting out its growing countdown, and re-navigates an error page back to the dashboard. MQTT recovers even when the app started before the network was up (previously a device that booted ahead of the router lost its Home Assistant entities until an app restart) and a stuck broker connection is now detected within a minute through ping timeouts. Sendspin, the At a Glance entity feed and the secure context proxy reconnect immediately as well.
 - Server errors on the dashboard recover like network errors always did: a 502 or 504 from a reverse proxy (or the secure context proxy) during an outage used to sit on screen until an app restart, because auto reload only watched network-level failures. The page now retries every few seconds until Home Assistant answers again.
 - The Website screensaver and rotation overlay pages retry failed loads instead of showing an error page for the rest of the session, and a crashed page renderer in the screensaver or camera view rebuilds its own WebView instead of Android killing the whole app, which matters most on low-RAM devices.
