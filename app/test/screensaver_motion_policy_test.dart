@@ -119,6 +119,7 @@ void main() {
       build({
         'ks.screensaver.enabled': true,
         'ks.screensaver.timeout_seconds': 5,
+        'ks.screensaver.dismiss_on_motion': true,
         'ks.screensaver.postpone_on_motion': true,
         'ks.camera.enabled': true,
       });
@@ -142,12 +143,14 @@ void main() {
     });
   });
 
-  test('without the toggle, motion between sessions changes nothing', () {
+  test('postpone never acts on its own: without Dismiss on motion a stale '
+      'true is inert', () {
     fakeAsync((async) {
       build({
         'ks.screensaver.enabled': true,
         'ks.screensaver.timeout_seconds': 5,
-        'ks.screensaver.postpone_on_motion': false,
+        'ks.screensaver.dismiss_on_motion': false,
+        'ks.screensaver.postpone_on_motion': true,
         'ks.camera.enabled': true,
       });
       async.flushMicrotasks();
@@ -159,7 +162,9 @@ void main() {
       async.flushMicrotasks();
       async.elapse(const Duration(seconds: 3));
       async.flushMicrotasks();
-      // 6s in: the 5s deadline fired on schedule; the motion was ignored.
+      // 6s in: the 5s deadline fired on schedule; the motion was ignored,
+      // because the postpone switch extends Dismiss on motion and its row
+      // is hidden (dependsOn) while that master switch is off.
       expect(saver.isActive, isTrue);
     });
   });

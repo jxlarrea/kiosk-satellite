@@ -166,8 +166,12 @@ class ScreensaverManager extends Manager {
       if (!_active) {
         // Between screensavers, motion can only postpone the next one
         // (discussion #126): people moving in front of the device keep
-        // resetting the idle clock, exactly like a touch would.
-        if (_settings.get(defs.screensaverPostponeOnMotion)) {
+        // resetting the idle clock, exactly like a touch would. Gated on
+        // Dismiss on motion too — the postpone switch extends it and must
+        // never act on its own (a stale true would otherwise act from
+        // under a hidden row).
+        if (_settings.get(defs.screensaverPostponeOnMotion) &&
+            _settings.get(defs.screensaverDismissOnMotion)) {
           _resetIdleTimer();
         }
         return;

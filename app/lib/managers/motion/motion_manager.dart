@@ -53,9 +53,13 @@ class MotionManager extends Manager {
 
   /// Whether the postpone leg wants the camera: between screensavers, with
   /// the screen actually lit, on a device whose screensaver can start at
-  /// all. Same camera master switch as [enabled].
+  /// all. Rides on Dismiss on motion — the postpone switch is an extension
+  /// of it (hidden and inert without it), never a second way to turn
+  /// motion detection on. The raw switch, not [_schedulePolicy]: schedule
+  /// overrides are session-scoped and this leg runs between sessions.
   bool get _postponeEnabled =>
       _settings.get(defs.screensaverPostponeOnMotion) &&
+      _settings.get(defs.screensaverDismissOnMotion) &&
       _settings.get(defs.screensaverEnabled) &&
       _settings.get(defs.cameraEnabled);
 

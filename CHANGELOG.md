@@ -5,7 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## v0.33.4-beta - 2026-08-04
 
 ### Added
-- Postpone on motion, a new opt-in switch in the screensaver's Motion Detection section (discussion #126): the camera also watches between screensavers, and movement nearby keeps resetting the idle timeout, so the screensaver stays away while people are actually around. Off by default because this direction is the expensive one: unlike Dismiss on motion, the camera runs the whole time the screen is in use, which adds CPU load and heat. The camera still stands down whenever the screen is off.
+- Postpone screensaver on motion, a new opt-in switch in the screensaver's Motion Detection section (discussion #126): the camera also watches between screensavers, and movement nearby keeps resetting the idle timeout, so the screensaver stays away while people are actually around. An extension of Dismiss on motion, so it appears and acts only with that switch on. Off by default because this direction is the expensive one: the camera runs permanently while the screen is in use, which adds CPU load and heat. The camera still stands down whenever the screen is off.
 
 ### Fixed
 - The microphone level meter no longer disables wake word detection. The meter rides the wake word tester's telemetry feed, and telemetry mode suppressed real detections by design (a tester hit must not start a voice interaction), so simply having the Voice Satellite settings open with the meter visible, on the device or in the remote admin, made the device deaf, and a remote admin tab left open on that page kept it deaf indefinitely. Telemetry now distinguishes a tester from a meter: the meter only reads levels and detections keep firing while it is on screen.
