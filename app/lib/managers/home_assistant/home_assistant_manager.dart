@@ -1383,7 +1383,17 @@ class GlanceSubscription {
 
   bool get isClosed => _closed;
 
-  void _markClosed() => _closed = true;
+  /// Fired when the socket dies underneath us (server gone, network drop) —
+  /// NOT on a deliberate [close]. The owner uses it to reopen; without it a
+  /// subscription that died after establishing stayed dead until the
+  /// screensaver cycled.
+  void Function()? onClosed;
+
+  void _markClosed() {
+    if (_closed) return;
+    _closed = true;
+    onClosed?.call();
+  }
 
   Future<void> close() async {
     if (_closed) return;

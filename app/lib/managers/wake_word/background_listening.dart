@@ -99,6 +99,11 @@ class BackgroundListening {
   /// The argument is 1 on, 0 off, -1 never set (the ROM decides).
   static void Function(int setting)? _onAmbientDisplayChanged;
 
+  /// The default network came up or went away. `initial` marks the
+  /// callback's registration-time replay of an already-present network,
+  /// which is not a transition and must not trigger recovery work.
+  static void Function(bool up, bool initial)? _onNetworkChanged;
+
   static set onDownloadComplete(
       void Function(int id, bool success, String? filename)? handler) {
     _onDownloadComplete = handler;
@@ -126,6 +131,11 @@ class BackgroundListening {
     _installHandler();
   }
 
+  static set onNetworkChanged(void Function(bool up, bool initial)? handler) {
+    _onNetworkChanged = handler;
+    _installHandler();
+  }
+
   /// One channel, one handler: every native push shares it, so it is
   /// (re)installed whenever any callback changes and removed only when they
   /// are all gone. Setting a handler directly on the channel from elsewhere
@@ -135,7 +145,8 @@ class BackgroundListening {
         _onVolumeChanged == null &&
         _onScreenStateChanged == null &&
         _onNextAlarmChanged == null &&
-        _onAmbientDisplayChanged == null) {
+        _onAmbientDisplayChanged == null &&
+        _onNetworkChanged == null) {
       _channel.setMethodCallHandler(null);
       return;
     }
@@ -164,6 +175,10 @@ class BackgroundListening {
         _onNextAlarmChanged?.call(
           args is Map ? args.cast<String, Object?>() : null,
         );
+      }
+      if (call.method == 'networkChanged') {
+        final args = (call.arguments as Map?) ?? const {};
+        _onNetworkChanged?.call(args['up'] == true, args['initial'] == true);
       }
       return null;
     });

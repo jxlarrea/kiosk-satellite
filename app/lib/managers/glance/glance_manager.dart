@@ -92,6 +92,7 @@ class GlanceManager extends Manager {
 
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<ScreensaverStateChanged>? _screensaverSub;
+  StreamSubscription<NetworkStateChanged>? _networkSub;
   GlanceSubscription? _live;
   Timer? _retry;
   bool _screensaverActive = false;
@@ -116,6 +117,14 @@ class GlanceManager extends Manager {
       } else {
         _close();
       }
+    });
+    // The network returned: a subscription the outage killed (or left
+    // half-open) should not wait out the 20s retry timer, or hold a dead
+    // socket that never errors. Reopen fresh; _open tears down any
+    // remnant first.
+    _networkSub = bus.on<NetworkStateChanged>().listen((event) {
+      if (!event.up || !_screensaverActive) return;
+      if (_live == null || _live!.isClosed) unawaited(_open());
     });
 
     commands.register(
@@ -142,6 +151,7 @@ class GlanceManager extends Manager {
   Future<void> dispose() async {
     await _settingsSub?.cancel();
     await _screensaverSub?.cancel();
+    await _networkSub?.cancel();
     _retry?.cancel();
     _close();
     entities.dispose();
@@ -203,6 +213,19 @@ class GlanceManager extends Manager {
       await live.close();
       return;
     }
+    // A socket that dies after establishing (HA restart, network drop)
+    // previously froze the row until the next screensaver session; reopen
+    // after a beat instead. The delay keeps a flapping server from turning
+    // this into a tight connect loop; a failed reopen falls back to the
+    // 20s timer above.
+    live.onClosed = () {
+      if (!_screensaverActive || _live != live) return;
+      log.debug(name, 'subscription dropped; reopening');
+      _retry?.cancel();
+      _retry = Timer(const Duration(seconds: 5), () {
+        if (_screensaverActive) unawaited(_open());
+      });
+    };
     _live = live;
     log.debug(name, 'watching ${ids.length} entities');
   }

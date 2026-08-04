@@ -182,6 +182,15 @@ class DeviceManager extends Manager {
       ),
     );
 
+    // Default-network transitions from the platform side. The registration
+    // replay (network already up at app start) arrives flagged initial and
+    // is dropped here, so an `up` on the bus always means an outage ended.
+    BackgroundListening.onNetworkChanged = (up, initial) {
+      if (initial) return;
+      log.info(name, up ? 'network available' : 'network lost');
+      bus.publish(NetworkStateChanged(up: up));
+    };
+
     // Media volume, percent both ways. No OS permission involved:
     // STREAM_MUSIC is freely settable (only ring/notification streams under
     // Do Not Disturb are gated, and those are never touched).

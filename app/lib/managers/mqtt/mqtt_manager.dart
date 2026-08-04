@@ -47,6 +47,16 @@ class MqttManager extends Manager {
   Timer? _reconnectDebounce;
   final _subs = <StreamSubscription>[];
 
+  /// Retry for a connect that failed outright (broker unreachable). The
+  /// package's auto-reconnect only arms once a connection has succeeded,
+  /// and the solicited disconnect() in the failure path disarms it anyway,
+  /// so without this a device that boots before its network is up has no
+  /// MQTT until an app restart (the offline-boot bug from the
+  /// wifi-resilience review). Backoff doubles 5s → 60s; a network-available
+  /// event short-circuits the wait.
+  Timer? _retryTimer;
+  Duration _retryDelay = const Duration(seconds: 5);
+
   /// Serialises enable/disable/reconnect so a settings burst cannot
   /// interleave two connection attempts.
   Future<void> _transition = Future.value();
@@ -155,6 +165,13 @@ class MqttManager extends Manager {
           DateTime.now().toUtc().toIso8601String());
     }));
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _publishNextAlarm()));
+    // The network returned from an outage: if the initial connect had
+    // failed and the retry timer is sitting out its backoff, go now.
+    // A live-but-disconnected client is the package's business — its
+    // auto-reconnect already retries every few seconds.
+    _subs.add(bus.on<NetworkStateChanged>().listen((e) {
+      if (e.up && _client == null && _retryTimer != null) _retryNow();
+    }));
     _subs.add(bus.on<AmbientDisplayChanged>().listen(
         (e) => _publishScreenAvailability(ambient: e.on)));
     // The native side damps flicker; this only guards the recorder's disk:
@@ -497,6 +514,10 @@ class MqttManager extends Manager {
       _client?.connectionStatus?.state == MqttConnectionState.connected;
 
   Future<void> _connect() async {
+    // Whatever drove this attempt (init, a settings change, the retry
+    // itself), a pending retry timer is now redundant.
+    _retryTimer?.cancel();
+    _retryTimer = null;
     final host = _settings.get(defs.mqttHost).trim();
     if (host.isEmpty) {
       log.warn(name, 'enabled but no broker host set; not connecting');
@@ -520,6 +541,11 @@ class MqttManager extends Manager {
         host, 'kiosksatellite_$_deviceId', port);
     client.secure = _settings.get(defs.mqttTls);
     client.keepAlivePeriod = 30;
+    // Without this the client pings every 30s but never checks for the
+    // answer, so a half-open socket (wifi flap, AP reboot) is only noticed
+    // when a TCP write hard-fails — minutes, sometimes never. With it, a
+    // missed PINGRESP forces a disconnect, which auto-reconnect repairs.
+    client.disconnectOnNoResponsePeriod = 30;
     client.autoReconnect = true;
     client.resubscribeOnAutoReconnect = true;
     client.setProtocolV311();
@@ -547,7 +573,13 @@ class MqttManager extends Manager {
       );
     } catch (e) {
       log.warn(name, 'connect to $host:$port failed: $e');
+      // disconnect() here is solicited, which the package treats as "the
+      // user hung up" and disarms auto-reconnect — so this path must own
+      // its retry, or an unreachable broker at boot is permanent.
+      client.autoReconnect = false;
       client.disconnect();
+      _client = null;
+      _scheduleRetry();
       return;
     }
     if (!_connected) {
@@ -561,6 +593,7 @@ class MqttManager extends Manager {
       _client = null;
       return;
     }
+    _retryDelay = const Duration(seconds: 5);
 
     _updatesSub = client.updates?.listen(_onMessage);
     for (final topic in [
@@ -587,6 +620,27 @@ class MqttManager extends Manager {
     ]) {
       client.subscribe(topic, MqttQos.atLeastOnce);
     }
+  }
+
+  void _scheduleRetry() {
+    _retryTimer?.cancel();
+    _retryTimer = Timer(_retryDelay, _retryNow);
+    log.info(name, 'retrying in ${_retryDelay.inSeconds}s');
+    final doubled = _retryDelay * 2;
+    _retryDelay = doubled > const Duration(seconds: 60)
+        ? const Duration(seconds: 60)
+        : doubled;
+  }
+
+  void _retryNow() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _transition = _transition.then((_) async {
+      // Re-check inside the serialized transition: a settings change or
+      // disable may have run (and connected, or torn down) meanwhile.
+      if (_client != null || !_settings.get(defs.mqttEnabled)) return;
+      await _connect();
+    });
   }
 
   DateTime _lastBringUp = DateTime.fromMillisecondsSinceEpoch(0);
@@ -665,6 +719,9 @@ class MqttManager extends Manager {
   }
 
   Future<void> _disconnect({required bool clearDiscovery}) async {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    _retryDelay = const Duration(seconds: 5);
     _pollTimer?.cancel();
     _pollTimer = null;
     await _updatesSub?.cancel();

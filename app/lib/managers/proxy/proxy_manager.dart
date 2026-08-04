@@ -115,6 +115,16 @@ class ProxyManager extends Manager {
         if (!isHttp) unawaited(_settings.set(defs.secureProxy, false));
       }
     });
+    // The network returned: the shared HttpClient's keep-alive pool is full
+    // of connections the outage killed, and each would fail one page
+    // request before being discarded. Recycle the client so the first
+    // request after recovery starts clean.
+    bus.on<NetworkStateChanged>().listen((e) {
+      if (!e.up || _server == null) return;
+      _client?.close(force: true);
+      _client = _newClient();
+      log.debug(name, 'recycled upstream client after network return');
+    });
     await sync();
   }
 
@@ -164,12 +174,14 @@ class ProxyManager extends Manager {
     return u.replace(host: '127.0.0.1', port: server.port).toString();
   }
 
+  HttpClient _newClient() => HttpClient()
+    // Pass bodies through verbatim: decompressing here would desync the
+    // Content-Encoding/Length headers the page receives.
+    ..autoUncompress = false
+    ..connectionTimeout = const Duration(seconds: 20);
+
   Future<void> _start() async {
-    _client = HttpClient()
-      // Pass bodies through verbatim: decompressing here would desync the
-      // Content-Encoding/Length headers the page receives.
-      ..autoUncompress = false
-      ..connectionTimeout = const Duration(seconds: 20);
+    _client = _newClient();
     try {
       _server = await HttpServer.bind(
         InternetAddress.loopbackIPv4,

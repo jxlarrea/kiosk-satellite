@@ -152,12 +152,17 @@ class SendspinBridge(
             Log.w(TAG, "No ConnectivityManager; network kick disabled")
             return
         }
+        // Only skip the registration-time replay when a network really was
+        // up at registration. A session that starts offline (boot before
+        // wifi) gets its first onAvailable when the outage ENDS - swallowing
+        // that one left recovery to the reconnect ladder's current delay
+        // (verified live: +20s, up to +5min at the parked tier).
+        var expectInitialReplay = cm.activeNetwork != null
         val cb = object : ConnectivityManager.NetworkCallback() {
-            private var sawInitialNetwork = false
             override fun onAvailable(network: Network) {
                 mainHandler.post {
-                    if (!sawInitialNetwork) {
-                        sawInitialNetwork = true
+                    if (expectInitialReplay) {
+                        expectInitialReplay = false
                         return@post
                     }
                     if (!started) return@post

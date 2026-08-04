@@ -99,6 +99,20 @@ class LightLevelChanged extends AppEvent {
   final double lux;
 }
 
+// ── Network ────────────────────────────────────────────────────────────
+
+/// The device's default network came up or went away (Android's default
+/// network callback, relayed by the platform side). Only genuine
+/// transitions travel here — the callback's registration-time replay of an
+/// already-present network is dropped at the source, so an `up` event
+/// always means an outage just ended. Internal: managers holding a dead
+/// connection retry NOW off it instead of waiting out their backoff
+/// timers, and the browser checks the page it is showing.
+class NetworkStateChanged extends AppEvent {
+  const NetworkStateChanged({required this.up});
+  final bool up;
+}
+
 // ── Updates ────────────────────────────────────────────────────────────
 
 /// The updater's picture of the world moved: a newer release appeared or

@@ -128,6 +128,13 @@ class BrowserManager extends Manager {
       _dashboardCovered = e.view != null;
       _scheduleFreezeSync();
     });
+    // The network came back from an outage: check what the page actually is
+    // and repair it now, instead of leaving it to timers that may sit for
+    // minutes (the HA shell's own retry countdown) or never fire at all (a
+    // half-open socket on a kiosk that never backgrounds).
+    bus.on<NetworkStateChanged>().listen((e) {
+      if (e.up) unawaited(onNetworkAvailable());
+    });
     bus.on<SettingChanged>().listen((e) {
       if (e.key != defs.freezeOnScreensaver.key) return;
       // A paused page reports itself hidden, and Home Assistant suspends a
@@ -681,6 +688,104 @@ class BrowserManager extends Manager {
       })()
     ''');
     log.info(name, 'HA socket nudge: $result');
+  }
+
+  /// Serializes and rate-limits [onNetworkAvailable]: a flapping network
+  /// must not stack probes or reload in a loop.
+  bool _networkRepairBusy = false;
+  DateTime _lastNetworkRepair = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// The network just returned from an outage: diagnose the page and fix
+  /// what the outage broke. Four outcomes, from cheapest up:
+  ///
+  ///  - a healthy page with a live HA socket: nothing to do;
+  ///  - an HA page whose socket died (or went half-open — a socket that
+  ///    reads OPEN but is dead, which nothing else on a never-backgrounded
+  ///    kiosk ever notices): [ensureHaConnected] nudges it and waits;
+  ///  - the HA shell without a connection (the "Unable to connect,
+  ///    retrying in Ns" screen, whose countdown grows and is never
+  ///    short-circuited by the frontend when the network returns), or a
+  ///    Chromium error page: re-navigate now;
+  ///  - anything else (a healthy non-HA page): left alone.
+  Future<void> onNetworkAvailable() async {
+    if (_controller == null || _networkRepairBusy) return;
+    if (DateTime.now().difference(_lastNetworkRepair).inSeconds < 10) return;
+    _networkRepairBusy = true;
+    _lastNetworkRepair = DateTime.now();
+    try {
+      // Let routes and DNS settle: onAvailable fires when the interface is
+      // up, which is a beat before connections actually succeed.
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (_controller == null) return;
+      final state = await _probePageState();
+      log.info(name, 'network returned; page state: $state');
+      switch (state) {
+        case 'connected':
+          return;
+        case 'stale':
+          // Nudges the frontend's reconnect and polls; a page mid-boot
+          // (connection object present, socket still opening) passes here
+          // without a disruptive reload.
+          if (!await ensureHaConnected(
+              timeout: const Duration(seconds: 8))) {
+            await _renavigate();
+          }
+        case 'shell':
+        case 'error-page':
+          await _renavigate();
+        default:
+          // A non-HA page that probes healthy, or a probe that failed:
+          // reloading might destroy real state, so leave it be.
+          return;
+      }
+    } finally {
+      _networkRepairBusy = false;
+    }
+  }
+
+  /// Where the page is (or should have been): the last committed URL, else
+  /// the start URL — the fallback that matters when the very first load
+  /// failed and there is nothing committed to reload.
+  Future<void> _renavigate() async {
+    final target = _currentUrl.isNotEmpty ? _currentUrl : startUrl;
+    if (target.isEmpty) return;
+    log.info(name, 'reloading after network outage: $target');
+    await loadUrl(target);
+  }
+
+  /// One JS round trip classifying the current document. Error pages
+  /// commit as chrome-error://, so location tells them apart from any real
+  /// page; the HA element split mirrors [_haConnected].
+  Future<String> _probePageState() async {
+    final controller = _controller;
+    if (controller == null) return 'none';
+    try {
+      final r = await controller.evaluateJavascript(source: '''
+        (function () {
+          try {
+            if (location.href.indexOf('chrome-error') === 0) {
+              return 'error-page';
+            }
+            var ha = document.querySelector('home-assistant');
+            if (ha) {
+              var c = ha.hass && ha.hass.connection;
+              if (c && c.connected && c.socket &&
+                  c.socket.readyState === 1) {
+                return 'connected';
+              }
+              return 'stale';
+            }
+            if (document.querySelector('ha-init-page, ha-launch-screen')) {
+              return 'shell';
+            }
+            return 'other';
+          } catch (e) { return 'other'; }
+        })()
+      ''');
+      return '$r'.replaceAll('"', '');
+    } catch (_) {
+      return 'none';
+    }
   }
 
   /// True when the Home Assistant frontend's websocket is live right now.

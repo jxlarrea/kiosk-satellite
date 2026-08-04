@@ -10,6 +10,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
 import android.hardware.display.DisplayManager
+import android.net.ConnectivityManager
+import android.net.Network
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -370,6 +372,44 @@ class BackgroundBridge(
         }
     }
 
+    // Default-network transitions, pushed to Dart so a manager holding a
+    // dead connection retries NOW instead of waiting out its own timers
+    // (MQTT after an offline boot, a stale HA page, the glance socket).
+    //
+    // registerDefaultNetworkCallback replays onAvailable immediately when a
+    // network already exists at registration. That replay is not an outage
+    // ending, so it is flagged `initial` for the Dart side to drop — but
+    // only when a network really was up at registration. When the app boots
+    // offline, the first onAvailable IS the recovery, and swallowing it
+    // would leave every consumer to its slow path (the Sendspin bridge's
+    // blanket skip-the-first had exactly that bug).
+    @Volatile private var expectInitialNetworkReplay = false
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            val initial = expectInitialNetworkReplay
+            expectInitialNetworkReplay = false
+            // NetworkCallback fires on a binder thread; the channel must be
+            // driven from the platform main thread.
+            Handler(Looper.getMainLooper()).post {
+                channel.invokeMethod(
+                    "networkChanged",
+                    mapOf("up" to true, "initial" to initial),
+                )
+            }
+        }
+
+        override fun onLost(network: Network) {
+            expectInitialNetworkReplay = false
+            Handler(Looper.getMainLooper()).post {
+                channel.invokeMethod(
+                    "networkChanged",
+                    mapOf("up" to false, "initial" to false),
+                )
+            }
+        }
+    }
+
     // A second init block on purpose: initializers run in declaration order,
     // so downloadReceiver exists by the time this registers it. EXPORTED
     // because ACTION_DOWNLOAD_COMPLETE is not a protected system broadcast;
@@ -423,6 +463,18 @@ class BackgroundBridge(
             },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+        try {
+            val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+            // Read BEFORE registering: this is what tells the registration
+            // replay apart from a genuine network arrival (offline boot).
+            expectInitialNetworkReplay = cm.activeNetwork != null
+            cm.registerDefaultNetworkCallback(networkCallback)
+        } catch (e: Exception) {
+            // Callback limit reached or no such service: network events
+            // simply never fire and every consumer keeps its own timers.
+            android.util.Log.w("kiosk_satellite", "network callback failed", e)
+        }
     }
 
     // Enqueue a WebView download; returns the DownloadManager id so the
@@ -785,6 +837,11 @@ class BackgroundBridge(
         }
         try {
             context.contentResolver.unregisterContentObserver(dozeObserver)
+        } catch (_: Exception) {
+        }
+        try {
+            (context.getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager).unregisterNetworkCallback(networkCallback)
         } catch (_: Exception) {
         }
     }
