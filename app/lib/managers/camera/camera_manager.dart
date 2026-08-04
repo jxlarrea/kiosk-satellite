@@ -8,14 +8,37 @@ import 'package:flutter/foundation.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../home_assistant/home_assistant_manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'models.dart';
 
 class CameraManager extends Manager {
-  CameraManager(super.bus, super.commands, super.log, this._settings);
+  CameraManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this._settings,
+    this._homeAssistant,
+  );
 
   final SettingsManager _settings;
+
+  /// Streams `ha`-kind cameras through Home Assistant's own WebRTC
+  /// signaling (issue #124); same composition-root reference pattern as
+  /// the glance manager.
+  final HomeAssistantManager _homeAssistant;
+
+  /// Open HA signaling sessions by camera id: each carries the backend's
+  /// trickled ICE candidates for one live stream, so it must outlive the
+  /// negotiation and die with the stream.
+  final _haSessions = <String, HaWebRtcSession>{};
+
+  /// Set by the active camera surface (the view overlay / screensaver
+  /// player): routes a backend ICE candidate into that page's peer
+  /// connection. Composition wiring, not a manager reference.
+  void Function(String cameraId, Map<String, Object?> candidate)?
+  onRemoteCandidate;
 
   @override
   String get name => 'camera';
@@ -103,15 +126,25 @@ class CameraManager extends Manager {
       )
       ..register(
         Command(
+          name: 'cameraImportHomeAssistant',
+          description:
+              'Import and merge the WebRTC-capable camera entities of the '
+              'connected Home Assistant (issue #124).',
+          handler: (_) => importHomeAssistantCameras(),
+        ),
+      )
+      ..register(
+        Command(
           name: 'cameraPutSource',
           description: 'Create or update a camera source.',
           params: const {
             'id': 'Existing camera id, or empty to create one',
             'name': 'Display name',
-            'kind': 'go2rtc or whep',
+            'kind': 'go2rtc, whep or ha',
             'serverId': 'Go2RTC server id',
             'streamName': 'Go2RTC stream name',
             'whepUrl': 'Direct WHEP endpoint',
+            'entityId': 'Home Assistant camera.* entity id (kind ha)',
             'fullscreenStreamName':
                 'Optional higher-quality Go2RTC stream for focus mode',
           },
@@ -191,6 +224,7 @@ class CameraManager extends Manager {
   Future<void> dispose() async {
     await _settingsSub?.cancel();
     await _voiceSub?.cancel();
+    closeHaSessions();
     activeViewId.dispose();
     focusedCameraId.dispose();
   }
@@ -359,6 +393,59 @@ class CameraManager extends Manager {
     }
   }
 
+  /// Same merge semantics as the Go2RTC import, keyed by entity id:
+  /// re-importing adds new entities, keeps names and view membership of
+  /// existing ones, and marks entities that stopped answering (removed,
+  /// or no longer WebRTC-capable) as missing rather than deleting them.
+  Future<CommandResult> importHomeAssistantCameras() async {
+    final List<({String entityId, String name})>? found;
+    try {
+      found = await _homeAssistant.listWebRtcCameras();
+    } catch (error) {
+      return CommandResult.fail('could not read Home Assistant: $error');
+    }
+    if (found == null) {
+      return const CommandResult.fail(
+        'Home Assistant is not configured or unreachable',
+      );
+    }
+    final byEntity = {for (final item in found) item.entityId: item};
+    final cameras = <CameraSource>[];
+    var added = 0;
+    var restored = 0;
+    for (final camera in _config.cameras) {
+      if (camera.kind != 'ha' || !camera.imported) {
+        cameras.add(camera);
+        continue;
+      }
+      final present = byEntity.remove(camera.entityId) != null;
+      if (present && camera.missing) restored++;
+      cameras.add(camera.copyWith(missing: !present));
+    }
+    for (final item in byEntity.values) {
+      cameras.add(
+        CameraSource(
+          id: _newId(),
+          name: item.name,
+          kind: 'ha',
+          entityId: item.entityId,
+          imported: true,
+        ),
+      );
+      added++;
+    }
+    await _save(_config.copyWith(cameras: cameras));
+    final missing = cameras
+        .where((camera) => camera.kind == 'ha' && camera.missing)
+        .length;
+    return CommandResult.ok({
+      'added': added,
+      'restored': restored,
+      'missing': missing,
+      'total': cameras.where((camera) => camera.kind == 'ha').length,
+    });
+  }
+
   Future<CommandResult> _putSourceCommand(Map<String, Object?> params) async {
     final requestedId = '${params['id'] ?? ''}'.trim();
     final existing = _config.cameras
@@ -367,19 +454,24 @@ class CameraManager extends Manager {
     final name = '${params['name'] ?? ''}'.trim();
     final kind = '${params['kind'] ?? existing?.kind ?? 'go2rtc'}';
     if (name.isEmpty) return const CommandResult.fail('name required');
-    if (kind != 'go2rtc' && kind != 'whep') {
-      return const CommandResult.fail('kind must be go2rtc or whep');
+    if (kind != 'go2rtc' && kind != 'whep' && kind != 'ha') {
+      return const CommandResult.fail('kind must be go2rtc, whep or ha');
     }
     final serverId = '${params['serverId'] ?? existing?.serverId ?? ''}'.trim();
     final streamName = '${params['streamName'] ?? existing?.streamName ?? ''}'
         .trim();
     final whepUrl = '${params['whepUrl'] ?? existing?.whepUrl ?? ''}'.trim();
+    final entityId = '${params['entityId'] ?? existing?.entityId ?? ''}'.trim();
     if (kind == 'go2rtc') {
       if (!_config.servers.any((server) => server.id == serverId)) {
         return const CommandResult.fail('valid serverId required');
       }
       if (streamName.isEmpty) {
         return const CommandResult.fail('streamName required');
+      }
+    } else if (kind == 'ha') {
+      if (!entityId.startsWith('camera.')) {
+        return const CommandResult.fail('a camera.* entityId is required');
       }
     } else {
       final uri = Uri.tryParse(whepUrl);
@@ -397,6 +489,7 @@ class CameraManager extends Manager {
       serverId: kind == 'go2rtc' ? serverId : null,
       streamName: kind == 'go2rtc' ? streamName : null,
       whepUrl: kind == 'whep' ? whepUrl : null,
+      entityId: kind == 'ha' ? entityId : null,
       fullscreenStreamName:
           '${params['fullscreenStreamName'] ?? existing?.fullscreenStreamName ?? ''}'
               .trim(),
@@ -544,6 +637,7 @@ class CameraManager extends Manager {
     if (activeViewId.value == null) return;
     focusedCameraId.value = null;
     activeViewId.value = null;
+    closeHaSessions();
     _publishState();
   }
 
@@ -616,6 +710,34 @@ class CameraManager extends Manager {
     return CommandResult.ok(_stateJson());
   }
 
+  /// The RTCConfiguration the page should build its peer connection with,
+  /// or null for browser defaults. Only `ha` cameras carry one: Home
+  /// Assistant hands out the ICE servers its backend expects (TURN for
+  /// cloud setups); Go2RTC and WHEP on the LAN need nothing.
+  Future<Map<String, Object?>?> rtcConfigFor(String cameraId) async {
+    final camera = _config.cameras
+        .where((item) => item.id == cameraId)
+        .firstOrNull;
+    final entityId = camera?.entityId;
+    if (camera?.kind != 'ha' || entityId == null || entityId.isEmpty) {
+      return null;
+    }
+    return _homeAssistant.webRtcClientConfig(entityId);
+  }
+
+  /// Close every open Home Assistant signaling session. Runs when the
+  /// camera surface goes away (view hidden, player torn down): the
+  /// sessions exist to relay ICE candidates into peer connections that no
+  /// longer exist, and each holds a websocket into Home Assistant.
+  void closeHaSessions() {
+    if (_haSessions.isEmpty) return;
+    final sessions = _haSessions.values.toList();
+    _haSessions.clear();
+    for (final session in sessions) {
+      unawaited(session.close());
+    }
+  }
+
   Future<String> negotiate({
     required String cameraId,
     required String offer,
@@ -625,6 +747,23 @@ class CameraManager extends Manager {
         .where((item) => item.id == cameraId)
         .firstOrNull;
     if (camera == null) throw StateError('camera not found');
+    if (camera.kind == 'ha') {
+      final entityId = camera.entityId;
+      if (entityId == null || entityId.isEmpty) {
+        throw StateError('camera has no entity id');
+      }
+      // A renegotiation (focus mode, the page's retry ladder) replaces the
+      // stream; the old session's candidates belong to a dead peer.
+      unawaited(_haSessions.remove(cameraId)?.close());
+      final result = await _homeAssistant.cameraWebRtcOffer(
+        entityId: entityId,
+        offer: offer,
+        onCandidate: (candidate) =>
+            onRemoteCandidate?.call(cameraId, candidate),
+      );
+      _haSessions[cameraId] = result.session;
+      return result.answer;
+    }
     CameraServer? server;
     Uri uri;
     if (camera.kind == 'go2rtc') {

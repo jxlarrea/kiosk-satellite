@@ -39,7 +39,11 @@ class AppContainer {
     screen = ScreenManager(bus, commands, log, settings);
     proxy = ProxyManager(bus, commands, log, settings);
     browser = BrowserManager(bus, commands, log, settings);
-    camera = CameraManager(bus, commands, log, settings);
+    // Constructed before camera, which streams Home Assistant camera
+    // entities through its WebRTC signaling (issue #124). Construction
+    // order only; init order below is unchanged.
+    homeAssistant = HomeAssistantManager(bus, commands, log, settings);
+    camera = CameraManager(bus, commands, log, settings, homeAssistant);
     // Composition-root wiring, not a manager-to-manager reference: every
     // page load funnels through BrowserManager.loadUrl, and the proxy is
     // the one that knows whether the URL must move to the loopback origin.
@@ -53,7 +57,6 @@ class AppContainer {
     // motion manager's gate reads.
     deviceCamera = DeviceCameraManager(bus, commands, log, settings);
     motion = MotionManager(bus, commands, log, settings);
-    homeAssistant = HomeAssistantManager(bus, commands, log, settings);
     // Before wakeWord: its init seeds the mic selector the engine reads at
     // start, and its SettingChanged subscription must run before wakeWord's
     // restart re-opens capture.
@@ -103,36 +106,36 @@ class AppContainer {
   late final JsApiManager jsApi;
 
   List<Manager> get _ordered => [
-        settings,
-        device,
-        screen,
-        proxy,
-        browser,
-        camera,
-        jsApi,
-        kiosk,
-        // After kiosk: it listens for the AppLaunched its launchApp emits,
-        // and its bringToFront/screenOn calls resolve at execute time.
-        launcher,
-        // After kiosk and before the action surfaces it drives: it only
-        // listens for GestureDetected and runs registered commands.
-        gestures,
-        screensaver,
-        immich,
-        deviceCamera,
-        motion,
-        homeAssistant,
-        audio,
-        wakeWord,
-        mqtt,
-        sendspin,
-        dlna,
-        files,
-        glance,
-        sound,
-        update,
-        remote,
-      ];
+    settings,
+    device,
+    screen,
+    proxy,
+    browser,
+    camera,
+    jsApi,
+    kiosk,
+    // After kiosk: it listens for the AppLaunched its launchApp emits,
+    // and its bringToFront/screenOn calls resolve at execute time.
+    launcher,
+    // After kiosk and before the action surfaces it drives: it only
+    // listens for GestureDetected and runs registered commands.
+    gestures,
+    screensaver,
+    immich,
+    deviceCamera,
+    motion,
+    homeAssistant,
+    audio,
+    wakeWord,
+    mqtt,
+    sendspin,
+    dlna,
+    files,
+    glance,
+    sound,
+    update,
+    remote,
+  ];
 
   Future<void> init() async {
     await settings.init();

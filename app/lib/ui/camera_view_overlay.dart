@@ -187,6 +187,13 @@ class _CameraPlayerState extends State<CameraPlayer> {
     final controller = _controller;
     if (controller == null || _tornDown) return;
     _tornDown = true;
+    // The page's peers are about to die; the HA signaling sessions feeding
+    // them candidates die with them, and the candidate route is unhooked
+    // so a later surface starts clean.
+    if (widget.container.camera.onRemoteCandidate != null) {
+      widget.container.camera.onRemoteCandidate = null;
+    }
+    widget.container.camera.closeHaSessions();
     controller.evaluateJavascript(source: 'shutdown();');
     controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
   }
@@ -281,6 +288,29 @@ class _CameraPlayerState extends State<CameraPlayer> {
       ),
       onWebViewCreated: (controller) {
         _controller = controller;
+        // This player is the camera surface: Home Assistant's trickled ICE
+        // candidates (issue #124) land on the manager and are pushed into
+        // the page's matching peer connection from here.
+        widget.container.camera.onRemoteCandidate = (cameraId, candidate) {
+          _controller?.evaluateJavascript(
+            source:
+                'window.ksAddCandidate && ksAddCandidate('
+                '${jsonEncode(cameraId)}, ${jsonEncode(candidate)});',
+          );
+        };
+        controller.addJavaScriptHandler(
+          handlerName: 'cameraRtcConfig',
+          callback: (args) async {
+            try {
+              final request = (args.first as Map).cast<String, Object?>();
+              return await widget.container.camera.rtcConfigFor(
+                '${request['cameraId'] ?? ''}',
+              );
+            } catch (_) {
+              return null;
+            }
+          },
+        );
         controller.addJavaScriptHandler(
           handlerName: 'cameraOffer',
           callback: (args) async {

@@ -1573,6 +1573,7 @@ const CAMERA_ICONS = {
   dns: '<rect x="3" y="4" width="18" height="6" rx="2"/>'
     + '<rect x="3" y="14" width="18" height="6" rx="2"/>'
     + '<path d="M7 7h.01M7 17h.01M11 7h7M11 17h7"/>',
+  home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/>',
   download: '<path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/>',
   delete: '<path d="M4 7h16M9 7V4h6v3m-8 0 1 14h8l1-14M10 11v6m4-6v6"/>',
   add: '<path d="M12 5v14M5 12h14"/>',
@@ -2006,6 +2007,7 @@ async function editCameraSource(config, camera) {
   const kind = cameraSelectField('Type', [
     { value: 'go2rtc', label: 'Go2RTC stream' },
     { value: 'whep', label: 'Direct WHEP URL' },
+    { value: 'ha', label: 'Home Assistant camera' },
   ], initialKind);
   const server = cameraSelectField(
     'Server',
@@ -2018,6 +2020,7 @@ async function editCameraSource(config, camera) {
     camera?.fullscreenStreamName || '',
   );
   const whep = cameraField('WHEP URL', camera?.whepUrl || '');
+  const entity = cameraField('Camera entity', camera?.entityId || '');
   body.append(
     name.wrap,
     kind.wrap,
@@ -2025,13 +2028,16 @@ async function editCameraSource(config, camera) {
     stream.wrap,
     fullscreen.wrap,
     whep.wrap,
+    entity.wrap,
   );
   const updateKind = () => {
-    const go2rtc = kind.select.value === 'go2rtc';
+    const value = kind.select.value;
+    const go2rtc = value === 'go2rtc';
     server.wrap.style.display = go2rtc ? '' : 'none';
     stream.wrap.style.display = go2rtc ? '' : 'none';
     fullscreen.wrap.style.display = go2rtc ? '' : 'none';
-    whep.wrap.style.display = go2rtc ? 'none' : '';
+    whep.wrap.style.display = value === 'whep' ? '' : 'none';
+    entity.wrap.style.display = value === 'ha' ? '' : 'none';
   };
   kind.select.addEventListener('change', updateKind);
   updateKind();
@@ -2046,6 +2052,7 @@ async function editCameraSource(config, camera) {
       streamName: stream.input.value,
       fullscreenStreamName: fullscreen.input.value,
       whepUrl: whep.input.value,
+      entityId: entity.input.value,
     }),
   });
 }
@@ -2217,6 +2224,29 @@ async function loadCameras() {
   };
   const refresh = () => loadCameras();
 
+  heading('Home Assistant');
+  const haCard = card();
+  haCard.appendChild(cameraListRow(
+    'Import WebRTC cameras from Home Assistant',
+    'Add every camera the connected Home Assistant can stream over '
+      + 'WebRTC. Importing again merges new cameras.',
+    [
+      cameraAction('Import', async () => {
+        const imported = await cmd('cameraImportHomeAssistant');
+        if (!imported.ok) {
+          await messageBox({ title: 'Import failed', message: imported.error });
+        } else {
+          await messageBox({
+            title: 'Import complete',
+            message: `${imported.data.added} added, ${imported.data.missing} missing.`,
+          });
+        }
+        refresh();
+      }, false, 'download'),
+    ],
+    { icon: 'home' },
+  ));
+
   heading('Go2RTC servers');
   const serversCard = card();
   for (const server of config.servers) {
@@ -2267,7 +2297,7 @@ async function loadCameras() {
   if (!config.cameras.length) {
     camerasCard.appendChild(cameraListRow(
       'No cameras configured',
-      'Import Go2RTC streams or add one manually.',
+      'Import cameras from Home Assistant or Go2RTC, or add one manually.',
       [],
       { icon: 'videoOff' },
     ));
@@ -2276,8 +2306,11 @@ async function loadCameras() {
   for (const camera of config.cameras) {
     const description = camera.kind === 'whep'
       ? camera.whepUrl
-      : `${serverNames[camera.serverId] || 'Unknown server'}: ${camera.streamName}`
-        + (camera.missing ? ' (missing)' : '');
+      : camera.kind === 'ha'
+        ? `Home Assistant: ${camera.entityId || ''}`
+          + (camera.missing ? ' (missing)' : '')
+        : `${serverNames[camera.serverId] || 'Unknown server'}: ${camera.streamName}`
+          + (camera.missing ? ' (missing)' : '');
     camerasCard.appendChild(cameraListRow(camera.name, description, [
       cameraAction('Delete', async () => {
         const choice = await messageBox({
@@ -2298,7 +2331,7 @@ async function loadCameras() {
   }
   camerasCard.appendChild(cameraListRow(
     'Add camera manually',
-    'Use a Go2RTC stream name or a WHEP URL.',
+    'Use a Go2RTC stream name, a WHEP URL or a Home Assistant camera entity.',
     [],
     {
       icon: 'add',

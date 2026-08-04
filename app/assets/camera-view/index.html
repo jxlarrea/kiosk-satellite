@@ -129,6 +129,18 @@ function shutdown() {
   for (const camera of CFG.cameras) stop(camera.id);
 }
 
+// Home Assistant signals its ICE candidates AFTER the answer (trickle);
+// the app relays each one here for the camera's live peer connection.
+// Candidates for a peer that was already replaced fail addIceCandidate
+// harmlessly - the app closes the old signaling session on renegotiation,
+// so stragglers are a frame or two at most.
+window.ksAddCandidate = (cameraId, candidate) => {
+  const session = sessions.get(cameraId);
+  if (!session || !session.pc) return;
+  session.pc.addIceCandidate(candidate)
+    .catch((error) => log(`candidate ${cameraId}: ${error}`));
+};
+
 function clearPendingTap() {
   clearTimeout(tapTimer);
   tapTimer = null;
@@ -176,7 +188,14 @@ async function start(cameraId, fullscreen) {
     clearTimeout(session.grace);
     session.grace = null;
     setStatus(cameraId, 'Connecting...');
-    const pc = new RTCPeerConnection();
+    // Home Assistant cameras carry the ICE servers HA's backend expects
+    // (TURN for cloud setups); everything else answers null and streams
+    // with browser defaults, which is what a LAN Go2RTC needs.
+    let rtcConfig = null;
+    try { rtcConfig = await bridge('cameraRtcConfig', { cameraId }); } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    const pc = new RTCPeerConnection(
+      rtcConfig && rtcConfig.iceServers ? { iceServers: rtcConfig.iceServers } : {});
     session.pc = pc;
     pc.addTransceiver('video', { direction: 'recvonly' });
     pc.ontrack = (event) => {

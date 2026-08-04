@@ -8,6 +8,7 @@ import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/camera/camera_manager.dart';
 import 'package:kiosk_satellite/managers/camera/models.dart';
+import 'package:kiosk_satellite/managers/home_assistant/home_assistant_manager.dart';
 import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,6 +59,62 @@ void main() {
   });
 
   test(
+    'ha camera sources round trip and validate their entity (#124)',
+    () async {
+      const source = CameraSource(
+        id: 'x',
+        name: 'Front door',
+        kind: 'ha',
+        entityId: 'camera.front_door',
+        imported: true,
+      );
+      final decoded = CameraSource.fromJson(
+        jsonDecode(jsonEncode(source.toJson())) as Map,
+      );
+      expect(decoded.kind, 'ha');
+      expect(decoded.entityId, 'camera.front_door');
+      expect(decoded.imported, isTrue);
+
+      SharedPreferences.setMockInitialValues({});
+      final bus = EventBus();
+      final logger = Logger();
+      final commands = CommandRegistry(logger);
+      final settings = SettingsManager(bus, commands, logger);
+      await settings.init();
+      final cameras = CameraManager(
+        bus,
+        commands,
+        logger,
+        settings,
+        HomeAssistantManager(bus, commands, logger, settings),
+      );
+      await cameras.init();
+
+      // No entity, or one that is not a camera: refused with a clear error.
+      final missing = await commands.execute('cameraPutSource', {
+        'name': 'Doorbell',
+        'kind': 'ha',
+      });
+      expect(missing.ok, isFalse);
+      final wrong = await commands.execute('cameraPutSource', {
+        'name': 'Doorbell',
+        'kind': 'ha',
+        'entityId': 'light.porch',
+      });
+      expect(wrong.ok, isFalse);
+
+      final put = await commands.execute('cameraPutSource', {
+        'name': 'Doorbell',
+        'kind': 'ha',
+        'entityId': 'camera.doorbell',
+      });
+      expect(put.ok, isTrue);
+      expect((put.data as Map)['entityId'], 'camera.doorbell');
+      expect(cameras.config.cameras.single.kind, 'ha');
+    },
+  );
+
+  test(
     'commands create a view, mask passwords, and validate membership',
     () async {
       SharedPreferences.setMockInitialValues({});
@@ -66,7 +123,13 @@ void main() {
       final commands = CommandRegistry(logger);
       final settings = SettingsManager(bus, commands, logger);
       await settings.init();
-      final cameras = CameraManager(bus, commands, logger, settings);
+      final cameras = CameraManager(
+        bus,
+        commands,
+        logger,
+        settings,
+        HomeAssistantManager(bus, commands, logger, settings),
+      );
       await cameras.init();
 
       final server = await commands.execute('cameraPutServer', {
@@ -154,7 +217,13 @@ void main() {
     final commands = CommandRegistry(logger);
     final settings = SettingsManager(bus, commands, logger);
     await settings.init();
-    final cameras = CameraManager(bus, commands, logger, settings);
+    final cameras = CameraManager(
+      bus,
+      commands,
+      logger,
+      settings,
+      HomeAssistantManager(bus, commands, logger, settings),
+    );
     await cameras.init();
     final screensaver = ScreensaverManager(bus, commands, logger, settings);
     await screensaver.init();
@@ -213,7 +282,13 @@ void main() {
     final commands = CommandRegistry(logger);
     final settings = SettingsManager(bus, commands, logger);
     await settings.init();
-    final cameras = CameraManager(bus, commands, logger, settings);
+    final cameras = CameraManager(
+      bus,
+      commands,
+      logger,
+      settings,
+      HomeAssistantManager(bus, commands, logger, settings),
+    );
     await cameras.init();
 
     final addedServer = await commands.execute('cameraPutServer', {
@@ -260,7 +335,13 @@ void main() {
     final commands = CommandRegistry(logger);
     final settings = SettingsManager(bus, commands, logger);
     await settings.init();
-    final cameras = CameraManager(bus, commands, logger, settings);
+    final cameras = CameraManager(
+      bus,
+      commands,
+      logger,
+      settings,
+      HomeAssistantManager(bus, commands, logger, settings),
+    );
     await cameras.init();
 
     // Present on a configuration that has never been touched.

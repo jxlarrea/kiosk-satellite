@@ -62,6 +62,7 @@ class CameraSource {
     this.serverId,
     this.streamName,
     this.whepUrl,
+    this.entityId,
     this.fullscreenStreamName,
     this.imported = false,
     this.missing = false,
@@ -70,11 +71,15 @@ class CameraSource {
   final String id;
   final String name;
 
-  /// `go2rtc` or `whep`.
+  /// `go2rtc`, `whep`, or `ha` (a Home Assistant camera entity streamed
+  /// over HA's own WebRTC signaling, issue #124).
   final String kind;
   final String? serverId;
   final String? streamName;
   final String? whepUrl;
+
+  /// The `camera.*` entity id backing a `ha` camera.
+  final String? entityId;
   final String? fullscreenStreamName;
   final bool imported;
   final bool missing;
@@ -84,6 +89,7 @@ class CameraSource {
     String? serverId,
     String? streamName,
     String? whepUrl,
+    String? entityId,
     String? fullscreenStreamName,
     bool? imported,
     bool? missing,
@@ -94,6 +100,7 @@ class CameraSource {
     serverId: serverId ?? this.serverId,
     streamName: streamName ?? this.streamName,
     whepUrl: whepUrl ?? this.whepUrl,
+    entityId: entityId ?? this.entityId,
     fullscreenStreamName: fullscreenStreamName ?? this.fullscreenStreamName,
     imported: imported ?? this.imported,
     missing: missing ?? this.missing,
@@ -106,6 +113,7 @@ class CameraSource {
     if (serverId != null) 'serverId': serverId,
     if (streamName != null) 'streamName': streamName,
     if (whepUrl != null) 'whepUrl': whepUrl,
+    if (entityId != null) 'entityId': entityId,
     if (fullscreenStreamName != null && fullscreenStreamName!.isNotEmpty)
       'fullscreenStreamName': fullscreenStreamName,
     if (imported) 'imported': imported,
@@ -119,6 +127,7 @@ class CameraSource {
     serverId: json['serverId'] as String?,
     streamName: json['streamName'] as String?,
     whepUrl: json['whepUrl'] as String?,
+    entityId: json['entityId'] as String?,
     fullscreenStreamName: json['fullscreenStreamName'] as String?,
     imported: json['imported'] == true,
     missing: json['missing'] == true,

@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- Import WebRTC cameras from Home Assistant (#124): a new Home Assistant group at the top of the WebRTC Cameras settings imports every camera entity the connected Home Assistant can stream over WebRTC (Home Assistant 2024.11 or newer), no Go2RTC URL or WHEP setup involved. Imported cameras stream through Home Assistant's own WebRTC signaling on the existing connection, including its ICE server configuration, so cloud setups work too. Re-importing merges new entities and marks removed ones as missing, exactly like the Go2RTC import, and a Home Assistant camera entity can also be added manually in the camera editor.
 - Postpone screensaver on motion, a new opt-in switch in the screensaver's Motion Detection section (discussion #126): the camera also watches between screensavers, and movement nearby keeps resetting the idle timeout, so the screensaver stays away while people are actually around. An extension of Dismiss on motion, so it appears and acts only with that switch on. Off by default because this direction is the expensive one: the camera runs permanently while the screen is in use, which adds CPU load and heat. The camera still stands down whenever the screen is off.
 
 ## v0.33.4-beta - 2026-08-04

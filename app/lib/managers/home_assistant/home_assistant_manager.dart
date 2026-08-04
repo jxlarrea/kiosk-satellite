@@ -103,258 +103,290 @@ class HomeAssistantManager extends Manager {
       }
     });
     commands
-      ..register(Command(
-        name: 'haCheckConnection',
-        description: 'Validate the Home Assistant URL and token',
-        handler: (_) async {
-          final error = await validateConnection();
-          return error == null
-              ? const CommandResult.ok()
-              : CommandResult.fail(error);
-        },
-      ))
-      ..register(Command(
-        name: 'haStatus',
-        description:
-            'Whether Home Assistant is configured and this run\'s '
-            'connection check passed.',
-        handler: (_) async => CommandResult.ok({
-          'configured': configured,
-          'connected': connectionOk.value,
-        }),
-      ))
-      ..register(Command(
-        name: 'haDetectVoiceSatellite',
-        description:
-            'Whether the Voice Satellite integration is installed on the '
-            'connected Home Assistant instance.',
-        handler: (_) async => CommandResult.ok(await detectVoiceSatellite()),
-      ))
-      ..register(Command(
-        name: 'applyVsRecommended',
-        description:
-            'Apply the recommended settings for a Voice Satellite kiosk: '
-            'resilience, refresh, mixed content, mic, autoplay, boot '
-            'start, keep-awake, wake word, remote management and the '
-            'dashboard optimizations.',
-        handler: (_) async {
-          const recommended = <String, Object>{
-            'browser.auto_reload_on_error': true,
-            'browser.pull_to_refresh': true,
-            'browser.pull_to_refresh_clear_cache': true,
-            'browser.allow_mixed_content': true,
-            'browser.ignore_ssl_errors': true,
-            'web.microphone': true,
-            'web.autoplay': true,
-            'kiosk.start_on_boot': true,
-            'screen.keep_on': true,
-            'wake_word.enabled': true,
-            'wake_word.background': true,
-            'remote.enabled': true,
-            'browser.disable_suspend': true,
-            'browser.freeze_on_screensaver': true,
-            'browser.ws_filter': true,
-          };
-          var applied = 0;
-          for (final entry in recommended.entries) {
-            if (await _settings.setFromJson(entry.key, entry.value)) {
-              applied++;
-            } else {
-              log.warn(name, 'recommended setting rejected: ${entry.key}');
+      ..register(
+        Command(
+          name: 'haCheckConnection',
+          description: 'Validate the Home Assistant URL and token',
+          handler: (_) async {
+            final error = await validateConnection();
+            return error == null
+                ? const CommandResult.ok()
+                : CommandResult.fail(error);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haStatus',
+          description:
+              'Whether Home Assistant is configured and this run\'s '
+              'connection check passed.',
+          handler: (_) async => CommandResult.ok({
+            'configured': configured,
+            'connected': connectionOk.value,
+          }),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haDetectVoiceSatellite',
+          description:
+              'Whether the Voice Satellite integration is installed on the '
+              'connected Home Assistant instance.',
+          handler: (_) async => CommandResult.ok(await detectVoiceSatellite()),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'applyVsRecommended',
+          description:
+              'Apply the recommended settings for a Voice Satellite kiosk: '
+              'resilience, refresh, mixed content, mic, autoplay, boot '
+              'start, keep-awake, wake word, remote management and the '
+              'dashboard optimizations.',
+          handler: (_) async {
+            const recommended = <String, Object>{
+              'browser.auto_reload_on_error': true,
+              'browser.pull_to_refresh': true,
+              'browser.pull_to_refresh_clear_cache': true,
+              'browser.allow_mixed_content': true,
+              'browser.ignore_ssl_errors': true,
+              'web.microphone': true,
+              'web.autoplay': true,
+              'kiosk.start_on_boot': true,
+              'screen.keep_on': true,
+              'wake_word.enabled': true,
+              'wake_word.background': true,
+              'remote.enabled': true,
+              'browser.disable_suspend': true,
+              'browser.freeze_on_screensaver': true,
+              'browser.ws_filter': true,
+            };
+            var applied = 0;
+            for (final entry in recommended.entries) {
+              if (await _settings.setFromJson(entry.key, entry.value)) {
+                applied++;
+              } else {
+                log.warn(name, 'recommended setting rejected: ${entry.key}');
+              }
             }
-          }
-          return CommandResult.ok({'applied': applied});
-        },
-      ))
-      ..register(Command(
-        name: 'haListVoiceSatellites',
-        description:
-            'The assist_satellite entities the Voice Satellite '
-            'integration provides.',
-        handler: (_) async {
-          final satellites = await listVoiceSatellites();
-          return satellites == null
-              ? const CommandResult.fail('could not list satellites')
-              : CommandResult.ok(satellites);
-        },
-      ))
-      ..register(Command(
-        name: 'haSearchEntities',
-        description:
-            'Search entities by id or friendly name, for the At a Glance '
-            'picker. Returns at most 50, closest matches first.',
-        params: const {'query': 'text to match against id and name'},
-        handler: (p) async {
-          final matches = await searchEntities('${p['query'] ?? ''}');
-          return matches == null
-              ? const CommandResult.fail('could not list entities')
-              : CommandResult.ok(matches);
-        },
-      ))
-      ..register(Command(
-        name: 'haListDashboards',
-        description: 'List Home Assistant dashboards',
-        handler: (_) async {
-          final dashboards = await listDashboards();
-          return dashboards == null
-              ? const CommandResult.fail('could not list dashboards')
-              : CommandResult.ok(dashboards);
-        },
-      ))
-      ..register(Command(
-        name: 'haListDashboardViews',
-        description: "One dashboard's views, for the rotation picker",
-        params: const {'url_path': "the dashboard's url_path"},
-        handler: (p) async {
-          final views = await listDashboardViews('${p['url_path'] ?? ''}');
-          return views == null
-              ? const CommandResult.fail('could not read the dashboard')
-              : CommandResult.ok(views);
-        },
-      ))
-      ..register(Command(
-        name: 'haNavigate',
-        description:
-            'Navigate the kiosk to a dashboard view path, dismissing the '
-            'screensaver and any overlays so the view is actually seen.',
-        params: const {'path': 'the navigation path ("url_path/view-route")'},
-        handler: (p) async {
-          final path = '${p['path'] ?? ''}'
-              .trim()
-              .replaceAll(RegExp(r'^/+|/+$'), '');
-          if (path.isEmpty) return const CommandResult.fail('no path');
-          if (!configured) {
-            return const CommandResult.fail('Home Assistant not configured');
-          }
-          await commands.execute('stopScreensaver', const {});
-          await commands.execute('hideCameraView', const {});
-          // A commanded view should not instantly rotate away: give it the
-          // same grace window a touch gets.
-          if (_rotationTimer != null) _pauseRotationForTouch();
-          await navigateToViewPath(path);
-          return const CommandResult.ok(null);
-        },
-      ))
-      ..register(Command(
-        name: 'haCallService',
-        description:
-            'Call a Home Assistant service (covers scripts, scenes and '
-            'automation triggers). data is the service data object.',
-        params: const {
-          'domain': 'service domain, e.g. light',
-          'service': 'service name, e.g. turn_on',
-          'entity_id': 'optional target entity',
-          'data': 'optional service data (JSON object)',
-        },
-        handler: (p) async {
-          final domain = '${p['domain'] ?? ''}'.trim();
-          final service = '${p['service'] ?? ''}'.trim();
-          if (domain.isEmpty || service.isEmpty) {
-            return const CommandResult.fail('domain and service required');
-          }
-          if (!configured) {
-            return const CommandResult.fail('Home Assistant not configured');
-          }
-          final entity = '${p['entity_id'] ?? ''}'.trim();
-          final data = p['data'];
-          try {
-            await _wsCommand({
-              'type': 'call_service',
-              'domain': domain,
-              'service': service,
-              if (data is Map) 'service_data': data,
-              if (entity.isNotEmpty)
-                'target': {'entity_id': entity},
-            });
-            log.info(name, 'called $domain.$service');
-            return const CommandResult.ok();
-          } catch (e) {
-            return CommandResult.fail('$domain.$service failed: $e');
-          }
-        },
-      ))
-      ..register(Command(
-        name: 'haValidateAction',
-        description:
-            'Check that a service (and an optional entity) exists in Home '
-            'Assistant. Backs the Validate button in the gesture editors.',
-        params: const {
-          'domain': 'service domain to check, e.g. light',
-          'service': 'service name to check, e.g. turn_on',
-          'entity_id': 'optional entity to check',
-        },
-        handler: (p) async {
-          final domain = '${p['domain'] ?? ''}'.trim();
-          final service = '${p['service'] ?? ''}'.trim();
-          final entity = '${p['entity_id'] ?? ''}'.trim();
-          if (!configured) {
-            return const CommandResult.fail('Home Assistant not configured');
-          }
-          try {
-            final results = <String, Object?>{};
-            if (domain.isNotEmpty) {
-              final services = await _wsCommand({'type': 'get_services'});
-              final domainMap = services is Map ? services[domain] : null;
-              results['domain'] = domainMap != null;
-              results['service'] =
-                  domainMap is Map && domainMap.containsKey(service);
+            return CommandResult.ok({'applied': applied});
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haListVoiceSatellites',
+          description:
+              'The assist_satellite entities the Voice Satellite '
+              'integration provides.',
+          handler: (_) async {
+            final satellites = await listVoiceSatellites();
+            return satellites == null
+                ? const CommandResult.fail('could not list satellites')
+                : CommandResult.ok(satellites);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haSearchEntities',
+          description:
+              'Search entities by id or friendly name, for the At a Glance '
+              'picker. Returns at most 50, closest matches first.',
+          params: const {'query': 'text to match against id and name'},
+          handler: (p) async {
+            final matches = await searchEntities('${p['query'] ?? ''}');
+            return matches == null
+                ? const CommandResult.fail('could not list entities')
+                : CommandResult.ok(matches);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haListDashboards',
+          description: 'List Home Assistant dashboards',
+          handler: (_) async {
+            final dashboards = await listDashboards();
+            return dashboards == null
+                ? const CommandResult.fail('could not list dashboards')
+                : CommandResult.ok(dashboards);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haListDashboardViews',
+          description: "One dashboard's views, for the rotation picker",
+          params: const {'url_path': "the dashboard's url_path"},
+          handler: (p) async {
+            final views = await listDashboardViews('${p['url_path'] ?? ''}');
+            return views == null
+                ? const CommandResult.fail('could not read the dashboard')
+                : CommandResult.ok(views);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haNavigate',
+          description:
+              'Navigate the kiosk to a dashboard view path, dismissing the '
+              'screensaver and any overlays so the view is actually seen.',
+          params: const {'path': 'the navigation path ("url_path/view-route")'},
+          handler: (p) async {
+            final path = '${p['path'] ?? ''}'.trim().replaceAll(
+              RegExp(r'^/+|/+$'),
+              '',
+            );
+            if (path.isEmpty) return const CommandResult.fail('no path');
+            if (!configured) {
+              return const CommandResult.fail('Home Assistant not configured');
             }
-            if (entity.isNotEmpty) {
-              final response = await http.get(
-                Uri.parse('$baseUrl/api/states/$entity'),
-                headers: {
-                  'Authorization': 'Bearer ${_settings.get(defs.haToken)}',
-                },
-              ).timeout(const Duration(seconds: 10));
-              results['entity'] = response.statusCode == 200;
+            await commands.execute('stopScreensaver', const {});
+            await commands.execute('hideCameraView', const {});
+            // A commanded view should not instantly rotate away: give it the
+            // same grace window a touch gets.
+            if (_rotationTimer != null) _pauseRotationForTouch();
+            await navigateToViewPath(path);
+            return const CommandResult.ok(null);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haCallService',
+          description:
+              'Call a Home Assistant service (covers scripts, scenes and '
+              'automation triggers). data is the service data object.',
+          params: const {
+            'domain': 'service domain, e.g. light',
+            'service': 'service name, e.g. turn_on',
+            'entity_id': 'optional target entity',
+            'data': 'optional service data (JSON object)',
+          },
+          handler: (p) async {
+            final domain = '${p['domain'] ?? ''}'.trim();
+            final service = '${p['service'] ?? ''}'.trim();
+            if (domain.isEmpty || service.isEmpty) {
+              return const CommandResult.fail('domain and service required');
             }
-            return CommandResult.ok(results);
-          } catch (e) {
-            return CommandResult.fail('validation failed: $e');
-          }
-        },
-      ))
-      ..register(Command(
-        name: 'haFireEvent',
-        description:
-            'Fire an event on the Home Assistant event bus, for automations '
-            'to listen to.',
-        params: const {
-          'event': 'event type, e.g. kiosk_satellite_gesture',
-          'data': 'optional event data (JSON object)',
-        },
-        handler: (p) async {
-          final event = '${p['event'] ?? ''}'.trim();
-          if (event.isEmpty) return const CommandResult.fail('event required');
-          if (!configured) {
-            return const CommandResult.fail('Home Assistant not configured');
-          }
-          final data = p['data'];
-          try {
-            await _wsCommand({
-              'type': 'fire_event',
-              'event_type': event,
-              if (data is Map) 'event_data': data,
-            });
-            log.info(name, 'fired event $event');
-            return const CommandResult.ok();
-          } catch (e) {
-            return CommandResult.fail('firing $event failed: $e');
-          }
-        },
-      ))
-      ..register(Command(
-        name: 'haBrowseMedia',
-        description: 'Browse a Home Assistant media node for the screensaver '
-            'picker. Omit mediaContentId for the root of every media source.',
-        params: const {'mediaContentId': 'media-source id, or omit for root'},
-        handler: (p) async {
-          final node = await browseMedia(p['mediaContentId'] as String?);
-          return node == null
-              ? const CommandResult.fail('could not browse media')
-              : CommandResult.ok(node);
-        },
-      ));
+            if (!configured) {
+              return const CommandResult.fail('Home Assistant not configured');
+            }
+            final entity = '${p['entity_id'] ?? ''}'.trim();
+            final data = p['data'];
+            try {
+              await _wsCommand({
+                'type': 'call_service',
+                'domain': domain,
+                'service': service,
+                if (data is Map) 'service_data': data,
+                if (entity.isNotEmpty) 'target': {'entity_id': entity},
+              });
+              log.info(name, 'called $domain.$service');
+              return const CommandResult.ok();
+            } catch (e) {
+              return CommandResult.fail('$domain.$service failed: $e');
+            }
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haValidateAction',
+          description:
+              'Check that a service (and an optional entity) exists in Home '
+              'Assistant. Backs the Validate button in the gesture editors.',
+          params: const {
+            'domain': 'service domain to check, e.g. light',
+            'service': 'service name to check, e.g. turn_on',
+            'entity_id': 'optional entity to check',
+          },
+          handler: (p) async {
+            final domain = '${p['domain'] ?? ''}'.trim();
+            final service = '${p['service'] ?? ''}'.trim();
+            final entity = '${p['entity_id'] ?? ''}'.trim();
+            if (!configured) {
+              return const CommandResult.fail('Home Assistant not configured');
+            }
+            try {
+              final results = <String, Object?>{};
+              if (domain.isNotEmpty) {
+                final services = await _wsCommand({'type': 'get_services'});
+                final domainMap = services is Map ? services[domain] : null;
+                results['domain'] = domainMap != null;
+                results['service'] =
+                    domainMap is Map && domainMap.containsKey(service);
+              }
+              if (entity.isNotEmpty) {
+                final response = await http
+                    .get(
+                      Uri.parse('$baseUrl/api/states/$entity'),
+                      headers: {
+                        'Authorization':
+                            'Bearer ${_settings.get(defs.haToken)}',
+                      },
+                    )
+                    .timeout(const Duration(seconds: 10));
+                results['entity'] = response.statusCode == 200;
+              }
+              return CommandResult.ok(results);
+            } catch (e) {
+              return CommandResult.fail('validation failed: $e');
+            }
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haFireEvent',
+          description:
+              'Fire an event on the Home Assistant event bus, for automations '
+              'to listen to.',
+          params: const {
+            'event': 'event type, e.g. kiosk_satellite_gesture',
+            'data': 'optional event data (JSON object)',
+          },
+          handler: (p) async {
+            final event = '${p['event'] ?? ''}'.trim();
+            if (event.isEmpty) {
+              return const CommandResult.fail('event required');
+            }
+            if (!configured) {
+              return const CommandResult.fail('Home Assistant not configured');
+            }
+            final data = p['data'];
+            try {
+              await _wsCommand({
+                'type': 'fire_event',
+                'event_type': event,
+                if (data is Map) 'event_data': data,
+              });
+              log.info(name, 'fired event $event');
+              return const CommandResult.ok();
+            } catch (e) {
+              return CommandResult.fail('firing $event failed: $e');
+            }
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'haBrowseMedia',
+          description:
+              'Browse a Home Assistant media node for the screensaver '
+              'picker. Omit mediaContentId for the root of every media source.',
+          params: const {'mediaContentId': 'media-source id, or omit for root'},
+          handler: (p) async {
+            final node = await browseMedia(p['mediaContentId'] as String?);
+            return node == null
+                ? const CommandResult.fail('could not browse media')
+                : CommandResult.ok(node);
+          },
+        ),
+      );
 
     // Day/night theme. Re-assert on every full page load (login, logout,
     // reload all reset the frontend), react to schedule edits at once, and tick
@@ -370,8 +402,10 @@ class HomeAssistantManager extends Manager {
         _applyThemeSchedule(force: true);
       }
     });
-    _themeTimer =
-        Timer.periodic(const Duration(minutes: 1), (_) => _applyThemeSchedule());
+    _themeTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _applyThemeSchedule(),
+    );
     // Android flips its own dark mode on its schedule (typically sunset and
     // sunrise); with the theme mirror on and the App theme on System, that
     // flip is the theme source (issue #92) and must reach the dashboard the
@@ -446,9 +480,10 @@ class HomeAssistantManager extends Manager {
       if (e.active) {
         if (_rotationTimer != null) {
           log.info(
-              name,
-              'rotation paused by interaction'
-              '${e.reason.isEmpty ? '' : ' (${e.reason})'}');
+            name,
+            'rotation paused by interaction'
+            '${e.reason.isEmpty ? '' : ' (${e.reason})'}',
+          );
         }
         _rotationTimer?.cancel();
         _rotationTimer = null;
@@ -575,8 +610,7 @@ class HomeAssistantManager extends Manager {
 
   List<String> _rotationPaths() {
     try {
-      final list =
-          jsonDecode(_settings.get(defs.haRotationDashboards)) as List;
+      final list = jsonDecode(_settings.get(defs.haRotationDashboards)) as List;
       return [
         for (final p in list)
           if (p is String && p.isNotEmpty) p,
@@ -671,8 +705,10 @@ class HomeAssistantManager extends Manager {
     _returnHomeTimer = null;
     if (!_returnHomeConfigured) return;
     if (_screensaverActive || _voiceInteracting || _cameraViewActive) return;
-    final seconds =
-        _settings.get(defs.haReturnHomeSeconds).toInt().clamp(10, 86400);
+    final seconds = _settings
+        .get(defs.haReturnHomeSeconds)
+        .toInt()
+        .clamp(10, 86400);
     _returnHomeTimer = Timer(Duration(seconds: seconds), () {
       _returnHomeTimer = null;
       log.info(name, 'idle: returning to the dashboard');
@@ -709,9 +745,7 @@ class HomeAssistantManager extends Manager {
     }
     // With the secure context proxy on, the page lives on the loopback
     // origin, not baseUrl — guard against what is actually on screen.
-    final mappedBase = await commands.execute('proxyMapUrl', {
-      'url': baseUrl,
-    });
+    final mappedBase = await commands.execute('proxyMapUrl', {'url': baseUrl});
     final effectiveBase = mappedBase.ok && mappedBase.data is String
         ? mappedBase.data as String
         : baseUrl;
@@ -742,7 +776,8 @@ class HomeAssistantManager extends Manager {
     await Future<void>.delayed(const Duration(milliseconds: 2500));
     if (_navSeq != seq) return;
     final check = await commands.execute('evalJs', {
-      'code': '''
+      'code':
+          '''
 (function () {
   try {
     if (location.pathname !== '/' + ${jsonEncode(viewPath)}) return false;
@@ -761,9 +796,10 @@ class HomeAssistantManager extends Manager {
     if (check.ok && '${check.data}' == 'true') {
       _hardLoadPaths.add(viewPath);
       log.info(
-          name,
-          '"$viewPath" needs a full load (strategy dashboard or '
-          'alias); remembering for future passes');
+        name,
+        '"$viewPath" needs a full load (strategy dashboard or '
+        'alias); remembering for future passes',
+      );
       await commands.execute('loadUrl', {'url': '$baseUrl/$viewPath'});
     }
   }
@@ -820,12 +856,12 @@ class HomeAssistantManager extends Manager {
   /// Whether the app is effectively dark right now: the App theme setting,
   /// deferring to the platform for System.
   bool _effectiveAppDark() => switch (_settings.get(defs.uiTheme)) {
-        'dark' => true,
-        'light' => false,
-        _ => WidgetsBinding
-                .instance.platformDispatcher.platformBrightness ==
-            Brightness.dark,
-      };
+    'dark' => true,
+    'light' => false,
+    _ =>
+      WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+          Brightness.dark,
+  };
 
   /// Relays the platform's dark-mode flips into the theme logic; see the
   /// observer registration in [init].
@@ -856,7 +892,8 @@ class HomeAssistantManager extends Manager {
     return h * 60 + m;
   }
 
-  String _themeJs(bool dark) => '''
+  String _themeJs(bool dark) =>
+      '''
 (function () {
   var base = document.querySelector('home-assistant');
   if (!base || !base.hass) return;
@@ -887,7 +924,10 @@ class HomeAssistantManager extends Manager {
     } catch (_) {
       _kioskPlugin = false;
     }
-    log.info(name, 'kiosk-mode plugin ${_kioskPlugin! ? 'detected' : 'absent'}');
+    log.info(
+      name,
+      'kiosk-mode plugin ${_kioskPlugin! ? 'detected' : 'absent'}',
+    );
     return _kioskPlugin!;
   }
 
@@ -914,10 +954,12 @@ class HomeAssistantManager extends Manager {
   Future<String?> checkConnection() async {
     if (!configured) return 'Home Assistant URL and token not configured';
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/'),
-        headers: {'Authorization': 'Bearer ${_settings.get(defs.haToken)}'},
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/'),
+            headers: {'Authorization': 'Bearer ${_settings.get(defs.haToken)}'},
+          )
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 401) return 'invalid token';
       if (response.statusCode != 200) return 'HTTP ${response.statusCode}';
       return null;
@@ -963,22 +1005,28 @@ class HomeAssistantManager extends Manager {
             final msg = jsonDecode(raw as String) as Map<String, dynamic>;
             switch (msg['type']) {
               case 'auth_required':
-                channel.sink.add(jsonEncode({
-                  'type': 'auth',
-                  'access_token': _settings.get(defs.haToken),
-                }));
+                channel.sink.add(
+                  jsonEncode({
+                    'type': 'auth',
+                    'access_token': _settings.get(defs.haToken),
+                  }),
+                );
               case 'auth_ok':
-                channel.sink.add(jsonEncode({
-                  'id': 1,
-                  'type': 'subscribe_entities',
-                  'entity_ids': entityIds,
-                }));
-                if (onPrecision != null) {
-                  channel.sink.add(jsonEncode({
-                    'id': 2,
-                    'type': 'config/entity_registry/get_entries',
+                channel.sink.add(
+                  jsonEncode({
+                    'id': 1,
+                    'type': 'subscribe_entities',
                     'entity_ids': entityIds,
-                  }));
+                  }),
+                );
+                if (onPrecision != null) {
+                  channel.sink.add(
+                    jsonEncode({
+                      'id': 2,
+                      'type': 'config/entity_registry/get_entries',
+                      'entity_ids': entityIds,
+                    }),
+                  );
                 }
               case 'auth_invalid':
                 log.warn(name, 'glance subscription rejected: bad token');
@@ -1091,14 +1139,14 @@ class HomeAssistantManager extends Manager {
       final rank = needle.isEmpty
           ? 2
           : name.toLowerCase().startsWith(needle) ||
-                  id.split('.').last.toLowerCase().startsWith(needle)
-              ? 0
-              : 1;
-      matches.add((rank, name.toLowerCase(), {
-        'entity_id': id,
-        'name': name,
-        'state': state['state'],
-      }));
+                id.split('.').last.toLowerCase().startsWith(needle)
+          ? 0
+          : 1;
+      matches.add((
+        rank,
+        name.toLowerCase(),
+        {'entity_id': id, 'name': name, 'state': state['state']},
+      ));
     }
     matches.sort((a, b) {
       final byRank = a.$1.compareTo(b.$1);
@@ -1113,10 +1161,12 @@ class HomeAssistantManager extends Manager {
   Future<List<Map<String, Object?>>?> fetchStates() async {
     if (!configured) return null;
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/states'),
-        headers: {'Authorization': 'Bearer ${_settings.get(defs.haToken)}'},
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/states'),
+            headers: {'Authorization': 'Bearer ${_settings.get(defs.haToken)}'},
+          )
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) {
         log.warn(name, 'states fetch failed: HTTP ${response.statusCode}');
         return null;
@@ -1158,20 +1208,16 @@ class HomeAssistantManager extends Manager {
       final satellites = [
         for (final e in result.cast<Map>())
           if (e['platform'] == 'voice_satellite' &&
-              (e['entity_id'] as String? ?? '').startsWith(
-                'assist_satellite.',
-              ))
+              (e['entity_id'] as String? ?? '').startsWith('assist_satellite.'))
             {
               'entity_id': e['entity_id'],
               'name':
                   e['name'] ??
-                      e['original_name'] ??
-                      prettify(e['entity_id'] as String),
+                  e['original_name'] ??
+                  prettify(e['entity_id'] as String),
             },
       ];
-      satellites.sort(
-        (a, b) => '${a['name']}'.compareTo('${b['name']}'),
-      );
+      satellites.sort((a, b) => '${a['name']}'.compareTo('${b['name']}'));
       return satellites;
     } catch (e) {
       log.warn(name, 'listVoiceSatellites failed: $e');
@@ -1272,9 +1318,7 @@ class HomeAssistantManager extends Manager {
   /// declared path when it has one, its index otherwise. Null when the
   /// config cannot be read (auto-generated strategy dashboards store no
   /// view list).
-  Future<List<Map<String, Object?>>?> listDashboardViews(
-    String urlPath,
-  ) async {
+  Future<List<Map<String, Object?>>?> listDashboardViews(String urlPath) async {
     if (!configured || urlPath.isEmpty) return null;
     try {
       final result = await _wsCommand({
@@ -1287,7 +1331,10 @@ class HomeAssistantManager extends Manager {
       if (views is! List) return null;
       return [
         for (final (i, v) in views.cast<Map>().indexed)
-          {'title': '${v['title'] ?? 'View ${i + 1}'}', 'route': '${v['path'] ?? i}'},
+          {
+            'title': '${v['title'] ?? 'View ${i + 1}'}',
+            'route': '${v['path'] ?? i}',
+          },
       ];
     } catch (e) {
       log.warn(name, 'listDashboardViews($urlPath) failed: $e');
@@ -1304,9 +1351,7 @@ class HomeAssistantManager extends Manager {
   Future<Map<String, Object?>?> browseMedia([String? mediaContentId]) async {
     if (!configured) return null;
     try {
-      final command = <String, Object?>{
-        'type': 'media_source/browse_media',
-      };
+      final command = <String, Object?>{'type': 'media_source/browse_media'};
       if (mediaContentId != null) {
         command['media_content_id'] = mediaContentId;
       }
@@ -1315,6 +1360,167 @@ class HomeAssistantManager extends Manager {
     } catch (e) {
       log.warn(name, 'browseMedia failed: $e');
       return null;
+    }
+  }
+
+  /// The `camera.*` entities whose frontend can stream WebRTC, for the
+  /// camera import (issue #124). Reads all states for names, then asks
+  /// `camera/capabilities` (HA 2024.11+) per entity; entities the command
+  /// fails for (older HA, odd integrations) are simply not offered. Null
+  /// when Home Assistant is not configured or unreachable.
+  Future<List<({String entityId, String name})>?> listWebRtcCameras() async {
+    final states = await fetchStates();
+    if (states == null) return null;
+    final result = <({String entityId, String name})>[];
+    for (final state in states) {
+      final entityId = '${state['entity_id'] ?? ''}';
+      if (!entityId.startsWith('camera.')) continue;
+      try {
+        final capabilities = await _wsCommand({
+          'type': 'camera/capabilities',
+          'entity_id': entityId,
+        });
+        final types = capabilities is Map
+            ? capabilities['frontend_stream_types']
+            : null;
+        if (types is! List || !types.contains('web_rtc')) continue;
+      } catch (e) {
+        log.debug(name, 'camera/capabilities($entityId) failed: $e');
+        continue;
+      }
+      final attributes = (state['attributes'] as Map?) ?? const {};
+      final friendly = '${attributes['friendly_name'] ?? ''}'.trim();
+      result.add((
+        entityId: entityId,
+        name: friendly.isEmpty
+            ? entityId.substring('camera.'.length)
+            : friendly,
+      ));
+    }
+    result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return result;
+  }
+
+  /// The RTCConfiguration Home Assistant asks WebRTC clients to use for
+  /// [entityId] (`camera/webrtc/get_client_config`): ICE servers, which
+  /// matter beyond the LAN (cloud TURN). Null when unavailable — the
+  /// caller streams with browser defaults, which is what LAN needs.
+  Future<Map<String, Object?>?> webRtcClientConfig(String entityId) async {
+    if (!configured) return null;
+    try {
+      final result = await _wsCommand({
+        'type': 'camera/webrtc/get_client_config',
+        'entity_id': entityId,
+      });
+      final configuration = result is Map ? result['configuration'] : null;
+      return configuration is Map
+          ? configuration.cast<String, Object?>()
+          : null;
+    } catch (e) {
+      log.debug(name, 'webrtc client config($entityId) failed: $e');
+      return null;
+    }
+  }
+
+  /// Negotiate a WebRTC stream for a camera entity over Home Assistant's
+  /// own signaling (`camera/webrtc/offer`, HA 2024.11+, issue #124).
+  ///
+  /// The offer should carry its ICE candidates (the camera page waits for
+  /// gathering before sending), so no client-side trickle is needed. HA's
+  /// side IS trickled: the answer arrives as an event and the backend's
+  /// candidates keep arriving after it, so the returned session stays open
+  /// for the stream's lifetime relaying them through [onCandidate], and
+  /// the caller MUST [HaWebRtcSession.close] it when the stream ends.
+  Future<({HaWebRtcSession session, String answer})> cameraWebRtcOffer({
+    required String entityId,
+    required String offer,
+    required void Function(Map<String, Object?> candidate) onCandidate,
+  }) async {
+    if (!configured) throw StateError('Home Assistant not configured');
+    final wsBase = baseUrl
+        .replaceFirst('https://', 'wss://')
+        .replaceFirst('http://', 'ws://');
+    final channel = WebSocketChannel.connect(
+      Uri.parse('$wsBase/api/websocket'),
+    );
+    final session = HaWebRtcSession._(channel);
+    final answer = Completer<String>();
+    channel.stream.listen(
+      (raw) {
+        try {
+          final msg = jsonDecode(raw as String) as Map<String, dynamic>;
+          switch (msg['type']) {
+            case 'auth_required':
+              channel.sink.add(
+                jsonEncode({
+                  'type': 'auth',
+                  'access_token': _settings.get(defs.haToken),
+                }),
+              );
+            case 'auth_ok':
+              channel.sink.add(
+                jsonEncode({
+                  'id': 1,
+                  'type': 'camera/webrtc/offer',
+                  'entity_id': entityId,
+                  'offer': offer,
+                }),
+              );
+            case 'auth_invalid':
+              if (!answer.isCompleted) {
+                answer.completeError(StateError('auth invalid'));
+              }
+            case 'result':
+              if (msg['success'] != true && !answer.isCompleted) {
+                answer.completeError(StateError('${msg['error']}'));
+              }
+            case 'event':
+              final event = msg['event'];
+              if (event is! Map) return;
+              switch ('${event['type']}') {
+                case 'answer':
+                  if (!answer.isCompleted) {
+                    answer.complete('${event['answer']}');
+                  }
+                case 'candidate':
+                  final candidate = event['candidate'];
+                  if (candidate is Map && !session.isClosed) {
+                    onCandidate(candidate.cast<String, Object?>());
+                  }
+                case 'error':
+                  if (!answer.isCompleted) {
+                    answer.completeError(
+                      StateError('${event['code']}: ${event['message']}'),
+                    );
+                  } else {
+                    log.warn(
+                      name,
+                      'webrtc $entityId: ${event['code']} ${event['message']}',
+                    );
+                  }
+              }
+          }
+        } catch (e) {
+          log.warn(name, 'webrtc frame ignored: $e');
+        }
+      },
+      onError: (Object e) {
+        if (!answer.isCompleted) answer.completeError(e);
+      },
+      onDone: () {
+        if (!answer.isCompleted) {
+          answer.completeError(StateError('signaling socket closed'));
+        }
+        session._markClosed();
+      },
+      cancelOnError: true,
+    );
+    try {
+      final sdp = await answer.future.timeout(const Duration(seconds: 15));
+      return (session: session, answer: sdp);
+    } catch (_) {
+      await session.close();
+      rethrow;
     }
   }
 
@@ -1327,35 +1533,38 @@ class HomeAssistantManager extends Manager {
     StreamSubscription<dynamic>? sub;
     try {
       final completer = Completer<Object?>();
-      sub = channel.stream.listen((raw) {
-        if (completer.isCompleted) return;
-        final msg = jsonDecode(raw as String) as Map<String, dynamic>;
-        switch (msg['type']) {
-          case 'auth_required':
-            channel.sink.add(jsonEncode({
-              'type': 'auth',
-              'access_token': _settings.get(defs.haToken),
-            }));
-          case 'auth_ok':
-            channel.sink.add(jsonEncode({'id': 1, ...command}));
-          case 'auth_invalid':
-            completer.completeError(StateError('auth invalid'));
-          case 'result':
-            if (msg['success'] == true) {
-              completer.complete(msg['result']);
-            } else {
-              completer.completeError(StateError('${msg['error']}'));
-            }
-        }
-      }, onError: (Object e, StackTrace s) {
-        // Guarded: an error after the result (or a second result frame)
-        // must not throw "Future already completed" into the stream zone.
-        if (!completer.isCompleted) completer.completeError(e, s);
-      });
-
-      return await completer.future.timeout(
-        const Duration(seconds: 10),
+      sub = channel.stream.listen(
+        (raw) {
+          if (completer.isCompleted) return;
+          final msg = jsonDecode(raw as String) as Map<String, dynamic>;
+          switch (msg['type']) {
+            case 'auth_required':
+              channel.sink.add(
+                jsonEncode({
+                  'type': 'auth',
+                  'access_token': _settings.get(defs.haToken),
+                }),
+              );
+            case 'auth_ok':
+              channel.sink.add(jsonEncode({'id': 1, ...command}));
+            case 'auth_invalid':
+              completer.completeError(StateError('auth invalid'));
+            case 'result':
+              if (msg['success'] == true) {
+                completer.complete(msg['result']);
+              } else {
+                completer.completeError(StateError('${msg['error']}'));
+              }
+          }
+        },
+        onError: (Object e, StackTrace s) {
+          // Guarded: an error after the result (or a second result frame)
+          // must not throw "Future already completed" into the stream zone.
+          if (!completer.isCompleted) completer.completeError(e, s);
+        },
       );
+
+      return await completer.future.timeout(const Duration(seconds: 10));
     } finally {
       await sub?.cancel();
       await channel.sink.close();
@@ -1371,6 +1580,29 @@ class HomeAssistantManager extends Manager {
     _voiceSafetyTimer?.cancel();
     _returnHomeTimer?.cancel();
     WidgetsBinding.instance.removeObserver(_brightnessWatch);
+  }
+}
+
+/// A live Home Assistant WebRTC signaling session (issue #124): the socket
+/// stays open for the stream's lifetime so the backend's trickled ICE
+/// candidates keep arriving. Closed by whoever opened it when the stream
+/// ends; closing tells HA to tear the backend session down.
+class HaWebRtcSession {
+  HaWebRtcSession._(this._channel);
+
+  final WebSocketChannel _channel;
+  bool _closed = false;
+
+  bool get isClosed => _closed;
+
+  void _markClosed() => _closed = true;
+
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    try {
+      await _channel.sink.close();
+    } catch (_) {}
   }
 }
 

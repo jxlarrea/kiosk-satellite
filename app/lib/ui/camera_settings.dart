@@ -56,6 +56,18 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _heading('Home Assistant'),
+        _card([
+          ListTile(
+            leading: const Icon(Icons.download_outlined),
+            title: const Text('Import WebRTC cameras from Home Assistant'),
+            subtitle: const Text(
+              'Add every camera the connected Home Assistant can stream '
+              'over WebRTC. Importing again merges new cameras.',
+            ),
+            onTap: _busy ? null : _importHomeAssistant,
+          ),
+        ]),
         _heading('Go2RTC servers'),
         _card([
           for (final server in config.servers)
@@ -93,7 +105,10 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             const ListTile(
               leading: Icon(Icons.videocam_off_outlined),
               title: Text('No cameras configured'),
-              subtitle: Text('Import Go2RTC streams or add one manually.'),
+              subtitle: Text(
+                'Import cameras from Home Assistant or Go2RTC, or add one '
+                'manually.',
+              ),
             ),
           for (final camera in config.cameras)
             ListTile(
@@ -114,7 +129,10 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           ListTile(
             leading: const Icon(Icons.add),
             title: const Text('Add camera manually'),
-            subtitle: const Text('Use a Go2RTC stream name or a WHEP URL.'),
+            subtitle: const Text(
+              'Use a Go2RTC stream name, a WHEP URL or a Home Assistant '
+              'camera entity.',
+            ),
             onTap: _busy ? null : () => _editCamera(null),
           ),
         ]),
@@ -123,9 +141,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           for (final view in config.views)
             ListTile(
               leading: Icon(
-                view.isDefault
-                    ? Icons.star_outline
-                    : Icons.grid_view_outlined,
+                view.isDefault ? Icons.star_outline : Icons.grid_view_outlined,
               ),
               title: Text(view.name),
               subtitle: Text(
@@ -215,10 +231,11 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     ),
   );
 
-  String _cameraName(List<CameraSource> cameras, String id) => cameras
-      .where((camera) => camera.id == id)
-      .map((camera) => camera.name)
-      .firstOrNull ??
+  String _cameraName(List<CameraSource> cameras, String id) =>
+      cameras
+          .where((camera) => camera.id == id)
+          .map((camera) => camera.name)
+          .firstOrNull ??
       'Unknown camera';
 
   Future<void> _showView(CameraViewConfig view) async {
@@ -235,10 +252,13 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     CameraConfiguration configuration,
   ) {
     if (camera.kind == 'whep') return camera.whepUrl ?? 'WHEP';
+    final status = camera.missing ? ' (missing)' : '';
+    if (camera.kind == 'ha') {
+      return 'Home Assistant: ${camera.entityId ?? ''}$status';
+    }
     final server = configuration.servers
         .where((item) => item.id == camera.serverId)
         .firstOrNull;
-    final status = camera.missing ? ' (missing)' : '';
     return '${server?.name ?? 'Unknown server'}: '
         '${camera.streamName ?? ''}$status';
   }
@@ -247,6 +267,22 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     final result = await widget.container.commands.execute(
       'cameraImportGo2Rtc',
       {'serverId': server.id},
+    );
+    if (!result.ok) {
+      _message('Import failed: ${result.error}');
+      return;
+    }
+    final data = result.data as Map;
+    _message(
+      'Import complete: ${data['added']} added, '
+      '${data['missing']} missing.',
+    );
+  });
+
+  Future<void> _importHomeAssistant() => _run(() async {
+    final result = await widget.container.commands.execute(
+      'cameraImportHomeAssistant',
+      const {},
     );
     if (!result.ok) {
       _message('Import failed: ${result.error}');
@@ -351,6 +387,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     final name = TextEditingController(text: camera?.name ?? '');
     final stream = TextEditingController(text: camera?.streamName ?? '');
     final whep = TextEditingController(text: camera?.whepUrl ?? '');
+    final entity = TextEditingController(text: camera?.entityId ?? '');
     final fullscreen = TextEditingController(
       text: camera?.fullscreenStreamName ?? '',
     );
@@ -385,11 +422,23 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                         value: 'whep',
                         child: Text('Direct WHEP URL'),
                       ),
+                      DropdownMenuItem(
+                        value: 'ha',
+                        child: Text('Home Assistant camera'),
+                      ),
                     ],
                     onChanged: (value) =>
                         setDialogState(() => kind = value ?? kind),
                   ),
-                  if (kind == 'go2rtc') ...[
+                  if (kind == 'ha')
+                    TextField(
+                      controller: entity,
+                      decoration: const InputDecoration(
+                        labelText: 'Camera entity',
+                        hintText: 'camera.front_door',
+                      ),
+                    )
+                  else if (kind == 'go2rtc') ...[
                     DropdownButtonFormField<String>(
                       initialValue:
                           config.servers.any((server) => server.id == serverId)
@@ -451,6 +500,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             'serverId': serverId,
             'streamName': stream.text,
             'whepUrl': whep.text,
+            'entityId': entity.text,
             'fullscreenStreamName': fullscreen.text,
           });
       if (!result.ok) _message('Could not save camera: ${result.error}');
@@ -496,13 +546,9 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                       buildDefaultDragHandles: false,
                       // onReorderItem: newIndex is already adjusted for the
                       // removal, unlike the deprecated onReorder.
-                      onReorderItem: (oldIndex, newIndex) =>
-                          setDialogState(() {
-                            selected.insert(
-                              newIndex,
-                              selected.removeAt(oldIndex),
-                            );
-                          }),
+                      onReorderItem: (oldIndex, newIndex) => setDialogState(() {
+                        selected.insert(newIndex, selected.removeAt(oldIndex));
+                      }),
                       children: [
                         for (final (index, id) in selected.indexed)
                           ListTile(
