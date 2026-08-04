@@ -767,6 +767,24 @@ const keepScreenOn = SettingDef<bool>(
   category: 'Screen',
 );
 
+// The Impeller escape hatch (issue #127): some old GPU drivers (Adreno 330
+// era) crash in the raster thread the moment Impeller draws, and Flutter
+// does not fall back to Skia on its own. Read natively BEFORE the engine
+// exists (RendererGuard.kt), which is also why a restart is needed — and
+// why the crash net over there can flip this on by itself after two boots
+// that died before their first frame.
+const disableImpeller = SettingDef<bool>(
+  key: 'render.disable_impeller',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Legacy renderer',
+  description:
+      'Draw the app with the older Skia renderer instead of Impeller, for '
+      'old GPUs that crash at startup. Turns itself on after two such '
+      'crashes. Takes effect on the next app start.',
+  category: 'Screen',
+);
+
 // Off by default: a slider with no gate would override every device's
 // OS-managed brightness the moment it upgrades.
 const setBrightnessOnLaunch = SettingDef<bool>(
@@ -2780,6 +2798,7 @@ const List<SettingDef<Object>> allSettings = [
   launcherAutoReturn,
   launcherAutoReturnSeconds,
   keepScreenOn,
+  disableImpeller,
   setBrightnessOnLaunch,
   defaultBrightness,
   screensaverEnabled,

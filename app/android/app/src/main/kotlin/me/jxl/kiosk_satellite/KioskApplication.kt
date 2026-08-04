@@ -77,7 +77,9 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         // Before any bridge: they all read volume state through it.
         VolumeController.init(applicationContext)
 
-        val engine = FlutterEngine(this)
+        // Renderer choice before the engine exists: old GPUs whose drivers
+        // crash under Impeller get Skia instead (issue #127, RendererGuard).
+        val engine = FlutterEngine(this, RendererGuard.engineArgs(this))
         // Plugins before the entrypoint: Dart main() starts the admin server and
         // reads shared_preferences immediately, so shared_preferences,
         // path_provider et al. must already be registered when it runs.

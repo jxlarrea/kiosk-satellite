@@ -91,6 +91,13 @@ class MainActivity : FlutterActivity() {
     // The engine belongs to the process, not this Activity.
     override fun shouldDestroyEngineWithHost(): Boolean = false
 
+    override fun onFlutterUiDisplayed() {
+        super.onFlutterUiDisplayed()
+        // A frame is on screen, so the renderer works on this GPU: stand
+        // the early-crash net down (issue #127, RendererGuard).
+        RendererGuard.noteFirstFrame(this)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         // Deliberately not calling super: plugins are registered once on the
         // cached engine in KioskApplication. Only Activity-scoped bridges here.
