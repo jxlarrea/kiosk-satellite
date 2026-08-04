@@ -163,6 +163,15 @@ class ScreensaverManager extends Manager {
       if (_active) unawaited(_applyVisuals());
     });
     bus.on<MotionDetected>().listen((_) {
+      if (!_active) {
+        // Between screensavers, motion can only postpone the next one
+        // (discussion #126): people moving in front of the device keep
+        // resetting the idle clock, exactly like a touch would.
+        if (_settings.get(defs.screensaverPostponeOnMotion)) {
+          _resetIdleTimer();
+        }
+        return;
+      }
       // The active schedule entry's motion override (issue #89) wins over
       // the switch, matching the camera's own gating in MotionManager.
       if (!(_motionPolicy ??

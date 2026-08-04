@@ -1,3 +1,4 @@
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
@@ -110,5 +111,56 @@ void main() {
     expect(published, isEmpty);
     final enabled = await commands.execute('getMotionEnabled', const {});
     expect(enabled.data, isFalse);
+  });
+
+  test('motion postpones the screensaver between sessions (discussion #126)',
+      () {
+    fakeAsync((async) {
+      build({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.timeout_seconds': 5,
+        'ks.screensaver.postpone_on_motion': true,
+        'ks.camera.enabled': true,
+      });
+      async.flushMicrotasks();
+      saver.init(); // arms the idle timer and the motion listener
+      async.flushMicrotasks();
+
+      async.elapse(const Duration(seconds: 3));
+      bus.publish(const MotionDetected());
+      async.flushMicrotasks();
+      // 6s in: past the original 5s deadline, but the motion at 3s reset
+      // the clock, so nothing has started.
+      async.elapse(const Duration(seconds: 3));
+      async.flushMicrotasks();
+      expect(saver.isActive, isFalse,
+          reason: 'motion must have reset the idle clock');
+      // A full quiet timeout after the motion: the screensaver starts.
+      async.elapse(const Duration(seconds: 3));
+      async.flushMicrotasks();
+      expect(saver.isActive, isTrue);
+    });
+  });
+
+  test('without the toggle, motion between sessions changes nothing', () {
+    fakeAsync((async) {
+      build({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.timeout_seconds': 5,
+        'ks.screensaver.postpone_on_motion': false,
+        'ks.camera.enabled': true,
+      });
+      async.flushMicrotasks();
+      saver.init();
+      async.flushMicrotasks();
+
+      async.elapse(const Duration(seconds: 3));
+      bus.publish(const MotionDetected());
+      async.flushMicrotasks();
+      async.elapse(const Duration(seconds: 3));
+      async.flushMicrotasks();
+      // 6s in: the 5s deadline fired on schedule; the motion was ignored.
+      expect(saver.isActive, isTrue);
+    });
   });
 }

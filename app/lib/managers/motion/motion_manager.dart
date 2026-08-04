@@ -22,6 +22,14 @@ import 'native_motion.dart';
 /// tick; here we translate that to [MotionDetected], which the screensaver
 /// consumes to wake (when "dismiss on motion" is on) and the JS API / remote
 /// admin observe.
+///
+/// "Postpone on motion" (discussion #126) is the deliberate exception to that
+/// optimisation: opted in, the camera ALSO runs while the screensaver is away,
+/// so nearby movement can keep resetting the idle timer and the screensaver
+/// never starts over someone actually using the room. The cost warning lives
+/// on the setting; the one gate kept here regardless is the screen being on —
+/// a panel someone turned off has no screensaver to postpone, and a camera
+/// burning CPU behind a dark screen would be the worst version of the trade.
 class MotionManager extends Manager {
   MotionManager(super.bus, super.commands, super.log, this._settings);
 
@@ -43,8 +51,17 @@ class MotionManager extends Manager {
           _settings.get(defs.screensaverDismissOnMotion)) &&
       _settings.get(defs.cameraEnabled);
 
+  /// Whether the postpone leg wants the camera: between screensavers, with
+  /// the screen actually lit, on a device whose screensaver can start at
+  /// all. Same camera master switch as [enabled].
+  bool get _postponeEnabled =>
+      _settings.get(defs.screensaverPostponeOnMotion) &&
+      _settings.get(defs.screensaverEnabled) &&
+      _settings.get(defs.cameraEnabled);
+
   StreamSubscription<void>? _camera;
   bool _screensaverActive = false;
+  bool _screenOn = true;
   bool _starting = false;
 
   /// The screensaver schedule's motion override, null when none holds.
@@ -63,12 +80,20 @@ class MotionManager extends Manager {
       _schedulePolicy = e.dismissOnMotion;
       _sync();
     });
+    // The postpone leg follows the panel: a screen someone turned off has
+    // no screensaver worth holding back, so the camera goes with it.
+    bus.on<ScreenStateChanged>().listen((e) {
+      _screenOn = e.on;
+      _sync();
+    });
     // A tuning change (fps / sensitivity / the Camera section's camera pick)
     // restarts the stream so the native analyzer picks up the new arguments;
     // turning the feature on prompts for the camera up front so the first dim
     // can start it without a pause.
     bus.on<SettingChanged>().listen((e) {
       final isGate = e.key == defs.screensaverDismissOnMotion.key ||
+          e.key == defs.screensaverPostponeOnMotion.key ||
+          e.key == defs.screensaverEnabled.key ||
           e.key == defs.cameraEnabled.key;
       if (!isGate &&
           !e.key.startsWith('motion.') &&
@@ -78,7 +103,9 @@ class MotionManager extends Manager {
           e.key != defs.cameraSnapshotResolution.key) {
         return;
       }
-      if (isGate && enabled) unawaited(_ensurePermission());
+      if (isGate && (enabled || _postponeEnabled)) {
+        unawaited(_ensurePermission());
+      }
       _stop();
       _sync();
     });
@@ -89,12 +116,26 @@ class MotionManager extends Manager {
       handler: (_) async => CommandResult.ok(enabled),
     ));
 
-    if (enabled) unawaited(_ensurePermission());
+    if (enabled || _postponeEnabled) unawaited(_ensurePermission());
+
+    // Seed the panel state from reality (a device that boots with its
+    // screen already off must not bind the camera) and let the postpone
+    // leg start if it is due. Best-effort: a failure leaves the default
+    // and the next ScreenStateChanged corrects it.
+    final on = await commands.execute('isScreenOn', const {});
+    if (on.ok && on.data is bool) _screenOn = on.data as bool;
+    _sync();
   }
 
+  /// Whether the camera should be running right now: dismiss-on-motion
+  /// wants it during a screensaver session, postpone-on-motion between
+  /// them (screen on). Both on means it simply never stops.
+  bool get _shouldRun => _screensaverActive
+      ? enabled
+      : _postponeEnabled && _screenOn;
+
   void _sync() {
-    final shouldRun = enabled && _screensaverActive;
-    if (shouldRun) {
+    if (_shouldRun) {
       unawaited(_start());
     } else {
       _stop();
@@ -110,7 +151,7 @@ class MotionManager extends Manager {
         return;
       }
       // State may have flipped while awaiting the permission check.
-      if (!(enabled && _screensaverActive) || _camera != null) return;
+      if (!_shouldRun || _camera != null) return;
       final fps = _settings.get(defs.motionFps).toDouble().clamp(0.5, 30.0);
       final sensitivity =
           _settings.get(defs.motionSensitivity).toInt().clamp(1, 100);

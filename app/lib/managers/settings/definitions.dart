@@ -1680,6 +1680,22 @@ const screensaverDismissOnMotion = SettingDef<bool>(
   section: 'Motion Detection',
 );
 
+// Opt-in because it is the expensive direction (discussion #126): unlike
+// dismiss_on_motion, the camera must run the whole time the screensaver is
+// NOT showing, which is most of the day.
+const screensaverPostponeOnMotion = SettingDef<bool>(
+  key: 'screensaver.postpone_on_motion',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Postpone on motion',
+  description:
+      'Watch the camera between screensavers and hold the screensaver back '
+      'while people are moving nearby. The camera runs the whole time the '
+      'screen is in use, which adds CPU load and heat.',
+  category: 'Screensaver',
+  section: 'Motion Detection',
+);
+
 const motionFps = SettingDef<num>(
   key: 'motion.fps',
   type: SettingType.number,
@@ -2829,6 +2845,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverGlanceEnabled,
   screensaverGlanceEntities,
   screensaverDismissOnMotion,
+  screensaverPostponeOnMotion,
   motionFps,
   motionSensitivity,
   motionCamera,
