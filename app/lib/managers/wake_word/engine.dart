@@ -292,12 +292,20 @@ abstract class WakeWordEngine {
   /// so it is independent of [pauseDetection].
   Future<void> setStopWordActive(bool active) async {}
 
-  /// Per-inference telemetry for the wake-word tester. Set a sink and turn
-  /// it on to receive one map per model per inference (score, threshold,
-  /// rms, latency, and any near-miss detail); off in normal operation to
-  /// avoid the overhead. Base engines that cannot report it stay silent.
+  /// Per-inference telemetry for the wake-word tester and the mic level
+  /// meter. Set a sink and turn it on to receive one map per model per
+  /// inference (score, threshold, rms, latency, and any near-miss detail);
+  /// off in normal operation to avoid the overhead. Base engines that
+  /// cannot report it stay silent.
+  ///
+  /// [tester] marks a tester actually watching the scores: detections are
+  /// then reported in telemetry but do NOT fire (a tester hit must not
+  /// start a voice interaction), and the stop classifier runs unarmed so
+  /// its scores show too. The mic level meter must NOT set it — a meter is
+  /// an observer, and the settings page silently going deaf while it is
+  /// open was exactly the bug (the page tells you to speak at it).
   set onTelemetry(void Function(Map<String, Object?>)? sink) {}
-  void setTelemetry(bool enabled) {}
+  void setTelemetry(bool enabled, {bool tester = false}) {}
 
   /// Pause/resume *detection* without tearing the engine down. The mic stays
   /// open and the models stay loaded, so resuming is instant — as opposed to

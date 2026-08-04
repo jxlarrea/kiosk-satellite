@@ -134,6 +134,49 @@ void main() {
       );
     }
 
+    test('meter telemetry never flags tester mode (the deaf-meter bug)',
+        () async {
+      // The mic level meter rides telemetry; only a TESTER may suppress
+      // real detections. The meter sending tester:true is exactly the bug
+      // that made the device deaf while a settings page showed the meter.
+      await start();
+      engine.setTelemetry(true);
+      await settle();
+      var msg = engine.control
+          .lastWhere((m) => m['type'] == WakeMsg.setTelemetry);
+      expect(msg['enabled'], isTrue);
+      expect(msg['tester'], isFalse);
+
+      engine.setTelemetry(true, tester: true);
+      await settle();
+      msg = engine.control
+          .lastWhere((m) => m['type'] == WakeMsg.setTelemetry);
+      expect(msg['tester'], isTrue);
+
+      engine.setTelemetry(false);
+      await settle();
+      msg = engine.control
+          .lastWhere((m) => m['type'] == WakeMsg.setTelemetry);
+      expect(msg['enabled'], isFalse);
+      expect(msg['tester'], isFalse);
+    });
+
+    test('a restart mid-watch re-arms telemetry with the same mode',
+        () async {
+      await start();
+      engine.setTelemetry(true); // meter mode
+      engine.isolate.crash();
+      await settle();
+      await engine.stop();
+      await start();
+      await settle();
+      final msg = engine.control
+          .lastWhere((m) => m['type'] == WakeMsg.setTelemetry);
+      expect(msg['enabled'], isTrue);
+      expect(msg['tester'], isFalse,
+          reason: 'a meter re-armed across a restart must stay a meter');
+    });
+
     test('a dying isolate is reported, not swallowed', () async {
       // Issue #52: an uncaught error kills the worker, and the engine used to
       // keep reporting itself as running. The device then looked like it was

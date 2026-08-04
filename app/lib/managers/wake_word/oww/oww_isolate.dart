@@ -27,7 +27,10 @@ void owwIsolateEntry(SendPort mainPort) {
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
         case WakeMsg.setTelemetry:
-          worker.setTelemetry(msg['enabled'] == true);
+          worker.setTelemetry(
+            msg['enabled'] == true,
+            tester: msg['tester'] == true,
+          );
         case WakeMsg.stop:
           worker.stop();
           port.close();
@@ -169,10 +172,19 @@ class _OwwWorker {
     }
   }
 
+  /// Telemetry emission (tester or mic level meter watching).
   bool _telemetry = false;
+
+  /// A tester is watching: report hits without firing them and run the
+  /// stop classifier unarmed. Never set for the mic level meter — see the
+  /// vsWakeWord isolate.
+  bool _tester = false;
   double _chunkRms = 0;
 
-  void setTelemetry(bool enabled) => _telemetry = enabled;
+  void setTelemetry(bool enabled, {bool tester = false}) {
+    _telemetry = enabled;
+    _tester = enabled && tester;
+  }
 
   void _ingest(Float32List chunk) {
     final pipeline = _pipeline;
@@ -197,7 +209,7 @@ class _OwwWorker {
 
     for (final k in _kws) {
       // Stop classifier runs while armed, or while a tester watches it.
-      if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
+      if (k.isStop ? (!_stopArmed && !_tester) : _detected) continue;
       final sw = _telemetry ? (Stopwatch()..start()) : null;
       final probability = _classify(k);
       sw?.stop();
@@ -219,7 +231,8 @@ class _OwwWorker {
       if (trigger == null) continue;
       // Tester open: recorded in telemetry, but do not fire a real
       // detection (it would start a voice interaction). Keep scoring.
-      if (_telemetry) continue;
+      // Tester only: the mic level meter must never eat a real wake word.
+      if (_tester) continue;
 
       if (k.isStop) {
         _log('info',

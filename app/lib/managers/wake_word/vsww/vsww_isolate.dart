@@ -33,7 +33,10 @@ void vswwIsolateEntry(SendPort mainPort) {
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
         case WakeMsg.setTelemetry:
-          worker.setTelemetry(msg['enabled'] == true);
+          worker.setTelemetry(
+            msg['enabled'] == true,
+            tester: msg['tester'] == true,
+          );
         case WakeMsg.stop:
           worker.stop();
           port.close();
@@ -290,9 +293,19 @@ class _IsolateWorker {
     return math.sqrt(sum / samples.length);
   }
 
+  /// Telemetry emission (tester or mic level meter watching).
   bool _telemetry = false;
 
-  void setTelemetry(bool enabled) => _telemetry = enabled;
+  /// A tester is watching: report hits in telemetry but never fire them,
+  /// and run the stop classifier unarmed so its scores show. The mic level
+  /// meter keeps this OFF — it only reads rms, and suppressing detections
+  /// for it made the device deaf while the settings page was open.
+  bool _tester = false;
+
+  void setTelemetry(bool enabled, {bool tester = false}) {
+    _telemetry = enabled;
+    _tester = enabled && tester;
+  }
 
   void _infer() {
     final ring = _ring, scratch = _scratch, extractor = _extractor;
@@ -321,7 +334,7 @@ class _IsolateWorker {
       // Wake models go quiet once one has fired (until re-armed); the stop
       // classifier only runs while the card says playback is interruptible,
       // or while a tester is watching it (telemetry, no real detection).
-      if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
+      if (k.isStop ? (!_stopArmed && !_tester) : _detected) continue;
       final tOut = k.manifest.tOut;
       final vocab = k.manifest.ctc.vocabSize;
       final sw = _telemetry ? (Stopwatch()..start()) : null;
@@ -388,8 +401,9 @@ class _IsolateWorker {
       }
       // Tester open: the hit is in telemetry above, but must not fire a
       // real detection (that would start a voice interaction). Keep
-      // scoring — do not latch _detected.
-      if (fired && _telemetry) continue;
+      // scoring — do not latch _detected. Tester only: the mic level
+      // meter's telemetry must never eat a real wake word.
+      if (fired && _tester) continue;
       if (fired) {
         if (k.isStop) {
           _log('info',

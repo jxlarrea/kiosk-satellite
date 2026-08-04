@@ -206,15 +206,21 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
   EngineFailureCallback? _onFailure;
   void Function(Map<String, Object?>)? _onTelemetry;
   bool _telemetryOn = false;
+  bool _testerOn = false;
 
   @override
   set onTelemetry(void Function(Map<String, Object?>)? sink) =>
       _onTelemetry = sink;
 
   @override
-  void setTelemetry(bool enabled) {
+  void setTelemetry(bool enabled, {bool tester = false}) {
     _telemetryOn = enabled;
-    _isolatePort?.send({'type': WakeMsg.setTelemetry, 'enabled': enabled});
+    _testerOn = enabled && tester;
+    _isolatePort?.send({
+      'type': WakeMsg.setTelemetry,
+      'enabled': enabled,
+      'tester': _testerOn,
+    });
   }
   Completer<bool>? _ready;
   Completer<void>? _stopped;
@@ -408,7 +414,11 @@ abstract class IsolateWakeEngine extends WakeWordEngine {
       }
       // A restart mid-test must re-arm telemetry on the fresh isolate.
       if (_telemetryOn) {
-        _isolatePort!.send({'type': WakeMsg.setTelemetry, 'enabled': true});
+        _isolatePort!.send({
+          'type': WakeMsg.setTelemetry,
+          'enabled': true,
+          'tester': _testerOn,
+        });
       }
       return;
     }

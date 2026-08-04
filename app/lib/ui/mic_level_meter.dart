@@ -34,9 +34,10 @@ const _greenUpTo = 15; // fraction 0.625 ~= -26 dBFS ~= 0.05 RMS
 const _amberUpTo = 20; // fraction 0.833 ~= -15 dBFS
 
 /// Live microphone level row for the Microphone settings card. Rides the
-/// wake-word tester's telemetry feed (reference counted, so it coexists
-/// with an open tester), which also means it only moves while the engine
-/// is listening - exactly when the gain above it matters.
+/// engine's telemetry feed in meter mode (reference counted, so it
+/// coexists with an open tester), which also means it only moves while the
+/// engine is listening - exactly when the gain above it matters. Meter
+/// mode, never tester mode: detections keep firing while it is visible.
 class MicLevelTile extends StatefulWidget {
   const MicLevelTile({super.key, required this.container});
 
@@ -55,7 +56,7 @@ class _MicLevelTileState extends State<MicLevelTile> {
   @override
   void initState() {
     super.initState();
-    widget.container.wakeWord.startTest();
+    widget.container.wakeWord.startMeter();
     _sub = widget.container.wakeWord.telemetry.listen((m) {
       _lastSampleMs = DateTime.now().millisecondsSinceEpoch;
       _rms.value = (m['rms'] as num?)?.toDouble() ?? 0;
@@ -74,7 +75,7 @@ class _MicLevelTileState extends State<MicLevelTile> {
   void dispose() {
     _staleness?.cancel();
     _sub?.cancel();
-    widget.container.wakeWord.stopTest();
+    widget.container.wakeWord.stopMeter();
     _rms.dispose();
     super.dispose();
   }

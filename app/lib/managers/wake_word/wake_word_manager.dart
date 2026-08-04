@@ -93,22 +93,40 @@ class WakeWordManager extends Manager {
   /// dialog subscribes while it is open. Off (no engine overhead) otherwise.
   final _telemetry = StreamController<Map<String, Object?>>.broadcast();
   int _testers = 0;
+  int _meters = 0;
 
   /// Live per-inference scores from the running engine, while a tester holds
   /// [startTest] open.
   Stream<Map<String, Object?>> get telemetry => _telemetry.stream;
 
-  /// Begin streaming telemetry from whichever engine is running. Reference
-  /// counted so overlapping testers (device + remote) share one feed.
+  /// Begin streaming telemetry for a TESTER, which also suppresses real
+  /// detections (a tester hit must not start a voice interaction).
+  /// Reference counted so overlapping testers (device + remote) share one
+  /// feed.
   void startTest() {
     _testers++;
-    if (_testers == 1) _applyTelemetry();
+    _applyTelemetry();
   }
 
   void stopTest() {
     if (_testers == 0) return;
     _testers--;
-    if (_testers == 0) _applyTelemetry();
+    _applyTelemetry();
+  }
+
+  /// Begin streaming telemetry for a mic level METER: rms only, real
+  /// detections keep firing. The meter used to ride [startTest], which
+  /// silently made the device deaf while any settings page showed it —
+  /// worse, the page's copy instructs the person to SPEAK at it.
+  void startMeter() {
+    _meters++;
+    _applyTelemetry();
+  }
+
+  void stopMeter() {
+    if (_meters == 0) return;
+    _meters--;
+    _applyTelemetry();
   }
 
   // Remote mic-level watch. The admin UI cannot hold an in-process telemetry
@@ -123,7 +141,7 @@ class WakeWordManager extends Manager {
     _micLevelExpiry?.cancel();
     _micLevelExpiry = Timer(const Duration(seconds: 15), _stopMicLevelWatch);
     if (_micLevelSub != null) return;
-    startTest();
+    startMeter();
     _micLevelSub = telemetry.listen((m) {
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - _lastMicLevelPushMs < 100) return;
@@ -138,21 +156,22 @@ class WakeWordManager extends Manager {
     if (_micLevelSub == null) return;
     _micLevelSub!.cancel();
     _micLevelSub = null;
-    stopTest();
+    stopMeter();
   }
 
   /// Point the active engine's telemetry at our stream (or unhook it).
   /// Re-run whenever the running engine changes, so requesting a test
   /// before the engine is up — or across an engine switch — still lands on
-  /// the one actually inferring.
+  /// the one actually inferring. Suppression follows the testers alone:
+  /// a mic level meter watching at the same time never blocks detections.
   void _applyTelemetry() {
-    final want = _testers > 0;
+    final want = _testers > 0 || _meters > 0;
     _engine.onTelemetry = want
         ? ((m) {
             if (!_telemetry.isClosed) _telemetry.add(m);
           })
         : null;
-    _engine.setTelemetry(want);
+    _engine.setTelemetry(want, tester: _testers > 0);
   }
 
   bool get enabled => _settings.get(defs.wakeWordEnabled);
@@ -892,9 +911,9 @@ class WakeWordManager extends Manager {
             'listening (${_config!.engine.name})'
             '${_engine.supportsStopWord ? ' + stop word' : ''}');
         _runningEngine = _engine;
-        // A tester opened before this engine came up (or across an engine
-        // switch) still gets its telemetry.
-        if (_testers > 0) _applyTelemetry();
+        // A tester or meter opened before this engine came up (or across
+        // an engine switch) still gets its telemetry.
+        if (_testers > 0 || _meters > 0) _applyTelemetry();
       } else if (!_failed) {
         // The engine reports its own failures (a refused mic, models that would
         // not download) through onFailure, which has already run and said

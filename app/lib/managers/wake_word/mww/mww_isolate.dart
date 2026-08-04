@@ -29,7 +29,10 @@ void mwwIsolateEntry(SendPort mainPort) {
         case WakeMsg.armStop:
           worker.armStop(msg['active'] == true);
         case WakeMsg.setTelemetry:
-          worker.setTelemetry(msg['enabled'] == true);
+          worker.setTelemetry(
+            msg['enabled'] == true,
+            tester: msg['tester'] == true,
+          );
         case WakeMsg.stop:
           worker.stop();
           port.close();
@@ -191,10 +194,19 @@ class _MwwWorker {
     }
   }
 
+  /// Telemetry emission (tester or mic level meter watching).
   bool _telemetry = false;
+
+  /// A tester is watching: report hits without firing them and run the
+  /// stop classifier unarmed. Never set for the mic level meter — see the
+  /// vsWakeWord isolate.
+  bool _tester = false;
   double _chunkRms = 0;
 
-  void setTelemetry(bool enabled) => _telemetry = enabled;
+  void setTelemetry(bool enabled, {bool tester = false}) {
+    _telemetry = enabled;
+    _tester = enabled && tester;
+  }
 
   void _ingest(Float64List chunk) {
     final frontend = _frontend;
@@ -216,7 +228,7 @@ class _MwwWorker {
         // Wake models go quiet once one has fired (until re-armed); the stop
         // classifier only runs while the card says playback is interruptible,
         // or while a tester is watching it (telemetry, no real detection).
-        if (k.isStop ? (!_stopArmed && !_telemetry) : _detected) continue;
+        if (k.isStop ? (!_stopArmed && !_tester) : _detected) continue;
         // Copied, not referenced: the frontend reuses its frame buffers.
         k.accum[k.accumLen].setAll(0, feature);
         k.accumLen++;
@@ -252,7 +264,8 @@ class _MwwWorker {
         // Tester open: the hit is recorded in telemetry above, but must not
         // fire a real detection (that would start a voice interaction). Keep
         // scoring — do not latch _detected — so the chart stays live.
-        if (_telemetry) continue;
+        // Tester only: the mic level meter must never eat a real wake word.
+        if (_tester) continue;
 
         if (k.isStop) {
           _log(
