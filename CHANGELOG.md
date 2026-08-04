@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v0.34.0-beta - 2026-08-04
 
 ### Fixed
 - Devices whose GPU drivers crash under Flutter's Impeller renderer no longer crash at every launch (#127, seen on a Galaxy Tab Pro 8.4 whose 2016 Adreno driver dies the moment Impeller draws). The renderer is now chosen per device when the engine starts: a new Legacy renderer switch in the Device settings forces the older Skia renderer, and the app also protects itself, so that two consecutive launches that die before showing a frame flip the switch automatically. Together with the crash self-heal an affected device converges to a working renderer on its own, and modern hardware keeps Impeller.
