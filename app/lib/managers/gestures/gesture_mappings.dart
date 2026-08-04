@@ -24,6 +24,7 @@
 ///  - url:              url (opened in the external link overlay)
 ///  - camera_view:      mode (show|hide), viewId (empty = default view)
 ///  - sendspin_player:  show the floating player card (a fling hides it)
+///  - screensaver:      start the screensaver (a tap already stops it)
 ///  - launch_app:       package
 ///  - open_uri:         uri, an Android deep link (ACTION_VIEW)
 ///  - android_settings
@@ -152,6 +153,8 @@ String describeGestureAction(Map<String, Object?> action) {
       return name.isEmpty ? 'Show the camera view' : 'Show camera view $name';
     case 'sendspin_player':
       return 'Show the Sendspin player';
+    case 'screensaver':
+      return 'Start the screensaver';
     case 'launch_app':
       return 'Open app ${action['package']}';
     case 'open_uri':

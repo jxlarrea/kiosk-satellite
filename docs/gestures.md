@@ -56,6 +56,7 @@ The chooser groups them: Kiosk Satellite, Android, Home Assistant.
 | Open a web page | An external URL, in the same overlay a dashboard link opens, with its close button. |
 | Show a camera view | Any configured WebRTC camera view, or close the active one. |
 | Show the Sendspin player | The floating player card; a fling on the card is how it hides. |
+| Start the screensaver | Whatever mode is configured; any tap dismisses it, so there is no stop action. |
 | Open another app | By package name, kiosk still running behind it. |
 | Open a deep link | Any URI another app claims, `myapp://path`. |
 | Open Android Settings | |

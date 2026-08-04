@@ -1604,6 +1604,7 @@ const CAMERA_ICONS = {
     + '<path d="M3 12h18M12 3a13.5 13.5 0 0 1 0 18M12 3a13.5 13.5 0 0 0 0 18"/>',
   speaker: '<rect x="6" y="3" width="12" height="18" rx="2.5"/>'
     + '<circle cx="12" cy="14.5" r="3.5"/><circle cx="12" cy="7.5" r="1"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   apps: '<path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01'
     + 'M5 19h.01M12 19h.01M19 19h.01"/>',
   link: '<path d="M10 13a4 4 0 0 0 5.7.3l2-2a4 4 0 0 0-5.7-5.6l-1.1 1.1"/>'
@@ -2390,6 +2391,7 @@ const GESTURE_ACTION_GROUPS = [
     ['url', 'Open a web page', 'globe'],
     ['camera_view', 'Show a camera view', 'video'],
     ['sendspin_player', 'Show the Sendspin player', 'speaker'],
+    ['screensaver', 'Start the screensaver', 'moon'],
   ]],
   ['Android', [
     ['launch_app', 'Open another app', 'apps'],
@@ -2436,6 +2438,7 @@ function describeGestureAction(a) {
       if (a.mode === 'hide') return 'Close the camera view';
       return a.viewName ? `Show camera view ${a.viewName}` : 'Show the camera view';
     case 'sendspin_player': return 'Show the Sendspin player';
+    case 'screensaver': return 'Start the screensaver';
     case 'launch_app': return `Open app ${a.package}`;
     case 'open_uri': return `Open ${a.uri}`;
     case 'android_settings': return 'Open Android Settings';
@@ -2776,7 +2779,7 @@ async function pickGestureAction(current) {
   if (!type) return null;
   const carried = current?.type === type ? current : null;
   switch (type) {
-    case 'android_settings': case 'sendspin_player':
+    case 'android_settings': case 'sendspin_player': case 'screensaver':
       return { type };
     case 'navigate': return configureGestureNavigate(carried);
     case 'url': return configureGestureText(carried, {

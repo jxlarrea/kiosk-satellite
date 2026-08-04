@@ -124,6 +124,10 @@ void main() {
         }),
         'Trigger automation.lights_off',
       );
+      expect(
+        describeGestureAction({'type': 'screensaver'}),
+        'Start the screensaver',
+      );
     });
   });
 
@@ -236,6 +240,15 @@ void main() {
         'data': {'brightness_pct': 60},
       });
       expect(executed[1].$2, {'domain': 'scene', 'service': 'turn_on'});
+    });
+
+    test('screensaver action starts the screensaver', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"br",'
+        '"taps":3},"action":{"type":"screensaver"}}]',
+      );
+      await fire('g1');
+      expect(executed.single.$1, 'startScreensaver');
     });
 
     test('sendspin_player turns the show_player setting on', () async {

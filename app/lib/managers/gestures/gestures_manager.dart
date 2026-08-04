@@ -75,6 +75,10 @@ class GesturesManager extends Manager {
       case 'sendspin_player':
         // Show only: the fling on the card is already the way to hide it.
         await _settings.set(defs.sendspinShowPlayer, true);
+      case 'screensaver':
+        // Start only: any tap already dismisses a running screensaver, so
+        // a stop action would map a gesture to what every touch does.
+        await _run('startScreensaver', const {});
       case 'launch_app':
         await _run('launchApp', {'package': a['package']});
       case 'open_uri':
