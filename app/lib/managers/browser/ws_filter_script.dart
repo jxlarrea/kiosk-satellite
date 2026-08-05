@@ -95,7 +95,13 @@ const wsFilterScript = '''
   }
   function applyRemove(r) { (r || []).forEach(function (e) { delete S.shadow[e]; }); }
 
-  function allowed(e) { return !S.enabled || !S.allow || S.allow.has(e); }
+  // update.* always passes: the sidebar's update badges live outside every
+  // view, and update entities change state rarely enough that forwarding
+  // them costs nothing (issue #131).
+  function allowed(e) {
+    return !S.enabled || !S.allow || S.allow.has(e) ||
+      e.lastIndexOf('update.', 0) === 0;
+  }
 
   // ---- deliver a raw frame to the frontend's listeners ----
   function deliver(str) {
@@ -237,13 +243,13 @@ const wsFilterScript = '''
       if (vp === view) { v = views[i]; break; }
     }
     if (!v) v = views[Number(view)] || null;
-    if (!v) { S.allow = null; return; } // unknown view -> do not filter
+    if (!v) { lift(); return; } // unknown view -> do not filter
     var acc = new Set();
     collect(v.cards, acc); collect(v.badges, acc); collect(v.sections, acc);
     var autos = []; findAuto(v, autos);
     var hass = hassEl();
     for (var a = 0; a < autos.length; a++) {
-      if (!hass || !expandAuto(autos[a], acc, hass)) { S.allow = null; return; }
+      if (!hass || !expandAuto(autos[a], acc, hass)) { lift(); return; }
     }
     // The literal scan can match entity-id-shaped strings that are not
     // entities ("0.5em" from a card-mod style, "e.g" in prose). Keep only ids
@@ -255,7 +261,7 @@ const wsFilterScript = '''
     }
     // An empty allowlist would go stale EVERYWHERE on the view — a view whose
     // entities cannot be determined must pass through, not filter to nothing.
-    if (!acc.size) { S.allow = null; return; }
+    if (!acc.size) { lift(); return; }
     // Voice Satellite's own device must never go stale, whatever view is on
     // screen: the card gates its whole wake pipeline on the satellite's
     // sibling select/switch entities (wake_word_detection, mute, wake_sound,
@@ -279,17 +285,39 @@ const wsFilterScript = '''
     S.allow = acc;
     pushAdd(Array.from(acc)); // refresh this view's entities to current state
   }
+  // Stop filtering for the current location. If an allowlist was active,
+  // replay every entity from the shadow so the page catches up on all the
+  // changes dropped while it was filtering (the same move setEnabled(false)
+  // makes). Without the replay a Settings page arrives reading whatever
+  // states it had when filtering started, and only a full app restart used
+  // to fix that (issue #131).
+  function lift() {
+    var had = !!S.allow;
+    S.built = true;
+    S.allow = null;
+    if (had) pushAdd(Object.keys(S.shadow));
+  }
   function recompute() {
     var hass = hassEl();
     if (!hass) { setTimeout(recompute, 500); return; }
     var l = loc();
+    // Non-dashboard panels (Settings, Developer tools, History, custom
+    // panels like Voice Satellite's) carry no lovelace config, so filtering
+    // there leaves the page stale (issue #131). The frontend already knows
+    // what every path is: hass.panels maps the first segment to its panel,
+    // and only lovelace panels are dashboards. Deciding here also spares the
+    // server a doomed lovelace/config call on every Settings visit. When the
+    // panel is unknown (or panels are not loaded yet), fall through to the
+    // config request below, whose rejection lifts the filter anyway.
+    var panel = (hass.panels || {})[l.dash];
+    if (panel && panel.component_name !== 'lovelace') { lift(); return; }
     if (S.configCache[l.dash]) { build(S.configCache[l.dash], l.view); return; }
     try {
       hass.connection.sendMessagePromise({ type: 'lovelace/config', url_path: l.dash === 'lovelace' ? null : l.dash })
         .then(function (cfg) { S.configCache[l.dash] = cfg; build(cfg, l.view); })
         // Strategy dashboard etc. -> do not filter.
-        .catch(function () { S.allow = null; S.built = true; });
-    } catch (e) { S.allow = null; S.built = true; }
+        .catch(function () { lift(); });
+    } catch (e) { lift(); }
   }
   window.addEventListener('location-changed', function () { if (S.enabled) recompute(); });
   window.addEventListener('popstate', function () { if (S.enabled) recompute(); });
