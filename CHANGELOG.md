@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The Web Browsing menu subtitle no longer mentions Start URL, which is not an option on that page (the dashboard is picked under Home Assistant Configuration); it now reads "Cache, SSL, Zoom level" on the device and in the remote admin.
+
 ## v0.35.0-beta - 2026-08-04
 
 ### Added

@@ -143,7 +143,7 @@ const _categories = <(String, String, IconData, String)>[
     Icons.graphic_eq_outlined,
     'Wake word, background listening',
   ),
-  ('Browser', 'Web Browsing', Icons.public, 'Start URL, cache, zoom'),
+  ('Browser', 'Web Browsing', Icons.public, 'Cache, SSL, Zoom level'),
   (
     'Kiosk',
     'Kiosk Mode',
