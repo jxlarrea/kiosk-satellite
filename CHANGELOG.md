@@ -2,6 +2,21 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.1 - 2026-08-05
+
+### Changed
+- Kiosk Satellite leaves beta. Versions now follow the same scheme as Home Assistant and Voice Satellite, year.month.release, so this release is 2026.8.1 and the -beta suffix is gone. Updating works exactly as before.
+- The whole app now draws from one design system: a single spacing and corner-radius scale, one card and section-heading treatment on every settings page (Camera Streams, Gestures and the setup wizard included), and Rubik, the typeface the screensaver clocks already use, on page, dialog and drawer titles in both the device UI and the remote admin.
+- Buttons are consistent everywhere: compact pills at one height and minimum width in both UIs, so Save and Cancel render as a matched pair, and secondary actions share one outlined style (the remote admin's Validate, Import, Export and Grant buttons no longer differ from Change view).
+- Dialogs share one anatomy in both UIs: the title and the action row stay on screen and only the body scrolls, pickers use real radio rows with clearance next to the scrollbar, confirm buttons are short verbs, and stacked input fields in the camera editors got their missing spacing.
+- Tab-like controls in the remote admin (the Logs source and the File Manager location) are now real segmented tabs, echoing the app's segmented buttons instead of looking like action buttons.
+- Long setting descriptions were rewritten to one or two short sentences, so rows no longer wrap into walls of text on small screens; both UIs pick the new texts up.
+- The drawer is tidier: Web Console left the menu (the console lives in Settings > Logs), Toggle HA Kiosk Mode is now HA Kiosk Mode, and Default Camera View is now Camera View, matching its renamed Allowed Actions switch.
+- The remote admin's Dashboard tab is now Overview, its narrow-screen top bar shows the app icon and a proper menu button, and log severity colors are legible in the light theme.
+
+### Fixed
+- Loading the remote admin no longer logs two failed haListDashboardViews requests: dashboards without a stored view config (auto-generated and strategy dashboards) now report no views instead of an error, and every picker keeps falling back to the dashboard's default view.
+
 ## v0.35.1-beta - 2026-08-05
 
 ### Added
