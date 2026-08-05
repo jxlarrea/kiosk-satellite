@@ -205,6 +205,23 @@ class HomeAssistantManager extends Manager {
       )
       ..register(
         Command(
+          name: 'haEntityAttributes',
+          description:
+              "One entity's current attributes, for the At a Glance "
+              'attribute picker.',
+          params: const {'entity_id': 'the entity to read'},
+          handler: (p) async {
+            final attributes = await fetchEntityAttributes(
+              '${p['entity_id'] ?? ''}',
+            );
+            return attributes == null
+                ? const CommandResult.fail('could not read the entity')
+                : CommandResult.ok(attributes);
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'haListDashboards',
           description: 'List Home Assistant dashboards',
           handler: (_) async {
@@ -1153,6 +1170,31 @@ class HomeAssistantManager extends Manager {
       return byRank != 0 ? byRank : a.$2.compareTo(b.$2);
     });
     return [for (final match in matches.take(50)) match.$3];
+  }
+
+  /// One entity's current attributes, or null when it (or Home Assistant)
+  /// cannot be reached. For the At a Glance attribute picker: values ride
+  /// along so the picker can show what each attribute currently reads.
+  Future<Map<String, Object?>?> fetchEntityAttributes(String entityId) async {
+    if (!configured || entityId.isEmpty) return null;
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/states/$entityId'),
+            headers: {'Authorization': 'Bearer ${_settings.get(defs.haToken)}'},
+          )
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        log.warn(name, 'entity fetch failed: HTTP ${response.statusCode}');
+        return null;
+      }
+      final decoded = jsonDecode(response.body);
+      final attributes = decoded is Map ? decoded['attributes'] : null;
+      return attributes is Map ? attributes.cast<String, Object?>() : const {};
+    } catch (e) {
+      log.warn(name, 'entity fetch failed: $e');
+      return null;
+    }
   }
 
   /// Every entity's current state, or null when Home Assistant cannot be

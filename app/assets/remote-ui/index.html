@@ -1683,6 +1683,17 @@ const CAMERA_ICONS = {
   star: '<path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5'
     + '.9-5.4L4.2 9.7l5.4-.8z"/>',
   drag: '<path d="M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01"/>',
+  gear: '<circle cx="12" cy="12" r="3"/>'
+    + '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83'
+    + 'l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1'
+    + '-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06'
+    + 'a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0'
+    + '-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0'
+    + '-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33'
+    + 'h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51'
+    + ' 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06'
+    + 'a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4'
+    + 'h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   up: '<path d="M12 19V5m0 0-6 6m6-6 6 6"/>',
   down: '<path d="M12 5v14m0 0 6-6m-6 6-6-6"/>',
   gesture: '<path d="M4 9c1-2 2.6-3.6 3.7-3 1.3.7-1.3 3.4-2.1 5.3'
@@ -1907,6 +1918,47 @@ const MIC_GROUP_NOTE =
   'Only for devices that capture too quietly. Wrong values make wake word ' +
   'detection worse.';
 
+/* Which value one glance entity displays: its state (the default) or one of
+   its attributes (issue #132). Mirrors the device's picker: the options are
+   the entity's live scalar attributes, each shown with its current reading,
+   so the choice is made by looking at real values. Resolves to '' for the
+   state, an attribute name, or null when cancelled. */
+async function glanceAttributePicker(entity) {
+  let attributes = null;
+  try {
+    const res = await (await api('/api/commands/haEntityAttributes', {
+      method: 'POST', body: JSON.stringify({ entity_id: entity.entity_id }) })).json();
+    if (res.ok) attributes = res.data || {};
+  } catch (_) {}
+  if (!attributes) {
+    messageBox({ title: 'At a glance', message: 'Could not reach Home Assistant.' });
+    return null;
+  }
+  /* Presentation metadata and structured values are left out, same list as
+     the device's picker: a forecast array is not a glanceable reading. */
+  const hidden = ['friendly_name', 'icon', 'entity_picture',
+    'supported_features', 'attribution'];
+  const names = Object.keys(attributes).filter((k) =>
+    !hidden.includes(k)
+    && (attributes[k] === null || typeof attributes[k] !== 'object')).sort();
+  return new Promise((resolve) => {
+    const done = (value) => { shell.close(); resolve(value); };
+    const shell = modalShell({
+      title: 'Displayed value', width: 460, onDismiss: () => done(null) });
+    const current = entity.attribute || '';
+    shell.body.appendChild(radioRow('State', '', current === '', () => done('')));
+    for (const name of names) {
+      shell.body.appendChild(radioRow(name, String(attributes[name]),
+        current === name, () => done(name)));
+    }
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-ghost';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => done(null));
+    shell.foot.appendChild(cancel);
+  });
+}
+
 async function glanceEntityPicker(initial) {
   const chosen = (initial || []).map((e) => ({ ...e }));
   const body = document.createElement('div');
@@ -1951,8 +2003,17 @@ async function glanceEntityPicker(initial) {
       name.textContent = entity.name || entity.entity_id;
       const desc = document.createElement('div');
       desc.className = 'desc';
-      desc.textContent = entity.entity_id;
+      desc.textContent = entity.attribute
+        ? `${entity.entity_id} · ${entity.attribute}`
+        : entity.entity_id;
       info.append(name, desc);
+      const gear = cameraAction('Displayed value', async () => {
+        const picked = await glanceAttributePicker(entity);
+        if (picked === null) return;
+        if (picked) entity.attribute = picked;
+        else delete entity.attribute;
+        renderChosen();
+      }, false, 'gear');
       const move = (delta) => {
         const to = index + delta;
         if (to < 0 || to >= chosen.length) return;
@@ -1967,7 +2028,7 @@ async function glanceEntityPicker(initial) {
         renderChosen();
         renderResults(lastResults);
       }, false, 'delete');
-      item.append(info, up, down, remove);
+      item.append(info, gear, up, down, remove);
       list.appendChild(item);
     });
   };
@@ -4970,6 +5031,18 @@ function settingRow(s) {
 
   // The gallery selection lives on the device (system photo picker); the
   // remote shows the count, mirroring the device row's summary.
+  // The clock's background photo lives on the device and is picked there;
+  // remotely the row only reports whether one is set.
+  if (s.key === 'screensaver.clock_background') {
+    const val = document.createElement('span');
+    val.className = 'device';
+    val.textContent = s.value
+      ? 'Selected. Change on the device.'
+      : 'None selected. Pick on the device.';
+    row.appendChild(val);
+    return row;
+  }
+
   if (s.key === 'screensaver.gallery_items') {
     let count = 0;
     try { count = JSON.parse(s.value || '[]').length; } catch (_) {}
@@ -5264,7 +5337,11 @@ function settingRow(s) {
       }
       // Numbered so the display order is readable without opening the modal.
       return chosen.map((entity, index) => readOnlyRow(
-        entity.name || entity.entity_id, entity.entity_id, `${index + 1}`));
+        entity.name || entity.entity_id,
+        entity.attribute
+          ? `${entity.entity_id} · ${entity.attribute}`
+          : entity.entity_id,
+        `${index + 1}`));
     };
     const repaint = () => {
       const parent = row.parentNode;

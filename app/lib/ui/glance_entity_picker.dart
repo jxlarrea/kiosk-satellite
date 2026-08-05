@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../app_container.dart';
 import '../managers/settings/definitions.dart';
+import 'kit.dart';
 
 /// Chooses the entities the At a Glance row shows: the chosen ones on top in
 /// the order they will appear, a search below for adding more.
@@ -85,6 +86,62 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
   bool _isChosen(String entityId) =>
       _chosen.any((entity) => entity['entity_id'] == entityId);
 
+  /// Attributes that are presentation metadata rather than values anyone
+  /// would put on the row. Structured values (lists, maps) are skipped too:
+  /// a forecast array is not a glanceable reading.
+  static const _hiddenAttributes = {
+    'friendly_name',
+    'icon',
+    'entity_picture',
+    'supported_features',
+    'attribution',
+  };
+
+  /// What one chosen entity displays: its state (the default) or one of its
+  /// attributes (issue #132). The options come from the entity's live
+  /// attributes, each with its current value, so the choice is made by
+  /// looking at real readings instead of guessing at names.
+  Future<void> _pickAttribute(int index) async {
+    final entity = _chosen[index];
+    final result = await widget.container.commands.execute(
+      'haEntityAttributes',
+      {'entity_id': entity['entity_id']},
+    );
+    if (!mounted) return;
+    if (!result.ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not reach Home Assistant.')),
+      );
+      return;
+    }
+    final attributes = (result.data as Map?) ?? const {};
+    final names = [
+      for (final entry in attributes.entries)
+        if (entry.value is! Map &&
+            entry.value is! List &&
+            !_hiddenAttributes.contains(entry.key))
+          '${entry.key}',
+    ]..sort();
+    final picked = await showRadioPicker<String>(
+      context,
+      title: 'Displayed value',
+      selected: entity['attribute'] as String? ?? '',
+      options: [
+        const PickerOption('', 'State'),
+        for (final name in names)
+          PickerOption(name, name, detail: '${attributes[name]}'),
+      ],
+    );
+    if (picked == null) return;
+    setState(() {
+      if (picked.isEmpty) {
+        entity.remove('attribute');
+      } else {
+        entity['attribute'] = picked;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final full = _chosen.length >= screensaverGlanceMax;
@@ -129,11 +186,27 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
                       child: const Icon(Icons.drag_handle),
                     ),
                     title: Text('${entity['name']}'),
-                    subtitle: Text('${entity['entity_id']}'),
-                    trailing: IconButton(
-                      tooltip: 'Remove',
-                      icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: () => setState(() => _chosen.removeAt(index)),
+                    subtitle: Text(
+                      entity['attribute'] == null
+                          ? '${entity['entity_id']}'
+                          : '${entity['entity_id']} · '
+                                '${entity['attribute']}',
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Displayed value',
+                          icon: const Icon(Icons.settings_outlined),
+                          onPressed: () => _pickAttribute(index),
+                        ),
+                        IconButton(
+                          tooltip: 'Remove',
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: () =>
+                              setState(() => _chosen.removeAt(index)),
+                        ),
+                      ],
                     ),
                   ),
               ],

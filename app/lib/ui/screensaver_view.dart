@@ -249,6 +249,25 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   // Dutch one.
   String _date() => fullDate(_now);
 
+  /// The background photo layers, or nothing when none is set (or the file
+  /// is gone — a restore onto another device brings the setting but not
+  /// the copy, and a missing file must not take the clock down with it).
+  List<Widget> _background(Size size, double dpr) {
+    final path = widget.container.settings.get(defs.screensaverClockBackground);
+    if (path.isEmpty) return const [];
+    final file = File(path);
+    if (!file.existsSync()) return const [];
+    return [
+      Image.file(
+        file,
+        fit: BoxFit.cover,
+        cacheWidth: (size.width * dpr).round(),
+        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+      ),
+      const ColoredBox(color: Color(0x59000000)),
+    ];
+  }
+
   /// The center of the face for the non-digital styles (issue #56). The
   /// shell around it — glance row, pixel shift, anchor — is shared, so the
   /// style only swaps what sits in the middle.
@@ -304,6 +323,12 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          // The background photo (issue #132), under everything, on any
+          // face. Decoded at screen resolution, not the photo's — a 12MP
+          // shot would otherwise hold ~50MB of texture for the whole
+          // screensaver session. The scrim keeps the clock and the row
+          // readable over whatever the photo happens to be.
+          ..._background(size, MediaQuery.devicePixelRatioOf(context)),
           // The row is pinned to the bottom of the display, NOT laid out
           // below the clock. Stacked under it, its position moved with the
           // clock's height, so turning the size slider up walked the row

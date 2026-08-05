@@ -15,7 +15,9 @@ class GlanceEntity {
   const GlanceEntity({
     required this.entityId,
     required this.name,
+    this.attribute,
     this.state,
+    this.attributeValue,
     this.icon,
     this.deviceClass,
     this.unit,
@@ -23,6 +25,15 @@ class GlanceEntity {
   });
 
   final String entityId;
+
+  /// The attribute to display instead of the state (issue #132), or null for
+  /// the state itself. Part of the configuration, not the live data: it is
+  /// chosen in the picker and stored with the entity.
+  final String? attribute;
+
+  /// The last known value of [attribute], already flattened to display text.
+  /// Null while nothing has reported it (or [attribute] is null).
+  final String? attributeValue;
 
   /// The name to show. Home Assistant's friendly name once it has reported
   /// one; until then the name saved when the entity was picked, so the row
@@ -43,6 +54,7 @@ class GlanceEntity {
   GlanceEntity merge({
     String? name,
     String? state,
+    String? attributeValue,
     String? icon,
     String? deviceClass,
     String? unit,
@@ -50,21 +62,44 @@ class GlanceEntity {
   }) => GlanceEntity(
     entityId: entityId,
     name: name ?? this.name,
+    attribute: attribute,
     state: state ?? this.state,
+    attributeValue: attributeValue ?? this.attributeValue,
     icon: icon ?? this.icon,
     deviceClass: deviceClass ?? this.deviceClass,
     unit: unit ?? this.unit,
     precision: precision ?? this.precision,
   );
 
-  Map<String, Object?> toJson() => {'entity_id': entityId, 'name': name};
+  Map<String, Object?> toJson() => {
+    'entity_id': entityId,
+    'name': name,
+    if (attribute != null) 'attribute': attribute,
+  };
 
-  static GlanceEntity fromJson(Map<Object?, Object?> json) => GlanceEntity(
-    entityId: '${json['entity_id'] ?? ''}',
-    name: '${json['name'] ?? ''}',
-  );
+  static GlanceEntity fromJson(Map<Object?, Object?> json) {
+    final attribute = '${json['attribute'] ?? ''}';
+    return GlanceEntity(
+      entityId: '${json['entity_id'] ?? ''}',
+      name: '${json['name'] ?? ''}',
+      attribute: attribute.isEmpty ? null : attribute,
+    );
+  }
 }
 
+
+/// An attribute value as display text. Attributes are free-form JSON: a
+/// whole number sheds the ".0" a double parse gives it, everything else
+/// shows as it is. Deliberately no unit or precision — those belong to the
+/// state, not to attributes.
+String glanceAttributeText(Object? value) {
+  if (value == null) return '';
+  if (value is num) {
+    final n = value.toDouble();
+    return n == n.roundToDouble() ? '${n.round()}' : '$value';
+  }
+  return '$value';
+}
 
 /// The screensaver's At a Glance row: which entities it shows and what they
 /// currently read (issue #37).
@@ -140,6 +175,10 @@ class GlanceManager extends Manager {
                 'entity_id': entity.entityId,
                 'name': entity.name,
                 'state': entity.state,
+                if (entity.attribute != null) ...{
+                  'attribute': entity.attribute,
+                  'attribute_value': entity.attributeValue,
+                },
               },
           ],
         }),
@@ -175,7 +214,13 @@ class GlanceManager extends Manager {
           if (item is! Map) continue;
           final entity = GlanceEntity.fromJson(item);
           if (entity.entityId.isEmpty) continue;
-          next.add(previous[entity.entityId] ?? entity);
+          // Live state carries over only while the configuration agrees: an
+          // edit that changed the displayed attribute must not keep showing
+          // the old attribute's value until the next update.
+          final kept = previous[entity.entityId];
+          next.add(kept != null && kept.attribute == entity.attribute
+              ? kept
+              : entity);
         }
       }
     } catch (error) {
@@ -257,12 +302,20 @@ class GlanceManager extends Manager {
         entities.value.indexWhere((entity) => entity.entityId == entityId);
     if (index < 0) return;
     final attributes = (state['attributes'] as Map?) ?? const {};
-    final updated = entities.value[index].merge(
+    final entity = entities.value[index];
+    final updated = entity.merge(
       state: state['state'] as String?,
       name: attributes['friendly_name'] as String?,
       icon: attributes['icon'] as String?,
       deviceClass: attributes['device_class'] as String?,
       unit: attributes['unit_of_measurement'] as String?,
+      // Only when this update actually carries the watched attribute: the
+      // subscription diffs attributes, so an update about something else
+      // must not erase the value already known.
+      attributeValue: entity.attribute != null &&
+              attributes.containsKey(entity.attribute)
+          ? glanceAttributeText(attributes[entity.attribute])
+          : null,
     );
     entities.value = [
       for (final (i, entity) in entities.value.indexed)

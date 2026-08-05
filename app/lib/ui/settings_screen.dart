@@ -4050,6 +4050,55 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
+        // The clock's background photo (issue #132): one image via the
+        // system photo picker, copied into app documents the same way the
+        // gallery set is. Clear returns to the solid color and removes
+        // the copy.
+        if (def.key == screensaverClockBackground.key) {
+          final path = value as String;
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(
+              path.isEmpty ? 'No photo selected' : path.split('/').last,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (path.isNotEmpty)
+                  TextButton(
+                    onPressed: () async {
+                      await c.settings.setFromJson(def.key, '');
+                      try {
+                        await File(path).parent.delete(recursive: true);
+                      } catch (_) {}
+                      onChanged();
+                    },
+                    child: const Text('Clear'),
+                  ),
+                TextButton(
+                  onPressed: () async {
+                    final picked = await ImagePicker().pickImage(
+                      source: ImageSource.gallery,
+                    );
+                    if (picked == null) return;
+                    final docs = await getApplicationDocumentsDirectory();
+                    final dir = Directory('${docs.path}/clock_bg');
+                    if (await dir.exists()) await dir.delete(recursive: true);
+                    await dir.create(recursive: true);
+                    final dest =
+                        '${dir.path}/${picked.name.replaceAll('/', '_')}';
+                    await File(picked.path).copy(dest);
+                    await c.settings.setFromJson(def.key, dest);
+                    onChanged();
+                  },
+                  child: const Text('Browse'),
+                ),
+              ],
+            ),
+          );
+        }
         // Photo Gallery: picked with the system gallery picker — the
         // modern Android photo picker needs no permission at all. The
         // picker hands back cache copies, which the OS may purge, so the

@@ -1040,6 +1040,22 @@ const screensaverClockColor = SettingDef<String>(
   dependsOnValue: 'digital',
 );
 
+// A local photo behind the clock (issue #132), any face. Stored as the path
+// of a copy in app documents, made when the photo is picked; the original
+// may live in picker cache the OS purges. Picked on the device — the photos
+// are there, a remote browser cannot see them.
+const screensaverClockBackground = SettingDef<String>(
+  key: 'screensaver.clock_background',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Background photo',
+  description: 'Show a photo behind the clock instead of the solid color.',
+  category: 'Screensaver',
+  section: 'Clock',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
 // One color pair per face rather than a shared one: visibility can only
 // key off a single setting value, and the two faces want opposite defaults
 // (dark digits on light cards for Flip, light digits on black for Roller).
@@ -2849,6 +2865,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockSeconds,
   screensaverClockDate,
   screensaverClockScale,
+  screensaverClockBackground,
   screensaverClockColor,
   screensaverFlipDigitColor,
   screensaverFlipBgColor,

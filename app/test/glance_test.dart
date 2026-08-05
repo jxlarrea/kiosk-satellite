@@ -91,6 +91,74 @@ void main() {
     });
   });
 
+  group('attribute display (#132)', () {
+    GlanceEntity weather({String? value, String? state}) => GlanceEntity(
+          entityId: 'weather.home',
+          name: 'Weather',
+          attribute: 'temperature',
+          attributeValue: value,
+          state: state ?? 'sunny',
+        );
+
+    test('shows the attribute value instead of the state', () {
+      expect(glanceStateText(weather(value: '92')), '92');
+    });
+
+    test('slug-like attribute values prettify like states', () {
+      expect(glanceStateText(weather(value: 'partly_cloudy')),
+          'Partly Cloudy');
+    });
+
+    test('waits with a placeholder until the value arrives', () {
+      expect(glanceStateText(weather()), '…');
+    });
+
+    test('an unavailable entity reads unavailable, not a stale value', () {
+      expect(glanceStateText(weather(value: '92', state: 'unavailable')),
+          'Unavailable');
+    });
+
+    test('state unit and precision never leak onto an attribute', () {
+      final e = GlanceEntity(
+        entityId: 'weather.home',
+        name: 'Weather',
+        attribute: 'humidity',
+        attributeValue: '47.25',
+        state: '21.5',
+        unit: '°C',
+        precision: 0,
+      );
+      expect(glanceStateText(e), '47.25');
+    });
+
+    test('attribute values flatten to display text', () {
+      expect(glanceAttributeText(92.0), '92');
+      expect(glanceAttributeText(92.06), '92.06');
+      expect(glanceAttributeText(15), '15');
+      expect(glanceAttributeText('sunny'), 'sunny');
+      expect(glanceAttributeText(null), '');
+    });
+
+    test('the chosen attribute survives a storage round trip', () {
+      final stored = weather().toJson();
+      expect(stored['attribute'], 'temperature');
+      final loaded = GlanceEntity.fromJson(stored);
+      expect(loaded.attribute, 'temperature');
+      // No attribute chosen: the key stays out of storage entirely.
+      final plain =
+          const GlanceEntity(entityId: 'x.y', name: 'X').toJson();
+      expect(plain.containsKey('attribute'), isFalse);
+      expect(GlanceEntity.fromJson(plain).attribute, isNull);
+    });
+
+    test('merge keeps the value across unrelated updates', () {
+      final before = weather(value: '92');
+      final after = before.merge(state: 'cloudy');
+      expect(after.attributeValue, '92');
+      expect(after.attribute, 'temperature');
+    });
+  });
+
   group('icons', () {
     test("an icon set in Home Assistant wins", () {
       expect(

@@ -183,6 +183,16 @@ String glanceStateText(GlanceEntity entity) {
   final state = entity.state;
   if (state == null || state.isEmpty) return '…';
   if (state == 'unavailable') return 'Unavailable';
+  // An entity configured to show an attribute (issue #132) shows that
+  // instead of the state. Slug-like values get the same prettifying the
+  // state would; units and precision do not apply, they are state-only.
+  final attribute = entity.attribute;
+  if (attribute != null) {
+    final value = entity.attributeValue;
+    if (value == null || value.isEmpty) return '…';
+    if (double.tryParse(value) != null) return value;
+    return _pretty(value);
+  }
   if (state == 'unknown') return 'Unknown';
   final unit = entity.unit;
   // A numeric state rounds to the entity's Display precision, padded the
@@ -197,12 +207,15 @@ String glanceStateText(GlanceEntity entity) {
       return unit == null || unit.isEmpty ? rounded : '$rounded $unit';
     }
   }
-  final pretty = state
-      .split('_')
-      .map((word) => word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
-      .join(' ');
+  final pretty = _pretty(state);
   return unit == null || unit.isEmpty ? pretty : '$pretty $unit';
 }
+
+String _pretty(String value) => value
+    .split('_')
+    .map((word) =>
+        word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
+    .join(' ');
 
 
 /// The entity's icon.
