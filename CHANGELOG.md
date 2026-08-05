@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.2 - 2026-08-05
+
+### Fixed
+- Settings, the Automations editor, the Voice Satellite panel and other non-dashboard pages no longer show stale states while the "Filter dashboard updates" optimization is on (#131). The filter now recognizes non-dashboard panels directly, and whenever it stands down it replays every entity's current state from the shadow copy it already keeps, so pages arrive seeing the truth instead of whatever they had when filtering started; previously only a full app restart caught them up. Update entities are also always forwarded now, so the sidebar's update badges stay current even while a dashboard view is filtered.
+
 ## v2026.8.1 - 2026-08-05
 
 ### Changed
