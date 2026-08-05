@@ -1328,7 +1328,9 @@ class HomeAssistantManager extends Manager {
       });
       if (result is! Map) return null;
       final views = result['views'];
-      if (views is! List) return null;
+      // A stored config without a views list (a strategy config) has no
+      // listable views — a normal answer, same as config_not_found below.
+      if (views is! List) return const [];
       return [
         for (final (i, v) in views.cast<Map>().indexed)
           {
@@ -1337,6 +1339,11 @@ class HomeAssistantManager extends Manager {
           },
       ];
     } catch (e) {
+      // A dashboard with no stored config (the auto-generated Overview and
+      // other strategy dashboards) is a normal answer, not a failure: it
+      // simply has no listable views. Callers fall back to the bare path.
+      // Reporting it as an error made every remote UI load log 400s.
+      if ('$e'.contains('config_not_found')) return const [];
       log.warn(name, 'listDashboardViews($urlPath) failed: $e');
       return null;
     }
