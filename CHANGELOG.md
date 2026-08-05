@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v0.35.1-beta - 2026-08-05
 
 ### Added
 - Fill the screen for the Local Media and Photo Gallery screensavers (#130): the same treatment the Immich screensaver already had. Photos shaped close enough to the screen are enlarged to cover it fully, and photos that keep their full frame, such as portrait shots on a landscape display, now show over a blurred, dimmed backdrop of the photo itself instead of black bars. On by default, with a Fill the screen switch in each mode's settings on the device and in the remote admin for anyone who prefers the plain letterboxed look.
