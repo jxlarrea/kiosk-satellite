@@ -771,6 +771,24 @@ setInterval(function () {
   }
 }
 
+/// The image's aspect ratio read from its header — no full decode, so it
+/// costs microseconds, not a second of jank before every slide.
+Future<double?> _aspectOf(Uint8List bytes) async {
+  try {
+    final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+    try {
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      final aspect = descriptor.width / descriptor.height;
+      descriptor.dispose();
+      return aspect;
+    } finally {
+      buffer.dispose();
+    }
+  } catch (_) {
+    return null;
+  }
+}
+
 /// The Local Media screensaver: photos and videos from a folder on this
 /// device, no Home Assistant involved. Photos hold for the configured
 /// interval; videos play to their end (muted — a screensaver that suddenly
@@ -809,6 +827,10 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
   /// full bitmap there until the cache's 100MB cap, which alone can OOM
   /// a low-RAM device running the WebView alongside.
   ImageProvider? _image;
+
+  /// Width over height of the current image, or null when unknown; feeds
+  /// the fill-the-screen decision.
+  double? _imageAspect;
 
   /// Set when the folder is missing, unreadable, or empty — the message is
   /// the screensaver then, because a silently black screen looks like a
@@ -958,9 +980,26 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         return;
       }
     } else {
+      // The header read costs one extra pass over the file, but the bytes
+      // are hot in the OS page cache by the time FileImage decodes them,
+      // and knowing the aspect before the first frame means the backdrop
+      // decision never flickers in after the slide is already up.
+      double? aspect;
+      if (c.settings.get(
+        _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
+      )) {
+        try {
+          aspect = await _aspectOf(await file.readAsBytes());
+        } catch (_) {}
+        if (!mounted) {
+          await old?.dispose();
+          return;
+        }
+      }
       final oldImage = _image;
       setState(() {
         _index = next;
+        _imageAspect = aspect;
         _image = _screenSizedFile(file);
       });
       if (oldImage != null) unawaited(oldImage.evict());
@@ -1058,42 +1097,98 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       final isVideoSlide = video != null && video.value.isInitialized;
       // The index is in the key so a repeated file still hands off.
       final key = ValueKey('$_index:${_files[_index].path}');
-      final Widget inner = isVideoSlide
-          ? Center(
-              child: AspectRatio(
-                aspectRatio: video.value.aspectRatio,
-                child: VideoPlayer(video),
-              ),
-            )
-          : SizedBox.expand(
-              child: Image(
-                image: _image!,
-                fit: BoxFit.contain,
-                gaplessPlayback: true,
-                errorBuilder: (_, _, _) => const SizedBox.expand(),
-              ),
-            );
-      final Widget slide = transition == 'kenburns' && !isVideoSlide
+      // Fill the screen: same recipe as the Immich screensaver — photos
+      // shaped close enough to the panel are cover-fitted edge to edge
+      // (crop capped at a 1.45x ratio mismatch), and the ones that keep
+      // their full frame get the photo itself, blurred and dimmed, as the
+      // backdrop instead of black bars.
+      final fillWanted =
+          !isVideoSlide &&
+          c.settings.get(
+            _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
+          );
+      var covers = false;
+      if (fillWanted && _imageAspect != null) {
+        final size = MediaQuery.of(context).size;
+        final screen = size.width / size.height;
+        final photo = _imageAspect!;
+        covers = max(photo / screen, screen / photo) <= 1.45;
+      }
+      final Widget inner;
+      if (isVideoSlide) {
+        inner = Center(
+          child: AspectRatio(
+            aspectRatio: video.value.aspectRatio,
+            child: VideoPlayer(video),
+          ),
+        );
+      } else {
+        Widget picture = Image(
+          image: _image!,
+          fit: covers ? BoxFit.cover : BoxFit.contain,
+          gaplessPlayback: true,
+          errorBuilder: (_, _, _) => const SizedBox.expand(),
+        );
+        if (transition == 'kenburns') {
           // Stills drift for the whole hold; videos supply their own
           // motion and just crossfade (the default branch of _handOff).
-          ? _KenBurnsDrift(
-              key: key,
-              index: _index,
-              duration:
-                  Duration(
-                    seconds: c.settings
-                        .get(
-                          _gallery
-                              ? defs.screensaverGalleryInterval
-                              : defs.screensaverLocalInterval,
-                        )
-                        .toInt()
-                        .clamp(2, 3600),
-                  ) +
-                  const Duration(seconds: 2),
-              child: inner,
-            )
-          : KeyedSubtree(key: key, child: inner);
+          // The drift wraps only the photo: the blurred backdrop stays
+          // static behind it, so it rasterizes once per slide instead of
+          // re-blurring the whole screen on every animation frame.
+          picture = _KenBurnsDrift(
+            index: _index,
+            duration:
+                Duration(
+                  seconds: c.settings
+                      .get(
+                        _gallery
+                            ? defs.screensaverGalleryInterval
+                            : defs.screensaverLocalInterval,
+                      )
+                      .toInt()
+                      .clamp(2, 3600),
+                ) +
+                const Duration(seconds: 2),
+            child: SizedBox.expand(child: picture),
+          );
+        }
+        inner = fillWanted && !covers
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Blur + scrim so the backdrop reads as atmosphere, not
+                  // a second copy of the photo. ImageFiltered over the
+                  // same provider, not BackdropFilter: a backdrop filter
+                  // must re-sample the scene every frame it composites,
+                  // which on weak tablet GPUs is a standing 60fps blur tax.
+                  RepaintBoundary(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        ImageFiltered(
+                          imageFilter: ui.ImageFilter.blur(
+                            sigmaX: 40,
+                            sigmaY: 40,
+                            tileMode: ui.TileMode.clamp,
+                          ),
+                          child: Image(
+                            image: _image!,
+                            fit: BoxFit.cover,
+                            gaplessPlayback: true,
+                            errorBuilder: (_, _, _) =>
+                                const SizedBox.expand(),
+                          ),
+                        ),
+                        const ColoredBox(color: Color(0x99000000)),
+                      ],
+                    ),
+                  ),
+                  picture,
+                ],
+              )
+            : SizedBox.expand(child: picture);
+      }
+      final Widget slide = KeyedSubtree(key: key, child: inner);
       body = transition == 'none'
           ? slide
           : ClipRect(
@@ -1307,24 +1402,6 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       unawaited(_prefetch(next + 1));
     }
     _retire(old);
-  }
-
-  /// The image's aspect ratio read from its header — no full decode, so it
-  /// costs microseconds, not a second of jank before every slide.
-  static Future<double?> _aspectOf(Uint8List bytes) async {
-    try {
-      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-      try {
-        final descriptor = await ui.ImageDescriptor.encoded(buffer);
-        final aspect = descriptor.width / descriptor.height;
-        descriptor.dispose();
-        return aspect;
-      } finally {
-        buffer.dispose();
-      }
-    } catch (_) {
-      return null;
-    }
   }
 
   /// Pull the next image into memory during the current hold. Videos are
@@ -1691,7 +1768,6 @@ Widget _handOff(
 /// never freezes while the photo is still on screen.
 class _KenBurnsDrift extends StatefulWidget {
   const _KenBurnsDrift({
-    super.key,
     required this.index,
     required this.duration,
     required this.child,

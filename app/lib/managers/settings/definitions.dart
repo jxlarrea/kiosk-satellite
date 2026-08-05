@@ -1285,6 +1285,20 @@ const screensaverGalleryTransition = SettingDef<String>(
   dependsOnValue: 'gallery',
 );
 
+const screensaverGalleryFill = SettingDef<bool>(
+  key: 'screensaver.gallery_fill',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Fill the screen',
+  description:
+      'Enlarge photos that match the screen shape to cover it fully. '
+      'Others keep their full frame.',
+  category: 'Screensaver',
+  section: 'Photo Gallery',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'gallery',
+);
+
 // ── Local media (mode: local) ──
 
 const screensaverLocalFolder = SettingDef<String>(
@@ -1349,6 +1363,20 @@ const screensaverLocalTransition = SettingDef<String>(
   section: 'Local Media',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'local',
+);
+
+const screensaverLocalFill = SettingDef<bool>(
+  key: 'screensaver.local_fill',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Fill the screen',
+  description:
+      'Enlarge photos that match the screen shape to cover it fully. '
+      'Others keep their full frame.',
+  category: 'Screensaver',
+  section: 'Local Media',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -2857,10 +2885,12 @@ const List<SettingDef<Object>> allSettings = [
   screensaverLocalShuffle,
   screensaverLocalRecursive,
   screensaverLocalTransition,
+  screensaverLocalFill,
   screensaverGalleryItems,
   screensaverGalleryInterval,
   screensaverGalleryShuffle,
   screensaverGalleryTransition,
+  screensaverGalleryFill,
   screensaverImmichUrl,
   screensaverImmichApiKey,
   screensaverImmichValidated,
