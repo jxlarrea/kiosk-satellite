@@ -143,7 +143,7 @@ const _categories = <(String, String, IconData, String)>[
     Icons.graphic_eq_outlined,
     'Wake word, background listening',
   ),
-  ('Browser', 'Web Browsing', Icons.public, 'Reload, cache, zoom'),
+  ('Browser', 'Web Browsing', Icons.public, 'Start URL, cache, zoom'),
   (
     'Kiosk',
     'Kiosk Mode',
@@ -156,12 +156,11 @@ const _categories = <(String, String, IconData, String)>[
     Icons.apps_outlined,
     'Open other apps from the kiosk',
   ),
-  ('Screen', 'Screen', Icons.brightness_6_outlined, 'Brightness, keep awake'),
   (
-    'Audio',
-    'Audio',
-    Icons.volume_up_outlined,
-    'Master, media and assistant volume',
+    'Screen & Audio',
+    'Screen & Audio',
+    Icons.brightness_6_outlined,
+    'Brightness, volume, microphone',
   ),
   (
     'Screensaver',
@@ -176,12 +175,6 @@ const _categories = <(String, String, IconData, String)>[
     'Device camera, MQTT snapshots',
   ),
   (
-    'Remote',
-    'Remote Administration',
-    Icons.settings_remote_outlined,
-    'Web console access',
-  ),
-  (
     'MQTT',
     'MQTT Settings',
     Icons.hub_outlined,
@@ -189,9 +182,9 @@ const _categories = <(String, String, IconData, String)>[
   ),
   (
     'Cameras',
-    'WebRTC Cameras',
+    'Camera Streams',
     Icons.videocam_outlined,
-    'Go2RTC cameras and views',
+    'Go2RTC and Home Assistant cameras',
   ),
   (
     'Sendspin',
@@ -215,10 +208,10 @@ const _categories = <(String, String, IconData, String)>[
     'Device',
     'Device',
     Icons.tablet_android_outlined,
-    'Name, identity, app theme',
+    'Name, app theme, remote access',
   ),
   ('About', 'About', Icons.info_outline, 'Version, author, license'),
-  ('Logs', 'App Logs', Icons.article_outlined, 'What the app has been doing'),
+  ('Logs', 'Logs', Icons.article_outlined, 'App log and web console'),
 ];
 
 List<SettingDef<Object>> _defsFor(String category) => [
@@ -671,6 +664,27 @@ class _CategoryContentState extends State<_CategoryContent> {
     });
   }
 
+  /// A fixed-height, internally scrolling box for log lines, so the Logs
+  /// page always fits the viewport and only the box itself scrolls — the
+  /// remote UI's panes behave the same way. Starts pinned to the newest
+  /// line at the bottom.
+  Widget _logBox(List<Widget> lines, {double extraChrome = 0}) {
+    // Estimated chrome around the box: page title, segmented nav, card
+    // header and paddings, footer; the narrow layout adds its app bar.
+    // A little short is a small gap below; too tall would put the scroll
+    // back on the page.
+    final size = MediaQuery.sizeOf(context);
+    final chrome = (size.width >= 720 ? 300.0 : 370.0) + extraChrome;
+    final height = (size.height - chrome).clamp(220.0, 1200.0);
+    return SizedBox(
+      height: height,
+      child: ListView(
+        reverse: true,
+        children: [for (final line in lines.reversed) line],
+      ),
+    );
+  }
+
   List<Widget> _logsCards(AppContainer container) {
     final theme = Theme.of(context);
     final entries = container.log.recent;
@@ -687,25 +701,7 @@ class _CategoryContentState extends State<_CategoryContent> {
       _SettingsCard(
         children: [
           ListTile(
-            title: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _logSource,
-                isDense: true,
-                items: const [
-                  DropdownMenuItem(
-                      value: 'app', child: Text('Kiosk Satellite')),
-                  DropdownMenuItem(value: 'logcat', child: Text('Logcat')),
-                ],
-                onChanged: (v) {
-                  if (v == null) return;
-                  setState(() => _logSource = v);
-                  if (v == 'logcat' && _logcatText == null) {
-                    _fetchLogcat(container);
-                  }
-                },
-              ),
-            ),
-            subtitle: Text(isLogcat
+            title: Text(isLogcat
                 ? 'Android system log for this app (crashes live here)'
                 : '${entries.length} entries'),
             trailing: Wrap(
@@ -805,42 +801,151 @@ class _CategoryContentState extends State<_CategoryContent> {
                             ),
                           );
                         }
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (final (line, pri) in lines)
-                              Text(
-                                line,
-                                style: TextStyle(
-                                  fontFamily: 'monospace',
-                                  fontSize: 11,
-                                  color: switch (pri) {
-                                    'E' || 'F' => Colors.red.shade300,
-                                    'W' => Colors.amber.shade700,
-                                    _ => theme.colorScheme.onSurface,
-                                  },
-                                ),
+                        return _logBox([
+                          for (final (line, pri) in lines)
+                            Text(
+                              line,
+                              style: TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 11,
+                                color: switch (pri) {
+                                  'E' || 'F' => Colors.red.shade300,
+                                  'W' => Colors.amber.shade700,
+                                  _ => theme.colorScheme.onSurface,
+                                },
                               ),
-                          ],
-                        );
-                      }))
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final e in entries)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 1),
-                          child: Text(
-                            fmt(e),
-                            style: TextStyle(
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                              color: levelColor(e.level),
                             ),
+                        ], extraChrome: 44);
+                      }))
+                : _logBox([
+                    for (final e in entries)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 1),
+                        child: Text(
+                          fmt(e),
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: levelColor(e.level),
                           ),
                         ),
-                    ],
+                      ),
+                  ]),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  /// The WebView console, inline, mirroring the remote admin's view. The
+  /// dock button hands over to the same feed as a panel over the live page,
+  /// for watching output while the dashboard is actually in front.
+  List<Widget> _consoleCards(AppContainer container) {
+    final theme = Theme.of(context);
+    Color levelColor(String level) => switch (level) {
+      'error' => Colors.red.shade300,
+      'warn' => Colors.amber.shade300,
+      'debug' => Colors.grey.shade500,
+      'tip' => Colors.lightBlue.shade200,
+      'cmd' => theme.colorScheme.primary,
+      _ => theme.colorScheme.onSurface,
+    };
+    return [
+      _SettingsCard(
+        children: [
+          ValueListenableBuilder<int>(
+            valueListenable: container.browser.consoleRevision,
+            builder: (context, _, _) {
+              final entries = container.browser.consoleEntries;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ListTile(
+                    title: Text('${entries.length} entries'),
+                    trailing: Wrap(
+                      spacing: 4,
+                      children: [
+                        IconButton(
+                          tooltip: 'Copy log',
+                          icon: const Icon(Icons.copy_outlined, size: 20),
+                          onPressed: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            await Clipboard.setData(
+                              ClipboardData(
+                                text: [
+                                  for (final e in entries)
+                                    '${e.time.toIso8601String()} '
+                                        '[${e.level}] ${e.message}',
+                                ].join('\n'),
+                              ),
+                            );
+                            if (!mounted) return;
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text('Console log copied'),
+                                duration: Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          tooltip: 'Clear',
+                          icon: const Icon(Icons.block_outlined, size: 20),
+                          onPressed: container.browser.clearConsole,
+                        ),
+                        IconButton(
+                          tooltip: 'Dock over the live page',
+                          icon: const Icon(Icons.terminal_outlined, size: 20),
+                          onPressed: () {
+                            Navigator.of(context)
+                                .popUntil((route) => route.isFirst);
+                            container.bus
+                                .publish(const WebConsoleRequested());
+                          },
+                        ),
+                      ],
+                    ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: entries.isEmpty
+                        ? Text(
+                            'No console output yet',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          )
+                        : _logBox([
+                            for (final e in entries)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 1),
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text:
+                                            '${e.time.toIso8601String().substring(11, 19)} ',
+                                        style: TextStyle(
+                                          color: theme.colorScheme.outline,
+                                        ),
+                                      ),
+                                      TextSpan(text: e.message),
+                                    ],
+                                  ),
+                                  style: TextStyle(
+                                    fontFamily: 'monospace',
+                                    fontSize: 12,
+                                    color: levelColor(e.level),
+                                  ),
+                                ),
+                              ),
+                          ]),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -939,7 +1044,21 @@ class _CategoryContentState extends State<_CategoryContent> {
           CameraSettingsPanel(container: container)
         else if (widget.category == 'Gestures')
           GestureSettingsPanel(container: container)
-        else if (widget.category == 'Audio') ...[
+        else if (widget.category == 'Screen & Audio') ...[
+          const _SectionHeading('Screen'),
+          _SettingsCard(
+            children: [
+              for (final def in _defsFor('Screen & Audio'))
+                if (def.section == 'Screen' && container.settings.visible(def))
+                  SettingTile(
+                    container: container,
+                    def: def,
+                    onChanged: () => setState(() {}),
+                  ),
+            ],
+          ),
+          _BrightnessGrantCard(container: container),
+          _AmbientDisplayCard(container: container),
           // One card, mixer-style: the master fader (live device volume,
           // not a setting) with the media and assistant faders that scale
           // under it. The remote UI mirrors this page.
@@ -947,12 +1066,55 @@ class _CategoryContentState extends State<_CategoryContent> {
           _SettingsCard(
             children: [
               _MasterVolumeTile(container: container),
-              for (final def in _defsFor('Audio'))
-                SettingTile(
+              for (final def in _defsFor('Screen & Audio'))
+                if (def.section == 'Audio Volume')
+                  SettingTile(
+                    container: container,
+                    def: def,
+                    onChanged: () => setState(() {}),
+                  ),
+            ],
+          ),
+          // Device pickers are hand-built (their options are live hardware);
+          // the remote UI mirrors both rows. The mic one only while detection
+          // is on — with it off this app never opens the microphone, the
+          // browser does.
+          const _SectionHeading('Audio Devices'),
+          _SettingsCard(
+            children: [
+              if (container.settings.get(wakeWordEnabled))
+                AudioDeviceTile(
                   container: container,
-                  def: def,
-                  onChanged: () => setState(() {}),
+                  def: audioMicDevice,
+                  inputs: true,
                 ),
+              AudioDeviceTile(
+                container: container,
+                def: audioSpeakerDevice,
+                inputs: false,
+              ),
+            ],
+          ),
+          // Capture tuning. Its own group because none of it is a
+          // preference: it is there for devices whose audio stack
+          // misbehaves, and every default is what the app has always done.
+          const _SectionHeading('Microphone settings'),
+          const _GroupNote(_micGroupNote),
+          _SettingsCard(
+            children: [
+              for (final def in _defsFor('Screen & Audio'))
+                if (def.section == 'Microphone settings' &&
+                    container.settings.visible(def))
+                  SettingTile(
+                    container: container,
+                    def: def,
+                    onChanged: () => setState(() {}),
+                  ),
+              // Live capture level under the gain it verifies. Only with
+              // detection on: it reads the engine's telemetry, and with
+              // detection off this app never opens the microphone.
+              if (container.settings.get(wakeWordEnabled))
+                MicLevelTile(container: container),
             ],
           ),
         ] else
@@ -1052,11 +1214,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                 sendspinMaToken.key: _MaValidateRow(container: container),
             },
           ),
-        if (widget.category == 'Screen') ...[
-          _BrightnessGrantCard(container: container),
-          _AmbientDisplayCard(container: container),
-        ],
-        if (widget.category == 'Remote' &&
+        if (widget.category == 'Device' &&
             container.settings.get(remoteEnabled))
           _AdminAddressCard(container: container),
         if (widget.category == 'Device') ...[
@@ -1094,7 +1252,32 @@ class _CategoryContentState extends State<_CategoryContent> {
                 : const SizedBox.shrink(),
           ),
         if (widget.category == 'About') ..._aboutCards(container),
-        if (widget.category == 'Logs') ..._logsCards(container),
+        if (widget.category == 'Logs') ...[
+          // One log at a time, picked by the links on top; the remote
+          // admin's Logs tab is the same three views.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+            child: SegmentedButton<String>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: 'app', label: Text('Kiosk Satellite')),
+                ButtonSegment(value: 'logcat', label: Text('Logcat')),
+                ButtonSegment(value: 'console', label: Text('Web Console')),
+              ],
+              selected: {_logSource},
+              onSelectionChanged: (selection) {
+                setState(() => _logSource = selection.first);
+                if (_logSource == 'logcat' && _logcatText == null) {
+                  _fetchLogcat(container);
+                }
+              },
+            ),
+          ),
+          if (_logSource == 'console')
+            ..._consoleCards(container)
+          else
+            ..._logsCards(container),
+        ],
         _MadeByFooter(container: container),
       ],
     );
@@ -1477,21 +1660,6 @@ class _CategoryContentState extends State<_CategoryContent> {
                         def: def,
                         onChanged: () => setState(() {}),
                       ),
-                  // Device pickers are hand-built (their options are live
-                  // hardware); the remote UI mirrors both rows. The mic one
-                  // only while detection is on — with it off this app never
-                  // opens the microphone, the browser does.
-                  if (container.settings.get(wakeWordEnabled))
-                    AudioDeviceTile(
-                      container: container,
-                      def: audioMicDevice,
-                      inputs: true,
-                    ),
-                  AudioDeviceTile(
-                    container: container,
-                    def: audioSpeakerDevice,
-                    inputs: false,
-                  ),
                   // Not a setting, but a row on the same card, so it sits
                   // behind the same line as the rest. Gone with the rest
                   // when detection is off: there is no state to report
@@ -1499,29 +1667,6 @@ class _CategoryContentState extends State<_CategoryContent> {
                   // already said by the switch above.
                   if (container.settings.get(wakeWordEnabled))
                     WakeWordStatusTile(container: container),
-                ],
-              ),
-              // Capture tuning, under the wake word settings it feeds. Its
-              // own group because none of it is a preference: it is there
-              // for devices whose audio stack misbehaves, and every default
-              // is what the app has always done.
-              const _SectionHeading('Microphone settings'),
-              const _GroupNote(_micGroupNote),
-              _SettingsCard(
-                children: [
-                  for (final def in _defsFor('Voice Satellite'))
-                    if (def.section == 'Microphone settings' &&
-                        container.settings.visible(def))
-                      SettingTile(
-                        container: container,
-                        def: def,
-                        onChanged: () => setState(() {}),
-                      ),
-                  // Live capture level under the gain it verifies. Only with
-                  // detection on: it reads the engine's telemetry, and with
-                  // detection off this app never opens the microphone.
-                  if (container.settings.get(wakeWordEnabled))
-                    MicLevelTile(container: container),
                 ],
               ),
               // The tester: a live look at what the engine hears and scores,

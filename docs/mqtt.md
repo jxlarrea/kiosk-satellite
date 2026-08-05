@@ -48,8 +48,8 @@ tablet's remote admin (while remote administration is enabled).
 | Screensaver | switch | Start or dismiss the screensaver. |
 | Dashboard view | select | Navigate the kiosk to any Home Assistant dashboard view, listed by navigation path (`url_path/view-route`; a dashboard whose views cannot be read, like the auto-generated Overview, appears by its bare path). Picking one navigates the kiosk there, dismissing the screensaver and any camera view so the page is actually seen, and holds dashboard rotation for the same grace window a touch does. This is what an automation uses to, say, show the camera dashboard when the doorbell rings and return home after a delay (discussion #66). The state tracks what is on screen, including navigation done by hand on the device; on a page that is no dashboard view at all (HA settings, an external site) it keeps the last known view. The options follow dashboards being added or removed, refreshed every few minutes and on every page load; the entity only appears once the view list has been read from Home Assistant, so it can be missing for the first moments after setup. |
 | Volume | number | The MASTER volume: the device's own, as a 0-100% slider. Tracks changes from every side, hardware buttons included. Media and Assistant volume scale under it (issues #69, #79), mixer style: this is the room-level knob, the other two set the balance. |
-| Media volume | number | Music and video (Sendspin, DLNA) play at this share of the master volume. The Sendspin player's volume in Music Assistant is this same fader, so the two sliders always agree. Mirrors the Media volume slider in the Audio settings. |
-| Assistant volume | number | Voice assistant responses and chimes play at this share of the master volume, independent of the media volume, so music can roam loud or quiet without the assistant shouting or whispering along with it. Mirrors the Assistant volume slider in the Audio settings. |
+| Media volume | number | Music and video (Sendspin, DLNA) play at this share of the master volume. The Sendspin player's volume in Music Assistant is this same fader, so the two sliders always agree. Mirrors the Media volume slider in the Screen & Audio settings. |
+| Assistant volume | number | Voice assistant responses and chimes play at this share of the master volume, independent of the media volume, so music can roam loud or quiet without the assistant shouting or whispering along with it. Mirrors the Assistant volume slider in the Screen & Audio settings. |
 | Kiosk mode | switch | The kiosk lockdown (exit gesture, blocked buttons). |
 | HA kiosk mode | switch | Hides the Home Assistant header and sidebar. On maps to the `auto` mode; a hand-picked `plugin`/`css` choice is left alone until the switch is actually flipped. The HA kiosk method select below is where a specific strategy can be picked. |
 | Screensaver mode | select | What the screensaver shows after the idle timeout, as a dropdown of the same modes the Screensaver settings page offers (Clock, Immich Media, Website and so on). Handy for automations that, say, switch to a camera at night and back to photos in the morning. |
@@ -138,7 +138,7 @@ by the setup wizard and surfaced in Settings when missing:
 ## Troubleshooting
 
 - **Entities never appear**: confirm the app log shows `connected as
-  kiosksatellite_<id>` (Settings → App Logs), that Home Assistant's MQTT
+  kiosksatellite_<id>` (Settings → Logs), that Home Assistant's MQTT
   integration is connected to the same broker, and that the discovery
   prefix matches.
 - **Two tablets keep knocking each other offline**: your broker only allows
@@ -150,5 +150,5 @@ by the setup wizard and surfaced in Settings when missing:
   the log will show `MQTT reconnect storm; backing off` while this is
   happening.
 - **Brightness in Home Assistant does not match the panel**: grant "Modify
-  system settings" (a notice with a Grant button appears in Screen settings
-  and in the remote admin while it is missing).
+  system settings" (a notice with a Grant button appears in the Screen &
+  Audio settings and in the remote admin while it is missing).

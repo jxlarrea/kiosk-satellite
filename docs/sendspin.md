@@ -153,7 +153,7 @@ license and attribution ship in the source tree.
 ## Troubleshooting
 
 - **Player never appears in Music Assistant**: check the app log
-  (Settings → App Logs) for `sendspin` lines; `connected as
+  (Settings → Logs) for `sendspin` lines; `connected as
   kiosksatellite_<id>` means the handshake worked. If discovery finds
   nothing, set the server address explicitly (mDNS does not cross
   subnets or VLANs).

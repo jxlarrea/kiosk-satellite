@@ -1,4 +1,4 @@
-# WebRTC Cameras
+# Camera Streams
 
 Kiosk Satellite can show up to four low-latency WebRTC cameras in a
 full-screen view. Camera streams come from Home Assistant itself, from
@@ -6,7 +6,7 @@ Go2RTC, or from a direct WHEP endpoint.
 
 ## Import cameras from Home Assistant
 
-Open Settings, then WebRTC Cameras, and select **Import WebRTC cameras from
+Open Settings, then Camera Streams, and select **Import WebRTC cameras from
 Home Assistant**. Kiosk Satellite asks the connected Home Assistant for every
 `camera.*` entity that can stream WebRTC (Home Assistant 2024.11 or newer)
 and adds them as cameras, streaming through Home Assistant's own WebRTC
@@ -21,7 +21,7 @@ setups that stream through Home Assistant Cloud work too.
 
 ## Add a Go2RTC server
 
-Open Settings, then WebRTC Cameras, and select **Add Go2RTC server**.
+Open Settings, then Camera Streams, and select **Add Go2RTC server**.
 
 Enter the base URL of a Go2RTC server that the tablet can reach, such as:
 

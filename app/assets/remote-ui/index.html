@@ -145,6 +145,22 @@
   .btn-ghost { background: transparent; border: 1px solid var(--border);
     color: var(--text); border-radius: var(--radius-sm); padding: 7px 12px; }
   .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+  /* The Logs tab's view picker: links, not a dropdown. */
+  .log-nav .btn-ghost.active { background: var(--surface-2);
+    border-color: var(--primary); color: var(--primary); }
+  /* Header row attached to the top of a log box, mirroring the device's
+     card header: label left, actions right, no orphaned button row. */
+  .log-head { display: flex; align-items: center; gap: 14px;
+    background: var(--surface); padding: 10px 20px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-bottom: 1px solid var(--border); }
+  .log-head .log-meta { color: var(--muted); font-size: 13px; }
+  .log-head .spacer { flex: 1; }
+  #tab-logs .console { border-top-left-radius: 0; border-top-right-radius: 0; }
+  /* Fill the viewport below the nav and header; the console pane keeps
+     room for its input row. */
+  #logsOut { height: calc(100vh - 250px); min-height: 320px; }
+  #consoleOut { height: calc(100vh - 308px); min-height: 300px; }
   #themeBtn { display: inline-flex; align-items: center; justify-content: center;
     padding: 7px 9px; }
   #themeBtn svg { display: block; }
@@ -461,7 +477,7 @@
         </button>
         <button data-tab="browser">
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13.5 13.5 0 0 1 0 18M12 3a13.5 13.5 0 0 0 0 18"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Web Browsing</span><span class="nav-sub">Start URL, error recovery</span></span>
+          <span class="nav-text"><span class="nav-title">Web Browsing</span><span class="nav-sub">Start URL, cache, zoom</span></span>
         </button>
         <button data-tab="kiosk">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
@@ -471,13 +487,9 @@
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg></span>
           <span class="nav-text"><span class="nav-title">App Launcher</span><span class="nav-sub">Open other apps from the kiosk</span></span>
         </button>
-        <button data-tab="screen">
+        <button data-tab="screenaudio">
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Screen</span><span class="nav-sub">Brightness, keep awake</span></span>
-        </button>
-        <button data-tab="audio">
-          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Audio</span><span class="nav-sub">Master, media and assistant volume</span></span>
+          <span class="nav-text"><span class="nav-title">Screen &amp; Audio</span><span class="nav-sub">Brightness, volume, microphone</span></span>
         </button>
         <button data-tab="screensaver">
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
@@ -486,10 +498,6 @@
         <button data-tab="camera">
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1.2-1.6a2 2 0 0 1 1.6-.8h3.4a2 2 0 0 1 1.6.8L16.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>
           <span class="nav-text"><span class="nav-title">Camera</span><span class="nav-sub">Device camera, MQTT snapshots</span></span>
-        </button>
-        <button data-tab="remote">
-          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="9" width="7" height="12" rx="2"/><path d="M8.2 5.5a6 6 0 0 1 7.6 0M5.8 2.9a10 10 0 0 1 12.4 0"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Remote Administration</span><span class="nav-sub">Web console access</span></span>
         </button>
         <button data-tab="mqtt">
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 6.9 6.3 16m6.8-9.1 4.6 9.1M7.2 18h9.6"/></svg></span>
@@ -501,7 +509,7 @@
         </button>
         <button data-tab="cameras">
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="14" height="14" rx="2.5"/><path d="m17 10 4-2v8l-4-2z"/></svg></span>
-          <span class="nav-text"><span class="nav-title">WebRTC Cameras</span><span class="nav-sub">Go2RTC cameras and views</span></span>
+          <span class="nav-text"><span class="nav-title">Camera Streams</span><span class="nav-sub">Go2RTC and Home Assistant cameras</span></span>
         </button>
         <button data-tab="dlna">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h.01M3 15a4 4 0 0 1 4 4M3 11a8 8 0 0 1 8 8"/><path d="M8 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg></span>
@@ -517,19 +525,15 @@
         </button>
         <button data-tab="device">
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M10.5 17.5h3"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, identity, status</span></span>
+          <span class="nav-text"><span class="nav-title">Device</span><span class="nav-sub">Name, app theme, remote access</span></span>
         </button>
         <button data-tab="about">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></span>
           <span class="nav-text"><span class="nav-title">About</span><span class="nav-sub">Version, author, license</span></span>
         </button>
-        <button data-tab="console">
-          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12.5 15H17"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Web Console</span><span class="nav-sub">Live from the WebView</span></span>
-        </button>
         <button data-tab="logs">
-          <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Logs</span><span class="nav-sub">App log</span></span>
+          <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Logs</span><span class="nav-sub">App log and web console</span></span>
         </button>
       </nav>
       <div class="side-foot">
@@ -602,13 +606,11 @@
     <div class="tab" id="tab-browser"></div>
     <div class="tab" id="tab-kiosk"></div>
     <div class="tab" id="tab-launcher"></div>
-    <div class="tab" id="tab-screen"></div>
-    <div class="tab" id="tab-audio"></div>
+    <div class="tab" id="tab-screenaudio"></div>
     <div class="tab" id="tab-screensaver"></div>
     <div class="tab" id="tab-camera"></div>
     <div class="tab" id="tab-homeassistant"></div>
     <div class="tab" id="tab-voicesatellite"></div>
-    <div class="tab" id="tab-remote"></div>
     <div class="tab" id="tab-mqtt"></div>
     <div class="tab" id="tab-sendspin"></div>
     <div class="tab" id="tab-cameras"></div>
@@ -620,41 +622,50 @@
       <div id="device-info"></div>
     </div>
 
-    <!-- Console -->
-    <div class="tab" id="tab-console">
-      <div class="toolbar">
-        <span class="spacer"></span>
-        <button class="btn-ghost" id="copyConsole">Copy</button>
-        <button class="btn-ghost" id="clearConsole">Clear</button>
-      </div>
-      <div class="console" id="consoleOut"></div>
-      <div class="console-input">
-        <span class="prompt">&gt;</span>
-        <input id="consoleInput" autocomplete="off" spellcheck="false"
-          placeholder="Run JavaScript in the page (Enter to run, Up/Down for history)">
-      </div>
-    </div>
-
-    <!-- Logs -->
-    <div class="tab" id="tab-logs">
-      <div class="toolbar">
-        <select id="logSource" style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); padding:8px 12px;">
-          <option value="app">Kiosk Satellite</option>
-          <option value="logcat">Logcat</option>
-        </select>
-        <span id="logcatFilters" style="display:none; gap:14px; align-items:center; margin-left:14px; font-size:13px; color:var(--muted);">
-          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcErrors" checked> Errors &amp; crashes</label>
-          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcWarnings" checked> Warnings</label>
-          <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcInfo"> Info &amp; debug</label>
-        </span>
-        <span class="spacer"></span>
-        <button class="btn-ghost" id="copyLogs">Copy</button>
-        <button class="btn-ghost" id="refreshLogs">Refresh</button></div>
-      <div class="console" id="logsOut"></div>
-    </div>
-
     <!-- About -->
     <div class="tab" id="tab-about"><div id="about-info"></div></div>
+
+    <!-- Logs: one log at a time — the app log, the Android logcat, or the
+         WebView console — picked by the nav links on top. The device's Logs
+         settings page is the same three views. -->
+    <div class="tab" id="tab-logs">
+      <div class="toolbar log-nav">
+        <button class="btn-ghost active" data-log="app">Kiosk Satellite</button>
+        <button class="btn-ghost" data-log="logcat">Logcat</button>
+        <button class="btn-ghost" data-log="console">Web Console</button>
+      </div>
+      <div id="logPane">
+        <!-- Header attached to the box, like the device's card: what you
+             are looking at on the left, the actions on the right. -->
+        <div class="log-head">
+          <span class="log-meta" id="logMeta"></span>
+          <span id="logcatFilters" style="display:none; gap:14px; align-items:center; font-size:13px; color:var(--muted);">
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcErrors" checked> Errors &amp; crashes</label>
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcWarnings" checked> Warnings</label>
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" id="lcInfo"> Info &amp; debug</label>
+          </span>
+          <span class="spacer"></span>
+          <button class="btn-ghost" id="copyLogs">Copy</button>
+          <button class="btn-ghost" id="refreshLogs">Refresh</button>
+        </div>
+        <div class="console" id="logsOut"></div>
+      </div>
+      <div id="consolePane" style="display:none">
+        <div class="log-head">
+          <span class="log-meta" id="consoleMeta"></span>
+          <span class="spacer"></span>
+          <button class="btn-ghost" id="copyConsole">Copy</button>
+          <button class="btn-ghost" id="clearConsole">Clear</button>
+        </div>
+        <div class="console" id="consoleOut"></div>
+        <div class="console-input">
+          <span class="prompt">&gt;</span>
+          <input id="consoleInput" autocomplete="off" spellcheck="false"
+            placeholder="Run JavaScript in the page (Enter to run, Up/Down for history)">
+        </div>
+      </div>
+    </div>
+
     <div class="made-by">Made with <span class="heart">&#9829;</span> by
       <a href="https://github.com/jxlarrea" target="_blank" rel="noreferrer">Xavier Larrea</a>
       &#183; &#9749;
@@ -752,23 +763,26 @@ function logout() {
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'launcher', 'screen', 'audio', 'screensaver',
-  'camera', 'remote', 'mqtt', 'sendspin', 'cameras', 'dlna', 'files', 'gestures', 'device', 'console', 'logs', 'about'];
+const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'launcher', 'screenaudio', 'screensaver',
+  'camera', 'mqtt', 'sendspin', 'cameras', 'dlna', 'files', 'gestures', 'device', 'about', 'logs'];
+// Old bookmarks from before the tabs were consolidated keep landing
+// somewhere sensible.
+const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs' };
 const TAB_TITLES = {
   dashboard: 'Dashboard', browser: 'Web Browsing',
-  kiosk: 'Kiosk Mode', launcher: 'App Launcher', screen: 'Screen', audio: 'Audio', screensaver: 'Screensaver',
+  kiosk: 'Kiosk Mode', launcher: 'App Launcher', screenaudio: 'Screen & Audio', screensaver: 'Screensaver',
   camera: 'Camera',
   homeassistant: 'Home Assistant Configuration',
   voicesatellite: 'Voice Satellite',
-  remote: 'Remote Administration',
   mqtt: 'MQTT Settings',
-  cameras: 'WebRTC Cameras',
+  cameras: 'Camera Streams',
   sendspin: 'Sendspin Player',
   dlna: 'DLNA Renderer', files: 'File Manager', gestures: 'Gestures',
-  device: 'Device', console: 'Web Console', logs: 'Logs', about: 'About',
+  device: 'Device', about: 'About', logs: 'Logs',
 };
 
 function showTab(name, { push = true } = {}) {
+  name = LEGACY_TABS[name] || name;
   const tab = TABS.includes(name) ? name : 'dashboard';
   document.querySelectorAll('#tabs button').forEach((b) =>
     b.classList.toggle('active', b.dataset.tab === tab));
@@ -789,7 +803,7 @@ function showTab(name, { push = true } = {}) {
   // Both notices track something changed on the tablet in Android's own
   // settings, so opening the tab is the moment to re-ask rather than
   // trusting whatever was true when the page loaded.
-  if (tab === 'screen') {
+  if (tab === 'screenaudio') {
     updateBrightnessGrantNotices();
     updateAmbientDisplayNotice();
   }
@@ -1404,17 +1418,27 @@ function updateMaValidateRow() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
-/* The always-on display notice on the Screen tab, mirroring the device's
-   card. Shown only where a screen-off leaves the panel showing a dim lock
-   screen, which no app can override and which is why the Home Assistant
-   screen entity withdraws itself there (issue #51). */
+/* Both notices land between the Screen card and the Audio Volume heading,
+   mirroring where the device page puts them; before the settings have
+   rendered there is no heading yet and they simply append. */
+function insertAfterScreenCard(...els) {
+  const root = document.getElementById('tab-screenaudio');
+  const anchor = [...root.querySelectorAll('h2.card-title')]
+    .find((h) => h.textContent === 'Audio Volume');
+  if (anchor) anchor.before(...els); else root.append(...els);
+}
+
+/* The always-on display notice on the Screen & Audio tab, mirroring the
+   device's card. Shown only where a screen-off leaves the panel showing a
+   dim lock screen, which no app can override and which is why the Home
+   Assistant screen entity withdraws itself there (issue #51). */
 async function updateAmbientDisplayNotice() {
   let ambient = false;
   try {
     const res = await (await api('/api/commands/getAmbientDisplay', { method: 'POST', body: '{}' })).json();
     ambient = res.data === true;
   } catch (_) { return; }
-  const root = document.getElementById('tab-screen');
+  const root = document.getElementById('tab-screenaudio');
   const existing = root.querySelector('.ambient-display-card');
   if (!ambient) { root.querySelectorAll('.ambient-display-card').forEach((el) => el.remove()); return; }
   if (existing) return;
@@ -1425,13 +1449,13 @@ async function updateAmbientDisplayNotice() {
   card.className = 'card ambient-display-card';
   card.appendChild(readOnlyRow('This device keeps a dim clock on',
     'Turning the screen off puts the device to sleep, but the always-on display lights the lock screen back up and no app can stop it. Turn off "Always show time and info" in Android settings under Display, near the lock screen options; some ROMs call it always-on display. The Home Assistant screen entity stays unavailable until you do.', ''));
-  root.append(heading, card);
+  insertAfterScreenCard(heading, card);
 }
 
 /* Brightness grant notices: shown under the dashboard slider and on the
-   Screen tab only while "Modify system settings" is missing on the device.
-   Without it the slider falls back to dimming the app window; the panel's
-   system brightness (what the MQTT entity reports) never moves. */
+   Screen & Audio tab only while "Modify system settings" is missing on the
+   device. Without it the slider falls back to dimming the app window; the
+   panel's system brightness (what the MQTT entity reports) never moves. */
 async function updateBrightnessGrantNotices() {
   let granted;
   try {
@@ -1439,9 +1463,9 @@ async function updateBrightnessGrantNotices() {
     granted = !!(res.data || {}).writeSettings;
   } catch (_) { return; }
   $('#brightnessGrantRow').style.display = granted ? 'none' : '';
-  const root = document.getElementById('tab-screen');
+  const root = document.getElementById('tab-screenaudio');
   const existing = root.querySelector('.brightness-grant-card');
-  if (granted) { existing?.remove(); return; }
+  if (granted) { root.querySelectorAll('.brightness-grant-card').forEach((el) => el.remove()); return; }
   if (existing) return;
   const heading = document.createElement('h2');
   heading.className = 'card-title brightness-grant-card';
@@ -1456,8 +1480,7 @@ async function updateBrightnessGrantNotices() {
   btn.style.cssText = 'margin:0 0 14px';
   btn.addEventListener('click', requestBrightnessGrant);
   card.appendChild(btn);
-  root.appendChild(heading);
-  root.appendChild(card);
+  insertAfterScreenCard(heading, card);
 }
 
 // The grant is Android's own settings screen on the tablet: launch it there,
@@ -3085,12 +3108,10 @@ const CATEGORY_TABS = [
   ['tab-browser', ['Browser']],
   ['tab-kiosk', ['Kiosk']],
   ['tab-launcher', ['Launcher']],
-  ['tab-screen', ['Screen']],
-  ['tab-audio', ['Audio']],
+  ['tab-screenaudio', ['Screen & Audio']],
   ['tab-screensaver', ['Screensaver']],
   ['tab-camera', ['Camera']],
   ['tab-homeassistant', ['Home Assistant']],
-  ['tab-remote', ['Remote']],
   ['tab-mqtt', ['MQTT']],
   ['tab-sendspin', ['Sendspin']],
   ['tab-dlna', ['DLNA']],
@@ -3175,6 +3196,58 @@ async function loadSettings() {
   // live device volume, not a setting, so it is hand-built over the
   // getVolume/setVolume commands.
   prependMasterVolumeRow();
+
+  // ── Screen & Audio hand-built rows ────────────────────────────────────
+  // The capture-tuning card and the audio device pickers, mirroring the
+  // device page: Audio Devices between the volume mixer and the Microphone
+  // settings group.
+  {
+    const root = document.getElementById('tab-screenaudio');
+    const micCard = [...root.querySelectorAll('.card')]
+      .find((c) => c.querySelector('[data-key="audio.mic_source"]'));
+    const micHeading = [...root.querySelectorAll('h2.card-title')]
+      .find((h) => h.textContent === 'Microphone settings');
+    const wakeWordOn = byKey['wake_word.enabled']?.value !== false;
+    if (micCard) {
+      // The warning the device shows under the group's heading. Same words,
+      // same place: between the heading and the card, not a row inside it.
+      const note = document.createElement('div');
+      note.style.cssText =
+        'font-size:12.5px; color:var(--muted); margin:-6px 20px 10px';
+      note.textContent = MIC_GROUP_NOTE;
+      micCard.before(note);
+      // AGC hides the gain slider, but the row is built either way and
+      // simply kept out of view, so flipping the switch can reveal it in
+      // place instead of reloading the whole tab (see save()).
+      if (!micCard.querySelector('[data-key="audio.mic_gain_db"]')) {
+        const gain = (state.settings || [])
+          .find((o) => o.key === 'audio.mic_gain_db');
+        if (gain) {
+          const gainRow = settingRow(gain);
+          gainRow.style.display = 'none';
+          micCard.appendChild(gainRow);
+        }
+      }
+      // Live capture level under the gain it verifies - mirrors the
+      // device's Microphone settings row. Only with detection on: it
+      // reads the engine's telemetry, and with detection off the device
+      // never opens the microphone.
+      if (wakeWordOn) micCard.appendChild(micLevelRow());
+    }
+    // Microphone / speaker pickers, hand-built because their options are
+    // live hardware. Their own card so the mixer card stays a mixer.
+    const devCard = document.createElement('div');
+    devCard.className = 'card';
+    await appendAudioDeviceRows(devCard, wakeWordOn);
+    if (devCard.children.length) {
+      const devHeading = document.createElement('h2');
+      devHeading.className = 'card-title';
+      devHeading.textContent = 'Audio Devices';
+      const anchor = micHeading || null;
+      if (anchor) anchor.before(devHeading, devCard);
+      else root.append(devHeading, devCard);
+    }
+  }
   updateBrightnessGrantNotices();
   updateAmbientDisplayNotice();
   // Awaited: the panels below read state.cameraPresent from it.
@@ -3189,10 +3262,11 @@ async function loadSettings() {
   updateMqttValidateRow();
   updateMaValidateRow();
 
-  // Mirror of the device's Access card under Remote Administration. Here
-  // the address is simply where this page came from.
+  // Mirror of the device's Access card, under the Remote Administration
+  // group on the Device tab. Here the address is simply where this page
+  // came from.
   {
-    const root = document.getElementById('tab-remote');
+    const root = document.getElementById('device-settings');
     const heading = document.createElement('h2');
     heading.className = 'card-title';
     heading.textContent = 'Access';
@@ -3257,49 +3331,6 @@ async function loadSettings() {
       // render() clears the container, so it goes first and the assigned
       // satellite card is prepended on top as the page's first item.
       render(root, ['Voice Satellite'].filter((c) => (byCat[c] || []).length));
-      // Two cards come out of that: the unsectioned wake word settings, then
-      // the "Microphone settings" section under them. Found by content
-      // rather than position, so reordering the definitions cannot silently
-      // send these rows to the wrong card.
-      const vsCards = [...root.querySelectorAll('.card')];
-      const micCard = vsCards.find((c) => c.querySelector('[data-key="audio.mic_source"]'));
-      const wakeCard = vsCards.find((c) => c !== micCard);
-      // The warning the device shows under the group's heading. Same words,
-      // same place: between the heading and the card, not a row inside it.
-      if (micCard) {
-        const note = document.createElement('div');
-        note.style.cssText =
-          'font-size:12.5px; color:var(--muted); margin:-6px 20px 10px';
-        note.textContent = MIC_GROUP_NOTE;
-        micCard.before(note);
-        // AGC hides the gain slider, but the row is built either way and
-        // simply kept out of view, so flipping the switch can reveal it in
-        // place instead of reloading the whole tab (see save()).
-        if (!micCard.querySelector('[data-key="audio.mic_gain_db"]')) {
-          const gain = (state.settings || [])
-            .find((o) => o.key === 'audio.mic_gain_db');
-          if (gain) {
-            const gainRow = settingRow(gain);
-            gainRow.style.display = 'none';
-            micCard.appendChild(gainRow);
-          }
-        }
-        // Live capture level under the gain it verifies - mirrors the
-        // device's Microphone settings row. Only with detection on: it
-        // reads the engine's telemetry, and with detection off the device
-        // never opens the microphone.
-        if (byKey['wake_word.enabled']?.value !== false) {
-          micCard.appendChild(micLevelRow());
-        }
-      }
-      // Microphone / speaker pickers on the same card as the wake word
-      // settings, mirroring the device's rows in the same place.
-      if (wakeCard) {
-        await appendAudioDeviceRows(
-          wakeCard,
-          byKey['wake_word.enabled']?.value !== false,
-        );
-      }
       // The satellite this kiosk identifies as: the page's own choice wins
       // (localStorage, changeable in the Voice Satellite panel); the
       // wizard's stored pick is the fallback before the page has booted.
@@ -4698,7 +4729,9 @@ function toggleRow(name, desc, checked, onChange) {
 // hand-built because it is the device's live volume (getVolume/setVolume
 // commands), not a setting. Media and assistant scale under it.
 async function prependMasterVolumeRow() {
-  const card = document.querySelector('#tab-audio .card');
+  const card = document
+    .querySelector('#tab-screenaudio [data-key="audio.media_volume"]')
+    ?.closest('.card');
   if (!card || card.querySelector('[data-key="master-volume"]')) return;
   let percent = null;
   try {
@@ -4732,7 +4765,7 @@ async function prependMasterVolumeRow() {
   card.prepend(row);
 }
 
-// The microphone / speaker pickers on the Voice Satellite page, mirroring the
+// The microphone / speaker pickers on the Screen & Audio page, mirroring the
 // device's rows: hand-built because their options are live hardware from
 // getAudioDevices, not declared constants. Values are the app's stable device
 // selectors; empty means automatic. A configured device that is currently
@@ -5251,7 +5284,7 @@ function settingRow(s) {
   }
 
   // The camera screensaver's view comes from the ones configured under
-  // WebRTC Cameras, mirroring the device's picker. Views without cameras
+  // Camera Streams, mirroring the device's picker. Views without cameras
   // are left out: there would be nothing to show.
   if (s.key === 'screensaver.camera_view') {
     const sel = document.createElement('select');
@@ -5637,7 +5670,7 @@ async function loadConsole() {
   (lines || []).forEach((l) => appendLine(el, l.level, l.message, l.time));
 }
 $('#clearConsole').addEventListener('click', () => {
-  cmd('clearConsole'); $('#consoleOut').innerHTML = '';
+  cmd('clearConsole'); $('#consoleOut').innerHTML = ''; updateConsoleMeta();
 });
 
 // Copy a console-style pane as plain text. navigator.clipboard exists only
@@ -5755,12 +5788,32 @@ function renderLogcat() {
     appendLine(el, 'debug', 'No matching lines. Enable more types above to see the full log.');
   }
 }
+// Which of the three views the Logs tab shows: the app's own log, the
+// Android logcat tail — where renderer crashes and OS-level kills show up,
+// which the in-app log cannot see (Fully Kiosk-style) — or the WebView
+// console. One at a time, picked by the tab's nav links.
+let logView = 'app';
+document.querySelectorAll('.log-nav button').forEach((btn) =>
+  btn.addEventListener('click', () => {
+    logView = btn.dataset.log;
+    document.querySelectorAll('.log-nav button').forEach((b) =>
+      b.classList.toggle('active', b === btn));
+    $('#logPane').style.display = logView === 'console' ? 'none' : '';
+    $('#consolePane').style.display = logView === 'console' ? '' : 'none';
+    if (logView === 'console') updateConsoleMeta(); else loadLogs();
+  }));
+
+function updateConsoleMeta() {
+  $('#consoleMeta').textContent = `${$('#consoleOut').children.length} entries`;
+}
+
 async function loadLogs() {
-  // The dropdown picks the source: the app's own log, or the Android logcat
-  // tail — where renderer crashes and OS-level kills show up, which the
-  // in-app log cannot see (Fully Kiosk-style).
-  const logcat = $('#logSource').value === 'logcat';
+  if (logView === 'console') return;
+  const logcat = logView === 'logcat';
   $('#logcatFilters').style.display = logcat ? 'inline-flex' : 'none';
+  // For logcat the filters are the header's left side; the device page
+  // titles it instead, but here both at once would crowd the row.
+  $('#logMeta').style.display = logcat ? 'none' : '';
   const el = $('#logsOut'); el.innerHTML = '';
   if (logcat) {
     try {
@@ -5773,11 +5826,11 @@ async function loadLogs() {
     return;
   }
   const { logs } = await (await api('/api/logs')).json();
+  $('#logMeta').textContent = `${(logs || []).length} entries`;
   (logs || []).forEach((l) =>
     appendLine(el, l.level, `${l.tag}: ${l.message}`, Date.parse(l.time)));
 }
 $('#refreshLogs').addEventListener('click', loadLogs);
-$('#logSource').addEventListener('change', loadLogs);
 ['lcErrors', 'lcWarnings', 'lcInfo'].forEach((id) =>
   $('#' + id).addEventListener('change', renderLogcat));
 
@@ -5795,10 +5848,10 @@ function connectWs() {
     const msg = JSON.parse(ev.data);
     if (msg.type === 'state') applyInfo(msg.device, msg.currentUrl);
     else if (msg.type === 'stats') renderStats(msg);
-    else if (msg.type === 'console') appendLine($('#consoleOut'), msg.level, msg.message, msg.time);
+    else if (msg.type === 'console') { appendLine($('#consoleOut'), msg.level, msg.message, msg.time); updateConsoleMeta(); }
     else if (msg.type === 'log') {
       // Live pushes belong to the app log; don't interleave them into logcat.
-      if ($('#logSource').value === 'app') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
+      if (logView === 'app') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
     }
     else if (msg.type === 'event' && msg.event === 'screenon') loadScreenshot();
     // The device's own settings screen updates live off the same event; this

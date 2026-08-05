@@ -738,7 +738,7 @@ const launcherAutoReturnSeconds = SettingDef<num>(
   dependsOn: 'launcher.auto_return',
 );
 
-// ── Screen ─────────────────────────────────────────────────────────────
+// ── Screen & Audio ─────────────────────────────────────────────────────
 
 // What the last screen-off actually did to the panel: on some devices the
 // display never goes dark, because the ROM lights an always-on clock the
@@ -754,7 +754,7 @@ const screenAmbientDisplay = SettingDef<bool>(
   description:
       'Whether turning the screen off leaves this device showing an ambient '
       'lock screen.',
-  category: 'Screen',
+  category: 'Screen & Audio',
   hidden: true,
 );
 
@@ -764,7 +764,8 @@ const keepScreenOn = SettingDef<bool>(
   defaultValue: true,
   title: 'Keep screen on',
   description: 'Prevent the OS from turning the screen off.',
-  category: 'Screen',
+  category: 'Screen & Audio',
+  section: 'Screen',
 );
 
 // Off by default: a slider with no gate would override every device's
@@ -775,7 +776,8 @@ const setBrightnessOnLaunch = SettingDef<bool>(
   defaultValue: false,
   title: 'Set brightness on launch',
   description: 'Apply the default brightness whenever the app starts.',
-  category: 'Screen',
+  category: 'Screen & Audio',
+  section: 'Screen',
 );
 
 const defaultBrightness = SettingDef<num>(
@@ -786,7 +788,8 @@ const defaultBrightness = SettingDef<num>(
   description:
       'Screen brightness applied when the app starts. Moving the slider '
       'applies it immediately.',
-  category: 'Screen',
+  category: 'Screen & Audio',
+  section: 'Screen',
   // Never 0: a kiosk that boots to a black panel looks dead.
   min: 0.05,
   max: 1,
@@ -812,7 +815,7 @@ const mediaVolume = SettingDef<num>(
   description:
       'Music and video play at this share of the master volume. The '
       'Sendspin player volume in Music Assistant moves this slider.',
-  category: 'Audio',
+  category: 'Screen & Audio',
   section: 'Audio Volume',
 );
 
@@ -828,7 +831,7 @@ const assistantVolume = SettingDef<num>(
   description:
       'Voice responses and chimes play at this share of the master '
       'volume, independent of the media volume.',
-  category: 'Audio',
+  category: 'Screen & Audio',
   section: 'Audio Volume',
 );
 
@@ -1877,7 +1880,7 @@ const micAudioSource = SettingDef<String>(
       'leave it unless the microphone reads far quieter here than in a '
       'recorder app. On the other two the device may hear its own speech and '
       'talk over itself.',
-  category: 'Voice Satellite',
+  category: 'Screen & Audio',
   section: 'Microphone settings',
 );
 
@@ -1890,7 +1893,7 @@ const micAgc = SettingDef<bool>(
       'Let Android level the microphone instead of setting a fixed gain. It '
       'adapts on its own, but it also lifts room noise when nobody is '
       'speaking, and on some devices it does nothing at all.',
-  category: 'Voice Satellite',
+  category: 'Screen & Audio',
   section: 'Microphone settings',
 );
 
@@ -1909,7 +1912,7 @@ const micGainDb = SettingDef<num>(
       'normally from where you use the device. Go negative for an overly '
       'sensitive microphone; too much gain distorts loud speech and makes '
       'detection worse, not better.',
-  category: 'Voice Satellite',
+  category: 'Screen & Audio',
   section: 'Microphone settings',
   // Hidden while Android is doing the levelling: a fixed gain under an
   // adaptive one is two controls fighting over the same number.
@@ -1968,7 +1971,7 @@ const audioMicDevice = SettingDef<String>(
   title: 'Microphone',
   description:
       'The microphone wake word detection and voice turns capture from.',
-  category: 'Voice Satellite',
+  category: 'Screen & Audio',
   hidden: true,
 );
 
@@ -1981,7 +1984,7 @@ const audioSpeakerDevice = SettingDef<String>(
       'Output for Voice Satellite sounds; media playback follows the system '
       'route. Echo cancellation only works with the microphone and speaker '
       'on the same device.',
-  category: 'Voice Satellite',
+  category: 'Screen & Audio',
   hidden: true,
 );
 
@@ -2686,7 +2689,8 @@ const remoteEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Remote management',
   description: 'Run the embedded admin web server.',
-  category: 'Remote',
+  category: 'Device',
+  section: 'Remote Administration',
 );
 
 const remotePort = SettingDef<num>(
@@ -2695,7 +2699,8 @@ const remotePort = SettingDef<num>(
   defaultValue: 2324,
   title: 'Server port',
   description: 'Port for the remote admin interface.',
-  category: 'Remote',
+  category: 'Device',
+  section: 'Remote Administration',
 );
 
 const remotePassword = SettingDef<String>(
@@ -2704,7 +2709,8 @@ const remotePassword = SettingDef<String>(
   defaultValue: '',
   title: 'Admin password',
   description: 'Required to log in to the remote interface.',
-  category: 'Remote',
+  category: 'Device',
+  section: 'Remote Administration',
   secret: true,
 );
 
@@ -2797,9 +2803,19 @@ const List<SettingDef<Object>> allSettings = [
   launcherShowIcons,
   launcherAutoReturn,
   launcherAutoReturnSeconds,
+  // The Screen & Audio page: screen first, then the volume mixer, then the
+  // hand-built device pickers, then capture tuning. Both UIs render this
+  // category in this order.
   keepScreenOn,
   setBrightnessOnLaunch,
   defaultBrightness,
+  mediaVolume,
+  assistantVolume,
+  audioMicDevice,
+  audioSpeakerDevice,
+  micAudioSource,
+  micAgc,
+  micGainDb,
   screensaverEnabled,
   screensaverTimeoutSeconds,
   // The separate brightness applies to every content mode, so it lives with
@@ -2879,16 +2895,7 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordEnabled,
   wakeWordBackground,
   wakeWordResumeTimeoutSeconds,
-  audioMicDevice,
-  audioSpeakerDevice,
-  mediaVolume,
-  assistantVolume,
   vsSuppressScreensaver,
-  // After the wake word settings they feed: both UIs render this category in
-  // this order, and the group sits below them on the page.
-  micAudioSource,
-  micAgc,
-  micGainDb,
   haUrl,
   haToken,
   haSatelliteEntity,
@@ -2939,10 +2946,11 @@ const List<SettingDef<Object>> allSettings = [
   sendspinLyricsOffset,
   dlnaEnabled,
   dlnaPort,
-  remoteEnabled,
-  remotePort,
-  remotePassword,
   deviceName,
   uiTheme,
   disableImpeller,
+  // The Remote Administration group closes the Device page.
+  remoteEnabled,
+  remotePort,
+  remotePassword,
 ];

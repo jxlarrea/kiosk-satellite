@@ -15,7 +15,8 @@ future multi-device fleet view).
 
 The server starts only when `remote.enabled` is on **and** `remote.password`
 is set. Three ways to get there: the setup wizard's optional admin-password
-field, Settings → Remote on the device (swipe from the left edge → Settings),
+field, Settings → Device → Remote Administration on the device (swipe from
+the left edge → Settings),
 or an Android provisioning intent:
 
 ```sh

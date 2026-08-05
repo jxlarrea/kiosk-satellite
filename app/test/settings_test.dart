@@ -92,9 +92,10 @@ void main() {
     // existed: everything at the master (device) volume.
     expect(settings.get(defs.mediaVolume), 100);
     expect(settings.get(defs.assistantVolume), 100);
-    // Both render on the Audio page's Audio Volume card, in both UIs.
-    expect(defs.mediaVolume.category, 'Audio');
-    expect(defs.assistantVolume.category, 'Audio');
+    // Both render on the Screen & Audio page's Audio Volume card, in both
+    // UIs.
+    expect(defs.mediaVolume.category, 'Screen & Audio');
+    expect(defs.assistantVolume.category, 'Screen & Audio');
     expect(defs.mediaVolume.section, 'Audio Volume');
     expect(defs.assistantVolume.section, 'Audio Volume');
   });

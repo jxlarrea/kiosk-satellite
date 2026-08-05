@@ -54,6 +54,7 @@ class _KioskScreenState extends State<KioskScreen>
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<KioskExitGesture>? _gestureSub;
+  StreamSubscription<WebConsoleRequested>? _consoleReqSub;
   StreamSubscription<KioskBackPressed>? _backSub;
   StreamSubscription<WakeWordDetected>? _wakeSub;
   StreamSubscription<CameraViewStateChanged>? _cameraSub;
@@ -308,6 +309,11 @@ class _KioskScreenState extends State<KioskScreen>
 
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
+    // The Logs settings page offers the console too; it pops back to the
+    // kiosk first, since the panel docks over the live page.
+    _consoleReqSub = c.bus.on<WebConsoleRequested>().listen((_) {
+      if (mounted) setState(() => _consoleOpen = true);
+    });
     // A wake word heard while a rotation excursion covers the dashboard
     // drops the overlay at once, so the Voice Satellite interaction (which
     // lives in the always-loaded dashboard below) is instantly on screen.
@@ -618,6 +624,7 @@ class _KioskScreenState extends State<KioskScreen>
     _drawer.dispose();
     _settingsSub?.cancel();
     _gestureSub?.cancel();
+    _consoleReqSub?.cancel();
     _backSub?.cancel();
     _wakeSub?.cancel();
     _cameraSub?.cancel();

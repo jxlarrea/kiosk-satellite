@@ -115,8 +115,8 @@ derive nothing from `status` that the label already says.
 ### Sound
 
 The output half of the audio handoff: the page hands a URL over and the app
-plays it natively — on the user's selected speaker (Settings → Voice
-Satellite → Speaker), with no WebView autoplay gate. The app fetches the URL
+plays it natively — on the user's selected speaker (Settings → Screen &
+Audio → Speaker), with no WebView autoplay gate. The app fetches the URL
 itself through its own HTTP stack, so a self-signed HA certificate the user
 accepted works here too. Voice Satellite uses this for its chimes when
 running in Kiosk Satellite; browser audio remains the fallback.

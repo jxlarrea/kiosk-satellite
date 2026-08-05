@@ -1,6 +1,6 @@
 # Microphone settings
 
-Settings → Voice Satellite → **Microphone settings**.
+Settings → Screen & Audio → **Microphone settings**.
 
 Three escape hatches for devices whose audio stack does not behave. Every
 default is what the app has always done, so an untouched install captures

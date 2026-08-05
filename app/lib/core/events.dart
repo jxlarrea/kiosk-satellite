@@ -312,6 +312,12 @@ class ConsoleLine extends AppEvent {
       {'level': level, 'message': message, 'time': timeMs};
 }
 
+/// The user asked for the docked web console from somewhere other than the
+/// drawer (the Logs settings page). Internal: the kiosk screen opens it.
+class WebConsoleRequested extends AppEvent {
+  const WebConsoleRequested();
+}
+
 class PageChanged extends AppEvent {
   const PageChanged({required this.url});
   final String url;
