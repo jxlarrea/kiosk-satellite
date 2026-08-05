@@ -4,8 +4,18 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## v2026.8.2 - 2026-08-05
 
+### Added
+- The setup wizard can scan the QR code Home Assistant shows next to a newly created long-lived access token, so the token never has to be typed on the device. A scan button appears in the token field on devices with a camera; the remote admin's wizard keeps paste, where a clipboard exists.
+- At a Glance entities can display an attribute instead of the state (#132): each chosen entity in the picker has a gear button that lists the entity's attributes with their current readings, on the device and in the remote admin, so a weather entity can show its actual temperature rather than "Sunny".
+- The Clock screensaver can have a background photo (#132): a new Background photo setting in the Clock section picks one from the device's local media, and the clock draws over it with a subtle dark scrim so the time and the At a Glance row stay readable on any photo and any clock face.
+
+### Changed
+- Dropdowns are real controls now: every dropdown in the app sits on the same bordered box the remote admin's selects use, instead of rendering as bare text that read like another row title.
+
 ### Fixed
 - Settings, the Automations editor, the Voice Satellite panel and other non-dashboard pages no longer show stale states while the "Filter dashboard updates" optimization is on (#131). The filter now recognizes non-dashboard panels directly, and whenever it stands down it replays every entity's current state from the shadow copy it already keeps, so pages arrive seeing the truth instead of whatever they had when filtering started; previously only a full app restart caught them up. Update entities are also always forwarded now, so the sidebar's update badges stay current even while a dashboard view is filtered.
+- Settings rows with dropdowns no longer squeeze their text into a sliver on portrait phones: on narrow screens the row stacks as title, dropdown, description, with the dropdown across the full row width, while wide screens keep the dropdown in its usual trailing spot.
+- On narrow screens, long page titles such as Home Assistant Configuration no longer get cut off at the screen edge, and the Made with footer line stays centered instead of clipping on the right.
 
 ## v2026.8.1 - 2026-08-05
 
