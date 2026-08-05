@@ -686,7 +686,6 @@ class _KioskScreenState extends State<KioskScreen>
       child: KioskDrawer(
         container: c,
         onClose: _closeDrawer,
-        onWebConsole: () => setState(() => _consoleOpen = true),
         onSettings: _openSettings,
         restricted: _drawerRestricted,
       ),

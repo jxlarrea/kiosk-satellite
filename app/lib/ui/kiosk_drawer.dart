@@ -6,9 +6,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../app_container.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/update/update_manager.dart';
+import 'kit.dart';
+import 'theme.dart';
 
 /// Slide-out menu (swipe from the left edge), Fully Kiosk style: Home,
-/// Settings, Web Console, Clear web cache, Log out, Exit Application.
+/// Settings, Clear web cache, Log out, Exit Application.
 ///
 /// Not a Material [Drawer]: the kiosk pushes its content aside rather than
 /// being covered (see KioskScreen), so this pane is square-cornered and
@@ -19,7 +21,6 @@ class KioskDrawer extends StatelessWidget {
     super.key,
     required this.container,
     required this.onClose,
-    required this.onWebConsole,
     required this.onSettings,
     this.restricted = false,
   });
@@ -35,9 +36,6 @@ class KioskDrawer extends StatelessWidget {
   /// Slides the drawer (and the kiosk) back. Every action starts with this,
   /// mirroring how the old overlay drawer popped itself before acting.
   final VoidCallback onClose;
-
-  /// Opens the bottom-docked JS console panel (owned by the kiosk screen).
-  final VoidCallback onWebConsole;
 
   /// Opens the settings screen (owned by the kiosk screen, which also holds
   /// the screensaver while it is up).
@@ -61,7 +59,7 @@ class KioskDrawer extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 30),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                 child: Row(
                   children: [
                     // The app-icon tile, as vectors. It carries its own teal
@@ -71,15 +69,18 @@ class KioskDrawer extends StatelessWidget {
                       width: 48,
                       height: 48,
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Kiosk Satellite',
+                            // The display face ties the header to the page
+                            // titles and the screensaver clock.
                             style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
+                              fontFamily: Ks.displayFont,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           Text(
@@ -105,7 +106,7 @@ class KioskDrawer extends StatelessWidget {
                     children: [
                       Material(
                         color: theme.colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(Ks.radiusCard),
                         clipBehavior: Clip.antiAlias,
                         child: Padding(
                           padding: const EdgeInsets.all(6),
@@ -148,7 +149,7 @@ class KioskDrawer extends StatelessWidget {
                                   c.settings.get(defs.haKioskMode) == 'off'
                                       ? Icons.fullscreen
                                       : Icons.fullscreen_exit,
-                                  'Toggle HA Kiosk Mode',
+                                  'HA Kiosk Mode',
                                   () async {
                                     onClose();
                                     final mode = c.settings.get(
@@ -182,7 +183,7 @@ class KioskDrawer extends StatelessWidget {
                                   _item(
                                     context,
                                     Icons.videocam_outlined,
-                                    'Default Camera View',
+                                    'Camera View',
                                     () {
                                       onClose();
                                       c.camera.showView(view.id);
@@ -211,20 +212,15 @@ class KioskDrawer extends StatelessWidget {
                                   c.settings.get(defs.kioskAllowApps))
                                 if (c.settings.get(defs.launcherEnabled) &&
                                     c.launcher.apps.isNotEmpty)
-                                  _item(context, Icons.apps_outlined, 'Apps', () {
-                                    onClose();
-                                    c.launcher.visible.value = true;
-                                  }),
-                              if (!restricted)
-                                _item(
-                                  context,
-                                  Icons.terminal_outlined,
-                                  'Web Console',
-                                  () {
-                                    onClose();
-                                    onWebConsole();
-                                  },
-                                ),
+                                  _item(
+                                    context,
+                                    Icons.apps_outlined,
+                                    'Apps',
+                                    () {
+                                      onClose();
+                                      c.launcher.visible.value = true;
+                                    },
+                                  ),
                               if (!restricted)
                                 _item(
                                   context,
@@ -254,11 +250,13 @@ class KioskDrawer extends StatelessWidget {
                                   () async {
                                     onClose();
                                     if (context.mounted &&
-                                        await _confirm(
+                                        await showConfirmDialog(
                                           context,
-                                          'Log out',
-                                          'Clear cookies and site data, then reload the '
-                                              'start page?',
+                                          title: 'Log out',
+                                          message:
+                                              'Clear cookies and site data, '
+                                              'then reload the start page?',
+                                          confirmLabel: 'Log out',
                                         )) {
                                       await c.commands.execute(
                                         'logout',
@@ -275,10 +273,11 @@ class KioskDrawer extends StatelessWidget {
                                   () async {
                                     onClose();
                                     if (context.mounted &&
-                                        await _confirm(
+                                        await showConfirmDialog(
                                           context,
-                                          'Exit Application',
-                                          'Close Kiosk Satellite?',
+                                          title: 'Exit Application',
+                                          message: 'Close Kiosk Satellite?',
+                                          confirmLabel: 'Exit',
                                         )) {
                                       await c.commands.execute(
                                         'exitApp',
@@ -309,7 +308,9 @@ class KioskDrawer extends StatelessWidget {
                         // runs only twice a day, and the wall is where "did my
                         // update land?" gets asked.
                         ? InkWell(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(
+                              Ks.radiusControl,
+                            ),
                             onTap: () => _checkNow(context),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -324,7 +325,7 @@ class KioskDrawer extends StatelessWidget {
                           )
                         : Material(
                             color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(Ks.radiusRow),
                             clipBehavior: Clip.antiAlias,
                             child: InkWell(
                               onTap: () => _offerUpdate(context, info),
@@ -388,15 +389,6 @@ class KioskDrawer extends StatelessWidget {
                   child: Center(
                     child: SegmentedButton<String>(
                       showSelectedIcon: false,
-                      style: const ButtonStyle(
-                        visualDensity: VisualDensity(
-                          horizontal: -2,
-                          vertical: -2,
-                        ),
-                        padding: WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(horizontal: 12),
-                        ),
-                      ),
                       segments: const [
                         ButtonSegment(
                           value: 'dark',
@@ -440,7 +432,7 @@ class KioskDrawer extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(Ks.radiusRow),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -498,7 +490,7 @@ class KioskDrawer extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: Text('Update to ${info.version}'),
         content: SizedBox(
-          width: 440,
+          width: 420,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -628,30 +620,5 @@ class KioskDrawer extends StatelessWidget {
       }
     }
     return out;
-  }
-
-  Future<bool> _confirm(
-    BuildContext context,
-    String title,
-    String message,
-  ) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(title),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
   }
 }

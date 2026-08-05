@@ -18,6 +18,35 @@ const _sage = Color(0xFF749C6F);
 const _lightBg = Color(0xFFF5F4F2);
 const _darkBg = Color(0xFF202124);
 
+/// The shared spacing and shape scale. Every screen draws from these instead
+/// of inventing its own values; if a number is not on this scale it should
+/// not appear in layout code.
+abstract final class Ks {
+  /// Outer padding of every settings/content page.
+  static const pagePadding = EdgeInsets.fromLTRB(20, 16, 20, 24);
+
+  /// The one left inset shared by everything that sits in a card column:
+  /// section headings, row content, dividers, hint rows, group notes.
+  static const double inset = 20;
+
+  /// Vertical gap between a card and the next section heading.
+  static const double cardGap = 16;
+
+  /// Cards, dialogs and other primary surfaces.
+  static const double radiusCard = 24;
+
+  /// Row ink splashes and small tappable surfaces inside a card.
+  static const double radiusRow = 14;
+
+  /// Text fields and other input controls.
+  static const double radiusControl = 12;
+
+  /// Display face for page titles, dialog titles and the app header. The
+  /// body stays on the default sans; Rubik ties the chrome to the clock
+  /// faces without carrying running text.
+  static const String displayFont = 'Rubik';
+}
+
 ColorScheme _lightScheme() =>
     ColorScheme.fromSeed(
       seedColor: _sage,
@@ -87,6 +116,17 @@ ColorScheme _darkScheme() =>
 ThemeData buildTheme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
   final scheme = dark ? _darkScheme() : _lightScheme();
+  // Pill-shaped, compact One UI buttons. Filled carries the affirmative
+  // action, text the quiet one; both share the same metrics so dialog action
+  // rows line up.
+  final buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(100),
+  );
+  const buttonPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 12);
+  const buttonText = TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600);
+  // A shared floor keeps dialog action pairs balanced: "Save" never renders
+  // visibly narrower than the "Cancel" beside it.
+  const buttonMinSize = Size(96, 44);
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
@@ -100,30 +140,44 @@ ThemeData buildTheme(Brightness brightness) {
       scrolledUnderElevation: 0,
       // One UI-weight headers: bold titles carry the hierarchy.
       titleTextStyle: TextStyle(
+        fontFamily: Ks.displayFont,
         fontSize: 22,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: scheme.onSurface,
       ),
     ),
+    // Borderless rounded section masks, One UI style: cards read as soft
+    // panels lifted from the background by tone alone.
     cardTheme: CardThemeData(
       elevation: 0,
       color: scheme.surfaceContainer,
+      margin: const EdgeInsets.only(bottom: Ks.cardGap),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(Ks.radiusCard),
       ),
     ),
     dialogTheme: DialogThemeData(
       elevation: 0,
       backgroundColor: scheme.surfaceContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Ks.radiusCard),
+      ),
+      titleTextStyle: TextStyle(
+        fontFamily: Ks.displayFont,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: scheme.onSurface,
+      ),
     ),
     dividerTheme: DividerThemeData(color: scheme.outlineVariant),
     // One UI list rhythm: taller rows, a readable medium-weight title over a
     // clearly quieter subtitle. The weight gap is what makes rows scannable.
     listTileTheme: ListTileThemeData(
       iconColor: scheme.onSurfaceVariant,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: Ks.inset,
+        vertical: 4,
+      ),
       titleTextStyle: TextStyle(
         fontSize: 17,
         fontWeight: FontWeight.w500,
@@ -131,7 +185,7 @@ ThemeData buildTheme(Brightness brightness) {
         color: scheme.onSurface,
       ),
       subtitleTextStyle: TextStyle(
-        fontSize: 13.5,
+        fontSize: 13,
         height: 1.35,
         color: scheme.onSurfaceVariant,
       ),
@@ -140,28 +194,55 @@ ThemeData buildTheme(Brightness brightness) {
       filled: true,
       fillColor: dark ? scheme.surfaceContainerHigh : Colors.white,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(Ks.radiusControl),
         borderSide: BorderSide(color: scheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(Ks.radiusControl),
         borderSide: BorderSide(color: scheme.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(Ks.radiusControl),
         borderSide: BorderSide(color: scheme.primary, width: 1.5),
       ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        minimumSize: buttonMinSize,
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: buttonText,
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        minimumSize: buttonMinSize,
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: buttonText,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: buttonMinSize,
+        padding: buttonPadding,
+        shape: buttonShape,
+        textStyle: buttonText,
+        side: BorderSide(color: scheme.outline),
+      ),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: SegmentedButton.styleFrom(
+        visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Ks.radiusControl),
+      ),
     ),
   );
 }

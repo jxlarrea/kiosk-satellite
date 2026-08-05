@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/camera/models.dart';
+import 'kit.dart';
 
 class CameraSettingsPanel extends StatefulWidget {
   const CameraSettingsPanel({super.key, required this.container});
@@ -56,167 +57,158 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _heading('Home Assistant'),
-        _card([
-          ListTile(
-            leading: const Icon(Icons.download_outlined),
-            title: const Text('Import WebRTC cameras from Home Assistant'),
-            subtitle: const Text(
-              'Add every camera the connected Home Assistant can stream '
-              'over WebRTC. Importing again merges new cameras.',
-            ),
-            onTap: _busy ? null : _importHomeAssistant,
-          ),
-        ]),
-        _heading('Go2RTC servers'),
-        _card([
-          for (final server in config.servers)
+        const SectionHeading('Home Assistant'),
+        SettingsCard(
+          children: [
             ListTile(
-              leading: const Icon(Icons.dns_outlined),
-              title: Text(server.name),
-              subtitle: Text(server.baseUrl),
-              onTap: () => _editServer(server),
-              trailing: Wrap(
-                spacing: 2,
-                children: [
-                  IconButton(
-                    tooltip: 'Import streams',
-                    icon: const Icon(Icons.download_outlined),
-                    onPressed: _busy ? null : () => _import(server),
-                  ),
-                  IconButton(
-                    tooltip: 'Delete server',
-                    icon: const Icon(Icons.delete_outline),
-                    onPressed: _busy ? null : () => _deleteServer(server),
-                  ),
-                ],
+              leading: const Icon(Icons.download_outlined),
+              title: const Text('Import WebRTC cameras from Home Assistant'),
+              subtitle: const Text(
+                'Add every camera the connected Home Assistant can stream '
+                'over WebRTC. Importing again merges new cameras.',
               ),
+              onTap: _busy ? null : _importHomeAssistant,
             ),
-          ListTile(
-            leading: const Icon(Icons.add),
-            title: const Text('Add Go2RTC server'),
-            subtitle: const Text('Connect to a server and import its streams.'),
-            onTap: _busy ? null : () => _editServer(null),
-          ),
-        ]),
-        _heading('Cameras'),
-        _card([
-          if (config.cameras.isEmpty)
-            const ListTile(
-              leading: Icon(Icons.videocam_off_outlined),
-              title: Text('No cameras configured'),
-              subtitle: Text(
-                'Import cameras from Home Assistant or Go2RTC, or add one '
-                'manually.',
-              ),
-            ),
-          for (final camera in config.cameras)
-            ListTile(
-              leading: Icon(
-                camera.missing
-                    ? Icons.link_off_outlined
-                    : Icons.videocam_outlined,
-              ),
-              title: Text(camera.name),
-              subtitle: Text(_cameraSubtitle(camera, config)),
-              onTap: () => _editCamera(camera),
-              trailing: IconButton(
-                tooltip: 'Delete camera',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _busy ? null : () => _deleteCamera(camera),
-              ),
-            ),
-          ListTile(
-            leading: const Icon(Icons.add),
-            title: const Text('Add camera manually'),
-            subtitle: const Text(
-              'Use a Go2RTC stream name, a WHEP URL or a Home Assistant '
-              'camera entity.',
-            ),
-            onTap: _busy ? null : () => _editCamera(null),
-          ),
-        ]),
-        _heading('Views'),
-        _card([
-          for (final view in config.views)
-            ListTile(
-              leading: Icon(
-                view.isDefault ? Icons.star_outline : Icons.grid_view_outlined,
-              ),
-              title: Text(view.name),
-              subtitle: Text(
-                view.cameraIds.isEmpty
-                    ? 'No cameras yet'
-                    : '${view.cameraIds.length} camera'
-                          '${view.cameraIds.length == 1 ? '' : 's'}'
-                          ' · Names '
-                          '${view.showCameraNames ? 'shown' : 'hidden'}',
-              ),
-              onTap: () => _editView(view),
-              trailing: Wrap(
-                spacing: 2,
-                children: [
-                  IconButton(
-                    tooltip: 'Show view',
-                    icon: const Icon(Icons.play_arrow),
-                    onPressed: view.cameraIds.isEmpty
-                        ? null
-                        : () => _showView(view),
-                  ),
-                  // The default view is permanent: emptying it is how it
-                  // gets retired, so it carries no delete.
-                  if (!view.isDefault)
+          ],
+        ),
+        const SectionHeading('Go2RTC servers'),
+        SettingsCard(
+          children: [
+            for (final server in config.servers)
+              ListTile(
+                leading: const Icon(Icons.dns_outlined),
+                title: Text(server.name),
+                subtitle: Text(server.baseUrl),
+                onTap: () => _editServer(server),
+                trailing: Wrap(
+                  spacing: 2,
+                  children: [
                     IconButton(
-                      tooltip: 'Delete view',
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: _busy ? null : () => _deleteView(view),
+                      tooltip: 'Import streams',
+                      icon: const Icon(Icons.download_outlined),
+                      onPressed: _busy ? null : () => _import(server),
                     ),
-                ],
+                    IconButton(
+                      tooltip: 'Delete server',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: _busy ? null : () => _deleteServer(server),
+                    ),
+                  ],
+                ),
               ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Add Go2RTC server'),
+              subtitle: const Text(
+                'Connect to a server and import its streams.',
+              ),
+              onTap: _busy ? null : () => _editServer(null),
             ),
-          ListTile(
-            leading: const Icon(Icons.add),
-            title: const Text('Create camera view'),
-            subtitle: Text(
-              config.cameras.isEmpty
-                  ? 'Add a camera first.'
-                  : 'Choose and order up to four cameras.',
+          ],
+        ),
+        const SectionHeading('Cameras'),
+        SettingsCard(
+          children: [
+            if (config.cameras.isEmpty)
+              const ListTile(
+                leading: Icon(Icons.videocam_off_outlined),
+                title: Text('No cameras configured'),
+                subtitle: Text(
+                  'Import cameras from Home Assistant or Go2RTC, or add one '
+                  'manually.',
+                ),
+              ),
+            for (final camera in config.cameras)
+              ListTile(
+                leading: Icon(
+                  camera.missing
+                      ? Icons.link_off_outlined
+                      : Icons.videocam_outlined,
+                ),
+                title: Text(camera.name),
+                subtitle: Text(_cameraSubtitle(camera, config)),
+                onTap: () => _editCamera(camera),
+                trailing: IconButton(
+                  tooltip: 'Delete camera',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _busy ? null : () => _deleteCamera(camera),
+                ),
+              ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Add camera manually'),
+              subtitle: const Text(
+                'Use a Go2RTC stream name, a WHEP URL or a Home Assistant '
+                'camera entity.',
+              ),
+              onTap: _busy ? null : () => _editCamera(null),
             ),
-            enabled: config.cameras.isNotEmpty && !_busy,
-            onTap: config.cameras.isEmpty || _busy
-                ? null
-                : () => _editView(null),
-          ),
-        ]),
-        const SizedBox(height: 16),
-        Text(
+          ],
+        ),
+        const SectionHeading('Views'),
+        SettingsCard(
+          children: [
+            for (final view in config.views)
+              ListTile(
+                leading: Icon(
+                  view.isDefault
+                      ? Icons.star_outline
+                      : Icons.grid_view_outlined,
+                ),
+                title: Text(view.name),
+                subtitle: Text(
+                  view.cameraIds.isEmpty
+                      ? 'No cameras yet'
+                      : '${view.cameraIds.length} camera'
+                            '${view.cameraIds.length == 1 ? '' : 's'}'
+                            ' · Names '
+                            '${view.showCameraNames ? 'shown' : 'hidden'}',
+                ),
+                onTap: () => _editView(view),
+                trailing: Wrap(
+                  spacing: 2,
+                  children: [
+                    IconButton(
+                      tooltip: 'Show view',
+                      icon: const Icon(Icons.play_arrow),
+                      onPressed: view.cameraIds.isEmpty
+                          ? null
+                          : () => _showView(view),
+                    ),
+                    // The default view is permanent: emptying it is how it
+                    // gets retired, so it carries no delete.
+                    if (!view.isDefault)
+                      IconButton(
+                        tooltip: 'Delete view',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: _busy ? null : () => _deleteView(view),
+                      ),
+                  ],
+                ),
+              ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Create camera view'),
+              subtitle: Text(
+                config.cameras.isEmpty
+                    ? 'Add a camera first.'
+                    : 'Choose and order up to four cameras.',
+              ),
+              enabled: config.cameras.isNotEmpty && !_busy,
+              onTap: config.cameras.isEmpty || _busy
+                  ? null
+                  : () => _editView(null),
+            ),
+          ],
+        ),
+        const GroupNote(
           'Grid playback is video-only. For low-power devices, use lower '
           'resolution Go2RTC streams in views and optionally set a separate '
           'fullscreen stream.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
         ),
       ],
     );
   }
-
-  Widget _heading(String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-    child: Text(
-      text,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        color: Theme.of(context).colorScheme.primary,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-  );
-
-  Widget _card(List<Widget> children) => Card(
-    margin: EdgeInsets.zero,
-    clipBehavior: Clip.antiAlias,
-    child: Column(children: children),
-  );
 
   Widget _sectionLabel(BuildContext context, String text) => Align(
     alignment: Alignment.centerLeft,
@@ -311,6 +303,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                spacing: 12,
                 children: [
                   TextField(
                     controller: name,
@@ -405,6 +398,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                spacing: 12,
                 children: [
                   TextField(
                     controller: name,

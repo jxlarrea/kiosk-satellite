@@ -9,6 +9,7 @@ import '../core/events.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'import_options_dialog.dart';
 import 'kiosk_screen.dart';
+import 'theme.dart';
 
 /// First-run onboarding: a five-step wizard, Home Assistant-oriented from
 /// the first screen, in the app's One UI split layout — the step list on a
@@ -63,22 +64,22 @@ class _SetupScreenState extends State<SetupScreen> {
       _fail(
         'Invalid access token',
         'Home Assistant rejected this token. In Home Assistant, open your '
-        'profile → Security → Long-lived access tokens, create a new '
-        'token, and copy the complete value.',
+            'profile → Security → Long-lived access tokens, create a new '
+            'token, and copy the complete value.',
       );
     } else if (error.startsWith('unreachable')) {
       _fail(
         "Can't reach Home Assistant",
         'No response from this address. Check that the URL is correct and '
-        'that this device is on the same network as your Home Assistant '
-        'server.',
+            'that this device is on the same network as your Home Assistant '
+            'server.',
       );
     } else if (error.startsWith('HTTP')) {
       _fail(
         'Unexpected response ($error)',
         "A server responded, but it doesn't appear to be Home Assistant. "
-        'Check that the URL is your Home Assistant base address, for '
-        'example https://homeassistant.local:8123.',
+            'Check that the URL is your Home Assistant base address, for '
+            'example https://homeassistant.local:8123.',
       );
     } else {
       _fail("Can't connect", error);
@@ -117,7 +118,10 @@ class _SetupScreenState extends State<SetupScreen> {
   static const _optionalRecommended = <(String, String)>[
     ('browser.auto_reload_on_error', 'Auto-reload on error'),
     ('browser.pull_to_refresh', 'Pull to refresh'),
-    ('browser.pull_to_refresh_clear_cache', 'Clear cache when pulling to refresh'),
+    (
+      'browser.pull_to_refresh_clear_cache',
+      'Clear cache when pulling to refresh',
+    ),
     ('browser.allow_mixed_content', 'Allow mixed content'),
     ('browser.ignore_ssl_errors', 'Ignore SSL errors'),
     ('web.autoplay', 'Autoplay audio and video'),
@@ -227,10 +231,7 @@ class _SetupScreenState extends State<SetupScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     if (!result.ok) {
-      _fail(
-        'Import failed',
-        result.error ?? 'The file could not be applied.',
-      );
+      _fail('Import failed', result.error ?? 'The file could not be applied.');
       return;
     }
     // pendingSetup: the permission prompts are running and the start URL
@@ -259,10 +260,7 @@ class _SetupScreenState extends State<SetupScreen> {
         if (_remoteWanted) {
           final password = _remotePassword.text;
           if (password.length < 4) {
-            _fail(
-              'Password too short',
-              'Use at least 4 characters.',
-            );
+            _fail('Password too short', 'Use at least 4 characters.');
             return;
           }
           await c.settings.set(defs.remotePassword, password);
@@ -292,7 +290,7 @@ class _SetupScreenState extends State<SetupScreen> {
           _fail(
             'Enter a long-lived access token',
             'In Home Assistant, open your profile → Security → Long-lived '
-            'access tokens to create one.',
+                'access tokens to create one.',
           );
           return;
         }
@@ -328,8 +326,9 @@ class _SetupScreenState extends State<SetupScreen> {
           _dashboards = dashboards;
           _dashboard = firstDash;
           _dashboardViews = views;
-          _dashboardView =
-              (views != null && views.isNotEmpty) ? '${views.first['route']}' : '';
+          _dashboardView = (views != null && views.isNotEmpty)
+              ? '${views.first['route']}'
+              : '';
           _step = 2;
         });
       case 2:
@@ -337,7 +336,7 @@ class _SetupScreenState extends State<SetupScreen> {
           _fail(
             'Select a dashboard',
             'Choose the dashboard the kiosk will display. You can change '
-            'it later in Settings.',
+                'it later in Settings.',
           );
           return;
         }
@@ -423,8 +422,9 @@ class _SetupScreenState extends State<SetupScreen> {
     setState(() {
       _dashboard = urlPath;
       _dashboardViews = views;
-      _dashboardView =
-          (views != null && views.isNotEmpty) ? '${views.first['route']}' : '';
+      _dashboardView = (views != null && views.isNotEmpty)
+          ? '${views.first['route']}'
+          : '';
     });
   }
 
@@ -439,15 +439,7 @@ class _SetupScreenState extends State<SetupScreen> {
       builder: (ctx) {
         final theme = Theme.of(ctx);
         return SimpleDialog(
-          title: Row(
-            children: [
-              const Expanded(child: Text('Choose a view')),
-              IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-            ],
-          ),
+          title: const Text('Choose a view'),
           children: [
             for (final v in views)
               ListTile(
@@ -520,8 +512,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(12, 16, 12, 20),
                   children: [
-                    for (final (i, (icon, title, subtitle))
-                        in _steps.indexed)
+                    for (final (i, (icon, title, subtitle)) in _steps.indexed)
                       _railStep(context, i, icon, title, subtitle),
                   ],
                 ),
@@ -670,7 +661,8 @@ class _SetupScreenState extends State<SetupScreen> {
       child: Text(
         text,
         style: theme.textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w700,
+          fontFamily: Ks.displayFont,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -725,7 +717,6 @@ class _SetupScreenState extends State<SetupScreen> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Remote admin password',
-                    border: OutlineInputBorder(),
                   ),
                 ),
               ),
@@ -765,7 +756,6 @@ class _SetupScreenState extends State<SetupScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Home Assistant Base URL',
                   hintText: 'https://homeassistant.local:8123',
-                  border: OutlineInputBorder(),
                 ),
               ),
             ),
@@ -776,7 +766,6 @@ class _SetupScreenState extends State<SetupScreen> {
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Long-lived access token',
-                  border: OutlineInputBorder(),
                 ),
               ),
             ),
@@ -808,7 +797,8 @@ class _SetupScreenState extends State<SetupScreen> {
                             ? _viewPath(urlPath, _dashboardView ?? '')
                             : urlPath,
                       ),
-                      trailing: isSel &&
+                      trailing:
+                          isSel &&
                               _dashboardViews != null &&
                               _dashboardViews!.isNotEmpty
                           ? TextButton(
@@ -853,9 +843,8 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                   title: Text('${s['name']}'),
                   subtitle: Text('${s['entity_id']}'),
-                  onTap: () => setState(
-                    () => _satellite = s['entity_id'] as String?,
-                  ),
+                  onTap: () =>
+                      setState(() => _satellite = s['entity_id'] as String?),
                 ),
             ]),
           _Card([
@@ -892,8 +881,7 @@ class _SetupScreenState extends State<SetupScreen> {
       case 4:
         final background =
             _vsStepActive && _recommended['wake_word.background']!;
-        final bootStart =
-            _vsStepActive && _recommended['kiosk.start_on_boot']!;
+        final bootStart = _vsStepActive && _recommended['kiosk.start_on_boot']!;
         return withError([
           heading('Permissions'),
           lead(
@@ -1006,12 +994,13 @@ class _ErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       decoration: BoxDecoration(
         color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(Ks.radiusCard),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1024,18 +1013,16 @@ class _ErrorCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                  style: text.titleSmall?.copyWith(
                     color: scheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (hint != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     hint!,
-                    style: TextStyle(
-                      fontSize: 13.5,
+                    style: text.bodyMedium?.copyWith(
                       height: 1.4,
                       color: scheme.onErrorContainer.withValues(alpha: 0.85),
                     ),
@@ -1099,11 +1086,11 @@ class _Card extends StatelessWidget {
 
   final List<Widget> children;
 
+  // Shape and margin come from the card theme; no dividers, because wizard
+  // cards hold forms rather than setting rows.
   @override
   Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.only(bottom: 16),
     clipBehavior: Clip.antiAlias,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     child: Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(children: children),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../managers/gestures/gesture_mappings.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'kit.dart';
 
 /// The Gestures page (issue #99): the list of gestures and the
 /// actions they trigger. Mirrored by the remote admin's Gestures page.
@@ -24,28 +25,33 @@ class GestureSettingsPanel extends StatefulWidget {
 /// The action chooser's groups of (type, label, icon); config dialogs
 /// switch on the type.
 const _actionGroups = <(String, List<(String, String, IconData)>)>[
-  ('Kiosk Satellite', [
-    ('navigate', 'Go to a dashboard view', Icons.dashboard_outlined),
-    ('url', 'Open a web page', Icons.public),
-    ('camera_view', 'Show a camera view', Icons.videocam_outlined),
-    (
-      'sendspin_player',
-      'Show the Sendspin player',
-      Icons.speaker_outlined,
-    ),
-    ('screensaver', 'Start the screensaver', Icons.nightlight_outlined),
-  ]),
-  ('Android', [
-    ('launch_app', 'Open another app', Icons.apps_outlined),
-    ('open_uri', 'Open a deep link', Icons.link_outlined),
-    ('android_settings', 'Open Android Settings', Icons.android_outlined),
-  ]),
-  ('Home Assistant', [
-    ('ha_service', 'Call a service', Icons.home_outlined),
-    ('ha_script', 'Run a script', Icons.description_outlined),
-    ('ha_automation', 'Trigger an automation', Icons.play_circle_outline),
-    ('ha_event', 'Fire an event', Icons.campaign_outlined),
-  ]),
+  (
+    'Kiosk Satellite',
+    [
+      ('navigate', 'Go to a dashboard view', Icons.dashboard_outlined),
+      ('url', 'Open a web page', Icons.public),
+      ('camera_view', 'Show a camera view', Icons.videocam_outlined),
+      ('sendspin_player', 'Show the Sendspin player', Icons.speaker_outlined),
+      ('screensaver', 'Start the screensaver', Icons.nightlight_outlined),
+    ],
+  ),
+  (
+    'Android',
+    [
+      ('launch_app', 'Open another app', Icons.apps_outlined),
+      ('open_uri', 'Open a deep link', Icons.link_outlined),
+      ('android_settings', 'Open Android Settings', Icons.android_outlined),
+    ],
+  ),
+  (
+    'Home Assistant',
+    [
+      ('ha_service', 'Call a service', Icons.home_outlined),
+      ('ha_script', 'Run a script', Icons.description_outlined),
+      ('ha_automation', 'Trigger an automation', Icons.play_circle_outline),
+      ('ha_event', 'Fire an event', Icons.campaign_outlined),
+    ],
+  ),
 ];
 
 const _triggerTypes = <(String, String)>[
@@ -91,89 +97,59 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
               ),
             ),
           ),
-        _heading('Gestures'),
-        _card([
-          if (mappings.isEmpty)
-            const ListTile(
-              leading: Icon(Icons.gesture),
-              title: Text('No gestures configured'),
-              subtitle: Text(
-                'A gesture triggers its action without any visible '
-                'control.',
+        const SectionHeading('Gestures'),
+        SettingsCard(
+          children: [
+            if (mappings.isEmpty)
+              const ListTile(
+                leading: Icon(Icons.gesture),
+                title: Text('No gestures configured'),
+                subtitle: Text(
+                  'A gesture triggers its action without any visible '
+                  'control.',
+                ),
               ),
-            ),
-          for (final mapping in mappings)
+            for (final mapping in mappings)
+              ListTile(
+                leading: const Icon(Icons.gesture),
+                title: Text(describeGestureTrigger(mapping.trigger)),
+                subtitle: Text(describeGestureAction(mapping.action)),
+                onTap: () => _edit(mapping),
+                trailing: IconButton(
+                  tooltip: 'Delete gesture',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _delete(mapping),
+                ),
+              ),
             ListTile(
-              leading: const Icon(Icons.gesture),
-              title: Text(describeGestureTrigger(mapping.trigger)),
-              subtitle: Text(describeGestureAction(mapping.action)),
-              onTap: () => _edit(mapping),
-              trailing: IconButton(
-                tooltip: 'Delete gesture',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _delete(mapping),
+              leading: const Icon(Icons.add),
+              title: const Text('Add gesture'),
+              subtitle: const Text(
+                'Pick a gesture and the action it triggers.',
               ),
+              onTap: () => _edit(null),
             ),
-          ListTile(
-            leading: const Icon(Icons.add),
-            title: const Text('Add gesture'),
-            subtitle: const Text('Pick a gesture and the action it triggers.'),
-            onTap: () => _edit(null),
-          ),
-        ]),
-        const SizedBox(height: 16),
-        Text(
+          ],
+        ),
+        const GroupNote(
           'Gestures are observed, not blocked: the taps also reach the '
           'dashboard, so corners and multi-finger shapes keep them from '
           'firing anything there.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
         ),
       ],
     );
   }
 
-  Widget _heading(String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-    child: Text(
-      text,
-      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-        color: Theme.of(context).colorScheme.primary,
-        fontWeight: FontWeight.w700,
-      ),
-    ),
-  );
-
-  Widget _card(List<Widget> children) => Card(
-    margin: EdgeInsets.zero,
-    clipBehavior: Clip.antiAlias,
-    child: Column(children: children),
-  );
-
   Future<void> _delete(GestureMapping mapping) async {
-    final confirmed =
-        await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Delete gesture?'),
-            content: Text(
-              '${describeGestureTrigger(mapping.trigger)} will no longer '
-              '${describeGestureAction(mapping.action).toLowerCase()}.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete gesture?',
+      message:
+          '${describeGestureTrigger(mapping.trigger)} will no longer '
+          '${describeGestureAction(mapping.action).toLowerCase()}.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    );
     if (!confirmed) return;
     await _save([..._mappings]..removeWhere((m) => m.id == mapping.id));
   }
@@ -269,14 +245,8 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                         initialValue: fingerTaps.clamp(1, 2),
                         decoration: const InputDecoration(labelText: 'Taps'),
                         items: const [
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('Single tap'),
-                          ),
-                          DropdownMenuItem(
-                            value: 2,
-                            child: Text('Double tap'),
-                          ),
+                          DropdownMenuItem(value: 1, child: Text('Single tap')),
+                          DropdownMenuItem(value: 2, child: Text('Double tap')),
                         ],
                         onChanged: (value) => setDialogState(
                           () => fingerTaps = value ?? fingerTaps,
@@ -301,9 +271,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                       Text(
                         sequence.isEmpty
                             ? 'Tap the corners in order (2 to 8 steps).'
-                            : sequence
-                                  .map((s) => s.toUpperCase())
-                                  .join(' > '),
+                            : sequence.map((s) => s.toUpperCase()).join(' > '),
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       Wrap(
@@ -435,9 +403,9 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
         : null;
     return switch (type) {
       // Actions with nothing to configure skip the second dialog.
-      'android_settings' || 'sendspin_player' || 'screensaver' => {
-        'type': type,
-      },
+      'android_settings' ||
+      'sendspin_player' ||
+      'screensaver' => {'type': type},
       'navigate' => _configureNavigate(carried),
       'url' => _configureText(
         carried,
@@ -513,9 +481,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
     required String? Function(String) validate,
     TextInputType? keyboard,
   }) async {
-    final controller = TextEditingController(
-      text: '${current?[field] ?? ''}',
-    );
+    final controller = TextEditingController(text: '${current?[field] ?? ''}');
     String? error;
     final result = await showDialog<Map<String, Object?>>(
       context: context,
@@ -629,18 +595,14 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
     required String domain,
     required String service,
   }) async {
-    final entity = TextEditingController(
-      text: '${current?['entityId'] ?? ''}',
-    );
+    final entity = TextEditingController(text: '${current?['entityId'] ?? ''}');
     String? error;
     var checking = false;
     (bool, String)? verdict;
     // A bare name is obviously meant as one of this domain's entities.
     String qualified() {
       final value = entity.text.trim();
-      return value.isEmpty || value.contains('.')
-          ? value
-          : '$domain.$value';
+      return value.isEmpty || value.contains('.') ? value : '$domain.$value';
     }
 
     final result = await showDialog<Map<String, Object?>>(
@@ -651,9 +613,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
             final value = qualified();
             if (!value.startsWith('$domain.') ||
                 value.length <= domain.length + 1) {
-              setDialogState(
-                () => error = 'Enter a $domain.* entity.',
-              );
+              setDialogState(() => error = 'Enter a $domain.* entity.');
               return;
             }
             Navigator.pop(context, {'type': type, 'entityId': value});
@@ -751,8 +711,10 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
     if (entries.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not list dashboards. Is Home Assistant '
-              'connected?'),
+          content: Text(
+            'Could not list dashboards. Is Home Assistant '
+            'connected?',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -813,10 +775,8 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                   : Icons.radio_button_off,
             ),
             title: const Text('Close the camera view'),
-            onTap: () => Navigator.pop(context, {
-              'type': 'camera_view',
-              'mode': 'hide',
-            }),
+            onTap: () =>
+                Navigator.pop(context, {'type': 'camera_view', 'mode': 'hide'}),
           ),
           if (views.isEmpty)
             const Padding(
@@ -831,15 +791,9 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
   Future<Map<String, Object?>?> _configureHaService(
     Map<String, Object?>? current,
   ) async {
-    final domain = TextEditingController(
-      text: '${current?['domain'] ?? ''}',
-    );
-    final service = TextEditingController(
-      text: '${current?['service'] ?? ''}',
-    );
-    final entity = TextEditingController(
-      text: '${current?['entityId'] ?? ''}',
-    );
+    final domain = TextEditingController(text: '${current?['domain'] ?? ''}');
+    final service = TextEditingController(text: '${current?['service'] ?? ''}');
+    final entity = TextEditingController(text: '${current?['entityId'] ?? ''}');
     final data = TextEditingController(
       text: current?['data'] is Map ? jsonEncode(current!['data']) : '',
     );
@@ -871,8 +825,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
               'type': 'ha_service',
               'domain': domain.text.trim(),
               'service': service.text.trim(),
-              if (entity.text.trim().isNotEmpty)
-                'entityId': entity.text.trim(),
+              if (entity.text.trim().isNotEmpty) 'entityId': entity.text.trim(),
               'data': ?parsed,
             });
           }
@@ -924,8 +877,12 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                       onValidate: () async {
                         if (domain.text.trim().isEmpty ||
                             service.text.trim().isEmpty) {
-                          setDialogState(() => verdict =
-                              (false, 'Domain and service are required.'));
+                          setDialogState(
+                            () => verdict = (
+                              false,
+                              'Domain and service are required.',
+                            ),
+                          );
                           return;
                         }
                         setDialogState(() {

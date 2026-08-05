@@ -150,9 +150,9 @@ const secureProxy = SettingDef<bool>(
   defaultValue: false,
   title: 'Secure context proxy',
   description:
-      'Routes a plain http Home Assistant through a proxy inside the app '
-      'so the browser unlocks the microphone and other https-only '
-      'features. Available only for http URLs.',
+      'Routes a plain http Home Assistant through an in-app proxy so '
+      'the browser unlocks the microphone and other https-only '
+      'features. Only for http URLs.',
   category: 'Home Assistant',
   hidden: true,
 );
@@ -193,10 +193,9 @@ const freezeOnScreensaver = SettingDef<bool>(
   defaultValue: true,
   title: 'Pause dashboard during screensaver',
   description:
-      'Stops drawing the dashboard while the screensaver covers it, cutting '
-      'CPU and GPU use. The connection stays active. Turns on "Keep '
-      'connected in the background". Does not apply to the Dim screensaver, '
-      'which keeps the dashboard visible.',
+      'Stops drawing the dashboard while the screensaver covers it, '
+      'cutting CPU and GPU use; the connection stays live. Not for the '
+      'Dim screensaver.',
   category: 'Home Assistant',
   section: 'Optimizations',
 );
@@ -212,10 +211,9 @@ const wsFilter = SettingDef<bool>(
   defaultValue: true,
   title: 'Filter dashboard updates',
   description:
-      'Only process Home Assistant updates for entities on the current '
-      'dashboard view. Cuts stutter on low-powered tablets. Works best with '
-      'kiosk mode on. Views whose entities cannot be determined are shown '
-      'unfiltered.',
+      'Only process updates for entities on the current view, cutting '
+      'stutter on low-powered tablets. Views that cannot be resolved '
+      'stay unfiltered.',
   category: 'Home Assistant',
   section: 'Optimizations',
 );
@@ -246,9 +244,9 @@ const pullToRefreshClearCache = SettingDef<bool>(
   defaultValue: false,
   title: 'Clear cache when pulling to refresh',
   description:
-      'A pull also empties the HTTP cache, Cache Storage and the cached '
-      'wake word models before reloading, so the page and its models come '
-      'back fresh. Login and saved page data are kept.',
+      'A pull also clears the web cache and wake word models before '
+      'reloading, so everything comes back fresh. Login and saved page '
+      'data are kept.',
   category: 'Browser',
   dependsOn: 'browser.pull_to_refresh',
 );
@@ -302,9 +300,8 @@ const pinchToZoom = SettingDef<bool>(
   defaultValue: false,
   title: 'Enable pinch to zoom',
   description:
-      'Zoom the page with a two-finger pinch. Off by default: a '
-      'kiosk dashboard should stay put under stray touches. Pages that '
-      'forbid zooming in their viewport settings still win.',
+      'Zoom the page with a two-finger pinch. Off by default so a kiosk '
+      'dashboard stays put under stray touches.',
   category: 'Browser',
 );
 
@@ -314,11 +311,9 @@ const disableCache = SettingDef<bool>(
   defaultValue: false,
   title: 'Disable cache',
   description:
-      'Always fetch from the network, ignoring the HTTP cache, and drop any '
-      'service worker + Cache Storage on load (Home Assistant registers one, '
-      'which otherwise keeps serving a stale dashboard or card after you '
-      'redeploy). Saved page data (localStorage) is never touched. Slower on '
-      'a normal kiosk, so treat it as a development aid.',
+      'Always fetch from the network and drop cached page data on load, '
+      'so a redeployed dashboard always comes back fresh. Slow; treat '
+      'it as a development aid.',
   category: 'Browser',
 );
 
@@ -437,10 +432,9 @@ const kioskStartOnBoot = SettingDef<bool>(
   defaultValue: false,
   title: 'Start on boot',
   description:
-      'Launch Kiosk Satellite when the device powers on. Reliable '
-      'background launch on Android 10+ needs the "display over other '
-      'apps" permission. Android asks when this is first enabled on '
-      'the device.',
+      'Launch Kiosk Satellite when the device powers on. On Android 10+ '
+      'this needs the display over other apps permission; Android asks '
+      'on first enable.',
   category: 'Kiosk',
 );
 
@@ -450,11 +444,9 @@ const kioskExitGesture = SettingDef<String>(
   defaultValue: 'taps7',
   title: 'Kiosk exit gesture',
   description:
-      'Fast taps anywhere on the screen open the menu, after the PIN '
-      'if one is set. The hold variants only fire when the last tap is '
-      'held down for a second, so rapid taps on dashboard buttons cannot '
-      'open the menu. With the gesture disabled, only the remote admin '
-      'can reach the settings.',
+      'Fast taps anywhere open the menu, after the PIN if one is set. '
+      'Hold variants need the last tap held down. When disabled, only '
+      'the remote admin can reach settings.',
   category: 'Kiosk',
   options: ['taps5', 'taps7', 'taps5hold', 'taps7hold', 'none'],
   optionLabels: {
@@ -487,8 +479,8 @@ const kioskDisableStatusBar = SettingDef<bool>(
   title: 'Disable status bar',
   description:
       'Block the status bar pull-down with a shield over the top edge. '
-      'Needs the "display over other apps" permission. Android asks for '
-      'it when this is first enabled on the device.',
+      'Needs the display over other apps permission; Android asks on '
+      'first enable.',
   category: 'Kiosk',
   dependsOn: 'kiosk.enabled',
 );
@@ -509,9 +501,9 @@ const kioskDisablePower = SettingDef<bool>(
   defaultValue: false,
   title: 'Disable power button',
   description:
-      'Android does not let apps block the power button; when it switches '
-      'the screen off, Kiosk Satellite turns it right back on. Turning the '
-      'screen off from Home Assistant or the remote admin still works.',
+      'Android cannot block the power button, so the screen turns right '
+      'back on when it is pressed. Turning the screen off remotely '
+      'still works.',
   category: 'Kiosk',
   dependsOn: 'kiosk.enabled',
 );
@@ -616,7 +608,7 @@ const kioskAllowCamera = SettingDef<bool>(
   key: 'kiosk.allow_camera',
   type: SettingType.boolean,
   defaultValue: true,
-  title: 'Default Camera View',
+  title: 'Camera View',
   description: 'Open the default camera view.',
   category: 'Kiosk',
   section: 'Allowed Actions',
@@ -1705,8 +1697,8 @@ const screensaverDismissOnMotion = SettingDef<bool>(
   title: 'Dismiss on motion',
   description:
       'Watch the camera while the screensaver is up and wake the screen '
-      'when someone approaches. The camera runs only during the screensaver, so '
-      'it costs nothing during normal use.',
+      'when someone approaches. The camera runs only during the '
+      'screensaver.',
   category: 'Screensaver',
   section: 'Motion Detection',
 );
@@ -1818,11 +1810,7 @@ const cameraSnapshotResolution = SettingDef<String>(
   description: 'Higher looks sharper but costs more CPU and bandwidth.',
   category: 'Camera',
   options: ['480', '720', '1080'],
-  optionLabels: {
-    '480': '480p',
-    '720': '720p',
-    '1080': '1080p',
-  },
+  optionLabels: {'480': '480p', '720': '720p', '1080': '1080p'},
   dependsOn: 'camera.enabled',
 );
 
@@ -1904,10 +1892,9 @@ const micAudioSource = SettingDef<String>(
   },
   title: 'Capture mode',
   description:
-      'Voice communication is the only mode echo cancellation works on, so '
+      'Voice communication is the only mode with echo cancellation, so '
       'leave it unless the microphone reads far quieter here than in a '
-      'recorder app. On the other two the device may hear its own speech and '
-      'talk over itself.',
+      'recorder app.',
   category: 'Screen & Audio',
   section: 'Microphone settings',
 );
@@ -1918,9 +1905,9 @@ const micAgc = SettingDef<bool>(
   defaultValue: false,
   title: 'Automatic gain control',
   description:
-      'Let Android level the microphone instead of setting a fixed gain. It '
-      'adapts on its own, but it also lifts room noise when nobody is '
-      'speaking, and on some devices it does nothing at all.',
+      'Let Android level the microphone instead of a fixed gain. It '
+      'also lifts room noise, and on some devices it does nothing at '
+      'all.',
   category: 'Screen & Audio',
   section: 'Microphone settings',
 );
@@ -1935,11 +1922,9 @@ const micGainDb = SettingDef<num>(
   unit: ' dB',
   title: 'Microphone gain',
   description:
-      'Amplify or attenuate the captured audio before anything hears it. Use '
-      'the wake word tester: aim for a mic level around 0.05 while speaking '
-      'normally from where you use the device. Go negative for an overly '
-      'sensitive microphone; too much gain distorts loud speech and makes '
-      'detection worse, not better.',
+      'Boost or cut the microphone before anything hears it. Aim for a '
+      'level near 0.05 in the wake word tester; too much gain distorts '
+      'speech and hurts detection.',
   category: 'Screen & Audio',
   section: 'Microphone settings',
   // Hidden while Android is doing the levelling: a fixed gain under an
@@ -1969,9 +1954,9 @@ const wakeWordBackground = SettingDef<bool>(
   defaultValue: false,
   title: 'Keep listening in the background',
   description:
-      'Keep hearing the wake word while another app is in front, and come back '
-      'to the front on a detection. Android freezes apps it cannot see, so this '
-      'needs a permanent notification and permission to display over other apps.',
+      'Keep hearing the wake word while another app is in front, and '
+      'return on a detection. Needs a permanent notification and '
+      'display over other apps.',
   category: 'Voice Satellite',
   dependsOn: 'wake_word.enabled',
 );
@@ -2022,10 +2007,8 @@ const vsSuppressScreensaver = SettingDef<bool>(
   defaultValue: true,
   title: 'Turn off the Voice Satellite screensaver',
   description:
-      'While the Kiosk Satellite screensaver is enabled, the Voice Satellite '
-      'screensaver on the dashboard stands down so the two never run at '
-      'once. Voice Satellite shows a notice next to its own screensaver '
-      'setting while this is in effect.',
+      'While this app\'s screensaver is enabled, the Voice Satellite '
+      'screensaver stands down so the two never run at once.',
   category: 'Voice Satellite',
 );
 
@@ -2084,9 +2067,9 @@ const haKioskMode = SettingDef<String>(
   defaultValue: 'off',
   title: 'HA kiosk mode',
   description:
-      'Hide the Home Assistant header and sidebar. Off shows the normal HA '
-      'UI. "auto" injects CSS and also uses the kiosk-mode HACS plugin when '
-      'detected. Applies immediately, with no restart.',
+      'Hide the Home Assistant header and sidebar. Auto injects CSS and '
+      'also uses the kiosk-mode plugin when detected. Applies '
+      'immediately.',
   category: 'Home Assistant',
   options: ['off', 'auto', 'plugin', 'css'],
   optionLabels: {
@@ -2246,10 +2229,9 @@ const haRotationPauseSeconds = SettingDef<num>(
   defaultValue: 30,
   title: 'Pause rotation on interaction (seconds)',
   description:
-      'When you touch the screen, rotation pauses for this long so you can '
-      'use the current view; each touch restarts the countdown. A voice '
-      'interaction always pauses rotation until it ends. Set to 0 to keep '
-      'rotating through touches.',
+      'Touching the screen pauses rotation for this long, and each '
+      'touch restarts the countdown. Voice interactions pause until '
+      'they end. 0 keeps rotating through touches.',
   category: 'Home Assistant',
   section: 'Dashboard View Rotation',
   dependsOn: 'ha.rotation_enabled',
@@ -2406,9 +2388,9 @@ const sendspinEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Enable Sendspin player',
   description:
-      'Turn this device into a synchronized Sendspin audio player. It '
-      'appears as a player in Music Assistant, named after the device '
-      'name, and plays in perfect sync with every other Sendspin speaker.',
+      'Turn this device into a synchronized Sendspin player. It appears '
+      'in Music Assistant under the device name, in sync with every '
+      'other Sendspin speaker.',
   category: 'Sendspin',
 );
 
@@ -2492,10 +2474,9 @@ const sendspinDuckPercent = SettingDef<num>(
   defaultValue: 10,
   title: 'Duck volume during voice interactions',
   description:
-      'While the voice assistant is listening or speaking, music drops to '
-      'this fraction of its volume so the microphone hears you, not the '
-      'song. Capped at 25%: any louder and wake word and speech detection '
-      'become unreliable.',
+      'While the assistant listens or speaks, music drops to this '
+      'fraction of its volume so the microphone hears you. Capped at '
+      '25% to keep detection reliable.',
   category: 'Sendspin',
   min: 0,
   max: 25,
@@ -2510,9 +2491,9 @@ const sendspinFullscreen = SettingDef<bool>(
   defaultValue: false,
   title: '"Now Playing" instead of the screensaver',
   description:
-      'While music plays, the idle screensaver becomes "Now Playing": a '
-      'full-screen view with album art and large title and artist. With '
-      'nothing playing, the regular screensaver appears as usual.',
+      'While music plays, the screensaver becomes a full-screen Now '
+      'Playing view with album art. With nothing playing, the regular '
+      'screensaver runs.',
   category: 'Sendspin',
   dependsOn: 'sendspin.enabled',
 );
@@ -2523,9 +2504,9 @@ const sendspinFullscreenMotion = SettingDef<bool>(
   defaultValue: false,
   title: 'Dismiss "Now Playing" on motion',
   description:
-      'Let motion dismiss the "Now Playing" view like a regular '
-      'screensaver. Off, only touch dismisses it, so someone walking past '
-      'does not interrupt the music display.',
+      'Let motion dismiss Now Playing like a regular screensaver. Off, '
+      'only touch dismisses it, so a walk-past does not interrupt the '
+      'music display.',
   category: 'Sendspin',
   dependsOn: 'sendspin.fullscreen',
 );
@@ -2641,9 +2622,8 @@ const sendspinLyricsOffset = SettingDef<num>(
   title: 'Lyrics timing',
   description:
       'Shift the lyrics against the music. Positive shows each line '
-      'earlier, which most people prefer since a line has to be read '
-      'before it is sung; negative shows it later. Sync quality varies by '
-      'track, so this is worth a nudge if one reads consistently off.',
+      'earlier, negative later. Worth a nudge on tracks that read '
+      'consistently off.',
   category: 'Sendspin',
   section: 'Music Assistant',
   dependsOn: 'sendspin.lyrics',
@@ -2780,9 +2760,9 @@ const disableImpeller = SettingDef<bool>(
   defaultValue: false,
   title: 'Legacy renderer',
   description:
-      'Draw the app with the older Skia renderer instead of Impeller, for '
-      'old GPUs that crash at startup. Turns itself on after two such '
-      'crashes. Takes effect on the next app start.',
+      'Use the older Skia renderer, for old GPUs that crash at startup. '
+      'Turns itself on after two such crashes; takes effect on the next '
+      'app start.',
   category: 'Device',
 );
 
