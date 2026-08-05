@@ -3,13 +3,17 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
+import '../core/permissions.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'import_options_dialog.dart';
 import 'kiosk_screen.dart';
 import 'theme.dart';
+import 'token_qr_scanner.dart';
 
 /// First-run onboarding: a five-step wizard, Home Assistant-oriented from
 /// the first screen, in the app's One UI split layout — the step list on a
@@ -95,6 +99,32 @@ class _SetupScreenState extends State<SetupScreen> {
   final _haUrl = TextEditingController();
   final _haToken = TextEditingController();
 
+  /// Camera permission, then the scanner; a decoded QR fills the token
+  /// field. Asked lazily at the tap, like every other grant in the app.
+  Future<void> _scanToken() async {
+    final outcome = await requestOsPermission(Permission.camera);
+    if (!mounted) return;
+    if (outcome != PermissionOutcome.granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            outcome == PermissionOutcome.blocked
+                ? 'Allow the camera for Kiosk Satellite in the Android '
+                      'settings to scan the QR code.'
+                : 'Allow the camera to scan the QR code.',
+          ),
+        ),
+      );
+      return;
+    }
+    final token = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const TokenQrScanner()),
+    );
+    if (token != null && token.isNotEmpty && mounted) {
+      setState(() => _haToken.text = token);
+    }
+  }
+
   // Step 3 — dashboards. The kiosk lands on a single view, so the chosen
   // dashboard carries a chosen view (its route), defaulting to the first.
   // `_dashboardViews` are the views of `_dashboard`, for the "Change view"
@@ -140,11 +170,18 @@ class _SetupScreenState extends State<SetupScreen> {
 
   StreamSubscription<SettingChanged>? _sub;
 
+  /// Whether the device can scan the token QR code Home Assistant shows
+  /// next to a new token; gates the scan button on the token field.
+  bool _hasCamera = false;
+
   @override
   void initState() {
     super.initState();
     c.device.ipAddress().then((ip) {
       if (mounted) setState(() => _deviceIp = ip);
+    });
+    c.deviceCamera.cameraPresent().then((present) {
+      if (mounted) setState(() => _hasCamera = present);
     });
     // The remote wizard may configure this device while this screen is up;
     // the moment a start URL exists, onboarding is done wherever it happened.
@@ -488,10 +525,11 @@ class _SetupScreenState extends State<SetupScreen> {
                 padding: const EdgeInsets.fromLTRB(28, 24, 20, 8),
                 child: Row(
                   children: [
-                    Image.asset(
-                      theme.brightness == Brightness.dark
-                          ? 'assets/branding/mark.png'
-                          : 'assets/branding/mark_light.png',
+                    // The app-icon tile, as vectors, same as the drawer
+                    // header. It carries its own teal background, so one
+                    // asset serves both themes.
+                    SvgPicture.asset(
+                      'assets/branding/icon_rounded.svg',
                       width: 40,
                       height: 40,
                     ),
@@ -546,10 +584,8 @@ class _SetupScreenState extends State<SetupScreen> {
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
           child: Column(
             children: [
-              Image.asset(
-                theme.brightness == Brightness.dark
-                    ? 'assets/branding/mark.png'
-                    : 'assets/branding/mark_light.png',
+              SvgPicture.asset(
+                'assets/branding/icon_rounded.svg',
                 width: 44,
                 height: 44,
               ),
@@ -764,8 +800,19 @@ class _SetupScreenState extends State<SetupScreen> {
               child: TextField(
                 controller: _haToken,
                 obscureText: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Long-lived access token',
+                  // Home Assistant shows a QR code next to a freshly created
+                  // token; scanning it beats typing 180 characters on a wall
+                  // tablet. Device wizard only: the remote wizard runs in a
+                  // browser where pasting is the easy path.
+                  suffixIcon: !_hasCamera
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.qr_code_scanner),
+                          tooltip: 'Scan the QR code',
+                          onPressed: _busy ? null : _scanToken,
+                        ),
                 ),
               ),
             ),
