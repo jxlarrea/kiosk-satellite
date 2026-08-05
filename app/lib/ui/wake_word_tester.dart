@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../app_container.dart';
 import '../managers/wake_word/engine.dart';
+import 'kit.dart';
 
 /// One inference's telemetry, as the engine reports it.
 class _Sample {
@@ -292,39 +293,15 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
                       ),
                     )
                   else
-                    Container(
-                      height: 46,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        border:
-                            Border.all(color: theme.colorScheme.outlineVariant),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedId,
-                          borderRadius: BorderRadius.circular(10),
-                          icon: const Padding(
-                            padding: EdgeInsets.only(left: 6),
-                            child: Icon(Icons.arrow_drop_down, size: 26),
-                          ),
-                          iconEnabledColor: theme.colorScheme.onSurfaceVariant,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.onSurface,
-                          ),
-                          items: [
-                            for (final w in _words)
-                              DropdownMenuItem(
-                                value: w.id,
-                                child: Text(w.label),
-                              ),
-                          ],
-                          onChanged: (id) {
-                            if (id != null) _selectWord(id);
-                          },
-                        ),
-                      ),
+                    KsDropdown<String>(
+                      value: _selectedId,
+                      items: [
+                        for (final w in _words)
+                          DropdownMenuItem(value: w.id, child: Text(w.label)),
+                      ],
+                      onChanged: (id) {
+                        if (id != null) _selectWord(id);
+                      },
                     ),
                   const Spacer(),
                   if (_engine.isNotEmpty)

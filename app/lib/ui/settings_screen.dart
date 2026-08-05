@@ -432,15 +432,21 @@ class CategorySettingsScreen extends StatelessWidget {
         .firstOrNull;
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 24),
-              const SizedBox(width: 10),
+        // scaleDown instead of ellipsis: the longest title overshoots a
+        // phone-width bar by only a few percent, and a barely smaller
+        // complete title beats a chopped one.
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 24),
+                const SizedBox(width: 10),
+              ],
+              Text(title),
             ],
-            Text(title),
-          ],
+          ),
         ),
       ),
       body: constrainedColumn(
@@ -1845,9 +1851,8 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        underline: const SizedBox.shrink(),
+                      child: KsDropdown<String>(
+                        expand: true,
                         value:
                             screensaverMode.options!.contains(
                               entries[i]['mode'],
@@ -1881,12 +1886,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                           ? 'Dismiss on motion while this entry is active'
                           : 'Requires the camera. Turn it on in the Camera '
                                 'settings first.',
-                      child: DropdownButton<String>(
-                        underline: const SizedBox.shrink(),
-                        isDense: true,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                        ),
+                      child: KsDropdown<String>(
                         value: switch (entries[i]['motion']) {
                           true => 'on',
                           false => 'off',
@@ -3235,30 +3235,35 @@ class _MadeByFooter extends StatelessWidget {
     );
     return Padding(
       padding: const EdgeInsets.fromLTRB(Ks.inset, 18, Ks.inset, 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Made with ', style: muted),
-          // An icon, not the \u2665 character: Android renders that
-          // codepoint as the emoji glyph, which ignores text color
-          // entirely and always shows its own saturated red.
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 1),
-            child: Icon(Icons.favorite, size: 15, color: Color(0xFFE86A6A)),
-          ),
-          Text(' by ', style: muted),
-          InkWell(
-            borderRadius: BorderRadius.circular(6),
-            onTap: () => _open(context, 'https://github.com/jxlarrea'),
-            child: Text('Xavier Larrea', style: link),
-          ),
-          Text(' \u00b7 \u2615 ', style: muted),
-          InkWell(
-            borderRadius: BorderRadius.circular(6),
-            onTap: () => _open(context, 'https://buymeacoffee.com/jxlarrea'),
-            child: Text('Buy me a coffee', style: link),
-          ),
-        ],
+      // scaleDown: the line is a touch wider than a phone pane, and an
+      // overflowing Row clips at the right edge and loses its centering.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Made with ', style: muted),
+            // An icon, not the \u2665 character: Android renders that
+            // codepoint as the emoji glyph, which ignores text color
+            // entirely and always shows its own saturated red.
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 1),
+              child: Icon(Icons.favorite, size: 15, color: Color(0xFFE86A6A)),
+            ),
+            Text(' by ', style: muted),
+            InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onTap: () => _open(context, 'https://github.com/jxlarrea'),
+              child: Text('Xavier Larrea', style: link),
+            ),
+            Text(' \u00b7 \u2615 ', style: muted),
+            InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onTap: () => _open(context, 'https://buymeacoffee.com/jxlarrea'),
+              child: Text('Buy me a coffee', style: link),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -3351,23 +3356,23 @@ class _AudioDeviceTileState extends State<AudioDeviceTile> {
           '${current.split('|').length > 2 && current.split('|')[2].isNotEmpty ? current.split('|')[2] : 'Selected device'} (not connected)',
         ),
     ];
-    return ListTile(
-      title: Text(widget.def.title),
-      subtitle: Text(widget.def.description),
-      trailing: devices == null
-          ? const Text('…')
-          : DropdownButton<String>(
-              value: options.any((o) => o.$1 == current) ? current : '',
-              items: [
-                for (final (selector, label) in options)
-                  DropdownMenuItem(value: selector, child: Text(label)),
-              ],
-              onChanged: (v) async {
-                if (v == null) return;
-                await c.settings.setFromJson(widget.def.key, v);
-                if (mounted) setState(() {});
-              },
-            ),
+    if (devices == null) {
+      return ListTile(
+        title: Text(widget.def.title),
+        subtitle: Text(widget.def.description),
+        trailing: const Text('…'),
+      );
+    }
+    return DropdownRow<String>(
+      title: widget.def.title,
+      description: widget.def.description,
+      value: options.any((o) => o.$1 == current) ? current : '',
+      options: options,
+      onChanged: (v) async {
+        if (v == null) return;
+        await c.settings.setFromJson(widget.def.key, v);
+        if (mounted) setState(() {});
+      },
     );
   }
 }
@@ -3979,21 +3984,16 @@ class SettingTile extends StatelessWidget {
             (option.isEmpty
                 ? option
                 : option[0].toUpperCase() + option.substring(1));
-        return ListTile(
-          title: Text(def.title),
-          subtitle: Text(def.description),
-          trailing: DropdownButton<String>(
-            value: options.contains(current) ? current : options.first,
-            items: [
-              for (final option in options)
-                DropdownMenuItem(value: option, child: Text(label(option))),
-            ],
-            onChanged: (v) async {
-              if (v == null) return;
-              await c.settings.setFromJson(def.key, v);
-              onChanged();
-            },
-          ),
+        return DropdownRow<String>(
+          title: def.title,
+          description: def.description,
+          value: options.contains(current) ? current : options.first,
+          options: [for (final option in options) (option, label(option))],
+          onChanged: (v) async {
+            if (v == null) return;
+            await c.settings.setFromJson(def.key, v);
+            onChanged();
+          },
         );
       case SettingType.string || SettingType.password || SettingType.number:
         // A bounded number is dragged, not typed — a slider in both UIs.

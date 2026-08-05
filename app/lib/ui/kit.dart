@@ -150,6 +150,126 @@ class WarnRow extends StatelessWidget {
   }
 }
 
+/// The one dropdown control: the remote admin's select translated to
+/// Flutter — value and chevron on a bordered surface box, same tokens
+/// (surface-2 fill, border, control radius). A bare DropdownButton is just
+/// text with a caret, which next to a row title reads as another title.
+class KsDropdown<T> extends StatelessWidget {
+  const KsDropdown({
+    super.key,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.expand = false,
+  });
+
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+
+  /// Null renders the control disabled, box and all.
+  final ValueChanged<T?>? onChanged;
+
+  /// Fill the available width instead of hugging the value.
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(Ks.radiusControl),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: expand,
+          borderRadius: BorderRadius.circular(Ks.radiusControl),
+          iconEnabledColor: scheme.onSurfaceVariant,
+          style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+/// A settings row with a dropdown control that never starves the text. A
+/// dropdown in ListTile.trailing demands the width of its widest option,
+/// which on a phone squeezes the title and description into a
+/// one-word-per-line sliver. On a roomy pane the dropdown keeps its natural
+/// trailing spot; on a narrow one the row stacks instead: title, then the
+/// dropdown across the full row, then the description beneath it.
+class DropdownRow<T> extends StatelessWidget {
+  const DropdownRow({
+    super.key,
+    required this.title,
+    required this.description,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String description;
+  final T? value;
+
+  /// (value, label) pairs; labels are built with single-line ellipsis so a
+  /// long device name truncates instead of wrapping inside the menu.
+  final List<(T, String)> options;
+
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    // The pane the row actually lives in: the settings split view keeps a
+    // rail on screens 720 and up (same constants as the settings screen);
+    // below that the page is full width. LayoutBuilder cannot be used here
+    // (ListTile measures intrinsics), so the pane width is derived instead.
+    final screen = MediaQuery.sizeOf(context).width;
+    final pane = screen >= 720
+        ? screen - (screen * 0.4).clamp(320.0, 430.0)
+        : screen;
+    final tight = pane < 640;
+    final dropdown = KsDropdown<T>(
+      value: value,
+      expand: tight,
+      items: [
+        for (final (v, label) in options)
+          DropdownMenuItem(
+            value: v,
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+      ],
+      onChanged: onChanged,
+    );
+    if (!tight) {
+      return ListTile(
+        title: Text(title),
+        subtitle: Text(description),
+        trailing: dropdown,
+      );
+    }
+    return ListTile(
+      title: Text(title),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 6),
+          dropdown,
+          const SizedBox(height: 8),
+          Text(description),
+        ],
+      ),
+    );
+  }
+}
+
 /// The one confirmation dialog. Cancel is quiet, the confirming action is a
 /// filled pill; [destructive] paints it in the error color. The confirm label
 /// is a short verb ("Exit", "Log out"), never a restatement of the title.
