@@ -196,12 +196,6 @@ Security → Long-lived access tokens). For voice, install
 from the default HACS repository.
 
 
-## Status
-
-Kiosk Satellite is in **beta**. It runs day and night on the author's own
-wall tablets, but expect rough edges. Bug reports and feature requests are
-very welcome in the issues.
-
 ## Documentation
 
 - [JavaScript API](docs/js-api.md): `window.kioskSatellite`, wake-word handoff protocol
