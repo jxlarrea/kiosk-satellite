@@ -252,6 +252,18 @@ class ScreensaverManager extends Manager {
       )
       ..register(
         Command(
+          name: 'postponeScreensaver',
+          description:
+              'Reset the screensaver idle timer, dismissing the screensaver '
+              'first if it is showing — external activity (issue #129)',
+          handler: (_) async {
+            notifyActivity('remote');
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'pauseScreensaver',
           description: 'Suppress (paused=true) or release the screensaver',
           params: const {'paused': 'true to suppress, false to release'},

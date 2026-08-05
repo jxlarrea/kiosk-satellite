@@ -168,4 +168,40 @@ void main() {
       expect(saver.isActive, isTrue);
     });
   });
+
+  test('postponeScreensaver resets the idle clock and dismisses a showing '
+      'screensaver (issue #129)', () {
+    fakeAsync((async) {
+      build({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.timeout_seconds': 5,
+      });
+      async.flushMicrotasks();
+      saver.init();
+      async.flushMicrotasks();
+
+      // Between sessions: a press at 3s resets the 5s clock, exactly like
+      // a touch — no motion switches involved, the source is external.
+      async.elapse(const Duration(seconds: 3));
+      commands.execute('postponeScreensaver', const {});
+      async.flushMicrotasks();
+      async.elapse(const Duration(seconds: 3));
+      async.flushMicrotasks();
+      expect(saver.isActive, isFalse,
+          reason: 'the press must have reset the idle clock');
+      async.elapse(const Duration(seconds: 3));
+      async.flushMicrotasks();
+      expect(saver.isActive, isTrue);
+
+      // Showing: the same press dismisses, and the timer re-arms so the
+      // screensaver returns after another full quiet timeout.
+      commands.execute('postponeScreensaver', const {});
+      async.flushMicrotasks();
+      expect(saver.isActive, isFalse);
+      async.elapse(const Duration(seconds: 6));
+      async.flushMicrotasks();
+      expect(saver.isActive, isTrue,
+          reason: 'the timer must re-arm after the dismissal');
+    });
+  });
 }

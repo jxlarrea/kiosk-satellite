@@ -600,6 +600,7 @@ class MqttManager extends Manager {
       '$_base/screen/set',
       '$_base/brightness/set',
       '$_base/screensaver/set',
+      '$_base/postpone_screensaver/set',
       '$_base/volume/set',
       '$_base/reload/set',
       '$_base/load_start_url/set',
@@ -796,6 +797,13 @@ class MqttManager extends Manager {
         log.info(name, 'command $topic = $text');
         await commands.execute(
             text == 'ON' ? 'startScreensaver' : 'stopScreensaver', const {});
+      } else if (topic == '$_base/postpone_screensaver/set') {
+        // External activity (issue #129): an automation presses this off
+        // any HA sensor — a door contact, a motion sensor across the room —
+        // and the idle timer resets as if someone had touched the screen,
+        // dismissing the screensaver first when one is showing.
+        log.info(name, 'command $topic');
+        await commands.execute('postponeScreensaver', const {});
       } else if (topic == '$_base/volume/set') {
         log.info(name, 'command $topic = $text');
         final percent = num.tryParse(text);
@@ -1130,6 +1138,7 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
         '$_prefix/switch/ks_$_deviceId/screensaver/config',
+        '$_prefix/button/ks_$_deviceId/postpone_screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/load_start_url/config',
         '$_prefix/button/ks_$_deviceId/clear_cache/config',
@@ -1419,6 +1428,11 @@ class MqttManager extends Manager {
         'unit_of_measurement': '%',
         'mode': 'slider',
         'icon': 'mdi:volume-high',
+      },
+      '$_prefix/button/ks_$_deviceId/postpone_screensaver/config': {
+        ...common('postpone_screensaver', 'Postpone screensaver'),
+        'command_topic': '$_base/postpone_screensaver/set',
+        'icon': 'mdi:timer-refresh-outline',
       },
       '$_prefix/button/ks_$_deviceId/reload/config': {
         ...common('reload', 'Reload page'),

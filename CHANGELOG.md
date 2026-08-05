@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- Postpone screensaver button entity over MQTT (#129): pressing it resets the screensaver's idle timer as if someone had touched the screen, dismissing the screensaver first when one is showing. Any Home Assistant automation can now keep the display awake from an external sensor, such as a door contact or a motion sensor elsewhere in the room, complementing the device-camera-based Postpone on motion. The same action is available to the remote REST API as the postponeScreensaver command.
+
 ### Changed
 - The settings menu is shorter: Screen and Audio are now one Screen & Audio page, which also picked up the microphone and speaker selection and the Microphone settings group from Voice Satellite, and Remote Administration now lives on the Device page. Every setting kept its stored key, so nothing resets, and the remote admin mirrors the new layout; old remote admin bookmarks to the Screen, Audio or Remote Administration tabs land on the right page.
 - The app log and the web console now share one Logs page in both UIs (on the device it opens the docked console over the live page), WebRTC Cameras is now called Camera Streams (it has streamed Home Assistant cameras without Go2RTC since the import arrived), and the menu subtitles now match between the device and the remote admin.

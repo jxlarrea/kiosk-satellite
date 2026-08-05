@@ -79,6 +79,8 @@ Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 `loadDashboard {dashboard}`, `loadStartUrl` (back to the configured
 Start URL), `reload`, `screenOn` / `screenOff`,
 `setBrightness {level}`, `startScreensaver` / `stopScreensaver`,
+`postponeScreensaver` (reset the idle timer, dismissing a showing
+screensaver first),
 `setWakeWordActive {active}`, `showCameraView {viewId}`,
 `hideCameraView`, `cameraGetConfig`, `restartApp`, `tts {text}`,
 `launchApp {package}` (open another Android app over the kiosk),
