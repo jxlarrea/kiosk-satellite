@@ -2,11 +2,6 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
-
-### Fixed
-- The Disable status bar shield no longer swallows taps on the top edge of the dashboard (#142). Home Assistant's view-tab bar sits exactly where the shield used to cover, making the page switcher dead while the protection was on; the shield now covers only the thin strip at the very display edge where the status bar pull-down actually has to begin, so the pull-down stays blocked and everything on the page is tappable. On some devices a determined user can still surface the shade with two precise swipes by dragging the transient bar the system itself reveals; that was equally possible with the old full-height shield, and the hard guarantee remains Disable home button, whose screen pinning makes Android disable the shade entirely.
-
 ## v2026.8.4 - 2026-08-06
 
 ### Added
@@ -19,6 +14,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - The settings categories are reordered into clearer groups in both the on-device settings and the remote admin: connection first, then the screen, browsing and screensaver, then the camera and media features, then kiosk behavior, with device, about and logs at the end.
 
 ### Fixed
+- The Disable status bar shield no longer swallows taps on the top edge of the dashboard (#142). Home Assistant's view-tab bar sits exactly where the shield used to cover, making the page switcher dead while the protection was on; the shield now covers only the thin strip at the very display edge where the status bar pull-down actually has to begin, so the pull-down stays blocked and everything on the page is tappable. On some devices a determined user can still surface the shade with two precise swipes by dragging the transient bar the system itself reveals; that was equally possible with the old full-height shield, and the hard guarantee remains Disable home button, whose screen pinning makes Android disable the shade entirely.
 - Devices that cannot read any thermal sensor no longer show a permanently unknown CPU temperature entity (#138). Some vendors' security policies deny apps the thermal sensors entirely (seen on a Lenovo TB336FU, where Android logs an SELinux denial for the read); the entity now only exists when a temperature can actually be read, it comes back on its own if a reading appears later, and the app stops retrying the blocked read, which was flooding logcat with denial lines on every stats poll.
 
 ## v2026.8.3 - 2026-08-06
