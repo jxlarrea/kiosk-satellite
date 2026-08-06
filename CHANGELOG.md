@@ -2,17 +2,13 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
-
-### Changed
-- Scrolling in the on-device settings is much smoother: the dashboard keeps rendering behind the settings screen even though it is fully covered, and on a busy dashboard that background work caused visible stutters. The dashboard's rendering now pauses while settings are open, the same optimization the screensaver uses, and resumes the instant settings begin to close. The Home Assistant connection stays live throughout.
-- The same rendering pause now applies under every surface that fully covers the dashboard: streaming camera views, where it matters most since the dashboard no longer competes with the video decoders, and media pushed over DLNA. The dashboard is drawing again the moment the covering surface closes.
-- The settings categories are reordered into clearer groups in both the on-device settings and the remote admin: connection first, then the screen, browsing and screensaver, then the camera and media features, then kiosk behavior, with device, about and logs at the end.
-
 ## v2026.8.4 - 2026-08-06
 
 ### Changed
 - Camera views grew from four cameras to twelve (#140), laid out exactly like UniFi Protect lays out each grid size: mixes of large and small tiles such as four large beside a column of four small for eight, or two large over eight small for ten. The view editor on the device and in the remote admin gained a UniFi-style Grid dropdown with layout icons, preselected from the camera count and adjustable upward, with a numbered miniature of the chosen layout below it. Cameras always fill the largest tiles first, slots without a camera stay empty on screen, and portrait devices render the same layouts turned sideways.
+- Scrolling in the on-device settings is much smoother: the dashboard keeps rendering behind the settings screen even though it is fully covered, and on a busy dashboard that background work caused visible stutters. The dashboard's rendering now pauses while settings are open, the same optimization the screensaver uses, and resumes the instant settings begin to close. The Home Assistant connection stays live throughout.
+- The same rendering pause now applies under every surface that fully covers the dashboard: streaming camera views, where it matters most since the dashboard no longer competes with the video decoders, and media pushed over DLNA. The dashboard is drawing again the moment the covering surface closes.
+- The settings categories are reordered into clearer groups in both the on-device settings and the remote admin: connection first, then the screen, browsing and screensaver, then the camera and media features, then kiosk behavior, with device, about and logs at the end.
 
 ### Fixed
 - Devices that cannot read any thermal sensor no longer show a permanently unknown CPU temperature entity (#138). Some vendors' security policies deny apps the thermal sensors entirely (seen on a Lenovo TB336FU, where Android logs an SELinux denial for the read); the entity now only exists when a temperature can actually be read, it comes back on its own if a reading appears later, and the app stops retrying the blocked read, which was flooding logcat with denial lines on every stats poll.
