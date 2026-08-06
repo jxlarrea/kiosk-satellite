@@ -2,6 +2,21 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.3 - 2026-08-06
+
+### Added
+- Motion is now available as its own Home Assistant sensor over MQTT: a new Motion Detection group in the Camera settings has a Motion sensor switch and a Clear after delay, and the resulting binary sensor turns on with movement and clears itself after the configured quiet time. Unlike the screensaver's motion features, the camera keeps watching even while the screen is off, so an automation can turn the panel on when someone walks into the room. The usual camera cost warning applies: the camera runs permanently while the sensor is on.
+
+### Changed
+- Motion detection's tuning lives with the camera now: Motion frame rate and Motion sensitivity moved from the Screensaver section into the Camera settings' Motion Detection group, since they tune every motion feature, not just the screensaver's. Dismiss on motion and Postpone stay in the Screensaver section, with a hint pointing at the new home; the remote admin mirrors the move, and its Latest snapshot preview moved to its own group at the end of the Camera page so the Motion Detection settings are not buried under the image.
+- Motion-triggered camera snapshots publish once per motion arrival instead of every ten seconds for as long as movement continues: someone staying in front of the device updates the retained MQTT snapshot once, and the next update comes after the sensor has cleared and motion returns.
+
+### Fixed
+- Restoring a backup as a new device no longer copies the Sendspin player identity (#136). Both devices ended up connecting to Music Assistant as one player and kicked each other off in an endless connect/disconnect loop, with neither ever syncing; a new-device restore now keeps the restoring device's own identity, while a replacement-device restore still adopts the backup's so Music Assistant sees the same player it always had.
+- Camera motion detection no longer mistakes the device's own light for movement. The screensaver going dark could reflect off the room, read as motion and dismiss the screensaver the instant it started, an infinite loop on dark clock faces, and slideshow photo swaps could do the same mid-session. Detection now discounts uniform lighting shifts, including the camera auto-exposure resettle that follows them, and additionally stands down for a couple of seconds around the app's own screen transitions: screensaver start and stop, screen power, brightness changes and slide changes.
+- The Filter dashboard updates optimization now catches entities referenced inside card templates (#139), such as a custom button-card's name, label and style templates: any entity id written in a template is included in the filter's allowlist, so those cards keep updating. Only entity ids computed dynamically inside a template remain invisible to it.
+- CPU temperature now reports on devices whose thermal sensors do not name the CPU (#138), by also accepting the SoC sensor spellings MediaTek, Exynos and Qualcomm devices use. When no readable sensor exists at all, the app logs which sensors the device exposes, so a bug report's app logs carry the answer.
+
 ## v2026.8.2 - 2026-08-05
 
 ### Added

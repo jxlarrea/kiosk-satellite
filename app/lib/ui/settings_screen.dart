@@ -134,7 +134,7 @@ const _categories = <(String, String, IconData, String)>[
     'Camera',
     'Camera',
     Icons.photo_camera_outlined,
-    'Device camera, MQTT snapshots',
+    'Device camera, motion detection',
   ),
   ('MQTT', 'MQTT Settings', Icons.hub_outlined, 'Publish to an MQTT broker'),
   (
