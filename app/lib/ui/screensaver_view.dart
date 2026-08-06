@@ -988,6 +988,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         }
         _video = video;
         final oldImage = _image;
+        c.screensaver.notifySlideChanged();
         setState(() {
           _index = next;
           _image = null;
@@ -1022,6 +1023,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         }
       }
       final oldImage = _image;
+      c.screensaver.notifySlideChanged();
       setState(() {
         _index = next;
         _imageAspect = aspect;
@@ -1407,6 +1409,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       _failures = 0;
       final oldImage = _image;
       final mq = MediaQuery.of(context);
+      c.screensaver.notifySlideChanged();
       setState(() {
         _index = next;
         _imageBytes = bytes;

@@ -137,6 +137,14 @@ void main() {
     sink!.success(null);
     await pump();
     expect(detected, 1);
+
+    // A slideshow swapping photos mid-session relights the room the same
+    // way (a dark-to-bright Immich slide) and gates the same way.
+    bus.publish(const ScreensaverSlideChanged());
+    await pump();
+    sink!.success(null);
+    await pump();
+    expect(detected, 1, reason: 'the slide swap must not read as motion');
   });
 
   test('the off_delay is MQTT-side only: changing it never restarts the '

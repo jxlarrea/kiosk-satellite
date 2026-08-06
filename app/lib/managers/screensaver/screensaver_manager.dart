@@ -295,6 +295,10 @@ class ScreensaverManager extends Manager {
     _resetIdleTimer();
   }
 
+  /// A slideshow view swapped to its next slide: the room is about to be
+  /// relit by the app's own display (see [ScreensaverSlideChanged]).
+  void notifySlideChanged() => bus.publish(const ScreensaverSlideChanged());
+
   void notifyActivity(String source) {
     if (_active) {
       log.debug(name, 'dismissed by $source');

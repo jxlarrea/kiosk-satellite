@@ -76,6 +76,14 @@ class ScreensaverViewChanged extends AppEvent {
   final String? view;
 }
 
+/// A slideshow screensaver swapped to its next slide. Internal: the motion
+/// manager treats it like every other self-inflicted light change — a
+/// dark-to-bright photo relights the room exactly like the screensaver
+/// starting did, and the AE resettle that follows can read as a body.
+class ScreensaverSlideChanged extends AppEvent {
+  const ScreensaverSlideChanged();
+}
+
 /// The device's media volume changed, from any side: a command, the
 /// hardware rocker, or another app.
 /// The device's next alarm was set, moved or dismissed, in whichever clock

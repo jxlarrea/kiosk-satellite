@@ -117,6 +117,11 @@ class MotionManager extends Manager {
       _sync();
     });
     bus.on<BrightnessChanged>().listen((_) => _selfLit());
+    // A slideshow swapping to a very differently lit photo relights the
+    // room mid-session just like the transitions above. The duty-cycle
+    // cost is bounded: at the default slide interval the gate covers a
+    // fraction of each hold, and touch dismissal is never gated.
+    bus.on<ScreensaverSlideChanged>().listen((_) => _selfLit());
     // Session start publishes the policy before the active event above, and
     // boundary crossings mid-session publish on their own — either way the
     // camera starts or stops to match within a tick.
