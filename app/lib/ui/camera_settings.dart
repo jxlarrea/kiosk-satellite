@@ -301,6 +301,9 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           content: SizedBox(
             width: 480,
             child: SingleChildScrollView(
+              // Room for the first field's floating label, which otherwise
+              // clips against the dialog title.
+              padding: const EdgeInsets.only(top: 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 spacing: 12,
@@ -396,6 +399,9 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           content: SizedBox(
             width: 480,
             child: SingleChildScrollView(
+              // Room for the first field's floating label, which otherwise
+              // clips against the dialog title.
+              padding: const EdgeInsets.only(top: 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 spacing: 12,
@@ -515,6 +521,9 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           content: SizedBox(
             width: 640,
             child: SingleChildScrollView(
+              // Room for the first field's floating label, which otherwise
+              // clips against the dialog title.
+              padding: const EdgeInsets.only(top: 8),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

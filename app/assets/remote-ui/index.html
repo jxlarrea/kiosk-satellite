@@ -2226,10 +2226,12 @@ async function editCameraView(config, view) {
   const available = document.createElement('div');
   available.className = 'card';
   available.style.cssText = 'margin:0; padding:0 16px;';
+  // Section labels styled like the device dialog's: primary color, semibold.
   const label = (text) => {
     const el = document.createElement('div');
     el.className = 'desc';
-    el.style.cssText = 'margin:14px 2px 6px; font-weight:600;';
+    el.style.cssText = 'margin:14px 2px 6px; font-weight:600;'
+      + ' color:var(--primary);';
     el.textContent = text;
     return el;
   };
@@ -2281,9 +2283,8 @@ async function editCameraView(config, view) {
   const gridField = document.createElement('div');
   gridField.style.cssText = 'display:flex; flex-direction:column; gap:6px;'
     + ' margin-top:14px; position:relative;';
-  const gridLabel = document.createElement('span');
-  gridLabel.className = 'desc';
-  gridLabel.textContent = 'Grid';
+  const gridLabel = label('Grid');
+  gridLabel.style.margin = '0 2px';
   const gridButton = document.createElement('button');
   gridButton.type = 'button';
   gridButton.className = 'field';
