@@ -528,23 +528,23 @@ class _KioskScreenState extends State<KioskScreen>
     if (mounted) {
       // The settings route fully covers the dashboard, so its WebView can
       // stop compositing and hand the frame budget to the settings UI.
-      // Freeze only once the push transition has finished (a frozen view
-      // draws nothing, and the dashboard is still visible mid-slide) and
-      // thaw the moment the pop starts, so the reveal is never blank.
+      // Report cover only once the push transition has finished (a frozen
+      // view draws nothing, and the dashboard is still visible mid-slide)
+      // and thaw the moment the pop starts, so the reveal is never blank.
       final route = MaterialPageRoute<void>(
         builder: (_) => SettingsScreen(container: c),
       );
       final pushed = Navigator.of(context).push(route);
       route.animation?.addStatusListener((status) {
         if (status == AnimationStatus.completed) {
-          c.browser.setSettingsRouteOpen(true);
+          c.browser.setCovered('settings', covered: true);
         } else if (status == AnimationStatus.reverse) {
-          c.browser.setSettingsRouteOpen(false);
+          c.browser.setCovered('settings', covered: false);
         }
       });
       await pushed;
       // Covers pops that skip the reverse animation.
-      c.browser.setSettingsRouteOpen(false);
+      c.browser.setCovered('settings', covered: false);
     }
     _settingsOpen = false;
     await c.commands.execute('pauseScreensaver', {'paused': false});

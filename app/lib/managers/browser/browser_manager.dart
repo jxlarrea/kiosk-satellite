@@ -456,29 +456,34 @@ class BrowserManager extends Manager {
 
   bool _screensaverActive = false;
   bool _dashboardCovered = false;
-  bool _settingsRouteOpen = false;
+  final _coveredBy = <String>{};
   bool _frozen = false;
   Timer? _freezeDelay;
 
   /// Whether the dashboard should be hidden right now: covered by a
-  /// screensaver overlay with the freeze optimization on, or covered by the
-  /// on-device settings route, which is opaque and full-screen — pausing
-  /// compositing under it hands the whole frame budget to the settings UI.
+  /// screensaver overlay with the freeze optimization on, or covered by an
+  /// always-opaque surface (the settings route, a camera view, DLNA media)
+  /// that reported itself through [setCovered] — pausing compositing under
+  /// those hands the whole frame budget to whatever is on top, and unlike
+  /// the screensaver's Dim mode they never show the page through.
   bool get _wantFrozen =>
       (_screensaverActive &&
           _dashboardCovered &&
           _settings.get(defs.freezeOnScreensaver)) ||
-      _settingsRouteOpen;
+      _coveredBy.isNotEmpty;
 
-  /// The settings route edge. The caller freezes only once the push
-  /// transition has completed (an INVISIBLE view draws nothing, so freezing
-  /// earlier blanks the dashboard while it is still on screen) and thaws
-  /// the moment the pop starts, mirroring how the screensaver unfreezes
-  /// before lifting its overlay.
-  void setSettingsRouteOpen(bool open) {
-    if (_settingsRouteOpen == open) return;
-    _settingsRouteOpen = open;
-    unawaited(_syncFreeze());
+  /// An opaque full-screen surface reporting that it covers the dashboard
+  /// (or stopped covering it). Freezing waits _scheduleFreezeSync's beat so
+  /// the surface has painted first (an INVISIBLE view draws nothing, and
+  /// blanking the dashboard while it still shows is a visible black flash);
+  /// thawing applies immediately, on the same synchronous edge that starts
+  /// the reveal, so the page is compositing again within a frame.
+  void setCovered(String reason, {required bool covered}) {
+    final changed = covered
+        ? _coveredBy.add(reason)
+        : _coveredBy.remove(reason);
+    if (!changed) return;
+    _scheduleFreezeSync();
   }
 
   /// Every freeze edge from the bus lands here: freezing waits a beat so the
@@ -538,7 +543,7 @@ class BrowserManager extends Manager {
       log.info(
         name,
         'rendering paused under '
-        '${_settingsRouteOpen ? 'settings' : 'screensaver'}',
+        '${_coveredBy.isNotEmpty ? _coveredBy.join(', ') : 'screensaver'}',
       );
     } else {
       _frozen = false;

@@ -132,6 +132,14 @@ class DlnaManager extends Manager {
   final pending = ValueNotifier<bool>(false);
   Timer? _pendingTimeout;
 
+  /// Whether the DLNA overlay is on screen (media up, or queued and showing
+  /// its loading card). This is the overlay's own visibility rule, shared
+  /// so the dashboard rendering freeze can never disagree with what is
+  /// actually covering the screen.
+  bool get coversScreen =>
+      media.value != null &&
+      (transportState.value != 'STOPPED' || pending.value);
+
   void _setPending(bool value) {
     _pendingTimeout?.cancel();
     _pendingTimeout = null;

@@ -37,7 +37,8 @@ class DlnaMediaOverlay extends StatelessWidget {
         // the controller's buffering window (URI resolution, its can-play
         // poll, stream spin-up) is otherwise dead air on the wall.
         final loading = media != null && state == 'STOPPED' && dlna.pending.value;
-        if (media == null || (state == 'STOPPED' && !loading)) {
+        // media == null is implied by coversScreen but promotes the type.
+        if (media == null || !dlna.coversScreen) {
           return const SizedBox.shrink();
         }
         return GestureDetector(

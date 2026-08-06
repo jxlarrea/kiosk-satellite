@@ -65,6 +65,21 @@ class AppContainer {
     mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
     dlna = DlnaManager(bus, commands, log, settings);
+    // Composition-root wiring: the opaque full-screen overlays report their
+    // visibility so the dashboard WebView stops compositing underneath
+    // them. The settings route reports from the UI, where its transition
+    // timing lives; these two have clean manager-side edges.
+    camera.activeViewId.addListener(
+      () => browser.setCovered(
+        'camera view',
+        covered: camera.activeViewId.value != null,
+      ),
+    );
+    void syncDlnaCover() =>
+        browser.setCovered('dlna', covered: dlna.coversScreen);
+    dlna.media.addListener(syncDlnaCover);
+    dlna.transportState.addListener(syncDlnaCover);
+    dlna.pending.addListener(syncDlnaCover);
     files = FilesManager(bus, commands, log);
     sound = SoundManager(bus, commands, log);
     update = UpdateManager(bus, commands, log);
