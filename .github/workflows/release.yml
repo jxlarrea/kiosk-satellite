@@ -1,12 +1,19 @@
 name: Release
 
-# Publishing a GitHub release builds the signed APK and attaches it. 
+# Publishing a GitHub release builds the signed APK and attaches it.
 # The app version comes from the tag (v1.2.3 becomes 1.2.3), so a release can never disagree with
 # what the app reports about itself.
+#
+# Manual fallback for when GitHub drops the release event (it happened during
+# the 2026-08-06 Actions outage): dispatch the workflow ON THE TAG REF and it
+# behaves identically, because GITHUB_REF_NAME is the tag either way:
+#   gh workflow run release.yml --ref <tag>
+# The release (draft or published) must already exist for the upload step.
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 jobs:
   apk:
