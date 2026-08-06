@@ -192,7 +192,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               subtitle: Text(
                 config.cameras.isEmpty
                     ? 'Add a camera first.'
-                    : 'Choose and order up to four cameras.',
+                    : 'Choose and order up to 12 cameras.',
               ),
               enabled: config.cameras.isNotEmpty && !_busy,
               onTap: config.cameras.isEmpty || _busy
@@ -533,6 +533,11 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                   // own list you can drag: reading position off a checkbox
                   // list meant re-ticking everything to move one tile.
                   if (selected.isNotEmpty) ...[
+                    _sectionLabel(context, 'Layout'),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 12),
+                      child: CameraGridPreview(count: selected.length),
+                    ),
                     _sectionLabel(context, 'In this view'),
                     ReorderableListView(
                       shrinkWrap: true,
@@ -581,8 +586,8 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                               ? const Text('Missing from Go2RTC')
                               : null,
                           trailing: const Icon(Icons.add_circle_outline),
-                          enabled: selected.length < 4,
-                          onTap: selected.length >= 4
+                          enabled: selected.length < 12,
+                          onTap: selected.length >= 12
                               ? null
                               : () => setDialogState(
                                   () => selected.add(camera.id),
@@ -679,5 +684,117 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         'id': view.id,
       });
     });
+  }
+}
+
+/// A miniature of the grid a view with [count] cameras renders with: the
+/// UniFi Protect layout for that count, numbered in view order. The layout
+/// tables mirror assets/camera-view/index.html and the remote UI preview.
+class CameraGridPreview extends StatelessWidget {
+  const CameraGridPreview({super.key, required this.count});
+
+  final int count;
+
+  /// [columns, rows] per camera count.
+  static const _grids = <int, List<int>>{
+    1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
+    7: [4, 2], 8: [4, 2], 9: [3, 3], 10: [4, 4], 11: [4, 3], 12: [4, 3],
+  };
+
+  /// [columnSpan, rowSpan] of the leading tiles that cover several cells;
+  /// every other tile is a single cell placed in reading order.
+  static const _spans = <int, List<List<int>>>{
+    3: [[1, 2]], 5: [[2, 2]], 6: [[2, 2]], 7: [[2, 1]],
+    10: [[2, 2], [2, 2]], 11: [[2, 1]],
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final grid = _grids[count];
+    if (grid == null) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    final columns = grid[0];
+    final rows = grid[1];
+    final tiles = _place(count, columns, rows, _spans[count] ?? const []);
+    return Center(
+      child: SizedBox(
+        width: 210,
+        height: 126,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cellWidth = constraints.maxWidth / columns;
+            final cellHeight = constraints.maxHeight / rows;
+            return Stack(
+              children: [
+                for (final (index, tile) in tiles.indexed)
+                  Positioned(
+                    left: tile[0] * cellWidth,
+                    top: tile[1] * cellHeight,
+                    width: tile[2] * cellWidth,
+                    height: tile[3] * cellHeight,
+                    child: Padding(
+                      padding: const EdgeInsets.all(1.5),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHighest,
+                          border: Border.all(color: scheme.outline),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Reading-order auto-placement, the rule CSS grid auto-flow applies in
+  /// the live view. Returns [column, row, columnSpan, rowSpan] per tile.
+  static List<List<int>> _place(
+    int count,
+    int columns,
+    int rows,
+    List<List<int>> spans,
+  ) {
+    final occupied = [
+      for (var row = 0; row < rows; row++) List.filled(columns, false),
+    ];
+    final tiles = <List<int>>[];
+    for (var index = 0; index < count; index++) {
+      final span = index < spans.length ? spans[index] : const [1, 1];
+      search:
+      for (var row = 0; row + span[1] <= rows; row++) {
+        for (var col = 0; col + span[0] <= columns; col++) {
+          var free = true;
+          for (var r = row; r < row + span[1] && free; r++) {
+            for (var c = col; c < col + span[0]; c++) {
+              if (occupied[r][c]) {
+                free = false;
+                break;
+              }
+            }
+          }
+          if (!free) continue;
+          for (var r = row; r < row + span[1]; r++) {
+            for (var c = col; c < col + span[0]; c++) {
+              occupied[r][c] = true;
+            }
+          }
+          tiles.add([col, row, span[0], span[1]]);
+          break search;
+        }
+      }
+    }
+    return tiles;
   }
 }

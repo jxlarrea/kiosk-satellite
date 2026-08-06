@@ -163,11 +163,11 @@ class CameraManager extends Manager {
         Command(
           name: 'cameraPutView',
           description:
-              'Create or update a camera view containing 1 to 4 cameras.',
+              'Create or update a camera view containing 1 to 12 cameras.',
           params: const {
             'id': 'Existing view id, or empty to create one',
             'name': 'Unique display name',
-            'cameraIds': 'Ordered list of 1 to 4 camera ids',
+            'cameraIds': 'Ordered list of 1 to 12 camera ids',
             'showCameraNames': 'Show camera names over the video',
           },
           handler: _putViewCommand,
@@ -546,10 +546,10 @@ class CameraManager extends Manager {
     // The default view is allowed to stand empty: it exists before any camera
     // does, and emptying it is how you retire it without deleting it.
     if (ids.isEmpty && existing?.isDefault != true) {
-      return const CommandResult.fail('a view must contain 1 to 4 cameras');
+      return const CommandResult.fail('a view must contain 1 to 12 cameras');
     }
-    if (ids.length > 4) {
-      return const CommandResult.fail('a view must contain 1 to 4 cameras');
+    if (ids.length > 12) {
+      return const CommandResult.fail('a view must contain 1 to 12 cameras');
     }
     if (ids.toSet().length != ids.length) {
       return const CommandResult.fail('a camera can appear only once per view');

@@ -2234,9 +2234,50 @@ async function editCameraView(config, view) {
   };
   const chosenLabel = label('In this view');
   const availableLabel = label('Available');
+  const layoutLabel = label('Layout');
+
+  // The grid the view will render with, numbered in camera order: the
+  // UniFi Protect layout per count. GRIDS is [columns, rows], SPANS lists
+  // [columnSpan, rowSpan] for the leading tiles that cover several cells.
+  // Mirrored in assets/camera-view/index.html and ui/camera_settings.dart.
+  const GRIDS = {
+    1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
+    7: [4, 2], 8: [4, 2], 9: [3, 3], 10: [4, 4], 11: [4, 3], 12: [4, 3],
+  };
+  const SPANS = {
+    3: [[1, 2]], 5: [[2, 2]], 6: [[2, 2]], 7: [[2, 1]],
+    10: [[2, 2], [2, 2]], 11: [[2, 1]],
+  };
+  const preview = document.createElement('div');
+  preview.style.cssText = 'display:grid; gap:3px; width:210px; height:126px;'
+    + ' margin:4px auto 2px;';
+  const renderPreview = () => {
+    preview.innerHTML = '';
+    const grid = GRIDS[selected.length];
+    const visible = !!grid;
+    layoutLabel.style.display = visible ? '' : 'none';
+    preview.style.display = visible ? 'grid' : 'none';
+    if (!visible) return;
+    preview.style.gridTemplateColumns = `repeat(${grid[0]}, 1fr)`;
+    preview.style.gridTemplateRows = `repeat(${grid[1]}, 1fr)`;
+    const spans = SPANS[selected.length] || [];
+    selected.forEach((id, index) => {
+      const cell = document.createElement('div');
+      const span = spans[index] || [1, 1];
+      cell.style.cssText = 'border:1px solid var(--border);'
+        + ' background:var(--surface-2); border-radius:4px; display:flex;'
+        + ' align-items:center; justify-content:center; font-size:11px;'
+        + ' color:var(--muted); min-width:0; min-height:0;';
+      if (span[0] > 1) cell.style.gridColumn = `span ${span[0]}`;
+      if (span[1] > 1) cell.style.gridRow = `span ${span[1]}`;
+      cell.textContent = index + 1;
+      preview.appendChild(cell);
+    });
+  };
 
   let dragId = null;
   const render = () => {
+    renderPreview();
     chosen.innerHTML = '';
     available.innerHTML = '';
     selected.forEach((id, index) => {
@@ -2320,10 +2361,10 @@ async function editCameraView(config, view) {
       description.textContent = camera.missing ? 'Missing from Go2RTC' : '';
       info.append(cameraName, description);
       const add = cameraAction('Add', () => {
-        if (selected.length >= 4) return;
+        if (selected.length >= 12) return;
         selected.push(camera.id);
         render();
-      }, false, 'add', selected.length >= 4);
+      }, false, 'add', selected.length >= 12);
       row.append(info, add);
       available.appendChild(row);
     }
@@ -2334,8 +2375,8 @@ async function editCameraView(config, view) {
     available.style.display = hasAvailable ? '' : 'none';
   };
   render();
-  body.append(name.wrap, showNames.wrap, chosenLabel, chosen,
-    availableLabel, available);
+  body.append(name.wrap, showNames.wrap, layoutLabel, preview,
+    chosenLabel, chosen, availableLabel, available);
   return cameraEditor({
     title: view ? 'Edit view' : 'Create camera view',
     body,
@@ -2536,7 +2577,7 @@ async function loadCameras() {
   viewsCard.appendChild(cameraListRow(
     'Create camera view',
     config.cameras.length
-      ? 'Choose and order up to four cameras.'
+      ? 'Choose and order up to 12 cameras.'
       : 'Add a camera first.',
     [],
     {

@@ -114,6 +114,47 @@ void main() {
     },
   );
 
+  test('a view holds up to 12 cameras and no more', () async {
+    SharedPreferences.setMockInitialValues({});
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final cameras = CameraManager(
+      bus,
+      commands,
+      logger,
+      settings,
+      HomeAssistantManager(bus, commands, logger, settings),
+    );
+    await cameras.init();
+
+    final ids = <String>[];
+    for (var index = 0; index < 13; index++) {
+      final source = await commands.execute('cameraPutSource', {
+        'name': 'Camera $index',
+        'kind': 'whep',
+        'whepUrl': 'https://cams.example/whep/$index',
+      });
+      expect(source.ok, isTrue);
+      ids.add('${(source.data as Map)['id']}');
+    }
+
+    final full = await commands.execute('cameraPutView', {
+      'name': 'Wall',
+      'cameraIds': ids.sublist(0, 12),
+    });
+    expect(full.ok, isTrue);
+
+    final overflow = await commands.execute('cameraPutView', {
+      'name': 'Too many',
+      'cameraIds': ids,
+    });
+    expect(overflow.ok, isFalse);
+    expect(overflow.error, contains('1 to 12'));
+  });
+
   test(
     'commands create a view, mask passwords, and validate membership',
     () async {

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- Camera views grew from four cameras to twelve (#140), and the grid now follows the same layouts UniFi Protect uses for each camera count: a large tile beside a 2x2 block for five, a large corner tile for six, two large tiles over eight small ones for ten, and so on. The view editor on the device and in the remote admin shows a numbered miniature of the layout as cameras are added and reordered, and portrait devices render the same layouts turned sideways.
+
 ## v2026.8.3 - 2026-08-06
 
 ### Added
