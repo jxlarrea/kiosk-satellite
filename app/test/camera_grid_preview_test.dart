@@ -42,4 +42,49 @@ void main() {
     expect(tiles[2].top, 63);
     expect(tiles[2].width, 210 / 4);
   });
+
+  testWidgets('7 cameras split the last quadrant into four', (tester) async {
+    final tiles = await pump(tester, 7);
+    for (final tile in tiles.take(3)) {
+      expect(tile.width, 105);
+      expect(tile.height, 63);
+    }
+    for (final tile in tiles.skip(3)) {
+      expect(tile.width, 52.5);
+      expect(tile.height, 31.5);
+      expect(tile.left, greaterThanOrEqualTo(105));
+      expect(tile.top, greaterThanOrEqualTo(63));
+    }
+  });
+
+  testWidgets('8 cameras pair four large tiles with a small column', (
+    tester,
+  ) async {
+    final tiles = await pump(tester, 8);
+    // Large tiles at indexes 0, 1, 4, 5; the right column holds the rest.
+    for (final index in [0, 1, 4, 5]) {
+      expect(tiles[index].width, 70);
+      expect(tiles[index].height, 63);
+    }
+    for (final index in [2, 3, 6, 7]) {
+      expect(tiles[index].left, 140);
+      expect(tiles[index].height, 31.5);
+    }
+  });
+
+  testWidgets('12 cameras split the last of nine tiles into four', (
+    tester,
+  ) async {
+    final tiles = await pump(tester, 12);
+    for (final tile in tiles.take(8)) {
+      expect(tile.width, 70);
+      expect(tile.height, 42);
+    }
+    for (final tile in tiles.skip(8)) {
+      expect(tile.width, 35);
+      expect(tile.height, 21);
+      expect(tile.left, greaterThanOrEqualTo(140));
+      expect(tile.top, greaterThanOrEqualTo(84));
+    }
+  });
 }

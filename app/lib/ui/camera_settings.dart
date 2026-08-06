@@ -506,6 +506,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     final name = TextEditingController(text: view?.name ?? '');
     final selected = [...?view?.cameraIds];
     var showCameraNames = view?.showCameraNames ?? true;
+    int? grid = view?.grid;
     final submitted = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -533,10 +534,48 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                   // own list you can drag: reading position off a checkbox
                   // list meant re-ticking everything to move one tile.
                   if (selected.isNotEmpty) ...[
-                    _sectionLabel(context, 'Layout'),
+                    _sectionLabel(context, 'Grid'),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 8),
+                      child: KsDropdown<int>(
+                        expand: true,
+                        value: (grid ?? selected.length).clamp(
+                          selected.length,
+                          12,
+                        ),
+                        items: [
+                          for (var size = selected.length; size <= 12; size++)
+                            DropdownMenuItem(
+                              value: size,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CameraGridPreview(
+                                    count: size,
+                                    width: 34,
+                                    height: 22,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    '$size Camera${size == 1 ? '' : 's'}',
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setDialogState(() => grid = value),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(top: 4, bottom: 12),
-                      child: CameraGridPreview(count: selected.length),
+                      child: CameraGridPreview(
+                        count: (grid ?? selected.length).clamp(
+                          selected.length,
+                          12,
+                        ),
+                        filled: selected.length,
+                      ),
                     ),
                     _sectionLabel(context, 'In this view'),
                     ReorderableListView(
@@ -589,9 +628,13 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                           enabled: selected.length < 12,
                           onTap: selected.length >= 12
                               ? null
-                              : () => setDialogState(
-                                  () => selected.add(camera.id),
-                                ),
+                              : () => setDialogState(() {
+                                  selected.add(camera.id);
+                                  if (grid != null &&
+                                      grid! < selected.length) {
+                                    grid = selected.length;
+                                  }
+                                }),
                         ),
                   ],
                 ],
@@ -622,6 +665,8 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         'name': name.text,
         'cameraIds': selected,
         'showCameraNames': showCameraNames,
+        if (selected.isNotEmpty)
+          'grid': (grid ?? selected.length).clamp(selected.length, 12),
       });
       if (!result.ok) _message('Could not save view: ${result.error}');
     });
@@ -687,25 +732,48 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
   }
 }
 
-/// A miniature of the grid a view with [count] cameras renders with: the
-/// UniFi Protect layout for that count, numbered in view order. The layout
-/// tables mirror assets/camera-view/index.html and the remote UI preview.
+/// A miniature of a camera grid: the UniFi Protect layout for [count]
+/// slots, numbered in view order up to [filled]. Small sizes drop the
+/// numbers and serve as the dropdown's layout icons. The layout tables
+/// mirror assets/camera-view/index.html and the remote UI preview.
 class CameraGridPreview extends StatelessWidget {
-  const CameraGridPreview({super.key, required this.count});
+  const CameraGridPreview({
+    super.key,
+    required this.count,
+    this.filled,
+    this.width = 210,
+    this.height = 126,
+  });
 
   final int count;
 
-  /// [columns, rows] per camera count.
+  /// Slots holding a camera; the rest render as empty cells. Defaults to
+  /// every slot.
+  final int? filled;
+
+  final double width;
+  final double height;
+
+  /// [columns, rows] in layout units per grid size.
   static const _grids = <int, List<int>>{
     1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
-    7: [4, 2], 8: [4, 2], 9: [3, 3], 10: [4, 4], 11: [4, 3], 12: [4, 3],
+    7: [4, 4], 8: [3, 4], 9: [3, 3], 10: [4, 4], 11: [4, 4], 12: [6, 6],
   };
 
-  /// [columnSpan, rowSpan] of the leading tiles that cover several cells;
-  /// every other tile is a single cell placed in reading order.
+  /// [columnSpan, rowSpan] of the leading tiles that cover several units;
+  /// every other tile is a single unit placed in reading order.
   static const _spans = <int, List<List<int>>>{
-    3: [[1, 2]], 5: [[2, 2]], 6: [[2, 2]], 7: [[2, 1]],
-    10: [[2, 2], [2, 2]], 11: [[2, 1]],
+    3: [[1, 2]],
+    5: [[2, 2]],
+    6: [[2, 2]],
+    7: [[2, 2], [2, 2], [2, 2]],
+    8: [[1, 2], [1, 2], [1, 1], [1, 1], [1, 2], [1, 2]],
+    10: [[2, 2], [2, 2]],
+    11: [[2, 2], [2, 1], [2, 1]],
+    12: [
+      [2, 2], [2, 2], [2, 2], [2, 2],
+      [2, 2], [2, 2], [2, 2], [2, 2],
+    ],
   };
 
   @override
@@ -715,11 +783,14 @@ class CameraGridPreview extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final columns = grid[0];
     final rows = grid[1];
+    final cameras = filled ?? count;
+    final numbered = height >= 60;
+    final inset = height >= 60 ? 1.5 : 0.7;
     final tiles = _place(count, columns, rows, _spans[count] ?? const []);
     return Center(
       child: SizedBox(
-        width: 210,
-        height: 126,
+        width: width,
+        height: height,
         child: LayoutBuilder(
           builder: (context, constraints) {
             final cellWidth = constraints.maxWidth / columns;
@@ -733,20 +804,34 @@ class CameraGridPreview extends StatelessWidget {
                     width: tile[2] * cellWidth,
                     height: tile[3] * cellHeight,
                     child: Padding(
-                      padding: const EdgeInsets.all(1.5),
+                      padding: EdgeInsets.all(inset),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: scheme.surfaceContainerHighest,
-                          border: Border.all(color: scheme.outline),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${index + 1}',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          color: index < cameras
+                              ? scheme.surfaceContainerHighest
+                              : null,
+                          border: Border.all(
+                            color: index < cameras
+                                ? scheme.outline
+                                : scheme.outlineVariant,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            numbered ? 4 : 1.5,
                           ),
                         ),
+                        child: numbered && index < cameras
+                            ? Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                   ),

@@ -140,6 +140,7 @@ class CameraViewConfig {
     required this.name,
     required this.cameraIds,
     this.showCameraNames = true,
+    this.grid,
   });
 
   /// The view every install has. It is created on first load, survives
@@ -153,17 +154,30 @@ class CameraViewConfig {
   final List<String> cameraIds;
   final bool showCameraNames;
 
+  /// The grid the view lays out on, 1 to 12 slots. Slots past the camera
+  /// count render empty. Null falls back to the camera count, which is what
+  /// every view saved before grids existed means.
+  final int? grid;
+
   bool get isDefault => id == defaultId;
+
+  /// The slot count the view actually renders with.
+  int get effectiveGrid {
+    final slots = grid ?? cameraIds.length;
+    return slots < cameraIds.length ? cameraIds.length : slots;
+  }
 
   CameraViewConfig copyWith({
     String? name,
     List<String>? cameraIds,
     bool? showCameraNames,
+    int? grid,
   }) => CameraViewConfig(
     id: id,
     name: name ?? this.name,
     cameraIds: cameraIds ?? this.cameraIds,
     showCameraNames: showCameraNames ?? this.showCameraNames,
+    grid: grid ?? this.grid,
   );
 
   Map<String, Object?> toJson() => {
@@ -171,6 +185,7 @@ class CameraViewConfig {
     'name': name,
     'cameraIds': cameraIds,
     'showCameraNames': showCameraNames,
+    if (grid != null) 'grid': grid,
     if (isDefault) 'isDefault': true,
   };
 
@@ -183,6 +198,7 @@ class CameraViewConfig {
             if (id is String) id,
         ],
         showCameraNames: json['showCameraNames'] != false,
+        grid: json['grid'] is num ? (json['grid'] as num).toInt() : null,
       );
 }
 

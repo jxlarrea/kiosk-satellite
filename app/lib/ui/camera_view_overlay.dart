@@ -235,6 +235,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
       'viewId': widget.view.id,
       'viewName': widget.view.name,
       'showCameraNames': widget.view.showCameraNames,
+      'grid': widget.view.effectiveGrid,
       'interactive': widget.interactive,
       'focusedCameraId': widget.interactive
           ? widget.container.camera.focusedCameraId.value

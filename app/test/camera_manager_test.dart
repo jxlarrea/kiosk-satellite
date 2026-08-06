@@ -43,6 +43,7 @@ void main() {
           name: 'Outside',
           cameraIds: ['camera'],
           showCameraNames: false,
+          grid: 6,
         ),
       ],
     );
@@ -52,6 +53,8 @@ void main() {
     expect(decoded.cameras.single.fullscreenStreamName, 'front_main');
     expect(decoded.views.single.cameraIds, ['camera']);
     expect(decoded.views.single.showCameraNames, isFalse);
+    expect(decoded.views.single.grid, 6);
+    expect(decoded.views.single.effectiveGrid, 6);
     expect(
       decoded.toJson(includePasswords: false)['servers'],
       contains(containsPair('passwordSet', true)),
@@ -153,6 +156,29 @@ void main() {
     });
     expect(overflow.ok, isFalse);
     expect(overflow.error, contains('1 to 12'));
+
+    // A grid may leave slots empty but never squeeze the cameras.
+    final roomy = await commands.execute('cameraPutView', {
+      'name': 'Roomy',
+      'cameraIds': ids.sublist(0, 3),
+      'grid': 8,
+    });
+    expect(roomy.ok, isTrue);
+    expect((roomy.data as Map)['grid'], 8);
+
+    final tight = await commands.execute('cameraPutView', {
+      'name': 'Tight',
+      'cameraIds': ids.sublist(0, 5),
+      'grid': 4,
+    });
+    expect(tight.ok, isFalse);
+
+    final oversized = await commands.execute('cameraPutView', {
+      'name': 'Oversized',
+      'cameraIds': ids.sublist(0, 3),
+      'grid': 13,
+    });
+    expect(oversized.ok, isFalse);
   });
 
   test(

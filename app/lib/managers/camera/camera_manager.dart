@@ -169,6 +169,9 @@ class CameraManager extends Manager {
             'name': 'Unique display name',
             'cameraIds': 'Ordered list of 1 to 12 camera ids',
             'showCameraNames': 'Show camera names over the video',
+            'grid':
+                'Optional grid size 1 to 12, at least the camera count; '
+                'slots without a camera stay empty',
           },
           handler: _putViewCommand,
         ),
@@ -565,6 +568,19 @@ class CameraManager extends Manager {
     )) {
       return const CommandResult.fail('view name must be unique');
     }
+    final rawGrid = params['grid'];
+    int? grid = existing?.grid;
+    if (rawGrid is num) {
+      grid = rawGrid.toInt();
+      if (grid < 1 || grid > 12) {
+        return const CommandResult.fail('grid must be between 1 and 12');
+      }
+      if (grid < ids.length) {
+        return const CommandResult.fail(
+          'grid is smaller than the camera count',
+        );
+      }
+    }
     final id = existing?.id ?? _newId();
     final view = CameraViewConfig(
       id: id,
@@ -573,6 +589,7 @@ class CameraManager extends Manager {
       showCameraNames: params['showCameraNames'] is bool
           ? params['showCameraNames'] as bool
           : existing?.showCameraNames ?? true,
+      grid: grid,
     );
     await _save(
       _config.copyWith(
