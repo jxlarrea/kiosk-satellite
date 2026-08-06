@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## v2026.8.4 - 2026-08-06
 
+### Added
+- Camera views are fully controllable over MQTT: a new Camera view select entity in Home Assistant lists every configured view, picking one shows it on the device and picking Closed dismisses it, and the entity always reflects what is on screen no matter how the view was opened or closed. The per-view Show buttons remain for automations that just press. The idle option is named Closed rather than None because Home Assistant reserves the None payload on MQTT entities and would blank the select.
+
 ### Changed
 - Camera views grew from four cameras to twelve (#140), laid out exactly like UniFi Protect lays out each grid size: mixes of large and small tiles such as four large beside a column of four small for eight, or two large over eight small for ten. The view editor on the device and in the remote admin gained a UniFi-style Grid dropdown with layout icons, preselected from the camera count and adjustable upward, with a numbered miniature of the chosen layout below it. Cameras always fill the largest tiles first, slots without a camera stay empty on screen, and portrait devices render the same layouts turned sideways.
 - Scrolling in the on-device settings is much smoother: the dashboard keeps rendering behind the settings screen even though it is fully covered, and on a busy dashboard that background work caused visible stutters. The dashboard's rendering now pauses while settings are open, the same optimization the screensaver uses, and resumes the instant settings begin to close. The Home Assistant connection stays live throughout.

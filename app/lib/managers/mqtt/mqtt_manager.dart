@@ -640,6 +640,7 @@ class MqttManager extends Manager {
       '$_base/assistant_volume/set',
       '$_base/media_volume/set',
       '$_base/camera/view/set',
+      '$_base/camera/view/select',
       '$_base/camera/close/set',
       '$_base/camera_snapshot/set',
       '$_base/dashboard_view/set',
@@ -927,6 +928,36 @@ class MqttManager extends Manager {
         if (!result.ok) {
           log.warn(name, 'showCameraView over MQTT failed: ${result.error}');
           await _publishCurrentCameraViewState();
+        }
+      } else if (topic == '$_base/camera/view/select') {
+        // The Camera view select speaks in view names; "Closed" closes.
+        // Not "None": Home Assistant's MQTT entities treat that literal
+        // payload as reserved and blank the select to unknown. "Closed"
+        // wins over a view someone actually named Closed, so the close
+        // action is always reachable ("None" is honored too, for scripts
+        // publishing raw payloads).
+        log.info(name, 'camera view select = $text');
+        if (text == 'Closed' || text == 'None') {
+          await commands.execute('hideCameraView', const {});
+        } else {
+          final view = _cameraViews.firstWhere(
+            (candidate) => '${candidate['name']}' == text,
+            orElse: () => const {},
+          );
+          final result = view.isEmpty
+              ? const CommandResult.fail('unknown view')
+              : await commands.execute('showCameraView', {
+                  'viewId': '${view['id']}',
+                });
+          if (!result.ok) {
+            // A stale option (view renamed or deleted before HA caught
+            // up): put the truth back so the select does not sit on it.
+            log.warn(
+              name,
+              'camera view select "$text" failed: ${result.error}',
+            );
+            await _publishCurrentCameraViewState();
+          }
         }
       } else if (topic == '$_base/dashboard_view/set') {
         log.info(name, 'command $topic = $text');
@@ -1461,6 +1492,22 @@ class MqttManager extends Manager {
           'payload_press': '${view['id']}',
           'icon': 'mdi:cctv',
         },
+      // Every view in one control: pick a view to show it, Closed to
+      // close. Only published once a view exists — a select holding
+      // nothing but Closed is noise. Options are view names (unique by
+      // construction); the config republish on every camera configuration
+      // change keeps them current through renames.
+      if (_cameraViews.isNotEmpty)
+        '$_prefix/select/ks_$_deviceId/camera_view/config': {
+          ...common('camera_view', 'Camera view'),
+          'state_topic': '$_base/camera/view/selected',
+          'command_topic': '$_base/camera/view/select',
+          'options': [
+            'Closed',
+            for (final view in _cameraViews) '${view['name']}',
+          ],
+          'icon': 'mdi:cctv',
+        },
       // Published only once a view list has been learned from HA; an
       // empty options array would render a useless dropdown. The retraction
       // for a list gone empty rides _discoveryTopics like everything else.
@@ -1717,6 +1764,10 @@ class MqttManager extends Manager {
 
   void _publishCameraViewState(CameraViewStateChanged event) {
     _publish('$_base/camera/view/state', event.viewName ?? 'none');
+    // The select's mirror of the same state: its vocabulary is its own
+    // options. The empty state is "Closed", never "None" — Home Assistant
+    // reserves that payload and would blank the select to unknown.
+    _publish('$_base/camera/view/selected', event.viewName ?? 'Closed');
     _publish(
       '$_base/camera/view/attributes',
       jsonEncode(event.toJson()),
@@ -1727,10 +1778,9 @@ class MqttManager extends Manager {
     final result = await commands.execute('cameraStatus', const {});
     final data = result.data;
     if (!result.ok || data is! Map) return;
-    _publish(
-      '$_base/camera/view/state',
-      data['viewName'] is String ? '${data['viewName']}' : 'none',
-    );
+    final viewName = data['viewName'] is String ? '${data['viewName']}' : null;
+    _publish('$_base/camera/view/state', viewName ?? 'none');
+    _publish('$_base/camera/view/selected', viewName ?? 'Closed');
     _publish('$_base/camera/view/attributes', jsonEncode(data));
   }
 }
