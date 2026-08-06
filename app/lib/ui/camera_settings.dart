@@ -757,7 +757,7 @@ class CameraGridPreview extends StatelessWidget {
   /// [columns, rows] in layout units per grid size.
   static const _grids = <int, List<int>>{
     1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
-    7: [4, 4], 8: [3, 4], 9: [3, 3], 10: [4, 4], 11: [4, 4], 12: [6, 6],
+    7: [4, 4], 8: [3, 4], 9: [3, 3], 10: [4, 4], 11: [5, 4], 12: [6, 6],
   };
 
   /// [columnSpan, rowSpan] of the leading tiles that cover several units;
@@ -768,12 +768,9 @@ class CameraGridPreview extends StatelessWidget {
     6: [[2, 2]],
     7: [[2, 2], [2, 2], [2, 2]],
     8: [[1, 2], [1, 2], [1, 1], [1, 1], [1, 2], [1, 2]],
-    10: [[2, 2], [2, 2]],
-    11: [[2, 2], [2, 1], [2, 1]],
-    12: [
-      [2, 2], [2, 2], [2, 2], [2, 2],
-      [2, 2], [2, 2], [2, 2], [2, 2],
-    ],
+    10: [[2, 2], [1, 1], [1, 1], [1, 1], [1, 1], [2, 2]],
+    11: [[2, 2], [2, 2], [1, 1], [1, 1], [2, 2]],
+    12: [[3, 3], [3, 3], [3, 3]],
   };
 
   @override

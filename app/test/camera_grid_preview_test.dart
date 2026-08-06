@@ -32,15 +32,36 @@ void main() {
     expect(first.height, 126); // both rows of the 4x2 grid
   });
 
-  testWidgets('10 cameras lead with two large tiles', (tester) async {
+  testWidgets('10 cameras stack two large tiles on the left', (tester) async {
     final tiles = await pump(tester, 10);
+    // Large tiles at indexes 0 and 5, one above the other on the left half.
     expect(tiles[0].width, 105);
     expect(tiles[0].height, 63);
-    expect(tiles[1].left, 105);
-    expect(tiles[1].width, 105);
-    // The eight remaining tiles fill the lower half, four per row.
-    expect(tiles[2].top, 63);
-    expect(tiles[2].width, 210 / 4);
+    expect(tiles[0].left, 0);
+    expect(tiles[5].width, 105);
+    expect(tiles[5].left, 0);
+    expect(tiles[5].top, 63);
+    // Everything else is small and on the right half.
+    for (final index in [1, 2, 3, 4, 6, 7, 8, 9]) {
+      expect(tiles[index].width, 52.5);
+      expect(tiles[index].left, greaterThanOrEqualTo(105));
+    }
+  });
+
+  testWidgets('11 cameras hold three large tiles', (tester) async {
+    final tiles = await pump(tester, 11);
+    // Large: top-left, top-middle, bottom-left; the rest are equal smalls.
+    expect(tiles[0].width, 84);
+    expect(tiles[0].height, 63);
+    expect(tiles[1].left, 84);
+    expect(tiles[1].width, 84);
+    expect(tiles[4].left, 0);
+    expect(tiles[4].top, 63);
+    expect(tiles[4].width, 84);
+    for (final index in [2, 3, 5, 6, 7, 8, 9, 10]) {
+      expect(tiles[index].width, 42);
+      expect(tiles[index].height, 31.5);
+    }
   });
 
   testWidgets('7 cameras split the last quadrant into four', (tester) async {
@@ -72,19 +93,19 @@ void main() {
     }
   });
 
-  testWidgets('12 cameras split the last of nine tiles into four', (
+  testWidgets('12 cameras fill the last quadrant with nine tiles', (
     tester,
   ) async {
     final tiles = await pump(tester, 12);
-    for (final tile in tiles.take(8)) {
-      expect(tile.width, 70);
-      expect(tile.height, 42);
+    for (final tile in tiles.take(3)) {
+      expect(tile.width, 105);
+      expect(tile.height, 63);
     }
-    for (final tile in tiles.skip(8)) {
+    for (final tile in tiles.skip(3)) {
       expect(tile.width, 35);
       expect(tile.height, 21);
-      expect(tile.left, greaterThanOrEqualTo(140));
-      expect(tile.top, greaterThanOrEqualTo(84));
+      expect(tile.left, greaterThanOrEqualTo(105));
+      expect(tile.top, greaterThanOrEqualTo(63));
     }
   });
 }
