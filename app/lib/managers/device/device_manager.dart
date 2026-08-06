@@ -306,6 +306,11 @@ class DeviceManager extends Manager {
     );
   }
 
+  /// Logged once per run: which thermal zones the sandbox actually sees on
+  /// a device that reports no CPU temperature, so a bug report's app logs
+  /// carry the diagnosis (issue #138) without an adb session.
+  bool _thermalLogged = false;
+
   /// The three live numbers the admin header shows. Its own read because the
   /// remote admin polls this every few seconds: [info] walks every network
   /// interface (twice) and queries the package on each call, all to produce
@@ -314,6 +319,13 @@ class DeviceManager extends Manager {
     final level = await _battery.batteryLevel;
     final state = await _battery.batteryState;
     final cpu = await DeviceDetails.cpu();
+    if (!_thermalLogged && cpu.containsKey('temp') && cpu['temp'] == null) {
+      _thermalLogged = true;
+      log.info(
+        name,
+        'no CPU temperature; thermal zones: ${cpu['thermalZones']}',
+      );
+    }
     return {
       'battery': level,
       'charging':

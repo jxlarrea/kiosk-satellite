@@ -33,6 +33,21 @@ import java.io.File
  * could only ever have rendered as "not available", which is a row that costs
  * space and teaches nothing.
  */
+/** SoC-package zone spellings accepted when no zone names "cpu" at all:
+ *  Qualcomm (tsens, cpuss is cpu-matched anyway), Exynos clusters
+ *  (BIG/MID/LITTLE, lowercased by the reader), per-cluster core names
+ *  (gold/silver/prime), MediaTek (mtkts*, soc_max, ap_ntc board sensor). */
+private val SOC_ZONE_HINTS = listOf(
+    "soc", "tsens", "cluster", "big", "little", "mid", "prime", "gold",
+    "silver", "mtkts", "ap_ntc",
+)
+
+/** Zone types never accepted as the CPU, whatever else they match. */
+private val NOT_CPU_ZONE = listOf(
+    "trip", "limit", "batt", "pmic", "charg", "wifi", "wlan", "usb", "skin",
+    "gpu", "cam", "flash", "modem", "mdpa", "nrpa", "dram",
+)
+
 class DeviceDetails(
     private val context: Context,
     messenger: BinaryMessenger,
@@ -202,10 +217,33 @@ class DeviceDetails(
      * number is derived from that (see [cpuUsage]), with the old
      * frequency-position estimate as the fallback where cpuidle is absent.
      */
-    private fun cpu(): Map<String, Any?> = mapOf(
-        "usage" to cpuUsage(),
-        "temp" to cpuTemp(),
-    )
+    private fun cpu(): Map<String, Any?> {
+        val temp = cpuTemp()
+        val out = mutableMapOf<String, Any?>(
+            "usage" to cpuUsage(),
+            "temp" to temp,
+        )
+        // Field diagnosis for devices that report no temperature (issue
+        // #138): what the thermal directory actually looks like from this
+        // app's sandbox, carried only while the answer is null so the Dart
+        // side can put it in the app logs a reporter pastes.
+        if (temp == null) out["thermalZones"] = thermalZoneDump()
+        return out
+    }
+
+    /** Every thermal zone's type (with "?" for an unreadable type and a
+     *  "!" suffix when its temp file cannot be read), or ["unlisted"] when
+     *  the directory itself cannot be enumerated. */
+    private fun thermalZoneDump(): List<String> {
+        val zones = File("/sys/class/thermal")
+            .listFiles { f -> f.name.startsWith("thermal_zone") }
+            ?: return listOf("unlisted")
+        return zones.sortedBy { it.name }.map { z ->
+            val type = readText(File(z, "type")) ?: "?"
+            val readable = readLong(File(z, "temp")) != null
+            if (readable) type else "$type!"
+        }
+    }
 
     /** One reading of every core's summed idle-state residency (µs) and
      *  entry count, with its online flag and when the reading was taken. */
@@ -330,22 +368,37 @@ class DeviceDetails(
     }
 
     /**
-     * The hottest CPU thermal zone, in °C. Zones are matched by `type`
-     * containing "cpu", never by index — the numbering differs per device (an
-     * S8 and an S8+ disagree). Values are milli-°C on these SoCs; a few report
-     * plain °C, so both scales are accepted and implausible readings dropped.
+     * The hottest CPU thermal zone, in °C. Zones are matched by `type`,
+     * never by index — the numbering differs per device (an S8 and an S8+
+     * disagree). Values are milli-°C on these SoCs; a few report plain °C,
+     * so both scales are accepted and implausible readings dropped.
+     *
+     * Matching is two-tier (issue #138): zones naming "cpu" first, and only
+     * when a device has none of those, zones whose type is a known SoC
+     * spelling — Exynos names its clusters BIG/MID/LITTLE, Qualcomm has
+     * tsens/cpuss, MediaTek mtkts* and soc_max — since a package sensor is
+     * the same reading under a different label. Never both: on a device
+     * with real cpu zones the extras could only replace a right answer
+     * with a hotter wrong one.
      */
-    private fun cpuTemp(): Double? {
+    private fun cpuTemp(): Double? =
+        hottest { it.contains("cpu") }
+            ?: hottest { type -> SOC_ZONE_HINTS.any { type.contains(it) } }
+
+    private fun hottest(wanted: (String) -> Boolean): Double? {
         val zones = File("/sys/class/thermal")
             .listFiles { f -> f.name.startsWith("thermal_zone") } ?: return null
         var max: Double? = null
         for (z in zones) {
             val type = readText(File(z, "type"))?.lowercase() ?: continue
-            if (!type.contains("cpu")) continue
-            // Threshold pseudo-zones, not sensors: `cpu-hw-trip-*` and
-            // friends report the constant throttle limit (105°C on Snapdragon
-            // phones), and the hottest-zone pick would return it forever.
-            if (type.contains("trip") || type.contains("limit")) continue
+            if (!wanted(type)) continue
+            // Pseudo-zones and lookalike sensors. trip/limit report the
+            // constant throttle threshold (105°C on Snapdragon phones), and
+            // the hottest-zone pick would return it forever; the rest are
+            // real sensors of the wrong thing (battery, radios, connector,
+            // case surface), several of which sit inside the plausibility
+            // window below.
+            if (NOT_CPU_ZONE.any { type.contains(it) }) continue
             val raw = readLong(File(z, "temp")) ?: continue
             val c = if (raw > 1000) raw / 1000.0 else raw.toDouble()
             if (c in 20.0..130.0 && (max == null || c > max)) max = c
