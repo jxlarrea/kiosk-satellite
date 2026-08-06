@@ -125,10 +125,25 @@ const wsFilterScript = '''
   }
   function collect(node, acc) {
     if (node == null) return;
-    if (typeof node === 'string') { if (/^[a-z_0-9]+\\.[a-z0-9_]+\$/.test(node)) acc.add(node); return; }
+    if (typeof node === 'string') {
+      if (/^[a-z_0-9]+\\.[a-z0-9_]+\$/.test(node)) { acc.add(node); return; }
+      // Longer strings are templates and markdown (button-card JS,
+      // card-mod styles, jinja), which name their entities verbatim —
+      // states['sensor.x'] — so scan them for id-shaped substrings
+      // (issue #139). Only ids built dynamically in the template escape
+      // this. Junk that happens to be id-shaped ("0.5em", "e.g") is
+      // dropped against hass.states by the caller, and over-collection
+      // only passes a few extra updates.
+      if (node.indexOf('.') >= 0) {
+        var m = node.match(/[a-z_0-9]+\\.[a-z0-9_]+/g);
+        if (m) for (var mi = 0; mi < m.length; mi++) acc.add(m[mi]);
+      }
+      return;
+    }
     if (Array.isArray(node)) { for (var i = 0; i < node.length; i++) collect(node[i], acc); return; }
     if (typeof node === 'object') { for (var k in node) collect(node[k], acc); }
   }
+  S.collect = collect; // diagnostics: inspect what a config subtree yields
 
   // auto-entities cards hold FILTERS, not entity ids, so the literal scan above
   // finds nothing in them. Expand the filters against the registries the
