@@ -189,16 +189,6 @@ class SendspinManager extends Manager {
 
   @override
   Future<void> init() async {
-    var clientId = _settings.get(defs.sendspinClientId);
-    if (clientId.isEmpty) {
-      final rng = Random.secure();
-      clientId = List.generate(
-        32,
-        (_) => rng.nextInt(16).toRadixString(16),
-      ).join();
-      await _settings.set(defs.sendspinClientId, clientId);
-    }
-
     _channel.setMethodCallHandler((call) async {
       final args = call.arguments;
       final map = args is Map
@@ -449,11 +439,23 @@ class SendspinManager extends Manager {
       final data = info.data;
       if (info.ok && data is Map) playerName = '${data['name'] ?? 'Kiosk'}';
     }
+    // Checked at every start, not just boot: an identity-shedding import
+    // (restore as a new device) clears the id, and the next start must
+    // come up as a fresh player rather than reuse the cleared value.
+    var clientId = _settings.get(defs.sendspinClientId);
+    if (clientId.isEmpty) {
+      final rng = Random.secure();
+      clientId = List.generate(
+        32,
+        (_) => rng.nextInt(16).toRadixString(16),
+      ).join();
+      await _settings.set(defs.sendspinClientId, clientId);
+    }
     try {
       await _channel.invokeMethod('start', {
         'serverUrl': _settings.get(defs.sendspinServer).trim(),
         'playerName': playerName,
-        'clientId': _settings.get(defs.sendspinClientId),
+        'clientId': clientId,
         'preferredCodec': _settings.get(defs.sendspinCodec),
         'syncOffsetMs': _settings.get(defs.sendspinSyncOffset).toInt(),
       });
