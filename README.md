@@ -60,6 +60,10 @@ smooth on the low-powered, older tablets that usually end up on walls.
   working throughout, and any view the filter cannot fully resolve is
   left unfiltered, so nothing ever breaks.
 
+<p align="center">
+ <img src="assets/perf-vs-fully.svg" alt="Measured against Fully Kiosk on a Galaxy Tab S8+ running the same dashboard" width="650">
+</p>
+
 &bull; **Kiosk lockdown**: exit gesture with PIN, blocked back/volume/home
   buttons, a status-bar shield, instant re-wake on power button, and
   lock-task support on device-owner provisioned tablets.

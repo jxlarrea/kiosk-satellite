@@ -101,3 +101,58 @@ entities dynamically) is deliberately left unfiltered, so nothing ever
 breaks; the telemetry line says when that is the case. That safe fallback is
 why it is on by default: the worst a view can get is the stock, unfiltered
 behavior. It works best on a locked, single-view kiosk.
+
+## Measured against Fully Kiosk
+
+To put the optimizations in context, here is the same dashboard on the same
+device, once under a stock install of Fully Kiosk Browser and once under
+Kiosk Satellite with the optimizations at their defaults. The device is a
+Galaxy Tab S8+ (Snapdragon 8 Gen 1, Android 16), and the page is a real
+production tablet dashboard: live camera card, animated graphs, and a wall
+of updating sensors. Both apps loaded the identical dashboard URL from the
+same instance, and both render through the same system WebView, so the
+engine is not the variable; what the app does around the engine is.
+
+The comparison is asymmetric in one honest way: Kiosk Satellite ran its
+built-in microWakeWord engine through every window (a live 16 kHz
+microphone stream, verified in dumpsys), because on-device wake word is
+part of what it is. Fully Kiosk has nothing comparable to run.
+
+With the dashboard on screen the two are comparable: CPU is a dead heat
+with the wake word engine included, with Kiosk Satellite a little heavier
+on the GPU because the page's animations render through the app's
+compositor. The state that matters is idle, because a kiosk on a
+30-second screensaver timeout spends nearly its whole life there. Fully
+Kiosk has nothing to stand down to: with no touches, the dashboard simply
+keeps rendering, and its idle measurement is identical to its active one.
+(Its optional black screensaver does not change that; measured
+separately, the overlay draws over a page that keeps rendering
+underneath.) Kiosk Satellite drops into its clock screensaver with
+**Pause dashboard during screensaver** stopping the page:
+
+| Idle, 30 s after the last touch | Fully Kiosk 1.60.1 | Kiosk Satellite |
+| --- | --- | --- |
+| App CPU (all processes, of total 8-core capacity) | 21.7% | 8.6% |
+| System CPU total | 34.0% | 16.2% |
+| GPU load | 52.3% | 0.0% |
+| SoC temperature (window mean) | 52.7°C | 38.7°C |
+
+Less than half the CPU with wake word inference still listening, a GPU
+that goes fully idle instead of staying half-busy forever, and an SoC that
+fell from 57°C to 43°C within a minute of the screensaver engaging. RAM is
+the one metric that goes the other way: Kiosk Satellite holds a few
+hundred MB more, its Flutter UI, wake word model and caches on top of the
+same WebView, which is a fair trade on a tablet with memory to spare and
+worth knowing about on one without.
+
+Methodology, for anyone reproducing it: each app was measured alone with
+the other force-stopped, back to back on the same network and Home
+Assistant instance, each dashboard session started from the same cooled
+baseline (under 46°C on the launcher), and every state was verified by
+screenshot around its window. CPU is jiffies attributed to every process
+of the app including its WebView renderer, sampled over two minutes and
+reported against the full 8-core capacity. RAM is PSS summed over the same
+processes. GPU load is the Adreno driver's busy-cycle counters over the
+same window, cross-checked against its busy-percentage node (they agreed
+within half a point). Temperature is the hottest CPU cluster thermal zone,
+sampled every three seconds.

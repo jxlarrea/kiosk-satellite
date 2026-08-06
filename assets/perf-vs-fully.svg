@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 442" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="960" height="442" rx="15" fill="#F5F4F2"/>
+  <text x="480.0" y="64" text-anchor="middle" font-size="40" font-weight="700" fill="#212327">Performance Benchmark</text>
+  <text x="480.0" y="102" text-anchor="middle" font-size="28" fill="#5D6066">Samsung Galaxy Tab S8+ (Less is better)</text>
+
+  <text x="48" y="164" font-size="24" fill="#5D6066">CPU load · all app processes, % of total CPU</text>
+  <path d="M48,178 h233.1 a5,5 0 0 1 5,5 v20 a5,5 0 0 1 -5,5 h-233.1 z" fill="#4F8846"/>
+  <text x="300.1" y="201" font-size="26" font-weight="700" fill="#212327">8.6%<tspan font-weight="400" font-size="24" fill="#5D6066"> Kiosk Satellite</tspan>
+  </text>
+  <path d="M48,213 h533.2 a5,5 0 0 1 5,5 v20 a5,5 0 0 1 -5,5 h-533.2 z" fill="#5479C4"/>
+  <text x="600.2" y="236" font-size="26" font-weight="700" fill="#212327">21.7%<tspan font-weight="400" font-size="24" fill="#5D6066"> Fully Kiosk</tspan>
+  </text>
+  <text x="48" y="290" font-size="24" fill="#5D6066">GPU load · % busy</text>
+  <path d="M48,304 h5.0 a5,5 0 0 1 5,5 v20 a5,5 0 0 1 -5,5 h-5.0 z" fill="#4F8846"/>
+  <text x="72.0" y="327" font-size="26" font-weight="700" fill="#212327">0.0%<tspan font-weight="400" font-size="24" fill="#5D6066"> Kiosk Satellite</tspan>
+  </text>
+  <path d="M48,339 h427.3 a5,5 0 0 1 5,5 v20 a5,5 0 0 1 -5,5 h-427.3 z" fill="#5479C4"/>
+  <text x="494.3" y="362" font-size="26" font-weight="700" fill="#212327">52.3%<tspan font-weight="400" font-size="24" fill="#5D6066"> Fully Kiosk</tspan>
+  </text>
+  <circle cx="280" cy="410" r="8" fill="#4F8846"/>
+  <circle cx="476" cy="410" r="8" fill="#5479C4"/>
+  <text x="48" y="416" font-size="24" fill="#5D6066">SoC temperature<tspan x="298" font-weight="700" fill="#212327">38.7 °C</tspan>
+    <tspan fill="#5D6066"> vs </tspan>
+    <tspan x="494" font-weight="700" fill="#212327">52.7 °C</tspan>
+  </text>
+</svg>
