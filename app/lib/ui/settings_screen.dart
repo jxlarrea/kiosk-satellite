@@ -105,25 +105,13 @@ const _categories = <(String, String, IconData, String)>[
     Icons.graphic_eq_outlined,
     'Wake word, background listening',
   ),
-  ('Browser', 'Web Browsing', Icons.public, 'Cache, SSL, Zoom level'),
-  (
-    'Kiosk',
-    'Kiosk Mode',
-    Icons.lock_outline,
-    'Exit gesture, PIN, hardware buttons',
-  ),
-  (
-    'Launcher',
-    'App Launcher',
-    Icons.apps_outlined,
-    'Open other apps from the kiosk',
-  ),
   (
     'Screen & Audio',
     'Screen & Audio',
     Icons.brightness_6_outlined,
     'Brightness, volume, microphone',
   ),
+  ('Browser', 'Web Browsing', Icons.public, 'Cache, SSL, Zoom level'),
   (
     'Screensaver',
     'Screensaver',
@@ -136,13 +124,6 @@ const _categories = <(String, String, IconData, String)>[
     Icons.photo_camera_outlined,
     'Device camera, motion detection',
   ),
-  ('MQTT', 'MQTT Settings', Icons.hub_outlined, 'Publish to an MQTT broker'),
-  (
-    'Cameras',
-    'Camera Streams',
-    Icons.videocam_outlined,
-    'Go2RTC and Home Assistant cameras',
-  ),
   (
     'Sendspin',
     'Sendspin Player',
@@ -150,10 +131,29 @@ const _categories = <(String, String, IconData, String)>[
     'Synchronized audio player',
   ),
   (
+    'Cameras',
+    'Camera Streams',
+    Icons.videocam_outlined,
+    'Go2RTC and Home Assistant cameras',
+  ),
+  (
     'DLNA',
     'DLNA Renderer',
     Icons.cast_outlined,
     'Play images, videos and audio remotely',
+  ),
+  ('MQTT', 'MQTT Settings', Icons.hub_outlined, 'Publish to an MQTT broker'),
+  (
+    'Kiosk',
+    'Kiosk Mode',
+    Icons.lock_outline,
+    'Exit gesture, PIN, hardware buttons',
+  ),
+  (
+    'Launcher',
+    'App Launcher',
+    Icons.apps_outlined,
+    'Open other apps from the kiosk',
   ),
   (
     'Gestures',
