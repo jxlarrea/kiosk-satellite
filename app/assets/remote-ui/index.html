@@ -1878,9 +1878,10 @@ function cameraToggle(label, checked, description = '') {
   return { wrap, input };
 }
 
-function cameraEditor({ title, body, save }) {
+function cameraEditor({ title, body, save, width = 620, tall = false }) {
   return new Promise((resolve) => {
-    const shell = modalShell({ title, width: 620 });
+    const shell = modalShell({ title, width });
+    if (tall) shell.card.style.maxHeight = 'min(94vh, 1000px)';
     body.classList.add('modal-form');
     shell.body.appendChild(body);
     // The error stays visible under the body, above the fixed actions.
@@ -2254,37 +2255,119 @@ async function editCameraView(config, view) {
     12: [[3, 3], [3, 3], [3, 3]],
   };
   let grid = view?.grid || selected.length || 1;
-  const gridField = cameraSelectField('Grid', [], String(grid));
-  gridField.wrap.style.marginTop = '14px';
-  gridField.select.addEventListener('change', () => {
-    grid = Number(gridField.select.value);
-    renderPreview();
+
+  // A miniature wireframe of a layout, the dropdown icon.
+  const gridIcon = (size) => {
+    const icon = document.createElement('div');
+    const spec = GRIDS[size];
+    icon.style.cssText = 'display:grid; gap:1.5px; width:34px; height:22px;'
+      + ` flex:none; grid-template-columns:repeat(${spec[0]}, 1fr);`
+      + ` grid-template-rows:repeat(${spec[1]}, 1fr);`;
+    const spans = SPANS[size] || [];
+    for (let slot = 0; slot < size; slot++) {
+      const cell = document.createElement('div');
+      cell.style.cssText = 'border:1px solid var(--muted);'
+        + ' border-radius:1.5px; min-width:0; min-height:0;';
+      const span = spans[slot] || [1, 1];
+      if (span[0] > 1) cell.style.gridColumn = `span ${span[0]}`;
+      if (span[1] > 1) cell.style.gridRow = `span ${span[1]}`;
+      icon.appendChild(cell);
+    }
+    return icon;
+  };
+
+  // The Grid dropdown is custom-built: a native select cannot show the
+  // layout icons the device dropdown has.
+  const gridField = document.createElement('div');
+  gridField.style.cssText = 'display:flex; flex-direction:column; gap:6px;'
+    + ' margin-top:14px; position:relative;';
+  const gridLabel = document.createElement('span');
+  gridLabel.className = 'desc';
+  gridLabel.textContent = 'Grid';
+  const gridButton = document.createElement('button');
+  gridButton.type = 'button';
+  gridButton.className = 'field';
+  gridButton.style.cssText = 'max-width:none; display:flex;'
+    + ' align-items:center; gap:12px; cursor:pointer; text-align:left;';
+  const gridMenu = document.createElement('div');
+  gridMenu.style.cssText = 'display:none; position:absolute; top:100%;'
+    + ' left:0; right:0; z-index:30; margin-top:4px;'
+    + ' background:var(--surface); border:1px solid var(--border);'
+    + ' border-radius:var(--radius-sm);'
+    + ' box-shadow:0 12px 32px rgba(0,0,0,.35);'
+    + ' max-height:320px; overflow-y:auto; padding:6px;';
+  gridField.append(gridLabel, gridButton, gridMenu);
+  const closeGridMenu = () => { gridMenu.style.display = 'none'; };
+  const outsideGridMenu = (event) => {
+    if (!document.body.contains(gridField)) {
+      document.removeEventListener('click', outsideGridMenu);
+    } else if (!gridField.contains(event.target)) {
+      closeGridMenu();
+    }
+  };
+  document.addEventListener('click', outsideGridMenu);
+  gridButton.addEventListener('click', () => {
+    gridMenu.style.display =
+      gridMenu.style.display === 'none' ? 'block' : 'none';
   });
+
   const preview = document.createElement('div');
   preview.style.cssText = 'display:grid; gap:3px; width:210px; height:126px;'
     + ' margin:12px auto 2px;';
   const renderPreview = () => {
     grid = Math.min(12, Math.max(grid, selected.length, 1));
-    gridField.select.innerHTML = '';
+    gridButton.innerHTML = '';
+    const gridText = document.createElement('span');
+    gridText.textContent = `${grid} Camera${grid === 1 ? '' : 's'}`;
+    gridText.style.flex = '1';
+    const chevron = document.createElement('span');
+    chevron.style.cssText = 'color:var(--muted); display:flex;';
+    chevron.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" '
+      + 'fill="none" stroke="currentColor" stroke-width="2" '
+      + 'stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="m6 9 6 6 6-6"/></svg>';
+    gridButton.append(gridIcon(grid), gridText, chevron);
+    gridMenu.innerHTML = '';
     for (let size = Math.max(1, selected.length); size <= 12; size++) {
-      const option = document.createElement('option');
-      option.value = String(size);
-      option.textContent = `${size} Camera${size === 1 ? '' : 's'}`;
-      option.selected = size === grid;
-      gridField.select.appendChild(option);
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.style.cssText = 'display:flex; align-items:center; gap:12px;'
+        + ' width:100%; padding:8px 10px; border:none; background:'
+        + (size === grid ? 'var(--surface-2)' : 'transparent')
+        + '; color:var(--text); border-radius:8px; cursor:pointer;'
+        + ' font-size:14px; text-align:left;';
+      const optionText = document.createElement('span');
+      optionText.textContent = `${size} Camera${size === 1 ? '' : 's'}`;
+      option.append(gridIcon(size), optionText);
+      option.addEventListener('click', () => {
+        grid = size;
+        closeGridMenu();
+        renderPreview();
+      });
+      gridMenu.appendChild(option);
     }
-    gridField.wrap.style.display = selected.length ? '' : 'none';
+    gridField.style.display = selected.length ? '' : 'none';
     preview.style.display = selected.length ? 'grid' : 'none';
     const spec = GRIDS[grid];
     if (!spec || !selected.length) return;
+    // Cameras take the largest tiles first, exactly like the live view:
+    // rank[slot] says which camera, by view order, sits in each slot.
+    const spans = SPANS[grid] || [];
+    const area = (slot) => {
+      const span = spans[slot];
+      return span ? span[0] * span[1] : 1;
+    };
+    const priority = Array.from({ length: grid }, (_, slot) => slot)
+      .sort((a, b) => area(b) - area(a) || a - b);
+    const rank = [];
+    priority.forEach((slot, position) => { rank[slot] = position; });
     preview.innerHTML = '';
     preview.style.gridTemplateColumns = `repeat(${spec[0]}, 1fr)`;
     preview.style.gridTemplateRows = `repeat(${spec[1]}, 1fr)`;
-    const spans = SPANS[grid] || [];
-    for (let index = 0; index < grid; index++) {
+    for (let slot = 0; slot < grid; slot++) {
       const cell = document.createElement('div');
-      const span = spans[index] || [1, 1];
-      const hasCamera = index < selected.length;
+      const span = spans[slot] || [1, 1];
+      const hasCamera = rank[slot] < selected.length;
       cell.style.cssText =
         `border:1px solid var(${hasCamera ? '--border' : '--divider'});`
         + (hasCamera ? ' background:var(--surface-2);' : '')
@@ -2293,7 +2376,7 @@ async function editCameraView(config, view) {
         + ' min-width:0; min-height:0;';
       if (span[0] > 1) cell.style.gridColumn = `span ${span[0]}`;
       if (span[1] > 1) cell.style.gridRow = `span ${span[1]}`;
-      if (hasCamera) cell.textContent = index + 1;
+      if (hasCamera) cell.textContent = rank[slot] + 1;
       preview.appendChild(cell);
     }
   };
@@ -2398,11 +2481,13 @@ async function editCameraView(config, view) {
     available.style.display = hasAvailable ? '' : 'none';
   };
   render();
-  body.append(name.wrap, showNames.wrap, gridField.wrap, preview,
+  body.append(name.wrap, showNames.wrap, gridField, preview,
     chosenLabel, chosen, availableLabel, available);
   return cameraEditor({
     title: view ? 'Edit view' : 'Create camera view',
     body,
+    width: 780,
+    tall: true,
     save: () => cmd('cameraPutView', {
       id: view?.id || '',
       name: name.input.value,

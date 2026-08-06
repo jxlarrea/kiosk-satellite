@@ -62,10 +62,11 @@ function orientation() {
 // The UniFi Protect view layouts, one per grid size. GRIDS is
 // [columns, rows] in layout units; SPANS lists [columnSpan, rowSpan] for
 // the leading tiles that cover more than one unit. Everything else is a
-// single unit placed by grid auto-flow in reading order, which matches a
-// view's camera order. Portrait swaps the axes and flows column-first,
-// which is an exact transposition.
-// Mirrored in ui/camera_settings.dart and remote-ui/index.html previews.
+// single unit placed by grid auto-flow in reading order. Cameras fill the
+// slots largest-first, so camera one always has the biggest tile and any
+// empty slots are the smallest. Portrait swaps the axes and flows
+// column-first, which is an exact transposition.
+// Mirrored in ui/camera_settings.dart and remote-ui/index.html.
 const GRIDS = {
   1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
   7: [4, 4], 8: [3, 4], 9: [3, 3], 10: [4, 4], 11: [5, 4], 12: [6, 6],
@@ -84,6 +85,18 @@ const SPANS = {
 // How many tiles the layout holds: the view's chosen grid, and never fewer
 // than its cameras. Slots past the camera count are empty placeholders.
 const SLOTS = Math.max(1, CFG.cameras.length, CFG.grid || 0);
+
+// Slot indexes ordered largest tile first (reading order breaks ties):
+// the n-th camera lives in slot PRIORITY[n].
+const PRIORITY = (() => {
+  const spans = SPANS[SLOTS] || [];
+  const area = (slot) => {
+    const span = spans[slot];
+    return span ? span[0] * span[1] : 1;
+  };
+  return Array.from({ length: SLOTS }, (_, slot) => slot)
+    .sort((a, b) => area(b) - area(a) || a - b);
+})();
 
 function applyLayout() {
   grid.className = `${focusId ? 'focus' : ''}`
@@ -327,20 +340,24 @@ function setFocus(cameraId, notify) {
   if (notify) bridge('cameraFocus', { cameraId: focusId || '' });
 }
 
-for (const camera of CFG.cameras) {
+// Tiles go into the DOM in slot reading order (that is what auto-flow
+// places), each holding the camera whose priority rank owns the slot;
+// slots whose rank runs past the camera count stay empty.
+const slotCamera = [];
+PRIORITY.forEach((slot, rank) => {
+  slotCamera[slot] = CFG.cameras[rank];
+});
+for (let slot = 0; slot < SLOTS; slot++) {
+  const camera = slotCamera[slot];
   const tile = document.createElement('div');
   tile.className = 'tile';
-  tile.dataset.id = camera.id;
-  tile.innerHTML =
-    `<div class="status">${camera.missing ? 'Stream missing from Go2RTC' : 'Connecting...'}</div>` +
-    `<div class="name"></div>`;
-  tile.querySelector('.name').textContent = camera.name;
-  grid.appendChild(tile);
-}
-// A grid larger than the camera count keeps its shape with empty slots.
-for (let slot = CFG.cameras.length; slot < SLOTS; slot++) {
-  const tile = document.createElement('div');
-  tile.className = 'tile';
+  if (camera) {
+    tile.dataset.id = camera.id;
+    tile.innerHTML =
+      `<div class="status">${camera.missing ? 'Stream missing from Go2RTC' : 'Connecting...'}</div>` +
+      `<div class="name"></div>`;
+    tile.querySelector('.name').textContent = camera.name;
+  }
   grid.appendChild(tile);
 }
 

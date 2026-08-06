@@ -93,6 +93,25 @@ void main() {
     }
   });
 
+  testWidgets('cameras fill the largest tiles first', (tester) async {
+    await pump(tester, 10);
+    // In the 10 layout the two large tiles stack on the left; cameras one
+    // and two own them, so number 2 sits bottom-left, not on a small tile.
+    Positioned tileOf(String number) => tester.widget<Positioned>(
+      find
+          .ancestor(of: find.text(number), matching: find.byType(Positioned))
+          .first,
+    );
+    final second = tileOf('2');
+    expect(second.left, 0);
+    expect(second.top, 63);
+    expect(second.width, 105);
+    // Camera three takes the first small tile on the right instead.
+    final third = tileOf('3');
+    expect(third.left, greaterThanOrEqualTo(105));
+    expect(third.width, 52.5);
+  });
+
   testWidgets('12 cameras fill the last quadrant with nine tiles', (
     tester,
   ) async {

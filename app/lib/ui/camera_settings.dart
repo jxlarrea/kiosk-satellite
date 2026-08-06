@@ -513,7 +513,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         builder: (context, setDialogState) => AlertDialog(
           title: Text(view == null ? 'Create camera view' : 'Edit view'),
           content: SizedBox(
-            width: 480,
+            width: 640,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -733,7 +733,9 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
 }
 
 /// A miniature of a camera grid: the UniFi Protect layout for [count]
-/// slots, numbered in view order up to [filled]. Small sizes drop the
+/// slots, numbered in view order up to [filled]. Cameras fill the largest
+/// tiles first, matching the live view, so number one always sits on the
+/// biggest tile and unfilled slots are the smallest. Small sizes drop the
 /// numbers and serve as the dropdown's layout icons. The layout tables
 /// mirror assets/camera-view/index.html and the remote UI preview.
 class CameraGridPreview extends StatelessWidget {
@@ -783,7 +785,21 @@ class CameraGridPreview extends StatelessWidget {
     final cameras = filled ?? count;
     final numbered = height >= 60;
     final inset = height >= 60 ? 1.5 : 0.7;
-    final tiles = _place(count, columns, rows, _spans[count] ?? const []);
+    final spans = _spans[count] ?? const <List<int>>[];
+    final tiles = _place(count, columns, rows, spans);
+    // Cameras take the largest tiles first, exactly like the live view:
+    // rank[slot] is which camera (by view order) sits in that slot.
+    int area(int slot) =>
+        slot < spans.length ? spans[slot][0] * spans[slot][1] : 1;
+    final priority = [for (var slot = 0; slot < count; slot++) slot]
+      ..sort((a, b) {
+        final byArea = area(b) - area(a);
+        return byArea != 0 ? byArea : a - b;
+      });
+    final rank = List<int>.filled(count, 0);
+    for (var position = 0; position < count; position++) {
+      rank[priority[position]] = position;
+    }
     return Center(
       child: SizedBox(
         width: width,
@@ -804,11 +820,11 @@ class CameraGridPreview extends StatelessWidget {
                       padding: EdgeInsets.all(inset),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: index < cameras
+                          color: rank[index] < cameras
                               ? scheme.surfaceContainerHighest
                               : null,
                           border: Border.all(
-                            color: index < cameras
+                            color: rank[index] < cameras
                                 ? scheme.outline
                                 : scheme.outlineVariant,
                           ),
@@ -816,10 +832,10 @@ class CameraGridPreview extends StatelessWidget {
                             numbered ? 4 : 1.5,
                           ),
                         ),
-                        child: numbered && index < cameras
+                        child: numbered && rank[index] < cameras
                             ? Center(
                                 child: Text(
-                                  '${index + 1}',
+                                  '${rank[index] + 1}',
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall
