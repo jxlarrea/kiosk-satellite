@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- Scrolling in the on-device settings is much smoother: the dashboard keeps rendering behind the settings screen even though it is fully covered, and on a busy dashboard that background work caused visible stutters. The dashboard's rendering now pauses while settings are open, the same optimization the screensaver uses, and resumes the instant settings begin to close. The Home Assistant connection stays live throughout.
+
 ## v2026.8.4 - 2026-08-06
 
 ### Changed

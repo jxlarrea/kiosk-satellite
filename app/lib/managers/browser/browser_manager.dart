@@ -456,8 +456,30 @@ class BrowserManager extends Manager {
 
   bool _screensaverActive = false;
   bool _dashboardCovered = false;
+  bool _settingsRouteOpen = false;
   bool _frozen = false;
   Timer? _freezeDelay;
+
+  /// Whether the dashboard should be hidden right now: covered by a
+  /// screensaver overlay with the freeze optimization on, or covered by the
+  /// on-device settings route, which is opaque and full-screen — pausing
+  /// compositing under it hands the whole frame budget to the settings UI.
+  bool get _wantFrozen =>
+      (_screensaverActive &&
+          _dashboardCovered &&
+          _settings.get(defs.freezeOnScreensaver)) ||
+      _settingsRouteOpen;
+
+  /// The settings route edge. The caller freezes only once the push
+  /// transition has completed (an INVISIBLE view draws nothing, so freezing
+  /// earlier blanks the dashboard while it is still on screen) and thaws
+  /// the moment the pop starts, mirroring how the screensaver unfreezes
+  /// before lifting its overlay.
+  void setSettingsRouteOpen(bool open) {
+    if (_settingsRouteOpen == open) return;
+    _settingsRouteOpen = open;
+    unawaited(_syncFreeze());
+  }
 
   /// Every freeze edge from the bus lands here: freezing waits a beat so the
   /// overlay has had time to paint (or the dashboard blinks to black just
@@ -465,9 +487,7 @@ class BrowserManager extends Manager {
   /// dashboard must be drawing again by the time it is uncovered.
   void _scheduleFreezeSync() {
     _freezeDelay?.cancel();
-    final want = _screensaverActive &&
-        _dashboardCovered &&
-        _settings.get(defs.freezeOnScreensaver);
+    final want = _wantFrozen;
     if (want && !_frozen) {
       _freezeDelay = Timer(
         const Duration(seconds: 1),
@@ -499,9 +519,7 @@ class BrowserManager extends Manager {
   /// origin, leaving the screensaver's own media WebView and rotation
   /// overlays alone.
   Future<void> _syncFreeze() async {
-    final want = _screensaverActive &&
-        _dashboardCovered &&
-        _settings.get(defs.freezeOnScreensaver);
+    final want = _wantFrozen;
     if (want == _frozen) return;
     final prefix = _origin(_currentUrl);
     if (prefix == null) {
@@ -517,7 +535,11 @@ class BrowserManager extends Manager {
         _freezeKeepAliveEvery,
         (_) => pingHaConnection(),
       );
-      log.info(name, 'rendering paused under screensaver');
+      log.info(
+        name,
+        'rendering paused under '
+        '${_settingsRouteOpen ? 'settings' : 'screensaver'}',
+      );
     } else {
       _frozen = false;
       _freezeKeepAlive?.cancel();
