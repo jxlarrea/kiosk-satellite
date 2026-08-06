@@ -102,6 +102,10 @@ class MqttManager extends Manager {
   bool get _cameraEntitiesWanted =>
       _settings.get(defs.cameraEnabled) && _cameraPresent;
 
+  /// Whether this device can read a CPU temperature at all; probed at
+  /// bring-up, revived by any later successful reading (issue #138).
+  bool _cpuTempPresent = true;
+
   /// Rate limiting for the illuminance publishes: the recorder does not need
   /// every damped native event, but big swings (lights on) should land now.
   double? _lastLuxPublished;
@@ -724,6 +728,15 @@ class MqttManager extends Manager {
     // Same rule for the camera: no hardware, no entities.
     final cam = await commands.execute('hasDeviceCamera', const {});
     _cameraPresent = !(cam.ok && cam.data == false);
+    // And for CPU temperature: some OEM SELinux policies deny apps the
+    // thermal sysfs outright (issue #138, Lenovo), and an entity that can
+    // never report is worse than none. One-way in the other direction: a
+    // later poll that does read a temperature revives the entity (the
+    // probe can miss a device sitting under the 20°C plausibility floor
+    // in a cold room).
+    final stats = await commands.execute('getStats', const {});
+    _cpuTempPresent =
+        stats.ok && stats.data is Map && (stats.data as Map)['temp'] != null;
     _publish(_availabilityTopic, 'online');
     await _publishDiscovery();
     await _publishInitialStates();
@@ -1124,6 +1137,13 @@ class MqttManager extends Manager {
       _publish('$_base/cpu/state', '$cpu');
     }
     final temp = (data['temp'] as num?)?.round();
+    if (temp != null && !_cpuTempPresent) {
+      // The bring-up probe read nothing (a device sitting under the
+      // plausibility floor in a cold room) but the sensor works after
+      // all: revive the entity.
+      _cpuTempPresent = true;
+      unawaited(_publishDiscovery());
+    }
     if (temp != null && temp != _lastCpuTemp) {
       _lastCpuTemp = temp;
       _publish('$_base/cpu_temp/state', '$temp');
@@ -1319,14 +1339,18 @@ class MqttManager extends Manager {
         'icon': 'mdi:chip',
         'entity_category': 'diagnostic',
       },
-      '$_prefix/sensor/ks_$_deviceId/cpu_temp/config': {
-        ...common('cpu_temp', 'CPU temperature'),
-        'state_topic': '$_base/cpu_temp/state',
-        'device_class': 'temperature',
-        'unit_of_measurement': '°C',
-        'state_class': 'measurement',
-        'entity_category': 'diagnostic',
-      },
+      // Conditional like illuminance: a device that cannot read any
+      // thermal sensor (issue #138) gets no entity rather than a
+      // permanently unknown one.
+      if (_cpuTempPresent)
+        '$_prefix/sensor/ks_$_deviceId/cpu_temp/config': {
+          ...common('cpu_temp', 'CPU temperature'),
+          'state_topic': '$_base/cpu_temp/state',
+          'device_class': 'temperature',
+          'unit_of_measurement': '°C',
+          'state_class': 'measurement',
+          'entity_category': 'diagnostic',
+        },
       '$_prefix/sensor/ks_$_deviceId/ram_free/config': {
         ...common('ram_free', 'RAM available'),
         'state_topic': '$_base/ram_free/state',
@@ -1570,6 +1594,12 @@ class MqttManager extends Manager {
     // Same for the app launcher's button while the launcher is off.
     if (!_settings.get(defs.launcherEnabled)) {
       _publish('$_prefix/button/ks_$_deviceId/open_launcher/config', '');
+    }
+    // A CPU temperature config from an older build (or an optimistic
+    // default) is retracted once the probe has said this device cannot
+    // read one, instead of lingering as a dead entity.
+    if (!_cpuTempPresent) {
+      _publish('$_prefix/sensor/ks_$_deviceId/cpu_temp/config', '');
     }
     // Self-correcting: a camera config published before the presence probe
     // answered (or before the feature was turned off) is retracted on the

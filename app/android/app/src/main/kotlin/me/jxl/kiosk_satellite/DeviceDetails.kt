@@ -235,6 +235,7 @@ class DeviceDetails(
      *  "!" suffix when its temp file cannot be read), or ["unlisted"] when
      *  the directory itself cannot be enumerated. */
     private fun thermalZoneDump(): List<String> {
+        if (thermalBlocked) return listOf("unlisted")
         val zones = File("/sys/class/thermal")
             .listFiles { f -> f.name.startsWith("thermal_zone") }
             ?: return listOf("unlisted")
@@ -385,9 +386,21 @@ class DeviceDetails(
         hottest { it.contains("cpu") }
             ?: hottest { type -> SOC_ZONE_HINTS.any { type.contains(it) } }
 
+    /** Latched once /sys/class/thermal fails to enumerate: some OEM SELinux
+     *  policies (Lenovo, issue #138) deny untrusted apps the directory read
+     *  outright, and retrying on every stats poll would spray avc denials
+     *  into logcat forever. Never unlatched: a policy does not change while
+     *  the process lives. */
+    private var thermalBlocked = false
+
     private fun hottest(wanted: (String) -> Boolean): Double? {
+        if (thermalBlocked) return null
         val zones = File("/sys/class/thermal")
-            .listFiles { f -> f.name.startsWith("thermal_zone") } ?: return null
+            .listFiles { f -> f.name.startsWith("thermal_zone") }
+        if (zones == null) {
+            thermalBlocked = true
+            return null
+        }
         var max: Double? = null
         for (z in zones) {
             val type = readText(File(z, "type"))?.lowercase() ?: continue

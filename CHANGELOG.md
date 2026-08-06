@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - Camera views grew from four cameras to twelve (#140), laid out exactly like UniFi Protect lays out each grid size: mixes of large and small tiles such as four large beside a column of four small for eight, or two large over eight small for ten. The view editor on the device and in the remote admin gained a UniFi-style Grid dropdown with layout icons, preselected from the camera count and adjustable upward, with a numbered miniature of the chosen layout below it. Cameras always fill the largest tiles first, slots without a camera stay empty on screen, and portrait devices render the same layouts turned sideways.
 
+### Fixed
+- Devices that cannot read any thermal sensor no longer show a permanently unknown CPU temperature entity (#138). Some vendors' security policies deny apps the thermal sensors entirely (seen on a Lenovo TB336FU, where Android logs an SELinux denial for the read); the entity now only exists when a temperature can actually be read, it comes back on its own if a reading appears later, and the app stops retrying the blocked read, which was flooding logcat with denial lines on every stats poll.
+
 ## v2026.8.3 - 2026-08-06
 
 ### Added
