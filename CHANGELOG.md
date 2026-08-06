@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The Disable status bar shield no longer swallows taps on the top edge of the dashboard (#142). Home Assistant's view-tab bar sits exactly where the shield used to cover, making the page switcher dead while the protection was on; the shield now covers only the thin strip at the very display edge where the status bar pull-down actually has to begin, so the pull-down stays blocked and everything on the page is tappable. On some devices a determined user can still surface the shade with two precise swipes by dragging the transient bar the system itself reveals; that was equally possible with the old full-height shield, and the hard guarantee remains Disable home button, whose screen pinning makes Android disable the shade entirely.
+
 ## v2026.8.4 - 2026-08-06
 
 ### Added

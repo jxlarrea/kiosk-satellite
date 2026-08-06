@@ -64,6 +64,14 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
          */
         @Volatile private var appScreenOffAt = 0L
 
+        /**
+         * Height of the status-bar shield in dp. Tall enough that the
+         * shade-opening swipe (which must start at the display's very
+         * edge) always lands on the shield, short enough that a page's
+         * own top-edge UI stays tappable (issue #142).
+         */
+        private const val SHIELD_EDGE_DP = 12
+
         /** Called by [BackgroundBridge] immediately before its lockNow. */
         fun noteAppScreenOff() {
             appScreenOffAt = SystemClock.elapsedRealtime()
@@ -310,19 +318,32 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     private fun setShield(enabled: Boolean) {
         if (enabled && shield == null) {
             if (!Settings.canDrawOverlays(activity)) return
-            val height = activity.resources.let { res ->
-                val id = res.getIdentifier(
-                    "status_bar_height", "dimen", "android")
-                if (id > 0) res.getDimensionPixelSize(id)
-                else (32 * res.displayMetrics.density).toInt()
-            }
+            // Only the very edge, NOT the full status_bar_height: the
+            // shade-opening swipe has to BEGIN within the first few
+            // pixels of the display (measured on One UI: a swipe from
+            // y=1 opens the full shade through immersive mode, a swipe
+            // from y=30 already belongs to the page). A full-height
+            // shield also swallowed taps on page UI living along the
+            // top edge - a Home Assistant dashboard's view-tab bar sits
+            // exactly there (issue #142).
+            val band =
+                (SHIELD_EDGE_DP * activity.resources.displayMetrics.density)
+                    .toInt()
             val view = View(activity)
-            // Consuming every touch on the top strip means the system never
-            // sees the edge swipe that expands the status bar.
+            // Consuming the drag in the edge band stops the one-motion
+            // shade pull. It cannot stop everything: the system still
+            // flashes the transient bar on an edge swipe (that detection
+            // is the system's, independent of who consumes the touches),
+            // and a second drag starting ON the visible bar goes to the
+            // status bar window, which sits above any app overlay — true
+            // of the old full-height shield too, verified side by side.
+            // The hard guarantee against that is lock task mode (the
+            // Disable home button setting), where the OS itself disables
+            // the shade.
             view.setOnTouchListener { v, _ -> v.performClick(); true }
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
-                height,
+                band,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                         or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
