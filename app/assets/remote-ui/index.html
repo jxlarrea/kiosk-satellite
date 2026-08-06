@@ -967,8 +967,16 @@ async function updateNoCameraNotice() {
   const input = anchor.querySelector('.switch input');
   if (input) { input.checked = false; input.disabled = true; }
   for (const key of ['camera.device', 'camera.snapshot_resolution',
-    'camera.snapshots', 'camera.snapshot_interval']) {
+    'camera.snapshots', 'camera.snapshot_interval', 'motion.sensor',
+    'motion.sensor_off_delay', 'motion.fps', 'motion.sensitivity']) {
     tab.querySelector(`[data-key="${key}"]`)?.remove();
+  }
+  // Emptied cards (the Motion Detection group) go too, headings included.
+  for (const card of [...tab.querySelectorAll('.card')]) {
+    if (card.children.length) continue;
+    const heading = card.previousElementSibling;
+    if (heading?.classList.contains('card-title')) heading.remove();
+    card.remove();
   }
   if (tab.querySelector('.camera-missing-notice')) return;
   const row = readOnlyRow('No camera detected',
@@ -1040,11 +1048,12 @@ async function updateCameraGrantNotice() {
 }
 
 /* Latest snapshot preview (remote admin only): the newest frame the device
-   published, under the snapshot interval, with how long ago it was taken.
-   Serves the server's cached frame - rendering this panel never drives a
-   capture. While the Camera tab is on screen the "ago" label ticks and the
-   frame is re-fetched every 15s so motion- and interval-driven snapshots
-   show up on their own. */
+   published, in its own group at the end of the Camera page (so the Motion
+   Detection group is not buried under the image), with how long ago it was
+   taken. Serves the server's cached frame - rendering this panel never
+   drives a capture. While the Camera tab is on screen the "ago" label
+   ticks and the frame is re-fetched every 15s so motion- and
+   interval-driven snapshots show up on their own. */
 let cameraSnapshotTimer = null;
 function agoLabel(date) {
   const s = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
@@ -1059,16 +1068,13 @@ function agoLabel(date) {
 }
 async function updateCameraSnapshotPanel() {
   const tab = document.getElementById('tab-camera');
-  tab.querySelector('.camera-snapshot-row')?.remove();
+  tab.querySelector('.camera-snapshot-heading')?.remove();
+  tab.querySelector('.camera-snapshot-card')?.remove();
   clearInterval(cameraSnapshotTimer);
   cameraSnapshotTimer = null;
   const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
   if (byKey['camera.enabled']?.value !== true) return;
   if (state.cameraPresent === false) return;
-  const anchor = tab.querySelector('[data-key="camera.snapshot_interval"]')
-    || tab.querySelector('[data-key="camera.snapshots"]')
-    || tab.querySelector('[data-key="camera.device"]');
-  if (!anchor) return;
   const row = document.createElement('div');
   row.className = 'row camera-snapshot-row';
   row.style.flexWrap = 'wrap';
@@ -1105,7 +1111,13 @@ async function updateCameraSnapshotPanel() {
     } catch (_) {} finally { btn.disabled = false; }
   });
   row.append(info, btn, img);
-  anchor.insertAdjacentElement('afterend', row);
+  const heading = document.createElement('h2');
+  heading.className = 'card-title camera-snapshot-heading';
+  heading.textContent = 'Latest snapshot';
+  const card = document.createElement('div');
+  card.className = 'card camera-snapshot-card';
+  card.appendChild(row);
+  tab.append(heading, card);
   try { await refresh(); } catch (_) {}
   let ticks = 0;
   cameraSnapshotTimer = setInterval(async () => {
@@ -1117,11 +1129,11 @@ async function updateCameraSnapshotPanel() {
   }, 5000);
 }
 
-/* The screensaver's motion rows follow the Camera section, mirroring the
-   device: with the camera master switch off, "Dismiss on motion" renders
-   disabled with the reason and its tuning rows disappear; with it on, a
-   hint marks where the old camera picker sat - the camera pick is a
-   Camera-settings decision now. */
+/* The screensaver's motion switches follow the Camera section, mirroring
+   the device: with the camera master switch off, "Dismiss on motion"
+   renders disabled with the reason; with it on, a hint under the postpone
+   row marks where the tuning rows used to sit - camera pick, frame rate
+   and sensitivity are Camera-settings decisions now. */
 function updateMotionCameraRows() {
   const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
   const camOn = byKey['camera.enabled']?.value === true
@@ -1139,16 +1151,13 @@ function updateMotionCameraRows() {
   if (!camOn) {
     const input = dismiss.querySelector('.switch input');
     if (input) { input.checked = false; input.disabled = true; }
-    for (const key of ['motion.fps', 'motion.sensitivity']) {
-      tab.querySelector(`[data-key="${key}"]`)?.remove();
-    }
     dismiss.insertAdjacentElement('afterend',
       note('Requires the camera. Turn it on in the Camera settings first.'));
   } else {
-    const anchor = tab.querySelector('[data-key="motion.sensitivity"]');
+    const anchor = tab.querySelector('[data-key="screensaver.postpone_on_motion"]');
     if (anchor) {
       anchor.insertAdjacentElement('afterend',
-        note('Motion detection uses the camera selected in the Camera settings.'));
+        note('Motion detection is tuned in the Camera settings.'));
     }
   }
 }

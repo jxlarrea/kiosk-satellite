@@ -36,7 +36,9 @@ class DeviceCameraManager extends Manager {
 
   Timer? _timer;
   bool _capturing = false;
-  DateTime? _lastMotionShot;
+  /// The last motion tick (any tick, not just ones that shot): the gap
+  /// since it is what defines a new motion session.
+  DateTime? _lastMotionTick;
 
   /// Probed once, lazily. Null until the first ask.
   bool? _present;
@@ -103,16 +105,23 @@ class DeviceCameraManager extends Manager {
 
     // Motion refreshes the picture: the tick that wakes the screensaver is
     // someone stepping up to the kiosk, which is exactly the moment worth
-    // having on the Home Assistant camera. Cooled down so a busy room
-    // cannot turn the retained snapshot topic into a frame hose.
+    // having on the Home Assistant camera. One snapshot per motion session,
+    // mirroring the MQTT motion sensor: a tick only counts as an arrival if
+    // the sensor's Clear after window has passed without motion. Someone
+    // staying in frame keeps the sensor on Detected and updates nothing —
+    // without the session gate, the always-on sensor leg turned sustained
+    // motion into a retained-JPEG hose over MQTT.
     bus.on<MotionDetected>().listen((_) {
       if (!enabled) return;
       final now = DateTime.now();
-      final last = _lastMotionShot;
-      if (last != null && now.difference(last) < const Duration(seconds: 10)) {
-        return;
-      }
-      _lastMotionShot = now;
+      final last = _lastMotionTick;
+      _lastMotionTick = now;
+      final clear = Duration(
+          seconds: _settings.get(defs.motionSensorOffDelay).toInt().clamp(
+                1,
+                300,
+              ));
+      if (last != null && now.difference(last) < clear) return;
       unawaited(_motionSnapshot());
     });
 

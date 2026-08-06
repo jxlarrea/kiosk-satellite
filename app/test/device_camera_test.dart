@@ -1,6 +1,8 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/device_camera/device_camera_manager.dart';
 import 'package:kiosk_satellite/managers/device_camera/native_camera.dart';
@@ -11,6 +13,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Camera permission answers "denied": snapshot attempts stop there with a
+  // countable warn instead of reaching the (absent) camera plugin.
+  setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('flutter.baseflow.com/permissions/methods'),
+      (call) async => switch (call.method) {
+        'checkPermissionStatus' => 0,
+        _ => null,
+      },
+    );
+  });
 
   late EventBus bus;
   late CommandRegistry commands;
@@ -120,6 +135,25 @@ void main() {
     expect(result.ok, isTrue);
     expect(settings.get(defs.cameraEnabled), isTrue);
     expect(settings.get(defs.cameraDevice), 'back');
+  });
+
+  test('motion snapshots fire once per session, not once per tick', () async {
+    await build({'ks.camera.enabled': true, 'ks.motion.sensor': true});
+    await camera().init();
+    // A burst of ticks: someone staying in frame. Only the first is an
+    // arrival; the rest land inside the Clear after window and must not
+    // refresh the retained MQTT snapshot (the sensor leg keeps the camera
+    // on permanently, so per-tick snapshots would publish forever).
+    bus.publish(const MotionDetected());
+    bus.publish(const MotionDetected());
+    bus.publish(const MotionDetected());
+    // Past the capture's deliberate 1s delay; the denied permission then
+    // fails each attempt with one warn, which is the countable trace.
+    await Future<void>.delayed(const Duration(milliseconds: 1400));
+    final attempts = log.recent
+        .where((e) => e.message.contains('motion snapshot failed'))
+        .length;
+    expect(attempts, 1);
   });
 
   test('importing a new backup leaves its camera choice alone', () async {

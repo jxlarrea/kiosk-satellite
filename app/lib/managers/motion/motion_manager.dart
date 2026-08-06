@@ -30,10 +30,39 @@ import 'native_motion.dart';
 /// on the setting; the one gate kept here regardless is the screen being on —
 /// a panel someone turned off has no screensaver to postpone, and a camera
 /// burning CPU behind a dark screen would be the worst version of the trade.
+///
+/// The "Motion sensor" leg (Camera section) is the third and least gated:
+/// motion as its own MQTT binary_sensor, independent of the screensaver
+/// features. It ignores even the screen-on gate above — waking a dark panel
+/// from an HA automation is the sensor's headline use, so the camera watching
+/// behind a dark screen is the point here, not a waste. The cost warning
+/// lives on its setting too.
 class MotionManager extends Manager {
-  MotionManager(super.bus, super.commands, super.log, this._settings);
+  MotionManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this._settings, {
+    this._selfLightQuiet = const Duration(milliseconds: 2500),
+  });
 
   final SettingsManager _settings;
+
+  /// How long motion ticks are suppressed after the app relights the room
+  /// itself (screensaver transitions, screen power, brightness). The
+  /// native analyzer rejects lighting-shaped change, but the transition
+  /// plus the AE resettle that follows it takes a few analyzed frames to
+  /// look like lighting again; this window covers them. Injectable for
+  /// tests only.
+  final Duration _selfLightQuiet;
+
+  /// Motion ticks before this instant are the app's own light change
+  /// bouncing off the room, not a body.
+  DateTime _quietUntil = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void _selfLit() {
+    _quietUntil = DateTime.now().add(_selfLightQuiet);
+  }
 
   @override
   String get name => 'motion';
@@ -63,6 +92,11 @@ class MotionManager extends Manager {
       _settings.get(defs.screensaverEnabled) &&
       _settings.get(defs.cameraEnabled);
 
+  /// Whether the standalone MQTT sensor wants the camera: whenever it is
+  /// on. No screensaver or screen-state gates (see the class comment).
+  bool get _sensorEnabled =>
+      _settings.get(defs.motionSensor) && _settings.get(defs.cameraEnabled);
+
   StreamSubscription<void>? _camera;
   bool _screensaverActive = false;
   bool _screenOn = true;
@@ -73,10 +107,16 @@ class MotionManager extends Manager {
 
   @override
   Future<void> init() async {
+    // Every branch below is the app relighting the room with its own
+    // display: the change the camera is about to see is self-inflicted
+    // (see _selfLightQuiet), the loop being a screensaver whose own dark
+    // background reads as motion and dismisses it instantly.
     bus.on<ScreensaverStateChanged>().listen((e) {
+      _selfLit();
       _screensaverActive = e.active;
       _sync();
     });
+    bus.on<BrightnessChanged>().listen((_) => _selfLit());
     // Session start publishes the policy before the active event above, and
     // boundary crossings mid-session publish on their own — either way the
     // camera starts or stops to match within a tick.
@@ -87,6 +127,7 @@ class MotionManager extends Manager {
     // The postpone leg follows the panel: a screen someone turned off has
     // no screensaver worth holding back, so the camera goes with it.
     bus.on<ScreenStateChanged>().listen((e) {
+      _selfLit();
       _screenOn = e.on;
       _sync();
     });
@@ -97,8 +138,12 @@ class MotionManager extends Manager {
     bus.on<SettingChanged>().listen((e) {
       final isGate = e.key == defs.screensaverDismissOnMotion.key ||
           e.key == defs.screensaverPostponeOnMotion.key ||
+          e.key == defs.motionSensor.key ||
           e.key == defs.screensaverEnabled.key ||
           e.key == defs.cameraEnabled.key;
+      // MQTT-side only (it lives in the HA discovery config): no reason to
+      // restart the camera over it.
+      if (e.key == defs.motionSensorOffDelay.key) return;
       if (!isGate &&
           !e.key.startsWith('motion.') &&
           e.key != defs.cameraDevice.key &&
@@ -107,7 +152,7 @@ class MotionManager extends Manager {
           e.key != defs.cameraSnapshotResolution.key) {
         return;
       }
-      if (isGate && (enabled || _postponeEnabled)) {
+      if (isGate && (enabled || _postponeEnabled || _sensorEnabled)) {
         unawaited(_ensurePermission());
       }
       _stop();
@@ -120,7 +165,9 @@ class MotionManager extends Manager {
       handler: (_) async => CommandResult.ok(enabled),
     ));
 
-    if (enabled || _postponeEnabled) unawaited(_ensurePermission());
+    if (enabled || _postponeEnabled || _sensorEnabled) {
+      unawaited(_ensurePermission());
+    }
 
     // Seed the panel state from reality (a device that boots with its
     // screen already off must not bind the camera) and let the postpone
@@ -133,10 +180,10 @@ class MotionManager extends Manager {
 
   /// Whether the camera should be running right now: dismiss-on-motion
   /// wants it during a screensaver session, postpone-on-motion between
-  /// them (screen on). Both on means it simply never stops.
-  bool get _shouldRun => _screensaverActive
-      ? enabled
-      : _postponeEnabled && _screenOn;
+  /// them (screen on), and the sensor leg always.
+  bool get _shouldRun =>
+      _sensorEnabled ||
+      (_screensaverActive ? enabled : _postponeEnabled && _screenOn);
 
   void _sync() {
     if (_shouldRun) {
@@ -171,6 +218,10 @@ class MotionManager extends Manager {
         snapshotHeight: snapH,
       ).listen(
         (_) {
+          if (DateTime.now().isBefore(_quietUntil)) {
+            log.debug(name, 'motion suppressed (own light change)');
+            return;
+          }
           log.debug(name, 'motion');
           bus.publish(const MotionDetected());
         },

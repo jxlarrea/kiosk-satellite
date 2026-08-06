@@ -1092,18 +1092,13 @@ class _CategoryContentState extends State<_CategoryContent> {
           ..._sectionedCards(
             container,
             // With the Camera master switch off (or no camera on the
-            // device at all), motion detection cannot run: its tuning rows
-            // disappear and the switch itself renders disabled (below)
-            // with the reason, instead of lying enabled. A camera-less
-            // device likewise keeps only the disabled master switch.
-            widget.category == 'Screensaver' &&
-                    !container.deviceCamera.effectiveEnabled
-                ? [
-                    for (final def in _defsFor('Screensaver'))
-                      if (!def.key.startsWith('motion.')) def,
-                  ]
-                : widget.category == 'Camera' &&
-                      container.deviceCamera.cameraKnownAbsent
+            // device at all), motion detection cannot run: the dismiss
+            // switch renders disabled (below) with the reason, instead of
+            // lying enabled; its tuning rows live in the Camera section
+            // now and hide with the master there. A camera-less device
+            // keeps only the disabled master switch.
+            widget.category == 'Camera' &&
+                    container.deviceCamera.cameraKnownAbsent
                 ? const [cameraEnabled]
                 : _defsFor(widget.category),
             () => setState(() {}),
@@ -1156,12 +1151,11 @@ class _CategoryContentState extends State<_CategoryContent> {
                       _CameraGrantRow(key: UniqueKey()),
                   ],
                 ),
-              // Where the motion camera picker used to be: the camera pick
-              // is a Camera-settings decision now.
+              // Where the tuning rows used to be: camera pick, frame rate
+              // and sensitivity are Camera-settings decisions now.
               if (widget.category == 'Screensaver')
-                motionSensitivity.key: const HintRow(
-                  'Motion detection uses the camera selected in the '
-                  'Camera settings.',
+                screensaverPostponeOnMotion.key: const HintRow(
+                  'Motion detection is tuned in the Camera settings.',
                 ),
               // Dim is the one mode the pause-dashboard optimization cannot
               // help: there is no overlay, the page IS the display. Lives in

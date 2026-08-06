@@ -1737,35 +1737,6 @@ const screensaverPostponeOnMotion = SettingDef<bool>(
   dependsOn: 'screensaver.dismiss_on_motion',
 );
 
-const motionFps = SettingDef<num>(
-  key: 'motion.fps',
-  type: SettingType.number,
-  defaultValue: 2,
-  title: 'Motion frame rate',
-  description:
-      'Frames per second the camera checks for motion. Lower is lighter '
-      'on the CPU; 2 is plenty to notice someone approaching.',
-  category: 'Screensaver',
-  section: 'Motion Detection',
-  dependsOn: 'screensaver.dismiss_on_motion',
-);
-
-const motionSensitivity = SettingDef<num>(
-  key: 'motion.sensitivity',
-  type: SettingType.number,
-  defaultValue: 70,
-  title: 'Motion sensitivity',
-  description:
-      'Higher trips on smaller movements. 1 needs a large change across '
-      'the frame; 100 reacts to the slightest motion.',
-  category: 'Screensaver',
-  section: 'Motion Detection',
-  dependsOn: 'screensaver.dismiss_on_motion',
-  min: 1,
-  max: 100,
-  step: 1,
-);
-
 // Legacy: superseded by [cameraDevice] when the Camera category arrived —
 // one camera choice for every camera feature, picked there. Kept hidden so
 // old exports still import and the one-time migration can read the choice.
@@ -1854,6 +1825,77 @@ const cameraSnapshotInterval = SettingDef<num>(
   max: 300,
   step: 5,
   unit: 's',
+);
+
+// ── Camera: Motion Detection ───────────────────────────────────────────
+// Motion detection's home: the standalone sensor and the shared tuning.
+// The sensor is motion exposed as its own MQTT binary_sensor, independent
+// of the screensaver's motion features. Users asked for the sensor without
+// the screensaver strings attached, and its natural use (motion turns the
+// panel on) needs the camera watching while the screen is dark, which no
+// screensaver leg does. A third leg in MotionManager, deliberately NOT
+// gated on the dismiss switch. The tuning rows (frame rate, sensitivity)
+// moved here from the Screensaver section when the sensor arrived: they
+// tune every motion leg, so they belong with the camera, not with one
+// consumer of it.
+
+const motionSensor = SettingDef<bool>(
+  key: 'motion.sensor',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Motion sensor',
+  description:
+      'Expose motion as a Home Assistant sensor over MQTT. WARNING: '
+      'Keeps the camera running permanently, even with the screen off.',
+  category: 'Camera',
+  section: 'Motion Detection',
+  dependsOn: 'camera.enabled',
+);
+
+// The sensor clears itself in Home Assistant (off_delay in the discovery
+// config): the app only ever reports motion, never its absence.
+const motionSensorOffDelay = SettingDef<num>(
+  key: 'motion.sensor_off_delay',
+  type: SettingType.number,
+  defaultValue: 5,
+  title: 'Clear after',
+  description: 'Seconds without motion before the sensor reads clear.',
+  category: 'Camera',
+  section: 'Motion Detection',
+  dependsOn: 'motion.sensor',
+  min: 1,
+  max: 300,
+  step: 1,
+  unit: 's',
+);
+
+const motionFps = SettingDef<num>(
+  key: 'motion.fps',
+  type: SettingType.number,
+  defaultValue: 2,
+  title: 'Motion frame rate',
+  description:
+      'Frames per second the camera checks for motion. Lower is lighter '
+      'on the CPU; 2 is plenty to notice someone approaching.',
+  category: 'Camera',
+  section: 'Motion Detection',
+  dependsOn: 'camera.enabled',
+);
+
+const motionSensitivity = SettingDef<num>(
+  key: 'motion.sensitivity',
+  type: SettingType.number,
+  defaultValue: 70,
+  title: 'Motion sensitivity',
+  description:
+      'Higher trips on smaller movements. 1 needs a large change across '
+      'the frame; 100 reacts to the slightest motion.',
+  category: 'Camera',
+  section: 'Motion Detection',
+  dependsOn: 'camera.enabled',
+  min: 1,
+  max: 100,
+  step: 1,
 );
 
 // ── Schedule ───────────────────────────────────────────────────────────
@@ -2909,14 +2951,16 @@ const List<SettingDef<Object>> allSettings = [
   screensaverGlanceEntities,
   screensaverDismissOnMotion,
   screensaverPostponeOnMotion,
-  motionFps,
-  motionSensitivity,
   motionCamera,
   cameraEnabled,
   cameraDevice,
   cameraSnapshotResolution,
   cameraSnapshots,
   cameraSnapshotInterval,
+  motionSensor,
+  motionSensorOffDelay,
+  motionFps,
+  motionSensitivity,
   screensaverScheduleEnabled,
   screensaverSchedule,
   wakeWordEnabled,

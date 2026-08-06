@@ -48,11 +48,20 @@ import kotlin.math.roundToInt
  * without lowering the bright-room bar into sensor noise. And AE is asked for
  * the slowest frame-rate range the sensor offers, trading frame rate nobody
  * needs (analysis is throttled far below it) for longer exposures, which means
- * more photons per frame instead of cranked gain. Because adaptive thresholds
- * would otherwise fire on lighting itself, a same-signed change (lights
- * toggling, AE hunting, a monitor or the screensaver content lighting the room
- * differently) is vetoed as illumination, not motion; a moving body always
- * diffs with both signs at once.
+ * more photons per frame instead of cranked gain.
+ *
+ * Lighting is rejected on two levels. Each cell is thresholded on its
+ * deviation from the frame's MEAN delta, not its raw delta: a light change
+ * plus the AE compensation that follows it is, to first order, a uniform
+ * shift of the whole grid, and subtracting the mean removes it — a body is a
+ * localized departure from whatever the global shift is. (This matters with
+ * the camera running across screensaver transitions: the raw transition is
+ * monotone, but half a second later AE has partially re-exposed, and
+ * screen-lit cells darkening while AE lifts the rest arrives mixed-sign —
+ * shaped exactly like a body.) What the mean cannot absorb — light landing
+ * unevenly, a lamp reaching only half the room — is caught by the raw-delta
+ * sign veto: same-signed raw change is illumination, while a frame-diff of a
+ * moving body has both signs at once.
  *
  * Only a "motion" tick ever crosses the channel, rate-limited to one per second.
  * The Dart side decides what motion means (waking the screensaver); the camera
@@ -286,38 +295,60 @@ class CameraMotion(
             if (prev == null || frameCount <= WARMUP_FRAMES) return
 
             val noise = noiseGrid ?: FloatArray(CELLS) { INITIAL_NOISE }.also { noiseGrid = it }
+
+            // The frame's global luminance shift: a light change and the AE
+            // gain that answers it move every cell together, and detection
+            // works on each cell's departure from this mean, not its raw
+            // delta. Computed over all cells; a body large enough to drag
+            // the mean drags it by only its own magnitude times the fraction
+            // of frame it covers, which the subtraction cannot cancel.
+            var sumDelta = 0
+            for (i in 0 until CELLS) sumDelta += grid[i] - prev[i]
+            val meanDelta = sumDelta / CELLS.toFloat()
+
             var changed = 0
+            var rawChanged = 0
             var brighter = 0
-            var changedMagnitude = 0
+            var changedMagnitude = 0f
             for (i in 0 until CELLS) {
                 val delta = grid[i] - prev[i]
-                val magnitude = abs(delta)
                 val threshold = (NOISE_K * noise[i])
                     .coerceIn(THRESHOLD_FLOOR, THRESHOLD_CEILING)
+                // Raw deltas feed the sign veto only.
+                if (abs(delta) >= threshold) {
+                    rawChanged++
+                    if (delta > 0) brighter++
+                }
+                val magnitude = abs(delta - meanDelta)
                 if (magnitude >= threshold) {
                     changed++
                     changedMagnitude += magnitude
-                    if (delta > 0) brighter++
                 } else {
                     // Quiet cells teach the jitter model what "still" looks
                     // like at the current gain; changed cells stay out so
-                    // motion does not desensitize the detector.
+                    // motion does not desensitize the detector. Learning on
+                    // the mean-relative magnitude keeps global flicker (a
+                    // TV lighting the room) from inflating the model.
                     noise[i] += NOISE_ALPHA * (magnitude - noise[i])
                 }
             }
 
-            // A same-signed change is illumination, not a body; see the veto
-            // constants. The known cost: something arriving entirely between
-            // two frames (or looming right over the camera) reads one-signed
-            // and is vetoed for that frame, but its next movement mixes signs
-            // and emits, so a real person costs at most a frame of latency.
-            val sameSign = max(brighter, changed - brighter)
-            val illumination = changed >= VETO_MIN_CELLS &&
-                sameSign * 100 >= changed * SAME_SIGN_PERCENT
+            // A same-signed raw change is illumination landing unevenly (a
+            // lamp reaching half the room shifts the mean by less than its
+            // own cells moved), not a body; see the veto constants. The
+            // known cost: something arriving entirely between two frames
+            // (or looming right over the camera) reads one-signed and is
+            // vetoed for that frame, but its next movement mixes signs and
+            // emits, so a real person costs at most a frame of latency.
+            val sameSign = max(brighter, rawChanged - brighter)
+            val illumination = rawChanged >= VETO_MIN_CELLS &&
+                sameSign * 100 >= rawChanged * SAME_SIGN_PERCENT
 
-            if (changed > 0) {
-                Log.d(TAG, "frame: changed=$changed brighter=$brighter " +
-                    "meanMag=${changedMagnitude / changed} veto=$illumination")
+            if (changed > 0 || rawChanged > 0) {
+                Log.d(TAG, "frame: changed=$changed raw=$rawChanged " +
+                    "brighter=$brighter mean=${"%.1f".format(meanDelta)} " +
+                    "meanMag=${if (changed > 0) (changedMagnitude / changed).roundToInt() else 0} " +
+                    "veto=$illumination")
             }
 
             if (!illumination && changed >= minChangedCells &&

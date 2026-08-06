@@ -164,6 +164,14 @@ class MqttManager extends Manager {
       _publish('$_base/camera_snapshot/at',
           DateTime.now().toUtc().toIso8601String());
     }));
+    _subs.add(bus.on<MotionDetected>().listen((_) {
+      if (!_settings.get(defs.motionSensor)) return;
+      // Never retained: a retained ON replayed on an HA restart or broker
+      // reconnect would read as fresh motion and restart the off_delay.
+      // The OFF side is HA's job entirely (off_delay in the discovery
+      // config); the app only ever reports motion, not its absence.
+      _publish('$_base/motion/state', 'ON', retain: false);
+    }));
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _publishNextAlarm()));
     // The network returned from an outage: if the initial connect had
     // failed and the retry timer is sitting out its backoff, go now.
@@ -470,6 +478,19 @@ class MqttManager extends Manager {
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
+    if (e.key == defs.motionSensor.key ||
+        e.key == defs.motionSensorOffDelay.key) {
+      if (!_connected) return;
+      if (_settings.get(defs.motionSensor) && _cameraEntitiesWanted) {
+        // On, or a new off_delay: (re)publish the config. The state topic
+        // needs no seeding — it is non-retained by design, and HA holds
+        // the sensor at its restored state until the next motion tick.
+        unawaited(_publishDiscovery());
+      } else {
+        _publish('$_prefix/binary_sensor/ks_$_deviceId/motion/config', '');
+      }
+      return;
+    }
     if (e.key == defs.cameraEnabled.key) {
       if (!_connected) return;
       if (e.value == true && _cameraPresent) {
@@ -481,10 +502,12 @@ class MqttManager extends Manager {
       } else {
         // Retract the entities and drop the retained frame: a disabled
         // camera should leave neither a dead entity nor a stale picture
-        // parked on the broker.
+        // parked on the broker. The motion sensor rides the camera master
+        // switch too, so it goes with them.
         _publish('$_prefix/camera/ks_$_deviceId/device_camera/config', '');
         _publish('$_prefix/button/ks_$_deviceId/take_snapshot/config', '');
         _publish('$_prefix/sensor/ks_$_deviceId/last_snapshot/config', '');
+        _publish('$_prefix/binary_sensor/ks_$_deviceId/motion/config', '');
         _publishBytes('$_base/camera_snapshot/image', const []);
         _publish('$_base/camera_snapshot/at', '');
       }
@@ -948,13 +971,13 @@ class MqttManager extends Manager {
 
   // ── Outgoing state ──────────────────────────────────────────────────
 
-  void _publish(String topic, String payload) {
+  void _publish(String topic, String payload, {bool retain = true}) {
     final client = _client;
     if (client == null || !_connected) return;
     try {
       client.publishMessage(topic, MqttQos.atLeastOnce,
           (MqttClientPayloadBuilder()..addUTF8String(payload)).payload!,
-          retain: true);
+          retain: retain);
     } catch (e) {
       log.warn(name, 'publish to $topic failed: $e');
     }
@@ -1150,6 +1173,8 @@ class MqttManager extends Manager {
         // conditionally: a config export moved to sensor-less hardware must
         // still clean the entity up.
         '$_prefix/sensor/ks_$_deviceId/illuminance/config',
+        // Conditional too (motion sensor toggle + camera enabled).
+        '$_prefix/binary_sensor/ks_$_deviceId/motion/config',
         '$_prefix/select/ks_$_deviceId/dashboard_view/config',
         '$_prefix/sensor/ks_$_deviceId/admin_url/config',
         '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
@@ -1338,6 +1363,17 @@ class MqttManager extends Manager {
           'device_class': 'illuminance',
           'unit_of_measurement': 'lx',
           'state_class': 'measurement',
+        },
+      // The standalone motion sensor (Camera > Motion Detection). The app
+      // only publishes ON ticks; off_delay makes HA clear the sensor after
+      // quiet, so there is no OFF publishing or timer anywhere in the app.
+      if (_settings.get(defs.motionSensor) && _cameraEntitiesWanted)
+        '$_prefix/binary_sensor/ks_$_deviceId/motion/config': {
+          ...common('motion', 'Motion'),
+          'state_topic': '$_base/motion/state',
+          'device_class': 'motion',
+          'off_delay':
+              _settings.get(defs.motionSensorOffDelay).toInt().clamp(1, 300),
         },
       // The device's own alarm clock (issue #42), so a wake-up automation
       // can run off the alarm someone set on the tablet itself. A timestamp
