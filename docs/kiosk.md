@@ -55,7 +55,7 @@ says when it is missing.
 
 ## Lockdown Mode
 
-Lockdown Mode (discussion #143) makes the screen untouchable while the
+Lockdown Mode makes the screen untouchable while the
 dashboard stays visible and live: the tablet remains glanceable, but every
 tap lands on the shield and shows a brief "Screen is locked" notice instead
 of reaching the page. While the mode holds, every Kiosk Mode protection
