@@ -648,6 +648,28 @@ const kioskAllowApps = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
+// ── Lockdown Mode (discussion #143) ────────────────────────────────────
+// The house-is-empty switch: one toggle that makes the tablet untouchable
+// without dismantling the owner's kiosk configuration. Everything else
+// derives from Kiosk Mode rather than duplicating it: the exit gesture is
+// the kiosk gesture plus two taps, the PIN is the kiosk PIN, and every
+// kiosk protection arms wholesale while the toggle holds, whatever its
+// individual switch says. Remote-only by design, so the category never
+// appears in the device settings rail: the only person standing at a
+// locked tablet is the one being locked out, and a device-side toggle
+// would lock out its own operator one tap after enabling it.
+
+const lockdownEnabled = SettingDef<bool>(
+  key: 'lockdown.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable Lockdown Mode',
+  description:
+      'Makes the screen untouchable until turned off here, from Home '
+      'Assistant, or with the exit gesture.',
+  category: 'Lockdown',
+);
+
 // ── App Launcher ───────────────────────────────────────────────────────
 // The minimal app selector (issue #114): a dedicated kiosk that doubles as
 // a media player or alarm clock needs a sanctioned way into a few other
@@ -2863,6 +2885,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowScreensaver,
   kioskAllowTheme,
   kioskAllowApps,
+  lockdownEnabled,
   launcherEnabled,
   launcherApps,
   launcherLayout,

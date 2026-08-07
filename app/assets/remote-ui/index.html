@@ -565,6 +565,10 @@
           <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
           <span class="nav-text"><span class="nav-title">Kiosk Mode</span><span class="nav-sub">Exit gesture, PIN, hardware buttons</span></span>
         </button>
+        <button data-tab="lockdown">
+          <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 9.5C8 19.4 5 15.6 5 11V6l7-3z"/><rect x="9.5" y="10" width="5" height="4.5" rx="1"/><path d="M10.7 10V8.8a1.3 1.3 0 0 1 2.6 0V10"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Lockdown Mode</span><span class="nav-sub">Make the screen untouchable</span></span>
+        </button>
         <button data-tab="launcher">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg></span>
           <span class="nav-text"><span class="nav-title">App Launcher</span><span class="nav-sub">Open other apps from the kiosk</span></span>
@@ -658,6 +662,7 @@
          order, as the device's settings rail. -->
     <div class="tab" id="tab-browser"></div>
     <div class="tab" id="tab-kiosk"></div>
+    <div class="tab" id="tab-lockdown"></div>
     <div class="tab" id="tab-launcher"></div>
     <div class="tab" id="tab-screenaudio"></div>
     <div class="tab" id="tab-screensaver"></div>
@@ -818,14 +823,14 @@ function logout() {
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'launcher', 'screenaudio', 'screensaver',
+const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'launcher', 'screenaudio', 'screensaver',
   'camera', 'mqtt', 'sendspin', 'cameras', 'dlna', 'files', 'gestures', 'device', 'about', 'logs'];
 // Old bookmarks from before the tabs were consolidated keep landing
 // somewhere sensible.
 const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs' };
 const TAB_TITLES = {
   dashboard: 'Overview', browser: 'Web Browsing',
-  kiosk: 'Kiosk Mode', launcher: 'App Launcher', screenaudio: 'Screen & Audio', screensaver: 'Screensaver',
+  kiosk: 'Kiosk Mode', lockdown: 'Lockdown Mode', launcher: 'App Launcher', screenaudio: 'Screen & Audio', screensaver: 'Screensaver',
   camera: 'Camera',
   homeassistant: 'Home Assistant Configuration',
   voicesatellite: 'Voice Satellite',
@@ -3370,6 +3375,7 @@ async function loadGestures() {
 const CATEGORY_TABS = [
   ['tab-browser', ['Browser']],
   ['tab-kiosk', ['Kiosk']],
+  ['tab-lockdown', ['Lockdown']],
   ['tab-launcher', ['Launcher']],
   ['tab-screenaudio', ['Screen & Audio']],
   ['tab-screensaver', ['Screensaver']],
@@ -3454,6 +3460,37 @@ async function loadSettings() {
     if (tabId === 'tab-homeassistant') continue; // custom render below
     if (tabId === 'tab-voicesatellite') continue; // custom render below
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
+  }
+
+  // ── Lockdown Mode explainer ───────────────────────────────────────────
+  // Everything about the mode derives from Kiosk Mode (gesture, PIN), so
+  // the page spells out what the single toggle will actually do, with the
+  // exit gesture computed from the CURRENT kiosk settings rather than
+  // described abstractly.
+  {
+    const root = document.getElementById('tab-lockdown');
+    const gesture = byKey['kiosk.exit_gesture']?.value || 'taps7';
+    const taps = { taps5: 7, taps5hold: 7, taps7: 9, taps7hold: 9 }[gesture];
+    const hold = String(gesture).endsWith('hold');
+    const pinSet = byKey['kiosk.pin']?.value === '__set__';
+    const exitText = taps
+      ? `On the device, ${taps} fast taps anywhere` +
+        `${hold ? ', holding the last tap down,' : ''} turn it off` +
+        `${pinSet ? ' after the kiosk PIN' : ''}. That is the Kiosk Mode ` +
+        'exit gesture plus two taps, so the two never collide.'
+      : 'The Kiosk Mode exit gesture is set to Disabled, so Lockdown Mode ' +
+        'can only be turned off from here or from Home Assistant.';
+    const note = document.createElement('div');
+    note.style.cssText =
+      'font-size:12.5px; color:var(--muted); margin:10px 20px 0; ' +
+      'line-height:1.5';
+    note.textContent =
+      'While on, the screen stops responding to touch and every Kiosk ' +
+      'Mode protection arms, whatever its own switch says. Kiosk settings ' +
+      'are not changed; turning Lockdown Mode off returns the device to ' +
+      'them. ' + exitText + ' Home Assistant gets a Lockdown mode switch ' +
+      'over MQTT.';
+    root.appendChild(note);
   }
   // The master fader tops the Audio Volume card, mirroring the device: the
   // live device volume, not a setting, so it is hand-built over the

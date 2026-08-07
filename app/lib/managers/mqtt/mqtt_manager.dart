@@ -326,6 +326,10 @@ class MqttManager extends Manager {
               () => _settings.get(defs.kioskEnabled),
               (on) => _settings.set(defs.kioskEnabled, on),
             ),
+            'lockdown': (
+              () => _settings.get(defs.lockdownEnabled),
+              (on) => _settings.set(defs.lockdownEnabled, on),
+            ),
             'ha_kiosk': (
               () => _settings.get(defs.haKioskMode) != 'off',
               (on) => _settings.set(defs.haKioskMode, on ? 'auto' : 'off'),
@@ -346,6 +350,7 @@ class MqttManager extends Manager {
 
   static const _switchSettingKeys = [
     'kiosk.enabled',
+    'lockdown.enabled',
     'ha.kiosk_mode',
     'screen.keep_on',
     'remote.enabled',
@@ -1622,6 +1627,8 @@ class MqttManager extends Manager {
       },
       '$_prefix/switch/ks_$_deviceId/kiosk/config':
           settingSwitch('kiosk', 'Kiosk mode', 'mdi:lock-outline'),
+      '$_prefix/switch/ks_$_deviceId/lockdown/config':
+          settingSwitch('lockdown', 'Lockdown mode', 'mdi:shield-lock'),
       '$_prefix/switch/ks_$_deviceId/ha_kiosk/config':
           settingSwitch('ha_kiosk', 'HA kiosk mode', 'mdi:dock-top'),
       '$_prefix/switch/ks_$_deviceId/keep_screen_on/config': settingSwitch(

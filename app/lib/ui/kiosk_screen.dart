@@ -21,6 +21,7 @@ import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'app_launcher_overlay.dart';
+import 'lockdown_shield.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'kiosk_drawer.dart';
@@ -238,6 +239,18 @@ class _KioskScreenState extends State<KioskScreen>
       // Locking also arms the pull-to-refresh protection (and unlocking
       // disarms it), so the effective state changes with this key too.
       await _syncPullToRefresh();
+      return;
+    }
+    // Lockdown Mode (discussion #143): mount or drop the touch shield. On
+    // enable, take back whatever a person had open on the device — drawer,
+    // settings route, launcher — so nothing usable outlives the flip.
+    if (e.key == defs.lockdownEnabled.key) {
+      setState(() {});
+      if (e.value == true) {
+        if (_drawer.value > 0) _closeDrawer();
+        if (_settingsOpen) Navigator.of(context).popUntil((r) => r.isFirst);
+        c.launcher.visible.value = false;
+      }
       return;
     }
     // The quick-actions toggles decide whether the locked kiosk mounts the
@@ -577,6 +590,18 @@ class _KioskScreenState extends State<KioskScreen>
   /// every escape route stays behind its own confirmation.
   Future<void> _onExitGesture(KioskExitGesture _) async {
     if (!mounted || _settingsOpen || _drawer.value > 0) return;
+    // Under lockdown the gesture is the kiosk one plus two taps, and the
+    // prize is not the menu but the mode's end — behind the kiosk PIN,
+    // exactly as the menu would be. The shield never swallows this: the
+    // taps are counted natively at the Activity, below the Flutter tree.
+    if (c.kiosk.lockdownActive) {
+      if (c.kiosk.pinRequired) {
+        final ok = await _askPin();
+        if (!ok || !mounted) return;
+      }
+      await c.settings.set(defs.lockdownEnabled, false);
+      return;
+    }
     if (c.kiosk.pinRequired) {
       final ok = await _askPin();
       if (!ok || !mounted) return;
@@ -727,6 +752,7 @@ class _KioskScreenState extends State<KioskScreen>
               canPop:
                   !open &&
                   !c.kiosk.locked &&
+                  !c.kiosk.lockdownActive &&
                   c.browser.overlayUrl.value == null &&
                   !c.launcher.visible.value &&
                   c.camera.activeViewId.value == null,
@@ -827,6 +853,12 @@ class _KioskScreenState extends State<KioskScreen>
                   // display, drawer open or not.
                   ScreensaverOverlay(container: c),
                   CameraViewOverlay(container: c),
+                  // Lockdown Mode's touch shield: topmost, above every
+                  // overlay, so nothing on screen is tappable while it
+                  // holds. Transparent — the dashboard stays glanceable,
+                  // it just stops answering. The exit gesture still works:
+                  // its taps are counted natively before Flutter sees them.
+                  if (c.kiosk.lockdownActive) const LockdownShield(),
                 ],
               ),
             );

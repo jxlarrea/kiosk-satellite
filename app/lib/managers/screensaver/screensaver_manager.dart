@@ -196,6 +196,16 @@ class ScreensaverManager extends Manager {
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key.startsWith('screensaver.')) _resetIdleTimer();
+      // Lockdown Mode owns the display while it holds: a running
+      // screensaver stops, and start() refuses below until it lifts.
+      if (e.key == defs.lockdownEnabled.key) {
+        if (e.value == true) {
+          unawaited(stop());
+          _idleTimer?.cancel();
+        } else {
+          _resetIdleTimer();
+        }
+      }
       // Moving the screensaver-brightness controls while the screensaver is
       // showing applies immediately: the slider doubles as a live preview.
       if (_active &&
@@ -366,6 +376,9 @@ class ScreensaverManager extends Manager {
 
   Future<void> start() async {
     if (_active || _paused || _cameraViewActive) return;
+    // No screensaver under Lockdown Mode: the locked dashboard stays
+    // glanceable, and nothing must sit above the touch shield.
+    if (_settings.get(defs.lockdownEnabled)) return;
     _active = true;
     // Hold the panel on for the whole screensaver, every mode. The screensaver
     // owns the display while it is up — black means brightness 0 under a black
