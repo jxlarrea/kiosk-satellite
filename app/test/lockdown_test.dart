@@ -34,6 +34,13 @@ void main() {
       expect(defs.lockdownEnabled.hidden, false);
     });
 
+    test('lockdown.blackout is declared, off by default, gates on the '
+        'toggle', () {
+      expect(defs.allSettings, contains(defs.lockdownBlackout));
+      expect(defs.lockdownBlackout.defaultValue, false);
+      expect(defs.lockdownBlackout.dependsOn, defs.lockdownEnabled.key);
+    });
+
     test('lockdown.exit_gesture mirrors the kiosk options and gates on '
         'the toggle', () {
       expect(defs.allSettings, contains(defs.lockdownExitGesture));

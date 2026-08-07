@@ -244,9 +244,11 @@ class _KioskScreenState extends State<KioskScreen>
     // Lockdown Mode (discussion #143): mount or drop the touch shield. On
     // enable, take back whatever a person had open on the device — drawer,
     // settings route, launcher — so nothing usable outlives the flip.
-    if (e.key == defs.lockdownEnabled.key) {
+    if (e.key == defs.lockdownEnabled.key ||
+        e.key == defs.lockdownBlackout.key) {
       setState(() {});
-      if (e.value == true) {
+      _syncLockdownCover();
+      if (e.key == defs.lockdownEnabled.key && e.value == true) {
         if (_drawer.value > 0) _closeDrawer();
         if (_settingsOpen) Navigator.of(context).popUntil((r) => r.isFirst);
         c.launcher.visible.value = false;
@@ -322,6 +324,9 @@ class _KioskScreenState extends State<KioskScreen>
 
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
+    // A restart mid-lockdown (crash self-heal included) must come back with
+    // the blackout cover already reported, not wait for a setting to move.
+    _syncLockdownCover();
     // The Logs settings page offers the console too; it pops back to the
     // kiosk first, since the panel docks over the live page.
     _consoleReqSub = c.bus.on<WebConsoleRequested>().listen((_) {
@@ -588,6 +593,18 @@ class _KioskScreenState extends State<KioskScreen>
   /// counted natively so they land even though the WebView swallows its
   /// pointers. PIN first when one is set; the prize is just the menu —
   /// every escape route stays behind its own confirmation.
+  /// Blackout lockdown is an opaque cover over the dashboard; report it so
+  /// the WebView stops compositing underneath, same as the settings route
+  /// and the camera/DLNA overlays. The transparent shield must NOT freeze
+  /// the page — a glanceable locked dashboard is the whole point.
+  void _syncLockdownCover() {
+    c.browser.setCovered(
+      'lockdown',
+      covered: c.settings.get(defs.lockdownEnabled) &&
+          c.settings.get(defs.lockdownBlackout),
+    );
+  }
+
   Future<void> _onExitGesture(KioskExitGesture _) async {
     if (!mounted || _settingsOpen || _drawer.value > 0) return;
     // Under lockdown the gesture is the kiosk one plus two taps, and the
@@ -855,10 +872,14 @@ class _KioskScreenState extends State<KioskScreen>
                   CameraViewOverlay(container: c),
                   // Lockdown Mode's touch shield: topmost, above every
                   // overlay, so nothing on screen is tappable while it
-                  // holds. Transparent — the dashboard stays glanceable,
-                  // it just stops answering. The exit gesture still works:
+                  // holds. Transparent by default — the dashboard stays
+                  // glanceable, it just stops answering — or solid black
+                  // with the blackout toggle. The exit gesture still works:
                   // its taps are counted natively before Flutter sees them.
-                  if (c.kiosk.lockdownActive) const LockdownShield(),
+                  if (c.kiosk.lockdownActive)
+                    LockdownShield(
+                      blackout: c.settings.get(defs.lockdownBlackout),
+                    ),
                 ],
               ),
             );

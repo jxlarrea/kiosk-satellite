@@ -671,6 +671,21 @@ const lockdownEnabled = SettingDef<bool>(
   category: 'Lockdown',
 );
 
+// The blackout variant: the same shield painted solid black. The panel
+// stays lit (turning it off would freeze the app and the admin server
+// with it, same reasoning as the screensaver's black mode) but the
+// dashboard WebView stops compositing underneath via the covered-surface
+// freeze, so a blacked-out lockdown costs less power than a visible one.
+const lockdownBlackout = SettingDef<bool>(
+  key: 'lockdown.blackout',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Blackout screen',
+  description: 'Turns the screen black while locked.',
+  category: 'Lockdown',
+  dependsOn: 'lockdown.enabled',
+);
+
 const lockdownExitGesture = SettingDef<String>(
   key: 'lockdown.exit_gesture',
   type: SettingType.select,
@@ -2908,6 +2923,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowTheme,
   kioskAllowApps,
   lockdownEnabled,
+  lockdownBlackout,
   lockdownExitGesture,
   launcherEnabled,
   launcherApps,

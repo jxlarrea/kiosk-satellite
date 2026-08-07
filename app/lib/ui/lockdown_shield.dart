@@ -15,8 +15,14 @@ import 'theme.dart';
 /// The lockdown exit gesture is counted natively at the Activity
 /// (KioskLock.kt sees every pointer before Flutter does), so the taps
 /// that end the mode land regardless of what is mounted here.
+///
+/// With [blackout] the same shield paints solid black instead: nothing to
+/// see and nothing to touch. The kiosk screen reports the covered surface
+/// to the browser so the dashboard stops compositing underneath.
 class LockdownShield extends StatefulWidget {
-  const LockdownShield({super.key});
+  const LockdownShield({super.key, this.blackout = false});
+
+  final bool blackout;
 
   @override
   State<LockdownShield> createState() => _LockdownShieldState();
@@ -46,37 +52,40 @@ class _LockdownShieldState extends State<LockdownShield> {
       child: Listener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: _onPointerDown,
-        child: Align(
-          // Low on the screen, clear of dashboard headers and the
-          // screensaver clock positions alike.
-          alignment: const Alignment(0, 0.82),
-          child: IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: _pillVisible ? 1 : 0,
-              duration: const Duration(milliseconds: 250),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(Ks.radiusCard),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
-                      size: 18,
-                      color: Colors.white70,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Screen is locked',
-                      style: TextStyle(color: Colors.white, fontSize: 14.5),
-                    ),
-                  ],
+        child: ColoredBox(
+          color: widget.blackout ? Colors.black : Colors.transparent,
+          child: Align(
+            // Low on the screen, clear of dashboard headers and the
+            // screensaver clock positions alike.
+            alignment: const Alignment(0, 0.82),
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _pillVisible ? 1 : 0,
+                duration: const Duration(milliseconds: 250),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(Ks.radiusCard),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.lock_outline,
+                        size: 18,
+                        color: Colors.white70,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Screen is locked',
+                        style: TextStyle(color: Colors.white, fontSize: 14.5),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

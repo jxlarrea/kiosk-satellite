@@ -3471,9 +3471,10 @@ async function loadSettings() {
       'font-size:12.5px; color:var(--muted); margin:10px 20px 0; ' +
       'line-height:1.5';
     note.textContent =
-      'Lockdown Mode arms every Kiosk Mode protection without changing ' +
-      'your Kiosk Mode settings, and mutes wake word detection while it ' +
-      'is on. Home Assistant gets a Lockdown mode switch over MQTT.';
+      'Lockdown Mode makes the dashboard non-interactive, arms every ' +
+      'Kiosk Mode protection without changing your Kiosk Mode settings, ' +
+      'and mutes wake word detection while it is on. Home Assistant gets ' +
+      'a Lockdown mode switch over MQTT.';
     document.getElementById('tab-lockdown').appendChild(note);
   }
   // The master fader tops the Audio Volume card, mirroring the device: the
