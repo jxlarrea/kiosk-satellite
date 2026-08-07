@@ -567,7 +567,7 @@
         </button>
         <button data-tab="lockdown">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 9.5C8 19.4 5 15.6 5 11V6l7-3z"/><rect x="9.5" y="10" width="5" height="4.5" rx="1"/><path d="M10.7 10V8.8a1.3 1.3 0 0 1 2.6 0V10"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Lockdown Mode</span><span class="nav-sub">Make the screen untouchable</span></span>
+          <span class="nav-text"><span class="nav-title">Lockdown Mode</span><span class="nav-sub">Disable screen interactions</span></span>
         </button>
         <button data-tab="launcher">
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.5"/><rect x="14" y="4" width="6" height="6" rx="1.5"/><rect x="4" y="14" width="6" height="6" rx="1.5"/><rect x="14" y="14" width="6" height="6" rx="1.5"/></svg></span>
@@ -3462,24 +3462,6 @@ async function loadSettings() {
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
 
-  // ── Lockdown Mode note ────────────────────────────────────────────────
-  // The gesture and toggle rows carry their own descriptions; this only
-  // states what the rows cannot: the side effects.
-  {
-    const note = document.createElement('div');
-    note.style.cssText =
-      'font-size:12.5px; color:var(--muted); margin:10px 20px 0; ' +
-      'line-height:1.5';
-    note.textContent =
-      'Lockdown Mode makes the dashboard non-interactive, arms every ' +
-      'Kiosk Mode protection without changing your Kiosk Mode settings, ' +
-      'and mutes wake word detection while it is on. With the System UI ' +
-      'guard enabled (below), the notification shade and recents are ' +
-      'blocked too. Home Assistant gets a Lockdown mode switch over ' +
-      'MQTT.';
-    document.getElementById('tab-lockdown').appendChild(note);
-  }
-
   // ── Required system permissions (Kiosk and Lockdown tabs) ────────────
   // Same shape as the Voice Satellite group: a row per grant with its
   // status, in its own card at the end of the tab. Unlike those, both of
@@ -3573,6 +3555,25 @@ async function loadSettings() {
           + 'Enable Kiosk Satellite under Accessibility on the tablet.',
         'Open settings on device', openGuard, pollGuard),
     ]);
+  }
+
+  // ── Lockdown Mode note ────────────────────────────────────────────────
+  // The gesture and toggle rows carry their own descriptions; this only
+  // states what the rows cannot: the side effects. Last on the tab, under
+  // the permissions group.
+  {
+    const note = document.createElement('div');
+    note.style.cssText =
+      'font-size:12.5px; color:var(--muted); margin:10px 20px 0; ' +
+      'line-height:1.5';
+    note.textContent =
+      'Lockdown Mode makes the dashboard non-interactive, arms every ' +
+      'Kiosk Mode protection without changing your Kiosk Mode settings, ' +
+      'and mutes wake word detection while it is on. With the System UI ' +
+      'guard enabled (above), the notification shade and recents are ' +
+      'blocked too. Home Assistant gets a Lockdown mode switch over ' +
+      'MQTT.';
+    document.getElementById('tab-lockdown').appendChild(note);
   }
   // The master fader tops the Audio Volume card, mirroring the device: the
   // live device volume, not a setting, so it is hand-built over the

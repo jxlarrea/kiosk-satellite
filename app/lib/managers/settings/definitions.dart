@@ -666,8 +666,8 @@ const lockdownEnabled = SettingDef<bool>(
   defaultValue: false,
   title: 'Enable Lockdown Mode',
   description:
-      'Makes the screen untouchable until turned off here, from Home '
-      'Assistant, or with the exit gesture.',
+      'Disables screen interactions until turned off either from Home '
+      'Assistant or with the exit gesture.',
   category: 'Lockdown',
 );
 
