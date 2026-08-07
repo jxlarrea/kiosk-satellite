@@ -1,7 +1,8 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 import 'dart:io';
 
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/command_registry.dart';
@@ -22,10 +23,14 @@ import '../settings/settings_manager.dart';
 ///
 /// iOS has no self-lockdown for ordinary apps (Guided Access is the OS's
 /// answer), so everything here is Android-only and quietly inert elsewhere.
-class KioskManager extends Manager {
+class KioskManager extends Manager with WidgetsBindingObserver {
   KioskManager(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
+
+  /// Armed when the app loses the foreground under lockdown; see
+  /// [didChangeAppLifecycleState].
+  Timer? _reclaimTimer;
 
   static const _channel = MethodChannel('kiosk_satellite/kiosk_lock');
 
@@ -308,6 +313,8 @@ class KioskManager extends Manager {
 
     if (!Platform.isAndroid) return;
 
+    WidgetsBinding.instance.addObserver(this);
+
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'ready':
@@ -353,6 +360,44 @@ class KioskManager extends Manager {
     await _apply();
   }
 
+  /// The unpinned half of lockdown's home protection: if the app loses the
+  /// foreground while the mode holds (a transient-bar Home or Recents, an
+  /// app another automation raised), pull it straight back. Same
+  /// bringToFront the launcher's auto-return rides on, so it needs the
+  /// same draw-over-apps grant, and it keeps retrying until it lands or
+  /// the mode ends.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      if (!lockdownActive) return;
+      _reclaimTimer?.cancel();
+      _reclaimTimer = Timer(const Duration(seconds: 1), _reclaimForeground);
+    } else if (state == AppLifecycleState.resumed) {
+      _reclaimTimer?.cancel();
+      _reclaimTimer = null;
+    }
+  }
+
+  Future<void> _reclaimForeground() async {
+    if (!lockdownActive ||
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+      return;
+    }
+    log.info(name, 'lockdown: reclaiming the foreground');
+    final result = await commands.execute('bringToFront', const {});
+    if (result.data == false) {
+      log.warn(name, 'lockdown reclaim needs the draw-over-apps grant');
+    }
+    _reclaimTimer = Timer(const Duration(seconds: 5), _reclaimForeground);
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
+    _reclaimTimer?.cancel();
+    _reclaimTimer = null;
+  }
+
   /// Push the armed flags to the Activity. With [force] false the bundle is
   /// all-off regardless of settings (used on exit, where staying pinned
   /// would block the app from closing).
@@ -377,6 +422,11 @@ class KioskManager extends Manager {
     final shieldGranted = lockdown &&
         !_settings.get(defs.kioskDisableStatusBar) &&
         (await _invoke<bool>('hasOverlayPermission') ?? false);
+    // The pin the owner asked for themselves, consent dialog and all;
+    // distinct from the pin lockdown would add on top.
+    final kioskHome = force &&
+        _settings.get(defs.kioskEnabled) &&
+        _settings.get(defs.kioskDisableHome);
     await _invoke<void>('apply', {
       // Back and the bar-blink watcher are tied to the master switch, not
       // their own toggles: a kiosk the back button can background — or one
@@ -387,7 +437,14 @@ class KioskManager extends Manager {
       'power': lockdown || (on && _settings.get(defs.kioskDisablePower)),
       'statusBar': shieldGranted ||
           (on && _settings.get(defs.kioskDisableStatusBar)),
-      'home': lockdown || (on && _settings.get(defs.kioskDisableHome)),
+      'home': lockdown || kioskHome,
+      // Without device ownership, pinning pops a consent dialog with a
+      // "No thanks" button and printed unpin instructions — every time,
+      // and shown to exactly the person lockdown is meant to lock out.
+      // When the pin demand comes only from lockdown, pin silently
+      // (device owner) or not at all; the lifecycle watchdog reclaims
+      // the foreground instead.
+      'homeSilent': lockdown && !kioskHome,
       'gestureTaps': !on ? 0 : gestureTapCount(gesture),
       // Hold-the-last-tap variants (issue #120): tapping a dashboard
       // button repeatedly can reach any count, but never ends in a

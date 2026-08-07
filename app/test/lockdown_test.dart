@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -49,6 +50,69 @@ void main() {
         defs.kioskExitGesture.options,
       );
       expect(defs.lockdownExitGesture.dependsOn, defs.lockdownEnabled.key);
+    });
+  });
+
+  group('foreground watchdog under lockdown', () {
+    late EventBus bus;
+    late CommandRegistry commands;
+    late SettingsManager settings;
+    late KioskManager kiosk;
+    late int reclaims;
+
+    Future<void> build(Map<String, Object> initial) async {
+      SharedPreferences.setMockInitialValues(initial);
+      bus = EventBus();
+      final log = Logger();
+      commands = CommandRegistry(log);
+      settings = SettingsManager(bus, commands, log);
+      await settings.init();
+      kiosk = KioskManager(bus, commands, log, settings);
+      await kiosk.init();
+      reclaims = 0;
+      commands.register(
+        Command(
+          name: 'bringToFront',
+          description: 'test stub',
+          handler: (_) async {
+            reclaims++;
+            return const CommandResult.ok(true);
+          },
+        ),
+      );
+      // The watchdog rechecks the binding's lifecycle before acting; make
+      // it agree the app is genuinely backgrounded.
+      WidgetsBinding.instance
+          .handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    }
+
+    tearDown(() async {
+      await kiosk.dispose();
+      WidgetsBinding.instance
+          .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    });
+
+    test('a pause while lockdown holds pulls the app back', () async {
+      await build({'ks.lockdown.enabled': true});
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 1);
+    });
+
+    test('a pause without lockdown is left alone', () async {
+      await build({});
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 0);
+    });
+
+    test('resuming inside the grace period disarms it', () async {
+      await build({'ks.lockdown.enabled': true});
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      expect(reclaims, 0);
     });
   });
 

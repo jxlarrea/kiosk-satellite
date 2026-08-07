@@ -126,7 +126,10 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                         call.argument<List<Map<String, Any?>>>("gestures"))
                     setWakeOnScreenOff(call.argument<Boolean>("power") ?: false)
                     setShield(call.argument<Boolean>("statusBar") ?: false)
-                    setPinned(call.argument<Boolean>("home") ?: false)
+                    setPinned(
+                        call.argument<Boolean>("home") ?: false,
+                        call.argument<Boolean>("homeSilent") ?: false,
+                    )
                     setBarWatch(call.argument<Boolean>("bars") ?: false)
                     // Not a lockdown flag; it rides this channel because the
                     // channel already re-pushes on every settings change and
@@ -360,7 +363,7 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
         }
     }
 
-    private fun setPinned(enabled: Boolean) {
+    private fun setPinned(enabled: Boolean, silentOnly: Boolean) {
         val am = activity.getSystemService(ActivityManager::class.java)
         val pinned =
             am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
@@ -373,7 +376,17 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                 // from the bar. Without it, plain screen pinning: the
                 // ceiling Android sets for a store app.
                 val dpm = activity.getSystemService(DevicePolicyManager::class.java)
-                if (dpm.isDeviceOwnerApp(activity.packageName)) {
+                val owner = dpm.isDeviceOwnerApp(activity.packageName)
+                // Plain pinning is consent-gated: SystemUI holds the pin
+                // until whoever is at the screen answers a dialog that
+                // offers "No thanks" and spells out the unpin gesture —
+                // every entry, not just the first. A silent-only request
+                // (lockdown, flipped remotely with nobody cooperative in
+                // front of the device) therefore pins only on the device
+                // owner path; Dart covers the gap by reclaiming the
+                // foreground when the app loses it.
+                if (silentOnly && !owner) return
+                if (owner) {
                     val admin = ComponentName(activity, KioskAdminReceiver::class.java)
                     dpm.setLockTaskPackages(admin, arrayOf(activity.packageName))
                     if (Build.VERSION.SDK_INT >= 28) {
