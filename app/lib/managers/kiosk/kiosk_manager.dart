@@ -47,15 +47,12 @@ class KioskManager extends Manager {
   /// instead of opening the menu.
   bool get lockdownActive => _settings.get(defs.lockdownEnabled);
 
-  /// The tap count the exit gesture needs, derived rather than configured:
-  /// under lockdown it is the kiosk gesture plus two taps, so the two can
-  /// never collide whatever variant the owner picked. A kiosk gesture of
-  /// 'none' stays none under lockdown too; the owner chose remote-only
-  /// escape and lockdown respects it.
-  static int exitGestureTaps(String gesture, {required bool lockdown}) =>
-      switch (gesture) {
-        'taps5' || 'taps5hold' => lockdown ? 7 : 5,
-        'taps7' || 'taps7hold' => lockdown ? 9 : 7,
+  /// Taps a gesture variant needs; 0 disables the counter. Lockdown and
+  /// kiosk each pick their own variant, but only one is armed at a time —
+  /// the lockdown gesture replaces the kiosk one while the mode holds.
+  static int gestureTapCount(String gesture) => switch (gesture) {
+        'taps5' || 'taps5hold' => 5,
+        'taps7' || 'taps7hold' => 7,
         _ => 0,
       };
 
@@ -332,7 +329,7 @@ class KioskManager extends Manager {
     bus.on<SettingChanged>().listen((e) async {
       if (!e.key.startsWith('kiosk.') &&
           !e.key.startsWith('gestures.') &&
-          e.key != defs.lockdownEnabled.key &&
+          !e.key.startsWith('lockdown.') &&
           e.key != defs.browserCutoutMode.key) {
         return;
       }
@@ -366,7 +363,12 @@ class KioskManager extends Manager {
     // the owner configured, kiosk mode on or off.
     final lockdown = force && _settings.get(defs.lockdownEnabled);
     final on = (force && _settings.get(defs.kioskEnabled)) || lockdown;
-    final gesture = _settings.get(defs.kioskExitGesture);
+    // One gesture slot on the native side: while lockdown holds, its own
+    // exit gesture is armed and the kiosk one stands down (the menu it
+    // would open is unreachable under the shield anyway).
+    final gesture = lockdown
+        ? _settings.get(defs.lockdownExitGesture)
+        : _settings.get(defs.kioskExitGesture);
     // The status-bar shield needs the draw-over-apps grant. The kiosk
     // toggle requests it interactively at enable time; lockdown is flipped
     // remotely with nobody cooperative in front of the device, so it takes
@@ -386,8 +388,7 @@ class KioskManager extends Manager {
       'statusBar': shieldGranted ||
           (on && _settings.get(defs.kioskDisableStatusBar)),
       'home': lockdown || (on && _settings.get(defs.kioskDisableHome)),
-      'gestureTaps':
-          !on ? 0 : exitGestureTaps(gesture, lockdown: lockdown),
+      'gestureTaps': !on ? 0 : gestureTapCount(gesture),
       // Hold-the-last-tap variants (issue #120): tapping a dashboard
       // button repeatedly can reach any count, but never ends in a
       // deliberate hold.

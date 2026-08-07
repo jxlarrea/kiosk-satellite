@@ -475,7 +475,8 @@ class WakeWordManager extends Manager {
   Future<void> init() async {
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.wakeWordEnabled.key ||
-          e.key == defs.wakeWordBackground.key) {
+          e.key == defs.wakeWordBackground.key ||
+          e.key == defs.lockdownEnabled.key) {
         _sync();
       } else if (e.key == defs.audioMicDevice.key) {
         // The engine reads its capture device when the mic opens, so a new
@@ -884,7 +885,12 @@ class WakeWordManager extends Manager {
   /// pauses detection: tearing the engine down per wake would re-download and
   /// recompile every model, and would drop the mic the page is streaming from.
   Future<void> _sync() async {
-    final shouldRun = enabled && available;
+    // Lockdown Mode mutes the microphone too: a locked tablet should not
+    // answer voice any more than touch. The engine stops (mic closed) and
+    // comes back through this same sync when the mode lifts, exactly as if
+    // the wake word toggle had been flipped, without touching the setting.
+    final shouldRun =
+        enabled && available && !_settings.get(defs.lockdownEnabled);
     // A config that switched runners (vsWakeWord -> microWakeWord) leaves the
     // previous engine running and holding the mic. Stop it before starting the
     // new one, or two engines fight over the microphone.

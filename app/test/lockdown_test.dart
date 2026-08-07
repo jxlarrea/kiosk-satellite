@@ -16,24 +16,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('exit gesture derivation', () {
-    test('kiosk gesture keeps its own count', () {
-      expect(KioskManager.exitGestureTaps('taps5', lockdown: false), 5);
-      expect(KioskManager.exitGestureTaps('taps7', lockdown: false), 7);
-      expect(KioskManager.exitGestureTaps('taps5hold', lockdown: false), 5);
-      expect(KioskManager.exitGestureTaps('taps7hold', lockdown: false), 7);
-    });
-
-    test('lockdown is the kiosk gesture plus two taps', () {
-      expect(KioskManager.exitGestureTaps('taps5', lockdown: true), 7);
-      expect(KioskManager.exitGestureTaps('taps7', lockdown: true), 9);
-      expect(KioskManager.exitGestureTaps('taps5hold', lockdown: true), 7);
-      expect(KioskManager.exitGestureTaps('taps7hold', lockdown: true), 9);
-    });
-
-    test('a disabled kiosk gesture stays disabled under lockdown', () {
-      expect(KioskManager.exitGestureTaps('none', lockdown: false), 0);
-      expect(KioskManager.exitGestureTaps('none', lockdown: true), 0);
+  group('exit gesture tap counts', () {
+    test('each variant maps to its count; none disables', () {
+      expect(KioskManager.gestureTapCount('taps5'), 5);
+      expect(KioskManager.gestureTapCount('taps7'), 7);
+      expect(KioskManager.gestureTapCount('taps5hold'), 5);
+      expect(KioskManager.gestureTapCount('taps7hold'), 7);
+      expect(KioskManager.gestureTapCount('none'), 0);
     });
   });
 
@@ -43,6 +32,16 @@ void main() {
       expect(defs.lockdownEnabled.defaultValue, false);
       expect(defs.lockdownEnabled.category, 'Lockdown');
       expect(defs.lockdownEnabled.hidden, false);
+    });
+
+    test('lockdown.exit_gesture mirrors the kiosk options and gates on '
+        'the toggle', () {
+      expect(defs.allSettings, contains(defs.lockdownExitGesture));
+      expect(
+        defs.lockdownExitGesture.options,
+        defs.kioskExitGesture.options,
+      );
+      expect(defs.lockdownExitGesture.dependsOn, defs.lockdownEnabled.key);
     });
   });
 

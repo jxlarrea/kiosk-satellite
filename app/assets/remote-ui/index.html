@@ -3462,35 +3462,19 @@ async function loadSettings() {
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
 
-  // ── Lockdown Mode explainer ───────────────────────────────────────────
-  // Everything about the mode derives from Kiosk Mode (gesture, PIN), so
-  // the page spells out what the single toggle will actually do, with the
-  // exit gesture computed from the CURRENT kiosk settings rather than
-  // described abstractly.
+  // ── Lockdown Mode note ────────────────────────────────────────────────
+  // The gesture and toggle rows carry their own descriptions; this only
+  // states what the rows cannot: the side effects.
   {
-    const root = document.getElementById('tab-lockdown');
-    const gesture = byKey['kiosk.exit_gesture']?.value || 'taps7';
-    const taps = { taps5: 7, taps5hold: 7, taps7: 9, taps7hold: 9 }[gesture];
-    const hold = String(gesture).endsWith('hold');
-    const pinSet = byKey['kiosk.pin']?.value === '__set__';
-    const exitText = taps
-      ? `On the device, ${taps} fast taps anywhere` +
-        `${hold ? ', holding the last tap down,' : ''} turn it off` +
-        `${pinSet ? ' after the kiosk PIN' : ''}. That is the Kiosk Mode ` +
-        'exit gesture plus two taps, so the two never collide.'
-      : 'The Kiosk Mode exit gesture is set to Disabled, so Lockdown Mode ' +
-        'can only be turned off from here or from Home Assistant.';
     const note = document.createElement('div');
     note.style.cssText =
       'font-size:12.5px; color:var(--muted); margin:10px 20px 0; ' +
       'line-height:1.5';
     note.textContent =
-      'While on, the screen stops responding to touch and every Kiosk ' +
-      'Mode protection arms, whatever its own switch says. Kiosk settings ' +
-      'are not changed; turning Lockdown Mode off returns the device to ' +
-      'them. ' + exitText + ' Home Assistant gets a Lockdown mode switch ' +
-      'over MQTT.';
-    root.appendChild(note);
+      'Lockdown Mode arms every Kiosk Mode protection without changing ' +
+      'your Kiosk Mode settings, and mutes wake word detection while it ' +
+      'is on. Home Assistant gets a Lockdown mode switch over MQTT.';
+    document.getElementById('tab-lockdown').appendChild(note);
   }
   // The master fader tops the Audio Volume card, mirroring the device: the
   // live device volume, not a setting, so it is hand-built over the
