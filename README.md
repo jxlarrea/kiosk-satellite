@@ -210,6 +210,7 @@ from the default HACS repository.
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the Black and Clock screensavers.
+- [Kiosk and Lockdown](docs/kiosk.md): Kiosk Mode's protections, Lockdown Mode, the grants they need, and the device owner tier.
 - [Gestures](docs/gestures.md): touch gestures mapped to configurable actions.
 - [Microphone](docs/microphone.md): capture mode, gain and AGC, for devices whose microphone reads too quiet.
 - [Optimizations](docs/optimizations.md): the connection and performance switches, what each one does and when to use it.
