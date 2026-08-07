@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.9 - 2026-08-07
 
 ### Changed
 - The Clear cache and Restart app buttons in Home Assistant moved from the device's Configuration area to Controls, where day-to-day actions belong. Existing devices migrate on their own, keeping entity ids and customizations.
