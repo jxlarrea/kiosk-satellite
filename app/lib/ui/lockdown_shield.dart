@@ -4,12 +4,18 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-/// Lockdown Mode's touch shield (discussion #143).
+/// Lockdown Mode's in-app touch shield (discussion #143).
 ///
 /// A transparent, opaque-to-hit-testing layer mounted topmost on the kiosk
 /// stack: the dashboard stays fully glanceable underneath, it just stops
 /// answering. A tap is acknowledged with a transient "Screen is locked"
 /// pill, so a locked tablet reads as locked instead of broken.
+///
+/// This is the fallback layer: the primary shield is the screen-level
+/// draw-over-apps window (LockShieldOverlay.kt), which covers the whole
+/// display and normally consumes every touch before it reaches Flutter.
+/// This widget matters when the overlay grant is missing, and during the
+/// exit gesture's PIN prompt, when the overlay lets touches through.
 ///
 /// The shield deliberately swallows pointers at the Flutter layer only.
 /// The lockdown exit gesture is counted natively at the Activity

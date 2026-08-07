@@ -137,6 +137,15 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                         call.argument<Boolean>("a11yShade") ?: false
                     KioskAccessibilityService.guardRecents =
                         call.argument<Boolean>("a11yRecents") ?: false
+                    // The screen-level lockdown shield. Its window consumes
+                    // every touch, so the exit-gesture counter is fed from
+                    // there instead of the Activity while it is up.
+                    LockShieldOverlay.onTouch = { ev -> onTouch(ev) }
+                    LockShieldOverlay.sync(
+                        activity.applicationContext,
+                        call.argument<Boolean>("lockShield") ?: false,
+                        call.argument<Boolean>("lockBlackout") ?: false,
+                    )
                     // Not a lockdown flag; it rides this channel because the
                     // channel already re-pushes on every settings change and
                     // to every new Activity. MainActivity.onCreate seeds the
@@ -150,6 +159,13 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     result.success(Settings.canDrawOverlays(activity))
                 "hasUiGuard" ->
                     result.success(KioskAccessibilityService.running)
+                "lockShieldPassThrough" -> {
+                    LockShieldOverlay.setPassThrough(
+                        activity.applicationContext,
+                        call.argument<Boolean>("value") ?: false,
+                    )
+                    result.success(null)
+                }
                 "openUiGuardSettings" -> {
                     activity.startActivity(
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
@@ -421,6 +437,10 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
         gestures.reset()
         setBarWatch(false)
         setShield(false)
+        // The lock shield outlives the Activity on purpose (it holds the
+        // screen while the reclaim watchdog rebuilds the kiosk); only the
+        // stale tap hook is dropped. The next Activity re-hooks in apply.
+        LockShieldOverlay.onTouch = null
         screenOffReceiver?.let { activity.unregisterReceiver(it) }
         screenOffReceiver = null
         channel.setMethodCallHandler(null)

@@ -75,6 +75,11 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   /// Open Android's Accessibility settings, where the guard is enabled.
   Future<void> openUiGuardSettings() => _invoke<void>('openUiGuardSettings');
 
+  /// Let touches through the screen-level lockdown shield (or stop again):
+  /// the exit gesture's PIN dialog is ordinary Flutter UI underneath it.
+  Future<void> setLockShieldPassThrough(bool value) =>
+      _invoke<void>('lockShieldPassThrough', {'value': value});
+
   @override
   Future<void> init() async {
     commands.register(
@@ -473,6 +478,12 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       'a11yShade':
           lockdown || (on && _settings.get(defs.kioskDisableStatusBar)),
       'a11yRecents': lockdown,
+      // The screen-level shield (draw-over-apps): covers the whole display
+      // above every app, so escaping the kiosk buys a screen that still
+      // does not answer. Falls back to the in-app Flutter shield alone
+      // when the overlay grant is missing (the native side checks).
+      'lockShield': lockdown,
+      'lockBlackout': lockdown && _settings.get(defs.lockdownBlackout),
       // Hold-the-last-tap variants (issue #120): tapping a dashboard
       // button repeatedly can reach any count, but never ends in a
       // deliberate hold.

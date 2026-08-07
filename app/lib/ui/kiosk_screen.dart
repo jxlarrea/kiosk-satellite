@@ -607,13 +607,17 @@ class _KioskScreenState extends State<KioskScreen>
 
   Future<void> _onExitGesture(KioskExitGesture _) async {
     if (!mounted || _settingsOpen || _drawer.value > 0) return;
-    // Under lockdown the gesture is the kiosk one plus two taps, and the
-    // prize is not the menu but the mode's end — behind the kiosk PIN,
-    // exactly as the menu would be. The shield never swallows this: the
-    // taps are counted natively at the Activity, below the Flutter tree.
+    // Under lockdown the armed gesture is lockdown's own, and the prize is
+    // not the menu but the mode's end — behind the kiosk PIN, exactly as
+    // the menu would be. The shields never swallow the taps: they are
+    // counted natively, at the screen-level overlay when it is up and at
+    // the Activity otherwise. The PIN dialog lives underneath that
+    // overlay, so it lets touches through for the prompt's duration.
     if (c.kiosk.lockdownActive) {
       if (c.kiosk.pinRequired) {
+        await c.kiosk.setLockShieldPassThrough(true);
         final ok = await _askPin();
+        await c.kiosk.setLockShieldPassThrough(false);
         if (!ok || !mounted) return;
       }
       await c.settings.set(defs.lockdownEnabled, false);
