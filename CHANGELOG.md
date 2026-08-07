@@ -5,7 +5,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- The Clock screensaver's background photo can be set from Home Assistant (#150): a new Clock background text entity over MQTT holds the image's file path on the device, so automations can rotate the picture behind the clock, push an alert image, or clear it back to the solid color with an empty value. Writing a path overwrites the photo picked on the device, a path that does not exist yet simply shows no background until the file appears, and changes apply live while the clock is on screen. The Remote Administration UI's Background photo row edits the same path as a text field now, where it used to just say a photo was selected on the device. Getting the images onto the device is out of scope; the remote admin's File Manager can upload them.
 - A Hide all extras toggle for the Black screensaver (#151): with it on, Black shows nothing at all, hiding the small clock, the At a Glance entities and any other overlay, so a kiosk that schedules Black overnight looks fully off without unconfiguring those extras for the night. The toggle appears in a Black group under the screensaver mode picker whenever the mode is Black, on the device and in the Remote Administration UI alike, and it is off by default.
+
+### Changed
+- The Clock screensaver's background photo now fills the screen the way the photo screensavers do: a photo shaped close enough to the panel covers it edge to edge, and one that keeps its full frame sits over itself blurred and dimmed instead of being cropped, so a portrait photo behind a landscape clock no longer loses its top and bottom. A background changed while the clock is on screen also applies immediately now, instead of waiting for the next minute tick.
 
 ## v2026.8.6 - 2026-08-07
 

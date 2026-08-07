@@ -56,6 +56,7 @@ tablet's remote admin (while remote administration is enabled).
 | HA kiosk mode | switch | Hides the Home Assistant header and sidebar. On maps to the `auto` mode; a hand-picked `plugin`/`css` choice is left alone until the switch is actually flipped. The HA kiosk method select below is where a specific strategy can be picked. |
 | Screensaver mode | select | What the screensaver shows after the idle timeout, as a dropdown of the same modes the Screensaver settings page offers (Clock, Immich Media, Website and so on). Handy for automations that, say, switch to a camera at night and back to photos in the morning. |
 | Clock style | select | The face of the Clock screensaver: Digital Clock, Flip Clock or Roller Clock. Only takes effect while the screensaver mode is Clock. |
+| Clock background | text | The Clock screensaver's background photo (issue #150), as a file path on the device. Writing a path shows that image behind the clock, overwriting whatever photo was picked on the device; an empty value clears the background back to the solid color. Getting the image onto the device is up to you (the remote admin's File Manager can upload one); a path that does not exist simply shows no background, and starts showing the moment the file appears. Changes apply live, even while the clock is on screen. |
 | HA kiosk method | select | The full HA kiosk mode choice (Off, Auto, Plugin, CSS). The HA kiosk mode switch is the simple toggle; this is the dropdown for picking a specific strategy. |
 | Keep screen on | switch | The keep-awake setting. |
 | Remote management | switch | The embedded admin web server. Turning it off from Home Assistant closes the remote admin. |
@@ -104,6 +105,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../assistant_volume/state`, `.../assistant_volume/set` | out / in | `0`..`100` |
 | `.../media_volume/state`, `.../media_volume/set` | out / in | `0`..`100` |
 | `.../screensaver_mode/…`, `.../screensaver_clock_style/…`, `.../ha_kiosk_method/…` | out / in | the selected option (`state` and `set` each). State carries the display label (e.g. `Immich Media`); `set` accepts the label or the stored value (e.g. `immich`). |
+| `.../clock_background/state`, `.../clock_background/set` | out / in | a device-local file path shown behind the Clock screensaver; empty clears it |
 | `.../reload/set`, `.../clear_cache/set`, `.../restart/set` | in | any payload presses the button |
 | `.../open_launcher/set` | in | Any non-retained payload opens the app launcher overlay |
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |

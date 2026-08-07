@@ -5604,20 +5604,13 @@ function settingRow(s) {
     if (changesLayout) await loadSettings();
   };
 
+  // The clock's background photo deliberately has no special case: the
+  // generic text input edits the file path directly, the same contract as
+  // the MQTT Clock background entity (issue #150) — a path in, empty
+  // clears. Picking from the device's photos still happens on the device.
+
   // The gallery selection lives on the device (system photo picker); the
   // remote shows the count, mirroring the device row's summary.
-  // The clock's background photo lives on the device and is picked there;
-  // remotely the row only reports whether one is set.
-  if (s.key === 'screensaver.clock_background') {
-    const val = document.createElement('span');
-    val.className = 'device';
-    val.textContent = s.value
-      ? 'Selected. Change on the device.'
-      : 'None selected. Pick on the device.';
-    row.appendChild(val);
-    return row;
-  }
-
   if (s.key === 'screensaver.gallery_items') {
     let count = 0;
     try { count = JSON.parse(s.value || '[]').length; } catch (_) {}

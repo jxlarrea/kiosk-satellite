@@ -1131,10 +1131,12 @@ const screensaverClockColor = SettingDef<String>(
   dependsOnValue: 'digital',
 );
 
-// A local photo behind the clock (issue #132), any face. Stored as the path
-// of a copy in app documents, made when the photo is picked; the original
-// may live in picker cache the OS purges. Picked on the device — the photos
-// are there, a remote browser cannot see them.
+// A local photo behind the clock (issue #132), any face. The device picker
+// stores the path of a copy in app documents, made when the photo is
+// picked; the original may live in picker cache the OS purges. The remote
+// admin and the MQTT Clock background entity (issue #150) write a raw
+// device path into the same setting instead — the renderer fails soft on
+// a missing file, so an unvalidated path costs nothing.
 const screensaverClockBackground = SettingDef<String>(
   key: 'screensaver.clock_background',
   type: SettingType.string,
@@ -1145,6 +1147,7 @@ const screensaverClockBackground = SettingDef<String>(
   section: 'Clock',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
+  placeholder: 'Path to an image on the device',
 );
 
 // One color pair per face rather than a shared one: visibility can only

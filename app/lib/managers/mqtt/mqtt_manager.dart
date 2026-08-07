@@ -399,6 +399,14 @@ class MqttManager extends Manager {
     });
   }
 
+  /// The Clock screensaver's background photo path (issue #150). Plain
+  /// pass-through of the setting: whatever picked the photo (the device
+  /// picker, an MQTT write), the HA text box shows the same path.
+  void _publishClockBackground() {
+    _publish('$_base/clock_background/state',
+        _settings.get(defs.screensaverClockBackground));
+  }
+
   void _publishScreensaverBrightnessLevel() {
     final level = _settings.get(defs.screensaverBrightnessLevel).toDouble();
     _publish('$_base/screensaver_brightness_level/state',
@@ -462,6 +470,12 @@ class MqttManager extends Manager {
     }
     if (e.key == defs.screensaverBrightnessLevel.key) {
       _publishScreensaverBrightnessLevel();
+      return;
+    }
+    if (e.key == defs.screensaverClockBackground.key) {
+      // Whatever surface set it (device picker, MQTT itself), the HA text
+      // box reflects it.
+      _publishClockBackground();
       return;
     }
     if (e.key == defs.assistantVolume.key) {
@@ -642,6 +656,7 @@ class MqttManager extends Manager {
       '$_base/open_launcher/set',
       '$_base/update/set',
       '$_base/screensaver_brightness_level/set',
+      '$_base/clock_background/set',
       '$_base/assistant_volume/set',
       '$_base/media_volume/set',
       '$_base/camera/view/set',
@@ -906,6 +921,14 @@ class MqttManager extends Manager {
         if (percent == null) continue;
         await _settings.set(defs.screensaverBrightnessLevel,
             percent.clamp(0, 100) / 100);
+      } else if (topic == '$_base/clock_background/set') {
+        // A device-local file path, overwriting the photo picked on the
+        // device (issue #150); empty clears the background. Not validated
+        // here: the renderer already fails soft on a missing file, and a
+        // path published before the file lands should start showing the
+        // moment it does.
+        log.info(name, 'command $topic = $text');
+        await _settings.set(defs.screensaverClockBackground, text.trim());
       } else if (topic == '$_base/assistant_volume/set') {
         log.info(name, 'command $topic = $text');
         final percent = num.tryParse(text);
@@ -1088,6 +1111,7 @@ class MqttManager extends Manager {
     _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
     _publishSettingSwitchStates();
     _publishSettingSelectStates();
+    _publishClockBackground();
     _publishScreensaverBrightnessLevel();
     _publishAssistantVolume();
     _publishMediaVolume();
@@ -1233,6 +1257,7 @@ class MqttManager extends Manager {
         '$_prefix/binary_sensor/ks_$_deviceId/motion/config',
         '$_prefix/select/ks_$_deviceId/dashboard_view/config',
         '$_prefix/sensor/ks_$_deviceId/admin_url/config',
+        '$_prefix/text/ks_$_deviceId/clock_background/config',
         '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
         '$_prefix/number/ks_$_deviceId/assistant_volume/config',
         '$_prefix/number/ks_$_deviceId/media_volume/config',
@@ -1587,6 +1612,16 @@ class MqttManager extends Manager {
         'command_topic': '$_base/update/set',
         'payload_install': 'install',
         'device_class': 'firmware',
+      },
+      // The Clock screensaver's background photo as a settable path
+      // (issue #150): automations rotate it among images already on the
+      // device. Writes land on the same setting the device picker uses.
+      '$_prefix/text/ks_$_deviceId/clock_background/config': {
+        ...common('clock_background', 'Clock background'),
+        'state_topic': '$_base/clock_background/state',
+        'command_topic': '$_base/clock_background/set',
+        'icon': 'mdi:image-frame',
+        'entity_category': 'config',
       },
       '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config': {
         ...common(

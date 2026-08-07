@@ -12,6 +12,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
+import '../core/events.dart';
 import '../core/locale_dates.dart';
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
 import '../managers/settings/definitions.dart' as defs;
@@ -175,6 +176,15 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   DateTime _now = DateTime.now();
   Offset _offset = Offset.zero;
 
+  /// The background photo, resolved off the path setting: the provider and
+  /// the aspect its fill treatment keys off. [_bgPath] is what they were
+  /// resolved FROM, so a changed path re-resolves and an unchanged one
+  /// costs nothing per rebuild.
+  String? _bgPath;
+  double? _bgAspect;
+  ImageProvider? _bgImage;
+  StreamSubscription<SettingChanged>? _bgSub;
+
   @override
   void initState() {
     super.initState();
@@ -183,6 +193,14 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
       // Nudge the whole face once a minute so a static clock cannot burn in.
       _shift = Timer.periodic(const Duration(minutes: 1), (_) => _nudge());
     }
+    // The face only rebuilds on clock ticks, a minute apart with seconds
+    // off — a background pushed over MQTT (issue #150) must not wait out
+    // the minute.
+    _bgSub = widget.container.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.screensaverClockBackground.key && mounted) {
+        setState(() {});
+      }
+    });
   }
 
   // Re-align to each wall-clock second (or minute, when seconds are not
@@ -226,6 +244,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   void dispose() {
     _tick?.cancel();
     _shift?.cancel();
+    _bgSub?.cancel();
     super.dispose();
   }
 
@@ -258,21 +277,114 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   // Dutch one.
   String _date() => fullDate(_now);
 
-  /// The background photo layers, or nothing when none is set (or the file
-  /// is gone — a restore onto another device brings the setting but not
-  /// the copy, and a missing file must not take the clock down with it).
-  List<Widget> _background(Size size, double dpr) {
-    final path = widget.container.settings.get(defs.screensaverClockBackground);
-    if (path.isEmpty) return const [];
+  /// Re-resolve the background provider when the path setting moved. A
+  /// missing file resolves to nothing but is not marked seen, so a path
+  /// published before its file lands (issue #150) starts showing on the
+  /// rebuild after the file appears; a restore onto another device, whose
+  /// setting names a copy that never came along, just keeps the solid
+  /// color instead of taking the clock down.
+  void _ensureBackground(String path, Size size, double dpr) {
+    if (path == _bgPath) return;
+    if (path.isEmpty) {
+      _bgPath = path;
+      _bgAspect = null;
+      _bgImage = null;
+      return;
+    }
     final file = File(path);
-    if (!file.existsSync()) return const [];
+    if (!file.existsSync()) {
+      _bgPath = null;
+      _bgAspect = null;
+      _bgImage = null;
+      return;
+    }
+    _bgPath = path;
+    unawaited(() async {
+      // The header read costs one pass over the file, but the bytes are
+      // hot in the page cache when FileImage decodes them, and knowing
+      // the aspect up front means the fill decision never flickers.
+      double? aspect;
+      try {
+        aspect = await _aspectOf(await file.readAsBytes());
+      } catch (_) {}
+      if (!mounted || _bgPath != path) return;
+      final old = _bgImage;
+      setState(() {
+        _bgAspect = aspect;
+        // Decoded at screen resolution, not the photo's — a 12MP shot
+        // would otherwise hold ~50MB of texture for the session.
+        _bgImage = ResizeImage(
+          FileImage(file),
+          width: (size.width * dpr).round(),
+        );
+      });
+      if (old != null) unawaited(old.evict());
+    }());
+  }
+
+  /// The background photo layers, or nothing when none is set. Fill the
+  /// screen, always on, the same recipe as the photo screensavers (issue
+  /// #130): a photo shaped close enough to the panel is cover-fitted edge
+  /// to edge (crop capped at a 1.45x ratio mismatch), one that keeps its
+  /// full frame gets itself, blurred and dimmed, as the backdrop instead
+  /// of black bars. The scrim on top keeps the clock and the row readable
+  /// over either.
+  List<Widget> _background(Size size, double dpr) {
+    _ensureBackground(
+      widget.container.settings.get(defs.screensaverClockBackground),
+      size,
+      dpr,
+    );
+    final image = _bgImage;
+    if (image == null) return const [];
+    final screen = size.width / size.height;
+    final photo = _bgAspect;
+    // An unreadable aspect (odd format) falls back to the cover fit the
+    // clock always used.
+    final covers =
+        photo == null || max(photo / screen, screen / photo) <= 1.45;
+    final picture = Image(
+      image: image,
+      fit: covers ? BoxFit.cover : BoxFit.contain,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+    );
     return [
-      Image.file(
-        file,
-        fit: BoxFit.cover,
-        cacheWidth: (size.width * dpr).round(),
-        errorBuilder: (_, _, _) => const SizedBox.shrink(),
-      ),
+      if (covers)
+        picture
+      else
+        Stack(
+          fit: StackFit.expand,
+          children: [
+            // Blur + scrim so the backdrop reads as atmosphere, not a
+            // second copy of the photo. ImageFiltered over the same
+            // provider, not BackdropFilter: a backdrop filter re-samples
+            // the scene every frame it composites, which on weak tablet
+            // GPUs is a standing 60fps blur tax.
+            RepaintBoundary(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ImageFiltered(
+                    imageFilter: ui.ImageFilter.blur(
+                      sigmaX: 40,
+                      sigmaY: 40,
+                      tileMode: ui.TileMode.clamp,
+                    ),
+                    child: Image(
+                      image: image,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (_, _, _) => const SizedBox.expand(),
+                    ),
+                  ),
+                  const ColoredBox(color: Color(0x99000000)),
+                ],
+              ),
+            ),
+            picture,
+          ],
+        ),
       const ColoredBox(color: Color(0x59000000)),
     ];
   }
