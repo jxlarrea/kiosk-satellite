@@ -131,6 +131,12 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                         call.argument<Boolean>("homeSilent") ?: false,
                     )
                     setBarWatch(call.argument<Boolean>("bars") ?: false)
+                    // The System UI guard, if the owner enabled it in
+                    // Accessibility settings; a no-op otherwise.
+                    KioskAccessibilityService.guardShade =
+                        call.argument<Boolean>("a11yShade") ?: false
+                    KioskAccessibilityService.guardRecents =
+                        call.argument<Boolean>("a11yRecents") ?: false
                     // Not a lockdown flag; it rides this channel because the
                     // channel already re-pushes on every settings change and
                     // to every new Activity. MainActivity.onCreate seeds the
@@ -142,6 +148,14 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                 }
                 "hasOverlayPermission" ->
                     result.success(Settings.canDrawOverlays(activity))
+                "hasUiGuard" ->
+                    result.success(KioskAccessibilityService.running)
+                "openUiGuardSettings" -> {
+                    activity.startActivity(
+                        Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    )
+                    result.success(null)
+                }
                 "requestOverlayPermission" -> {
                     activity.startActivity(
                         Intent(

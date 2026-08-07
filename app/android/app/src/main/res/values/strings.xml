@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown by Android under the service in Accessibility settings. -->
+    <string name="ui_guard_description">Closes the notification shade and
+        the recents screen whenever they open while Kiosk Mode or Lockdown
+        Mode is protecting the screen. Kiosk Satellite does not read any
+        screen content.</string>
+</resources>

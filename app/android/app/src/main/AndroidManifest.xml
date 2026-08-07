@@ -93,6 +93,21 @@
         <service
             android:name=".CrashGuardService"
             android:exported="false"/>
+        <!-- The System UI guard: closes the notification shade and recents
+             the moment they open while kiosk or lockdown protections hold.
+             Enabled by the owner, once, in Android's Accessibility settings;
+             inert until then. See KioskAccessibilityService. -->
+        <service
+            android:name=".KioskAccessibilityService"
+            android:exported="false"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/kiosk_accessibility"/>
+        </service>
         <receiver
             android:name=".CrashHeartbeatReceiver"
             android:exported="false"/>

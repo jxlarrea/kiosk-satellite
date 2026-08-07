@@ -3462,6 +3462,40 @@ async function loadSettings() {
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
 
+  // ── System UI guard row (Kiosk tab) ──────────────────────────────────
+  // Mirrors the device's row under the Kiosk Mode master switch: the
+  // accessibility service that closes the notification shade and recents
+  // while protections hold. Android only lets the person at the device
+  // enable it, so the remote shows the state and says where to go.
+  {
+    const anchor = document.querySelector(
+      '#tab-kiosk [data-key="kiosk.enabled"]');
+    if (anchor) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+      info.querySelector('.name').textContent = 'System UI guard';
+      info.querySelector('.desc').textContent = 'Checking...';
+      row.appendChild(info);
+      anchor.insertAdjacentElement('afterend', row);
+      api('/api/commands/hasUiGuard', { method: 'POST', body: '{}' })
+        .then((r) => r.json())
+        .then((res) => {
+          info.querySelector('.desc').textContent = res.data === true
+            ? 'On. The notification shade and recents close on their own '
+              + 'while the screen is protected.'
+            : 'Off. On the device, enable Kiosk Satellite under Android '
+              + 'Accessibility settings to close the notification shade '
+              + 'and recents while the screen is protected.';
+        })
+        .catch(() => {
+          info.querySelector('.desc').textContent = 'Status unavailable.';
+        });
+    }
+  }
+
   // ── Lockdown Mode note ────────────────────────────────────────────────
   // The gesture and toggle rows carry their own descriptions; this only
   // states what the rows cannot: the side effects.
@@ -3473,8 +3507,10 @@ async function loadSettings() {
     note.textContent =
       'Lockdown Mode makes the dashboard non-interactive, arms every ' +
       'Kiosk Mode protection without changing your Kiosk Mode settings, ' +
-      'and mutes wake word detection while it is on. Home Assistant gets ' +
-      'a Lockdown mode switch over MQTT.';
+      'and mutes wake word detection while it is on. With the System UI ' +
+      'guard enabled (see Kiosk Mode), the notification shade and recents ' +
+      'are blocked too. Home Assistant gets a Lockdown mode switch over ' +
+      'MQTT.';
     document.getElementById('tab-lockdown').appendChild(note);
   }
   // The master fader tops the Audio Volume card, mirroring the device: the

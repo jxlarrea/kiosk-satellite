@@ -66,6 +66,15 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   bool get pinRequired => _settings.get(defs.kioskPin).isNotEmpty;
   bool pinMatches(String pin) => pin == _settings.get(defs.kioskPin);
 
+  /// Whether the System UI guard (the accessibility service that closes
+  /// the notification shade and recents while protections hold) is enabled
+  /// in Android's Accessibility settings.
+  Future<bool> uiGuardEnabled() async =>
+      await _invoke<bool>('hasUiGuard') ?? false;
+
+  /// Open Android's Accessibility settings, where the guard is enabled.
+  Future<void> openUiGuardSettings() => _invoke<void>('openUiGuardSettings');
+
   @override
   Future<void> init() async {
     commands.register(
@@ -311,6 +320,17 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       ),
     );
 
+    commands.register(
+      Command(
+        name: 'hasUiGuard',
+        description:
+            'Whether the System UI guard accessibility service is enabled '
+            'in Android settings. The remote UI shows the status; enabling '
+            'it can only be done on the device.',
+        handler: (_) async => CommandResult.ok(await uiGuardEnabled()),
+      ),
+    );
+
     if (!Platform.isAndroid) return;
 
     WidgetsBinding.instance.addObserver(this);
@@ -446,6 +466,13 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       // the foreground instead.
       'homeSilent': lockdown && !kioskHome,
       'gestureTaps': !on ? 0 : gestureTapCount(gesture),
+      // The System UI guard (accessibility service, owner-enabled once in
+      // Android settings): shade slams shut whenever the status bar is
+      // being protected, recents bounces under lockdown. Kiosk mode's own
+      // recents defense stays the pin the owner consented to.
+      'a11yShade':
+          lockdown || (on && _settings.get(defs.kioskDisableStatusBar)),
+      'a11yRecents': lockdown,
       // Hold-the-last-tap variants (issue #120): tapping a dashboard
       // button repeatedly can reach any count, but never ends in a
       // deliberate hold.

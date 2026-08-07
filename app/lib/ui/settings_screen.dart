@@ -1143,6 +1143,11 @@ class _CategoryContentState extends State<_CategoryContent> {
               if (widget.category == 'Browser' &&
                   container.settings.get(autoReloadOnError))
                 autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
+              if (widget.category == 'Kiosk')
+                kioskEnabled.key: _UiGuardRow(
+                  container: container,
+                  key: UniqueKey(),
+                ),
               if (widget.category == 'Camera')
                 cameraEnabled.key: Column(
                   children: [
@@ -1688,6 +1693,63 @@ const _githubMark =
 /// itself back after a whole-process crash on Android 10+, and the toggle is
 /// where that surprise gets noticed. Hidden once granted; same shape as the
 /// camera row below.
+/// The System UI guard status row (mirrored in the remote UI's Kiosk tab):
+/// the accessibility service that closes the notification shade and recents
+/// whenever they open while kiosk or lockdown protections hold. Android
+/// only lets the person at the device enable it, so this row shows the
+/// state and opens the Accessibility settings screen.
+class _UiGuardRow extends StatefulWidget {
+  const _UiGuardRow({required this.container, super.key});
+
+  final AppContainer container;
+
+  @override
+  State<_UiGuardRow> createState() => _UiGuardRowState();
+}
+
+class _UiGuardRowState extends State<_UiGuardRow> {
+  bool? _enabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final enabled = await widget.container.kiosk.uiGuardEnabled();
+    if (!mounted) return;
+    setState(() => _enabled = enabled);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = _enabled;
+    if (enabled == null) return const SizedBox.shrink();
+    return ListTile(
+      title: const Text('System UI guard'),
+      subtitle: Text(
+        enabled
+            ? 'On. The notification shade and recents close on their own '
+                'while the screen is protected.'
+            : 'Closes the notification shade and recents while the screen '
+                'is protected. Enable Kiosk Satellite under Accessibility.',
+      ),
+      trailing: enabled
+          ? Icon(
+              Icons.check_circle_outline,
+              color: Theme.of(context).colorScheme.primary,
+            )
+          : TextButton(
+              onPressed: () async {
+                await widget.container.kiosk.openUiGuardSettings();
+              },
+              child: const Text('Enable'),
+            ),
+    );
+  }
+}
+
 class _OverlayGrantRow extends StatefulWidget {
   const _OverlayGrantRow({super.key});
 
