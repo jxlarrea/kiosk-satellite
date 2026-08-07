@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The Clear cache and Restart app buttons in Home Assistant moved from the device's Configuration area to Controls, where day-to-day actions belong. Existing devices migrate on their own, keeping entity ids and customizations.
+
+### Added
+- Camera enabled and Screensaver motion detection switches over MQTT (discussion #155), on devices with a usable camera: the camera master toggle and the screensaver's Dismiss on motion, controllable from Home Assistant. Made for staged wake-ups where camera use should not run around the clock: a room-wide motion sensor turns the camera on when someone is nearby, the camera's approach detection then wakes the screen for whoever walks up, and the automation turns the camera, and its roughly 10% CPU cost, back off when the room empties. Turning the camera off retracts its entities as always; the switches themselves stay.
+
 ## v2026.8.8 - 2026-08-07
 
 ### Added

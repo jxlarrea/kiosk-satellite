@@ -62,6 +62,8 @@ tablet's remote admin (while remote administration is enabled).
 | Keep screen on | switch | The keep-awake setting. |
 | Remote management | switch | The embedded admin web server. Turning it off from Home Assistant closes the remote admin. |
 | Screensaver brightness, Screensaver brightness level | switch, number | The separate screensaver brightness (issue #31): the switch enables it, the slider sets the level. Changes apply live while the screensaver is showing. |
+| Camera enabled | switch | The camera master toggle, the same Enable camera switch the Camera settings page has (discussion #155). Camera use costs roughly 10% CPU, so an automation with a room-wide motion sensor can keep it off until someone is around and only then arm the camera features. Turning it off also retracts the camera entities below and the motion sensor. Only exists on devices with a usable camera. |
+| Screensaver motion detection | switch | The screensaver's Dismiss on motion toggle (discussion #155): with it on, the camera watches during the screensaver and wakes the screen when someone approaches. Pairs with the Camera enabled switch for staged wake-ups: an external sensor turns the camera on and the approach detection takes over from there. Only exists on devices with a usable camera. |
 | Reload page | button | Reload the current dashboard. |
 | Go to dashboard | button | Navigate back to the configured Start URL, the device's own dashboard. Unlike Reload page, this leaves whatever page is currently shown, so it is the way home after temporarily sending the device to another dashboard. |
 | Bring to front | button | Bring Kiosk Satellite back in front of whatever app covers it (issue #84), typically after the `launchApp` REST command opened another app. Does nothing when already in front, so it is safe to press blind. On Android 10+ it needs the "display over other apps" permission (the setup wizard requests it up front). |
@@ -101,7 +103,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../screen/state`, `.../screen/set` | out / in | `ON` / `OFF` |
 | `.../brightness/state`, `.../brightness/set` | out / in | `0`..`255` |
 | `.../screensaver_active/state`, `.../screensaver_active/set` | out / in | `ON` / `OFF` |
-| `.../screensaver/…`, `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…`, `.../screensaver_brightness/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
+| `.../screensaver/…`, `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…`, `.../screensaver_brightness/…`, `.../camera_enabled/…`, `.../screensaver_motion/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
 | `.../screensaver_brightness_level/state`, `.../screensaver_brightness_level/set` | out / in | `0`..`100` |
 | `.../assistant_volume/state`, `.../assistant_volume/set` | out / in | `0`..`100` |
 | `.../media_volume/state`, `.../media_volume/set` | out / in | `0`..`100` |

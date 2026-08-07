@@ -358,6 +358,21 @@ class MqttManager extends Manager {
               () => _settings.get(defs.screensaverEnabled),
               (on) => _settings.set(defs.screensaverEnabled, on),
             ),
+            // The camera master toggle (discussion #155): an automation
+            // with a wider motion sensor can keep the camera, and its 10%
+            // CPU cost, off until someone is near, then arm camera motion
+            // detection for the final approach.
+            'camera_enabled': (
+              () => _settings.get(defs.cameraEnabled),
+              (on) => _settings.set(defs.cameraEnabled, on),
+            ),
+            // Dismiss on motion, under the name the feature goes by. Rides
+            // the same automations as the camera switch above: arm the
+            // approach detection only while somebody could be approaching.
+            'screensaver_motion': (
+              () => _settings.get(defs.screensaverDismissOnMotion),
+              (on) => _settings.set(defs.screensaverDismissOnMotion, on),
+            ),
           };
 
   static const _switchSettingKeys = [
@@ -368,6 +383,8 @@ class MqttManager extends Manager {
     'remote.enabled',
     'screensaver.brightness_enabled',
     'screensaver.enabled',
+    'camera.enabled',
+    'screensaver.dismiss_on_motion',
   ];
 
   /// The setting-backed dropdowns: object id → (definition, entity name,
@@ -402,6 +419,30 @@ class MqttManager extends Manager {
   void _publishSettingSwitchStates() {
     _settingSwitches.forEach((objectId, actions) =>
         _publish('$_base/$objectId/state', actions.$1() ? 'ON' : 'OFF'));
+  }
+
+  /// The camera master toggle flipped (any surface: device UI, remote
+  /// admin, the MQTT switch): publish or retract the camera entities.
+  void _syncCameraEntities(Object? enabled) {
+    if (!_connected) return;
+    if (enabled == true && _cameraPresent) {
+      unawaited(_publishDiscovery()
+          .then((_) => commands.execute('takeCameraSnapshot', const {})));
+    } else if (enabled == true) {
+      // Enabled on a camera-less device: nothing to publish.
+      return;
+    } else {
+      // Retract the entities and drop the retained frame: a disabled
+      // camera should leave neither a dead entity nor a stale picture
+      // parked on the broker. The motion sensor rides the camera master
+      // switch too, so it goes with them.
+      _publish('$_prefix/camera/ks_$_deviceId/device_camera/config', '');
+      _publish('$_prefix/button/ks_$_deviceId/take_snapshot/config', '');
+      _publish('$_prefix/sensor/ks_$_deviceId/last_snapshot/config', '');
+      _publish('$_prefix/binary_sensor/ks_$_deviceId/motion/config', '');
+      _publishBytes('$_base/camera_snapshot/image', const []);
+      _publish('$_base/camera_snapshot/at', '');
+    }
   }
 
   void _publishSettingSelectStates() {
@@ -479,6 +520,9 @@ class MqttManager extends Manager {
         unawaited(_publishAdminUrl());
         if (_connected) unawaited(_publishDiscovery());
       }
+      // Switch-backed since discussion #155, but the camera entities still
+      // ride the master toggle the way they always did.
+      if (e.key == defs.cameraEnabled.key) _syncCameraEntities(e.value);
       return;
     }
     if (e.key == defs.screensaverBrightnessLevel.key) {
@@ -524,28 +568,6 @@ class MqttManager extends Manager {
         unawaited(_publishDiscovery());
       } else {
         _publish('$_prefix/binary_sensor/ks_$_deviceId/motion/config', '');
-      }
-      return;
-    }
-    if (e.key == defs.cameraEnabled.key) {
-      if (!_connected) return;
-      if (e.value == true && _cameraPresent) {
-        unawaited(_publishDiscovery().then(
-            (_) => commands.execute('takeCameraSnapshot', const {})));
-      } else if (e.value == true) {
-        // Enabled on a camera-less device: nothing to publish.
-        return;
-      } else {
-        // Retract the entities and drop the retained frame: a disabled
-        // camera should leave neither a dead entity nor a stale picture
-        // parked on the broker. The motion sensor rides the camera master
-        // switch too, so it goes with them.
-        _publish('$_prefix/camera/ks_$_deviceId/device_camera/config', '');
-        _publish('$_prefix/button/ks_$_deviceId/take_snapshot/config', '');
-        _publish('$_prefix/sensor/ks_$_deviceId/last_snapshot/config', '');
-        _publish('$_prefix/binary_sensor/ks_$_deviceId/motion/config', '');
-        _publishBytes('$_base/camera_snapshot/image', const []);
-        _publish('$_base/camera_snapshot/at', '');
       }
       return;
     }
@@ -1302,18 +1324,34 @@ class MqttManager extends Manager {
       ];
 
   Future<void> _publishDiscovery() async {
-    // One-time migration (issue #152): the screensaver switch changed
-    // meaning (start/stop → the master enable setting) and gained
-    // entity_category config, but Home Assistant only re-reads the
-    // category when the entity is registered anew — a config update on
-    // the same topic leaves an upgraded device's switch sitting in
-    // Controls forever. Retract the old config once, before the fresh
-    // one below re-registers the entity; HA restores its entity id and
-    // customizations on the re-add.
-    if (_connected &&
-        _settings.internal('mqtt_screensaver_switch_migrated') != '1') {
-      _publish('$_prefix/switch/ks_$_deviceId/screensaver/config', '');
-      await _settings.setInternal('mqtt_screensaver_switch_migrated', '1');
+    // One-time migrations: Home Assistant only re-reads entity_category
+    // (and other registration-time fields) when an entity is registered
+    // anew — a config update on the same topic leaves an upgraded
+    // device's entity parked in its old area forever. Retract the moved
+    // entities once, right before the fresh configs below re-register
+    // them; HA restores entity ids and customizations on the re-add.
+    // Bump the generation and grow the list when another entity moves:
+    //  1: the screensaver switch became the setting-backed master toggle
+    //     and moved to Configuration (issue #152).
+    //  2: the Clear cache and Restart app buttons moved from
+    //     Configuration to Controls.
+    const migrationGeneration = 2;
+    final migrated =
+        int.tryParse(_settings.internal('mqtt_discovery_generation')) ??
+            // The flag generation 1 shipped under, mapped so those
+            // devices skip only what they already did.
+            (_settings.internal('mqtt_screensaver_switch_migrated') == '1'
+                ? 1
+                : 0);
+    if (_connected && migrated < migrationGeneration) {
+      if (migrated < 1) {
+        _publish('$_prefix/switch/ks_$_deviceId/screensaver/config', '');
+      }
+      _publish('$_prefix/button/ks_$_deviceId/clear_cache/config', '');
+      _publish('$_prefix/button/ks_$_deviceId/restart/config', '');
+      await _settings.setInternal(
+          'mqtt_discovery_generation', '$migrationGeneration');
+      await _settings.setInternal('mqtt_screensaver_switch_migrated', '');
     }
     final configuredName = _settings.get(defs.deviceName).trim();
     final model = _deviceInfo['model'];
@@ -1615,13 +1653,11 @@ class MqttManager extends Manager {
         ...common('clear_cache', 'Clear cache'),
         'command_topic': '$_base/clear_cache/set',
         'icon': 'mdi:broom',
-        'entity_category': 'config',
       },
       '$_prefix/button/ks_$_deviceId/restart/config': {
         ...common('restart', 'Restart app'),
         'command_topic': '$_base/restart/set',
         'device_class': 'restart',
-        'entity_category': 'config',
       },
       '$_prefix/button/ks_$_deviceId/bring_to_front/config': {
         ...common('bring_to_front', 'Bring to front'),
@@ -1705,6 +1741,18 @@ class MqttManager extends Manager {
               'mdi:brightness-4'),
       '$_prefix/switch/ks_$_deviceId/screensaver/config':
           settingSwitch('screensaver', 'Screensaver', 'mdi:sleep'),
+      // Camera-dependent controls (discussion #155): only on hardware
+      // that can actually run them, retracted below otherwise. Unlike
+      // the camera entities they do NOT ride the enable toggle — the
+      // switch is the way to flip that toggle remotely.
+      if (_cameraPresent) ...{
+        '$_prefix/switch/ks_$_deviceId/camera_enabled/config':
+            settingSwitch('camera_enabled', 'Camera enabled',
+                'mdi:camera-outline'),
+        '$_prefix/switch/ks_$_deviceId/screensaver_motion/config':
+            settingSwitch('screensaver_motion', 'Screensaver motion detection',
+                'mdi:motion-sensor'),
+      },
       for (final entry in _settingSelects.entries)
         '$_prefix/select/ks_$_deviceId/${entry.key}/config':
             settingSelect(entry.key, entry.value),
@@ -1729,6 +1777,12 @@ class MqttManager extends Manager {
       _publish('$_prefix/camera/ks_$_deviceId/device_camera/config', '');
       _publish('$_prefix/button/ks_$_deviceId/take_snapshot/config', '');
       _publish('$_prefix/sensor/ks_$_deviceId/last_snapshot/config', '');
+    }
+    // The camera-dependent switches follow the hardware, not the toggle:
+    // a config restored onto camera-less hardware cleans them up here.
+    if (!_cameraPresent) {
+      _publish('$_prefix/switch/ks_$_deviceId/camera_enabled/config', '');
+      _publish('$_prefix/switch/ks_$_deviceId/screensaver_motion/config', '');
     }
     final currentIds = {
       for (final view in _cameraViews) '${view['id']}',
