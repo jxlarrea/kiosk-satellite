@@ -1582,16 +1582,16 @@ async function loadFiles() {
   } catch (_) { listErr = 'device unreachable'; }
 
   tab.innerHTML = '';
-  const head = document.createElement('div'); head.className = 'card';
 
-  // Root picker plus upload, one row.
-  const pick = document.createElement('div'); pick.className = 'row';
-  const info = document.createElement('div'); info.className = 'info';
-  info.innerHTML = '<div class="name">Location</div><div class="desc"></div>';
-  pick.appendChild(info);
+  // Root tabs on the left, upload on the right, bare on the page like the
+  // Logs source picker — the tabs say what they are, so no card and no
+  // label. On a phone the wrap drops the upload button to its own line,
+  // still right-aligned thanks to the auto margin.
+  const pick = document.createElement('div'); pick.className = 'toolbar';
+  pick.style.cssText = 'flex-wrap:wrap;';
   const rootSeg = document.createElement('div');
   rootSeg.className = 'seg';
-  rootSeg.style.cssText = 'flex-shrink:0; margin-left:8px;';
+  rootSeg.style.cssText = 'flex-shrink:0;';
   for (const r of roots) {
     const b = document.createElement('button');
     b.textContent = r.label;
@@ -1606,7 +1606,7 @@ async function loadFiles() {
   const uploadBtn = document.createElement('button');
   uploadBtn.className = 'btn-ghost';
   uploadBtn.textContent = 'Upload file';
-  uploadBtn.style.cssText = 'flex-shrink:0; margin-left:8px;';
+  uploadBtn.style.cssText = 'flex-shrink:0; margin-left:auto;';
   const picker = document.createElement('input');
   picker.type = 'file'; picker.hidden = true;
   picker.addEventListener('change', async () => {
@@ -1626,7 +1626,7 @@ async function loadFiles() {
   uploadBtn.addEventListener('click', () => picker.click());
   pick.appendChild(uploadBtn);
   pick.appendChild(picker);
-  head.appendChild(pick);
+  tab.appendChild(pick);
 
   // Shared storage gated: the grant screen lives on the device.
   const shared = roots.find((r) => r.id === 'shared');
@@ -1651,9 +1651,11 @@ async function loadFiles() {
       btn.disabled = false;
     });
     row.appendChild(btn);
-    head.appendChild(row);
+    const grantCard = document.createElement('div');
+    grantCard.className = 'card';
+    grantCard.appendChild(row);
+    tab.appendChild(grantCard);
   }
-  tab.appendChild(head);
 
   // Listing card: breadcrumb row, then the entries.
   const card = document.createElement('div'); card.className = 'card';
@@ -1677,50 +1679,34 @@ async function loadFiles() {
     for (const e of entries) {
       const desc = e.dir ? 'Folder'
         : `${fileSizeLabel(e.size || 0)} · ${new Date(e.modified || 0).toLocaleString()}`;
-      const row = readOnlyRow(e.name, desc, '');
-      const icon = document.createElement('span');
-      icon.style.cssText = 'flex-shrink:0; display:flex; align-items:center; '
-        + 'margin-right:12px; color:var(--muted);';
-      icon.innerHTML = e.dir
-        ? '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
-        : '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
-      row.insertBefore(icon, row.firstChild);
       if (e.dir) {
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', () => { filesState.crumbs.push(e.name); loadFiles(); });
-      } else {
-        const rel = [...filesState.crumbs, e.name].join('/');
-        const dl = document.createElement('button');
-        dl.className = 'btn-ghost';
-        dl.textContent = 'Download';
-        dl.style.cssText = 'flex-shrink:0; margin-left:8px;';
-        dl.addEventListener('click', async () => {
-          dl.disabled = true;
-          try {
-            const q = `root=${encodeURIComponent(filesState.root)}&path=${encodeURIComponent(rel)}`;
-            const res = await api(`/api/files/download?${q}`);
-            const blob = await res.blob();
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = e.name;
-            a.click();
-            URL.revokeObjectURL(a.href);
-          } catch (err) { alert('Download failed: ' + err); }
-          dl.disabled = false;
-        });
-        const del = document.createElement('button');
-        del.className = 'btn-ghost';
-        del.textContent = 'Delete';
-        del.style.cssText = 'flex-shrink:0; margin-left:8px;';
-        del.addEventListener('click', async () => {
-          if (!confirm(`Delete ${e.name}?`)) return;
-          await cmd('fileDelete', { root: filesState.root, path: rel });
-          loadFiles();
-        });
-        row.appendChild(dl);
-        row.appendChild(del);
+        card.appendChild(cameraListRow(e.name, desc, [], {
+          icon: 'folder',
+          onClick: () => { filesState.crumbs.push(e.name); loadFiles(); },
+        }));
+        continue;
       }
-      card.appendChild(row);
+      const rel = [...filesState.crumbs, e.name].join('/');
+      const dl = cameraAction('Download', async () => {
+        dl.disabled = true;
+        try {
+          const q = `root=${encodeURIComponent(filesState.root)}&path=${encodeURIComponent(rel)}`;
+          const res = await api(`/api/files/download?${q}`);
+          const blob = await res.blob();
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = e.name;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        } catch (err) { alert('Download failed: ' + err); }
+        dl.disabled = false;
+      }, false, 'download');
+      const del = cameraAction('Delete', async () => {
+        if (!confirm(`Delete ${e.name}?`)) return;
+        await cmd('fileDelete', { root: filesState.root, path: rel });
+        loadFiles();
+      }, false, 'delete');
+      card.appendChild(cameraListRow(e.name, desc, [dl, del], { icon: 'doc' }));
     }
   }
   tab.appendChild(card);
@@ -2039,6 +2025,8 @@ const CAMERA_ICONS = {
   dns: '<rect x="3" y="4" width="18" height="6" rx="2"/>'
     + '<rect x="3" y="14" width="18" height="6" rx="2"/>'
     + '<path d="M7 7h.01M7 17h.01M11 7h7M11 17h7"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1'
+    + ' -2 2H5a2 2 0 0 1-2-2z"/>',
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/>',
   download: '<path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"/>',
   delete: '<path d="M4 7h16M9 7V4h6v3m-8 0 1 14h8l1-14M10 11v6m4-6v6"/>',
