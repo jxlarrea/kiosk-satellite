@@ -204,6 +204,19 @@ void main() {
       expect(saver.isActive, false);
     });
 
+    test('motion never dismisses the screensaver while locked', () async {
+      await build({
+        'ks.lockdown.enabled': true,
+        'ks.lockdown.allow_screensaver': true,
+        'ks.screensaver.dismiss_on_motion': true,
+      });
+      await saver.start();
+      expect(saver.isActive, true);
+      bus.publish(const MotionDetected());
+      await pumpEventQueue();
+      expect(saver.isActive, true);
+    });
+
     test('an active screensaver stops when lockdown flips on, and the '
         'screensaver runs again after it lifts', () async {
       await build({});

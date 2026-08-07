@@ -691,7 +691,9 @@ const lockdownAllowScreensaver = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Allow screensaver',
-  description: 'Lets the screensaver run while locked.',
+  description:
+      'Lets the screensaver run while locked. Dismiss on motion stays '
+      'deactivated until the lock lifts.',
   category: 'Lockdown',
   dependsOn: 'lockdown.enabled',
 );

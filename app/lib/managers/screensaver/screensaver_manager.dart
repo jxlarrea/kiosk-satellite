@@ -163,6 +163,10 @@ class ScreensaverManager extends Manager {
       if (_active) unawaited(_applyVisuals());
     });
     bus.on<MotionDetected>().listen((_) {
+      // Under lockdown the screen must stay locked: motion neither
+      // dismisses a screensaver running under the opt-in nor postpones
+      // the next one. The mode lifting brings normal behavior back.
+      if (_settings.get(defs.lockdownEnabled)) return;
       if (!_active) {
         // Between screensavers, motion can only postpone the next one
         // (discussion #126): people moving in front of the device keep

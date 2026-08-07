@@ -74,7 +74,7 @@ gesture on the glass.
 | --- | --- |
 | Enable Lockdown Mode | Disables screen interactions until turned off either from Home Assistant or with the exit gesture. |
 | Blackout | Paints the locked screen solid black and pauses the dashboard's rendering underneath, so a locked tablet also costs less power. The panel stays lit and the device stays reachable. |
-| Allow screensaver | Lets the screensaver keep running while locked, for whoever prefers the clock over a live dashboard. |
+| Allow screensaver | Lets the screensaver keep running while locked, for whoever prefers the clock over a live dashboard. Dismiss on motion stays deactivated while the mode holds, so someone walking past never unlocks the view; normal behavior returns when the lock lifts. |
 | Lockdown exit gesture | The same options as the kiosk exit gesture, its own setting so the two can differ. Fast taps anywhere turn the mode off, after the kiosk PIN if one is set. |
 
 The shield is a screen-level overlay, not a page inside the app: it covers
