@@ -127,20 +127,37 @@
   .dot.on { background: var(--ok); }
   .dot.off { background: var(--error); }
 
-  /* Settings search: the pill under the brand, the device rail's field.
+  /* Settings search: the pill under the brand, matching the device rail's
+     field — quiet card-surface fill, a 20px glass on the row inset, the
+     focus ring in the accent, and a clear button only while there is text
+     (the native search cancel is hidden; it matches neither theme).
      On narrow screens the results take the nav list's place inside the
      drawer; on wide screens they land in the content pane (#tab-search). */
   .side-search { padding: 2px 16px 12px; }
-  .side-search .field { position: relative; }
-  .side-search .field svg { position: absolute; left: 15px; top: 50%;
-    transform: translateY(-50%); width: 16px; height: 16px;
+  /* Not named .field: that class is the login/wizard text-input style and
+     would paint this wrapper as a second box around the pill. */
+  .side-search .search-wrap { position: relative; }
+  .side-search .search-wrap > svg { position: absolute; left: 18px; top: 50%;
+    transform: translateY(-50%); width: 20px; height: 20px;
     color: var(--muted); pointer-events: none; }
   .side-search input { width: 100%; box-sizing: border-box;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 999px; color: var(--text); font-size: 14px;
-    padding: 9px 16px 9px 40px; }
+    background: var(--surface); border: 1px solid transparent;
+    border-radius: 999px; color: var(--text); font-size: 14.5px;
+    padding: 12px 46px 12px 48px; }
   .side-search input:focus { outline: none; border-color: var(--primary); }
   .side-search input::placeholder { color: var(--muted); }
+  .side-search input::-webkit-search-cancel-button,
+  .side-search input::-webkit-search-decoration {
+    -webkit-appearance: none; appearance: none; }
+  .side-search .clear { position: absolute; right: 9px; top: 50%;
+    transform: translateY(-50%); display: none; align-items: center;
+    justify-content: center; width: 30px; height: 30px; padding: 0;
+    border: none; border-radius: 50%; background: transparent;
+    color: var(--muted); cursor: pointer; }
+  .side-search .clear svg { width: 16px; height: 16px; }
+  .side-search .clear:hover { color: var(--text);
+    background: var(--surface-2); }
+  .side-search.has-text .clear { display: flex; }
   #sideResults { display: none; }
   .search-results .row { cursor: pointer; }
   .search-results .row:hover .name { color: var(--primary); }
@@ -553,9 +570,12 @@
            the content pane for results (and, on narrow screens, the nav
            list below this box). -->
       <div class="side-search">
-        <div class="field">
+        <div class="search-wrap">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input id="settingsSearch" type="search" placeholder="Search settings" autocomplete="off" spellcheck="false">
+          <button class="clear" id="settingsSearchClear" type="button" aria-label="Clear search" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          </button>
         </div>
       </div>
       <div id="sideResults"></div>
@@ -892,6 +912,7 @@ function showTab(name, { push = true } = {}) {
   if (search && search.value && $('#sidebar').classList.contains('searching')) {
     search.value = '';
     $('#sidebar').classList.remove('searching');
+    document.querySelector('.side-search')?.classList.remove('has-text');
     searchReturnTab = null;
   }
   name = LEGACY_TABS[name] || name;
@@ -1005,6 +1026,8 @@ function searchSettingsIndex(query) {
 let searchReturnTab = null;
 function renderSearch() {
   const q = $('#settingsSearch').value.trim();
+  document.querySelector('.side-search')
+    .classList.toggle('has-text', $('#settingsSearch').value.length > 0);
   $('#sidebar').classList.toggle('searching', !!q);
   if (!q) {
     if (searchReturnTab) {
@@ -1139,6 +1162,11 @@ $('#settingsSearch').addEventListener('input', renderSearch);
 // like the device's field does.
 $('#settingsSearch').addEventListener('focus', (ev) => {
   if (ev.target.value.trim()) renderSearch();
+});
+$('#settingsSearchClear').addEventListener('click', () => {
+  $('#settingsSearch').value = '';
+  renderSearch();
+  $('#settingsSearch').focus();
 });
 $('#settingsSearch').addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape') {

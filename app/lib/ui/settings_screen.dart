@@ -309,7 +309,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }),
                 ),
           filled: true,
-          fillColor: scheme.surfaceContainerHighest,
+          // The card surface, not the rail highlight: on dark the selected
+          // category tile uses surfaceContainerHighest, and a field in the
+          // same color read as another selected row.
+          fillColor: scheme.surfaceContainer,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,
