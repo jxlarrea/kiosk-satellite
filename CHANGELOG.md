@@ -2,17 +2,19 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
-
-### Fixed
-- The Screensaver switch in Home Assistant now controls the master screensaver enable/disable, the same toggle the Screensaver settings page has, instead of only dismissing the screensaver for one timeout period (#152): turning it off keeps the screensaver away until the switch is turned back on, so automations no longer need a loop pressing Postpone screensaver to keep the screen alive. The switch moved to the device's Configuration area in Home Assistant accordingly, and turning it off while a screensaver is showing dismisses it immediately, from Home Assistant and the Remote Administration UI alike.
+## v2026.8.8 - 2026-08-07
 
 ### Added
-- A Screensaver active switch over MQTT, carrying what the old Screensaver switch did: it is on while a screensaver is on screen, turning it on starts the screensaver right away, and turning it off dismisses it until the idle timeout runs out again.
 - A Keep audio in the background toggle for the DLNA renderer (discussion #153), off by default: with it on, audio pushed to the renderer, such as TTS announcements or music, plays without taking over the screen, so the dashboard or a running screensaver stays exactly as it was. Images, video and camera streams still show as before, and playback control from Home Assistant keeps working while the audio stays invisible.
+- A Screensaver active switch over MQTT, carrying what the old Screensaver switch did: it is on while a screensaver is on screen, turning it on starts the screensaver right away, and turning it off dismisses it until the idle timeout runs out again.
 
 ### Changed
 - Scrolling content now fades out gracefully at the edges instead of being cut off: the settings lists, search results, log boxes and scrolling dialog bodies on the device, and the settings pages, modals, nav rail and consoles in the Remote Administration UI, all show a soft gradient at an edge that still hides content, sliding away once the list reaches its end.
+
+### Fixed
+- The Screensaver switch in Home Assistant now controls the master screensaver enable/disable, the same toggle the Screensaver settings page has, instead of only dismissing the screensaver for one timeout period (#152): turning it off keeps the screensaver away until the switch is turned back on, so automations no longer need a loop pressing Postpone screensaver to keep the screen alive. The switch moved to the device's Configuration area in Home Assistant accordingly, and turning it off while a screensaver is showing dismisses it immediately, from Home Assistant and the Remote Administration UI alike.
+- The Remote Administration UI's File Manager no longer breaks on narrow viewports (phones): the Location tabs and the Upload file button no longer overlap, the tabs sit on their own toolbar without a card or label, and the per-file Download and Delete buttons became compact icon buttons that share a row with the file name. File and folder rows now use the same list style as the Gestures and Camera pages.
+- The note under the gesture list in the Remote Administration UI now renders in the same quiet style as the other card notes, instead of full-size text.
 
 ## v2026.8.7 - 2026-08-07
 
