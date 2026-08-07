@@ -686,6 +686,16 @@ const lockdownBlackout = SettingDef<bool>(
   dependsOn: 'lockdown.enabled',
 );
 
+const lockdownAllowScreensaver = SettingDef<bool>(
+  key: 'lockdown.allow_screensaver',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Allow screensaver',
+  description: 'Lets the screensaver run while locked.',
+  category: 'Lockdown',
+  dependsOn: 'lockdown.enabled',
+);
+
 const lockdownExitGesture = SettingDef<String>(
   key: 'lockdown.exit_gesture',
   type: SettingType.select,
@@ -2924,6 +2934,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowApps,
   lockdownEnabled,
   lockdownBlackout,
+  lockdownAllowScreensaver,
   lockdownExitGesture,
   launcherEnabled,
   launcherApps,

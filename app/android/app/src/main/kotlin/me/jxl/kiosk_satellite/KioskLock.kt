@@ -159,6 +159,13 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     result.success(Settings.canDrawOverlays(activity))
                 "hasUiGuard" ->
                     result.success(KioskAccessibilityService.running)
+                "isPinned" -> {
+                    val am = activity.getSystemService(ActivityManager::class.java)
+                    result.success(
+                        am.lockTaskModeState !=
+                            ActivityManager.LOCK_TASK_MODE_NONE
+                    )
+                }
                 "lockShieldPassThrough" -> {
                     LockShieldOverlay.setPassThrough(
                         activity.applicationContext,

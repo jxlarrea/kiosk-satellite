@@ -1143,11 +1143,6 @@ class _CategoryContentState extends State<_CategoryContent> {
               if (widget.category == 'Browser' &&
                   container.settings.get(autoReloadOnError))
                 autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
-              if (widget.category == 'Kiosk')
-                kioskEnabled.key: _UiGuardRow(
-                  container: container,
-                  key: UniqueKey(),
-                ),
               if (widget.category == 'Camera')
                 cameraEnabled.key: Column(
                   children: [
@@ -1186,6 +1181,15 @@ class _CategoryContentState extends State<_CategoryContent> {
                 sendspinMaToken.key: _MaValidateRow(container: container),
             },
           ),
+        // Last and on their own card, like the Voice Satellite permissions:
+        // the OS's to give, not ours to set. Always shown - Lockdown Mode
+        // has no page on the device, so its grants live here too.
+        if (widget.category == 'Kiosk') ...[
+          const SectionHeading('Required system permissions'),
+          SettingsCard(
+            children: [_KioskPermissionsTile(container: container)],
+          ),
+        ],
         if (widget.category == 'Device' &&
             container.settings.get(remoteEnabled))
           _AdminAddressCard(container: container),
@@ -1693,59 +1697,120 @@ const _githubMark =
 /// itself back after a whole-process crash on Android 10+, and the toggle is
 /// where that surprise gets noticed. Hidden once granted; same shape as the
 /// camera row below.
-/// The System UI guard status row (mirrored in the remote UI's Kiosk tab):
-/// the accessibility service that closes the notification shade and recents
-/// whenever they open while kiosk or lockdown protections hold. Android
-/// only lets the person at the device enable it, so this row shows the
-/// state and opens the Accessibility settings screen.
-class _UiGuardRow extends StatefulWidget {
-  const _UiGuardRow({required this.container, super.key});
+/// The grants the kiosk and lockdown protections lean on, in the same shape
+/// as the Voice Satellite permissions card (mirrored in the remote UI's
+/// Kiosk and Lockdown tabs): a row per grant saying what breaks without it.
+/// The System UI guard is the accessibility service that closes the
+/// notification shade and recents whenever they open while protections
+/// hold; Android only lets the person at the device enable it, so its row
+/// opens the Accessibility settings screen.
+class _KioskPermissionsTile extends StatefulWidget {
+  const _KioskPermissionsTile({required this.container});
 
   final AppContainer container;
 
   @override
-  State<_UiGuardRow> createState() => _UiGuardRowState();
+  State<_KioskPermissionsTile> createState() => _KioskPermissionsTileState();
 }
 
-class _UiGuardRowState extends State<_UiGuardRow> {
-  bool? _enabled;
+class _KioskPermissionsTileState extends State<_KioskPermissionsTile>
+    with WidgetsBindingObserver {
+  bool? _overlay;
+  bool? _uiGuard;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refresh();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Both are given on OS screens that report nothing back, so re-read
+    // them when the user returns from one.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
   Future<void> _refresh() async {
-    final enabled = await widget.container.kiosk.uiGuardEnabled();
+    bool? overlay;
+    bool? uiGuard;
+    try {
+      overlay = (await Permission.systemAlertWindow.status).isGranted;
+    } catch (_) {}
+    try {
+      uiGuard = await widget.container.kiosk.uiGuardEnabled();
+    } catch (_) {}
     if (!mounted) return;
-    setState(() => _enabled = enabled);
+    setState(() {
+      _overlay = overlay;
+      _uiGuard = uiGuard;
+    });
+  }
+
+  /// Same shape as the Voice Satellite permission rows.
+  Widget _row({
+    required bool? granted,
+    required IconData missingIcon,
+    required String title,
+    required String held,
+    required String missing,
+    required VoidCallback onGrant,
+    String action = 'Grant',
+  }) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(
+        granted == true ? Icons.check_circle_outline : missingIcon,
+        color: granted == true ? null : theme.colorScheme.error,
+      ),
+      title: Text(title),
+      subtitle: Text(granted == true ? held : missing),
+      trailing: granted == true
+          ? null
+          : TextButton(onPressed: onGrant, child: Text(action)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final enabled = _enabled;
-    if (enabled == null) return const SizedBox.shrink();
-    return ListTile(
-      title: const Text('System UI guard'),
-      subtitle: Text(
-        enabled
-            ? 'On. The notification shade and recents close on their own '
-                'while the screen is protected.'
-            : 'Closes the notification shade and recents while the screen '
-                'is protected. Enable Kiosk Satellite under Accessibility.',
-      ),
-      trailing: enabled
-          ? Icon(
-              Icons.check_circle_outline,
-              color: Theme.of(context).colorScheme.primary,
-            )
-          : TextButton(
-              onPressed: () async {
-                await widget.container.kiosk.openUiGuardSettings();
-              },
-              child: const Text('Enable'),
-            ),
+    return Column(
+      children: separatedRows([
+        _row(
+          granted: _overlay,
+          missingIcon: Icons.open_in_new_off_outlined,
+          title: 'Display over other apps',
+          held: 'Kiosk Satellite can put itself back in front.',
+          missing:
+              'Without this the kiosk cannot bring itself back and the '
+              'lockdown shield only covers the app.',
+          onGrant: () async {
+            await requestOsPermission(Permission.systemAlertWindow);
+            await _refresh();
+          },
+        ),
+        _row(
+          granted: _uiGuard,
+          missingIcon: Icons.shield_outlined,
+          title: 'System UI guard',
+          held:
+              'The notification shade and recents close on their own '
+              'while the screen is protected.',
+          missing:
+              'Without this the notification shade and recents stay '
+              'reachable. Enable Kiosk Satellite under Accessibility.',
+          action: 'Enable',
+          onGrant: () async {
+            await widget.container.kiosk.openUiGuardSettings();
+          },
+        ),
+      ]),
     );
   }
 }

@@ -64,15 +64,20 @@ class CrashGuardService : Service() {
     // "Close all" in recents (or a swipe-away) removes the task without
     // stopping this service, and it is the one escape the Activity side
     // cannot answer: by the time the Dart lifecycle watchdog would act,
-    // the Activity may already be gone. Under lockdown, relaunch straight
-    // from here — this service runs whenever the app is alive, background
-    // listening on or off. The overlay grant is the same gate every
-    // background relaunch in this app answers to; without it Android
-    // discards the start anyway.
+    // the Activity may already be gone. Under lockdown or kiosk mode,
+    // relaunch straight from here — this service runs whenever the app is
+    // alive, background listening on or off. A deliberate exit is not
+    // this (the exit path raises [exiting] first, and leaving kiosk mode
+    // goes through the gesture and PIN before the exit is reachable).
+    // The overlay grant is the same gate every background relaunch in
+    // this app answers to; without it Android discards the start anyway.
     override fun onTaskRemoved(rootIntent: Intent?) {
-        if (!exiting &&
+        val prefs =
             getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
-                .getBoolean("flutter.ks.lockdown.enabled", false) &&
+        val guarded =
+            prefs.getBoolean("flutter.ks.lockdown.enabled", false) ||
+                prefs.getBoolean("flutter.ks.kiosk.enabled", false)
+        if (!exiting && guarded &&
             android.provider.Settings.canDrawOverlays(this)
         ) {
             packageManager.getLaunchIntentForPackage(packageName)?.let {

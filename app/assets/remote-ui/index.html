@@ -3462,40 +3462,6 @@ async function loadSettings() {
     render(document.getElementById(tabId), cats.filter((c) => byCat[c]));
   }
 
-  // ── System UI guard row (Kiosk tab) ──────────────────────────────────
-  // Mirrors the device's row under the Kiosk Mode master switch: the
-  // accessibility service that closes the notification shade and recents
-  // while protections hold. Android only lets the person at the device
-  // enable it, so the remote shows the state and says where to go.
-  {
-    const anchor = document.querySelector(
-      '#tab-kiosk [data-key="kiosk.enabled"]');
-    if (anchor) {
-      const row = document.createElement('div');
-      row.className = 'row';
-      const info = document.createElement('div');
-      info.className = 'info';
-      info.innerHTML = '<div class="name"></div><div class="desc"></div>';
-      info.querySelector('.name').textContent = 'System UI guard';
-      info.querySelector('.desc').textContent = 'Checking...';
-      row.appendChild(info);
-      anchor.insertAdjacentElement('afterend', row);
-      api('/api/commands/hasUiGuard', { method: 'POST', body: '{}' })
-        .then((r) => r.json())
-        .then((res) => {
-          info.querySelector('.desc').textContent = res.data === true
-            ? 'On. The notification shade and recents close on their own '
-              + 'while the screen is protected.'
-            : 'Off. On the device, enable Kiosk Satellite under Android '
-              + 'Accessibility settings to close the notification shade '
-              + 'and recents while the screen is protected.';
-        })
-        .catch(() => {
-          info.querySelector('.desc').textContent = 'Status unavailable.';
-        });
-    }
-  }
-
   // ── Lockdown Mode note ────────────────────────────────────────────────
   // The gesture and toggle rows carry their own descriptions; this only
   // states what the rows cannot: the side effects.
@@ -3508,10 +3474,105 @@ async function loadSettings() {
       'Lockdown Mode makes the dashboard non-interactive, arms every ' +
       'Kiosk Mode protection without changing your Kiosk Mode settings, ' +
       'and mutes wake word detection while it is on. With the System UI ' +
-      'guard enabled (see Kiosk Mode), the notification shade and recents ' +
-      'are blocked too. Home Assistant gets a Lockdown mode switch over ' +
+      'guard enabled (below), the notification shade and recents are ' +
+      'blocked too. Home Assistant gets a Lockdown mode switch over ' +
       'MQTT.';
     document.getElementById('tab-lockdown').appendChild(note);
+  }
+
+  // ── Required system permissions (Kiosk and Lockdown tabs) ────────────
+  // Same shape as the Voice Satellite group: a row per grant with its
+  // status, in its own card at the end of the tab. Unlike those, both of
+  // these can be kicked off from here - the grant dialog or settings
+  // screen opens on the device - so a Missing row carries a button.
+  {
+    const check = (cmd) => api('/api/commands/' + cmd,
+      { method: 'POST', body: '{}' }).then((r) => r.json())
+      .then((res) => res.data === true).catch(() => null);
+    const pollOverlay = () => check('hasOverlayPermission');
+    const pollGuard = () => check('hasUiGuard');
+    const grantOverlay = () => api('/api/commands/requestOsPermissions',
+      { method: 'POST', body: JSON.stringify({ which: ['overlay'] }) });
+    const openGuard = () => api('/api/commands/openUiGuardSettings',
+      { method: 'POST', body: '{}' });
+    const permRow = (name, held, missing, btnText, onClick, poll) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+      info.querySelector('.name').textContent = name;
+      info.querySelector('.desc').textContent = 'Checking...';
+      row.appendChild(info);
+      const state = document.createElement('span');
+      state.style.whiteSpace = 'nowrap';
+      row.appendChild(state);
+      const render = (ok) => {
+        info.querySelector('.desc').textContent =
+          ok === null ? 'Status unavailable.' : ok ? held : missing;
+        state.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
+        state.style.color = ok ? 'var(--ok)' : 'var(--error)';
+        row.querySelector('button')?.remove();
+        if (ok !== false) return;
+        const btn = document.createElement('button');
+        btn.className = 'btn-ghost';
+        btn.textContent = btnText;
+        btn.style.cssText = 'flex-shrink:0;';
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try { await onClick(); } catch (_) { }
+          // The grant happens on the tablet; keep re-reading until it
+          // lands so the row flips by itself.
+          let tries = 30;
+          const tick = setInterval(async () => {
+            const now = await poll();
+            if (now === true || --tries <= 0) {
+              clearInterval(tick);
+              render(now);
+            }
+          }, 2000);
+        });
+        row.appendChild(btn);
+      };
+      poll().then(render);
+      return row;
+    };
+    const group = (tabId, rows) => {
+      const tab = document.getElementById(tabId);
+      const h = document.createElement('h2');
+      h.className = 'card-title';
+      h.textContent = 'Required system permissions';
+      const card = document.createElement('div');
+      card.className = 'card';
+      rows.forEach((r) => card.appendChild(r));
+      tab.append(h, card);
+    };
+    group('tab-kiosk', [
+      permRow('Display over other apps',
+        'Kiosk Satellite can put itself back in front.',
+        'Without this the kiosk cannot bring itself back. The grant '
+          + 'screen appears on the tablet.',
+        'Grant on device', grantOverlay, pollOverlay),
+      permRow('System UI guard',
+        'The notification shade and recents close on their own while '
+          + 'the screen is protected.',
+        'Without this the notification shade and recents stay reachable. '
+          + 'Enable Kiosk Satellite under Accessibility on the tablet.',
+        'Open settings on device', openGuard, pollGuard),
+    ]);
+    group('tab-lockdown', [
+      permRow('Display over other apps',
+        'The lockdown shield can cover the whole screen.',
+        'Without this the shield only covers the app. The grant screen '
+          + 'appears on the tablet.',
+        'Grant on device', grantOverlay, pollOverlay),
+      permRow('System UI guard',
+        'The notification shade and recents close on their own while '
+          + 'the screen is protected.',
+        'Without this the notification shade and recents stay reachable. '
+          + 'Enable Kiosk Satellite under Accessibility on the tablet.',
+        'Open settings on device', openGuard, pollGuard),
+    ]);
   }
   // The master fader tops the Audio Volume card, mirroring the device: the
   // live device volume, not a setting, so it is hand-built over the

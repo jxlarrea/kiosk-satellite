@@ -71,7 +71,7 @@ class _KioskScreenState extends State<KioskScreen>
   late final AnimationController _drawer = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 260),
-  );
+  )..addListener(_syncMenuBusy);
 
   void _closeDrawer() => _drawer.fling(velocity: -1);
 
@@ -543,6 +543,7 @@ class _KioskScreenState extends State<KioskScreen>
     // on, opens the camera while someone is configuring. Re-arm on return.
     await c.commands.execute('pauseScreensaver', {'paused': true});
     _settingsOpen = true;
+    _syncMenuBusy();
     if (mounted) {
       // The settings route fully covers the dashboard, so its WebView can
       // stop compositing and hand the frame budget to the settings UI.
@@ -565,7 +566,15 @@ class _KioskScreenState extends State<KioskScreen>
       c.browser.setCovered('settings', covered: false);
     }
     _settingsOpen = false;
+    _syncMenuBusy();
     await c.commands.execute('pauseScreensaver', {'paused': false});
+  }
+
+  /// Tell the kiosk manager whether the owner is inside the menu or the
+  /// settings: pauses caused from there (permission grant screens, system
+  /// pickers) are legitimate, and the foreground reclaim stands down.
+  void _syncMenuBusy() {
+    c.kiosk.menuBusy = _settingsOpen || _drawer.value > 0;
   }
 
   /// Whether a WebView permission request may be granted: its Web Content

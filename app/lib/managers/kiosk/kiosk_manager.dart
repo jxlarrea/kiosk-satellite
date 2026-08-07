@@ -28,9 +28,27 @@ class KioskManager extends Manager with WidgetsBindingObserver {
 
   final SettingsManager _settings;
 
-  /// Armed when the app loses the foreground under lockdown; see
+  /// Armed when the app loses the foreground under lockdown (or under
+  /// kiosk mode with Disable home wanted but not pinned); see
   /// [didChangeAppLifecycleState].
   Timer? _reclaimTimer;
+
+  /// Set by the kiosk screen while its drawer or the settings are open:
+  /// grant screens launched from there pause the app legitimately, and
+  /// the kiosk-mode reclaim must not yank the owner out of them.
+  bool menuBusy = false;
+
+  /// The last sanctioned app launch (launcher, gesture, MQTT). A pause
+  /// right after one is the launched app coming up — the launcher's
+  /// auto-return owns the way back, not the reclaim.
+  DateTime? _appLaunchedAt;
+  static const _launchGrace = Duration(seconds: 15);
+
+  /// Kiosk mode wants Home dead. When the pin holds, it already is; the
+  /// reclaim covers the gap where pinning was declined or lost.
+  bool get _kioskHomeGuard =>
+      _settings.get(defs.kioskEnabled) &&
+      _settings.get(defs.kioskDisableHome);
 
   static const _channel = MethodChannel('kiosk_satellite/kiosk_lock');
 
@@ -336,6 +354,33 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       ),
     );
 
+    commands.register(
+      Command(
+        name: 'hasOverlayPermission',
+        description:
+            'Whether the draw-over-apps grant is held. The lockdown shield '
+            'and the foreground reclaim both ride on it.',
+        handler: (_) async => CommandResult.ok(
+          await _invoke<bool>('hasOverlayPermission') ?? false,
+        ),
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'openUiGuardSettings',
+        description:
+            'Open Android Accessibility settings on the device, where the '
+            'System UI guard is enabled.',
+        handler: (_) async {
+          await openUiGuardSettings();
+          return const CommandResult.ok();
+        },
+      ),
+    );
+
+    bus.on<AppLaunched>().listen((_) => _appLaunchedAt = DateTime.now());
+
     if (!Platform.isAndroid) return;
 
     WidgetsBinding.instance.addObserver(this);
@@ -394,7 +439,12 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      if (!lockdownActive) return;
+      if (!lockdownActive) {
+        final launched = _appLaunchedAt;
+        final sanctioned = launched != null &&
+            DateTime.now().difference(launched) <= _launchGrace;
+        if (!_kioskHomeGuard || sanctioned || menuBusy) return;
+      }
       _reclaimTimer?.cancel();
       _reclaimTimer = Timer(const Duration(seconds: 1), _reclaimForeground);
     } else if (state == AppLifecycleState.resumed) {
@@ -404,14 +454,19 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   }
 
   Future<void> _reclaimForeground() async {
-    if (!lockdownActive ||
-        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+    if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
       return;
     }
-    log.info(name, 'lockdown: reclaiming the foreground');
+    if (!lockdownActive) {
+      if (!_kioskHomeGuard || menuBusy) return;
+      // Pinned means Home is already dead system-wide: whatever paused
+      // the app, it was not an escape this guard needs to answer.
+      if (await _invoke<bool>('isPinned') ?? false) return;
+    }
+    log.info(name, 'reclaiming the foreground');
     final result = await commands.execute('bringToFront', const {});
     if (result.data == false) {
-      log.warn(name, 'lockdown reclaim needs the draw-over-apps grant');
+      log.warn(name, 'foreground reclaim needs the draw-over-apps grant');
     }
     _reclaimTimer = Timer(const Duration(seconds: 5), _reclaimForeground);
   }
@@ -477,7 +532,11 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       // recents defense stays the pin the owner consented to.
       'a11yShade':
           lockdown || (on && _settings.get(defs.kioskDisableStatusBar)),
-      'a11yRecents': lockdown,
+      // Recents bounce: under lockdown always; under kiosk whenever
+      // Disable home is wanted. No pinned check needed — a pinned device
+      // never shows recents, so the guard only ever fires in the gap
+      // where the pin is not holding.
+      'a11yRecents': lockdown || kioskHome,
       // The screen-level shield (draw-over-apps): covers the whole display
       // above every app, so escaping the kiosk buys a screen that still
       // does not answer. Falls back to the in-app Flutter shield alone

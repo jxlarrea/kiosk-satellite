@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/kiosk/kiosk_manager.dart';
 import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
@@ -40,6 +41,16 @@ void main() {
       expect(defs.allSettings, contains(defs.lockdownBlackout));
       expect(defs.lockdownBlackout.defaultValue, false);
       expect(defs.lockdownBlackout.dependsOn, defs.lockdownEnabled.key);
+    });
+
+    test('lockdown.allow_screensaver is declared, off by default, gates '
+        'on the toggle', () {
+      expect(defs.allSettings, contains(defs.lockdownAllowScreensaver));
+      expect(defs.lockdownAllowScreensaver.defaultValue, false);
+      expect(
+        defs.lockdownAllowScreensaver.dependsOn,
+        defs.lockdownEnabled.key,
+      );
     });
 
     test('lockdown.exit_gesture mirrors the kiosk options and gates on '
@@ -99,8 +110,39 @@ void main() {
       expect(reclaims, 1);
     });
 
-    test('a pause without lockdown is left alone', () async {
+    test('a pause without lockdown or kiosk is left alone', () async {
       await build({});
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 0);
+    });
+
+    test('kiosk mode with Disable home reclaims too', () async {
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 1);
+    });
+
+    test('kiosk mode without Disable home does not', () async {
+      await build({'ks.kiosk.enabled': true});
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 0);
+    });
+
+    test('an open menu stands the kiosk reclaim down', () async {
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+      kiosk.menuBusy = true;
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 0);
+    });
+
+    test('a sanctioned app launch stands the kiosk reclaim down', () async {
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+      bus.publish(const AppLaunched(package: 'com.example.app'));
+      await pumpEventQueue();
       kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
       await Future<void>.delayed(const Duration(milliseconds: 1300));
       expect(reclaims, 0);
@@ -134,6 +176,30 @@ void main() {
 
     test('start() refuses while lockdown holds', () async {
       await build({'ks.lockdown.enabled': true});
+      await saver.start();
+      expect(saver.isActive, false);
+    });
+
+    test('the opt-in lets the screensaver run under lockdown', () async {
+      await build({
+        'ks.lockdown.enabled': true,
+        'ks.lockdown.allow_screensaver': true,
+      });
+      await saver.start();
+      expect(saver.isActive, true);
+    });
+
+    test('with the opt-in, lockdown flipping on leaves the screensaver '
+        'alone; revoking it mid-lockdown stops it', () async {
+      await build({'ks.lockdown.allow_screensaver': true});
+      await saver.start();
+      expect(saver.isActive, true);
+      await settings.set(defs.lockdownEnabled, true);
+      await pumpEventQueue();
+      expect(saver.isActive, true);
+      await settings.set(defs.lockdownAllowScreensaver, false);
+      await pumpEventQueue();
+      expect(saver.isActive, false);
       await saver.start();
       expect(saver.isActive, false);
     });
