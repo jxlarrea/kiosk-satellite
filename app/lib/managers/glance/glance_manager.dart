@@ -236,6 +236,12 @@ class GlanceManager extends Manager {
   Future<void> _open() async {
     _close();
     if (!_rowModes.contains(_settings.get(defs.screensaverMode))) return;
+    // Black with "Hide all extras" never draws the row (issue #151), so
+    // holding entity state live for it would be pure cost.
+    if (_settings.get(defs.screensaverMode) == 'black' &&
+        _settings.get(defs.screensaverBlackHideExtras)) {
+      return;
+    }
     final ids = [for (final entity in entities.value) entity.entityId];
     if (ids.isEmpty) return;
     final live = await _ha.subscribeEntities(

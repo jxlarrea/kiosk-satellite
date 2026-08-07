@@ -38,6 +38,11 @@ class ScreensaverOverlay extends StatelessWidget {
       valueListenable: container.screensaver.activeView,
       builder: (context, view, _) {
         if (view == null) return const SizedBox.shrink();
+        // A Black screensaver asked to look off (issue #151): one switch
+        // blanks the overlays instead of asking people to unconfigure the
+        // small clock and At a Glance row for the night.
+        final blackBare = view == 'black' &&
+            container.settings.get(defs.screensaverBlackHideExtras);
         return ValueListenableBuilder<Map<String, Object?>?>(
           valueListenable: container.sendspin.nowPlaying,
           builder: (context, nowPlaying, child) {
@@ -90,7 +95,10 @@ class ScreensaverOverlay extends StatelessWidget {
                   // carrying the At a Glance row when there is one.
                   _ => _Dismissable(
                     container: container,
-                    child: container.settings.get(defs.screensaverGlanceEnabled)
+                    child: !blackBare &&
+                            container.settings.get(
+                              defs.screensaverGlanceEnabled,
+                            )
                         ? GlanceScreensaver(container: container)
                         : const ColoredBox(color: Colors.black),
                   ),
@@ -100,6 +108,7 @@ class ScreensaverOverlay extends StatelessWidget {
                 // clock sitting over a live camera is in the way.
                 if (view != 'clock' &&
                     view != 'camera' &&
+                    !blackBare &&
                     container.settings.get(defs.screensaverMiniClock))
                   MiniClockOverlay(container: container),
               ],

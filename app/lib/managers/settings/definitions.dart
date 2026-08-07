@@ -1021,6 +1021,26 @@ const screensaverMode = SettingDef<String>(
   },
 );
 
+// ── Black (mode: black) ──
+
+// The Black panel's one control (issue #151): people schedule Black
+// overnight and expect a dark panel, but the small clock and the At a
+// Glance row deliberately ride over Black. One switch blanks the overlays
+// rather than making each of them schedule-aware.
+const screensaverBlackHideExtras = SettingDef<bool>(
+  key: 'screensaver.black_hide_extras',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Hide all extras',
+  description:
+      'Keeps the screen fully black: no small clock, At a Glance '
+      'entities, or other overlays.',
+  category: 'Screensaver',
+  section: 'Black',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'black',
+);
+
 // ── Clock (mode: clock) ──
 
 // The face the clock draws (issue #56). Digital is the original text clock;
@@ -2977,6 +2997,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDimLevel,
   screenAmbientDisplay,
   screensaverSavedBrightness,
+  screensaverBlackHideExtras,
   screensaverClockStyle,
   screensaverClock24h,
   screensaverClockSeconds,

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A Hide all extras toggle for the Black screensaver (#151): with it on, Black shows nothing at all, hiding the small clock, the At a Glance entities and any other overlay, so a kiosk that schedules Black overnight looks fully off without unconfiguring those extras for the night. The toggle appears in a Black group under the screensaver mode picker whenever the mode is Black, on the device and in the Remote Administration UI alike, and it is off by default.
+
 ## v2026.8.6 - 2026-08-07
 
 ### Fixed
