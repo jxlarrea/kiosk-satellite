@@ -61,6 +61,33 @@ class CrashGuardService : Service() {
         isRunning = true
     }
 
+    // "Close all" in recents (or a swipe-away) removes the task without
+    // stopping this service, and it is the one escape the Activity side
+    // cannot answer: by the time the Dart lifecycle watchdog would act,
+    // the Activity may already be gone. Under lockdown, relaunch straight
+    // from here — this service runs whenever the app is alive, background
+    // listening on or off. The overlay grant is the same gate every
+    // background relaunch in this app answers to; without it Android
+    // discards the start anyway.
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (!exiting &&
+            getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
+                .getBoolean("flutter.ks.lockdown.enabled", false) &&
+            android.provider.Settings.canDrawOverlays(this)
+        ) {
+            packageManager.getLaunchIntentForPackage(packageName)?.let {
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                try {
+                    startActivity(it)
+                } catch (e: Exception) {
+                    android.util.Log.w("CrashGuardService",
+                        "lockdown relaunch failed: $e")
+                }
+            }
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
