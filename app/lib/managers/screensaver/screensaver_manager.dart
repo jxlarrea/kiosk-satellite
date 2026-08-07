@@ -200,6 +200,13 @@ class ScreensaverManager extends Manager {
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key.startsWith('screensaver.')) _resetIdleTimer();
+      // Disabling the master toggle takes a running screensaver down with
+      // it. On the device this never shows (opening settings already
+      // dismisses it), but over MQTT or the remote admin nothing else
+      // would, and the screensaver stayed up with no timer (issue #152).
+      if (e.key == defs.screensaverEnabled.key && e.value == false) {
+        unawaited(stop());
+      }
       // Lockdown Mode owns the display while it holds: a running
       // screensaver stops, and start() refuses below until it lifts —
       // unless the owner opted in to letting it run under the shield.

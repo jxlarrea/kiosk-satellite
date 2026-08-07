@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The Screensaver switch in Home Assistant now controls the master screensaver enable/disable, the same toggle the Screensaver settings page has, instead of only dismissing the screensaver for one timeout period (#152): turning it off keeps the screensaver away until the switch is turned back on, so automations no longer need a loop pressing Postpone screensaver to keep the screen alive. The switch moved to the device's Configuration area in Home Assistant accordingly, and turning it off while a screensaver is showing dismisses it immediately, from Home Assistant and the Remote Administration UI alike.
+
+### Added
+- A Screensaver active switch over MQTT, carrying what the old Screensaver switch did: it is on while a screensaver is on screen, turning it on starts the screensaver right away, and turning it off dismisses it until the idle timeout runs out again.
+
 ## v2026.8.7 - 2026-08-07
 
 ### Added

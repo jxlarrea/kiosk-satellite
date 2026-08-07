@@ -32,7 +32,10 @@ import '../settings/settings_manager.dart';
 ///    so the HA toggle snaps back instead of lying.
 ///  - sensor "Battery" and binary_sensor "Charging", polled once a minute.
 ///  - sensor "Current page": the URL the kiosk is showing (diagnostic).
-///  - binary_sensor "Screensaver": whether the screensaver is up.
+///  - switch "Screensaver active": whether the screensaver is up right
+///    now; ON/OFF forces it on screen or dismisses it. The master
+///    enable/disable lives in the "Screensaver" setting switch (issue
+///    #152).
 class MqttManager extends Manager {
   MqttManager(super.bus, super.commands, super.log, this._settings);
 
@@ -144,7 +147,7 @@ class MqttManager extends Manager {
     }));
     _subs.add(bus.on<ScreensaverStateChanged>().listen((e) {
       _screensaverActive = e.active;
-      _publish('$_base/screensaver/state', e.active ? 'ON' : 'OFF');
+      _publish('$_base/screensaver_active/state', e.active ? 'ON' : 'OFF');
     }));
     // Covers every path the volume moves: an MQTT command, the hardware
     // rocker, another app (the platform side broadcasts them all).
@@ -346,6 +349,15 @@ class MqttManager extends Manager {
               () => _settings.get(defs.screensaverBrightnessEnabled),
               (on) => _settings.set(defs.screensaverBrightnessEnabled, on),
             ),
+            // The master enable/disable, same as the Screensaver toggle in
+            // the settings UI (issue #152). Kept under the object id the
+            // start/stop switch used to hold, so existing automations that
+            // flip switch.*_screensaver now control the master toggle the
+            // way that entity always claimed to.
+            'screensaver': (
+              () => _settings.get(defs.screensaverEnabled),
+              (on) => _settings.set(defs.screensaverEnabled, on),
+            ),
           };
 
   static const _switchSettingKeys = [
@@ -355,6 +367,7 @@ class MqttManager extends Manager {
     'screen.keep_on',
     'remote.enabled',
     'screensaver.brightness_enabled',
+    'screensaver.enabled',
   ];
 
   /// The setting-backed dropdowns: object id → (definition, entity name,
@@ -645,7 +658,7 @@ class MqttManager extends Manager {
     for (final topic in [
       '$_base/screen/set',
       '$_base/brightness/set',
-      '$_base/screensaver/set',
+      '$_base/screensaver_active/set',
       '$_base/postpone_screensaver/set',
       '$_base/volume/set',
       '$_base/reload/set',
@@ -850,7 +863,7 @@ class MqttManager extends Manager {
         if (raw == null) continue;
         await commands.execute(
             'setBrightness', {'level': (raw.clamp(0, 255)) / 255});
-      } else if (topic == '$_base/screensaver/set') {
+      } else if (topic == '$_base/screensaver_active/set') {
         log.info(name, 'command $topic = $text');
         await commands.execute(
             text == 'ON' ? 'startScreensaver' : 'stopScreensaver', const {});
@@ -1108,7 +1121,8 @@ class MqttManager extends Manager {
       _publish('$_base/brightness/state',
           (level.clamp(0.0, 1.0) * 255).round().toString());
     }
-    _publish('$_base/screensaver/state', _screensaverActive ? 'ON' : 'OFF');
+    _publish(
+        '$_base/screensaver_active/state', _screensaverActive ? 'ON' : 'OFF');
     _publishSettingSwitchStates();
     _publishSettingSelectStates();
     _publishClockBackground();
@@ -1240,7 +1254,7 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/ram_free/config',
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
-        '$_prefix/switch/ks_$_deviceId/screensaver/config',
+        '$_prefix/switch/ks_$_deviceId/screensaver_active/config',
         '$_prefix/button/ks_$_deviceId/postpone_screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
         '$_prefix/button/ks_$_deviceId/load_start_url/config',
@@ -1288,6 +1302,19 @@ class MqttManager extends Manager {
       ];
 
   Future<void> _publishDiscovery() async {
+    // One-time migration (issue #152): the screensaver switch changed
+    // meaning (start/stop → the master enable setting) and gained
+    // entity_category config, but Home Assistant only re-reads the
+    // category when the entity is registered anew — a config update on
+    // the same topic leaves an upgraded device's switch sitting in
+    // Controls forever. Retract the old config once, before the fresh
+    // one below re-registers the entity; HA restores its entity id and
+    // customizations on the re-add.
+    if (_connected &&
+        _settings.internal('mqtt_screensaver_switch_migrated') != '1') {
+      _publish('$_prefix/switch/ks_$_deviceId/screensaver/config', '');
+      await _settings.setInternal('mqtt_screensaver_switch_migrated', '1');
+    }
     final configuredName = _settings.get(defs.deviceName).trim();
     final model = _deviceInfo['model'];
     final deviceBlock = {
@@ -1549,10 +1576,13 @@ class MqttManager extends Manager {
           'options': _dashboardViews,
           'icon': 'mdi:view-dashboard-outline',
         },
-      '$_prefix/switch/ks_$_deviceId/screensaver/config': {
-        ...common('screensaver', 'Screensaver'),
-        'state_topic': '$_base/screensaver/state',
-        'command_topic': '$_base/screensaver/set',
+      // Whether a screensaver is on screen right now; ON/OFF forces it up
+      // or dismisses it. The master enable/disable is the "Screensaver"
+      // setting switch below (issue #152).
+      '$_prefix/switch/ks_$_deviceId/screensaver_active/config': {
+        ...common('screensaver_active', 'Screensaver active'),
+        'state_topic': '$_base/screensaver_active/state',
+        'command_topic': '$_base/screensaver_active/set',
         'icon': 'mdi:sleep',
       },
       '$_prefix/number/ks_$_deviceId/volume/config': {
@@ -1673,6 +1703,8 @@ class MqttManager extends Manager {
       '$_prefix/switch/ks_$_deviceId/screensaver_brightness/config':
           settingSwitch('screensaver_brightness', 'Screensaver brightness',
               'mdi:brightness-4'),
+      '$_prefix/switch/ks_$_deviceId/screensaver/config':
+          settingSwitch('screensaver', 'Screensaver', 'mdi:sleep'),
       for (final entry in _settingSelects.entries)
         '$_prefix/select/ks_$_deviceId/${entry.key}/config':
             settingSelect(entry.key, entry.value),
