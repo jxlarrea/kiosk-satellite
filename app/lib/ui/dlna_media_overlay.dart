@@ -37,10 +37,25 @@ class DlnaMediaOverlay extends StatelessWidget {
         // the controller's buffering window (URI resolution, its can-play
         // poll, stream spin-up) is otherwise dead air on the wall.
         final loading = media != null && state == 'STOPPED' && dlna.pending.value;
-        // media == null is implied by coversScreen but promotes the type.
-        if (media == null || !dlna.coversScreen) {
-          return const SizedBox.shrink();
+        if (media == null) return const SizedBox.shrink();
+        // Background audio (discussion #153): the screen stays whatever it
+        // was, but the player must keep running — it IS the playback, and
+        // it reports the position GetPositionInfo answers with. Offstage
+        // keeps it mounted and silent about it; nothing to run while the
+        // controller is still queueing.
+        if (dlna.audioInBackground) {
+          if (state == 'STOPPED') return const SizedBox.shrink();
+          return Offstage(
+            child: _DlnaPlayer(
+              key: ValueKey(media.uri),
+              dlna: dlna,
+              mediaGain: container.device.mediaGain,
+              media: media,
+              paused: state == 'PAUSED_PLAYBACK',
+            ),
+          );
         }
+        if (!dlna.coversScreen) return const SizedBox.shrink();
         return GestureDetector(
           onTap: dlna.userDismiss,
           child: Container(

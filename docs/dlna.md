@@ -33,7 +33,7 @@ code on screen, photos from the HA media library.
 | --- | --- |
 | Images | Shown full screen until stopped or tapped. Image entities (a QR code, a snapshot) stay live: when the entity updates, the wall updates. |
 | Video | HLS camera streams from Home Assistant, MP4/MKV/WebM files, MJPEG cameras. Decoding is the platform player's, so codec support matches the device. |
-| Audio | MP3, FLAC, AAC, OGG, WAV; shown as a title card while playing. |
+| Audio | MP3, FLAC, AAC, OGG, WAV; shown as a title card while playing. With **Keep audio in the background** on, audio plays with nothing on screen at all: the dashboard (or a running screensaver) stays exactly as it was, made for TTS announcements and music that should not take over the wall. The kind is what the sender declares, so video and streams still show even with the toggle on. |
 
 Playback answers to Home Assistant: play, pause, seek, stop, volume and
 mute all work from the entity. A tap on the kiosk screen dismisses the

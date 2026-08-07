@@ -9,6 +9,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Added
 - A Screensaver active switch over MQTT, carrying what the old Screensaver switch did: it is on while a screensaver is on screen, turning it on starts the screensaver right away, and turning it off dismisses it until the idle timeout runs out again.
+- A Keep audio in the background toggle for the DLNA renderer (discussion #153), off by default: with it on, audio pushed to the renderer, such as TTS announcements or music, plays without taking over the screen, so the dashboard or a running screensaver stays exactly as it was. Images, video and camera streams still show as before, and playback control from Home Assistant keeps working while the audio stays invisible.
 
 ### Changed
 - Scrolling content now fades out gracefully at the edges instead of being cut off: the settings lists, search results, log boxes and scrolling dialog bodies on the device, and the settings pages, modals, nav rail and consoles in the Remote Administration UI, all show a soft gradient at an edge that still hides content, sliding away once the list reaches its end.

@@ -2799,6 +2799,19 @@ const dlnaEnabled = SettingDef<bool>(
   category: 'DLNA',
 );
 
+// Discussion #153: TTS and music pushed to the renderer took over the
+// screen with the player card. Images, video and streams still do; only
+// media announced as audio stays off screen.
+const dlnaAudioBackground = SettingDef<bool>(
+  key: 'dlna.audio_background',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Keep audio in the background',
+  description: 'Pushed audio plays without taking over the screen.',
+  category: 'DLNA',
+  dependsOn: 'dlna.enabled',
+);
+
 // Still 2325, deliberately. It collides with the secure context proxy, which
 // binds the same number on loopback and wins the race on every http instance
 // (issue #49) — but the renderer now steps to the next free port instead of
@@ -3115,6 +3128,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinLyrics,
   sendspinLyricsOffset,
   dlnaEnabled,
+  dlnaAudioBackground,
   dlnaPort,
   deviceName,
   uiTheme,

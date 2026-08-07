@@ -132,12 +132,22 @@ class DlnaManager extends Manager {
   final pending = ValueNotifier<bool>(false);
   Timer? _pendingTimeout;
 
+  /// Background audio (discussion #153): with the setting on, media
+  /// announced as audio plays with nothing on screen — no player card, no
+  /// loading screen, and no claim on the screensaver. Keyed off what the
+  /// controller declared, so video and streams still take the screen even
+  /// when they happen to carry no picture.
+  bool get audioInBackground =>
+      media.value?.kind == 'audio' &&
+      _settings.get(defs.dlnaAudioBackground);
+
   /// Whether the DLNA overlay is on screen (media up, or queued and showing
   /// its loading card). This is the overlay's own visibility rule, shared
   /// so the dashboard rendering freeze can never disagree with what is
   /// actually covering the screen.
   bool get coversScreen =>
       media.value != null &&
+      !audioInBackground &&
       (transportState.value != 'STOPPED' || pending.value);
 
   void _setPending(bool value) {
@@ -852,11 +862,15 @@ class DlnaManager extends Manager {
 
   /// Pushed media owns the screen: dismiss the screensaver now and keep
   /// the idle timer at bay while playing, the same signal a touch sends.
+  /// Background audio deliberately sends nothing — keeping the current
+  /// screen includes a screensaver that is already up.
   void _onPlaybackStarted() {
-    bus.publish(const ActivityDetected(source: 'dlna'));
+    if (!audioInBackground) {
+      bus.publish(const ActivityDetected(source: 'dlna'));
+    }
     _activityTick?.cancel();
     _activityTick = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (transportState.value == 'PLAYING') {
+      if (transportState.value == 'PLAYING' && !audioInBackground) {
         bus.publish(const ActivityDetected(source: 'dlna'));
       }
     });
