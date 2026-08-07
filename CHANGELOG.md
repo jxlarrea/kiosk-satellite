@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.6 - 2026-08-07
 
 ### Fixed
 - A black screen at startup on some devices, stuck in a restart loop every 30 seconds (#145): on slower hardware the dashboard's browser view could be created a moment before the app's screen was ready to host it, the creation failed silently and was never retried, and the built-in recovery restarted the app into the same failure. The browser view now waits for the screen to be ready before it is created, and the recovery watchdog additionally rebuilds the view in place, well before resorting to an app restart.
