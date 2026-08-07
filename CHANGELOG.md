@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.7 - 2026-08-07
 
 ### Added
 - The Clock screensaver's background photo can be set from Home Assistant (#150): a new Clock background text entity over MQTT holds the image's file path on the device, so automations can rotate the picture behind the clock, push an alert image, or clear it back to the solid color with an empty value. Writing a path overwrites the photo picked on the device, a path that does not exist yet simply shows no background until the file appears, and changes apply live while the clock is on screen. The Remote Administration UI's Background photo row edits the same path as a text field now, where it used to just say a photo was selected on the device. Getting the images onto the device is out of scope; the remote admin's File Manager can upload them.
