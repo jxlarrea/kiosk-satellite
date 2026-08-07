@@ -127,6 +127,34 @@
   .dot.on { background: var(--ok); }
   .dot.off { background: var(--error); }
 
+  /* Settings search: the pill under the brand, the device rail's field.
+     On narrow screens the results take the nav list's place inside the
+     drawer; on wide screens they land in the content pane (#tab-search). */
+  .side-search { padding: 2px 16px 12px; }
+  .side-search .field { position: relative; }
+  .side-search .field svg { position: absolute; left: 15px; top: 50%;
+    transform: translateY(-50%); width: 16px; height: 16px;
+    color: var(--muted); pointer-events: none; }
+  .side-search input { width: 100%; box-sizing: border-box;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; color: var(--text); font-size: 14px;
+    padding: 9px 16px 9px 40px; }
+  .side-search input:focus { outline: none; border-color: var(--primary); }
+  .side-search input::placeholder { color: var(--muted); }
+  #sideResults { display: none; }
+  .search-results .row { cursor: pointer; }
+  .search-results .row:hover .name { color: var(--primary); }
+  .search-results .name b { color: var(--primary); font-weight: 600; }
+  /* The found-it flash on the row a result lands on: two soft blinks,
+     matching the device's landing pulse. */
+  .search-hit { animation: search-hit 1.6s ease both;
+    border-radius: var(--radius-sm); }
+  @keyframes search-hit {
+    0%, 50%, 100% { background: transparent; box-shadow: none; }
+    25%, 75% { background: var(--primary-soft);
+      box-shadow: 0 0 0 6px var(--primary-soft); }
+  }
+
   /* The rail rows: icon discs cycling the brand accents (the same language
      as the device's category icons), semibold titles, muted subtitles, and
      a large rounded highlight on the selected row. */
@@ -321,6 +349,11 @@
       z-index: 20; width: 300px; max-width: 84vw;
       transform: translateX(-100%); transition: transform .22s ease; }
     #sidebar.open { transform: none; box-shadow: 0 10px 40px rgba(0, 0, 0, .45); }
+    /* While searching, the results replace the nav list below the field —
+       the drawer covers the content pane, so that is where the eyes are. */
+    #sidebar.searching nav#tabs { display: none; }
+    #sidebar.searching #sideResults { display: block; flex: 1;
+      overflow-y: auto; padding: 0 12px 12px; }
     .nav-backdrop.show { display: block; }
     main { padding: 14px 16px 20px; }
     #pageTitle { font-size: 22px; margin-bottom: 12px; }
@@ -516,6 +549,16 @@
           <div class="brand-sub" id="deviceName"></div>
         </div>
       </div>
+      <!-- Settings search, mirroring the device's rail field: typing swaps
+           the content pane for results (and, on narrow screens, the nav
+           list below this box). -->
+      <div class="side-search">
+        <div class="field">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="settingsSearch" type="search" placeholder="Search settings" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div id="sideResults"></div>
       <nav id="tabs">
         <button data-tab="dashboard" class="active">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
@@ -660,6 +703,7 @@
 
     <!-- Settings, one tab per category, the same groupings, in the same
          order, as the device's settings rail. -->
+    <div class="tab" id="tab-search"></div>
     <div class="tab" id="tab-browser"></div>
     <div class="tab" id="tab-kiosk"></div>
     <div class="tab" id="tab-lockdown"></div>
@@ -842,6 +886,14 @@ const TAB_TITLES = {
 };
 
 function showTab(name, { push = true } = {}) {
+  // Picking a tab while searching leaves the search: clear the field so the
+  // results do not linger under a pane the person just chose over them.
+  const search = document.getElementById('settingsSearch');
+  if (search && search.value && $('#sidebar').classList.contains('searching')) {
+    search.value = '';
+    $('#sidebar').classList.remove('searching');
+    searchReturnTab = null;
+  }
   name = LEGACY_TABS[name] || name;
   const tab = TABS.includes(name) ? name : 'dashboard';
   document.querySelectorAll('#tabs button').forEach((b) =>
@@ -880,6 +932,221 @@ function setNav(open) {
 $('#navToggle').addEventListener('click', () =>
   setNav(!$('#tabs').classList.contains('open')));
 $('#navBackdrop').addEventListener('click', () => setNav(false));
+
+/* ---- Settings search ---- */
+// Mirrors the device's settings search (settings_search.dart): one index
+// over the definitions (state.settings, the same declarative list), the
+// pages themselves, and a short list of hand-built rows the definitions do
+// not cover. Keep SEARCH_EXTRAS in step with handBuiltSearchEntries there.
+const SEARCH_CATEGORY_TABS = {
+  'Browser': 'browser', 'Kiosk': 'kiosk', 'Lockdown': 'lockdown',
+  'Launcher': 'launcher', 'Screen & Audio': 'screenaudio',
+  'Screensaver': 'screensaver', 'Camera': 'camera',
+  'Home Assistant': 'homeassistant', 'Voice Satellite': 'voicesatellite',
+  'MQTT': 'mqtt', 'Sendspin': 'sendspin', 'DLNA': 'dlna',
+  'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
+};
+const SEARCH_EXTRAS = [
+  { tab: 'homeassistant', title: 'Validate connection',
+    desc: 'Check the URL and token against your Home Assistant.' },
+  { tab: 'homeassistant', title: 'Secure context proxy',
+    desc: 'Serve a plain-http Home Assistant through a secure proxy inside the app.' },
+  { tab: 'homeassistant', title: 'Dashboard',
+    desc: 'Pick the dashboard and view the kiosk shows.', heading: 'Dashboard' },
+  { tab: 'voicesatellite', title: 'Assigned satellite',
+    desc: 'The assist_satellite entity this kiosk identifies as in Home Assistant.' },
+  { tab: 'voicesatellite', title: 'Required system permissions',
+    desc: 'Microphone and the other grants wake word detection needs.',
+    heading: 'Required system permissions' },
+  { tab: 'kiosk', title: 'Required system permissions',
+    desc: 'The grants the kiosk and lockdown protections lean on.',
+    heading: 'Required system permissions' },
+  { tab: 'lockdown', title: 'Required system permissions',
+    desc: 'The grants the lockdown protections lean on.',
+    heading: 'Required system permissions' },
+  { tab: 'screenaudio', title: 'Master volume',
+    desc: 'The device volume the media and assistant faders scale under.' },
+  { tab: 'device', title: 'Export configuration',
+    desc: "Download every setting and the page's local storage." },
+  { tab: 'device', title: 'Import configuration',
+    desc: "Replace this device's settings from an exported file." },
+];
+// The nav's own entries, so pages are findable alongside their settings.
+const SEARCH_PAGES = [...document.querySelectorAll('#tabs button')].map((b) => ({
+  tab: b.dataset.tab,
+  title: b.querySelector('.nav-title').textContent.trim(),
+  desc: (b.querySelector('.nav-sub')?.textContent || '').trim(),
+  isPage: true,
+}));
+
+function searchSettingsIndex(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const terms = q.split(/\s+/);
+  const defs = (state.settings || [])
+    .filter((s) => !s.hidden && SEARCH_CATEGORY_TABS[s.category])
+    .map((s) => ({ tab: SEARCH_CATEGORY_TABS[s.category], title: s.title,
+      desc: s.description || '', key: s.key }));
+  const hits = [];
+  [...SEARCH_PAGES, ...defs, ...SEARCH_EXTRAS].forEach((e, order) => {
+    const title = e.title.toLowerCase();
+    const hay = `${title} ${e.desc.toLowerCase()}`;
+    if (!terms.every((t) => hay.includes(t))) return;
+    // Title prefix beats title match beats description-only, then the nav
+    // order keeps groups contiguous — the same ranking as the device.
+    const score = title.startsWith(q) ? 0
+      : terms.every((t) => title.includes(t)) ? 1 : 2;
+    hits.push({ e, rank: TABS.indexOf(e.tab), score, order });
+  });
+  hits.sort((a, b) => a.rank - b.rank || a.score - b.score || a.order - b.order);
+  return hits.map((h) => h.e);
+}
+
+let searchReturnTab = null;
+function renderSearch() {
+  const q = $('#settingsSearch').value.trim();
+  $('#sidebar').classList.toggle('searching', !!q);
+  if (!q) {
+    if (searchReturnTab) {
+      const back = searchReturnTab;
+      searchReturnTab = null;
+      showTab(back, { push: false });
+    }
+    return;
+  }
+  if (!searchReturnTab) {
+    searchReturnTab =
+      document.querySelector('#tabs button.active')?.dataset.tab || 'dashboard';
+    document.querySelectorAll('.tab').forEach((t) =>
+      t.classList.toggle('active', t.id === 'tab-search'));
+    $('#pageTitle').textContent = 'Search results';
+  }
+  const results = searchSettingsIndex(q);
+  const build = (root) => {
+    root.innerHTML = '';
+    if (!results.length) {
+      const card = document.createElement('div');
+      card.className = 'card search-results';
+      const d = document.createElement('div');
+      d.className = 'desc';
+      d.style.cssText = 'color:var(--muted); padding:12px 0;';
+      d.textContent = `No settings match "${q}".`;
+      card.appendChild(d);
+      root.appendChild(card);
+      return;
+    }
+    let tab = null;
+    let card = null;
+    for (const e of results) {
+      if (e.tab !== tab) {
+        tab = e.tab;
+        const h = document.createElement('h2');
+        h.className = 'card-title';
+        h.textContent = TAB_TITLES[tab] || tab;
+        root.appendChild(h);
+        card = document.createElement('div');
+        card.className = 'card search-results';
+        root.appendChild(card);
+      }
+      const row = document.createElement('div');
+      row.className = 'row';
+      const info = document.createElement('div');
+      info.className = 'info';
+      const name = document.createElement('div');
+      name.className = 'name';
+      // The first match emphasized, so each row says why it is here.
+      const i = e.title.toLowerCase().indexOf(q);
+      if (i < 0) name.textContent = e.title;
+      else {
+        name.append(document.createTextNode(e.title.slice(0, i)));
+        const b = document.createElement('b');
+        b.textContent = e.title.slice(i, i + q.length);
+        name.appendChild(b);
+        name.append(document.createTextNode(e.title.slice(i + q.length)));
+      }
+      const desc = document.createElement('div');
+      desc.className = 'desc';
+      desc.textContent = e.desc;
+      info.append(name, desc);
+      row.appendChild(info);
+      row.addEventListener('click', () => jumpToResult(e));
+      card.appendChild(row);
+    }
+  };
+  build($('#tab-search'));
+  build($('#sideResults'));
+}
+
+// A definition row gated off by its dependsOn chain has no element to land
+// on; climb to the nearest parent that is rendered — the setting that turns
+// the found one on. Mirrors resolveSearchAnchor on the device.
+function resolveSearchAnchor(e) {
+  if (!e.key) return e.isPage ? null : e;
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  const shown = (s) => {
+    if (s.hidden) return false;
+    if (!s.dependsOn) return true;
+    const dep = byKey[s.dependsOn];
+    if (!dep) return true;
+    return dep.value === (s.dependsOnValue ?? true) && shown(dep);
+  };
+  let s = byKey[e.key];
+  while (s && !shown(s)) s = s.dependsOn ? byKey[s.dependsOn] : null;
+  return s ? { key: s.key } : null;
+}
+
+function findSearchAnchor(tab, a) {
+  const root = document.getElementById(`tab-${tab}`);
+  if (!root || !a) return null;
+  if (a.key) return root.querySelector(`[data-key="${a.key}"]`);
+  for (const n of root.querySelectorAll('.row .info .name')) {
+    if (n.textContent === a.title) return n.closest('.row');
+  }
+  if (a.heading) {
+    for (const h of root.querySelectorAll('h2.card-title')) {
+      if (h.textContent === a.heading) return h.nextElementSibling;
+    }
+  }
+  return null;
+}
+
+function jumpToResult(e) {
+  const anchor = resolveSearchAnchor(e);
+  searchReturnTab = null;
+  $('#sidebar').classList.remove('searching');
+  setNav(false);
+  showTab(e.tab);
+  if (!anchor) return;
+  // Tabs that render async may not have the row yet; look for a moment.
+  let tries = 14;
+  const seek = () => {
+    const el = findSearchAnchor(e.tab, anchor);
+    if (!el) {
+      if (--tries > 0) setTimeout(seek, 150);
+      return;
+    }
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.remove('search-hit');
+    void el.offsetWidth; // restart the animation on a repeat landing
+    el.classList.add('search-hit');
+    setTimeout(() => el.classList.remove('search-hit'), 1700);
+  };
+  seek();
+}
+
+$('#settingsSearch').addEventListener('input', renderSearch);
+// Tapping back into a field that still holds a query reopens the results,
+// like the device's field does.
+$('#settingsSearch').addEventListener('focus', (ev) => {
+  if (ev.target.value.trim()) renderSearch();
+});
+$('#settingsSearch').addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') {
+    ev.target.value = '';
+    renderSearch();
+    ev.target.blur();
+  }
+});
 
 $('#tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('button');

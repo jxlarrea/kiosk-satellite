@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- Settings search, in the on-device settings and the Remote Administration UI alike: a search field sits under the Settings title (under the Kiosk Satellite logo in the remote UI), typing swaps the content for results grouped by page with the match highlighted, and tapping a result opens its page, scrolls to the setting and blinks it. Results cover every setting, the pages themselves and the hand-built rows such as Validate connection or the permissions groups; a setting currently hidden behind a switch that is off still appears, and tapping it lands on the switch that turns it on.
+
 ## v2026.8.5 - 2026-08-07
 
 ### Added

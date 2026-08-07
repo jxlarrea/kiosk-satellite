@@ -33,6 +33,7 @@ import 'kit.dart';
 import 'media_picker.dart';
 import 'theme.dart';
 import 'mic_level_meter.dart';
+import 'settings_search.dart';
 import 'wake_word_tester.dart';
 
 /// Render a category's settings as cards: consecutive settings sharing a
@@ -223,6 +224,213 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   int _selected = 0;
 
+  /// Search over every pane, One UI style: the field lives with the rail (or
+  /// the hub on narrow screens), typing swaps the content for results, and a
+  /// tapped result opens its pane and scrolls to the row.
+  final _searchCtl = TextEditingController();
+  bool _showResults = false;
+
+  /// The row the last tapped result lands on; the epoch re-arms the landing
+  /// so tapping the same result again scrolls again.
+  String? _landing;
+  int _landingEpoch = 0;
+
+  late final List<SettingsSearchEntry> _searchIndex = buildSettingsSearchIndex([
+    for (final (category, title, _, subtitle) in _categories)
+      (category, title, subtitle),
+  ]);
+
+  String get _query => _searchCtl.text.trim();
+
+  @override
+  void dispose() {
+    _searchCtl.dispose();
+    super.dispose();
+  }
+
+  void _openResult(SettingsSearchEntry entry) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final index = _categories.indexWhere((c) => c.$1 == entry.category);
+    if (index < 0) return;
+    final anchor = resolveSearchAnchor(
+      entry,
+      widget.container.settings.visible,
+    );
+    final wide = MediaQuery.sizeOf(context).width >= 720;
+    if (wide) {
+      setState(() {
+        _selected = index;
+        _showResults = false;
+        _landing = anchor;
+        _landingEpoch++;
+      });
+    } else {
+      // The results stay behind the pushed pane, so Back returns to them.
+      final (category, title, _, _) = _categories[index];
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CategorySettingsScreen(
+            container: widget.container,
+            title: title,
+            category: category,
+            landingAnchor: anchor,
+          ),
+        ),
+      );
+    }
+  }
+
+  /// The pill search field, One UI's shape: rounded fill, leading glass,
+  /// trailing clear while there is something to clear.
+  Widget _searchField(BuildContext context, {required EdgeInsets padding}) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: padding,
+      child: TextField(
+        controller: _searchCtl,
+        textInputAction: TextInputAction.search,
+        onTap: () {
+          if (_query.isNotEmpty && !_showResults) {
+            setState(() => _showResults = true);
+          }
+        },
+        onChanged: (_) => setState(() => _showResults = _query.isNotEmpty),
+        decoration: InputDecoration(
+          hintText: 'Search settings',
+          prefixIcon: Icon(Icons.search, color: scheme.onSurfaceVariant),
+          suffixIcon: _query.isEmpty
+              ? null
+              : IconButton(
+                  tooltip: 'Clear search',
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: () => setState(() {
+                    _searchCtl.clear();
+                    _showResults = false;
+                  }),
+                ),
+          filled: true,
+          fillColor: scheme.surfaceContainerHighest,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(100),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// The results, grouped under their pane's heading the way One UI groups
+  /// by page. Wide screens give it the pane header the category content has;
+  /// narrow screens list it directly under the field.
+  Widget _resultsPane(BuildContext context, {required bool wide}) {
+    final theme = Theme.of(context);
+    final results = searchSettings(_query, _searchIndex, [
+      for (final c in _categories) c.$1,
+    ]);
+    final children = <Widget>[];
+    if (wide) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
+          child: Row(
+            children: [
+              const Icon(Icons.search, size: 26),
+              const SizedBox(width: 12),
+              Text(
+                'Search results',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontFamily: Ks.displayFont,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (results.isEmpty) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(Ks.inset, 12, Ks.inset, 12),
+          child: Text(
+            'No settings match "$_query".',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      );
+    } else {
+      String? category;
+      var rows = <Widget>[];
+      void flush() {
+        if (rows.isEmpty) return;
+        children.add(SettingsCard(children: rows));
+        rows = [];
+      }
+
+      for (final entry in results) {
+        if (entry.category != category) {
+          flush();
+          category = entry.category;
+          final title = _categories
+              .where((c) => c.$1 == category)
+              .map((c) => c.$2)
+              .firstOrNull;
+          children.add(SectionHeading(title ?? entry.category));
+        }
+        rows.add(
+          ListTile(
+            title: _highlightMatch(entry.title, _query, theme),
+            subtitle: entry.description.isEmpty
+                ? null
+                : Text(
+                    entry.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+            trailing: entry.isPage ? const Icon(Icons.chevron_right) : null,
+            onTap: () => _openResult(entry),
+          ),
+        );
+      }
+      flush();
+    }
+    return ListView(
+      padding: wide
+          ? const EdgeInsets.fromLTRB(8, 24, 28, 24)
+          : Ks.pagePadding,
+      children: children,
+    );
+  }
+
+  /// The result title with the first match of the query emphasized, so the
+  /// eye can tell why each row is in the list.
+  Widget _highlightMatch(String text, String query, ThemeData theme) {
+    final q = query.trim().toLowerCase();
+    final index = q.isEmpty ? -1 : text.toLowerCase().indexOf(q);
+    if (index < 0) return Text(text);
+    final emphasis = TextStyle(
+      color: theme.colorScheme.primary,
+      fontWeight: FontWeight.w600,
+    );
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: text.substring(0, index)),
+          TextSpan(text: text.substring(index, index + q.length),
+              style: emphasis),
+          TextSpan(text: text.substring(index + q.length)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // The split needs room for a readable rail plus content; below that,
@@ -267,6 +475,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
+                  _searchField(
+                    context,
+                    padding: const EdgeInsets.fromLTRB(24, 0, 16, 10),
+                  ),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
@@ -281,35 +493,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             Expanded(
-              child: ListView(
-                key: PageStorageKey('settings-pane-$category'),
-                padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
-                    child: Row(
-                      children: [
-                        // The rail's icon again — bare glyph, no disc: the
-                        // title row is a label, not a button.
-                        Icon(icon, size: 26),
-                        const SizedBox(width: 12),
-                        Text(
-                          title,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontFamily: Ks.displayFont,
-                            fontWeight: FontWeight.w600,
+              child: _showResults
+                  ? _resultsPane(context, wide: true)
+                  : SearchLandingScope(
+                      target: _landing,
+                      epoch: _landingEpoch,
+                      child: ListView(
+                        key: PageStorageKey('settings-pane-$category'),
+                        padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
+                            child: Row(
+                              children: [
+                                // The rail's icon again — bare glyph, no
+                                // disc: the title row is a label, not a
+                                // button.
+                                Icon(icon, size: 26),
+                                const SizedBox(width: 12),
+                                Text(
+                                  title,
+                                  style: theme.textTheme.headlineSmall
+                                      ?.copyWith(
+                                        fontFamily: Ks.displayFont,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                          _CategoryContent(
+                            key: ValueKey(category),
+                            container: widget.container,
+                            category: category,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  _CategoryContent(
-                    key: ValueKey(category),
-                    container: widget.container,
-                    category: category,
-                  ),
-                ],
-              ),
             ),
           ],
         ),
@@ -337,7 +557,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(Ks.radiusCard),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => setState(() => _selected = index),
+          // Picking a category leaves the results and disarms the last
+          // landing — a stale target must not flash on a later visit.
+          onTap: () => setState(() {
+            _selected = index;
+            _showResults = false;
+            _landing = null;
+          }),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
@@ -375,33 +601,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   /// Narrow screens: the classic hub page; categories push on top of it.
+  /// The search field sits under the title; typing swaps the category list
+  /// for results, and results push their pane like a category tap does.
   Widget _hub(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: constrainedColumn(
-        ListView(
-          padding: Ks.pagePadding,
+        Column(
           children: [
-            SettingsCard(
-              children: [
-                for (final (index, (category, title, icon, subtitle))
-                    in _categories.indexed)
-                  ListTile(
-                    leading: _CategoryIcon(index: index, icon: icon),
-                    title: Text(title),
-                    subtitle: Text(subtitle),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => CategorySettingsScreen(
-                          container: widget.container,
-                          title: title,
-                          category: category,
+            _searchField(
+              context,
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+            ),
+            Expanded(
+              child: _showResults
+                  ? _resultsPane(context, wide: false)
+                  : ListView(
+                      padding: Ks.pagePadding,
+                      children: [
+                        SettingsCard(
+                          children: [
+                            for (final (index, (category, title, icon, subtitle))
+                                in _categories.indexed)
+                              ListTile(
+                                leading: _CategoryIcon(
+                                  index: index,
+                                  icon: icon,
+                                ),
+                                title: Text(title),
+                                subtitle: Text(subtitle),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => CategorySettingsScreen(
+                                      container: widget.container,
+                                      title: title,
+                                      category: category,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
+                      ],
                     ),
-                  ),
-              ],
             ),
           ],
         ),
@@ -418,11 +661,16 @@ class CategorySettingsScreen extends StatelessWidget {
     required this.container,
     required this.title,
     required this.category,
+    this.landingAnchor,
   });
 
   final AppContainer container;
   final String title;
   final String category;
+
+  /// The row a search result lands on: scrolled to and blinked once the
+  /// pane is up. Null opens the pane at the top, the plain category tap.
+  final String? landingAnchor;
 
   @override
   Widget build(BuildContext context) {
@@ -450,11 +698,15 @@ class CategorySettingsScreen extends StatelessWidget {
         ),
       ),
       body: constrainedColumn(
-        ListView(
-          padding: Ks.pagePadding,
-          children: [
-            _CategoryContent(container: container, category: category),
-          ],
+        SearchLandingScope(
+          target: landingAnchor,
+          epoch: 1,
+          child: ListView(
+            padding: Ks.pagePadding,
+            children: [
+              _CategoryContent(container: container, category: category),
+            ],
+          ),
         ),
       ),
     );
@@ -1036,7 +1288,10 @@ class _CategoryContentState extends State<_CategoryContent> {
           const SectionHeading('Audio Volume'),
           SettingsCard(
             children: [
-              _MasterVolumeTile(container: container),
+              SearchLandingTarget(
+                id: 'x:master_volume',
+                child: _MasterVolumeTile(container: container),
+              ),
               for (final def in _defsFor('Screen & Audio'))
                 if (def.section == 'Audio Volume')
                   SettingTile(
@@ -1054,15 +1309,21 @@ class _CategoryContentState extends State<_CategoryContent> {
           SettingsCard(
             children: [
               if (container.settings.get(wakeWordEnabled))
-                AudioDeviceTile(
-                  container: container,
-                  def: audioMicDevice,
-                  inputs: true,
+                SearchLandingTarget(
+                  id: audioMicDevice.key,
+                  child: AudioDeviceTile(
+                    container: container,
+                    def: audioMicDevice,
+                    inputs: true,
+                  ),
                 ),
-              AudioDeviceTile(
-                container: container,
-                def: audioSpeakerDevice,
-                inputs: false,
+              SearchLandingTarget(
+                id: audioSpeakerDevice.key,
+                child: AudioDeviceTile(
+                  container: container,
+                  def: audioSpeakerDevice,
+                  inputs: false,
+                ),
               ),
             ],
           ),
@@ -1105,37 +1366,46 @@ class _CategoryContentState extends State<_CategoryContent> {
             replace: {
               if (widget.category == 'Screensaver' &&
                   !container.deviceCamera.effectiveEnabled)
-                screensaverDismissOnMotion.key: const SwitchListTile(
-                  title: Text('Dismiss on motion'),
-                  subtitle: Text(
-                    'Requires the camera. Turn it on in the Camera '
-                    'settings first.',
+                screensaverDismissOnMotion.key: SearchLandingTarget(
+                  id: screensaverDismissOnMotion.key,
+                  child: const SwitchListTile(
+                    title: Text('Dismiss on motion'),
+                    subtitle: Text(
+                      'Requires the camera. Turn it on in the Camera '
+                      'settings first.',
+                    ),
+                    value: false,
+                    onChanged: null,
                   ),
-                  value: false,
-                  onChanged: null,
                 ),
               if (widget.category == 'Camera' &&
                   container.deviceCamera.cameraKnownAbsent)
-                cameraEnabled.key: SwitchListTile(
-                  title: Text(cameraEnabled.title),
-                  subtitle: Text(cameraEnabled.description),
-                  value: false,
-                  onChanged: null,
+                cameraEnabled.key: SearchLandingTarget(
+                  id: cameraEnabled.key,
+                  child: SwitchListTile(
+                    title: Text(cameraEnabled.title),
+                    subtitle: Text(cameraEnabled.description),
+                    value: false,
+                    onChanged: null,
+                  ),
                 ),
               // One camera means no front/back choice to offer (the
               // capture falls back to the camera present regardless of
               // the stored value).
               if (widget.category == 'Camera' &&
                   container.deviceCamera.knownFacings?.length == 1)
-                cameraDevice.key: ListTile(
-                  title: Text(cameraDevice.title),
-                  subtitle: const Text('The only camera this device has.'),
-                  trailing: Text(
-                    cameraDevice.optionLabels?[container
-                            .deviceCamera
-                            .knownFacings!
-                            .single] ??
-                        container.deviceCamera.knownFacings!.single,
+                cameraDevice.key: SearchLandingTarget(
+                  id: cameraDevice.key,
+                  child: ListTile(
+                    title: Text(cameraDevice.title),
+                    subtitle: const Text('The only camera this device has.'),
+                    trailing: Text(
+                      cameraDevice.optionLabels?[container
+                              .deviceCamera
+                              .knownFacings!
+                              .single] ??
+                          container.deviceCamera.knownFacings!.single,
+                    ),
                   ),
                 ),
             },
@@ -1186,8 +1456,11 @@ class _CategoryContentState extends State<_CategoryContent> {
         // has no page on the device, so its grants live here too.
         if (widget.category == 'Kiosk') ...[
           const SectionHeading('Required system permissions'),
-          SettingsCard(
-            children: [_KioskPermissionsTile(container: container)],
+          SearchLandingTarget(
+            id: 'x:kiosk_permissions',
+            child: SettingsCard(
+              children: [_KioskPermissionsTile(container: container)],
+            ),
           ),
         ],
         if (widget.category == 'Device' &&
@@ -1197,22 +1470,28 @@ class _CategoryContentState extends State<_CategoryContent> {
           const SectionHeading('Configuration'),
           SettingsCard(
             children: [
-              ListTile(
-                title: const Text('Export configuration'),
-                subtitle: const Text(
-                  "Save every setting and the page's local storage to a "
-                  'file.',
+              SearchLandingTarget(
+                id: 'x:export_config',
+                child: ListTile(
+                  title: const Text('Export configuration'),
+                  subtitle: const Text(
+                    "Save every setting and the page's local storage to a "
+                    'file.',
+                  ),
+                  trailing: const Icon(Icons.download_outlined),
+                  onTap: _exportConfig,
                 ),
-                trailing: const Icon(Icons.download_outlined),
-                onTap: _exportConfig,
               ),
-              ListTile(
-                title: const Text('Import configuration'),
-                subtitle: const Text(
-                  "Replace this device's settings from an exported file.",
+              SearchLandingTarget(
+                id: 'x:import_config',
+                child: ListTile(
+                  title: const Text('Import configuration'),
+                  subtitle: const Text(
+                    "Replace this device's settings from an exported file.",
+                  ),
+                  trailing: const Icon(Icons.upload_outlined),
+                  onTap: _importConfig,
                 ),
-                trailing: const Icon(Icons.upload_outlined),
-                onTap: _importConfig,
               ),
             ],
           ),
@@ -1275,7 +1554,9 @@ class _CategoryContentState extends State<_CategoryContent> {
             def: haToken,
             onChanged: () => setState(() {}),
           ),
-          ListTile(
+          SearchLandingTarget(
+            id: 'x:ha_validate',
+            child: ListTile(
             title: const Text('Validate connection'),
             subtitle: Text(
               _haValidating
@@ -1298,31 +1579,35 @@ class _CategoryContentState extends State<_CategoryContent> {
                         : Icons.cloud_off_outlined,
                   ),
             onTap: _haValidating ? null : () => _validateHa(container),
+            ),
           ),
           // Hand-built (and mirrored in the remote UI's connection card):
           // the row's enabled state derives from the URL scheme. https
           // needs no proxy, so the switch sits disabled and off; a plain
           // http URL enables it, and validation turns it on with a modal.
-          Builder(
-            builder: (context) {
-              final uri = Uri.tryParse(container.settings.get(haUrl).trim());
-              final isHttp =
-                  uri != null &&
-                  uri.scheme == 'http' &&
-                  uri.host != 'localhost' &&
-                  uri.host != '127.0.0.1';
-              return SwitchListTile(
-                title: Text(secureProxy.title),
-                subtitle: Text(secureProxy.description),
-                value: container.settings.get(secureProxy),
-                onChanged: isHttp
-                    ? (v) async {
-                        await container.settings.set(secureProxy, v);
-                        if (mounted) setState(() {});
-                      }
-                    : null,
-              );
-            },
+          SearchLandingTarget(
+            id: 'x:secure_proxy',
+            child: Builder(
+              builder: (context) {
+                final uri = Uri.tryParse(container.settings.get(haUrl).trim());
+                final isHttp =
+                    uri != null &&
+                    uri.scheme == 'http' &&
+                    uri.host != 'localhost' &&
+                    uri.host != '127.0.0.1';
+                return SwitchListTile(
+                  title: Text(secureProxy.title),
+                  subtitle: Text(secureProxy.description),
+                  value: container.settings.get(secureProxy),
+                  onChanged: isHttp
+                      ? (v) async {
+                          await container.settings.set(secureProxy, v);
+                          if (mounted) setState(() {});
+                        }
+                      : null,
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -1383,7 +1668,10 @@ class _CategoryContentState extends State<_CategoryContent> {
   List<Widget> _haConfiguredCards(AppContainer container) {
     return [
       const SectionHeading('Dashboard'),
-      _DashboardPickerCard(container: container),
+      SearchLandingTarget(
+        id: 'x:dashboard_picker',
+        child: _DashboardPickerCard(container: container),
+      ),
       ..._sectionedCards(container, [
         for (final def in _defsFor('Home Assistant'))
           if (def.key != haUrl.key &&
@@ -1420,11 +1708,16 @@ class _CategoryContentState extends State<_CategoryContent> {
         () => setState(() {}),
         replace: {
           if (container.settings.get(haRotationEnabled))
-            haReturnHomeEnabled.key: const SwitchListTile(
-              title: Text('Return to Home Dashboard View'),
-              subtitle: Text('Turned off while Dashboard view rotation is on.'),
-              value: false,
-              onChanged: null,
+            haReturnHomeEnabled.key: SearchLandingTarget(
+              id: haReturnHomeEnabled.key,
+              child: const SwitchListTile(
+                title: Text('Return to Home Dashboard View'),
+                subtitle: Text(
+                  'Turned off while Dashboard view rotation is on.',
+                ),
+                value: false,
+                onChanged: null,
+              ),
             ),
         },
         after: {
@@ -1603,7 +1896,9 @@ class _CategoryContentState extends State<_CategoryContent> {
             children: [
               FutureBuilder<String>(
                 future: _satellite,
-                builder: (context, snap) => SettingsCard(
+                builder: (context, snap) => SearchLandingTarget(
+                  id: 'x:assigned_satellite',
+                  child: SettingsCard(
                   children: [
                     ListTile(
                       title: const Text('Assigned satellite'),
@@ -1621,6 +1916,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                       ),
                     ),
                   ],
+                  ),
                 ),
               ),
               SettingsCard(
@@ -1645,8 +1941,11 @@ class _CategoryContentState extends State<_CategoryContent> {
               // for diagnosing "the wake word isn't triggering".
               if (container.settings.get(wakeWordEnabled)) ...[
                 const SectionHeading('Wake Word Tester'),
-                SettingsCard(
-                  children: [WakeWordTesterTile(container: container)],
+                SearchLandingTarget(
+                  id: 'x:wake_word_tester',
+                  child: SettingsCard(
+                    children: [WakeWordTesterTile(container: container)],
+                  ),
                 ),
               ],
               // Last, and on their own card: these are the OS's to give,
@@ -1656,8 +1955,11 @@ class _CategoryContentState extends State<_CategoryContent> {
               // for the microphone through its own flow.
               if (container.settings.get(wakeWordEnabled)) ...[
                 const SectionHeading('Required system permissions'),
-                SettingsCard(
-                  children: [SystemPermissionsTile(container: container)],
+                SearchLandingTarget(
+                  id: 'x:vs_permissions',
+                  child: SettingsCard(
+                    children: [SystemPermissionsTile(container: container)],
+                  ),
                 ),
               ],
             ],
@@ -4082,7 +4384,12 @@ class SettingTile extends StatelessWidget {
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      // Every definition-rendered row is a search landing: the settings
+      // search scrolls to and blinks the row whose key it resolved.
+      SearchLandingTarget(id: def.key, child: _tile(context));
+
+  Widget _tile(BuildContext context) {
     switch (def.type) {
       case SettingType.boolean:
         return SwitchListTile(
