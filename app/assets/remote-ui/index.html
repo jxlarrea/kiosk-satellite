@@ -294,6 +294,11 @@
   .row .info { flex: 1; min-width: 0; }
   .row .info .name { font-size: 16px; font-weight: 500; }
   .row .info .desc { color: var(--muted); font-size: 13.5px; }
+  /* A quiet note under a card, the device's GroupNote: side effects and
+     caveats the rows themselves cannot state. Horizontal margin lines it
+     up with the row text inside the card above it. */
+  .group-note { font-size: 12.5px; color: var(--muted);
+    line-height: 1.5; margin: 10px 20px 0; }
   .row input[type=text], .row input[type=password], .row input[type=number],
   .row input[type=time], .row select {
     background: var(--surface-2); border: 1px solid var(--border);
@@ -3720,8 +3725,7 @@ async function loadGestures() {
   ));
 
   const note = document.createElement('div');
-  note.className = 'desc';
-  note.style.cssText = 'margin-top:12px;';
+  note.className = 'group-note';
   note.textContent = 'Gestures are observed, not blocked: the taps also '
     + 'reach the dashboard, so corners and multi-finger shapes keep them '
     + 'from firing anything there.';
@@ -3923,9 +3927,7 @@ async function loadSettings() {
   // the permissions group.
   {
     const note = document.createElement('div');
-    note.style.cssText =
-      'font-size:12.5px; color:var(--muted); margin:10px 20px 0; ' +
-      'line-height:1.5';
+    note.className = 'group-note';
     note.textContent =
       'Lockdown Mode makes the dashboard non-interactive, arms every ' +
       'Kiosk Mode protection without changing your Kiosk Mode settings, ' +
