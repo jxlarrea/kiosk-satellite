@@ -2,6 +2,9 @@ package me.jxl.kiosk_satellite
 
 import android.accessibilityservice.AccessibilityService
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 
 /**
@@ -77,6 +80,10 @@ class KioskAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
+    private val main = Handler(Looper.getMainLooper())
+    private var burst: Runnable? = null
+    private var burstUntil = 0L
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             return
@@ -86,19 +93,42 @@ class KioskAccessibilityService : AccessibilityService() {
         // Any SystemUI window while armed: the dismiss is a no-op unless
         // the shade or quick settings are actually open, so firing it on
         // a volume panel or a transient bar costs nothing.
-        if (guardShade && pkg == "com.android.systemui") {
-            if (Build.VERSION.SDK_INT >= 31) {
-                performGlobalAction(GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE)
-            } else {
-                // Best effort below 31: back collapses an open shade.
-                performGlobalAction(GLOBAL_ACTION_BACK)
-            }
-        }
+        if (guardShade && pkg == "com.android.systemui") dismissBurst()
         // Recents is quickstep's RecentsActivity on stock, Samsung and most
         // OEM launchers alike. Back returns to the task below it: us.
         if (guardRecents && cls.contains("RecentsActivity")) {
             performGlobalAction(GLOBAL_ACTION_BACK)
         }
+    }
+
+    /**
+     * One dismiss per event is not enough: the event fires when the shade
+     * window appears, but the system will not collapse a panel mid-drag,
+     * so a single dismiss is spent before the finger lifts and the shade
+     * then sits open until some later event. Repeating the dismiss every
+     * ~120 ms for a couple of seconds lands the collapse the moment the
+     * system accepts one; every extra shot is a no-op on a closed shade.
+     */
+    private fun dismissBurst() {
+        burstUntil = SystemClock.uptimeMillis() + 2000
+        if (burst != null) return
+        val shot = object : Runnable {
+            override fun run() {
+                if (!guardShade || SystemClock.uptimeMillis() > burstUntil) {
+                    burst = null
+                    return
+                }
+                if (Build.VERSION.SDK_INT >= 31) {
+                    performGlobalAction(GLOBAL_ACTION_DISMISS_NOTIFICATION_SHADE)
+                } else {
+                    // Best effort below 31: back collapses an open shade.
+                    performGlobalAction(GLOBAL_ACTION_BACK)
+                }
+                main.postDelayed(this, 120)
+            }
+        }
+        burst = shot
+        shot.run()
     }
 
     override fun onInterrupt() {}
