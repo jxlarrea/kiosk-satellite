@@ -65,6 +65,7 @@ class BackgroundBridge(
                     result.success(true)
                 }
                 "isActivityResumed" -> result.success(ActivityState.resumed)
+                "isActivityAttached" -> result.success(ActivityState.attached)
                 // Open another app by package name (issue #44). The kiosk
                 // stays running behind it; whatever brings the kiosk back —
                 // the return gesture, a wake word, an automation — finds it

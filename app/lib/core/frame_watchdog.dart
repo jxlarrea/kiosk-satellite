@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 import '../app_container.dart';
+import 'events.dart';
 import '../managers/settings/definitions.dart' as defs;
 
 /// Detects a wedged renderer and restarts the process.
@@ -25,9 +26,13 @@ import '../managers/settings/definitions.dart' as defs;
 ///     is the wedge. Transients (a settings-triggered WebView rebuild) last
 ///     moments; the watchdog needs three consecutive strikes 5s apart.
 ///
-/// Recovery is a full process restart through the background bridge: an
-/// Activity relaunch and a WebView rebuild have both been observed to
-/// leave the wedge in place, a restart reliably comes back.
+/// Recovery escalates. First a WebView rebuild in place: the create-raced-
+/// attach variant (issue #145 — the platform view was requested before the
+/// Activity attached, failed once, and never retries) heals with a fresh
+/// widget now that the Activity is up. Then, strikes later, a full process
+/// restart through the background bridge: for the failed-re-attach variant
+/// a rebuild has been observed to leave the wedge in place, and only a
+/// restart reliably comes back.
 class FrameWatchdog {
   FrameWatchdog(this._container);
 
@@ -39,6 +44,10 @@ class FrameWatchdog {
   /// 5s strikes before the WebView attaches, and slow devices need real
   /// headroom — a false trip here would be a restart loop.
   static const _strikesToTrip = 6;
+
+  /// The in-place rebuild attempt, past any healthy slow boot (20s in)
+  /// and early enough that a rebuild that works averts the restart.
+  static const _strikesToRebuild = 4;
 
   final AppContainer _container;
   Timer? _timer;
@@ -77,6 +86,14 @@ class FrameWatchdog {
       'watchdog',
       'strike $_strikes/$_strikesToTrip: resumed with no WebView',
     );
+    if (_strikes == _strikesToRebuild) {
+      _container.log.warn(
+        'watchdog',
+        'requesting a WebView rebuild before restarting',
+      );
+      _container.bus.publish(const WebViewRebuildRequested());
+      return;
+    }
     if (_strikes < _strikesToTrip) return;
     _tripped = true;
     _container.log.error(

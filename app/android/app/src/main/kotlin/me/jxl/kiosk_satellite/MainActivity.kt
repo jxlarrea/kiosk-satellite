@@ -23,6 +23,14 @@ import io.flutter.plugin.common.MethodChannel
  *  not trustworthy across a failed re-attach — these callbacks are. */
 object ActivityState {
     @Volatile var resumed = false
+
+    /** Whether an Activity is attached to the cached engine right now.
+     *  Platform views can only be created while this holds — the engine's
+     *  platform-views channel has no handler otherwise — so the Dart side
+     *  gates the first dashboard WebView build on it (issue #145: on slow
+     *  devices Dart boots and builds the WebView before the Activity's
+     *  attach lands, the create dies, and the kiosk sits black). */
+    @Volatile var attached = false
 }
 
 class MainActivity : FlutterActivity() {
@@ -101,6 +109,10 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         // Deliberately not calling super: plugins are registered once on the
         // cached engine in KioskApplication. Only Activity-scoped bridges here.
+        //
+        // The delegate calls this after attachToActivity, so the engine's
+        // platform-views surface is live by the time the flag flips.
+        ActivityState.attached = true
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         // The snapshot bridge first: motion detection pre-binds its capture
         // use case so the two share one camera session.
@@ -156,6 +168,7 @@ class MainActivity : FlutterActivity() {
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
         // Counterpart to configureFlutterEngine: drop the Activity-scoped
         // bridges as we detach. The engine (and its Dart isolate) stays.
+        ActivityState.attached = false
         cameraMotion?.dispose()
         cameraMotion = null
         deviceCamera?.dispose()

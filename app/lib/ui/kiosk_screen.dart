@@ -59,6 +59,15 @@ class _KioskScreenState extends State<KioskScreen>
   StreamSubscription<KioskBackPressed>? _backSub;
   StreamSubscription<WakeWordDetected>? _wakeSub;
   StreamSubscription<CameraViewStateChanged>? _cameraSub;
+  StreamSubscription<WebViewRebuildRequested>? _rebuildSub;
+
+  /// Whether the Activity has attached to the process-wide engine. The
+  /// dashboard WebView build waits for this: the Dart isolate boots in
+  /// Application.onCreate, so on slow devices the widget tree is up before
+  /// the Activity is, and a platform view created in that window dies with
+  /// an unretried MissingPluginException — a black screen the watchdog then
+  /// restarts into the same race, forever (issue #145).
+  bool _activityAttached = false;
 
   /// Guards the exit gesture while the settings route sits on top.
   bool _settingsOpen = false;
@@ -322,6 +331,13 @@ class _KioskScreenState extends State<KioskScreen>
   void initState() {
     super.initState();
 
+    unawaited(_waitForActivityAttach());
+    // The watchdog's step before a process restart: a fresh widget retries
+    // the platform-view creation, which heals a create that raced the
+    // Activity attach at boot (issue #145).
+    _rebuildSub = c.bus.on<WebViewRebuildRequested>().listen((_) {
+      if (mounted) setState(() => _webViewEpoch++);
+    });
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
     // A restart mid-lockdown (crash self-heal included) must come back with
@@ -404,6 +420,32 @@ class _KioskScreenState extends State<KioskScreen>
         );
       });
     }
+  }
+
+  /// Open the WebView gate once the Activity is attached to the engine.
+  /// Quick polls while the attach is imminent (a cold boot), slower ones
+  /// for a process idling headless — there the gate staying shut is the
+  /// point, since a platform view created without an Activity just dies.
+  Future<void> _waitForActivityAttach() async {
+    var tries = 0;
+    while (mounted) {
+      var attached = true;
+      try {
+        attached = await BackgroundListening.isActivityAttached();
+      } catch (e) {
+        // Fail open: a broken probe must degrade to today's behavior, not
+        // hold the dashboard hostage.
+        c.log.warn('kiosk', 'activity-attach probe failed: $e');
+      }
+      if (attached) break;
+      tries++;
+      await Future<void>.delayed(
+        tries < 50
+            ? const Duration(milliseconds: 100)
+            : const Duration(seconds: 1),
+      );
+    }
+    if (mounted) setState(() => _activityAttached = true);
   }
 
   /// The zoom-level setting as a CSS zoom on the document root. Idempotent
@@ -696,6 +738,7 @@ class _KioskScreenState extends State<KioskScreen>
     _settingsSub?.cancel();
     _gestureSub?.cancel();
     _consoleReqSub?.cancel();
+    _rebuildSub?.cancel();
     _backSub?.cancel();
     _wakeSub?.cancel();
     _cameraSub?.cancel();
@@ -733,7 +776,9 @@ class _KioskScreenState extends State<KioskScreen>
       // collapse a child-sized Stack.
       fit: StackFit.expand,
       children: [
-        _webView(),
+        // Held back until the Activity attach (the scaffold's black shows,
+        // exactly what the splash was showing); see _waitForActivityAttach.
+        if (_activityAttached) _webView(),
         // The rotation's external pages, shown OVER the dashboard so the
         // dashboard (and the Voice Satellite session with it) never
         // unloads. A wake detection hides this instantly, revealing the

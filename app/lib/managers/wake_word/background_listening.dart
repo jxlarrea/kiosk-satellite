@@ -52,6 +52,14 @@ class BackgroundListening {
   static Future<bool> isBatteryUnrestricted() async =>
       await _channel.invokeMethod<bool>('isBatteryUnrestricted') ?? false;
 
+  /// Whether an Activity is attached to the cached engine right now — the
+  /// precondition for creating a platform view. The kiosk screen holds its
+  /// WebView build on this (issue #145: the Dart isolate boots in
+  /// Application.onCreate, so on slow devices the WebView's create used to
+  /// race the Activity attach and die, leaving a black screen).
+  static Future<bool> isActivityAttached() async =>
+      await _channel.invokeMethod<bool>('isActivityAttached') ?? false;
+
   /// Hand a WebView download to Android's DownloadManager. Same app-context
   /// bridge as the rest: works whether or not an Activity is up. Returns the
   /// DownloadManager id (-1 on failure), which [onDownloadComplete] reports

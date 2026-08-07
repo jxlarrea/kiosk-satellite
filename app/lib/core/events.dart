@@ -345,6 +345,16 @@ class UrlChanged extends AppEvent {
   Map<String, Object?> toJson() => {'url': url};
 }
 
+/// The frame watchdog asking the kiosk screen to rebuild the dashboard
+/// WebView in place (issue #145): a platform-view create that failed —
+/// typically because it raced the Activity attach at process boot — never
+/// retries on its own, so the widget sits dead while everything around it
+/// runs. A rebuild after the Activity is attached succeeds; the watchdog's
+/// process restart stays the backstop when it does not. Internal.
+class WebViewRebuildRequested extends AppEvent {
+  const WebViewRebuildRequested();
+}
+
 // ── Camera views ───────────────────────────────────────────────────────
 
 class CameraConfigurationChanged extends AppEvent {
