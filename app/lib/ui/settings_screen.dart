@@ -404,11 +404,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
       flush();
     }
-    return ListView(
-      padding: wide
-          ? const EdgeInsets.fromLTRB(8, 24, 28, 24)
-          : Ks.pagePadding,
-      children: children,
+    return EdgeFade(
+      child: ListView(
+        padding: wide
+            ? const EdgeInsets.fromLTRB(8, 24, 28, 24)
+            : Ks.pagePadding,
+        children: children,
+      ),
     );
   }
 
@@ -426,8 +428,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       TextSpan(
         children: [
           TextSpan(text: text.substring(0, index)),
-          TextSpan(text: text.substring(index, index + q.length),
-              style: emphasis),
+          TextSpan(
+            text: text.substring(index, index + q.length),
+            style: emphasis,
+          ),
           TextSpan(text: text.substring(index + q.length)),
         ],
       ),
@@ -483,13 +487,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     padding: const EdgeInsets.fromLTRB(24, 0, 16, 10),
                   ),
                   Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
-                      children: [
-                        for (final (index, (_, title, icon, subtitle))
-                            in _categories.indexed)
-                          _railTile(context, index, title, icon, subtitle),
-                      ],
+                    child: EdgeFade(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
+                        children: [
+                          for (final (index, (_, title, icon, subtitle))
+                              in _categories.indexed)
+                            _railTile(context, index, title, icon, subtitle),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -501,36 +507,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : SearchLandingScope(
                       target: _landing,
                       epoch: _landingEpoch,
-                      child: ListView(
-                        key: PageStorageKey('settings-pane-$category'),
-                        padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
-                            child: Row(
-                              children: [
-                                // The rail's icon again — bare glyph, no
-                                // disc: the title row is a label, not a
-                                // button.
-                                Icon(icon, size: 26),
-                                const SizedBox(width: 12),
-                                Text(
-                                  title,
-                                  style: theme.textTheme.headlineSmall
-                                      ?.copyWith(
-                                        fontFamily: Ks.displayFont,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                              ],
+                      child: EdgeFade(
+                        child: ListView(
+                          key: PageStorageKey('settings-pane-$category'),
+                          padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
+                              child: Row(
+                                children: [
+                                  // The rail's icon again — bare glyph, no
+                                  // disc: the title row is a label, not a
+                                  // button.
+                                  Icon(icon, size: 26),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    title,
+                                    style: theme.textTheme.headlineSmall
+                                        ?.copyWith(
+                                          fontFamily: Ks.displayFont,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          _CategoryContent(
-                            key: ValueKey(category),
-                            container: widget.container,
-                            category: category,
-                          ),
-                        ],
+                            _CategoryContent(
+                              key: ValueKey(category),
+                              container: widget.container,
+                              category: category,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
             ),
@@ -619,34 +627,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Expanded(
               child: _showResults
                   ? _resultsPane(context, wide: false)
-                  : ListView(
-                      padding: Ks.pagePadding,
-                      children: [
-                        SettingsCard(
-                          children: [
-                            for (final (index, (category, title, icon, subtitle))
-                                in _categories.indexed)
-                              ListTile(
-                                leading: _CategoryIcon(
-                                  index: index,
-                                  icon: icon,
-                                ),
-                                title: Text(title),
-                                subtitle: Text(subtitle),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => CategorySettingsScreen(
-                                      container: widget.container,
-                                      title: title,
-                                      category: category,
+                  : EdgeFade(
+                      child: ListView(
+                        padding: Ks.pagePadding,
+                        children: [
+                          SettingsCard(
+                            children: [
+                              for (final (
+                                    index,
+                                    (category, title, icon, subtitle),
+                                  )
+                                  in _categories.indexed)
+                                ListTile(
+                                  leading: _CategoryIcon(
+                                    index: index,
+                                    icon: icon,
+                                  ),
+                                  title: Text(title),
+                                  subtitle: Text(subtitle),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => CategorySettingsScreen(
+                                        container: widget.container,
+                                        title: title,
+                                        category: category,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
             ),
           ],
@@ -704,11 +717,13 @@ class CategorySettingsScreen extends StatelessWidget {
         SearchLandingScope(
           target: landingAnchor,
           epoch: 1,
-          child: ListView(
-            padding: Ks.pagePadding,
-            children: [
-              _CategoryContent(container: container, category: category),
-            ],
+          child: EdgeFade(
+            child: ListView(
+              padding: Ks.pagePadding,
+              children: [
+                _CategoryContent(container: container, category: category),
+              ],
+            ),
           ),
         ),
       ),
@@ -899,9 +914,11 @@ class _CategoryContentState extends State<_CategoryContent> {
     final height = (size.height - chrome).clamp(220.0, 1200.0);
     return SizedBox(
       height: height,
-      child: ListView(
-        reverse: true,
-        children: [for (final line in lines.reversed) line],
+      child: EdgeFade(
+        child: ListView(
+          reverse: true,
+          children: [for (final line in lines.reversed) line],
+        ),
       ),
     );
   }
@@ -1560,28 +1577,28 @@ class _CategoryContentState extends State<_CategoryContent> {
           SearchLandingTarget(
             id: 'x:ha_validate',
             child: ListTile(
-            title: const Text('Validate connection'),
-            subtitle: Text(
-              _haValidating
-                  ? 'Checking…'
-                  : _haError ??
-                        (container.homeAssistant.connectionOk.value
-                            ? 'Connected'
-                            : 'Not validated yet. The settings below unlock '
-                                  'once the connection checks out.'),
-            ),
-            trailing: _haValidating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.4),
-                  )
-                : Icon(
-                    container.homeAssistant.connectionOk.value
-                        ? Icons.cloud_done_outlined
-                        : Icons.cloud_off_outlined,
-                  ),
-            onTap: _haValidating ? null : () => _validateHa(container),
+              title: const Text('Validate connection'),
+              subtitle: Text(
+                _haValidating
+                    ? 'Checking…'
+                    : _haError ??
+                          (container.homeAssistant.connectionOk.value
+                              ? 'Connected'
+                              : 'Not validated yet. The settings below unlock '
+                                    'once the connection checks out.'),
+              ),
+              trailing: _haValidating
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.4),
+                    )
+                  : Icon(
+                      container.homeAssistant.connectionOk.value
+                          ? Icons.cloud_done_outlined
+                          : Icons.cloud_off_outlined,
+                    ),
+              onTap: _haValidating ? null : () => _validateHa(container),
             ),
           ),
           // Hand-built (and mirrored in the remote UI's connection card):
@@ -1902,23 +1919,23 @@ class _CategoryContentState extends State<_CategoryContent> {
                 builder: (context, snap) => SearchLandingTarget(
                   id: 'x:assigned_satellite',
                   child: SettingsCard(
-                  children: [
-                    ListTile(
-                      title: const Text('Assigned satellite'),
-                      subtitle: const Text(
-                        'The assist_satellite entity this kiosk identifies '
-                        'as in Home Assistant.',
+                    children: [
+                      ListTile(
+                        title: const Text('Assigned satellite'),
+                        subtitle: const Text(
+                          'The assist_satellite entity this kiosk identifies '
+                          'as in Home Assistant.',
+                        ),
+                        trailing: Text(
+                          snap.connectionState != ConnectionState.done
+                              ? '…'
+                              : ((snap.data ?? '').isEmpty
+                                    ? 'None assigned'
+                                    : snap.data!),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                       ),
-                      trailing: Text(
-                        snap.connectionState != ConnectionState.done
-                            ? '…'
-                            : ((snap.data ?? '').isEmpty
-                                  ? 'None assigned'
-                                  : snap.data!),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
+                    ],
                   ),
                 ),
               ),
@@ -3089,17 +3106,19 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
         title: Text('Watched entities (${items.length})'),
         content: SizedBox(
           width: 420,
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              for (final it in items)
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(it.name.isEmpty ? it.id : it.name),
-                  subtitle: it.name.isEmpty ? null : Text(it.id),
-                ),
-            ],
+          child: EdgeFade(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final it in items)
+                  ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(it.name.isEmpty ? it.id : it.name),
+                    subtitle: it.name.isEmpty ? null : Text(it.id),
+                  ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -4831,27 +4850,29 @@ class SettingTile extends StatelessWidget {
             width: 420,
             child: apps.isEmpty
                 ? const Text('No launchable apps found.')
-                : ListView(
-                    shrinkWrap: true,
-                    children: [
-                      for (final app in apps)
-                        CheckboxListTile(
-                          value: selected.contains('${app['package']}'),
-                          title: Text('${app['label']}'),
-                          subtitle: Text(
-                            '${app['package']}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                : EdgeFade(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final app in apps)
+                          CheckboxListTile(
+                            value: selected.contains('${app['package']}'),
+                            title: Text('${app['label']}'),
+                            subtitle: Text(
+                              '${app['package']}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onChanged: (on) => setState(() {
+                              if (on == true) {
+                                selected.add('${app['package']}');
+                              } else {
+                                selected.remove('${app['package']}');
+                              }
+                            }),
                           ),
-                          onChanged: (on) => setState(() {
-                            if (on == true) {
-                              selected.add('${app['package']}');
-                            } else {
-                              selected.remove('${app['package']}');
-                            }
-                          }),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
           ),
           actions: [

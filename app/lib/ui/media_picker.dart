@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
+import 'kit.dart';
 
 /// A Home Assistant media browser, for picking the screensaver's media.
 ///
@@ -120,21 +121,24 @@ class _MediaPickerDialogState extends State<_MediaPickerDialog> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Text(_error!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: theme.colorScheme.error)),
-                          ),
-                        )
-                      : children.isEmpty
-                          ? const Center(child: Text('Nothing here.'))
-                          : ListView.builder(
-                              itemCount: children.length,
-                              itemBuilder: (context, i) =>
-                                  _row(children[i] as Map),
-                            ),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: theme.colorScheme.error),
+                        ),
+                      ),
+                    )
+                  : children.isEmpty
+                  ? const Center(child: Text('Nothing here.'))
+                  : EdgeFade(
+                      child: ListView.builder(
+                        itemCount: children.length,
+                        itemBuilder: (context, i) => _row(children[i] as Map),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -167,11 +171,13 @@ class _MediaPickerDialogState extends State<_MediaPickerDialog> {
     final play = child['can_play'] == true;
     return ListTile(
       dense: true,
-      leading: Icon(expand
-          ? Icons.folder_outlined
-          : _isCamera(id)
-              ? Icons.videocam_outlined
-              : Icons.perm_media_outlined),
+      leading: Icon(
+        expand
+            ? Icons.folder_outlined
+            : _isCamera(id)
+            ? Icons.videocam_outlined
+            : Icons.perm_media_outlined,
+      ),
       title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing: expand ? const Icon(Icons.chevron_right) : null,
       onTap: () {

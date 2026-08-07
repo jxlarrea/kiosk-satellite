@@ -260,42 +260,43 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
                         _searching
                             ? 'Searching…'
                             : _query.text.trim().isEmpty
-                                ? 'Type to search entities.'
-                                : 'Nothing matched.',
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(
+                            ? 'Type to search entities.'
+                            : 'Nothing matched.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                   )
-                : ListView.builder(
-                    itemCount: _results.length,
-                    itemBuilder: (context, index) {
-                      final entity = _results[index];
-                      final id = '${entity['entity_id']}';
-                      final chosen = _isChosen(id);
-                      return ListTile(
-                        title: Text('${entity['name']}'),
-                        subtitle: Text('$id · ${entity['state']}'),
-                        trailing: Icon(
-                          chosen
-                              ? Icons.check_circle
-                              : Icons.add_circle_outline,
-                        ),
-                        enabled: chosen || !full,
-                        onTap: () => setState(() {
-                          if (chosen) {
-                            _chosen.removeWhere((e) => e['entity_id'] == id);
-                          } else if (_chosen.length < screensaverGlanceMax) {
-                            _chosen.add({
-                              'entity_id': id,
-                              'name': entity['name'],
-                            });
-                          }
-                        }),
-                      );
-                    },
+                : EdgeFade(
+                    child: ListView.builder(
+                      itemCount: _results.length,
+                      itemBuilder: (context, index) {
+                        final entity = _results[index];
+                        final id = '${entity['entity_id']}';
+                        final chosen = _isChosen(id);
+                        return ListTile(
+                          title: Text('${entity['name']}'),
+                          subtitle: Text('$id · ${entity['state']}'),
+                          trailing: Icon(
+                            chosen
+                                ? Icons.check_circle
+                                : Icons.add_circle_outline,
+                          ),
+                          enabled: chosen || !full,
+                          onTap: () => setState(() {
+                            if (chosen) {
+                              _chosen.removeWhere((e) => e['entity_id'] == id);
+                            } else if (_chosen.length < screensaverGlanceMax) {
+                              _chosen.add({
+                                'entity_id': id,
+                                'name': entity['name'],
+                              });
+                            }
+                          }),
+                        );
+                      },
+                    ),
                   ),
           ),
         ],

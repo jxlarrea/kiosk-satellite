@@ -150,6 +150,127 @@ class WarnRow extends StatelessWidget {
   }
 }
 
+/// Fades overflowing content out at the edge it disappears under. Wraps a
+/// vertical scrollable (the widget with the viewport, never the content
+/// inside it) and paints a [Ks.fadeEdge]-tall gradient of the backing
+/// surface's color over the top and bottom — but only on an edge that
+/// still hides content, so a list at rest shows a crisp first row and a
+/// soft hint of more below, and the hints slide in and out with the
+/// scroll instead of permanently dimming the ends. The remote admin's
+/// .edge-fade containers carry the same treatment.
+///
+/// Painting the surface color over the content, rather than masking the
+/// content to transparent, is deliberate: it reads identically on the
+/// app's solid surfaces but costs two small gradient quads, where a
+/// ShaderMask re-renders the entire list into an offscreen saveLayer on
+/// every scrolled frame. The trade is that the fade color must match what
+/// the list sits on — resolved from the nearest [Material], which is the
+/// scaffold behind a settings pane, the sheet behind a dialog body, the
+/// card behind a log box.
+class EdgeFade extends StatefulWidget {
+  const EdgeFade({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<EdgeFade> createState() => _EdgeFadeState();
+}
+
+class _EdgeFadeState extends State<EdgeFade> {
+  bool _top = false;
+  bool _bottom = false;
+
+  /// Test hooks: the two decisions that drive the overlays, which is what
+  /// the widget tests pin down rather than the painted gradients.
+  @visibleForTesting
+  bool get debugTop => _top;
+  @visibleForTesting
+  bool get debugBottom => _bottom;
+
+  void _update(ScrollMetrics metrics) {
+    if (metrics.axis != Axis.vertical || !metrics.hasContentDimensions) {
+      return;
+    }
+    // A reversed list (the log boxes) grows upward: extentBefore is the
+    // content hidden below the viewport, not above it.
+    final reversed = metrics.axisDirection == AxisDirection.up;
+    final top = (reversed ? metrics.extentAfter : metrics.extentBefore) > 1;
+    final bottom = (reversed ? metrics.extentBefore : metrics.extentAfter) > 1;
+    if (top != _top || bottom != _bottom) {
+      setState(() {
+        _top = top;
+        _bottom = bottom;
+      });
+    }
+  }
+
+  /// One edge's overlay: a surface-colored gradient strip whose alpha
+  /// animates with the edge's state, gone from the tree entirely once the
+  /// animation settles at off so an idle list paints nothing extra.
+  Widget _edge(Color surface, {required bool show, required bool top}) =>
+      Positioned(
+        left: 0,
+        right: 0,
+        top: top ? 0 : null,
+        bottom: top ? null : 0,
+        height: Ks.fadeEdge,
+        child: IgnorePointer(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(end: show ? 1.0 : 0.0),
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            builder: (context, t, _) => t == 0
+                ? const SizedBox.shrink()
+                : DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: top
+                            ? Alignment.topCenter
+                            : Alignment.bottomCenter,
+                        end: top ? Alignment.bottomCenter : Alignment.topCenter,
+                        colors: [
+                          surface.withValues(alpha: t),
+                          surface.withValues(alpha: 0),
+                        ],
+                      ),
+                    ),
+                  ),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final surface =
+        context.findAncestorWidgetOfExactType<Material>()?.color ??
+        Theme.of(context).scaffoldBackgroundColor;
+    // Both notification kinds matter: metrics notifications cover layout
+    // and content-size changes (including the very first frame, which is
+    // what turns the bottom hint on before any touch), scroll
+    // notifications cover the scrolling itself.
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (n) {
+        if (n.depth == 0) _update(n.metrics);
+        return false;
+      },
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n.depth == 0) _update(n.metrics);
+          return false;
+        },
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            widget.child,
+            _edge(surface, show: _top, top: true),
+            _edge(surface, show: _bottom, top: false),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// The one dropdown control: the remote admin's select translated to
 /// Flutter — value and chevron on a bordered surface box, same tokens
 /// (surface-2 fill, border, control radius). A bare DropdownButton is just

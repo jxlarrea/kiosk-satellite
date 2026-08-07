@@ -45,6 +45,10 @@ abstract final class Ks {
   /// body stays on the default sans; Rubik ties the chrome to the clock
   /// faces without carrying running text.
   static const String displayFont = 'Rubik';
+
+  /// Height of the fade-out an [EdgeFade] paints over a scroll edge that
+  /// still hides content. The remote admin's --fade-size matches.
+  static const double fadeEdge = 28;
 }
 
 ColorScheme _lightScheme() =>

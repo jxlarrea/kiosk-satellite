@@ -418,6 +418,22 @@
   .modal-foot { flex: none; display: flex; justify-content: flex-end;
     align-items: center; gap: 10px; padding-top: 16px; }
   .modal-foot button { min-width: 96px; width: auto; }
+
+  /* Scroll-edge fades, the device's EdgeFade widget in CSS: a scroll
+     container fades its top/bottom 28px while content hides past that
+     edge, so rows slide into view instead of being cut off. The script
+     keeps the two lengths in step with the scroll position, shrinking a
+     fade through the last 28px of travel so it slides away with the
+     scroll itself. Deliberately no transition: animating a property the
+     mask depends on repaints the whole element every frame on the main
+     thread, which stuttered right as a fling landed on the end stop. */
+  .edge-fade { --fade-top: 0px; --fade-bottom: 0px;
+    -webkit-mask-image: linear-gradient(to bottom,
+      transparent 0, #000 var(--fade-top),
+      #000 calc(100% - var(--fade-bottom)), transparent 100%);
+    mask-image: linear-gradient(to bottom,
+      transparent 0, #000 var(--fade-top),
+      #000 calc(100% - var(--fade-bottom)), transparent 100%); }
   .modal-foot .spacer { flex: 1; min-width: 0; }
   .modal-foot:empty { display: none; }
   .row.camera-list-row { display: flex; align-items: center; gap: 14px; }
@@ -535,7 +551,7 @@
   <main class="wizard-pane">
     <h2 id="wizardTitle"></h2>
     <p class="lead" id="wizardLead"></p>
-    <div id="wizardBody"></div>
+    <div id="wizardBody" class="edge-fade"></div>
     <div id="wizardError"></div>
     <div class="wizard-nav">
       <button class="hidden" id="wizardBack">Back</button>
@@ -578,8 +594,8 @@
           </button>
         </div>
       </div>
-      <div id="sideResults"></div>
-      <nav id="tabs">
+      <div id="sideResults" class="edge-fade"></div>
+      <nav id="tabs" class="edge-fade">
         <button data-tab="dashboard" class="active">
           <span class="disc d4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
           <span class="nav-text"><span class="nav-title">Overview</span><span class="nav-sub">Screen and quick controls</span></span>
@@ -772,7 +788,7 @@
           <button class="btn-ghost" id="copyLogs">Copy</button>
           <button class="btn-ghost" id="refreshLogs">Refresh</button>
         </div>
-        <div class="console" id="logsOut"></div>
+        <div class="console edge-fade" id="logsOut"></div>
       </div>
       <div id="consolePane" style="display:none">
         <div class="log-head">
@@ -781,7 +797,7 @@
           <button class="btn-ghost" id="copyConsole">Copy</button>
           <button class="btn-ghost" id="clearConsole">Clear</button>
         </div>
-        <div class="console" id="consoleOut"></div>
+        <div class="console edge-fade" id="consoleOut"></div>
         <div class="console-input">
           <span class="prompt">&gt;</span>
           <input id="consoleInput" autocomplete="off" spellcheck="false"
@@ -1187,6 +1203,53 @@ window.addEventListener('hashchange', () => showTab(location.hash.slice(1), { pu
 /* ---- Dashboard ---- */
 // The one modal scaffold: backdrop, card, fixed title, a body that scrolls
 // its overflow, and a fixed footer for the actions. onDismiss (optional)
+// Keeps every .edge-fade container's two mask lengths honest: an edge that
+// still hides content gets its fade, one scrolled to the end goes crisp.
+// One capturing scroll listener covers containers created at any time; the
+// mutation observer catches content appearing or disappearing without a
+// scroll (a modal opening, rows re-rendering), batched to one pass per
+// frame since it reads layout.
+function updateEdgeFade(el) {
+  const max = el.scrollHeight - el.clientHeight;
+  // Proportional through the last 28px of travel, saturated at 28 the
+  // rest of the way: mid-list scrolling writes the same values, which
+  // the guard below turns into no style work at all.
+  const top = Math.max(0, Math.min(28, el.scrollTop));
+  const bottom = Math.max(0, Math.min(28, max - el.scrollTop));
+  setEdgeFadeVar(el, '--fade-top', top);
+  setEdgeFadeVar(el, '--fade-bottom', bottom);
+}
+function setEdgeFadeVar(el, name, px) {
+  const value = px > 0 ? px.toFixed(1) + 'px' : '0px';
+  if (el.style.getPropertyValue(name) !== value) {
+    el.style.setProperty(name, value);
+  }
+}
+let edgeFadeQueued = false;
+function queueEdgeFades() {
+  if (edgeFadeQueued) return;
+  edgeFadeQueued = true;
+  requestAnimationFrame(() => {
+    edgeFadeQueued = false;
+    document.querySelectorAll('.edge-fade').forEach(updateEdgeFade);
+  });
+}
+document.addEventListener('scroll', (e) => {
+  if (e.target instanceof Element && e.target.classList.contains('edge-fade')) {
+    updateEdgeFade(e.target);
+  }
+}, true);
+// Class changes too (but not style: the fade writes styles itself, and
+// observing them would re-trigger the observer forever): visibility here
+// is toggled by classes, like the sidebar swapping its nav for search
+// results, and a container measured while hidden reports no overflow.
+new MutationObserver(queueEdgeFades).observe(document.body, {
+  childList: true, subtree: true,
+  attributes: true, attributeFilter: ['class'],
+});
+window.addEventListener('resize', queueEdgeFades);
+queueEdgeFades();
+
 // runs on a backdrop tap; pass it for pickers, omit it for alerts that
 // must be answered with a button.
 function modalShell({ title, width, onDismiss }) {
@@ -1199,7 +1262,7 @@ function modalShell({ title, width, onDismiss }) {
   head.className = 'modal-title';
   head.textContent = title;
   const body = document.createElement('div');
-  body.className = 'modal-body';
+  body.className = 'modal-body edge-fade';
   const foot = document.createElement('div');
   foot.className = 'modal-foot';
   card.append(head, body, foot);
@@ -2287,6 +2350,7 @@ async function glanceEntityPicker(initial) {
   search.className = 'field';
   search.style.margin = '0';
   const results = document.createElement('div');
+  results.className = 'edge-fade';
   results.style.cssText = 'max-height:320px; overflow:auto; margin-top:8px;';
   const hint = (text) => {
     results.innerHTML = '';
@@ -2591,6 +2655,7 @@ async function editCameraView(config, view) {
   gridButton.style.cssText = 'max-width:none; display:flex;'
     + ' align-items:center; gap:12px; cursor:pointer; text-align:left;';
   const gridMenu = document.createElement('div');
+  gridMenu.className = 'edge-fade';
   gridMenu.style.cssText = 'display:none; position:absolute; top:100%;'
     + ' left:0; right:0; z-index:30; margin-top:4px;'
     + ' background:var(--surface); border:1px solid var(--border);'

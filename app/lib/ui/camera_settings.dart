@@ -300,49 +300,51 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           title: Text(server == null ? 'Add Go2RTC server' : 'Edit server'),
           content: SizedBox(
             width: 480,
-            child: SingleChildScrollView(
-              // Room for the first field's floating label, which otherwise
-              // clips against the dialog title.
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 12,
-                children: [
-                  TextField(
-                    controller: name,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                  ),
-                  TextField(
-                    controller: url,
-                    keyboardType: TextInputType.url,
-                    decoration: const InputDecoration(
-                      labelText: 'Base URL',
-                      hintText: 'http://192.168.1.10:1984',
+            child: EdgeFade(
+              child: SingleChildScrollView(
+                // Room for the first field's floating label, which otherwise
+                // clips against the dialog title.
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 12,
+                  children: [
+                    TextField(
+                      controller: name,
+                      decoration: const InputDecoration(labelText: 'Name'),
                     ),
-                  ),
-                  TextField(
-                    controller: username,
-                    decoration: const InputDecoration(
-                      labelText: 'Username (optional)',
+                    TextField(
+                      controller: url,
+                      keyboardType: TextInputType.url,
+                      decoration: const InputDecoration(
+                        labelText: 'Base URL',
+                        hintText: 'http://192.168.1.10:1984',
+                      ),
                     ),
-                  ),
-                  TextField(
-                    controller: password,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: server?.password.isNotEmpty == true
-                          ? 'New password (leave blank to keep)'
-                          : 'Password (optional)',
+                    TextField(
+                      controller: username,
+                      decoration: const InputDecoration(
+                        labelText: 'Username (optional)',
+                      ),
                     ),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Allow invalid TLS certificate'),
-                    value: invalidCertificate,
-                    onChanged: (value) =>
-                        setDialogState(() => invalidCertificate = value),
-                  ),
-                ],
+                    TextField(
+                      controller: password,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        labelText: server?.password.isNotEmpty == true
+                            ? 'New password (leave blank to keep)'
+                            : 'Password (optional)',
+                      ),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Allow invalid TLS certificate'),
+                      value: invalidCertificate,
+                      onChanged: (value) =>
+                          setDialogState(() => invalidCertificate = value),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -398,82 +400,88 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           title: Text(camera == null ? 'Add camera' : 'Edit camera'),
           content: SizedBox(
             width: 480,
-            child: SingleChildScrollView(
-              // Room for the first field's floating label, which otherwise
-              // clips against the dialog title.
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                spacing: 12,
-                children: [
-                  TextField(
-                    controller: name,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                  ),
-                  DropdownButtonFormField<String>(
-                    initialValue: kind,
-                    decoration: const InputDecoration(labelText: 'Type'),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'go2rtc',
-                        child: Text('Go2RTC stream'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'whep',
-                        child: Text('Direct WHEP URL'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'ha',
-                        child: Text('Home Assistant camera'),
-                      ),
-                    ],
-                    onChanged: (value) =>
-                        setDialogState(() => kind = value ?? kind),
-                  ),
-                  if (kind == 'ha')
+            child: EdgeFade(
+              child: SingleChildScrollView(
+                // Room for the first field's floating label, which otherwise
+                // clips against the dialog title.
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 12,
+                  children: [
                     TextField(
-                      controller: entity,
-                      decoration: const InputDecoration(
-                        labelText: 'Camera entity',
-                        hintText: 'camera.front_door',
-                      ),
-                    )
-                  else if (kind == 'go2rtc') ...[
+                      controller: name,
+                      decoration: const InputDecoration(labelText: 'Name'),
+                    ),
                     DropdownButtonFormField<String>(
-                      initialValue:
-                          config.servers.any((server) => server.id == serverId)
-                          ? serverId
-                          : null,
-                      decoration: const InputDecoration(labelText: 'Server'),
-                      items: [
-                        for (final server in config.servers)
-                          DropdownMenuItem(
-                            value: server.id,
-                            child: Text(server.name),
-                          ),
+                      initialValue: kind,
+                      decoration: const InputDecoration(labelText: 'Type'),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'go2rtc',
+                          child: Text('Go2RTC stream'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'whep',
+                          child: Text('Direct WHEP URL'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'ha',
+                          child: Text('Home Assistant camera'),
+                        ),
                       ],
                       onChanged: (value) =>
-                          setDialogState(() => serverId = value ?? ''),
+                          setDialogState(() => kind = value ?? kind),
                     ),
-                    TextField(
-                      controller: stream,
-                      decoration: const InputDecoration(
-                        labelText: 'Stream name',
+                    if (kind == 'ha')
+                      TextField(
+                        controller: entity,
+                        decoration: const InputDecoration(
+                          labelText: 'Camera entity',
+                          hintText: 'camera.front_door',
+                        ),
+                      )
+                    else if (kind == 'go2rtc') ...[
+                      DropdownButtonFormField<String>(
+                        initialValue:
+                            config.servers.any(
+                              (server) => server.id == serverId,
+                            )
+                            ? serverId
+                            : null,
+                        decoration: const InputDecoration(labelText: 'Server'),
+                        items: [
+                          for (final server in config.servers)
+                            DropdownMenuItem(
+                              value: server.id,
+                              child: Text(server.name),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setDialogState(() => serverId = value ?? ''),
                       ),
-                    ),
-                    TextField(
-                      controller: fullscreen,
-                      decoration: const InputDecoration(
-                        labelText: 'Fullscreen stream (optional)',
+                      TextField(
+                        controller: stream,
+                        decoration: const InputDecoration(
+                          labelText: 'Stream name',
+                        ),
                       ),
-                    ),
-                  ] else
-                    TextField(
-                      controller: whep,
-                      keyboardType: TextInputType.url,
-                      decoration: const InputDecoration(labelText: 'WHEP URL'),
-                    ),
-                ],
+                      TextField(
+                        controller: fullscreen,
+                        decoration: const InputDecoration(
+                          labelText: 'Fullscreen stream (optional)',
+                        ),
+                      ),
+                    ] else
+                      TextField(
+                        controller: whep,
+                        keyboardType: TextInputType.url,
+                        decoration: const InputDecoration(
+                          labelText: 'WHEP URL',
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -520,133 +528,137 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           title: Text(view == null ? 'Create camera view' : 'Edit view'),
           content: SizedBox(
             width: 640,
-            child: SingleChildScrollView(
-              // Room for the first field's floating label, which otherwise
-              // clips against the dialog title.
-              padding: const EdgeInsets.only(top: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: name,
-                    decoration: const InputDecoration(labelText: 'Name'),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Show camera names'),
-                    value: showCameraNames,
-                    onChanged: (value) =>
-                        setDialogState(() => showCameraNames = value),
-                  ),
-                  const SizedBox(height: 12),
-                  // Order is the grid order, so the chosen cameras get their
-                  // own list you can drag: reading position off a checkbox
-                  // list meant re-ticking everything to move one tile.
-                  if (selected.isNotEmpty) ...[
-                    _sectionLabel(context, 'Grid'),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4, bottom: 8),
-                      child: KsDropdown<int>(
-                        expand: true,
-                        value: (grid ?? selected.length).clamp(
-                          selected.length,
-                          12,
+            child: EdgeFade(
+              child: SingleChildScrollView(
+                // Room for the first field's floating label, which otherwise
+                // clips against the dialog title.
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: name,
+                      decoration: const InputDecoration(labelText: 'Name'),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Show camera names'),
+                      value: showCameraNames,
+                      onChanged: (value) =>
+                          setDialogState(() => showCameraNames = value),
+                    ),
+                    const SizedBox(height: 12),
+                    // Order is the grid order, so the chosen cameras get their
+                    // own list you can drag: reading position off a checkbox
+                    // list meant re-ticking everything to move one tile.
+                    if (selected.isNotEmpty) ...[
+                      _sectionLabel(context, 'Grid'),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 8),
+                        child: KsDropdown<int>(
+                          expand: true,
+                          value: (grid ?? selected.length).clamp(
+                            selected.length,
+                            12,
+                          ),
+                          items: [
+                            for (var size = selected.length; size <= 12; size++)
+                              DropdownMenuItem(
+                                value: size,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CameraGridPreview(
+                                      count: size,
+                                      width: 34,
+                                      height: 22,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text('$size Camera${size == 1 ? '' : 's'}'),
+                                  ],
+                                ),
+                              ),
+                          ],
+                          onChanged: (value) =>
+                              setDialogState(() => grid = value),
                         ),
-                        items: [
-                          for (var size = selected.length; size <= 12; size++)
-                            DropdownMenuItem(
-                              value: size,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CameraGridPreview(
-                                    count: size,
-                                    width: 34,
-                                    height: 22,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    '$size Camera${size == 1 ? '' : 's'}',
-                                  ),
-                                ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4, bottom: 12),
+                        child: CameraGridPreview(
+                          count: (grid ?? selected.length).clamp(
+                            selected.length,
+                            12,
+                          ),
+                          filled: selected.length,
+                        ),
+                      ),
+                      _sectionLabel(context, 'In this view'),
+                      ReorderableListView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        buildDefaultDragHandles: false,
+                        // onReorderItem: newIndex is already adjusted for the
+                        // removal, unlike the deprecated onReorder.
+                        onReorderItem: (oldIndex, newIndex) =>
+                            setDialogState(() {
+                              selected.insert(
+                                newIndex,
+                                selected.removeAt(oldIndex),
+                              );
+                            }),
+                        children: [
+                          for (final (index, id) in selected.indexed)
+                            ListTile(
+                              key: ValueKey(id),
+                              contentPadding: EdgeInsets.zero,
+                              leading: ReorderableDragStartListener(
+                                index: index,
+                                child: const Icon(Icons.drag_handle),
+                              ),
+                              title: Text(_cameraName(cameras, id)),
+                              subtitle: Text('Position ${index + 1}'),
+                              trailing: IconButton(
+                                tooltip: 'Remove',
+                                icon: const Icon(Icons.remove_circle_outline),
+                                onPressed: () =>
+                                    setDialogState(() => selected.remove(id)),
                               ),
                             ),
                         ],
-                        onChanged: (value) =>
-                            setDialogState(() => grid = value),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4, bottom: 12),
-                      child: CameraGridPreview(
-                        count: (grid ?? selected.length).clamp(
-                          selected.length,
-                          12,
-                        ),
-                        filled: selected.length,
-                      ),
-                    ),
-                    _sectionLabel(context, 'In this view'),
-                    ReorderableListView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      buildDefaultDragHandles: false,
-                      // onReorderItem: newIndex is already adjusted for the
-                      // removal, unlike the deprecated onReorder.
-                      onReorderItem: (oldIndex, newIndex) => setDialogState(() {
-                        selected.insert(newIndex, selected.removeAt(oldIndex));
-                      }),
-                      children: [
-                        for (final (index, id) in selected.indexed)
+                      const SizedBox(height: 8),
+                    ],
+                    if (cameras.any((c) => !selected.contains(c.id))) ...[
+                      _sectionLabel(context, 'Available'),
+                      for (final camera in cameras)
+                        if (!selected.contains(camera.id))
                           ListTile(
-                            key: ValueKey(id),
                             contentPadding: EdgeInsets.zero,
-                            leading: ReorderableDragStartListener(
-                              index: index,
-                              child: const Icon(Icons.drag_handle),
+                            leading: Icon(
+                              camera.missing
+                                  ? Icons.link_off_outlined
+                                  : Icons.videocam_outlined,
                             ),
-                            title: Text(_cameraName(cameras, id)),
-                            subtitle: Text('Position ${index + 1}'),
-                            trailing: IconButton(
-                              tooltip: 'Remove',
-                              icon: const Icon(Icons.remove_circle_outline),
-                              onPressed: () =>
-                                  setDialogState(() => selected.remove(id)),
-                            ),
+                            title: Text(camera.name),
+                            subtitle: camera.missing
+                                ? const Text('Missing from Go2RTC')
+                                : null,
+                            trailing: const Icon(Icons.add_circle_outline),
+                            enabled: selected.length < 12,
+                            onTap: selected.length >= 12
+                                ? null
+                                : () => setDialogState(() {
+                                    selected.add(camera.id);
+                                    if (grid != null &&
+                                        grid! < selected.length) {
+                                      grid = selected.length;
+                                    }
+                                  }),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
+                    ],
                   ],
-                  if (cameras.any((c) => !selected.contains(c.id))) ...[
-                    _sectionLabel(context, 'Available'),
-                    for (final camera in cameras)
-                      if (!selected.contains(camera.id))
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: Icon(
-                            camera.missing
-                                ? Icons.link_off_outlined
-                                : Icons.videocam_outlined,
-                          ),
-                          title: Text(camera.name),
-                          subtitle: camera.missing
-                              ? const Text('Missing from Go2RTC')
-                              : null,
-                          trailing: const Icon(Icons.add_circle_outline),
-                          enabled: selected.length < 12,
-                          onTap: selected.length >= 12
-                              ? null
-                              : () => setDialogState(() {
-                                  selected.add(camera.id);
-                                  if (grid != null &&
-                                      grid! < selected.length) {
-                                    grid = selected.length;
-                                  }
-                                }),
-                        ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),
@@ -767,21 +779,65 @@ class CameraGridPreview extends StatelessWidget {
 
   /// [columns, rows] in layout units per grid size.
   static const _grids = <int, List<int>>{
-    1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
-    7: [4, 4], 8: [3, 4], 9: [3, 3], 10: [4, 4], 11: [5, 4], 12: [6, 6],
+    1: [1, 1],
+    2: [2, 1],
+    3: [2, 2],
+    4: [2, 2],
+    5: [4, 2],
+    6: [3, 3],
+    7: [4, 4],
+    8: [3, 4],
+    9: [3, 3],
+    10: [4, 4],
+    11: [5, 4],
+    12: [6, 6],
   };
 
   /// [columnSpan, rowSpan] of the leading tiles that cover several units;
   /// every other tile is a single unit placed in reading order.
   static const _spans = <int, List<List<int>>>{
-    3: [[1, 2]],
-    5: [[2, 2]],
-    6: [[2, 2]],
-    7: [[2, 2], [2, 2], [2, 2]],
-    8: [[1, 2], [1, 2], [1, 1], [1, 1], [1, 2], [1, 2]],
-    10: [[2, 2], [1, 1], [1, 1], [1, 1], [1, 1], [2, 2]],
-    11: [[2, 2], [2, 2], [1, 1], [1, 1], [2, 2]],
-    12: [[3, 3], [3, 3], [3, 3]],
+    3: [
+      [1, 2],
+    ],
+    5: [
+      [2, 2],
+    ],
+    6: [
+      [2, 2],
+    ],
+    7: [
+      [2, 2],
+      [2, 2],
+      [2, 2],
+    ],
+    8: [
+      [1, 2],
+      [1, 2],
+      [1, 1],
+      [1, 1],
+      [1, 2],
+      [1, 2],
+    ],
+    10: [
+      [2, 2],
+      [1, 1],
+      [1, 1],
+      [1, 1],
+      [1, 1],
+      [2, 2],
+    ],
+    11: [
+      [2, 2],
+      [2, 2],
+      [1, 1],
+      [1, 1],
+      [2, 2],
+    ],
+    12: [
+      [3, 3],
+      [3, 3],
+      [3, 3],
+    ],
   };
 
   @override
@@ -845,9 +901,7 @@ class CameraGridPreview extends StatelessWidget {
                             ? Center(
                                 child: Text(
                                   '${rank[index] + 1}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
+                                  style: Theme.of(context).textTheme.labelSmall
                                       ?.copyWith(
                                         color: scheme.onSurfaceVariant,
                                       ),

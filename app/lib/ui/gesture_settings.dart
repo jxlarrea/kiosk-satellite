@@ -184,142 +184,162 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
             title: Text(existing == null ? 'Add gesture' : 'Edit gesture'),
             content: SizedBox(
               width: 480,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 12,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      initialValue: type,
-                      decoration: const InputDecoration(labelText: 'Gesture'),
-                      items: [
-                        for (final (value, label) in _triggerTypes)
-                          DropdownMenuItem(value: value, child: Text(label)),
-                      ],
-                      onChanged: (value) =>
-                          setDialogState(() => type = value ?? type),
-                    ),
-                    if (type == 'corner_taps' || type == 'corner_hold')
+              child: EdgeFade(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: 12,
+                    children: [
                       DropdownButtonFormField<String>(
-                        initialValue: corner,
-                        decoration: const InputDecoration(labelText: 'Corner'),
+                        initialValue: type,
+                        decoration: const InputDecoration(labelText: 'Gesture'),
                         items: [
-                          for (final entry in cornerNames.entries)
-                            DropdownMenuItem(
-                              value: entry.key,
-                              child: Text(
-                                '${entry.value[0].toUpperCase()}'
-                                '${entry.value.substring(1)} corner',
+                          for (final (value, label) in _triggerTypes)
+                            DropdownMenuItem(value: value, child: Text(label)),
+                        ],
+                        onChanged: (value) =>
+                            setDialogState(() => type = value ?? type),
+                      ),
+                      if (type == 'corner_taps' || type == 'corner_hold')
+                        DropdownButtonFormField<String>(
+                          initialValue: corner,
+                          decoration: const InputDecoration(
+                            labelText: 'Corner',
+                          ),
+                          items: [
+                            for (final entry in cornerNames.entries)
+                              DropdownMenuItem(
+                                value: entry.key,
+                                child: Text(
+                                  '${entry.value[0].toUpperCase()}'
+                                  '${entry.value.substring(1)} corner',
+                                ),
                               ),
+                          ],
+                          onChanged: (value) =>
+                              setDialogState(() => corner = value ?? corner),
+                        ),
+                      if (type == 'corner_taps')
+                        DropdownButtonFormField<int>(
+                          initialValue: taps.clamp(2, 4),
+                          decoration: const InputDecoration(labelText: 'Taps'),
+                          items: const [
+                            DropdownMenuItem(value: 2, child: Text('2 taps')),
+                            DropdownMenuItem(value: 3, child: Text('3 taps')),
+                            DropdownMenuItem(value: 4, child: Text('4 taps')),
+                          ],
+                          onChanged: (value) =>
+                              setDialogState(() => taps = value ?? taps),
+                        ),
+                      if (type == 'finger_taps' || type == 'finger_hold')
+                        DropdownButtonFormField<int>(
+                          initialValue: fingers.clamp(2, 3),
+                          decoration: const InputDecoration(
+                            labelText: 'Fingers',
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 2,
+                              child: Text('2 fingers'),
                             ),
-                        ],
-                        onChanged: (value) =>
-                            setDialogState(() => corner = value ?? corner),
-                      ),
-                    if (type == 'corner_taps')
-                      DropdownButtonFormField<int>(
-                        initialValue: taps.clamp(2, 4),
-                        decoration: const InputDecoration(labelText: 'Taps'),
-                        items: const [
-                          DropdownMenuItem(value: 2, child: Text('2 taps')),
-                          DropdownMenuItem(value: 3, child: Text('3 taps')),
-                          DropdownMenuItem(value: 4, child: Text('4 taps')),
-                        ],
-                        onChanged: (value) =>
-                            setDialogState(() => taps = value ?? taps),
-                      ),
-                    if (type == 'finger_taps' || type == 'finger_hold')
-                      DropdownButtonFormField<int>(
-                        initialValue: fingers.clamp(2, 3),
-                        decoration: const InputDecoration(labelText: 'Fingers'),
-                        items: const [
-                          DropdownMenuItem(value: 2, child: Text('2 fingers')),
-                          DropdownMenuItem(value: 3, child: Text('3 fingers')),
-                        ],
-                        onChanged: (value) =>
-                            setDialogState(() => fingers = value ?? fingers),
-                      ),
-                    if (type == 'finger_taps')
-                      DropdownButtonFormField<int>(
-                        initialValue: fingerTaps.clamp(1, 2),
-                        decoration: const InputDecoration(labelText: 'Taps'),
-                        items: const [
-                          DropdownMenuItem(value: 1, child: Text('Single tap')),
-                          DropdownMenuItem(value: 2, child: Text('Double tap')),
-                        ],
-                        onChanged: (value) => setDialogState(
-                          () => fingerTaps = value ?? fingerTaps,
+                            DropdownMenuItem(
+                              value: 3,
+                              child: Text('3 fingers'),
+                            ),
+                          ],
+                          onChanged: (value) =>
+                              setDialogState(() => fingers = value ?? fingers),
                         ),
-                      ),
-                    if (type == 'corner_hold' || type == 'finger_hold') ...[
-                      Text(
-                        'Hold for ${holdSeconds.toStringAsFixed(2)} s',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Slider(
-                        value: holdSeconds.clamp(0.5, 3),
-                        min: 0.5,
-                        max: 3,
-                        divisions: 10,
-                        onChanged: (value) => setDialogState(
-                          () => holdMs = (value * 1000).round(),
+                      if (type == 'finger_taps')
+                        DropdownButtonFormField<int>(
+                          initialValue: fingerTaps.clamp(1, 2),
+                          decoration: const InputDecoration(labelText: 'Taps'),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 1,
+                              child: Text('Single tap'),
+                            ),
+                            DropdownMenuItem(
+                              value: 2,
+                              child: Text('Double tap'),
+                            ),
+                          ],
+                          onChanged: (value) => setDialogState(
+                            () => fingerTaps = value ?? fingerTaps,
+                          ),
                         ),
-                      ),
-                    ],
-                    if (type == 'corner_sequence') ...[
-                      Text(
-                        sequence.isEmpty
-                            ? 'Tap the corners in order (2 to 8 steps).'
-                            : sequence.map((s) => s.toUpperCase()).join(' > '),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final entry in cornerNames.entries)
-                            OutlinedButton(
-                              onPressed: sequence.length >= 8
+                      if (type == 'corner_hold' || type == 'finger_hold') ...[
+                        Text(
+                          'Hold for ${holdSeconds.toStringAsFixed(2)} s',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        Slider(
+                          value: holdSeconds.clamp(0.5, 3),
+                          min: 0.5,
+                          max: 3,
+                          divisions: 10,
+                          onChanged: (value) => setDialogState(
+                            () => holdMs = (value * 1000).round(),
+                          ),
+                        ),
+                      ],
+                      if (type == 'corner_sequence') ...[
+                        Text(
+                          sequence.isEmpty
+                              ? 'Tap the corners in order (2 to 8 steps).'
+                              : sequence
+                                    .map((s) => s.toUpperCase())
+                                    .join(' > '),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final entry in cornerNames.entries)
+                              OutlinedButton(
+                                onPressed: sequence.length >= 8
+                                    ? null
+                                    : () => setDialogState(
+                                        () => sequence.add(entry.key),
+                                      ),
+                                child: Text(entry.key.toUpperCase()),
+                              ),
+                            IconButton(
+                              tooltip: 'Remove last step',
+                              icon: const Icon(Icons.backspace_outlined),
+                              onPressed: sequence.isEmpty
                                   ? null
                                   : () => setDialogState(
-                                      () => sequence.add(entry.key),
+                                      () => sequence.removeLast(),
                                     ),
-                              child: Text(entry.key.toUpperCase()),
                             ),
-                          IconButton(
-                            tooltip: 'Remove last step',
-                            icon: const Icon(Icons.backspace_outlined),
-                            onPressed: sequence.isEmpty
-                                ? null
-                                : () => setDialogState(
-                                    () => sequence.removeLast(),
-                                  ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      ],
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.play_circle_outline),
+                        title: Text(
+                          action == null
+                              ? 'Choose an action'
+                              : describeGestureAction(action!),
+                        ),
+                        subtitle: Text(
+                          action == null
+                              ? 'What this gesture triggers.'
+                              : 'Tap to change.',
+                        ),
+                        onTap: () async {
+                          final picked = await _pickAction(action);
+                          if (picked != null) {
+                            setDialogState(() => action = picked);
+                          }
+                        },
                       ),
                     ],
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.play_circle_outline),
-                      title: Text(
-                        action == null
-                            ? 'Choose an action'
-                            : describeGestureAction(action!),
-                      ),
-                      subtitle: Text(
-                        action == null
-                            ? 'What this gesture triggers.'
-                            : 'Tap to change.',
-                      ),
-                      onTap: () async {
-                        final picked = await _pickAction(action);
-                        if (picked != null) {
-                          setDialogState(() => action = picked);
-                        }
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -834,73 +854,75 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
             title: const Text('Call a Home Assistant service'),
             content: SizedBox(
               width: 480,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 12,
-                  children: [
-                    TextField(
-                      controller: domain,
-                      decoration: const InputDecoration(
-                        labelText: 'Domain',
-                        hintText: 'light',
+              child: EdgeFade(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 12,
+                    children: [
+                      TextField(
+                        controller: domain,
+                        decoration: const InputDecoration(
+                          labelText: 'Domain',
+                          hintText: 'light',
+                        ),
                       ),
-                    ),
-                    TextField(
-                      controller: service,
-                      decoration: const InputDecoration(
-                        labelText: 'Service',
-                        hintText: 'turn_on',
+                      TextField(
+                        controller: service,
+                        decoration: const InputDecoration(
+                          labelText: 'Service',
+                          hintText: 'turn_on',
+                        ),
                       ),
-                    ),
-                    TextField(
-                      controller: entity,
-                      decoration: const InputDecoration(
-                        labelText: 'Entity (optional)',
-                        hintText: 'light.kitchen',
+                      TextField(
+                        controller: entity,
+                        decoration: const InputDecoration(
+                          labelText: 'Entity (optional)',
+                          hintText: 'light.kitchen',
+                        ),
                       ),
-                    ),
-                    TextField(
-                      controller: data,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        labelText: 'Service data (optional)',
-                        hintText: '{"brightness_pct": 60}',
-                        errorText: error,
+                      TextField(
+                        controller: data,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: 'Service data (optional)',
+                          hintText: '{"brightness_pct": 60}',
+                          errorText: error,
+                        ),
                       ),
-                    ),
-                    _validateRow(
-                      context,
-                      checking: checking,
-                      verdict: verdict,
-                      onValidate: () async {
-                        if (domain.text.trim().isEmpty ||
-                            service.text.trim().isEmpty) {
-                          setDialogState(
-                            () => verdict = (
-                              false,
-                              'Domain and service are required.',
-                            ),
+                      _validateRow(
+                        context,
+                        checking: checking,
+                        verdict: verdict,
+                        onValidate: () async {
+                          if (domain.text.trim().isEmpty ||
+                              service.text.trim().isEmpty) {
+                            setDialogState(
+                              () => verdict = (
+                                false,
+                                'Domain and service are required.',
+                              ),
+                            );
+                            return;
+                          }
+                          setDialogState(() {
+                            checking = true;
+                            verdict = null;
+                          });
+                          final checked = await _validateHaAction(
+                            domain: domain.text.trim(),
+                            service: service.text.trim(),
+                            entity: entity.text.trim(),
                           );
-                          return;
-                        }
-                        setDialogState(() {
-                          checking = true;
-                          verdict = null;
-                        });
-                        final checked = await _validateHaAction(
-                          domain: domain.text.trim(),
-                          service: service.text.trim(),
-                          entity: entity.text.trim(),
-                        );
-                        setDialogState(() {
-                          checking = false;
-                          verdict = checked;
-                        });
-                      },
-                    ),
-                  ],
+                          setDialogState(() {
+                            checking = false;
+                            verdict = checked;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
