@@ -111,6 +111,9 @@ class WebViewFreeze(
      * [revealWithoutScrollbarFlash] so a drag inside a reveal's suppression
      * window cannot resurrect bars early or restore a suppressed state.
      */
+    /** Saved View.overScrollMode per view while a drag suppresses it. */
+    private val savedOverscroll = HashMap<WebView, Int>()
+
     private fun setScrollBars(hidden: Boolean, prefix: String): Int {
         return forEachWebView(prefix) { view ->
             if (hidden) {
@@ -123,11 +126,22 @@ class WebViewFreeze(
                     }
                 view.isVerticalScrollBarEnabled = false
                 view.isHorizontalScrollBarEnabled = false
+                // The Android 12+ overscroll stretch distorts the whole
+                // rendered surface, fixed-position elements included, when
+                // a drag counts as edge overscroll — CSS overscroll-behavior
+                // does not reach this WebView effect, so it is parked at the
+                // View level for the drag's duration.
+                if (!savedOverscroll.containsKey(view)) {
+                    savedOverscroll[view] = view.overScrollMode
+                }
+                view.overScrollMode = View.OVER_SCROLL_NEVER
             } else {
                 val (vertical, horizontal) = savedBars.remove(view)
                     ?: (true to true)
                 view.isVerticalScrollBarEnabled = vertical
                 view.isHorizontalScrollBarEnabled = horizontal
+                view.overScrollMode = savedOverscroll.remove(view)
+                    ?: View.OVER_SCROLL_ALWAYS
             }
         }
     }
