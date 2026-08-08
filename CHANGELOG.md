@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.14 - 2026-08-08
 
 ### Added
 - An Allow H.265 streams toggle in the Camera Streams settings' new Playback group, on the device and in the Remote Administration UI alike, off by default. Leave it off and cameras are requested as H.264 (or VP8, VP9, AV1), which is what Android devices actually decode; turn it on for a device that genuinely plays H.265 and the stream is taken as it comes. A device that cannot decode H.265 shows a blank image instead, so the toggle is worth trying one camera at a time.
