@@ -5030,8 +5030,11 @@ async function loadAboutInfo() {
   // Everything is fetched before the container is cleared: an await between
   // clear and append lets a second invocation interleave and the tab ends up
   // rendered twice.
-  const info = await api('/api/info').then((r) => r.json()).catch(() => null);
-  const upd = (await cmd('getUpdateStatus').catch(() => null))?.data;
+  const [info, updRes] = await Promise.all([
+    api('/api/info').then((r) => r.json()).catch(() => null),
+    cmd('getUpdateStatus').catch(() => null),
+  ]);
+  const upd = updRes?.data;
   const or = (v, alt = '-') => (v === null || v === undefined || v === '' ? alt : v);
 
   root.innerHTML = '';

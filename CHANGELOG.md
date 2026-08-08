@@ -10,6 +10,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - The Web Browsing page's User Interface group is gone: Zoom level moved up into the page's main group, and Display cutout moved to the Screen & Audio page under Screen, where a choice about the device's window belongs. Stored values carry over unchanged.
 
+### Fixed
+- The Remote Administration UI's About page no longer takes seconds to appear on its first open after a page load. The update-status read was fetching the full device info, including a CPU load measurement that pays for a fresh half-second sample whenever it runs twice in quick succession, exactly what opening the page caused; it now reads the one value it needs directly, and the page fetches its two reads in parallel.
+
 ## v2026.8.9 - 2026-08-07
 
 ### Changed

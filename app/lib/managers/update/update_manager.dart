@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -68,6 +69,14 @@ class UpdateManager extends Manager {
   final ValueNotifier<double?> progress = ValueNotifier(null);
 
   late final String _currentVersion;
+
+  /// Read once at init, not through the getDeviceInfo command: that command
+  /// gathers CPU load, whose sampler pays a 500ms paired read whenever it is
+  /// called twice in quick succession — exactly what the About page's
+  /// info-then-update-status sequence did, making getUpdateStatus a half
+  /// second call for one integer. Null off Android.
+  int? _sdkInt;
+
   Timer? _timer;
 
   /// Last whole percent pushed onto the bus; keeps the progress stream from
@@ -77,6 +86,9 @@ class UpdateManager extends Manager {
   @override
   Future<void> init() async {
     _currentVersion = (await PackageInfo.fromPlatform()).version;
+    if (Platform.isAndroid) {
+      _sdkInt = (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+    }
     // The installer's asynchronous outcomes. Success never arrives: Android
     // kills the process as it swaps the code, and the relaunch receiver
     // brings the app back already running the new version.
@@ -227,14 +239,10 @@ class UpdateManager extends Manager {
   /// Android 9 and older restart fine regardless.
   Future<bool> canRelaunch() async {
     try {
-      final device = await commands.execute('getDeviceInfo', const {});
-      final sdk = (device.data is Map)
-          ? ((device.data as Map)['sdkInt'] as num?)?.toInt()
-          : null;
-      if (sdk == null || sdk < 29) return true;
+      // Unknown (tests, non-Android): claim yes rather than nag.
+      if (_sdkInt == null || _sdkInt! < 29) return true;
       return await _background.invokeMethod<bool>('canBringToFront') ?? false;
     } catch (_) {
-      // Unknown (tests, non-Android): claim yes rather than nag.
       return true;
     }
   }
