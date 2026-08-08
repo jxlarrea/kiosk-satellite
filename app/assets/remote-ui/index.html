@@ -2869,6 +2869,15 @@ async function loadCameras() {
     return;
   }
   const config = result.data;
+  // The page is otherwise built from the camera document alone; the playback
+  // row at the end is a real setting, so its definition comes from the
+  // settings API the same way the generic pages read theirs.
+  let settings = [];
+  try {
+    const read = await (await api('/api/settings')).json();
+    settings = read.settings || [];
+    state.settings = settings;
+  } catch (_) {}
   root.innerHTML = '';
 
   const heading = (text) => {
@@ -3060,6 +3069,13 @@ async function loadCameras() {
       },
     },
   ));
+
+  // Mirrors the device's Playback section (ui/camera_settings.dart).
+  const allowH265 = settings.find((setting) => setting.key === 'camera.allow_h265');
+  if (allowH265) {
+    heading('Playback');
+    card().appendChild(settingRow(allowH265));
+  }
 }
 
 /* ---- Gestures (issue #99) ----

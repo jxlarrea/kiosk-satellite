@@ -120,6 +120,28 @@ Use the normal `button.press` action in a Home Assistant automation to show a
 specific view. View buttons use stable internal IDs, so renaming a view does
 not replace its Home Assistant entity.
 
+## Stream codecs
+
+Kiosk Satellite asks for H.264 (and VP8, VP9, AV1) and deliberately leaves
+H.265 out of the request. Android WebViews advertise H.265 support whether or
+not the device can decode it: the stream connects, video data arrives, and not
+a single frame is ever decoded, which looks like a permanently blank camera
+with nothing in the logs (issue #160).
+
+With H.265 out of the way, a Go2RTC server that has `ffmpeg` available
+transcodes an H.265 camera to H.264 on its own and the camera plays. A server
+without `ffmpeg` answers with an error instead, which the App Logs record. The
+other fix is at the camera: many models can be switched to H.264, or expose an
+H.264 substream that can be used in the view.
+
+**Allow H.265 streams** (Settings, then Camera Streams, then Playback) turns
+the restriction off for devices that really do decode H.265, such as recent
+high-end tablets. A device that cannot decode it shows a blank image instead.
+
+Whatever the setting, a stream that connects but decodes nothing says so on
+the tile and writes a warning to the App Logs naming the codec, so a camera
+that stays blank can be diagnosed from the logs alone.
+
 ## Performance
 
 The camera player is created only while a view is visible. One WebView owns all

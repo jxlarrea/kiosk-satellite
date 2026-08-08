@@ -2,6 +2,15 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- An Allow H.265 streams toggle in the Camera Streams settings' new Playback group, on the device and in the Remote Administration UI alike, off by default. Leave it off and cameras are requested as H.264 (or VP8, VP9, AV1), which is what Android devices actually decode; turn it on for a device that genuinely plays H.265 and the stream is taken as it comes. A device that cannot decode H.265 shows a blank image instead, so the toggle is worth trying one camera at a time.
+- A decode watchdog behind every camera tile: a stream that connects and receives video without ever decoding a frame now says so on the tile and writes a warning to the App Logs naming the codec, the packet count and the camera, instead of sitting black with nothing recorded anywhere. A stream that plays normally logs its codec and resolution once, so an issue report carries what the device actually negotiated.
+
+### Fixed
+- Cameras that stream H.265 no longer show as a permanently blank tile (#160). Android WebViews advertise H.265 support in the stream request whether or not anything on the device can decode it, so the server hands over H.265, the connection succeeds, video data arrives, and not one frame is ever decoded. Kiosk Satellite now leaves H.265 out of the request unless the new toggle turns it back on, which lets a Go2RTC server with ffmpeg transcode the camera to H.264 by itself, and makes a server that cannot transcode answer with a real error rather than silence.
+
 ## v2026.8.13 - 2026-08-08
 
 ### Added

@@ -7,6 +7,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../app_container.dart';
 import '../managers/camera/models.dart';
+import '../managers/settings/definitions.dart' as defs;
 
 class CameraViewOverlay extends StatelessWidget {
   const CameraViewOverlay({super.key, required this.container});
@@ -236,6 +237,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
       'viewName': widget.view.name,
       'showCameraNames': widget.view.showCameraNames,
       'grid': widget.view.effectiveGrid,
+      'allowH265': widget.container.settings.get(defs.cameraAllowH265),
       'interactive': widget.interactive,
       'focusedCameraId': widget.interactive
           ? widget.container.camera.focusedCameraId.value
@@ -358,10 +360,19 @@ class _CameraPlayerState extends State<CameraPlayer> {
         controller.addJavaScriptHandler(
           handlerName: 'cameraLog',
           callback: (args) {
-            widget.container.log.debug(
-              'camera',
-              args.isEmpty ? '' : '${args.first}',
-            );
+            final first = args.isEmpty ? null : args.first;
+            final entry = first is Map
+                ? first.cast<String, Object?>()
+                : const <String, Object?>{};
+            final message = '${entry['message'] ?? first ?? ''}';
+            // A stream that connects and then decodes nothing is the one
+            // camera failure with no error behind it, so the page reports it
+            // as a warning and it shows up in About > App Logs (issue #160).
+            if (entry['level'] == 'warn') {
+              widget.container.log.warn('camera', message);
+            } else {
+              widget.container.log.debug('camera', message);
+            }
             return null;
           },
         );

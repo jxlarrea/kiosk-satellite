@@ -50,9 +50,24 @@ const HIDDEN_STOP_MS = 10000;
 // An ICE 'disconnected' usually heals itself within a couple of seconds;
 // tearing the session down on sight turns a blip into a visible reconnect.
 const DISCONNECT_GRACE_MS = 4000;
+// How long a connected stream may deliver packets without decoding a single
+// frame before the tile says so. Long enough to cover a slow first keyframe.
+const DECODE_POLL_MS = 2500;
+const DECODE_GRACE_MS = 10000;
+// Android WebViews advertise H.265 receive support whether or not anything
+// can decode it, so the offer leaves it out unless the setting says the
+// device really plays it (issue #160).
+const ALLOW_H265 = CFG.allowH265 === true;
 
-function log(message) {
-  try { bridge('cameraLog', String(message)); } catch (_) {}
+function log(message, level) {
+  try {
+    bridge('cameraLog', { message: String(message), level: level || 'debug' });
+  } catch (_) {}
+}
+
+// 'video/H265' as a person writes it.
+function codecLabel(mimeType) {
+  return (mimeType || 'unknown').replace('video/', '').replace(/^H26/i, 'H.26');
 }
 
 function orientation() {
@@ -153,6 +168,7 @@ function stop(cameraId) {
   session.wanted = false;
   clearTimeout(session.retry);
   clearTimeout(session.grace);
+  clearInterval(session.decode);
   if (session.pc) {
     session.pc.ontrack = null;
     session.pc.onconnectionstatechange = null;
@@ -208,7 +224,7 @@ async function start(cameraId, fullscreen) {
   stop(cameraId);
   const session = {
     wanted: true, pc: null, video: null, retry: null, grace: null,
-    attempt: 0, fullscreen: !!fullscreen,
+    decode: null, attempt: 0, fullscreen: !!fullscreen,
   };
   sessions.set(cameraId, session);
 
@@ -222,8 +238,53 @@ async function start(cameraId, fullscreen) {
     pc.close();
   };
 
+  // A tile can negotiate, connect and take packets while decoding nothing at
+  // all: the device accepted a codec it cannot actually play, and no error is
+  // raised anywhere - it just stays black. Watch the decoder and say what
+  // happened, on the tile and in the app log (issue #160).
+  const watchDecode = (pc) => {
+    clearInterval(session.decode);
+    let waited = 0;
+    session.decode = setInterval(async () => {
+      if (!session.wanted || session.pc !== pc) {
+        clearInterval(session.decode);
+        session.decode = null;
+        return;
+      }
+      waited += DECODE_POLL_MS;
+      let stats;
+      try { stats = await pc.getStats(); } catch (_) { return; }
+      let inbound = null;
+      const codecs = new Map();
+      stats.forEach((report) => {
+        if (report.type === 'codec') codecs.set(report.id, report.mimeType);
+        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+          inbound = report;
+        }
+      });
+      if (!inbound) return;
+      const codec = codecLabel(codecs.get(inbound.codecId));
+      if (inbound.framesDecoded > 0) {
+        clearInterval(session.decode);
+        session.decode = null;
+        log(`${cameraId}: playing ${codec} `
+          + `${inbound.frameWidth}x${inbound.frameHeight}`);
+        return;
+      }
+      if (waited < DECODE_GRACE_MS || !inbound.packetsReceived) return;
+      clearInterval(session.decode);
+      session.decode = null;
+      setStatus(cameraId, `This device cannot decode ${codec}`);
+      log(`${cameraId}: ${codec} stream connected `
+        + `(${inbound.packetsReceived} packets, ${inbound.framesReceived} `
+        + 'frames) but decoded 0 frames; this device cannot play it', 'warn');
+    }, DECODE_POLL_MS);
+  };
+
   const retry = (pc, message) => {
     discard(pc);
+    clearInterval(session.decode);
+    session.decode = null;
     if (!session.wanted) return;
     session.attempt++;
     const delay = Math.min(30000, 1000 * Math.pow(2, session.attempt));
@@ -246,7 +307,21 @@ async function start(cameraId, fullscreen) {
     const pc = new RTCPeerConnection(
       rtcConfig && rtcConfig.iceServers ? { iceServers: rtcConfig.iceServers } : {});
     session.pc = pc;
-    pc.addTransceiver('video', { direction: 'recvonly' });
+    const transceiver = pc.addTransceiver('video', { direction: 'recvonly' });
+    // Leaving H.265 out of the offer costs nothing where a stream is H.264
+    // already, and turns an undecodable H.265 camera into either a Go2RTC
+    // transcode (servers that carry ffmpeg) or a visible signaling error.
+    if (!ALLOW_H265 && transceiver.setCodecPreferences &&
+        window.RTCRtpReceiver && RTCRtpReceiver.getCapabilities) {
+      try {
+        const capabilities = RTCRtpReceiver.getCapabilities('video');
+        const usable = (capabilities ? capabilities.codecs : [])
+          .filter((codec) => !/h265|hevc/i.test(codec.mimeType));
+        if (usable.length) transceiver.setCodecPreferences(usable);
+      } catch (error) {
+        log(`codecs ${cameraId}: ${error}`);
+      }
+    }
     pc.ontrack = (event) => {
       if (!session.wanted || !event.streams.length) return;
       const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
@@ -288,6 +363,7 @@ async function start(cameraId, fullscreen) {
         session.grace = null;
         session.attempt = 0;
         setStatus(cameraId, '');
+        watchDecode(pc);
       }
     };
     try {

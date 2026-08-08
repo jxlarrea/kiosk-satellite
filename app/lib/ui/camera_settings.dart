@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../managers/camera/models.dart';
+import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
+import 'settings_search.dart';
 
 class CameraSettingsPanel extends StatefulWidget {
   const CameraSettingsPanel({super.key, required this.container});
@@ -198,6 +200,26 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               onTap: config.cameras.isEmpty || _busy
                   ? null
                   : () => _editView(null),
+            ),
+          ],
+        ),
+        const SectionHeading('Playback'),
+        SettingsCard(
+          children: [
+            SearchLandingTarget(
+              id: defs.cameraAllowH265.key,
+              child: SwitchListTile(
+                title: Text(defs.cameraAllowH265.title),
+                subtitle: Text(defs.cameraAllowH265.description),
+                value: widget.container.settings.get(defs.cameraAllowH265),
+                onChanged: (value) async {
+                  await widget.container.settings.setFromJson(
+                    defs.cameraAllowH265.key,
+                    value,
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
             ),
           ],
         ),

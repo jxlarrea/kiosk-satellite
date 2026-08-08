@@ -2572,6 +2572,22 @@ const mqttDeviceId = SettingDef<String>(
   hidden: true,
 );
 
+// Android WebViews advertise H.265 receive support in the SDP offer whether
+// or not anything on the device can decode it: the stream negotiates, packets
+// arrive, and not a single frame is decoded, so the tile sits black with no
+// error anywhere (issue #160). Off by default, which offers H.264 only and
+// lets a Go2RTC server with ffmpeg transcode an H.265 camera instead.
+const cameraAllowH265 = SettingDef<bool>(
+  key: 'camera.allow_h265',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Allow H.265 streams',
+  description:
+      'Play H.265 camera streams as they are. A device that cannot decode '
+      'H.265 shows a blank image instead.',
+  category: 'Cameras',
+);
+
 // Hidden because Cameras has a purpose-built editor on the device and in the
 // remote admin. Marking the versioned document secret keeps server credentials
 // out of the generic settings API while still including them in full backups.
@@ -3167,6 +3183,7 @@ const List<SettingDef<Object>> allSettings = [
   mqttPassword,
   mqttDiscoveryPrefix,
   mqttDeviceId,
+  cameraAllowH265,
   cameraConfig,
   sendspinEnabled,
   sendspinServer,
