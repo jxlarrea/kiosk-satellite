@@ -1008,6 +1008,9 @@ const SEARCH_EXTRAS = [
     heading: 'Required system permissions' },
   { tab: 'screenaudio', title: 'Master volume',
     desc: 'The device volume the media and assistant faders scale under.' },
+  { tab: 'device', title: 'Permissions',
+    desc: 'Every Android grant the app can use, with its status: microphone, camera, notifications, unrestricted battery, display over other apps, modify system settings, system UI guard, device admin and location.',
+    heading: 'Permissions' },
   { tab: 'device', title: 'Export configuration',
     desc: "Download every setting and the page's local storage." },
   { tab: 'device', title: 'Import configuration',
@@ -4010,6 +4013,157 @@ async function loadSettings() {
       'Open this address in a browser on your computer.',
       `http://${location.host}`));
     root.append(heading, card);
+  }
+
+  // ── Permissions (issue #156) ──────────────────────────────────────────
+  // The device's Settings -> Device group, mirrored. Three states, not the
+  // two the per-feature groups use: a flat granted/missing list paints half
+  // the rows red on any setup that does not use every feature, so a grant
+  // nothing currently needs stays muted and merely informative while still
+  // being grantable ahead of time. Granting happens on the tablet either
+  // way - Android has no way to accept on someone's behalf - so each button
+  // opens the dialog there and the row polls until it lands.
+  {
+    const root = document.getElementById('device-settings');
+    const on = (k) => byKey[k]?.value === true;
+    const background = on('wake_word.enabled') && on('wake_word.background');
+    const ROWS = [
+      { key: 'microphone', name: 'Microphone', ask: 'microphone',
+        needed: on('wake_word.enabled'),
+        held: 'Wake word detection and pages can hear you.',
+        missing: 'Wake word detection is on and nothing is listening.',
+        idle: 'Needed by wake word detection and by pages that ask for the microphone.' },
+      // Always needed: the app holds the Home Assistant and MQTT
+      // connections open while the screen is off, and Doze is what stops
+      // them. Nothing has to be switched on for this one to matter.
+      { key: 'batteryUnrestricted', name: 'Unrestricted battery', ask: 'batteryOptimizations',
+        needed: true,
+        held: 'Android leaves the app running in the background.',
+        missing: 'Android may pause the app when the screen is off, dropping the Home Assistant connection and the MQTT entities with it.',
+        idle: '' },
+      { key: 'camera', name: 'Camera', ask: 'camera',
+        needed: on('camera.enabled'),
+        held: 'Motion detection and snapshots can use the camera.',
+        missing: 'The camera is switched on and cannot be opened.',
+        idle: 'Needed by motion detection, camera snapshots and pages that ask for the camera.' },
+      { key: 'notification', name: 'Notifications', ask: 'notifications',
+        needed: background,
+        held: 'The ongoing notification that keeps listening alive.',
+        missing: 'Background listening needs it to run reliably.',
+        idle: 'Needed by background wake word listening.' },
+      { key: 'displayOverOtherApps', name: 'Display over other apps', ask: 'overlay',
+        needed: background || on('browser.auto_reload_on_error')
+          || on('kiosk.start_on_boot') || on('kiosk.disable_status_bar'),
+        held: 'Kiosk Satellite can put itself back in front.',
+        missing: 'Without this the app cannot reopen itself after a crash, an update or a wake word heard behind another app.',
+        idle: 'Lets the app bring itself back to the front, and the lockdown shield cover the whole screen.' },
+      { key: 'writeSettings', name: 'Modify system settings', ask: 'writeSettings',
+        needed: on('screen.set_brightness_on_launch') || on('screensaver.brightness_enabled'),
+        held: "Brightness changes set the panel's real brightness.",
+        missing: 'Brightness only dims the app window, so the panel and Home Assistant never see the change.',
+        idle: "Needed to set the panel's real brightness rather than dimming the app window." },
+      { key: 'uiGuard', name: 'System UI guard', guard: true,
+        needed: on('kiosk.enabled') && on('kiosk.disable_status_bar'),
+        held: 'The notification shade and recents close on their own while the screen is protected.',
+        missing: 'The notification shade and recents stay reachable. Enable Kiosk Satellite under Accessibility.',
+        idle: 'Closes the notification shade and recents while kiosk mode protects the screen.' },
+      { key: 'deviceAdmin', name: 'Device admin', ask: 'deviceAdmin',
+        needed: false,
+        held: 'Screen off really powers the panel down.',
+        missing: '',
+        idle: 'Lets Screen off power the panel down instead of only blacking it out.' },
+      { key: 'location', name: 'Location', ask: 'location',
+        needed: false,
+        held: 'Pages can use the device location.',
+        missing: '',
+        idle: 'Only used by dashboard pages that ask for your location.' },
+    ];
+
+    const readAll = async () => {
+      const out = {};
+      try {
+        const res = await cmd('getSystemPermissions');
+        Object.assign(out, res.data || {});
+      } catch (_) {}
+      try {
+        const g = await cmd('hasUiGuard');
+        out.uiGuard = g.data === true;
+      } catch (_) {}
+      return out;
+    };
+
+    const heading = document.createElement('h2');
+    heading.className = 'card-title';
+    heading.textContent = 'Permissions';
+    const note = document.createElement('div');
+    note.className = 'group-note';
+    note.textContent =
+      'Grants are given on the device, so each button opens an Android '
+      + 'dialog or settings screen there. Some brands add their own battery '
+      + 'or autostart manager on top, which Android cannot report.';
+    const card = document.createElement('div');
+    card.className = 'card';
+    root.append(heading, note, card);
+
+    const rendered = ROWS.map((spec) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+      info.querySelector('.name').textContent = spec.name;
+      info.querySelector('.desc').textContent = 'Checking...';
+      row.appendChild(info);
+      const state = document.createElement('span');
+      state.style.whiteSpace = 'nowrap';
+      row.appendChild(state);
+      card.appendChild(row);
+      return { spec, row, info, state };
+    });
+
+    const paint = (all) => {
+      for (const { spec, row, info, state } of rendered) {
+        const ok = all[spec.key] === true;
+        const unknownState = all[spec.key] === undefined;
+        info.querySelector('.desc').textContent = unknownState
+          ? 'Status unavailable.'
+          : ok ? spec.held : (spec.needed ? spec.missing : spec.idle);
+        state.textContent = unknownState ? ''
+          : ok ? 'Granted' : (spec.needed ? 'Missing' : 'Not granted');
+        state.style.color = ok ? 'var(--ok)'
+          : spec.needed ? 'var(--error)' : 'var(--muted)';
+        row.querySelector('button')?.remove();
+        if (ok || unknownState) continue;
+        const btn = document.createElement('button');
+        btn.className = 'btn-ghost';
+        btn.textContent = spec.guard ? 'Open settings on device' : 'Grant on device';
+        btn.style.cssText = 'flex-shrink:0;';
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            if (spec.guard) {
+              await api('/api/commands/openUiGuardSettings',
+                { method: 'POST', body: '{}' });
+            } else {
+              await api('/api/commands/requestOsPermissions', { method: 'POST',
+                body: JSON.stringify({ which: [spec.ask] }) });
+            }
+          } catch (_) {}
+          // The grant happens on the tablet; keep re-reading until it lands
+          // so the row flips by itself.
+          let tries = 30;
+          const tick = setInterval(async () => {
+            const now = await readAll();
+            if (now[spec.key] === true || --tries <= 0) {
+              clearInterval(tick);
+              paint(now);
+            }
+          }, 2000);
+        });
+        row.appendChild(btn);
+      }
+    };
+    readAll().then(paint);
   }
 
   // ── Voice Satellite ───────────────────────────────────────────────────

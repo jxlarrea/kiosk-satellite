@@ -93,6 +93,20 @@ permissions** group showing the two grants the protections lean on, each
 with a button that starts the grant on the device, including from the
 remote admin.
 
+These per-feature groups only cover what the feature being configured
+needs. **Settings, Device, Permissions** lists every grant the app can use
+in one place, on the device and in the remote admin alike, so a permission
+no enabled feature happens to ask for is still findable. Each row says
+what it is for and reads Granted, Missing (something switched on needs it
+and does not have it) or Not granted (nothing needs it yet, and it can
+still be given ahead of time). Note that granting always happens on the
+device: the buttons there and in the remote admin both open an Android
+dialog or settings screen on the tablet, because Android has no way to
+accept a permission on someone's behalf. Some manufacturers also add their
+own battery or autostart manager on top of Android's, which no app can
+read or request; if the app keeps being killed with every row granted,
+that is the next place to look.
+
 **Display over other apps** is the standard Android overlay permission. It
 powers the screen-level lockdown shield, the status bar shield, the
 foreground reclaim, the relaunch after a crash or a task removal, and Start

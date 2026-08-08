@@ -1487,6 +1487,20 @@ class _CategoryContentState extends State<_CategoryContent> {
             container.settings.get(remoteEnabled))
           _AdminAddressCard(container: container),
         if (widget.category == 'Device') ...[
+          // Every OS grant in one place (issue #156). The per-feature groups
+          // elsewhere answer "what does this feature need" where it is
+          // configured; this one answers "what does the app use, and where
+          // do I stand" — which is how a grant nobody's current features
+          // ask for, like the battery exemption on a device without voice,
+          // becomes findable at all.
+          const SectionHeading('Permissions'),
+          const GroupNote(_permissionsGroupNote),
+          SearchLandingTarget(
+            id: 'x:device_permissions',
+            child: SettingsCard(
+              children: [_DevicePermissionsTile(container: container)],
+            ),
+          ),
           const SectionHeading('Configuration'),
           SettingsCard(
             children: [
@@ -3720,6 +3734,11 @@ const _micGroupNote =
     'Only for devices that capture too quietly. Wrong values make wake word '
     'detection worse.';
 
+const _permissionsGroupNote =
+    'Grants are given on this device, so each button opens an Android '
+    'dialog or settings screen here. Some brands add their own battery or '
+    'autostart manager on top, which Android cannot report.';
+
 /// A microphone or speaker picker over the live device list ([def] selects
 /// which). Options come from getAudioDevices at open; the stored value is
 /// AudioRouting's stable selector, so a device that is currently off still
@@ -4016,6 +4035,276 @@ class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Every OS grant the app can use, in one list, on the Device page (issue
+/// #156).
+///
+/// The per-feature groups elsewhere are deliberately narrow: they show what
+/// the feature being configured needs, right where it is configured. The cost
+/// is that a grant no enabled feature asks for is reachable from nowhere —
+/// the battery exemption used to appear only under background wake-word
+/// listening, so a kiosk with no voice at all could not find the one grant
+/// that keeps its Home Assistant connection alive in Doze, which is the
+/// report this list comes from.
+///
+/// Three states rather than two, because a flat granted/missing list would
+/// paint half the rows red on any setup that does not use every feature:
+///   * granted — held, nothing to do
+///   * missing — not held AND something currently switched on needs it, so
+///     something is broken right now
+///   * not granted — not held and nothing needs it yet; muted, still
+///     grantable, so anything can be given ahead of turning its feature on
+///
+/// Read on build and again on resume: these are Android dialogs and settings
+/// screens that report nothing back, so returning to the app is the only
+/// reliable moment to re-read them.
+class _DevicePermissionsTile extends StatefulWidget {
+  const _DevicePermissionsTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_DevicePermissionsTile> createState() => _DevicePermissionsTileState();
+}
+
+class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
+    with WidgetsBindingObserver {
+  SystemPermissions? _perms;
+  bool? _uiGuard;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    SystemPermissions? perms;
+    bool? uiGuard;
+    try {
+      perms = await SystemPermissions.read();
+    } catch (_) {}
+    try {
+      uiGuard = await widget.container.kiosk.uiGuardEnabled();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _perms = perms;
+      _uiGuard = uiGuard;
+    });
+  }
+
+  /// One grant. [needed] drives the middle state: not held and needed reads
+  /// as an error, not held and unneeded stays muted and merely informative.
+  Widget _row({
+    required bool? granted,
+    required bool needed,
+    required IconData missingIcon,
+    required String title,
+    required String held,
+    required String missing,
+    required String idle,
+    required Future<void> Function() onGrant,
+    String action = 'Grant',
+  }) {
+    final theme = Theme.of(context);
+    final ok = granted == true;
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return ListTile(
+      leading: Icon(
+        ok ? Icons.check_circle_outline : missingIcon,
+        color: ok
+            ? null
+            : needed
+            ? theme.colorScheme.error
+            : muted,
+      ),
+      title: Text(title),
+      subtitle: Text(
+        ok
+            ? held
+            : needed
+            ? missing
+            : idle,
+        style: ok || needed ? null : TextStyle(color: muted),
+      ),
+      trailing: ok
+          ? null
+          : TextButton(
+              onPressed: () async {
+                await onGrant();
+                await _refresh();
+              },
+              child: Text(action),
+            ),
+    );
+  }
+
+  Future<void> _requestVia(String which) async {
+    await widget.container.commands.execute('requestOsPermissions', {
+      'which': [which],
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = widget.container.settings;
+    final perms = _perms;
+    final background =
+        settings.get(wakeWordEnabled) && settings.get(wakeWordBackground);
+    final micBlocked = perms?.microphoneBlocked == true;
+    return Column(
+      children: separatedRows([
+        _row(
+          granted: perms?.microphone,
+          needed: settings.get(wakeWordEnabled),
+          missingIcon: Icons.mic_off_outlined,
+          title: 'Microphone',
+          held: 'Wake word detection and pages can hear you.',
+          missing: micBlocked
+              ? 'Blocked. Android will not ask again, so allow it in the '
+                    'app settings.'
+              : 'Wake word detection is on and nothing is listening.',
+          idle: 'Needed by wake word detection and by pages that ask for '
+              'the microphone.',
+          action: micBlocked ? 'App settings' : 'Grant',
+          onGrant: () async {
+            if (micBlocked) {
+              await openOsAppSettings();
+            } else {
+              await ensureOsPermission(Permission.microphone);
+            }
+          },
+        ),
+        // Always needed: the app keeps its Home Assistant and MQTT
+        // connections alive while the screen is off, and Doze is what stops
+        // them. Nothing has to be switched on for this one to matter.
+        _row(
+          granted: perms?.batteryUnrestricted,
+          needed: true,
+          missingIcon: Icons.battery_alert_outlined,
+          title: 'Unrestricted battery',
+          held: 'Android leaves the app running in the background.',
+          missing:
+              'Android may pause the app when the screen is off, dropping '
+              'the Home Assistant connection and the MQTT entities with it.',
+          idle: '',
+          onGrant: BackgroundListening.requestBatteryUnrestricted,
+        ),
+        _row(
+          granted: perms?.camera,
+          needed: settings.get(cameraEnabled),
+          missingIcon: Icons.videocam_off_outlined,
+          title: 'Camera',
+          held: 'Motion detection and snapshots can use the camera.',
+          missing: 'The camera is switched on and cannot be opened.',
+          idle: 'Needed by motion detection, camera snapshots and pages '
+              'that ask for the camera.',
+          onGrant: () => ensureOsPermission(Permission.camera),
+        ),
+        _row(
+          granted: perms?.notification,
+          needed: background,
+          missingIcon: Icons.notifications_off_outlined,
+          title: 'Notifications',
+          held: 'The ongoing notification that keeps listening alive.',
+          missing: 'Background listening needs it to run reliably.',
+          idle: 'Needed by background wake word listening.',
+          onGrant: () => ensureOsPermission(Permission.notification),
+        ),
+        _row(
+          granted: perms?.displayOverOtherApps,
+          needed:
+              background ||
+              settings.get(autoReloadOnError) ||
+              settings.get(kioskStartOnBoot) ||
+              settings.get(kioskDisableStatusBar),
+          missingIcon: Icons.open_in_new_off_outlined,
+          title: 'Display over other apps',
+          held: 'Kiosk Satellite can put itself back in front.',
+          missing:
+              'Without this the app cannot reopen itself after a crash, an '
+              'update or a wake word heard behind another app.',
+          idle: 'Lets the app bring itself back to the front, and the '
+              'lockdown shield cover the whole screen.',
+          onGrant: () => requestOsPermission(Permission.systemAlertWindow),
+        ),
+        _row(
+          granted: perms?.writeSettings,
+          needed:
+              settings.get(setBrightnessOnLaunch) ||
+              settings.get(screensaverBrightnessEnabled),
+          missingIcon: Icons.brightness_6_outlined,
+          title: 'Modify system settings',
+          held: "Brightness changes set the panel's real brightness.",
+          missing:
+              'Brightness only dims the app window, so the panel and Home '
+              'Assistant never see the change.',
+          idle: "Needed to set the panel's real brightness rather than "
+              'dimming the app window.',
+          onGrant: () => _requestVia('writeSettings'),
+        ),
+        _row(
+          granted: _uiGuard,
+          needed:
+              settings.get(kioskEnabled) &&
+              settings.get(kioskDisableStatusBar),
+          missingIcon: Icons.shield_outlined,
+          title: 'System UI guard',
+          held:
+              'The notification shade and recents close on their own while '
+              'the screen is protected.',
+          missing:
+              'The notification shade and recents stay reachable. Enable '
+              'Kiosk Satellite under Accessibility.',
+          idle: 'Closes the notification shade and recents while kiosk mode '
+              'protects the screen.',
+          action: 'Enable',
+          onGrant: widget.container.kiosk.openUiGuardSettings,
+        ),
+        // Never marked needed: the screen entity and the MQTT switch both
+        // fall back to a dark panel without it, which is a lesser version of
+        // the feature rather than a broken one.
+        _row(
+          granted: perms?.deviceAdmin,
+          needed: false,
+          missingIcon: Icons.admin_panel_settings_outlined,
+          title: 'Device admin',
+          held: 'Screen off really powers the panel down.',
+          missing: '',
+          idle: 'Lets Screen off power the panel down instead of only '
+              'blacking it out.',
+          action: 'Enable',
+          onGrant: () => _requestVia('deviceAdmin'),
+        ),
+        // Pages ask for this themselves when they need it; nothing native
+        // here uses it, so it is listed for completeness only.
+        _row(
+          granted: perms?.location,
+          needed: false,
+          missingIcon: Icons.location_off_outlined,
+          title: 'Location',
+          held: 'Pages can use the device location.',
+          missing: '',
+          idle: 'Only used by dashboard pages that ask for your location.',
+          onGrant: () => ensureOsPermission(Permission.locationWhenInUse),
+        ),
+      ]),
     );
   }
 }

@@ -268,8 +268,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           'full': 'true for the whole recommended set',
           'which':
               'explicit list of permissions to request (microphone, camera, '
-              'notifications, batteryOptimizations, overlay, writeSettings, '
-              'deviceAdmin); overrides full',
+              'notifications, batteryOptimizations, overlay, location, '
+              'writeSettings, deviceAdmin); overrides full',
         },
         handler: (p) async {
           const known = <String, Permission>{
@@ -278,6 +278,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
             'notifications': Permission.notification,
             'batteryOptimizations': Permission.ignoreBatteryOptimizations,
             'overlay': Permission.systemAlertWindow,
+            // Only a page ever wants this, but the Device page's permission
+            // list offers it like the rest, and the remote admin can only
+            // ask through this command (issue #156).
+            'location': Permission.locationWhenInUse,
           };
           final which = p['which'];
           final wanted = which is List
@@ -285,8 +289,12 @@ class KioskManager extends Manager with WidgetsBindingObserver {
                   for (final name in which)
                     if (known.containsKey(name)) name as String,
                 ]
+              // "The recommended set" deliberately excludes location: no
+              // native feature uses it, pages ask for it themselves, and an
+              // unexplained location prompt during onboarding is exactly
+              // the kind of thing that gets an app distrusted.
               : p['full'] == true
-              ? known.keys.toList()
+              ? [for (final k in known.keys) if (k != 'location') k]
               : const ['microphone'];
           final results = <String, bool>{};
           for (final name in wanted) {

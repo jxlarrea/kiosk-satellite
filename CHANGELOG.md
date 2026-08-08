@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A Permissions group in the Device settings, on the device and in the Remote Administration UI alike (#156), listing every Android grant the app can use in one place: microphone, unrestricted battery, camera, notifications, display over other apps, modify system settings, system UI guard, device admin and location. Each row says what the grant is for and carries a button that starts it, and reads Granted, Missing when something currently switched on needs it, or Not granted when nothing needs it yet and it can still be given ahead of time. Until now permissions only appeared inside the feature groups that use them, so a grant no enabled feature happened to ask for could not be found at all: the battery exemption, which is what keeps the Home Assistant connection and the MQTT entities alive while the screen is off, was only listed under background wake word listening.
+
 ## v2026.8.12 - 2026-08-08
 
 ### Added

@@ -110,6 +110,16 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Device',
+    title: 'Permissions',
+    description:
+        'Every Android grant the app can use, with its status: microphone, '
+        'camera, notifications, unrestricted battery, display over other '
+        'apps, modify system settings, system UI guard, device admin and '
+        'location.',
+    anchorId: 'x:device_permissions',
+  ),
+  SettingsSearchEntry(
+    category: 'Device',
     title: 'Export configuration',
     description:
         "Save every setting and the page's local storage to a file.",
