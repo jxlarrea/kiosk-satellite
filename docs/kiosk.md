@@ -94,7 +94,7 @@ with a button that starts the grant on the device, including from the
 remote admin.
 
 These per-feature groups only cover what the feature being configured
-needs. **Settings, Device, Permissions** lists every grant the app can use
+needs. **Settings, Device, Permissions Manager** lists every grant the app can use
 in one place, on the device and in the remote admin alike, so a permission
 no enabled feature happens to ask for is still findable. Each row says
 what it is for and reads Granted, Missing (something switched on needs it

@@ -413,10 +413,14 @@ class _SetupScreenState extends State<SetupScreen> {
         await c.commands.execute('requestOsPermissions', {
           'which': [
             'microphone',
-            if (_vsStepActive && _recommended['wake_word.background']!) ...[
+            // Every kiosk needs this one, voice or not: the app holds the
+            // Home Assistant and MQTT connections open while the screen is
+            // off, and Doze is what stops them (issue #156). It used to
+            // ride background listening, so a setup without Voice
+            // Satellite was never asked and had no way to find it later.
+            'batteryOptimizations',
+            if (_vsStepActive && _recommended['wake_word.background']!)
               'notifications',
-              'batteryOptimizations',
-            ],
             // Auto-reload on error (default on) needs it to bring the app
             // back after a crash; start-on-boot needs it for the boot launch.
             if (c.settings.get(defs.autoReloadOnError) ||

@@ -203,10 +203,12 @@ class SettingsManager extends Manager {
                       if (get(wakeWordEnabled) || get(webMicrophone))
                         'microphone',
                       if (get(cameraEnabled) || get(webCamera)) 'camera',
-                      if (get(wakeWordBackground)) ...[
-                        'notifications',
-                        'batteryOptimizations',
-                      ],
+                      // Unconditional like the setup wizard's: the Home
+                      // Assistant and MQTT connections are held open with
+                      // the screen off whatever else is configured, and
+                      // Doze is what stops them (issue #156).
+                      'batteryOptimizations',
+                      if (get(wakeWordBackground)) 'notifications',
                       if (get(wakeWordBackground) ||
                           get(kioskStartOnBoot) ||
                           get(autoReloadOnError))

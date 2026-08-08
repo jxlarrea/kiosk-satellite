@@ -1008,9 +1008,9 @@ const SEARCH_EXTRAS = [
     heading: 'Required system permissions' },
   { tab: 'screenaudio', title: 'Master volume',
     desc: 'The device volume the media and assistant faders scale under.' },
-  { tab: 'device', title: 'Permissions',
+  { tab: 'device', title: 'Permissions Manager',
     desc: 'Every Android grant the app can use, with its status: microphone, camera, notifications, unrestricted battery, display over other apps, modify system settings, system UI guard, device admin and location.',
-    heading: 'Permissions' },
+    heading: 'Permissions Manager' },
   { tab: 'device', title: 'Export configuration',
     desc: "Download every setting and the page's local storage." },
   { tab: 'device', title: 'Import configuration',
@@ -4094,7 +4094,7 @@ async function loadSettings() {
 
     const heading = document.createElement('h2');
     heading.className = 'card-title';
-    heading.textContent = 'Permissions';
+    heading.textContent = 'Permissions Manager';
     const card = document.createElement('div');
     card.className = 'card';
     root.append(heading, card);
@@ -7242,9 +7242,12 @@ function wizardSteps() {
       if (background) {
         addRow('notification', 'Notifications',
           'Allows Kiosk Satellite to continue listening to the wake word in the background');
-        addRow('batteryUnrestricted', 'Ignore battery optimizations',
-          'Allows Kiosk Satellite to run in the background permanently');
       }
+      // Always asked, voice or not: the app holds the Home Assistant and
+      // MQTT connections open while the screen is off, and Doze is what
+      // stops them (issue #156).
+      addRow('batteryUnrestricted', 'Unrestricted battery',
+        'Allows the process to run in the background without being paused or killed.');
       addRow('displayOverOtherApps', 'Display over other apps',
         bootStart
           ? 'Lets Kiosk Satellite come back after a crash and start when your device boots.'
@@ -7280,7 +7283,8 @@ function wizardSteps() {
         await api('/api/commands/requestOsPermissions', { method: 'POST',
           body: JSON.stringify({ which: [
             'microphone',
-            ...(background ? ['notifications', 'batteryOptimizations'] : []),
+            'batteryOptimizations',
+            ...(background ? ['notifications'] : []),
             // Auto-reload on error (default on) needs the overlay grant to
             // bring the app back after a crash; boot start rides the same one.
             'overlay',

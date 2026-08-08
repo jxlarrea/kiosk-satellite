@@ -110,7 +110,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Device',
-    title: 'Permissions',
+    title: 'Permissions Manager',
     description:
         'Every Android grant the app can use, with its status: microphone, '
         'camera, notifications, unrestricted battery, display over other '

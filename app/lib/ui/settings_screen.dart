@@ -1493,7 +1493,7 @@ class _CategoryContentState extends State<_CategoryContent> {
           // do I stand" — which is how a grant nobody's current features
           // ask for, like the battery exemption on a device without voice,
           // becomes findable at all.
-          const SectionHeading('Permissions'),
+          const SectionHeading('Permissions Manager'),
           SearchLandingTarget(
             id: 'x:device_permissions',
             child: SettingsCard(
