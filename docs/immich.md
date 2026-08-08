@@ -25,7 +25,8 @@ Videos in the selection play too, muted and in full.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Media source | All media | The whole library, or a single album picked from a dropdown. |
+| Media source | All media | The whole library, or a single album picked from a dropdown. Shared albums are listed too. |
+| Photos only | off | Skip videos in the slideshow. |
 | Seconds per image | 10 | Videos ignore this and play to their end. |
 | Shuffle | off | Random order instead of the server's newest-first order. |
 | Transition | Crossfade | The same set every slideshow mode offers: none, crossfade, slide, zoom, Ken Burns, or random. |
