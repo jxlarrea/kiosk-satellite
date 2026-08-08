@@ -65,6 +65,20 @@ function log(message, level) {
   } catch (_) {}
 }
 
+// What a failed negotiation gets to claim. A server that answered and turned
+// the offer down is not a network fault, and a tile that says otherwise sends
+// people looking at their Wi-Fi instead of their stream (issue #160).
+function signalingFailure(result) {
+  if (!result || result.ok === true) return 'Connection failed';
+  if (result.status === 404) return 'Stream not found on the camera server';
+  if (result.status === 401 || result.status === 403) {
+    return 'The camera server rejected the login';
+  }
+  if (result.status) return 'The camera server could not start this stream';
+  if (result.kind === 'network') return 'Cannot reach the camera server';
+  return 'Connection failed';
+}
+
 // 'video/H265' as a person writes it.
 function codecLabel(mimeType) {
   return (mimeType || 'unknown').replace('video/', '').replace(/^H26/i, 'H.26');
@@ -366,11 +380,12 @@ async function start(cameraId, fullscreen) {
         watchDecode(pc);
       }
     };
+    let signaling = null;
     try {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await waitForIce(pc);
-      const result = await bridge('cameraOffer', {
+      signaling = await bridge('cameraOffer', {
         cameraId,
         offer: pc.localDescription.sdp,
         fullscreen,
@@ -379,13 +394,14 @@ async function start(cameraId, fullscreen) {
         pc.close();
         return;
       }
-      if (!result || result.ok !== true) {
-        throw new Error(result && result.error || 'signaling failed');
+      if (!signaling || signaling.ok !== true) {
+        throw new Error(signaling && signaling.error || 'signaling failed');
       }
-      await pc.setRemoteDescription({ type: 'answer', sdp: result.answer });
+      await pc.setRemoteDescription({ type: 'answer', sdp: signaling.answer });
     } catch (error) {
       log(`connect ${cameraId}: ${error}`);
-      retry(pc, (seconds) => `Connection failed. Retrying in ${seconds}s`);
+      const headline = signalingFailure(signaling);
+      retry(pc, (seconds) => `${headline}. Retrying in ${seconds}s`);
     }
   };
   connect();

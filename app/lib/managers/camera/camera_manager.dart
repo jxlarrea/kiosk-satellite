@@ -807,10 +807,7 @@ class CameraManager extends Manager {
     );
     final answer = response.body;
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw HttpException(
-        'WebRTC signaling returned HTTP ${response.statusCode}: $answer',
-        uri: uri,
-      );
+      throw CameraSignalingException(response.statusCode, answer.trim(), uri);
     }
     return answer;
   }
@@ -900,6 +897,21 @@ class CameraManager extends Manager {
       (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
     ).join();
   }
+}
+
+/// The camera server answered the offer and refused it. Distinct from never
+/// reaching the server at all: one is the stream, the other is the network,
+/// and the tile has to say which (issue #160).
+class CameraSignalingException implements Exception {
+  const CameraSignalingException(this.statusCode, this.body, this.uri);
+
+  final int statusCode;
+  final String body;
+  final Uri uri;
+
+  @override
+  String toString() =>
+      'WebRTC signaling returned HTTP $statusCode: $body, uri = $uri';
 }
 
 class _HttpResult {

@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../app_container.dart';
+import '../managers/camera/camera_manager.dart';
 import '../managers/camera/models.dart';
 import '../managers/settings/definitions.dart' as defs;
 
@@ -330,7 +332,17 @@ class _CameraPlayerState extends State<CameraPlayer> {
                 'camera',
                 'WebRTC signaling failed: $error',
               );
-              return {'ok': false, 'error': '$error'};
+              // What the tile is allowed to claim: a server that answered and
+              // refused is not a network problem, and saying so sends people
+              // hunting the wrong thing (issue #160).
+              return {
+                'ok': false,
+                'error': '$error',
+                'kind': error is SocketException || error is TimeoutException
+                    ? 'network'
+                    : 'server',
+                if (error is CameraSignalingException) 'status': error.statusCode,
+              };
             }
           },
         );
