@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.10 - 2026-08-08
 
 ### Added
 - A dashboard carousel, off by default, under the Home Assistant settings' new User Interface group (which also gathers the HA kiosk mode rows): with it on, swiping left or right on the dashboard moves to the neighboring view of the current dashboard, wrapping at the ends. The view follows the finger while dragging, and once a view has been visited it appears live beside the current one during the drag, sliding in with the finger like a real carousel; letting go far enough (or flicking) carries the swap through seamlessly, while a hesitant drag springs back into place. Views not yet visited slide in right after the release instead. Made for small screens where the header tabs waste precious space: hide the header with HA kiosk mode and navigate by swipe instead. Swipes on sliders, maps, dialogs and horizontally scrolling cards are left to those elements, subviews and hidden views are skipped, and the toggle applies live without a reload.
@@ -10,6 +10,8 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Changed
 - The Web Browsing page's User Interface group is gone: Zoom level moved up into the page's main group, and Display cutout moved to the Screen & Audio page under Screen, where a choice about the device's window belongs. Stored values carry over unchanged.
+- Setting titles in the Home Assistant Configuration pages now use consistent sentence casing: Sync Home Assistant themes with Kiosk Satellite, Return to home dashboard view, Home Assistant base URL, and Enable dashboard view rotation.
+- The browser never shows a horizontal scrollbar anymore (Home Assistant never scrolls a dashboard sideways), and all scrollbars stay hidden while a carousel swipe or its animation is in progress, reappearing for normal scrolling as before.
 
 ### Fixed
 - The Remote Administration UI's About page no longer takes seconds to appear on its first open after a page load. The update-status read was fetching the full device info, including a CPU load measurement that pays for a fresh half-second sample whenever it runs twice in quick succession, exactly what opening the page caused; it now reads the one value it needs directly, and the page fetches its two reads in parallel.
