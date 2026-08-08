@@ -2,10 +2,19 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.11 - 2026-08-08
+
+### Added
+- Page indicator dots for the dashboard carousel: while swiping between views, a small pill at the bottom center shows the dashboard's views and where in the cycle you are, with the target dot lighting up as the swap starts and the whole indicator fading away once the gesture settles. It ignores touches and respects display cutouts.
+
+### Fixed
+- With the dashboard carousel enabled, scrolling a tall view vertically no longer flashes a horizontal scrollbar: the parked view previews kept a phantom horizontal scroll range alive, and Android wakes both bars on any scroll whenever a range exists. Previews now park where no range can form.
+- Swiping to the previous view no longer nudges the whole page (and the page indicator with it) a few pixels along with the finger: Android's overscroll stretch effect counted the drag as edge overscroll and distorted the entire browser surface. The stretch is suspended for exactly the duration of a carousel drag and restored afterwards, so overscroll behavior everywhere else is unchanged.
+
 ## v2026.8.10 - 2026-08-08
 
 ### Added
-- A dashboard carousel, off by default, under the Home Assistant settings' new User Interface group (which also gathers the HA kiosk mode rows): with it on, swiping left or right on the dashboard moves to the neighboring view of the current dashboard, wrapping at the ends. The view follows the finger while dragging, and once a view has been visited it appears live beside the current one during the drag, sliding in with the finger like a real carousel; letting go far enough (or flicking) carries the swap through seamlessly, while a hesitant drag springs back into place. Views not yet visited slide in right after the release instead. While swiping, page indicator dots at the bottom center show the dashboard's views and where in the cycle you are, fading away when the gesture settles. Made for small screens where the header tabs waste precious space: hide the header with HA kiosk mode and navigate by swipe instead. Swipes on sliders, maps, dialogs and horizontally scrolling cards are left to those elements, subviews and hidden views are skipped, and the toggle applies live without a reload.
+- A dashboard carousel, off by default, under the Home Assistant settings' new User Interface group (which also gathers the HA kiosk mode rows): with it on, swiping left or right on the dashboard moves to the neighboring view of the current dashboard, wrapping at the ends. The view follows the finger while dragging, and once a view has been visited it appears live beside the current one during the drag, sliding in with the finger like a real carousel; letting go far enough (or flicking) carries the swap through seamlessly, while a hesitant drag springs back into place. Views not yet visited slide in right after the release instead. Made for small screens where the header tabs waste precious space: hide the header with HA kiosk mode and navigate by swipe instead. Swipes on sliders, maps, dialogs and horizontally scrolling cards are left to those elements, subviews and hidden views are skipped, and the toggle applies live without a reload.
 - A Disable scrolling toggle in the Web Browsing settings: locks the page in place so it cannot be scrolled in either direction, for dashboards built to fit the screen where a stray drag should not move anything. Only the browser's own panning is taken away, so taps, pull to refresh, pinch to zoom and the app's gestures all keep working, and the toggle applies live without a reload.
 
 ### Changed
