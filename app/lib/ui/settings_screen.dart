@@ -1494,11 +1494,15 @@ class _CategoryContentState extends State<_CategoryContent> {
           // ask for, like the battery exemption on a device without voice,
           // becomes findable at all.
           const SectionHeading('Permissions'),
-          const GroupNote(_permissionsGroupNote),
           SearchLandingTarget(
             id: 'x:device_permissions',
             child: SettingsCard(
-              children: [_DevicePermissionsTile(container: container)],
+              children: [
+                // The explanation is the group's first row rather than
+                // floating text under the heading.
+                const HintRow(_permissionsGroupNote),
+                _DevicePermissionsTile(container: container),
+              ],
             ),
           ),
           const SectionHeading('Configuration'),
@@ -2122,7 +2126,7 @@ class _KioskPermissionsTileState extends State<_KioskPermissionsTile>
           granted: _overlay,
           missingIcon: Icons.open_in_new_off_outlined,
           title: 'Display over other apps',
-          held: 'Kiosk Satellite can put itself back in front.',
+          held: 'Kiosk Satellite can bring itself back in the foreground.',
           missing:
               'Without this the kiosk cannot bring itself back and the '
               'lockdown shield only covers the app.',
@@ -4175,7 +4179,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed: settings.get(wakeWordEnabled),
           missingIcon: Icons.mic_off_outlined,
           title: 'Microphone',
-          held: 'Wake word detection and pages can hear you.',
+          held: 'Allows microphone usage for wake word detection and speech to text.',
           missing: micBlocked
               ? 'Blocked. Android will not ask again, so allow it in the '
                     'app settings.'
@@ -4199,7 +4203,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed: true,
           missingIcon: Icons.battery_alert_outlined,
           title: 'Unrestricted battery',
-          held: 'Android leaves the app running in the background.',
+          held: 'Allows the process to run in the background without being paused or killed.',
           missing:
               'Android may pause the app when the screen is off, dropping '
               'the Home Assistant connection and the MQTT entities with it.',
@@ -4236,7 +4240,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               settings.get(kioskDisableStatusBar),
           missingIcon: Icons.open_in_new_off_outlined,
           title: 'Display over other apps',
-          held: 'Kiosk Satellite can put itself back in front.',
+          held: 'Kiosk Satellite can bring itself back in the foreground.',
           missing:
               'Without this the app cannot reopen itself after a crash, an '
               'update or a wake word heard behind another app.',
@@ -4285,7 +4289,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed: false,
           missingIcon: Icons.admin_panel_settings_outlined,
           title: 'Device admin',
-          held: 'Screen off really powers the panel down.',
+          held: 'Allows the app to turn the screen off.',
           missing: '',
           idle: 'Lets Screen off power the panel down instead of only '
               'blacking it out.',

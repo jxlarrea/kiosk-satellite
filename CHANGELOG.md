@@ -5,7 +5,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
-- A Permissions group in the Device settings, on the device and in the Remote Administration UI alike (#156), listing every Android grant the app can use in one place: microphone, unrestricted battery, camera, notifications, display over other apps, modify system settings, system UI guard, device admin and location. Each row says what the grant is for and carries a button that starts it, and reads Granted, Missing when something currently switched on needs it, or Not granted when nothing needs it yet and it can still be given ahead of time. Until now permissions only appeared inside the feature groups that use them, so a grant no enabled feature happened to ask for could not be found at all: the battery exemption, which is what keeps the Home Assistant connection and the MQTT entities alive while the screen is off, was only listed under background wake word listening.
+- A Permissions group in the Device settings, on the device and in the Remote Administration UI alike (#156), listing every Android grant the app can use in one place, with an explanation as its first row: microphone, unrestricted battery, camera, notifications, display over other apps, modify system settings, system UI guard, device admin and location. Each row says what the grant is for and carries a button that starts it, and reads Granted, Missing when something currently switched on needs it, or Not granted when nothing needs it yet and it can still be given ahead of time. Until now permissions only appeared inside the feature groups that use them, so a grant no enabled feature happened to ask for could not be found at all: the battery exemption, which is what keeps the Home Assistant connection and the MQTT entities alive while the screen is off, was only listed under background wake word listening.
+
+### Changed
+- Permission rows describe what the grant allows rather than what it does for one feature, everywhere they appear: the microphone, unrestricted battery, display over other apps and device admin rows read the same in the Voice Satellite, Kiosk Mode and Lockdown Mode groups as in the new Permissions group.
+- The Remote Administration UI's Device tab no longer repeats itself: the read-only Permissions and Remote administration summaries at the bottom are gone, since the settings above list the same grants with a button to give them, and the same port and admin address.
 
 ## v2026.8.12 - 2026-08-08
 

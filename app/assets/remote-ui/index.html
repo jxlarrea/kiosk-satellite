@@ -3887,7 +3887,7 @@ async function loadSettings() {
     };
     group('tab-kiosk', [
       permRow('Display over other apps',
-        'Kiosk Satellite can put itself back in front.',
+        'Kiosk Satellite can bring itself back in the foreground.',
         'Without this the kiosk cannot bring itself back. The grant '
           + 'screen appears on the tablet.',
         'Grant on device', grantOverlay, pollOverlay),
@@ -4030,7 +4030,7 @@ async function loadSettings() {
     const ROWS = [
       { key: 'microphone', name: 'Microphone', ask: 'microphone',
         needed: on('wake_word.enabled'),
-        held: 'Wake word detection and pages can hear you.',
+        held: 'Allows microphone usage for wake word detection and speech to text.',
         missing: 'Wake word detection is on and nothing is listening.',
         idle: 'Needed by wake word detection and by pages that ask for the microphone.' },
       // Always needed: the app holds the Home Assistant and MQTT
@@ -4038,7 +4038,7 @@ async function loadSettings() {
       // them. Nothing has to be switched on for this one to matter.
       { key: 'batteryUnrestricted', name: 'Unrestricted battery', ask: 'batteryOptimizations',
         needed: true,
-        held: 'Android leaves the app running in the background.',
+        held: 'Allows the process to run in the background without being paused or killed.',
         missing: 'Android may pause the app when the screen is off, dropping the Home Assistant connection and the MQTT entities with it.',
         idle: '' },
       { key: 'camera', name: 'Camera', ask: 'camera',
@@ -4054,7 +4054,7 @@ async function loadSettings() {
       { key: 'displayOverOtherApps', name: 'Display over other apps', ask: 'overlay',
         needed: background || on('browser.auto_reload_on_error')
           || on('kiosk.start_on_boot') || on('kiosk.disable_status_bar'),
-        held: 'Kiosk Satellite can put itself back in front.',
+        held: 'Kiosk Satellite can bring itself back in the foreground.',
         missing: 'Without this the app cannot reopen itself after a crash, an update or a wake word heard behind another app.',
         idle: 'Lets the app bring itself back to the front, and the lockdown shield cover the whole screen.' },
       { key: 'writeSettings', name: 'Modify system settings', ask: 'writeSettings',
@@ -4069,7 +4069,7 @@ async function loadSettings() {
         idle: 'Closes the notification shade and recents while kiosk mode protects the screen.' },
       { key: 'deviceAdmin', name: 'Device admin', ask: 'deviceAdmin',
         needed: false,
-        held: 'Screen off really powers the panel down.',
+        held: 'Allows the app to turn the screen off.',
         missing: '',
         idle: 'Lets Screen off power the panel down instead of only blacking it out.' },
       { key: 'location', name: 'Location', ask: 'location',
@@ -4095,15 +4095,19 @@ async function loadSettings() {
     const heading = document.createElement('h2');
     heading.className = 'card-title';
     heading.textContent = 'Permissions';
+    const card = document.createElement('div');
+    card.className = 'card';
+    root.append(heading, card);
+    // The explanation reads as the group's first row rather than floating
+    // text under the heading, matching the in-card notes elsewhere.
     const note = document.createElement('div');
-    note.className = 'group-note';
+    note.className = 'row';
+    note.style.cssText = 'font-size:12.5px; color:var(--muted);';
     note.textContent =
       'Grants are given on the device, so each button opens an Android '
       + 'dialog or settings screen there. Some brands add their own battery '
       + 'or autostart manager on top, which Android cannot report.';
-    const card = document.createElement('div');
-    card.className = 'card';
-    root.append(heading, note, card);
+    card.appendChild(note);
 
     const rendered = ROWS.map((spec) => {
       const row = document.createElement('div');
@@ -5054,10 +5058,9 @@ async function loadDeviceInfo() {
     catch { return null; }
   };
 
-  const [info, settings, perms, wake, screenOn, motion, ua, det] = await Promise.all([
+  const [info, settings, wake, screenOn, motion, ua, det] = await Promise.all([
     api('/api/info').then((r) => r.json()).catch(() => null),
     api('/api/settings').then((r) => r.json()).catch(() => null),
-    get('getSystemPermissions'),
     get('getWakeWordState'),
     get('isScreenOn'),
     get('getMotionEnabled'),
@@ -5144,29 +5147,12 @@ async function loadDeviceInfo() {
     ['Motion detection', yn(motion)],
   ]);
 
-  // Every permission that can actually fail, with what it is for, Fully lists
-  // only the denied ones, but "granted" is exactly the claim you want to check
-  // when something has gone quiet. The install-time normals are summarised
-  // rather than listed: they cannot be denied, so a row each would be noise.
-  const st = (v) => (v ? 'granted' : 'denied');
-  card('Permissions', [
-    ['Microphone', perms?.microphoneBlocked ? 'blocked'
-      : st(perms?.microphone) + ' (wake word)'],
-    ['Camera', st(perms?.camera) + ' (motion detection)'],
-    ['Location', st(perms?.location) + ' (page geolocation)'],
-    ['Notifications', st(perms?.notification) + ' (background listening)'],
-    ['Display over other apps', st(perms?.displayOverOtherApps) +
-      ' (come forward on a wake word)'],
-    ['Unrestricted battery', st(perms?.batteryUnrestricted) +
-      ' (keep the background listener alive)'],
-    ['Install-time', 'granted: internet, network state, wake lock, audio ' +
-      'settings, boot, foreground service'],
-  ]);
-
-  card('Remote administration', [
-    ['Port', or(S['remote.port'])],
-    ['Web admin', `http://${or(info?.ip, '<device-ip>')}:${or(S['remote.port'], 2324)}`],
-  ]);
+  // Permissions used to be summarised here, read-only. The Permissions group
+  // in the settings above this pane lists the same grants with what each one
+  // is for and a button to give it, so a second copy on the same tab was
+  // only a second thing to keep in step. Remote administration went for the
+  // same reason: its port is a setting in that pane and the admin address is
+  // the Access card.
 
   card('WebView', [
     // The system WebView, which updates itself independently of this app and
