@@ -790,7 +790,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 keyboardType: TextInputType.url,
                 autocorrect: false,
                 decoration: const InputDecoration(
-                  labelText: 'Home Assistant Base URL',
+                  labelText: 'Home Assistant base URL',
                   hintText: 'https://homeassistant.local:8123',
                 ),
               ),

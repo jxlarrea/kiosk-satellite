@@ -1731,7 +1731,7 @@ class _CategoryContentState extends State<_CategoryContent> {
             haReturnHomeEnabled.key: SearchLandingTarget(
               id: haReturnHomeEnabled.key,
               child: const SwitchListTile(
-                title: Text('Return to Home Dashboard View'),
+                title: Text('Return to home dashboard view'),
                 subtitle: Text(
                   'Turned off while Dashboard view rotation is on.',
                 ),

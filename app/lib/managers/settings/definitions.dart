@@ -2181,7 +2181,7 @@ const haUrl = SettingDef<String>(
   key: 'ha.url',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Home Assistant Base URL',
+  title: 'Home Assistant base URL',
   description:
       'e.g. https://homeassistant.local:8123, without a dashboard path.',
   category: 'Home Assistant',
@@ -2297,7 +2297,7 @@ const themeMatchApp = SettingDef<bool>(
   key: 'ha.theme_match_app',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Sync Home Assistant Themes with Kiosk Satellite',
+  title: 'Sync Home Assistant themes with Kiosk Satellite',
   description:
       'Automatically match your Home Assistant theme to your Kiosk '
       'Satellite interface.',
@@ -2362,7 +2362,7 @@ const haRotationEnabled = SettingDef<bool>(
   key: 'ha.rotation_enabled',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Enable Dashboard view rotation',
+  title: 'Enable dashboard view rotation',
   description:
       'Cycle through the selected dashboard views in an endless loop, '
       'showing each one for the chosen number of seconds.',
@@ -2431,12 +2431,12 @@ const haReturnHomeEnabled = SettingDef<bool>(
   key: 'ha.return_home_enabled',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Return to Home Dashboard View',
+  title: 'Return to home dashboard view',
   description:
       'Go back to the dashboard configured above after a period of '
       'inactivity.',
   category: 'Home Assistant',
-  section: 'Return to Home Dashboard View',
+  section: 'Return to home dashboard view',
 );
 
 const haReturnHomeSeconds = SettingDef<num>(
@@ -2447,7 +2447,7 @@ const haReturnHomeSeconds = SettingDef<num>(
   title: 'Return after (seconds)',
   description: 'Inactivity period before the kiosk goes back.',
   category: 'Home Assistant',
-  section: 'Return to Home Dashboard View',
+  section: 'Return to home dashboard view',
   dependsOn: 'ha.return_home_enabled',
 );
 

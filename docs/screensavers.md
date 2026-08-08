@@ -234,7 +234,7 @@ the exception, since the dashboard stays visible.
 
 Dashboard rotation freezes in place while the screensaver is up and
 resumes where it left off, so the kiosk does not page through views
-nobody sees. **Return to Home Dashboard View**, on the other hand, works
+nobody sees. **Return to home dashboard view**, on the other hand, works
 quietly behind a showing screensaver, so the morning starts on the home
 view without the screen having lit up at 3 AM to navigate.
 
