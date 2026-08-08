@@ -15,6 +15,7 @@ class NativeMotion {
     required String camera,
     required int snapshotWidth,
     required int snapshotHeight,
+    int startDelayMs = 0,
   }) {
     return _channel.receiveBroadcastStream(<String, Object?>{
       'fps': fps,
@@ -24,6 +25,10 @@ class NativeMotion {
       // a frame taken mid-screensaver matches the configured resolution.
       'snapshotWidth': snapshotWidth,
       'snapshotHeight': snapshotHeight,
+      // Extra blindness after the stream starts, for cameras that move as
+      // they open (discussion #159). Applied natively so the analyzer keeps
+      // tracking frames without letting the movement train its noise model.
+      'startDelayMs': startDelayMs,
     }).map((_) {});
   }
 }

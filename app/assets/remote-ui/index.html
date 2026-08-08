@@ -1336,7 +1336,8 @@ async function updateNoCameraNotice() {
   if (input) { input.checked = false; input.disabled = true; }
   for (const key of ['camera.device', 'camera.snapshot_resolution',
     'camera.snapshots', 'camera.snapshot_interval', 'motion.sensor',
-    'motion.sensor_off_delay', 'motion.fps', 'motion.sensitivity']) {
+    'motion.sensor_off_delay', 'motion.fps', 'motion.sensitivity',
+    'motion.start_delay']) {
     tab.querySelector(`[data-key="${key}"]`)?.remove();
   }
   // Emptied cards (the Motion Detection group) go too, headings included.

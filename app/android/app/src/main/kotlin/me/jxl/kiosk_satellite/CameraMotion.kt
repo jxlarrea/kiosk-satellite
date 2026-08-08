@@ -159,6 +159,16 @@ class CameraMotion(
     private var frameIntervalNs = 0L
     private var minChangedCells = 1
 
+    /** Extra blindness after the stream starts (discussion #159), on top of
+     *  [WARMUP_FRAMES]. Hardware with a pop-up camera sweeps the lens through
+     *  the scene as the motor deploys it, which is a genuine both-signed
+     *  change no lighting veto can reject; the frames are still tracked as
+     *  the baseline, they just do not count as motion and never train the
+     *  noise model. Nanosecond deadline, armed by the first frame so it
+     *  measures from when the camera really started producing. */
+    private var startDelayNs = 0L
+    private var analyzeFromNs = 0L
+
     /** Requested processing rate, kept for AE fps-range selection. Main
      *  thread only. */
     private var requestedFps = 2.0
@@ -179,6 +189,8 @@ class CameraMotion(
         }
         val snapW = (args?.get("snapshotWidth") as? Number)?.toInt()
         val snapH = (args?.get("snapshotHeight") as? Number)?.toInt()
+        val startDelayMs =
+            (args?.get("startDelayMs") as? Number)?.toLong()?.coerceIn(0L, 15_000L) ?: 0L
 
         frameIntervalNs = (1_000_000_000.0 / fps).toLong()
         // Sensitivity → how many of the grid's cells must change. High
@@ -190,6 +202,8 @@ class CameraMotion(
         frameCount = 0
         lastProcessedNs = 0L
         lastEmitNs = 0L
+        startDelayNs = startDelayMs * 1_000_000L
+        analyzeFromNs = 0L
 
         requestedFps = fps
 
@@ -292,7 +306,15 @@ class CameraMotion(
             val prev = prevGrid
             prevGrid = grid
             frameCount++
+            // The startup delay runs from the first frame, not from onListen:
+            // binding CameraX and opening the device already takes a moment
+            // (longer still on a camera that has to deploy), and the point is
+            // to skip what the lens sees once it is actually producing.
+            if (analyzeFromNs == 0L) analyzeFromNs = now + startDelayNs
             if (prev == null || frameCount <= WARMUP_FRAMES) return
+            // Baseline keeps advancing above; only analysis waits, so the
+            // sweep never trains the noise model it would otherwise desensitize.
+            if (now < analyzeFromNs) return
 
             val noise = noiseGrid ?: FloatArray(CELLS) { INITIAL_NOISE }.also { noiseGrid = it }
 

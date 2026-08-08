@@ -1987,6 +1987,32 @@ const motionFps = SettingDef<num>(
   dependsOn: 'camera.enabled',
 );
 
+/// Seconds of blindness after the camera stream starts, on top of the
+/// analyzer's own auto-exposure warm-up (see CameraMotion.kt). For hardware
+/// whose camera physically moves as it opens: a pop-up module rising on its
+/// motor sweeps the lens through the scene, which is a real, both-signed
+/// change no lighting veto can reject, so it reads as a body and dismisses
+/// the screensaver that just started the camera (discussion #159). Anchored
+/// to the stream start rather than the screensaver's, so every path that
+/// binds the camera is covered: schedule boundaries, screen on/off and
+/// tuning changes all deploy the same lens.
+const motionStartDelay = SettingDef<num>(
+  key: 'motion.start_delay',
+  type: SettingType.number,
+  defaultValue: 0,
+  title: 'Startup delay',
+  description:
+      'Ignore motion for this long after the camera starts, for devices '
+      'whose camera physically moves as it opens.',
+  category: 'Camera',
+  section: 'Motion Detection',
+  dependsOn: 'camera.enabled',
+  min: 0,
+  max: 15,
+  step: 1,
+  unit: 's',
+);
+
 const motionSensitivity = SettingDef<num>(
   key: 'motion.sensitivity',
   type: SettingType.number,
@@ -3103,6 +3129,7 @@ const List<SettingDef<Object>> allSettings = [
   motionSensorOffDelay,
   motionFps,
   motionSensitivity,
+  motionStartDelay,
   screensaverScheduleEnabled,
   screensaverSchedule,
   wakeWordEnabled,

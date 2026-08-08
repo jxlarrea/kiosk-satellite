@@ -214,13 +214,20 @@ class MotionManager extends Manager {
       final camera = _settings.get(defs.cameraDevice);
       final (snapW, snapH) =
           snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
-      log.info(name, 'camera on (fps=$fps sensitivity=$sensitivity cam=$camera)');
+      final startDelay =
+          _settings.get(defs.motionStartDelay).toInt().clamp(0, 15);
+      log.info(
+        name,
+        'camera on (fps=$fps sensitivity=$sensitivity cam=$camera'
+        '${startDelay > 0 ? ' delay=${startDelay}s' : ''})',
+      );
       _camera = NativeMotion.stream(
         fps: fps,
         sensitivity: sensitivity,
         camera: camera,
         snapshotWidth: snapW,
         snapshotHeight: snapH,
+        startDelayMs: startDelay * 1000,
       ).listen(
         (_) {
           if (DateTime.now().isBefore(_quietUntil)) {
