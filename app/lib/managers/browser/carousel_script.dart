@@ -291,15 +291,25 @@ const dashboardCarouselScript = '''
     return 0;
   }
 
-  function makeWrapper(container, side) {
+  function makeWrapper(container) {
     var wrap = document.createElement('div');
+    // Parked on the LEFT always, whichever side it will reveal on:
+    // right-hanging content extends the document's reported horizontal
+    // scroll range even under overflow-x:hidden, and Android awakens
+    // BOTH scrollbars on every scroll whenever a range exists — so a
+    // preview parked at left:100% made plain vertical scrolling flash a
+    // horizontal bar. Left-hanging content adds no range (the same CSS
+    // asymmetry behind the original stutter). The flip to the right
+    // happens at drag lock: a write-only position change on the
+    // wrapper's own layer, while the bars are already slept.
+    //
     // will-change gives the wrapper its own compositor layer: painted
     // once while parked, so revealing is an opacity flip on the
     // compositor and sliding never repaints — without it the reveal
     // repaints the whole preview into the container's layer mid-swipe.
     wrap.style.cssText =
-      'position:absolute;left:' + (side > 0 ? '100%' : '-100%') +
-      ';top:' + computeTop(container) + 'px;width:100%;height:100%;' +
+      'position:absolute;left:-100%;' +
+      'top:' + computeTop(container) + 'px;width:100%;height:100%;' +
       'overflow:hidden;pointer-events:none;' +
       'will-change:transform,opacity;opacity:' + PARKED + ';';
     return wrap;
@@ -324,7 +334,7 @@ const dashboardCarouselScript = '''
         container.style.position = 'relative';
         undoPos = true;
       }
-      var wrap = makeWrapper(container, side);
+      var wrap = makeWrapper(container);
       wrap.appendChild(el);
       // NEVER as the last child: hui-root's _selectView removes
       // `lastChild` as "the current view" on every swap. A wrapper
@@ -334,7 +344,13 @@ const dashboardCarouselScript = '''
       // and still paints above hui-view-background, which comes first.
       container.insertBefore(wrap, container.lastChild);
       ensureClip();
-      entry = { el: el, wrapper: wrap, side: side };
+      // Everything parks on side -1; the reveal re-sides via the reuse
+      // branch above when the drag wants the right edge.
+      entry = { el: el, wrapper: wrap, side: -1 };
+      if (side !== -1) {
+        wrap.style.left = '100%';
+        entry.side = side;
+      }
       strip.push(entry);
       return entry;
     } catch (_) { return null; }
@@ -365,7 +381,13 @@ const dashboardCarouselScript = '''
 
   function parkStrip() {
     for (var i = 0; i < strip.length; i++) {
-      strip[i].wrapper.style.opacity = PARKED;
+      var e = strip[i];
+      e.wrapper.style.opacity = PARKED;
+      // Back to the range-free left side (see makeWrapper).
+      if (e.side !== -1) {
+        e.wrapper.style.left = '-100%';
+        e.side = -1;
+      }
     }
   }
 
@@ -448,7 +470,7 @@ const dashboardCarouselScript = '''
       // is always fresh.
       if (el && borrowable(el) && want.indexOf(el) === -1) {
         want.push(el);
-        mountPreview(hr, container, el, sides[i]);
+        mountPreview(hr, container, el, -1); // parked left, re-sided at lock
       }
     }
     if (strip.length) ensureClip(); else dropClip();
