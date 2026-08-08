@@ -87,6 +87,7 @@ The tuning lives under Camera, **Motion Detection**:
 | Clear after | 5 | Seconds without motion before the sensor reads clear, 1 to 300. |
 | Motion frame rate | 2 | Frames per second the camera checks. Lower is lighter on the CPU; 2 is plenty to notice someone approaching. |
 | Motion sensitivity | 70 | 1 to 100. Higher trips on smaller movements. |
+| Startup delay | 0 | Seconds to ignore motion after the camera starts, 0 to 15. For devices whose camera physically moves as it opens. |
 
 Detection is built to be cheap and to work in the dark. Frames are
 analyzed at the camera's smallest resolution, luminance only, on a coarse
@@ -97,6 +98,19 @@ changes are discounted, and the app suppresses detection for a couple of
 seconds around its own light changes (screensaver start and stop, screen
 power, brightness moves, slide transitions), so the kiosk does not wake
 itself up.
+
+**Startup delay** covers a different problem: hardware whose camera
+physically moves as it opens, such as a phone with a pop-up module. The
+lens travels through the scene as the motor deploys it, and that sweep is
+a real change across the whole frame rather than a lighting shift, so
+none of the discounting above can filter it out and the kiosk dismisses
+the screensaver that just started the camera. The delay counts from the
+first frame and applies to every path that starts the camera, not just a
+screensaver, since a schedule boundary, the screen turning on or a tuning
+change deploy the same lens. Frames are still tracked as the baseline
+while it runs, so detection is fully sensitive the moment it expires.
+Leave it at 0 on a device with a fixed camera; a few seconds is enough
+for the hardware that needs it.
 
 Two related switches live elsewhere: with **Allow screensaver** on under
 [Lockdown Mode](kiosk.md), Dismiss on motion stays deactivated until the
