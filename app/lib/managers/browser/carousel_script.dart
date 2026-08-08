@@ -252,6 +252,82 @@ const dashboardCarouselScript = '''
     } catch (_) {}
   }
 
+  // ── Page indicator dots ─────────────────────────────────────────────
+  // Bottom-center pill showing the eligible views and where the cycle
+  // stands, visible only around a swipe. Lives on document.body, NOT
+  // inside the moving container: a transform creates a fixed-position
+  // containing block, so a fixed element inside the container would ride
+  // the strip. Everything here is write-only DOM (no reads, this runs on
+  // the touch path) and fades on opacity alone.
+
+  var dots = null;     // {host, items, n, cur}
+  var dotsHide = null; // pending fade-out
+
+  function ensureDots(n) {
+    if (dots && dots.n === n) return dots;
+    if (dots) {
+      try { dots.host.remove(); } catch (_) {}
+      dots = null;
+    }
+    var host = document.createElement('div');
+    host.id = '__ksCarouselDots';
+    host.style.cssText =
+      'position:fixed;left:50%;' +
+      'bottom:calc(18px + env(safe-area-inset-bottom, 0px));' +
+      'transform:translateX(-50%);z-index:2147483647;display:flex;' +
+      'gap:7px;align-items:center;padding:7px 11px;border-radius:999px;' +
+      'background:rgba(0,0,0,.38);pointer-events:none;opacity:0;' +
+      'transition:opacity .25s;will-change:opacity;';
+    var items = [];
+    for (var i = 0; i < n; i++) {
+      var d = document.createElement('div');
+      d.style.cssText =
+        'width:7px;height:7px;border-radius:50%;' +
+        'background:rgba(255,255,255,.45);' +
+        'transition:background .15s, transform .15s;';
+      host.appendChild(d);
+      items.push(d);
+    }
+    (document.body || document.documentElement).appendChild(host);
+    dots = { host: host, items: items, n: n, cur: -1 };
+    return dots;
+  }
+
+  function showDots(n, cur) {
+    if (n < 2) return;
+    var dd = ensureDots(n);
+    if (dd.cur !== cur) {
+      var old = dd.items[dd.cur];
+      if (old) {
+        old.style.background = 'rgba(255,255,255,.45)';
+        old.style.transform = '';
+      }
+      var active = dd.items[cur];
+      if (active) {
+        active.style.background = '#fff';
+        active.style.transform = 'scale(1.35)';
+      }
+      dd.cur = cur;
+    }
+    clearTimeout(dotsHide);
+    dd.host.style.opacity = '1';
+  }
+
+  function scheduleDotsHide() {
+    clearTimeout(dotsHide);
+    dotsHide = setTimeout(function () {
+      if (dots) dots.host.style.opacity = '0';
+    }, 900);
+  }
+
+  function dropDots() {
+    clearTimeout(dotsHide);
+    if (dots) {
+      try { dots.host.remove(); } catch (_) {}
+      dots = null;
+    }
+  }
+
   function navigate(urlPath, key) {
     history.pushState(null, '',
       '/' + urlPath + '/' + encodeURIComponent(key));
@@ -373,6 +449,7 @@ const dashboardCarouselScript = '''
   function teardownStrip(container) {
     while (strip.length) unmount(strip[0]);
     dropClip();
+    dropDots();
     if (undoPos && container) {
       container.style.position = '';
       undoPos = false;
@@ -534,6 +611,7 @@ const dashboardCarouselScript = '''
             clearStyles(s);
             animating = false;
             dragUi(false);
+            scheduleDotsHide();
             scheduleRebuild();
           }, 180);
         });
@@ -587,6 +665,7 @@ const dashboardCarouselScript = '''
         clearStyles(s);
         animating = false;
         dragUi(false);
+        scheduleDotsHide();
         scheduleRebuild();
       };
       var fallback = function () {
@@ -638,6 +717,10 @@ const dashboardCarouselScript = '''
     var info = routeInfo(d.hr);
     if (!info) { snapBack(d); return; }
     dragUi(true); // idempotent; covers the no-drag flick path too
+    // The target dot lights up as the swap starts, so the indicator
+    // lands with the view.
+    showDots(info.eligible.length,
+      (info.cur + dir + info.eligible.length) % info.eligible.length);
     if (d.preview && d.preview.side === dir &&
         d.preview.el.parentNode === d.preview.wrapper) {
       commitSeamless(d, dir, info);
@@ -647,7 +730,7 @@ const dashboardCarouselScript = '''
   }
 
   function snapBack(d) {
-    if (!d.container) { dragUi(false); return; }
+    if (!d.container) { dragUi(false); scheduleDotsHide(); return; }
     var s = d.container.style;
     s.transition = 'transform 150ms ease-out';
     s.transform = '';
@@ -655,6 +738,7 @@ const dashboardCarouselScript = '''
       parkStrip();
       clearStyles(s);
       dragUi(false);
+      scheduleDotsHide();
     }, 170);
   }
 
@@ -714,7 +798,8 @@ const dashboardCarouselScript = '''
       var hr = huiRoot();
       // The panel resolver caches panels: a lovelace root can answer the
       // query while a settings page is on screen.
-      if (!hr || panelHidden() || !routeInfo(hr)) {
+      var lockInfo = hr && !panelHidden() ? routeInfo(hr) : null;
+      if (!lockInfo) {
         start = null;
         return;
       }
@@ -722,6 +807,7 @@ const dashboardCarouselScript = '''
       if (!container) { start = null; return; }
       window.__ksCarouselDragging = true; // the PTR probe stands down
       dragUi(true);
+      showDots(lockInfo.eligible.length, lockInfo.cur);
       container.style.willChange = 'transform';
       container.style.transition = 'none';
       // Offsets measure from the lock point, so the view starts moving
