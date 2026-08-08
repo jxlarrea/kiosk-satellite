@@ -1044,12 +1044,6 @@ class _KioskScreenState extends State<KioskScreen>
       supportZoom: c.settings.get(defs.pinchToZoom),
       builtInZoomControls: c.settings.get(defs.pinchToZoom),
       displayZoomControls: false,
-      // No horizontal scrollbar, ever: HA never scrolls the document
-      // sideways, but the carousel's parked next-view preview widens the
-      // reported content extent, and the native bar flashed over the
-      // page on every next-direction swipe (overflow-x:hidden blocks the
-      // scrolling itself, not the range Chromium reports to Android).
-      horizontalScrollBarEnabled: false,
       mediaPlaybackRequiresUserGesture: !c.settings.get(defs.webAutoplay),
       allowsInlineMediaPlayback: true,
       iframeAllow: 'camera; microphone',

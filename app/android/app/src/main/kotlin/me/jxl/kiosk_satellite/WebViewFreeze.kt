@@ -125,7 +125,7 @@ class WebViewFreeze(
                 view.isHorizontalScrollBarEnabled = false
             } else {
                 val (vertical, horizontal) = savedBars.remove(view)
-                    ?: (true to false)
+                    ?: (true to true)
                 view.isVerticalScrollBarEnabled = vertical
                 view.isHorizontalScrollBarEnabled = horizontal
             }
@@ -157,9 +157,7 @@ class WebViewFreeze(
         view.visibility = View.VISIBLE
         val restore = Runnable {
             pendingRestore.remove(view)
-            // Fallback matches the app's settings: the horizontal bar is
-            // disabled at WebView creation and must stay that way.
-            val (vertical, horizontal) = savedBars.remove(view) ?: (true to false)
+            val (vertical, horizontal) = savedBars.remove(view) ?: (true to true)
             view.isVerticalScrollBarEnabled = vertical
             view.isHorizontalScrollBarEnabled = horizontal
         }
