@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_container.dart';
+import 'core/app_identity.dart';
 import 'core/events.dart';
 import 'core/frame_watchdog.dart';
 import 'core/ha_http_overrides.dart';
@@ -30,6 +31,14 @@ Future<void> main() async {
 
   final container = AppContainer();
   await container.init();
+
+  // The app names itself on the wire from here on: the device manager has
+  // resolved the version and the OS by now, and the overrides below hand
+  // the string to every client the process creates.
+  AppIdentity.configure(
+    version: container.device.appVersion,
+    osVersion: container.device.osVersion,
+  );
 
   // Self-signed certificates are the norm for LAN Home Assistant servers;
   // accept them for the configured HA host (and only that host) across

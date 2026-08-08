@@ -77,6 +77,10 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         // Before any bridge: they all read volume state through it.
         VolumeController.init(applicationContext)
 
+        // Before anything opens a socket: the native HTTP stacks read the
+        // app's user agent from here.
+        AppIdentity.configure(applicationContext)
+
         // Renderer choice before the engine exists: old GPUs whose drivers
         // crash under Impeller get Skia instead (issue #127, RendererGuard).
         val engine = FlutterEngine(this, RendererGuard.engineArgs(this))

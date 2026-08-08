@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import '../../core/app_identity.dart';
+
 /// Direct LRCLIB lookup, the FALLBACK behind Music Assistant's own
 /// providers (issue #90).
 ///
@@ -33,10 +35,9 @@ class LrclibApi {
     try {
       final uri = Uri.https(_host, '/api/search', {'q': query});
       final request = await client.getUrl(uri);
-      request.headers.set(
-        HttpHeaders.userAgentHeader,
-        'kiosk-satellite (https://github.com/jxlarrea/kiosk-satellite)',
-      );
+      // LRCLIB asks clients to identify themselves with something a
+      // maintainer could contact; the app-wide string carries the link.
+      request.headers.set(HttpHeaders.userAgentHeader, AppIdentity.userAgent);
       final response =
           await request.close().timeout(const Duration(seconds: 25));
       if (response.statusCode != 200) return null;

@@ -1,6 +1,7 @@
 package me.jxl.kiosk_satellite.sendspin.transport
 
 import android.util.Log
+import me.jxl.kiosk_satellite.AppIdentity
 import me.jxl.kiosk_satellite.sendspin.network.WebSocketUrlBuilder
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -74,8 +75,12 @@ class OkHttpWebSocketTransport(
         Log.d(TAG, "Transport connecting to: $wsUrl")
 
         // OkHttp's Request.Builder silently rewrites ws:// to http:// for the
-        // upgrade request, so the ws URL can be passed straight through.
-        val request = Request.Builder().url(wsUrl).build()
+        // upgrade request, so the ws URL can be passed straight through. The
+        // user agent names the app rather than the library it happens to use.
+        val request = Request.Builder()
+            .url(wsUrl)
+            .header("User-Agent", AppIdentity.userAgent)
+            .build()
         webSocket = sharedClient.newWebSocket(request, SocketListener())
     }
 

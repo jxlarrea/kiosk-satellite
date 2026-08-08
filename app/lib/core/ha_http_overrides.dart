@@ -2,6 +2,7 @@ import 'dart:io';
 
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/settings/settings_manager.dart';
+import 'app_identity.dart';
 
 /// Most Home Assistant installs on a LAN run self-signed certificates, so
 /// the app must not fail TLS verification against its own configured
@@ -26,6 +27,11 @@ class HaHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     final client = super.createHttpClient(context);
+    // Every client in the process is born here, so this is the one place
+    // the app has to name itself. A request that sets its own User-Agent
+    // header still wins, which is what keeps the secure-context proxy
+    // forwarding the browser's own string.
+    client.userAgent = AppIdentity.userAgent;
     client.badCertificateCallback = (cert, host, port) {
       final ha = Uri.tryParse(_settings.get(defs.haUrl).trim())?.host;
       if (ha != null && ha.isNotEmpty && host == ha) {

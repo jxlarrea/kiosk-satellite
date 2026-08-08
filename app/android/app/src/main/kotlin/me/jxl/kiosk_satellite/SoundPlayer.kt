@@ -18,12 +18,15 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.TeeAudioProcessor
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
@@ -344,6 +347,18 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     private fun playWithExo(id: String, source: String, target: AudioDeviceInfo?): Boolean {
         return try {
             val player = ExoPlayer.Builder(appContext, exoRenderersFactory(id))
+                // Media3's default HTTP stack announces itself, not the app;
+                // a Home Assistant access log should name the kiosk that
+                // pulled the TTS clip.
+                .setMediaSourceFactory(
+                    DefaultMediaSourceFactory(
+                        DefaultDataSource.Factory(
+                            appContext,
+                            DefaultHttpDataSource.Factory()
+                                .setUserAgent(AppIdentity.userAgent),
+                        ),
+                    ),
+                )
                 .setLoadControl(
                     DefaultLoadControl.Builder()
                         .setBufferDurationsMs(
