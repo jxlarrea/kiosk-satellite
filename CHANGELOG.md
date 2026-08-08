@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- A dashboard carousel, off by default, under the Home Assistant settings' new User Interface group (which also gathers the HA kiosk mode rows): with it on, swiping left or right on the dashboard moves to the neighboring view of the current dashboard, wrapping at the ends. The view follows the finger while dragging; letting go far enough (or flicking) carries it out and slides the next view in, while a hesitant drag springs back into place. Made for small screens where the header tabs waste precious space: hide the header with HA kiosk mode and navigate by swipe instead. Swipes on sliders, maps, dialogs and horizontally scrolling cards are left to those elements, subviews and hidden views are skipped, and the toggle applies live without a reload.
 - A Disable scrolling toggle in the Web Browsing settings: locks the page in place so it cannot be scrolled in either direction, for dashboards built to fit the screen where a stray drag should not move anything. Only the browser's own panning is taken away, so taps, pull to refresh, pinch to zoom and the app's gestures all keep working, and the toggle applies live without a reload.
 
 ### Changed

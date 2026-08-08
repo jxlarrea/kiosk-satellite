@@ -2234,6 +2234,7 @@ const haKioskMode = SettingDef<String>(
       'also uses the kiosk-mode plugin when detected. Applies '
       'immediately.',
   category: 'Home Assistant',
+  section: 'User Interface',
   options: ['off', 'auto', 'plugin', 'css'],
   optionLabels: {
     'off': 'Off',
@@ -2255,6 +2256,7 @@ const haKioskHideHeader = SettingDef<bool>(
       'Hide the dashboard toolbar and view tabs while HA kiosk mode is '
       'on. Leave off if you switch views from the header.',
   category: 'Home Assistant',
+  section: 'User Interface',
 );
 
 const haKioskHideSidebar = SettingDef<bool>(
@@ -2264,6 +2266,24 @@ const haKioskHideSidebar = SettingDef<bool>(
   title: 'Hide the sidebar',
   description: 'Hide the navigation sidebar while HA kiosk mode is on.',
   category: 'Home Assistant',
+  section: 'User Interface',
+);
+
+/// Swipe navigation between the current dashboard's views (in-page script,
+/// see carousel_script.dart). The natural companion to hiding the header:
+/// on a small screen the view tabs are the last navigation left, and this
+/// gives their job to the whole screen instead. Strategy dashboards without
+/// listable views and single-view dashboards leave the script inert.
+const haDashboardCarousel = SettingDef<bool>(
+  key: 'ha.dashboard_carousel',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable dashboard carousel',
+  description:
+      'Swipe left or right on the dashboard to move between its views. '
+      'Swipes on sliders, maps and scrolling cards are left alone.',
+  category: 'Home Assistant',
+  section: 'User Interface',
 );
 
 /// Mirror the app's effective theme onto the Home Assistant dashboard
@@ -3096,6 +3116,7 @@ const List<SettingDef<Object>> allSettings = [
   haKioskModeLast,
   haKioskHideHeader,
   haKioskHideSidebar,
+  haDashboardCarousel,
   themeMatchApp,
   themeAuto,
   themeDarkAt,

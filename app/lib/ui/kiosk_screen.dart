@@ -11,6 +11,7 @@ import '../core/permissions.dart';
 import '../app_container.dart';
 import 'screensaver_view.dart';
 import '../core/events.dart';
+import '../managers/browser/carousel_script.dart';
 import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
@@ -227,6 +228,12 @@ class _KioskScreenState extends State<KioskScreen>
     // Scroll lock rides the zoom path: applied live as page CSS, no rebuild.
     if (e.key == defs.disableScrolling.key) {
       await c.browser.runJs(_scrollLockJs);
+      return;
+    }
+    // The carousel's document-start seed is frozen at WebView creation;
+    // flip the live flag so the toggle applies without a reload.
+    if (e.key == defs.haDashboardCarousel.key) {
+      await c.browser.runJs('window.__ksCarouselEnabled = ${e.value == true};');
       return;
     }
     if (e.key == defs.allowMixedContent.key ||
@@ -550,6 +557,19 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     UserScript(
       source: pullToRefreshProbeScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // The dashboard carousel rides the same contract as the pull probe:
+    // always injected, acted on only while its flag is on, so the toggle
+    // needs no reload.
+    UserScript(
+      source:
+          'window.__ksCarouselEnabled = '
+          '${c.settings.get(defs.haDashboardCarousel)};',
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    UserScript(
+      source: dashboardCarouselScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // Turn off Home Assistant's "Suspend background connections" so it does
@@ -1119,9 +1139,14 @@ class _KioskScreenState extends State<KioskScreen>
       _refreshing = false;
       _refreshingFailsafe?.cancel();
       _pullToRefresh.endRefreshing();
-      // The document-start seed of this flag is frozen at WebView creation;
-      // re-assert per load so a toggled setting reaches pages loaded later.
+      // The document-start seeds of these flags are frozen at WebView
+      // creation; re-assert per load so toggled settings reach pages
+      // loaded later.
       c.browser.runJs('window.__ksPtrEnabled = $_ptrEnabled;');
+      c.browser.runJs(
+        'window.__ksCarouselEnabled = '
+        '${c.settings.get(defs.haDashboardCarousel)};',
+      );
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
       // work when the effective mode is 'css').
