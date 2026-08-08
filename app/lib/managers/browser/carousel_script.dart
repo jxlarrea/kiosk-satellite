@@ -493,7 +493,16 @@ const dashboardCarouselScript = '''
     if (document.getElementById('__ksCarouselClip')) return;
     var st = document.createElement('style');
     st.id = '__ksCarouselClip';
-    st.textContent = 'html { overflow-x: hidden !important; }';
+    // overscroll-behavior-x: the container hanging past the right edge
+    // mid-drag briefly creates a horizontal range, and a rightward
+    // gesture then counts as overscroll-at-left-edge — Android 12+
+    // answers with its stretch effect, visibly dragging the WHOLE
+    // surface (fixed elements included) a few pixels with the finger.
+    // Only ever in the prev direction: leftward-hanging content makes
+    // no range. Vertical overscroll stays stock.
+    st.textContent =
+      'html { overflow-x: hidden !important; ' +
+      'overscroll-behavior-x: none !important; }';
     (document.head || document.documentElement).appendChild(st);
     var d = document.scrollingElement || document.documentElement;
     if (d.scrollLeft) d.scrollLeft = 0;
