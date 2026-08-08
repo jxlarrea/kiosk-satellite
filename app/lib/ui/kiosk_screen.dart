@@ -224,6 +224,11 @@ class _KioskScreenState extends State<KioskScreen>
       await c.browser.runJs(_zoomJs);
       return;
     }
+    // Scroll lock rides the zoom path: applied live as page CSS, no rebuild.
+    if (e.key == defs.disableScrolling.key) {
+      await c.browser.runJs(_scrollLockJs);
+      return;
+    }
     if (e.key == defs.allowMixedContent.key ||
         e.key == defs.ignoreSslErrors.key ||
         e.key == defs.disableCache.key ||
@@ -455,6 +460,32 @@ class _KioskScreenState extends State<KioskScreen>
     return zoom == 1
         ? "document.documentElement.style.zoom = '';"
         : "document.documentElement.style.zoom = '$zoom';";
+  }
+
+  /// The scroll lock, as page CSS rather than the plugin's native
+  /// disable-scroll flags: those swallow every touch-move at the view layer,
+  /// which also starves the pull-to-refresh probe and any in-page drag (an
+  /// HA slider). `touch-action` only withdraws the browser's own panning —
+  /// touch events still dispatch to the page and the native gesture
+  /// detectors, so pulls, taps and drags keep working. The wildcard matters:
+  /// HA scrolls inner shadow-root containers, and a rule on `html` alone
+  /// would not reach them. `pinch-zoom` (not `none`) so the pinch setting
+  /// still composes.
+  String get _scrollLockJs {
+    final on = c.settings.get(defs.disableScrolling);
+    return '''
+      (function () {
+        var st = document.getElementById('__ksScrollLock');
+        if ($on && !st) {
+          st = document.createElement('style');
+          st.id = '__ksScrollLock';
+          st.textContent = '* { touch-action: pinch-zoom !important; }';
+          (document.head || document.documentElement).appendChild(st);
+        } else if (!$on && st) {
+          st.remove();
+        }
+      })();
+    ''';
   }
 
   /// `auto` hedges instead of choosing: the plugin params ride the URL when
@@ -1097,6 +1128,10 @@ class _KioskScreenState extends State<KioskScreen>
       if (_useCss) _applyKioskMode();
       // The zoom-level setting, as CSS zoom on every navigation.
       if (c.settings.get(defs.browserZoom) != 1) c.browser.runJs(_zoomJs);
+      // The scroll lock too: its style element dies with each document.
+      if (c.settings.get(defs.disableScrolling)) {
+        c.browser.runJs(_scrollLockJs);
+      }
       // The user's pasted JavaScript, Fully Kiosk style: runs after every
       // page load. Errors surface in the web console, nowhere else.
       final inject = c.settings.get(defs.browserInjectJs);

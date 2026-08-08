@@ -260,7 +260,6 @@ const browserZoom = SettingDef<num>(
       'Scales the whole page. Above 1x for wall tablets viewed from a '
       'distance; below 1x fits more dashboard on a small screen.',
   category: 'Browser',
-  section: 'User Interface',
   min: 0.5,
   max: 4,
   step: 0.05,
@@ -273,7 +272,8 @@ const browserZoom = SettingDef<num>(
 /// dashboards with controls at the very top can avoid the cutout instead
 /// (discussion #102). Applied live through the kiosk_lock channel, and read
 /// natively from SharedPreferences at Activity creation so the window is
-/// right from the first frame.
+/// right from the first frame. Lives on the Screen & Audio page: it shapes
+/// the window, not the browser, even though the key predates the move.
 const browserCutoutMode = SettingDef<String>(
   key: 'browser.cutout_mode',
   type: SettingType.select,
@@ -283,8 +283,8 @@ const browserCutoutMode = SettingDef<String>(
       'What to do with the screen area around a camera cutout or punch '
       'hole. Pick Avoid the cutout if the camera sits on top of buttons at '
       'the top of the dashboard.',
-  category: 'Browser',
-  section: 'User Interface',
+  category: 'Screen & Audio',
+  section: 'Screen',
   options: ['always', 'short_edges', 'default', 'never'],
   optionLabels: {
     'always': 'Use the cutout area',
@@ -302,6 +302,17 @@ const pinchToZoom = SettingDef<bool>(
   description:
       'Zoom the page with a two-finger pinch. Off by default so a kiosk '
       'dashboard stays put under stray touches.',
+  category: 'Browser',
+);
+
+const disableScrolling = SettingDef<bool>(
+  key: 'browser.disable_scrolling',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Disable scrolling',
+  description:
+      'Lock the page in place so it cannot be scrolled in any direction. '
+      'Taps and buttons keep working.',
   category: 'Browser',
 );
 
@@ -2938,15 +2949,13 @@ const List<SettingDef<Object>> allSettings = [
   autoReloadOnError,
   pullToRefresh,
   pullToRefreshClearCache,
+  browserZoom,
   pinchToZoom,
+  disableScrolling,
   disableCache,
   browserInjectJs,
   allowMixedContent,
   ignoreSslErrors,
-  // The User Interface group closes the Web Browsing page; consecutive so
-  // both UIs render them under the one heading.
-  browserZoom,
-  browserCutoutMode,
   webMicrophone,
   webCamera,
   webGeolocation,
@@ -2986,6 +2995,7 @@ const List<SettingDef<Object>> allSettings = [
   keepScreenOn,
   setBrightnessOnLaunch,
   defaultBrightness,
+  browserCutoutMode,
   mediaVolume,
   assistantVolume,
   audioMicDevice,

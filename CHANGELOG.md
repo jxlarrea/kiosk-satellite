@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A Disable scrolling toggle in the Web Browsing settings: locks the page in place so it cannot be scrolled in either direction, for dashboards built to fit the screen where a stray drag should not move anything. Only the browser's own panning is taken away, so taps, pull to refresh, pinch to zoom and the app's gestures all keep working, and the toggle applies live without a reload.
+
+### Changed
+- The Web Browsing page's User Interface group is gone: Zoom level moved up into the page's main group, and Display cutout moved to the Screen & Audio page under Screen, where a choice about the device's window belongs. Stored values carry over unchanged.
+
 ## v2026.8.9 - 2026-08-07
 
 ### Changed
