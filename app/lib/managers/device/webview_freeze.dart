@@ -28,4 +28,22 @@ class WebViewFreeze {
       return 0;
     }
   }
+
+  /// Suppress or restore the dashboard's native scrollbars — the carousel
+  /// hides them around a drag, where drift and the parked preview's widened
+  /// content extent awaken bars over an animation that is not a scroll.
+  static Future<int> setScrollBars({
+    required bool hidden,
+    required String urlPrefix,
+  }) async {
+    try {
+      return await _channel.invokeMethod<int>('setScrollBars', {
+            'hidden': hidden,
+            'urlPrefix': urlPrefix,
+          }) ??
+          0;
+    } catch (_) {
+      return 0;
+    }
+  }
 }

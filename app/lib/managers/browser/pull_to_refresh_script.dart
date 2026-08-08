@@ -106,6 +106,7 @@ const pullToRefreshProbeScript = '''
 
   addEventListener('touchstart', function (e) {
     if (window.__ksPtrEnabled === false) { tracking = false; return; }
+    if (window.__ksCarouselDragging) { tracking = false; return; }
     fired = false;
     travel = 0;
     tracking = e.touches.length === 1;
@@ -116,6 +117,14 @@ const pullToRefreshProbeScript = '''
 
   addEventListener('touchmove', function (e) {
     if (window.__ksPtrEnabled === false) { tracking = false; disarm(); return; }
+    // A live carousel drag owns the gesture. Cheap boolean FIRST: the
+    // pathAtTop below reads scrollTop per element, and a layout read on
+    // the touch path pays a whole-document flush whenever anything left
+    // layout dirty - profiled at ~86ms mid-swipe on a Tab S8.
+    if (window.__ksCarouselDragging) {
+      if (tracking) { tracking = false; disarm(); }
+      return;
+    }
     if (!tracking || fired) return;
     if (e.touches.length !== 1) { tracking = false; disarm(); return; }
     var t = e.touches[0];

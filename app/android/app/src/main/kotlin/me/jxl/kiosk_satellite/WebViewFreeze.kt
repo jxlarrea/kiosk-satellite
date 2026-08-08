@@ -48,28 +48,32 @@ class WebViewFreeze(
                         result.success(setHidden(hidden, prefix))
                     }
                 }
+                "setScrollBars" -> {
+                    val hidden = call.argument<Boolean>("hidden") ?: false
+                    val prefix = call.argument<String>("urlPrefix") ?: ""
+                    if (prefix.isEmpty()) {
+                        result.success(0)
+                    } else {
+                        result.success(setScrollBars(hidden, prefix))
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
     }
 
-    /** Returns how many WebViews were switched — 0 means the dashboard was
-     *  not found (mid-rebuild, or not loaded yet) and the caller may retry. */
-    private fun setHidden(hidden: Boolean, prefix: String): Int {
-        val target = if (hidden) View.INVISIBLE else View.VISIBLE
-        var changed = 0
+    /** Runs [action] on every WebView under the decor whose URL matches
+     *  [prefix]; returns how many matched. */
+    private fun forEachWebView(prefix: String, action: (WebView) -> Unit): Int {
+        var matched = 0
         val stack = ArrayDeque<View>()
         stack.add(activity.window.decorView)
         while (stack.isNotEmpty()) {
             val view = stack.removeLast()
             if (view is WebView) {
-                if (view.url?.startsWith(prefix) == true && view.visibility != target) {
-                    if (target == View.VISIBLE) {
-                        revealWithoutScrollbarFlash(view)
-                    } else {
-                        view.visibility = target
-                    }
-                    changed++
+                if (view.url?.startsWith(prefix) == true) {
+                    action(view)
+                    matched++
                 }
                 continue
             }
@@ -77,7 +81,55 @@ class WebViewFreeze(
                 for (i in 0 until view.childCount) stack.add(view.getChildAt(i))
             }
         }
+        return matched
+    }
+
+    /** Returns how many WebViews were switched — 0 means the dashboard was
+     *  not found (mid-rebuild, or not loaded yet) and the caller may retry. */
+    private fun setHidden(hidden: Boolean, prefix: String): Int {
+        val target = if (hidden) View.INVISIBLE else View.VISIBLE
+        var changed = 0
+        forEachWebView(prefix) { view ->
+            if (view.visibility != target) {
+                if (target == View.VISIBLE) {
+                    revealWithoutScrollbarFlash(view)
+                } else {
+                    view.visibility = target
+                }
+                changed++
+            }
+        }
         return changed
+    }
+
+    /**
+     * Suppress (or restore) the native scrollbars, used by the dashboard
+     * carousel around a drag: the swipe's slight vertical drift and the
+     * parked preview's widened content extent both awaken the bars over an
+     * animation that is not a scroll. Suppressing saves the current state
+     * and restoring puts exactly that back, sharing the bookkeeping with
+     * [revealWithoutScrollbarFlash] so a drag inside a reveal's suppression
+     * window cannot resurrect bars early or restore a suppressed state.
+     */
+    private fun setScrollBars(hidden: Boolean, prefix: String): Int {
+        return forEachWebView(prefix) { view ->
+            if (hidden) {
+                pendingRestore.remove(view)?.let { view.removeCallbacks(it) }
+                    ?: run {
+                        if (!savedBars.containsKey(view)) {
+                            savedBars[view] = view.isVerticalScrollBarEnabled to
+                                view.isHorizontalScrollBarEnabled
+                        }
+                    }
+                view.isVerticalScrollBarEnabled = false
+                view.isHorizontalScrollBarEnabled = false
+            } else {
+                val (vertical, horizontal) = savedBars.remove(view)
+                    ?: (true to false)
+                view.isVerticalScrollBarEnabled = vertical
+                view.isHorizontalScrollBarEnabled = horizontal
+            }
+        }
     }
 
     /** Scrollbar state saved across a reveal, and the restore that puts it
@@ -105,7 +157,9 @@ class WebViewFreeze(
         view.visibility = View.VISIBLE
         val restore = Runnable {
             pendingRestore.remove(view)
-            val (vertical, horizontal) = savedBars.remove(view) ?: (true to true)
+            // Fallback matches the app's settings: the horizontal bar is
+            // disabled at WebView creation and must stay that way.
+            val (vertical, horizontal) = savedBars.remove(view) ?: (true to false)
             view.isVerticalScrollBarEnabled = vertical
             view.isHorizontalScrollBarEnabled = horizontal
         }

@@ -231,9 +231,14 @@ class _KioskScreenState extends State<KioskScreen>
       return;
     }
     // The carousel's document-start seed is frozen at WebView creation;
-    // flip the live flag so the toggle applies without a reload.
+    // flip the live flag so the toggle applies without a reload. The sync
+    // call makes the script act on it now: build the preview strip, or
+    // tear a disabled one down instead of leaving it mounted.
     if (e.key == defs.haDashboardCarousel.key) {
-      await c.browser.runJs('window.__ksCarouselEnabled = ${e.value == true};');
+      await c.browser.runJs(
+        'window.__ksCarouselEnabled = ${e.value == true};'
+        'if (window.__ksCarouselSync) window.__ksCarouselSync();',
+      );
       return;
     }
     if (e.key == defs.allowMixedContent.key ||
@@ -1039,6 +1044,12 @@ class _KioskScreenState extends State<KioskScreen>
       supportZoom: c.settings.get(defs.pinchToZoom),
       builtInZoomControls: c.settings.get(defs.pinchToZoom),
       displayZoomControls: false,
+      // No horizontal scrollbar, ever: HA never scrolls the document
+      // sideways, but the carousel's parked next-view preview widens the
+      // reported content extent, and the native bar flashed over the
+      // page on every next-direction swipe (overflow-x:hidden blocks the
+      // scrolling itself, not the range Chromium reports to Android).
+      horizontalScrollBarEnabled: false,
       mediaPlaybackRequiresUserGesture: !c.settings.get(defs.webAutoplay),
       allowsInlineMediaPlayback: true,
       iframeAllow: 'camera; microphone',
@@ -1128,6 +1139,15 @@ class _KioskScreenState extends State<KioskScreen>
       controller.addJavaScriptHandler(
         handlerName: 'ksPullToRefresh',
         callback: (_) => _triggerRefresh(),
+      );
+      // The carousel reports its drag edges so the native scrollbars
+      // stay asleep during the strip animation (see carousel_script).
+      controller.addJavaScriptHandler(
+        handlerName: 'ksCarouselDrag',
+        callback: (args) {
+          final active = args.isNotEmpty && args.first == true;
+          unawaited(c.browser.setDragScrollBars(hidden: active));
+        },
       );
     },
     onUpdateVisitedHistory: (controller, url, isReload) {

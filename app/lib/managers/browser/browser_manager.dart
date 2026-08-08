@@ -554,6 +554,15 @@ class BrowserManager extends Manager {
     }
   }
 
+  /// Carousel drag edges: the native scrollbars sleep while the strip
+  /// animates (drift and the parked preview's content extent awaken them
+  /// over an animation that is not a scroll), and wake back after.
+  Future<void> setDragScrollBars({required bool hidden}) async {
+    final prefix = _origin(_currentUrl);
+    if (prefix == null) return;
+    await WebViewFreeze.setScrollBars(hidden: hidden, urlPrefix: prefix);
+  }
+
   /// scheme://host[:port] of [url], or null when it has none (no page yet).
   String? _origin(String url) {
     final uri = Uri.tryParse(url);
