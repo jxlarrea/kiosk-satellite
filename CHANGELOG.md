@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.12 - 2026-08-08
 
 ### Added
 - A Startup delay slider in the Camera settings' Motion Detection group (discussion #159), 0 to 15 seconds and 0 by default: motion is ignored for that long after the camera stream starts. Made for devices whose camera physically moves as it opens, such as a phone with a pop-up module, where the lens sweeping through the scene on its motor reads as motion and dismisses the screensaver that just started the camera. The delay counts from the first frame and covers every path that starts the camera, not just a screensaver, and the frames are still tracked as the baseline so the movement never desensitizes detection afterwards.
