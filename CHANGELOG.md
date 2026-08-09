@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.18 - 2026-08-09
 
 ### Added
 - A **Network connection lost** notice at the bottom of the screen while the device has no network, and a brief **Network connection restored** one when it comes back. Until now an outage was completely silent: the dashboard sat there showing the last state it had rendered, and the first sign of trouble was a page that would not reload, hours later. The notice stays for as long as the outage does, takes no touch away from the dashboard underneath, and gives way to the screensaver, the camera view and anything else that owns the whole screen.
