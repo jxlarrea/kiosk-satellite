@@ -101,6 +101,11 @@ class BackgroundBridge(
                 // The device's next alarm, as the clock app set it
                 // (issue #42).
                 "nextAlarm" -> result.success(nextAlarm())
+                // Whether a default network exists RIGHT NOW, for seeding
+                // the Dart side's picture of it: the network callback only
+                // reports transitions, and a device that starts offline
+                // gets no callback at all until one arrives.
+                "networkUp" -> result.success(networkUp())
                 // The panel's real state, for seeding the logical flag at
                 // start: a device that boots (or reinstalls) with its screen
                 // already off must not report it as on.
@@ -385,6 +390,21 @@ class BackgroundBridge(
     // would leave every consumer to its slow path (the Sendspin bridge's
     // blanket skip-the-first had exactly that bug).
     @Volatile private var expectInitialNetworkReplay = false
+
+    /**
+     * Whether a default network exists right now. Deliberately the same test
+     * the callback registration uses (`activeNetwork`), so a seeded value and
+     * a callback-driven one can never disagree. Validation is NOT required: a
+     * LAN with no internet still reaches Home Assistant, and demanding
+     * NET_CAPABILITY_VALIDATED would report a perfectly usable kiosk offline.
+     * Fails open — an unanswerable question must not raise an outage.
+     */
+    private fun networkUp(): Boolean = try {
+        (context.getSystemService(Context.CONNECTIVITY_SERVICE)
+            as ConnectivityManager).activeNetwork != null
+    } catch (e: Exception) {
+        true
+    }
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {

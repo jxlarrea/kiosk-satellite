@@ -653,7 +653,20 @@ class BrowserManager extends Manager {
   /// Called by the UI layer from the WebView's onLoadStop.
   void onPageLoaded(String url) {
     _lastLoadHadHttpError = _httpErrorThisLoad;
+    // The error page Chromium commits for a failed load reaches here too,
+    // announced by the onReceivedError that always precedes it — so a load
+    // that arrives without one is the real page, and the offline notice
+    // covering it can come down. Nothing else clears this: a retry that
+    // fails again lands right back here with the flag set.
+    //
+    // A server error counts as a failed load for this purpose even though
+    // it committed a document: the proxy's 502 while Home Assistant is
+    // unreachable has an empty body, which is a blank screen with no more
+    // to say for itself than Chromium's error page.
+    loadFailed.value = _loadErrorThisLoad || _httpErrorThisLoad;
+    _loadErrorThisLoad = false;
     _httpErrorThisLoad = false;
+    if (!loadFailed.value) _clearErrorReload();
     _currentUrl = url;
     log.info(name, 'loaded $url');
     bus.publish(PageChanged(url: url));
@@ -694,13 +707,31 @@ class BrowserManager extends Manager {
     }
   }
 
+  /// Whether the page on screen is Chromium's own error page — the main
+  /// document failed to load at all (no route, DNS, connection refused),
+  /// which is what an outage looks like from here.
+  ///
+  /// The UI covers it while this holds: WebView's built-in error page is a
+  /// dark slab with a fallen Android robot, which on a wall panel reads as a
+  /// broken app rather than a missing network. It also survives the reload
+  /// attempts underneath, since only a load that finishes cleanly clears it.
+  final ValueNotifier<bool> loadFailed = ValueNotifier(false);
+
+  /// What the failed load was trying to reach, for the notice's detail line.
+  String lastErrorDescription = '';
+
+  /// Set when the current load's main document failed outright; shifted into
+  /// [loadFailed] when the load finishes, because Chromium follows the error
+  /// with an onLoadStop for the error page it commits.
+  bool _loadErrorThisLoad = false;
+
   /// Called by the UI layer on load errors and render-process crashes.
   Future<void> onLoadError(String description) async {
     log.warn(name, 'load error: $description');
-    if (_settings.get(defs.autoReloadOnError)) {
-      await Future<void>.delayed(const Duration(seconds: 5));
-      await _controller?.reload();
-    }
+    lastErrorDescription = description;
+    _loadErrorThisLoad = true;
+    loadFailed.value = true;
+    _scheduleErrorReload();
   }
 
   /// Set when the current load's main document came back with a server
@@ -723,10 +754,49 @@ class BrowserManager extends Manager {
   Future<void> onHttpError(int statusCode) async {
     _httpErrorThisLoad = true;
     log.warn(name, 'main-frame HTTP $statusCode');
-    if (_settings.get(defs.autoReloadOnError)) {
-      await Future<void>.delayed(const Duration(seconds: 5));
-      await _controller?.reload();
-    }
+    lastErrorDescription = 'HTTP $statusCode';
+    loadFailed.value = true;
+    _scheduleErrorReload();
+  }
+
+  /// The pending retry of a failed load, and how long the next wait is.
+  Timer? _errorReload;
+  int _errorReloadAttempt = 0;
+
+  /// Retry a failed load, backing off 5s → 10 → 20 → 40 → 60 and holding
+  /// there.
+  ///
+  /// A fixed five seconds was fine for a page that fails once, and wrong for
+  /// the case that prompted this: a kiosk left offline overnight retried
+  /// twelve times a minute until morning, every attempt a failed DNS lookup
+  /// and a fresh error page, and the log full of nothing else. The network
+  /// coming back does not wait for this timer either — [onNetworkAvailable]
+  /// re-navigates the moment the interface is up, so the backoff only
+  /// governs how often we guess in the dark.
+  void _scheduleErrorReload() {
+    if (!_settings.get(defs.autoReloadOnError)) return;
+    if (_errorReload?.isActive ?? false) return;
+    const ladder = [5, 10, 20, 40, 60];
+    final seconds = ladder[_errorReloadAttempt.clamp(0, ladder.length - 1)];
+    _errorReloadAttempt++;
+    _errorReload = Timer(Duration(seconds: seconds), () {
+      unawaited(_controller?.reload());
+    });
+  }
+
+  /// A load succeeded (or the page is being replaced deliberately): drop the
+  /// pending retry and start the backoff over, so the next outage gets the
+  /// same quick first attempt this one did.
+  void _clearErrorReload() {
+    _errorReload?.cancel();
+    _errorReload = null;
+    _errorReloadAttempt = 0;
+  }
+
+  @override
+  Future<void> dispose() async {
+    _errorReload?.cancel();
+    _freezeDelay?.cancel();
   }
 
   /// Set by the composition root (see AppContainer): rewrites a URL to its
@@ -813,6 +883,16 @@ class BrowserManager extends Manager {
       // up, which is a beat before connections actually succeed.
       await Future<void>.delayed(const Duration(seconds: 2));
       if (_controller == null) return;
+      // A failed load needs no diagnosis: there is no page to interrogate,
+      // and the probe cannot even run — Chromium's error page answers no
+      // JavaScript, so the probe would come back 'none' and this would
+      // decide to leave a dead kiosk alone. This is the whole outage case:
+      // the network dropped, the page (or its reload) failed, and now the
+      // network is back.
+      if (loadFailed.value) {
+        await _renavigate();
+        return;
+      }
       final state = await _probePageState();
       log.info(name, 'network returned; page state: $state');
       switch (state) {
@@ -845,13 +925,40 @@ class BrowserManager extends Manager {
     }
   }
 
-  /// Where the page is (or should have been): the last committed URL, else
-  /// the start URL — the fallback that matters when the very first load
-  /// failed and there is nothing committed to reload.
+  /// Where a recovery should aim: the last real URL, else the start URL —
+  /// the fallback that matters when the very first load failed and there is
+  /// nothing committed to reload.
+  ///
+  /// Chromium's own pages are not targets. A failed navigation can leave
+  /// `chrome-error://chromewebdata/` (or `about:blank`) as the committed
+  /// URL, and re-navigating to that would "recover" the kiosk onto the
+  /// error page it is already showing.
+  String get _recoveryUrl {
+    final last = _currentUrl;
+    final usable =
+        last.isNotEmpty &&
+        !last.startsWith('chrome-error') &&
+        !last.startsWith('about:');
+    return usable ? last : startUrl;
+  }
+
+  /// Load the dashboard again, now — the offline notice's Retry button, and
+  /// what an operator means by "try again" from the remote admin.
+  Future<void> retryLoad() async {
+    _clearErrorReload();
+    final target = _recoveryUrl;
+    if (target.isEmpty) return;
+    log.info(name, 'retrying $target');
+    await loadUrl(target);
+  }
+
   Future<void> _renavigate() async {
-    final target = _currentUrl.isNotEmpty ? _currentUrl : startUrl;
+    final target = _recoveryUrl;
     if (target.isEmpty) return;
     log.info(name, 'reloading after network outage: $target');
+    // This attempt replaces the pending blind retry, and its failure should
+    // start the backoff fresh rather than resume it mid-ladder.
+    _clearErrorReload();
     await loadUrl(target);
   }
 

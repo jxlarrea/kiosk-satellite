@@ -24,6 +24,7 @@ import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'app_launcher_overlay.dart';
 import 'lockdown_shield.dart';
+import 'offline_notice.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'kiosk_drawer.dart';
@@ -845,6 +846,10 @@ class _KioskScreenState extends State<KioskScreen>
         // Held back until the Activity attach (the scaffold's black shows,
         // exactly what the splash was showing); see _waitForActivityAttach.
         if (_activityAttached) _webView(),
+        // Directly over the dashboard: it hides Chromium's error page, and
+        // everything below in this list (an overlay page, the player) is
+        // content that belongs on top of the dashboard, error or not.
+        OfflineNotice(container: c),
         // The rotation's external pages, shown OVER the dashboard so the
         // dashboard (and the Voice Satellite session with it) never
         // unloads. A wake detection hides this instantly, revealing the
@@ -983,6 +988,11 @@ class _KioskScreenState extends State<KioskScreen>
                         onHorizontalDragEnd: _drawerDragEnd,
                       ),
                     ),
+                  // Over both planes (the drawer included — an outage is
+                  // just as true with the menu open), and under every
+                  // full-screen overlay below, which owns the display while
+                  // it is up.
+                  NetworkToast(container: c),
                   // Media pushed over DLNA covers both planes like the
                   // screensaver does; the screensaver stays away while it
                   // plays (playback reports activity).

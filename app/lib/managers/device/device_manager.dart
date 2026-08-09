@@ -55,6 +55,14 @@ class DeviceManager extends Manager {
   double? lightLux;
   StreamSubscription<dynamic>? _lightSub;
 
+  /// Whether the device has a default network right now.
+  ///
+  /// The bus event is a transition ("an outage just ended"); this is the
+  /// state, which is what anything drawing on screen needs — the offline
+  /// notice has to be right the moment it is built, including on a kiosk
+  /// that has been sitting offline since before the app started.
+  final networkUp = ValueNotifier<bool>(true);
+
   /// The composed media gain (0..1) the Dart players apply (the DLNA
   /// overlay): the media fader, times the software master on fixed-volume
   /// devices (Chromebooks, issue #62). Native computes it (one curve, one
@@ -185,11 +193,22 @@ class DeviceManager extends Manager {
     // Default-network transitions from the platform side. The registration
     // replay (network already up at app start) arrives flagged initial and
     // is dropped here, so an `up` on the bus always means an outage ended.
+    // [networkUp] still takes it: the flag says "this is not a transition",
+    // not "this is not the truth".
     BackgroundListening.onNetworkChanged = (up, initial) {
+      networkUp.value = up;
       if (initial) return;
       log.info(name, up ? 'network available' : 'network lost');
       bus.publish(NetworkStateChanged(up: up));
     };
+    // Seeded from the platform, because a device that starts offline is
+    // told nothing: there is no network to replay, and the first callback
+    // only comes when one appears. Without this the UI would call an
+    // offline boot online until something changed.
+    try {
+      networkUp.value =
+          await background.invokeMethod<bool>('networkUp') ?? true;
+    } catch (_) {}
 
     // Media volume, percent both ways. No OS permission involved:
     // STREAM_MUSIC is freely settable (only ring/notification streams under

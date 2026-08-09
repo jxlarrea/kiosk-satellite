@@ -2,6 +2,17 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Network connection lost** notice at the bottom of the screen while the device has no network, and a brief **Network connection restored** one when it comes back. Until now an outage was completely silent: the dashboard sat there showing the last state it had rendered, and the first sign of trouble was a page that would not reload, hours later. The notice stays for as long as the outage does, takes no touch away from the dashboard underneath, and gives way to the screensaver, the camera view and anything else that owns the whole screen.
+- A **No network connection** page in place of the browser engine's own error page, which is a dark screen with a fallen Android robot and a `net::` error string on it, and reads on a wall panel as a broken app. The Kiosk Satellite notice says whether the device has no network at all or the dashboard could not be reached, and offers a Retry button. It covers a failed load only: a dashboard that is merely stale keeps showing, since a page nobody can update is still worth reading.
+
+### Changed
+- The dashboard now comes straight back when the network does, including from a failed load. A page that failed while the network was down could only be recovered by the blind retry timer, since there is no page there to diagnose; it is now re-requested as soon as the interface is up.
+- Retries of a failed page load now back off (5 seconds, then 10, 20, 40 and 60), instead of hammering the same failing address every 5 seconds for as long as the outage lasts. Nothing waits on the ladder when the network returns, and it starts over at 5 seconds after the next successful load.
+- A server error on the main page (the secure context proxy's 502 while Home Assistant is unreachable, a reverse proxy's 502 or 504) now shows the same notice instead of the empty page those answers render as.
+
 ## v2026.8.17 - 2026-08-09
 
 ### Changed
