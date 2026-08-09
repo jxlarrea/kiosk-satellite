@@ -93,11 +93,13 @@ List<Widget> _sectionedCards(
 }
 
 /// (defs category, page title, icon, subtitle)
-const _categories = <(String, String, IconData, String)>[
+// The icon is a Material [IconData], or the path of an SVG asset for a
+// category named after a product with a mark of its own.
+const _categories = <(String, String, Object, String)>[
   (
     'Home Assistant',
     'Home Assistant Configuration',
-    Icons.home_outlined,
+    'assets/svg/home-assistant.svg',
     'Connection, dashboard, kiosk mode',
   ),
   (
@@ -127,9 +129,11 @@ const _categories = <(String, String, IconData, String)>[
   ),
   (
     'Sendspin',
-    'Sendspin Player',
-    Icons.speaker_outlined,
-    'Synchronized audio player',
+    'Music Assistant',
+    // The one category that answers to a product rather than a feature, so
+    // it wears that product's mark instead of a Material glyph.
+    'assets/svg/music-assistant.svg',
+    'Configuration, Sendspin player, lyrics',
   ),
   (
     'Cameras',
@@ -184,7 +188,9 @@ class _CategoryIcon extends StatelessWidget {
   const _CategoryIcon({required this.index, required this.icon});
 
   final int index;
-  final IconData icon;
+
+  /// [IconData], or an SVG asset path (see [_categories]).
+  final Object icon;
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +208,22 @@ class _CategoryIcon extends StatelessWidget {
         color: accents[index % accents.length],
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: Colors.white, size: 22),
+      child: icon is IconData
+          ? Icon(icon as IconData, color: Colors.white, size: 22)
+          // Drawn in the disc's foreground like every Material glyph beside
+          // it, so a product mark does not become the one colored thing in
+          // the rail.
+          : Center(
+              child: SvgPicture.asset(
+                icon as String,
+                width: 21,
+                height: 21,
+                colorFilter: const ColorFilter.mode(
+                  Colors.white,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
     );
   }
 }
@@ -519,7 +540,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   // The rail's icon again — bare glyph, no
                                   // disc: the title row is a label, not a
                                   // button.
-                                  Icon(icon, size: 26),
+                                  if (icon is IconData)
+                                    Icon(icon, size: 26)
+                                  else
+                                    SvgPicture.asset(
+                                      icon as String,
+                                      width: 24,
+                                      height: 24,
+                                      colorFilter: ColorFilter.mode(
+                                        theme.colorScheme.onSurface,
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
                                   const SizedBox(width: 12),
                                   Text(
                                     title,
@@ -554,7 +586,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     int index,
     String title,
-    IconData icon,
+    Object icon,
     String subtitle,
   ) {
     final theme = Theme.of(context);
@@ -704,8 +736,19 @@ class CategorySettingsScreen extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
+              if (icon is IconData) ...[
                 Icon(icon, size: 24),
+                const SizedBox(width: 10),
+              ] else if (icon is String) ...[
+                SvgPicture.asset(
+                  icon,
+                  width: 22,
+                  height: 22,
+                  colorFilter: ColorFilter.mode(
+                    Theme.of(context).colorScheme.onSurface,
+                    BlendMode.srcIn,
+                  ),
+                ),
                 const SizedBox(width: 10),
               ],
               Text(title),
@@ -2718,7 +2761,8 @@ class _MaValidateRowState extends State<_MaValidateRow> {
     subtitle: Text(
       _validating
           ? 'Checking…'
-          : _message ?? 'Check the address and token before turning on lyrics.',
+          : _message ??
+                'Check the address and token before turning on the shortcut or lyrics.',
     ),
     trailing: _validating
         ? const SizedBox(
@@ -4179,12 +4223,14 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed: settings.get(wakeWordEnabled),
           missingIcon: Icons.mic_off_outlined,
           title: 'Microphone',
-          held: 'Allows microphone usage for wake word detection and speech to text.',
+          held:
+              'Allows microphone usage for wake word detection and speech to text.',
           missing: micBlocked
               ? 'Blocked. Android will not ask again, so allow it in the '
                     'app settings.'
               : 'Wake word detection is on and nothing is listening.',
-          idle: 'Needed by wake word detection and by pages that ask for '
+          idle:
+              'Needed by wake word detection and by pages that ask for '
               'the microphone.',
           action: micBlocked ? 'App settings' : 'Grant',
           onGrant: () async {
@@ -4203,7 +4249,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed: true,
           missingIcon: Icons.battery_alert_outlined,
           title: 'Unrestricted battery',
-          held: 'Allows the process to run in the background without being paused or killed.',
+          held:
+              'Allows the process to run in the background without being paused or killed.',
           missing:
               'Android may pause the app when the screen is off, dropping '
               'the Home Assistant connection and the MQTT entities with it.',
@@ -4217,7 +4264,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           title: 'Camera',
           held: 'Motion detection and snapshots can use the camera.',
           missing: 'The camera is switched on and cannot be opened.',
-          idle: 'Needed by motion detection, camera snapshots and pages '
+          idle:
+              'Needed by motion detection, camera snapshots and pages '
               'that ask for the camera.',
           onGrant: () => ensureOsPermission(Permission.camera),
         ),
@@ -4244,7 +4292,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missing:
               'Without this the app cannot reopen itself after a crash, an '
               'update or a wake word heard behind another app.',
-          idle: 'Lets the app bring itself back to the front, and the '
+          idle:
+              'Lets the app bring itself back to the front, and the '
               'lockdown shield cover the whole screen.',
           onGrant: () => requestOsPermission(Permission.systemAlertWindow),
         ),
@@ -4259,15 +4308,15 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missing:
               'Brightness only dims the app window, so the panel and Home '
               'Assistant never see the change.',
-          idle: "Needed to set the panel's real brightness rather than "
+          idle:
+              "Needed to set the panel's real brightness rather than "
               'dimming the app window.',
           onGrant: () => _requestVia('writeSettings'),
         ),
         _row(
           granted: _uiGuard,
           needed:
-              settings.get(kioskEnabled) &&
-              settings.get(kioskDisableStatusBar),
+              settings.get(kioskEnabled) && settings.get(kioskDisableStatusBar),
           missingIcon: Icons.shield_outlined,
           title: 'System UI guard',
           held:
@@ -4276,7 +4325,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missing:
               'The notification shade and recents stay reachable. Enable '
               'Kiosk Satellite under Accessibility.',
-          idle: 'Closes the notification shade and recents while kiosk mode '
+          idle:
+              'Closes the notification shade and recents while kiosk mode '
               'protects the screen.',
           action: 'Enable',
           onGrant: widget.container.kiosk.openUiGuardSettings,
@@ -4291,7 +4341,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           title: 'Device admin',
           held: 'Allows the app to turn the screen off.',
           missing: '',
-          idle: 'Lets Screen off power the panel down instead of only '
+          idle:
+              'Lets Screen off power the panel down instead of only '
               'blacking it out.',
           action: 'Enable',
           onGrant: () => _requestVia('deviceAdmin'),

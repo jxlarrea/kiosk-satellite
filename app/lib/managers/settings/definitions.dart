@@ -2628,6 +2628,7 @@ const sendspinEnabled = SettingDef<bool>(
       'in Music Assistant under the device name, in sync with every '
       'other Sendspin speaker.',
   category: 'Sendspin',
+  section: 'Sendspin player',
 );
 
 const sendspinServer = SettingDef<String>(
@@ -2639,6 +2640,7 @@ const sendspinServer = SettingDef<String>(
       'Sendspin server address, for example 192.168.1.10:8927. Leave '
       'empty to find the server on the network automatically.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   dependsOn: 'sendspin.enabled',
 );
 
@@ -2651,6 +2653,7 @@ const sendspinCodec = SettingDef<String>(
       'FLAC is lossless and ideal on WiFi or ethernet. The server makes '
       'the final choice from what this device offers.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   options: ['flac', 'opus', 'pcm'],
   optionLabels: {
     'flac': 'FLAC (lossless)',
@@ -2670,6 +2673,7 @@ const sendspinShowPlayer = SettingDef<bool>(
       'dashboard with artwork, track info and progress. Drag it anywhere; '
       'the position is remembered.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   dependsOn: 'sendspin.enabled',
 );
 
@@ -2683,6 +2687,7 @@ const sendspinPlayerSize = SettingDef<String>(
       'previous, play/pause and next buttons sized for touch, controlling '
       'the whole playback group.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   options: ['compact', 'large'],
   optionLabels: {'compact': 'Compact', 'large': 'Large with controls'},
   dependsOn: 'sendspin.show_player',
@@ -2697,6 +2702,7 @@ const sendspinPausedHideMinutes = SettingDef<num>(
       'How long a paused player card stays on screen before hiding '
       'itself. It returns the moment playback resumes.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   min: 1,
   max: 10,
   step: 1,
@@ -2714,6 +2720,7 @@ const sendspinDuckPercent = SettingDef<num>(
       'fraction of its volume so the microphone hears you. Capped at '
       '25% to keep detection reliable.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   min: 0,
   max: 25,
   step: 5,
@@ -2731,6 +2738,7 @@ const sendspinFullscreen = SettingDef<bool>(
       'Playing view with album art. With nothing playing, the regular '
       'screensaver runs.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   dependsOn: 'sendspin.enabled',
 );
 
@@ -2744,6 +2752,7 @@ const sendspinFullscreenMotion = SettingDef<bool>(
       'only touch dismisses it, so a walk-past does not interrupt the '
       'music display.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -2756,6 +2765,7 @@ const sendspinDismissKeepsPlaying = SettingDef<bool>(
       'Flinging the floating player away hides it without stopping the '
       'music.',
   category: 'Sendspin',
+  section: 'Sendspin player',
   dependsOn: 'sendspin.enabled',
 );
 
@@ -2888,6 +2898,7 @@ const sendspinSyncOffset = SettingDef<num>(
       'Negative plays this device earlier, for speakers that lag behind '
       'the group (Bluetooth). Tune by ear; applies live.',
   category: 'Sendspin',
+  section: 'Sendspin player',
 );
 
 const sendspinLyricsOffset = SettingDef<num>(
@@ -3236,6 +3247,15 @@ const List<SettingDef<Object>> allSettings = [
   mqttDeviceId,
   cameraAllowH265,
   cameraConfig,
+  // Music Assistant leads the page it names: the server is what the kiosk
+  // browses, asks for lyrics and hands people through the menu, and the
+  // Sendspin player below is one of the things it drives.
+  sendspinMaUrl,
+  sendspinMaToken,
+  sendspinMaShortcut,
+  sendspinMaAutoClose,
+  sendspinLyrics,
+  sendspinLyricsOffset,
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
@@ -3249,12 +3269,6 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,
-  sendspinMaUrl,
-  sendspinMaToken,
-  sendspinMaShortcut,
-  sendspinMaAutoClose,
-  sendspinLyrics,
-  sendspinLyricsOffset,
   dlnaEnabled,
   dlnaAudioBackground,
   dlnaPort,

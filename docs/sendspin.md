@@ -16,7 +16,10 @@ that stands in for the screensaver while music plays.
 
 ## Setup
 
-Settings → **Sendspin Player** on the device, or the matching tab in the remote admin.
+Settings → **Music Assistant** on the device, or the matching tab in the
+remote admin. The page opens on the Music Assistant group described
+further down; the **Sendspin player** group below it holds the settings in
+this table.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
