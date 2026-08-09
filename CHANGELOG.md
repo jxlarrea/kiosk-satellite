@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.15 - 2026-08-09
 
 ### Added
 - A **Music Assistant** entry in the kiosk menu, which opens the Music Assistant web interface over the dashboard: the full library, search, queue, playlists and radio, exactly as they are on a phone or a laptop. Closing it (or pressing back) reveals the dashboard still loaded underneath, with the voice session and the wake word untouched, because the page never left. It appears as soon as a server address is set under Sendspin, Music Assistant, and a new **Show in the kiosk menu** toggle there turns it off. In kiosk mode it is one of the Allowed Actions, so it can be offered in, or kept out of, the restricted quick-actions menu.
