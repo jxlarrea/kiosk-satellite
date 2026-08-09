@@ -5784,6 +5784,54 @@ function radioRow(name, desc, selected, onPick) {
   row.addEventListener('click', onPick);
   return row;
 }
+// Bring the rows gated on `key` (dependsOn, transitively) in or out of the
+// card `anchorRow` sits in, reading the values already in state.settings —
+// no fetch, no tab rebuild, nothing else on the page touched.
+//
+// Returns false when the flip reaches past that one card, which is the case
+// this cannot place a row for: a heading may need creating or removing, and
+// where it belongs is the renderer's business. The caller falls back to a
+// full re-render there.
+function syncGatedRows(key, anchorRow) {
+  const all = state.settings || [];
+  const card = anchorRow.parentNode;
+  const byKey = Object.fromEntries(all.map((o) => [o.key, o]));
+  const anchor = byKey[key];
+  if (!anchor || !card) return false;
+  // The same visibility rule loadSettings() renders by, so a row that comes
+  // back in place is exactly the row a re-render would have drawn.
+  const depSatisfied = (o) => {
+    if (!o.dependsOn) return true;
+    const dep = byKey[o.dependsOn];
+    if (!dep) return true;
+    return dep.value === (o.dependsOnValue ?? true) && depSatisfied(dep);
+  };
+  const visible = (o) => !o.hidden && depSatisfied(o);
+  // Everything the flip can reach: the rows gated on this one, and the rows
+  // gated on those in turn (a revealed row may be a gate itself).
+  const reached = [];
+  const walk = (k) => all.filter((o) => o.dependsOn === k)
+    .forEach((o) => { reached.push(o); walk(o.key); });
+  walk(key);
+  const sameCard = (o) => o.category === anchor.category
+    && (o.section || '') === (anchor.section || '');
+  if (!reached.every(sameCard)) return false;
+  // Schema order within the card decides where a returning row goes back:
+  // in front of the first row after it that is currently on screen.
+  const order = all.filter(sameCard);
+  for (const o of reached) {
+    const existing = card.querySelector(`[data-key="${o.key}"]`);
+    if (!visible(o)) { existing?.remove(); continue; }
+    if (existing) continue;
+    let before = null;
+    for (let i = order.indexOf(o) + 1; i < order.length && !before; i++) {
+      before = card.querySelector(`[data-key="${order[i].key}"]`);
+    }
+    card.insertBefore(settingRow(o), before);
+  }
+  return true;
+}
+
 function settingRow(s) {
   const row = document.createElement('div'); row.className = 'row';
   // Lets a saved row find another row without a re-render (see save()).
@@ -5795,28 +5843,33 @@ function settingRow(s) {
   row.appendChild(info);
   const save = async (value) => {
     await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
-    // AGC gates exactly one row, the gain slider next to it. Showing or
-    // hiding that in place beats the reload below, which re-runs the
-    // satellite lookup and the audio device probe and reads as the page
-    // jumping under the switch you just flipped.
+    const cached = (state.settings || []).find((o) => o.key === s.key);
+    if (cached) cached.value = value;
+    // AGC hides the gain slider next to it without gating it (the row is
+    // always rendered, so there is nothing for syncGatedRows to place).
     if (s.key === 'audio.mic_agc') {
-      const cached = (state.settings || []).find((o) => o.key === s.key);
-      if (cached) cached.value = value;
       const gain = document.querySelector('[data-key="audio.mic_gain_db"]');
       if (gain) gain.style.display = value ? 'none' : '';
       return;
     }
-    // Re-render only when this toggle actually changes what else is shown: a
-    // setting others gate on (dependsOn), or one that reveals a hand-built
-    // section (the rotation views). A blanket re-render re-fetches the
-    // dashboards on the Home Assistant tab, which reads as a jarring reload.
-    const changesLayout = (state.settings || []).some((o) => o.dependsOn === s.key)
-      || s.key === 'ha.rotation_enabled'
-      // Editing either resets immich_validated on the device, which the
-      // dependent rows and the validate row must reflect.
+    // Three keys genuinely need the device's answer again: the rotation
+    // switch reveals a hand-built section, and editing either Immich
+    // credential resets immich_validated on the device, which the dependent
+    // rows and the validate row must reflect.
+    if (s.key === 'ha.rotation_enabled'
       || s.key === 'screensaver.immich_url'
-      || s.key === 'screensaver.immich_api_key';
-    if (changesLayout) await loadSettings();
+      || s.key === 'screensaver.immich_api_key') {
+      await loadSettings();
+      return;
+    }
+    // Otherwise the only thing a flip can change is which rows it gates
+    // (dependsOn), and those come and go in place — the same trick the
+    // hand-built Home Assistant cards use. A loadSettings() here rebuilds
+    // every tab and re-runs the device probes they own, which reads as the
+    // whole page reloading under the switch just flipped.
+    if ((state.settings || []).some((o) => o.dependsOn === s.key)) {
+      if (!syncGatedRows(s.key, row)) await loadSettings();
+    }
   };
 
   // The clock's background photo deliberately has no special case: the
