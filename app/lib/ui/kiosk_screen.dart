@@ -1327,13 +1327,84 @@ class _OverlayHost extends StatefulWidget {
   State<_OverlayHost> createState() => _OverlayHostState();
 }
 
-class _OverlayHostState extends State<_OverlayHost> {
+class _OverlayHostState extends State<_OverlayHost>
+    with SingleTickerProviderStateMixin {
   String? _lastUrl;
 
   /// Whether the page being kept came from a link tap. Recorded while the
   /// overlay is up: by the time dismissal rebuilds this widget,
   /// overlayDismissible has already been reset.
   bool _linkOverlay = false;
+
+  /// The slide: a page opened by hand rises from the bottom edge and leaves
+  /// the same way, so it reads as something brought up over the dashboard
+  /// rather than the dashboard being replaced between two frames.
+  ///
+  /// Not for the rotation, which shows nobody's page in particular on a
+  /// timer and would just make the wall panel move by itself; its overlay
+  /// sits at rest (value 1) and keeps today's instant swap.
+  late final AnimationController _slide = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 280),
+    reverseDuration: const Duration(milliseconds: 220),
+    value: 1,
+  )..addStatusListener(_onSlideStatus);
+
+  late final Animation<Offset> _slideOffset = Tween(
+    begin: const Offset(0, 1),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(
+    parent: _slide,
+    curve: Curves.easeOutCubic,
+    reverseCurve: Curves.easeInCubic,
+  ));
+
+  @override
+  void initState() {
+    super.initState();
+    widget.container.browser.overlayUrl.addListener(_onOverlayUrl);
+  }
+
+  @override
+  void dispose() {
+    widget.container.browser.overlayUrl.removeListener(_onOverlayUrl);
+    _slide.dispose();
+    super.dispose();
+  }
+
+  /// Drives the animation off the overlay state. The build below still reads
+  /// the same values; this only decides which way the page is moving.
+  void _onOverlayUrl() {
+    final showing = widget.container.browser.overlayUrl.value != null;
+    if (showing) {
+      // A link page starts off the bottom edge and rises; the rotation's
+      // page is simply there.
+      if (widget.container.browser.overlayDismissible.value) {
+        _slide.forward(from: _slide.isAnimating ? _slide.value : 0);
+      } else {
+        _slide.value = 1;
+      }
+    } else if (_linkOverlay) {
+      // Already at the bottom (nothing ever slid in): drop it now rather
+      // than wait for a status change that will not come.
+      if (_slide.value == 0) {
+        _onSlideStatus(AnimationStatus.dismissed);
+      } else {
+        _slide.reverse();
+      }
+    }
+  }
+
+  /// The exit finished: only now is the WebView released. Until then the
+  /// dismissed page is still on screen — that is what is sliding.
+  void _onSlideStatus(AnimationStatus status) {
+    if (status != AnimationStatus.dismissed) return;
+    if (!mounted || widget.container.browser.overlayUrl.value != null) return;
+    setState(() {
+      _lastUrl = null;
+      _linkOverlay = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1344,12 +1415,11 @@ class _OverlayHostState extends State<_OverlayHost> {
         if (url != null) {
           _lastUrl = url;
           _linkOverlay = c.browser.overlayDismissible.value;
-        } else if (_linkOverlay ||
-            !c.settings.get(defs.haRotationEnabled)) {
-          // A dismissed link page, or the rotation feature being off:
-          // release the WebView instead of keeping it warm.
+        } else if (!_linkOverlay && !c.settings.get(defs.haRotationEnabled)) {
+          // The rotation feature is off: release the WebView instead of
+          // keeping it warm. A dismissed link page is held a moment longer
+          // — it is still on screen, sliding out (see _onSlideStatus).
           _lastUrl = null;
-          _linkOverlay = false;
         }
         final kept = _lastUrl;
         if (kept == null) return const SizedBox.shrink();
@@ -1359,63 +1429,79 @@ class _OverlayHostState extends State<_OverlayHost> {
         // the tree shape never changes underneath the live WebView; it
         // counts only while this page is the one on screen.
         return Offstage(
-          offstage: url == null,
-          child: _IdleDismiss(
-            seconds: url != null &&
-                    isMusicAssistantOrigin(
-                      kept,
-                      c.settings.get(defs.sendspinMaUrl),
-                    )
-                ? c.settings.get(defs.sendspinMaAutoClose).toInt()
-                : 0,
-            onIdle: () {
-              c.browser.log.info(
-                'browser',
-                'Music Assistant page idle — back to the dashboard',
-              );
-              c.browser.dismissOverlay();
-            },
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-              _OverlayWebView(
-                url: kept,
-                key: ValueKey(kept),
-                paused: url == null,
-                container: c,
-                onRenderGone: () {
-                  c.browser.log.warn(
+          // The rotation's page waits offstage between passes. A dismissed
+          // link page stays on stage a moment longer: it is what the exit
+          // animation is moving.
+          offstage: url == null && !_linkOverlay,
+          child: IgnorePointer(
+            // On its way out it is scenery, not a page: a tap belongs to
+            // the dashboard coming back underneath.
+            ignoring: url == null,
+            child: SlideTransition(
+              position: _slideOffset,
+              child: _IdleDismiss(
+                seconds:
+                    url != null &&
+                        isMusicAssistantOrigin(
+                          kept,
+                          c.settings.get(defs.sendspinMaUrl),
+                        )
+                    ? c.settings.get(defs.sendspinMaAutoClose).toInt()
+                    : 0,
+                onIdle: () {
+                  c.browser.log.info(
                     'browser',
-                    'overlay renderer gone — dropping the overlay',
+                    'Music Assistant page idle — back to the dashboard',
                   );
                   c.browser.dismissOverlay();
-                  setState(() => _lastUrl = null);
                 },
-              ),
-              // A link-opened overlay has no rotation pass to move it along
-              // (issue #86): the floating close is the visible way back to
-              // the dashboard. The back button and a wake word work too.
-              if (c.browser.overlayDismissible.value)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: SafeArea(
-                    child: Material(
-                      color: Colors.black45,
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: c.browser.dismissOverlay,
-                        child: const Padding(
-                          padding: EdgeInsets.all(10),
-                          child:
-                              Icon(Icons.close, color: Colors.white, size: 24),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _OverlayWebView(
+                      url: kept,
+                      key: ValueKey(kept),
+                      paused: url == null,
+                      container: c,
+                      onRenderGone: () {
+                        c.browser.log.warn(
+                          'browser',
+                          'overlay renderer gone — dropping the overlay',
+                        );
+                        c.browser.dismissOverlay();
+                        setState(() => _lastUrl = null);
+                      },
+                    ),
+                    // A link-opened overlay has no rotation pass to move it
+                    // along (issue #86): the floating close is the visible
+                    // way back to the dashboard. The back button and a wake
+                    // word work too.
+                    if (c.browser.overlayDismissible.value)
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: SafeArea(
+                          child: Material(
+                            color: Colors.black45,
+                            shape: const CircleBorder(),
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: c.browser.dismissOverlay,
+                              child: const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

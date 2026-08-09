@@ -62,7 +62,8 @@ class ClosingCameraPlayer extends StatefulWidget {
   State<ClosingCameraPlayer> createState() => _ClosingCameraPlayerState();
 }
 
-class _ClosingCameraPlayerState extends State<ClosingCameraPlayer> {
+class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
+    with SingleTickerProviderStateMixin {
   /// The view still mounted, which lags [widget.view] while one closes.
   CameraViewConfig? _mounted;
   bool _closing = false;
@@ -70,10 +71,38 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer> {
 
   static const _shutdownGrace = Duration(milliseconds: 600);
 
+  /// The opened camera view rises from the bottom edge and leaves the same
+  /// way, like every other page brought up over the dashboard.
+  ///
+  /// Only the opened view. The screensaver builds the same grid as its own
+  /// content ([ClosingCameraPlayer.interactive] off), where it is scenery
+  /// the screensaver fades in on its own terms — sliding it would make the
+  /// panel appear to move by itself.
+  late final AnimationController _slide = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 280),
+    reverseDuration: const Duration(milliseconds: 220),
+    value: widget.interactive && widget.view != null ? 0 : 1,
+  )..addStatusListener(_onSlideStatus);
+
+  late final Animation<Offset> _slideOffset = Tween(
+    begin: const Offset(0, 1),
+    end: Offset.zero,
+  ).animate(
+    CurvedAnimation(
+      parent: _slide,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    ),
+  );
+
   @override
   void initState() {
     super.initState();
     _mounted = widget.view;
+    // A view already open when this mounts (the overlay is built with one,
+    // or the app restored into one) still gets its entrance.
+    if (widget.interactive && widget.view != null) _slide.forward();
   }
 
   @override
@@ -85,23 +114,53 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer> {
     }
     _drop?.cancel();
     if (next == null) {
-      // Closing: hide it now, let it shut down, drop it shortly after.
       if (_mounted == null) return;
-      setState(() => _closing = true);
-      _drop = Timer(_shutdownGrace, () {
-        if (mounted) setState(() => _mounted = null);
-      });
+      if (!widget.interactive) {
+        // The screensaver's grid: hide it now, let it shut down, drop it
+        // shortly after.
+        setState(() => _closing = true);
+        _startDropTimer();
+      } else {
+        // The opened view slides out first, still playing — the teardown
+        // and the offstage hide wait for [_onSlideStatus], so what leaves
+        // the screen is the grid rather than a black rectangle.
+        _slide.reverse();
+      }
     } else {
+      final wasOpen = _mounted != null;
       setState(() {
         _mounted = next;
         _closing = false;
       });
+      // From the bottom edge when a view is opening, from wherever it has
+      // got to when one is caught on its way out, and with no movement at
+      // all when a view simply replaces another already on screen.
+      if (widget.interactive) {
+        _slide.forward(from: wasOpen ? _slide.value : 0);
+      }
     }
+  }
+
+  /// The exit finished: shut the streams down from a still-mounted widget
+  /// (the whole point of this wrapper) and let the grace period run.
+  void _onSlideStatus(AnimationStatus status) {
+    if (status != AnimationStatus.dismissed || !mounted) return;
+    if (widget.view != null || _mounted == null) return;
+    setState(() => _closing = true);
+    _startDropTimer();
+  }
+
+  void _startDropTimer() {
+    _drop?.cancel();
+    _drop = Timer(_shutdownGrace, () {
+      if (mounted) setState(() => _mounted = null);
+    });
   }
 
   @override
   void dispose() {
     _drop?.cancel();
+    _slide.dispose();
     super.dispose();
   }
 
@@ -111,13 +170,21 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer> {
     if (view == null) return const SizedBox.shrink();
     return Offstage(
       offstage: _closing,
-      child: CameraPlayer(
-        key: ValueKey('${view.id}-${widget.interactive}'),
-        container: widget.container,
-        view: view,
-        interactive: widget.interactive,
-        onDismiss: widget.onDismiss,
-        closing: _closing,
+      child: IgnorePointer(
+        // On its way out it is scenery, not a view: a touch belongs to what
+        // is coming back underneath.
+        ignoring: widget.interactive && widget.view == null,
+        child: SlideTransition(
+          position: _slideOffset,
+          child: CameraPlayer(
+            key: ValueKey('${view.id}-${widget.interactive}'),
+            container: widget.container,
+            view: view,
+            interactive: widget.interactive,
+            onDismiss: widget.onDismiss,
+            closing: _closing,
+          ),
+        ),
       ),
     );
   }
