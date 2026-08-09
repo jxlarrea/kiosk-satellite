@@ -13,16 +13,9 @@
 <a href="https://buymeacoffee.com/jxlarrea"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
 </p>
 
-Turn any Android tablet into a beautiful, voice-enabled Home Assistant
-kiosk in about two minutes.
+Turn any Android tablet into a dedicated, voice-enabled Home Assistant kiosk. Unlike generic kiosk applications, Kiosk Satellite is purpose-built for Home Assistant from the ground up and serves as the official companion app for [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration).
 
-Kiosk Satellite is an open source lightweight kiosk browser built **specifically for Home
-Assistant**, and the official companion app for
-[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration).
-Mount a tablet on the wall, run the setup wizard, and you get a locked-down,
-always-on dashboard that listens for your wake word natively, even while
-the screen is off or another app is in front. And it is built to stay
-smooth on the low-powered, older tablets that usually end up on walls.
+Mount your tablet, run the setup wizard, and get a locked-down, always-on dashboard with native wake-word detection even when the screen is off or another app is in front. It is built to stay smooth on the older, low-power hardware typically used for wall mounts.
 
 <p align="center">
  <img src="assets/ks-demo-lossy.gif" alt="Kiosk Satellite" width="650"/>
