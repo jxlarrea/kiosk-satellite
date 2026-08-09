@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- Installing an update now asks GitHub for the latest release first, so what installs is the newest version at the moment Install is pressed rather than the one the notice named when it appeared (#162). The release check runs twice a day and the notice then sits there until someone acts on it, so a version published in between used to install the older build and leave a second update waiting right behind it. This applies wherever the update starts: the kiosk menu, the Remote Administration UI and Home Assistant's Updates page. If GitHub cannot be reached at that moment the known release installs exactly as before, and in the rare case where the offered release is gone and the device is already on the latest, nothing downloads and the notice clears itself.
+
 ## v2026.8.16 - 2026-08-09
 
 ### Changed

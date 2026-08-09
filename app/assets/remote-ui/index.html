@@ -5282,6 +5282,14 @@ async function loadAboutInfo() {
           btn.textContent = `Downloading… ${Math.round(st.progress * 100)}%`;
         }
       } while (st && st.progress !== null && st.progress !== undefined);
+      // The device re-checks GitHub before downloading, so the run can end
+      // with nothing to install (the offered release was pulled and the
+      // tablet is on the latest). Only say so when the device answered:
+      // a poll lost to the install itself is not the same thing.
+      if (st && !st.availableVersion) {
+        btn.textContent = 'Already up to date';
+        return;
+      }
       btn.textContent = 'Confirm on the tablet screen';
     };
     // Release notes first, then the download: the same flow as the

@@ -591,10 +591,15 @@ class KioskDrawer extends StatelessWidget {
     if (!context.mounted) return;
     Navigator.of(context, rootNavigator: true).pop();
     if (error != null) {
+      // The download re-checks GitHub before it starts, so it can also come
+      // back with "nothing to install" (the offered release was pulled and
+      // this build is the latest); that is not a failure. Nothing pending
+      // afterwards is what tells the two apart.
+      final pending = c.update.available.value != null;
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Update failed'),
+          title: Text(pending ? 'Update failed' : 'Updates'),
           content: Text(error),
           actions: [
             FilledButton(

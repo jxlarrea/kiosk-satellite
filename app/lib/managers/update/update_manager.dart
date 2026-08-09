@@ -77,6 +77,12 @@ class UpdateManager extends Manager {
   /// second call for one integer. Null off Android.
   int? _sdkInt;
 
+  /// Builds the client for the release query and the APK download. Swapped
+  /// in tests; production always hands back a real one.
+  @visibleForTesting
+  http.Client Function() clientFactory = http.Client.new;
+
+  Timer? _firstCheck;
   Timer? _timer;
 
   /// Last whole percent pushed onto the bus; keeps the progress stream from
@@ -173,7 +179,7 @@ class UpdateManager extends Manager {
       );
     // Not immediately: at boot the network may still be settling, and the
     // check is never urgent.
-    Timer(const Duration(seconds: 20), () => unawaited(check()));
+    _firstCheck = Timer(const Duration(seconds: 20), () => unawaited(check()));
     _timer = Timer.periodic(
       const Duration(hours: 12),
       (_) => unawaited(check()),
@@ -182,20 +188,33 @@ class UpdateManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    _firstCheck?.cancel();
     _timer?.cancel();
   }
 
   /// Returns whether GitHub answered; the outcome itself lands in
   /// [available] either way.
   Future<bool> check() async {
+    final latest = await _fetchLatest();
+    if (!latest.reachable) return false;
+    available.value = latest.info;
+    return true;
+  }
+
+  /// Asks GitHub for the latest release. `reachable` is false when the query
+  /// itself failed (offline, rate limited, malformed release), which is the
+  /// case where the caller keeps what it already knew; `info` is null when
+  /// GitHub answered and the running version is already the latest.
+  Future<({bool reachable, UpdateInfo? info})> _fetchLatest() async {
+    final client = clientFactory();
     try {
-      final res = await http.get(
+      final res = await client.get(
         Uri.parse(_latestUrl),
         headers: const {'Accept': 'application/vnd.github+json'},
       );
       if (res.statusCode != 200) {
         log.warn(name, 'release check failed: HTTP ${res.statusCode}');
-        return false;
+        return (reachable: false, info: null);
       }
       final body = jsonDecode(res.body) as Map<String, dynamic>;
       final tag = (body['tag_name'] as String? ?? '').replaceFirst(
@@ -209,26 +228,30 @@ class UpdateManager extends Manager {
         orElse: () => const {},
       );
       final url = apk['browser_download_url'] as String?;
-      if (tag.isEmpty || url == null) return false;
+      if (tag.isEmpty || url == null) return (reachable: false, info: null);
       final newer = _isNewer(tag, _currentVersion);
       log.info(
         name,
         'latest release $tag, running $_currentVersion: '
         '${newer ? 'update available' : 'up to date'}',
       );
-      available.value = newer
-          ? UpdateInfo(
-              version: tag,
-              apkUrl: url,
-              notes: (body['body'] as String? ?? '').trim(),
-              releaseUrl: body['html_url'] as String? ??
-                  'https://github.com/jxlarrea/kiosk-satellite/releases',
-            )
-          : null;
-      return true;
+      return (
+        reachable: true,
+        info: newer
+            ? UpdateInfo(
+                version: tag,
+                apkUrl: url,
+                notes: (body['body'] as String? ?? '').trim(),
+                releaseUrl: body['html_url'] as String? ??
+                    'https://github.com/jxlarrea/kiosk-satellite/releases',
+              )
+            : null,
+      );
     } catch (e) {
       log.warn(name, 'release check failed: $e');
-      return false;
+      return (reachable: false, info: null);
+    } finally {
+      client.close();
     }
   }
 
@@ -268,11 +291,42 @@ class UpdateManager extends Manager {
   /// taken over (Android asks its own confirmation from there; on the first
   /// use it walks the user through the "install unknown apps" grant).
   Future<String?> downloadAndInstall() async {
-    final info = available.value;
+    var info = available.value;
     if (info == null || progress.value != null) return null;
     progress.value = 0;
-    final client = http.Client();
+    final client = clientFactory();
     try {
+      // The notice can be half a day old (the periodic check runs twice a
+      // day) and stays up until it is acted on, so a release cut in the
+      // meantime would install the version that was current when the notice
+      // appeared and leave another update waiting right behind it. Ask
+      // GitHub once more and take whatever is newest now; when GitHub cannot
+      // be reached the known release is still better than no update at all.
+      final latest = await _fetchLatest();
+      if (latest.reachable) {
+        final fresh = latest.info;
+        if (fresh == null) {
+          // The release the notice pointed at is gone (pulled or re-tagged)
+          // and nothing newer stands behind it: nothing to install.
+          log.info(
+            name,
+            'skipping the install: v${info.version} is no longer offered and '
+            '$_currentVersion is the latest release',
+          );
+          available.value = null;
+          return 'Already up to date. Version $_currentVersion is the latest '
+              'release.';
+        }
+        if (fresh.version != info.version) {
+          log.info(
+            name,
+            'v${fresh.version} was released since the update notice '
+            'appeared: installing that instead of v${info.version}',
+          );
+          available.value = fresh;
+          info = fresh;
+        }
+      }
       final res = await client.send(
         http.Request('GET', Uri.parse(info.apkUrl)),
       );
