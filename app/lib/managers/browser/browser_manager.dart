@@ -122,6 +122,20 @@ class BrowserManager extends Manager {
     // a content mode, or the Now Playing takeover).
     bus.on<ScreensaverStateChanged>().listen((e) {
       _screensaverActive = e.active;
+      // A page someone opened and walked away from gives way to the
+      // screensaver, exactly as an abandoned app launcher does: what
+      // returns when the screensaver lifts is the dashboard, not a
+      // stranger's half-browsed album page. It also stops that page
+      // rendering behind the screensaver, which the dashboard freeze
+      // cannot do for it (it hides the dashboard's origin, not this).
+      //
+      // Only the dismissible kind — a rotation excursion belongs to the
+      // rotation, which moves it along and pauses under the screensaver
+      // on its own.
+      if (e.active && overlayDismissible.value) {
+        log.info(name, 'screensaver takes over from the overlay page');
+        dismissOverlay();
+      }
       _scheduleFreezeSync();
     });
     bus.on<ScreensaverViewChanged>().listen((e) {

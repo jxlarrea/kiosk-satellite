@@ -19,12 +19,13 @@ void main() {
   late EventBus bus;
   late SettingsManager settings;
   late BrowserManager browser;
+  late CommandRegistry commands;
 
   Future<void> build(Map<String, Object> initial) async {
     SharedPreferences.setMockInitialValues(initial);
     bus = EventBus();
     final log = Logger();
-    final commands = CommandRegistry(log);
+    commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
     await settings.init();
     browser = BrowserManager(bus, commands, log, settings);
@@ -152,6 +153,39 @@ void main() {
       await pumpEventQueue();
       expect(browser.renderingFrozen, isFalse);
       expect(calls.last.arguments['hidden'], isFalse);
+    });
+
+    test('the screensaver takes over from a page someone left open, and '
+        'the dashboard is what comes back', () async {
+      await build({});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      browser.showLinkOverlay('https://music.local:8095/');
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pumpEventQueue();
+      expect(browser.overlayUrl.value, isNull);
+      // The page is gone, so the dashboard is uncovered again; freezing it
+      // is now the screensaver's own decision (its setting is off here).
+      expect(browser.renderingFrozen, isFalse);
+    });
+
+    test('a rotation excursion is left alone: the rotation owns it', () async {
+      await build({});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      await commands.execute(
+        'showOverlayPage',
+        {'url': 'https://weather.example/'},
+      );
+      bus.publish(const ScreensaverStateChanged(active: true));
+      // Past the freeze's paint delay, so the excursion's own freeze lands
+      // inside this test rather than in the next one.
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.overlayUrl.value, 'https://weather.example/');
+      expect(browser.renderingFrozen, isTrue);
+      browser.dismissOverlay();
+      await pumpEventQueue();
     });
 
     test('an overlay on the dashboard origin leaves it rendering (the '
