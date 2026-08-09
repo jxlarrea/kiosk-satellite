@@ -19,6 +19,7 @@ import '../managers/browser/ws_filter_script.dart';
 import '../managers/kiosk/app_link.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/proxy/media_rewrite_script.dart';
+import '../managers/sendspin/music_assistant_api.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'app_launcher_overlay.dart';
@@ -292,6 +293,15 @@ class _KioskScreenState extends State<KioskScreen>
           _drawer.value > 0) {
         _closeDrawer();
       }
+      return;
+    }
+    // The Music Assistant shortcut and the address it opens both decide
+    // whether the drawer offers the entry at all, and the drawer is built
+    // from here — so a flip in the remote admin shows up on the device
+    // without waiting for the next rebuild.
+    if (e.key == defs.sendspinMaShortcut.key ||
+        e.key == defs.sendspinMaUrl.key) {
+      setState(() {});
       return;
     }
     // The secure context proxy changes the page's ORIGIN and its media
@@ -1333,15 +1343,36 @@ class _OverlayHostState extends State<_OverlayHost> {
         }
         final kept = _lastUrl;
         if (kept == null) return const SizedBox.shrink();
+        // The Music Assistant page's own idle timeout: a wall tablet whose
+        // visitor queued a song and walked off belongs back on the
+        // dashboard. Always mounted (with 0 seconds standing for off) so
+        // the tree shape never changes underneath the live WebView; it
+        // counts only while this page is the one on screen.
         return Offstage(
           offstage: url == null,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
+          child: _IdleDismiss(
+            seconds: url != null &&
+                    isMusicAssistantOrigin(
+                      kept,
+                      c.settings.get(defs.sendspinMaUrl),
+                    )
+                ? c.settings.get(defs.sendspinMaAutoClose).toInt()
+                : 0,
+            onIdle: () {
+              c.browser.log.info(
+                'browser',
+                'Music Assistant page idle — back to the dashboard',
+              );
+              c.browser.dismissOverlay();
+            },
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
               _OverlayWebView(
                 url: kept,
                 key: ValueKey(kept),
                 paused: url == null,
+                container: c,
                 onRenderGone: () {
                   c.browser.log.warn(
                     'browser',
@@ -1374,12 +1405,89 @@ class _OverlayHostState extends State<_OverlayHost> {
                     ),
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
+}
+
+/// Dismisses what it wraps after [seconds] with no touch inside it, or
+/// never when [seconds] is zero.
+///
+/// A raw [Listener] rather than a gesture recognizer: the overlay's content
+/// is a platform view that claims the gestures it is given, while pointer
+/// events still travel the hit-test path through here — so the page keeps
+/// scrolling and tapping exactly as it did, and the timer merely watches.
+class _IdleDismiss extends StatefulWidget {
+  const _IdleDismiss({
+    required this.seconds,
+    required this.onIdle,
+    required this.child,
+  });
+
+  final int seconds;
+  final VoidCallback onIdle;
+  final Widget child;
+
+  @override
+  State<_IdleDismiss> createState() => _IdleDismissState();
+}
+
+class _IdleDismissState extends State<_IdleDismiss> {
+  Timer? _timer;
+
+  /// When the countdown last restarted. A drag delivers pointer moves by
+  /// the hundred; restarting a timer for each is waste, and one restart a
+  /// second is as precise as a timeout measured in seconds needs.
+  DateTime? _armedAt;
+
+  @override
+  void initState() {
+    super.initState();
+    _arm();
+  }
+
+  @override
+  void didUpdateWidget(_IdleDismiss old) {
+    super.didUpdateWidget(old);
+    // A page arriving or leaving, or the setting being changed from the
+    // remote admin while the page is up.
+    if (widget.seconds != old.seconds) _arm();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _arm() {
+    _timer?.cancel();
+    _armedAt = null;
+    if (widget.seconds <= 0) return;
+    _armedAt = DateTime.now();
+    _timer = Timer(Duration(seconds: widget.seconds), widget.onIdle);
+  }
+
+  void _touched() {
+    if (widget.seconds <= 0) return;
+    final armed = _armedAt;
+    if (armed != null &&
+        DateTime.now().difference(armed) < const Duration(seconds: 1)) {
+      return;
+    }
+    _arm();
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) => _touched(),
+    onPointerMove: (_) => _touched(),
+    child: widget.child,
+  );
 }
 
 /// A bare WebView for a rotation external page, layered over the dashboard.
@@ -1392,11 +1500,14 @@ class _OverlayWebView extends StatefulWidget {
   const _OverlayWebView({
     required this.url,
     required this.paused,
+    required this.container,
     this.onRenderGone,
     super.key,
   });
 
   final String url;
+
+  final AppContainer container;
 
   /// Offstage: the page is loaded but hidden. Pausing the WebView (per-view
   /// onPause, NOT the process-wide pauseTimers) stops its JS, animations and
@@ -1442,12 +1553,48 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
     });
   }
 
+  /// Signing the kiosk into Music Assistant with the token it already has.
+  ///
+  /// The Music Assistant web interface keeps its session as a JWT in
+  /// `ma_access_token`, and the long-lived token configured for lyrics is
+  /// exactly such a token — so handing it over at document start opens the
+  /// interface already signed in. Home Assistant's own credentials cannot
+  /// stand in for this: its authorize page mints a token per client and asks
+  /// for the password every time, dashboard session or not.
+  ///
+  /// Only for pages on the configured server, and only over a session this
+  /// seeding put there itself (remembered alongside it, so a token changed
+  /// in the settings replaces the stale one). A session someone signed into
+  /// by hand is left alone.
+  UnmodifiableListView<UserScript>? get _seedScripts {
+    final token = widget.container.settings.get(defs.sendspinMaToken).trim();
+    final server = widget.container.settings.get(defs.sendspinMaUrl);
+    if (token.isEmpty || !isMusicAssistantOrigin(widget.url, server)) {
+      return null;
+    }
+    return UnmodifiableListView([
+      UserScript(
+        source:
+            'try {'
+            'var t = ${jsonEncode(token)};'
+            'var cur = localStorage.getItem("ma_access_token");'
+            'if (!cur || cur === localStorage.getItem("ks_ma_seed")) {'
+            'localStorage.setItem("ma_access_token", t);'
+            'localStorage.setItem("ks_ma_seed", t);'
+            '}'
+            '} catch (e) {}',
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.black,
       child: InAppWebView(
         initialUrlRequest: URLRequest(url: WebUri(widget.url)),
+        initialUserScripts: _seedScripts,
         initialSettings: InAppWebViewSettings(
           useHybridComposition: true,
           transparentBackground: false,
@@ -1456,6 +1603,20 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
         onWebViewCreated: (controller) {
           _controller = controller;
           if (widget.paused) controller.pause();
+        },
+        // Same policy as the dashboard WebView: the pages that land here are
+        // local servers with certificates of their own making (Music
+        // Assistant's add-on generates one), and the address was typed by
+        // the owner on their own network.
+        onReceivedServerTrustAuthRequest: (controller, challenge) async {
+          if (widget.container.settings.get(defs.ignoreSslErrors)) {
+            return ServerTrustAuthResponse(
+              action: ServerTrustAuthResponseAction.PROCEED,
+            );
+          }
+          return ServerTrustAuthResponse(
+            action: ServerTrustAuthResponseAction.CANCEL,
+          );
         },
         onReceivedError: (controller, request, error) {
           if (request.isForMainFrame ?? true) _scheduleRetry();

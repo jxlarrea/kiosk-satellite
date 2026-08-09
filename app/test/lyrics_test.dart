@@ -188,4 +188,68 @@ void main() {
       expect(lyricsRetryArtist('/leading'), isNull);
     });
   });
+
+  group('musicAssistantWebUrl (the kiosk menu shortcut)', () {
+    test('an address as typed becomes an openable page', () {
+      expect(
+        musicAssistantWebUrl('https://192.168.1.10:8095'),
+        'https://192.168.1.10:8095',
+      );
+      expect(
+        musicAssistantWebUrl('http://music.local:8095'),
+        'http://music.local:8095',
+      );
+      // Trailing slashes and stray whitespace come from copy-paste.
+      expect(
+        musicAssistantWebUrl('  https://192.168.1.10:8095///  '),
+        'https://192.168.1.10:8095',
+      );
+    });
+
+    test('a bare host takes https, as the API does', () {
+      expect(musicAssistantWebUrl('192.168.1.10:8095'),
+          'https://192.168.1.10:8095');
+    });
+
+    test('a websocket address maps back to its http form', () {
+      expect(musicAssistantWebUrl('wss://192.168.1.10:8095'),
+          'https://192.168.1.10:8095');
+      expect(musicAssistantWebUrl('ws://192.168.1.10:8095'),
+          'http://192.168.1.10:8095');
+    });
+
+    test('no address means no shortcut', () {
+      expect(musicAssistantWebUrl(''), isNull);
+      expect(musicAssistantWebUrl('   '), isNull);
+      // Nothing to open: a scheme with no host is not an address.
+      expect(musicAssistantWebUrl('https://'), isNull);
+    });
+  });
+
+  group('isMusicAssistantOrigin (who gets handed the token)', () {
+    const server = 'https://192.168.1.10:8095';
+
+    test('any page on the configured server matches', () {
+      expect(isMusicAssistantOrigin('$server/', server), isTrue);
+      expect(
+        isMusicAssistantOrigin('$server/#/library', '192.168.1.10:8095'),
+        isTrue,
+      );
+    });
+
+    test('another host, port or scheme does not', () {
+      expect(isMusicAssistantOrigin('https://192.168.1.11:8095/', server),
+          isFalse);
+      expect(isMusicAssistantOrigin('https://192.168.1.10:8123/', server),
+          isFalse);
+      expect(
+        isMusicAssistantOrigin('http://192.168.1.10:8095/', server),
+        isFalse,
+      );
+    });
+
+    test('with no server configured, nothing matches', () {
+      expect(isMusicAssistantOrigin('https://192.168.1.10:8095/', ''), isFalse);
+    });
+  });
 }

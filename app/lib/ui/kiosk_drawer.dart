@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../app_container.dart';
+import '../managers/sendspin/music_assistant_api.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/update/update_manager.dart';
 import 'kit.dart';
@@ -42,6 +43,12 @@ class KioskDrawer extends StatelessWidget {
   final VoidCallback onSettings;
 
   AppContainer get c => container;
+
+  /// The Music Assistant web interface to offer, or null when the shortcut
+  /// is switched off or no server address has been set.
+  String? get _musicUrl => c.settings.get(defs.sendspinMaShortcut)
+      ? musicAssistantWebUrl(c.settings.get(defs.sendspinMaUrl))
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -187,6 +194,28 @@ class KioskDrawer extends StatelessWidget {
                                     () {
                                       onClose();
                                       c.camera.showView(view.id);
+                                    },
+                                  ),
+                              // Music Assistant's own web interface, over
+                              // the dashboard on the same surface a tapped
+                              // link gets — browsing, queueing and
+                              // playlists belong to the server that
+                              // already does all of it well. Shown only
+                              // once its address is configured (the same
+                              // one the lyrics use): an entry that can
+                              // only fail is worse than no entry.
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowMusic))
+                                if (_musicUrl case final url?)
+                                  _item(
+                                    context,
+                                    Icons.library_music_outlined,
+                                    'Music Assistant',
+                                    () {
+                                      onClose();
+                                      c.commands.execute('showLinkPage', {
+                                        'url': url,
+                                      });
                                     },
                                   ),
                               if (!restricted ||

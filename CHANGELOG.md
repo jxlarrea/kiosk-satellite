@@ -2,6 +2,16 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Music Assistant** entry in the kiosk menu, which opens the Music Assistant web interface over the dashboard: the full library, search, queue, playlists and radio, exactly as they are on a phone or a laptop. Closing it (or pressing back) reveals the dashboard still loaded underneath, with the voice session and the wake word untouched, because the page never left. It appears as soon as a server address is set under Sendspin, Music Assistant, and a new **Show in the kiosk menu** toggle there turns it off. In kiosk mode it is one of the Allowed Actions, so it can be offered in, or kept out of, the restricted quick-actions menu.
+- A **Close after inactivity** slider under the shortcut, 0 to 60 seconds and off by default: with no touch anywhere on the Music Assistant page for that long, it closes itself and the dashboard comes back. Made for the wall tablet whose visitor queues a song and walks away. Scrolling and tapping count as activity, so reading a long album page keeps it up, and the close button, the back button and a wake word still work as before.
+- The Music Assistant web interface opens already signed in, using the long-lived token configured for lyrics, so the shortcut is not a second login to get past every time. The token decides what the tablet can do there, so a read-only one browses but cannot queue. Signing in by hand still works and is left alone, and the token is only ever handed to pages on the configured server. Home Assistant's own login cannot stand in for it: Home Assistant mints a separate token per application and asks for the password each time one is granted, dashboard session or not.
+
+### Fixed
+- Pages shown over the dashboard (a tapped dashboard link, a view rotation's external page, a gesture's page) no longer fail to load from a server with a self-signed certificate while the dashboard itself loads fine. They now follow the same **Ignore SSL errors** setting the dashboard does.
+
 ## v2026.8.14 - 2026-08-08
 
 ### Added

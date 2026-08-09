@@ -10,6 +10,46 @@ String? lyricsRetryArtist(String artist) {
   return primary.isEmpty || primary == artist.trim() ? null : primary;
 }
 
+/// The browsable web interface behind the configured server address, or
+/// null when no address is set.
+///
+/// The same address the API uses, minus the protocol juggling: whatever the
+/// user typed is a host they can also open in a WebView, so a missing scheme
+/// becomes https (as with the API) and a websocket scheme is mapped back to
+/// the http one it was derived from.
+String? musicAssistantWebUrl(String raw) {
+  final trimmed = raw.trim().replaceAll(RegExp(r'/+$'), '');
+  if (trimmed.isEmpty) return null;
+  final withScheme = trimmed.startsWith('http') || trimmed.startsWith('ws')
+      ? trimmed
+      : 'https://$trimmed';
+  final uri = Uri.tryParse(withScheme);
+  if (uri == null || !uri.hasAuthority) return null;
+  return uri
+      .replace(
+        scheme: switch (uri.scheme) {
+          'ws' => 'http',
+          'wss' => 'https',
+          final other => other,
+        },
+      )
+      .toString();
+}
+
+/// Whether [url] is a page on the Music Assistant server configured as
+/// [serverAddress] — the test that decides whether a page gets handed this
+/// device's Music Assistant token.
+bool isMusicAssistantOrigin(String url, String serverAddress) {
+  final server = musicAssistantWebUrl(serverAddress);
+  if (server == null) return false;
+  final a = Uri.tryParse(url);
+  final b = Uri.parse(server);
+  return a != null &&
+      a.scheme == b.scheme &&
+      a.host == b.host &&
+      a.port == b.port;
+}
+
 /// A single request/response against Music Assistant's own API.
 ///
 /// Separate from the Sendspin connection on purpose: Sendspin is the player

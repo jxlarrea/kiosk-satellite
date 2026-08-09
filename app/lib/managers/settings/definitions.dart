@@ -626,6 +626,17 @@ const kioskAllowCamera = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
+const kioskAllowMusic = SettingDef<bool>(
+  key: 'kiosk.allow_music',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Music Assistant',
+  description: 'Open the Music Assistant web interface.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
 const kioskAllowScreensaver = SettingDef<bool>(
   key: 'kiosk.allow_screensaver',
   type: SettingType.boolean,
@@ -2798,13 +2809,52 @@ const sendspinMaToken = SettingDef<String>(
   title: 'Auth token',
   description:
       'A long-lived token from Music Assistant (Settings, then Users). '
-      'Read access is enough.',
+      'Read access is enough for lyrics; the kiosk menu shortcut opens '
+      'the web interface as whoever the token belongs to.',
   category: 'Sendspin',
   section: 'Music Assistant',
   // As with the Home Assistant token: masks the row on a wall-mounted
   // screen, and keeps the token out of a configuration export unless the
   // export was explicitly asked to carry secrets.
   secret: true,
+);
+
+/// The kiosk menu's way into Music Assistant itself (browsing, queueing,
+/// playlists). Deliberately not a player UI of our own: Music Assistant's
+/// web interface is already complete, already maintained, and already the
+/// one the household knows — the shortcut simply puts it a swipe away,
+/// over the dashboard, on the surface a tapped link would get.
+const sendspinMaShortcut = SettingDef<bool>(
+  key: 'sendspin.ma_shortcut',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show in the kiosk menu',
+  description:
+      "Add a Music Assistant entry to the kiosk menu, opening the server's "
+      'web interface over the dashboard. Needs the server address above.',
+  category: 'Sendspin',
+  section: 'Music Assistant',
+);
+
+/// A wall tablet's way back to the dashboard when whoever queued a song
+/// walked off: the dashboard is what the screen is for, and a Music
+/// Assistant page left open is a screen doing nothing. Zero keeps it up
+/// until someone closes it, which is right for a desk.
+const sendspinMaAutoClose = SettingDef<num>(
+  key: 'sendspin.ma_auto_close',
+  type: SettingType.number,
+  defaultValue: 0,
+  title: 'Close after inactivity',
+  description:
+      'Return to the dashboard when nobody has touched the Music Assistant '
+      'page for this long. Zero leaves it open until it is closed.',
+  category: 'Sendspin',
+  section: 'Music Assistant',
+  dependsOn: 'sendspin.ma_shortcut',
+  min: 0,
+  max: 60,
+  step: 5,
+  unit: 's',
 );
 
 const sendspinLyrics = SettingDef<bool>(
@@ -3038,6 +3088,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowDrawer,
   kioskAllowDashboard,
   kioskAllowCamera,
+  kioskAllowMusic,
   kioskAllowScreensaver,
   kioskAllowTheme,
   kioskAllowApps,
@@ -3200,6 +3251,8 @@ const List<SettingDef<Object>> allSettings = [
   sendspinClientId,
   sendspinMaUrl,
   sendspinMaToken,
+  sendspinMaShortcut,
+  sendspinMaAutoClose,
   sendspinLyrics,
   sendspinLyricsOffset,
   dlnaEnabled,

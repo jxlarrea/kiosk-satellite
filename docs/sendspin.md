@@ -39,14 +39,56 @@ own API, which is a separate address with its own token.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Server address | | The Music Assistant server's address as its web interface shows it, usually https on port 8095. A self-signed certificate is accepted. |
-| Auth token | | A long-lived token from Music Assistant, under Settings then Users. Read access is enough. |
+| Auth token | | A long-lived token from Music Assistant, under Settings then Users. Read access is enough for lyrics; the shortcut below browses as whoever the token belongs to. |
 | Validate connection | | Opens the API and authenticates, so a wrong port and a wrong token report differently. |
+| Show in the kiosk menu | on | The shortcut described below. |
+| Close after inactivity | 0s | Seconds without a touch on the Music Assistant page before it closes itself and the dashboard returns. Zero leaves it open until someone closes it. |
 | Show lyrics | off | Synced lyrics on the "Now Playing" screen, described below. |
 | Lyrics timing | +0.3s | Shifts the lyrics against the music. Positive shows each line earlier. |
 
 Music Assistant's Sendspin provider is built in and always enabled, and
 players register themselves on connection: there is nothing to add on the
 server side.
+
+## The Music Assistant shortcut
+
+With a server address set, a **Music Assistant** entry appears in the kiosk
+menu and opens the server's own web interface over the dashboard: the full
+library, search, queue, playlists and radio, exactly as they are on a phone
+or a laptop. Close it (or press back) and the dashboard is still there,
+loaded, with the voice session and the wake word untouched, because the page
+never left.
+
+The interface is Music Assistant's, not a copy of it, so browsing and
+queueing stay whatever the server's current version makes them. Playback
+itself needs nothing more than the Sendspin player above: queue to this
+device and it plays here.
+
+**Close after inactivity** puts the dashboard back on its own, for the wall
+tablet whose visitor queued a song and walked away: up to a minute without a
+touch anywhere on the Music Assistant page and it closes itself. Scrolling
+and tapping count, so reading a long album page keeps it up. At zero it
+stays until someone closes it, which is what a desk or a kitchen counter
+wants. Everything else that closes it works the same as ever: the close
+button, the back button, and a wake word.
+
+**No second sign-in.** Music Assistant keeps its own session, so the shortcut
+would land on its login screen every time storage is cleared. Instead the
+token above is handed to the page as it loads, and the interface opens
+already signed in, as the user that token belongs to. Give the token the
+rights that user should have on the tablet: a read-only token browses but
+cannot queue. Signing in by hand still works and is left alone when it
+happens, and the token is only ever given to pages on the configured server.
+
+Home Assistant's own login cannot stand in for it, even though the dashboard
+is signed in: Home Assistant mints a separate token per application and asks
+for the password each time one is granted.
+
+The server address alone is enough to show the entry; without a token the
+shortcut opens Music Assistant's login screen. Music Assistant's own
+certificate is accepted the same way the dashboard's is, through **Ignore SSL
+errors** in the Browser settings. In kiosk mode the entry follows **Allowed
+Actions**, where it can be left out of the restricted quick-actions menu.
 
 ## The floating media player
 

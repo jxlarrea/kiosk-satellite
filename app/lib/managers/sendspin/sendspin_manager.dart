@@ -297,6 +297,9 @@ class SendspinManager extends Manager {
         // the music it is tuned against.
         'sendspin.lyrics',
         'sendspin.lyrics_offset',
+        // A menu entry the kiosk drawer draws, and nothing the player does.
+        'sendspin.ma_shortcut',
+        'sendspin.ma_auto_close',
       ];
       final relevant =
           e.key.startsWith('sendspin.') &&
