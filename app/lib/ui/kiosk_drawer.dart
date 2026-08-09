@@ -209,7 +209,7 @@ class KioskDrawer extends StatelessWidget {
                                 if (_musicUrl case final url?)
                                   _item(
                                     context,
-                                    Icons.library_music_outlined,
+                                    'assets/svg/music-assistant.svg',
                                     'Music Assistant',
                                     () {
                                       onClose();
@@ -451,9 +451,13 @@ class KioskDrawer extends StatelessWidget {
   }
 
   /// One action row, same weight language as the settings rail.
+  /// One menu row. [icon] is a Material glyph, or the path of an SVG asset
+  /// for the entries that answer to a product rather than a feature — the
+  /// same rule the settings rail follows, drawn in the row's own color so a
+  /// product mark does not become the one colored thing in the menu.
   Widget _item(
     BuildContext context,
-    IconData icon,
+    Object icon,
     String label,
     VoidCallback onTap,
   ) {
@@ -467,7 +471,29 @@ class KioskDrawer extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Icon(icon, color: theme.colorScheme.onSurfaceVariant),
+              if (icon is String)
+                // Boxed to the glyph size so every label in the menu starts
+                // on the same line, whatever the mark's own proportions.
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: Center(
+                    child: SvgPicture.asset(
+                      icon,
+                      width: 22,
+                      height: 22,
+                      colorFilter: ColorFilter.mode(
+                        theme.colorScheme.onSurfaceVariant,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Icon(
+                  icon as IconData,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               const SizedBox(width: 16),
               Text(
                 label,
