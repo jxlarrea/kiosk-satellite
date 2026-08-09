@@ -136,5 +136,32 @@ void main() {
       expect(browser.renderingFrozen, isFalse);
       expect(calls.last.arguments['hidden'], isFalse);
     });
+
+    test('an overlay page freezes the dashboard, and dismissing it thaws '
+        'without the paint delay', () async {
+      await build({});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      browser.showLinkOverlay('https://music.local:8095/');
+      await pumpEventQueue();
+      // The overlay gets the same beat to paint as a screensaver does.
+      expect(browser.renderingFrozen, isFalse);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+
+      browser.dismissOverlay();
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls.last.arguments['hidden'], isFalse);
+    });
+
+    test('an overlay on the dashboard origin leaves it rendering (the '
+        'native side cannot tell the two views apart)', () async {
+      await build({});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      browser.showLinkOverlay('http://ha.local:8123/map');
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls, isEmpty);
+    });
   });
 }

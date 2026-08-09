@@ -80,6 +80,14 @@ up. WebView builds vary; if a dashboard ever comes back wrong after the
 screensaver, turn it off and please report what the device and Android
 version were.
 
+The same pause, with no setting of its own, runs whenever anything else
+covers the dashboard completely: the settings screen, a camera view, media
+pushed over DLNA, blackout lockdown, and a page shown over the dashboard
+(the Music Assistant shortcut, a tapped dashboard link, the view rotation's
+external pages). Those surfaces are always opaque, so there is nothing to
+decide. A page shown on Home Assistant's own address is the exception: the
+two are indistinguishable underneath, so the dashboard keeps drawing.
+
 ## Filter dashboard updates
 
 A dashboard subscribes to every entity in Home Assistant, and a large

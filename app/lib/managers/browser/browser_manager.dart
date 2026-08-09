@@ -128,6 +128,24 @@ class BrowserManager extends Manager {
       _dashboardCovered = e.view != null;
       _scheduleFreezeSync();
     });
+    // An overlay page is an opaque full-screen surface over the dashboard —
+    // a tapped link, a rotation excursion, the Music Assistant shortcut — so
+    // it reports itself like the camera view and DLNA media do and the
+    // dashboard stops compositing underneath it. The page on top gets the
+    // whole frame budget, and the page below keeps its timers, its socket
+    // and its JS: hiding the native view is not onPause.
+    //
+    // Not for an overlay on the dashboard's OWN origin: the native side
+    // finds views by URL prefix, so it cannot tell the two apart and would
+    // blank the overlay along with the page under it.
+    overlayUrl.addListener(() {
+      final url = overlayUrl.value;
+      final uri = url == null ? null : Uri.tryParse(url);
+      setCovered(
+        'overlay page',
+        covered: uri != null && uri.hasScheme && !isDashboardOrigin(uri),
+      );
+    });
     // The network came back from an outage: check what the page actually is
     // and repair it now, instead of leaving it to timers that may sit for
     // minutes (the HA shell's own retry countdown) or never fire at all (a
