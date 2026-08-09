@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.16 - 2026-08-09
+
+### Changed
+- The Sendspin Player settings page is now **Music Assistant**, wearing the server's own mark, and it opens on the Music Assistant group: the address, the token, the kiosk menu shortcut and lyrics. The player's own settings follow under a **Sendspin player** heading, unchanged. Home Assistant Configuration wears the Home Assistant mark for the same reason, since a page named after a product is easier to find by its logo than by a generic glyph.
+
+### Fixed
+- A page someone opened over the dashboard and walked away from now gives way to the screensaver, the way an abandoned app launcher already did, so what comes back when the screensaver lifts is the dashboard rather than a half-browsed Music Assistant page from hours ago. It also stops that page rendering behind the screensaver, which the dashboard's own pause could never do for it. Touching the page still counts as activity, so the screensaver never interrupts someone using it, and a view rotation's external page is left alone since the rotation moves it along itself.
+
 ## v2026.8.15 - 2026-08-09
 
 ### Added
@@ -10,11 +18,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - The Music Assistant web interface opens already signed in, using the long-lived token configured for lyrics, so the shortcut is not a second login to get past every time. The token decides what the tablet can do there, so a read-only one browses but cannot queue. Signing in by hand still works and is left alone, and the token is only ever handed to pages on the configured server. Home Assistant's own login cannot stand in for it: Home Assistant mints a separate token per application and asks for the password each time one is granted, dashboard session or not.
 
 ### Changed
-- The Sendspin Player settings page is now **Music Assistant**, wearing the server's own mark, and it opens on the Music Assistant group: the address, the token, the kiosk menu shortcut and lyrics. The player's own settings follow under a **Sendspin player** heading, unchanged. Home Assistant Configuration wears the Home Assistant mark for the same reason, since a page named after a product is easier to find by its logo than by a generic glyph.
 - A page shown over the dashboard (the Music Assistant shortcut, a tapped dashboard link, a view rotation's external page) now pauses the dashboard's rendering underneath it, the way the camera view, DLNA media and the settings screen already do, so the whole frame budget goes to the page on top instead of to a dashboard nobody can see. The dashboard keeps its Home Assistant connection, its timers and its scripts throughout, and is drawing again in the same frame the page is dismissed. A page on Home Assistant's own address is left out of this, since the two cannot be told apart underneath.
 
 ### Fixed
-- A page someone opened over the dashboard and walked away from now gives way to the screensaver, the way an abandoned app launcher already did, so what comes back when the screensaver lifts is the dashboard rather than a half-browsed Music Assistant page from hours ago. It also stops that page rendering behind the screensaver, which the dashboard's own pause could never do for it. Touching the page still counts as activity, so the screensaver never interrupts someone using it, and a view rotation's external page is left alone since the rotation moves it along itself.
 - Flipping a switch in the Remote Administration UI that reveals or hides other settings no longer rebuilds the whole page under it. The revealed rows now appear and disappear on their own, exactly where they belong, with nothing else on the page touched and no round trip to the device: until now every such switch re-read the entire configuration and redrew every tab, which re-ran the connection, permission and audio probes those tabs own and made the page jump. Switches that swap whole sections at once, such as the screensaver mode, still redraw as before, and so does anything that changes what the device reports back.
 - Pages shown over the dashboard (a tapped dashboard link, a view rotation's external page, a gesture's page) no longer fail to load from a server with a self-signed certificate while the dashboard itself loads fine. They now follow the same **Ignore SSL errors** setting the dashboard does.
 
