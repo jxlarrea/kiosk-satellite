@@ -1405,6 +1405,14 @@ class _CategoryContentState extends State<_CategoryContent> {
                     def: def,
                     onChanged: () => setState(() {}),
                   ),
+              // The capture channel of a multichannel microphone. Hand-built
+              // (its options run to the selected mic's channel count) and
+              // only with detection on, like the mic picker above.
+              if (container.settings.get(wakeWordEnabled))
+                SearchLandingTarget(
+                  id: micChannel.key,
+                  child: MicChannelTile(container: container),
+                ),
               // Live capture level under the gain it verifies. Only with
               // detection on: it reads the engine's telemetry, and with
               // detection off this app never opens the microphone.
@@ -3883,6 +3891,98 @@ class _AudioDeviceTileState extends State<AudioDeviceTile> {
       onChanged: (v) async {
         if (v == null) return;
         await c.settings.setFromJson(widget.def.key, v);
+        if (mounted) setState(() {});
+      },
+    );
+  }
+}
+
+/// The capture channel of a multichannel microphone, in the Microphone
+/// settings group. Hand-built because the option list is live hardware: the
+/// row only exists while the selected microphone reports more than one
+/// channel, and the options run to its count. Downmix (every channel
+/// averaged by the platform) is the default and the app's historical
+/// behavior; arrays like the reSpeaker XVF3800 reserve a channel for
+/// recognition engines, and picking it keeps the call-processed channel out
+/// of the wake models.
+class MicChannelTile extends StatefulWidget {
+  const MicChannelTile({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<MicChannelTile> createState() => _MicChannelTileState();
+}
+
+class _MicChannelTileState extends State<MicChannelTile> {
+  int _channels = 0; // of the selected mic; below 2 renders nothing
+
+  StreamSubscription<AudioDevicesChanged>? _hotplug;
+  StreamSubscription<SettingChanged>? _selection;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    // Both the hardware changing under the selection and the selection
+    // itself: the row follows whichever microphone capture would use now.
+    _hotplug = widget.container.bus.on<AudioDevicesChanged>().listen(
+      (_) => _load(),
+    );
+    _selection = widget.container.bus.on<SettingChanged>().listen((e) {
+      if (e.key == audioMicDevice.key) _load();
+    });
+  }
+
+  @override
+  void dispose() {
+    _hotplug?.cancel();
+    _selection?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final c = widget.container;
+    final selected = c.settings.get(audioMicDevice);
+    var channels = 0;
+    if (selected.isNotEmpty) {
+      final result = await c.commands.execute('getAudioDevices', const {});
+      final data = result.data;
+      final list = data is Map ? data['inputs'] : null;
+      if (list is List) {
+        for (final d in list) {
+          if (d is Map && '${d['selector']}' == selected) {
+            channels = (d['channels'] as num?)?.toInt() ?? 0;
+          }
+        }
+      }
+    }
+    if (!mounted) return;
+    setState(() => _channels = channels);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_channels < 2) return const SizedBox.shrink();
+    final c = widget.container;
+    final current = c.settings.get(micChannel).toInt();
+    final options = <(num, String)>[
+      (0, 'Downmix (default)'),
+      for (var i = 1; i <= _channels; i++) (i, 'Channel $i'),
+      // A stored channel beyond what the mic reports stays visible instead
+      // of masquerading as another option; capture falls back to the mono
+      // downmix until it is repicked.
+      if (current > _channels)
+        (current, 'Channel $current (not on this microphone)'),
+    ];
+    return DropdownRow<num>(
+      title: micChannel.title,
+      description: micChannel.description,
+      value: current,
+      options: options,
+      onChanged: (v) async {
+        if (v == null) return;
+        await c.settings.setFromJson(micChannel.key, v);
         if (mounted) setState(() {});
       },
     );

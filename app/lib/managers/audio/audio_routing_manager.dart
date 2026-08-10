@@ -69,7 +69,8 @@ class AudioRoutingManager extends Manager {
         _micDeviceId = await _resolveMicId();
       } else if (e.key == defs.micAudioSource.key ||
           e.key == defs.micGainDb.key ||
-          e.key == defs.micAgc.key) {
+          e.key == defs.micAgc.key ||
+          e.key == defs.micChannel.key) {
         // Same contract as the device selector above: the values must be
         // current before the wake-word manager reopens capture on this key.
         _pushCaptureTuning();
@@ -158,6 +159,7 @@ class AudioRoutingManager extends Manager {
     // A gain under an adaptive AGC is two controls on one number; the setting
     // is hidden in that state, so ignore whatever value it holds.
     NativeMic.gainDb = NativeMic.agc ? 0 : _settings.get(defs.micGainDb);
+    NativeMic.channel = _settings.get(defs.micChannel);
   }
 
   Future<void> _pushOutput(String selector) async {

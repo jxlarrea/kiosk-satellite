@@ -2,11 +2,13 @@
 
 Settings → Screen & Audio → **Microphone settings**.
 
-Three escape hatches for devices whose audio stack does not behave. Every
+Escape hatches for devices whose audio stack does not behave. Every
 default is what the app has always done, so an untouched install captures
 exactly as it did before these existed. Nothing here is a general improvement:
 each one trades something away, and on a device that already hears you well
-they will make detection worse.
+they will make detection worse. The one exception is the microphone channel,
+which on the right hardware is a genuine improvement; it appears only when
+that hardware is selected.
 
 ## When you need them
 
@@ -78,11 +80,35 @@ engines do no level compensation of their own, so audio arriving well below
 what a model was trained on lands in the wrong place regardless of how clean it
 is. Too much gain is worse than none, since clipped speech is distorted speech.
 
+## Microphone channel
+
+Only shown when the microphone selected under Audio Devices reports more than
+one channel. Most built-in microphones do not, so most devices never see this
+row.
+
+Multichannel USB microphones often put a differently processed signal on each
+channel. The reSpeaker XVF3800 is the motivating example: channel 1 carries
+its call output, tuned to sound good to a person on the other end of a call
+(noise suppression and automatic gain control), while channel 2 carries the
+same picked-up voice with a fixed gain and lighter processing, the output XMOS
+recommends for feeding recognition engines.
+
+- **Downmix** (default) lets Android average every channel together, which is
+  what the app has always done. On an array like the one above that mixes the
+  call-processed channel into the clean one.
+- **Channel N** feeds that channel alone to the wake word engine, the stop
+  word and speech to text.
+
+If a multichannel array underperforms on wake words, pick its recognition
+channel; on the XVF3800 that is channel 2. If a chosen channel cannot be
+opened (the array was swapped for a simpler microphone), capture falls back
+to the downmix rather than going silent.
+
 ## Notes
 
 - Changing any of these reopens the microphone. Detection stops for a moment
   and resumes on its own.
-- All three are applied when capture starts, so they are equally in force with
-  the screen off and while background listening is running.
+- All of them are applied when capture starts, so they are equally in force
+  with the screen off and while background listening is running.
 - The settings appear in the remote admin in the same place, under Voice
   Satellite.

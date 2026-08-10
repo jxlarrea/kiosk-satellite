@@ -74,8 +74,13 @@ object AudioRouting {
         val devices = am.getDevices(
             if (source) AudioManager.GET_DEVICES_INPUTS else AudioManager.GET_DEVICES_OUTPUTS,
         )
-        val rows = devices
-            .filter { selectable(it.type, source) }
+        val selectableDevices = devices.filter { selectable(it.type, source) }
+        // Channel count per selector, maxed across a device's profiles (they
+        // can disagree), for the capture channel picker; 0 = unreported.
+        val channelCounts = selectableDevices
+            .groupBy { "${it.type}|${it.address}|${it.productName}" }
+            .mapValues { (_, ds) -> ds.maxOf { d -> d.channelCounts.maxOrNull() ?: 0 } }
+        val rows = selectableDevices
             .map {
                 Triple("${it.type}|${it.address}|${it.productName}", label(it), it)
             }
@@ -92,7 +97,12 @@ object AudioRouting {
                 } else {
                     label
                 }
-            mapOf("selector" to selector, "label" to name, "type" to device.type)
+            mapOf(
+                "selector" to selector,
+                "label" to name,
+                "type" to device.type,
+                "channels" to (channelCounts[selector] ?: 0),
+            )
         }
     }
 

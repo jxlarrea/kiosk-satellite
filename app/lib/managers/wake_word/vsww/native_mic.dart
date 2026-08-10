@@ -21,12 +21,17 @@ class NativeMic {
   static num gainDb = 0;
   static bool agc = false;
 
+  /// 1-based channel of a multichannel microphone to capture; 0 lets the
+  /// platform downmix (which averages every channel together).
+  static num channel = 0;
+
   Stream<Uint8List> stream() => _channel
       .receiveBroadcastStream({
         if (deviceSelector.isNotEmpty) 'device': deviceSelector,
         'source': source,
         'gainDb': gainDb,
         'agc': agc,
+        'channel': channel,
       })
       .map((e) => e as Uint8List);
 }

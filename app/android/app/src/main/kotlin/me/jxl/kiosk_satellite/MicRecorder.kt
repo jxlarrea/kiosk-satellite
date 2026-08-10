@@ -49,6 +49,14 @@ import kotlin.math.max
  * it 20 dB down while a recorder app on plain MIC sounds fine. The defaults are
  * the behaviour described above; the overrides arrive as stream arguments,
  * which is why a change of any of them reopens capture.
+ *
+ * Channel selection: multichannel USB arrays put differently-processed
+ * signals on each channel (the reSpeaker XVF3800 sends its comms output on
+ * channel 1 and its raw ASR output on channel 2), and Android's stereo-to-
+ * mono contraction averages them, polluting the clean channel with the
+ * processed one. A `channel` argument of 1..N opens capture with a channel
+ * index mask wide enough to include it and forwards only that channel; 0 (the
+ * default) is the platform's mono downmix, the app's historical behavior.
  */
 class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.StreamHandler {
     companion object {
@@ -97,49 +105,65 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
 
     override fun onListen(arguments: Any?, sink: EventChannel.EventSink?) {
         if (sink == null || recording) return
-        val minBuf = AudioRecord.getMinBufferSize(
-            SAMPLE_RATE,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-        )
-        val bufSize = max(minBuf, CHUNK_BYTES * 4)
         val args = arguments as? Map<*, *>
         val source = audioSource(args?.get("source") as? String)
         val wantAgc = args?.get("agc") == true
         // A gain of 0 dB is the overwhelmingly common case, and a factor of
         // exactly 1 lets the read loop skip the sample walk entirely.
         val gain = gainFactor((args?.get("gainDb") as? Number)?.toDouble() ?: 0.0)
-        val rec = try {
-            AudioRecord(
-                source,
-                SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                bufSize,
-            )
+        val selector = args?.get("device") as? String
+        val wantChannel = (args?.get("channel") as? Number)?.toInt() ?: 0
+        // The mask must reach the chosen channel even when the device cannot
+        // be resolved right now (it may still appear by open time), and must
+        // cover the whole device when it can, so a 4-channel array does not
+        // get opened 2-wide and remapped underneath the selection.
+        val chans = if (wantChannel >= 1) {
+            val reported = AudioRouting.resolve(selector, source = true)
+                ?.channelCounts?.maxOrNull() ?: 0
+            maxOf(2, wantChannel, reported)
+        } else {
+            1
+        }
+        var rec = try {
+            openRecord(source, SAMPLE_RATE, chans)
         } catch (e: SecurityException) {
             mainHandler.post { sink.error("permission", "RECORD_AUDIO not granted", null) }
             return
         }
-        if (rec.state != AudioRecord.STATE_INITIALIZED) {
-            rec.release()
+        // A channel selection the device cannot satisfy (mic swapped for a
+        // mono one, a ROM that refuses index masks): capture beats silence,
+        // so fall back to the plain mono open rather than erroring out.
+        var openChans = chans
+        if (rec == null && chans > 1) {
+            Log.w(TAG, "$chans-channel capture failed to open; falling back to mono downmix")
+            openChans = 1
+            rec = try {
+                openRecord(source, SAMPLE_RATE, 1)
+            } catch (e: SecurityException) {
+                mainHandler.post { sink.error("permission", "RECORD_AUDIO not granted", null) }
+                return
+            }
+        }
+        val opened = rec ?: run {
             mainHandler.post { sink.error("init", "AudioRecord init failed", null) }
             return
         }
-        record = rec
-        val selector = args?.get("device") as? String
+        record = opened
         Log.i(
             TAG,
             "capture opening (device=${selector ?: "automatic"} " +
                 "source=${sourceName(source)} gain=${"%.1f".format(gainDbOf(gain))}dB " +
-                "agc=$wantAgc)",
+                "agc=$wantAgc" +
+                (if (openChans > 1) " channel=$wantChannel/$openChans" else "") + ")",
         )
-        applyPreferredDevice(rec, selector)
-        applyDsp(rec.audioSessionId, wantAgc)
+        applyPreferredDevice(opened, selector)
+        applyDsp(opened.audioSessionId, wantAgc)
         recording = true
-        rec.startRecording()
+        opened.startRecording()
+        val channelIdx = wantChannel - 1
         worker = thread(name = "vsww-mic") {
-            var cur = rec
+            var cur = opened
+            var chansNow = openChans
             var decimate = false
             var fellBack = false
             var announcedFallbackAudio = false
@@ -147,15 +171,24 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             // transient before going silent, so any single nonzero frame
             // must not disarm the watchdog for good.
             var zeroRun = 0L
-            var buf = ByteArray(CHUNK_BYTES)
+            var buf = ByteArray(CHUNK_BYTES * chansNow)
             while (recording) {
                 val read = cur.read(buf, 0, buf.size)
                 if (read <= 0) continue
-                if (allZero(buf, read)) {
-                    zeroRun += read
+                // Everything downstream - the watchdog included - listens to
+                // the selected channel: the array's other channels carrying
+                // audio is no consolation when the chosen one is dead.
+                val mono = if (chansNow > 1) extractChannel(buf, read, chansNow, channelIdx) else null
+                val monoLen = mono?.size ?: read
+                if (allZero(mono ?: buf, monoLen)) {
+                    zeroRun += monoLen
                     if (!fellBack && zeroRun >= SILENT_FALLBACK_BYTES) {
                         fellBack = true
-                        val next = openRecord(source, FALLBACK_RATE)
+                        val next = try {
+                            openRecord(source, FALLBACK_RATE, chansNow)
+                        } catch (_: SecurityException) {
+                            null
+                        }
                         if (next != null) {
                             Log.w(
                                 TAG,
@@ -178,7 +211,7 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                             record = next
                             decimate = true
                             zeroRun = 0
-                            buf = ByteArray(CHUNK_BYTES * 3)
+                            buf = ByteArray(CHUNK_BYTES * 3 * chansNow)
                             continue
                         }
                         Log.w(TAG, "silent capture and the $FALLBACK_RATE Hz fallback failed to open; keeping the silent capture")
@@ -190,7 +223,11 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
                         Log.i(TAG, "$FALLBACK_RATE Hz fallback capture is delivering audio")
                     }
                 }
-                val chunk = if (decimate) decimate3(buf, read) else buf.copyOf(read)
+                val chunk = when {
+                    decimate -> decimate3(mono ?: buf, monoLen)
+                    mono != null -> mono
+                    else -> buf.copyOf(read)
+                }
                 if (gain != 1.0) amplify(chunk, chunk.size, gain)
                 mainHandler.post {
                     if (recording) sink.success(chunk)
@@ -199,24 +236,40 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
         }
     }
 
-    /** Open a capture at the given rate, or null when it cannot be had. */
-    private fun openRecord(source: Int, rateHz: Int): AudioRecord? {
+    /**
+     * Open a capture at the given rate and channel count, or null when it
+     * cannot be had. Multichannel opens use a channel index mask (channels in
+     * wire order, no positional meaning) because that is what USB arrays
+     * are: numbered outputs, not a left and a right.
+     */
+    private fun openRecord(source: Int, rateHz: Int, channels: Int): AudioRecord? {
         val minBuf = AudioRecord.getMinBufferSize(
             rateHz,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
-        )
-        val chunk = CHUNK_BYTES * (rateHz / SAMPLE_RATE)
+        ) * channels
+        val chunk = CHUNK_BYTES * (rateHz / SAMPLE_RATE) * channels
+        val format = AudioFormat.Builder()
+            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+            .setSampleRate(rateHz)
+            .apply {
+                if (channels > 1) {
+                    setChannelIndexMask((1 shl channels) - 1)
+                } else {
+                    setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                }
+            }
+            .build()
         val rec = try {
-            AudioRecord(
-                source,
-                rateHz,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                max(minBuf, chunk * 4),
-            )
+            AudioRecord.Builder()
+                .setAudioSource(source)
+                .setAudioFormat(format)
+                .setBufferSizeInBytes(max(minBuf, chunk * 4))
+                .build()
+        } catch (e: SecurityException) {
+            throw e
         } catch (e: Exception) {
-            Log.w(TAG, "AudioRecord open at $rateHz Hz failed: ${e.message}")
+            Log.w(TAG, "AudioRecord open at $rateHz Hz x$channels failed: ${e.message}")
             return null
         }
         if (rec.state != AudioRecord.STATE_INITIALIZED) {
@@ -224,6 +277,32 @@ class MicRecorder(context: Context, messenger: BinaryMessenger) : EventChannel.S
             return null
         }
         return rec
+    }
+
+    /**
+     * One channel of an interleaved PCM16 buffer as a fresh mono buffer.
+     * [channelIdx] beyond the frame (stale selection, fallback-narrowed
+     * capture) clamps to the last channel rather than reading past the frame.
+     */
+    private fun extractChannel(
+        buf: ByteArray,
+        length: Int,
+        channels: Int,
+        channelIdx: Int,
+    ): ByteArray {
+        val idx = channelIdx.coerceIn(0, channels - 1)
+        val frames = length / 2 / channels
+        val out = ByteArray(frames * 2)
+        var si = idx * 2
+        var oi = 0
+        val stride = channels * 2
+        repeat(frames) {
+            out[oi] = buf[si]
+            out[oi + 1] = buf[si + 1]
+            si += stride
+            oi += 2
+        }
+        return out
     }
 
     private fun allZero(buf: ByteArray, length: Int): Boolean {

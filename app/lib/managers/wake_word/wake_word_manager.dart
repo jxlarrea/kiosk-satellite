@@ -486,9 +486,11 @@ class WakeWordManager extends Manager {
         _restartForMicChange('microphone selection changed');
       } else if (e.key == defs.micAudioSource.key ||
           e.key == defs.micGainDb.key ||
-          e.key == defs.micAgc.key) {
-        // Source, gain and AGC are all fixed when the capture session opens,
-        // so they land the same way the device selection does.
+          e.key == defs.micAgc.key ||
+          e.key == defs.micChannel.key) {
+        // Source, gain, AGC and the capture channel are all fixed when the
+        // capture session opens, so they land the same way the device
+        // selection does.
         _restartForMicChange('microphone settings changed');
       }
     });

@@ -3985,10 +3985,11 @@ async function loadSettings() {
           micCard.appendChild(gainRow);
         }
       }
-      // Live capture level under the gain it verifies - mirrors the
-      // device's Microphone settings row. Only with detection on: it
-      // reads the engine's telemetry, and with detection off the device
-      // never opens the microphone.
+      // The capture channel of a multichannel microphone, then the live
+      // capture level under the gain it verifies - mirroring the device's
+      // Microphone settings rows in that order. Only with detection on:
+      // with it off the device never opens the microphone.
+      if (wakeWordOn) await updateMicChannelRow();
       if (wakeWordOn) micCard.appendChild(micLevelRow());
     }
     // Microphone / speaker pickers, hand-built because their options are
@@ -5538,6 +5539,8 @@ function micLevelFraction(rms) {
 
 function micLevelRow() {
   const row = document.createElement('div'); row.className = 'row';
+  // Lets the capture channel row insert itself above this one on a re-run.
+  row.dataset.key = 'x:mic_level';
   const info = document.createElement('div'); info.className = 'info';
   info.innerHTML = `<div class="name"></div><div class="desc"></div>`;
   info.querySelector('.name').textContent = 'Microphone level';
@@ -5705,10 +5708,79 @@ async function appendAudioDeviceRows(card, wakeWordOn) {
       opt.selected = o.selector === spec.current;
       sel.appendChild(opt);
     }
-    sel.addEventListener('change', () =>
-      api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [spec.key]: sel.value }) }));
+    sel.addEventListener('change', async () => {
+      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [spec.key]: sel.value }) });
+      const cached = (state.settings || []).find((o) => o.key === spec.key);
+      if (cached) cached.value = sel.value;
+      // The capture channel row exists only under a multichannel mic, so it
+      // follows the selection in place, like the device's row does.
+      if (spec.key === 'audio.mic_device') await updateMicChannelRow();
+    });
     row.appendChild(sel);
     card.appendChild(row);
+  }
+}
+
+// The capture channel of a multichannel microphone, mirroring the device's
+// hand-built row in the Microphone settings card: only while the selected
+// microphone reports more than one channel, with options Downmix plus
+// Channel 1..N to its count. The value is 'audio.mic_channel' (a number,
+// 0 = the platform's every-channel downmix, the historical behavior); the
+// title and wording come from the hidden definition so the two UIs cannot
+// drift. Re-run after a microphone selection change.
+async function updateMicChannelRow() {
+  const root = document.getElementById('tab-screenaudio');
+  const micCard = root && [...root.querySelectorAll('.card')]
+    .find((c) => c.querySelector('[data-key="audio.mic_source"]'));
+  if (!micCard) return;
+  const old = micCard.querySelector('[data-key="audio.mic_channel"]');
+  const setting = (state.settings || []).find((o) => o.key === 'audio.mic_channel');
+  const selected = (state.settings || [])
+    .find((o) => o.key === 'audio.mic_device')?.value || '';
+  let channels = 0;
+  if (setting && selected) {
+    try {
+      const r = await cmd('getAudioDevices');
+      if (r.ok) {
+        const hit = (r.data.inputs || []).find((d) => d.selector === selected);
+        channels = Number(hit?.channels) || 0;
+      }
+    } catch (_) {}
+  }
+  if (channels < 2) { old?.remove(); return; }
+  const row = readOnlyRow(setting.title, setting.description, '');
+  row.querySelector('span').remove();
+  row.dataset.key = 'audio.mic_channel';
+  const current = Number(setting.value) || 0;
+  const opts = [[0, 'Downmix (default)']];
+  for (let i = 1; i <= channels; i++) opts.push([i, `Channel ${i}`]);
+  // A stored channel beyond what the mic reports stays visible instead of
+  // masquerading as another option; capture falls back to the mono downmix
+  // until it is repicked.
+  if (current > channels) {
+    opts.push([current, `Channel ${current} (not on this microphone)`]);
+  }
+  const sel = document.createElement('select');
+  for (const [v, label] of opts) {
+    const opt = document.createElement('option');
+    opt.value = String(v);
+    opt.textContent = label;
+    opt.selected = v === current;
+    sel.appendChild(opt);
+  }
+  sel.addEventListener('change', async () => {
+    const value = Number(sel.value) || 0;
+    await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ 'audio.mic_channel': value }) });
+    setting.value = value;
+  });
+  row.appendChild(sel);
+  if (old) {
+    old.replaceWith(row);
+  } else {
+    // The device's place for it: after the gain, before the level meter.
+    const level = micCard.querySelector('[data-key="x:mic_level"]');
+    if (level) level.before(row);
+    else micCard.appendChild(row);
   }
 }
 // The navigation path of a view within a dashboard: "url_path/route", or

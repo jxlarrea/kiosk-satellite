@@ -2099,6 +2099,28 @@ const micAudioSource = SettingDef<String>(
   section: 'Microphone settings',
 );
 
+// Hidden: rendered as a hand-built dropdown (device settings screen and the
+// remote UI both) because its options depend on live hardware - the row only
+// exists when the selected microphone reports more than one channel, and the
+// option list runs to that count. Multichannel arrays put differently
+// processed signals on each channel (the reSpeaker XVF3800 sends its
+// call-tuned output on channel 1 and its raw ASR output on channel 2, the one
+// its docs recommend for recognition engines), while Android's default mono
+// capture averages them all together. 0 = that downmix (the app's historical
+// behavior), 1..N = listen to that channel alone.
+const micChannel = SettingDef<num>(
+  key: 'audio.mic_channel',
+  type: SettingType.number,
+  defaultValue: 0,
+  title: 'Microphone channel',
+  description:
+      'Multichannel microphones often reserve one channel for speech '
+      'recognition; picking it can improve detection.',
+  category: 'Screen & Audio',
+  section: 'Microphone settings',
+  hidden: true,
+);
+
 const micAgc = SettingDef<bool>(
   key: 'audio.mic_agc',
   type: SettingType.boolean,
@@ -3127,6 +3149,9 @@ const List<SettingDef<Object>> allSettings = [
   micAudioSource,
   micAgc,
   micGainDb,
+  // Hand-built row: renders after the gain in both UIs, and only when the
+  // selected microphone reports more than one channel.
+  micChannel,
   screensaverEnabled,
   screensaverTimeoutSeconds,
   // The separate brightness applies to every content mode, so it lives with

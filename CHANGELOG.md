@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Microphone channel** setting under Microphone settings, shown only when the selected microphone reports more than one channel. Multichannel USB arrays often reserve a channel for recognition engines: on the reSpeaker XVF3800, channel 1 carries the call-tuned output (noise suppression, automatic gain control) while channel 2 carries the same voice with lighter processing, the one its maker recommends for wake word and speech recognition. Android's mono capture averages every channel together, mixing the processed channel into the clean one; picking a channel feeds it alone to wake word detection, the stop word and speech to text. Downmix stays the default, the remote admin carries the row in the same place, and a channel the microphone cannot deliver falls back to the downmix rather than going silent.
+
 ## v2026.8.18 - 2026-08-09
 
 ### Added
