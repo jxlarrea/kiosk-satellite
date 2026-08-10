@@ -461,6 +461,7 @@ class SendspinManager extends Manager {
         'clientId': clientId,
         'preferredCodec': _settings.get(defs.sendspinCodec),
         'syncOffsetMs': _settings.get(defs.sendspinSyncOffset).toInt(),
+        'engine': _settings.get(defs.sendspinEngine),
       });
       _running = true;
       log.info(name, 'player started as "$playerName"');

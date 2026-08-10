@@ -40,6 +40,20 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        externalNativeBuild {
+            cmake {
+                arguments("-DANDROID_STL=c++_static")
+            }
+        }
+    }
+
+    // Native SendSpin engine (sendspin-cpp + JNI bridge).
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 
     signingConfigs {
@@ -61,6 +75,9 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // Only ADDS the JNI keep rules; the R8 baseline the Flutter
+            // plugin configures stays as it was.
+            proguardFiles("proguard-rules.pro")
         }
         // Same signing as release so a profile build installs OVER the
         // release app (keeping its data) when profiling on a test device.

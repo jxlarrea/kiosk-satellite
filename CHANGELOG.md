@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Playback engine** setting on the Music Assistant page. Classic is the player Kiosk Satellite has always shipped; Native (experimental) runs the Sendspin reference engine, sendspin-cpp, the same implementation behind ESPHome speakers, with Kiosk Satellite providing only the Android audio output around it. The two differ most on devices whose audio hardware misreports its own playback clock (the Meta Portal of issue #163): Classic measures sync against that clock and restarts the stream when the numbers look wrong, which on such hardware loops forever, while Native paces itself by playback feedback that a broken clock can only slow down, never poison, and corrects drift with single-frame adjustments that cannot be heard. Everything around the player is unchanged whichever engine is selected: same server and codec settings, floating player, lyrics, ducking, volume and MQTT surfaces.
+
 ## v2026.8.19 - 2026-08-10
 
 ### Added

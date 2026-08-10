@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import me.jxl.kiosk_satellite.sendspin.NativeSendspinSession
 import me.jxl.kiosk_satellite.sendspin.PlaybackState
 import me.jxl.kiosk_satellite.sendspin.SendSpin
 import me.jxl.kiosk_satellite.sendspin.SyncAudioPlayer
@@ -115,6 +116,11 @@ class SendspinBridge(
     @Volatile private var decoder: AudioDecoder? = null
     @Volatile private var autoDiscovery: NsdDiscoveryManager? = null
 
+    // The alternative engine: sendspin-cpp behind a JNI shell. Exactly one of
+    // client/nativeSession is non-null per session, decided by the
+    // sendspin.engine setting at start.
+    @Volatile private var nativeSession: NativeSendspinSession? = null
+
     @Volatile private var started = false
     @Volatile private var discoveryMode = false
 
@@ -168,7 +174,8 @@ class SendspinBridge(
                     if (!started) return@post
                     Log.i(TAG, "Network available - nudging Sendspin recovery")
                     client?.onNetworkAvailable()
-                    if (discoveryMode && client?.isConnected != true) {
+                    nativeSession?.onNetworkAvailable()
+                    if (discoveryMode && !engineConnected()) {
                         // Recycle the browse now rather than at the next
                         // 10-minute tick; a wedged NSD browse cannot see the
                         // server that just became reachable.
@@ -199,7 +206,7 @@ class SendspinBridge(
 
     private val discoveryRestart: Runnable = object : Runnable {
         override fun run() {
-            if (started && discoveryMode && client?.isConnected != true) {
+            if (started && discoveryMode && !engineConnected()) {
                 // Recycle any existing browse rather than trusting it:
                 // Android's NSD can wedge silently after a wifi drop (no
                 // callbacks, no error), and startAutoDiscovery's null guard
@@ -316,7 +323,8 @@ class SendspinBridge(
                     val preferredCodec =
                         (call.argument<String>("preferredCodec") ?: "flac").lowercase()
                     syncOffsetMs = (call.argument<Number>("syncOffsetMs") ?: 0).toLong()
-                    startSession(serverUrl, playerName, clientId, preferredCodec)
+                    val engine = call.argument<String>("engine") ?: "classic"
+                    startSession(serverUrl, playerName, clientId, preferredCodec, engine)
                     result.success(true)
                 }
                 // Applied live, no session restart: a slider being tuned by
@@ -324,6 +332,7 @@ class SendspinBridge(
                 "setSyncOffset" -> {
                     syncOffsetMs = (call.argument<Number>("ms") ?: 0).toLong()
                     player?.setPlaybackOffsetMs(syncOffsetMs)
+                    nativeSession?.setSyncOffset(syncOffsetMs)
                     result.success(true)
                 }
                 "stop" -> {
@@ -340,6 +349,7 @@ class SendspinBridge(
                     val factor = call.argument<Number>("factor")?.toFloat() ?: 1f
                     duckFactor = factor.coerceIn(0f, 1f)
                     player?.duckFactor = duckFactor
+                    nativeSession?.setDuckFactor(duckFactor)
                     result.success(true)
                 }
                 "control" -> {
@@ -349,6 +359,7 @@ class SendspinBridge(
                         (allowed.isEmpty() || command in allowed)
                     ) {
                         client?.sendControllerCommand(command)
+                        nativeSession?.sendCommand(command)
                         result.success(true)
                     } else {
                         result.success(false)
@@ -362,6 +373,7 @@ class SendspinBridge(
         // no matter which surface moved it.
         VolumeController.addListener {
             player?.setVolume(VolumeController.mediaGain)
+            nativeSession?.setMediaGain(VolumeController.mediaGain)
             if (started) publishVolumeIfChanged()
         }
     }
@@ -375,21 +387,40 @@ class SendspinBridge(
         playerName: String,
         clientId: String,
         preferredCodec: String,
+        engine: String,
     ) {
         if (started) stopSession()
         started = true
 
-        val newClient = SendSpin(
-            deviceName = playerName,
-            clientId = clientId,
-            preferredCodec = preferredCodec,
-            softwareVersion = versionName,
-            callback = ClientCallback(),
-        )
-        newClient.setInitialVolume(deviceVolumePct(), deviceMuted())
-        lastReportedVolume = deviceVolumePct()
-        lastReportedMuted = deviceMuted()
-        client = newClient
+        if (engine == "native") {
+            val session = NativeSendspinSession(
+                context = context,
+                playerName = playerName,
+                clientId = clientId,
+                preferredCodec = preferredCodec,
+                softwareVersion = versionName,
+                initialSyncOffsetMs = syncOffsetMs,
+                initialDuckFactor = duckFactor,
+                initialMediaGain = VolumeController.mediaGain,
+                events = NativeEngineEvents(),
+            )
+            session.publishVolume(deviceVolumePct(), deviceMuted())
+            lastReportedVolume = deviceVolumePct()
+            lastReportedMuted = deviceMuted()
+            nativeSession = session
+        } else {
+            val newClient = SendSpin(
+                deviceName = playerName,
+                clientId = clientId,
+                preferredCodec = preferredCodec,
+                softwareVersion = versionName,
+                callback = ClientCallback(),
+            )
+            newClient.setInitialVolume(deviceVolumePct(), deviceMuted())
+            lastReportedVolume = deviceVolumePct()
+            lastReportedMuted = deviceMuted()
+            client = newClient
+        }
 
         if (serverUrl.isNullOrBlank()) {
             discoveryMode = true
@@ -401,10 +432,20 @@ class SendspinBridge(
             discoveryMode = false
             val (address, path) = parseServerUrl(serverUrl)
             Log.i(TAG, "start: connecting to $address$path")
-            newClient.connect(address, path)
+            connectEngine(address, path)
         }
 
         registerNetworkCallback()
+    }
+
+    /** True when whichever engine is active has a live server connection. */
+    private fun engineConnected(): Boolean =
+        client?.isConnected == true || nativeSession?.isConnected == true
+
+    /** Route a resolved server address to whichever engine is active. */
+    private fun connectEngine(address: String, path: String) {
+        client?.connect(address, path)
+        nativeSession?.connect("ws://$address$path")
     }
 
     private fun stopSession() {
@@ -419,6 +460,8 @@ class SendspinBridge(
         // Goodbye + disconnect + release, in dependency order.
         client?.destroy()
         client = null
+        nativeSession?.destroy()
+        nativeSession = null
 
         synchronized(pipelineLock) {
             player?.release()
@@ -473,7 +516,7 @@ class SendspinBridge(
     private fun startAutoDiscovery() {
         mainHandler.post {
             if (!started || !discoveryMode || autoDiscovery != null) return@post
-            if (client?.isConnected == true) return@post
+            if (engineConnected()) return@post
 
             val manager = NsdDiscoveryManager(
                 context,
@@ -493,7 +536,7 @@ class SendspinBridge(
                             val address =
                                 if (host.contains(":")) "[$host]:$port" else "$host:$port"
                             Log.i(TAG, "Discovery: connecting to '$friendlyName' at $address$path")
-                            client?.connect(address, path)
+                            connectEngine(address, path)
                         }
                     }
 
@@ -596,6 +639,7 @@ class SendspinBridge(
         lastReportedMuted = muted
         client?.setInitialVolume(vol, muted)
         client?.sendClientStateSnapshot()
+        nativeSession?.publishVolume(vol, muted)
         emit("volumeChanged", mapOf("volume" to vol, "muted" to muted))
     }
 
@@ -614,7 +658,8 @@ class SendspinBridge(
                 "connected" to connected,
                 "serverName" to serverName,
                 "playbackState" to playbackState,
-                "synced" to (client?.isSynchronized() ?: false),
+                "synced" to (client?.isSynchronized()
+                    ?: nativeSession?.isTimeSynced ?: false),
             ),
         )
     }
@@ -639,10 +684,10 @@ class SendspinBridge(
         "album" to album,
         "volume" to deviceVolumePct(),
         "muted" to deviceMuted(),
-        "synced" to (client?.isSynchronized() ?: false),
+        "synced" to (client?.isSynchronized() ?: nativeSession?.isTimeSynced ?: false),
         // Pipeline health, for diagnosing stutter reports (issue #59)
         // without an adb cable: every counter that marks lost audio.
-        "stats" to player?.getStats()?.let { s ->
+        "stats" to (nativeSession?.buildStats() ?: player?.getStats()?.let { s ->
             mapOf(
                 "chunksReceived" to s.chunksReceived,
                 "chunksPlayed" to s.chunksPlayed,
@@ -657,7 +702,7 @@ class SendspinBridge(
                 "decoderInputDropped" to (decoder?.inputFramesDropped ?: 0L),
                 "decodeQueueDrops" to decodeQueueDrops.get(),
             )
-        },
+        }),
     )
 
     // ==================================================================
@@ -954,6 +999,85 @@ class SendspinBridge(
             this@SendspinBridge.supportedCommands = supportedCommands
             emit("controllerChanged",
                 mapOf("supportedCommands" to supportedCommands))
+        }
+    }
+
+    // ==================================================================
+    // Native engine events
+    // ==================================================================
+
+    /**
+     * Maps [NativeSendspinSession.Events] onto the same bridge mirrors and
+     * Dart emissions [ClientCallback] feeds, so both engines look identical
+     * from Flutter. Position needs none of the classic base-pairing: the
+     * native library interpolates track progress itself and holds metadata
+     * deliveries to their server timestamps.
+     */
+    private inner class NativeEngineEvents : NativeSendspinSession.Events {
+
+        override fun onConnectionChanged(connected: Boolean, serverName: String?) {
+            this@SendspinBridge.connected = connected
+            if (connected) {
+                if (serverName != null) this@SendspinBridge.serverName = serverName
+                mainHandler.removeCallbacks(discoveryRestart)
+            } else if (started && discoveryMode) {
+                scheduleDiscoveryRestart()
+            }
+            emitState()
+        }
+
+        override fun onPlaybackStateChanged(state: String?) {
+            playbackState = state
+            recomputePlaying()
+            emitState()
+        }
+
+        override fun onMetadata(
+            title: String?,
+            artist: String?,
+            album: String?,
+            artworkUrl: String?,
+            positionMs: Long,
+            durationMs: Long,
+        ) {
+            this@SendspinBridge.title = title
+            this@SendspinBridge.artist = artist
+            this@SendspinBridge.album = album
+            emit(
+                "metadataChanged",
+                buildMap {
+                    put("title", title ?: "")
+                    put("artist", artist ?: "")
+                    put("album", album ?: "")
+                    put("artworkUrl", artworkUrl ?: "")
+                    if (positionMs >= 0) put("positionMs", positionMs)
+                    if (durationMs >= 0) put("durationMs", durationMs)
+                },
+            )
+        }
+
+        override fun onPositionUpdate(positionMs: Long) {
+            emit("metadataChanged", mapOf("positionMs" to positionMs))
+        }
+
+        override fun onServerVolume(volume: Int) {
+            setDeviceVolumePct(volume)
+            publishVolumeIfChanged()
+        }
+
+        override fun onServerMuted(muted: Boolean) {
+            setDeviceMuted(muted)
+            publishVolumeIfChanged()
+        }
+
+        override fun onSupportedCommands(commands: List<String>) {
+            supportedCommands = commands
+            emit("controllerChanged", mapOf("supportedCommands" to commands))
+        }
+
+        override fun onStreamActiveChanged(active: Boolean) {
+            streamActive = active
+            recomputePlaying()
         }
     }
 }
