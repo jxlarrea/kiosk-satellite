@@ -267,6 +267,19 @@ class NativeAudioOutput {
         }
     }
 
+    /** Total frames handed to the AudioTrack this stream, for diagnostics. */
+    fun totalFramesWritten(): Long = framesWritten.get()
+
+    /** The platform's underrun counter for the live track, for diagnostics. */
+    fun underrunCount(): Int = try {
+        track?.underrunCount ?: 0
+    } catch (_: Exception) {
+        0
+    }
+
+    /** The measured write-to-speaker latency, for diagnostics. */
+    fun sinkLatencyMs(): Long = sinkLatencyUs / 1000
+
     fun setMediaGain(gain: Float) {
         mediaGain = gain.coerceIn(0f, 1f)
         applyGain()

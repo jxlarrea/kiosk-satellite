@@ -221,6 +221,9 @@ class NativeSendspinSession(
     fun buildStats(): Map<String, Any?> = mapOf(
         "engine" to "native",
         "outputQueueMs" to output.outputQueueMs(),
+        "framesWritten" to output.totalFramesWritten(),
+        "audioTrackUnderruns" to output.underrunCount(),
+        "sinkLatencyMs" to output.sinkLatencyMs(),
         "timeSynced" to isTimeSynced,
         "progressMs" to trackProgressMs,
     )

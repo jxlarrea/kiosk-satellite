@@ -2685,24 +2685,6 @@ const sendspinCodec = SettingDef<String>(
   dependsOn: 'sendspin.enabled',
 );
 
-const sendspinEngine = SettingDef<String>(
-  key: 'sendspin.engine',
-  type: SettingType.select,
-  defaultValue: 'classic',
-  title: 'Playback engine',
-  description:
-      'Native uses the Sendspin reference engine and can hold sync on '
-      'devices where Classic cannot.',
-  category: 'Sendspin',
-  section: 'Sendspin player',
-  options: ['classic', 'native'],
-  optionLabels: {
-    'classic': 'Classic',
-    'native': 'Native (experimental)',
-  },
-  dependsOn: 'sendspin.enabled',
-);
-
 const sendspinShowPlayer = SettingDef<bool>(
   key: 'sendspin.show_player',
   type: SettingType.boolean,
@@ -3302,7 +3284,6 @@ const List<SettingDef<Object>> allSettings = [
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
-  sendspinEngine,
   sendspinSyncOffset,
   sendspinDuckPercent,
   sendspinShowPlayer,
