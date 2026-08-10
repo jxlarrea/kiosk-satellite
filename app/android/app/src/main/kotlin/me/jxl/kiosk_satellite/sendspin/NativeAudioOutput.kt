@@ -56,6 +56,20 @@ class NativeAudioOutput {
     private var headWraps = 0L
     private var lastReportedFrames = 0L
 
+    @Volatile private var halBufferUs = 0L
+
+    // Position-reference latch. The reference is chosen once per stream and
+    // never flipped mid-stream: on devices whose getTimestamp is
+    // intermittent (SM-X710) or mixer-referenced (Echo Show 8), every
+    // reference flip is a ~90ms step in the reported timeline that the
+    // library audibly corrects. A constant offset, by contrast, costs one
+    // correction at stream start and then stays consistent.
+    private var refDecided = false
+    private var refIsTimestamp = false
+    private var refFramePosition = 0L
+    private var refNanoTime = 0L
+    private var pollsWithoutTimestamp = 0
+
     @Volatile private var mediaGain = 1f
     @Volatile private var duckGain = 1f
     @Volatile private var softStartBeganMs = 0L
@@ -112,6 +126,7 @@ class NativeAudioOutput {
             val multiplier = if (minBufMs > DEEP_BUFFER_THRESHOLD_MS) 2 else 4
             val floorBytes = sampleRate * BUFFER_FLOOR_MS / 1000 * frameBytes
             val bufferBytes = maxOf(minBuf * multiplier, floorBytes)
+            halBufferUs = minBufMs * 1000
 
             val newTrack = try {
                 AudioTrack(
@@ -211,18 +226,31 @@ class NativeAudioOutput {
         return consumed
     }
 
+    class Progress(
+        /** Frames presented since the previous poll, clamped non-negative. */
+        @JvmField val frames: Long,
+        /**
+         * Microseconds until those frames actually exit the DAC: the HAL
+         * buffer depth, since the count is taken at the mixer head, which
+         * leads the speaker by exactly that. Without it the library sees a
+         * phantom lead and audibly corrects it every few seconds.
+         */
+        @JvmField val finishBiasUs: Long,
+    )
+
     /**
      * Frames presented since the previous call, clamped non-negative.
-     * Returns 0 when the position source reports nothing new (including a
-     * frozen or retrograde HAL timestamp).
+     * Returns null when the position source reports nothing new (including
+     * a frozen or retrograde HAL timestamp).
      */
-    fun takePresentedFramesDelta(): Long {
+    fun takePresentedFramesDelta(): Progress? {
         synchronized(lock) {
-            if (!started) return 0
+            if (!started) return null
             val presented = presentedFramesLocked()
             val delta = (presented - lastReportedFrames).coerceAtLeast(0)
-            if (delta > 0) lastReportedFrames = presented
-            return delta
+            if (delta <= 0) return null
+            lastReportedFrames = presented
+            return Progress(delta, if (refIsTimestamp) 0L else halBufferUs)
         }
     }
 
@@ -274,16 +302,36 @@ class NativeAudioOutput {
         val t = track ?: return 0
         if (t.state != AudioTrack.STATE_INITIALIZED) return 0
 
-        val ts = AudioTimestamp()
-        if (t.getTimestamp(ts) && ts.nanoTime != 0L) {
-            val elapsedNs = (System.nanoTime() - ts.nanoTime).coerceAtLeast(0)
-            val extrapolated = elapsedNs * sampleRate / 1_000_000_000L
-            val fromTimestamp = ts.framePosition + extrapolated
-            // A HAL timestamp can freeze while the software head keeps
-            // advancing (issue #106/#163 hardware); take whichever source
-            // has made more progress so a wedged clock cannot stall the
-            // feedback. Both only ever move forward through the wrap guard.
-            return maxOf(fromTimestamp, headPositionLocked())
+        val nowNs = System.nanoTime()
+        if (!refDecided || refIsTimestamp) {
+            val ts = AudioTimestamp()
+            if (t.getTimestamp(ts) && ts.nanoTime != 0L) {
+                // Fresh timestamp: latch it as the reference (first success
+                // decides the mode for the whole stream).
+                refDecided = true
+                refIsTimestamp = true
+                refFramePosition = ts.framePosition
+                refNanoTime = ts.nanoTime
+            } else if (!refDecided && ++pollsWithoutTimestamp > 100) {
+                // ~0.5s of polls with no timestamp: this device does not do
+                // timestamps; count at the head for the rest of the stream.
+                refDecided = true
+                refIsTimestamp = false
+            }
+            if (refIsTimestamp) {
+                // Extrapolate from the latched timestamp. A HAL that stops
+                // producing fresh timestamps mid-stream (frozen clock,
+                // issue #106/#163 hardware) would make this run away at
+                // nominal rate forever, so 2s without a fresh one demotes
+                // the stream to head counting.
+                val ageNs = nowNs - refNanoTime
+                if (ageNs > 2_000_000_000L) {
+                    refIsTimestamp = false
+                } else {
+                    val extrapolated = ageNs.coerceAtLeast(0) * sampleRate / 1_000_000_000L
+                    return refFramePosition + extrapolated
+                }
+            }
         }
         return headPositionLocked()
     }
@@ -300,6 +348,9 @@ class NativeAudioOutput {
         framesWritten.set(0)
         headRaw = 0
         headWraps = 0
+        refDecided = false
+        refIsTimestamp = false
+        pollsWithoutTimestamp = 0
         lastReportedFrames = presentedFramesLocked()
     }
 

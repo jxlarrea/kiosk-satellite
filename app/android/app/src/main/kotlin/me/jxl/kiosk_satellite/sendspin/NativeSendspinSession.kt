@@ -255,12 +255,12 @@ class NativeSendspinSession(
             while (!destroyed.get()) {
                 val h = handle
                 if (h != 0L && output.isStarted) {
-                    val frames = output.takePresentedFramesDelta()
-                    if (frames > 0) {
-                        val bias = -syncOffsetMs * 1000
+                    val progress = output.takePresentedFramesDelta()
+                    if (progress != null) {
+                        val bias = progress.finishBiasUs - syncOffsetMs * 1000
                         NativeSendspin.nativeNotifyAudioPlayed(
                             h,
-                            frames.toInt(),
+                            progress.frames.toInt(),
                             NativeSendspin.nativeMonotonicTimeUs() + bias,
                         )
                     }
