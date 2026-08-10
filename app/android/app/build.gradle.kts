@@ -103,7 +103,14 @@ flutter {
 
 dependencies {
     // CameraX for low-cost motion detection (YUV luminance analysis only).
-    val cameraxVersion = "1.3.4"
+    // Ceiling: 1.5.x is the last line whose Camera2Config is the legacy
+    // camera2 backend. 1.6.0 replaced it with camera-pipe (CXCP) with no
+    // opt-out, and on some LIMITED-level HALs that backend pegs a core for
+    // as long as the camera is bound (issue #164, Galaxy Tab S6 Lite).
+    // mobile_scanner asks for 1.6.1; the root build.gradle.kts forces every
+    // subproject onto this version, so bump the two together only after
+    // camera-pipe is proven out on limited hardware.
+    val cameraxVersion = "1.5.1"
     implementation("androidx.camera:camera-core:$cameraxVersion")
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")

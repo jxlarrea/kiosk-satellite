@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- Camera motion detection no longer drives the CPU to 100% on some devices whose camera reports the LIMITED hardware level, the Galaxy Tab S6 Lite among them (#164). The QR scanner added to the setup wizard in v2026.8.10 silently pulled the whole app onto a newer camera library whose rewritten backend misbehaves on such hardware; the app is now pinned back to the proven backend the motion feature was built and tuned on, for every camera user in the app including the QR scanner.
+
 ### Changed
 - The Sendspin player has been **rebuilt on the Sendspin reference engine**, sendspin-cpp, the same implementation behind ESPHome speakers, with Kiosk Satellite providing the Android audio output around it. The change matters most on devices whose audio hardware misreports its own playback clock (the Meta Portal of issue #163): the old player measured sync against that clock and restarted the stream when the numbers looked wrong, which on such hardware looped forever, while the new engine paces itself by playback feedback that a broken clock can only slow down, never poison, and corrects drift with single-frame adjustments that cannot be heard. In a grouped four-device test spanning three hardware generations, the new engine played ten minutes with pause, resume and stream restarts without a single audible correction, where the old player logged hundreds of buffer underruns and an audible re-anchor on one device. Everything around the player is unchanged: same server and codec settings, floating player, lyrics, ducking, volume and MQTT surfaces. The device's write-to-speaker latency is now measured from the platform rather than assumed, so speakers of different hardware generations land on the same beat without hand tuning; the Sync offset setting remains for trimming Bluetooth outputs.
 
