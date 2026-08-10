@@ -27,19 +27,26 @@ void main() {
   late UpdateManager update;
   late List<String> installed;
 
-  /// A GitHub release payload, as the latest-release endpoint returns it.
-  String release(String tag) => jsonEncode({
+  /// One GitHub release object, as the releases list carries them.
+  Map<String, Object?> entry(String tag, {bool prerelease = false}) => {
         'tag_name': 'v$tag',
         'html_url': 'https://github.com/jxlarrea/kiosk-satellite/'
             'releases/tag/v$tag',
         'body': 'Notes for $tag',
+        'prerelease': prerelease,
+        'draft': false,
         'assets': [
           {
             'name': 'kiosk-satellite-$tag.apk',
             'browser_download_url': 'https://example.invalid/$tag.apk',
           },
         ],
-      });
+      };
+
+  /// The releases-list payload, newest first, as the check fetches it.
+  String releases(List<Map<String, Object?>> entries) => jsonEncode(entries);
+
+  String release(String tag) => releases([entry(tag)]);
 
   bool isReleaseQuery(http.BaseRequest request) =>
       request.url.host == 'api.github.com';
@@ -141,5 +148,49 @@ void main() {
     // The notice clears, so nothing keeps offering the release that is gone.
     expect(update.available.value, isNull);
     expect(update.progress.value, isNull);
+  });
+
+  test('one release behind shows that body alone, untouched', () async {
+    update.clientFactory = () => MockClient((request) async =>
+        http.Response(releases([entry('1.1.0'), entry('1.0.0')]), 200));
+    await update.init();
+    expect(await update.check(), isTrue);
+    expect(update.available.value?.notes, 'Notes for 1.1.0');
+  });
+
+  test('skipped releases stack their notes newest first', () async {
+    update.clientFactory = () => MockClient((request) async => http.Response(
+        releases([entry('1.3.0'), entry('1.2.0'), entry('1.0.0')]), 200));
+    await update.init();
+    expect(await update.check(), isTrue);
+    expect(update.available.value?.version, '1.3.0');
+    final notes = update.available.value!.notes;
+    expect(
+      notes.indexOf('Notes for 1.3.0'),
+      lessThan(notes.indexOf('Notes for 1.2.0')),
+    );
+    expect(notes, contains('# Version 1.3.0'));
+    expect(notes, contains('# Version 1.2.0'));
+    // The running release and older stay out, and the whole gap fit the
+    // fetch window, so nothing points at the release history.
+    expect(notes, isNot(contains('Notes for 1.0.0')));
+    expect(notes, isNot(contains('releases page')));
+  });
+
+  test('a gap beyond the fetch window points at the history', () async {
+    update.clientFactory = () => MockClient((request) async =>
+        http.Response(releases([entry('1.3.0'), entry('1.2.0')]), 200));
+    await update.init();
+    expect(await update.check(), isTrue);
+    expect(update.available.value?.notes, contains('releases page'));
+  });
+
+  test('prereleases never count as the latest release', () async {
+    update.clientFactory = () => MockClient((request) async => http.Response(
+        releases([entry('1.2.0', prerelease: true), entry('1.1.0')]), 200));
+    await update.init();
+    expect(await update.check(), isTrue);
+    expect(update.available.value?.version, '1.1.0');
+    expect(update.available.value?.notes, isNot(contains('1.2.0')));
   });
 }

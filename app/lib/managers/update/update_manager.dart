@@ -26,7 +26,9 @@ class UpdateInfo {
   final String version;
   final String apkUrl;
 
-  /// The GitHub release body (markdown), shown before the download starts.
+  /// What is new since the running version, shown before the download
+  /// starts: the GitHub release body, or, when the device skipped releases,
+  /// every missed body newest-first under a Version heading each (#165).
   final String notes;
 
   /// The release's GitHub page, linked from the HA update entity.
@@ -43,8 +45,15 @@ class UpdateInfo {
 class UpdateManager extends Manager {
   UpdateManager(super.bus, super.commands, super.log);
 
-  static const _latestUrl =
-      'https://api.github.com/repos/jxlarrea/kiosk-satellite/releases/latest';
+  /// The releases list rather than `/releases/latest`: one request either
+  /// way, but the list also carries the bodies of releases the device
+  /// skipped, which is what lets the notice show everything that changed
+  /// since the running version (#165) without a request per release. The
+  /// window is a display cap, not a paging cursor: a device further behind
+  /// than this gets the newest releases and a pointer to the history.
+  static const _releasesUrl =
+      'https://api.github.com/repos/jxlarrea/kiosk-satellite/'
+      'releases?per_page=30';
 
   /// App-scoped (see ApkInstaller): installs go through a PackageInstaller
   /// session, which needs no Activity. On Android 12+ the session installs
@@ -201,27 +210,34 @@ class UpdateManager extends Manager {
     return true;
   }
 
-  /// Asks GitHub for the latest release. `reachable` is false when the query
-  /// itself failed (offline, rate limited, malformed release), which is the
-  /// case where the caller keeps what it already knew; `info` is null when
-  /// GitHub answered and the running version is already the latest.
+  /// Asks GitHub for the newest releases. `reachable` is false when the
+  /// query itself failed (offline, rate limited, malformed release), which
+  /// is the case where the caller keeps what it already knew; `info` is null
+  /// when GitHub answered and the running version is already the latest.
   Future<({bool reachable, UpdateInfo? info})> _fetchLatest() async {
     final client = clientFactory();
     try {
       final res = await client.get(
-        Uri.parse(_latestUrl),
+        Uri.parse(_releasesUrl),
         headers: const {'Accept': 'application/vnd.github+json'},
       );
       if (res.statusCode != 200) {
         log.warn(name, 'release check failed: HTTP ${res.statusCode}');
         return (reachable: false, info: null);
       }
-      final body = jsonDecode(res.body) as Map<String, dynamic>;
-      final tag = (body['tag_name'] as String? ?? '').replaceFirst(
-        RegExp('^v'),
-        '',
-      );
-      final assets = (body['assets'] as List? ?? const [])
+      String tagOf(Map<String, dynamic> r) =>
+          (r['tag_name'] as String? ?? '').replaceFirst(RegExp('^v'), '');
+      // Betas and drafts never count, exactly as /releases/latest excluded
+      // them; the first entry left is the release that endpoint would have
+      // answered with.
+      final releases = (jsonDecode(res.body) as List)
+          .cast<Map<String, dynamic>>()
+          .where((r) => r['draft'] != true && r['prerelease'] != true)
+          .toList();
+      final latest = releases.firstOrNull;
+      if (latest == null) return (reachable: false, info: null);
+      final tag = tagOf(latest);
+      final assets = (latest['assets'] as List? ?? const [])
           .cast<Map<String, dynamic>>();
       final apk = assets.firstWhere(
         (a) => (a['name'] as String? ?? '').endsWith('.apk'),
@@ -241,8 +257,8 @@ class UpdateManager extends Manager {
             ? UpdateInfo(
                 version: tag,
                 apkUrl: url,
-                notes: (body['body'] as String? ?? '').trim(),
-                releaseUrl: body['html_url'] as String? ??
+                notes: _combinedNotes(releases, tagOf),
+                releaseUrl: latest['html_url'] as String? ??
                     'https://github.com/jxlarrea/kiosk-satellite/releases',
               )
             : null,
@@ -253,6 +269,31 @@ class UpdateManager extends Manager {
     } finally {
       client.close();
     }
+  }
+
+  /// The release notes to show for an update: every fetched release newer
+  /// than the running version, newest first (#165). A single release keeps
+  /// its body untouched, today's look; a skipped-releases update separates
+  /// the bodies with a Version heading each, so nothing that changed in
+  /// between goes unseen. When even the oldest fetched release is newer
+  /// than the running version, the device is further behind than the fetch
+  /// window and the notes end by saying where the rest lives.
+  String _combinedNotes(
+    List<Map<String, dynamic>> releases,
+    String Function(Map<String, dynamic>) tagOf,
+  ) {
+    String bodyOf(Map<String, dynamic> r) =>
+        (r['body'] as String? ?? '').trim();
+    final missed = releases
+        .where((r) => _isNewer(tagOf(r), _currentVersion))
+        .toList();
+    if (missed.length <= 1) return missed.map(bodyOf).join();
+    final parts = <String>[
+      for (final r in missed) '# Version ${tagOf(r)}\n\n${bodyOf(r)}',
+      if (missed.length == releases.length)
+        'Earlier changes are on the GitHub releases page.',
+    ];
+    return parts.join('\n\n');
   }
 
   /// Whether the app can reopen itself after the installer kills it. On
