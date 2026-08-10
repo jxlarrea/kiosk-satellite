@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -19,7 +21,7 @@ import '../wake_word/background_listening.dart';
 /// without the grant the off button reports why instead of faking it. The
 /// black screensaver keeps its own brightness-zero overlay (it must keep the
 /// app alive for motion and wake word), independent of these commands.
-class ScreenManager extends Manager {
+class ScreenManager extends Manager with WidgetsBindingObserver {
   ScreenManager(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
@@ -50,6 +52,16 @@ class ScreenManager extends Manager {
   @override
   Future<void> init() async {
     await _applyWakelock();
+
+    // Reapplied every time the app reaches the foreground. The apply above
+    // is not enough on its own: at boot this init runs on the cached engine
+    // before the Activity exists, so wakelock_plus throws "wakelock requires
+    // a foreground activity" and "Keep screen on" silently never takes
+    // effect until the setting is toggled by hand (issue #167). The flag is
+    // also a property of the Activity window, so a recreated Activity (crash
+    // self-heal, config change) starts without it. Both cases end with a
+    // resume, which is the retry.
+    WidgetsBinding.instance.addObserver(this);
 
     // The panel's real state, however it got there. Without this the flag
     // below only ever moved when this app itself turned the screen on or
@@ -194,6 +206,21 @@ class ScreenManager extends Manager {
       ));
   }
 
+  /// See the observer registration in [init]: a resume means there is now a
+  /// foreground Activity, which is exactly what a failed or lost wakelock
+  /// apply was missing. Enable and disable both just set or clear a window
+  /// flag, so reapplying on every resume is harmless when nothing changed.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    unawaited(_applyWakelock());
+  }
+
+  @override
+  Future<void> dispose() async {
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
   /// Keep the screen on when either the user's setting asks for it or the
   /// screensaver is holding it. `FLAG_KEEP_SCREEN_ON` (via wakelock_plus) stops
   /// the OS display timeout — the panel stays powered, brightness is ours to
@@ -202,10 +229,19 @@ class ScreenManager extends Manager {
     final want = _settings.get(defs.keepScreenOn) || _screensaverHold;
     try {
       want ? await WakelockPlus.enable() : await WakelockPlus.disable();
+      if (_wakelockRetryPending) {
+        _wakelockRetryPending = false;
+        log.info(name, 'wakelock ${want ? 'enabled' : 'disabled'} on retry');
+      }
     } catch (e) {
+      _wakelockRetryPending = true;
       log.warn(name, 'wakelock ${want ? 'enable' : 'disable'} failed: $e');
     }
   }
+
+  /// A failed apply waiting for its resume retry; only exists so the retry
+  /// logs its success and the fix is visible in the app logs.
+  bool _wakelockRetryPending = false;
 
   /// The level of the window override currently masking the system value,
   /// null when none is up. Set only by the no-grant fallback in

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- **Keep screen on** now takes effect after a device reboot (#167). When the app starts at boot it comes up before its screen exists, the keep-awake flag cannot be set yet, and until now the failure was only logged, leaving the screen to time out until the setting was toggled by hand. The flag is now reapplied the moment the app reaches the foreground, which also restores it when the screen is rebuilt after a crash recovery.
+
 ## v2026.8.20 - 2026-08-10
 
 ### Fixed
