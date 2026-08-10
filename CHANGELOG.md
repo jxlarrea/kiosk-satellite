@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.20 - 2026-08-10
 
 ### Fixed
 - Camera motion detection no longer drives the CPU to 100% on some devices whose camera reports the LIMITED hardware level, the Galaxy Tab S6 Lite among them (#164). The QR scanner added to the setup wizard in v2026.8.10 silently pulled the whole app onto a newer camera library whose rewritten backend misbehaves on such hardware; the app is now pinned back to the proven backend the motion feature was built and tuned on, for every camera user in the app including the QR scanner.
