@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- MSE camera tiles no longer grow a gray Cast button in their corner (seen on the Echo Show 8). Chromium overlays that button on any video playing from a media source once a castable device is visible on the network; a camera tile is not a castable movie, and now says so. WebRTC tiles never had it, which is why the icon only appeared on MSE streams.
+
 ## v2026.8.22 - 2026-08-10
 
 ### Fixed

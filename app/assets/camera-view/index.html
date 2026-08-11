@@ -17,6 +17,9 @@
   .tile.hidden { display: none; }
   .tile.focused { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
   video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  /* Belt for WebViews that predate disableRemotePlayback: never draw the
+     media-controls overlay cast button on a camera tile. */
+  video::-internal-media-controls-overlay-cast-button { display: none !important; }
   .name { position: absolute; left: 12px; bottom: 10px; max-width: 75%;
     padding: 5px 9px; border-radius: 7px; background: rgba(0, 0, 0, .58);
     font-size: 14px; line-height: 18px; overflow: hidden;
@@ -322,6 +325,14 @@ async function start(cameraId, fullscreen) {
       video.playsInline = true;
       video.setAttribute('muted', '');
       video.setAttribute('playsinline', '');
+      // Chromium overlays a Cast button on any src-backed video the moment
+      // a cast target exists on the network, so MSE tiles grew a gray icon
+      // in the corner (seen on the Echo Show 8). A camera tile is not a
+      // castable movie; say so. WebRTC's srcObject never casts, hence the
+      // icon only ever appearing on MSE.
+      video.disableRemotePlayback = true;
+      video.setAttribute('disableremoteplayback', '');
+      video.disablePictureInPicture = true;
       tile.insertBefore(video, tile.firstChild);
     }
     session.video = video;
