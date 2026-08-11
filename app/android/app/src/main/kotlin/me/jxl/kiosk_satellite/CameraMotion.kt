@@ -125,6 +125,27 @@ class CameraMotion(
         // spelled as a literal so this compiles against pre-35 SDKs.
         private const val AE_MODE_LOW_LIGHT_BOOST = 6
 
+        // The exposure-hunt fallback (issue #164). Some vendor auto-exposure
+        // loops never converge once the slow fps range below is requested:
+        // the Galaxy Tab S6 Lite's LIMITED front camera oscillates exposure
+        // forever, which pins a core in the camera HAL for as long as the
+        // camera is bound. The analyzer sees that clearly, as an endless run
+        // of frames whose change is global and same-signed (the illumination
+        // veto) with no local structure at all, something no real scene
+        // sustains for this long: a body is local, a slide change or lamp is
+        // over in a frame or two, and even a flickering TV lands only
+        // veto-shaped frames interleaved with quiet ones as the flicker
+        // beats against the analysis rate. HUNT_FRAMES consecutive hits
+        // (about 10 s at the default 2 fps) restarts the session once
+        // without the slow-AE request; hardware level is deliberately not
+        // the trigger, because healthy LIMITED cameras (the Tab S8's front
+        // one among them) benefit from the long exposures.
+        private const val HUNT_FRAMES = 20
+
+        // A hunting frame has essentially no mean-relative change: AE gain
+        // moves every cell together and the mean subtraction absorbs it.
+        private const val HUNT_MAX_LOCAL_CELLS = 3
+
         // Auto-exposure settles over the first frames after the camera opens and
         // swings luminance globally; skip them so it does not read as motion.
         private const val WARMUP_FRAMES = 3
@@ -173,6 +194,26 @@ class CameraMotion(
      *  thread only. */
     private var requestedFps = 2.0
 
+    /** Whether the slow AE fps range is actually in force on the bound
+     *  session, so the hunt detector only ever arms when there is a request
+     *  to withdraw. Written on the main thread at bind, read on
+     *  [analysisExecutor]. */
+    @Volatile private var slowAeApplied = false
+
+    /** The hunt fallback's one-way latch for the current listen: once the
+     *  session restarts without the slow AE range it never asks for it
+     *  again until the next listen. Main thread only. */
+    private var slowAeDisabled = false
+
+    /** Consecutive hunting-shaped frames (see [HUNT_FRAMES]); analyzer
+     *  state like [prevGrid]. */
+    private var huntStreak = 0
+
+    /** What the current listen bound, kept so the hunt fallback can rebuild
+     *  the same session without the slow AE range. Main thread only. */
+    private var activeFacing: CameraSelector? = null
+    private var activeSink: EventChannel.EventSink? = null
+
     init {
         eventChannel.setStreamHandler(this)
     }
@@ -204,11 +245,16 @@ class CameraMotion(
         lastEmitNs = 0L
         startDelayNs = startDelayMs * 1_000_000L
         analyzeFromNs = 0L
+        huntStreak = 0
+        slowAeApplied = false
 
         requestedFps = fps
 
         // CameraX binding must happen on the main thread.
         mainHandler.post {
+            slowAeDisabled = false
+            activeFacing = facing
+            activeSink = sink
             snapshotTarget = if (snapW != null && snapH != null) {
                 Size(snapW, snapH)
             } else {
@@ -254,7 +300,9 @@ class CameraMotion(
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             applyLowLightExposure(analysisBuilder, cameraProvider, selector)
             val imageAnalysis = analysisBuilder.build()
-            imageAnalysis.setAnalyzer(analysisExecutor) { image -> analyze(image, sink) }
+            imageAnalysis.setAnalyzer(analysisExecutor) { image ->
+                analyze(image, sink, mySession)
+            }
             analysis = imageAnalysis
 
             val owner = CameraLifecycle().also { lifecycle = it }
@@ -315,7 +363,11 @@ class CameraMotion(
         }, ContextCompat.getMainExecutor(context))
     }
 
-    private fun analyze(image: ImageProxy, sink: EventChannel.EventSink) {
+    private fun analyze(
+        image: ImageProxy,
+        sink: EventChannel.EventSink,
+        boundSession: Int,
+    ) {
         try {
             val now = System.nanoTime()
             // Drop frames that arrive before the next slot is due.
@@ -393,6 +445,20 @@ class CameraMotion(
                     "veto=$illumination")
             }
 
+            // The exposure-hunt fallback (see HUNT_FRAMES): a vetoed frame
+            // with next to no mean-relative structure is AE moving the whole
+            // grid; enough of them in an unbroken run is a 3A loop that will
+            // never settle. Fires once per streak, at the threshold exactly;
+            // the main thread validates the session and latches.
+            if (slowAeApplied && illumination && changed <= HUNT_MAX_LOCAL_CELLS) {
+                huntStreak++
+                if (huntStreak == HUNT_FRAMES) {
+                    mainHandler.post { onExposureHunt(boundSession) }
+                }
+            } else {
+                huntStreak = 0
+            }
+
             if (!illumination && changed >= minChangedCells &&
                 now - lastEmitNs >= EMIT_INTERVAL_NS
             ) {
@@ -405,6 +471,47 @@ class CameraMotion(
     }
 
     /**
+     * The analyzer counted [HUNT_FRAMES] straight frames of global
+     * same-signed change under the slow AE range: this camera's exposure
+     * loop is not going to settle (issue #164), and on such hardware the
+     * hunt itself is what burns a core in the camera HAL. Rebuild the same
+     * session with default AE, once per listen; the restarted stream
+     * re-warms exactly like a fresh bind, so the transition cannot read as
+     * motion. Detection keeps working after the fallback, just without the
+     * long-exposure advantage in the dark, which a scene AE never settles
+     * on was not delivering anyway.
+     */
+    private fun onExposureHunt(boundSession: Int) {
+        if (session != boundSession || slowAeDisabled) return
+        val facing = activeFacing ?: return
+        val sink = activeSink ?: return
+        slowAeDisabled = true
+        Log.w(
+            TAG,
+            "auto exposure kept hunting under the slow fps range; " +
+                "restarting the camera with default exposure (issue #164)",
+        )
+        // The teardown half of onCancel; start() bumps the session, so
+        // callbacks of the torn-down bind die on their session checks.
+        deviceCamera?.sharedCapture = null
+        deviceCamera?.motionSessionActive = false
+        analysis?.clearAnalyzer()
+        lifecycle?.destroy()
+        lifecycle = null
+        provider?.unbindAll()
+        analysis = null
+        prevGrid = null
+        noiseGrid = null
+        frameCount = 0
+        lastProcessedNs = 0L
+        lastEmitNs = 0L
+        analyzeFromNs = 0L
+        huntStreak = 0
+        slowAeApplied = false
+        start(facing, sink)
+    }
+
+    /**
      * Ask AE for the slowest frame-rate range the sensor offers so dark
      * scenes get long exposures (more photons per frame) instead of cranked
      * gain (more noise). Analysis is throttled far below the sensor rate, so
@@ -413,6 +520,8 @@ class CameraMotion(
      * (Android 15+), low-light boost AE mode is enabled on top.
      *
      * Best effort: any failure here just leaves the default AE behavior.
+     * Skipped wholesale after the hunt fallback ([onExposureHunt]) tripped
+     * for this listen.
      */
     @OptIn(ExperimentalCamera2Interop::class)
     private fun applyLowLightExposure(
@@ -420,6 +529,8 @@ class CameraMotion(
         cameraProvider: ProcessCameraProvider,
         selector: CameraSelector,
     ) {
+        slowAeApplied = false
+        if (slowAeDisabled) return
         try {
             val info = selector.filter(cameraProvider.availableCameraInfos).firstOrNull() ?: return
             val camera2Info = Camera2CameraInfo.from(info)
@@ -439,6 +550,7 @@ class CameraMotion(
                 ?: return
             val extender = Camera2Interop.Extender(builder)
             extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, range)
+            slowAeApplied = true
             var boost = false
             if (Build.VERSION.SDK_INT >= 35) {
                 val modes = camera2Info.getCameraCharacteristic(
@@ -495,6 +607,8 @@ class CameraMotion(
     override fun onCancel(arguments: Any?) {
         mainHandler.post {
             session++
+            activeFacing = null
+            activeSink = null
             deviceCamera?.sharedCapture = null
             deviceCamera?.motionSessionActive = false
             analysis?.clearAnalyzer()
