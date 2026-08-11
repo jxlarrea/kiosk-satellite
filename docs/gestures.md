@@ -60,9 +60,10 @@ The chooser groups them: Kiosk Satellite, Android, Home Assistant.
 | --- | --- |
 | Go to a dashboard view | Picked from a list of the instance's dashboards and views. |
 | Open a web page | An external URL, in the same overlay a dashboard link opens, with its close button. |
-| Show a camera view | Any configured WebRTC camera view, or close the active one. |
+| Show a camera view | Any configured camera view. The show action toggles: the same gesture performed again closes the view it opened. A separate close action exists for closing whatever view is up. |
 | Show the Sendspin player | The floating player card; a fling on the card is how it hides. |
-| Start the screensaver | Whatever mode is configured; any tap dismisses it, so there is no stop action. |
+| Start the screensaver | Whatever mode is configured. |
+| Stop the screensaver | Redundant for touch (any tap dismisses), made for claps: the screen comes back from across the room. |
 | Open another app | By package name, kiosk still running behind it. |
 | Open a deep link | Any URI another app claims, `myapp://path`. |
 | Open Android Settings | |

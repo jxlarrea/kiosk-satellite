@@ -282,8 +282,18 @@ void main() {
       await fire('g1');
       await fire('g2');
       expect(executed[0].$1, 'showCameraView');
-      expect(executed[0].$2, {'viewId': 'v1'});
+      // toggle: performed again, the same gesture closes the view it opened.
+      expect(executed[0].$2, {'viewId': 'v1', 'toggle': true});
       expect(executed[1].$1, 'hideCameraView');
+    });
+
+    test('screensaver_stop action stops the screensaver', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"claps","claps":2},'
+        '"action":{"type":"screensaver_stop"}}]',
+      );
+      await fire('g1');
+      expect(executed.single.$1, 'stopScreensaver');
     });
   });
 

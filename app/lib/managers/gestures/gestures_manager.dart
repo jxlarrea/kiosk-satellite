@@ -228,15 +228,22 @@ class GesturesManager extends Manager {
         if (a['mode'] == 'hide') {
           await _run('hideCameraView', const {});
         } else {
-          await _run('showCameraView', {'viewId': a['viewId'] ?? ''});
+          // toggle: the same gesture performed again closes the view it
+          // opened, which is what a repeated clap sequence should mean.
+          await _run('showCameraView', {
+            'viewId': a['viewId'] ?? '',
+            'toggle': true,
+          });
         }
       case 'sendspin_player':
         // Show only: the fling on the card is already the way to hide it.
         await _settings.set(defs.sendspinShowPlayer, true);
       case 'screensaver':
-        // Start only: any tap already dismisses a running screensaver, so
-        // a stop action would map a gesture to what every touch does.
         await _run('startScreensaver', const {});
+      case 'screensaver_stop':
+        // Redundant for touch (any tap dismisses), real for claps: hands
+        // full across the room, the screen comes back without walking over.
+        await _run('stopScreensaver', const {});
       case 'launch_app':
         await _run('launchApp', {'package': a['package']});
       case 'open_uri':

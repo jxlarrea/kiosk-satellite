@@ -33,6 +33,7 @@ const _actionGroups = <(String, List<(String, String, IconData)>)>[
       ('camera_view', 'Show a camera view', Icons.videocam_outlined),
       ('sendspin_player', 'Show the Sendspin player', Icons.speaker_outlined),
       ('screensaver', 'Start the screensaver', Icons.nightlight_outlined),
+      ('screensaver_stop', 'Stop the screensaver', Icons.light_mode_outlined),
     ],
   ),
   (
@@ -446,7 +447,8 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
       // Actions with nothing to configure skip the second dialog.
       'android_settings' ||
       'sendspin_player' ||
-      'screensaver' => {'type': type},
+      'screensaver' ||
+      'screensaver_stop' => {'type': type},
       'navigate' => _configureNavigate(carried),
       'url' => _configureText(
         carried,

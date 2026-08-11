@@ -237,6 +237,20 @@ void main() {
       expect(shown.ok, isTrue);
       expect(cameras.activeViewId.value, viewId);
       expect(cameras.activeView?.showCameraNames, isFalse);
+
+      // toggle (the gesture path): showing the already-active view closes
+      // it, showing it again reopens it, and a plain show never closes.
+      final toggled = await commands.execute('showCameraView', {
+        'viewId': viewId,
+        'toggle': true,
+      });
+      expect(toggled.ok, isTrue);
+      expect(cameras.activeViewId.value, isNull);
+      await commands
+          .execute('showCameraView', {'viewId': viewId, 'toggle': true});
+      expect(cameras.activeViewId.value, viewId);
+      await commands.execute('showCameraView', {'viewId': viewId});
+      expect(cameras.activeViewId.value, viewId);
       expect(cameras.focusCamera('$cameraId').ok, isTrue);
       expect(cameras.focusCamera('unknown').ok, isFalse);
 

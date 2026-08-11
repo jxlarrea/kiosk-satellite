@@ -187,9 +187,15 @@ class CameraManager extends Manager {
       ..register(
         Command(
           name: 'showCameraView',
-          description: 'Show a configured camera view over the dashboard.',
-          params: const {'viewId': 'Camera view id'},
-          handler: (params) => showView('${params['viewId'] ?? ''}'),
+          description: 'Show a configured camera view over the dashboard. '
+              'With toggle, a view that is already showing closes instead — '
+              'gestures pass it so the same gesture opens and closes a view.',
+          params: const {
+            'viewId': 'Camera view id',
+            'toggle': 'true to close the view when it is already showing',
+          },
+          handler: (params) => showView('${params['viewId'] ?? ''}',
+              toggle: params['toggle'] == true),
         ),
       )
       ..register(
@@ -627,11 +633,15 @@ class CameraManager extends Manager {
     return const CommandResult.ok();
   }
 
-  Future<CommandResult> showView(String viewId) async {
+  Future<CommandResult> showView(String viewId, {bool toggle = false}) async {
     final view = _config.views.where((item) => item.id == viewId).firstOrNull;
     if (view == null) return const CommandResult.fail('view not found');
     if (view.cameraIds.isEmpty) {
       return const CommandResult.fail('view has no cameras');
+    }
+    if (toggle && activeViewId.value == view.id) {
+      hideView();
+      return CommandResult.ok(_stateJson());
     }
     _clearInterruptedView();
     await _prepareToShowView();
