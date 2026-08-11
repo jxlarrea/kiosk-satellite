@@ -67,17 +67,26 @@ camera actually runs:
 | --- | --- | --- |
 | Dismiss on motion | Screensaver settings | Only while the screensaver is showing. |
 | Postpone screensaver on motion | Screensaver settings | Permanently while the screen is on. |
-| Motion sensor | Camera settings | Permanently, even with the screen off. |
+| Motion sensor | Camera settings | Permanently while the screen is on, Black screensaver included. |
 
 **Dismiss on motion** wakes the screen when someone approaches the
 sleeping kiosk. **Postpone screensaver on motion** extends it: movement in
 the room keeps resetting the idle timer, so the screensaver waits until
 the room is actually empty; it requires Dismiss on motion. **Motion
 sensor** exposes motion as a Home Assistant `binary_sensor` with no
-screen-state gate at all, because turning the panel on from across the
-room is its headline use. A screensaver [schedule](screensavers.md) entry
+screensaver gate at all. A screensaver [schedule](screensavers.md) entry
 can override Dismiss on motion per time window, so an overnight Black
 entry can keep the camera off entirely.
+
+One Android rule binds all three: no app can watch the camera while the
+panel is truly powered off. The OS revokes camera access within seconds
+of the screen turning off, however alive the app is. The screen that
+*looks* off but keeps every camera feature working is the **Black
+screensaver** (backlight at zero under a black overlay); use it, or a
+scheduled Black entry, where Fully Kiosk users would reach for "fake
+screen off". After a real screen-off (the power button, the Screen
+entity, an idle timeout) the camera rebinds on its own the moment the
+screen comes back on.
 
 The tuning lives under Camera, **Motion Detection**:
 

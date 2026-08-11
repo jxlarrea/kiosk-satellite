@@ -33,10 +33,14 @@ import 'native_motion.dart';
 ///
 /// The "Motion sensor" leg (Camera section) is the third and least gated:
 /// motion as its own MQTT binary_sensor, independent of the screensaver
-/// features. It ignores even the screen-on gate above — waking a dark panel
-/// from an HA automation is the sensor's headline use, so the camera watching
-/// behind a dark screen is the point here, not a waste. The cost warning
-/// lives on its setting too.
+/// features. It ignores even the screen-on gate above, but note what that
+/// can and cannot buy: a "dark" panel under the Black screensaver is a lit,
+/// visible app and the camera keeps running, while a panel that is truly
+/// powered off gets the camera revoked by the OS within seconds (the camera
+/// service gates access on app visibility — measured on Android 16, and the
+/// reason "watch while the screen is off" is impossible for any app). The
+/// revocation is reported as a stream error and [_onCameraLost] rebinds on
+/// the next screen-on. The cost warning lives on its setting too.
 class MotionManager extends Manager {
   MotionManager(
     super.bus,
@@ -44,6 +48,7 @@ class MotionManager extends Manager {
     super.log,
     this._settings, {
     this._selfLightQuiet = const Duration(milliseconds: 2500),
+    this._retryFloor = const Duration(seconds: 5),
   });
 
   final SettingsManager _settings;
@@ -101,6 +106,20 @@ class MotionManager extends Manager {
   bool _screensaverActive = false;
   bool _screenOn = true;
   bool _starting = false;
+
+  /// Rebind backoff after the OS revokes the camera out from under a live
+  /// session — the panel powering off does it within seconds (the camera
+  /// service gates access on the app being *visible*, an alive process
+  /// and foreground service change nothing), and another app taking the
+  /// sensor does it too. The native side reports the revocation as a
+  /// stream error; this schedules the rebind.
+  Timer? _retry;
+  late Duration _retryDelay = _retryFloor;
+
+  /// First rebind delay; doubles per consecutive failure up to the
+  /// ceiling. Injectable for tests only.
+  final Duration _retryFloor;
+  static const _retryCeiling = Duration(seconds: 60);
 
   /// The screensaver schedule's motion override, null when none holds.
   bool? _schedulePolicy;
@@ -230,6 +249,9 @@ class MotionManager extends Manager {
         startDelayMs: startDelay * 1000,
       ).listen(
         (_) {
+          // Frames flowing again: the session is healthy, forget any
+          // accumulated rebind backoff.
+          _retryDelay = _retryFloor;
           if (DateTime.now().isBefore(_quietUntil)) {
             log.debug(name, 'motion suppressed (own light change)');
             return;
@@ -237,14 +259,48 @@ class MotionManager extends Manager {
           log.debug(name, 'motion');
           bus.publish(const MotionDetected());
         },
-        onError: (Object e) => log.warn(name, 'camera error: $e'),
+        onError: (Object e) {
+          log.warn(name, 'camera error: $e');
+          _onCameraLost();
+        },
       );
     } finally {
       _starting = false;
     }
   }
 
+  /// The stream died under us (the native side reported the OS revoking
+  /// the camera). Tear the dead subscription down and rebind when a
+  /// rebind can work: on a timer with backoff while the screen is on
+  /// (another app may still hold the sensor), or on the next screen-on
+  /// when the panel is off — rebinding under a dark panel is refused the
+  /// same way the eviction happened, so the ScreenStateChanged listener
+  /// owns that case.
+  void _onCameraLost() {
+    final dead = _camera;
+    if (dead == null) return;
+    _camera = null;
+    unawaited(dead.cancel());
+    if (!_shouldRun) return;
+    if (!_screenOn) {
+      log.info(name, 'camera revoked with the screen off; rebinding on wake');
+      return;
+    }
+    final delay = _retryDelay;
+    final doubled = _retryDelay * 2;
+    _retryDelay = doubled > _retryCeiling ? _retryCeiling : doubled;
+    log.info(name, 'rebinding the camera in ${delay.inSeconds}s');
+    _retry?.cancel();
+    _retry = Timer(delay, () {
+      _retry = null;
+      _sync();
+    });
+  }
+
   void _stop() {
+    _retry?.cancel();
+    _retry = null;
+    _retryDelay = _retryFloor;
     if (_camera == null) return;
     _camera!.cancel();
     _camera = null;

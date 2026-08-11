@@ -266,11 +266,11 @@ class CameraMotion(
             }
             try {
                 cameraProvider.unbindAll()
-                if (imageCapture != null) {
+                val camera = if (imageCapture != null) {
                     try {
                         cameraProvider.bindToLifecycle(
                             owner, selector, imageAnalysis, imageCapture)
-                        deviceCamera.sharedCapture = imageCapture
+                            .also { deviceCamera.sharedCapture = imageCapture }
                     } catch (e: Exception) {
                         // Hardware that cannot run analysis and JPEG capture
                         // in one session: motion wins, snapshots report busy
@@ -283,6 +283,26 @@ class CameraMotion(
                 }
                 deviceCamera?.motionSessionActive = true
                 owner.resume()
+                // The OS revokes a running camera the moment the app stops
+                // being visible (5s after the panel powers off, measured on
+                // Android 16: "Access has been restricted, isUidVisible
+                // false") and when another app takes the sensor. Without
+                // this observer the analyzer just stops receiving frames
+                // and nothing upstream ever hears about it — the motion
+                // sensor stays dead until an app restart (issue from
+                // discussion #134 testing). Observed through [owner], so
+                // the cancel path's destroy() removes it before teardown's
+                // own CLOSING/CLOSED states could echo back as errors.
+                camera.cameraInfo.cameraState.observe(owner) { state ->
+                    val err = state.error ?: return@observe
+                    if (session != mySession) return@observe
+                    Log.w(TAG, "camera lost: ${state.type} error ${err.code}")
+                    sink.error(
+                        "camera",
+                        "camera revoked by the OS (error ${err.code})",
+                        null,
+                    )
+                }
                 Log.i(TAG, "camera bound (fps slot=${frameIntervalNs / 1_000_000}ms, minCells=$minChangedCells)")
             } catch (e: Exception) {
                 // Nothing bound: drop the owner so the eventual cancel has

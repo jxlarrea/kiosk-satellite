@@ -50,6 +50,7 @@ void main() {
   Future<void> build(
     Map<String, Object> initial, {
     Duration selfLightQuiet = const Duration(milliseconds: 2500),
+    Duration retryFloor = const Duration(milliseconds: 100),
   }) async {
     listens = 0;
     sink = null;
@@ -60,7 +61,7 @@ void main() {
     settings = SettingsManager(bus, commands, log);
     await settings.init();
     motion = MotionManager(bus, commands, log, settings,
-        selfLightQuiet: selfLightQuiet);
+        selfLightQuiet: selfLightQuiet, retryFloor: retryFloor);
     await motion.init();
   }
 
@@ -145,6 +146,54 @@ void main() {
     sink!.success(null);
     await pump();
     expect(detected, 1, reason: 'the slide swap must not read as motion');
+  });
+
+  test('a camera revoked mid-session (stream error) is rebound after the '
+      'backoff', () async {
+    await build({
+      'ks.camera.enabled': true,
+      'ks.motion.sensor': true,
+    });
+    await pump();
+    expect(listens, 1);
+
+    // The OS revoking the camera (the panel powering off, another app
+    // taking the sensor) surfaces as a stream error from the native side.
+    sink!.error(code: 'camera', message: 'camera revoked by the OS (error 6)');
+    await pump();
+    expect(sink, isNull, reason: 'the dead session must be torn down');
+    expect(listens, 1, reason: 'no immediate rebind: the revoker may still '
+        'hold the camera');
+
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    await pump();
+    expect(listens, 2, reason: 'the backoff timer must rebind');
+  });
+
+  test('revoked with the screen off, the rebind waits for the screen',
+      () async {
+    await build({
+      'ks.camera.enabled': true,
+      'ks.motion.sensor': true,
+    });
+    await pump();
+    expect(listens, 1);
+
+    // The panel powers off; five seconds later the OS revokes the camera
+    // (measured on Android 16). Rebinding under a dark panel would be
+    // refused the same way, so nothing should be scheduled.
+    bus.publish(const ScreenStateChanged(on: false));
+    await pump();
+    sink!.error(code: 'camera', message: 'camera revoked by the OS (error 6)');
+    await pump();
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    await pump();
+    expect(listens, 1, reason: 'no rebind attempts against a dark panel');
+
+    // The screen coming back is the moment a rebind can work.
+    bus.publish(const ScreenStateChanged(on: true));
+    await pump();
+    expect(listens, 2, reason: 'screen on must rebind the sensor camera');
   });
 
   test('the off_delay is MQTT-side only: changing it never restarts the '
