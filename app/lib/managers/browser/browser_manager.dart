@@ -444,6 +444,16 @@ class BrowserManager extends Manager {
               100,
             );
             final width = (p['width'] as num?)?.toInt() ?? 1280;
+            // A truly dark panel composites no frames, so there is nothing
+            // real to copy: PixelCopy fails or hands back a half-drawn
+            // page depending on the Android version. A generated "Screen
+            // off" card is the honest picture of the display.
+            final on = await commands.execute('isScreenOn', const {});
+            if (on.ok && on.data == false) {
+              return CommandResult.ok(
+                base64Encode(await screenOffPlaceholder(width: width)),
+              );
+            }
             // The window, via a GPU blit on a background thread (see
             // ScreenCapture.kt). The WebView's own capture below draws the
             // view into a bitmap on the UI thread — with the admin's

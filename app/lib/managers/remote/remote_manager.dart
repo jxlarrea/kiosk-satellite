@@ -503,9 +503,13 @@ class RemoteManager extends Manager {
     if (!result.ok || result.data is! String) {
       return _json(500, {'error': result.error ?? 'screenshot failed'});
     }
+    final bytes = base64Decode(result.data as String);
+    // Captures are JPEG; the screen-off placeholder is PNG. Label by the
+    // magic bytes rather than promising one of them.
+    final png = bytes.length > 1 && bytes[0] == 0x89 && bytes[1] == 0x50;
     return Response.ok(
-      base64Decode(result.data as String),
-      headers: {'content-type': 'image/jpeg'},
+      bytes,
+      headers: {'content-type': png ? 'image/png' : 'image/jpeg'},
     );
   }
 
