@@ -42,7 +42,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     if (_screenOn == on) return;
     _screenOn = on;
     log.debug(name, 'screen ${on ? 'on' : 'off'} ($source)');
-    bus.publish(ScreenStateChanged(on: on));
+    bus.publish(ScreenStateChanged(on: on, source: source));
   }
 
   /// The screensaver asks the screen to stay on while its overlay is up (see

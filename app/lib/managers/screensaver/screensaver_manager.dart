@@ -171,18 +171,28 @@ class ScreensaverManager extends Manager {
         _resetIdleTimer();
       }
     });
-    // The panel changing state under an active session moves the screen-off
-    // countdown with it: a wake (power button, motion about to dismiss)
-    // starts a fresh one, a power-off — ours or anyone's — leaves nothing
-    // to count down for.
+    // The panel changing state under an active session: a power-off — ours
+    // or anyone's — leaves nothing to count down for, and a wake depends on
+    // whose hand it was. A person at the panel (power button, double-tap-
+    // to-wake: source system) is activity like a touch, so they land on
+    // the dashboard rather than the screensaver — except under lockdown,
+    // which keeps its screen locked here exactly like it does for motion.
+    // The app's own pokes (source app) are either part of a dismiss that
+    // is already running or an automation switching the panel on to show
+    // the screensaver (a photo frame's morning switch-on), so those keep
+    // the session and just start a fresh screen-off countdown.
     bus.on<ScreenStateChanged>().listen((e) {
       if (!_active) return;
-      if (e.on) {
-        _armScreenOffTimer();
-      } else {
+      if (!e.on) {
         _screenOffTimer?.cancel();
         _screenOffTimer = null;
+        return;
       }
+      if (e.source == 'system' && !_settings.get(defs.lockdownEnabled)) {
+        notifyActivity('screen on');
+        return;
+      }
+      _armScreenOffTimer();
     });
     bus.on<SendspinNowPlayingChanged>().listen((e) {
       _sendspinNowPlaying = e.active;

@@ -176,9 +176,14 @@ back on. That covers motion (with
 through a real screen-off; see [Camera](camera.md)), the wake word, the
 MQTT **Dismiss screensaver** button, and a Home Assistant automation
 calling `stopScreensaver`. All of them land on the dashboard,
-not on the screensaver. The power button also wakes the panel; the
-screensaver is still showing then, and a fresh screen-off countdown
-starts.
+not on the screensaver. The power button and double-tap-to-wake count as
+activity like a touch, so they land on the dashboard too (under
+Lockdown Mode the screensaver stays, as it does for motion).
+The one wake that keeps the screensaver is the app switching its own
+panel on, the MQTT **Screen** switch: an automation turning a photo
+frame on in the morning gets its photos back, with a fresh screen-off
+countdown, and can call the dismiss button when it wants the dashboard
+instead.
 
 A day-to-day example: photos during the day, Black in the evening via
 the [schedule](#schedule), and Turn screen off after set to 10 minutes.

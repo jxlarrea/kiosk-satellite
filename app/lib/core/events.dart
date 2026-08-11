@@ -27,8 +27,15 @@ class AmbientDisplayChanged extends AppEvent {
 }
 
 class ScreenStateChanged extends AppEvent {
-  const ScreenStateChanged({required this.on});
+  const ScreenStateChanged({required this.on, this.source = 'system'});
   final bool on;
+
+  /// 'app' when this app moved the panel itself (screenOn/screenOff, from
+  /// a dismiss, the wake word or the MQTT Screen switch); 'system' for the
+  /// power button, double-tap-to-wake and everything else the OS reports.
+  /// The distinction is what lets a person waking the panel land on the
+  /// dashboard while an automation switching it on keeps its screensaver.
+  final String source;
 
   @override
   String get wireName => on ? 'screenon' : 'screenoff';

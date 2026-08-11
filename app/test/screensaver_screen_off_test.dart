@@ -22,7 +22,7 @@ void main() {
   late SettingsManager settings;
   late ScreensaverManager saver;
   late List<Map<String, Object?>> offCalls;
-  late int onCalls;
+  late List<Object> onCalls;
 
   Future<void> build(Map<String, Object> initial) async {
     SharedPreferences.setMockInitialValues(initial);
@@ -31,14 +31,19 @@ void main() {
     commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
     await settings.init();
-    offCalls = [];
-    onCalls = 0;
+    // Local captures, not the outer variables: a stale timer from an
+    // earlier test's manager firing mid-test must record into ITS OWN
+    // lists, never the current test's.
+    final off = <Map<String, Object?>>[];
+    final on = <Object>[];
+    offCalls = off;
+    onCalls = on;
     commands
       ..register(Command(
         name: 'screenOff',
         description: 'recorder',
         handler: (p) async {
-          offCalls.add(p);
+          off.add(p);
           return const CommandResult.ok();
         },
       ))
@@ -46,7 +51,7 @@ void main() {
         name: 'screenOn',
         description: 'recorder',
         handler: (_) async {
-          onCalls++;
+          on.add(true);
           return const CommandResult.ok();
         },
       ));
@@ -103,11 +108,11 @@ void main() {
 
     // Any dismiss source lands here: motion and the wake word both call
     // stop() (via notifyActivity and the WakeWordDetected listener).
-    final before = onCalls;
+    final before = onCalls.length;
     saver.notifyActivity('motion');
     await pumpEventQueue();
     expect(saver.isActive, isFalse);
-    expect(onCalls, greaterThan(before),
+    expect(onCalls.length, greaterThan(before),
         reason: 'stop() must poke the panel back on');
   });
 
@@ -116,29 +121,72 @@ void main() {
     await build({'ks.screensaver.enabled': true});
     final result = await commands.execute('stopScreensaver', const {});
     expect(result.ok, isTrue);
-    expect(onCalls, greaterThan(0),
+    expect(onCalls.length, greaterThan(0),
         reason: 'the dismiss button means "bring the dashboard back", and '
             'half of that is the screen');
   });
 
-  test('a mid-session wake gets a fresh countdown', () async {
+  test('an app-sourced mid-session wake keeps the session, with a fresh '
+      'countdown', () async {
     await build({
       'ks.screensaver.enabled': true,
       'ks.screensaver.mode': 'black',
       'ks.screensaver.screen_off_minutes': 5,
     });
     await saver.start();
-    // The panel goes dark by other hands (power button) before the timer
-    // fires: nothing left to count down for.
+    // The panel goes dark by other hands before the timer fires: nothing
+    // left to count down for.
     bus.publish(const ScreenStateChanged(on: false));
     await Future<void>.delayed(const Duration(milliseconds: 100));
     expect(offCalls, isEmpty);
 
-    // A power-button wake dismisses nothing — the screensaver is still up,
-    // so it earns its own fresh countdown.
-    bus.publish(const ScreenStateChanged(on: true));
+    // An automation switching the panel on (the MQTT Screen switch: source
+    // app) wants the screensaver it left showing — a photo frame's morning
+    // switch-on — so the session survives and earns a fresh countdown.
+    bus.publish(const ScreenStateChanged(on: true, source: 'app'));
     await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(saver.isActive, isTrue);
     expect(offCalls, hasLength(1));
+  });
+
+  test('a system wake (power button, double-tap) dismisses to the dashboard',
+      () async {
+    await build({
+      'ks.screensaver.enabled': true,
+      'ks.screensaver.mode': 'black',
+      'ks.screensaver.screen_off_minutes': 5,
+    });
+    await saver.start();
+    bus.publish(const ScreenStateChanged(on: false));
+    await pumpEventQueue();
+
+    // A person waking the panel is activity like a touch: the session ends
+    // and the dashboard is what they see.
+    final before = onCalls.length;
+    bus.publish(const ScreenStateChanged(on: true));
+    await pumpEventQueue();
+    expect(saver.isActive, isFalse);
+    expect(onCalls.length, greaterThan(before));
+  });
+
+  test('under lockdown a system wake leaves the screensaver up', () async {
+    await build({
+      'ks.screensaver.enabled': true,
+      'ks.screensaver.mode': 'black',
+      'ks.screensaver.screen_off_minutes': 5,
+      'ks.lockdown.enabled': true,
+      'ks.lockdown.allow_screensaver': true,
+    });
+    await saver.start();
+    expect(saver.isActive, isTrue);
+    bus.publish(const ScreenStateChanged(on: false));
+    await pumpEventQueue();
+
+    // Lockdown keeps its screen locked here exactly like it does for
+    // motion: the wake lights the panel, the screensaver stays.
+    bus.publish(const ScreenStateChanged(on: true));
+    await pumpEventQueue();
+    expect(saver.isActive, isTrue);
   });
 
   test('moving the slider under a running session re-arms the countdown',
