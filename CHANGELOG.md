@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.26 - 2026-08-11
+
+### Fixed
+- The **Show the Sendspin player** gesture action actually brings the card back now. It only turned on a setting that is usually already on, while a card flung away (or hidden by the paused-for-a-while timeout) is dismissed by widget state that setting never reaches; the action now clears that dismissal too.
+
 ## v2026.8.25 - 2026-08-11
 
 ### Added
@@ -12,7 +17,6 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - Screenshots taken while the screen is truly off (the remote admin overview, the MQTT Screenshot camera) now return a "Screen off" placeholder image instead of a broken or half-drawn capture. A dark panel composites no frames, so there is nothing real to photograph. A capture requested in the instant a dismiss wakes the panel used to race the first redraw and come back broken or all black; it now waits the wake transition out and delivers the dashboard.
 
 ### Fixed
-- The **Show the Sendspin player** gesture action actually brings the card back now. It only turned on a setting that is usually already on, while a card flung away (or hidden by the paused-for-a-while timeout) is dismissed by widget state that setting never reaches; the action now clears that dismissal too.
 - Camera motion detection keeps watching after the screen truly powers off. Newer Android revokes any non-visible app's camera within seconds of the panel going dark, which silently benched the motion sensor, Dismiss on motion and continuous snapshots until the screen came back. With background listening enabled and the camera permission granted, the background service now carries the camera foreground type Android reserves for exactly this, and the OS leaves the feed alone (verified on Android 11 and Android 16 hardware). Vendors that suspend apps entirely once the panel is off remain out of reach, and the Black screensaver stays the route that works everywhere.
 
 ## v2026.8.24 - 2026-08-11
