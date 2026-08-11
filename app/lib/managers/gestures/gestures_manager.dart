@@ -250,7 +250,12 @@ class GesturesManager extends Manager {
         }
       case 'sendspin_player':
         // Show only: the fling on the card is already the way to hide it.
+        // The setting covers a player disabled in Settings; the event is
+        // what actually brings back a card the fling (or the paused-hide
+        // timer) dismissed, because those hide via widget-local state the
+        // setting cannot reach.
         await _settings.set(defs.sendspinShowPlayer, true);
+        bus.publish(const SendspinShowPlayerRequested());
       case 'screensaver':
         await _run('startScreensaver', const {});
       case 'screensaver_stop':

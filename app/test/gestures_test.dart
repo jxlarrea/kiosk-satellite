@@ -271,6 +271,22 @@ void main() {
       expect(settings.get(defs.sendspinShowPlayer), isTrue);
     });
 
+    test('sendspin_player publishes the reveal, which is what actually '
+        'brings back a flung-away card', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"finger_hold","fingers":2,'
+        '"holdMs":1000},"action":{"type":"sendspin_player"}}]',
+      );
+      // The card hidden by a fling (or the paused-hide timer) is
+      // widget-local state; the setting is usually still true, so writing
+      // it again changes nothing and only this event reaches the overlay.
+      var revealed = 0;
+      bus.on<SendspinShowPlayerRequested>().listen((_) => revealed++);
+      await fire('g1');
+      await pumpEventQueue();
+      expect(revealed, 1, reason: 'the overlay un-dismisses on this event');
+    });
+
     test('camera_view show and hide pick the right command', () async {
       await build(
         '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'

@@ -447,6 +447,15 @@ class SendspinNowPlayingChanged extends AppEvent {
   final bool active;
 }
 
+/// Someone asked for the floating player card right now (the "Show the
+/// Sendspin player" gesture action). The overlay clears its own dismissal
+/// on this — a flung-away or paused-out card is hidden by widget-local
+/// state that no setting can reach, which is exactly why the gesture
+/// cannot just write `sendspin.show_player`.
+class SendspinShowPlayerRequested extends AppEvent {
+  const SendspinShowPlayerRequested();
+}
+
 // ── Settings ───────────────────────────────────────────────────────────
 
 class SettingChanged extends AppEvent {

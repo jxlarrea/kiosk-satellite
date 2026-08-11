@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'lyrics_view.dart';
 
 import '../app_container.dart';
+import '../core/events.dart';
 import '../managers/settings/definitions.dart' as defs;
 
 /// The floating now-playing card for the Sendspin player.
@@ -439,6 +440,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   bool _dismissed = false;
   bool _wasPlaying = false;
   Timer? _pausedHide;
+  StreamSubscription<SendspinShowPlayerRequested>? _reveal;
 
   /// Artwork bytes, fetched ourselves rather than via Image.network:
   /// Music Assistant serves artwork through its image proxy over https
@@ -468,6 +470,15 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         0.98;
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
     c.sendspin.voiceActive.addListener(_onVoiceActive);
+    // The "Show the Sendspin player" gesture: a fling (or the paused-hide
+    // timer) hides the card via _dismissed, which no setting reaches, so
+    // the reveal arrives as its own event.
+    _reveal = c.bus.on<SendspinShowPlayerRequested>().listen((_) {
+      if (!mounted) return;
+      _pausedHide?.cancel();
+      _pausedHide = null;
+      setState(() => _dismissed = false);
+    });
     _onNowPlaying();
   }
 
@@ -475,6 +486,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
     c.sendspin.voiceActive.removeListener(_onVoiceActive);
+    _reveal?.cancel();
     _tick?.cancel();
     _pausedHide?.cancel();
     super.dispose();
