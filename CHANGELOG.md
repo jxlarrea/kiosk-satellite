@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.27 - 2026-08-11
 
 ### Fixed
 - Camera motion detection now withdraws its long-exposure request when a camera's auto exposure cannot live with it (#164, second round). Motion detection asks the camera for its slowest frame rate so dark rooms get longer exposures, but some vendor exposure loops never converge under that request; the Galaxy Tab S6 Lite's front camera oscillates exposure forever, and the endless hunt is what was pinning a core in the camera HAL even after the camera library rollback. The analyzer already sees the hunt plainly, as an unbroken run of global same-signed change with no local structure, so after about ten seconds of it the camera is restarted once with default exposure for the rest of the session. Healthy cameras, including every device the dark-room tuning was built on, keep the long exposures exactly as before.
