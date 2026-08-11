@@ -25,10 +25,15 @@ void main() {
 
   late Directory cache;
   late UpdateManager update;
+  late CommandRegistry registry;
   late List<String> installed;
+  late List<String> kioskCalls;
+  var needsConfirm = false;
 
   /// One GitHub release object, as the releases list carries them.
-  Map<String, Object?> entry(String tag, {bool prerelease = false}) => {
+  Map<String, Object?> entry(String tag,
+          {bool prerelease = false, int? size}) =>
+      {
         'tag_name': 'v$tag',
         'html_url': 'https://github.com/jxlarrea/kiosk-satellite/'
             'releases/tag/v$tag',
@@ -39,6 +44,7 @@ void main() {
           {
             'name': 'kiosk-satellite-$tag.apk',
             'browser_download_url': 'https://example.invalid/$tag.apk',
+            'size': ?size,
           },
         ],
       };
@@ -59,10 +65,13 @@ void main() {
       (call) async =>
           call.method == 'getTemporaryDirectory' ? cache.path : null,
     );
+    needsConfirm = false;
+    kioskCalls = [];
     messenger.setMockMethodCallHandler(installer, (call) async {
+      if (call.method == 'needsConfirmation') return needsConfirm;
       if (call.method != 'installApk') return null;
       installed.add((call.arguments as Map)['path'] as String);
-      return 'silent';
+      return needsConfirm ? 'confirm' : 'silent';
     });
     PackageInfo.setMockInitialValues(
       appName: 'Kiosk Satellite',
@@ -72,7 +81,26 @@ void main() {
       buildSignature: '',
     );
     final log = Logger();
-    update = UpdateManager(EventBus(), CommandRegistry(log), log);
+    registry = CommandRegistry(log);
+    // Stand-ins for the kiosk manager's install pause (issue #170); the
+    // update manager only ever executes them by name.
+    registry.register(Command(
+      name: 'pauseKioskForInstall',
+      description: '',
+      handler: (_) async {
+        kioskCalls.add('pause');
+        return const CommandResult.ok();
+      },
+    ));
+    registry.register(Command(
+      name: 'resumeKioskAfterInstall',
+      description: '',
+      handler: (_) async {
+        kioskCalls.add('resume');
+        return const CommandResult.ok();
+      },
+    ));
+    update = UpdateManager(EventBus(), registry, log);
   });
 
   tearDown(() async {
@@ -192,5 +220,95 @@ void main() {
     expect(await update.check(), isTrue);
     expect(update.available.value?.version, '1.1.0');
     expect(update.available.value?.notes, isNot(contains('1.2.0')));
+  });
+
+  /// Delivers an installer callback the way the native side would.
+  Future<void> installerEvent(String method) async {
+    await messenger.handlePlatformMessage(
+      'kiosk_satellite/installer',
+      const StandardMethodCodec().encodeMethodCall(MethodCall(method)),
+      (_) {},
+    );
+  }
+
+  test('a second install attempt reuses the downloaded APK instead of '
+      'downloading it again', () async {
+    await notice('1.1.0');
+    final asked = <String>[];
+    update.clientFactory = () => MockClient((request) async {
+          asked.add(request.url.toString());
+          return isReleaseQuery(request)
+              ? http.Response(releases([entry('1.1.0', size: 2048)]), 200)
+              : http.Response.bytes(List.filled(2048, 7), 200);
+        });
+
+    expect(await update.downloadAndInstall(), isNull);
+    expect(asked, contains('https://example.invalid/1.1.0.apk'));
+
+    // The person declined (or the confirmation never showed); the notice
+    // is still up and they try again.
+    await installerEvent('installDeclined');
+    asked.clear();
+    expect(await update.downloadAndInstall(), isNull);
+
+    expect(asked.any((url) => url.endsWith('.apk')), isFalse);
+    expect(installed, hasLength(2));
+  });
+
+  test('a mismatched leftover file is downloaded fresh, not installed',
+      () async {
+    await notice('1.1.0');
+    final dir = Directory('${cache.path}/updates');
+    await dir.create(recursive: true);
+    await File('${dir.path}/kiosk-satellite-update.apk')
+        .writeAsBytes(List.filled(100, 1)); // truncated earlier attempt
+    final asked = <String>[];
+    update.clientFactory = () => MockClient((request) async {
+          asked.add(request.url.toString());
+          return isReleaseQuery(request)
+              ? http.Response(releases([entry('1.1.0', size: 2048)]), 200)
+              : http.Response.bytes(List.filled(2048, 7), 200);
+        });
+
+    expect(await update.downloadAndInstall(), isNull);
+
+    expect(asked, contains('https://example.invalid/1.1.0.apk'));
+    expect(await File(installed.single).length(), 2048);
+  });
+
+  test('an install that needs confirming stands the kiosk down first and '
+      're-arms it when declined', () async {
+    needsConfirm = true;
+    await notice('1.1.0');
+    update.clientFactory = () => MockClient((request) async =>
+        isReleaseQuery(request)
+            ? http.Response(release('1.1.0'), 200)
+            : http.Response.bytes(List.filled(64, 7), 200));
+
+    expect(await update.downloadAndInstall(), isNull);
+
+    // Stood down before the session was committed, and only once.
+    expect(kioskCalls, ['pause']);
+    expect(installed, hasLength(1));
+
+    await installerEvent('installDeclined');
+    expect(kioskCalls, ['pause', 'resume']);
+
+    // The callback can only owe one re-arm; a stray repeat changes nothing.
+    await installerEvent('installFailed');
+    expect(kioskCalls, ['pause', 'resume']);
+  });
+
+  test('a silent install never touches the kiosk', () async {
+    await notice('1.1.0');
+    update.clientFactory = () => MockClient((request) async =>
+        isReleaseQuery(request)
+            ? http.Response(release('1.1.0'), 200)
+            : http.Response.bytes(List.filled(64, 7), 200));
+
+    expect(await update.downloadAndInstall(), isNull);
+
+    expect(kioskCalls, isEmpty);
+    expect(installed, hasLength(1));
   });
 }

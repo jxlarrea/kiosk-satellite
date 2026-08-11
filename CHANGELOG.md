@@ -4,6 +4,10 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- Updates now install on a pinned kiosk (#170). Lock task pinning blocks Android's install confirmation screen outright, so pressing Install appeared to do nothing; the kiosk now stands down (unpins and drops its shields) right before an install that needs confirming, leaves the confirmation alone instead of reclaiming the foreground over it, and re-arms when the install is declined or fails. A confirmation nobody answers re-arms the protections on its own after ten minutes. A successful install re-arms on the relaunch as always.
+- A declined or never-shown install no longer costs a second download: the downloaded APK is kept, recognized by the byte size GitHub reports for the release, and handed straight to the installer on the next attempt (#170).
+
 ### Added
 - A **Screenshot camera entity and a Take screenshot button** in Home Assistant, over MQTT like the rest of the device entities (#168). Press the button and the entity shows what the device's display is showing at that moment: dashboard, screensaver, kiosk menu, whatever is actually on screen. Made for checking on a panel that is not in the same building without exposing the remote admin beyond Home Assistant. A **Last screenshot** timestamp sensor reports the frame's freshness, the frame is retained on the broker so it survives a Home Assistant restart, and captures are scaled to at most 1080p so a high-resolution panel never parks a multi-megabyte payload on the broker. Works on every device; no camera hardware involved.
 

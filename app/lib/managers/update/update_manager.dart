@@ -20,11 +20,17 @@ class UpdateInfo {
     required this.apkUrl,
     required this.notes,
     required this.releaseUrl,
+    this.apkSize,
   });
 
   /// Bare version, tag with the leading `v` stripped (e.g. `0.2.0`).
   final String version;
   final String apkUrl;
+
+  /// The APK asset's byte size as GitHub reports it, or null when the API
+  /// omitted it. What lets an already-downloaded file be recognized and
+  /// reused instead of downloaded again (issue #170).
+  final int? apkSize;
 
   /// What is new since the running version, shown before the download
   /// starts: the GitHub release body, or, when the device skipped releases,
@@ -111,8 +117,10 @@ class UpdateManager extends Manager {
       switch (call.method) {
         case 'installDeclined':
           log.info(name, 'install declined on the device screen');
+          await _resumeKioskIfPaused();
         case 'installFailed':
           log.warn(name, 'install failed: ${call.arguments}');
+          await _resumeKioskIfPaused();
       }
       bus.publish(const UpdateStateChanged());
       return null;
@@ -260,6 +268,7 @@ class UpdateManager extends Manager {
                 notes: _combinedNotes(releases, tagOf),
                 releaseUrl: latest['html_url'] as String? ??
                     'https://github.com/jxlarrea/kiosk-satellite/releases',
+                apkSize: (apk['size'] as num?)?.toInt(),
               )
             : null,
       );
@@ -364,15 +373,12 @@ class UpdateManager extends Manager {
             'v${fresh.version} was released since the update notice '
             'appeared: installing that instead of v${info.version}',
           );
-          available.value = fresh;
-          info = fresh;
         }
-      }
-      final res = await client.send(
-        http.Request('GET', Uri.parse(info.apkUrl)),
-      );
-      if (res.statusCode != 200) {
-        return 'Download failed (HTTP ${res.statusCode}).';
+        // Adopted even on the same version: the fresh record carries the
+        // asset's current byte size, which the reuse check below compares
+        // the cached file against (issue #170).
+        available.value = fresh;
+        info = fresh;
       }
       // One fixed name, replaced every time: cache never accumulates old
       // APKs. The updates/ folder is what the manifest's FileProvider maps.
@@ -381,29 +387,60 @@ class UpdateManager extends Manager {
       );
       await dir.create(recursive: true);
       final file = File('${dir.path}/kiosk-satellite-update.apk');
-      final sink = file.openWrite();
-      final total = res.contentLength ?? 0;
-      var got = 0;
-      try {
-        await for (final chunk in res.stream) {
-          sink.add(chunk);
-          got += chunk.length;
-          if (total > 0) progress.value = got / total;
+      // An earlier attempt whose install never went through (declined, or
+      // the confirmation could not show) already paid for this download;
+      // a file whose size matches what GitHub reports for the asset is
+      // that download, not a stale or truncated one (issue #170).
+      final expected = info.apkSize;
+      if (expected != null &&
+          await file.exists() &&
+          await file.length() == expected) {
+        log.info(
+          name,
+          'reusing the already-downloaded v${info.version} APK',
+        );
+      } else {
+        final res = await client.send(
+          http.Request('GET', Uri.parse(info.apkUrl)),
+        );
+        if (res.statusCode != 200) {
+          return 'Download failed (HTTP ${res.statusCode}).';
         }
-      } finally {
-        await sink.close();
+        final sink = file.openWrite();
+        final total = res.contentLength ?? 0;
+        var got = 0;
+        try {
+          await for (final chunk in res.stream) {
+            sink.add(chunk);
+            got += chunk.length;
+            if (total > 0) progress.value = got / total;
+          }
+        } finally {
+          await sink.close();
+        }
+        log.info(
+          name,
+          'downloaded v${info.version} (${(got / 1048576).toStringAsFixed(1)} '
+          'MB), handing to the installer',
+        );
       }
-      log.info(
-        name,
-        'downloaded v${info.version} (${(got / 1048576).toStringAsFixed(1)} '
-        'MB), handing to the installer',
-      );
       if (!await canRelaunch()) {
         log.warn(
           name,
           'the "Display over other apps" permission is missing: the update '
           'will install but the app cannot reopen itself afterwards',
         );
+      }
+      // When Android's confirm screen is coming, the kiosk has to stand
+      // down first: lock task pinning blocks that screen outright, and
+      // the foreground reclaim would cover it seconds after it appeared,
+      // so the install silently went nowhere (issue #170). Asked before
+      // the session is committed — by PENDING_USER_ACTION it is too late.
+      // The kiosk re-arms when the install is declined or fails (below);
+      // a successful install kills the process and the relaunch re-arms.
+      if (await _needsConfirmation()) {
+        _kioskPaused =
+            (await commands.execute('pauseKioskForInstall', const {})).ok;
       }
       final mode =
           await _installer.invokeMethod<String>('installApk', {'path': file.path});
@@ -416,10 +453,33 @@ class UpdateManager extends Manager {
       return null;
     } catch (e) {
       log.warn(name, 'update failed: $e');
+      await _resumeKioskIfPaused();
       return 'Update failed: $e';
     } finally {
       client.close();
       progress.value = null;
     }
+  }
+
+  /// Whether the coming install will put Android's confirmation screen up
+  /// (true) or go through silently (false). Off Android there is nothing
+  /// to confirm and nothing to pause.
+  Future<bool> _needsConfirmation() async {
+    try {
+      return await _installer.invokeMethod<bool>('needsConfirmation') ?? true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Whether the kiosk stood down for this install and still owes a
+  /// re-arm. Cleared by the declined/failed callbacks; a successful
+  /// install ends the process instead.
+  bool _kioskPaused = false;
+
+  Future<void> _resumeKioskIfPaused() async {
+    if (!_kioskPaused) return;
+    _kioskPaused = false;
+    await commands.execute('resumeKioskAfterInstall', const {});
   }
 }

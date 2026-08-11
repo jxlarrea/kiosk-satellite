@@ -44,6 +44,18 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   DateTime? _appLaunchedAt;
   static const _launchGrace = Duration(seconds: 15);
 
+  /// The kiosk is standing down for an update install (issue #170): lock
+  /// task pinning blocks Android's install confirmation screen outright,
+  /// and the foreground reclaim would pull the kiosk back over it within
+  /// seconds. Set by pauseKioskForInstall, cleared by
+  /// resumeKioskAfterInstall or the backstop timer below.
+  bool _installPause = false;
+  Timer? _installPauseTimer;
+
+  /// A confirmation nobody answers must not leave the kiosk down forever:
+  /// after this long the protections re-arm on their own.
+  static const _installPauseLimit = Duration(minutes: 10);
+
   /// Kiosk mode wants Home dead. When the pin holds, it already is; the
   /// reclaim covers the gap where pinning was declined or lost.
   bool get _kioskHomeGuard =>
@@ -157,6 +169,50 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           } on MissingPluginException {
             return const CommandResult.fail('opening URIs is Android-only');
           }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'pauseKioskForInstall',
+        description:
+            'Stand the kiosk protections down (unpin, drop the shields) so '
+            'Android\'s install confirmation can show and be answered '
+            '(issue #170). The update manager calls this right before an '
+            'install that needs confirming.',
+        handler: (_) async {
+          log.info(name, 'standing down for an install confirmation');
+          _installPause = true;
+          _installPauseTimer?.cancel();
+          _installPauseTimer = Timer(_installPauseLimit, () {
+            if (!_installPause) return;
+            log.warn(
+              name,
+              'the install confirmation was never answered; re-arming',
+            );
+            unawaited(commands.execute('resumeKioskAfterInstall', const {}));
+          });
+          await _apply(force: false);
+          return const CommandResult.ok();
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'resumeKioskAfterInstall',
+        description:
+            'Re-arm the kiosk protections after a declined or failed '
+            'install. A successful install never needs this: the process '
+            'dies with the install and the relaunch re-arms on its own.',
+        handler: (_) async {
+          _installPauseTimer?.cancel();
+          _installPauseTimer = null;
+          if (_installPause) log.info(name, 're-arming after the install');
+          _installPause = false;
+          await _apply();
+          return const CommandResult.ok();
         },
       ),
     );
@@ -447,6 +503,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
+      // The pause that follows pauseKioskForInstall is Android's install
+      // confirmation coming up — the one screen the reclaim must leave
+      // alone, under lockdown included (issue #170).
+      if (_installPause) return;
       if (!lockdownActive) {
         final launched = _appLaunchedAt;
         final sanctioned = launched != null &&
@@ -462,6 +522,9 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   }
 
   Future<void> _reclaimForeground() async {
+    // Armed before the install pause began (the timer rechecks): stand
+    // down rather than cover the install confirmation.
+    if (_installPause) return;
     if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
       return;
     }
@@ -484,6 +547,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
     _reclaimTimer?.cancel();
     _reclaimTimer = null;
+    _installPauseTimer?.cancel();
+    _installPauseTimer = null;
   }
 
   /// Push the armed flags to the Activity. With [force] false the bundle is
@@ -491,6 +556,11 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   /// would block the app from closing).
   Future<void> _apply({bool force = true}) async {
     if (!Platform.isAndroid) return;
+    // While the kiosk stands down for an install confirmation, any apply
+    // that races it (a settings change, a fresh Activity's ready) must not
+    // re-arm over Android's install screen. resumeKioskAfterInstall clears
+    // the flag before its own apply, so re-arming goes through unharmed.
+    force = force && !_installPause;
     // Lockdown arms the whole kiosk bundle without touching the persisted
     // kiosk settings: on exit the device returns to exactly the protections
     // the owner configured, kiosk mode on or off.

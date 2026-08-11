@@ -103,6 +103,12 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                         result.error("install", e.message, null)
                     }
                 }
+                // Asked before committing, so Dart can stand the kiosk down
+                // first when Android's confirm screen is coming: lock task
+                // pinning blocks that screen outright (issue #170), and by
+                // the time the session reports PENDING_USER_ACTION the
+                // launch has already been refused once.
+                "needsConfirmation" -> result.success(!canInstallSilently())
                 else -> result.notImplemented()
             }
         }
