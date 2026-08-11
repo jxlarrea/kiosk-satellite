@@ -60,6 +60,7 @@ const _triggerTypes = <(String, String)>[
   ('finger_taps', 'Multi-finger tap'),
   ('finger_hold', 'Multi-finger hold'),
   ('corner_sequence', 'Corner sequence'),
+  ('claps', 'Claps'),
 ];
 
 class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
@@ -164,6 +165,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
         ? ((existing?.trigger['taps'] as num?)?.toInt() ?? 1)
         : 1;
     var holdMs = (existing?.trigger['holdMs'] as num?)?.toInt() ?? 1500;
+    var claps = (existing?.trigger['claps'] as num?)?.toInt() ?? 2;
     final sequence = [
       for (final s in (existing?.trigger['sequence'] as List?) ?? const [])
         '$s',
@@ -284,6 +286,24 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                           ),
                         ),
                       ],
+                      if (type == 'claps') ...[
+                        DropdownButtonFormField<int>(
+                          initialValue: claps.clamp(2, 4),
+                          decoration: const InputDecoration(labelText: 'Claps'),
+                          items: const [
+                            DropdownMenuItem(value: 2, child: Text('2 claps')),
+                            DropdownMenuItem(value: 3, child: Text('3 claps')),
+                            DropdownMenuItem(value: 4, child: Text('4 claps')),
+                          ],
+                          onChanged: (value) =>
+                              setDialogState(() => claps = value ?? claps),
+                        ),
+                        Text(
+                          'Claps are heard through the microphone, with or '
+                          'without wake word detection.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                       if (type == 'corner_sequence') ...[
                         Text(
                           sequence.isEmpty
@@ -367,6 +387,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
       if (type == 'finger_taps') 'taps': fingerTaps,
       if (type == 'corner_hold' || type == 'finger_hold') 'holdMs': holdMs,
       if (type == 'corner_sequence') 'sequence': sequence,
+      if (type == 'claps') 'claps': claps,
     };
     final mapping = GestureMapping(
       id: existing?.id ?? 'g${DateTime.now().millisecondsSinceEpoch}',

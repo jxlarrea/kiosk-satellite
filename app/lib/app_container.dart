@@ -132,15 +132,17 @@ class AppContainer {
     // After kiosk: it listens for the AppLaunched its launchApp emits,
     // and its bringToFront/screenOn calls resolve at execute time.
     launcher,
-    // After kiosk and before the action surfaces it drives: it only
-    // listens for GestureDetected and runs registered commands.
-    gestures,
     screensaver,
     immich,
     deviceCamera,
     motion,
     homeAssistant,
     audio,
+    // After kiosk (it relays GestureDetected) and after audio: gestures may
+    // open the shared microphone for clap detection at init, and the capture
+    // selector and tuning must be seeded first. Commands resolve at execute
+    // time, so running late costs nothing.
+    gestures,
     wakeWord,
     mqtt,
     sendspin,

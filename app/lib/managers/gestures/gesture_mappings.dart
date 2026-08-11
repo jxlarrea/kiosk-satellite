@@ -19,6 +19,10 @@
 ///  - finger_hold:     fingers (2|3), holdMs
 ///  - corner_sequence: sequence (list of 2..8 corners)
 ///
+/// One trigger is acoustic rather than touch (detected by ClapDetector on
+/// the shared microphone stream, never sent to GestureEngine):
+///  - claps:           claps (2..4)
+///
 /// Action types (run in GesturesManager):
 ///  - navigate:         path (a dashboard view, via haNavigate)
 ///  - url:              url (opened in the external link overlay)
@@ -83,10 +87,12 @@ List<GestureMapping> decodeGestureMappings(String json) {
 }
 
 /// The flat trigger list KioskLock pushes to GestureEngine.configure.
+/// Claps are not touch: they never reach the native engine.
 List<Map<String, Object?>> nativeGestureTriggers(
   List<GestureMapping> mappings,
 ) => [
   for (final m in mappings)
+    if (m.triggerType != 'claps')
     {
       'id': m.id,
       'type': m.triggerType,
@@ -136,9 +142,19 @@ String describeGestureTrigger(Map<String, Object?> trigger) {
             '${seq.map((c) => '$c'.toUpperCase()).join(' > ')}';
       }
       return 'Corner sequence';
+    case 'claps':
+      return '${trigger['claps']} claps';
   }
   return 'Gesture';
 }
+
+/// The clap counts the configured mappings listen for: what ClapDetector is
+/// armed with, and empty when no clap mapping exists (no microphone use).
+Set<int> clapTargets(List<GestureMapping> mappings) => {
+  for (final m in mappings)
+    if (m.triggerType == 'claps' && m.trigger['claps'] is num)
+      (m.trigger['claps'] as num).toInt(),
+};
 
 /// "Open camera view Front door": the row subtitle in both UIs.
 String describeGestureAction(Map<String, Object?> action) {

@@ -62,7 +62,8 @@ Sideload the app, run the setup wizard and get a locked-down, always-on dashboar
   lock-task support on device-owner provisioned tablets.
 
 &bull; **Gestures**: map corner taps, corner holds, multi-finger taps and
-  holds, or a knock-code corner sequence to
+  holds, a knock-code corner sequence, or 2 to 4 claps (the Clapper,
+  heard through the microphone, no Voice Satellite required) to
   [configurable actions](docs/gestures.md): jump to a dashboard view,
   call a Home Assistant service or script, open another app and more,
   all invisible to guests.

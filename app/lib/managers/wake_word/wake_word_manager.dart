@@ -176,6 +176,10 @@ class WakeWordManager extends Manager {
 
   bool get enabled => _settings.get(defs.wakeWordEnabled);
 
+  /// The satellite is muted (the card said so when it released the mic).
+  /// Carried on [WakeWordStateChanged] so the clap detector goes quiet too.
+  bool get _muted => _released && _releaseReason == 'muted';
+
   /// Actively detecting. The engine can be running (mic open, models loaded)
   /// while detection is paused for the duration of a voice turn.
   bool get listening => _engine.running && _active;
@@ -329,7 +333,8 @@ class WakeWordManager extends Manager {
         'engine unavailable ($detail); Voice Satellite keeps browser detection');
     // Tell the page and the settings UIs, both of which may be showing
     // "Listening natively" over a microphone that no longer exists.
-    bus.publish(WakeWordStateChanged(active: _active, listening: listening));
+    bus.publish(WakeWordStateChanged(
+        active: _active, listening: listening, muted: _muted));
   }
 
   /// Try again after a failure: re-ask for the microphone, re-fetch the models.
@@ -572,7 +577,8 @@ class WakeWordManager extends Manager {
           _active = true; // a later re-push starts listening, not suspended
           await _engine.stop();
           log.info(name, 'released by page (mic closed)');
-          bus.publish(WakeWordStateChanged(active: _active, listening: listening));
+          bus.publish(WakeWordStateChanged(
+              active: _active, listening: listening, muted: _muted));
           return const CommandResult.ok();
         },
       ))
@@ -948,7 +954,8 @@ class WakeWordManager extends Manager {
       }
     }
     await _syncBackgroundService();
-    bus.publish(WakeWordStateChanged(active: _active, listening: listening));
+    bus.publish(WakeWordStateChanged(
+        active: _active, listening: listening, muted: _muted));
   }
 
   /// The stop word fired. Unlike a wake word this starts no turn and touches

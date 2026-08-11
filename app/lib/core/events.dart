@@ -294,9 +294,18 @@ class StopWordDetected extends AppEvent {
 }
 
 class WakeWordStateChanged extends AppEvent {
-  const WakeWordStateChanged({required this.active, required this.listening});
+  const WakeWordStateChanged({
+    required this.active,
+    required this.listening,
+    this.muted = false,
+  });
   final bool active;
   final bool listening;
+
+  /// Voice Satellite muted the satellite and the microphone is closed. The
+  /// clap detector honors this too: someone who mutes the device expects it
+  /// to stop listening, claps included.
+  final bool muted;
 }
 
 // ── Browser ────────────────────────────────────────────────────────────

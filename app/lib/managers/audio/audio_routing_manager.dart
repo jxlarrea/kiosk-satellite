@@ -8,6 +8,7 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import '../wake_word/vsww/native_mic.dart';
+import 'mic_hub.dart';
 
 /// The user's microphone and speaker selections, applied to native audio.
 ///
@@ -67,6 +68,10 @@ class AudioRoutingManager extends Manager {
         // because this manager inits (and so subscribes) first.
         NativeMic.deviceSelector = _settings.get(defs.audioMicDevice);
         _micDeviceId = await _resolveMicId();
+        // With the capture shared (clap detection can hold it without the
+        // engine), the engine's own restart no longer guarantees a fresh
+        // session; the hub reopens it with the values just pushed.
+        await MicHub.instance.bounce();
       } else if (e.key == defs.micAudioSource.key ||
           e.key == defs.micGainDb.key ||
           e.key == defs.micAgc.key ||
@@ -74,6 +79,7 @@ class AudioRoutingManager extends Manager {
         // Same contract as the device selector above: the values must be
         // current before the wake-word manager reopens capture on this key.
         _pushCaptureTuning();
+        await MicHub.instance.bounce();
       } else if (e.key == defs.audioSpeakerDevice.key) {
         _pushOutput(_settings.get(defs.audioSpeakerDevice));
       }
@@ -135,6 +141,9 @@ class AudioRoutingManager extends Manager {
           id == null
               ? 'selected microphone disappeared; capture falls back'
               : 'selected microphone (re)appeared; capture moves to it');
+      // A capture held open only by the clap detector has no engine restart
+      // to move it; reopen it here so it follows the device.
+      await MicHub.instance.bounce();
     }
     bus.publish(AudioDevicesChanged(capturePathChanged: moved));
   }

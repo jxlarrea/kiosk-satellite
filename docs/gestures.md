@@ -9,6 +9,11 @@ Gestures generalize the kiosk exit gesture: where that one is fixed (fast
 taps anywhere, then the PIN, then the menu), these are configurable on both
 ends. The exit gesture itself is unchanged and keeps working alongside them.
 
+One gesture is not touch at all: **Claps**. Two, three or four claps heard
+through the microphone trigger an action from across the room, the way the
+classic Clapper turned on a lamp. Clap detection works with or without
+Voice Satellite; see [its section](#claps) below.
+
 ## Setup
 
 Settings, then **Gestures**: the list of gestures and the actions they
@@ -35,6 +40,7 @@ entity against the connected instance before anything is saved.
 | Multi-finger tap | 2 or 3 fingers, single or double tap, anywhere. |
 | Multi-finger hold | 2 or 3 fingers held down, anywhere. |
 | Corner sequence | An ordered sequence of corner taps, like a knock code. |
+| Claps | 2 to 4 claps, heard through the microphone. |
 
 The corners are boxes about a centimeter and a half on a side. Two mappings
 can share a corner with different tap counts; the shorter one waits a beat
@@ -64,6 +70,41 @@ The chooser groups them: Kiosk Satellite, Android, Home Assistant.
 | Run a script | A `script.*` entity, run through `script.turn_on`. |
 | Trigger an automation | An `automation.*` entity, run through `automation.trigger`. |
 | Fire an event | An event type and optional data for automations to listen to. |
+
+## Claps
+
+A clap is detected as what it is acoustically: a sharp, broadband burst
+that jumps far above the room's noise level and dies away within a fraction
+of a second. Detection is plain arithmetic on the audio stream, no models
+and no cloud, and it is light enough to run on the weakest supported
+devices without competing with wake word detection.
+
+Claps in a sequence land roughly a half second apart or faster; a pause of
+about three quarters of a second ends the sequence. Two mappings can use
+different counts; a smaller count waits out that pause when a larger one is
+configured, to be sure more claps are not coming.
+
+The microphone side:
+
+- With Voice Satellite wake word detection running, clap detection shares
+  the capture that is already open and costs nothing extra. Without it, the
+  app opens the microphone itself while at least one claps mapping exists,
+  so the Clapper works on a device that has never seen Voice Satellite. The
+  first claps mapping prompts for the Microphone permission if it was never
+  granted.
+- Claps are ignored while a voice interaction is running: talking at the
+  satellite must not fire an action.
+- Muting the satellite in Voice Satellite closes the microphone, claps
+  included. A muted device is not listening, full stop.
+- Lockdown Mode and kiosk mode's Disable Gestures silence claps exactly as
+  they silence touch gestures.
+- Thresholds adapt to the room: steady loudness (music, a running TV)
+  raises the bar claps must clear rather than firing through it. Detection
+  keeps working over background music, though very percussive tracks at
+  high volume can occasionally read as claps; pick 3 or 4 claps for
+  anything that should never misfire.
+- On Android 12 and later the system microphone indicator shows while clap
+  detection is listening, as it does for wake word detection.
 
 ## Timing
 

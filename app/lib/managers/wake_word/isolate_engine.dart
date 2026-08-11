@@ -6,8 +6,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/logging.dart';
 import '../../core/permissions.dart';
+import '../audio/mic_hub.dart';
 import 'engine.dart';
-import 'vsww/native_mic.dart';
 import 'wake_msg.dart';
 
 export 'wake_msg.dart' show WakeMsg;
@@ -138,7 +138,9 @@ Future<Isolate?> _spawnIsolate(
 abstract class IsolateWakeEngine extends WakeWordEngine {
   IsolateWakeEngine(this.log,
       {MicSource? mic, IsolateSpawner? spawner, MicPermission? micPermission})
-      : _mic = mic ?? (() => NativeMic().stream()),
+      // Through the hub, not NativeMic directly: the clap detector shares
+      // the capture, and MicRecorder only serves one native listener.
+      : _mic = mic ?? (() => MicHub.instance.stream()),
         _spawn = spawner ?? _spawnIsolate,
         _micPermission = micPermission ?? _requestMicPermission;
 

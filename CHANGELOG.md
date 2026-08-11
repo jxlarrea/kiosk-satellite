@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **The Clapper**: clap sequences as a gesture. A new **Claps** trigger on the Gestures page maps 2, 3 or 4 claps to any existing gesture action, so a light scene, a camera view or the screensaver is two claps away from across the room. Detection is plain arithmetic on the microphone stream (no models, no cloud) with thresholds that adapt to the room's noise level, light enough for the weakest supported devices. With Voice Satellite wake word detection running it shares the already-open capture at no extra cost; without Voice Satellite the app opens the microphone itself, so the Clapper works standalone. Claps are ignored during a voice interaction, while the satellite is muted, in Lockdown Mode, and under kiosk mode's Disable Gestures.
+
 ## v2026.8.23 - 2026-08-11
 
 ### Added

@@ -3102,6 +3102,7 @@ const GESTURE_TRIGGERS = [
   ['finger_taps', 'Multi-finger tap'],
   ['finger_hold', 'Multi-finger hold'],
   ['corner_sequence', 'Corner sequence'],
+  ['claps', 'Claps'],
 ];
 const GESTURE_ACTION_GROUPS = [
   ['Kiosk Satellite', [
@@ -3144,6 +3145,7 @@ function describeGestureTrigger(t) {
     case 'corner_sequence':
       return 'Corner sequence: '
         + (t.sequence || []).map((c) => String(c).toUpperCase()).join(' > ');
+    case 'claps': return `${t.claps} claps`;
   }
   return 'Gesture';
 }
@@ -3550,6 +3552,14 @@ async function editGesture(existing) {
   const fingerTapsSel = cameraSelectField('Taps',
     [{ value: '1', label: 'Single tap' }, { value: '2', label: 'Double tap' }],
     String(Number(t.taps) === 2 ? 2 : 1));
+  const clapsSel = cameraSelectField('Claps',
+    [{ value: '2', label: '2 claps' }, { value: '3', label: '3 claps' },
+      { value: '4', label: '4 claps' }],
+    String(Math.min(Math.max(Number(t.claps) || 2, 2), 4)));
+  const clapsNote = document.createElement('span');
+  clapsNote.className = 'desc';
+  clapsNote.textContent = 'Claps are heard through the microphone, with or '
+    + 'without wake word detection.';
 
   const holdWrap = document.createElement('label');
   holdWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
@@ -3614,7 +3624,7 @@ async function editGesture(existing) {
   }));
 
   body.append(typeSel.wrap, cornerSel.wrap, tapsSel.wrap, fingersSel.wrap,
-    fingerTapsSel.wrap, holdWrap, seqWrap, actionRow);
+    fingerTapsSel.wrap, clapsSel.wrap, clapsNote, holdWrap, seqWrap, actionRow);
   const update = () => {
     const type = typeSel.select.value;
     cornerSel.wrap.style.display =
@@ -3623,6 +3633,8 @@ async function editGesture(existing) {
     fingersSel.wrap.style.display =
       type === 'finger_taps' || type === 'finger_hold' ? '' : 'none';
     fingerTapsSel.wrap.style.display = type === 'finger_taps' ? '' : 'none';
+    clapsSel.wrap.style.display = type === 'claps' ? '' : 'none';
+    clapsNote.style.display = type === 'claps' ? '' : 'none';
     holdWrap.style.display =
       type === 'corner_hold' || type === 'finger_hold' ? '' : 'none';
     seqWrap.style.display = type === 'corner_sequence' ? '' : 'none';
@@ -3652,6 +3664,7 @@ async function editGesture(existing) {
         trigger.holdMs = Number(holdInput.value);
       }
       if (type === 'corner_sequence') trigger.sequence = [...sequence];
+      if (type === 'claps') trigger.claps = Number(clapsSel.select.value);
       const mappings = readGestureMappings();
       const mapping = {
         id: existing?.id || `g${Date.now()}`, trigger, action,

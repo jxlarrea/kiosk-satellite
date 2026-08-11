@@ -1,13 +1,20 @@
+import 'dart:async';
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/core/permissions.dart';
 import 'package:kiosk_satellite/managers/gestures/gesture_mappings.dart';
 import 'package:kiosk_satellite/managers/gestures/gestures_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'clap_synth.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -277,6 +284,173 @@ void main() {
       expect(executed[0].$1, 'showCameraView');
       expect(executed[0].$2, {'viewId': 'v1'});
       expect(executed[1].$1, 'hideCameraView');
+    });
+  });
+
+  group('clapTargets', () {
+    test('collects clap counts and ignores everything else', () {
+      final mappings = decodeGestureMappings(
+        '[{"id":"g1","trigger":{"type":"claps","claps":2},'
+        '"action":{"type":"screensaver"}},'
+        '{"id":"g2","trigger":{"type":"claps","claps":4},'
+        '"action":{"type":"screensaver"}},'
+        '{"id":"g3","trigger":{"type":"corner_taps","corner":"tl","taps":3},'
+        '"action":{"type":"screensaver"}}]',
+      );
+      expect(clapTargets(mappings), {2, 4});
+      // Claps are acoustic: the native touch engine never sees them.
+      expect(nativeGestureTriggers(mappings).map((t) => t['id']), ['g3']);
+    });
+  });
+
+  group('clap gestures', () {
+    const clapMapping =
+        '[{"id":"c1","trigger":{"type":"claps","claps":2},'
+        '"action":{"type":"navigate","path":"lovelace/0"}}]';
+
+    late EventBus bus;
+    late SettingsManager settings;
+    late GesturesManager gestures;
+    late List<(String, Map<String, Object?>)> executed;
+    late StreamController<Uint8List> mic;
+    late int permissionAsks;
+
+    Future<void> settle() async {
+      for (var i = 0; i < 8; i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    Future<void> build(
+      String mappingsJson, {
+      PermissionOutcome outcome = PermissionOutcome.granted,
+    }) async {
+      SharedPreferences.setMockInitialValues({
+        'ks.${defs.gestureMappings.key}': mappingsJson,
+      });
+      bus = EventBus();
+      final log = Logger();
+      final commands = CommandRegistry(log);
+      executed = [];
+      commands.register(Command(
+        name: 'haNavigate',
+        description: 'test stub',
+        handler: (p) async {
+          executed.add(('haNavigate', p));
+          return const CommandResult.ok();
+        },
+      ));
+      settings = SettingsManager(bus, commands, log);
+      await settings.init();
+      mic = StreamController<Uint8List>.broadcast();
+      permissionAsks = 0;
+      gestures = GesturesManager(
+        bus,
+        commands,
+        log,
+        settings,
+        micStream: () => mic.stream,
+        micPermission: () async {
+          permissionAsks++;
+          return outcome;
+        },
+      );
+      await gestures.init();
+      await settle();
+    }
+
+    /// Push a synthetic scene through the mic stream in 80 ms chunks.
+    Future<void> hear(List<double> samples) async {
+      final bytes = pcmOf(samples);
+      const chunk = 2560;
+      for (var i = 0; i < bytes.length; i += chunk) {
+        mic.add(Uint8List.sublistView(
+            bytes, i, min(i + chunk, bytes.length)));
+      }
+      await settle();
+    }
+
+    test('two claps run the mapped action', () async {
+      await build(clapMapping);
+      expect(mic.hasListener, isTrue, reason: 'a claps mapping opens the mic');
+      await hear(clapScene(2, Random(20)));
+      expect(executed.single.$1, 'haNavigate');
+      expect(executed.single.$2, {'path': 'lovelace/0'});
+    });
+
+    test('no clap mappings never opens the mic', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
+        '"taps":3},"action":{"type":"navigate","path":"lovelace/0"}}]',
+      );
+      expect(mic.hasListener, isFalse);
+      expect(permissionAsks, 0);
+    });
+
+    test('claps during a voice turn are ignored', () async {
+      await build(clapMapping);
+      bus.publish(const WakeWordStateChanged(active: false, listening: false));
+      await settle();
+      await hear(clapScene(2, Random(21)));
+      expect(executed, isEmpty, reason: 'that was someone talking to VS');
+      bus.publish(const WakeWordStateChanged(active: true, listening: true));
+      await settle();
+      await hear(clapScene(2, Random(22)));
+      expect(executed, hasLength(1));
+    });
+
+    test('muting the satellite closes the capture, unmuting reopens', () async {
+      await build(clapMapping);
+      bus.publish(const WakeWordStateChanged(
+          active: true, listening: false, muted: true));
+      await settle();
+      expect(mic.hasListener, isFalse, reason: 'muted means not listening');
+      bus.publish(const WakeWordStateChanged(active: true, listening: true));
+      await settle();
+      expect(mic.hasListener, isTrue);
+    });
+
+    test('lockdown closes the capture', () async {
+      await build(clapMapping);
+      await settings.set(defs.lockdownEnabled, true);
+      await settle();
+      expect(mic.hasListener, isFalse);
+      await settings.set(defs.lockdownEnabled, false);
+      await settle();
+      expect(mic.hasListener, isTrue);
+    });
+
+    test('kiosk Disable Gestures covers claps too', () async {
+      await build(clapMapping);
+      await settings.set(defs.kioskEnabled, true);
+      await settings.set(defs.kioskDisableGestures, true);
+      await settle();
+      expect(mic.hasListener, isFalse);
+    });
+
+    test('a declined microphone stays closed and is not re-nagged', () async {
+      await build(clapMapping, outcome: PermissionOutcome.declined);
+      expect(mic.hasListener, isFalse);
+      expect(permissionAsks, 1);
+      // An unrelated wake state change must not re-prompt...
+      bus.publish(const WakeWordStateChanged(active: true, listening: true));
+      await settle();
+      expect(permissionAsks, 1);
+      // ...but editing the mappings is the user re-engaging: ask again.
+      await settings.setFromJson(defs.gestureMappings.key, clapMapping);
+      await settle();
+      expect(permissionAsks, 2);
+    });
+
+    test('a capture error retries instead of going deaf', () async {
+      await build(clapMapping);
+      mic.addError(StateError('audioserver died'));
+      await settle();
+      expect(mic.hasListener, isFalse);
+      // The retry timer is 30 s; call the sync directly by nudging a gate.
+      await settings.setFromJson(defs.gestureMappings.key, clapMapping);
+      await settle();
+      expect(mic.hasListener, isTrue);
     });
   });
 }
