@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- Waking the panel no longer rebuilds the dashboard. Every resume from the screensaver's screen-off (and any other background spell) force-reconnected the Home Assistant websocket as insurance against the half-open socket a long freeze can leave behind; the frontend answered with a connection-lost flash and every camera card tearing down and renegotiating its stream, which read as the page reloading itself moments after the screen came on. The insurance now checks before it acts: a ping goes through the frontend's connection first, and a socket that answers is provably alive and left untouched. Only a socket that stays silent (the half-open case the reconnect exists for) still gets cycled, so the recovery is exactly as reliable as before, it just stops paying its cost on healthy wakes.
+
 ## v2026.8.27 - 2026-08-11
 
 ### Fixed

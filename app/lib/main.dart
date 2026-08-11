@@ -197,7 +197,11 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
     if (_voiceActive) return;
     final wake = _lastWakeAt;
     if (wake != null && DateTime.now().difference(wake) < _wakeGuard) return;
-    widget.container.browser.reconnectHaSocket();
+    // Verified first: a socket that answers a ping is left alone, so a
+    // routine wake (the screen-off feature wakes several times a day) does
+    // not cost a connection flash and every camera card's stream; only a
+    // socket that fails the round trip gets the cycle.
+    widget.container.browser.nudgeHaSocketIfDead();
   }
 
   @override

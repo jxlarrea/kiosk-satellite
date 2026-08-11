@@ -888,9 +888,8 @@ class BrowserManager extends Manager {
   /// re-register, with no page reload — the page, the VS session and the wake
   /// word all stay loaded. A no-op on non-HA pages.
   Future<void> reconnectHaSocket() async {
-    final controller = _controller;
-    if (controller == null) return;
-    final result = await controller.evaluateJavascript(source: '''
+    if (_controller == null && evalOverride == null) return;
+    final result = await _eval('''
       (function () {
         try {
           var ha = document.querySelector('home-assistant');
@@ -909,6 +908,71 @@ class BrowserManager extends Manager {
       })()
     ''');
     log.info(name, 'HA socket nudge: $result');
+  }
+
+  /// Test seam for the JS round trips above and below; production always
+  /// asks the live controller.
+  @visibleForTesting
+  Future<Object?> Function(String source)? evalOverride;
+
+  Future<Object?> _eval(String source) async {
+    final override = evalOverride;
+    if (override != null) return override(source);
+    return _controller?.evaluateJavascript(source: source);
+  }
+
+  /// The resume-path recovery: cycle the HA socket only when it fails a
+  /// liveness check.
+  ///
+  /// [reconnectHaSocket] exists for the half-open socket a long freeze
+  /// leaves behind, which still reads OPEN and connected — no state
+  /// inspection can clear it, so the resume path used to cycle the socket
+  /// unconditionally. But on a panel whose process the foreground service
+  /// keeps alive, the background keepalive usually kept the socket genuinely
+  /// healthy, and the blind cycle made every wake cost a "connection lost"
+  /// flash and a from-scratch rebuild of every camera card's stream — which
+  /// reads as the dashboard reloading itself.
+  ///
+  /// The one signal a zombie cannot fake is a round trip, so this sends a
+  /// ping through the frontend's connection and waits for the pong. An
+  /// answer within [timeout] means the socket is provably alive and it is
+  /// left untouched; no answer, an errored send, or a page with no
+  /// connection at all falls through to [reconnectHaSocket], exactly the
+  /// recovery the resume path always had.
+  Future<void> nudgeHaSocketIfDead({
+    Duration timeout = const Duration(seconds: 3),
+  }) async {
+    if (_controller == null && evalOverride == null) return;
+    final started = await _eval('''
+      (function () {
+        try {
+          var ha = document.querySelector('home-assistant');
+          var conn = ha && ha.hass && ha.hass.connection;
+          if (!conn || !conn.connected || !conn.socket ||
+              conn.socket.readyState !== 1) {
+            return 'no-connection';
+          }
+          window.__ksPingCheck = 'pending';
+          conn.sendMessagePromise({ type: 'ping' }).then(
+            function () { window.__ksPingCheck = 'alive'; },
+            function () { window.__ksPingCheck = 'dead'; });
+          return 'pending';
+        } catch (e) { return 'no-connection'; }
+      })()
+    ''');
+    if ('$started' == 'pending') {
+      final deadline = DateTime.now().add(timeout);
+      while (DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        final state = await _eval('window.__ksPingCheck');
+        if ('$state' == 'alive') {
+          log.info(name, 'HA socket answered the resume ping; leaving it be');
+          return;
+        }
+        if ('$state' == 'dead') break;
+      }
+    }
+    await reconnectHaSocket();
   }
 
   /// Serializes and rate-limits [onNetworkAvailable]: a flapping network
