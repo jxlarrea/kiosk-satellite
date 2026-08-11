@@ -47,7 +47,10 @@ Home Assistant itself would draw for that kind of entity, so a lock looks like
 a lock and an open garage looks open.
 
 Everything is drawn in one muted tone. State is never color coded: the row is
-meant to be read across a dark room without competing with the clock.
+meant to be read across a dark room without competing with the clock. On the
+Clock screensaver the tone is the face's own digit color (Clock color for
+Digital, the digit colors for Flip and Roller), so the row stays readable on
+whatever backdrop the clock was given.
 
 States are shown the way they read in Home Assistant, capitalised (`Open`,
 `Locked`, `Closed`), with the unit appended for numeric sensors.

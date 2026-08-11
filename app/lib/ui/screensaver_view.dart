@@ -436,7 +436,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         // The flip backdrop follows the card color (see flipBackdrop).
         'flip' => flipBackdrop(
             _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5))),
-        _ => Colors.black,
+        _ => _rgb(defs.screensaverClockBgColor, Colors.black),
       },
       // Expand: both children are pinned to the display, so the stack must
       // be the display rather than sized to whatever the clock happens to
@@ -464,15 +464,15 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                 container: widget.container,
                 scale: glanceScale,
                 // The row wears the face's digit color so it reads as part
-                // of the clock — and stays legible on the flip and roller
-                // faces, whose backdrops follow the user's colors. The
-                // digital face keeps the standalone grey-on-black palette.
+                // of the clock — and stays legible on every face, whose
+                // backdrops all follow the user's colors now (issue #173:
+                // a white backdrop under grey-on-black glance rows).
                 tint: switch (style) {
                   'flip' => _rgb(
                       defs.screensaverFlipDigitColor, const Color(0xFF212121)),
                   'roller' => _rgb(defs.screensaverRollerDigitColor,
                       const Color(0xFFFAFAFA)),
-                  _ => null,
+                  _ => _color(),
                 },
               ),
             ),

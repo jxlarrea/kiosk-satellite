@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- The Digital clock screensaver has a **Background color** setting (#173). It was the one face with a hardcoded black backdrop; Flip and Roller already followed their card and background colors. A white background with a black clock color gives the inverted face e-ink panels read best. The At a Glance row now wears the clock's color on the Digital face too (it already followed the Flip and Roller digit colors), so the row stays readable instead of staying grey-on-white over a light backdrop.
+
 ### Fixed
 - MSE camera tiles no longer grow a gray Cast button in their corner (seen on the Echo Show 8). Chromium overlays that button on any video playing from a media source once a castable device is visible on the network; a camera tile is not a castable movie, and now says so. WebRTC tiles never had it, which is why the icon only appeared on MSE streams.
 

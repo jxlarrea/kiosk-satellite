@@ -1153,6 +1153,21 @@ const screensaverClockColor = SettingDef<String>(
   dependsOnValue: 'digital',
 );
 
+// The color behind the digital clock (issue #173): e-ink panels want the
+// whole face inverted, black digits on white, and until this setting the
+// backdrop was hardcoded black. Flip and Roller already have their own.
+const screensaverClockBgColor = SettingDef<String>(
+  key: 'screensaver.clock_bg_color',
+  type: SettingType.string,
+  defaultValue: '0,0,0',
+  title: 'Background color',
+  description: 'The color behind the clock.',
+  category: 'Screensaver',
+  section: 'Clock',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'digital',
+);
+
 // A local photo behind the clock (issue #132), any face. The device picker
 // stores the path of a copy in app documents, made when the photo is
 // picked; the original may live in picker cache the OS purges. The remote
@@ -3195,6 +3210,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockScale,
   screensaverClockBackground,
   screensaverClockColor,
+  screensaverClockBgColor,
   screensaverFlipDigitColor,
   screensaverFlipBgColor,
   screensaverRollerDigitColor,
