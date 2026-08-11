@@ -21,6 +21,7 @@ Settings, then **Screensaver** (the same tab exists in the remote admin):
 | Idle timeout (seconds) | 300 | Inactivity period before the screensaver starts. |
 | Screensaver brightness | off | A separate brightness while the screensaver shows. See below. |
 | Brightness level | 20% | Applies to every mode except Dim and Black. |
+| Turn screen off after | 0 (never) | Truly power the panel off once the screensaver has run this long. See below. |
 | Pixel shift | off | Nudge the image every minute to protect OLED panels. Not for Black, whose pixels are already off. |
 | Small clock | off | A corner clock over the photo and website modes. See below. |
 | Screensaver mode | Black | What the screensaver shows. Only the selected mode's settings appear below the picker. |
@@ -156,6 +157,34 @@ is active. Moving the slider while the screensaver shows applies
 immediately, so it can be tuned by eye. The pre-screensaver brightness
 is saved persistently, so even an app restart mid-screensaver cannot
 make the night level the new normal.
+
+## Turning the screen off
+
+The screensaver holds the panel awake while it shows, so the OS idle
+timeout never fires under it. **Turn screen off after** is the
+sanctioned way out: once the screensaver has been up that long, the
+panel truly powers off (up to 60 minutes, in 5-minute steps; 0, the
+default, never does). Powering the panel off is device-admin territory
+on Android, so the setting needs the **Device admin** permission
+(Settings, Device, Permissions); without it the timer logs a warning
+and leaves the panel on.
+
+The screensaver session stays active behind the dark panel, which is
+what makes waking symmetrical: every dismiss source powers the panel
+back on. That covers motion (with
+[background listening](microphone.md) on, the camera keeps watching
+through a real screen-off; see [Camera](camera.md)), the wake word, the
+MQTT **Dismiss screensaver** button, and a Home Assistant automation
+calling `stopScreensaver`. All of them land on the dashboard,
+not on the screensaver. The power button also wakes the panel; the
+screensaver is still showing then, and a fresh screen-off countdown
+starts.
+
+A day-to-day example: photos during the day, Black in the evening via
+the [schedule](#schedule), and Turn screen off after set to 10 minutes.
+The display goes fully dark overnight once the room empties, and the
+first person walking past in the morning (or "okay nabu") brings the
+dashboard straight back.
 
 ## Schedule
 

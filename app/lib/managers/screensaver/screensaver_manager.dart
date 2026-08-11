@@ -74,12 +74,18 @@ Map<String, Object?>? activeScheduleEntry(
 ///           watches [overlayActive])
 ///
 /// Dimming and restoring go through 'setBrightness'/'screenOn' registry
-/// commands so this manager never references the screen manager. Never
-/// 'screenOff': that is real display power (device-admin lockNow), which
-/// would freeze the app — the screensaver's black is brightness zero
-/// behind an overlay, with everything still running.
+/// commands so this manager never references the screen manager. The
+/// screensaver's black stays brightness zero behind an overlay (the app
+/// alive, motion and wake word running); real display power-off happens in
+/// exactly one place, the "Turn screen off after" timer, and by explicit
+/// request — with background listening on, the process (and its camera,
+/// carried by the camera-type foreground service) keeps running behind the
+/// dark panel, so motion, the MQTT dismiss and the wake word can all light
+/// it back up. The session stays active across the power-off, which is what
+/// routes every dismiss source through [stop] and its screenOn.
 class ScreensaverManager extends Manager {
-  ScreensaverManager(super.bus, super.commands, super.log, this._settings);
+  ScreensaverManager(super.bus, super.commands, super.log, this._settings,
+      {this._screenOffUnit = const Duration(minutes: 1)});
 
   final SettingsManager _settings;
 
@@ -90,6 +96,15 @@ class ScreensaverManager extends Manager {
   Timer? _scheduleTimer;
   bool _active = false;
   bool _paused = false;
+
+  /// "Turn screen off after": armed when a session starts (and re-armed on
+  /// a mid-session wake, so a power-button wake that dismisses nothing gets
+  /// its own fresh countdown), canceled when the session ends or the panel
+  /// goes dark by other hands.
+  Timer? _screenOffTimer;
+
+  /// One real minute, injectable for tests only.
+  final Duration _screenOffUnit;
 
   /// The `at` of the schedule entry the current visuals were applied under,
   /// so the periodic tick only reapplies on an actual boundary crossing.
@@ -154,6 +169,19 @@ class ScreensaverManager extends Manager {
       if (e.active && _voiceTurn) {
         _voiceTurn = false;
         _resetIdleTimer();
+      }
+    });
+    // The panel changing state under an active session moves the screen-off
+    // countdown with it: a wake (power button, motion about to dismiss)
+    // starts a fresh one, a power-off — ours or anyone's — leaves nothing
+    // to count down for.
+    bus.on<ScreenStateChanged>().listen((e) {
+      if (!_active) return;
+      if (e.on) {
+        _armScreenOffTimer();
+      } else {
+        _screenOffTimer?.cancel();
+        _screenOffTimer = null;
       }
     });
     bus.on<SendspinNowPlayingChanged>().listen((e) {
@@ -229,6 +257,11 @@ class ScreensaverManager extends Manager {
           _idleTimer?.cancel();
         }
       }
+      // Moving the screen-off slider under a running session applies to it:
+      // the countdown restarts at the new value (or stops at 0).
+      if (_active && e.key == defs.screensaverScreenOffMinutes.key) {
+        _armScreenOffTimer();
+      }
       // Moving the screensaver-brightness controls while the screensaver is
       // showing applies immediately: the slider doubles as a live preview.
       if (_active &&
@@ -278,6 +311,11 @@ class ScreensaverManager extends Manager {
           description: 'Dismiss the screensaver (one-shot)',
           handler: (_) async {
             await stop();
+            // The dismiss must light a dark panel even when nothing was up
+            // to dismiss (stop() pokes it only when a session ended): the
+            // button's job is "bring the dashboard back", and half of that
+            // is the screen. A no-op on a lit panel.
+            await commands.execute('screenOn', const {});
             _resetIdleTimer();
             return const CommandResult.ok();
           },
@@ -414,8 +452,31 @@ class ScreensaverManager extends Manager {
     // app and take the admin server down with it.
     await commands.execute('keepScreenAwake', {'enabled': true});
     log.info(name, 'start ($_effectiveMode)');
+    _armScreenOffTimer();
     await _applyVisuals();
     bus.publish(const ScreensaverStateChanged(active: true));
+  }
+
+  /// "Turn screen off after": once the screensaver has been up this long,
+  /// truly power the panel off (device-admin lockNow via the screenOff
+  /// command). The session stays active behind the dark panel — that is
+  /// what lets motion, the MQTT dismiss and the wake word wake it through
+  /// the normal [stop] path. Quiet on a missing device admin grant: a
+  /// timer firing overnight must never put Android's permission screen up.
+  void _armScreenOffTimer() {
+    _screenOffTimer?.cancel();
+    _screenOffTimer = null;
+    final minutes = _settings.get(defs.screensaverScreenOffMinutes).toInt();
+    if (minutes <= 0) return;
+    _screenOffTimer = Timer(_screenOffUnit * minutes, () async {
+      _screenOffTimer = null;
+      if (!_active) return;
+      log.info(name, 'up for ${minutes}m; powering the panel off');
+      final r = await commands.execute('screenOff', const {'prompt': false});
+      if (!r.ok) {
+        log.warn(name, 'could not power the panel off: ${r.error}');
+      }
+    });
   }
 
   /// Save the restore point before the first brightness change of a
@@ -532,6 +593,8 @@ class ScreensaverManager extends Manager {
   Future<void> stop() async {
     if (!_active) return;
     _active = false;
+    _screenOffTimer?.cancel();
+    _screenOffTimer = null;
     log.info(name, 'stop');
     // Thaw the dashboard while the overlay still covers it, so the wake
     // never shows a blank hole where the page is (a no-op unless the
@@ -569,6 +632,7 @@ class ScreensaverManager extends Manager {
   Future<void> dispose() async {
     _idleTimer?.cancel();
     _scheduleTimer?.cancel();
+    _screenOffTimer?.cancel();
     activeView.dispose();
   }
 }

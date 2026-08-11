@@ -171,8 +171,17 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         name: 'screenOff',
         description:
             'Turn the display off (needs the device admin permission)',
-        handler: (_) async {
+        params: const {
+          'prompt': 'false to fail quietly without raising the device '
+              'admin grant screen (unattended callers like the '
+              'screensaver timer)',
+        },
+        handler: (p) async {
           if (await screenOff()) return const CommandResult.ok();
+          if (p['prompt'] == false) {
+            return const CommandResult.fail(
+                'the device admin permission is not active');
+          }
           // Missing grant: put Android's own activation screen up on the
           // device — one tap there and the next press works. Via the
           // Activity when one is up (Samsung shows the proper dialog only

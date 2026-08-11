@@ -4,6 +4,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- A **Turn screen off after** slider in Screensaver, below Brightness level (0 to 60 minutes in 5-minute steps, default never): once the screensaver has run that long, the panel truly powers off instead of glowing all night. It needs the Device admin permission (the only way Android lets an app power a panel off), and the timer fails quietly without it. The screensaver session stays active behind the dark panel, so every dismiss source wakes the display and lands on the dashboard: motion, the wake word, the MQTT Dismiss screensaver button, or an automation. The power button wakes the panel too, back into the screensaver with a fresh countdown. Pairs with camera motion detection surviving screen-off (below) for a display that sleeps when the room empties and comes back the moment someone walks in.
+- A detected wake word now always lights a dark panel, before the voice turn's UI appears. This holds from the foreground, behind another app, and whatever turned the screen off.
+- The MQTT **Dismiss screensaver** button (and the `stopScreensaver` command) now wakes the display even when no screensaver is showing, so an automation can use it as a plain "bring the dashboard back".
+
 ### Fixed
 - Camera motion detection keeps watching after the screen truly powers off. Newer Android revokes any non-visible app's camera within seconds of the panel going dark, which silently benched the motion sensor, Dismiss on motion and continuous snapshots until the screen came back. With background listening enabled and the camera permission granted, the background service now carries the camera foreground type Android reserves for exactly this, and the OS leaves the feed alone (verified on Android 11 and Android 16 hardware). Vendors that suspend apps entirely once the panel is off remain out of reach, and the Black screensaver stays the route that works everywhere.
 

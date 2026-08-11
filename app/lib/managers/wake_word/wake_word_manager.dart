@@ -1005,6 +1005,12 @@ class WakeWordManager extends Manager {
     // audio source for the turn the page is about to run.
     _active = false;
     log.info(name, 'detected "${model.id}"');
+    // A dark panel wakes first, before anything else about the turn:
+    // someone spoke to the device, and the UI the turn is about to show
+    // must land on a lit screen. Covers the screensaver's screen-off timer
+    // and any other power-off, from the foreground or behind another app
+    // alike; a no-op when the panel is already lit.
+    await commands.execute('screenOn', const {});
     // Heard from behind another app: come forward, or the turn happens on a
     // page nobody can see. Ordered before the event so the card's UI is on
     // screen by the time it reacts; the audio it will ask us for is already in

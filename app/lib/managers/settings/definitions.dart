@@ -1783,6 +1783,27 @@ const screensaverBrightnessLevel = SettingDef<num>(
   unit: '%',
 );
 
+// The screensaver deliberately holds the panel awake (see the manager's
+// start()), so the OS idle timeout can never fire under it; this timer is
+// the one sanctioned way a session ends in a truly dark panel. Wake paths
+// exist for every dismiss source: motion, the MQTT dismiss button and the
+// wake word all light the panel back up. Real power-off is device-admin
+// lockNow, hence the permission note.
+const screensaverScreenOffMinutes = SettingDef<num>(
+  key: 'screensaver.screen_off_minutes',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: 0,
+  max: 60,
+  step: 5,
+  unit: ' min',
+  title: 'Turn screen off after',
+  description:
+      'Truly power the panel off after the screensaver has run this long; '
+      '0 never does. Needs the Device admin permission.',
+  category: 'Screensaver',
+);
+
 /// The brightness to restore when the screensaver ends, persisted so a
 /// process death mid-screensaver cannot turn the dim level into the new
 /// normal. -1 means no restore pending.
@@ -3207,6 +3228,7 @@ const List<SettingDef<Object>> allSettings = [
   // the general controls rather than a per-mode panel.
   screensaverBrightnessEnabled,
   screensaverBrightnessLevel,
+  screensaverScreenOffMinutes,
   // Pixel shift sits with the general controls: it applies to every mode.
   screensaverPixelShift,
   // The small clock too — it overlays every mode except Clock itself.

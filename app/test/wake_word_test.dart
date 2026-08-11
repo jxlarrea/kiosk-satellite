@@ -111,6 +111,35 @@ void main() {
         reason: 'we still know what was asked for');
   });
 
+  test('a detection lights a dark panel before the page hears about it',
+      () async {
+    await commands.execute('setWakeWordConfig', vsConfig);
+
+    // The screen manager is absent here; record its command instead. A
+    // detection must poke the panel on (screensaver screen-off timer, OS
+    // timeout, app behind another app — all the dark cases) and must do so
+    // before WakeWordDetected, so the turn's UI lands on a lit screen.
+    var screenPokes = 0;
+    commands.register(Command(
+      name: 'screenOn',
+      description: 'recorder',
+      handler: (_) async {
+        screenPokes++;
+        return const CommandResult.ok();
+      },
+    ));
+    var pokedBeforeEvent = false;
+    bus.on<WakeWordDetected>().listen((_) {
+      pokedBeforeEvent = screenPokes > 0;
+    });
+
+    await commands.execute('simulateWakeWord', const {});
+    await Future<void>.delayed(Duration.zero);
+    expect(screenPokes, greaterThan(0));
+    expect(pokedBeforeEvent, isTrue,
+        reason: 'the panel wakes before the turn starts');
+  });
+
   test('detection releases the mic before publishing, page resume re-arms',
       () async {
     await commands.execute('setWakeWordConfig', vsConfig);
