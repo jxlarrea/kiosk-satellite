@@ -105,7 +105,9 @@ dialog or settings screen on the tablet, because Android has no way to
 accept a permission on someone's behalf. Some manufacturers also add their
 own battery or autostart manager on top of Android's, which no app can
 read or request; if the app keeps being killed with every row granted,
-that is the next place to look.
+that is the next place to look. For provisioning a panel from a computer,
+[Permissions](permissions.md) lists every grant with the adb commands to
+give them all at once.
 
 **Display over other apps** is the standard Android overlay permission. It
 powers the screen-level lockdown shield, the status bar shield, the

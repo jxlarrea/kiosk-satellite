@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- A new [Permissions](docs/permissions.md) doc: every Android grant the app uses, what each one is for, and the adb commands that grant them all at once for provisioning a panel from a computer.
 - The Digital clock screensaver has a **Background color** setting (#173). It was the one face with a hardcoded black backdrop; Flip and Roller already followed their card and background colors. A white background with a black clock color gives the inverted face e-ink panels read best. The At a Glance row now wears the clock's color on the Digital face too (it already followed the Flip and Roller digit colors), so the row stays readable instead of staying grey-on-white over a light backdrop.
 
 ### Fixed
