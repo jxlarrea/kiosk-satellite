@@ -2,14 +2,10 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
-
-### Fixed
-- The **Show the Sendspin player** gesture now works after an app restart too (#178). The Sendspin server announces nothing on connect about a queue that is not playing, so a Music Assistant queue paused before a restart was invisible to the app and the gesture had nothing to reveal, even though the queue sat there ready to resume. When the gesture fires with nothing to show, the app now asks Music Assistant directly for the player's active queue and brings it back as a paused card, with the artwork, track and position it left off at; play on that card resumes exactly where the queue stood. A queue that is already playing, or a server with no queue for this player, behaves as before.
-
 ## v2026.8.27 - 2026-08-11
 
 ### Fixed
+- The **Show the Sendspin player** gesture now works after an app restart too (#178). The Sendspin server announces nothing on connect about a queue that is not playing, so a Music Assistant queue paused before a restart was invisible to the app and the gesture had nothing to reveal, even though the queue sat there ready to resume. When the gesture fires with nothing to show, the app now asks Music Assistant directly for the player's active queue and brings it back as a paused card, with the artwork, track and position it left off at; play on that card resumes exactly where the queue stood. A queue that is already playing, or a server with no queue for this player, behaves as before.
 - Camera motion detection now withdraws its long-exposure request when a camera's auto exposure cannot live with it (#164, second round). Motion detection asks the camera for its slowest frame rate so dark rooms get longer exposures, but some vendor exposure loops never converge under that request; the Galaxy Tab S6 Lite's front camera oscillates exposure forever, and the endless hunt is what was pinning a core in the camera HAL even after the camera library rollback. The analyzer already sees the hunt plainly, as an unbroken run of global same-signed change with no local structure, so after about ten seconds of it the camera is restarted once with default exposure for the rest of the session. Healthy cameras, including every device the dark-room tuning was built on, keep the long exposures exactly as before.
 
 ## v2026.8.26 - 2026-08-11
