@@ -84,6 +84,9 @@ tablet's remote admin (while remote administration is enabled).
 | Camera | camera | The device's own camera as a still camera, fed by JPEG snapshots: on demand via the **Take camera snapshot** button below, at a fixed interval with **Continuous snapshots** on (Camera settings), when the screensaver's motion detection spots someone approaching, and once on every broker connect. The frame size follows the Snapshot resolution setting (480p to 1080p on the 4:3 ladder, mapped to the nearest size the device's camera offers). The entity shows the last published frame; nothing streams. It only exists while the camera is enabled in the Camera settings, and it shares the sensor with the screensaver's motion detection, so one never blocks the other. Frames are retained on the broker, so the picture survives a Home Assistant restart. Note that some devices have no camera Android can use even when the hardware has one: a ROM without camera support (LineageOS ports on Echo Show hardware, for example) reports "no camera is available", and the Camera settings say so up front. |
 | Take camera snapshot | button | Capture a fresh frame and publish it to the Camera entity. An automation that wants a current picture presses this, then reads the entity a moment later (`camera.snapshot` saves it to a file). |
 | Last camera snapshot | sensor | When the Camera entity's frame was captured, as a timestamp. The camera entity's own state never leaves `idle` (nothing streams), so this is what shows, and lets automations react to, a fresh frame arriving. |
+| Screenshot | camera | What the device's display is showing, as a still camera fed only by the **Take screenshot** button below (issue #168). Made for checking on a panel that is not in the same room: press the button, look at the entity. It captures whatever is actually on screen, dashboard, screensaver, kiosk menu and all, scaled down to at most 1080p, and the frame is retained on the broker so it survives a Home Assistant restart. Unlike the Camera entities it needs no camera hardware, so every device gets it. |
+| Take screenshot | button | Capture the screen and publish it to the Screenshot entity. |
+| Last screenshot | sensor | When the Screenshot entity's frame was captured, as a timestamp; like the camera, the entity's own state never moves, so this is what shows a fresh frame arriving. |
 | Motion | binary_sensor | Camera-based motion, with the **Motion sensor** setting on (Camera settings). The app only ever publishes motion; the clearing is Home Assistant's `off_delay`, set from the **Clear after** setting, so a broker reconnect never replays stale motion. See the [Device Camera doc](camera.md). |
 
 All entities carry availability: they go unavailable the moment the tablet
@@ -127,6 +130,9 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../camera_snapshot/set` | in | Any non-retained payload captures a fresh frame |
 | `.../camera_snapshot/image` | out, retained | The latest snapshot as raw JPEG bytes |
 | `.../camera_snapshot/at` | out, retained | When that snapshot was captured, ISO 8601 UTC |
+| `.../screenshot/set` | in | Any non-retained payload captures a screenshot of the display |
+| `.../screenshot/image` | out, retained | The latest screenshot as raw JPEG bytes, at most 1080p |
+| `.../screenshot/at` | out, retained | When that screenshot was captured, ISO 8601 UTC |
 | `.../motion/state` | out | `ON` on motion, never retained; clearing is Home Assistant's `off_delay` |
 
 Discovery configs are published retained under

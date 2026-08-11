@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Screenshot camera entity and a Take screenshot button** in Home Assistant, over MQTT like the rest of the device entities (#168). Press the button and the entity shows what the device's display is showing at that moment: dashboard, screensaver, kiosk menu, whatever is actually on screen. Made for checking on a panel that is not in the same building without exposing the remote admin beyond Home Assistant. A **Last screenshot** timestamp sensor reports the frame's freshness, the frame is retained on the broker so it survives a Home Assistant restart, and captures are scaled to at most 1080p so a high-resolution panel never parks a multi-megabyte payload on the broker. Works on every device; no camera hardware involved.
+
 ## v2026.8.21 - 2026-08-10
 
 ### Fixed

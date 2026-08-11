@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' show Random;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:mqtt_client/mqtt_client.dart';
@@ -698,6 +699,7 @@ class MqttManager extends Manager {
       '$_base/camera/view/select',
       '$_base/camera/close/set',
       '$_base/camera_snapshot/set',
+      '$_base/screenshot/set',
       '$_base/dashboard_view/set',
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
       for (final objectId in _settingSelects.keys) '$_base/$objectId/set',
@@ -1039,6 +1041,25 @@ class MqttManager extends Manager {
           log.warn(name, 'takeCameraSnapshot over MQTT failed: '
               '${result.error}');
         }
+      } else if (topic == '$_base/screenshot/set') {
+        log.info(name, 'screenshot command');
+        // Capped near 1080p (1920 wide in landscape, 1080 in portrait): a
+        // troubleshooting picture, not an archive, and an uncapped panel
+        // frame would sit on the broker as a multi-megabyte retained
+        // payload. The capture scales natively, so the full frame is never
+        // allocated (issue #168).
+        final size = PlatformDispatcher.instance.implicitView?.physicalSize;
+        final portrait = size != null && size.height > size.width;
+        final result = await commands
+            .execute('screenshot', {'width': portrait ? 1080 : 1920});
+        final jpeg = result.data;
+        if (result.ok && jpeg is String) {
+          _publishBytes('$_base/screenshot/image', base64Decode(jpeg));
+          _publish('$_base/screenshot/at',
+              DateTime.now().toUtc().toIso8601String());
+        } else {
+          log.warn(name, 'screenshot over MQTT failed: ${result.error}');
+        }
       } else if (topic == '$_base/camera/close/set') {
         log.info(name, 'camera close command');
         await commands.execute('hideCameraView', const {});
@@ -1304,6 +1325,9 @@ class MqttManager extends Manager {
         '$_prefix/camera/ks_$_deviceId/device_camera/config',
         '$_prefix/button/ks_$_deviceId/take_snapshot/config',
         '$_prefix/sensor/ks_$_deviceId/last_snapshot/config',
+        '$_prefix/camera/ks_$_deviceId/screenshot/config',
+        '$_prefix/button/ks_$_deviceId/take_screenshot/config',
+        '$_prefix/sensor/ks_$_deviceId/last_screenshot/config',
         for (final id in {
           ..._publishedCameraViewIds,
           for (final view in _cameraViews) '${view['id']}',
@@ -1553,6 +1577,27 @@ class MqttManager extends Manager {
         'command_topic': '$_base/camera/close/set',
         'payload_press': 'CLOSE',
         'icon': 'mdi:close-box-outline',
+      },
+      // The screen as Home Assistant can see it (issue #168): a still
+      // camera fed only by the button beside it, for checking on a panel
+      // that is not in the same building. Same shape as the device camera
+      // below — retained frame, timestamp sensor for freshness — but it
+      // needs no camera hardware, so it is always published.
+      '$_prefix/camera/ks_$_deviceId/screenshot/config': {
+        ...common('screenshot', 'Screenshot'),
+        'topic': '$_base/screenshot/image',
+      },
+      '$_prefix/button/ks_$_deviceId/take_screenshot/config': {
+        ...common('take_screenshot', 'Take screenshot'),
+        'command_topic': '$_base/screenshot/set',
+        'payload_press': 'SCREENSHOT',
+        'icon': 'mdi:monitor-screenshot',
+      },
+      '$_prefix/sensor/ks_$_deviceId/last_screenshot/config': {
+        ...common('last_screenshot', 'Last screenshot'),
+        'state_topic': '$_base/screenshot/at',
+        'device_class': 'timestamp',
+        'icon': 'mdi:monitor-screenshot',
       },
       // The device's own camera (discussion #72): a still camera fed by
       // retained JPEG publishes — the interval snapshots and the button
