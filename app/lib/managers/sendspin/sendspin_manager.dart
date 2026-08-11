@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:math' show Random;
 
-import 'package:flutter/foundation.dart' show ValueNotifier;
+import 'package:flutter/foundation.dart'
+    show ValueNotifier, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../core/command_registry.dart';
@@ -79,6 +80,15 @@ class SendspinManager extends Manager {
   /// after the song has already changed can be discarded.
   String _lyricsKey = '';
 
+  /// Builds the Music Assistant client. Swapped in tests; production always
+  /// hands back a real one.
+  @visibleForTesting
+  MusicAssistantApi Function({required String baseUrl, required String token})
+  apiFactory = MusicAssistantApi.new;
+
+  /// One queue recovery in flight at a time (see [_recoverQueue]).
+  bool _recovering = false;
+
   /// Ask Music Assistant for the playing track's lyrics.
   ///
   /// One lookup per track, not per metadata update: Sendspin sends progress
@@ -98,7 +108,7 @@ class SendspinManager extends Manager {
     _lyricsKey = key;
     lyrics.value = const [];
     if (title.isEmpty) return;
-    final api = MusicAssistantApi(
+    final api = apiFactory(
       baseUrl: _settings.get(defs.sendspinMaUrl),
       token: _settings.get(defs.sendspinMaToken),
     );
@@ -270,6 +280,13 @@ class SendspinManager extends Manager {
       _channel.invokeMethod('duck', {'factor': factor}).catchError((_) {});
     });
 
+    // The "Show the Sendspin player" gesture with nothing on screen to
+    // show: the queue may still exist server-side, invisible to this app
+    // since it restarted (issue #178) — go look for it.
+    bus.on<SendspinShowPlayerRequested>().listen((_) {
+      unawaited(_recoverQueue());
+    });
+
     bus.on<SettingChanged>().listen((e) {
       // Only connection-shaping settings restart the client; the UI-only
       // ones (card visibility, size, position, fullscreen mode) must not
@@ -417,6 +434,58 @@ class SendspinManager extends Manager {
   Future<void> dispose() async {
     _restartDebounce?.cancel();
     await _stop();
+  }
+
+  /// Bring back a queue this app session has never seen (issue #178).
+  ///
+  /// On connect the Sendspin server announces nothing about a queue that is
+  /// not playing, so after an app restart a paused Music Assistant queue is
+  /// invisible here: [nowPlaying] stays null and the reveal gesture has no
+  /// card to reveal, even though the queue sits in Music Assistant ready to
+  /// resume. Music Assistant does know, so when the reveal fires with
+  /// nothing to show, ask it for this player's active queue and surface a
+  /// paused card from the answer. Play on that card goes through the normal
+  /// control channel, and live metadata takes over from there.
+  ///
+  /// A playing queue is left alone: its metadata is already streaming in,
+  /// and a card conjured a moment earlier would only fight it.
+  Future<void> _recoverQueue() async {
+    if (nowPlaying.value != null || _playing || _recovering || !_running) {
+      return;
+    }
+    _recovering = true;
+    try {
+      final api = apiFactory(
+        baseUrl: _settings.get(defs.sendspinMaUrl),
+        token: _settings.get(defs.sendspinMaToken),
+      );
+      final track = await api.fetchActiveQueueTrack(
+        playerId: _settings.get(defs.sendspinClientId),
+      );
+      // The world may have moved on while Music Assistant was answering.
+      if (nowPlaying.value != null || _playing || !_running) return;
+      if (track == null) {
+        log.info(name, 'show player: no queue to recover from Music Assistant');
+        return;
+      }
+      if (track['state'] == 'playing') return;
+      _status = {
+        ..._status,
+        for (final e in track.entries)
+          if (e.key != 'state') e.key: e.value,
+        'receivedAt': DateTime.now().millisecondsSinceEpoch,
+      };
+      _uiPlaying = false;
+      _setNowPlaying({..._status, 'playing': false});
+      log.info(
+        name,
+        'recovered the paused queue from Music Assistant: '
+        '${track['artist'] ?? '?'} - ${track['title']}',
+      );
+      unawaited(_refreshLyrics());
+    } finally {
+      _recovering = false;
+    }
   }
 
   /// Group transport control (the controller role). False when the server

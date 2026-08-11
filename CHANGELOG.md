@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The **Show the Sendspin player** gesture now works after an app restart too (#178). The Sendspin server announces nothing on connect about a queue that is not playing, so a Music Assistant queue paused before a restart was invisible to the app and the gesture had nothing to reveal, even though the queue sat there ready to resume. When the gesture fires with nothing to show, the app now asks Music Assistant directly for the player's active queue and brings it back as a paused card, with the artwork, track and position it left off at; play on that card resumes exactly where the queue stood. A queue that is already playing, or a server with no queue for this player, behaves as before.
+
 ## v2026.8.27 - 2026-08-11
 
 ### Fixed

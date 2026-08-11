@@ -203,6 +203,95 @@ class MusicAssistantApi {
     return '${uri.host}:${uri.port}';
   }
 
+  /// The current track of the player's active queue, or null when there is
+  /// no queue, the queue is empty, or the server cannot be reached.
+  ///
+  /// This exists for the "Show the Sendspin player" reveal (issue #178):
+  /// the Sendspin connection itself announces nothing about a queue that is
+  /// not playing, so after an app restart a paused queue is invisible to
+  /// the player until someone presses play elsewhere. Music Assistant does
+  /// know, and its player id for a Sendspin client is the client id this
+  /// device connects with. The active queue is asked for (not the player's
+  /// own) so a player synced into a group finds the group's queue.
+  ///
+  /// The map uses the same keys as Sendspin metadata ('title', 'artist',
+  /// 'album', 'durationMs', 'positionMs', 'artworkUrl'), plus 'state' (the
+  /// queue's playing/paused/idle) for the caller to decide with.
+  Future<Map<String, Object?>?> fetchActiveQueueTrack({
+    required String playerId,
+  }) async {
+    if (playerId.trim().isEmpty ||
+        baseUrl.trim().isEmpty ||
+        token.trim().isEmpty) {
+      return null;
+    }
+    final client = _client();
+    WebSocket? socket;
+    try {
+      socket = await WebSocket.connect(
+        _socketUri.toString(),
+        customClient: client,
+      ).timeout(const Duration(seconds: 15));
+      final session = _Session(socket);
+      await session.send('auth', {'token': token});
+      final queue = await session.send('player_queues/get_active_queue', {
+        'player_id': playerId,
+      });
+      if (queue is! Map) return null;
+      final item = queue['current_item'];
+      if (item is! Map) return null;
+      final media = item['media_item'] is Map
+          ? (item['media_item'] as Map).cast<String, Object?>()
+          : const <String, Object?>{};
+      final title = '${media['name'] ?? item['name'] ?? ''}';
+      if (title.trim().isEmpty) return null;
+      // Sendspin credits multiple artists as one slash-joined string; the
+      // recovered card reads the same as a live one.
+      final artist = ((media['artists'] as List?) ?? const [])
+          .map((a) => a is Map ? '${a['name'] ?? ''}' : '')
+          .where((s) => s.isNotEmpty)
+          .join('/');
+      final album = media['album'] is Map
+          ? '${(media['album'] as Map)['name'] ?? ''}'
+          : '';
+      final duration =
+          (item['duration'] as num?) ?? (media['duration'] as num?);
+      final elapsed = queue['elapsed_time'] as num?;
+      return {
+        'state': '${queue['state'] ?? ''}',
+        'title': title,
+        if (artist.isNotEmpty) 'artist': artist,
+        if (album.isNotEmpty) 'album': album,
+        if (duration != null) 'durationMs': (duration * 1000).round(),
+        'positionMs': ((elapsed ?? 0) * 1000).round(),
+        ...switch (_imageUrl(item['image'])) {
+          final url? => {'artworkUrl': url},
+          null => const <String, Object?>{},
+        },
+      };
+    } catch (_) {
+      return null;
+    } finally {
+      await socket?.close();
+      client.close(force: true);
+    }
+  }
+
+  /// A fetchable URL for a queue item's image: the path itself when it is
+  /// a plain web URL, otherwise the server's image proxy via the image's
+  /// deterministic proxy id. Null when there is no image to offer.
+  String? _imageUrl(Object? image) {
+    if (image is! Map) return null;
+    final path = '${image['path'] ?? ''}';
+    if (image['remotely_accessible'] == true && path.startsWith('http')) {
+      return path;
+    }
+    final proxyId = '${image['proxy_id'] ?? ''}';
+    final base = musicAssistantWebUrl(baseUrl);
+    if (proxyId.isEmpty || base == null) return null;
+    return '$base/imageproxy/$proxyId?size=512&fmt=jpg';
+  }
+
   /// The synced lyrics for a track, or null when there are none.
   ///
   /// Two calls on one connection: Sendspin only tells us what is playing by
