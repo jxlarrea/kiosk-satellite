@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.22 - 2026-08-10
 
 ### Fixed
 - Camera motion detection now survives the screen turning truly off. Android revokes the camera from any app within seconds of the panel powering off (visibility, not process state, is what gates camera access), and until now the revocation was silent: the motion sensor looked alive in Home Assistant but saw nothing until the app was restarted. The camera session now reports the revocation and rebinds the moment the screen comes back on, and the same recovery covers the camera being taken by another app. The docs now also spell out the platform rule: no app can watch the camera while the panel is truly off; the Black screensaver (backlight at zero, everything running) is the screen-off that keeps motion detection alive.
