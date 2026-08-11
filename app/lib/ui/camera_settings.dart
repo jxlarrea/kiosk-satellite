@@ -221,6 +221,21 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                 },
               ),
             ),
+            SearchLandingTarget(
+              id: defs.cameraPreferMse.key,
+              child: SwitchListTile(
+                title: Text(defs.cameraPreferMse.title),
+                subtitle: Text(defs.cameraPreferMse.description),
+                value: widget.container.settings.get(defs.cameraPreferMse),
+                onChanged: (value) async {
+                  await widget.container.settings.setFromJson(
+                    defs.cameraPreferMse.key,
+                    value,
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
+            ),
           ],
         ),
         const GroupNote(

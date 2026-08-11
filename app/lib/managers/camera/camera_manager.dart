@@ -228,6 +228,9 @@ class CameraManager extends Manager {
     await _settingsSub?.cancel();
     await _voiceSub?.cancel();
     closeHaSessions();
+    closeMseSessions();
+    await _mseServer?.close(force: true);
+    _mseServer = null;
     activeViewId.dispose();
     focusedCameraId.dispose();
   }
@@ -810,6 +813,145 @@ class CameraManager extends Manager {
       throw CameraSignalingException(response.statusCode, answer.trim(), uri);
     }
     return answer;
+  }
+
+  /// A loopback WebSocket endpoint relaying Go2RTC's MSE stream for
+  /// [cameraId] (issue #160: devices whose WebView cannot play WebRTC at
+  /// all — Fire tablets — stream over MSE instead).
+  ///
+  /// The camera page cannot open the Go2RTC socket itself: a page
+  /// WebSocket carries no Authorization header, and the servers list
+  /// holds credentials and the allow-invalid-certificate escape hatch
+  /// only dart:io can honor. So every MSE session goes through a
+  /// loopback-only relay: single-use token, upstream opened with the
+  /// server's auth, frames piped both ways, both sides die together.
+  Future<Map<String, Object?>> mseEndpoint({
+    required String cameraId,
+    required bool fullscreen,
+  }) async {
+    final camera = _config.cameras
+        .where((item) => item.id == cameraId)
+        .firstOrNull;
+    if (camera == null) return {'ok': false, 'error': 'camera not found'};
+    if (camera.kind != 'go2rtc') {
+      return {
+        'ok': false,
+        'error': 'MSE streaming needs a Go2RTC camera (this one is '
+            '${camera.kind})',
+      };
+    }
+    final server = _config.servers
+        .where((item) => item.id == camera.serverId)
+        .firstOrNull;
+    if (server == null) {
+      return {'ok': false, 'error': 'camera server not found'};
+    }
+    final stream =
+        fullscreen &&
+            camera.fullscreenStreamName != null &&
+            camera.fullscreenStreamName!.isNotEmpty
+        ? camera.fullscreenStreamName!
+        : camera.streamName!;
+    var uri = _serverUri(server, 'api/ws', {'src': stream});
+    uri = uri.replace(scheme: uri.scheme == 'https' ? 'wss' : 'ws');
+    try {
+      final port = await _ensureMseRelay();
+      final token = _mseToken();
+      _msePending[token] = (uri: uri, server: server);
+      // A token the page never connects must not accumulate.
+      Timer(const Duration(seconds: 30), () => _msePending.remove(token));
+      return {'ok': true, 'url': 'ws://127.0.0.1:$port/$token'};
+    } catch (e) {
+      return {'ok': false, 'error': 'MSE relay failed: $e'};
+    }
+  }
+
+  HttpServer? _mseServer;
+  final _msePending = <String, ({Uri uri, CameraServer server})>{};
+  final _mseSockets = <WebSocket>{};
+
+  String _mseToken() {
+    final random = Random.secure();
+    return List.generate(
+      16,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+  }
+
+  Future<int> _ensureMseRelay() async {
+    final existing = _mseServer;
+    if (existing != null) return existing.port;
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    _mseServer = server;
+    server.listen(_handleMseUpgrade, onError: (Object _) {});
+    return server.port;
+  }
+
+  Future<void> _handleMseUpgrade(HttpRequest request) async {
+    final target = _msePending.remove(request.uri.path.replaceFirst('/', ''));
+    if (target == null || !WebSocketTransformer.isUpgradeRequest(request)) {
+      request.response.statusCode = HttpStatus.notFound;
+      await request.response.close();
+      return;
+    }
+    WebSocket? local;
+    WebSocket? upstream;
+    void closeBoth() {
+      local?.close();
+      upstream?.close();
+      _mseSockets.remove(local);
+      _mseSockets.remove(upstream);
+    }
+
+    try {
+      local = await WebSocketTransformer.upgrade(request);
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 15);
+      if (target.server.allowInvalidCertificate) {
+        client.badCertificateCallback = (certificate, host, port) =>
+            host == target.uri.host;
+      }
+      final server = target.server;
+      upstream = await WebSocket.connect(
+        target.uri.toString(),
+        headers: {
+          if (server.username.isNotEmpty || server.password.isNotEmpty)
+            HttpHeaders.authorizationHeader:
+                'Basic ${base64Encode(utf8.encode('${server.username}:${server.password}'))}',
+        },
+        customClient: client,
+      );
+    } catch (e) {
+      log.warn(name, 'MSE upstream connect failed: $e');
+      closeBoth();
+      return;
+    }
+    _mseSockets
+      ..add(local)
+      ..add(upstream);
+    local.listen(
+      upstream.add,
+      onDone: closeBoth,
+      onError: (Object _) => closeBoth(),
+      cancelOnError: true,
+    );
+    upstream.listen(
+      local.add,
+      onDone: closeBoth,
+      onError: (Object _) => closeBoth(),
+      cancelOnError: true,
+    );
+  }
+
+  /// Close every relayed MSE stream. Runs alongside [closeHaSessions] when
+  /// the camera surface goes away: each open socket is a live decoder on
+  /// the page and a live stream on the server.
+  void closeMseSessions() {
+    for (final socket in _mseSockets.toList()) {
+      socket.close();
+    }
+    _mseSockets.clear();
+    _msePending.clear();
   }
 
   Future<_HttpResult> _request(

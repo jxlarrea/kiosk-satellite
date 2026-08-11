@@ -3075,10 +3075,14 @@ async function loadCameras() {
   ));
 
   // Mirrors the device's Playback section (ui/camera_settings.dart).
-  const allowH265 = settings.find((setting) => setting.key === 'camera.allow_h265');
-  if (allowH265) {
+  const playbackKeys = ['camera.allow_h265', 'camera.prefer_mse'];
+  const playback = playbackKeys
+    .map((key) => settings.find((setting) => setting.key === key))
+    .filter(Boolean);
+  if (playback.length) {
     heading('Playback');
-    card().appendChild(settingRow(allowH265));
+    const playbackCard = card();
+    for (const setting of playback) playbackCard.appendChild(settingRow(setting));
   }
 }
 

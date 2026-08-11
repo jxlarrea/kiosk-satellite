@@ -2621,6 +2621,21 @@ const cameraAllowH265 = SettingDef<bool>(
   category: 'Cameras',
 );
 
+// Off by default: WebRTC is near-realtime and stays the first choice, with
+// MSE as the automatic fallback when a stream connects and decodes nothing
+// (issue #160). On, the order flips — for devices whose browser cannot do
+// WebRTC at all (Fire tablets), and for forcing MSE to test it.
+const cameraPreferMse = SettingDef<bool>(
+  key: 'camera.prefer_mse',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Prefer MSE over WebRTC',
+  description:
+      'Stream Go2RTC cameras over MSE first. For devices that cannot play '
+      'WebRTC; adds a second or two of delay.',
+  category: 'Cameras',
+);
+
 // Hidden because Cameras has a purpose-built editor on the device and in the
 // remote admin. Marking the versioned document secret keeps server credentials
 // out of the generic settings API while still including them in full backups.
@@ -3271,6 +3286,7 @@ const List<SettingDef<Object>> allSettings = [
   mqttDiscoveryPrefix,
   mqttDeviceId,
   cameraAllowH265,
+  cameraPreferMse,
   cameraConfig,
   // Music Assistant leads the page it names: the server is what the kiosk
   // browses, asks for lyrics and hands people through the menu, and the

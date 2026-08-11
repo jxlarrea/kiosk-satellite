@@ -264,6 +264,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
       widget.container.camera.onRemoteCandidate = null;
     }
     widget.container.camera.closeHaSessions();
+    widget.container.camera.closeMseSessions();
     controller.evaluateJavascript(source: 'shutdown();');
     controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
   }
@@ -307,6 +308,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
       'showCameraNames': widget.view.showCameraNames,
       'grid': widget.view.effectiveGrid,
       'allowH265': widget.container.settings.get(defs.cameraAllowH265),
+      'preferMse': widget.container.settings.get(defs.cameraPreferMse),
       'interactive': widget.interactive,
       'focusedCameraId': widget.interactive
           ? widget.container.camera.focusedCameraId.value
@@ -324,6 +326,10 @@ class _CameraPlayerState extends State<CameraPlayer> {
                   camera.fullscreenStreamName != null &&
                   camera.fullscreenStreamName!.isNotEmpty &&
                   camera.fullscreenStreamName != camera.streamName,
+              // Whether this camera can stream over MSE: a Go2RTC server
+              // serves the same stream both ways, WHEP and HA are
+              // WebRTC-only (issue #160).
+              'mse': camera.kind == 'go2rtc' && !camera.missing,
             },
       ],
     });
@@ -410,6 +416,20 @@ class _CameraPlayerState extends State<CameraPlayer> {
                     : 'server',
                 if (error is CameraSignalingException) 'status': error.statusCode,
               };
+            }
+          },
+        );
+        controller.addJavaScriptHandler(
+          handlerName: 'cameraMse',
+          callback: (args) async {
+            try {
+              final request = (args.first as Map).cast<String, Object?>();
+              return await widget.container.camera.mseEndpoint(
+                cameraId: '${request['cameraId'] ?? ''}',
+                fullscreen: request['fullscreen'] == true,
+              );
+            } catch (error) {
+              return {'ok': false, 'error': '$error'};
             }
           },
         );

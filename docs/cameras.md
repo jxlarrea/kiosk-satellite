@@ -142,6 +142,21 @@ Whatever the setting, a stream that connects but decodes nothing says so on
 the tile and writes a warning to the App Logs naming the codec, so a camera
 that stays blank can be diagnosed from the logs alone.
 
+## WebRTC and MSE
+
+Go2RTC cameras stream over WebRTC first, for its near-realtime latency, and
+fall back to MSE on their own when WebRTC does not work out: a stream that
+connects and decodes nothing, a WebView that cannot do WebRTC at all (Fire
+tablets), or repeated failed connections all switch the tile over
+automatically, and the App Logs say so. MSE plays the same stream through
+ordinary video buffering, which nearly every WebView handles, at the cost of
+a second or two of delay.
+
+**Prefer MSE over WebRTC** (Settings, then Camera Streams, then Playback)
+flips the order for devices known to lack WebRTC, and is also the switch to
+force MSE when testing. WebRTC then becomes the fallback. WHEP and Home
+Assistant cameras are WebRTC by definition and are not affected.
+
 ## Performance
 
 The camera player is created only while a view is visible. One WebView owns all

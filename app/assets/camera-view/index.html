@@ -58,6 +58,37 @@ const DECODE_GRACE_MS = 10000;
 // can decode it, so the offer leaves it out unless the setting says the
 // device really plays it (issue #160).
 const ALLOW_H265 = CFG.allowH265 === true;
+// Go2RTC serves the same stream over MSE, which is what devices whose
+// WebView cannot do WebRTC at all (Fire tablets) can play. WebRTC stays
+// first for its near-realtime latency; MSE is the fallback a dead decode
+// or failed negotiation switches to — unless the "Prefer MSE over WebRTC"
+// setting flips the order (issue #160).
+const PREFER_MSE = CFG.preferMse === true;
+// Same-mode failures in a row before trying the other transport anyway:
+// covers failures that never name a culprit (a WebView that cannot even
+// form a WebRTC offer fails generically).
+const MODE_STRIKE_LIMIT = 3;
+// MSE receiving no data: allow a slow first keyframe, then reconnect.
+const MSE_STALL_POLL_MS = 5000;
+const MSE_STALL_MS = 12000;
+
+// The codec families offered in the Go2RTC MSE handshake. Video only, like
+// the WebRTC transceiver: the grid is muted and a silent audio track is
+// bandwidth for nothing. isTypeSupported is honest for MSE (unlike the
+// WebRTC receiver capabilities that started issue #160), but H.265 stays
+// gated on the same setting so both transports tell one story.
+const MSE_CODECS = [
+  'avc1.640029', 'avc1.64002A', 'avc1.4D401F', 'avc1.42E01F',
+  'hvc1.1.6.L153.B0', 'hev1.1.6.L153.B0',
+];
+function mseCodecs() {
+  if (!window.MediaSource) return '';
+  return MSE_CODECS
+    .filter((codec) => ALLOW_H265 || !/^h(vc|ev)1/i.test(codec))
+    .filter((codec) =>
+      MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`))
+    .join(',');
+}
 
 function log(message, level) {
   try {
@@ -82,6 +113,16 @@ function signalingFailure(result) {
 // 'video/H265' as a person writes it.
 function codecLabel(mimeType) {
   return (mimeType || 'unknown').replace('video/', '').replace(/^H26/i, 'H.26');
+}
+
+// The human name of the first codec in an MSE mime ('video/mp4;
+// codecs="avc1.64001f"' -> 'H.264').
+function mseCodecLabel(mimeType) {
+  const match = /codecs="([^"]+)"/.exec(mimeType || '');
+  const codec = ((match && match[1]) || '').split(',')[0];
+  if (/^avc/i.test(codec)) return 'H.264';
+  if (/^h(vc|ev)/i.test(codec)) return 'H.265';
+  return codec || 'this stream';
 }
 
 function orientation() {
@@ -183,6 +224,7 @@ function stop(cameraId) {
   clearTimeout(session.retry);
   clearTimeout(session.grace);
   clearInterval(session.decode);
+  clearInterval(session.mseWatch);
   if (session.pc) {
     session.pc.ontrack = null;
     session.pc.onconnectionstatechange = null;
@@ -190,6 +232,12 @@ function stop(cameraId) {
       if (receiver.track) receiver.track.stop();
     }
     session.pc.close();
+  }
+  if (session.ws) {
+    session.ws.onmessage = null;
+    session.ws.onclose = null;
+    session.ws.onerror = null;
+    session.ws.close();
   }
   if (session.video) {
     session.video.pause();
@@ -236,9 +284,17 @@ function closeView() {
 
 async function start(cameraId, fullscreen) {
   stop(cameraId);
+  const camera = CFG.cameras.find((candidate) => candidate.id === cameraId);
+  // The transports this camera can use, in preference order. WHEP and HA
+  // cameras are WebRTC by definition; Go2RTC serves both.
+  const modes = camera && camera.mse
+    ? (PREFER_MSE ? ['mse', 'webrtc'] : ['webrtc', 'mse'])
+    : ['webrtc'];
   const session = {
-    wanted: true, pc: null, video: null, retry: null, grace: null,
-    decode: null, attempt: 0, fullscreen: !!fullscreen,
+    wanted: true, pc: null, ws: null, mediaSource: null, sourceBuffer: null,
+    queue: [], video: null, retry: null, grace: null, decode: null,
+    mseWatch: null, attempt: 0, modes, modeIndex: 0, modeFailures: 0,
+    fullscreen: !!fullscreen,
   };
   sessions.set(cameraId, session);
 
@@ -250,6 +306,51 @@ async function start(cameraId, fullscreen) {
     pc.ontrack = null;
     pc.onconnectionstatechange = null;
     pc.close();
+  };
+
+  // The tile's video element, shared by both transports. WebRTC feeds it a
+  // srcObject, MSE a MediaSource url; each side clears the other's source
+  // before attaching its own.
+  const ensureVideo = () => {
+    const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
+    if (!tile) return null;
+    let video = tile.querySelector('video');
+    if (!video) {
+      video = document.createElement('video');
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('muted', '');
+      video.setAttribute('playsinline', '');
+      tile.insertBefore(video, tile.firstChild);
+    }
+    session.video = video;
+    return video;
+  };
+
+  // Drop the current attempt's transport (never the video element: a black
+  // flash between retries reads as worse than a frozen last frame).
+  const releaseTransport = () => {
+    clearInterval(session.decode);
+    session.decode = null;
+    clearInterval(session.mseWatch);
+    session.mseWatch = null;
+    clearTimeout(session.grace);
+    session.grace = null;
+    if (session.pc) {
+      discard(session.pc);
+      session.pc = null;
+    }
+    if (session.ws) {
+      session.ws.onmessage = null;
+      session.ws.onclose = null;
+      session.ws.onerror = null;
+      session.ws.close();
+      session.ws = null;
+    }
+    session.mediaSource = null;
+    session.sourceBuffer = null;
+    session.queue = [];
   };
 
   // A tile can negotiate, connect and take packets while decoding nothing at
@@ -288,30 +389,221 @@ async function start(cameraId, fullscreen) {
       if (waited < DECODE_GRACE_MS || !inbound.packetsReceived) return;
       clearInterval(session.decode);
       session.decode = null;
-      setStatus(cameraId, `This device cannot decode ${codec}`);
       log(`${cameraId}: ${codec} stream connected `
         + `(${inbound.packetsReceived} packets, ${inbound.framesReceived} `
         + 'frames) but decoded 0 frames; this device cannot play it', 'warn');
+      // The one failure that names WebRTC itself: connected, fed, decoding
+      // nothing. Where the camera also streams over MSE, switch instead of
+      // parking an error on the tile (issue #160).
+      if (session.modes.length > 1) {
+        retry(() => 'Trying MSE...', true);
+      } else {
+        setStatus(cameraId, `This device cannot decode ${codec}`);
+      }
     }, DECODE_POLL_MS);
   };
 
-  const retry = (pc, message) => {
-    discard(pc);
-    clearInterval(session.decode);
-    session.decode = null;
+  const modeName = () => session.modes[session.modeIndex];
+
+  // One retry ladder across both transports. A hard failure that names the
+  // transport as the problem (a connected stream decoding nothing, an MSE
+  // codec the device refuses) switches immediately; anonymous failures
+  // (signaling, connection drops) switch after MODE_STRIKE_LIMIT in a row,
+  // which is what carries a device that cannot form a WebRTC offer at all
+  // onto MSE without a human touching anything (issue #160).
+  const retry = (message, switchMode) => {
+    releaseTransport();
     if (!session.wanted) return;
     session.attempt++;
+    session.modeFailures++;
+    if (session.modes.length > 1 &&
+        (switchMode || session.modeFailures >= MODE_STRIKE_LIMIT)) {
+      session.modeIndex = (session.modeIndex + 1) % session.modes.length;
+      session.modeFailures = 0;
+      log(`${cameraId}: switching to ${modeName() === 'mse' ? 'MSE' : 'WebRTC'}`);
+    }
     const delay = Math.min(30000, 1000 * Math.pow(2, session.attempt));
-    setStatus(cameraId, message(Math.round(delay / 1000)));
+    setStatus(cameraId,
+      typeof message === 'function' ? message(Math.round(delay / 1000)) : message);
     clearTimeout(session.retry);
     session.retry = setTimeout(connect, delay);
   };
 
-  const connect = async () => {
+  const connect = () => {
     if (!session.wanted || sessions.get(cameraId) !== session) return;
     clearTimeout(session.grace);
     session.grace = null;
+    if (modeName() === 'mse') {
+      connectMse();
+    } else {
+      connectWebrtc();
+    }
+  };
+
+  const connectMse = async () => {
     setStatus(cameraId, 'Connecting...');
+    const codecs = mseCodecs();
+    if (!codecs) {
+      log(`${cameraId}: MSE unavailable (no MediaSource or no codec)`, 'warn');
+      if (session.modes.length > 1) {
+        retry(() => 'Trying WebRTC...', true);
+      } else {
+        setStatus(cameraId, 'This device cannot play MSE streams');
+      }
+      return;
+    }
+    let info = null;
+    try {
+      info = await bridge('cameraMse', { cameraId, fullscreen: session.fullscreen });
+    } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    if (!info || info.ok !== true) {
+      log(`${cameraId}: MSE endpoint failed: ${info && info.error}`);
+      retry((seconds) => `Cannot reach the camera server. Retrying in ${seconds}s`);
+      return;
+    }
+    const ws = new WebSocket(info.url);
+    ws.binaryType = 'arraybuffer';
+    session.ws = ws;
+    const mediaSource = new MediaSource();
+    session.mediaSource = mediaSource;
+    const video = ensureVideo();
+    if (!video) return;
+    video.srcObject = null;
+    video.src = URL.createObjectURL(mediaSource);
+    video.play().catch((error) => log(`play ${cameraId}: ${error}`));
+
+    const stale = () => !session.wanted || session.ws !== ws;
+    let mime = null;
+    let opened = false;
+    let playingLogged = false;
+    let lastDataAt = performance.now();
+
+    // Appends run strictly one at a time; everything else queues. When the
+    // queue is idle, trim the back buffer so an all-day view never grows an
+    // unbounded fMP4 tail.
+    const pump = () => {
+      const buffer = session.sourceBuffer;
+      if (stale() || !buffer || buffer.updating ||
+          mediaSource.readyState !== 'open') {
+        return;
+      }
+      if (session.queue.length) {
+        try {
+          buffer.appendBuffer(session.queue.shift());
+        } catch (error) {
+          log(`${cameraId}: MSE append failed: ${error}`, 'warn');
+          retry(() => 'Reconnecting...');
+        }
+        return;
+      }
+      try {
+        const buffered = video.buffered;
+        if (buffered.length && video.currentTime - buffered.start(0) > 30) {
+          buffer.remove(buffered.start(0), video.currentTime - 10);
+        }
+      } catch (_) {}
+    };
+
+    const maybeCreateBuffer = () => {
+      if (stale() || !opened || !mime || session.sourceBuffer) return;
+      const label = mseCodecLabel(mime);
+      if (!MediaSource.isTypeSupported(mime)) {
+        log(`${cameraId}: MSE offered ${mime}, unsupported here`, 'warn');
+        if (session.modes.length > 1) {
+          retry(() => 'Trying WebRTC...', true);
+        } else {
+          releaseTransport();
+          setStatus(cameraId, `This device cannot decode ${label}`);
+        }
+        return;
+      }
+      try {
+        const buffer = mediaSource.addSourceBuffer(mime);
+        buffer.mode = 'segments';
+        session.sourceBuffer = buffer;
+        buffer.addEventListener('updateend', pump);
+        pump();
+      } catch (error) {
+        log(`${cameraId}: MSE source buffer failed: ${error}`, 'warn');
+        retry(() => 'Reconnecting...', session.modes.length > 1);
+      }
+    };
+
+    mediaSource.addEventListener('sourceopen', () => {
+      opened = true;
+      // The url has served its purpose (the element resolved it to the
+      // MediaSource); revoking it now keeps retries from accumulating blobs.
+      try { URL.revokeObjectURL(video.src); } catch (_) {}
+      maybeCreateBuffer();
+    });
+    ws.onopen = () => {
+      if (!stale()) ws.send(JSON.stringify({ type: 'mse', value: codecs }));
+    };
+    ws.onmessage = (event) => {
+      if (stale()) return;
+      if (typeof event.data === 'string') {
+        let message = null;
+        try { message = JSON.parse(event.data); } catch (_) { return; }
+        if (message && message.type === 'mse' && message.value) {
+          mime = message.value;
+          maybeCreateBuffer();
+        } else if (message && message.type === 'error') {
+          log(`${cameraId}: MSE server error: ${message.value}`, 'warn');
+          retry(() => 'The camera server could not start this stream. Retrying...');
+        }
+        return;
+      }
+      lastDataAt = performance.now();
+      session.queue.push(event.data);
+      if (!playingLogged && session.sourceBuffer) {
+        playingLogged = true;
+        session.attempt = 0;
+        session.modeFailures = 0;
+        setStatus(cameraId, '');
+        log(`${cameraId}: playing over MSE (${mime})`);
+      }
+      pump();
+    };
+    ws.onclose = () => {
+      if (stale()) return;
+      retry(() => 'Reconnecting...');
+    };
+    ws.onerror = () => {
+      if (stale()) return;
+      retry((seconds) => `Connection failed. Retrying in ${seconds}s`);
+    };
+    // A socket that stays open while frames stop coming, and a live stream
+    // drifting behind its own buffer, are both silent failures without this.
+    session.mseWatch = setInterval(() => {
+      if (stale()) return;
+      if (performance.now() - lastDataAt > MSE_STALL_MS) {
+        log(`${cameraId}: MSE stalled (no data)`, 'warn');
+        retry(() => 'Reconnecting...');
+        return;
+      }
+      try {
+        const buffered = video.buffered;
+        if (buffered.length &&
+            buffered.end(buffered.length - 1) - video.currentTime > 5) {
+          video.currentTime = buffered.end(buffered.length - 1) - 0.3;
+        }
+      } catch (_) {}
+    }, MSE_STALL_POLL_MS);
+  };
+
+  const connectWebrtc = async () => {
+    setStatus(cameraId, 'Connecting...');
+    if (!window.RTCPeerConnection) {
+      // The Fire-tablet case in its purest form: no WebRTC at all.
+      log(`${cameraId}: this WebView has no WebRTC`, 'warn');
+      if (session.modes.length > 1) {
+        retry(() => 'Trying MSE...', true);
+      } else {
+        setStatus(cameraId, 'This device cannot play WebRTC streams');
+      }
+      return;
+    }
     // Home Assistant cameras carry the ICE servers HA's backend expects
     // (TURN for cloud setups); everything else answers null and streams
     // with browser defaults, which is what a LAN Go2RTC needs.
@@ -338,19 +630,13 @@ async function start(cameraId, fullscreen) {
     }
     pc.ontrack = (event) => {
       if (!session.wanted || !event.streams.length) return;
-      const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
-      if (!tile) return;
-      let video = tile.querySelector('video');
-      if (!video) {
-        video = document.createElement('video');
-        video.autoplay = true;
-        video.muted = true;
-        video.playsInline = true;
-        video.setAttribute('muted', '');
-        video.setAttribute('playsinline', '');
-        tile.insertBefore(video, tile.firstChild);
+      const video = ensureVideo();
+      if (!video) return;
+      // The tile may have carried an MSE source on a previous attempt.
+      if (video.src) {
+        video.removeAttribute('src');
+        video.load();
       }
-      session.video = video;
       video.srcObject = event.streams[0];
       video.play().catch((error) => log(`play ${cameraId}: ${error}`));
       setStatus(cameraId, '');
@@ -359,7 +645,7 @@ async function start(cameraId, fullscreen) {
       if (!session.wanted || session.pc !== pc) return;
       const state = pc.connectionState;
       if (state === 'failed' || state === 'closed') {
-        retry(pc, () => 'Reconnecting...');
+        retry(() => 'Reconnecting...');
       } else if (state === 'disconnected') {
         // Ride it out: WebRTC recovers most of these on its own, and a
         // renegotiation costs a visibly black tile for a second or two.
@@ -369,13 +655,14 @@ async function start(cameraId, fullscreen) {
           session.grace = null;
           if (session.wanted && session.pc === pc &&
               pc.connectionState === 'disconnected') {
-            retry(pc, () => 'Reconnecting...');
+            retry(() => 'Reconnecting...');
           }
         }, DISCONNECT_GRACE_MS);
       } else if (state === 'connected') {
         clearTimeout(session.grace);
         session.grace = null;
         session.attempt = 0;
+        session.modeFailures = 0;
         setStatus(cameraId, '');
         watchDecode(pc);
       }
@@ -401,7 +688,7 @@ async function start(cameraId, fullscreen) {
     } catch (error) {
       log(`connect ${cameraId}: ${error}`);
       const headline = signalingFailure(signaling);
-      retry(pc, (seconds) => `${headline}. Retrying in ${seconds}s`);
+      retry((seconds) => `${headline}. Retrying in ${seconds}s`);
     }
   };
   connect();

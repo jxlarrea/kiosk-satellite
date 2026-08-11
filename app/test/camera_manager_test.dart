@@ -470,6 +470,106 @@ void main() {
     await logger.dispose();
     await bus.dispose();
   });
+
+  test('the MSE relay pipes the Go2RTC socket with the server login, both '
+      'directions (issue #160)', () async {
+    HttpOverrides.global = _RealHttpOverrides();
+    addTearDown(() => HttpOverrides.global = null);
+    // A fake Go2RTC: records the Authorization header and the stream asked
+    // for, answers the MSE handshake, then sends one binary segment.
+    String? sawAuth;
+    String? sawSrc;
+    final go2rtc = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => go2rtc.close(force: true));
+    go2rtc.listen((request) async {
+      sawAuth = request.headers.value(HttpHeaders.authorizationHeader);
+      sawSrc = request.uri.queryParameters['src'];
+      final socket = await WebSocketTransformer.upgrade(request);
+      socket.listen((message) {
+        if (message is! String) return;
+        socket.add(jsonEncode({
+          'type': 'mse',
+          'value': 'video/mp4; codecs="avc1.64001f"',
+        }));
+        socket.add(<int>[1, 2, 3, 4]);
+      });
+    });
+
+    final config = CameraConfiguration(
+      servers: [
+        CameraServer(
+          id: 'server',
+          name: 'Local',
+          baseUrl: 'http://127.0.0.1:${go2rtc.port}',
+          username: 'user',
+          password: 'secret',
+        ),
+      ],
+      cameras: const [
+        CameraSource(
+          id: 'cam',
+          name: 'Front',
+          kind: 'go2rtc',
+          serverId: 'server',
+          streamName: 'front_sub',
+          fullscreenStreamName: 'front_main',
+        ),
+        CameraSource(id: 'door', name: 'Door', kind: 'ha',
+            entityId: 'camera.door', imported: true),
+      ],
+    );
+    SharedPreferences.setMockInitialValues({
+      'ks.camera.config': config.encode(),
+    });
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final cameras = CameraManager(
+      bus,
+      commands,
+      logger,
+      settings,
+      HomeAssistantManager(bus, commands, logger, settings),
+    );
+    await cameras.init();
+    addTearDown(cameras.dispose);
+
+    // WebRTC-only kinds have no MSE endpoint to hand out.
+    final refused = await cameras.mseEndpoint(cameraId: 'door', fullscreen: false);
+    expect(refused['ok'], isFalse);
+
+    final endpoint = await cameras.mseEndpoint(cameraId: 'cam', fullscreen: false);
+    expect(endpoint['ok'], isTrue, reason: '${endpoint['error']}');
+    final url = '${endpoint['url']}';
+    expect(url, startsWith('ws://127.0.0.1:'));
+
+    final client = await WebSocket.connect(url);
+    client.add(jsonEncode({'type': 'mse', 'value': 'avc1.640029'}));
+    final received = <Object?>[];
+    await for (final message in client.timeout(const Duration(seconds: 5))) {
+      received.add(message);
+      if (received.length == 2) break;
+    }
+    expect(sawAuth, 'Basic ${base64Encode(utf8.encode('user:secret'))}',
+        reason: 'the relay must carry the server login the page cannot');
+    expect(sawSrc, 'front_sub');
+    expect(received.first, contains('avc1.64001f'));
+    expect(received.last, [1, 2, 3, 4]);
+    await client.close();
+
+    // A token is single use: replaying the same url is refused.
+    await expectLater(WebSocket.connect(url), throwsA(anything));
+
+    // Fullscreen rides the fullscreen stream, exactly like WebRTC signaling.
+    final full = await cameras.mseEndpoint(cameraId: 'cam', fullscreen: true);
+    final fullSocket = await WebSocket.connect('${full['url']}');
+    fullSocket.add('{"type":"mse"}');
+    await fullSocket.timeout(const Duration(seconds: 5)).first;
+    expect(sawSrc, 'front_main');
+    await fullSocket.close();
+  });
 }
 
 class _RealHttpOverrides extends HttpOverrides {}
