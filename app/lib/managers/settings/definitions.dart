@@ -1799,8 +1799,9 @@ const screensaverScreenOffMinutes = SettingDef<num>(
   unit: ' min',
   title: 'Turn screen off after',
   description:
-      'Truly power the panel off after the screensaver has run this long; '
-      '0 never does. Needs the Device admin permission.',
+      'Powers down the display panel once the screensaver has run for the '
+      'set duration. Set to 0 to keep the screen on indefinitely. Requires '
+      'Device Administrator permission.',
   category: 'Screensaver',
 );
 
