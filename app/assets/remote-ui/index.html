@@ -2081,6 +2081,12 @@ const CAMERA_ICONS = {
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4'
     + 'm11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/>',
+  // Two palms coming together under an impact burst: the clap trigger.
+  clap: '<rect x="6.1" y="9.5" width="4.2" height="10.5" rx="2.1"'
+    + ' transform="rotate(-16 8.2 14.75)"/>'
+    + '<rect x="13.7" y="9.5" width="4.2" height="10.5" rx="2.1"'
+    + ' transform="rotate(16 15.8 14.75)"/>'
+    + '<path d="M12 6.5V3.5M8.4 7.4 6.4 5.2M15.6 7.4l2-2.2"/>',
   apps: '<path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01'
     + 'M5 19h.01M12 19h.01M19 19h.01"/>',
   link: '<path d="M10 13a4 4 0 0 0 5.7.3l2-2a4 4 0 0 0-5.7-5.6l-1.1 1.1"/>'
@@ -3742,7 +3748,7 @@ async function loadGestures() {
         }, false, 'delete'),
       ],
       {
-        icon: 'gesture',
+        icon: mapping.trigger?.type === 'claps' ? 'clap' : 'gesture',
         onClick: async () => {
           if (await editGesture(mapping)) refresh();
         },

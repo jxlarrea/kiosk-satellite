@@ -113,7 +113,10 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
               ),
             for (final mapping in mappings)
               ListTile(
-                leading: const Icon(Icons.gesture),
+                // Claps are heard, not touched; the row icon says which.
+                leading: Icon(mapping.triggerType == 'claps'
+                    ? Icons.sign_language_outlined
+                    : Icons.gesture),
                 title: Text(describeGestureTrigger(mapping.trigger)),
                 subtitle: Text(describeGestureAction(mapping.action)),
                 onTap: () => _edit(mapping),
