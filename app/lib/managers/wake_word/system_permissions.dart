@@ -24,6 +24,7 @@ class SystemPermissions {
     required this.location,
     required this.deviceAdmin,
     required this.writeSettings,
+    required this.allFiles,
   });
 
   /// Nothing listens without this one, foreground or not.
@@ -56,8 +57,25 @@ class SystemPermissions {
   /// value (and everything mirroring it) never sees.
   final bool writeSettings;
 
+  /// "All files access": the File Manager's shared-storage root. A settings
+  /// screen on Android 11+, the legacy storage dialog before that (issue
+  /// #175); without it the manager still works on the app's own folder.
+  final bool allFiles;
+
   static const _brightnessChannel =
       MethodChannel('kiosk_satellite/brightness');
+  static const _backgroundChannel =
+      MethodChannel('kiosk_satellite/background');
+
+  static Future<bool> _hasAllFilesAccess() async {
+    try {
+      return await _backgroundChannel
+              .invokeMethod<bool>('hasAllFilesAccess') ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
 
   static Future<bool> _canWriteSettings() async {
     try {
@@ -77,6 +95,7 @@ class SystemPermissions {
         location: await Permission.locationWhenInUse.isGranted,
         deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
         writeSettings: await _canWriteSettings(),
+        allFiles: await _hasAllFilesAccess(),
       );
 
   /// Nothing we could not read. A platform without these channels answers
@@ -92,6 +111,7 @@ class SystemPermissions {
     location: false,
     deviceAdmin: false,
     writeSettings: false,
+    allFiles: false,
   );
 
   Map<String, Object?> toJson() => {
@@ -104,5 +124,6 @@ class SystemPermissions {
         'location': location,
         'deviceAdmin': deviceAdmin,
         'writeSettings': writeSettings,
+        'allFiles': allFiles,
       };
 }

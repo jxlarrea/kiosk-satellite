@@ -4447,6 +4447,21 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           action: 'Enable',
           onGrant: () => _requestVia('deviceAdmin'),
         ),
+        // Same shape as Device admin: without it the File Manager still
+        // works on the app's own folder, a lesser version of the feature
+        // rather than a broken one.
+        _row(
+          granted: perms?.allFiles,
+          needed: false,
+          missingIcon: Icons.folder_off_outlined,
+          title: 'All files access',
+          held: 'The File Manager can browse the shared storage.',
+          missing: '',
+          idle:
+              'Lets the File Manager browse the shared storage instead of '
+              'only the app folder.',
+          onGrant: () => _requestVia('allFiles'),
+        ),
         // Pages ask for this themselves when they need it; nothing native
         // here uses it, so it is listed for completeness only.
         _row(

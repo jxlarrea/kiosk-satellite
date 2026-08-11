@@ -1,10 +1,26 @@
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/manager.dart';
+
+/// Whether this device predates "All files access" (Android 11): there the
+/// shared storage root rides on the legacy storage runtime pair instead, a
+/// dialog rather than a settings screen (issue #175). Shared with the
+/// Permissions Manager's request path, so both grant buttons ask the same
+/// way.
+Future<bool> legacyStorage() async {
+  if (!Platform.isAndroid) return false;
+  try {
+    return (await DeviceInfoPlugin().androidInfo).version.sdkInt < 30;
+  } catch (_) {
+    return false;
+  }
+}
 
 /// A simple file manager, Fully Kiosk style: browse folders, and (through
 /// the remote admin) download and upload files.
@@ -141,9 +157,24 @@ class FilesManager extends Manager {
       ..register(Command(
         name: 'requestAllFilesAccess',
         description:
-            'Open the "All files access" settings screen for this app (the '
-            'grant behind the shared storage root; a screen, not a dialog)',
+            'Ask for the grant behind the shared storage root: the "All '
+            'files access" settings screen on Android 11+, the storage '
+            'permission dialog before that',
         handler: (_) async {
+          // Before Android 11 the settings screen does not exist; the same
+          // door is the legacy storage pair, a normal runtime dialog
+          // (issue #175).
+          if (await legacyStorage()) {
+            try {
+              final status = await Permission.storage.request();
+              return status.isGranted
+                  ? const CommandResult.ok()
+                  : const CommandResult.fail(
+                      'the storage permission was not granted');
+            } catch (e) {
+              return CommandResult.fail('could not ask for storage: $e');
+            }
+          }
           try {
             await _background.invokeMethod('requestAllFilesAccess');
             return const CommandResult.ok();

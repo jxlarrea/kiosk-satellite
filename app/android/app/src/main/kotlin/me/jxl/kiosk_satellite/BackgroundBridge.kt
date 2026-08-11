@@ -119,12 +119,24 @@ class BackgroundBridge(
                 // keeps the panel showing a dim clock (issue #51).
                 "displayState" -> result.success(displayState())
                 "ambientDisplaySetting" -> result.success(ambientDisplaySetting())
-                // The File Manager's shared-storage root. "All files access"
-                // is a settings screen, not a runtime dialog: request() opens
-                // it for this app and the person toggles it there.
+                // The File Manager's shared-storage root. On Android 11+
+                // this is "All files access", a settings screen: request()
+                // opens it for this app and the person toggles it there.
+                // Before 11 no such screen exists and the same door is the
+                // legacy storage runtime pair, requested from the Dart side;
+                // answering true unconditionally there reported a root the
+                // OS then refused to list (issue #175).
                 "hasAllFilesAccess" -> result.success(
-                    Build.VERSION.SDK_INT < Build.VERSION_CODES.R ||
-                        android.os.Environment.isExternalStorageManager(),
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        android.os.Environment.isExternalStorageManager()
+                    } else {
+                        context.checkSelfPermission(
+                            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED &&
+                            context.checkSelfPermission(
+                                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    },
                 )
                 "requestAllFilesAccess" -> {
                     try {

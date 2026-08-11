@@ -16,6 +16,14 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
+    <!-- Writing (delete, upload) in the File Manager's shared root before
+         Android 11, where All files access does not exist and the legacy
+         storage pair is the whole grant (issue #175). The
+         requestLegacyExternalStorage attribute on the application keeps
+         that pair meaningful on Android 10's scoped storage; 11+ ignores
+         the attribute. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29"/>
     <!-- Motion detection uses a camera when one is present, but the app is fully
          usable without it, so never let the Store filter the install. -->
     <uses-feature android:name="android.hardware.camera.any" android:required="false"/>
@@ -40,9 +48,9 @@
          (see ApkInstaller). Normal protection: granted at install. -->
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION"/>
     <!-- The File Manager's shared-storage root. A special settings-screen
-         grant ("All files access"), only ever requested from the File
-         Manager itself; without it the manager still works on the app's
-         own folder. -->
+         grant ("All files access"), requested from the File Manager and
+         the Permissions Manager; without it the manager still works on
+         the app's own folder. -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage"/>
     <!-- Writing the real system brightness (the value quick-settings moves),
@@ -55,6 +63,7 @@
         android:label="Kiosk Satellite"
         android:name=".KioskApplication"
         android:icon="@mipmap/ic_launcher"
+        android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
         <!-- singleTask with a real affinity: exactly one instance, ever.
              The scaffold's singleTop + empty affinity meant no launch could

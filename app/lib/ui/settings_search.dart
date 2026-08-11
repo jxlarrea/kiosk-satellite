@@ -114,8 +114,8 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     description:
         'Every Android grant the app can use, with its status: microphone, '
         'camera, notifications, unrestricted battery, display over other '
-        'apps, modify system settings, system UI guard, device admin and '
-        'location.',
+        'apps, modify system settings, system UI guard, device admin, all '
+        'files access and location.',
     anchorId: 'x:device_permissions',
   ),
   SettingsSearchEntry(

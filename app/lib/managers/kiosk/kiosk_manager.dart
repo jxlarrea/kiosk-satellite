@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../files/files_manager.dart' show legacyStorage;
 import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
@@ -325,7 +326,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           'which':
               'explicit list of permissions to request (microphone, camera, '
               'notifications, batteryOptimizations, overlay, location, '
-              'writeSettings, deviceAdmin); overrides full',
+              'writeSettings, allFiles, deviceAdmin); overrides full',
         },
         handler: (p) async {
           const known = <String, Permission>{
@@ -377,6 +378,29 @@ class KioskManager extends Manager with WidgetsBindingObserver {
               }
             } catch (_) {
               results['writeSettings'] = false;
+            }
+          }
+          // "All files access" (the File Manager's shared-storage root) is
+          // the same kind of settings screen as "Modify system settings" on
+          // Android 11+. Before that no such screen exists and the grant is
+          // the legacy storage pair, a normal runtime dialog (issue #175).
+          final askAllFiles = which is List && which.contains('allFiles');
+          if (askAllFiles) {
+            try {
+              if (await _backgroundChannel
+                      .invokeMethod<bool>('hasAllFilesAccess') ==
+                  true) {
+                results['allFiles'] = true;
+              } else if (await legacyStorage()) {
+                results['allFiles'] =
+                    (await Permission.storage.request()).isGranted;
+              } else {
+                await _backgroundChannel.invokeMethod('requestAllFilesAccess');
+                // Only launched: the user grants (or not) on that screen.
+                results['allFiles'] = false;
+              }
+            } catch (_) {
+              results['allFiles'] = false;
             }
           }
           // Device admin (the real "Screen off") is an Activity, not a
