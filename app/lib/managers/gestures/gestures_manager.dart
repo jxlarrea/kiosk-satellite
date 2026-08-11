@@ -50,7 +50,20 @@ class GesturesManager extends Manager {
 
   StreamSubscription<GestureDetected>? _sub;
   StreamSubscription<Uint8List>? _micSub;
-  late final ClapDetector _detector = ClapDetector(onClaps: _onClaps);
+  late final ClapDetector _detector =
+      ClapDetector(onClaps: _onClaps, onDiscard: _onClapsDiscarded);
+
+  /// Discard diagnostics, rate limited: under continuous music the veto can
+  /// discard every second or two, and a debug line each time would flood
+  /// the ring buffer that a field report needs.
+  DateTime _lastDiscardLog = DateTime.fromMillisecondsSinceEpoch(0);
+
+  void _onClapsDiscarded(String reason) {
+    final now = DateTime.now();
+    if (now.difference(_lastDiscardLog) < const Duration(seconds: 10)) return;
+    _lastDiscardLog = now;
+    log.debug(name, 'clap sequence discarded: $reason');
+  }
 
   /// A voice turn is running (wake word suspended by the page): claps heard
   /// now are someone talking at the satellite, not a command to us.

@@ -97,6 +97,21 @@ void main() {
       expect(fired, isEmpty);
     });
 
+    test('loud claps with a live-room reverb tail still count', () {
+      detector.targets = {2};
+      final rng = Random(13);
+      // Regression: the tail at 250 ms is far above any absolute floor but
+      // 15+ dB below the clap's peak; only a peak-relative check passes it.
+      feed(detector, [
+        ...ambience(700, rng),
+        ...reverbClap(rng),
+        ...ambience(150, rng),
+        ...reverbClap(rng),
+        ...ambience(900, rng),
+      ]);
+      expect(fired, [2]);
+    });
+
     test('claps quieter than the music under them do not fire', () {
       detector.targets = {2};
       final rng = Random(8);

@@ -21,10 +21,15 @@ import 'dart:typed_data';
 /// continuously while open, and a deterministic clock is what makes this
 /// testable with synthetic PCM.
 class ClapDetector {
-  ClapDetector({required this.onClaps});
+  ClapDetector({required this.onClaps, this.onDiscard});
 
   /// Fired with the clap count when a completed sequence matches [targets].
   final void Function(int count) onClaps;
+
+  /// Diagnostic: a collected sequence was thrown away and why ("sustained
+  /// sound after N claps", "closed with N claps, no match"). The one clue a
+  /// field report of missed claps has, so the manager logs it at debug.
+  final void Function(String reason)? onDiscard;
 
   /// Clap counts that fire (2..4, from the configured mappings). The count
   /// equal to the largest target fires the moment it lands; smaller targets
@@ -40,8 +45,9 @@ class ClapDetector {
   static const double _minEnergy = 5e-5; // absolute onset floor (quiet mics ok)
   static const double _minHfRatio = 0.08; // diff-energy share = broadband
   static const int _refractoryFrames = 15; // 150 ms between claps
-  static const int _decayCheckFrames = 25; // a clap has died away by here
-  static const double _decayRatio = 8; // still this loud = not a clap
+  static const int _decayCheckFrames = 25; // decay window: 250 ms past onset
+  static const int _decayLateFrames = 10; // judged on its last 100 ms
+  static const double _decayDropRatio = 32; // a clap is 15 dB down by then
   static const int _maxGapFrames = 70; // 700 ms between claps in a sequence
   static const int _vetoCooldownFrames = 100; // quiet-down after a false start
 
@@ -53,9 +59,18 @@ class ClapDetector {
   /// Frame indices of the claps in the sequence being collected.
   final List<int> _onsets = [];
 
-  /// Pending decay check: the frame to look at and the floor at onset time.
+  /// Pending decay check for the newest clap. The judgment is RELATIVE to
+  /// the clap's own peak, never near-absolute: a loud clap in a live room
+  /// leaves reverb well above any fixed level at 250 ms (which is how loud
+  /// close claps used to veto themselves, deterministically, while soft
+  /// ones worked), but that reverb is 20+ dB below the clap's peak, where
+  /// music or an alarm is still sitting at full level. Majority-of-window
+  /// rather than one sampled frame, so a stray blip cannot decide it.
   int _decayCheckAt = -1;
-  double _decayFloor = 0;
+  double _onsetEnergy = 0;
+  double _onsetFloor = 0;
+  int _lateLoud = 0;
+  int _lateTotal = 0;
 
   /// Partial subframe carried between chunks, plus the last sample of the
   /// previous subframe so the first difference is continuous across edges.
@@ -73,6 +88,9 @@ class ClapDetector {
     _suppressedUntil = 0;
     _onsets.clear();
     _decayCheckAt = -1;
+    _onsetEnergy = 0;
+    _lateLoud = 0;
+    _lateTotal = 0;
     _carried = 0;
     _lastSample = 0;
   }
@@ -116,15 +134,34 @@ class ClapDetector {
       _closeSequence();
     }
 
-    // The decay check for the newest clap: a real clap is back near the
-    // floor a quarter second after it hit. Something still loud is music,
-    // an alarm, a truck — cancel the sequence and stand down briefly so a
-    // sustained sound cannot keep restarting it.
-    if (_frame == _decayCheckAt) {
-      _decayCheckAt = -1;
-      if (energy > _minEnergy && energy > _decayFloor * _decayRatio) {
-        _onsets.clear();
-        _suppressedUntil = _frame + _vetoCooldownFrames;
+    // The decay check for the newest clap: a real clap has fallen far below
+    // its own peak a quarter second after it hit. Something still near that
+    // level is music, an alarm, a truck — cancel the sequence and stand down
+    // briefly so a sustained sound cannot keep restarting it.
+    if (_decayCheckAt > 0) {
+      if (_frame > _decayCheckAt - _decayLateFrames) {
+        _lateTotal++;
+        // Near the clap's peak, above pre-clap ambience, and not mere noise:
+        // all three, so neither a quiet room nor a noisy one skews the count.
+        final loudBar = [
+          _onsetEnergy / _decayDropRatio,
+          _onsetFloor * 4,
+          _minEnergy,
+        ].reduce((a, b) => a > b ? a : b);
+        if (energy > loudBar) _lateLoud++;
+      } else if (energy > _onsetEnergy) {
+        // The burst can peak a frame or two past the onset frame.
+        _onsetEnergy = energy;
+      }
+      if (_frame == _decayCheckAt) {
+        final veto = _lateLoud * 2 > _lateTotal;
+        _decayCheckAt = -1;
+        if (veto) {
+          final count = _onsets.length;
+          _onsets.clear();
+          _suppressedUntil = _frame + _vetoCooldownFrames;
+          onDiscard?.call('sustained sound after $count clap(s)');
+        }
       }
     }
 
@@ -138,7 +175,10 @@ class ClapDetector {
         hf > energy * _minHfRatio) {
       _onsets.add(_frame);
       _decayCheckAt = _frame + _decayCheckFrames;
-      _decayFloor = _floor;
+      _onsetEnergy = energy;
+      _onsetFloor = _floor;
+      _lateLoud = 0;
+      _lateTotal = 0;
       // Nothing larger is configured, so there is nothing to wait for.
       var maxTarget = 0;
       for (final t in targets) {
@@ -161,6 +201,10 @@ class ClapDetector {
     _decayCheckAt = -1;
     // The tail of the last clap must not seed the next sequence.
     _suppressedUntil = _frame + _refractoryFrames;
-    if (count >= 2 && targets.contains(count)) onClaps(count);
+    if (count >= 2 && targets.contains(count)) {
+      onClaps(count);
+    } else {
+      onDiscard?.call('closed with $count clap(s), no match');
+    }
   }
 }

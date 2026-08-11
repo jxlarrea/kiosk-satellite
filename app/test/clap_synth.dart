@@ -30,6 +30,21 @@ List<double> clap(Random rng, {double amp = 0.5}) => [
     (rng.nextDouble() * 2 - 1) * amp * exp(-i / (sampleRate * 0.006)),
 ];
 
+/// A loud clap in a live room: the burst plus a long reverb tail (an 80 ms
+/// time constant, a real bedroom's worth) that is still well above ambience
+/// a quarter second later. The report that motivated this: clapping hard
+/// next to the device read as "sustained sound" and vetoed itself, because
+/// the decay check compared the tail to a near-absolute level instead of to
+/// the clap's own peak.
+List<double> reverbClap(Random rng, {double amp = 0.9}) => [
+  for (var i = 0; i < sampleRate * 350 ~/ 1000; i++)
+    (rng.nextDouble() * 2 - 1) *
+        amp *
+        (i < sampleRate * 15 ~/ 1000
+            ? 1.0
+            : 0.35 * exp(-(i - sampleRate * 15 ~/ 1000) / (sampleRate * 0.08))),
+];
+
 /// A low-frequency thud: a 200 Hz sine burst with a 5 ms attack ramp, loud
 /// but with almost no high-frequency content. Must not read as a clap.
 List<double> thud(int ms, {double amp = 0.5, double freq = 200}) {
