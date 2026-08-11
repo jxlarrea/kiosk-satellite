@@ -1505,6 +1505,46 @@ async function updateCameraSnapshotPanel() {
   }, 5000);
 }
 
+/* The Device admin grant, surfaced right under "Turn screen off after",
+   mirroring the device row: the screen-off timer fails quietly without
+   the grant, so this row is what says why nothing turned off. */
+async function updateScreenOffAdminNotice() {
+  let granted;
+  try {
+    const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+    granted = !!(res.data || {}).deviceAdmin;
+  } catch (_) { return; }
+  if (granted) return;
+  const tab = document.getElementById('tab-screensaver');
+  const anchor = tab.querySelector('[data-key="screensaver.screen_off_minutes"]');
+  if (!anchor || tab.querySelector('.screen-off-admin-notice')) return;
+  const row = readOnlyRow('Device admin permission missing',
+    'Without it the screen cannot be turned off. The grant dialog appears '
+    + 'on the tablet screen.', '');
+  row.classList.add('screen-off-admin-notice');
+  const btn = document.createElement('button');
+  btn.className = 'btn-ghost';
+  btn.textContent = 'Grant on device';
+  btn.style.cssText = 'flex-shrink:0;';
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      await api('/api/commands/requestOsPermissions', { method: 'POST',
+        body: JSON.stringify({ which: ['deviceAdmin'] }) });
+    } catch (_) {}
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      try {
+        const res = await (await api('/api/commands/getSystemPermissions', { method: 'POST', body: '{}' })).json();
+        if ((res.data || {}).deviceAdmin) { row.remove(); return; }
+      } catch (_) {}
+    }
+    btn.disabled = false;
+  });
+  row.appendChild(btn);
+  anchor.insertAdjacentElement('afterend', row);
+}
+
 /* The screensaver's motion switches follow the Camera section, mirroring
    the device: with the camera master switch off, "Dismiss on motion"
    renders disabled with the reason; with it on, a hint under the postpone
@@ -4044,6 +4084,7 @@ async function loadSettings() {
   updateCameraSnapshotPanel();
   updateMotionCameraRows();
   updateDimModeNotice();
+  updateScreenOffAdminNotice();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();
   updateMqttValidateRow();

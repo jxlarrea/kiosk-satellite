@@ -1498,6 +1498,13 @@ class _CategoryContentState extends State<_CategoryContent> {
                 screensaverPostponeOnMotion.key: const HintRow(
                   'Motion detection is tuned in the Camera settings.',
                 ),
+              // The screen-off timer fails quietly without device admin;
+              // this row is what says so, right where the slider is.
+              if (widget.category == 'Screensaver')
+                screensaverScreenOffMinutes.key: _ScreenOffAdminRow(
+                  key: UniqueKey(),
+                  container: container,
+                ),
               // Dim is the one mode the pause-dashboard optimization cannot
               // help: there is no overlay, the page IS the display. Lives in
               // the Dim group, whose rows only render while Dim is selected.
@@ -2244,6 +2251,74 @@ class _OverlayGrantRowState extends State<_OverlayGrantRow> {
           await _refresh();
         },
         child: const Text('Grant'),
+      ),
+    );
+  }
+}
+
+/// The device-admin grant, surfaced right under "Turn screen off after"
+/// (mirrored in the remote UI): the timer fails quietly without the grant,
+/// so this row is what says why nothing turned off. Same shape as the
+/// Permissions Manager's Device admin row; hidden entirely while the grant
+/// is held.
+class _ScreenOffAdminRow extends StatefulWidget {
+  const _ScreenOffAdminRow({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_ScreenOffAdminRow> createState() => _ScreenOffAdminRowState();
+}
+
+class _ScreenOffAdminRowState extends State<_ScreenOffAdminRow>
+    with WidgetsBindingObserver {
+  bool? _granted;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The grant is given on Android's own screen, which reports nothing on
+    // the way back; returning here is the moment to look again.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final granted = await BackgroundListening.isScreenOffAvailable();
+    if (!mounted) return;
+    setState(() => _granted = granted);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_granted != false) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(
+        Icons.admin_panel_settings_outlined,
+        color: theme.colorScheme.error,
+      ),
+      title: const Text('Device admin'),
+      subtitle: const Text('Not granted, so the screen cannot turn off.'),
+      trailing: TextButton(
+        onPressed: () async {
+          await widget.container.commands.execute('requestOsPermissions', {
+            'which': ['deviceAdmin'],
+          });
+          await _refresh();
+        },
+        child: const Text('Enable'),
       ),
     );
   }
