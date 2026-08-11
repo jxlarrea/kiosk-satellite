@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.24 - 2026-08-11
 
 ### Added
 - An **Auto-dismiss after** slider in Camera Streams, Playback (0 to 5 minutes, default off): an opened camera view closes on its own after the chosen time, so a view brought up in passing with a clap or a corner tap does not stream forever. Focusing a camera restarts the countdown, and the camera screensaver is unaffected.
