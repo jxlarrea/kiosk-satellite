@@ -78,15 +78,21 @@ screensaver gate at all. A screensaver [schedule](screensavers.md) entry
 can override Dismiss on motion per time window, so an overnight Black
 entry can keep the camera off entirely.
 
-One Android rule binds all three: no app can watch the camera while the
-panel is truly powered off. The OS revokes camera access within seconds
-of the screen turning off, however alive the app is. The screen that
-*looks* off but keeps every camera feature working is the **Black
-screensaver** (backlight at zero under a black overlay); use it, or a
-scheduled Black entry, where Fully Kiosk users would reach for "fake
-screen off". After a real screen-off (the power button, the Screen
-entity, an idle timeout) the camera rebinds on its own the moment the
-screen comes back on.
+What a true screen-off does to the camera depends on the Android
+version. Older versions leave it alone. Newer ones (observed on Android
+16, and rolling in since Android 11's while-in-use rules) revoke camera
+access within seconds of the panel powering off from any app that is
+not on a visible screen, unless the app holds a camera-type foreground
+service. Kiosk Satellite attaches that type to the [background
+listening](microphone.md) service whenever the camera permission is granted,
+so with background listening enabled all three motion features keep
+watching through a real screen-off. Without background listening, and
+on vendors that suspend apps wholesale once the panel is off, the
+revocation still happens; the camera then rebinds on its own the moment
+the screen comes back on. The screen that *looks* off but keeps every
+camera feature working everywhere is the **Black screensaver**
+(backlight at zero under a black overlay); use it, or a scheduled Black
+entry, where Fully Kiosk users would reach for "fake screen off".
 
 The tuning lives under Camera, **Motion Detection**:
 

@@ -35,6 +35,11 @@
          moment another app is in front. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+    <!-- Keeps motion detection's camera alive when the panel powers off.
+         Newer Android revokes camera access from apps that are not visible
+         unless a camera-type foreground service is running; the type is only
+         attached when the CAMERA permission is granted (WakeWordService). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA"/>
     <!-- The service's notification. Denied, the service still runs; it just says
          nothing, which is worse for the person in the room than for us. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
@@ -94,7 +99,7 @@
         <service
             android:name=".WakeWordService"
             android:exported="false"
-            android:foregroundServiceType="microphone"/>
+            android:foregroundServiceType="microphone|camera"/>
         <!-- Crash recovery (issue #94): the sticky restart of this empty
              service is what relaunches the kiosk after a native crash, and
              the heartbeat alarm below is its backstop on OEMs that restart

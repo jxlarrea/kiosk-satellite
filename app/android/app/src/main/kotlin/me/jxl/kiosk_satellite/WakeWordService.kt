@@ -35,6 +35,10 @@ import androidx.core.content.ContextCompat
  * [ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE] is the part that makes the
  * microphone real rather than silent, and from Android 14 it must be declared
  * both here and in the manifest, backed by FOREGROUND_SERVICE_MICROPHONE.
+ * [ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA] does the same for the camera:
+ * it is the exemption that keeps motion detection's camera alive after the
+ * panel powers off on Android versions that otherwise revoke it (see
+ * onCreate for the details and the permission condition).
  *
  * The notification is not optional and cannot be hidden. That is the deal
  * Android offers for background microphone access, and it is the right deal:
@@ -85,10 +89,23 @@ class WakeWordService : Service() {
         super.onCreate()
         isRunning = true
         createChannel()
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // The camera bit is what lets motion detection keep the camera when
+        // the panel powers off: without it, modern Android soft-denies the
+        // camera app-op the moment the app leaves TOP (Tab S8 / Android 16
+        // revokes ~5s after screen-off; Android 11 never does). It must be
+        // conditional: from Android 14, startForeground with a camera type
+        // throws unless the CAMERA permission is actually granted, and the
+        // camera is optional for this app.
+        var type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
         } else {
             0
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+            ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, buildNotification(), type)

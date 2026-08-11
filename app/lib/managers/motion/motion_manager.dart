@@ -33,14 +33,17 @@ import 'native_motion.dart';
 ///
 /// The "Motion sensor" leg (Camera section) is the third and least gated:
 /// motion as its own MQTT binary_sensor, independent of the screensaver
-/// features. It ignores even the screen-on gate above, but note what that
-/// can and cannot buy: a "dark" panel under the Black screensaver is a lit,
-/// visible app and the camera keeps running, while a panel that is truly
-/// powered off gets the camera revoked by the OS within seconds (the camera
-/// service gates access on app visibility — measured on Android 16, and the
-/// reason "watch while the screen is off" is impossible for any app). The
-/// revocation is reported as a stream error and [_onCameraLost] rebinds on
-/// the next screen-on. The cost warning lives on its setting too.
+/// features. It ignores even the screen-on gate above, and a truly
+/// powered-off panel is its headline use: an already-open session now
+/// survives screen-off because the background listening service carries the
+/// camera foreground type (WakeWordService), the exemption newer Android
+/// gates on — without it the OS revokes within seconds of the panel going
+/// dark (measured on Android 16; Android 11 never revokes). What no version
+/// allows is *opening* the camera under a dark panel, so binds are the
+/// fragile edge, not open sessions: a revocation is reported as a stream
+/// error and [_onCameraLost] rebinds on the next screen-on, and a bind that
+/// happened while the panel was off is treated as suspect and restarted on
+/// wake (see [_boundBlind]). The cost warning lives on its setting too.
 class MotionManager extends Manager {
   MotionManager(
     super.bus,
@@ -107,12 +110,23 @@ class MotionManager extends Manager {
   bool _screenOn = true;
   bool _starting = false;
 
+  /// Set when the camera was bound while the panel was off. Opening the
+  /// camera under a dark panel is refused even where an already-open
+  /// session survives it: One UI rejects the connect with "disabled by
+  /// policy" and CameraX parks the session in PENDING_OPEN — no error, no
+  /// frames, and nothing ever heals it, because no availability callback
+  /// follows a policy reject (measured on a Tab S8 / Android 16 when a
+  /// relaunch raced a screen-off). Older Android opens fine. Either way
+  /// the session is suspect until a frame proves otherwise, so the wake
+  /// listener restarts it and a motion tick clears the suspicion.
+  bool _boundBlind = false;
+
   /// Rebind backoff after the OS revokes the camera out from under a live
-  /// session — the panel powering off does it within seconds (the camera
-  /// service gates access on the app being *visible*, an alive process
-  /// and foreground service change nothing), and another app taking the
-  /// sensor does it too. The native side reports the revocation as a
-  /// stream error; this schedules the rebind.
+  /// session — the panel powering off does it within seconds on versions
+  /// that revoke at all (see the class comment; the camera foreground
+  /// service type is the exemption), and another app taking the sensor
+  /// does it too. The native side reports the revocation as a stream
+  /// error; this schedules the rebind.
   Timer? _retry;
   late Duration _retryDelay = _retryFloor;
 
@@ -153,6 +167,11 @@ class MotionManager extends Manager {
     bus.on<ScreenStateChanged>().listen((e) {
       _selfLit();
       _screenOn = e.on;
+      if (e.on && _boundBlind) {
+        _boundBlind = false;
+        log.info(name, 'camera was bound under a dark panel; restarting it');
+        _stop();
+      }
       _sync();
     });
     // A tuning change (fps / sensitivity / the Camera section's camera pick)
@@ -235,10 +254,12 @@ class MotionManager extends Manager {
           snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
       final startDelay =
           _settings.get(defs.motionStartDelay).toInt().clamp(0, 15);
+      _boundBlind = !_screenOn;
       log.info(
         name,
         'camera on (fps=$fps sensitivity=$sensitivity cam=$camera'
-        '${startDelay > 0 ? ' delay=${startDelay}s' : ''})',
+        '${startDelay > 0 ? ' delay=${startDelay}s' : ''}'
+        '${_boundBlind ? ', panel off: restart on wake unless frames flow' : ''})',
       );
       _camera = NativeMotion.stream(
         fps: fps,
@@ -250,8 +271,9 @@ class MotionManager extends Manager {
       ).listen(
         (_) {
           // Frames flowing again: the session is healthy, forget any
-          // accumulated rebind backoff.
+          // accumulated rebind backoff and any blind-bind suspicion.
           _retryDelay = _retryFloor;
+          _boundBlind = false;
           if (DateTime.now().isBefore(_quietUntil)) {
             log.debug(name, 'motion suppressed (own light change)');
             return;
@@ -301,6 +323,7 @@ class MotionManager extends Manager {
     _retry?.cancel();
     _retry = null;
     _retryDelay = _retryFloor;
+    _boundBlind = false;
     if (_camera == null) return;
     _camera!.cancel();
     _camera = null;

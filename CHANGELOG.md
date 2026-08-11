@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- Camera motion detection keeps watching after the screen truly powers off. Newer Android revokes any non-visible app's camera within seconds of the panel going dark, which silently benched the motion sensor, Dismiss on motion and continuous snapshots until the screen came back. With background listening enabled and the camera permission granted, the background service now carries the camera foreground type Android reserves for exactly this, and the OS leaves the feed alone (verified on Android 11 and Android 16 hardware). Vendors that suspend apps entirely once the panel is off remain out of reach, and the Black screensaver stays the route that works everywhere.
+
 ## v2026.8.24 - 2026-08-11
 
 ### Added
