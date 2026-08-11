@@ -164,7 +164,7 @@ const _categories = <(String, String, Object, String)>[
     'Gestures',
     'Gestures',
     Icons.gesture,
-    'Touch gestures that trigger actions',
+    'Touch and clap gestures that trigger actions',
   ),
   (
     'Device',

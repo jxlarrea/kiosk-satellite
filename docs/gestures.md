@@ -1,6 +1,6 @@
 # Gestures
 
-Touch gestures that trigger actions, for the kiosk that should stay clean.
+Touch and clap gestures that trigger actions, for the kiosk that should stay clean.
 The dashboard shows nothing extra, guests see nothing to press, and the
 person who set the tablet up can still jump to an admin view, run a script
 or trigger an automation with a touch shape nobody performs by accident.
