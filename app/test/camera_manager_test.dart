@@ -10,6 +10,7 @@ import 'package:kiosk_satellite/managers/camera/camera_manager.dart';
 import 'package:kiosk_satellite/managers/camera/models.dart';
 import 'package:kiosk_satellite/managers/home_assistant/home_assistant_manager.dart';
 import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -251,6 +252,20 @@ void main() {
       expect(cameras.activeViewId.value, viewId);
       await commands.execute('showCameraView', {'viewId': viewId});
       expect(cameras.activeViewId.value, viewId);
+
+      // Auto-dismiss: an open view closes on its own after the configured
+      // time; 0 (the default) leaves it up. 1 s here to keep the test quick.
+      await settings.set(defs.cameraAutoDismissSeconds, 1);
+      await commands.execute('showCameraView', {'viewId': viewId});
+      expect(cameras.activeViewId.value, viewId);
+      await Future<void>.delayed(const Duration(milliseconds: 1400));
+      expect(cameras.activeViewId.value, isNull,
+          reason: 'the view should have auto-dismissed');
+      await settings.set(defs.cameraAutoDismissSeconds, 0);
+      await commands.execute('showCameraView', {'viewId': viewId});
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      expect(cameras.activeViewId.value, viewId,
+          reason: 'off means a view stays up');
       expect(cameras.focusCamera('$cameraId').ok, isTrue);
       expect(cameras.focusCamera('unknown').ok, isFalse);
 

@@ -120,6 +120,21 @@ Use the normal `button.press` action in a Home Assistant automation to show a
 specific view. View buttons use stable internal IDs, so renaming a view does
 not replace its Home Assistant entity.
 
+## Auto-dismiss
+
+**Auto-dismiss after** (Settings, then Camera Streams, then Playback) closes
+an opened camera view on its own after the chosen time, from 30 seconds to 5
+minutes. The default, 0, keeps a view up until something closes it. Made for
+views opened in passing: a clap sequence or a corner tap brings the cameras
+up for a look, and the dashboard comes back on its own instead of the grid
+streaming until someone touches the screen.
+
+The countdown restarts when a camera is focused, since a tap on the view is
+someone using it, and it applies however the view was opened: a gesture, the
+menu, MQTT, or the remote admin. The [camera screensaver](#camera-screensaver)
+is unaffected, since it is the screensaver showing cameras rather than a view
+over the dashboard.
+
 ## Stream codecs
 
 Kiosk Satellite asks for H.264 (and VP8, VP9, AV1) and deliberately leaves

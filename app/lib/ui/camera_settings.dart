@@ -236,12 +236,56 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                 },
               ),
             ),
+            SearchLandingTarget(
+              id: defs.cameraAutoDismissSeconds.key,
+              child: _autoDismissRow(context),
+            ),
           ],
         ),
         const GroupNote(
           'Grid playback is video-only. For low-power devices, use lower '
           'resolution Go2RTC streams in views and optionally set a separate '
           'fullscreen stream.',
+        ),
+      ],
+    );
+  }
+
+  /// Value under the finger mid-drag; null reads the stored setting.
+  double? _autoDismissDrag;
+
+  /// The auto-dismiss slider (0 = off, shown as such). Mirrors the generic
+  /// def-backed slider; hand-built here because the Playback card is.
+  Widget _autoDismissRow(BuildContext context) {
+    final def = defs.cameraAutoDismissSeconds;
+    final value = _autoDismissDrag ??
+        (widget.container.settings.get(def))
+            .toDouble()
+            .clamp(def.min!.toDouble(), def.max!.toDouble());
+    return Column(
+      children: [
+        ListTile(
+          title: Text(def.title),
+          subtitle: Text(def.description),
+          trailing: Text(
+            value <= 0 ? 'Off' : '${value.round()} s',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Slider(
+            value: value,
+            min: def.min!.toDouble(),
+            max: def.max!.toDouble(),
+            divisions: ((def.max! - def.min!) / def.step!).round(),
+            onChanged: (v) => setState(() => _autoDismissDrag = v),
+            onChangeEnd: (v) async {
+              setState(() => _autoDismissDrag = null);
+              await widget.container.settings.setFromJson(def.key, v.round());
+              if (mounted) setState(() {});
+            },
+          ),
         ),
       ],
     );

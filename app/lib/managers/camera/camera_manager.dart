@@ -57,16 +57,45 @@ class CameraManager extends Manager {
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<VoiceInteractionChanged>? _voiceSub;
 
+  /// Auto-dismiss: an open view closes on its own after the configured time.
+  /// Armed off the [activeViewId] listener so every way of opening a view is
+  /// covered (gesture, MQTT, drawer, the restore after a voice turn) and
+  /// nothing else needs to know. The screensaver's camera mode renders its
+  /// own surface and never touches [activeViewId], so it is exempt by
+  /// construction. Focusing a camera re-arms the countdown: a tap on the
+  /// view is someone using it.
+  Timer? _autoDismiss;
+
   CameraViewConfig? get activeView {
     final id = activeViewId.value;
     if (id == null) return null;
     return _config.views.where((view) => view.id == id).firstOrNull;
   }
 
+  void _armAutoDismiss() {
+    _autoDismiss?.cancel();
+    _autoDismiss = null;
+    if (activeViewId.value == null) return;
+    final seconds = _settings.get(defs.cameraAutoDismissSeconds).toInt();
+    if (seconds <= 0) return;
+    _autoDismiss = Timer(Duration(seconds: seconds), () {
+      if (activeViewId.value == null) return;
+      log.info(name, 'camera view auto-dismissed after ${seconds}s');
+      hideView();
+    });
+  }
+
   @override
   Future<void> init() async {
     _load();
+    activeViewId.addListener(_armAutoDismiss);
+    focusedCameraId.addListener(_armAutoDismiss);
     _settingsSub = bus.on<SettingChanged>().listen((event) {
+      if (event.key == defs.cameraAutoDismissSeconds.key) {
+        // A changed duration re-times an already-open view from now.
+        _armAutoDismiss();
+        return;
+      }
       if (event.key != defs.cameraConfig.key || _saving) return;
       _load();
       bus.publish(const CameraConfigurationChanged());
@@ -231,6 +260,7 @@ class CameraManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    _autoDismiss?.cancel();
     await _settingsSub?.cancel();
     await _voiceSub?.cancel();
     closeHaSessions();

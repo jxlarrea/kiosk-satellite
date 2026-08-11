@@ -2651,6 +2651,25 @@ const cameraPreferMse = SettingDef<bool>(
   category: 'Cameras',
 );
 
+// A glance at the cameras from a clap or a corner tap should not stay up
+// forever on a wall panel. Applies to the camera view overlay however it was
+// opened (gesture, MQTT, the drawer); the screensaver's camera mode is its
+// own surface and never touched by this.
+const cameraAutoDismissSeconds = SettingDef<num>(
+  key: 'camera.auto_dismiss_seconds',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: 0,
+  max: 300,
+  step: 30,
+  unit: ' s',
+  title: 'Auto-dismiss after',
+  description:
+      'Close an opened camera view on its own; 0 keeps it up. The camera '
+      'screensaver is unaffected.',
+  category: 'Cameras',
+);
+
 // Hidden because Cameras has a purpose-built editor on the device and in the
 // remote admin. Marking the versioned document secret keeps server credentials
 // out of the generic settings API while still including them in full backups.
@@ -3303,6 +3322,7 @@ const List<SettingDef<Object>> allSettings = [
   mqttDeviceId,
   cameraAllowH265,
   cameraPreferMse,
+  cameraAutoDismissSeconds,
   cameraConfig,
   // Music Assistant leads the page it names: the server is what the kiosk
   // browses, asks for lyrics and hands people through the menu, and the

@@ -3077,7 +3077,8 @@ async function loadCameras() {
   ));
 
   // Mirrors the device's Playback section (ui/camera_settings.dart).
-  const playbackKeys = ['camera.allow_h265', 'camera.prefer_mse'];
+  const playbackKeys = ['camera.allow_h265', 'camera.prefer_mse',
+    'camera.auto_dismiss_seconds'];
   const playback = playbackKeys
     .map((key) => settings.find((setting) => setting.key === key))
     .filter(Boolean);
