@@ -4907,7 +4907,7 @@ class _SliderTileState extends State<_SliderTile> {
                 final go = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: const Text('Turn screen off after'),
+                    title: const Text('WARNING: Please Read!'),
                     content: const Text(
                       'Once the display truly powers off, the tablet\'s own '
                       'power management takes over, and many Android models '

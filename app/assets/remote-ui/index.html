@@ -1293,7 +1293,7 @@ function messageBox({ title, message, buttons = ['OK'] }) {
     const { back, body, foot } = modalShell({ title });
     const p = document.createElement('p');
     p.textContent = message;
-    p.style.cssText = 'margin:0; color:var(--muted); font-size:14px; line-height:1.55;';
+    p.style.cssText = 'margin:0; color:var(--muted); font-size:14px; line-height:1.55; white-space:pre-line;';
     body.appendChild(p);
     buttons.forEach((label, i) => {
       const btn = document.createElement('button');
@@ -6477,16 +6477,16 @@ function settingRow(s) {
       if (s.key === 'screensaver.screen_off_minutes' &&
           Number(s.value || 0) === 0 && next > 0) {
         const pick = await messageBox({
-          title: 'Turn screen off after',
+          title: 'WARNING: Please Read!',
           message: "Once the display truly powers off, the tablet's own "
             + 'power management takes over, and many Android models '
             + 'misbehave in that state: Wi-Fi naps or drops, the Home '
             + 'Assistant entities go unavailable, the camera can be '
             + 'revoked, and some models kill background apps outright. '
-            + 'What happens depends on the manufacturer. The reliable '
-            + 'alternative is the Black screensaver with this setting left '
-            + 'at 0: the panel looks just as dark, and the app keeps full '
-            + 'control.',
+            + 'What happens depends on the manufacturer.\n\n'
+            + 'The reliable alternative is the Black screensaver with this '
+            + 'setting left at 0: the panel looks just as dark, and the '
+            + 'app keeps full control.',
           buttons: ['Cancel', 'Turn screen off anyway'],
         });
         if (pick === 'Cancel') {
