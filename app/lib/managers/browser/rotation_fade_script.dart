@@ -10,13 +10,20 @@ import 'dart:convert';
 /// element can be mounted in a wrapper next to (here: on top of) the live
 /// view. Two paths, mirroring the carousel's seamless/blind split:
 ///
-/// - Seamless: the target view has a detached cached element. It gets a
-///   fresh `hass` (a synchronous re-render, paid while still invisible),
-///   is mounted centered over the live view in an absolutely positioned
-///   wrapper at opacity ~0 - above Chromium's effectively-invisible
-///   cutoff so the mount rasters NOW, not mid-fade (the carousel's PARKED
-///   lesson) - then fades to 1 on the compositor (opacity only, the
-///   reactive-bar rule). Only then does the soft navigation fire, and
+/// - Seamless: the target view has a detached cached element - or none
+///   at all, in which case one is built the way hui-root's _selectView
+///   builds them (a hui-view with index/lovelace/narrow/hass) and given
+///   1.5s to construct its cards invisibly, the current view fully
+///   visible the whole time; it is adopted into `_viewCache` only after
+///   proving it rendered, so a dud can never become a permanently blank
+///   view HA reuses forever, and an unrendered build degrades to the
+///   plain cut. Either way the element gets current `hass` (a
+///   synchronous re-render, paid while still invisible), is mounted
+///   centered over the live view in an absolutely positioned wrapper at
+///   opacity ~0 - above Chromium's effectively-invisible cutoff so the
+///   mount rasters NOW, not mid-fade (the carousel's PARKED lesson) -
+///   then fades to 1 on the compositor (opacity only, the reactive-bar
+///   rule). Only then does the soft navigation fire, and
 ///   HA's own swap appendChild()s that same element, MOVING it out of the
 ///   wrapper into the container. The MutationObserver callback is a
 ///   microtask, before the next paint: dropping the wrapper there is
@@ -33,10 +40,10 @@ import 'dart:convert';
 ///   listening (the swap must not land before anyone waits for it), and
 ///   the new view fades back in once swapped - with a timeout so an
 ///   unseen swap can never wedge the dashboard invisible. Only ever for
-///   BUILT views, where the swap is an instant append: a first visit has
-///   no cached element and cuts ('plain') instead, because fading out
-///   ahead of a first build left an Echo Show's screen dark for the
-///   seconds the view took to construct - a hard cut beats a black hole.
+///   BUILT views, where the swap is an instant append. Fading out ahead
+///   of a first-visit build was tried and left an Echo Show's screen
+///   dark for the seconds the view took to construct - which is why
+///   first visits build invisibly under the seamless path instead.
 ///
 /// Everything is timed with setTimeout, never requestAnimationFrame: a
 /// covered dashboard stops compositing (rendering freeze, overlay pages)
@@ -123,17 +130,37 @@ String rotationCrossfadeJs({required String base, required String viewPath}) {
 
     var cached = null;
     try { cached = hr._viewCache && hr._viewCache[idx]; } catch (_) {}
-    // First visit: nothing rendered exists to fade to, and fading out
-    // ahead of the build holds a slow device's screen dark for however
-    // long the view takes to construct. Cut; the visit fills the cache.
-    if (!cached) return 'plain';
+    // First visit: no cached element exists, so build one the way
+    // hui-root's _selectView does and let it construct INVISIBLY over the
+    // fully visible current view (fading out ahead of the build instead
+    // held a slow device's screen dark for the whole construction). It
+    // only enters hui-root's cache at fade time, after proving it
+    // actually rendered - seeding a dud would hand HA a permanently
+    // blank view to reuse forever.
+    var warm = false;
+    if (!cached) {
+      if (!hr._viewCache) return 'plain';
+      try {
+        cached = document.createElement('hui-view');
+        cached.index = idx;
+        cached.lovelace = hr.lovelace;
+        cached.narrow = hr.narrow;
+        cached.hass = hr.hass;
+        warm = true;
+      } catch (_) { return 'plain'; }
+    }
 
     // ── Seamless: dissolve the cached target view in over the live one ──
     if (!cached.isConnected) {
-      busy(FADE_MS + 6000);
+      // A freshly built view needs real time to construct its cards
+      // before it is worth looking at; a cached one only needs its mount
+      // rastered.
+      var settleMs = warm ? 1500 : 80;
+      busy(settleMs + FADE_MS + 6000);
       // Fresh states before showing: assigning hass re-renders the view
-      // synchronously, which is fine while it is still invisible.
-      try { if (hr.hass) cached.hass = hr.hass; } catch (_) {}
+      // synchronously, which is fine while it is still invisible. A
+      // warm-built view was created with current hass moments ago.
+      try { if (!warm && hr.hass) cached.hass = hr.hass; } catch (_) {}
       var undoPos = false;
       if (getComputedStyle(container).position === 'static') {
         container.style.position = 'relative';
@@ -176,7 +203,24 @@ String rotationCrossfadeJs({required String base, required String viewPath}) {
         if (undoPos) container.style.position = '';
         idle();
       };
-      setTimeout(function () { // mount rasters while imperceptible
+      setTimeout(function () { // construct/raster while imperceptible
+        if (warm) {
+          // The build had its settle time; a view that produced no DOM
+          // (an unknown layout, an old frontend) must neither be shown
+          // nor cached. Cut instead - exactly what a plain tick does.
+          var rendered = false;
+          try {
+            rendered = cached.childElementCount > 0 ||
+              (cached.shadowRoot && cached.shadowRoot.childElementCount > 0);
+          } catch (_) {}
+          if (!rendered) { cleanup(); navigate(); return; }
+          // Adopt it into hui-root's cache so HA's own swap reuses THIS
+          // element - the seamless handoff depends on the swap appending
+          // the very element the wrapper holds.
+          try { hr._viewCache[idx] = cached; } catch (_) {
+            cleanup(); navigate(); return;
+          }
+        }
         wrap.style.transition = 'opacity ' + FADE_MS + 'ms ease-in-out';
         wrap.style.opacity = '1';
         setTimeout(function () {
@@ -217,7 +261,7 @@ String rotationCrossfadeJs({required String base, required String viewPath}) {
           setTimeout(function () { finish(null); }, 800);
           navigate();
         }, FADE_MS + 30);
-      }, 80);
+      }, settleMs);
       return 'fade';
     }
 

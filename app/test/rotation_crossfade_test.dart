@@ -93,5 +93,8 @@ void main() {
     // The carousel's load-bearing rule, kept here too: the overlay
     // wrapper must never be the container's last child.
     expect(js, contains('container.insertBefore(wrap, container.lastChild)'));
+    // First visits build the view element themselves (issue #189
+    // follow-up: the initial ring pass must dissolve too).
+    expect(js, contains("document.createElement('hui-view')"));
   });
 }
