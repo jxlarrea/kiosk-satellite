@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.29 - 2026-08-12
 
 ### Fixed
 - Voice Satellite no longer goes unavailable in Home Assistant while the screen is off (discussion #186). The screensaver's rendering freeze makes the dashboard page report itself hidden, and a hidden page inside an app with no screen turns out to be the combination that makes Android's WebView suspend the page's JavaScript timers and task queues outright, measured as a 50 millisecond timer that simply never fires. With its event loop stopped, the page's Home Assistant websocket could not answer keepalives or finish reconnects, so it died within a couple of minutes of the panel powering off and took Voice Satellite's availability with it; wake words kept working only because the wake path repairs the connection on its way in. The freeze now follows the panel: it lifts when the screen powers off, which costs nothing since a dark panel composites no frames, and returns the moment the screen does. Verified on an Echo Show 8: the assist satellite entity now stays available through dark spells that previously killed it inside three minutes.
