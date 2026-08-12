@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.28 - 2026-08-11
 
 ### Fixed
 - The Wi-Fi radio is now held awake while the screen is off. Minutes into a dark spell, OEM Wi-Fi power saving napped the connection every ten to thirty minutes (measured on a Galaxy Tab S9), and each nap dropped everything at once: the MQTT session, so the device's entities flapped unavailable in Home Assistant, the dashboard's websocket, and the network stack under any remote session. The keep-alive service now holds the system's own keep-Wi-Fi-on lock for as long as it runs, which is exactly the span the app must stay reachable without a screen; in a 45-minute screen-off test that previously produced three drops, the connection did not blink once. Wall-powered kiosks pay nothing that matters for it.
