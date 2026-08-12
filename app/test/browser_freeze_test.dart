@@ -197,5 +197,30 @@ void main() {
       expect(browser.renderingFrozen, isFalse);
       expect(calls, isEmpty);
     });
+
+    test('the panel powering off thaws a frozen dashboard, and the panel '
+        'lighting back up refreezes it', () async {
+      await build({'ks.browser.freeze_on_screensaver': true});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      bus.publish(const ScreensaverViewChanged(view: 'clock'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+
+      // Screen off: a frozen (hidden) page inside an app with no resumed
+      // Activity gets its timers and task queues suspended outright, which
+      // kills the HA websocket and everything riding it (discussion #186).
+      // The thaw costs nothing: a dark panel composites no frames.
+      bus.publish(const ScreenStateChanged(on: false));
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls.last.arguments['hidden'], isFalse);
+
+      // Wake: the screensaver is still up, so the freeze returns (after
+      // the usual paint beat).
+      bus.publish(const ScreenStateChanged(on: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+    });
   });
 }

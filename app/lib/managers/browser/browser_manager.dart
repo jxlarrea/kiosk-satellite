@@ -147,6 +147,11 @@ class BrowserManager extends Manager {
     // back all black, so it waits the transition out (see the handler).
     bus.on<ScreenStateChanged>().listen((e) {
       if (e.on) _screenOnAt = DateTime.now();
+      _screenIsOn = e.on;
+      // The freeze follows the panel: thaw when it powers off (see
+      // _wantFrozen for why a frozen page cannot survive a dark panel),
+      // freeze again when it lights back up under a screensaver.
+      _scheduleFreezeSync();
     });
     // An overlay page is an opaque full-screen surface over the dashboard —
     // a tapped link, a rotation excursion, the Music Assistant shortcut — so
@@ -347,6 +352,18 @@ class BrowserManager extends Manager {
       )
       ..register(
         Command(
+          name: 'resumeWebTimers',
+          description:
+              'Resume the WebView JavaScript timers (diagnostic: WebView '
+              'suspends them globally while the app has no visible window)',
+          handler: (_) async {
+            await _controller?.resumeTimers();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'ensureHaConnected',
           description:
               'Reconnect the Home Assistant websocket if it is down and wait '
@@ -525,6 +542,13 @@ class BrowserManager extends Manager {
           },
         ),
       );
+
+    // Seed the freeze gate from reality: a device that boots with its panel
+    // already dark must not freeze the page it needs alive (_wantFrozen).
+    // Best-effort — a failure keeps the lit default and the next
+    // ScreenStateChanged corrects it.
+    final on = await commands.execute('isScreenOn', const {});
+    if (on.ok && on.data is bool) _screenIsOn = on.data as bool;
   }
 
   void attach(InAppWebViewController controller) {
@@ -543,6 +567,9 @@ class BrowserManager extends Manager {
   /// this process. The screenshot command waits out a fresh wake before
   /// capturing (a too-early PixelCopy returns an all-black frame).
   DateTime? _screenOnAt;
+
+  /// Whether the panel is lit, for the freeze gate in [_wantFrozen].
+  bool _screenIsOn = true;
   final _coveredBy = <String>{};
   bool _frozen = false;
   Timer? _freezeDelay;
@@ -553,11 +580,24 @@ class BrowserManager extends Manager {
   /// that reported itself through [setCovered] — pausing compositing under
   /// those hands the whole frame budget to whatever is on top, and unlike
   /// the screensaver's Dim mode they never show the page through.
+  ///
+  /// Never while the screen is off. The freeze makes the page report itself
+  /// hidden, and a hidden page inside an app with no resumed Activity is
+  /// the combination that makes the WebView suspend the page's timers and
+  /// task queues outright (measured on an Echo Show 8: a 50ms setTimeout
+  /// that simply never fires). With its event loop stopped, the Home
+  /// Assistant frontend cannot answer keepalives or finish reconnects, so
+  /// the websocket dies within a couple of minutes of the panel powering
+  /// off and everything riding it — Voice Satellite's availability first
+  /// of all — dies with it (discussion #186). A dark panel composites
+  /// nothing anyway, so unfreezing costs no frames; the freeze comes back
+  /// the moment the screen does.
   bool get _wantFrozen =>
-      (_screensaverActive &&
-          _dashboardCovered &&
-          _settings.get(defs.freezeOnScreensaver)) ||
-      _coveredBy.isNotEmpty;
+      _screenIsOn &&
+      ((_screensaverActive &&
+              _dashboardCovered &&
+              _settings.get(defs.freezeOnScreensaver)) ||
+          _coveredBy.isNotEmpty);
 
   /// An opaque full-screen surface reporting that it covers the dashboard
   /// (or stopped covering it). Freezing waits _scheduleFreezeSync's beat so
