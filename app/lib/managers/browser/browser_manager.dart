@@ -638,6 +638,15 @@ class BrowserManager extends Manager {
       _freezeKeepAlive = null;
       await WebViewFreeze.setHidden(hidden: false, urlPrefix: prefix);
       log.info(name, 'rendering resumed');
+      if (_repairOnResume) {
+        // The outage check a freeze deferred (see onNetworkAvailable):
+        // the page is visible and unthrottled now, so the probe and the
+        // liveness wait mean something. Bypasses the repair rate limit —
+        // this IS the follow-up the deferral promised.
+        _repairOnResume = false;
+        _lastNetworkRepair = DateTime.fromMillisecondsSinceEpoch(0);
+        unawaited(onNetworkAvailable());
+      }
     }
   }
 
@@ -993,7 +1002,9 @@ class BrowserManager extends Manager {
   ///    Chromium error page: re-navigate now;
   ///  - anything else (a healthy non-HA page): left alone.
   Future<void> onNetworkAvailable() async {
-    if (_controller == null || _networkRepairBusy) return;
+    if ((_controller == null && evalOverride == null) || _networkRepairBusy) {
+      return;
+    }
     if (DateTime.now().difference(_lastNetworkRepair).inSeconds < 10) return;
     _networkRepairBusy = true;
     _lastNetworkRepair = DateTime.now();
@@ -1001,7 +1012,7 @@ class BrowserManager extends Manager {
       // Let routes and DNS settle: onAvailable fires when the interface is
       // up, which is a beat before connections actually succeed.
       await Future<void>.delayed(const Duration(seconds: 2));
-      if (_controller == null) return;
+      if (_controller == null && evalOverride == null) return;
       // A failed load needs no diagnosis: there is no page to interrogate,
       // and the probe cannot even run — Chromium's error page answers no
       // JavaScript, so the probe would come back 'none' and this would
@@ -1018,6 +1029,24 @@ class BrowserManager extends Manager {
         case 'connected':
           return;
         case 'stale':
+          // A frozen page cannot pass the liveness wait below no matter how
+          // healthy the network is: Chromium hard-throttles a long-hidden
+          // page's timers to about once a minute, so the frontend's
+          // reconnect cannot finish inside any reasonable window. Judging
+          // it now produced a false "dead" and a reload nobody saw start —
+          // it sat pending under the frozen view and committed the moment
+          // the screen came on, reading as the kiosk reloading itself at
+          // every wake that followed a Wi-Fi blip. Nudge the socket (the
+          // connect attempt itself is not timer-driven, so it can succeed
+          // while hidden) and leave the verdict to the resume, where the
+          // unthrottled page reconnects in seconds and the re-run below
+          // finds it healthy.
+          if (renderingFrozen) {
+            unawaited(reconnectHaSocket());
+            _repairOnResume = true;
+            log.info(name, 'page frozen; deferring the outage check to resume');
+            return;
+          }
           // Nudges the frontend's reconnect and polls; a page mid-boot
           // (connection object present, socket still opening) passes here
           // without a disruptive reload.
@@ -1071,7 +1100,16 @@ class BrowserManager extends Manager {
     await loadUrl(target);
   }
 
+  /// Outage reloads issued, for the tests that assert one did NOT happen.
+  @visibleForTesting
+  int renavigations = 0;
+
+  /// A network blip was diagnosed while the page was frozen; re-run the
+  /// repair when rendering resumes, on a page that can actually answer.
+  bool _repairOnResume = false;
+
   Future<void> _renavigate() async {
+    renavigations++;
     final target = _recoveryUrl;
     if (target.isEmpty) return;
     log.info(name, 'reloading after network outage: $target');
@@ -1085,10 +1123,9 @@ class BrowserManager extends Manager {
   /// commit as chrome-error://, so location tells them apart from any real
   /// page; the HA element split mirrors [_haConnected].
   Future<String> _probePageState() async {
-    final controller = _controller;
-    if (controller == null) return 'none';
+    if (_controller == null && evalOverride == null) return 'none';
     try {
-      final r = await controller.evaluateJavascript(source: '''
+      final r = await _eval('''
         (function () {
           try {
             if (location.href.indexOf('chrome-error') === 0) {
@@ -1118,9 +1155,8 @@ class BrowserManager extends Manager {
 
   /// True when the Home Assistant frontend's websocket is live right now.
   Future<bool> _haConnected() async {
-    final controller = _controller;
-    if (controller == null) return false;
-    final r = await controller.evaluateJavascript(source: '''
+    if (_controller == null && evalOverride == null) return false;
+    final r = await _eval('''
       (function () {
         try {
           var c = document.querySelector('home-assistant');
@@ -1165,7 +1201,7 @@ class BrowserManager extends Manager {
   Future<bool> ensureHaConnected({
     Duration timeout = const Duration(seconds: 6),
   }) async {
-    if (_controller == null) return false;
+    if (_controller == null && evalOverride == null) return false;
     if (await _haConnected()) return true;
     await reconnectHaSocket();
     final deadline = DateTime.now().add(timeout);
