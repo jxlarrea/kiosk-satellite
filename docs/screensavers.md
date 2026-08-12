@@ -142,6 +142,9 @@ picked when adding or editing it. Widgets ride over every mode their
 type allows, but never over Black with Hide all extras. The group's
 **Widget scaling** slider (50 to 150 percent) sizes every widget for
 the screen, and moving it while the screensaver shows previews live.
+Widgets own their corners: the Immich metadata overlay steps to the
+first free corner when a widget claims its spot, and hides only when
+every corner is taken.
 
 ### Small clock
 
@@ -150,7 +153,7 @@ Camera (kept clear so nothing sits over the video):
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Corner | first free corner | The Immich metadata overlay defaults to the bottom left, opposite the usual clock corner. |
+| Corner | first free corner | The Immich metadata overlay steps out of any corner a widget claims. |
 | Color | white | |
 | 24-hour clock | off | Its own switch, independent of the Clock mode's. |
 | Show date | off | A short date under the time, in the device language. |
@@ -163,7 +166,8 @@ settings.
 ### Weather
 
 Live weather from a Home Assistant `weather` entity, over any mode
-except Clock and WebRTC Camera. The block reads, top to bottom: the
+except WebRTC Camera — a clock face with a weather corner is exactly
+what the Clock mode wants. The block reads, top to bottom: the
 location name, the temperature in a large font with its unit (always
 shown, "28°C"), the forecast text with a matching icon, then humidity,
 wind speed and visibility, each with its icon. Units come from the
@@ -173,7 +177,7 @@ the text.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Weather entity | none | Picked from Home Assistant. The widget shows nothing until one is set. |
-| Location name | empty | The place shown over the temperature. Weather entities carry no city attribute, so it is named by hand; empty falls back to the entity's name. |
+| Location name | empty | The place shown over the temperature. Weather entities carry no city attribute, so it is named by hand; left empty, the line stays off. |
 | Corner | first free corner | |
 | Color | white | Text and icons alike. |
 | Location, Forecast, Humidity, Wind speed, Visibility | on | One toggle per line. A line also needs the entity to actually carry that reading; whatever the entity lacks is simply left out. |

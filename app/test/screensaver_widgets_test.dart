@@ -88,8 +88,8 @@ void main() {
       expect(screensaverWidgetAllowedOnMode('clock', 'immich'), isTrue);
     });
 
-    test('the weather widget follows the same mode rules', () {
-      expect(screensaverWidgetAllowedOnMode('weather', 'clock'), isFalse);
+    test('the weather widget rides the Clock mode, but not the grid', () {
+      expect(screensaverWidgetAllowedOnMode('weather', 'clock'), isTrue);
       expect(screensaverWidgetAllowedOnMode('weather', 'camera'), isFalse);
       expect(screensaverWidgetAllowedOnMode('weather', 'gallery'), isTrue);
     });

@@ -974,7 +974,7 @@ const screensaverWidgetScale = SettingDef<num>(
   type: SettingType.number,
   defaultValue: 100,
   title: 'Widget scaling',
-  description: 'Scale every widget from 50 to 150 percent for this screen.',
+  description: 'Scale all widgets to better fit your screen size.',
   category: 'Screensaver',
   section: 'Widgets',
   min: 50,

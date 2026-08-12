@@ -77,13 +77,14 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
   _ => const {},
 };
 
-/// Whether [type] renders over the [mode] screensaver. Widgets stay off
-/// the Clock mode (whose face owns the layout) and the camera grid, where
-/// an overlay sits in the way of a live feed.
+/// Whether [type] renders over the [mode] screensaver. Everything stays
+/// off the camera grid, where an overlay sits in the way of a live feed;
+/// the clock widget also stays off the Clock mode, which is one already —
+/// the weather widget is exactly what a clock face wants next to it.
 bool screensaverWidgetAllowedOnMode(String type, String mode) =>
     switch (type) {
-      'clock' || 'weather' => mode != 'clock' && mode != 'camera',
-      _ => true,
+      'clock' => mode != 'clock' && mode != 'camera',
+      _ => mode != 'camera',
     };
 
 /// Decode the screensaver.widgets JSON, dropping anything malformed rather

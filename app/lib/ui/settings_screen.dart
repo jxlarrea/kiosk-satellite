@@ -2607,8 +2607,8 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
   /// The per-type hint under the dialog's title: where the widget
   /// deliberately stays off, so nobody hunts for a hidden clock.
   String? _modeNote(String type) => switch (type) {
-    'clock' ||
-    'weather' => 'Hidden in Digital Clock and WebRTC screensaver modes.',
+    'clock' => 'Hidden in Digital Clock and WebRTC screensaver modes.',
+    'weather' => 'Hidden in the WebRTC screensaver mode.',
     _ => null,
   };
 
@@ -2831,7 +2831,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                         decoration: const InputDecoration(
                           labelText: 'Location name',
                           helperText:
-                              'The entity name shows when left empty.',
+                              'Leave empty to hide the location line.',
                         ),
                         onChanged: (v) => config['label'] = v.trim(),
                       ),

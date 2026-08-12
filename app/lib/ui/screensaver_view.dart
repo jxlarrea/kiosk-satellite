@@ -613,14 +613,16 @@ Widget _cornerVignette(Alignment corner, {double radius = 0.7}) =>
         gradient: RadialGradient(
           center: corner,
           radius: radius,
-          // Front-loaded: still ~half black a third of the way out, so the
-          // text area is solidly backed before the long fade begins.
+          // Front-loaded: still ~60% black well past a third of the way
+          // out, so the text area is solidly backed before the long fade
+          // begins. 80% at the corner itself: anything lighter left the
+          // widgets washing out on bright daylight photos.
           colors: const [
-            Color(0xB3000000),
-            Color(0x80000000),
+            Color(0xCC000000),
+            Color(0x99000000),
             Color(0x00000000),
           ],
-          stops: [0, 0.35, 1],
+          stops: [0, 0.4, 1],
         ),
       ),
       child: const SizedBox.expand(),
@@ -999,11 +1001,9 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     final wind = _num('wind_speed');
     final visibility = _num('visibility');
     // The place is named by hand (weather entities carry no city
-    // attribute); the entity's own name is only the fallback.
-    final label = '${widget.spec.config['label'] ?? ''}'.trim();
-    final location = label.isNotEmpty
-        ? label
-        : '${_attributes['friendly_name'] ?? ''}';
+    // attribute, and their names are integration names); left empty, the
+    // line simply stays off.
+    final location = '${widget.spec.config['label'] ?? ''}'.trim();
 
     final align = corner.x < 0
         ? CrossAxisAlignment.start
@@ -2176,9 +2176,23 @@ class _ImmichMetadata extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final corner = _cornerAlignment(
-      container.settings.get(defs.screensaverImmichMetadataPosition),
+    // Widgets own their corners: rather than stacking two panels into
+    // one corner, the metadata steps to the first free one, and stands
+    // down entirely on the (unlikely) fully claimed screen.
+    final claimed = {
+      for (final w in decodeScreensaverWidgets(
+        container.settings.get(defs.screensaverWidgets),
+      ))
+        if (screensaverWidgetAllowedOnMode(w.type, 'immich')) w.position,
+    };
+    final preferred = container.settings.get(
+      defs.screensaverImmichMetadataPosition,
     );
+    final spot = [preferred, ...defs.cornerOptions]
+        .where((c) => !claimed.contains(c))
+        .firstOrNull;
+    if (spot == null) return const SizedBox.shrink();
+    final corner = _cornerAlignment(spot);
     const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
     TextStyle style({double size = 16, FontWeight? weight, double alpha = 1}) =>
         TextStyle(

@@ -6372,10 +6372,13 @@ function settingRow(s) {
       let config = { ...DEFAULTS[type], ...(existing?.config || {}) };
 
       const body = document.createElement('div');
-      // The hint reads directly under the title, before any control.
+      // The hint reads directly under the title, before any control; the
+      // wording is per type, kept word-for-word with the device dialog.
       const note = document.createElement('span');
       note.className = 'desc';
-      note.textContent = 'Hidden in Digital Clock and WebRTC screensaver modes.';
+      const noteFor = (t) => t === 'weather'
+        ? 'Hidden in the WebRTC screensaver mode.'
+        : 'Hidden in Digital Clock and WebRTC screensaver modes.';
       const cornerSel = cameraSelectField('Corner',
         free.map(([value, label]) => ({ value, label })),
         existing?.position || free[0][0]);
@@ -6406,6 +6409,7 @@ function settingRow(s) {
         return { wrap, input };
       };
       const renderTypeBlock = () => {
+        note.textContent = noteFor(type);
         typeBlock.innerHTML = '';
         refs = { color: colorField() };
         if (type === 'clock') {
@@ -6457,7 +6461,7 @@ function settingRow(s) {
           const input = document.createElement('input');
           input.className = 'field';
           input.type = 'text';
-          input.placeholder = 'The entity name shows when left empty';
+          input.placeholder = 'Leave empty to hide the location line';
           input.value = config.label || '';
           input.style.maxWidth = 'none';
           wrap.append(title, input);
