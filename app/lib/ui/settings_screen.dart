@@ -2603,10 +2603,10 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     _ => Icons.widgets_outlined,
   };
 
-  /// The per-type footnote under the dialog's pickers: where the widget
+  /// The per-type hint under the dialog's title: where the widget
   /// deliberately stays off, so nobody hunts for a hidden clock.
   String? _modeNote(String type) => switch (type) {
-    'clock' => 'Stays off the Clock and WebRTC Camera modes.',
+    'clock' => 'Hidden in Digital Clock and WebRTC screensaver modes.',
     _ => null,
   };
 
@@ -2651,7 +2651,9 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                 )
               : const Color(0xFFFAFAFA);
           return AlertDialog(
-            title: Text(existing == null ? 'Add widget' : 'Edit widget'),
+            // The widget's own name: the dialog reads as that widget's
+            // settings, not as a generic form.
+            title: Text(describeScreensaverWidgetType(type)),
             content: SizedBox(
               width: 480,
               child: SingleChildScrollView(
@@ -2660,6 +2662,13 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: 12,
                   children: [
+                    if (note != null)
+                      Text(
+                        note,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     DropdownButtonFormField<String>(
                       initialValue: position,
                       decoration: const InputDecoration(labelText: 'Corner'),
@@ -2691,11 +2700,6 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                         config = {...screensaverWidgetDefaults(type)};
                       }),
                     ),
-                    if (note != null)
-                      Text(
-                        note,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
                     if (type == 'clock') ...[
                       ListTile(
                         contentPadding: EdgeInsets.zero,

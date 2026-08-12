@@ -6363,16 +6363,17 @@ function settingRow(s) {
       const config = { ...DEFAULTS.clock, ...(existing?.config || {}) };
 
       const body = document.createElement('div');
+      // The hint reads directly under the title, before any control.
+      const note = document.createElement('span');
+      note.className = 'desc';
+      note.textContent = 'Hidden in Digital Clock and WebRTC screensaver modes.';
       const cornerSel = cameraSelectField('Corner',
         free.map(([value, label]) => ({ value, label })),
         existing?.position || free[0][0]);
       const typeSel = cameraSelectField('Widget',
         TYPES.map(([value, label]) => ({ value, label })),
         TYPES.some(([t]) => t === existing?.type) ? existing.type : 'clock');
-      const note = document.createElement('span');
-      note.className = 'desc';
-      note.textContent = 'Stays off the Clock and WebRTC Camera modes.';
-      body.append(cornerSel.wrap, typeSel.wrap, note);
+      body.append(note, cornerSel.wrap, typeSel.wrap);
 
       // The clock's settings (the only type so far; a new type brings its
       // own block here, shown for its typeSel value).
@@ -6396,7 +6397,10 @@ function settingRow(s) {
       body.append(colorWrap, h24.wrap, date.wrap);
 
       return cameraEditor({
-        title: existing ? 'Edit widget' : 'Add widget',
+        // The widget's own name: the modal reads as that widget's
+        // settings, not as a generic form.
+        title: typeLabel(TYPES.some(([t]) => t === existing?.type)
+          ? existing.type : 'clock'),
         width: 460,
         body,
         save: async () => {
