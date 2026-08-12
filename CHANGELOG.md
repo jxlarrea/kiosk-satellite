@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.30 - 2026-08-12
 
 ### Fixed
 - The camera exposure-hunt fallback no longer trades 9% CPU for 100% (#164, third round). When a camera's auto exposure keeps hunting under the slow frame-rate request, the previous release restarted the camera with default exposure, and the reporter's Galaxy Tab S6 Lite revealed the flaw: on that hardware the camera pipeline at its full delivery rate is itself the 100% CPU, so the fallback re-created the very problem it was escaping (the hunt itself had been running at 9%). The fallback now steps down gently instead: a detected hunt restarts the camera at the lowest fixed frame rate the sensor offers, which stays as cheap as the slow range while removing the rate freedom the hunt oscillated in, and if even that hunts, the camera keeps the pinned rate and simply stops watching for hunts; default full-rate exposure never comes back.
