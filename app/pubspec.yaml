@@ -2,7 +2,7 @@ name: kiosk_satellite
 description: "Modern kiosk browser for Home Assistant — companion app for Voice Satellite."
 publish_to: 'none'
 
-version: 2026.8.32+123
+version: 2026.8.33+124
 
 environment:
   sdk: ^3.12.2
