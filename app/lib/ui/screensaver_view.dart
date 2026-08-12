@@ -51,8 +51,13 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     // Editing the Widgets group while the screensaver shows (the remote
     // admin can) applies immediately: the widget list is read at build,
     // so a changed list needs this rebuild to mount or unmount overlays.
+    // The scaling slider rides along and doubles as a live preview.
     _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
-      if (e.key == defs.screensaverWidgets.key && mounted) setState(() {});
+      if ((e.key == defs.screensaverWidgets.key ||
+              e.key == defs.screensaverWidgetScale.key) &&
+          mounted) {
+        setState(() {});
+      }
     });
   }
 
@@ -703,8 +708,11 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
     // Proportional to the panel, but floored: on a small low-density screen
     // (the Echo Show 5's 480 logical pixels) the proportional size lands
     // near the metadata's fixed-pixel text and reads absurdly small for a
-    // clock.
-    final clockSize = max(min(size.width, size.height) * 0.063, 44.0);
+    // clock. The Widget scaling slider then corrects for the screen.
+    final scale =
+        widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
+        100;
+    final clockSize = max(min(size.width, size.height) * 0.063, 44.0) * scale;
     // Readable over a bright photo without boxing the text in.
     const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
     return IgnorePointer(
@@ -729,12 +737,15 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
                       style: TextStyle(
                         // Always the bundled Rubik, not the big clock's
                         // system-font preference: the small overlays should
-                        // render identically on every device.
+                        // render identically on every device. Proportional
+                        // figures, not tabular: the block hugs its corner
+                        // (the outer edge cannot jitter), and a leading 1's
+                        // tabular side-bearing left the time visibly
+                        // indented against its own date line.
                         fontFamily: 'Rubik',
                         color: color,
                         fontSize: clockSize,
                         fontWeight: FontWeight.w400,
-                        fontFeatures: const [FontFeature.tabularFigures()],
                         height: 1.0,
                         shadows: shadows,
                       ),
@@ -805,6 +816,18 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
   final Map<String, Object?> _attributes = {};
   bool _haveData = false;
 
+  /// The friendlier description some integrations publish as a sensor
+  /// next to the weather entity ("overcast clouds" vs "cloudy"); shown on
+  /// the forecast line when it reports, while the icon always follows
+  /// the condition.
+  String _forecastText = '';
+
+  /// OpenWeatherMap's naming; a missing companion simply never reports.
+  String? _companion(String entity) {
+    final parts = entity.split('.');
+    return parts.length == 2 ? 'sensor.${parts[1]}_weather' : null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -827,7 +850,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     final entity = '${widget.spec.config['entity'] ?? ''}';
     if (entity.isEmpty) return;
     final live = await widget.container.homeAssistant.subscribeEntities(
-      [entity],
+      [entity, ?_companion(entity)],
       _onState,
     );
     if (!mounted) {
@@ -859,6 +882,12 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     if (!mounted) return;
     setState(() {
       final s = state['state'];
+      if (entityId.startsWith('sensor.')) {
+        if (s is String) {
+          _forecastText = (s == 'unavailable' || s == 'unknown') ? '' : s;
+        }
+        return;
+      }
       if (s is String) _condition = s;
       final attrs = state['attributes'];
       if (attrs is Map) {
@@ -881,6 +910,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       if (live != null) unawaited(live.close());
       _attributes.clear();
       _condition = '';
+      _forecastText = '';
       _haveData = false;
       unawaited(_open());
     }
@@ -917,8 +947,13 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     final size = MediaQuery.of(context).size;
     // The temperature is exactly the small clock's size, and the location
     // and detail lines take the Immich metadata panel's fixed sizes, so
-    // the corner overlays all read as one family.
-    final tempSize = max(min(size.width, size.height) * 0.063, 44.0);
+    // the corner overlays all read as one family. The Widget scaling
+    // slider then corrects everything for the screen.
+    final scale =
+        widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
+        100;
+    final tempSize =
+        max(min(size.width, size.height) * 0.063, 44.0) * scale;
     const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
 
     TextStyle line({
@@ -928,26 +963,31 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     }) => TextStyle(
       fontFamily: 'Rubik',
       color: color.withValues(alpha: alpha),
-      fontSize: size,
+      fontSize: size * scale,
       fontWeight: weight ?? FontWeight.w400,
       shadows: shadows,
-      height: 1.35,
+      height: 1.2,
     );
 
-    // One reading with its trailing monochrome icon, tinted like the text.
-    Widget detail(String value, IconData icon) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(value, style: line()),
-        const SizedBox(width: 9),
-        Icon(
-          icon,
-          size: 16,
-          color: color.withValues(alpha: 0.85),
-          shadows: shadows,
-        ),
-      ],
-    );
+    // One reading with its monochrome icon, tinted like the text. The
+    // icon sits on the corner's outer edge — left corners lead with it,
+    // right corners trail — so the icon column stays flush however long
+    // the readings run.
+    final right = corner.x > 0;
+    Widget detail(String value, IconData icon) {
+      final glyph = Icon(
+        icon,
+        size: 16 * scale,
+        color: color.withValues(alpha: 0.85),
+        shadows: shadows,
+      );
+      final text = Text(value, style: line());
+      final gap = SizedBox(width: 9 * scale);
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: right ? [text, gap, glyph] : [glyph, gap, text],
+      );
+    }
 
     String reading(num value, String unitKey) {
       final unit = '${_attributes[unitKey] ?? ''}';
@@ -965,25 +1005,19 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
         ? label
         : '${_attributes['friendly_name'] ?? ''}';
 
-    final lines = <Widget>[
-      if (_on('location') && location.isNotEmpty)
-        Text(location, style: line(size: 18, weight: FontWeight.w600,
-            alpha: 1)),
-      if (temperature != null)
-        Text(
-          '${temperature.round()}${_attributes['temperature_unit'] ?? '°'}',
-          style: TextStyle(
-            fontFamily: 'Rubik',
-            color: color,
-            fontSize: tempSize,
-            fontWeight: FontWeight.w400,
-            fontFeatures: const [FontFeature.tabularFigures()],
-            height: 1.0,
-            shadows: shadows,
-          ),
-        ),
+    final align = corner.x < 0
+        ? CrossAxisAlignment.start
+        : CrossAxisAlignment.end;
+    // The readings sit in their own tighter column, so the list reads as
+    // one block under the temperature rather than four spaced lines.
+    final details = <Widget>[
       if (_on('forecast') && _condition.isNotEmpty)
-        detail(_conditionLabel(_condition), _conditionIcon(_condition)),
+        detail(
+          _forecastText.isNotEmpty
+              ? _sentenceCase(_forecastText)
+              : _conditionLabel(_condition),
+          _conditionIcon(_condition),
+        ),
       if (_on('humidity') && humidity != null)
         detail('${humidity.round()}%', Icons.water_drop_outlined),
       if (_on('wind') && wind != null)
@@ -991,6 +1025,33 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       if (_on('visibility') && visibility != null)
         detail(reading(visibility, 'visibility_unit'),
             Icons.visibility_outlined),
+    ];
+    final lines = <Widget>[
+      if (_on('location') && location.isNotEmpty)
+        Text(location, style: line(size: 18, weight: FontWeight.w600,
+            alpha: 1)),
+      if (temperature != null)
+        Text(
+          '${temperature.round()}${_attributes['temperature_unit'] ?? '°'}',
+          // Proportional figures, not tabular: the block hugs its corner,
+          // so a leading 1's tabular side-bearing would only read as the
+          // number sitting off the lines around it.
+          style: TextStyle(
+            fontFamily: 'Rubik',
+            color: color,
+            fontSize: tempSize,
+            fontWeight: FontWeight.w400,
+            height: 1.0,
+            shadows: shadows,
+          ),
+        ),
+      if (details.isNotEmpty)
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 2,
+          crossAxisAlignment: align,
+          children: details,
+        ),
     ];
     if (lines.isEmpty) return const SizedBox.shrink();
 
@@ -1007,12 +1068,8 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
                 offset: _offset,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  // The metadata panel's row rhythm, so the two corner
-                  // blocks read alike when both are up.
                   spacing: 6,
-                  crossAxisAlignment: corner.x < 0
-                      ? CrossAxisAlignment.start
-                      : CrossAxisAlignment.end,
+                  crossAxisAlignment: align,
                   children: lines,
                 ),
               ),
@@ -1023,6 +1080,9 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     );
   }
 }
+
+String _sentenceCase(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
 /// Home Assistant's weather conditions as readable text; conditions this
 /// map does not know just clean up (dashes out, first letter up).
@@ -1042,10 +1102,7 @@ String _conditionLabel(String condition) => switch (condition) {
   'sunny' => 'Sunny',
   'windy' => 'Windy',
   'windy-variant' => 'Windy',
-  _ => condition.isEmpty
-      ? condition
-      : (condition[0].toUpperCase() + condition.substring(1))
-          .replaceAll('-', ' '),
+  _ => _sentenceCase(condition).replaceAll('-', ' '),
 };
 
 /// Monochrome Material glyphs for the conditions, tinted with the widget

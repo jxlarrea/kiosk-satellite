@@ -967,6 +967,22 @@ const screensaverWidgets = SettingDef<String>(
   section: 'Widgets',
 );
 
+// One knob for every widget rather than per-entry sizes: the corners all
+// sit on the same panel, so they want the same correction.
+const screensaverWidgetScale = SettingDef<num>(
+  key: 'screensaver.widget_scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Widget scaling',
+  description: 'Scale every widget from 50 to 150 percent for this screen.',
+  category: 'Screensaver',
+  section: 'Widgets',
+  min: 50,
+  max: 150,
+  step: 5,
+  unit: '%',
+);
+
 // ── Small clock (legacy; now a Widgets entry) ──
 //
 // Hidden since the Widgets group replaced these rows: they stay registered
@@ -3317,6 +3333,7 @@ const List<SettingDef<Object>> allSettings = [
   // The Widgets group: corner overlays riding over the mode panels above,
   // so it sits between them and the other overlay group, At a Glance.
   screensaverWidgets,
+  screensaverWidgetScale,
   screensaverGlanceEnabled,
   screensaverGlanceEntities,
   screensaverDismissOnMotion,

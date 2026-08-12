@@ -139,7 +139,9 @@ Small overlays in the corners of the screensaver, added from the
 **Widgets** group under the mode's settings. Each widget takes one of
 the four corners (one widget per corner) and carries its own settings,
 picked when adding or editing it. Widgets ride over every mode their
-type allows, but never over Black with Hide all extras.
+type allows, but never over Black with Hide all extras. The group's
+**Widget scaling** slider (50 to 150 percent) sizes every widget for
+the screen, and moving it while the screensaver shows previews live.
 
 ### Small clock
 
