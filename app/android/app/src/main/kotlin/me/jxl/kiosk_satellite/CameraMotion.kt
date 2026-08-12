@@ -136,8 +136,8 @@ class CameraMotion(
         // over in a frame or two, and even a flickering TV lands only
         // veto-shaped frames interleaved with quiet ones as the flicker
         // beats against the analysis rate. HUNT_FRAMES consecutive hits
-        // (about 10 s at the default 2 fps) restarts the session once
-        // without the slow-AE request; hardware level is deliberately not
+        // (about 10 s at the default 2 fps) escalates the aeLevel ladder
+        // and restarts the session; hardware level is deliberately not
         // the trigger, because healthy LIMITED cameras (the Tab S8's front
         // one among them) benefit from the long exposures.
         private const val HUNT_FRAMES = 20
@@ -194,16 +194,23 @@ class CameraMotion(
      *  thread only. */
     private var requestedFps = 2.0
 
-    /** Whether the slow AE fps range is actually in force on the bound
-     *  session, so the hunt detector only ever arms when there is a request
-     *  to withdraw. Written on the main thread at bind, read on
+    /** Whether an AE fps-range request is in force on the bound session,
+     *  so the hunt detector only ever arms while there is a request left
+     *  to escalate away from. Written on the main thread at bind, read on
      *  [analysisExecutor]. */
     @Volatile private var slowAeApplied = false
 
-    /** The hunt fallback's one-way latch for the current listen: once the
-     *  session restarts without the slow AE range it never asks for it
-     *  again until the next listen. Main thread only. */
-    private var slowAeDisabled = false
+    /** The hunt fallback's escalation ladder for the current listen
+     *  (issue #164). 0: the slowest range the sensor offers, usually wide
+     *  ([7,30]), best in the dark. 1: the lowest FIXED range ([15,15]):
+     *  a pinned rate keeps the camera pipeline as cheap as the slow range
+     *  did — on the Tab S6 Lite the full-rate pipeline alone is the 100%
+     *  CPU, so the first fallback's restart to default exposure was the
+     *  cure causing the disease — while taking away the rate freedom the
+     *  hunt oscillated in. 2: the same pinned range with the detector
+     *  disarmed, the end of the ladder; default exposure never returns.
+     *  Main thread only. */
+    private var aeLevel = 0
 
     /** Consecutive hunting-shaped frames (see [HUNT_FRAMES]); analyzer
      *  state like [prevGrid]. */
@@ -252,7 +259,7 @@ class CameraMotion(
 
         // CameraX binding must happen on the main thread.
         mainHandler.post {
-            slowAeDisabled = false
+            aeLevel = 0
             activeFacing = facing
             activeSink = sink
             snapshotTarget = if (snapW != null && snapH != null) {
@@ -472,24 +479,27 @@ class CameraMotion(
 
     /**
      * The analyzer counted [HUNT_FRAMES] straight frames of global
-     * same-signed change under the slow AE range: this camera's exposure
-     * loop is not going to settle (issue #164), and on such hardware the
-     * hunt itself is what burns a core in the camera HAL. Rebuild the same
-     * session with default AE, once per listen; the restarted stream
-     * re-warms exactly like a fresh bind, so the transition cannot read as
-     * motion. Detection keeps working after the fallback, just without the
-     * long-exposure advantage in the dark, which a scene AE never settles
-     * on was not delivering anyway.
+     * same-signed change under an AE request: this camera's exposure loop
+     * is not settling with what it was asked for (issue #164). Escalate
+     * one rung of the [aeLevel] ladder and rebuild the session; the
+     * restarted stream re-warms exactly like a fresh bind, so the
+     * transition cannot read as motion. The ladder exists because the
+     * first fallback tried default exposure and that was worse: on the
+     * Tab S6 Lite the camera pipeline at its full delivery rate IS the
+     * 100% CPU (the hunt itself ran at 9%), so the middle rung keeps the
+     * rate pinned low and only surrenders the oscillation freedom.
      */
     private fun onExposureHunt(boundSession: Int) {
-        if (session != boundSession || slowAeDisabled) return
+        if (session != boundSession || aeLevel >= 2) return
         val facing = activeFacing ?: return
         val sink = activeSink ?: return
-        slowAeDisabled = true
+        aeLevel++
         Log.w(
             TAG,
-            "auto exposure kept hunting under the slow fps range; " +
-                "restarting the camera with default exposure (issue #164)",
+            "auto exposure kept hunting; restarting the camera " +
+                (if (aeLevel == 1) "at a fixed low frame rate"
+                else "with the hunt detector disarmed") +
+                " (issue #164, level $aeLevel)",
         )
         // The teardown half of onCancel; start() bumps the session, so
         // callbacks of the torn-down bind die on their session checks.
@@ -520,8 +530,10 @@ class CameraMotion(
      * (Android 15+), low-light boost AE mode is enabled on top.
      *
      * Best effort: any failure here just leaves the default AE behavior.
-     * Skipped wholesale after the hunt fallback ([onExposureHunt]) tripped
-     * for this listen.
+     * After a hunt trip ([onExposureHunt], level 1) the ask changes to the
+     * lowest FIXED range instead: a pinned rate keeps the pipeline as
+     * cheap as the slow range did while removing the rate freedom the
+     * hunt oscillated in. A second trip (level 2) leaves AE alone.
      */
     @OptIn(ExperimentalCamera2Interop::class)
     private fun applyLowLightExposure(
@@ -530,7 +542,6 @@ class CameraMotion(
         selector: CameraSelector,
     ) {
         slowAeApplied = false
-        if (slowAeDisabled) return
         try {
             val info = selector.filter(cameraProvider.availableCameraInfos).firstOrNull() ?: return
             val camera2Info = Camera2CameraInfo.from(info)
@@ -540,19 +551,40 @@ class CameraMotion(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES,
             )?.filter { it.lower >= 1 && it.upper <= 120 }
             if (ranges.isNullOrEmpty()) return
-            val minLower = ranges.minOf { it.lower }
-            val candidates = ranges.filter { it.lower == minLower }
-            // Prefer the tightest range that can still deliver the requested
-            // processing rate; fall back to the widest one.
             val want = ceil(requestedFps).toInt()
-            val range = candidates.filter { it.upper >= want }.minByOrNull { it.upper }
-                ?: candidates.maxByOrNull { it.upper }
-                ?: return
+            val range = if (aeLevel >= 1) {
+                // The hunt fallback: the lowest pinned rate that still
+                // covers the analysis cadence, else the lowest pinned rate
+                // at all, else the narrowest low range on offer. The rung
+                // past this one keeps the same pinned range and only
+                // disarms the detector — default exposure never returns,
+                // because the full-rate pipeline is the very cost this
+                // device cannot pay.
+                val fixed = ranges.filter { it.lower == it.upper }
+                fixed.filter { it.upper >= want }.minByOrNull { it.upper }
+                    ?: fixed.maxByOrNull { it.upper }
+                    ?: ranges.minByOrNull { (it.upper - it.lower) * 1000 + it.upper }
+                    ?: return
+            } else {
+                val minLower = ranges.minOf { it.lower }
+                val candidates = ranges.filter { it.lower == minLower }
+                // Prefer the tightest range that can still deliver the
+                // requested processing rate; fall back to the widest one.
+                candidates.filter { it.upper >= want }.minByOrNull { it.upper }
+                    ?: candidates.maxByOrNull { it.upper }
+                    ?: return
+            }
             val extender = Camera2Interop.Extender(builder)
             extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, range)
-            slowAeApplied = true
+            // Level 2 keeps the range but disarms the detector: a residual
+            // hunt at a pinned low rate costs almost nothing and the veto
+            // already keeps it from waking the screensaver.
+            slowAeApplied = aeLevel < 2
             var boost = false
-            if (Build.VERSION.SDK_INT >= 35) {
+            // Low-light boost only on the first rung: it is itself an AE
+            // mode with opinions, and the fallback rung is about taking
+            // freedom away from a loop that cannot handle it.
+            if (aeLevel == 0 && Build.VERSION.SDK_INT >= 35) {
                 val modes = camera2Info.getCameraCharacteristic(
                     CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES,
                 )
@@ -562,7 +594,11 @@ class CameraMotion(
                     boost = true
                 }
             }
-            Log.i(TAG, "AE fps range $range of ${ranges.joinToString()}, low-light boost=$boost")
+            Log.i(
+                TAG,
+                "AE fps range $range of ${ranges.joinToString()}, " +
+                    "low-light boost=$boost, level=$aeLevel",
+            )
         } catch (e: Exception) {
             Log.w(TAG, "low-light exposure setup skipped: ${e.message}")
         }
