@@ -4529,7 +4529,7 @@ async function loadSettings() {
       // supply.
       const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token'
         && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds'
-        && s.key !== 'ha.rotation_pause_seconds'
+        && s.key !== 'ha.rotation_pause_seconds' && s.key !== 'ha.rotation_crossfade'
         // Rendered below the rotation group, which its switch is gated on.
         && s.key !== 'ha.return_home_enabled' && s.key !== 'ha.return_home_seconds'
         // The Theme card is hand-built below: its toggles swap the
@@ -4669,6 +4669,16 @@ async function loadSettings() {
             });
             pRow.appendChild(pInp);
             rcard.appendChild(pRow);
+          }
+          // Crossfade toggle, saved in place like the numbers above.
+          const rotFade = byKey['ha.rotation_crossfade'];
+          if (rotFade) {
+            rcard.appendChild(toggleRow(rotFade.title, rotFade.description,
+              rotFade.value === true, async (on) => {
+                rotFade.value = on;
+                await api('/api/settings', { method: 'PATCH',
+                  body: JSON.stringify({ 'ha.rotation_crossfade': on }) });
+              }));
           }
           let sel = [];
           try { sel = JSON.parse(byKey['ha.rotation_dashboards']?.value || '[]'); } catch (_) {}

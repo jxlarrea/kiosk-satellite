@@ -14,6 +14,7 @@ import '../../core/command_registry.dart';
 import '../../core/ha_http_overrides.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../browser/rotation_fade_script.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -458,7 +459,8 @@ class HomeAssistantManager extends Manager {
         // New dwell time, same ring position.
         if (_rotationTimer != null) _armRotationTimer();
       }
-      // haRotationPauseSeconds is read at pause time; nothing to rebuild.
+      // haRotationPauseSeconds is read at pause time and
+      // haRotationCrossfade at tick time; nothing to rebuild for either.
     });
     // While the screensaver is up (or the app is not on screen) rotation
     // would navigate views nobody sees — and a strategy view's hard load
@@ -678,6 +680,13 @@ class HomeAssistantManager extends Manager {
     }
     final slots = _rotationSlots();
     if (slots.isEmpty || baseUrl.isEmpty) return;
+    // The crossfade needs the outgoing view visible: after an external
+    // page's slot the dashboard sits covered (and frozen) under the
+    // overlay, so that step cuts - the overlay teardown is a cut anyway.
+    final prevWasUrl =
+        _rotationIndex >= 0 &&
+        _rotationIndex < slots.length &&
+        slots[_rotationIndex].startsWith('url:');
     _rotationIndex = (_rotationIndex + 1) % slots.length;
     final slot = slots[_rotationIndex];
     if (slot.startsWith('url:')) {
@@ -686,7 +695,10 @@ class HomeAssistantManager extends Manager {
       });
       return;
     }
-    await navigateToViewPath(slot.substring('view:'.length));
+    await navigateToViewPath(
+      slot.substring('view:'.length),
+      crossfade: _settings.get(defs.haRotationCrossfade) && !prevWasUrl,
+    );
   }
 
   // ── Return to the dashboard (issue #83) ─────────────────────────────
@@ -751,7 +763,13 @@ class HomeAssistantManager extends Manager {
   /// "url_path/view-route"): a soft SPA navigation so nothing reloads,
   /// with a learned hard-load fallback for paths the SPA cannot resolve.
   /// Drops any external overlay page so the dashboard is actually seen.
-  Future<void> navigateToViewPath(String viewPath) async {
+  /// With [crossfade] the rotation's in-page dissolve is tried first (see
+  /// rotation_fade_script.dart); whatever it cannot handle falls through
+  /// to the instant path below.
+  Future<void> navigateToViewPath(
+    String viewPath, {
+    bool crossfade = false,
+  }) async {
     if (baseUrl.isEmpty || viewPath.isEmpty) return;
     final seq = ++_navSeq;
     // A path a soft navigation cannot resolve goes straight to a full load
@@ -766,6 +784,20 @@ class HomeAssistantManager extends Manager {
     final effectiveBase = mappedBase.ok && mappedBase.data is String
         ? mappedBase.data as String
         : baseUrl;
+    if (crossfade) {
+      final fade = await commands.execute('evalJs', {
+        'code': rotationCrossfadeJs(base: effectiveBase, viewPath: viewPath),
+      });
+      if (fade.ok && '${fade.data}' == 'fade') {
+        // The dissolve navigates on its own, always within a working
+        // same-dashboard hui-root — the strategy-spinner self-heal below
+        // cannot apply to such a target.
+        await commands.execute('hideOverlayPage', const {});
+        return;
+      }
+      // 'plain': a dashboard hop, an off-origin page, an unknown route or
+      // a transition already in flight — the instant path handles it.
+    }
     // Navigate the SPA FIRST — beneath any overlay — and only then reveal
     // the dashboard. Hiding first flashed the previous view for the beat
     // the soft navigation took.
@@ -798,6 +830,13 @@ class HomeAssistantManager extends Manager {
 (function () {
   try {
     if (location.pathname !== '/' + ${jsonEncode(viewPath)}) return false;
+    // A page loaded moments ago has no hui-root YET for a perfectly
+    // resolvable path (the frontend is still booting), and a verdict
+    // taken then mislearned ordinary views as hard loads for the rest of
+    // the session -- observed live when an app start's first rotation
+    // ticks landed inside the frontend boot. performance.now() is
+    // per-page-load time, so this skips exactly that window.
+    if (performance.now() < 15000) return false;
     var ha = document.querySelector('home-assistant');
     var main = ha && ha.shadowRoot && ha.shadowRoot.querySelector('home-assistant-main');
     var panel = main && main.shadowRoot && main.shadowRoot.querySelector('ha-panel-lovelace');

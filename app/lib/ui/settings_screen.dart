@@ -4034,6 +4034,11 @@ class _RotationCardState extends State<_RotationCard> {
             def: haRotationPauseSeconds,
             onChanged: () => setState(() {}),
           ),
+          SettingTile(
+            container: c,
+            def: haRotationCrossfade,
+            onChanged: () => setState(() {}),
+          ),
           FutureBuilder<List<(String, String, List<Map<String, Object?>>)>?>(
             future: _views,
             builder: (context, snapshot) {

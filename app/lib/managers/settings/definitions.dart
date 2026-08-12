@@ -2554,6 +2554,24 @@ const haRotationPauseSeconds = SettingDef<num>(
   dependsOn: 'ha.rotation_enabled',
 );
 
+/// Issue #189. In-page only: views of the same dashboard dissolve into each
+/// other (see rotation_fade_script.dart); a hop to a different dashboard, a
+/// hard-loaded strategy dashboard or an external page still cuts, because
+/// nothing of the outgoing and incoming page coexists to fade between.
+const haRotationCrossfade = SettingDef<bool>(
+  key: 'ha.rotation_crossfade',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Crossfade between views',
+  description:
+      'Fade each dashboard view into the next instead of switching '
+      'instantly. Moving to a different dashboard or an external page '
+      'still switches instantly.',
+  category: 'Home Assistant',
+  section: 'Dashboard View Rotation',
+  dependsOn: 'ha.rotation_enabled',
+);
+
 /// Return to the configured dashboard after inactivity (issue #83): the
 /// Fully Kiosk "Return to Start URL" for people who wander to a lights
 /// page and walk away. Runs its own idle clock, independent of the
@@ -3376,6 +3394,7 @@ const List<SettingDef<Object>> allSettings = [
   haRotationUrls,
   haRotationSeconds,
   haRotationPauseSeconds,
+  haRotationCrossfade,
   haReturnHomeEnabled,
   haReturnHomeSeconds,
   mqttEnabled,
