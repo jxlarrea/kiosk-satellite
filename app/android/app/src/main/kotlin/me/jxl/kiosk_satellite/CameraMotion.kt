@@ -273,6 +273,13 @@ class CameraMotion(
 
     private fun start(facing: CameraSelector, sink: EventChannel.EventSink) {
         val mySession = ++session
+        // No camera hardware: say so without waking CameraX, whose presence
+        // tracking would retry the missing camera service every second
+        // forever (see DeviceCamera's hasCamera comment, issue #193).
+        if (cameraFacings(context).isEmpty()) {
+            sink.error("camera", NO_CAMERA_MESSAGE, null)
+            return
+        }
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
             if (session != mySession) return@addListener

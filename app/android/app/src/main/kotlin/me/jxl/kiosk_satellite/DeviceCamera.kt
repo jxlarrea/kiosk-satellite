@@ -130,13 +130,24 @@ class DeviceCamera(
                 mainHandler.post { snapshot(facing, target, result) }
             }
             // Whether any camera exists at all. False on hardware whose ROM
-            // ships no camera HAL (LineageOS ports on Echo Shows) - the
-            // settings surfaces warn instead of offering switches that can
-            // only fail. Answered from Camera2 directly, with a CameraX
-            // provider timeout as the backstop: a wedged CameraX init must
-            // not leave the Dart probe waiting forever.
+            // ships no camera HAL (LineageOS ports on Echo Shows, e-ink
+            // tablets) - the settings surfaces warn instead of offering
+            // switches that can only fail. Camera2 answers first and is
+            // the whole answer when it enumerates nothing: CameraX must
+            // never initialize on such hardware, because its camera
+            // presence tracking (CameraX 1.5+) registers availability
+            // callbacks that make the platform retry the missing camera
+            // service every second, forever - a log line and a binder
+            // attempt per second that pegged a weak SoC at 100% CPU
+            // (issue #193). CameraX only confirms when cameras DO exist,
+            // with a provider timeout as the backstop: a wedged CameraX
+            // init must not leave the Dart probe waiting forever.
             "hasCamera" -> {
                 mainHandler.post {
+                    if (cameraFacings(context).isEmpty()) {
+                        result.success(false)
+                        return@post
+                    }
                     var answered = false
                     val answer = { has: Boolean ->
                         if (!answered) {
@@ -215,6 +226,14 @@ class DeviceCamera(
         }
         if (motionSessionActive) {
             done(null, "camera busy with motion detection")
+            return
+        }
+
+        // No camera hardware: answer plainly without waking CameraX, whose
+        // presence tracking would retry the missing camera service forever
+        // (see the hasCamera comment, issue #193).
+        if (cameraFacings(context).isEmpty()) {
+            done(null, NO_CAMERA_MESSAGE)
             return
         }
 

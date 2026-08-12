@@ -22,6 +22,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Fixed
 - Rotation ticks landing right after an app start no longer mislabel ordinary dashboard views as hard loads. The rotation's strategy-dashboard discovery reads "no view rendered shortly after navigating" as "this path needs a full page load", but during the frontend's own boot no view is rendered for any path yet; a tick in that window taught the rotation to fully reload perfectly soft-navigable views on every pass for the rest of the session. The check now stands down for the first 15 seconds after a page load; a genuine strategy dashboard is still learned on its next pass.
 
+## Unreleased
+
+### Fixed
+- Devices without any camera hardware no longer burn CPU retrying a camera service that does not exist (#193). The camera library the app moved to in v2026.8.20 keeps a persistent watch on the platform's camera service once it initializes, and on hardware whose ROM ships no camera service at all (e-ink tablets, some LineageOS ports) that watch makes Android retry the missing service every second, forever, spamming the log and pegging a weak processor. The camera features now ask the lower-level camera API first, and on a device that enumerates no cameras the camera library is simply never started: the camera settings surfaces say plainly that no camera is available, and nothing retries anything.
+
 ## v2026.8.30 - 2026-08-12
 
 ### Fixed
