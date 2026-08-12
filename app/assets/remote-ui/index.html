@@ -6469,7 +6469,35 @@ function settingRow(s) {
     val.style.cssText = 'min-width:3.5em; text-align:right; font-variant-numeric:tabular-nums';
     val.textContent = label(+inp.value);
     inp.addEventListener('input', () => (val.textContent = label(+inp.value)));
-    inp.addEventListener('change', () => save(Number(inp.value)));
+    inp.addEventListener('change', async () => {
+      const next = Number(inp.value);
+      // Enabling real screen-off gets a warning first: what a dark panel
+      // does to Wi-Fi, the camera and the app itself is the manufacturer's
+      // call, and the Black screensaver avoids the whole regime.
+      if (s.key === 'screensaver.screen_off_minutes' &&
+          Number(s.value || 0) === 0 && next > 0) {
+        const pick = await messageBox({
+          title: 'Turn screen off after',
+          message: "Once the display truly powers off, the tablet's own "
+            + 'power management takes over, and many Android models '
+            + 'misbehave in that state: Wi-Fi naps or drops, the Home '
+            + 'Assistant entities go unavailable, the camera can be '
+            + 'revoked, and some models kill background apps outright. '
+            + 'What happens depends on the manufacturer. The reliable '
+            + 'alternative is the Black screensaver with this setting left '
+            + 'at 0: the panel looks just as dark, and the app keeps full '
+            + 'control.',
+          buttons: ['Cancel', 'Turn screen off anyway'],
+        });
+        if (pick === 'Cancel') {
+          inp.value = 0;
+          val.textContent = label(0);
+          return;
+        }
+      }
+      s.value = next;
+      save(next);
+    });
     controls.append(inp, val);
     row.appendChild(controls);
     return row;

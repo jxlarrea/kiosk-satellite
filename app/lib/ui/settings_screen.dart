@@ -4896,10 +4896,48 @@ class _SliderTileState extends State<_SliderTile> {
             onChangeEnd: (v) async {
               _drag = null;
               // Trim float noise so a whole value stores as a whole value.
-              await widget.container.settings.setFromJson(
-                def.key,
-                num.parse(v.toStringAsFixed(4)),
-              );
+              final parsed = num.parse(v.toStringAsFixed(4));
+              // Enabling real screen-off gets a warning first: what a dark
+              // panel does to Wi-Fi, the camera and the app itself is the
+              // manufacturer's call, not the app's (issue #184 and kin),
+              // and the Black screensaver avoids the whole regime.
+              if (def.key == screensaverScreenOffMinutes.key &&
+                  (widget.container.settings.get(def) as num) == 0 &&
+                  parsed > 0) {
+                final go = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Turn screen off after'),
+                    content: const Text(
+                      'Once the display truly powers off, the tablet\'s own '
+                      'power management takes over, and many Android models '
+                      'misbehave in that state: Wi-Fi naps or drops, the '
+                      'Home Assistant entities go unavailable, the camera '
+                      'can be revoked, and some models kill background apps '
+                      'outright. What happens depends on the manufacturer.\n\n'
+                      'The reliable alternative is the Black screensaver '
+                      'with this setting left at 0: the panel looks just as '
+                      'dark, and the app keeps full control.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Turn screen off anyway'),
+                      ),
+                    ],
+                  ),
+                );
+                if (go != true) {
+                  // The slider snaps back to the stored 0.
+                  if (mounted) setState(() {});
+                  return;
+                }
+              }
+              await widget.container.settings.setFromJson(def.key, parsed);
               widget.onChanged();
             },
           ),

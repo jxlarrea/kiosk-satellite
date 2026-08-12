@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The MQTT integration now speaks **MQTT 5**, and uses its will delay to end availability flapping for good (#184). The keepalive tuning and Wi-Fi hold of v2026.8.28 help most devices, but some hardware (the Lenovo M10 Plus among them) cuts the connection outright on every screen-off radio nap, and no client-side tuning survives that: every cut fired the will and flapped the device's entities unavailable. Under MQTT 5 the broker now sits on the will for 90 seconds, so a device that reconnects within that window never shows offline at all, while one that stays gone is still marked offline honestly. Brokers that only speak MQTT 3.1.1 are detected automatically and served exactly as before; every current mosquitto, EMQX and the Home Assistant add-on speak MQTT 5.
+- Enabling **Turn screen off after** now explains what it may cost first. Once the display truly powers off the manufacturer's power management takes over, and depending on the model that means Wi-Fi naps, unavailable entities, a revoked camera or the app being killed outright; the warning says so, in the device settings and the remote admin alike, and points at the Black screensaver as the reliable alternative that keeps the app in control with the panel just as dark.
+
 ## v2026.8.28 - 2026-08-11
 
 ### Fixed
