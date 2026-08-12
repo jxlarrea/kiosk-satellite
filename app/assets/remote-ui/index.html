@@ -6329,7 +6329,7 @@ function settingRow(s) {
     const TYPES = [['clock', 'Small clock'], ['weather', 'Weather']];
     const DEFAULTS = {
       clock: { color: '250,250,250', h24: false, date: false },
-      weather: { entity: '', name: '', color: '250,250,250',
+      weather: { entity: '', name: '', label: '', color: '250,250,250',
         location: true, forecast: true, humidity: true, wind: true,
         visibility: true },
     };
@@ -6446,6 +6446,23 @@ function settingRow(s) {
             }
           } catch (_) {}
         })();
+        // Weather entities carry no city attribute, so the place shown
+        // over the temperature is named by hand.
+        refs.label = (() => {
+          const wrap = document.createElement('label');
+          wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+          const title = document.createElement('span');
+          title.className = 'desc';
+          title.textContent = 'Location name';
+          const input = document.createElement('input');
+          input.className = 'field';
+          input.type = 'text';
+          input.placeholder = 'The entity name shows when left empty';
+          input.value = config.label || '';
+          input.style.maxWidth = 'none';
+          wrap.append(title, input);
+          return { wrap, input };
+        })();
         refs.location = cameraToggle('Location',
           config.location === true, "The place's name over the temperature.");
         refs.forecast = cameraToggle('Forecast',
@@ -6453,7 +6470,7 @@ function settingRow(s) {
         refs.humidity = cameraToggle('Humidity', config.humidity === true);
         refs.wind = cameraToggle('Wind speed', config.wind === true);
         refs.visibility = cameraToggle('Visibility', config.visibility === true);
-        typeBlock.append(refs.entity.wrap, refs.color.wrap,
+        typeBlock.append(refs.entity.wrap, refs.label.wrap, refs.color.wrap,
           refs.location.wrap, refs.forecast.wrap, refs.humidity.wrap,
           refs.wind.wrap, refs.visibility.wrap);
       };
@@ -6487,7 +6504,8 @@ function settingRow(s) {
             if (!entity) return { ok: false, error: 'Pick a weather entity.' };
             const option = refs.entity.select.selectedOptions[0];
             entryConfig = { entity,
-              name: option ? option.textContent : entity, color,
+              name: option ? option.textContent : entity,
+              label: refs.label.input.value.trim(), color,
               location: refs.location.input.checked,
               forecast: refs.forecast.input.checked,
               humidity: refs.humidity.input.checked,

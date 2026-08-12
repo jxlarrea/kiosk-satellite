@@ -101,6 +101,7 @@ void main() {
       expect(describeScreensaverWidgetType('weather'), 'Weather');
       final defaults = screensaverWidgetDefaults('weather');
       expect(defaults['entity'], '');
+      expect(defaults['label'], '');
       expect(defaults['color'], '250,250,250');
       // Every line defaults on; the entity's own readings gate them too.
       for (final key in ['location', 'forecast', 'humidity', 'wind',

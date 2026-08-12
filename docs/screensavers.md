@@ -162,14 +162,16 @@ settings.
 
 Live weather from a Home Assistant `weather` entity, over any mode
 except Clock and WebRTC Camera. The block reads, top to bottom: the
-location name, the temperature in a large font (always shown), the
-forecast text with a matching icon, then humidity, wind speed and
-visibility, each with its icon. The icons are monochrome and take the
-widget's color, like the text.
+location name, the temperature in a large font with its unit (always
+shown, "28°C"), the forecast text with a matching icon, then humidity,
+wind speed and visibility, each with its icon. Units come from the
+entity, and the icons are monochrome and take the widget's color, like
+the text.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
 | Weather entity | none | Picked from Home Assistant. The widget shows nothing until one is set. |
+| Location name | empty | The place shown over the temperature. Weather entities carry no city attribute, so it is named by hand; empty falls back to the entity's name. |
 | Corner | first free corner | |
 | Color | white | Text and icons alike. |
 | Location, Forecast, Humidity, Wind speed, Visibility | on | One toggle per line. A line also needs the entity to actually carry that reading; whatever the entity lacks is simply left out. |

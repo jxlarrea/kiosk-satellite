@@ -18,10 +18,13 @@
 ///    - clock: color ("r,g,b" text color), h24 (24-hour time instead of
 ///      AM/PM), date (short date under the time)
 ///    - weather: entity (a weather.* entity id), name (its friendly name,
-///      cached for the editors), color ("r,g,b" text and icon color), and
-///      the line toggles location, forecast, humidity, wind, visibility.
-///      The temperature always shows; every line needs its toggle on AND
-///      the entity to actually carry the reading.
+///      cached for the editors), label (the location text shown over the
+///      temperature; the entity name when empty — weather entities carry
+///      no city attribute, so the place is named by hand), color ("r,g,b"
+///      text and icon color), and the line toggles location, forecast,
+///      humidity, wind, visibility. The temperature always shows; every
+///      line needs its toggle on AND the entity to actually carry the
+///      reading.
 /// - config: the type's own settings; missing keys read as the type's
 ///   defaults, so entries survive new keys being added.
 ///
@@ -63,6 +66,7 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
   'weather' => {
     'entity': '',
     'name': '',
+    'label': '',
     'color': '250,250,250',
     'location': true,
     'forecast': true,

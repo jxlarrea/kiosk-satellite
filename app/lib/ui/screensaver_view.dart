@@ -915,32 +915,37 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     final corner = _cornerAlignment(widget.spec.position);
     final color = _widgetRgb(widget.spec.config['color']);
     final size = MediaQuery.of(context).size;
-    // The temperature takes the small clock's size; every other line is a
-    // fraction of it, so the block reads as one widget at any panel size.
+    // The temperature is exactly the small clock's size, and the location
+    // and detail lines take the Immich metadata panel's fixed sizes, so
+    // the corner overlays all read as one family.
     final tempSize = max(min(size.width, size.height) * 0.063, 44.0);
-    final lineSize = tempSize * 0.34;
     const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
-    final muted = color.withValues(alpha: 0.85);
 
-    Widget text(String value, {Color? tint}) => Text(
-      value,
-      style: TextStyle(
-        fontFamily: 'Rubik',
-        color: tint ?? muted,
-        fontSize: lineSize,
-        fontWeight: FontWeight.w400,
-        height: 1.3,
-        shadows: shadows,
-      ),
+    TextStyle line({
+      double size = 16,
+      FontWeight? weight,
+      double alpha = 0.9,
+    }) => TextStyle(
+      fontFamily: 'Rubik',
+      color: color.withValues(alpha: alpha),
+      fontSize: size,
+      fontWeight: weight ?? FontWeight.w400,
+      shadows: shadows,
+      height: 1.35,
     );
 
     // One reading with its trailing monochrome icon, tinted like the text.
     Widget detail(String value, IconData icon) => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        text(value),
-        SizedBox(width: lineSize * 0.35),
-        Icon(icon, size: lineSize * 1.15, color: muted, shadows: shadows),
+        Text(value, style: line()),
+        const SizedBox(width: 9),
+        Icon(
+          icon,
+          size: 16,
+          color: color.withValues(alpha: 0.85),
+          shadows: shadows,
+        ),
       ],
     );
 
@@ -953,20 +958,27 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     final humidity = _num('humidity');
     final wind = _num('wind_speed');
     final visibility = _num('visibility');
-    final location = '${_attributes['friendly_name'] ?? ''}';
+    // The place is named by hand (weather entities carry no city
+    // attribute); the entity's own name is only the fallback.
+    final label = '${widget.spec.config['label'] ?? ''}'.trim();
+    final location = label.isNotEmpty
+        ? label
+        : '${_attributes['friendly_name'] ?? ''}';
 
     final lines = <Widget>[
-      if (_on('location') && location.isNotEmpty) text(location),
+      if (_on('location') && location.isNotEmpty)
+        Text(location, style: line(size: 18, weight: FontWeight.w600,
+            alpha: 1)),
       if (temperature != null)
         Text(
-          '${temperature.round()}°',
+          '${temperature.round()}${_attributes['temperature_unit'] ?? '°'}',
           style: TextStyle(
             fontFamily: 'Rubik',
             color: color,
             fontSize: tempSize,
             fontWeight: FontWeight.w400,
             fontFeatures: const [FontFeature.tabularFigures()],
-            height: 1.1,
+            height: 1.0,
             shadows: shadows,
           ),
         ),
@@ -995,6 +1007,9 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
                 offset: _offset,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  // The metadata panel's row rhythm, so the two corner
+                  // blocks read alike when both are up.
+                  spacing: 6,
                   crossAxisAlignment: corner.x < 0
                       ? CrossAxisAlignment.start
                       : CrossAxisAlignment.end,

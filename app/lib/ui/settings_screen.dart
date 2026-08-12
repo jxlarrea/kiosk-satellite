@@ -2678,6 +2678,11 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
       ...screensaverWidgetDefaults(type),
       ...?existing?.config,
     };
+    // The weather location override; a controller so edits survive the
+    // dialog's rebuilds.
+    final labelCtrl = TextEditingController(
+      text: '${config['label'] ?? ''}',
+    );
 
     final submitted = await showDialog<bool>(
       context: context,
@@ -2781,6 +2786,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                         // A different widget, different settings: start it
                         // from its own defaults.
                         config = {...screensaverWidgetDefaults(type)};
+                        labelCtrl.text = '${config['label'] ?? ''}';
                       }),
                     ),
                     if (type == 'clock') ...[
@@ -2818,6 +2824,17 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                           child: const Text('Choose'),
                         ),
                       ),
+                      // Weather entities carry no city attribute, so the
+                      // place shown over the temperature is named by hand.
+                      TextField(
+                        controller: labelCtrl,
+                        decoration: const InputDecoration(
+                          labelText: 'Location name',
+                          helperText:
+                              'The entity name shows when left empty.',
+                        ),
+                        onChanged: (v) => config['label'] = v.trim(),
+                      ),
                       colorRow(),
                       // The temperature always shows; each other line also
                       // needs the entity to carry the reading.
@@ -2848,6 +2865,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
         },
       ),
     );
+    labelCtrl.dispose();
     if (submitted != true) return;
     await _save([
       // The corner dropdown only offers free corners, but drop any claimant
