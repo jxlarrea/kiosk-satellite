@@ -2076,6 +2076,7 @@ const CAMERA_ICONS = {
   dns: '<rect x="3" y="4" width="18" height="6" rx="2"/>'
     + '<rect x="3" y="14" width="18" height="6" rx="2"/>'
     + '<path d="M7 7h.01M7 17h.01M11 7h7M11 17h7"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1'
     + ' -2 2H5a2 2 0 0 1-2-2z"/>',
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/>',
@@ -6314,9 +6315,10 @@ function settingRow(s) {
   }
 
   // The screensaver widgets (small corner overlays), mirroring the device's
-  // editor: one row per widget - its type, corner, and the type's own
-  // settings - plus an add button. One widget per corner. The type and
-  // corner labels are kept word-for-word with screensaver_widgets.dart.
+  // editor: one summary row per widget - its type and corner - plus an add
+  // button, with every setting edited in a labeled modal, the same shape as
+  // the device's dialog. One widget per corner. The type and corner labels
+  // are kept word-for-word with screensaver_widgets.dart.
   if (s.key === 'screensaver.widgets') {
     let entries = [];
     try { entries = JSON.parse(s.value || '[]') || []; } catch (_) { entries = []; }
@@ -6325,6 +6327,8 @@ function settingRow(s) {
     const TYPES = [['clock', 'Small clock']];
     const DEFAULTS = { clock: { color: '250,250,250', h24: false, date: false } };
     const order = CORNERS.map(([v]) => v);
+    const cornerLabel = (v) => (CORNERS.find(([c]) => c === v) || [, v])[1];
+    const typeLabel = (v) => (TYPES.find(([t]) => t === v) || [, v])[1];
 
     const btn = document.createElement('button');
     btn.className = 'btn-ghost';
@@ -6349,78 +6353,83 @@ function settingRow(s) {
       repaint();
     };
 
-    const entryRow = (e, i) => {
-      const r = document.createElement('div');
-      r.className = 'row';
-      r.style.gap = '10px';
-      e.config = e.config || { ...(DEFAULTS[e.type] || {}) };
-      const type = document.createElement('select');
-      type.style.cssText = 'flex:1 1 25%; min-width:110px;';
-      TYPES.forEach(([v, text]) => {
-        const o = document.createElement('option');
-        o.value = v; o.textContent = text;
-        type.appendChild(o);
+    // The labeled editor modal, the same fields in the same order as the
+    // device's dialog: corner, widget type, then the type's own settings.
+    const editWidget = async (existing) => {
+      const others = entries.filter((e) => e !== existing);
+      // Only unclaimed corners are offered: one widget per corner.
+      const free = CORNERS.filter(([v]) =>
+        v === existing?.position || !others.some((o) => o.position === v));
+      const config = { ...DEFAULTS.clock, ...(existing?.config || {}) };
+
+      const body = document.createElement('div');
+      const cornerSel = cameraSelectField('Corner',
+        free.map(([value, label]) => ({ value, label })),
+        existing?.position || free[0][0]);
+      const typeSel = cameraSelectField('Widget',
+        TYPES.map(([value, label]) => ({ value, label })),
+        TYPES.some(([t]) => t === existing?.type) ? existing.type : 'clock');
+      const note = document.createElement('span');
+      note.className = 'desc';
+      note.textContent = 'Stays off the Clock and WebRTC Camera modes.';
+      body.append(cornerSel.wrap, typeSel.wrap, note);
+
+      // The clock's settings (the only type so far; a new type brings its
+      // own block here, shown for its typeSel value).
+      const colorWrap = document.createElement('label');
+      colorWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+      const colorTitle = document.createElement('span');
+      colorTitle.className = 'desc';
+      colorTitle.textContent = 'Color';
+      const [cr, cg, cb] = String(config.color || '250,250,250').split(',').map((n) => +n || 0);
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = '#' + [cr, cg, cb].map((n) => n.toString(16).padStart(2, '0')).join('');
+      colorInput.style.cssText = 'width:64px; height:36px; padding:2px;'
+        + ' background:var(--surface-2); border:1px solid var(--border);'
+        + ' border-radius:var(--radius-sm); cursor:pointer;';
+      colorWrap.append(colorTitle, colorInput);
+      const h24 = cameraToggle('24-hour clock',
+        config.h24 === true, 'Show a 24-hour time instead of AM/PM.');
+      const date = cameraToggle('Show date',
+        config.date === true, 'Add a short date under the clock.');
+      body.append(colorWrap, h24.wrap, date.wrap);
+
+      return cameraEditor({
+        title: existing ? 'Edit widget' : 'Add widget',
+        width: 460,
+        body,
+        save: async () => {
+          const position = cornerSel.select.value;
+          const hex = colorInput.value; // #rrggbb
+          const entry = {
+            position,
+            type: typeSel.select.value,
+            config: {
+              color: [1, 3, 5].map((x) => parseInt(hex.slice(x, x + 2), 16)).join(','),
+              h24: h24.input.checked,
+              date: date.input.checked,
+            },
+          };
+          // The corner list only offers free corners, but drop any claimant
+          // anyway so a stale modal cannot double-book one.
+          entries = [...others.filter((o) => o.position !== position), entry];
+          await persist();
+          return { ok: true };
+        },
       });
-      type.value = TYPES.some(([v]) => v === e.type) ? e.type : 'clock';
-      type.addEventListener('change', () => {
-        e.type = type.value;
-        // A different widget, different settings: start from its defaults.
-        e.config = { ...(DEFAULTS[e.type] || {}) };
-        persist();
-      });
-      const corner = document.createElement('select');
-      corner.style.cssText = 'flex:0 1 auto; min-width:110px;';
-      CORNERS.forEach(([v, text]) => {
-        // Only unclaimed corners are offered: one widget per corner.
-        if (v !== e.position && entries.some((o) => o !== e && o.position === v)) return;
-        const o = document.createElement('option');
-        o.value = v; o.textContent = text;
-        corner.appendChild(o);
-      });
-      corner.value = e.position;
-      corner.addEventListener('change', () => { e.position = corner.value; persist(); });
-      r.appendChild(type); r.appendChild(corner);
-      if (type.value === 'clock') {
-        const [cr, cg, cb] = String(e.config.color || '250,250,250').split(',').map((n) => +n || 0);
-        const color = document.createElement('input');
-        color.type = 'color';
-        color.value = '#' + [cr, cg, cb].map((n) => n.toString(16).padStart(2, '0')).join('');
-        color.style.cssText = 'width:44px; height:32px; padding:2px; background:var(--surface-2);'
-          + 'border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; flex-shrink:0';
-        color.title = 'Color';
-        color.addEventListener('change', () => {
-          const h = color.value; // #rrggbb
-          e.config.color = [1, 3, 5].map((x) => parseInt(h.slice(x, x + 2), 16)).join(',');
-          persist();
-        });
-        const fmt = document.createElement('select');
-        fmt.style.cssText = 'flex:0 1 auto; min-width:96px;';
-        [['h12', '12-hour'], ['h24', '24-hour']].forEach(([v, text]) => {
-          const o = document.createElement('option');
-          o.value = v; o.textContent = text;
-          fmt.appendChild(o);
-        });
-        fmt.value = e.config.h24 === true ? 'h24' : 'h12';
-        fmt.addEventListener('change', () => { e.config.h24 = fmt.value === 'h24'; persist(); });
-        const date = document.createElement('select');
-        date.style.cssText = 'flex:0 1 auto; min-width:96px;';
-        [['off', 'No date'], ['on', 'Show date']].forEach(([v, text]) => {
-          const o = document.createElement('option');
-          o.value = v; o.textContent = text;
-          date.appendChild(o);
-        });
-        date.value = e.config.date === true ? 'on' : 'off';
-        date.addEventListener('change', () => { e.config.date = date.value === 'on'; persist(); });
-        r.appendChild(color); r.appendChild(fmt); r.appendChild(date);
-      }
-      const del = document.createElement('button');
-      del.className = 'btn-ghost';
-      del.textContent = '×';
-      del.style.cssText = 'flex-shrink:0;';
-      del.addEventListener('click', () => { entries.splice(i, 1); persist(); });
-      r.appendChild(del);
-      return r;
     };
+
+    const entryRow = (e) => cameraListRow(
+      typeLabel(e.type), cornerLabel(e.position),
+      [
+        cameraAction('Delete', () => {
+          entries = entries.filter((o) => o !== e);
+          persist();
+        }, false, 'delete'),
+      ],
+      { icon: 'clock', onClick: () => editWidget(e) },
+    );
 
     const repaint = () => {
       // Every corner taken means nothing left to add.
@@ -6442,12 +6451,7 @@ function settingRow(s) {
     };
     repaint();
 
-    btn.addEventListener('click', () => {
-      const free = order.find((v) => !entries.some((e) => e.position === v));
-      if (!free) return;
-      entries.push({ position: free, type: 'clock', config: { ...DEFAULTS.clock } });
-      persist();
-    });
+    btn.addEventListener('click', () => editWidget(null));
     return frag;
   }
 
