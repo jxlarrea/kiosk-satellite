@@ -23,7 +23,15 @@ import 'dart:convert';
 ///   opacity ~0 - above Chromium's effectively-invisible cutoff so the
 ///   mount rasters NOW, not mid-fade (the carousel's PARKED lesson) -
 ///   then fades to 1 on the compositor (opacity only, the reactive-bar
-///   rule). Only then does the soft navigation fire, and
+///   rule). The outgoing view fades DOWN beneath it on a slight stagger:
+///   wherever the incoming view is transparent (card gaps, transparent
+///   card backgrounds) the old content would otherwise hold at full
+///   opacity and blink out at the swap; the stagger keeps the shared
+///   background from bleeding through regions where both views are
+///   opaque. Both elements outlive the fade in `_viewCache`, so every
+///   exit path scrubs the inline fade styles - a leftover opacity:0
+///   comes back as an invisible view on a later pass. Only after both
+///   fades does the soft navigation fire, and
 ///   HA's own swap appendChild()s that same element, MOVING it out of the
 ///   wrapper into the container. The MutationObserver callback is a
 ///   microtask, before the next paint: dropping the wrapper there is
@@ -77,6 +85,7 @@ String rotationCrossfadeJs({required String base, required String viewPath}) {
   var base = ${jsonEncode(base)};
   var viewPath = ${jsonEncode(viewPath)};
   var FADE_MS = 400;    // seamless dissolve
+  var OLD_DELAY = 150;  // stagger before the outgoing view fades under it
   var OUT_MS = 200;     // fade-through, outgoing leg
   var IN_MS = 260;      // fade-through, incoming leg
   try {
@@ -191,15 +200,42 @@ String rotationCrossfadeJs({required String base, required String viewPath}) {
         'position:absolute;left:0;top:' + top + 'px;' +
         'width:100%;height:100%;overflow:hidden;pointer-events:none;' +
         'will-change:opacity;opacity:0.02;z-index:2147480000;';
+      // A previous fade-out may have left inline opacity on this cached
+      // element (it lives on in _viewCache between passes); mounting it
+      // invisible would show background where the view belongs.
+      try {
+        cached.style.opacity = '';
+        cached.style.transition = '';
+      } catch (_) {}
       wrap.appendChild(cached);
+      // The outgoing view, faded DOWN while the incoming one fades up:
+      // wherever the incoming view is transparent (card gaps, cards with
+      // transparent backgrounds) the old content would otherwise sit at
+      // full opacity behind it until the swap yanked it - a visible
+      // blink. Captured before the wrapper goes in, while the view is
+      // still the last element.
+      var old = container.lastElementChild;
+      if (!old || old === cached || !old.style) old = null;
       // NEVER as the last child: _selectView removes lastChild as "the
       // current view" on every swap (the carousel lesson).
       container.insertBefore(wrap, container.lastChild);
+      // The old element ALSO lives on in _viewCache after the swap: any
+      // inline fade style must be scrubbed on every exit path, or the
+      // view comes back invisible when the rotation returns to it.
+      var restoreOld = function () {
+        if (!old) return;
+        try {
+          old.style.transition = '';
+          old.style.opacity = '';
+          old.style.willChange = '';
+        } catch (_) {}
+      };
       var cleanup = function () {
         try {
           if (cached.parentNode === wrap) wrap.removeChild(cached);
           wrap.remove();
         } catch (_) {}
+        restoreOld();
         if (undoPos) container.style.position = '';
         idle();
       };
@@ -223,6 +259,15 @@ String rotationCrossfadeJs({required String base, required String viewPath}) {
         }
         wrap.style.transition = 'opacity ' + FADE_MS + 'ms ease-in-out';
         wrap.style.opacity = '1';
+        // Slightly staggered so the incoming view is mostly opaque before
+        // the outgoing one thins: fading both at full overlap lets the
+        // shared background bleed through regions where both are opaque.
+        if (old) {
+          old.style.willChange = 'opacity';
+          old.style.transition =
+            'opacity ' + FADE_MS + 'ms ease-in-out ' + OLD_DELAY + 'ms';
+          old.style.opacity = '0';
+        }
         setTimeout(function () {
           var mo = null, done = false;
           var finish = function (recs) {
@@ -260,7 +305,7 @@ String rotationCrossfadeJs({required String base, required String viewPath}) {
           // leave the borrowed element wedged in the wrapper.
           setTimeout(function () { finish(null); }, 800);
           navigate();
-        }, FADE_MS + 30);
+        }, FADE_MS + OLD_DELAY + 50);
       }, settleMs);
       return 'fade';
     }

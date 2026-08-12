@@ -96,5 +96,11 @@ void main() {
     // First visits build the view element themselves (issue #189
     // follow-up: the initial ring pass must dissolve too).
     expect(js, contains("document.createElement('hui-view')"));
+    // The outgoing view fades under the incoming one and both elements
+    // outlive the fade in _viewCache: the inline fade styles must be
+    // scrubbed on every exit path or a later pass mounts an invisible
+    // view.
+    expect(js, contains('var restoreOld'));
+    expect(js, contains("old.style.opacity = '0'"));
   });
 }
