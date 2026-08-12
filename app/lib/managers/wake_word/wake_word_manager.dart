@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
@@ -7,6 +8,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../core/permissions.dart';
+import '../assist_pipeline/native_audio_source.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'background_listening.dart';
@@ -40,7 +42,7 @@ import 'vsww/vsww_engine.dart';
 /// Ordering contract: on detection the engine is stopped *before*
 /// WakeWordDetected is published, so the page may open getUserMedia the
 /// moment its event listener fires.
-class WakeWordManager extends Manager {
+class WakeWordManager extends Manager implements NativeAudioSource {
   WakeWordManager(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
@@ -316,6 +318,8 @@ class WakeWordManager extends Manager {
       // path does the same thing for the same reason.
       if (_pageAudioActive && _engine.running) {
         await _openPageAudioStream();
+      } else if (_nativeAudioSink != null && _engine.running) {
+        await _engine.startAudioStream(_nativeAudioSink!);
       }
     });
   }
@@ -870,6 +874,31 @@ class WakeWordManager extends Manager {
         ));
       });
 
+  /// In-process consumer for the native pipeline transport (the assist
+  /// pipeline manager), so a delegated turn's audio never leaves the app.
+  /// Same single-consumer engine stream the page path uses — Voice
+  /// Satellite runs one or the other per turn, never both.
+  void Function(Uint8List pcm, bool preRoll)? _nativeAudioSink;
+
+  /// Open the mic for the native pipeline transport. Pre-roll semantics are
+  /// identical to the page stream: already-captured audio since the wake
+  /// word's end is flushed first, flagged preRoll.
+  @override
+  Future<bool> openNativeAudioStream(
+      void Function(Uint8List pcm, bool preRoll) onChunk) async {
+    if (!_engine.running) return false;
+    _nativeAudioSink = onChunk;
+    await _engine.startAudioStream(onChunk);
+    return true;
+  }
+
+  @override
+  Future<void> closeNativeAudioStream() async {
+    if (_nativeAudioSink == null) return;
+    _nativeAudioSink = null;
+    await _engine.stopAudioStream();
+  }
+
   /// Reopen the mic on the right device. Models come from the disk cache on
   /// the way back up, so the gap is brief; a rare, user- or hotplug-driven
   /// change is worth it.
@@ -882,9 +911,12 @@ class WakeWordManager extends Manager {
     await _sync();
     // The page's audio stream (an idle-held one included) died with the old
     // engine; put it back so the next turn is not a 60-second hang against a
-    // stream the page still believes is open.
+    // stream the page still believes is open. Same for the native pipeline's
+    // in-process stream.
     if (_pageAudioActive && _engine.running) {
       await _openPageAudioStream();
+    } else if (_nativeAudioSink != null && _engine.running) {
+      await _engine.startAudioStream(_nativeAudioSink!);
     }
   }
 
@@ -1035,8 +1067,10 @@ class WakeWordManager extends Manager {
           log.warn(name, 'page never resumed listening; self-healing');
           // The page that opened the audio stream is gone with the turn;
           // without closing it every mic chunk keeps being base64-encoded
-          // and published to a listener that no longer exists.
+          // and published to a listener that no longer exists. The native
+          // pipeline's stream dies with the same lost page.
           _pageAudioActive = false;
+          _nativeAudioSink = null;
           await _engine.stopAudioStream();
           setActive(true);
         }

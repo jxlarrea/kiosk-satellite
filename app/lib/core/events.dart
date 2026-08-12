@@ -288,6 +288,46 @@ class AudioChunk extends AppEvent {
       {'pcm': base64, 'sampleRate': sampleRate, 'preRoll': preRoll};
 }
 
+// ── Native pipeline transport ──────────────────────────────────────────
+
+/// One event from a delegated voice_satellite/run_pipeline subscription,
+/// forwarded verbatim to the page. Internal-only (no wireName), like
+/// [AudioChunk]: streaming intent-progress deltas would otherwise flood the
+/// remote admin feed. The JS API bridge dispatches it explicitly as
+/// `kiosksatellite:pipeline`.
+class PipelineEvent extends AppEvent {
+  const PipelineEvent({required this.runId, required this.message});
+  final String runId;
+  final Map<String, Object?> message;
+
+  @override
+  Map<String, Object?> toJson() => {'runId': runId, 'message': message};
+}
+
+/// A delegated run's transport died underneath it (the app's HA websocket
+/// closed mid-run). Subscriptions cannot be resumed, so the page's pipeline
+/// recovery restarts the turn. Internal-only; dispatched explicitly as
+/// `kiosksatellite:pipeline-closed`.
+class PipelineClosed extends AppEvent {
+  const PipelineClosed({required this.runId, required this.reason});
+  final String runId;
+  final String reason;
+
+  @override
+  Map<String, Object?> toJson() => {'runId': runId, 'reason': reason};
+}
+
+/// Per-chunk speech-weighted mic level during a delegated turn (~15/s).
+/// The page's reactive bar animates to audio it never receives. Internal-
+/// only; dispatched explicitly as `kiosksatellite:pipeline-level`.
+class PipelineMicLevel extends AppEvent {
+  const PipelineMicLevel({required this.level});
+  final double level;
+
+  @override
+  Map<String, Object?> toJson() => {'level': level};
+}
+
 /// The stop word fired during an interruptible state (TTS, media, a ringing
 /// timer). The page decides what to interrupt; we only report the word.
 class StopWordDetected extends AppEvent {

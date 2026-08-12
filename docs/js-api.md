@@ -128,6 +128,35 @@ running in Kiosk Satellite; browser audio remains the fallback.
 | `stopSound(id)` | `boolean` | Stop a playing sound early. A `sound-ended` event still fires. |
 | `setSoundVolume(id, volume)` | `boolean` | Change a playing sound's volume (0..1) live, so a mid-utterance volume change behaves like it does on a browser Audio element. |
 
+### Pipeline delegation
+
+The app can run the transport of a Voice Satellite assist pipeline turn
+itself: it subscribes `voice_satellite/run_pipeline` on its own
+authenticated Home Assistant websocket and uploads mic PCM as binary frames
+natively, so during a voice turn no audio crosses the JS bridge in either
+direction. The page keeps everything else: the session policy, the overlay
+UI, and every pipeline event, which the app forwards verbatim. The audio
+methods mirror the page's own send/buffer/mute choreography one to one, so
+the chime mute window, cross-tablet dedupe and seamless one-shot buffering
+run unchanged.
+
+All methods fail (resolve `false`) when the "Native voice pipeline" setting
+is off or the app is not configured for Home Assistant; Voice Satellite
+falls back to running the pipeline on the dashboard's own connection.
+
+| Method | Returns | Description |
+|---|---|---|
+| `pipelineRun(params)` | `{runId}` or `false` | Subscribe a run. `params` is the `voice_satellite/run_pipeline` payload (`entity_id`, `start_stage`, `end_stage`, `sample_rate`, plus the optional `conversation_id`, `extra_system_prompt`, `wake_word_phrase`, `wake_word_slot`, `intent_input`, `pipeline_id`). Subscription events arrive as `kiosksatellite:pipeline` events; the synthetic `init` event's binary handler ID stays in the app, which owns the upload. One run at a time; a new run displaces a stale one. |
+| `pipelineStop(runId)` | `boolean` | Unsubscribe the run and stop its audio upload. |
+| `pipelineOpenMic()` | `{sampleRate}` or `false` | Open the delegated capture: mic chunks flow into the app-side buffer (pre-roll first, trimmed to the wake word's end) and per-chunk speech levels are dispatched for the reactive bar. Fails when the wake-word engine is not running. |
+| `pipelineCloseMic()` | `boolean` | Close the delegated capture and drop buffered audio. |
+| `pipelineSetMuted(muted)` | `boolean` | Drop mic chunks on arrival (never buffered) while `true`; the page brackets its wake chime with this so the chime cannot reach STT. |
+| `pipelineStartBuffering({reset})` | `boolean` | Capture chunks into the buffer before sending starts (the seamless one-shot window). `reset` clears the buffer first. |
+| `pipelineStopBuffering({clear})` | `boolean` | Stop capturing; `clear` drops what was buffered. |
+| `pipelineClearBuffer()` | `boolean` | Drop buffered audio (stale chime-window audio before the stream resumes). |
+| `pipelineStartSending(runId)` | `boolean` | Start uploading: buffered chunks first, then live. Waits out the `init` event internally. |
+| `pipelineStopSending()` | `boolean` | Pause the upload (the chime window does this). |
+
 ## Events
 
 Dispatched on `window` as `CustomEvent`s:
@@ -141,6 +170,9 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:sound-started` | `{id}` | A `playSound` sound actually began playing (audio is leaving the speaker). Time stop-word arming and speaking UI off this, not off the `playSound` resolve. |
 | `kiosksatellite:sound-level` | `{id, level}` | Playback level of a playing sound (mean \|amplitude\| 0..1, at most ~20/s, near-duplicate samples skipped) so a page visualizer can animate to audio it never touches. Best-effort: absent on devices without a working `Visualizer`. |
 | `kiosksatellite:sound-ended` | `{id, error?}` | A `playSound` sound finished, failed (`error` says how), or was stopped. Exactly one per sound. |
+| `kiosksatellite:pipeline` | `{runId, message}` | One event from a delegated run's subscription, verbatim (the synthetic `init`, `run-start`, STT partials, `intent-progress` deltas, `tts-end`, errors). |
+| `kiosksatellite:pipeline-closed` | `{runId, reason}` | The delegated run's transport died mid-run (the app's websocket closed). Subscriptions cannot be resumed: restart the turn, as the page's own reconnect recovery would. |
+| `kiosksatellite:pipeline-level` | `{level}` | Per-chunk speech-weighted mic level (~15/s) during a delegated turn, for the reactive bar. Same band-split math the page applies to raw chunks, so the bar renders identically. |
 
 ```js
 window.addEventListener('kiosksatellite:wakeword', (e) => {

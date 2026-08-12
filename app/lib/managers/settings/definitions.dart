@@ -2298,6 +2298,17 @@ const audioSpeakerDevice = SettingDef<String>(
   hidden: true,
 );
 
+const vsNativePipeline = SettingDef<bool>(
+  key: 'vs.native_pipeline',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Native voice pipeline',
+  description:
+      'Voice audio goes straight from the app to Home Assistant, which '
+      'keeps speech recognition steady on slow devices.',
+  category: 'Voice Satellite',
+);
+
 const vsSuppressScreensaver = SettingDef<bool>(
   key: 'vs.suppress_screensaver',
   type: SettingType.boolean,
@@ -3372,6 +3383,7 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordEnabled,
   wakeWordBackground,
   wakeWordResumeTimeoutSeconds,
+  vsNativePipeline,
   vsSuppressScreensaver,
   haUrl,
   haToken,

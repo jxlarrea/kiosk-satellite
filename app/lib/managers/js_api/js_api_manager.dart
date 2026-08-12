@@ -49,6 +49,16 @@ class JsApiManager extends Manager {
     'getWakeWordState': 'getWakeWordState',
     'startAudioStream': 'startAudioStream',
     'stopAudioStream': 'stopAudioStream',
+    'pipelineRun': 'pipelineRun',
+    'pipelineStop': 'pipelineStop',
+    'pipelineOpenMic': 'pipelineOpenMic',
+    'pipelineCloseMic': 'pipelineCloseMic',
+    'pipelineSetMuted': 'pipelineSetMuted',
+    'pipelineStartBuffering': 'pipelineStartBuffering',
+    'pipelineStopBuffering': 'pipelineStopBuffering',
+    'pipelineClearBuffer': 'pipelineClearBuffer',
+    'pipelineStartSending': 'pipelineStartSending',
+    'pipelineStopSending': 'pipelineStopSending',
     'playSound': 'playSound',
     'prefetchSound': 'prefetchSound',
     'stopSound': 'stopSound',
@@ -93,6 +103,14 @@ class JsApiManager extends Manager {
     // Mic audio for the page. AudioChunk has no wireName (it must not reach
     // the remote admin feed), so it is dispatched here explicitly.
     bus.on<AudioChunk>().listen((e) => _dispatchToPage('audio', e.toJson()));
+    // Native pipeline transport events, explicit for the same reason:
+    // streaming intent-progress deltas and ~15/s mic levels have no
+    // business on the remote admin WebSocket.
+    bus.on<PipelineEvent>().listen((e) => _dispatchToPage('pipeline', e.toJson()));
+    bus.on<PipelineClosed>()
+        .listen((e) => _dispatchToPage('pipeline-closed', e.toJson()));
+    bus.on<PipelineMicLevel>()
+        .listen((e) => _dispatchToPage('pipeline-level', e.toJson()));
   }
 
   /// The script the UI layer injects at document start.

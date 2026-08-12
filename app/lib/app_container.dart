@@ -2,6 +2,7 @@ import 'core/command_registry.dart';
 import 'core/event_bus.dart';
 import 'core/logging.dart';
 import 'core/manager.dart';
+import 'managers/assist_pipeline/assist_pipeline_manager.dart';
 import 'managers/audio/audio_routing_manager.dart';
 import 'managers/browser/browser_manager.dart';
 import 'managers/camera/camera_manager.dart';
@@ -62,6 +63,10 @@ class AppContainer {
     // restart re-opens capture.
     audio = AudioRoutingManager(bus, commands, log, settings);
     wakeWord = WakeWordManager(bus, commands, log, settings);
+    // After wakeWord: the native pipeline transport consumes the engine's
+    // in-process audio stream through it (issue-free: one consumer per
+    // turn, negotiated by Voice Satellite).
+    pipeline = AssistPipelineManager(bus, commands, log, settings, wakeWord);
     mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
     dlna = DlnaManager(bus, commands, log, settings);
@@ -108,6 +113,7 @@ class AppContainer {
   late final HomeAssistantManager homeAssistant;
   late final AudioRoutingManager audio;
   late final WakeWordManager wakeWord;
+  late final AssistPipelineManager pipeline;
   late final MqttManager mqtt;
   late final SendspinManager sendspin;
   late final DlnaManager dlna;
@@ -144,6 +150,7 @@ class AppContainer {
     // time, so running late costs nothing.
     gestures,
     wakeWord,
+    pipeline,
     mqtt,
     sendspin,
     dlna,

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- Voice turns now run their transport natively (with a matching Voice Satellite release). Until now the app streamed every microphone chunk into the dashboard page, which decoded it and re-sent it to Home Assistant over its own connection; on weak tablets that round trip competes with the page's rendering for the same main thread, so speech delivery stuttered exactly when the page did. The app now subscribes the assist pipeline run on its own authenticated websocket and uploads the audio directly, so during a voice turn no audio touches the page at all and speech recognition stays steady however busy the dashboard is. The overlay, chimes, wake behavior and every Voice Satellite setting work exactly as before, the reactive bar included (it animates to levels the app computes with the same speech weighting the page used). A **Native voice pipeline** toggle under Voice Satellite in the device settings and the remote admin turns the delegation off, and Voice Satellite falls back to running everything in the page on its own whenever the app cannot take the turn.
+
 ## v2026.8.32 - 2026-08-12
 
 ### Added

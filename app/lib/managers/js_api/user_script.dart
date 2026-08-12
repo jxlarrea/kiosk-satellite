@@ -83,6 +83,32 @@ String buildKioskSatelliteScript({required String version, required String os}) 
     startAudioStream: function () { return call('startAudioStream'); },
     stopAudioStream: function () { return call('stopAudioStream'); },
 
+    // Pipeline delegation: the app subscribes voice_satellite/run_pipeline
+    // on its own authenticated websocket and uploads mic audio as binary
+    // frames natively, so during a voice turn no PCM crosses this bridge in
+    // either direction. Subscription events arrive as
+    // 'kiosksatellite:pipeline' ({runId, message}), transport death as
+    // 'kiosksatellite:pipeline-closed' ({runId, reason}), and per-chunk
+    // speech levels for the reactive bar as 'kiosksatellite:pipeline-level'
+    // ({level}). The audio methods mirror the page's own send/buffer/mute
+    // choreography one-to-one; see docs/js-api.md.
+    pipelineRun: function (params) { return call('pipelineRun', params); },
+    pipelineStop: function (runId) { return call('pipelineStop', { runId: runId }); },
+    pipelineOpenMic: function () { return call('pipelineOpenMic'); },
+    pipelineCloseMic: function () { return call('pipelineCloseMic'); },
+    pipelineSetMuted: function (muted) { return call('pipelineSetMuted', { muted: !!muted }); },
+    pipelineStartBuffering: function (opts) {
+      return call('pipelineStartBuffering', { reset: !!(opts && opts.reset) });
+    },
+    pipelineStopBuffering: function (opts) {
+      return call('pipelineStopBuffering', { clear: !!(opts && opts.clear) });
+    },
+    pipelineClearBuffer: function () { return call('pipelineClearBuffer'); },
+    pipelineStartSending: function (runId) {
+      return call('pipelineStartSending', { runId: runId });
+    },
+    pipelineStopSending: function () { return call('pipelineStopSending'); },
+
     // Sound delegation, the output half of the audio handoff: the app plays
     // the URL natively, on the user's selected speaker, with no autoplay
     // gate. Resolves {id} (or false); 'kiosksatellite:sound-started' ({id})
