@@ -2600,15 +2600,62 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
 
   IconData _icon(String type) => switch (type) {
     'clock' => Icons.access_time,
+    'weather' => Icons.cloud_outlined,
     _ => Icons.widgets_outlined,
   };
 
   /// The per-type hint under the dialog's title: where the widget
   /// deliberately stays off, so nobody hunts for a hidden clock.
   String? _modeNote(String type) => switch (type) {
-    'clock' => 'Hidden in Digital Clock and WebRTC screensaver modes.',
+    'clock' ||
+    'weather' => 'Hidden in Digital Clock and WebRTC screensaver modes.',
     _ => null,
   };
+
+  /// The weather.* entities, picked from Home Assistant by friendly name.
+  /// Returns (entity_id, name), or null when dismissed or unreachable.
+  Future<(String, String)?> _pickWeatherEntity(
+    BuildContext context,
+    String current,
+  ) async {
+    final result = await widget.container.commands.execute(
+      'haSearchEntities',
+      const {'query': 'weather.'},
+    );
+    final data = result.data;
+    if (!result.ok || data is! List) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not reach Home Assistant.')),
+        );
+      }
+      return null;
+    }
+    final entities = [
+      for (final e in data)
+        if (e is Map && '${e['entity_id']}'.startsWith('weather.'))
+          ('${e['entity_id']}', '${e['name'] ?? e['entity_id']}'),
+    ];
+    if (entities.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Home Assistant has no weather entities.'),
+          ),
+        );
+      }
+      return null;
+    }
+    if (!context.mounted) return null;
+    return showRadioPicker<(String, String)>(
+      context,
+      title: 'Weather entity',
+      options: [
+        for (final e in entities) PickerOption(e, e.$2, detail: e.$1),
+      ],
+      selected: entities.where((e) => e.$1 == current).firstOrNull,
+    );
+  }
 
   Future<void> _edit(
     BuildContext context,
@@ -2650,6 +2697,42 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                   colorParts[2]!,
                 )
               : const Color(0xFFFAFAFA);
+          // Both types carry a color; the toggle rows are per type.
+          Widget colorRow() => ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Color'),
+            trailing: GestureDetector(
+              onTap: () async {
+                final picked = await pickColor(
+                  context,
+                  initial: '${config['color'] ?? ''}',
+                  title: 'Color',
+                );
+                if (picked != null) {
+                  setDialogState(() => config['color'] = picked);
+                }
+              },
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: swatch,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+              ),
+            ),
+          );
+          Widget toggle(String title, String key) => SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(title),
+            value: config[key] == true,
+            onChanged: (v) => setDialogState(() => config[key] = v),
+          );
+          final weatherEntity = '${config['entity'] ?? ''}';
+          final weatherName = '${config['name'] ?? ''}';
           return AlertDialog(
             // The widget's own name: the dialog reads as that widget's
             // settings, not as a generic form.
@@ -2701,47 +2784,48 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                       }),
                     ),
                     if (type == 'clock') ...[
+                      colorRow(),
+                      toggle('24-hour clock', 'h24'),
+                      toggle('Show date', 'date'),
+                    ],
+                    if (type == 'weather') ...[
+                      // The entity everything is read from; the friendly
+                      // name is cached in the config so both editors can
+                      // show it without a Home Assistant round trip.
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Color'),
-                        trailing: GestureDetector(
-                          onTap: () async {
-                            final picked = await pickColor(
+                        title: const Text('Weather entity'),
+                        subtitle: Text(
+                          weatherName.isNotEmpty
+                              ? weatherName
+                              : (weatherEntity.isNotEmpty
+                                    ? weatherEntity
+                                    : 'Not set'),
+                        ),
+                        trailing: TextButton(
+                          onPressed: () async {
+                            final picked = await _pickWeatherEntity(
                               context,
-                              initial: '${config['color'] ?? ''}',
-                              title: 'Color',
+                              weatherEntity,
                             );
                             if (picked != null) {
-                              setDialogState(() => config['color'] = picked);
+                              setDialogState(() {
+                                config['entity'] = picked.$1;
+                                config['name'] = picked.$2;
+                              });
                             }
                           },
-                          child: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              color: swatch,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                            ),
-                          ),
+                          child: const Text('Choose'),
                         ),
                       ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('24-hour clock'),
-                        value: config['h24'] == true,
-                        onChanged: (v) =>
-                            setDialogState(() => config['h24'] = v),
-                      ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Show date'),
-                        value: config['date'] == true,
-                        onChanged: (v) =>
-                            setDialogState(() => config['date'] = v),
-                      ),
+                      colorRow(),
+                      // The temperature always shows; each other line also
+                      // needs the entity to carry the reading.
+                      toggle('Location', 'location'),
+                      toggle('Forecast', 'forecast'),
+                      toggle('Humidity', 'humidity'),
+                      toggle('Wind speed', 'wind'),
+                      toggle('Visibility', 'visibility'),
                     ],
                   ],
                 ),
@@ -2753,7 +2837,10 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                onPressed: () => Navigator.pop(context, true),
+                // A weather widget without its entity has nothing to show.
+                onPressed: type == 'weather' && weatherEntity.isEmpty
+                    ? null
+                    : () => Navigator.pop(context, true),
                 child: Text(existing == null ? 'Add' : 'Save'),
               ),
             ],

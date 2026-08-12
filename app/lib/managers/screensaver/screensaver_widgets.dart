@@ -17,6 +17,11 @@
 /// - type: what the widget shows. Types and their config keys:
 ///    - clock: color ("r,g,b" text color), h24 (24-hour time instead of
 ///      AM/PM), date (short date under the time)
+///    - weather: entity (a weather.* entity id), name (its friendly name,
+///      cached for the editors), color ("r,g,b" text and icon color), and
+///      the line toggles location, forecast, humidity, wind, visibility.
+///      The temperature always shows; every line needs its toggle on AND
+///      the entity to actually carry the reading.
 /// - config: the type's own settings; missing keys read as the type's
 ///   defaults, so entries survive new keys being added.
 ///
@@ -44,25 +49,36 @@ class ScreensaverWidget {
 }
 
 /// Every widget type, in the order the pickers offer them.
-const screensaverWidgetTypes = ['clock'];
+const screensaverWidgetTypes = ['clock', 'weather'];
 
 String describeScreensaverWidgetType(String type) => switch (type) {
   'clock' => 'Small clock',
+  'weather' => 'Weather',
   _ => type,
 };
 
 /// A fresh entry's config, also the fallback for keys an entry is missing.
 Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
   'clock' => {'color': '250,250,250', 'h24': false, 'date': false},
+  'weather' => {
+    'entity': '',
+    'name': '',
+    'color': '250,250,250',
+    'location': true,
+    'forecast': true,
+    'humidity': true,
+    'wind': true,
+    'visibility': true,
+  },
   _ => const {},
 };
 
-/// Whether [type] renders over the [mode] screensaver. The clock stays off
-/// the Clock mode (which is one already) and the camera grid, where an
-/// overlay sits in the way of a live feed.
+/// Whether [type] renders over the [mode] screensaver. Widgets stay off
+/// the Clock mode (whose face owns the layout) and the camera grid, where
+/// an overlay sits in the way of a live feed.
 bool screensaverWidgetAllowedOnMode(String type, String mode) =>
     switch (type) {
-      'clock' => mode != 'clock' && mode != 'camera',
+      'clock' || 'weather' => mode != 'clock' && mode != 'camera',
       _ => true,
     };
 

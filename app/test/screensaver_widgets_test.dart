@@ -87,6 +87,39 @@ void main() {
       expect(screensaverWidgetAllowedOnMode('clock', 'black'), isTrue);
       expect(screensaverWidgetAllowedOnMode('clock', 'immich'), isTrue);
     });
+
+    test('the weather widget follows the same mode rules', () {
+      expect(screensaverWidgetAllowedOnMode('weather', 'clock'), isFalse);
+      expect(screensaverWidgetAllowedOnMode('weather', 'camera'), isFalse);
+      expect(screensaverWidgetAllowedOnMode('weather', 'gallery'), isTrue);
+    });
+  });
+
+  group('weather widget type', () {
+    test('is offered, labeled, and defaulted', () {
+      expect(screensaverWidgetTypes, contains('weather'));
+      expect(describeScreensaverWidgetType('weather'), 'Weather');
+      final defaults = screensaverWidgetDefaults('weather');
+      expect(defaults['entity'], '');
+      expect(defaults['color'], '250,250,250');
+      // Every line defaults on; the entity's own readings gate them too.
+      for (final key in ['location', 'forecast', 'humidity', 'wind',
+          'visibility']) {
+        expect(defaults[key], isTrue, reason: key);
+      }
+    });
+
+    test('decodes alongside a clock, one corner each', () {
+      final widgets = decodeScreensaverWidgets(
+        '[{"position":"top_left","type":"clock"},'
+        '{"position":"bottom_right","type":"weather",'
+        '"config":{"entity":"weather.home","humidity":false}}]',
+      );
+      expect(widgets, hasLength(2));
+      expect(widgets.last.type, 'weather');
+      expect(widgets.last.config['entity'], 'weather.home');
+      expect(widgets.last.config['humidity'], isFalse);
+    });
   });
 
   group('legacy small clock migration', () {

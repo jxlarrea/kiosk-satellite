@@ -158,6 +158,26 @@ honors pixel shift. A small clock configured before the Widgets group
 existed becomes a clock widget automatically, keeping its corner and
 settings.
 
+### Weather
+
+Live weather from a Home Assistant `weather` entity, over any mode
+except Clock and WebRTC Camera. The block reads, top to bottom: the
+location name, the temperature in a large font (always shown), the
+forecast text with a matching icon, then humidity, wind speed and
+visibility, each with its icon. The icons are monochrome and take the
+widget's color, like the text.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Weather entity | none | Picked from Home Assistant. The widget shows nothing until one is set. |
+| Corner | first free corner | |
+| Color | white | Text and icons alike. |
+| Location, Forecast, Humidity, Wind speed, Visibility | on | One toggle per line. A line also needs the entity to actually carry that reading; whatever the entity lacks is simply left out. |
+
+Readings arrive over a live Home Assistant subscription while the
+screensaver shows, so they stay current without polling, and the last
+known values survive a short Home Assistant outage.
+
 ## Brightness
 
 **Screensaver brightness** gives the screensaver its own panel

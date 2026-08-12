@@ -2077,6 +2077,8 @@ const CAMERA_ICONS = {
     + '<rect x="3" y="14" width="18" height="6" rx="2"/>'
     + '<path d="M7 7h.01M7 17h.01M11 7h7M11 17h7"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  weather: '<path d="M17.5 19H7a4 4 0 01-.7-7.94 5.5 5.5 0 0110.61-1.53'
+    + 'A4.25 4.25 0 0117.5 19z"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1'
     + ' -2 2H5a2 2 0 0 1-2-2z"/>',
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/>',
@@ -6324,8 +6326,13 @@ function settingRow(s) {
     try { entries = JSON.parse(s.value || '[]') || []; } catch (_) { entries = []; }
     const CORNERS = [['top_left', 'Top left'], ['top_right', 'Top right'],
       ['bottom_left', 'Bottom left'], ['bottom_right', 'Bottom right']];
-    const TYPES = [['clock', 'Small clock']];
-    const DEFAULTS = { clock: { color: '250,250,250', h24: false, date: false } };
+    const TYPES = [['clock', 'Small clock'], ['weather', 'Weather']];
+    const DEFAULTS = {
+      clock: { color: '250,250,250', h24: false, date: false },
+      weather: { entity: '', name: '', color: '250,250,250',
+        location: true, forecast: true, humidity: true, wind: true,
+        visibility: true },
+    };
     const order = CORNERS.map(([v]) => v);
     const cornerLabel = (v) => (CORNERS.find(([c]) => c === v) || [, v])[1];
     const typeLabel = (v) => (TYPES.find(([t]) => t === v) || [, v])[1];
@@ -6360,7 +6367,9 @@ function settingRow(s) {
       // Only unclaimed corners are offered: one widget per corner.
       const free = CORNERS.filter(([v]) =>
         v === existing?.position || !others.some((o) => o.position === v));
-      const config = { ...DEFAULTS.clock, ...(existing?.config || {}) };
+      let type = TYPES.some(([t]) => t === existing?.type)
+        ? existing.type : 'clock';
+      let config = { ...DEFAULTS[type], ...(existing?.config || {}) };
 
       const body = document.createElement('div');
       // The hint reads directly under the title, before any control.
@@ -6371,50 +6380,121 @@ function settingRow(s) {
         free.map(([value, label]) => ({ value, label })),
         existing?.position || free[0][0]);
       const typeSel = cameraSelectField('Widget',
-        TYPES.map(([value, label]) => ({ value, label })),
-        TYPES.some(([t]) => t === existing?.type) ? existing.type : 'clock');
-      body.append(note, cornerSel.wrap, typeSel.wrap);
+        TYPES.map(([value, label]) => ({ value, label })), type);
+      // The current type's own settings, rebuilt when the type changes.
+      const typeBlock = document.createElement('div');
+      typeBlock.className = 'modal-form';
+      typeBlock.style.display = 'contents';
+      body.append(note, cornerSel.wrap, typeSel.wrap, typeBlock);
 
-      // The clock's settings (the only type so far; a new type brings its
-      // own block here, shown for its typeSel value).
-      const colorWrap = document.createElement('label');
-      colorWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
-      const colorTitle = document.createElement('span');
-      colorTitle.className = 'desc';
-      colorTitle.textContent = 'Color';
-      const [cr, cg, cb] = String(config.color || '250,250,250').split(',').map((n) => +n || 0);
-      const colorInput = document.createElement('input');
-      colorInput.type = 'color';
-      colorInput.value = '#' + [cr, cg, cb].map((n) => n.toString(16).padStart(2, '0')).join('');
-      colorInput.style.cssText = 'width:64px; height:36px; padding:2px;'
-        + ' background:var(--surface-2); border:1px solid var(--border);'
-        + ' border-radius:var(--radius-sm); cursor:pointer;';
-      colorWrap.append(colorTitle, colorInput);
-      const h24 = cameraToggle('24-hour clock',
-        config.h24 === true, 'Show a 24-hour time instead of AM/PM.');
-      const date = cameraToggle('Show date',
-        config.date === true, 'Add a short date under the clock.');
-      body.append(colorWrap, h24.wrap, date.wrap);
+      // Live references into the current type block, read on save.
+      let refs = {};
+      const colorField = () => {
+        const wrap = document.createElement('label');
+        wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+        const title = document.createElement('span');
+        title.className = 'desc';
+        title.textContent = 'Color';
+        const [cr, cg, cb] = String(config.color || '250,250,250').split(',').map((n) => +n || 0);
+        const input = document.createElement('input');
+        input.type = 'color';
+        input.value = '#' + [cr, cg, cb].map((n) => n.toString(16).padStart(2, '0')).join('');
+        input.style.cssText = 'width:64px; height:36px; padding:2px;'
+          + ' background:var(--surface-2); border:1px solid var(--border);'
+          + ' border-radius:var(--radius-sm); cursor:pointer;';
+        wrap.append(title, input);
+        return { wrap, input };
+      };
+      const renderTypeBlock = () => {
+        typeBlock.innerHTML = '';
+        refs = { color: colorField() };
+        if (type === 'clock') {
+          refs.h24 = cameraToggle('24-hour clock',
+            config.h24 === true, 'Show a 24-hour time instead of AM/PM.');
+          refs.date = cameraToggle('Show date',
+            config.date === true, 'Add a short date under the clock.');
+          typeBlock.append(refs.color.wrap, refs.h24.wrap, refs.date.wrap);
+          return;
+        }
+        // Weather: the entity everything is read from, then the line
+        // toggles. The temperature always shows; each other line also
+        // needs the entity to actually carry the reading.
+        refs.entity = cameraSelectField('Weather entity',
+          config.entity
+            ? [{ value: config.entity, label: config.name || config.entity }]
+            : [{ value: '', label: 'Pick a weather entity…' }],
+          config.entity || '');
+        (async () => {
+          try {
+            const res = await (await api('/api/commands/haSearchEntities', {
+              method: 'POST', body: JSON.stringify({ query: 'weather.' }) })).json();
+            if (!res.ok) return;
+            const found = (res.data || [])
+              .filter((e) => String(e.entity_id || '').startsWith('weather.'));
+            if (!found.length) return;
+            refs.entity.select.innerHTML = '';
+            if (!config.entity) {
+              const blank = document.createElement('option');
+              blank.value = ''; blank.textContent = 'Pick a weather entity…';
+              refs.entity.select.appendChild(blank);
+            }
+            for (const e of found) {
+              const o = document.createElement('option');
+              o.value = e.entity_id; o.textContent = e.name || e.entity_id;
+              o.selected = e.entity_id === config.entity;
+              refs.entity.select.appendChild(o);
+            }
+          } catch (_) {}
+        })();
+        refs.location = cameraToggle('Location',
+          config.location === true, "The place's name over the temperature.");
+        refs.forecast = cameraToggle('Forecast',
+          config.forecast === true, 'The conditions, with a matching icon.');
+        refs.humidity = cameraToggle('Humidity', config.humidity === true);
+        refs.wind = cameraToggle('Wind speed', config.wind === true);
+        refs.visibility = cameraToggle('Visibility', config.visibility === true);
+        typeBlock.append(refs.entity.wrap, refs.color.wrap,
+          refs.location.wrap, refs.forecast.wrap, refs.humidity.wrap,
+          refs.wind.wrap, refs.visibility.wrap);
+      };
+      renderTypeBlock();
+      typeSel.select.addEventListener('change', () => {
+        type = typeSel.select.value;
+        // A different widget, different settings: start from its defaults,
+        // and retitle the modal, which reads as this widget's settings.
+        config = { ...DEFAULTS[type] };
+        renderTypeBlock();
+        const head = body.closest('.modal-card')?.querySelector('.modal-title');
+        if (head) head.textContent = typeLabel(type);
+      });
 
       return cameraEditor({
         // The widget's own name: the modal reads as that widget's
         // settings, not as a generic form.
-        title: typeLabel(TYPES.some(([t]) => t === existing?.type)
-          ? existing.type : 'clock'),
+        title: typeLabel(type),
         width: 460,
         body,
         save: async () => {
           const position = cornerSel.select.value;
-          const hex = colorInput.value; // #rrggbb
-          const entry = {
-            position,
-            type: typeSel.select.value,
-            config: {
-              color: [1, 3, 5].map((x) => parseInt(hex.slice(x, x + 2), 16)).join(','),
-              h24: h24.input.checked,
-              date: date.input.checked,
-            },
-          };
+          const hex = refs.color.input.value; // #rrggbb
+          const color = [1, 3, 5].map((x) => parseInt(hex.slice(x, x + 2), 16)).join(',');
+          let entryConfig;
+          if (type === 'clock') {
+            entryConfig = { color,
+              h24: refs.h24.input.checked, date: refs.date.input.checked };
+          } else {
+            const entity = refs.entity.select.value;
+            if (!entity) return { ok: false, error: 'Pick a weather entity.' };
+            const option = refs.entity.select.selectedOptions[0];
+            entryConfig = { entity,
+              name: option ? option.textContent : entity, color,
+              location: refs.location.input.checked,
+              forecast: refs.forecast.input.checked,
+              humidity: refs.humidity.input.checked,
+              wind: refs.wind.input.checked,
+              visibility: refs.visibility.input.checked };
+          }
+          const entry = { position, type, config: entryConfig };
           // The corner list only offers free corners, but drop any claimant
           // anyway so a stale modal cannot double-book one.
           entries = [...others.filter((o) => o.position !== position), entry];
@@ -6432,7 +6512,10 @@ function settingRow(s) {
           persist();
         }, false, 'delete'),
       ],
-      { icon: 'clock', onClick: () => editWidget(e) },
+      {
+        icon: e.type === 'weather' ? 'weather' : 'clock',
+        onClick: () => editWidget(e),
+      },
     );
 
     const repaint = () => {

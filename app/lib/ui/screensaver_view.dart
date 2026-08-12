@@ -14,6 +14,8 @@ import 'package:video_player/video_player.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../core/locale_dates.dart';
+import '../managers/home_assistant/home_assistant_manager.dart'
+    show GlanceSubscription;
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
@@ -29,10 +31,36 @@ import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
 /// panel. Media and website go through a WebView, reusing Chromium's video,
 /// image and WebRTC exactly as Voice Satellite does, rather than pulling native
 /// decoders into the app. A tap anywhere dismisses.
-class ScreensaverOverlay extends StatelessWidget {
+class ScreensaverOverlay extends StatefulWidget {
   const ScreensaverOverlay({super.key, required this.container});
 
   final AppContainer container;
+
+  @override
+  State<ScreensaverOverlay> createState() => _ScreensaverOverlayState();
+}
+
+class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
+  StreamSubscription<SettingChanged>? _widgetsSub;
+
+  AppContainer get container => widget.container;
+
+  @override
+  void initState() {
+    super.initState();
+    // Editing the Widgets group while the screensaver shows (the remote
+    // admin can) applies immediately: the widget list is read at build,
+    // so a changed list needs this rebuild to mount or unmount overlays.
+    _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.screensaverWidgets.key && mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _widgetsSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,6 +144,10 @@ class ScreensaverOverlay extends StatelessWidget {
                     if (screensaverWidgetAllowedOnMode(spec.type, view))
                       switch (spec.type) {
                         'clock' => ClockWidgetOverlay(
+                          container: container,
+                          spec: spec,
+                        ),
+                        'weather' => WeatherWidgetOverlay(
                           container: container,
                           spec: spec,
                         ),
@@ -649,15 +681,6 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
     super.dispose();
   }
 
-  Color _color() {
-    final raw = '${widget.spec.config['color'] ?? ''}';
-    final parts = raw.split(',').map((p) => int.tryParse(p.trim())).toList();
-    if (parts.length == 3 && parts.every((p) => p != null)) {
-      return Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!);
-    }
-    return const Color(0xFFFAFAFA);
-  }
-
   String _time() {
     final h24 = widget.spec.config['h24'] == true;
     final h = h24 ? _now.hour : (_now.hour % 12 == 0 ? 12 : _now.hour % 12);
@@ -675,7 +698,7 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
   @override
   Widget build(BuildContext context) {
     final corner = _cornerAlignment(widget.spec.position);
-    final color = _color();
+    final color = _widgetRgb(widget.spec.config['color']);
     final size = MediaQuery.of(context).size;
     // Proportional to the panel, but floored: on a small low-density screen
     // (the Echo Show 5's 480 logical pixels) the proportional size lands
@@ -740,6 +763,295 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
     );
   }
 }
+
+/// A widget's "r,g,b" color, falling back to the overlays' near-white.
+Color _widgetRgb(Object? raw) {
+  final parts = '$raw'.split(',').map((p) => int.tryParse(p.trim())).toList();
+  if (parts.length == 3 && parts.every((p) => p != null)) {
+    return Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!);
+  }
+  return const Color(0xFFFAFAFA);
+}
+
+/// The weather widget: one Home Assistant weather entity in a corner —
+/// the location name, a big temperature, the forecast with its icon, and
+/// optional humidity, wind and visibility lines, each shown only when its
+/// toggle is on AND the entity actually carries the reading. Fed by its
+/// own subscribe_entities socket while the screensaver shows (the At a
+/// Glance pattern), so the readings stay live without polling.
+class WeatherWidgetOverlay extends StatefulWidget {
+  const WeatherWidgetOverlay({
+    super.key,
+    required this.container,
+    required this.spec,
+  });
+
+  final AppContainer container;
+  final ScreensaverWidget spec;
+
+  @override
+  State<WeatherWidgetOverlay> createState() => _WeatherWidgetOverlayState();
+}
+
+class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
+  GlanceSubscription? _live;
+  Timer? _retry;
+  Timer? _shift;
+  Offset _offset = Offset.zero;
+
+  /// Last known state and attributes, merged across updates: the
+  /// subscription diffs, so attributes only arrive when they change.
+  String _condition = '';
+  final Map<String, Object?> _attributes = {};
+  bool _haveData = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_open());
+    // The same slow OLED-protecting nudge the small clock does.
+    _shift = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!widget.container.settings.get(defs.screensaverPixelShift)) return;
+      final r = Random();
+      const max = 10.0;
+      setState(() {
+        _offset = Offset(
+          (r.nextDouble() * 2 - 1) * max,
+          (r.nextDouble() * 2 - 1) * max,
+        );
+      });
+    });
+  }
+
+  Future<void> _open() async {
+    final entity = '${widget.spec.config['entity'] ?? ''}';
+    if (entity.isEmpty) return;
+    final live = await widget.container.homeAssistant.subscribeEntities(
+      [entity],
+      _onState,
+    );
+    if (!mounted) {
+      unawaited(live?.close());
+      return;
+    }
+    if (live == null) {
+      // Home Assistant unreachable, mid-restart, whatever: keep showing
+      // what we last knew and try again shortly (the At a Glance cadence).
+      _retry?.cancel();
+      _retry = Timer(const Duration(seconds: 20), () {
+        if (mounted) unawaited(_open());
+      });
+      return;
+    }
+    // A socket that dies after establishing reopens after a beat; the
+    // delay keeps a flapping server from turning this into a tight loop.
+    live.onClosed = () {
+      if (!mounted || _live != live) return;
+      _retry?.cancel();
+      _retry = Timer(const Duration(seconds: 5), () {
+        if (mounted) unawaited(_open());
+      });
+    };
+    _live = live;
+  }
+
+  void _onState(String entityId, Map<String, Object?> state) {
+    if (!mounted) return;
+    setState(() {
+      final s = state['state'];
+      if (s is String) _condition = s;
+      final attrs = state['attributes'];
+      if (attrs is Map) {
+        _attributes.addAll(attrs.map((k, v) => MapEntry('$k', v)));
+      }
+      _haveData = true;
+    });
+  }
+
+  // A live edit can repoint the widget at another entity; the element is
+  // reused in place, so the subscription has to follow by hand.
+  @override
+  void didUpdateWidget(WeatherWidgetOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ('${oldWidget.spec.config['entity']}' !=
+        '${widget.spec.config['entity']}') {
+      _retry?.cancel();
+      final live = _live;
+      _live = null;
+      if (live != null) unawaited(live.close());
+      _attributes.clear();
+      _condition = '';
+      _haveData = false;
+      unawaited(_open());
+    }
+  }
+
+  @override
+  void dispose() {
+    _retry?.cancel();
+    _shift?.cancel();
+    final live = _live;
+    _live = null;
+    if (live != null) unawaited(live.close());
+    super.dispose();
+  }
+
+  bool _on(String key) => widget.spec.config[key] == true;
+
+  num? _num(String key) {
+    final value = _attributes[key];
+    return value is num ? value : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Nothing sensible to draw before the first snapshot, or while the
+    // entity itself is gone.
+    if (!_haveData ||
+        _condition == 'unavailable' ||
+        _condition == 'unknown') {
+      return const SizedBox.shrink();
+    }
+    final corner = _cornerAlignment(widget.spec.position);
+    final color = _widgetRgb(widget.spec.config['color']);
+    final size = MediaQuery.of(context).size;
+    // The temperature takes the small clock's size; every other line is a
+    // fraction of it, so the block reads as one widget at any panel size.
+    final tempSize = max(min(size.width, size.height) * 0.063, 44.0);
+    final lineSize = tempSize * 0.34;
+    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final muted = color.withValues(alpha: 0.85);
+
+    Widget text(String value, {Color? tint}) => Text(
+      value,
+      style: TextStyle(
+        fontFamily: 'Rubik',
+        color: tint ?? muted,
+        fontSize: lineSize,
+        fontWeight: FontWeight.w400,
+        height: 1.3,
+        shadows: shadows,
+      ),
+    );
+
+    // One reading with its trailing monochrome icon, tinted like the text.
+    Widget detail(String value, IconData icon) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        text(value),
+        SizedBox(width: lineSize * 0.35),
+        Icon(icon, size: lineSize * 1.15, color: muted, shadows: shadows),
+      ],
+    );
+
+    String reading(num value, String unitKey) {
+      final unit = '${_attributes[unitKey] ?? ''}';
+      return unit.isEmpty ? '${value.round()}' : '${value.round()} $unit';
+    }
+
+    final temperature = _num('temperature');
+    final humidity = _num('humidity');
+    final wind = _num('wind_speed');
+    final visibility = _num('visibility');
+    final location = '${_attributes['friendly_name'] ?? ''}';
+
+    final lines = <Widget>[
+      if (_on('location') && location.isNotEmpty) text(location),
+      if (temperature != null)
+        Text(
+          '${temperature.round()}°',
+          style: TextStyle(
+            fontFamily: 'Rubik',
+            color: color,
+            fontSize: tempSize,
+            fontWeight: FontWeight.w400,
+            fontFeatures: const [FontFeature.tabularFigures()],
+            height: 1.1,
+            shadows: shadows,
+          ),
+        ),
+      if (_on('forecast') && _condition.isNotEmpty)
+        detail(_conditionLabel(_condition), _conditionIcon(_condition)),
+      if (_on('humidity') && humidity != null)
+        detail('${humidity.round()}%', Icons.water_drop_outlined),
+      if (_on('wind') && wind != null)
+        detail(reading(wind, 'wind_speed_unit'), Icons.air),
+      if (_on('visibility') && visibility != null)
+        detail(reading(visibility, 'visibility_unit'),
+            Icons.visibility_outlined),
+    ];
+    if (lines.isEmpty) return const SizedBox.shrink();
+
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _cornerVignette(corner),
+          Align(
+            alignment: corner,
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Transform.translate(
+                offset: _offset,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: corner.x < 0
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.end,
+                  children: lines,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Home Assistant's weather conditions as readable text; conditions this
+/// map does not know just clean up (dashes out, first letter up).
+String _conditionLabel(String condition) => switch (condition) {
+  'clear-night' => 'Clear night',
+  'cloudy' => 'Cloudy',
+  'exceptional' => 'Severe weather',
+  'fog' => 'Fog',
+  'hail' => 'Hail',
+  'lightning' => 'Lightning',
+  'lightning-rainy' => 'Thunderstorms',
+  'partlycloudy' => 'Partly cloudy',
+  'pouring' => 'Pouring',
+  'rainy' => 'Rainy',
+  'snowy' => 'Snowy',
+  'snowy-rainy' => 'Sleet',
+  'sunny' => 'Sunny',
+  'windy' => 'Windy',
+  'windy-variant' => 'Windy',
+  _ => condition.isEmpty
+      ? condition
+      : (condition[0].toUpperCase() + condition.substring(1))
+          .replaceAll('-', ' '),
+};
+
+/// Monochrome Material glyphs for the conditions, tinted with the widget
+/// color exactly like the text.
+IconData _conditionIcon(String condition) => switch (condition) {
+  'clear-night' => Icons.nights_stay,
+  'cloudy' => Icons.cloud,
+  'exceptional' => Icons.storm,
+  'fog' => Icons.foggy,
+  'hail' => Icons.grain,
+  'lightning' => Icons.bolt,
+  'lightning-rainy' => Icons.thunderstorm,
+  'partlycloudy' => Icons.wb_cloudy,
+  'pouring' => Icons.umbrella,
+  'rainy' => Icons.umbrella,
+  'snowy' => Icons.ac_unit,
+  'snowy-rainy' => Icons.ac_unit,
+  'sunny' => Icons.wb_sunny,
+  'windy' || 'windy-variant' => Icons.air,
+  _ => Icons.cloud,
+};
 
 /// Media and website, rendered in their own WebView.
 ///

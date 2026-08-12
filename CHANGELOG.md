@@ -5,7 +5,8 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
-- The Screensaver settings gain a Widgets group: small corner overlays added by picking a corner and a widget type, each widget carrying its own settings. The small clock is the first type (color, 24-hour format, date, one widget per corner, up to four), an already configured small clock migrates into a clock widget automatically with its corner and settings intact, and the group is edited the same way in the on-device settings and the remote admin. More widget types, starting with weather, can now slot in.
+- The Screensaver settings gain a Widgets group: small corner overlays added by picking a corner and a widget type, each widget carrying its own settings. The small clock is the first type (color, 24-hour format, date, one widget per corner, up to four), an already configured small clock migrates into a clock widget automatically with its corner and settings intact, and the group is edited the same way in the on-device settings and the remote admin.
+- A Weather widget joins the Widgets group: pick a Home Assistant weather entity and a corner, and the screensaver shows the location, a large temperature, the forecast with a matching icon, and optional humidity, wind speed and visibility lines. Every line except the temperature has its own toggle, lines the entity does not carry are left out automatically, the icons are monochrome and take the widget's color, and the readings stay live over a Home Assistant subscription while the screensaver shows.
 
 ## v2026.8.30 - 2026-08-12
 
