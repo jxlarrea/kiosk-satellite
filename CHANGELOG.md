@@ -2,15 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.32 - 2026-08-12
 
 ### Added
 - A **Foreground app** sensor joins the MQTT device's diagnostics (#192): which app is on the device's screen, the app's package name as the state (stable across languages and renames, so automations match on it safely) and its human-readable name in a `label` attribute, so an automation can notice the kiosk left behind another app and, say, bring it back after a couple of minutes. It updates within a few seconds of an app opening over the kiosk or the kiosk returning, and once a minute otherwise. Identifying other apps needs Android's **Usage access** grant, which gets its own row in the Permissions Manager in the device settings and the remote admin alike; without it the sensor still reports the kiosk's own package while the kiosk is frontmost, and unknown when it is not.
 
-## Unreleased
-
 ### Fixed
 - The rotation crossfade no longer lets the outgoing view linger behind transparent parts of the incoming one. Card gaps and cards with transparent backgrounds showed the old view at full opacity through the fade, and that leftover content blinked out the moment the views swapped; the outgoing view now fades down beneath the incoming one on a slight stagger, so those regions dissolve to the dashboard background instead.
+- Devices without any camera hardware no longer burn CPU retrying a camera service that does not exist (#193). The camera library the app moved to in v2026.8.20 keeps a persistent watch on the platform's camera service once it initializes, and on hardware whose ROM ships no camera service at all (e-ink tablets, some LineageOS ports) that watch makes Android retry the missing service every second, forever, spamming the log and pegging a weak processor. The camera features now ask the lower-level camera API first, and on a device that enumerates no cameras the camera library is simply never started: the camera settings surfaces say plainly that no camera is available, and nothing retries anything.
 
 ## v2026.8.31 - 2026-08-12
 
@@ -21,11 +20,6 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Fixed
 - Rotation ticks landing right after an app start no longer mislabel ordinary dashboard views as hard loads. The rotation's strategy-dashboard discovery reads "no view rendered shortly after navigating" as "this path needs a full page load", but during the frontend's own boot no view is rendered for any path yet; a tick in that window taught the rotation to fully reload perfectly soft-navigable views on every pass for the rest of the session. The check now stands down for the first 15 seconds after a page load; a genuine strategy dashboard is still learned on its next pass.
-
-## Unreleased
-
-### Fixed
-- Devices without any camera hardware no longer burn CPU retrying a camera service that does not exist (#193). The camera library the app moved to in v2026.8.20 keeps a persistent watch on the platform's camera service once it initializes, and on hardware whose ROM ships no camera service at all (e-ink tablets, some LineageOS ports) that watch makes Android retry the missing service every second, forever, spamming the log and pegging a weak processor. The camera features now ask the lower-level camera API first, and on a device that enumerates no cameras the camera library is simply never started: the camera settings surfaces say plainly that no camera is available, and nothing retries anything.
 
 ## v2026.8.30 - 2026-08-12
 
