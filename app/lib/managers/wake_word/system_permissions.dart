@@ -25,6 +25,7 @@ class SystemPermissions {
     required this.deviceAdmin,
     required this.writeSettings,
     required this.allFiles,
+    required this.usageAccess,
   });
 
   /// Nothing listens without this one, foreground or not.
@@ -62,6 +63,11 @@ class SystemPermissions {
   /// #175); without it the manager still works on the app's own folder.
   final bool allFiles;
 
+  /// "Usage access": naming whichever app is on screen, for the MQTT
+  /// Foreground app sensor (issue #192). Without it the sensor still knows
+  /// when Kiosk Satellite itself is frontmost, just never who else is.
+  final bool usageAccess;
+
   static const _brightnessChannel =
       MethodChannel('kiosk_satellite/brightness');
   static const _backgroundChannel =
@@ -71,6 +77,15 @@ class SystemPermissions {
     try {
       return await _backgroundChannel
               .invokeMethod<bool>('hasAllFilesAccess') ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> _hasUsageAccess() async {
+    try {
+      return await _backgroundChannel.invokeMethod<bool>('hasUsageAccess') ??
           false;
     } catch (_) {
       return false;
@@ -96,6 +111,7 @@ class SystemPermissions {
         deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
         writeSettings: await _canWriteSettings(),
         allFiles: await _hasAllFilesAccess(),
+        usageAccess: await _hasUsageAccess(),
       );
 
   /// Nothing we could not read. A platform without these channels answers
@@ -112,6 +128,7 @@ class SystemPermissions {
     deviceAdmin: false,
     writeSettings: false,
     allFiles: false,
+    usageAccess: false,
   );
 
   Map<String, Object?> toJson() => {
@@ -125,5 +142,6 @@ class SystemPermissions {
         'deviceAdmin': deviceAdmin,
         'writeSettings': writeSettings,
         'allFiles': allFiles,
+        'usageAccess': usageAccess,
       };
 }

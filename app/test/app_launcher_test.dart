@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -138,5 +140,53 @@ void main() {
     expect(launcher.apps, isEmpty);
     await settings.setFromJson('launcher.apps', twoApps);
     expect(launcher.apps, hasLength(2));
+  });
+
+  group('foregroundApp', () {
+    final binding = TestWidgetsFlutterBinding.instance;
+    const channel = MethodChannel('kiosk_satellite/background');
+
+    void mockNative(Map<Object?, Object?>? answer) {
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
+          (call) async => call.method == 'foregroundApp' ? answer : null);
+      addTearDown(
+          () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
+              channel, null));
+    }
+
+    test('relays the native answer when usage access names one', () async {
+      await build({});
+      mockNative(const {'package': 'com.wall', 'label': 'WallPanel'});
+      final result =
+          await launcher.commands.execute('foregroundApp', const {});
+      expect(result.ok, isTrue);
+      expect((result.data as Map)['package'], 'com.wall');
+      expect((result.data as Map)['label'], 'WallPanel');
+    });
+
+    test('vouches for this app while resumed when native knows nothing',
+        () async {
+      await build({});
+      mockNative(null);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      final result =
+          await launcher.commands.execute('foregroundApp', const {});
+      expect((result.data as Map)['package'], 'me.jxl.kiosk_satellite');
+      expect((result.data as Map)['label'], 'Kiosk Satellite');
+    });
+
+    test('answers an honest null while another app is up without the grant',
+        () async {
+      await build({});
+      mockNative(null);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      // Leave the binding as other tests expect it.
+      addTearDown(() => binding
+          .handleAppLifecycleStateChanged(AppLifecycleState.resumed));
+      final result =
+          await launcher.commands.execute('foregroundApp', const {});
+      expect(result.ok, isTrue);
+      expect((result.data as Map)['package'], isNull);
+    });
   });
 }

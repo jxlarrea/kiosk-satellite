@@ -156,6 +156,26 @@ class BackgroundBridge(
                         result.error("files", e.message, null)
                     }
                 }
+                // The Foreground app sensor (issue #192). Which app is on
+                // screen is special-grant information ("Usage access", a
+                // settings screen like All files access); without it the
+                // Dart side falls back to what it can know by itself.
+                "hasUsageAccess" -> result.success(hasUsageAccess())
+                "requestUsageAccess" -> {
+                    try {
+                        requestUsageAccess()
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("usage", e.message, null)
+                    }
+                }
+                // The app on screen right now, as usage events report it.
+                // Off the main thread: the first query walks hours of
+                // events. Null without the grant.
+                "foregroundApp" -> Thread {
+                    val app = foregroundApp()
+                    Handler(Looper.getMainLooper()).post { result.success(app) }
+                }.start()
                 // MASTER volume: no permission involved. The MQTT volume
                 // entity reads and writes through these. VolumeController
                 // decides whether that means STREAM_MUSIC or, on
@@ -705,6 +725,99 @@ class BackgroundBridge(
         } catch (e: Exception) {
             android.util.Log.w("kiosk_satellite", "appIcon $packageName failed", e)
             null
+        }
+    }
+
+    /// Whether "Usage access" is granted: the app-ops gate in front of
+    /// UsageStatsManager. MODE_DEFAULT falls through to the manifest
+    /// permission check, per the documented convention.
+    private fun hasUsageAccess(): Boolean = try {
+        val ops = context.getSystemService(Context.APP_OPS_SERVICE)
+            as android.app.AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ops.unsafeCheckOpNoThrow(
+                android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(), context.packageName,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            ops.checkOpNoThrow(
+                android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+                android.os.Process.myUid(), context.packageName,
+            )
+        }
+        if (mode == android.app.AppOpsManager.MODE_DEFAULT) {
+            context.checkSelfPermission(
+                android.Manifest.permission.PACKAGE_USAGE_STATS,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            mode == android.app.AppOpsManager.MODE_ALLOWED
+        }
+    } catch (e: Exception) {
+        android.util.Log.w("kiosk_satellite", "hasUsageAccess failed", e)
+        false
+    }
+
+    /// Open the "Usage access" settings screen. Package-specific first (it
+    /// lands on our row where the OS supports that form); some builds only
+    /// accept the plain list, which is the same screen one tap higher.
+    private fun requestUsageAccess() {
+        try {
+            context.startActivity(
+                Intent(
+                    Settings.ACTION_USAGE_ACCESS_SETTINGS,
+                    Uri.parse("package:${context.packageName}"),
+                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        } catch (_: Exception) {
+            context.startActivity(
+                Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+        }
+    }
+
+    /** The last app usage events reported in the foreground, and where the
+     *  last query ended: each poll only walks what happened since. */
+    private var lastForegroundPkg: String? = null
+    private var lastUsageQueryEnd = 0L
+
+    /// The app on screen as [{package, label}], or null when the grant is
+    /// missing or no foreground event has been seen. ACTIVITY_RESUMED shares
+    /// its value with the pre-29 MOVE_TO_FOREGROUND, so one comparison
+    /// covers every supported release.
+    private fun foregroundApp(): Map<String, String>? {
+        if (!hasUsageAccess()) return null
+        try {
+            val usm = context.getSystemService(Context.USAGE_STATS_SERVICE)
+                as android.app.usage.UsageStatsManager
+            val now = System.currentTimeMillis()
+            // The first ask reaches half a day back to find any foreground
+            // event at all; later asks re-walk a small overlap only.
+            val begin = if (lastUsageQueryEnd == 0L) now - 12 * 3600_000L
+                        else lastUsageQueryEnd - 5_000L
+            val events = usm.queryEvents(begin, now)
+            val event = android.app.usage.UsageEvents.Event()
+            while (events.hasNextEvent()) {
+                events.getNextEvent(event)
+                if (event.eventType ==
+                    android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED
+                ) {
+                    lastForegroundPkg = event.packageName
+                }
+            }
+            lastUsageQueryEnd = now
+            val pkg = lastForegroundPkg ?: return null
+            val label = try {
+                val pm = context.packageManager
+                pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
+            } catch (_: Exception) {
+                pkg
+            }
+            return mapOf("package" to pkg, "label" to label)
+        } catch (e: Exception) {
+            android.util.Log.w("kiosk_satellite", "foregroundApp failed", e)
+            return null
         }
     }
 

@@ -4892,6 +4892,21 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               'only the app folder.',
           onGrant: () => _requestVia('allFiles'),
         ),
+        // Same shape again: without it the Foreground app sensor still
+        // reports Kiosk Satellite itself, it just cannot name other apps.
+        _row(
+          granted: perms?.usageAccess,
+          needed: false,
+          missingIcon: Icons.apps_outage,
+          title: 'Usage access',
+          held: 'The Foreground app sensor can name whichever app is on '
+              'screen.',
+          missing: '',
+          idle:
+              'Lets the Foreground app sensor name apps other than '
+              'Kiosk Satellite.',
+          onGrant: () => _requestVia('usageAccess'),
+        ),
         // Pages ask for this themselves when they need it; nothing native
         // here uses it, so it is listed for completeness only.
         _row(

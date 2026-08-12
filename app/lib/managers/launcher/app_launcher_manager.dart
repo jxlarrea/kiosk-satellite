@@ -111,6 +111,41 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
 
     commands.register(
       Command(
+        name: 'foregroundApp',
+        description:
+            'The app on screen right now: {package, label}. Naming other '
+            'apps needs the Usage access grant; without it the answer is '
+            'this app while it is frontmost and {package: null} otherwise.',
+        handler: (_) async {
+          try {
+            final raw =
+                await _channel.invokeMethod<Map<Object?, Object?>>(
+                    'foregroundApp');
+            if (raw != null) {
+              return CommandResult.ok({
+                'package': '${raw['package']}',
+                'label': '${raw['label']}',
+              });
+            }
+          } on MissingPluginException {
+            // Not Android; fall through to what the lifecycle knows.
+          } on PlatformException catch (e) {
+            log.warn(name, 'foregroundApp failed: $e');
+          }
+          // No grant (or no usage event yet): the one app we can still
+          // vouch for is ourselves, while resumed.
+          final resumed = WidgetsBinding.instance.lifecycleState ==
+              AppLifecycleState.resumed;
+          return CommandResult.ok({
+            'package': resumed ? 'me.jxl.kiosk_satellite' : null,
+            'label': resumed ? 'Kiosk Satellite' : null,
+          });
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
         name: 'showAppLauncher',
         description:
             'Open the app launcher overlay. Fails when no apps are '

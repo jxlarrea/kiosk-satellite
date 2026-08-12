@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Foreground app** sensor joins the MQTT device's diagnostics (#192): which app is on the device's screen, the app's package name as the state (stable across languages and renames, so automations match on it safely) and its human-readable name in a `label` attribute, so an automation can notice the kiosk left behind another app and, say, bring it back after a couple of minutes. It updates within a few seconds of an app opening over the kiosk or the kiosk returning, and once a minute otherwise. Identifying other apps needs Android's **Usage access** grant, which gets its own row in the Permissions Manager in the device settings and the remote admin alike; without it the sensor still reports the kiosk's own package while the kiosk is frontmost, and unknown when it is not.
+
 ## v2026.8.31 - 2026-08-12
 
 ### Added

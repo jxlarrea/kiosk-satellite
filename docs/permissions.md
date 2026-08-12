@@ -30,6 +30,7 @@ do.
 | Display over other apps | Lets the app bring itself back to the front after a crash, an update, or a wake word heard behind another app, and lets the lockdown shield cover the whole screen. |
 | Modify system settings | Writing the panel's real brightness instead of dimming the app window. |
 | All files access | The File Manager's shared storage root. Without it the manager still works on the app's own folder. Android 11+; on older versions the storage permission below is the whole grant. |
+| Usage access | Lets the MQTT **Foreground app** sensor name whichever app is on screen. Without it the sensor still reports Kiosk Satellite while the kiosk is frontmost, just never another app. |
 | Device admin | The real **Screen off**: powers the panel down instead of only blacking it out. |
 | Location | Only used by dashboard pages that ask for the device location. Nothing native uses it. |
 | System UI guard | An accessibility service that closes the notification shade and recents while kiosk protections hold. See [Kiosk and Lockdown](kiosk.md#required-system-permissions). |
@@ -70,6 +71,7 @@ of a dialog:
 adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow
 adb shell appops set me.jxl.kiosk_satellite WRITE_SETTINGS allow
 adb shell appops set me.jxl.kiosk_satellite MANAGE_EXTERNAL_STORAGE allow
+adb shell appops set me.jxl.kiosk_satellite GET_USAGE_STATS allow
 adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite
 adb shell dpm set-active-admin me.jxl.kiosk_satellite/.KioskAdminReceiver
 ```

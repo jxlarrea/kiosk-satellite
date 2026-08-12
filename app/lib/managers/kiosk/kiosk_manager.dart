@@ -326,7 +326,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           'which':
               'explicit list of permissions to request (microphone, camera, '
               'notifications, batteryOptimizations, overlay, location, '
-              'writeSettings, allFiles, deviceAdmin); overrides full',
+              'writeSettings, allFiles, usageAccess, deviceAdmin); '
+              'overrides full',
         },
         handler: (p) async {
           const known = <String, Permission>{
@@ -401,6 +402,24 @@ class KioskManager extends Manager with WidgetsBindingObserver {
               }
             } catch (_) {
               results['allFiles'] = false;
+            }
+          }
+          // "Usage access" (the Foreground app sensor naming other apps)
+          // is another such settings screen, on every supported release.
+          final askUsage = which is List && which.contains('usageAccess');
+          if (askUsage) {
+            try {
+              if (await _backgroundChannel.invokeMethod<bool>(
+                      'hasUsageAccess') ==
+                  true) {
+                results['usageAccess'] = true;
+              } else {
+                await _backgroundChannel.invokeMethod('requestUsageAccess');
+                // Only launched: the user grants (or not) on that screen.
+                results['usageAccess'] = false;
+              }
+            } catch (_) {
+              results['usageAccess'] = false;
             }
           }
           // Device admin (the real "Screen off") is an Activity, not a

@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'dart:math' show Random;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart' show MethodChannel;
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
@@ -36,7 +39,7 @@ import 'mqtt_link.dart';
 ///    now; ON/OFF forces it on screen or dismisses it. The master
 ///    enable/disable lives in the "Screensaver" setting switch (issue
 ///    #152).
-class MqttManager extends Manager {
+class MqttManager extends Manager with WidgetsBindingObserver {
   MqttManager(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
@@ -89,6 +92,12 @@ class MqttManager extends Manager {
   bool? _lastCharging;
   int? _lastCpu;
   int? _lastCpuTemp;
+
+  /// The foreground package last published ('unknown' when none), so the
+  /// sensor only publishes on change; the nudge timer batches the lifecycle
+  /// flurries around an app launch into one read.
+  String _lastForeground = '';
+  Timer? _foregroundNudge;
   int? _lastRamFreeMb;
   int? _lastRamTotalMb;
   List<Map<String, Object?>> _cameraViews = const [];
@@ -148,6 +157,11 @@ class MqttManager extends Manager {
   @override
   Future<void> init() async {
     _subs.add(bus.on<SettingChanged>().listen(_onSettingChanged));
+    // The Foreground app sensor's fast path: apps opening or the kiosk
+    // returning publish within seconds, the stats poll covers switches
+    // that happen entirely behind other apps.
+    _subs.add(bus.on<AppLaunched>().listen((_) => _nudgeForegroundApp()));
+    if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
     _subs.add(bus.on<ScreenStateChanged>().listen(
         (e) => _publish('$_base/screen/state', e.on ? 'ON' : 'OFF')));
     _subs.add(bus.on<BrightnessChanged>().listen((e) => _publish(
@@ -304,11 +318,48 @@ class MqttManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
+    _foregroundNudge?.cancel();
     for (final s in _subs) {
       await s.cancel();
     }
     _reconnectDebounce?.cancel();
     await _disconnect(clearDiscovery: false);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.resumed) {
+      _nudgeForegroundApp();
+    }
+  }
+
+  /// Re-read the foreground app shortly after something moved (a launch, a
+  /// pause, a return). The delay lets the usage event land first.
+  void _nudgeForegroundApp() {
+    _foregroundNudge?.cancel();
+    _foregroundNudge = Timer(const Duration(seconds: 3), () {
+      unawaited(_publishForegroundApp());
+    });
+  }
+
+  /// Which app is on screen (issue #192): the package name as the state
+  /// (stable, what automations match on), the human label in attributes.
+  /// 'unknown' when nothing can be vouched for (no Usage access grant
+  /// while another app is up).
+  Future<void> _publishForegroundApp() async {
+    if (!_connected) return;
+    final result = await commands.execute('foregroundApp', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map) return;
+    final pkg = data['package'] as String?;
+    final key = pkg ?? 'unknown';
+    if (key == _lastForeground) return;
+    _lastForeground = key;
+    _publish('$_base/foreground_app/state', key);
+    _publish('$_base/foreground_app/attributes',
+        jsonEncode({'label': pkg == null ? null : '${data['label'] ?? pkg}'}));
   }
 
   /// The setting-backed switches: object id → (setting read, apply). The
@@ -1178,6 +1229,10 @@ class MqttManager extends Manager {
     await _publishVolume();
     await _publishUpdateState();
     await _publishCurrentCameraViewState();
+    // Fresh link, fresh answer: the retained state may be from before a
+    // reinstall or a long outage, so republish regardless of the dedupe.
+    _lastForeground = '';
+    await _publishForegroundApp();
     if (_lightSensorPresent) {
       final light = await commands.execute('getLightLevel', const {});
       final lux = light.ok && light.data is Map
@@ -1237,6 +1292,7 @@ class MqttManager extends Manager {
       _viewRefreshTicks = 0;
       unawaited(_refreshDashboardViews());
     }
+    unawaited(_publishForegroundApp());
     final result = await commands.execute('getStats', const {});
     final data = result.data;
     if (!result.ok || data is! Map) return;
@@ -1299,6 +1355,7 @@ class MqttManager extends Manager {
         '$_prefix/sensor/ks_$_deviceId/ram_free/config',
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
+        '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
         '$_prefix/switch/ks_$_deviceId/screensaver_active/config',
         '$_prefix/button/ks_$_deviceId/postpone_screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
@@ -1566,6 +1623,17 @@ class MqttManager extends Manager {
         ...common('admin_url', 'Remote admin'),
         'state_topic': '$_base/admin_url/state',
         'icon': 'mdi:remote-desktop',
+        'entity_category': 'diagnostic',
+      },
+      // Which app is on screen (issue #192), so an automation can notice
+      // the kiosk left behind another app. Naming other apps needs the
+      // Usage access grant; without it the state only moves between
+      // Kiosk Satellite and Unknown.
+      '$_prefix/sensor/ks_$_deviceId/foreground_app/config': {
+        ...common('foreground_app', 'Foreground app'),
+        'state_topic': '$_base/foreground_app/state',
+        'json_attributes_topic': '$_base/foreground_app/attributes',
+        'icon': 'mdi:application-outline',
         'entity_category': 'diagnostic',
       },
       '$_prefix/sensor/ks_$_deviceId/active_camera_view/config': {

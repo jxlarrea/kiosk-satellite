@@ -64,6 +64,12 @@
          system settings" screen, never a runtime prompt. -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions"/>
+    <!-- Which app is on screen, for the MQTT "Foreground app" sensor
+         (issue #192). Granted via the special "Usage access" screen, never
+         a runtime prompt; without it the sensor only knows when Kiosk
+         Satellite itself is in the foreground. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions"/>
     <application
         android:label="Kiosk Satellite"
         android:name=".KioskApplication"
