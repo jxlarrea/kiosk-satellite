@@ -88,7 +88,16 @@ class AssistPipelineManager extends Manager {
   // pushMicPcm math, ported so the bar renders identically).
   double _lp180 = 0;
   double _lp3400 = 0;
-  int _lastLevelMs = 0;
+
+  // Level batching: the benchmark showed the bridge's cost is the CALL
+  // count, not the payload, so per-chunk level events were as expensive as
+  // the audio chunks they replaced. Levels accumulate with offsets and
+  // flush as one event every few chunks; the page replays them locally, so
+  // the bar still moves at chunk cadence for one batch window of latency.
+  final List<Map<String, Object?>> _levelBatch = [];
+  int _levelBatchStartMs = 0;
+  static const _levelBatchMax = 3;
+  static const _levelBatchWindowMs = 240;
 
   bool get _enabled =>
       _settings.get(defs.vsNativePipeline) &&
@@ -249,11 +258,8 @@ class AssistPipelineManager extends Manager {
   void _onChunk(Uint8List pcm, bool preRoll) {
     // Page parity (audio/index.js kiosk branch): muted chunks are dropped
     // on the floor — buffering them would put the wake chime into the STT
-    // recording — and the bar is zeroed so it cannot hold a stale level.
-    if (_muted) {
-      _publishLevel(0);
-      return;
-    }
+    // recording. The bar was already zeroed when the mute command landed.
+    if (_muted) return;
     if (_sending || _buffering) _buffer.add(pcm);
     // Pre-roll is past audio: the pipeline wants it, the bar must not
     // render it (it would trail live speech by the pre-roll's length).
@@ -269,6 +275,7 @@ class AssistPipelineManager extends Manager {
     _buffering = false;
     _stopPump();
     _buffer.clear();
+    _levelBatch.clear();
     _lp180 = 0;
     _lp3400 = 0;
   }
@@ -333,12 +340,27 @@ class AssistPipelineManager extends Manager {
   }
 
   void _publishLevel(double level, {bool force = false}) {
-    // Mic chunks arrive every ~60-80 ms; the bar holds the last value, so
-    // anything faster than ~15/s is wasted evaluateJavascript traffic.
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (!force && now - _lastLevelMs < 60) return;
-    _lastLevelMs = now;
-    bus.publish(PipelineMicLevel(level: level));
+    if (force) {
+      // Immediate, batch discarded: a mute must zero the bar NOW, not a
+      // batch window from now with stale levels replaying after it.
+      _levelBatch.clear();
+      bus.publish(PipelineMicLevel(level: level));
+      return;
+    }
+    // A batch left over from a stream that stopped mid-window would replay
+    // old audio's shape at the front of the next turn; start clean instead.
+    if (_levelBatch.isNotEmpty &&
+        now - _levelBatchStartMs > _levelBatchWindowMs * 4) {
+      _levelBatch.clear();
+    }
+    if (_levelBatch.isEmpty) _levelBatchStartMs = now;
+    _levelBatch.add({'o': now - _levelBatchStartMs, 'v': level});
+    if (_levelBatch.length >= _levelBatchMax ||
+        now - _levelBatchStartMs >= _levelBatchWindowMs) {
+      bus.publish(PipelineMicLevel(level: level, levels: List.of(_levelBatch)));
+      _levelBatch.clear();
+    }
   }
 
   // ── Run lifecycle ────────────────────────────────────────────────────

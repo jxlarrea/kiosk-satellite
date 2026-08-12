@@ -114,8 +114,22 @@ void main() {
     await _until(() => server.binaryFrames.isNotEmpty);
     expect(server.binaryFrames.first[0], 7);
     expect(server.binaryFrames.first.sublist(1), chunk);
+
+    // Levels arrive batched: three chunks in quick succession flush as ONE
+    // event carrying all three with offsets, not three bridge calls.
+    levels.clear();
+    mic.feed(loudChunk());
+    mic.feed(loudChunk());
+    mic.feed(loudChunk());
     await _until(() => levels.isNotEmpty);
-    expect(levels.last.level, greaterThan(0));
+    expect(levels.length, 1);
+    expect(levels.single.levels.length, greaterThanOrEqualTo(3));
+    expect((levels.single.levels.first['o'] as num).toInt(), 0);
+    expect(levels.single.level, greaterThan(0));
+
+    // Those three chunks were live while sending, so they upload too; let
+    // the pump drain them before the muted-window check counts frames.
+    await _until(() => server.binaryFrames.length >= 4);
 
     // Muted: dropped on arrival, never buffered, level zeroed.
     server.binaryFrames.clear();

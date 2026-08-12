@@ -172,7 +172,7 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:sound-ended` | `{id, error?}` | A `playSound` sound finished, failed (`error` says how), or was stopped. Exactly one per sound. |
 | `kiosksatellite:pipeline` | `{runId, message}` | One event from a delegated run's subscription, verbatim (the synthetic `init`, `run-start`, STT partials, `intent-progress` deltas, `tts-end`, errors). |
 | `kiosksatellite:pipeline-closed` | `{runId, reason}` | The delegated run's transport died mid-run (the app's websocket closed). Subscriptions cannot be resumed: restart the turn, as the page's own reconnect recovery would. |
-| `kiosksatellite:pipeline-level` | `{level}` | Per-chunk speech-weighted mic level (~15/s) during a delegated turn, for the reactive bar. Same band-split math the page applies to raw chunks, so the bar renders identically. |
+| `kiosksatellite:pipeline-level` | `{level, levels?}` | Speech-weighted mic levels during a delegated turn, for the reactive bar. Batched (~4/s): `levels` is `[{o, v}]` with `o` the ms offset from the batch's first entry, replayed locally by the page so the bar moves at chunk cadence one batch window behind live audio. A bare `{level}` is immediate (the zero a mute forces). Same band-split math the page applies to raw chunks, so the bar renders identically. |
 
 ```js
 window.addEventListener('kiosksatellite:wakeword', (e) => {

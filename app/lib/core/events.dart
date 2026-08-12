@@ -317,15 +317,20 @@ class PipelineClosed extends AppEvent {
   Map<String, Object?> toJson() => {'runId': runId, 'reason': reason};
 }
 
-/// Per-chunk speech-weighted mic level during a delegated turn (~15/s).
-/// The page's reactive bar animates to audio it never receives. Internal-
-/// only; dispatched explicitly as `kiosksatellite:pipeline-level`.
+/// Speech-weighted mic levels during a delegated turn, batched (~4/s).
+/// The page's reactive bar animates to audio it never receives. [levels]
+/// carries per-chunk entries as {o: ms offset from the first, v: level};
+/// the page replays them locally so the bar still moves at chunk cadence
+/// while the bridge is called a third as often. [level] is the newest
+/// value, for zero-forcing and older consumers. Internal-only; dispatched
+/// explicitly as `kiosksatellite:pipeline-level`.
 class PipelineMicLevel extends AppEvent {
-  const PipelineMicLevel({required this.level});
+  const PipelineMicLevel({required this.level, this.levels = const []});
   final double level;
+  final List<Map<String, Object?>> levels;
 
   @override
-  Map<String, Object?> toJson() => {'level': level};
+  Map<String, Object?> toJson() => {'level': level, 'levels': levels};
 }
 
 /// The stop word fired during an interruptible state (TTS, media, a ringing
