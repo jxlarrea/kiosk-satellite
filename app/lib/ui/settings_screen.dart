@@ -16,6 +16,7 @@ import '../core/events.dart';
 import '../core/logging.dart';
 import '../managers/camera/models.dart' show CameraViewConfig;
 import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
+import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart';
 import '../managers/settings/export_filename.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -2565,6 +2566,246 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// The screensaver Widgets editor (mirrored in the remote UI): one row per
+/// widget — its type and corner — plus an add button. A widget's own
+/// settings live in a dialog, so every type can carry different ones.
+class _WidgetsEditor extends StatefulWidget {
+  const _WidgetsEditor({required this.container, required this.onChanged});
+
+  final AppContainer container;
+  final VoidCallback onChanged;
+
+  @override
+  State<_WidgetsEditor> createState() => _WidgetsEditorState();
+}
+
+class _WidgetsEditorState extends State<_WidgetsEditor> {
+  List<ScreensaverWidget> _widgets() => decodeScreensaverWidgets(
+    widget.container.settings.get(screensaverWidgets),
+  );
+
+  Future<void> _save(List<ScreensaverWidget> widgets) async {
+    await widget.container.settings.setFromJson(
+      screensaverWidgets.key,
+      encodeScreensaverWidgets(widgets),
+    );
+    if (mounted) setState(() {});
+    widget.onChanged();
+  }
+
+  IconData _icon(String type) => switch (type) {
+    'clock' => Icons.access_time,
+    _ => Icons.widgets_outlined,
+  };
+
+  /// The per-type footnote under the dialog's pickers: where the widget
+  /// deliberately stays off, so nobody hunts for a hidden clock.
+  String? _modeNote(String type) => switch (type) {
+    'clock' => 'Stays off the Clock and WebRTC Camera modes.',
+    _ => null,
+  };
+
+  Future<void> _edit(
+    BuildContext context,
+    ScreensaverWidget? existing,
+  ) async {
+    final others = [
+      for (final w in _widgets())
+        if (w.position != existing?.position) w,
+    ];
+    // Only unclaimed corners are offered: one widget per corner.
+    final free = [
+      for (final corner in cornerOptions)
+        if (!others.any((w) => w.position == corner)) corner,
+    ];
+    var position = existing?.position ?? free.first;
+    var type = existing?.type ?? screensaverWidgetTypes.first;
+    // Defaults first, so entries saved before a type grew a key still edit
+    // cleanly.
+    var config = <String, Object?>{
+      ...screensaverWidgetDefaults(type),
+      ...?existing?.config,
+    };
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final note = _modeNote(type);
+          final colorParts = '${config['color'] ?? ''}'
+              .split(',')
+              .map((p) => int.tryParse(p.trim()))
+              .toList();
+          final swatch =
+              (colorParts.length == 3 && colorParts.every((p) => p != null))
+              ? Color.fromARGB(
+                  255,
+                  colorParts[0]!,
+                  colorParts[1]!,
+                  colorParts[2]!,
+                )
+              : const Color(0xFFFAFAFA);
+          return AlertDialog(
+            title: Text(existing == null ? 'Add widget' : 'Edit widget'),
+            content: SizedBox(
+              width: 480,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 12,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: position,
+                      decoration: const InputDecoration(labelText: 'Corner'),
+                      items: [
+                        for (final corner in free)
+                          DropdownMenuItem(
+                            value: corner,
+                            child: Text(cornerLabels[corner] ?? corner),
+                          ),
+                      ],
+                      onChanged: (value) =>
+                          setDialogState(() => position = value ?? position),
+                    ),
+                    DropdownButtonFormField<String>(
+                      initialValue: type,
+                      decoration: const InputDecoration(labelText: 'Widget'),
+                      items: [
+                        for (final t in screensaverWidgetTypes)
+                          DropdownMenuItem(
+                            value: t,
+                            child: Text(describeScreensaverWidgetType(t)),
+                          ),
+                      ],
+                      onChanged: (value) => setDialogState(() {
+                        if (value == null || value == type) return;
+                        type = value;
+                        // A different widget, different settings: start it
+                        // from its own defaults.
+                        config = {...screensaverWidgetDefaults(type)};
+                      }),
+                    ),
+                    if (note != null)
+                      Text(
+                        note,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (type == 'clock') ...[
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Color'),
+                        trailing: GestureDetector(
+                          onTap: () async {
+                            final picked = await pickColor(
+                              context,
+                              initial: '${config['color'] ?? ''}',
+                              title: 'Color',
+                            );
+                            if (picked != null) {
+                              setDialogState(() => config['color'] = picked);
+                            }
+                          },
+                          child: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: swatch,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('24-hour clock'),
+                        value: config['h24'] == true,
+                        onChanged: (v) =>
+                            setDialogState(() => config['h24'] = v),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Show date'),
+                        value: config['date'] == true,
+                        onChanged: (v) =>
+                            setDialogState(() => config['date'] = v),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(existing == null ? 'Add' : 'Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (submitted != true) return;
+    await _save([
+      // The corner dropdown only offers free corners, but drop any claimant
+      // anyway so a stale dialog cannot double-book one.
+      for (final w in others)
+        if (w.position != position) w,
+      ScreensaverWidget(position: position, type: type, config: config),
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final widgets = _widgets();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widgets.isEmpty)
+          ListTile(
+            title: const Text('No widgets yet'),
+            subtitle: Text(screensaverWidgets.description),
+          ),
+        for (final w in widgets)
+          ListTile(
+            leading: Icon(_icon(w.type)),
+            title: Text(describeScreensaverWidgetType(w.type)),
+            subtitle: Text(cornerLabels[w.position] ?? w.position),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Remove widget',
+              onPressed: () =>
+                  _save([...widgets]..removeWhere(
+                      (x) => x.position == w.position,
+                    )),
+            ),
+            onTap: () => _edit(context, w),
+          ),
+        // Every corner taken means nothing left to add.
+        if (widgets.length < cornerOptions.length)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 4),
+              child: TextButton.icon(
+                onPressed: () => _edit(context, null),
+                icon: const Icon(Icons.add),
+                label: const Text('Add widget'),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -5285,6 +5526,11 @@ class SettingTile extends StatelessWidget {
         // edited in place rather than typed as JSON.
         if (def.key == screensaverSchedule.key) {
           return _ScheduleEditor(container: c, onChanged: onChanged);
+        }
+        // The screensaver widgets: one summary row per corner overlay,
+        // configured in a dialog rather than typed as JSON.
+        if (def.key == screensaverWidgets.key) {
+          return _WidgetsEditor(container: c, onChanged: onChanged);
         }
         // A time of day is picked from a clock, not typed.
         if (def.key == themeDarkAt.key || def.key == themeLightAt.key) {

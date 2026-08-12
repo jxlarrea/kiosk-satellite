@@ -1012,6 +1012,9 @@ const SEARCH_EXTRAS = [
     heading: 'Required system permissions' },
   { tab: 'screenaudio', title: 'Master volume',
     desc: 'The device volume the media and assistant faders scale under.' },
+  { tab: 'screensaver', title: 'Small clock',
+    desc: 'A clock widget in a corner of the screensaver.',
+    key: 'screensaver.widgets' },
   { tab: 'device', title: 'Permissions Manager',
     desc: 'Every Android grant the app can use, with its status: microphone, camera, notifications, unrestricted battery, display over other apps, modify system settings, system UI guard, device admin and location.',
     heading: 'Permissions Manager' },
@@ -6305,6 +6308,144 @@ function settingRow(s) {
         mode: (modeDef && modeDef.value) || 'clock',
         brightness: (level && typeof level.value === 'number') ? level.value : 0.2,
       });
+      persist();
+    });
+    return frag;
+  }
+
+  // The screensaver widgets (small corner overlays), mirroring the device's
+  // editor: one row per widget - its type, corner, and the type's own
+  // settings - plus an add button. One widget per corner. The type and
+  // corner labels are kept word-for-word with screensaver_widgets.dart.
+  if (s.key === 'screensaver.widgets') {
+    let entries = [];
+    try { entries = JSON.parse(s.value || '[]') || []; } catch (_) { entries = []; }
+    const CORNERS = [['top_left', 'Top left'], ['top_right', 'Top right'],
+      ['bottom_left', 'Bottom left'], ['bottom_right', 'Bottom right']];
+    const TYPES = [['clock', 'Small clock']];
+    const DEFAULTS = { clock: { color: '250,250,250', h24: false, date: false } };
+    const order = CORNERS.map(([v]) => v);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Add widget';
+    btn.style.cssText = 'flex-shrink:0;';
+    row.appendChild(btn);
+
+    // Real siblings, not a wrapper: the card's dividers are drawn between
+    // adjacent .row elements (see the schedule editor above).
+    const frag = document.createDocumentFragment();
+    frag.appendChild(row);
+    let entryRows = [];
+
+    const persist = async () => {
+      entries.sort((a, b) => order.indexOf(a.position) - order.indexOf(b.position));
+      const json = JSON.stringify(entries);
+      const cached = (state.settings || []).find((o) => o.key === s.key);
+      if (cached) cached.value = json;
+      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+        'screensaver.widgets': json,
+      }) });
+      repaint();
+    };
+
+    const entryRow = (e, i) => {
+      const r = document.createElement('div');
+      r.className = 'row';
+      r.style.gap = '10px';
+      e.config = e.config || { ...(DEFAULTS[e.type] || {}) };
+      const type = document.createElement('select');
+      type.style.cssText = 'flex:1 1 25%; min-width:110px;';
+      TYPES.forEach(([v, text]) => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = text;
+        type.appendChild(o);
+      });
+      type.value = TYPES.some(([v]) => v === e.type) ? e.type : 'clock';
+      type.addEventListener('change', () => {
+        e.type = type.value;
+        // A different widget, different settings: start from its defaults.
+        e.config = { ...(DEFAULTS[e.type] || {}) };
+        persist();
+      });
+      const corner = document.createElement('select');
+      corner.style.cssText = 'flex:0 1 auto; min-width:110px;';
+      CORNERS.forEach(([v, text]) => {
+        // Only unclaimed corners are offered: one widget per corner.
+        if (v !== e.position && entries.some((o) => o !== e && o.position === v)) return;
+        const o = document.createElement('option');
+        o.value = v; o.textContent = text;
+        corner.appendChild(o);
+      });
+      corner.value = e.position;
+      corner.addEventListener('change', () => { e.position = corner.value; persist(); });
+      r.appendChild(type); r.appendChild(corner);
+      if (type.value === 'clock') {
+        const [cr, cg, cb] = String(e.config.color || '250,250,250').split(',').map((n) => +n || 0);
+        const color = document.createElement('input');
+        color.type = 'color';
+        color.value = '#' + [cr, cg, cb].map((n) => n.toString(16).padStart(2, '0')).join('');
+        color.style.cssText = 'width:44px; height:32px; padding:2px; background:var(--surface-2);'
+          + 'border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; flex-shrink:0';
+        color.title = 'Color';
+        color.addEventListener('change', () => {
+          const h = color.value; // #rrggbb
+          e.config.color = [1, 3, 5].map((x) => parseInt(h.slice(x, x + 2), 16)).join(',');
+          persist();
+        });
+        const fmt = document.createElement('select');
+        fmt.style.cssText = 'flex:0 1 auto; min-width:96px;';
+        [['h12', '12-hour'], ['h24', '24-hour']].forEach(([v, text]) => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = text;
+          fmt.appendChild(o);
+        });
+        fmt.value = e.config.h24 === true ? 'h24' : 'h12';
+        fmt.addEventListener('change', () => { e.config.h24 = fmt.value === 'h24'; persist(); });
+        const date = document.createElement('select');
+        date.style.cssText = 'flex:0 1 auto; min-width:96px;';
+        [['off', 'No date'], ['on', 'Show date']].forEach(([v, text]) => {
+          const o = document.createElement('option');
+          o.value = v; o.textContent = text;
+          date.appendChild(o);
+        });
+        date.value = e.config.date === true ? 'on' : 'off';
+        date.addEventListener('change', () => { e.config.date = date.value === 'on'; persist(); });
+        r.appendChild(color); r.appendChild(fmt); r.appendChild(date);
+      }
+      const del = document.createElement('button');
+      del.className = 'btn-ghost';
+      del.textContent = '×';
+      del.style.cssText = 'flex-shrink:0;';
+      del.addEventListener('click', () => { entries.splice(i, 1); persist(); });
+      r.appendChild(del);
+      return r;
+    };
+
+    const repaint = () => {
+      // Every corner taken means nothing left to add.
+      btn.disabled = entries.length >= CORNERS.length;
+      const parent = row.parentNode;
+      const fresh = entries.map(entryRow);
+      if (!parent) {
+        entryRows.forEach((el) => el.remove());
+        fresh.forEach((el) => frag.appendChild(el));
+      } else {
+        entryRows.forEach((el) => el.remove());
+        let after = row;
+        fresh.forEach((el) => {
+          after.insertAdjacentElement('afterend', el);
+          after = el;
+        });
+      }
+      entryRows = fresh;
+    };
+    repaint();
+
+    btn.addEventListener('click', () => {
+      const free = order.find((v) => !entries.some((e) => e.position === v));
+      if (!free) return;
+      entries.push({ position: free, type: 'clock', config: { ...DEFAULTS.clock } });
       persist();
     });
     return frag;

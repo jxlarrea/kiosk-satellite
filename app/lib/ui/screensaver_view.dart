@@ -15,6 +15,7 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/locale_dates.dart';
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
+import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'clock_faces.dart';
@@ -104,14 +105,22 @@ class ScreensaverOverlay extends StatelessWidget {
                         : const ColoredBox(color: Colors.black),
                   ),
                 },
-                // The small corner clock rides over every mode except Clock,
-                // which is a clock already, and the camera grid, where a
-                // clock sitting over a live camera is in the way.
-                if (view != 'clock' &&
-                    view != 'camera' &&
-                    !blackBare &&
-                    container.settings.get(defs.screensaverMiniClock))
-                  MiniClockOverlay(container: container),
+                // The corner widgets ride over every mode their type
+                // allows (the small clock stays off Clock, which is one
+                // already, and the camera grid, where it sits over a live
+                // feed).
+                if (!blackBare)
+                  for (final spec in decodeScreensaverWidgets(
+                    container.settings.get(defs.screensaverWidgets),
+                  ))
+                    if (screensaverWidgetAllowedOnMode(spec.type, view))
+                      switch (spec.type) {
+                        'clock' => ClockWidgetOverlay(
+                          container: container,
+                          spec: spec,
+                        ),
+                        _ => const SizedBox.shrink(),
+                      },
               ],
             ),
           ),
@@ -580,21 +589,26 @@ Widget _cornerVignette(Alignment corner, {double radius = 0.7}) =>
       child: const SizedBox.expand(),
     );
 
-/// The small corner clock, shown over every screensaver mode except Clock.
+/// The small clock widget, shown over every screensaver mode except Clock.
 /// Minute-aligned ticks (it shows no seconds), a soft shadow so it reads on
 /// photos and video alike, and — with pixel shift on — the same slow nudge
 /// the big clock does, since a static bright corner is exactly how OLED
 /// burn-in starts.
-class MiniClockOverlay extends StatefulWidget {
-  const MiniClockOverlay({super.key, required this.container});
+class ClockWidgetOverlay extends StatefulWidget {
+  const ClockWidgetOverlay({
+    super.key,
+    required this.container,
+    required this.spec,
+  });
 
   final AppContainer container;
+  final ScreensaverWidget spec;
 
   @override
-  State<MiniClockOverlay> createState() => _MiniClockOverlayState();
+  State<ClockWidgetOverlay> createState() => _ClockWidgetOverlayState();
 }
 
-class _MiniClockOverlayState extends State<MiniClockOverlay> {
+class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
   Timer? _tick;
   DateTime _now = DateTime.now();
   Offset _offset = Offset.zero;
@@ -636,7 +650,7 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
   }
 
   Color _color() {
-    final raw = widget.container.settings.get(defs.screensaverMiniClockColor);
+    final raw = '${widget.spec.config['color'] ?? ''}';
     final parts = raw.split(',').map((p) => int.tryParse(p.trim())).toList();
     if (parts.length == 3 && parts.every((p) => p != null)) {
       return Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!);
@@ -645,7 +659,7 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
   }
 
   String _time() {
-    final h24 = widget.container.settings.get(defs.screensaverMiniClock24h);
+    final h24 = widget.spec.config['h24'] == true;
     final h = h24 ? _now.hour : (_now.hour % 12 == 0 ? 12 : _now.hour % 12);
     final hh = h24 ? h.toString().padLeft(2, '0') : h.toString();
     final mm = _now.minute.toString().padLeft(2, '0');
@@ -660,8 +674,7 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final s = widget.container.settings;
-    final corner = _cornerAlignment(s.get(defs.screensaverMiniClockPosition));
+    final corner = _cornerAlignment(widget.spec.position);
     final color = _color();
     final size = MediaQuery.of(context).size;
     // Proportional to the panel, but floored: on a small low-density screen
@@ -703,7 +716,7 @@ class _MiniClockOverlayState extends State<MiniClockOverlay> {
                         shadows: shadows,
                       ),
                     ),
-                    if (s.get(defs.screensaverMiniClockDate))
+                    if (widget.spec.config['date'] == true)
                       Padding(
                         padding: EdgeInsets.only(top: clockSize * 0.05),
                         child: Text(

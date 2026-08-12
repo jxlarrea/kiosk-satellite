@@ -8,6 +8,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'screensaver_widgets.dart';
 
 /// "HH:MM" as minutes since midnight, or null when malformed.
 int? scheduleMinutes(String hhmm) {
@@ -132,6 +133,7 @@ class ScreensaverManager extends Manager {
   @override
   Future<void> init() async {
     await _migrateMiniClock24h();
+    await _migrateMiniClockWidget();
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
     // Stand down while a page interaction runs (voice turn, ringing timer
     // alert, media playback), whichever API the page signalled it through:
@@ -238,6 +240,17 @@ class ScreensaverManager extends Manager {
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key.startsWith('screensaver.')) _resetIdleTimer();
+      // An old backup import re-arms the legacy small clock switch; its
+      // sub-keys land in the same batch, so fold them into a widget only
+      // after the batch has settled (the importing flag holds for 1s).
+      if (e.key == defs.screensaverMiniClock.key && e.value == true) {
+        unawaited(
+          Future<void>.delayed(
+            const Duration(seconds: 2),
+            _migrateMiniClockWidget,
+          ),
+        );
+      }
       // Disabling the master toggle takes a running screensaver down with
       // it. On the device this never shows (opening settings already
       // dismisses it), but over MQTT or the remote admin nothing else
@@ -636,6 +649,36 @@ class ScreensaverManager extends Manager {
       log.info(name, 'small clock keeps its 24-hour format');
     }
     await _settings.setInternal('screensaver.mini_clock_24h.migrated', '1');
+  }
+
+  /// Fold an enabled legacy small clock into a Widgets entry. Value-driven
+  /// rather than marker-driven: migrating turns the old switch off, so it
+  /// naturally runs once — and runs again when an old backup import turns
+  /// it back on.
+  Future<void> _migrateMiniClockWidget() async {
+    if (!_settings.get(defs.screensaverMiniClock)) return;
+    final position = _settings.get(defs.screensaverMiniClockPosition);
+    final entry = ScreensaverWidget(
+      position: position,
+      type: 'clock',
+      config: {
+        'color': _settings.get(defs.screensaverMiniClockColor),
+        'h24': _settings.get(defs.screensaverMiniClock24h),
+        'date': _settings.get(defs.screensaverMiniClockDate),
+      },
+    );
+    final others = [
+      for (final w in decodeScreensaverWidgets(
+        _settings.get(defs.screensaverWidgets),
+      ))
+        if (w.position != position && w.type != 'clock') w,
+    ];
+    await _settings.set(
+      defs.screensaverWidgets,
+      encodeScreensaverWidgets([...others, entry]),
+    );
+    await _settings.set(defs.screensaverMiniClock, false);
+    log.info(name, 'small clock migrated to a $position widget');
   }
 
   @override

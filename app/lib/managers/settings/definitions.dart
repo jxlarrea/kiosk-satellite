@@ -940,17 +940,38 @@ const screensaverTimeoutSeconds = SettingDef<num>(
   category: 'Screensaver',
 );
 
-// The four corners an overlay can sit in, shared by the small clock and the
-// Immich metadata panel — one vocabulary, and their dropdowns stay in step.
-const _cornerOptions = ['top_left', 'top_right', 'bottom_left', 'bottom_right'];
-const _cornerLabels = {
+// The four corners an overlay can sit in, shared by the screensaver widgets
+// and the Immich metadata panel — one vocabulary, and their dropdowns stay
+// in step.
+const cornerOptions = ['top_left', 'top_right', 'bottom_left', 'bottom_right'];
+const cornerLabels = {
   'top_left': 'Top left',
   'top_right': 'Top right',
   'bottom_left': 'Bottom left',
   'bottom_right': 'Bottom right',
 };
 
-// ── Small clock (every mode except Clock, which is one already) ──
+// ── Widgets (small corner overlays, over every mode their type allows) ──
+//
+// One JSON list drives the whole group; both UIs edit it in place (see
+// screensaver_widgets.dart for the shape). Replaces the mini clock settings
+// below, which migrate into a clock entry on startup.
+
+const screensaverWidgets = SettingDef<String>(
+  key: 'screensaver.widgets',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Widgets',
+  description: 'Small overlays in the corners of the screensaver.',
+  category: 'Screensaver',
+  section: 'Widgets',
+);
+
+// ── Small clock (legacy; now a Widgets entry) ──
+//
+// Hidden since the Widgets group replaced these rows: they stay registered
+// so old backups still import, and the screensaver manager folds an enabled
+// small clock into a clock widget on startup and after an import.
 
 const screensaverMiniClock = SettingDef<bool>(
   key: 'screensaver.mini_clock',
@@ -961,6 +982,7 @@ const screensaverMiniClock = SettingDef<bool>(
       'Show a small clock in a corner of the screensaver. Not for the '
       'Clock and WebRTC Camera modes.',
   category: 'Screensaver',
+  hidden: true,
 );
 
 const screensaverMiniClockPosition = SettingDef<String>(
@@ -970,9 +992,10 @@ const screensaverMiniClockPosition = SettingDef<String>(
   title: 'Clock position',
   description: 'Which corner the clock sits in.',
   category: 'Screensaver',
-  options: _cornerOptions,
-  optionLabels: _cornerLabels,
+  options: cornerOptions,
+  optionLabels: cornerLabels,
   dependsOn: 'screensaver.mini_clock',
+  hidden: true,
 );
 
 const screensaverMiniClockColor = SettingDef<String>(
@@ -984,12 +1007,9 @@ const screensaverMiniClockColor = SettingDef<String>(
   description: 'The color of the clock text.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mini_clock',
+  hidden: true,
 );
 
-// Its own switch, not the Clock mode's (issue #116): the mini clock used
-// to read screensaver.clock_24h, whose settings row only shows while the
-// mode is Clock — on every other mode the format was steered by a setting
-// the person could not see.
 const screensaverMiniClock24h = SettingDef<bool>(
   key: 'screensaver.mini_clock_24h',
   type: SettingType.boolean,
@@ -998,6 +1018,7 @@ const screensaverMiniClock24h = SettingDef<bool>(
   description: 'Show a 24-hour time instead of AM/PM.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mini_clock',
+  hidden: true,
 );
 
 const screensaverMiniClockDate = SettingDef<bool>(
@@ -1008,6 +1029,7 @@ const screensaverMiniClockDate = SettingDef<bool>(
   description: 'Add a short date under the clock.',
   category: 'Screensaver',
   dependsOn: 'screensaver.mini_clock',
+  hidden: true,
 );
 
 const screensaverMode = SettingDef<String>(
@@ -1699,8 +1721,8 @@ const screensaverImmichMetadataPosition = SettingDef<String>(
   title: 'Metadata position',
   description: 'Which corner the details sit in.',
   category: 'Screensaver',
-  options: _cornerOptions,
-  optionLabels: _cornerLabels,
+  options: cornerOptions,
+  optionLabels: cornerLabels,
   section: 'Immich Media',
   dependsOn: 'screensaver.immich_metadata',
 );
@@ -3232,7 +3254,8 @@ const List<SettingDef<Object>> allSettings = [
   screensaverScreenOffMinutes,
   // Pixel shift sits with the general controls: it applies to every mode.
   screensaverPixelShift,
-  // The small clock too — it overlays every mode except Clock itself.
+  // The legacy small clock rows, hidden since the Widgets group took over;
+  // registered so old backups still import (then migrate on startup).
   screensaverMiniClock,
   screensaverMiniClockPosition,
   screensaverMiniClockColor,
@@ -3291,6 +3314,9 @@ const List<SettingDef<Object>> allSettings = [
   screensaverWebsiteUrl,
   screensaverCameraView,
   screensaverCameraViewName,
+  // The Widgets group: corner overlays riding over the mode panels above,
+  // so it sits between them and the other overlay group, At a Glance.
+  screensaverWidgets,
   screensaverGlanceEnabled,
   screensaverGlanceEntities,
   screensaverDismissOnMotion,

@@ -108,6 +108,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
         'under.',
     anchorId: 'x:master_volume',
   ),
+  // The small clock is a Widgets entry now, but "clock" is still what
+  // people search for.
+  SettingsSearchEntry(
+    category: 'Screensaver',
+    title: 'Small clock',
+    description: 'A clock widget in a corner of the screensaver.',
+    defKey: 'screensaver.widgets',
+  ),
   SettingsSearchEntry(
     category: 'Device',
     title: 'Permissions Manager',

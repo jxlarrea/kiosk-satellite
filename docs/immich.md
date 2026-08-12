@@ -73,11 +73,11 @@ never cached, they stream from the server each time.
 
 ## Small clock
 
-The screensaver's **Small clock** option (above the screensaver mode
-setting) pairs well with this one: a corner
+The screensaver's **Small clock** widget (added from the Widgets group
+under the mode's settings) pairs well with this one: a corner
 clock and date over the photos, with a soft vignette behind it so it
 stays readable on bright pictures. The metadata overlay defaults to the
-opposite corner, so both can be on at once.
+bottom left, so the usual top-right clock and it can be on at once.
 
 ## Troubleshooting
 

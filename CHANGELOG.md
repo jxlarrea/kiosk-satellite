@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- The Screensaver settings gain a Widgets group: small corner overlays added by picking a corner and a widget type, each widget carrying its own settings. The small clock is the first type (color, 24-hour format, date, one widget per corner, up to four), an already configured small clock migrates into a clock widget automatically with its corner and settings intact, and the group is edited the same way in the on-device settings and the remote admin. More widget types, starting with weather, can now slot in.
+
 ## v2026.8.30 - 2026-08-12
 
 ### Fixed

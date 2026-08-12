@@ -23,8 +23,10 @@ Settings, then **Screensaver** (the same tab exists in the remote admin):
 | Brightness level | 20% | Applies to every mode except Dim and Black. |
 | Turn screen off after | 0 (never) | Truly power the panel off once the screensaver has run this long. See below. |
 | Pixel shift | off | Nudge the image every minute to protect OLED panels. Not for Black, whose pixels are already off. |
-| Small clock | off | A corner clock over the photo and website modes. See below. |
 | Screensaver mode | Black | What the screensaver shows. Only the selected mode's settings appear below the picker. |
+
+Below the mode's own settings sits the **Widgets** group, small corner
+overlays that ride over the modes. See [Widgets](#widgets).
 
 ## The modes
 
@@ -39,7 +41,7 @@ next to the slider.
 ### Black
 
 A fully dark panel that still answers. **Hide all extras** keeps it
-truly black: no small clock, no At a Glance row, no overlays of any
+truly black: no widgets, no At a Glance row, no overlays of any
 kind, and the At a Glance connection is not even opened.
 
 ### Clock
@@ -131,21 +133,30 @@ machinery:
 - Photos are decoded at panel resolution and shown slides are released,
   so a folder of huge originals does not exhaust a low-RAM tablet.
 
-## The small clock
+## Widgets
 
-A corner clock over any mode except Clock (already a clock), WebRTC
-Camera (kept clear), and Black with Hide all extras:
+Small overlays in the corners of the screensaver, added from the
+**Widgets** group under the mode's settings. Each widget takes one of
+the four corners (one widget per corner) and carries its own settings,
+picked when adding or editing it. Widgets ride over every mode their
+type allows, but never over Black with Hide all extras.
+
+### Small clock
+
+A corner clock over any mode except Clock (already a clock) and WebRTC
+Camera (kept clear so nothing sits over the video):
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Small clock | off | |
-| Clock position | Top right | Which corner. The Immich metadata overlay defaults to the opposite one. |
-| Clock color | white | |
+| Corner | first free corner | The Immich metadata overlay defaults to the bottom left, opposite the usual clock corner. |
+| Color | white | |
 | 24-hour clock | off | Its own switch, independent of the Clock mode's. |
 | Show date | off | A short date under the time, in the device language. |
 
 It sits on a soft vignette so it stays readable on bright photos, and it
-honors pixel shift.
+honors pixel shift. A small clock configured before the Widgets group
+existed becomes a clock widget automatically, keeping its corner and
+settings.
 
 ## Brightness
 
