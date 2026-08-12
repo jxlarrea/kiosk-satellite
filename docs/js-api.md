@@ -77,7 +77,7 @@ app; the app downloads what it needs from those URLs.
 
 | Method | Returns | Description |
 |---|---|---|
-| `setWakeWordConfig({engine, models, stopModel, energyGate})` | `{available, stopWordAvailable}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two; VS routes two wake words to separate pipeline slots). Resolves `{available: false}` when the app is not listening for that config (no native runner, but also a refused microphone or models it could not download), and **Voice Satellite must then keep using its browser engine**. Pushing again is also the retry: it clears any previous failure and takes the mic back after a release. |
+| `setWakeWordConfig({engine, models, stopModel, energyGate, nativePipeline})` | `{available, stopWordAvailable}` | Push the satellite's wake config: `engine` is `'microWakeWord' \| 'openWakeWord' \| 'vsWakeWord'`, `models` is `[{id, wakeWord, manifestUrl}]` (up to two; VS routes two wake words to separate pipeline slots). `nativePipeline: true` announces the card knows the delegated pipeline transport, so the app's settings can show whether voice turns run natively; a card that predates it sends nothing. Resolves `{available: false}` when the app is not listening for that config (no native runner, but also a refused microphone or models it could not download), and **Voice Satellite must then keep using its browser engine**. Pushing again is also the retry: it clears any previous failure and takes the mic back after a release. |
 | `setWakeWordActive(active)` | `boolean` | Resume (`true`) or suspend (`false`) native listening. The mic stays open, for an instant resume between turns. **The page must call `setWakeWordActive(true)` when its voice session returns to idle**; see handoff protocol. |
 | `releaseWakeWord({reason})` | `boolean` | Hard mic-off: stop detecting **and close the microphone**, unlike `setWakeWordActive(false)`. For a muted satellite, or the browser taking detection back. `reason` is `'muted' \| 'browser'` and is shown to the user; both look identical from the app's side, so **only Voice Satellite can say which**, and an unexplained release can only be reported as "the microphone was released". `setWakeWordConfig` takes it back. |
 | `getWakeWordState()` | see below | Current engine state |
@@ -102,6 +102,10 @@ disagree about the same device:
   released: true,
   releaseReason: 'muted',
   stopWord: 'Stop',
+  nativePipeline: false,     // voice turns will run their transport natively
+                             // (the card announced it in setWakeWordConfig
+                             // via `nativePipeline: true` and the app can
+                             // take it)
   models: [{ id, wakeWord, manifestUrl, confidenceScale, cutoff }],
 }
 ```
@@ -140,9 +144,13 @@ methods mirror the page's own send/buffer/mute choreography one to one, so
 the chime mute window, cross-tablet dedupe and seamless one-shot buffering
 run unchanged.
 
-All methods fail (resolve `false`) when the "Native voice pipeline" setting
-is off or the app is not configured for Home Assistant; Voice Satellite
-falls back to running the pipeline on the dashboard's own connection.
+The delegation is negotiated transparently, like the wake-word handoff:
+a page that knows these methods uses them, any other keeps the page path,
+and there is nothing to configure. All methods fail (resolve `false`) when
+the app cannot take the turn — not configured for Home Assistant, the
+wake-word engine down, or the hidden `vs.native_pipeline` kill switch
+turned off remotely for field debugging — and Voice Satellite falls back
+to running the pipeline on the dashboard's own connection.
 
 | Method | Returns | Description |
 |---|---|---|

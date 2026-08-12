@@ -4531,6 +4531,19 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
             ),
             trailing: _rowValue(context, config.stopModel!.wakeWord),
           ),
+        ListTile(
+          leading: const Icon(Icons.sync_alt),
+          title: const Text('Native voice pipeline'),
+          subtitle: Text(
+            wake.nativePipelineSupported
+                ? 'Voice audio flows through the app during turns'
+                : 'This Voice Satellite version runs voice audio in the browser',
+          ),
+          trailing: _rowValue(
+            context,
+            wake.nativePipelineSupported ? 'Supported' : 'Not supported',
+          ),
+        ),
         ClearModelCacheTile(container: widget.container),
       ]),
     );

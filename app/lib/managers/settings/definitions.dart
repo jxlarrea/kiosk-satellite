@@ -2298,6 +2298,12 @@ const audioSpeakerDevice = SettingDef<String>(
   hidden: true,
 );
 
+// Hidden: the pipeline delegation is negotiated transparently, exactly like
+// the wake-word handoff — a Voice Satellite that knows the API uses it, any
+// other keeps the page path, and every failure falls back at runtime. No
+// user decision exists, so no row exists. The setting stays as a remote
+// kill switch (/api/settings) so a field problem can isolate the native
+// path without downgrading the app.
 const vsNativePipeline = SettingDef<bool>(
   key: 'vs.native_pipeline',
   type: SettingType.boolean,
@@ -2307,6 +2313,7 @@ const vsNativePipeline = SettingDef<bool>(
       'Voice audio goes straight from the app to Home Assistant, which '
       'keeps speech recognition steady on slow devices.',
   category: 'Voice Satellite',
+  hidden: true,
 );
 
 const vsSuppressScreensaver = SettingDef<bool>(

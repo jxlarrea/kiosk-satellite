@@ -5132,6 +5132,12 @@ async function loadWakeWord() {
       s.stopWordAvailable ? 'Running in Kiosk' : 'Voice Satellite keeps this one in the browser',
       s.stopWord));
   }
+  card.appendChild(readOnlyRow(
+    'Native voice pipeline',
+    s.nativePipeline
+      ? 'Voice audio flows through the app during turns'
+      : 'This Voice Satellite version runs voice audio in the browser',
+    s.nativePipeline ? 'Supported' : 'Not supported'));
 
   // Models are cached by URL, so re-publishing one on Home Assistant under the
   // same name is invisible to this device until the cache is dropped.

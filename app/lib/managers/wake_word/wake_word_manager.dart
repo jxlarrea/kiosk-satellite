@@ -190,6 +190,21 @@ class WakeWordManager extends Manager implements NativeAudioSource {
   /// card pushes it via setWakeWordConfig).
   WakeWordConfig? get config => _config;
 
+  /// The page's Voice Satellite announced it knows the delegated pipeline
+  /// transport (docs/js-api.md, "Pipeline delegation").
+  bool _pagePipelineSupport = false;
+
+  /// Whether voice turns will run their transport natively: the card said
+  /// it knows the delegated pipeline AND this app can take it (Home
+  /// Assistant configured, kill switch on). Rendered as the "Native voice
+  /// pipeline" row by both settings UIs, off [describeState] so the two
+  /// cannot disagree.
+  bool get nativePipelineSupported =>
+      _pagePipelineSupport &&
+      _settings.get(defs.vsNativePipeline) &&
+      _settings.get(defs.haUrl).isNotEmpty &&
+      _settings.get(defs.haToken).isNotEmpty;
+
   /// Whether this app will natively handle wake-word detection for the
   /// pushed config: the user enabled wake word detection in *our* settings
   /// AND we have a native runner for that engine.
@@ -474,6 +489,7 @@ class WakeWordManager extends Manager implements NativeAudioSource {
         'releaseReason': _releaseReason,
         'needsAppSettings': needsAppSettings,
         'stopWord': _config?.stopModel?.wakeWord,
+        'nativePipeline': nativePipelineSupported,
         'models': [
           for (final m in _config?.models ?? const <WakeWordModelRef>[])
             m.toJson(),
@@ -540,6 +556,10 @@ class WakeWordManager extends Manager implements NativeAudioSource {
           _releaseReason = null;
           _failed = false; // and re-earns the right to claim availability
           _config = config;
+          // The card announces whether it knows the delegated pipeline
+          // transport; absent means a build that predates it. Recorded per
+          // push (one per page load), so a downgrade reads honest.
+          _pagePipelineSupport = p['nativePipeline'] == true;
           if (changed && _engine.running) {
             log.info(name, 'config changed; restarting engine');
             await _engine.stop();
