@@ -60,6 +60,7 @@ dependencies:
   typed_data: ^1.4.0
   intl: ^0.20.3
   mobile_scanner: ^7.4.0
+  mqtt5_client: ^5.0.0
 
 dev_dependencies:
   flutter_test:

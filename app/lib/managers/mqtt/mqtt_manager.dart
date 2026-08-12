@@ -5,15 +5,13 @@ import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart' show MethodChannel;
-import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:typed_data/typed_data.dart' show Uint8Buffer;
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'mqtt_link.dart';
 
 /// Ready-made Home Assistant entities over MQTT discovery (issue #11).
 ///
@@ -46,11 +44,31 @@ class MqttManager extends Manager {
   @override
   String get name => 'mqtt';
 
-  MqttServerClient? _client;
+  MqttLink? _link;
   Timer? _pollTimer;
-  StreamSubscription<List<MqttReceivedMessage<MqttMessage>>>? _updatesSub;
+  StreamSubscription<MqttInbound>? _updatesSub;
   Timer? _reconnectDebounce;
   final _subs = <StreamSubscription>[];
+
+  /// The broker answered MQTT 3.1.1 after refusing 5: remember for the rest
+  /// of this run so every reconnect does not pay a doomed 5 attempt first.
+  bool _legacyBroker = false;
+
+  /// Builds the protocol links. Swapped in tests; production always hands
+  /// back the real ones.
+  @visibleForTesting
+  MqttLink Function({required bool legacy}) linkFactory =
+      ({required legacy}) => legacy ? Mqtt311Link() : Mqtt5Link();
+
+  /// The connect flow, for the protocol-ladder tests.
+  @visibleForTesting
+  Future<void> connectForTest() => _connect();
+
+  /// How long the broker sits on the will before marking this device
+  /// offline (MQTT 5 only). Covers the once-a-minute radio naps of issue
+  /// #184 with room to spare; a genuinely dead device is offline within
+  /// the same margin.
+  static const _willDelaySeconds = 90;
 
   /// Retry for a connect that failed outright (broker unreachable). The
   /// package's auto-reconnect only arms once a connection has succeeded,
@@ -191,7 +209,7 @@ class MqttManager extends Manager {
     // A live-but-disconnected client is the package's business — its
     // auto-reconnect already retries every few seconds.
     _subs.add(bus.on<NetworkStateChanged>().listen((e) {
-      if (e.up && _client == null && _retryTimer != null) _retryNow();
+      if (e.up && _link == null && _retryTimer != null) _retryNow();
     }));
     _subs.add(bus.on<AmbientDisplayChanged>().listen(
         (e) => _publishScreenAvailability(ambient: e.on)));
@@ -256,64 +274,32 @@ class MqttManager extends Manager {
     if (_connected) {
       return CommandResult.ok({'connected': true, 'host': host, 'port': port});
     }
-    final probe = MqttServerClient.withPort(
-      host,
-      'kiosksatellite_probe_${DateTime.now().millisecondsSinceEpoch}',
-      port,
-    );
-    probe.secure = _settings.get(defs.mqttTls);
-    probe.autoReconnect = false;
-    probe.keepAlivePeriod = 10;
-    probe.connectTimeoutPeriod = 8000;
-    probe.setProtocolV311();
-    probe.logging(on: false);
-    probe.connectionMessage = MqttConnectMessage().startClean();
     final username = _settings.get(defs.mqttUsername).trim();
     final password = _settings.get(defs.mqttPassword);
-    try {
-      await probe.connect(
-        username.isEmpty ? null : username,
-        password.isEmpty ? null : password,
-      );
-      final state = probe.connectionStatus?.state;
-      if (state != MqttConnectionState.connected) {
-        return CommandResult.fail(
-          _validationError(probe.connectionStatus?.returnCode),
-        );
+    final config = MqttLinkConfig(
+      host: host,
+      port: port,
+      tls: _settings.get(defs.mqttTls),
+      clientId:
+          'kiosksatellite_probe_${DateTime.now().millisecondsSinceEpoch}',
+      username: username.isEmpty ? null : username,
+      password: password.isEmpty ? null : password,
+      keepAliveSeconds: 10,
+      connectTimeoutMs: 8000,
+    );
+    // The same protocol ladder the live connection walks: 5 first, 3.1.1
+    // for brokers that never learned it.
+    MqttLinkError? error;
+    for (final probe in [Mqtt5Link(), Mqtt311Link()]) {
+      error = await probe.connect(config);
+      if (error == null) {
+        probe.disconnect();
+        return CommandResult.ok(
+            {'connected': true, 'host': host, 'port': port});
       }
-      return CommandResult.ok({'connected': true, 'host': host, 'port': port});
-    } catch (e) {
-      log.warn(name, 'validation against $host:$port failed: $e');
-      return CommandResult.fail(_connectException(e, host, port));
-    } finally {
-      probe.disconnect();
     }
-  }
-
-  String _validationError(MqttConnectReturnCode? code) => switch (code) {
-    MqttConnectReturnCode.badUsernameOrPassword =>
-      'The broker rejected the username or password.',
-    MqttConnectReturnCode.notAuthorized =>
-      'The broker refused this client. Check its access control rules.',
-    MqttConnectReturnCode.identifierRejected =>
-      'The broker rejected the client id.',
-    MqttConnectReturnCode.brokerUnavailable => 'The broker is unavailable.',
-    MqttConnectReturnCode.unacceptedProtocolVersion =>
-      'The broker does not accept MQTT 3.1.1.',
-    _ => 'The broker refused the connection.',
-  };
-
-  String _connectException(Object error, String host, int port) {
-    final text = '$error';
-    if (text.contains('SocketException') || text.contains('timed out')) {
-      return 'Could not reach $host:$port.';
-    }
-    if (text.contains('HandshakeException') ||
-        text.contains('CertificateException')) {
-      return 'TLS handshake failed. Check the Use TLS setting and the '
-          "broker's certificate.";
-    }
-    return 'Could not connect to $host:$port.';
+    log.warn(name, 'validation against $host:$port failed: $error');
+    return CommandResult.fail('$error');
   }
 
   @override
@@ -597,8 +583,7 @@ class MqttManager extends Manager {
     });
   }
 
-  bool get _connected =>
-      _client?.connectionStatus?.state == MqttConnectionState.connected;
+  bool get _connected => _link?.connected ?? false;
 
   Future<void> _connect() async {
     // Whatever drove this attempt (init, a settings change, the retry
@@ -624,66 +609,67 @@ class MqttManager extends Manager {
       await _settings.set(defs.mqttDeviceId, _deviceId);
     }
     final port = _settings.get(defs.mqttPort).toInt();
-    final client = MqttServerClient.withPort(
-        host, 'kiosksatellite_$_deviceId', port);
-    client.secure = _settings.get(defs.mqttTls);
-    client.keepAlivePeriod = 30;
-    // Without this the client pings every 30s but never checks for the
-    // answer, so a half-open socket (wifi flap, AP reboot) is only noticed
-    // when a TCP write hard-fails — minutes, sometimes never. With it, a
-    // missed PINGRESP forces a disconnect, which auto-reconnect repairs.
-    // Two ping cycles, not one: with the screen off some Wi-Fi radios
-    // (Lenovo M10 Plus, issue #184) delay traffic past a single 30s
-    // window without the connection being dead at all, and every forced
-    // disconnect fires the will — the device's entities flapped
-    // unavailable in Home Assistant about once a minute, around the
-    // clock. A genuinely dead socket is still caught, one cycle later.
-    client.disconnectOnNoResponsePeriod = 65;
-    client.autoReconnect = true;
-    client.resubscribeOnAutoReconnect = true;
-    client.setProtocolV311();
-    client.logging(on: false);
-    // The will is what makes `availability` honest: the broker flips this
-    // device to offline the moment the connection dies, however it dies.
-    client.connectionMessage = MqttConnectMessage()
-        .withWillTopic(_availabilityTopic)
-        .withWillMessage('offline')
-        .withWillRetain()
-        .withWillQos(MqttQos.atLeastOnce)
-        .startClean();
-    client.onConnected = _onConnected;
-    client.onAutoReconnected = _onConnected;
-    client.onDisconnected =
-        () => log.warn(name, 'disconnected from $host:$port');
-    _client = client;
-
     final username = _settings.get(defs.mqttUsername).trim();
     final password = _settings.get(defs.mqttPassword);
-    try {
-      await client.connect(
-        username.isEmpty ? null : username,
-        password.isEmpty ? null : password,
-      );
-    } catch (e) {
-      log.warn(name, 'connect to $host:$port failed: $e');
-      // disconnect() here is solicited, which the package treats as "the
-      // user hung up" and disarms auto-reconnect — so this path must own
-      // its retry, or an unreachable broker at boot is permanent.
-      client.autoReconnect = false;
-      client.disconnect();
-      _client = null;
-      _scheduleRetry();
-      return;
+    final config = MqttLinkConfig(
+      host: host,
+      port: port,
+      tls: _settings.get(defs.mqttTls),
+      clientId: 'kiosksatellite_$_deviceId',
+      username: username.isEmpty ? null : username,
+      password: password.isEmpty ? null : password,
+      keepAliveSeconds: 30,
+      // Without this the client pings every 30s but never checks for the
+      // answer, so a half-open socket (wifi flap, AP reboot) is only
+      // noticed when a TCP write hard-fails — minutes, sometimes never.
+      // With it, a missed PINGRESP forces a disconnect, which
+      // auto-reconnect repairs. Two ping cycles, not one: with the screen
+      // off some Wi-Fi radios (Lenovo M10 Plus, issue #184) delay traffic
+      // past a single 30s window without the connection being dead at all.
+      noResponseSeconds: 65,
+      autoReconnect: true,
+      // The will is what makes `availability` honest: the broker flips
+      // this device to offline when the connection dies, however it dies —
+      // but only after the delay (MQTT 5), so the reconnect dance of a
+      // napping screen-off radio never shows in Home Assistant at all.
+      willTopic: _availabilityTopic,
+      willPayload: 'offline',
+      willDelaySeconds: _willDelaySeconds,
+    );
+
+    var link = linkFactory(legacy: _legacyBroker);
+    void wire(MqttLink l) {
+      l.onConnected = _onConnected;
+      l.onDisconnected = () => log.warn(name, 'disconnected from $host:$port');
     }
-    if (!_connected) {
-      log.warn(name,
-          'connect to $host:$port refused: ${client.connectionStatus}');
-      // Tear the client down like the exception branch does: left alive
-      // with autoReconnect on, it would hammer a refusing broker (bad
-      // credentials, ACL) on its own timer forever.
-      client.autoReconnect = false;
-      client.disconnect();
-      _client = null;
+
+    wire(link);
+    _link = link;
+    var error = await link.connect(config);
+    if (error != null && !_legacyBroker) {
+      // Whatever felled the 5 attempt, give 3.1.1 one shot: a pre-5 broker
+      // may answer a 5 CONNECT with a refusal or just hang up on it.
+      log.info(name, 'MQTT 5 connect failed ($error); trying MQTT 3.1.1');
+      final legacy = linkFactory(legacy: true);
+      wire(legacy);
+      final legacyError = await legacy.connect(config);
+      if (legacyError == null) {
+        _legacyBroker = true;
+        _link = legacy;
+        link = legacy;
+        error = null;
+        log.info(name, 'broker speaks MQTT 3.1.1 only; staying on it');
+      } else {
+        error = legacyError;
+      }
+    }
+    if (error != null) {
+      _link = null;
+      log.warn(name, 'connect to $host:$port failed: $error');
+      // A network-shaped failure owns its retry (the solicited teardown in
+      // the link disarms the package's auto-reconnect); a broker that
+      // answered and refused (credentials, ACL) is not hammered.
+      if (error.retryable) _scheduleRetry();
       return;
     }
     _retryDelay = const Duration(seconds: 5);
@@ -698,7 +684,7 @@ class MqttManager extends Manager {
         .invokeMethod('setWifiLockHeld', {'held': true})
         .catchError((_) {}));
 
-    _updatesSub = client.updates?.listen(_onMessage);
+    _updatesSub = link.messages.listen((m) => _onMessage([m]));
     for (final topic in [
       '$_base/screen/set',
       '$_base/brightness/set',
@@ -725,7 +711,7 @@ class MqttManager extends Manager {
       for (final objectId in _settingSwitches.keys) '$_base/$objectId/set',
       for (final objectId in _settingSelects.keys) '$_base/$objectId/set',
     ]) {
-      client.subscribe(topic, MqttQos.atLeastOnce);
+      link.subscribe(topic);
     }
   }
 
@@ -745,7 +731,7 @@ class MqttManager extends Manager {
     _transition = _transition.then((_) async {
       // Re-check inside the serialized transition: a settings change or
       // disable may have run (and connected, or torn down) meanwhile.
-      if (_client != null || !_settings.get(defs.mqttEnabled)) return;
+      if (_link != null || !_settings.get(defs.mqttEnabled)) return;
       await _connect();
     });
   }
@@ -792,7 +778,11 @@ class MqttManager extends Manager {
   }
 
   Future<void> _bringUp() async {
-    log.info(name, 'connected as kiosksatellite_$_deviceId');
+    log.info(
+      name,
+      'connected as kiosksatellite_$_deviceId'
+      ' (${_link?.protocolName ?? 'MQTT'})',
+    );
     if (_deviceInfo.isEmpty) {
       final info = await commands.execute('getDeviceInfo', const {});
       if (info.ok && info.data is Map) {
@@ -842,28 +832,21 @@ class MqttManager extends Manager {
     _pollTimer = null;
     await _updatesSub?.cancel();
     _updatesSub = null;
-    final client = _client;
-    _client = null;
-    if (client == null) return;
-    if (client.connectionStatus?.state == MqttConnectionState.connected) {
+    final link = _link;
+    _link = null;
+    if (link == null) return;
+    if (link.connected) {
       if (clearDiscovery) {
         // Feature turned off: retract the entities. An empty retained
         // config payload is how HA discovery removes a device cleanly.
         for (final topic in _discoveryTopics()) {
-          client.publishMessage(topic, MqttQos.atLeastOnce,
-              MqttClientPayloadBuilder().payload!,
-              retain: true);
+          link.publishEmpty(topic);
         }
       }
       // A graceful disconnect never fires the will; say goodbye ourselves.
-      client.publishMessage(
-          _availabilityTopic,
-          MqttQos.atLeastOnce,
-          (MqttClientPayloadBuilder()..addUTF8String('offline')).payload!,
-          retain: true);
+      link.publishString(_availabilityTopic, 'offline', retain: true);
     }
-    client.autoReconnect = false;
-    client.disconnect();
+    link.disconnect();
     // The feature is off (or the manager is going down): let the radio
     // sleep again unless another holder still needs it.
     unawaited(_background
@@ -873,12 +856,9 @@ class MqttManager extends Manager {
 
   // ── Incoming commands ───────────────────────────────────────────────
 
-  Future<void> _onMessage(List<MqttReceivedMessage<MqttMessage>> batch) async {
+  Future<void> _onMessage(List<MqttInbound> batch) async {
     for (final received in batch) {
-      final payload = received.payload;
-      if (payload is! MqttPublishMessage) continue;
-      final text = MqttPublishPayload.bytesToStringAsString(
-          payload.payload.message);
+      final text = received.text;
       final topic = received.topic;
       // Every subscription here is a /set command topic, and commands are
       // imperative: a payload delivered with the retain flag is the broker
@@ -888,7 +868,7 @@ class MqttManager extends Manager {
       // with the flag clear even when sent retained, so dropping these
       // loses nothing. One guard here instead of the old per-topic ones,
       // which missed the riskiest topics (reload, restart, clear_cache).
-      if (payload.header?.retain == true) {
+      if (received.retained) {
         log.warn(name, 'ignored retained command on $topic');
         continue;
       }
@@ -1126,12 +1106,10 @@ class MqttManager extends Manager {
   // ── Outgoing state ──────────────────────────────────────────────────
 
   void _publish(String topic, String payload, {bool retain = true}) {
-    final client = _client;
-    if (client == null || !_connected) return;
+    final link = _link;
+    if (link == null || !_connected) return;
     try {
-      client.publishMessage(topic, MqttQos.atLeastOnce,
-          (MqttClientPayloadBuilder()..addUTF8String(payload)).payload!,
-          retain: retain);
+      link.publishString(topic, payload, retain: retain);
     } catch (e) {
       log.warn(name, 'publish to $topic failed: $e');
     }
@@ -1139,12 +1117,10 @@ class MqttManager extends Manager {
 
   /// Binary sibling of [_publish], for the camera entity's JPEG frames.
   void _publishBytes(String topic, List<int> bytes) {
-    final client = _client;
-    if (client == null || !_connected) return;
+    final link = _link;
+    if (link == null || !_connected) return;
     try {
-      client.publishMessage(
-          topic, MqttQos.atLeastOnce, Uint8Buffer()..addAll(bytes),
-          retain: true);
+      link.publishBytes(topic, bytes, retain: true);
     } catch (e) {
       log.warn(name, 'publish to $topic failed: $e');
     }
