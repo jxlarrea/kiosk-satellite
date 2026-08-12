@@ -4,6 +4,7 @@ import 'dart:math' show Random;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:typed_data/typed_data.dart' show Uint8Buffer;
@@ -117,6 +118,10 @@ class MqttManager extends Manager {
 
   String get _base => 'kiosksatellite/$_deviceId';
   String get _availabilityTopic => '$_base/availability';
+
+  /// The native side's Wi-Fi hold, shared with the keep-alive service (see
+  /// WifiLockHolder in the Android sources).
+  static const _background = MethodChannel('kiosk_satellite/background');
   String get _prefix {
     final p = _settings.get(defs.mqttDiscoveryPrefix).trim();
     return p.isEmpty ? 'homeassistant' : p;
@@ -627,7 +632,13 @@ class MqttManager extends Manager {
     // answer, so a half-open socket (wifi flap, AP reboot) is only noticed
     // when a TCP write hard-fails — minutes, sometimes never. With it, a
     // missed PINGRESP forces a disconnect, which auto-reconnect repairs.
-    client.disconnectOnNoResponsePeriod = 30;
+    // Two ping cycles, not one: with the screen off some Wi-Fi radios
+    // (Lenovo M10 Plus, issue #184) delay traffic past a single 30s
+    // window without the connection being dead at all, and every forced
+    // disconnect fires the will — the device's entities flapped
+    // unavailable in Home Assistant about once a minute, around the
+    // clock. A genuinely dead socket is still caught, one cycle later.
+    client.disconnectOnNoResponsePeriod = 65;
     client.autoReconnect = true;
     client.resubscribeOnAutoReconnect = true;
     client.setProtocolV311();
@@ -676,6 +687,16 @@ class MqttManager extends Manager {
       return;
     }
     _retryDelay = const Duration(seconds: 5);
+
+    // Hold the Wi-Fi radio awake for the connection's lifetime (issue
+    // #184): with the screen off, radio power saving delays or drops
+    // traffic and the keepalive dance flaps the entities. Held across
+    // auto-reconnects on purpose — the radio matters most exactly while
+    // the session struggles. Best-effort: off Android there is nothing
+    // to hold.
+    unawaited(_background
+        .invokeMethod('setWifiLockHeld', {'held': true})
+        .catchError((_) {}));
 
     _updatesSub = client.updates?.listen(_onMessage);
     for (final topic in [
@@ -843,6 +864,11 @@ class MqttManager extends Manager {
     }
     client.autoReconnect = false;
     client.disconnect();
+    // The feature is off (or the manager is going down): let the radio
+    // sleep again unless another holder still needs it.
+    unawaited(_background
+        .invokeMethod('setWifiLockHeld', {'held': false})
+        .catchError((_) {}));
   }
 
   // ── Incoming commands ───────────────────────────────────────────────

@@ -8,7 +8,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
@@ -77,24 +76,12 @@ class WakeWordService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    /** Keeps the Wi-Fi radio awake while the panel's screen is off.
-     *
-     *  Minutes after the screen powers off, OEM Wi-Fi power saving naps the
-     *  radio (measured on a Galaxy Tab S9: brief disconnects every 10 to 30
-     *  dark minutes). Each nap drops everything at once — the MQTT session
-     *  (entities flap unavailable in Home Assistant), the dashboard's
-     *  websocket, adb — and the network-loss recovery machinery then runs
-     *  against a page nobody can see. This lock is the documented ask for
-     *  "keep Wi-Fi up with the screen off", scoped to this service's
-     *  lifetime because the service exists precisely while the app must
-     *  stay reachable without a screen. Wall-powered kiosks pay nothing
-     *  that matters for it. */
-    private var wifiLock: WifiManager.WifiLock? = null
-
     override fun onDestroy() {
         super.onDestroy()
-        wifiLock?.let { if (it.isHeld) it.release() }
-        wifiLock = null
+        // The Wi-Fi hold for this service's lifetime (see WifiLockHolder):
+        // the service exists precisely while the app must stay reachable
+        // without a screen.
+        WifiLockHolder.release()
         isRunning = false
         if (exiting) {
             exiting = false
@@ -106,20 +93,7 @@ class WakeWordService : Service() {
         super.onCreate()
         isRunning = true
         createChannel()
-        // HIGH_PERF, not LOW_LATENCY: the low-latency mode only applies
-        // while the acquiring app is foreground with the screen ON, and the
-        // whole point here is the screen-off spell. Deprecated on paper,
-        // still the mode that holds the radio through screen-off power
-        // saving in practice.
-        try {
-            @Suppress("DEPRECATION")
-            wifiLock = (applicationContext.getSystemService(Context.WIFI_SERVICE)
-                as WifiManager).createWifiLock(
-                WifiManager.WIFI_MODE_FULL_HIGH_PERF, "ks:screen-off-wifi")
-                .also { it.acquire() }
-        } catch (_: Exception) {
-            // No Wi-Fi service (ethernet-only hardware): nothing to hold.
-        }
+        WifiLockHolder.acquire(this)
         // The camera bit is what lets motion detection keep the camera when
         // the panel powers off: without it, modern Android soft-denies the
         // camera app-op the moment the app leaves TOP (Tab S8 / Android 16

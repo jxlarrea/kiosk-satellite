@@ -43,6 +43,10 @@ class BackgroundBridge(
 ) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/background")
 
+    /** Whether the MQTT side currently holds its Wi-Fi ref (see
+     *  "setWifiLockHeld"); tracked so repeated asks stay one ref. */
+    private var wifiLockHeld = false
+
     init {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -251,6 +255,20 @@ class BackgroundBridge(
                 // Android 10 forbids it, and "Display over other apps" is the
                 // exemption that gets it back. Without it the wake word is heard
                 // and nothing happens, which is worse than not listening.
+                // The MQTT client's Wi-Fi hold (issue #184): held while it is
+                // connected, so a device without background listening still
+                // keeps the radio awake through dark spells while its Home
+                // Assistant entities depend on the session. Idempotent: only
+                // an actual edge touches the shared holder's refcount.
+                "setWifiLockHeld" -> {
+                    val want = call.argument<Boolean>("held") == true
+                    if (want != wifiLockHeld) {
+                        wifiLockHeld = want
+                        if (want) WifiLockHolder.acquire(context)
+                        else WifiLockHolder.release()
+                    }
+                    result.success(null)
+                }
                 "canBringToFront" -> result.success(canDrawOverlays())
                 "requestBringToFront" -> {
                     context.startActivity(
