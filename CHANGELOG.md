@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.37 - 2026-08-13
 
 ### Added
 - The crash record now also covers deliberate process restarts. The frame watchdog's recovery restart (and a restart asked for from the kiosk menu, the remote admin or MQTT) kills the process without any exception, so it left no trace: after the restart it was indistinguishable from a crash, with an empty record where the answer should be. Such restarts now write their reason into the same record the crash trace uses, so the Logs screen says plainly whether the last abnormal end was a crash with a stack or the watchdog reacting to a wedged screen, and what wedged it.
