@@ -302,7 +302,9 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           }
           log.info(name, 'restarting application');
           try {
-            await _backgroundChannel.invokeMethod<void>('restartProcess');
+            await _backgroundChannel.invokeMethod<void>('restartProcess', {
+              'reason': 'restart requested (kiosk menu, remote admin or MQTT)',
+            });
           } on PlatformException catch (e) {
             return CommandResult.fail('restart failed: $e');
           } on MissingPluginException {

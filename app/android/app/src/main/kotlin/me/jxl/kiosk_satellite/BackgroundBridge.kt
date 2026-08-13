@@ -213,6 +213,14 @@ class BackgroundBridge(
                 // failed engine re-attach stuck on the splash screen, while a
                 // clean process restart reliably comes back.
                 "restartProcess" -> {
+                    // Into the journal first: this kill fires no exception,
+                    // so without the note the death is invisible after the
+                    // restart - reporters see a fresh process and an empty
+                    // journal and nobody learns the watchdog did it.
+                    CrashJournal.note(
+                        context,
+                        call.argument<String>("reason") ?: "restartProcess",
+                    )
                     // A restart wants the app BACK, so the self-heal throttle
                     // must not stand in its way. This matters most on the
                     // watchdog path: an Activity that attaches to an engine

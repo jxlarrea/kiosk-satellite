@@ -65,6 +65,21 @@ object CrashJournal {
         file.writeText(combined)
     }
 
+    /** A deliberate abnormal end (the frame watchdog's process restart):
+     *  no exception fires, so without this entry the death is invisible
+     *  after the restart — the very gap the journal exists to close. */
+    fun note(context: Context, reason: String) {
+        try {
+            val thread = Thread.currentThread()
+            record(
+                context.applicationContext,
+                thread,
+                RuntimeException("process restarted deliberately: $reason"),
+            )
+        } catch (_: Throwable) {
+        }
+    }
+
     /** The journal's contents, empty when no crash has ever been recorded. */
     fun read(context: Context): String = try {
         val file = File(context.filesDir, FILE)

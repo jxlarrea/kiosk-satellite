@@ -105,7 +105,13 @@ class FrameWatchdog {
     // Give the log line a moment to flush.
     await Future<void>.delayed(const Duration(milliseconds: 300));
     try {
-      await _channel.invokeMethod<void>('restartProcess');
+      await _channel.invokeMethod<void>('restartProcess', {
+        // Lands in the crash journal: this kill throws nothing, and the
+        // in-memory log dies with the process, so without the reason the
+        // restart is indistinguishable from a crash after the fact.
+        'reason': 'the frame watchdog found the UI wedged '
+            '(no frames for ${_interval.inSeconds * _strikesToTrip}s)',
+      });
     } catch (e) {
       _container.log.error('watchdog', 'restart failed: $e');
       _tripped = false;
