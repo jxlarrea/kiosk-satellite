@@ -3823,6 +3823,9 @@ async function loadGestures() {
   if (strictness) {
     const clapperHeading = document.createElement('h2');
     clapperHeading.className = 'card-title';
+    // Follows the group note, which ends flush (no bottom margin); the
+    // usual card-to-heading rhythm needs restoring by hand here.
+    clapperHeading.style.marginTop = '22px';
     clapperHeading.textContent = 'Clapper';
     root.appendChild(clapperHeading);
     const clapperCard = document.createElement('div');
