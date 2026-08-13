@@ -2588,19 +2588,21 @@ const haRotationPauseSeconds = SettingDef<num>(
   dependsOn: 'ha.rotation_enabled',
 );
 
-/// Issue #189. In-page only: views of the same dashboard dissolve into each
-/// other (see rotation_fade_script.dart); a hop to a different dashboard, a
-/// hard-loaded strategy dashboard or an external page still cuts, because
-/// nothing of the outgoing and incoming page coexists to fade between.
+/// Issue #189. In-page only: views of the same dashboard fade out to the
+/// theme background and back in on the new view (see
+/// rotation_fade_script.dart); a hop to a different dashboard, a
+/// hard-loaded strategy dashboard or an external page still cuts. The key
+/// keeps its original "crossfade" name from the first dissolve-based
+/// implementation so existing configurations carry over.
 const haRotationCrossfade = SettingDef<bool>(
   key: 'ha.rotation_crossfade',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Crossfade between views',
+  title: 'Fade between views',
   description:
-      'Fade each dashboard view into the next instead of switching '
-      'instantly. Moving to a different dashboard or an external page '
-      'still switches instantly.',
+      'Fade out to the background and into the next view instead of '
+      'switching instantly. Moving to a different dashboard or an '
+      'external page still switches instantly.',
   category: 'Home Assistant',
   section: 'Dashboard View Rotation',
   dependsOn: 'ha.rotation_enabled',

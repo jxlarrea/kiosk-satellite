@@ -6,8 +6,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Improvements
 - Clap detection now requires sequences to look deliberate: claps must come out of a calm moment, keep an even rhythm, and stay at one loudness (discussion #177, false triggers from a child playing with toys near the device). Ordinary clatter shares a clap's impulse shape but rarely its regularity. A new **Clap detection** setting on the Gestures page (both UIs) adds a Strict mode that tightens all three checks and wants louder claps, for homes where the standard checks still misfire.
-
-## Unreleased
+- The rotation fade is smoother (#189, reporter feedback). The dissolve that blended the outgoing and incoming views could not hide its mechanics on real dashboards: transparent card regions, the final view swap and mid-fade re-renders all read as steps. Rotation now fades the screen out to the theme's background color, switches views while covered, and fades back in once the new view has rendered, on longer and gentler legs; first visits simply build behind the cover, needing none of the previous pre-building. The toggle is now called **Fade between views**; its stored setting carries over.
 
 ### Added
 - Crashes are now remembered across the restart that follows them (#21). Android's own crash log rotates within minutes on a busy device, so by the time anyone copies logs after the app has come back, the actual crash trace is usually gone; every crash report so far has started with that dance. The app now writes the full trace to its own storage at the moment of the crash, and the next start surfaces it at the top of the app log, marked "a previous run crashed", where the Logs screen and the remote admin already look. The record keeps until the next crash replaces it, so a report filed days later still carries the trace.

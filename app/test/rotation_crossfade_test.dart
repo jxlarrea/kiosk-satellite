@@ -90,17 +90,11 @@ void main() {
     expect(js, contains('"http://ha.test:8123"'));
     // Encoded, not spliced: a quote in a view path must not break out.
     expect(js, contains(r'"lovelace/kit\"chen"'));
-    // The carousel's load-bearing rule, kept here too: the overlay
-    // wrapper must never be the container's last child.
-    expect(js, contains('container.insertBefore(wrap, container.lastChild)'));
-    // First visits build the view element themselves (issue #189
-    // follow-up: the initial ring pass must dissolve too).
-    expect(js, contains("document.createElement('hui-view')"));
-    // The outgoing view fades under the incoming one and both elements
-    // outlive the fade in _viewCache: the inline fade styles must be
-    // scrubbed on every exit path or a later pass mounts an invisible
-    // view.
-    expect(js, contains('var restoreOld'));
-    expect(js, contains("old.style.opacity = '0'"));
+    // The switch happens behind a full-viewport cover in the theme's
+    // background color, and the cover must always come back down: the
+    // poll is bounded and the reveal runs regardless of the swap.
+    expect(js, contains('__ksRotFadeCover'));
+    expect(js, contains('--primary-background-color'));
+    expect(js, contains('waited >= POLL_MAX'));
   });
 }
