@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.35 - 2026-08-13
 
 ### Improvements
 - Clap detection now requires sequences to look deliberate: claps must come out of a calm moment, keep an even rhythm, and stay at one loudness (discussion #177, false triggers from a child playing with toys near the device). Ordinary clatter shares a clap's impulse shape but rarely its regularity. A new **Clap detection** setting on the Gestures page (both UIs) adds a Strict mode that tightens all three checks and wants louder claps, for homes where the standard checks still misfire.
