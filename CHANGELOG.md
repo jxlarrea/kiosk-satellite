@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.36 - 2026-08-13
 
 ### Fixed
 - MQTT no longer amplifies a dropped connection into repeated ones when the device camera is enabled (#207). Three hardenings: a camera frame larger than the packet size the broker advertised (MQTT 5) is now skipped with a log line instead of sent, since brokers answer an oversize publish by dropping the whole connection; the fresh camera frame taken at connect time is throttled to once per five minutes across reconnects, so a snapshot publish that kills the link can no longer re-kill every reconnect; and a connect attempt that fails or times out is now fully disarmed, where before it could complete in the background as a ghost session that fights the replacement link over the client id, with the broker kicking whichever connected last, forever.
