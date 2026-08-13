@@ -381,19 +381,18 @@
     #pageTitle { font-size: 22px; margin-bottom: 12px; }
   }
 
-  /* On phones, reflow each row so the name and its control share the top line
-     and the description spans full width below both, instead of a cramped
-     name+description column beside the control. Placed after the base .row
-     rules so this display:grid wins (media queries add no specificity).
-     `display: contents` promotes the .info's name/desc into the row's grid. */
+  /* On phones, reflow each row so the name and its controls share the top
+     line and the description spans full width below them, instead of a
+     cramped name+description column beside the control. Flex wrap rather
+     than a named-area grid: a grid cell can hold only one item, so rows
+     with a status span AND a grant button stacked them on top of each
+     other (#202). `display: contents` promotes the .info's name/desc into
+     the row's flex line; the name's flex:1 pushes the controls right. */
   @media (max-width: 640px) {
-    .row { display: grid; grid-template-columns: 1fr auto; align-items: center;
-      column-gap: 12px; row-gap: 3px;
-      grid-template-areas: "name control" "desc desc"; }
+    .row { flex-wrap: wrap; row-gap: 3px; }
     .row .info { display: contents; }
-    .row .info .name { grid-area: name; }
-    .row .info .desc { grid-area: desc; }
-    .row > :not(.info) { grid-area: control; justify-self: end; }
+    .row .info .name { flex: 1 1 auto; min-width: 0; }
+    .row .info .desc { flex-basis: 100%; order: 1; }
     /* Keep controls from crowding the name off its line. Numbers hold short
        values, so they get a tight cap; text/selects a little more. */
     .row input[type=text], .row input[type=password], .row select { max-width: 48vw; }

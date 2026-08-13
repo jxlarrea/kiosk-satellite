@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The remote admin no longer lets grant buttons overlap their status text on narrow screens (#202). On phone-width viewports every control in a settings row was placed into the same layout slot, so rows carrying both a status ("Not granted") and a button ("Grant on device") painted them on top of each other; controls now sit side by side and wrap below the row's name when there is no room. The same fix covers the brightness slider's value and the permission notice rows, which overlapped the same way.
+
 ## v2026.8.34 - 2026-08-12
 
 ### Changed
