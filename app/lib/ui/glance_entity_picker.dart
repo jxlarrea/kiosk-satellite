@@ -97,11 +97,14 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
     'attribution',
   };
 
-  /// What one chosen entity displays: its state (the default) or one of its
-  /// attributes (issue #132). The options come from the entity's live
-  /// attributes, each with its current value, so the choice is made by
-  /// looking at real readings instead of guessing at names.
-  Future<void> _pickAttribute(int index) async {
+  /// One chosen entity's editable pieces in a single dialog: the name the
+  /// row shows (issue #206) — a custom one, or the Home Assistant name when
+  /// the field is left empty — and what it displays, its state (the default)
+  /// or one of its attributes (issue #132). The attribute options come from
+  /// the entity's live attributes, each with its current value, so the
+  /// choice is made by looking at real readings instead of guessing at
+  /// names.
+  Future<void> _edit(int index) async {
     final entity = _chosen[index];
     final result = await widget.container.commands.execute(
       'haEntityAttributes',
@@ -122,22 +125,94 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
             !_hiddenAttributes.contains(entry.key))
           '${entry.key}',
     ]..sort();
-    final picked = await showRadioPicker<String>(
-      context,
-      title: 'Displayed value',
-      selected: entity['attribute'] as String? ?? '',
-      options: [
-        const PickerOption('', 'State'),
-        for (final name in names)
-          PickerOption(name, name, detail: '${attributes[name]}'),
-      ],
+    final controller =
+        TextEditingController(text: '${entity['custom_name'] ?? ''}');
+    var attribute = entity['attribute'] as String? ?? '';
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text('${entity['name']}'),
+          content: SizedBox(
+            width: 480,
+            child: EdgeFade(
+              child: SingleChildScrollView(
+                // Room for the name field's floating label, which otherwise
+                // clips against the dialog title.
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'Name',
+                        hintText: '${entity['name']}',
+                        helperText:
+                            'Leave empty to use the Home Assistant name.',
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Displayed value',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    RadioGroup<String>(
+                      groupValue: attribute,
+                      onChanged: (value) =>
+                          setDialogState(() => attribute = value ?? ''),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const RadioListTile<String>(
+                            value: '',
+                            title: Text('State'),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          for (final name in names)
+                            RadioListTile<String>(
+                              value: name,
+                              title: Text(name),
+                              subtitle: Text('${attributes[name]}'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
     );
-    if (picked == null) return;
+    final name = controller.text.trim();
+    controller.dispose();
+    if (submitted != true) return;
     setState(() {
-      if (picked.isEmpty) {
+      if (name.isEmpty) {
+        entity.remove('custom_name');
+      } else {
+        entity['custom_name'] = name;
+      }
+      if (attribute.isEmpty) {
         entity.remove('attribute');
       } else {
-        entity['attribute'] = picked;
+        entity['attribute'] = attribute;
       }
     });
   }
@@ -185,7 +260,7 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
                       index: index,
                       child: const Icon(Icons.drag_handle),
                     ),
-                    title: Text('${entity['name']}'),
+                    title: Text('${entity['custom_name'] ?? entity['name']}'),
                     subtitle: Text(
                       entity['attribute'] == null
                           ? '${entity['entity_id']}'
@@ -196,9 +271,9 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          tooltip: 'Displayed value',
-                          icon: const Icon(Icons.settings_outlined),
-                          onPressed: () => _pickAttribute(index),
+                          tooltip: 'Edit',
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: () => _edit(index),
                         ),
                         IconButton(
                           tooltip: 'Remove',

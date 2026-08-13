@@ -1891,7 +1891,8 @@ const screensaverGlanceEnabled = SettingDef<bool>(
   section: 'At a Glance',
 );
 
-// The chosen entities as a JSON list of {entity_id, name}. Hand-built pickers
+// The chosen entities as a JSON list of {entity_id, name} plus optional
+// custom_name and attribute. Hand-built pickers
 // on the device and in the remote admin write it; the generic settings
 // renderer skips it (a raw JSON field is not something to type).
 const screensaverGlanceEntities = SettingDef<String>(
@@ -1900,8 +1901,8 @@ const screensaverGlanceEntities = SettingDef<String>(
   defaultValue: '[]',
   title: 'Entities',
   description:
-      'Up to four entities to show. Their names come from Home '
-      'Assistant.',
+      'Up to four entities to show, each with an optional custom '
+      'name.',
   category: 'Screensaver',
   section: 'At a Glance',
   dependsOn: 'screensaver.glance_enabled',

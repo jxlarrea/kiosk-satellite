@@ -159,6 +159,50 @@ void main() {
     });
   });
 
+  group('custom names (#206)', () {
+    test('a custom name wins over the Home Assistant name', () {
+      const renamed = GlanceEntity(
+        entityId: 'cover.g',
+        name: 'Garage Door Left Side',
+        customName: 'Garage',
+      );
+      expect(renamed.displayName, 'Garage');
+      expect(
+        const GlanceEntity(entityId: 'cover.g', name: 'Garage Door')
+            .displayName,
+        'Garage Door',
+      );
+    });
+
+    test('a friendly_name update does not overwrite a custom name', () {
+      const renamed = GlanceEntity(
+        entityId: 'cover.g',
+        name: 'Garage Door',
+        customName: 'Garage',
+      );
+      final after = renamed.merge(name: 'Garage Door Left Side', state: 'open');
+      expect(after.displayName, 'Garage');
+      // The live name is still tracked, so clearing the custom name later
+      // falls back to the current one, not the one saved at pick time.
+      expect(after.name, 'Garage Door Left Side');
+    });
+
+    test('the custom name survives a storage round trip', () {
+      const renamed = GlanceEntity(
+        entityId: 'cover.g',
+        name: 'Garage Door',
+        customName: 'Garage',
+      );
+      final loaded = GlanceEntity.fromJson(renamed.toJson());
+      expect(loaded.customName, 'Garage');
+      expect(loaded.displayName, 'Garage');
+      // No custom name: the key stays out of storage entirely.
+      final plain = const GlanceEntity(entityId: 'x.y', name: 'X').toJson();
+      expect(plain.containsKey('custom_name'), isFalse);
+      expect(GlanceEntity.fromJson(plain).customName, isNull);
+    });
+  });
+
   group('icons', () {
     test("an icon set in Home Assistant wins", () {
       expect(

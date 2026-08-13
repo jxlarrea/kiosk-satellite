@@ -15,6 +15,7 @@ class GlanceEntity {
   const GlanceEntity({
     required this.entityId,
     required this.name,
+    this.customName,
     this.attribute,
     this.state,
     this.attributeValue,
@@ -35,10 +36,18 @@ class GlanceEntity {
   /// Null while nothing has reported it (or [attribute] is null).
   final String? attributeValue;
 
-  /// The name to show. Home Assistant's friendly name once it has reported
-  /// one; until then the name saved when the entity was picked, so the row
-  /// reads correctly from the first frame.
+  /// A name chosen by hand in the picker (issue #206), or null to follow
+  /// Home Assistant. Part of the configuration, not the live data.
+  final String? customName;
+
+  /// Home Assistant's friendly name once it has reported one; until then the
+  /// name saved when the entity was picked, so the row reads correctly from
+  /// the first frame.
   final String name;
+
+  /// What the row shows: the hand-chosen name when there is one, the
+  /// Home Assistant name otherwise.
+  String get displayName => customName ?? name;
 
   /// Null while the state is not known yet (nothing has reported it).
   final String? state;
@@ -62,6 +71,7 @@ class GlanceEntity {
   }) => GlanceEntity(
     entityId: entityId,
     name: name ?? this.name,
+    customName: customName,
     attribute: attribute,
     state: state ?? this.state,
     attributeValue: attributeValue ?? this.attributeValue,
@@ -74,14 +84,17 @@ class GlanceEntity {
   Map<String, Object?> toJson() => {
     'entity_id': entityId,
     'name': name,
+    if (customName != null) 'custom_name': customName,
     if (attribute != null) 'attribute': attribute,
   };
 
   static GlanceEntity fromJson(Map<Object?, Object?> json) {
     final attribute = '${json['attribute'] ?? ''}';
+    final customName = '${json['custom_name'] ?? ''}';
     return GlanceEntity(
       entityId: '${json['entity_id'] ?? ''}',
       name: '${json['name'] ?? ''}',
+      customName: customName.isEmpty ? null : customName,
       attribute: attribute.isEmpty ? null : attribute,
     );
   }
@@ -173,7 +186,7 @@ class GlanceManager extends Manager {
             for (final entity in entities.value)
               {
                 'entity_id': entity.entityId,
-                'name': entity.name,
+                'name': entity.displayName,
                 'state': entity.state,
                 if (entity.attribute != null) ...{
                   'attribute': entity.attribute,
@@ -215,10 +228,12 @@ class GlanceManager extends Manager {
           final entity = GlanceEntity.fromJson(item);
           if (entity.entityId.isEmpty) continue;
           // Live state carries over only while the configuration agrees: an
-          // edit that changed the displayed attribute must not keep showing
-          // the old attribute's value until the next update.
+          // edit that changed the displayed attribute or the name must not
+          // keep showing the old choice until the next update.
           final kept = previous[entity.entityId];
-          next.add(kept != null && kept.attribute == entity.attribute
+          next.add(kept != null &&
+                  kept.attribute == entity.attribute &&
+                  kept.customName == entity.customName
               ? kept
               : entity);
         }

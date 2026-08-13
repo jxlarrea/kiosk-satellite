@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- At a Glance entities can be renamed (#206). Each chosen entity in the picker (device settings and remote admin alike) now has an Edit action opening one dialog with the entity's name and its displayed value; a custom name replaces the Home Assistant name on the screensaver row, and clearing the field goes back to following Home Assistant. Handy where the registry name is a mouthful ("Garage Door Left Side") and the row only needs "Garage".
+
 ## v2026.8.35 - 2026-08-13
 
 ### Improvements

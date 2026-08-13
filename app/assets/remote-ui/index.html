@@ -2114,6 +2114,8 @@ const CAMERA_ICONS = {
     + 'h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   up: '<path d="M12 19V5m0 0-6 6m6-6 6 6"/>',
   down: '<path d="M12 5v14m0 0 6-6m-6 6-6-6"/>',
+  pencil: '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/>'
+    + '<path d="m13.5 6.5 4 4"/>',
   gesture: '<path d="M4 9c1-2 2.6-3.6 3.7-3 1.3.7-1.3 3.4-2.1 5.3'
     + '-.9 2.2-.4 4.7 1.9 4.7 3.2 0 4.5-6.5 8-6.5 2.4 0 3 2 3 3.5 0 2.6'
     + '-1.7 5-4 5-1.4 0-2.3-1-2.3-2.1 0-1.5 1.5-2.9 3.6-2.9H21"/>',
@@ -2345,12 +2347,15 @@ const MIC_GROUP_NOTE =
   'Only for devices that capture too quietly. Wrong values make wake word ' +
   'detection worse.';
 
-/* Which value one glance entity displays: its state (the default) or one of
-   its attributes (issue #132). Mirrors the device's picker: the options are
-   the entity's live scalar attributes, each shown with its current reading,
-   so the choice is made by looking at real values. Resolves to '' for the
-   state, an attribute name, or null when cancelled. */
-async function glanceAttributePicker(entity) {
+/* One chosen glance entity's editable pieces in a single modal, mirroring
+   the device's dialog: the name the row shows (issue #206) — a custom one,
+   or the Home Assistant name when the field is left empty — and which value
+   it displays, the state (the default) or one of its attributes (issue
+   #132). The attribute options are the entity's live scalar attributes,
+   each shown with its current reading, so the choice is made by looking at
+   real values. Applies the edit to `entity` and resolves to true when
+   saved. */
+async function glanceEntityEditor(entity) {
   let attributes = null;
   try {
     const res = await (await api('/api/commands/haEntityAttributes', {
@@ -2359,7 +2364,7 @@ async function glanceAttributePicker(entity) {
   } catch (_) {}
   if (!attributes) {
     messageBox({ title: 'At a glance', message: 'Could not reach Home Assistant.' });
-    return null;
+    return false;
   }
   /* Presentation metadata and structured values are left out, same list as
      the device's picker: a forecast array is not a glanceable reading. */
@@ -2368,22 +2373,42 @@ async function glanceAttributePicker(entity) {
   const names = Object.keys(attributes).filter((k) =>
     !hidden.includes(k)
     && (attributes[k] === null || typeof attributes[k] !== 'object')).sort();
-  return new Promise((resolve) => {
-    const done = (value) => { shell.close(); resolve(value); };
-    const shell = modalShell({
-      title: 'Displayed value', width: 460, onDismiss: () => done(null) });
-    const current = entity.attribute || '';
-    shell.body.appendChild(radioRow('State', '', current === '', () => done('')));
+  const body = document.createElement('div');
+  const field = cameraField('Name', entity.custom_name || '');
+  field.input.placeholder = entity.name || entity.entity_id;
+  const note = document.createElement('div');
+  note.className = 'desc';
+  note.style.marginTop = '8px';
+  note.textContent = 'Leave empty to use the Home Assistant name.';
+  const label = document.createElement('div');
+  label.className = 'desc';
+  label.style.cssText = 'margin-top:16px; font-weight:600;';
+  label.textContent = 'Displayed value';
+  let picked = entity.attribute || '';
+  const rows = document.createElement('div');
+  const paint = () => {
+    rows.innerHTML = '';
+    rows.appendChild(radioRow('State', '', picked === '', () => {
+      picked = '';
+      paint();
+    }));
     for (const name of names) {
-      shell.body.appendChild(radioRow(name, String(attributes[name]),
-        current === name, () => done(name)));
+      rows.appendChild(radioRow(name, String(attributes[name]),
+        picked === name, () => { picked = name; paint(); }));
     }
-    const cancel = document.createElement('button');
-    cancel.className = 'btn-ghost';
-    cancel.textContent = 'Cancel';
-    cancel.addEventListener('click', () => done(null));
-    shell.foot.appendChild(cancel);
-  });
+  };
+  paint();
+  body.append(field.wrap, note, label, rows);
+  const saved = await cameraEditor({
+    title: entity.name || entity.entity_id, body, width: 460,
+    save: async () => ({ ok: true }) });
+  if (!saved) return false;
+  const name = field.input.value.trim();
+  if (name) entity.custom_name = name;
+  else delete entity.custom_name;
+  if (picked) entity.attribute = picked;
+  else delete entity.attribute;
+  return true;
 }
 
 async function glanceEntityPicker(initial) {
@@ -2428,20 +2453,16 @@ async function glanceEntityPicker(initial) {
       info.className = 'info';
       const name = document.createElement('div');
       name.className = 'name';
-      name.textContent = entity.name || entity.entity_id;
+      name.textContent = entity.custom_name || entity.name || entity.entity_id;
       const desc = document.createElement('div');
       desc.className = 'desc';
       desc.textContent = entity.attribute
         ? `${entity.entity_id} · ${entity.attribute}`
         : entity.entity_id;
       info.append(name, desc);
-      const gear = cameraAction('Displayed value', async () => {
-        const picked = await glanceAttributePicker(entity);
-        if (picked === null) return;
-        if (picked) entity.attribute = picked;
-        else delete entity.attribute;
-        renderChosen();
-      }, false, 'gear');
+      const edit = cameraAction('Edit', async () => {
+        if (await glanceEntityEditor(entity)) renderChosen();
+      }, false, 'pencil');
       const move = (delta) => {
         const to = index + delta;
         if (to < 0 || to >= chosen.length) return;
@@ -2456,7 +2477,7 @@ async function glanceEntityPicker(initial) {
         renderChosen();
         renderResults(lastResults);
       }, false, 'delete');
-      item.append(info, gear, up, down, remove);
+      item.append(info, edit, up, down, remove);
       list.appendChild(item);
     });
   };
@@ -6623,7 +6644,7 @@ function settingRow(s) {
       }
       // Numbered so the display order is readable without opening the modal.
       return chosen.map((entity, index) => readOnlyRow(
-        entity.name || entity.entity_id,
+        entity.custom_name || entity.name || entity.entity_id,
         entity.attribute
           ? `${entity.entity_id} · ${entity.attribute}`
           : entity.entity_id,

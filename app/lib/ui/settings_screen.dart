@@ -5619,7 +5619,7 @@ class SettingTile extends StatelessWidget {
             subtitle: Text(
               chosen.isEmpty
                   ? 'None yet. Up to $screensaverGlanceMax entities.'
-                  : chosen.map((e) => e['name']).join(', '),
+                  : chosen.map((e) => e['custom_name'] ?? e['name']).join(', '),
             ),
             trailing: const Icon(Icons.edit_outlined),
             onTap: () => _editGlanceEntities(context),
