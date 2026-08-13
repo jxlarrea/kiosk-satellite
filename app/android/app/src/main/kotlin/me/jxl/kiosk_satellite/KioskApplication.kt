@@ -74,6 +74,11 @@ class KioskApplication : Application(), CameraXConfig.Provider {
     override fun onCreate() {
         super.onCreate()
 
+        // First of all: a crash anywhere past this point must be readable
+        // after the restart (see CrashJournal - logcat rotates faster than
+        // reporters can copy it).
+        CrashJournal.install(this)
+
         // Before any bridge: they all read volume state through it.
         VolumeController.init(applicationContext)
 

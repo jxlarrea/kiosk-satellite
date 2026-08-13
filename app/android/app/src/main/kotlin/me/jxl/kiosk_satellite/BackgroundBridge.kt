@@ -289,6 +289,14 @@ class BackgroundBridge(
                     }
                     result.success(null)
                 }
+                // The crash journal (issue #21): fatal traces persisted
+                // across the restart that follows them, surfaced into the
+                // app log at boot so reporters can paste them at leisure.
+                "getLastCrash" -> result.success(CrashJournal.read(context))
+                "clearLastCrash" -> {
+                    CrashJournal.clear(context)
+                    result.success(null)
+                }
                 "canBringToFront" -> result.success(canDrawOverlays())
                 "requestBringToFront" -> {
                     context.startActivity(

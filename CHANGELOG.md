@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- Crashes are now remembered across the restart that follows them (#21). Android's own crash log rotates within minutes on a busy device, so by the time anyone copies logs after the app has come back, the actual crash trace is usually gone; every crash report so far has started with that dance. The app now writes the full trace to its own storage at the moment of the crash, and the next start surfaces it at the top of the app log, marked "a previous run crashed", where the Logs screen and the remote admin already look. The record keeps until the next crash replaces it, so a report filed days later still carries the trace.
+
 ### Fixed
 - The remote admin no longer lets grant buttons overlap their status text on narrow screens (#202). On phone-width viewports every control in a settings row was placed into the same layout slot, so rows carrying both a status ("Not granted") and a button ("Grant on device") painted them on top of each other; controls now sit side by side and wrap below the row's name when there is no room. The same fix covers the brightness slider's value and the permission notice rows, which overlapped the same way.
 

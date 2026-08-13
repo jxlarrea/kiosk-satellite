@@ -114,6 +114,26 @@ class DeviceManager extends Manager {
     packageName = packageInfo.packageName;
     buildNumber = packageInfo.buildNumber;
 
+    // A previous run's fatal crash, persisted by the native CrashJournal
+    // (issue #21: logcat rotates faster than reporters can copy it).
+    // Logged here so every reporting surface — the Logs screen, the remote
+    // admin, /api/logs — carries the trace from the moment the app is back.
+    // The journal itself is kept until the next crash overwrites it, so a
+    // report filed days later still finds it.
+    if (Platform.isAndroid) {
+      unawaited(() async {
+        try {
+          const background = MethodChannel('kiosk_satellite/background');
+          final crash =
+              await background.invokeMethod<String>('getLastCrash') ?? '';
+          if (crash.trim().isNotEmpty) {
+            log.error(name,
+                'a previous run crashed; the recorded trace follows\n$crash');
+          }
+        } catch (_) {}
+      }());
+    }
+
     final deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
       final android = await deviceInfo.androidInfo;
