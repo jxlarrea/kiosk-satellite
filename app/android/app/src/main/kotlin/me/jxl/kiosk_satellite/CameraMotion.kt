@@ -559,27 +559,36 @@ class CameraMotion(
             )?.filter { it.lower >= 1 && it.upper <= 120 }
             if (ranges.isNullOrEmpty()) return
             val want = ceil(requestedFps).toInt()
+            val minLowerAll = ranges.minOf { it.lower }
+            val slowCandidates = ranges.filter { it.lower == minLowerAll }
+            val slowWide = slowCandidates
+                .filter { it.upper >= want }.minByOrNull { it.upper }
+                ?: slowCandidates.maxByOrNull { it.upper }
+                ?: return
             val range = if (aeLevel >= 1) {
                 // The hunt fallback: the lowest pinned rate that still
                 // covers the analysis cadence, else the lowest pinned rate
-                // at all, else the narrowest low range on offer. The rung
-                // past this one keeps the same pinned range and only
-                // disarms the detector — default exposure never returns,
-                // because the full-rate pipeline is the very cost this
-                // device cannot pay.
+                // at all. Cheap comes before stiff: many sensors offer only
+                // [30,30] as their fixed range, and restarting into that is
+                // restarting into the full-rate pipeline — the very cost
+                // this device cannot pay (the Tab S6 Lite's third round of
+                // issue #164). A pinned range only wins when its ceiling is
+                // no higher than the slow range's; otherwise the slow range
+                // stays and this rung only re-warms, with the rung after it
+                // disarming the detector. Default exposure never returns.
                 val fixed = ranges.filter { it.lower == it.upper }
-                fixed.filter { it.upper >= want }.minByOrNull { it.upper }
+                val pinned = fixed.filter { it.upper >= want }
+                    .minByOrNull { it.upper }
                     ?: fixed.maxByOrNull { it.upper }
-                    ?: ranges.minByOrNull { (it.upper - it.lower) * 1000 + it.upper }
-                    ?: return
+                if (pinned != null && pinned.upper <= slowWide.upper) {
+                    pinned
+                } else {
+                    slowWide
+                }
             } else {
-                val minLower = ranges.minOf { it.lower }
-                val candidates = ranges.filter { it.lower == minLower }
                 // Prefer the tightest range that can still deliver the
                 // requested processing rate; fall back to the widest one.
-                candidates.filter { it.upper >= want }.minByOrNull { it.upper }
-                    ?: candidates.maxByOrNull { it.upper }
-                    ?: return
+                slowWide
             }
             val extender = Camera2Interop.Extender(builder)
             extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, range)
