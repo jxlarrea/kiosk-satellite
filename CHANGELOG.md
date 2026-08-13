@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Improvements
+- The Charging entity now updates the moment the cable changes (#205 follow-up). It rode the once-a-minute MQTT stats poll, so a plug or unplug could take up to a minute to reach Home Assistant; the app now listens for the system's battery broadcasts, re-reads the plugged flag on each, and pushes the flip immediately. The minute poll stays as the backstop.
+
 ## v2026.8.36 - 2026-08-13
 
 ### Fixed

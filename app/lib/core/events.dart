@@ -114,6 +114,15 @@ class LightLevelChanged extends AppEvent {
   final double lux;
 }
 
+/// External power was connected or removed. Android broadcasts every battery
+/// change; the device manager re-reads the plugged flag on each and only a
+/// genuine flip travels here. Internal-only; MQTT mirrors it into the
+/// Charging binary sensor without waiting for the minute poll (issue #205).
+class PowerChanged extends AppEvent {
+  const PowerChanged({required this.charging});
+  final bool charging;
+}
+
 // ── Network ────────────────────────────────────────────────────────────
 
 /// The device's default network came up or went away (Android's default

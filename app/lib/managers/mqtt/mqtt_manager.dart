@@ -33,7 +33,8 @@ import 'mqtt_link.dart';
 ///    screenOff), brightness is the panel backlight. When the screen-off
 ///    grant is missing the command fails and the true state is republished,
 ///    so the HA toggle snaps back instead of lying.
-///  - sensor "Battery" and binary_sensor "Charging", polled once a minute.
+///  - sensor "Battery" and binary_sensor "Charging", polled once a minute;
+///    charging flips also push the moment the cable changes (issue #205).
 ///  - sensor "Current page": the URL the kiosk is showing (diagnostic).
 ///  - switch "Screensaver active": whether the screensaver is up right
 ///    now; ON/OFF forces it on screen or dismisses it. The master
@@ -227,6 +228,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     }));
     _subs.add(bus.on<AmbientDisplayChanged>().listen(
         (e) => _publishScreenAvailability(ambient: e.on)));
+    // Charging flips push immediately; the minute poll left the entity
+    // trailing the cable by up to a minute (issue #205).
+    _subs.add(bus.on<PowerChanged>().listen((e) {
+      if (e.charging == _lastCharging) return;
+      _lastCharging = e.charging;
+      _publish('$_base/charging/state', e.charging ? 'ON' : 'OFF');
+    }));
     // The native side damps flicker; this only guards the recorder's disk:
     // at most one publish per 15s, unless the level swung hard (lights on).
     _subs.add(bus.on<LightLevelChanged>().listen((e) {

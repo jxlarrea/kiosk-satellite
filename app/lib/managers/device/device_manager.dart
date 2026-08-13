@@ -343,6 +343,45 @@ class DeviceManager extends Manager {
         handler: (_) async => CommandResult.ok(await stats()),
       ),
     );
+
+    _watchPower();
+  }
+
+  /// Whether external power is connected right now. Plugged, not the battery
+  /// status: "charging" here has always meant "on external power" (a docked
+  /// kiosk at 100% counts), and the status lies on some kernels — a LineageOS
+  /// Fire 7 reports charging forever (issue #205). The status is only the
+  /// fallback for hosts without the channel.
+  Future<bool> _chargingNow([BatteryState? state]) async {
+    final plugged = await DeviceDetails.plugged();
+    if (plugged != null) return plugged;
+    final s = state ?? await _battery.batteryState;
+    return s == BatteryState.charging ||
+        s == BatteryState.connectedNotCharging;
+  }
+
+  StreamSubscription<BatteryState>? _powerSub;
+
+  /// The last value the push path saw, so only genuine flips become events.
+  bool? _chargingSeen;
+
+  /// Pushes charging flips as they happen. Android broadcasts every battery
+  /// change (level, plugged, status alike); each broadcast is only a cue to
+  /// re-read the plugged flag — the carried status is the very value issue
+  /// #205 showed lying. Without this the Charging entity trailed the cable
+  /// by up to a minute, the MQTT poll interval.
+  void _watchPower() {
+    try {
+      _powerSub = _battery.onBatteryStateChanged.listen((state) async {
+        final charging = await _chargingNow(state);
+        if (charging == _chargingSeen) return;
+        _chargingSeen = charging;
+        bus.publish(PowerChanged(charging: charging));
+      }, onError: (Object e) {
+        // Hosts without the battery event channel (tests, desktop): the
+        // minute poll still covers charging.
+      });
+    } catch (_) {}
   }
 
   /// Logged once per run: which thermal zones the sandbox actually sees on
@@ -356,17 +395,7 @@ class DeviceManager extends Manager {
   /// fields a stats tick throws away.
   Future<Map<String, Object?>> stats() async {
     final level = await _battery.batteryLevel;
-    // Plugged, not the battery status: "charging" here has always meant "on
-    // external power" (a docked kiosk at 100% counts), and the status lies on
-    // some kernels — a LineageOS Fire 7 reports charging forever (issue
-    // #205). The status is only the fallback for hosts without the channel.
-    var charging = await DeviceDetails.plugged();
-    if (charging == null) {
-      final state = await _battery.batteryState;
-      charging =
-          state == BatteryState.charging ||
-          state == BatteryState.connectedNotCharging;
-    }
+    final charging = await _chargingNow();
     final cpu = await DeviceDetails.cpu();
     if (!_thermalLogged && cpu.containsKey('temp') && cpu['temp'] == null) {
       _thermalLogged = true;
@@ -476,6 +505,7 @@ class DeviceManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    await _powerSub?.cancel();
     await _lightSub?.cancel();
     await _volumeSub?.cancel();
     await _mixSub?.cancel();
