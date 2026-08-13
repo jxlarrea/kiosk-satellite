@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- The crash record now also covers deliberate process restarts. The frame watchdog's recovery restart (and a restart asked for from the kiosk menu, the remote admin or MQTT) kills the process without any exception, so it left no trace: after the restart it was indistinguishable from a crash, with an empty record where the answer should be. Such restarts now write their reason into the same record the crash trace uses, so the Logs screen says plainly whether the last abnormal end was a crash with a stack or the watchdog reacting to a wedged screen, and what wedged it.
+
 ### Improvements
 - The Charging entity now updates the moment the cable changes (#205 follow-up). It rode the once-a-minute MQTT stats poll, so a plug or unplug could take up to a minute to reach Home Assistant; the app now listens for the system's battery broadcasts, re-reads the plugged flag on each, and pushes the flip immediately. The minute poll stays as the backstop.
 
