@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- The Charging entity no longer sticks at "Charging" on devices whose kernel misreports the battery status (#205, a Fire 7 on LineageOS). Charging (MQTT, the remote admin header and `/api/health` alike) is now read from the charger's own plugged flag rather than the battery status, with the status kept only as a fallback; the meaning stays "external power connected", so a docked kiosk holding at 100% still reads as charging.
+
 ### Added
 - At a Glance entities can be renamed (#206). Each chosen entity in the picker (device settings and remote admin alike) now has an Edit action opening one dialog with the entity's name and its displayed value; a custom name replaces the Home Assistant name on the screensaver row, and clearing the field goes back to following Home Assistant. Handy where the registry name is a mouthful ("Garage Door Left Side") and the row only needs "Garage".
 

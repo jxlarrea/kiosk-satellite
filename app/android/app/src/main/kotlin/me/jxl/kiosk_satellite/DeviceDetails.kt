@@ -2,7 +2,10 @@ package me.jxl.kiosk_satellite
 
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.net.ConnectivityManager
+import android.os.BatteryManager
 import android.net.Network
 import android.os.Build
 import android.os.Environment
@@ -98,6 +101,7 @@ class DeviceDetails(
             when (call.method) {
                 "read" -> result.success(read())
                 "uptime" -> result.success(uptime())
+                "plugged" -> result.success(plugged())
                 // The SSAID: stable per device + app signing key, surviving
                 // reinstalls (a factory reset changes it). The seed for the
                 // licensing Device ID — a value that has to outlive app data.
@@ -136,6 +140,23 @@ class DeviceDetails(
         "app" to (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime()) / 1000,
         "network" to networkSince?.let { (SystemClock.elapsedRealtime() - it) / 1000 },
     )
+
+    /**
+     * Whether external power is connected, from the sticky
+     * ACTION_BATTERY_CHANGED broadcast's EXTRA_PLUGGED — the charger's own
+     * online flag, not the battery status. Some kernels report a status of
+     * "charging" forever (a LineageOS Fire 7, issue #205), while plugged
+     * tracks the cable. Null when the platform won't say.
+     */
+    private fun plugged(): Boolean? {
+        val intent = try {
+            context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        } catch (e: Exception) {
+            null
+        } ?: return null
+        val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
+        return if (plugged < 0) null else plugged > 0
+    }
 
     private fun read(): Map<String, Any?> = mapOf(
         "brand" to Build.BRAND,

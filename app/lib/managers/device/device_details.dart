@@ -44,6 +44,18 @@ class DeviceDetails {
     }
   }
 
+  /// Whether external power is connected, from the charger's own online flag
+  /// (EXTRA_PLUGGED) rather than the battery status — some kernels report a
+  /// status of "charging" forever (issue #205). Null off Android or when the
+  /// platform won't say.
+  static Future<bool?> plugged() async {
+    try {
+      return await _channel.invokeMethod<bool>('plugged');
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Seconds since the process started (`app`) and since the default network
   /// last came up (`network`, null while offline). The network clock starts
   /// at app start at the earliest: Android tells an app about the network

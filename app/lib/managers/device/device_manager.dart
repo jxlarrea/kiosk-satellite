@@ -356,7 +356,17 @@ class DeviceManager extends Manager {
   /// fields a stats tick throws away.
   Future<Map<String, Object?>> stats() async {
     final level = await _battery.batteryLevel;
-    final state = await _battery.batteryState;
+    // Plugged, not the battery status: "charging" here has always meant "on
+    // external power" (a docked kiosk at 100% counts), and the status lies on
+    // some kernels — a LineageOS Fire 7 reports charging forever (issue
+    // #205). The status is only the fallback for hosts without the channel.
+    var charging = await DeviceDetails.plugged();
+    if (charging == null) {
+      final state = await _battery.batteryState;
+      charging =
+          state == BatteryState.charging ||
+          state == BatteryState.connectedNotCharging;
+    }
     final cpu = await DeviceDetails.cpu();
     if (!_thermalLogged && cpu.containsKey('temp') && cpu['temp'] == null) {
       _thermalLogged = true;
@@ -367,9 +377,7 @@ class DeviceManager extends Manager {
     }
     return {
       'battery': level,
-      'charging':
-          state == BatteryState.charging ||
-          state == BatteryState.connectedNotCharging,
+      'charging': charging,
       'cpu': cpu['usage'],
       'temp': cpu['temp'],
     };
