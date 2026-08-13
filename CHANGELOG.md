@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The **Default brightness** slider in Screen & Audio now goes down to 0% instead of 5%.
+
 ## v2026.8.33 - 2026-08-12
 
 ### Added

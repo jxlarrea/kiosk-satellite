@@ -875,8 +875,7 @@ const defaultBrightness = SettingDef<num>(
       'applies it immediately.',
   category: 'Screen & Audio',
   section: 'Screen',
-  // Never 0: a kiosk that boots to a black panel looks dead.
-  min: 0.05,
+  min: 0,
   max: 1,
   step: 0.05,
   unit: '%',
