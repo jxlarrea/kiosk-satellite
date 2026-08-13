@@ -6,6 +6,7 @@ import '../app_container.dart';
 import '../managers/gestures/gesture_mappings.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
+import 'settings_search.dart';
 
 /// The Gestures page (issue #99): the list of gestures and the
 /// actions they trigger. Mirrored by the remote admin's Gestures page.
@@ -140,6 +141,25 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
           'Gestures are observed, not blocked: the taps also reach the '
           'dashboard, so corners and multi-finger shapes keep them from '
           'firing anything there.',
+        ),
+        const SectionHeading('Clapper'),
+        SettingsCard(
+          children: [
+            SearchLandingTarget(
+              id: defs.clapStrictness.key,
+              child: DropdownRow<String>(
+                title: defs.clapStrictness.title,
+                description: defs.clapStrictness.description,
+                value: c.settings.get(defs.clapStrictness),
+                options: const [('standard', 'Standard'), ('strict', 'Strict')],
+                onChanged: (value) async {
+                  if (value == null) return;
+                  await c.settings.setFromJson(defs.clapStrictness.key, value);
+                  if (mounted) setState(() {});
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );

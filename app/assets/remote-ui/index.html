@@ -3816,6 +3816,20 @@ async function loadGestures() {
     + 'reach the dashboard, so corners and multi-finger shapes keep them '
     + 'from firing anything there.';
   root.appendChild(note);
+
+  // Mirrors the device's Clapper section (ui/gesture_settings.dart).
+  const strictness = (state.settings || [])
+    .find((s) => s.key === 'gestures.clap_strictness');
+  if (strictness) {
+    const clapperHeading = document.createElement('h2');
+    clapperHeading.className = 'card-title';
+    clapperHeading.textContent = 'Clapper';
+    root.appendChild(clapperHeading);
+    const clapperCard = document.createElement('div');
+    clapperCard.className = 'card';
+    clapperCard.appendChild(settingRow(strictness));
+    root.appendChild(clapperCard);
+  }
 }
 
 /* ---- Settings ---- */

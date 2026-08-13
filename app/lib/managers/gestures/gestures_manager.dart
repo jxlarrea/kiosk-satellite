@@ -90,6 +90,7 @@ class GesturesManager extends Manager {
 
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.gestureMappings.key ||
+          e.key == defs.clapStrictness.key ||
           e.key == defs.lockdownEnabled.key ||
           e.key == defs.kioskEnabled.key ||
           e.key == defs.kioskDisableGestures.key) {
@@ -136,6 +137,7 @@ class GesturesManager extends Manager {
   /// the mappings retunes a live subscription without touching the capture.
   Future<void> _syncClapper() async {
     _detector.targets = _detectorTargets();
+    _detector.strict = _settings.get(defs.clapStrictness) == 'strict';
     final wanted = _clapsWanted;
     if (wanted && _micSub == null) {
       // Ask for the microphone ourselves: on a device with wake word

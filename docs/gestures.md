@@ -104,6 +104,12 @@ The microphone side:
   keeps working over background music, though very percussive tracks at
   high volume can occasionally read as claps; pick 3 or 4 claps for
   anything that should never misfire.
+- Claps must look deliberate: they come out of a calm moment, land on an
+  even beat, and stay at one loudness. Ordinary clatter shares a clap's
+  impulse shape but rarely all three. If it still false-triggers (a child
+  playing with toys can be surprisingly clap-like), set **Clap detection**
+  on the Gestures page to Strict, which tightens those checks and wants
+  louder claps, and prefer 3 or 4 claps over 2.
 - On Android 12 and later the system microphone indicator shows while clap
   detection is listening, as it does for wake word detection.
 

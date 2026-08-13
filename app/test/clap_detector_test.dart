@@ -129,6 +129,88 @@ void main() {
       expect(fired, isEmpty);
     });
 
+    test('a bang and a tap do not make two claps', () {
+      detector.targets = {2};
+      final rng = Random(30);
+      // Discussion #177: toy clatter reaching the right count. One pair of
+      // hands claps at one level; a 13 dB spread between the two is not it.
+      feed(detector, [
+        ...ambience(700, rng),
+        ...clap(rng, amp: 0.9),
+        ...ambience(300, rng),
+        ...clap(rng, amp: 0.2),
+        ...ambience(900, rng),
+      ]);
+      expect(fired, isEmpty);
+    });
+
+    test('three bangs off the beat do not make three claps', () {
+      detector.targets = {3};
+      final rng = Random(31);
+      feed(detector, [
+        ...ambience(700, rng),
+        ...clap(rng),
+        ...ambience(180, rng),
+        ...clap(rng),
+        ...ambience(630, rng),
+        ...clap(rng),
+        ...ambience(900, rng),
+      ]);
+      expect(fired, isEmpty, reason: 'gap ratio 3.5 is clatter, not rhythm');
+    });
+
+    test('claps straight out of ongoing noise are not a command', () {
+      detector.targets = {2};
+      final rng = Random(32);
+      // A loud low thud (no clap onset, but noise) right before the claps:
+      // the first clap needs a calm lead-in, so nothing starts.
+      feed(detector, [
+        ...ambience(700, rng),
+        ...thud(400),
+        ...ambience(100, rng),
+        ...clap(rng),
+        ...ambience(300, rng),
+        ...clap(rng),
+        ...ambience(900, rng),
+      ]);
+      expect(fired, isEmpty);
+      // The same claps after a proper calm gap fire fine.
+      feed(detector, [
+        ...ambience(700, rng),
+        ...clap(rng),
+        ...ambience(300, rng),
+        ...clap(rng),
+        ...ambience(900, rng),
+      ]);
+      expect(fired, [2]);
+    });
+
+    test('strict rejects the spread standard tolerates', () {
+      detector.targets = {2};
+      final rng = Random(33);
+      final scene = [
+        ...ambience(700, rng),
+        ...clap(rng, amp: 0.5),
+        ...ambience(300, rng),
+        ...clap(rng, amp: 0.19),
+        ...ambience(900, rng),
+      ];
+      feed(detector, scene);
+      expect(fired, [2], reason: 'an 8 dB spread passes standard');
+      detector.strict = true;
+      detector.reset();
+      feed(detector, scene);
+      expect(fired, [2], reason: 'strict rejects the same pair: no new fire');
+      detector.strict = false;
+    });
+
+    test('strict still hears clean deliberate claps', () {
+      detector.targets = {2, 3};
+      detector.strict = true;
+      feed(detector, clapScene(3, Random(34)));
+      expect(fired, [3]);
+    });
+
     test('reset drops a half-collected sequence', () {
       detector.targets = {2};
       final rng = Random(9);

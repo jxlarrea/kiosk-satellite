@@ -37,11 +37,16 @@ class ClapDetector {
   /// short-circuits [addChunk] entirely.
   Set<int> targets = const {};
 
+  /// Strict mode (the gestures.clap_strictness setting): louder onsets, a
+  /// longer quiet lead-in and tighter rhythm/loudness consistency. For homes
+  /// where ordinary clatter (a child's toys was the field report) is
+  /// impulsive enough to pass the standard checks.
+  bool strict = false;
+
   // All tunables in 10 ms subframes of 160 samples.
   static const int _subframeSamples = 160;
   static const int _warmupFrames = 50; // let the noise floor settle first
-  static const double _onsetRatio = 20; // energy jump over the floor (13 dB)
-  static const double _riseRatio = 3; // and over the previous subframe
+  static const double _riseRatio = 3; // energy jump over the previous subframe
   static const double _minEnergy = 5e-5; // absolute onset floor (quiet mics ok)
   static const double _minHfRatio = 0.08; // diff-energy share = broadband
   static const int _refractoryFrames = 15; // 150 ms between claps
@@ -50,14 +55,29 @@ class ClapDetector {
   static const double _decayDropRatio = 32; // a clap is 15 dB down by then
   static const int _maxGapFrames = 70; // 700 ms between claps in a sequence
   static const int _vetoCooldownFrames = 100; // quiet-down after a false start
+  static const double _leadLoudRatio = 10; // what counts as noise beforehand
+
+  // Deliberateness: claps meant as a command come out of quiet, on a beat,
+  // at one loudness. Random clatter shares the impulse shape but rarely all
+  // three of those, which is what separates the two without a model.
+  double get _onsetRatio => strict ? 40 : 20; // over the floor: 16 / 13 dB
+  int get _quietLeadFrames => strict ? 50 : 30; // quiet before the first clap
+  double get _rhythmMaxRatio => strict ? 1.5 : 1.8; // longest gap / shortest
+  double get _levelMaxRatio => strict ? 6 : 12; // loudest clap / quietest
 
   int _frame = 0;
   double _floor = 1e-4;
   double _prevEnergy = 0;
   int _suppressedUntil = 0;
 
-  /// Frame indices of the claps in the sequence being collected.
+  /// Frame indices of the claps in the sequence being collected, and each
+  /// one's onset energy for the loudness-consistency check.
   final List<int> _onsets = [];
+  final List<double> _levels = [];
+
+  /// The last frame that was loud relative to the floor: the quiet-lead-in
+  /// check needs to know whether the room was calm before a first clap.
+  int _lastLoudFrame = 0;
 
   /// Pending decay check for the newest clap. The judgment is RELATIVE to
   /// the clap's own peak, never near-absolute: a loud clap in a live room
@@ -87,6 +107,8 @@ class ClapDetector {
     _prevEnergy = 0;
     _suppressedUntil = 0;
     _onsets.clear();
+    _levels.clear();
+    _lastLoudFrame = 0;
     _decayCheckAt = -1;
     _onsetEnergy = 0;
     _lateLoud = 0;
@@ -159,21 +181,29 @@ class ClapDetector {
         if (veto) {
           final count = _onsets.length;
           _onsets.clear();
+          _levels.clear();
           _suppressedUntil = _frame + _vetoCooldownFrames;
           onDiscard?.call('sustained sound after $count clap(s)');
         }
       }
     }
 
+    // Quiet lead-in: a first clap that is a command comes out of calm, not
+    // out of ongoing clatter. Only the sequence's first clap needs it —
+    // later ones follow other claps by design.
+    final leadOk = _onsets.isNotEmpty ||
+        _frame - _lastLoudFrame >= _quietLeadFrames;
     final canDetect = _frame > _warmupFrames &&
         _frame >= _suppressedUntil &&
         (_onsets.isEmpty || _frame - _onsets.last >= _refractoryFrames);
     if (canDetect &&
+        leadOk &&
         energy > _minEnergy &&
         energy > _floor * _onsetRatio &&
         energy > _prevEnergy * _riseRatio &&
         hf > energy * _minHfRatio) {
       _onsets.add(_frame);
+      _levels.add(energy);
       _decayCheckAt = _frame + _decayCheckFrames;
       _onsetEnergy = energy;
       _onsetFloor = _floor;
@@ -187,6 +217,11 @@ class ClapDetector {
       if (_onsets.length >= maxTarget) _closeSequence();
     }
 
+    // For the lead-in check, using the floor before this frame joins it.
+    if (energy > _minEnergy && energy > _floor * _leadLoudRatio) {
+      _lastLoudFrame = _frame;
+    }
+
     // Asymmetric noise-floor EMA: falls fast, rises slowly (a ~500 ms time
     // constant), so a clap barely moves it but steady loudness becomes the
     // new normal that claps must then punch through.
@@ -197,14 +232,43 @@ class ClapDetector {
 
   void _closeSequence() {
     final count = _onsets.length;
+    final onsets = List<int>.of(_onsets);
+    final levels = List<double>.of(_levels);
     _onsets.clear();
+    _levels.clear();
     _decayCheckAt = -1;
     // The tail of the last clap must not seed the next sequence.
     _suppressedUntil = _frame + _refractoryFrames;
-    if (count >= 2 && targets.contains(count)) {
-      onClaps(count);
-    } else {
+    if (count < 2 || !targets.contains(count)) {
       onDiscard?.call('closed with $count clap(s), no match');
+      return;
     }
+    // Rhythm: deliberate claps land on a beat. Random bangs that happen to
+    // reach the right count rarely keep their gaps within a factor of each
+    // other. Two claps make one gap, so this starts at three.
+    if (count >= 3) {
+      var shortest = 1 << 30, longest = 0;
+      for (var i = 1; i < onsets.length; i++) {
+        final gap = onsets[i] - onsets[i - 1];
+        if (gap < shortest) shortest = gap;
+        if (gap > longest) longest = gap;
+      }
+      if (longest > shortest * _rhythmMaxRatio) {
+        onDiscard?.call('$count claps with an uneven rhythm');
+        return;
+      }
+    }
+    // Loudness: one pair of hands claps at one level. A sequence mixing a
+    // bang with a tap is clatter, not a command.
+    var quietest = double.infinity, loudest = 0.0;
+    for (final level in levels) {
+      if (level < quietest) quietest = level;
+      if (level > loudest) loudest = level;
+    }
+    if (loudest > quietest * _levelMaxRatio) {
+      onDiscard?.call('$count claps with uneven loudness');
+      return;
+    }
+    onClaps(count);
   }
 }

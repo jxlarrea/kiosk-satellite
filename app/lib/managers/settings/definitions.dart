@@ -584,6 +584,23 @@ const gestureMappings = SettingDef<String>(
   hidden: true,
 );
 
+// Deliberateness thresholds for the clap detector (discussion #177: a child
+// playing with toys near the device produced enough clap-shaped impulses to
+// false-trigger). Standard already requires a quiet lead-in and consistent
+// rhythm and loudness; Strict tightens all three and wants louder claps.
+const clapStrictness = SettingDef<String>(
+  key: 'gestures.clap_strictness',
+  type: SettingType.select,
+  defaultValue: 'standard',
+  options: ['standard', 'strict'],
+  optionLabels: {'standard': 'Standard', 'strict': 'Strict'},
+  title: 'Clap detection',
+  description:
+      'Strict needs louder, evenly spaced claps; try it if household '
+      'noise false-triggers.',
+  category: 'Gestures',
+);
+
 // The quick-actions escape hatch (issue #64): a wall-mounted kiosk in
 // lockdown still wants "back to the dashboard" and "show the camera" to
 // be one swipe away. Off by default — kiosk mode keeps its full lock
@@ -3262,6 +3279,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskDisablePullRefresh,
   kioskDisableGestures,
   gestureMappings,
+  clapStrictness,
   kioskAllowDrawer,
   kioskAllowDashboard,
   kioskAllowCamera,
