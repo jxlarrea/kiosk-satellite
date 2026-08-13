@@ -30,6 +30,13 @@ abstract class MqttLink {
 
   bool get connected;
 
+  /// The broker's advertised Maximum Packet Size (MQTT 5 CONNACK), null
+  /// when it stated none (or the protocol has no such notion, as in
+  /// 3.1.1). A publish larger than this is a protocol error the broker
+  /// answers by dropping the whole connection, so callers should skip
+  /// oversize payloads instead of sending them.
+  int? get brokerMaximumPacketSize => null;
+
   /// Fires on the initial connect and on every automatic reconnect alike;
   /// the manager's bring-up is idempotent and treats both the same.
   void Function()? onConnected;
@@ -146,6 +153,21 @@ class Mqtt5Link extends MqttLink {
       _client?.connectionStatus?.state == v5.MqttConnectionState.connected;
 
   @override
+  int? get brokerMaximumPacketSize {
+    try {
+      final size =
+          _client?.connectionStatus?.connectAckMessage.maximumPacketSize;
+      // The property is absent from the CONNACK when the broker imposes
+      // no limit; the package parses that as 0.
+      return (size == null || size <= 0) ? null : size;
+    } catch (_) {
+      // The connack field is `late` in the package and unset until the
+      // first CONNACK arrives.
+      return null;
+    }
+  }
+
+  @override
   Stream<MqttInbound> get messages => _messages.stream;
 
   @override
@@ -191,7 +213,14 @@ class Mqtt5Link extends MqttLink {
       }
       await attempt;
     } catch (e) {
-      _teardown();
+      // The package can still be mid-connect when this throws (the future
+      // timeout above fires first): the attempt must be killed outright,
+      // not just dropped. An abandoned client that completes its connect
+      // in the background becomes a ghost session under the same client
+      // id as the link that replaces it (the 3.1.1 fallback, a retry),
+      // and the broker then kicks whichever connected last, forever: a
+      // "reset by peer" and an availability flap on every keepalive cycle.
+      _abandon(client);
       return MqttLinkError(
         _describeException(e, config.host, config.port),
         retryable: true,
@@ -199,7 +228,7 @@ class Mqtt5Link extends MqttLink {
     }
     if (!connected) {
       final code = client.connectionStatus?.reasonCode;
-      _teardown();
+      _abandon(client);
       return MqttLinkError(_refusal(code), retryable: false);
     }
     _sub = client.updates?.listen((batch) {
@@ -264,6 +293,20 @@ class Mqtt5Link extends MqttLink {
     _teardown();
   }
 
+  /// A failed attempt, put down for good: callbacks unhooked and
+  /// auto-reconnect disarmed before the disconnect, so nothing of it can
+  /// come back to life later.
+  void _abandon(v5s.MqttServerClient client) {
+    client.onConnected = null;
+    client.onAutoReconnected = null;
+    client.onDisconnected = null;
+    client.autoReconnect = false;
+    try {
+      client.disconnect();
+    } catch (_) {}
+    _teardown();
+  }
+
   void _teardown() {
     _sub?.cancel();
     _sub = null;
@@ -319,7 +362,9 @@ class Mqtt311Link extends MqttLink {
     try {
       await client.connect(config.username, config.password);
     } catch (e) {
-      _teardown();
+      // Same ghost rule as the v5 link: a failed attempt is killed
+      // outright, never just dropped (see Mqtt5Link.connect).
+      _abandon(client);
       return MqttLinkError(
         _describeException(e, config.host, config.port),
         retryable: true,
@@ -327,7 +372,7 @@ class Mqtt311Link extends MqttLink {
     }
     if (!connected) {
       final code = client.connectionStatus?.returnCode;
-      _teardown();
+      _abandon(client);
       return MqttLinkError(_refusal(code), retryable: false);
     }
     _sub = client.updates?.listen((batch) {
@@ -388,6 +433,18 @@ class Mqtt311Link extends MqttLink {
   void disconnect() {
     _client?.autoReconnect = false;
     _client?.disconnect();
+    _teardown();
+  }
+
+  /// See [Mqtt5Link._abandon]: a failed attempt, put down for good.
+  void _abandon(v3s.MqttServerClient client) {
+    client.onConnected = null;
+    client.onAutoReconnected = null;
+    client.onDisconnected = null;
+    client.autoReconnect = false;
+    try {
+      client.disconnect();
+    } catch (_) {}
     _teardown();
   }
 

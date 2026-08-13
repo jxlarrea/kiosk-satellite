@@ -788,6 +788,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   }
 
   DateTime _lastBringUp = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime _lastBringUpSnapshot = DateTime.fromMillisecondsSinceEpoch(0);
   bool _bringingUp = false;
   final _reconnectTimes = <DateTime>[];
 
@@ -862,8 +863,14 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     await _publishInitialStates();
     // A fresh frame for the camera entity on every connect, so it never
     // shows a picture older than the link. Detached: a capture takes a
-    // moment and the bring-up should not wait on the sensor.
-    if (_cameraEntitiesWanted) {
+    // moment and the bring-up should not wait on the sensor. Throttled
+    // across reconnects (issue #207): if the snapshot publish itself is
+    // what felled the link (a broker packet cap, a flap mid-transfer),
+    // snapshotting again on every reconnect turns one drop into a loop.
+    final now = DateTime.now();
+    if (_cameraEntitiesWanted &&
+        now.difference(_lastBringUpSnapshot) > const Duration(minutes: 5)) {
+      _lastBringUpSnapshot = now;
       unawaited(commands.execute('takeCameraSnapshot', const {}));
     }
     // Learn the view list once the link is up; republishes discovery on
@@ -1170,6 +1177,17 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   void _publishBytes(String topic, List<int> bytes) {
     final link = _link;
     if (link == null || !_connected) return;
+    // A broker that advertised a packet size cap (MQTT 5) answers an
+    // oversize publish by dropping the whole connection (issue #207); a
+    // skipped frame with a log line beats a killed link. The margin
+    // covers the topic and the fixed header and properties around it.
+    final max = link.brokerMaximumPacketSize;
+    if (max != null && bytes.length + topic.length + 64 > max) {
+      log.warn(name, 'not publishing ${bytes.length} bytes to $topic: '
+          'the broker caps MQTT packets at $max bytes. Lower the camera '
+          'snapshot resolution or raise the broker limit.');
+      return;
+    }
     try {
       link.publishBytes(topic, bytes, retain: true);
     } catch (e) {
