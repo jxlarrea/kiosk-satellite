@@ -1,5 +1,9 @@
 <h1 align="center" style="border-bottom: none">
-   <img alt="Kiosk Satellite for Home Assistant" src="assets/banners/kiosk_satellite_banner.png" width="650" />
+   <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="assets/banners/kiosk_satellite_banner_dark.png" />
+      <source media="(prefers-color-scheme: light)" srcset="assets/banners/kiosk_satellite_banner_light.png" />
+      <img alt="Kiosk Satellite for Home Assistant" src="assets/banners/kiosk_satellite_banner.png" width="650" />
+   </picture>
 </h1>
 
 <p align="center">
