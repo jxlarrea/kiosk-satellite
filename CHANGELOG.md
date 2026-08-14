@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.40 - 2026-08-14
 
 ### Added
 - A new Haptics group under Home Assistant Configuration with an "Enable haptics" toggle, on by default: the vibration motor gives a short native click whenever a tap lands on a button, switch, chip or tap-action card in the dashboard, and a softer tick for every step crossed while dragging a slider or the thermostat card's temperature wheel, so a wall panel answers like a physical switch and a brightness drag feels like a detented knob. Custom card sliders (Mushroom included) tick too, even though their events never leave the card. A "Vibration strength" selector (Light, Medium, Strong) appears alongside while the toggle is on, with slider ticks always sitting one level softer than button clicks. The detection runs entirely on tap and value events inside the page (no polling, no observers, no layout reads), the buzz is the platform's own tuned click effect driven directly through the vibrator so the system's separate touch-vibration setting cannot silently veto it, and devices without a vibration motor simply ignore the toggle. Every change applies immediately, no reload needed.
