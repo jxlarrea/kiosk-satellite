@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.42 - 2026-08-14
 
 ### Fixed
 - The "Ignore SSL errors" setting is now honored by the app's own network requests, not just the browser (#216). Wake word model downloads, native TTS and sound playback, and other in-app requests used to fail with a certificate error when the URL pointed at a host other than the configured Home Assistant base URL, such as the server's IP address while the certificate only matches its domain. With the setting enabled those requests now accept the certificate exactly like the dashboard browser does.
