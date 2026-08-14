@@ -9,6 +9,7 @@ import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/managers/wake_word/model_cache.dart';
+import 'package:kiosk_satellite/managers/wake_word/vsww/model_store.dart';
 import 'package:kiosk_satellite/managers/wake_word/wake_word_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -207,6 +208,7 @@ void main() {
         'listening',
         'canRetry',
         'needsAppSettings',
+        'modelPrecision',
       ]) {
         expect(state, contains(key), reason: 'the web admin reads "$key"');
       }
@@ -470,4 +472,108 @@ void main() {
       expect((result.data as Map)['removed'], 0);
     });
   });
+
+  group('int8 model preference', () {
+    // Kiosk Satellite prefers the quantized int8 sibling under `int8/`
+    // (same manifest, ~35% faster inference) and falls back to the fp32
+    // file when the server does not carry one, so an older Voice Satellite
+    // keeps working untouched.
+    late Directory support;
+    late HttpServer server;
+    late List<String> requestedPaths;
+    late Set<String> present;
+
+    // The smallest manifest VswwManifest.fromJson accepts.
+    String manifestJson() =>
+        '{"name":"ok_test","format":"vs-wake-word-ctc-v1",'
+        '"input":{"shape":[1,128,40]},"output":{"shape":[1,64,52]},'
+        '"feature_config":{"sample_rate":16000,"n_fft":512,"n_mels":40,'
+        '"f_min":80.0,"f_max":7600.0,"log_floor":1e-6,"frame_samples":400,'
+        '"hop_samples":160,"window_samples":20800,"frames":128,'
+        '"window_ms":1300},'
+        '"ctc":{"vocab_size":52,"wake_word_targets":[[3,4,5]]}}';
+
+    setUp(() async {
+      support = await Directory.systemTemp.createTemp('ks_int8_test');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (call) async => call.method == 'getApplicationSupportDirectory'
+            ? support.path
+            : null,
+      );
+      requestedPaths = [];
+      present = {'/m/ok_test.json', '/m/ok_test.onnx', '/m/int8/ok_test.onnx'};
+      server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      server.listen((req) {
+        requestedPaths.add(req.uri.path);
+        if (!present.contains(req.uri.path)) {
+          req.response.statusCode = 404;
+          req.response.close();
+          return;
+        }
+        if (req.uri.path.endsWith('.json')) {
+          req.response.write(manifestJson());
+        } else {
+          // Distinguishable bodies, so the test can tell which file loaded.
+          req.response.add(
+              req.uri.path.contains('/int8/') ? [8, 8, 8] : [32, 32, 32, 32]);
+        }
+        req.response.close();
+      });
+    });
+
+    tearDown(() async {
+      await server.close(force: true);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+              const MethodChannel('plugins.flutter.io/path_provider'), null);
+      if (await support.exists()) await support.delete(recursive: true);
+    });
+
+    String url(String q) =>
+        'http://127.0.0.1:${server.port}/m/ok_test.json$q';
+
+    // flutter_test blocks network with a 400-everything HttpClient; the
+    // base HttpOverrides restores the real one for the loopback server.
+    Future<VswwModel> fetch(String u, {required bool preferInt8}) =>
+        HttpOverrides.runWithHttpOverrides(
+            () => VswwModelStore().fetch(u, preferInt8: preferInt8),
+            _RealHttpOverrides());
+
+    test('prefers the int8 sibling and says so', () async {
+      final model = await fetch(url(''), preferInt8: true);
+      expect(model.precision, 'int8');
+      expect(model.onnxBytes, [8, 8, 8]);
+      expect(requestedPaths, contains('/m/int8/ok_test.onnx'));
+    });
+
+    test('falls back to fp32 when the server has no int8 build', () async {
+      present.remove('/m/int8/ok_test.onnx');
+      final model = await fetch(url(''), preferInt8: true);
+      expect(model.precision, 'fp32');
+      expect(model.onnxBytes, [32, 32, 32, 32]);
+      // It did try: the 404 is the negotiation, not an error.
+      expect(requestedPaths, contains('/m/int8/ok_test.onnx'));
+    });
+
+    test('fp32 preference never touches the int8 path', () async {
+      final model = await fetch(url(''), preferInt8: false);
+      expect(model.precision, 'fp32');
+      expect(requestedPaths.where((p) => p.contains('/int8/')), isEmpty);
+    });
+
+    test('the cache-busting query rides along to the int8 URL', () async {
+      await fetch(url('?v=2026.8.8'), preferInt8: true);
+      final onnxReq = requestedPaths
+          .firstWhere((p) => p.contains('/int8/ok_test.onnx'));
+      expect(onnxReq, '/m/int8/ok_test.onnx');
+    });
+
+    test('the toggle default fetches int8', () {
+      expect(settings.get(defs.wakeWordPreferFp32), isFalse);
+    });
+  });
 }
+
+class _RealHttpOverrides extends HttpOverrides {}

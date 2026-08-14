@@ -5169,6 +5169,14 @@ async function loadWakeWord() {
       s.stopWordAvailable ? 'Running in Kiosk' : 'Voice Satellite keeps this one in the browser',
       s.stopWord));
   }
+  if (s.modelPrecision) {
+    card.appendChild(readOnlyRow(
+      'Model precision',
+      s.modelPrecision === 'int8' ? 'Quantized for faster listening'
+        : s.modelPrecision === 'fp32' ? 'Original full-precision models'
+        : 'Some models fell back to fp32',
+      s.modelPrecision));
+  }
   card.appendChild(readOnlyRow(
     'Native voice pipeline',
     s.nativePipeline

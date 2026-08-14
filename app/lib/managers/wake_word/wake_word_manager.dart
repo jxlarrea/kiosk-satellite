@@ -55,8 +55,10 @@ class WakeWordManager extends Manager implements NativeAudioSource {
   final Map<WakeWordEngineType, WakeWordEngine> _engines = {};
 
   WakeWordEngine? _engineFor(WakeWordEngineType type) => switch (type) {
-        WakeWordEngineType.vsWakeWord =>
-          _engines.putIfAbsent(type, () => VswwEngine(log)),
+        WakeWordEngineType.vsWakeWord => _engines.putIfAbsent(
+            type,
+            () => VswwEngine(log,
+                preferInt8: () => !_settings.get(defs.wakeWordPreferFp32))),
         WakeWordEngineType.microWakeWord =>
           _engines.putIfAbsent(type, () => MwwEngine(log)),
         WakeWordEngineType.openWakeWord =>
@@ -472,6 +474,24 @@ class WakeWordManager extends Manager implements NativeAudioSource {
   /// The whole wake-word state as data: what `getWakeWordState` answers, what
   /// the settings screen draws, and what the web admin draws. One shape, so the
   /// two UIs cannot disagree.
+  /// Aggregate precision of the loaded vsWakeWord models for the settings
+  /// UIs: 'int8', 'fp32', 'mixed' (some fell back), or null when the engine
+  /// is not vsWakeWord or nothing has downloaded yet.
+  String? get modelPrecision {
+    final config = _config;
+    if (config == null || config.engine != WakeWordEngineType.vsWakeWord) {
+      return null;
+    }
+    final ids = [
+      for (final m in config.models) m.id,
+      if (config.stopModel != null) config.stopModel!.id,
+    ];
+    final seen = {for (final id in ids) _engine.modelPrecision(id)}
+      ..remove(null);
+    if (seen.isEmpty) return null;
+    return seen.length == 1 ? seen.first : 'mixed';
+  }
+
   Map<String, Object?> describeState() => {
         'available': available,
         'stopWordAvailable': stopWordAvailable,
@@ -492,8 +512,18 @@ class WakeWordManager extends Manager implements NativeAudioSource {
         'nativePipeline': nativePipelineSupported,
         'models': [
           for (final m in _config?.models ?? const <WakeWordModelRef>[])
-            m.toJson(),
+            {
+              ...m.toJson(),
+              // Which file the engine actually loaded ('int8'/'fp32'); null
+              // until the download has happened.
+              'precision': _engine.modelPrecision(m.id),
+            },
         ],
+        'stopWordPrecision': switch (_config?.stopModel?.id) {
+          null => null,
+          final id => _engine.modelPrecision(id),
+        },
+        'modelPrecision': modelPrecision,
       };
 
   @override
@@ -517,6 +547,10 @@ class WakeWordManager extends Manager implements NativeAudioSource {
         // capture session opens, so they land the same way the device
         // selection does.
         _restartForMicChange('microphone settings changed');
+      } else if (e.key == defs.wakeWordPreferFp32.key) {
+        // Models are fetched at engine start; a precision flip needs the
+        // same stop/start to re-download as a mic change does.
+        _restartForMicChange('model precision preference changed');
       }
     });
 

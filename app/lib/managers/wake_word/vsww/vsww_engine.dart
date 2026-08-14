@@ -19,10 +19,26 @@ typedef ModelStoreFactory = VswwModelStore Function();
 /// word's last sample rather than to the detection instant.
 class VswwEngine extends IsolateWakeEngine {
   VswwEngine(super.log,
-      {ModelStoreFactory? storeFactory, super.mic, super.spawner})
-      : _store = (storeFactory ?? VswwModelStore.new)();
+      {ModelStoreFactory? storeFactory,
+      bool Function()? preferInt8,
+      super.mic,
+      super.spawner})
+      : _store = (storeFactory ?? VswwModelStore.new)(),
+        _preferInt8 = preferInt8 ?? (() => true);
 
   final VswwModelStore _store;
+
+  /// Whether to try the quantized `int8/` sibling first (the "Prefer fp32
+  /// vsWakeWord models" setting, inverted). Read per download so a toggle
+  /// flip only needs an engine restart, not a new engine.
+  final bool Function() _preferInt8;
+
+  /// Precision actually loaded per model id ('int8' or 'fp32'), for the
+  /// settings UIs. Only models fetched this session appear.
+  final Map<String, String> _precisions = {};
+
+  @override
+  String? modelPrecision(String id) => _precisions[id];
 
   @override
   String get tag => 'vsww';
@@ -38,10 +54,14 @@ class VswwEngine extends IsolateWakeEngine {
 
   @override
   Future<WakeModelPayload?> loadModels(WakeWordConfig config) async {
+    final preferInt8 = _preferInt8();
+    _precisions.clear();
     final models = <Map<String, Object>>[];
     for (final ref in config.models) {
       try {
-        final model = await _store.fetch(ref.manifestUrl);
+        final model =
+            await _store.fetch(ref.manifestUrl, preferInt8: preferInt8);
+        _precisions[ref.id] = model.precision;
         models.add({
           'id': ref.id,
           'wakeWord': ref.wakeWord,
@@ -51,8 +71,8 @@ class VswwEngine extends IsolateWakeEngine {
           // only apply it.
           'confidenceScale': ref.confidenceScale,
         });
-        log.info(
-            tag, 'downloaded "${ref.id}" (${model.onnxBytes.length} bytes)');
+        log.info(tag,
+            'downloaded "${ref.id}" (${model.precision}, ${model.onnxBytes.length} bytes)');
       } catch (e) {
         log.error(tag, 'download "${ref.id}" failed: $e');
       }
@@ -65,7 +85,9 @@ class VswwEngine extends IsolateWakeEngine {
     final stopRef = config.stopModel;
     if (stopRef != null) {
       try {
-        final model = await _store.fetch(stopRef.manifestUrl);
+        final model =
+            await _store.fetch(stopRef.manifestUrl, preferInt8: preferInt8);
+        _precisions[stopRef.id] = model.precision;
         models.add({
           'id': stopRef.id,
           'wakeWord': stopRef.wakeWord,
@@ -76,7 +98,7 @@ class VswwEngine extends IsolateWakeEngine {
         });
         hasStop = true;
         log.info(tag,
-            'downloaded stop model "${stopRef.id}" (${model.onnxBytes.length} bytes)');
+            'downloaded stop model "${stopRef.id}" (${model.precision}, ${model.onnxBytes.length} bytes)');
       } catch (e) {
         log.error(tag, 'download stop model "${stopRef.id}" failed: $e');
       }

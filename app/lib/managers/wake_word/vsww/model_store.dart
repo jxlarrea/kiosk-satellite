@@ -11,10 +11,13 @@ import 'manifest.dart';
 /// A downloaded vsWakeWord model: its parsed manifest, the raw manifest JSON
 /// (so it can be re-parsed inside the compute isolate), and the ONNX bytes.
 class VswwModel {
-  VswwModel(this.manifest, this.manifestJson, this.onnxBytes);
+  VswwModel(this.manifest, this.manifestJson, this.onnxBytes, this.precision);
   final VswwManifest manifest;
   final String manifestJson;
   final Uint8List onnxBytes;
+
+  /// 'int8' when the quantized sibling was fetched, 'fp32' otherwise.
+  final String precision;
 }
 
 /// Downloads vsWakeWord models + manifests from the URLs the Voice Satellite
@@ -30,7 +33,11 @@ class VswwModelStore {
   }
 
   /// Fetch manifest (always fresh) + ONNX (disk-cached by URL hash).
-  Future<VswwModel> fetch(String manifestUrl) async {
+  ///
+  /// With [preferInt8], the quantized sibling under `int8/` is tried first
+  /// (same manifest, ~35% faster inference); any failure falls back to the
+  /// fp32 file, so a server without the int8 build keeps working untouched.
+  Future<VswwModel> fetch(String manifestUrl, {bool preferInt8 = false}) async {
     final manifestResp = await http
         .get(Uri.parse(manifestUrl))
         .timeout(const Duration(seconds: 20));
@@ -44,8 +51,17 @@ class VswwModelStore {
     }
 
     final onnxUrl = _onnxUrlFor(manifestUrl);
+    if (preferInt8) {
+      try {
+        final bytes = await _fetchOnnxCached(_int8UrlFor(onnxUrl));
+        return VswwModel(manifest, manifestResp.body, bytes, 'int8');
+      } catch (_) {
+        // No int8 sibling on this server (or it failed to load): fp32 is
+        // always the safe answer, and the browser runner requires it anyway.
+      }
+    }
     final onnxBytes = await _fetchOnnxCached(onnxUrl);
-    return VswwModel(manifest, manifestResp.body, onnxBytes);
+    return VswwModel(manifest, manifestResp.body, onnxBytes, 'fp32');
   }
 
   /// Derive the `.onnx` URL from the manifest URL, preserving any query
@@ -59,6 +75,18 @@ class VswwModelStore {
         ? '${path.substring(0, path.length - 5)}.onnx'
         : '$path.onnx';
     return '$onnxPath$query';
+  }
+
+  /// The quantized sibling lives in an `int8/` subfolder next to the fp32
+  /// file: `.../vswakeword/ok_nova.onnx` -> `.../vswakeword/int8/ok_nova.onnx`
+  /// (query preserved, it carries the cache-busting version).
+  static String _int8UrlFor(String onnxUrl) {
+    final q = onnxUrl.indexOf('?');
+    final path = q >= 0 ? onnxUrl.substring(0, q) : onnxUrl;
+    final query = q >= 0 ? onnxUrl.substring(q) : '';
+    final slash = path.lastIndexOf('/');
+    if (slash < 0) return onnxUrl;
+    return '${path.substring(0, slash)}/int8${path.substring(slash)}$query';
   }
 
   Future<Uint8List> _fetchOnnxCached(String onnxUrl) async {

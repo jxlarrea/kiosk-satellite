@@ -4531,6 +4531,17 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
             ),
             trailing: _rowValue(context, config.stopModel!.wakeWord),
           ),
+        if (wake.modelPrecision != null)
+          ListTile(
+            leading: const Icon(Icons.memory),
+            title: const Text('Model precision'),
+            subtitle: Text(switch (wake.modelPrecision) {
+              'int8' => 'Quantized for faster listening',
+              'fp32' => 'Original full-precision models',
+              _ => 'Some models fell back to fp32',
+            }),
+            trailing: _rowValue(context, wake.modelPrecision!),
+          ),
         ListTile(
           leading: const Icon(Icons.sync_alt),
           title: const Text('Native voice pipeline'),

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.38 - 2026-08-13
+
+### Added
+- Wake word detection now prefers quantized int8 vsWakeWord models when Voice Satellite serves them, falling back to the original fp32 files automatically on servers without an int8 build. Inference drops from 8.6ms to 5.9ms per window on an Echo Show 8, cutting listening CPU by 10-30% depending on how busy the device is; the manifest, thresholds and detection gates are unchanged, and the quantization was validated against the standard wake-word benchmark suite on three wake words with recall identical on every positive set and false-positive deltas within a single borderline clip. A new "Prefer fp32 vsWakeWord models" toggle opts back into full precision, and both settings UIs gained a Model precision row in the Wake word panel stating which variant is actually loaded.
+
 ## v2026.8.37 - 2026-08-13
 
 ### Added

@@ -287,6 +287,11 @@ abstract class WakeWordEngine {
 
   Future<void> stop();
 
+  /// Precision of the model actually loaded for [id] ('int8' or 'fp32'), or
+  /// null when unknown - not downloaded yet, or an engine without precision
+  /// variants. The settings UIs show it next to the wake words.
+  String? modelPrecision(String id) => null;
+
   /// Arm/disarm the stop-word classifier. Unlike wake detection this runs
   /// *during* a voice turn (that is the whole point: interrupting playback),
   /// so it is independent of [pauseDetection].
