@@ -2484,8 +2484,7 @@ const haHaptics = SettingDef<bool>(
   title: 'Enable haptics',
   description:
       'Vibrate when buttons, switches, cards, sliders and thermostat '
-      'dials are used. Does nothing on devices without a vibration '
-      'motor.',
+      'dials are used. Requires a vibration motor.',
   category: 'Home Assistant',
   section: 'Haptics',
 );
