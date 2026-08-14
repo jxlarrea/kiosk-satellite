@@ -1,6 +1,6 @@
-/// Button haptics: a short native vibration whenever a tap lands on
-/// something button-shaped in the dashboard, and a lighter tick for every
-/// step a slider crosses while it drags — so a wall panel answers like a
+/// Haptics: a short native vibration whenever a tap lands on something
+/// button-shaped in the dashboard, and a lighter tick for every step a
+/// slider crosses while it drags — so a wall panel answers like a
 /// physical switch and a brightness drag feels like a detented knob.
 ///
 /// Everything is event-driven and idle-free: capture-phase listeners on
@@ -28,16 +28,28 @@
 /// path instead: the release of a drag also fires a click, and a full
 /// tap on top of the last tick would double-buzz.
 ///
-/// Sliders ride three events, all handled by one function: `input`
-/// (native range inputs — ha-slider is md-slider around one; the event is
-/// composed, and composedPath()[0] is the real inner input where
-/// event.target has been retargeted to the outer host), and HA's own
-/// `slider-moved` / `value-changed` (ha-control-slider and friends render
-/// with pointer events, no input element; fireEvent dispatches composed).
+/// Sliders funnel into one function from two directions. Native range
+/// inputs (ha-slider is md-slider around one) surface as composed `input`
+/// events at the window, where composedPath()[0] is the real inner input
+/// event.target was retargeted away from. Everything else announces a
+/// value by DISPATCHING a custom event — HA's `slider-moved` /
+/// `value-changed`, the thermostat wheel's `value/low/high-changing`
+/// stream (ha-control-circular-slider fires -changing per step during the
+/// drag and -changed only on release), and custom cards like Mushroom
+/// whose `current-change` / `change` are created with neither bubbles nor
+/// composed, so no listener anywhere above them can ever see them. So the
+/// custom-event side hooks EventTarget.prototype.dispatchEvent itself and
+/// watches slider-named elements dispatch — the source end of the pipe,
+/// where flags do not matter. The hook's overhead off the slider path is
+/// one regex test per JS-dispatched event; page-generated events (clicks,
+/// input, pointer) never pass through it at all.
+///
 /// The value is quantized to the control's step and remembered on the
 /// element itself, so a tick fires only when the stepped value actually
-/// changes — value-changed doubling up after input dedupes against the
-/// same memory, and holding still buzzes nothing.
+/// changes — release events repeating the last value dedupe against the
+/// same memory, and holding still buzzes nothing. A dual-target
+/// thermostat's low and high handles keep separate memories on their
+/// shared element.
 ///
 /// The haptic itself is native (see HapticsBridge.kt): one fire-and-forget
 /// callHandler message per accepted event — 'tap' or 'tick', strength is
@@ -119,29 +131,55 @@ const buttonHapticsScript = '''
 
   // ── Sliders ─────────────────────────────────────────────────────────
 
-  function onSlider(e) {
-    if (window.__ksHapticsEnabled !== true) return;
-    var t = e.composedPath ? e.composedPath()[0] : e.target;
-    if (!(t instanceof Element)) return;
+  // Every custom event a slider family announces values with. 'change'
+  // and 'value-changed' are generic across the frontend; the slider-name
+  // gate below keeps text fields and pickers out.
+  var SLIDE_EV = new RegExp('^(slider-moved|value-changed|value-changing|' +
+    'low-changing|low-changed|high-changing|high-changed|' +
+    'current-change|change)\$');
+
+  // [dv] is the event's detail.value when it carried one; release events
+  // that signal end-of-interaction with an undefined detail fall back to
+  // the element's own value, which sits on the last step and dedupes.
+  function sliderTick(t, type, dv, now) {
     var name = t.localName || '';
     var isRange = name === 'input' && t.type === 'range';
     if (!isRange && name.indexOf('slider') === -1) return;
-    var v = e.detail && typeof e.detail.value === 'number'
-      ? e.detail.value
-      : parseFloat(t.value);
+    var v = typeof dv === 'number' ? dv : parseFloat(t.value);
     if (!isFinite(v)) return;
     var step = parseFloat(t.step) || 1;
     var q = Math.round(v / step);
-    if (t.__ksHapticStep === q) return;
-    t.__ksHapticStep = q;
-    var now = e.timeStamp || 0;
+    // Dual-target thermostats drive low and high from one element; each
+    // handle remembers its own step or they would dedupe against each
+    // other where the ranges meet.
+    var key = type.lastIndexOf('low-', 0) === 0 ? '__ksHapticStepLo'
+      : type.lastIndexOf('high-', 0) === 0 ? '__ksHapticStepHi'
+      : '__ksHapticStep';
+    if (t[key] === q) return;
+    t[key] = q;
     if (now - lastTick < TICK_MS) return;
     lastTick = now;
     send('tick');
   }
 
-  addEventListener('input', onSlider, { passive: true, capture: true });
-  addEventListener('slider-moved', onSlider, { passive: true, capture: true });
-  addEventListener('value-changed', onSlider, { passive: true, capture: true });
+  addEventListener('input', function (e) {
+    if (window.__ksHapticsEnabled !== true) return;
+    var t = e.composedPath ? e.composedPath()[0] : e.target;
+    if (t instanceof Element) sliderTick(t, e.type, null, e.timeStamp || 0);
+  }, { passive: true, capture: true });
+
+  var dispatch = EventTarget.prototype.dispatchEvent;
+  EventTarget.prototype.dispatchEvent = function (ev) {
+    try {
+      if (window.__ksHapticsEnabled === true && ev &&
+          SLIDE_EV.test(ev.type) && this instanceof Element) {
+        var d = ev.detail;
+        sliderTick(this, ev.type,
+          d && typeof d.value === 'number' ? d.value : null,
+          performance.now());
+      }
+    } catch (_) {}
+    return dispatch.call(this, ev);
+  };
 })();
 ''';

@@ -247,7 +247,7 @@ class _KioskScreenState extends State<KioskScreen>
     }
     // Button haptics is the same live-flag contract; the script itself has
     // no state to build or tear down.
-    if (e.key == defs.haButtonHaptics.key) {
+    if (e.key == defs.haHaptics.key) {
       await c.browser.runJs(
         'window.__ksHapticsEnabled = ${e.value == true};',
       );
@@ -602,7 +602,7 @@ class _KioskScreenState extends State<KioskScreen>
     UserScript(
       source:
           'window.__ksHapticsEnabled = '
-          '${c.settings.get(defs.haButtonHaptics)};',
+          '${c.settings.get(defs.haHaptics)};',
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     UserScript(
@@ -1191,8 +1191,8 @@ class _KioskScreenState extends State<KioskScreen>
       controller.addJavaScriptHandler(
         handlerName: 'ksHaptic',
         callback: (args) {
-          if (!c.settings.get(defs.haButtonHaptics)) return;
-          final strength = c.settings.get(defs.haButtonHapticsStrength);
+          if (!c.settings.get(defs.haHaptics)) return;
+          final strength = c.settings.get(defs.haHapticsStrength);
           if (args.isNotEmpty && args.first == 'tick') {
             Haptics.tick(strength: strength);
           } else {
@@ -1220,7 +1220,7 @@ class _KioskScreenState extends State<KioskScreen>
       );
       c.browser.runJs(
         'window.__ksHapticsEnabled = '
-        '${c.settings.get(defs.haButtonHaptics)};',
+        '${c.settings.get(defs.haHaptics)};',
       );
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does

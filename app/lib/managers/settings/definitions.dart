@@ -2470,41 +2470,41 @@ const haDashboardCarousel = SettingDef<bool>(
   section: 'User Interface',
 );
 
-/// Haptic feedback for dashboard taps (in-page script, see
+/// Haptic feedback for the dashboard (in-page script, see
 /// haptics_script.dart): a short native click whenever a tap lands on
 /// something button-shaped, and a lighter tick per step while a slider
-/// drags, so a wall panel answers like a physical switch. Uses the
-/// platform vibrator directly, so it works even where the system's own
-/// touch-feedback setting is off; devices without a vibrator (most Fire
-/// tablets, Echo Shows) leave the toggle a no-op.
-const haButtonHaptics = SettingDef<bool>(
-  key: 'ha.button_haptics',
+/// or thermostat wheel drags, so a wall panel answers like a physical
+/// switch. Uses the platform vibrator directly, so it works even where
+/// the system's own touch-feedback setting is off; devices without a
+/// vibrator (most Fire tablets, Echo Shows) leave the toggle a no-op.
+const haHaptics = SettingDef<bool>(
+  key: 'ha.haptics',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Vibrate on button taps',
+  title: 'Enable haptics',
   description:
-      'Give a short vibration when a button, switch or card is tapped '
-      'and as sliders move across their steps. Does nothing on devices '
-      'without a vibration motor.',
+      'Vibrate when buttons, switches, cards, sliders and thermostat '
+      'dials are used. Does nothing on devices without a vibration '
+      'motor.',
   category: 'Home Assistant',
-  section: 'User Interface',
+  section: 'Haptics',
 );
 
 /// How hard the buzz hits. Read Dart-side per tap (never seeded into the
 /// page), so a change applies to the very next touch with no reload and
 /// no page contract. Buttons get the chosen level; slider ticks always
 /// sit one level softer so a drag reads as texture, not as taps.
-const haButtonHapticsStrength = SettingDef<String>(
-  key: 'ha.button_haptics_strength',
+const haHapticsStrength = SettingDef<String>(
+  key: 'ha.haptics_strength',
   type: SettingType.select,
   defaultValue: 'medium',
   title: 'Vibration strength',
-  description: 'How strong the tap vibration feels.',
+  description: 'How strong the vibration feels.',
   category: 'Home Assistant',
-  section: 'User Interface',
+  section: 'Haptics',
   options: ['light', 'medium', 'strong'],
   optionLabels: {'light': 'Light', 'medium': 'Medium', 'strong': 'Strong'},
-  dependsOn: 'ha.button_haptics',
+  dependsOn: 'ha.haptics',
 );
 
 /// Mirror the app's effective theme onto the Home Assistant dashboard
@@ -3473,8 +3473,8 @@ const List<SettingDef<Object>> allSettings = [
   haKioskHideHeader,
   haKioskHideSidebar,
   haDashboardCarousel,
-  haButtonHaptics,
-  haButtonHapticsStrength,
+  haHaptics,
+  haHapticsStrength,
   themeMatchApp,
   themeAuto,
   themeDarkAt,
