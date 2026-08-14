@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.41 - 2026-08-14
 
 ### Added
 - The At a Glance row can now join the full-screen Now Playing view (#209). A new "Show on Now Playing" toggle in the At a Glance group, off by default, pins the configured entities to the bottom of the screen while music plays, with the album art panel shrinking slightly and riding a little higher so both fit even on short screens like the Echo Show. The row stays hidden while lyrics are showing, since those layouts already use every free pixel, and entity states stay live for the whole session over the same lightweight subscription the screensaver row uses.
