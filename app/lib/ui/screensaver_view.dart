@@ -2169,11 +2169,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
               fit: StackFit.expand,
               children: [
                 body,
-                _ImmichMetadata(
-                  key: ValueKey('meta:${_assets[_index].id}'),
-                  container: c,
-                  asset: _assets[_index],
-                ),
+                _ImmichMetadata(container: c, asset: _assets[_index]),
               ],
             )
           : body,
@@ -2183,20 +2179,58 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
 
 /// The metadata panel in a corner of the Immich screensaver: album, date,
 /// camera and location, shadow-on-photo text like the small clock, and only
-/// the lines the asset actually carries. Instant when the lookup was
-/// prefetched; otherwise it appears as soon as the server answers.
-class _ImmichMetadata extends StatelessWidget {
-  const _ImmichMetadata({
-    super.key,
-    required this.container,
-    required this.asset,
-  });
+/// the lines the asset actually carries. The panel outlives the slide: the
+/// vignette holds steady from photo to photo while the text fades out with
+/// the old one and back in with the new. Remounting the whole panel per
+/// slide read as a hard blink against the crossfading photos.
+class _ImmichMetadata extends StatefulWidget {
+  const _ImmichMetadata({required this.container, required this.asset});
 
   final AppContainer container;
   final ImmichAsset asset;
 
   @override
+  State<_ImmichMetadata> createState() => _ImmichMetadataState();
+}
+
+class _ImmichMetadataState extends State<_ImmichMetadata> {
+  /// The details on screen right now. They lag [_ImmichMetadata.asset] by
+  /// design: the old text holds through its fade-out, and the vignette
+  /// rides this map, so it only moves when an asset truly has no lines.
+  Map<String, String> _details = const {};
+  bool _textVisible = false;
+
+  static const _fade = Duration(milliseconds: 250);
+
+  @override
+  void initState() {
+    super.initState();
+    _swap(widget.asset, fadeOut: false);
+  }
+
+  @override
+  void didUpdateWidget(_ImmichMetadata old) {
+    super.didUpdateWidget(old);
+    if (old.asset.id != widget.asset.id) _swap(widget.asset, fadeOut: true);
+  }
+
+  /// Fade the old text out, look up the new asset's lines (already cached
+  /// when the prefetcher got there first), fade back in. A newer swap wins:
+  /// each continuation checks it still speaks for the current asset.
+  Future<void> _swap(ImmichAsset asset, {required bool fadeOut}) async {
+    if (fadeOut) setState(() => _textVisible = false);
+    final details = await widget.container.immich.assetDetails(asset);
+    if (fadeOut) await Future<void>.delayed(_fade);
+    if (!mounted || widget.asset.id != asset.id) return;
+    setState(() {
+      _details = details;
+      _textVisible = true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final container = widget.container;
     // Widgets own their corners: rather than stacking two panels into
     // one corner, the metadata steps to the first free one, and stands
     // down entirely on the (unlikely) fully claimed screen.
@@ -2224,77 +2258,79 @@ class _ImmichMetadata extends StatelessWidget {
           shadows: shadows,
           height: 1.35,
         );
+    final details = _details;
+    // One icon per row; the two camera lines (model and exposure)
+    // share the exif icon as a single logical entry.
+    Widget row(String icon, List<Widget> texts) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SvgPicture.asset(
+          'assets/svg/$icon.svg',
+          width: 15,
+          height: 15,
+          colorFilter: ColorFilter.mode(
+            Colors.white.withValues(alpha: 0.85),
+            BlendMode.srcIn,
+          ),
+        ),
+        const SizedBox(width: 9),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: texts,
+        ),
+      ],
+    );
     return IgnorePointer(
-      child: FutureBuilder<Map<String, String>>(
-        future: container.immich.assetDetails(asset),
-        builder: (context, snapshot) {
-          final details = snapshot.data;
-          if (details == null || details.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          // One icon per row; the two camera lines (model and exposure)
-          // share the exif icon as a single logical entry.
-          Widget row(String icon, List<Widget> texts) => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                'assets/svg/$icon.svg',
-                width: 15,
-                height: 15,
-                colorFilter: ColorFilter.mode(
-                  Colors.white.withValues(alpha: 0.85),
-                  BlendMode.srcIn,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // The vignette fades with content presence, not with the slide:
+          // consecutive photos with metadata keep one steady vignette.
+          AnimatedOpacity(
+            opacity: details.isEmpty ? 0 : 1,
+            duration: _fade,
+            child: _cornerVignette(corner, radius: 0.6),
+          ),
+          AnimatedOpacity(
+            opacity: _textVisible && details.isNotEmpty ? 1 : 0,
+            duration: _fade,
+            child: Align(
+              alignment: corner,
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 10,
+                  crossAxisAlignment: corner.x < 0
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.end,
+                  children: [
+                    if (details['album'] != null)
+                      row('album', [
+                        Text(
+                          details['album']!,
+                          style: style(size: 18, weight: FontWeight.w600),
+                        ),
+                      ]),
+                    if (details['date'] != null)
+                      row('calendar', [
+                        Text(details['date']!, style: style(alpha: 0.9)),
+                      ]),
+                    if (details['settings'] != null)
+                      row('exif', [
+                        Text(details['settings']!, style: style(alpha: 0.8)),
+                      ]),
+                    if (details['location'] != null)
+                      row('location', [
+                        Text(details['location']!, style: style(alpha: 0.9)),
+                      ]),
+                  ],
                 ),
               ),
-              const SizedBox(width: 9),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: texts,
-              ),
-            ],
-          );
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              _cornerVignette(corner, radius: 0.6),
-              Align(
-                alignment: corner,
-                child: Padding(
-                  padding: const EdgeInsets.all(28),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    spacing: 10,
-                    crossAxisAlignment: corner.x < 0
-                        ? CrossAxisAlignment.start
-                        : CrossAxisAlignment.end,
-                    children: [
-                      if (details['album'] != null)
-                        row('album', [
-                          Text(
-                            details['album']!,
-                            style: style(size: 18, weight: FontWeight.w600),
-                          ),
-                        ]),
-                      if (details['date'] != null)
-                        row('calendar', [
-                          Text(details['date']!, style: style(alpha: 0.9)),
-                        ]),
-                      if (details['settings'] != null)
-                        row('exif', [
-                          Text(details['settings']!, style: style(alpha: 0.8)),
-                        ]),
-                      if (details['location'] != null)
-                        row('location', [
-                          Text(details['location']!, style: style(alpha: 0.9)),
-                        ]),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
