@@ -267,8 +267,9 @@ class HomeAssistantManager extends Manager {
             // A commanded view should not instantly rotate away: give it the
             // same grace window a touch gets.
             if (_rotationTimer != null) _pauseRotationForTouch();
-            await navigateToViewPath(path);
-            return const CommandResult.ok(null);
+            // The outcome travels in the result so the MQTT select knows
+            // whether the page actually moved before echoing state.
+            return CommandResult.ok(await navigateToViewPath(path));
           },
         ),
       )
@@ -766,17 +767,22 @@ class HomeAssistantManager extends Manager {
   /// With [crossfade] the rotation's in-page dissolve is tried first (see
   /// rotation_fade_script.dart); whatever it cannot handle falls through
   /// to the instant path below.
-  Future<void> navigateToViewPath(
+  ///
+  /// Returns what actually happened — 'navigated', 'already' (the page is
+  /// on that view), 'off-origin' (a non-HA page is on screen, nothing
+  /// moved) or 'failed' — so callers reporting state elsewhere (the MQTT
+  /// select) do not have to guess.
+  Future<String> navigateToViewPath(
     String viewPath, {
     bool crossfade = false,
   }) async {
-    if (baseUrl.isEmpty || viewPath.isEmpty) return;
+    if (baseUrl.isEmpty || viewPath.isEmpty) return 'failed';
     final seq = ++_navSeq;
     // A path a soft navigation cannot resolve goes straight to a full load
     // (loadUrl drops the overlay itself). One-time discovery below.
     if (_hardLoadPaths.contains(viewPath)) {
       await commands.execute('loadUrl', {'url': '$baseUrl/$viewPath'});
-      return;
+      return 'navigated';
     }
     // With the secure context proxy on, the page lives on the loopback
     // origin, not baseUrl — guard against what is actually on screen.
@@ -793,7 +799,7 @@ class HomeAssistantManager extends Manager {
         // same-dashboard hui-root — the strategy-spinner self-heal below
         // cannot apply to such a target.
         await commands.execute('hideOverlayPage', const {});
-        return;
+        return 'navigated';
       }
       // 'plain': a dashboard hop, an off-origin page, an unknown route or
       // a transition already in flight — the instant path handles it.
@@ -815,7 +821,12 @@ class HomeAssistantManager extends Manager {
 ''';
     final nav = await commands.execute('evalJs', {'code': js});
     await commands.execute('hideOverlayPage', const {});
-    if (!nav.ok || '${nav.data}' != 'navigated') return;
+    final outcome = nav.ok ? '${nav.data}' : 'failed';
+    if (outcome != 'navigated') {
+      return outcome == 'already' || outcome == 'off-origin'
+          ? outcome
+          : 'failed';
+    }
     // Self-heal, once per path: a soft navigation cannot resolve every
     // dashboard — strategy dashboards (the auto "Overview") and redirect
     // aliases leave the panel spinning forever. If it is still spinning
@@ -823,7 +834,7 @@ class HomeAssistantManager extends Manager {
     // do the full load now; every later pass goes straight to loadUrl with
     // no spinner-then-reload double hit.
     await Future<void>.delayed(const Duration(milliseconds: 2500));
-    if (_navSeq != seq) return;
+    if (_navSeq != seq) return 'navigated';
     final check = await commands.execute('evalJs', {
       'code':
           '''
@@ -858,6 +869,7 @@ class HomeAssistantManager extends Manager {
       );
       await commands.execute('loadUrl', {'url': '$baseUrl/$viewPath'});
     }
+    return 'navigated';
   }
 
   Timer? _themeTimer;

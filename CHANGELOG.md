@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The Dashboard view select entity no longer loses its view options after a Home Assistant restart or network flap (#214). If the periodic option refresh happened to run while the app's Home Assistant websocket was down, every dashboard's view list read failed and the select's options collapsed to bare dashboard paths, which was then persisted and republished to MQTT discovery, leaving the device's retained "dashboard/view" state invalid in Home Assistant ("Invalid option for select"). A failed view list read now keeps the last known option list instead of downgrading it.
+- Commanding the Dashboard view select no longer reports the requested view as current when the page never actually moved (a non Home Assistant page on screen, or a navigation failure). The app log now also says why the page did not move instead of staying silent.
+
 ## v2026.8.40 - 2026-08-14
 
 ### Added

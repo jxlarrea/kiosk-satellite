@@ -1099,12 +1099,18 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       } else if (topic == '$_base/dashboard_view/set') {
         log.info(name, 'command $topic = $text');
         final result = await commands.execute('haNavigate', {'path': text});
+        final outcome = result.ok ? '${result.data}' : '';
         if (!result.ok) {
           log.warn(name, 'haNavigate over MQTT failed: ${result.error}');
-        } else {
+        } else if (outcome == 'navigated' || outcome == 'already') {
           // Optimistic; the URL change event corrects it if the SPA lands
           // somewhere else (redirect, auth bounce).
           _publish('$_base/dashboard_view/state', text);
+        } else {
+          // The page never moved (an off-origin site on screen, an eval
+          // failure): echoing the command would lie to the select, and the
+          // silence hid exactly this case in issue #214's logs.
+          log.warn(name, 'haNavigate did not move the page: $outcome');
         }
       } else if (topic == '$_base/camera_snapshot/set') {
         log.info(name, 'snapshot command');
@@ -1961,13 +1967,20 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         final views = await commands.execute('haListDashboardViews', {
           'url_path': urlPath,
         });
-        final viewData = views.ok ? views.data : null;
+        // A FAILED read (websocket down, HA restarting) says nothing about
+        // the dashboard: abort and keep the last known list. Falling back
+        // to the bare path here downgraded the whole select to viewless
+        // options — and persisted the downgrade — whenever a refresh ran
+        // inside a websocket outage, leaving retained "dashboard/view"
+        // states invalid in HA (issue #214).
+        if (!views.ok) return;
+        final viewData = views.data;
         if (viewData is List && viewData.isNotEmpty) {
           for (final v in viewData) {
             if (v is Map) options.add('$urlPath/${v['route']}');
           }
         } else {
-          // A dashboard whose config cannot be read (auto-generated
+          // A dashboard that genuinely holds no view list (auto-generated
           // strategy dashboards) still navigates by its bare path.
           options.add(urlPath);
         }
