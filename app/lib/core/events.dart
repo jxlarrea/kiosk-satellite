@@ -513,7 +513,13 @@ class SendspinShowPlayerRequested extends AppEvent {
 // ── Settings ───────────────────────────────────────────────────────────
 
 class SettingChanged extends AppEvent {
-  const SettingChanged({required this.key, required this.value});
+  const SettingChanged({required this.key, required this.value, this.previous});
   final String key;
   final Object? value;
+
+  /// The value the setting held before this change (null when the publisher
+  /// does not know it). Lets a listener react to what actually changed — the
+  /// browser rewrites the start URL's origin only when it matched the *old*
+  /// HA base URL.
+  final Object? previous;
 }

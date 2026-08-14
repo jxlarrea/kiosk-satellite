@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- Changing the Home Assistant base URL now updates the stored dashboard start URL along with it (#216). The dashboard picker stores an absolute URL built from the base URL at pick time, so a device first set up over an IP address kept loading the dashboard from that IP forever after the base URL moved to a domain, and every URL the page derives from its own address (wake word model downloads, TTS playback) kept the old host too. When the base URL changes, a start URL sitting on the old origin now follows it to the new one and the dashboard reloads there; a start URL pointing at some other site is left alone.
+
 ## v2026.8.42 - 2026-08-14
 
 ### Fixed

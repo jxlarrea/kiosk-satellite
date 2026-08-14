@@ -258,6 +258,7 @@ class SettingsManager extends Manager {
   }
 
   Future<void> set<T>(SettingDef<T> def, T value) async {
+    final previous = get(def);
     switch (value) {
       case final bool v:
         await _prefs.setBool(_prefix + def.key, v);
@@ -275,7 +276,7 @@ class SettingsManager extends Manager {
         throw ArgumentError('unsupported setting type: $value');
     }
     log.info(name, 'set ${def.key}${def.secret ? '' : ' = $value'}');
-    bus.publish(SettingChanged(key: def.key, value: value));
+    bus.publish(SettingChanged(key: def.key, value: value, previous: previous));
   }
 
   /// Internal string value with no settings row (state, not preference).

@@ -179,6 +179,9 @@ class BrowserManager extends Manager {
       if (e.up) unawaited(onNetworkAvailable());
     });
     bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.haUrl.key) unawaited(_migrateStartUrlOrigin(e));
+    });
+    bus.on<SettingChanged>().listen((e) {
       if (e.key != defs.freezeOnScreensaver.key) return;
       // A paused page reports itself hidden, and Home Assistant suspends a
       // hidden page's connection after a few minutes — so freezing requires
@@ -907,6 +910,34 @@ class BrowserManager extends Manager {
   /// loopback-proxied form when the secure context proxy is on. Every load
   /// funnels through here, so callers keep passing the real HA URLs.
   String Function(String url)? urlMapper;
+
+  /// Follow a Home Assistant base URL change with the stored start URL
+  /// (issue #216). The dashboard picker bakes an absolute URL at pick time,
+  /// so without this the WebView keeps loading the dashboard from whatever
+  /// origin the base URL had back then — and every URL the page derives
+  /// from its own origin (wake word model manifests, TTS proxy) keeps that
+  /// old host too, while the app's own clients follow the new one.
+  ///
+  /// Only a start URL sitting on the *old* base origin moves; a custom page
+  /// on some other host is the user's own business and stays put.
+  Future<void> _migrateStartUrlOrigin(SettingChanged e) async {
+    final old = Uri.tryParse(((e.previous as String?) ?? '').trim());
+    final now = Uri.tryParse(((e.value as String?) ?? '').trim());
+    final start = Uri.tryParse(startUrl);
+    if (old == null || now == null || start == null) return;
+    // Uri.origin throws for anything without one; a first-time setup
+    // (previous value empty) falls out here too.
+    for (final u in [old, now, start]) {
+      if (!u.isScheme('http') && !u.isScheme('https')) return;
+    }
+    if (old.origin == now.origin || start.origin != old.origin) return;
+    final full = start.toString();
+    if (!full.startsWith(start.origin)) return;
+    final rewritten = now.origin + full.substring(start.origin.length);
+    log.info(name, 'start URL follows the new HA base URL: $rewritten');
+    await _settings.set(defs.startUrl, rewritten);
+    await loadUrl(rewritten);
+  }
 
   Future<void> loadUrl(String url) async {
     // An explicit navigation targets the main WebView; an overlay page
