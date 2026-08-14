@@ -13,9 +13,7 @@
 <a href="https://buymeacoffee.com/jxlarrea"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee"></a>
 </p>
 
-Turn any Android device into a dedicated, voice-enabled Home Assistant kiosk. Unlike generic kiosk applications, Kiosk Satellite is purpose-built for Home Assistant from the ground up and serves as the official companion app for [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration). Kiosk Satellite is free and open source.
-
-Sideload the app, run the setup wizard and get a locked-down, always-on dashboard with native wake-word detection even when the screen is off or another app is in front. It is built to run smoothly even on older, low powered devices.
+Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpose-built for Home Assistant from the ground up, Kiosk Satellite delivers a smooth, native dashboard experience with optional voice control via [Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration). Kiosk Satellite is free and open source.
 
 <p align="center">
  <img src="assets/ks-demo-lossy.gif" alt="Kiosk Satellite" width="650"/>
