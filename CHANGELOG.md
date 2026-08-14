@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The updater can no longer reinstall the release the device already runs when two consecutive release APKs happen to be byte-identical in size. The downloaded APK was cached under one fixed name and recognized by size alone, so with 2026.8.38 and 2026.8.39 coming out at exactly the same byte count, a device holding the older cached file "updated" by reinstalling it and came back up on the same version every time. The cache file now carries the release version in its name and anything else in the cache is swept before the check, so a leftover from an earlier release can never impersonate the new download.
+
 ## v2026.8.39 - 2026-08-14
 
 ### Improvements

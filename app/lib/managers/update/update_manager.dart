@@ -380,17 +380,30 @@ class UpdateManager extends Manager {
         available.value = fresh;
         info = fresh;
       }
-      // One fixed name, replaced every time: cache never accumulates old
-      // APKs. The updates/ folder is what the manifest's FileProvider maps.
+      // The updates/ folder is what the manifest's FileProvider maps. One
+      // file per version, anything else swept first, so the cache never
+      // accumulates old APKs and a leftover from an earlier release can
+      // never impersonate the new one. The name must carry the version
+      // because byte size alone cannot tell releases apart: two builds
+      // differing by nothing but a same-length version string produce
+      // APKs of identical size, and on exactly such a pair the reuse
+      // check below installed the cached old release as if it were the
+      // new download, "updating" the device to the version it already ran.
       final dir = Directory(
         '${(await getTemporaryDirectory()).path}/updates',
       );
       await dir.create(recursive: true);
-      final file = File('${dir.path}/kiosk-satellite-update.apk');
+      final file = File(
+        '${dir.path}/kiosk-satellite-update-${info.version}.apk',
+      );
+      await for (final stale in dir.list()) {
+        if (stale.path != file.path) await stale.delete();
+      }
       // An earlier attempt whose install never went through (declined, or
       // the confirmation could not show) already paid for this download;
-      // a file whose size matches what GitHub reports for the asset is
-      // that download, not a stale or truncated one (issue #170).
+      // a file of this version's name whose size matches what GitHub
+      // reports for the asset is that download, not a truncated one
+      // (issue #170).
       final expected = info.apkSize;
       if (expected != null &&
           await file.exists() &&

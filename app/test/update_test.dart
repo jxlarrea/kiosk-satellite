@@ -255,12 +255,39 @@ void main() {
     expect(installed, hasLength(2));
   });
 
+  test('a cached APK from the previous release is never reused, even at '
+      'the exact byte size of the new one', () async {
+    // Two consecutive builds can differ by nothing but a same-length
+    // version string and come out byte-identical in size; a size-only
+    // reuse check "updated" a device by reinstalling the release it
+    // already ran.
+    await notice('1.1.0');
+    final dir = Directory('${cache.path}/updates');
+    await dir.create(recursive: true);
+    final stale = File('${dir.path}/kiosk-satellite-update-1.0.0.apk');
+    await stale.writeAsBytes(List.filled(2048, 9)); // old release, same size
+    final asked = <String>[];
+    update.clientFactory = () => MockClient((request) async {
+          asked.add(request.url.toString());
+          return isReleaseQuery(request)
+              ? http.Response(releases([entry('1.1.0', size: 2048)]), 200)
+              : http.Response.bytes(List.filled(2048, 7), 200);
+        });
+
+    expect(await update.downloadAndInstall(), isNull);
+
+    expect(asked, contains('https://example.invalid/1.1.0.apk'));
+    expect(installed.single, endsWith('kiosk-satellite-update-1.1.0.apk'));
+    expect((await File(installed.single).readAsBytes()).first, 7);
+    expect(await stale.exists(), isFalse); // swept, not left to linger
+  });
+
   test('a mismatched leftover file is downloaded fresh, not installed',
       () async {
     await notice('1.1.0');
     final dir = Directory('${cache.path}/updates');
     await dir.create(recursive: true);
-    await File('${dir.path}/kiosk-satellite-update.apk')
+    await File('${dir.path}/kiosk-satellite-update-1.1.0.apk')
         .writeAsBytes(List.filled(100, 1)); // truncated earlier attempt
     final asked = <String>[];
     update.clientFactory = () => MockClient((request) async {
