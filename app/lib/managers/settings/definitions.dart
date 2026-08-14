@@ -2480,7 +2480,7 @@ const haDashboardCarousel = SettingDef<bool>(
 const haHaptics = SettingDef<bool>(
   key: 'ha.haptics',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Enable haptics',
   description:
       'Vibrate when buttons, switches, cards, sliders and thermostat '
