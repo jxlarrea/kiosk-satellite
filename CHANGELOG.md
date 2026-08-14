@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.39 - 2026-08-14
 
 ### Improvements
 - The Immich Media screensaver's metadata panel no longer blinks at each slide change. The whole panel (corner vignette and text) was torn down and rebuilt with every photo; the vignette now holds steady from photo to photo while the text fades out with the old slide and back in with the new one.
