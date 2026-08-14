@@ -1541,11 +1541,20 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         }
       }
       final oldImage = _image;
+      final image = _screenSizedFile(file);
+      // Decode before the hand-off, same as the Immich path (#212): an
+      // undecoded slide paints as nothing, so the crossfade would dip
+      // through black instead of blending photo into photo.
+      await precacheImage(image, context, onError: (_, _) {});
+      if (!mounted) {
+        await old?.dispose();
+        return;
+      }
       c.screensaver.notifySlideChanged();
       setState(() {
         _index = next;
         _imageAspect = aspect;
-        _image = _screenSizedFile(file);
+        _image = image;
       });
       if (oldImage != null) unawaited(oldImage.evict());
       final seconds = c.settings
@@ -1761,8 +1770,9 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
 /// The Immich Media screensaver: the playlist comes from the Immich server
 /// once per activation, images arrive as screen-sized previews (through the
 /// local cache when enabled), videos stream muted and play in full. The next
-/// image is prefetched while the current one holds, so a hand-off never
-/// waits on the network.
+/// image is prefetched while the current one holds and decoded before the
+/// crossfade begins, so a hand-off never waits on the network and never
+/// fades through black.
 class ImmichScreensaver extends StatefulWidget {
   const ImmichScreensaver({super.key, required this.container});
 
@@ -1927,17 +1937,28 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       _failures = 0;
       final oldImage = _image;
       final mq = MediaQuery.of(context);
+      // Screen-width decode cap: server previews can still out-size a
+      // small panel (Echo Show class) several times over.
+      final image = ResizeImage(
+        MemoryImage(bytes),
+        width: (mq.size.width * mq.devicePixelRatio).round(),
+      );
+      // Decode before the hand-off: the switcher starts fading the moment
+      // the new slide mounts, and a decode still in flight paints as
+      // nothing, so the old photo would fade into black and the new one
+      // pop in late (#212). Waiting here just holds the current photo a
+      // beat longer, then the crossfade blends image into image.
+      await precacheImage(image, context, onError: (_, _) {});
+      if (!mounted) {
+        await old?.dispose();
+        return;
+      }
       c.screensaver.notifySlideChanged();
       setState(() {
         _index = next;
         _imageBytes = bytes;
         _imageAspect = aspect;
-        // Screen-width decode cap: server previews can still out-size a
-        // small panel (Echo Show class) several times over.
-        _image = ResizeImage(
-          MemoryImage(bytes),
-          width: (mq.size.width * mq.devicePixelRatio).round(),
-        );
+        _image = image;
       });
       if (oldImage != null) unawaited(oldImage.evict());
       final seconds = c.settings

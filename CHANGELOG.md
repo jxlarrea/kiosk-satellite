@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Improvements
+- Slideshow screensavers no longer fade through black between photos (#212). The next image was downloaded ahead of time but only decoded once the crossfade had already started, so on slower tablets the outgoing photo faded into the black backdrop and the new one popped in late. The image is now fully decoded before the hand-off begins, holding the current photo a moment longer instead, so the transition blends directly from one photo to the next. Applies to the Immich Media, Photo Gallery and Local Folder screensavers and every transition style.
+
 ## v2026.8.38 - 2026-08-13
 
 ### Added
