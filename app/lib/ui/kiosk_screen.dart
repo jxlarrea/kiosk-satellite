@@ -1184,13 +1184,20 @@ class _KioskScreenState extends State<KioskScreen>
           unawaited(c.browser.setDragScrollBars(hidden: active));
         },
       );
-      // Button haptics: one message per accepted tap (see haptics_script).
-      // The setting is re-checked here so a page that missed a toggle's
-      // live flag still cannot buzz while the setting is off.
+      // Button haptics: one message per accepted tap or slider step (see
+      // haptics_script). The setting is re-checked here so a page that
+      // missed a toggle's live flag still cannot buzz while it is off;
+      // strength is read per event, so the select applies instantly.
       controller.addJavaScriptHandler(
         handlerName: 'ksHaptic',
-        callback: (_) {
-          if (c.settings.get(defs.haButtonHaptics)) Haptics.tap();
+        callback: (args) {
+          if (!c.settings.get(defs.haButtonHaptics)) return;
+          final strength = c.settings.get(defs.haButtonHapticsStrength);
+          if (args.isNotEmpty && args.first == 'tick') {
+            Haptics.tick(strength: strength);
+          } else {
+            Haptics.tap(strength: strength);
+          }
         },
       );
     },

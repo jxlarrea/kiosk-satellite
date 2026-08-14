@@ -9,16 +9,21 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 
 /**
- * A short click on the vibration motor, for the dashboard's button-haptics
- * setting (see haptics_script.dart).
+ * Short clicks and ticks on the vibration motor, for the dashboard's
+ * button-haptics setting (see haptics_script.dart).
  *
  * The vibrator is driven directly rather than through
  * View.performHapticFeedback: the view path is silently vetoed by the
  * system's own "touch vibration" setting, which wall-mounted panels often
  * have off — a toggle that only works when a second, hidden toggle agrees
- * is a support thread waiting to happen. EFFECT_CLICK is the crisp
- * hardware-tuned click where the platform has one (API 29+); older
- * devices get a 20ms one-shot, which is the same thing slightly softer.
+ * is a support thread waiting to happen.
+ *
+ * Two kinds at three strengths, mapped onto the platform's hardware-tuned
+ * effects where they exist (API 29+): a button 'tap' plays TICK, CLICK or
+ * HEAVY_CLICK for light/medium/strong, and a slider 'tick' always sits one
+ * level softer (TICK, TICK, CLICK) so a drag across steps reads as texture
+ * under the finger rather than a burst of taps. Older devices approximate
+ * with amplitude-scaled one-shots; pre-O gets plain timed buzzes.
  *
  * [hasVibrator] lets Dart cache whether a motor exists at all, so devices
  * without one (most Fire tablets, Echo Shows) never send per-tap traffic.
@@ -46,7 +51,10 @@ class HapticsBridge(
             when (call.method) {
                 "hasVibrator" -> result.success(vibrator?.hasVibrator() == true)
                 "tap" -> {
-                    tap()
+                    play(
+                        call.argument<String>("kind") ?: "tap",
+                        call.argument<String>("strength") ?: "medium",
+                    )
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -54,18 +62,41 @@ class HapticsBridge(
         }
     }
 
-    private fun tap() {
+    private fun play(kind: String, strength: String) {
         val v = vibrator ?: return
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+                val effect = if (kind == "tick") {
+                    when (strength) {
+                        "strong" -> VibrationEffect.EFFECT_CLICK
+                        else -> VibrationEffect.EFFECT_TICK
+                    }
+                } else {
+                    when (strength) {
+                        "light" -> VibrationEffect.EFFECT_TICK
+                        "strong" -> VibrationEffect.EFFECT_HEAVY_CLICK
+                        else -> VibrationEffect.EFFECT_CLICK
+                    }
+                }
+                v.vibrate(VibrationEffect.createPredefined(effect))
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                v.vibrate(
-                    VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE),
-                )
+                val (ms, amp) = if (kind == "tick") {
+                    when (strength) {
+                        "light" -> 8L to 80
+                        "strong" -> 15L to 180
+                        else -> 10L to 120
+                    }
+                } else {
+                    when (strength) {
+                        "light" -> 12L to 120
+                        "strong" -> 35L to 255
+                        else -> 20L to 200
+                    }
+                }
+                v.vibrate(VibrationEffect.createOneShot(ms, amp))
             } else {
                 @Suppress("DEPRECATION")
-                v.vibrate(20)
+                v.vibrate(if (kind == "tick") 10 else 20)
             }
         } catch (_: Exception) {
             // A motor that declines is a silent tap, never an error.

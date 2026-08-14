@@ -2,18 +2,21 @@ import 'package:flutter/services.dart';
 
 /// The vibration motor, for the dashboard's button-haptics setting.
 ///
-/// One method that matters: [tap], a fire-and-forget native click
-/// (HapticsBridge.kt drives the vibrator directly, so the system's own
-/// touch-vibration setting cannot silently veto the feature). Whether a
+/// Two fire-and-forget kinds: [tap] for a completed press on something
+/// button-shaped and [tick] for a slider crossing a step, each at the
+/// strength the setting asks for (HapticsBridge.kt maps them onto the
+/// platform's tuned effects, a tick always one level softer than a tap).
+/// The bridge drives the vibrator directly, so the system's own
+/// touch-vibration setting cannot silently veto the feature. Whether a
 /// motor exists at all is probed once and cached, so devices without one
 /// (most Fire tablets, Echo Shows) pay nothing per tap — the check makes
-/// every later [tap] a synchronous no-op.
+/// every later call a synchronous no-op.
 class Haptics {
   Haptics._();
 
   static const _channel = MethodChannel('kiosk_satellite/haptics');
 
-  /// null until the first [tap] resolves the probe; false off Android.
+  /// null until the first buzz resolves the probe; false off Android.
   static bool? _hasVibrator;
   static Future<bool>? _probe;
 
@@ -26,16 +29,22 @@ class Haptics {
     return _hasVibrator!;
   }();
 
-  /// A short native click. Never throws, never blocks the caller.
-  static void tap() {
+  /// A short native click for a button press. Never throws, never blocks.
+  static void tap({String strength = 'medium'}) => _play('tap', strength);
+
+  /// A softer tick for a slider step. Never throws, never blocks.
+  static void tick({String strength = 'medium'}) => _play('tick', strength);
+
+  static void _play(String kind, String strength) {
+    final args = {'kind': kind, 'strength': strength};
     if (_hasVibrator == false) return;
     if (_hasVibrator == null) {
-      // First tap pays the probe; the buzz still lands if a motor exists.
+      // First buzz pays the probe; it still lands if a motor exists.
       _resolve().then((has) {
-        if (has) _channel.invokeMethod<void>('tap').catchError((_) {});
+        if (has) _channel.invokeMethod<void>('tap', args).catchError((_) {});
       });
       return;
     }
-    _channel.invokeMethod<void>('tap').catchError((_) {});
+    _channel.invokeMethod<void>('tap', args).catchError((_) {});
   }
 }
