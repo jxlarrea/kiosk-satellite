@@ -70,6 +70,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
     private lateinit var soundPlayer: SoundPlayer
     private lateinit var apkInstaller: ApkInstaller
     private lateinit var lightSensor: LightSensor
+    private lateinit var haptics: HapticsBridge
 
     override fun onCreate() {
         super.onCreate()
@@ -110,5 +111,6 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         soundPlayer = SoundPlayer(applicationContext, messenger)
         apkInstaller = ApkInstaller(applicationContext, messenger)
         lightSensor = LightSensor(applicationContext, messenger)
+        haptics = HapticsBridge(applicationContext, messenger)
     }
 }

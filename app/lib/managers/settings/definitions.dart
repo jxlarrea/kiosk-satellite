@@ -2470,6 +2470,24 @@ const haDashboardCarousel = SettingDef<bool>(
   section: 'User Interface',
 );
 
+/// Haptic feedback for dashboard taps (in-page script, see
+/// haptics_script.dart): a short native click whenever a tap lands on
+/// something button-shaped, so a wall panel answers like a physical
+/// switch. Uses the platform vibrator directly, so it works even where
+/// the system's own touch-feedback setting is off; devices without a
+/// vibrator (most Fire tablets, Echo Shows) leave the toggle a no-op.
+const haButtonHaptics = SettingDef<bool>(
+  key: 'ha.button_haptics',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Vibrate on button taps',
+  description:
+      'Give a short vibration when a button, switch or card is tapped on '
+      'the dashboard. Does nothing on devices without a vibration motor.',
+  category: 'Home Assistant',
+  section: 'User Interface',
+);
+
 /// Mirror the app's effective theme onto the Home Assistant dashboard
 /// (issue #92): with the App theme on "System", Android flips dark mode on
 /// its own schedule (typically sunset/sunrise), and the dashboard follows.
@@ -3436,6 +3454,7 @@ const List<SettingDef<Object>> allSettings = [
   haKioskHideHeader,
   haKioskHideSidebar,
   haDashboardCarousel,
+  haButtonHaptics,
   themeMatchApp,
   themeAuto,
   themeDarkAt,

@@ -13,6 +13,8 @@ import 'screensaver_view.dart';
 import '../core/events.dart';
 import '../managers/browser/carousel_script.dart';
 import '../managers/browser/disable_suspend_script.dart';
+import '../managers/browser/haptics_script.dart';
+import '../managers/device/haptics.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
 import '../managers/browser/ws_filter_script.dart';
@@ -240,6 +242,14 @@ class _KioskScreenState extends State<KioskScreen>
       await c.browser.runJs(
         'window.__ksCarouselEnabled = ${e.value == true};'
         'if (window.__ksCarouselSync) window.__ksCarouselSync();',
+      );
+      return;
+    }
+    // Button haptics is the same live-flag contract; the script itself has
+    // no state to build or tear down.
+    if (e.key == defs.haButtonHaptics.key) {
+      await c.browser.runJs(
+        'window.__ksHapticsEnabled = ${e.value == true};',
       );
       return;
     }
@@ -586,6 +596,17 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     UserScript(
       source: dashboardCarouselScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // Button haptics: same always-injected, flag-gated contract.
+    UserScript(
+      source:
+          'window.__ksHapticsEnabled = '
+          '${c.settings.get(defs.haButtonHaptics)};',
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    UserScript(
+      source: buttonHapticsScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // Turn off Home Assistant's "Suspend background connections" so it does
@@ -1163,6 +1184,15 @@ class _KioskScreenState extends State<KioskScreen>
           unawaited(c.browser.setDragScrollBars(hidden: active));
         },
       );
+      // Button haptics: one message per accepted tap (see haptics_script).
+      // The setting is re-checked here so a page that missed a toggle's
+      // live flag still cannot buzz while the setting is off.
+      controller.addJavaScriptHandler(
+        handlerName: 'ksHaptic',
+        callback: (_) {
+          if (c.settings.get(defs.haButtonHaptics)) Haptics.tap();
+        },
+      );
     },
     onUpdateVisitedHistory: (controller, url, isReload) {
       // SPA navigations inside HA (view switches, rotation's pushState)
@@ -1180,6 +1210,10 @@ class _KioskScreenState extends State<KioskScreen>
       c.browser.runJs(
         'window.__ksCarouselEnabled = '
         '${c.settings.get(defs.haDashboardCarousel)};',
+      );
+      c.browser.runJs(
+        'window.__ksHapticsEnabled = '
+        '${c.settings.get(defs.haButtonHaptics)};',
       );
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
