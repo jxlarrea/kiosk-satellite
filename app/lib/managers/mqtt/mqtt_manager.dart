@@ -101,6 +101,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   Timer? _foregroundNudge;
   int? _lastRamFreeMb;
   int? _lastRamTotalMb;
+
+  /// State plus attributes last published per IP sensor, so the minute poll
+  /// only publishes when an address actually moved.
+  final _lastIpPayload = <String, String>{};
   List<Map<String, Object?>> _cameraViews = const [];
   Set<String> _publishedCameraViewIds = {};
 
@@ -225,6 +229,14 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // auto-reconnect already retries every few seconds.
     _subs.add(bus.on<NetworkStateChanged>().listen((e) {
       if (e.up && _link == null && _retryTimer != null) _retryNow();
+      // Addresses change exactly at these transitions, and the minute poll
+      // would leave the IP sensors stale for up to a minute. Deferred a
+      // moment so DHCP has settled by the time we look.
+      if (_connected) {
+        Timer(const Duration(seconds: 3), () {
+          if (_connected) unawaited(_publishIpAddresses());
+        });
+      }
     }));
     _subs.add(bus.on<AmbientDisplayChanged>().listen(
         (e) => _publishScreenAvailability(ambient: e.on)));
@@ -1265,6 +1277,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // reinstall or a long outage, so republish regardless of the dedupe.
     _lastForeground = '';
     await _publishForegroundApp();
+    await _publishDeviceIdentity();
     if (_lightSensorPresent) {
       final light = await commands.execute('getLightLevel', const {});
       final lux = light.ok && light.data is Map
@@ -1276,6 +1289,74 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         _publish('$_base/illuminance/state', lux.round().toString());
       }
     }
+  }
+
+  /// The Device identity sensor (issue #213): the model as the state, the
+  /// Android version and OEM build in attributes. Published once per
+  /// bring-up; none of it changes while the process lives.
+  Future<void> _publishDeviceIdentity() async {
+    final model = _deviceInfo['model'];
+    if (model is! String || model.isEmpty) return;
+    final details = await commands.execute('getDeviceDetails', const {});
+    final build = details.ok && details.data is Map
+        ? (details.data as Map)['androidBuild']
+        : null;
+    _publish('$_base/device_info/state', model);
+    _publish(
+        '$_base/device_info/attributes',
+        jsonEncode({
+          'android_version': _deviceInfo['osVersion'],
+          'build': build,
+        }));
+  }
+
+  /// The IP address sensors (issue #213): the primary address as the state,
+  /// every other address in `other_addresses`, and all of them keyed by
+  /// interface in `interfaces` so an automation can tell the wired NIC from
+  /// the wireless one. Checked by the minute poll and on network
+  /// transitions, published only on change.
+  Future<void> _publishIpAddresses() async {
+    final result = await commands.execute('getIpAddresses', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map) return;
+    _publishAddressFamily('ipv4_address', data['ipv4'], preferGlobal: false);
+    _publishAddressFamily('ipv6_address', data['ipv6'], preferGlobal: true);
+  }
+
+  void _publishAddressFamily(String objectId, Object? raw,
+      {required bool preferGlobal}) {
+    final byInterface = <String, List<String>>{
+      if (raw is Map)
+        for (final entry in raw.entries)
+          if (entry.value is List)
+            '${entry.key}': [
+              // Dart reports IPv6 addresses with their scope id suffix
+              // ("fd42::1%9", "fe80::1%wlan0"); the interface is already
+              // named by the key, so the suffix is only noise in HA.
+              for (final a in entry.value as List) '$a'.split('%').first,
+            ],
+    };
+    final all = [for (final addresses in byInterface.values) ...addresses];
+    // IPv6 interfaces list the link-local fe80:: address before the global
+    // one; the routable address is the interesting one, so it wins the
+    // state slot and link-local only leads when it is all there is.
+    var main = all.isEmpty ? '' : all.first;
+    if (preferGlobal) {
+      main = all.firstWhere((a) => !a.startsWith('fe80'), orElse: () => main);
+    }
+    final attrs = jsonEncode({
+      'other_addresses': [
+        for (final address in all)
+          if (address != main) address,
+      ],
+      'interfaces': byInterface,
+    });
+    if (_lastIpPayload[objectId] == '$main $attrs') return;
+    _lastIpPayload[objectId] = '$main $attrs';
+    // An empty state (no address of this family at all) reads as unknown
+    // in Home Assistant, which is the honest answer.
+    _publish('$_base/$objectId/state', main);
+    _publish('$_base/$objectId/attributes', attrs);
   }
 
   /// The HA update entity's whole world in one JSON payload: versions, the
@@ -1325,6 +1406,20 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       unawaited(_refreshDashboardViews());
     }
     unawaited(_publishForegroundApp());
+    unawaited(_publishIpAddresses());
+    // Uptimes republish every tick like last_seen: the app one always
+    // moved, and the pair costs one platform read.
+    final up = await commands.execute('getUptime', const {});
+    if (up.ok && up.data is Map) {
+      final uptime = up.data as Map;
+      final app = (uptime['app'] as num?)?.toInt();
+      if (app != null) _publish('$_base/app_uptime/state', '$app');
+      final network = (uptime['network'] as num?)?.toInt();
+      // Empty while offline: the sensor reads unknown rather than holding
+      // a stale count.
+      _publish(
+          '$_base/network_uptime/state', network == null ? '' : '$network');
+    }
     final result = await commands.execute('getStats', const {});
     final data = result.data;
     if (!result.ok || data is! Map) return;
@@ -1388,6 +1483,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
         '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
+        '$_prefix/sensor/ks_$_deviceId/device_info/config',
+        '$_prefix/sensor/ks_$_deviceId/ipv4_address/config',
+        '$_prefix/sensor/ks_$_deviceId/ipv6_address/config',
+        '$_prefix/sensor/ks_$_deviceId/app_uptime/config',
+        '$_prefix/sensor/ks_$_deviceId/network_uptime/config',
         '$_prefix/switch/ks_$_deviceId/screensaver_active/config',
         '$_prefix/button/ks_$_deviceId/postpone_screensaver/config',
         '$_prefix/button/ks_$_deviceId/reload/config',
@@ -1666,6 +1766,46 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'state_topic': '$_base/foreground_app/state',
         'json_attributes_topic': '$_base/foreground_app/attributes',
         'icon': 'mdi:application-outline',
+        'entity_category': 'diagnostic',
+      },
+      // The hardware identity and addresses the remote admin's Device page
+      // shows, as diagnostic sensors (issue #213), so dashboards and
+      // scripts can read them without opening the admin.
+      '$_prefix/sensor/ks_$_deviceId/device_info/config': {
+        ...common('device_info', 'Device'),
+        'state_topic': '$_base/device_info/state',
+        'json_attributes_topic': '$_base/device_info/attributes',
+        'icon': 'mdi:information-outline',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/sensor/ks_$_deviceId/ipv4_address/config': {
+        ...common('ipv4_address', 'IPv4 address'),
+        'state_topic': '$_base/ipv4_address/state',
+        'json_attributes_topic': '$_base/ipv4_address/attributes',
+        'icon': 'mdi:ip-network',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/sensor/ks_$_deviceId/ipv6_address/config': {
+        ...common('ipv6_address', 'IPv6 address'),
+        'state_topic': '$_base/ipv6_address/state',
+        'json_attributes_topic': '$_base/ipv6_address/attributes',
+        'icon': 'mdi:ip-network-outline',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/sensor/ks_$_deviceId/app_uptime/config': {
+        ...common('app_uptime', 'App uptime'),
+        'state_topic': '$_base/app_uptime/state',
+        'device_class': 'duration',
+        'unit_of_measurement': 's',
+        'icon': 'mdi:timer-outline',
+        'entity_category': 'diagnostic',
+      },
+      '$_prefix/sensor/ks_$_deviceId/network_uptime/config': {
+        ...common('network_uptime', 'Network uptime'),
+        'state_topic': '$_base/network_uptime/state',
+        'device_class': 'duration',
+        'unit_of_measurement': 's',
+        'icon': 'mdi:timer-sync-outline',
         'entity_category': 'diagnostic',
       },
       '$_prefix/sensor/ks_$_deviceId/active_camera_view/config': {

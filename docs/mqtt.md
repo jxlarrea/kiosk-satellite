@@ -77,6 +77,9 @@ tablet's remote admin (while remote administration is enabled).
 | RAM available, RAM total | sensor | Polled once a minute. |
 | Last seen | sensor | When the device last reported in, as a timestamp, republished once a minute. The one entity that does not go unavailable when the device drops: it exists so the drop shows up in history and the timestamp stays readable while the device is gone (issue #75). |
 | Current page | sensor | The URL the kiosk is showing. |
+| Device | sensor | The device's model name, with the Android version and the OEM build in the `android_version` and `build` attributes (issue #213). |
+| IPv4 address, IPv6 address | sensor | The device's primary address as the state, every other address in the `other_addresses` attribute, and all of them keyed by network interface in the `interfaces` attribute, so a script can tell whether the device is connected over its wired or its wireless NIC (issue #213). The IPv6 sensor prefers a routable address over the link-local `fe80::` one when it has both. Addresses are re-checked once a minute and moments after any network change; a family with no address at all reads unknown. |
+| App uptime, Network uptime | sensor | Seconds since the app process started, and seconds since the device last saw its network come up, republished once a minute (issue #213). A kiosk that recently restarted or dropped offline shows up as a small number, which is what a status dashboard wants to highlight. The network clock can only start at app start at the earliest (Android tells an app about the network from registration onward, not since association), so it reads as "how long since a drop was last seen"; it is unknown while the device is offline. |
 | Next alarm | sensor | The device's next alarm clock, as a timestamp, or unknown when none is set. It reads whatever the system considers the next alarm, so any clock app counts, and it follows alarms set, moved, disabled or dismissed outside this app. The `package` attribute names the app that owns it and `local_time` gives the device's own wall-clock reading. |
 | Remote admin | sensor | The remote admin's URL for this device, or `disabled` when remote administration is off. Handy for deep-linking from a dashboard. |
 | Foreground app | sensor | Which app is on the device's screen, so an automation can react to the kiosk being left behind another app (issue #192): the app's package name as the state (stable across languages and renames, so automations match on it safely), its human-readable name in the `label` attribute. Updates within a few seconds of an app opening over the kiosk or the kiosk coming back, and once a minute otherwise. Identifying other apps needs the **Usage access** grant (Permissions Manager, under Device settings); without it the sensor still reports `me.jxl.kiosk_satellite` while the kiosk is frontmost, and `unknown` when it is not. |
@@ -119,6 +122,11 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../update/state`, `.../update/set` | out / in | JSON with `installed_version`, `latest_version`, release info and progress; `install` starts the update |
 | `.../battery/state`, `.../cpu/state`, `.../cpu_temp/state`, `.../ram_free/state`, `.../ram_total/state`, `.../illuminance/state` | out, retained | numbers |
 | `.../last_seen/state` | out, retained | when the device last reported in, ISO 8601 UTC, once a minute |
+| `.../device_info/state` | out, retained | the device model |
+| `.../device_info/attributes` | out, retained | JSON with `android_version` and `build` |
+| `.../ipv4_address/state`, `.../ipv6_address/state` | out, retained | the primary address of that family, empty when it has none |
+| `.../ipv4_address/attributes`, `.../ipv6_address/attributes` | out, retained | JSON with `other_addresses` and `interfaces` (addresses keyed by interface name) |
+| `.../app_uptime/state`, `.../network_uptime/state` | out, retained | seconds, once a minute; network uptime is empty while offline |
 | `.../url/state` | out, retained | the current URL |
 | `.../next_alarm/state` | out, retained | the next alarm as an ISO 8601 UTC timestamp, or `None` when there is no alarm |
 | `.../next_alarm/attributes` | out, retained | JSON with `package` and `local_time` |

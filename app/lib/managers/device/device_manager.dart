@@ -170,6 +170,30 @@ class DeviceManager extends Manager {
       ),
     );
 
+    commands.register(
+      Command(
+        name: 'getIpAddresses',
+        description:
+            'Every non-loopback IP address, keyed by interface name: '
+            '{ipv4: {iface: [addr, ...]}, ipv6: {iface: [addr, ...]}}. '
+            'IPv6 link-local addresses included.',
+        handler: (_) async => CommandResult.ok({
+          'ipv4': await addressesByInterface(InternetAddressType.IPv4),
+          'ipv6': await addressesByInterface(InternetAddressType.IPv6),
+        }),
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'getUptime',
+        description:
+            'Seconds since the app process started (app) and since the '
+            'default network last came up (network, null while offline).',
+        handler: (_) async => CommandResult.ok(await DeviceDetails.uptime()),
+      ),
+    );
+
     await _initLightSensor();
     commands.register(
       Command(
@@ -412,47 +436,52 @@ class DeviceManager extends Manager {
     };
   }
 
-  /// Every non-loopback IPv6 address, in interface order.
-  ///
-  /// All of them, link-local included: on a kiosk the interesting question is
-  /// usually "what can reach this thing", and a device with a global address
-  /// and a stale link-local one looks identical from here unless both are
-  /// shown. Empty when the network has no IPv6 at all, which is not an error.
-  Future<List<String>> ipv6Addresses() async {
+  /// Every non-loopback address of [type], keyed by interface name in
+  /// interface order. Link-local IPv6 included: Dart drops every fe80::
+  /// address by default — the device reports them, we just would not have.
+  /// They are worth listing: a device with a global address and a stale
+  /// link-local one that no longer routes looks identical from here unless
+  /// both are shown. Empty when the network has none, which is not an error.
+  Future<Map<String, List<String>>> addressesByInterface(
+      InternetAddressType type) async {
     try {
       final interfaces = await NetworkInterface.list(
-        type: InternetAddressType.IPv6,
+        type: type,
         includeLoopback: false,
-        // Off by default in Dart, which quietly drops every fe80:: address —
-        // the device reports them, we just would not have. They are worth
-        // listing: a device with a global address and a link-local one that no
-        // longer routes looks identical from here unless both are shown.
         includeLinkLocal: true,
       );
-      return [
+      return {
         for (final interface in interfaces)
-          for (final address in interface.addresses) address.address,
-      ];
+          if (interface.addresses.isNotEmpty)
+            interface.name: [
+              for (final address in interface.addresses) address.address,
+            ],
+      };
     } catch (e) {
-      log.warn(name, 'ipv6Addresses failed: $e');
-      return const [];
+      log.warn(name, 'addressesByInterface failed: $e');
+      return const {};
     }
   }
 
-  /// First non-loopback IPv4 address, or null (e.g. no network).
+  /// Every non-loopback IPv6 address, in interface order. See
+  /// [addressesByInterface] for why link-local addresses are included.
+  Future<List<String>> ipv6Addresses() async => [
+        for (final addresses
+            in (await addressesByInterface(InternetAddressType.IPv6)).values)
+          ...addresses,
+      ];
+
+  /// First non-loopback IPv4 address, or null (e.g. no network). Link-local
+  /// 169.254 addresses are skipped: this is the address the admin URL and
+  /// the setup screen print for people to visit, and a DHCP-failure address
+  /// routes nowhere.
   Future<String?> ipAddress() async {
-    try {
-      final interfaces = await NetworkInterface.list(
-        type: InternetAddressType.IPv4,
-        includeLoopback: false,
-      );
-      for (final interface in interfaces) {
-        for (final address in interface.addresses) {
-          return address.address;
-        }
+    for (final addresses
+        in (await addressesByInterface(InternetAddressType.IPv4)).values) {
+      for (final address in addresses) {
+        if (address.startsWith('169.254.')) continue;
+        return address;
       }
-    } catch (e) {
-      log.warn(name, 'ipAddress failed: $e');
     }
     return null;
   }
