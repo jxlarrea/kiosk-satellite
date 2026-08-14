@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.43 - 2026-08-14
 
 ### Improvements
 - The App uptime, Network uptime and Last seen sensors no longer write a recorder row every minute (#213). The uptime pair now publishes the moment the app or the network came up as a timestamp entity, which Home Assistant renders as a live "n hours ago" on its own, so the state only changes when a restart or reconnect actually happens; upgraded devices re-register the two entities automatically. Last seen is now stamped once per broker connect and once more on a graceful disconnect instead of every minute; after a hard death the moment of the drop is the availability transition Home Assistant already records on every entity.
