@@ -190,7 +190,18 @@ class DeviceManager extends Manager {
         description:
             'Seconds since the app process started (app) and since the '
             'default network last came up (network, null while offline).',
-        handler: (_) async => CommandResult.ok(await DeviceDetails.uptime()),
+        handler: (_) async {
+          final data = await DeviceDetails.uptime();
+          // Once per run: whether the kernel's address timestamp answered
+          // or the app-start fallback clock did, so a report's logs say
+          // which number a device is actually publishing.
+          final source = data['networkSource'];
+          if (!_uptimeSourceLogged && source != null) {
+            _uptimeSourceLogged = true;
+            log.info(name, 'network uptime source: $source');
+          }
+          return CommandResult.ok(data);
+        },
       ),
     );
 
@@ -407,6 +418,9 @@ class DeviceManager extends Manager {
       });
     } catch (_) {}
   }
+
+  /// Logged once per run: which source the network uptime came from.
+  bool _uptimeSourceLogged = false;
 
   /// Logged once per run: which thermal zones the sandbox actually sees on
   /// a device that reports no CPU temperature, so a bug report's app logs

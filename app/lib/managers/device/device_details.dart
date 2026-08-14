@@ -57,10 +57,12 @@ class DeviceDetails {
   }
 
   /// Seconds since the process started (`app`) and since the default network
-  /// last came up (`network`, null while offline). The network clock starts
-  /// at app start at the earliest: Android tells an app about the network
-  /// from registration onward, not since association — so it reads as "how
-  /// long since a drop was last seen" (issue #75). Empty off-Android.
+  /// last came up (`network`, null while offline). The network number reads
+  /// the kernel's own timestamp on the interface's IP address where it can,
+  /// so it survives app restarts; where the kernel read is refused it falls
+  /// back to a clock anchored at app start at the earliest, which then reads
+  /// as "how long since a drop was last seen" (issue #75). `networkSource`
+  /// names which of the two answered. Empty off-Android.
   static Future<Map<String, Object?>> uptime() async {
     try {
       return await _channel.invokeMapMethod<String, Object?>('uptime') ??

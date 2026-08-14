@@ -15,11 +15,17 @@ import android.os.Process
 import android.os.StatFs
 import android.os.SystemClock
 import android.provider.Settings
+import android.system.Os
+import android.system.OsConstants
+import android.system.StructTimeval
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.net.NetworkInterface
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 /**
  * The device facts Android will still tell an app, for the remote admin's
@@ -50,6 +56,20 @@ private val NOT_CPU_ZONE = listOf(
     "trip", "limit", "batt", "pmic", "charg", "wifi", "wlan", "usb", "skin",
     "gpu", "cam", "flash", "modem", "mdpa", "nrpa", "dram",
 )
+
+/** Netlink ABI numbers (linux/netlink.h, rtnetlink.h, if_addr.h). Kernel
+ *  ABI, fixed forever; several are missing from OsConstants on the older
+ *  API levels this app still runs on, so they are spelled out here. */
+private const val AF_NETLINK = 16
+private const val NETLINK_ROUTE = 0
+private const val RTM_NEWADDR = 20
+private const val RTM_GETADDR = 22
+private const val NLMSG_ERROR = 2
+private const val NLMSG_DONE = 3
+private const val NLM_F_REQUEST = 1
+private const val NLM_F_DUMP = 0x300
+private const val IFA_ADDRESS = 1
+private const val IFA_CACHEINFO = 6
 
 class DeviceDetails(
     private val context: Context,
@@ -132,14 +152,171 @@ class DeviceDetails(
 
     /**
      * Seconds this process has been alive (`app`) and seconds since the
-     * default network last came up (`network`, `null` while offline — see
-     * [networkSince] for what "came up" can mean). Both from the
-     * elapsedRealtime clock, so a wall-clock change cannot bend either.
+     * default network last came up (`network`, `null` while offline). The
+     * app clock is elapsedRealtime, so a wall-clock change cannot bend it.
+     *
+     * The network number prefers the kernel's own timestamp on the default
+     * interface's IP address (see [addressAgeSeconds]): the kernel stamps
+     * every address when it is configured, so the age survives app
+     * restarts — an app that restarts on a device that has sat on Wi-Fi
+     * for a week reports the week, not its own age. Where the netlink read
+     * is refused or finds nothing, [networkSince] (anchored at app start
+     * at the earliest) is the floor. `networkSource` says which one
+     * answered, for the app log.
      */
-    private fun uptime(): Map<String, Any?> = mapOf(
-        "app" to (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime()) / 1000,
-        "network" to networkSince?.let { (SystemClock.elapsedRealtime() - it) / 1000 },
-    )
+    private fun uptime(): Map<String, Any?> {
+        var network: Long? = null
+        var source: String? = null
+        if (currentNetwork != null) {
+            network = try {
+                addressAgeSeconds()
+            } catch (e: Exception) {
+                null
+            }
+            source = if (network != null) "address" else null
+            if (network == null) {
+                network = networkSince?.let {
+                    (SystemClock.elapsedRealtime() - it) / 1000
+                }
+                if (network != null) source = "app clock"
+            }
+        }
+        return mapOf(
+            "app" to
+                (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime()) / 1000,
+            "network" to network,
+            "networkSource" to source,
+        )
+    }
+
+    /**
+     * How long the default network's interface has held its current IP
+     * address, in seconds, or `null` when that cannot be read.
+     *
+     * The kernel keeps a creation timestamp (`cstamp`, hundredths of a
+     * second on the suspend-excluding jiffies clock) in every address's
+     * IFA_CACHEINFO, dumped over an RTM_GETADDR netlink request — the same
+     * socket family bionic's getifaddrs uses, so SELinux allows it to
+     * untrusted apps. A DHCP renewal replaces the address in place and
+     * preserves cstamp; a reconnect deletes and re-adds it, which is
+     * exactly the reset this number should show. Compared against
+     * uptimeMillis, the matching suspend-excluding clock.
+     *
+     * IPv4 addresses are preferred; a v6-only network falls back to its
+     * oldest non-link-local address (link-local ages tell nothing — they
+     * exist from the moment the radio is up, network or not). The oldest
+     * address wins within a family: rotating IPv6 privacy addresses are
+     * young by design, the stable address carries the history.
+     */
+    private fun addressAgeSeconds(): Long? {
+        val network = currentNetwork ?: return null
+        val ifname = (context.getSystemService(Context.CONNECTIVITY_SERVICE)
+            as ConnectivityManager).getLinkProperties(network)?.interfaceName
+            ?: return null
+        val ifindex = NetworkInterface.getByName(ifname)?.index ?: return null
+        val fd = Os.socket(AF_NETLINK, OsConstants.SOCK_DGRAM, NETLINK_ROUTE)
+        try {
+            // A stuck read must not wedge the stats poll.
+            Os.setsockoptTimeval(
+                fd, OsConstants.SOL_SOCKET, OsConstants.SO_RCVTIMEO,
+                StructTimeval.fromMillis(500),
+            )
+            // nlmsghdr (16 bytes) + ifaddrmsg (8 bytes), AF_UNSPEC so one
+            // dump carries both families. Sent unaddressed: an unconnected
+            // netlink socket targets the kernel (portid 0) by default.
+            val request = ByteBuffer.allocate(24).order(ByteOrder.nativeOrder())
+            request.putInt(24)                       // nlmsg_len
+            request.putShort(RTM_GETADDR.toShort())  // nlmsg_type
+            request.putShort((NLM_F_REQUEST or NLM_F_DUMP).toShort())
+            request.putInt(1)                        // nlmsg_seq
+            request.putInt(0)                        // nlmsg_pid
+            request.putLong(0)                       // ifaddrmsg, all zero
+            request.flip()
+            Os.write(fd, request)
+            var bestV4: Long? = null
+            var bestV6: Long? = null
+            val response =
+                ByteBuffer.allocate(64 * 1024).order(ByteOrder.nativeOrder())
+            reading@ while (true) {
+                response.clear()
+                val read = Os.read(fd, response)
+                if (read <= 0) break
+                response.flip()
+                var offset = 0
+                while (offset + 16 <= read) {
+                    val messageLength = response.getInt(offset)
+                    if (messageLength < 16 || offset + messageLength > read) break
+                    when (response.getShort(offset + 4).toInt()) {
+                        NLMSG_DONE -> break@reading
+                        NLMSG_ERROR -> return null
+                        RTM_NEWADDR -> {
+                            val age = parseAddressAge(
+                                response, offset, messageLength, ifindex)
+                            if (age != null) {
+                                val (family, seconds) = age
+                                if (family == OsConstants.AF_INET) {
+                                    bestV4 = maxOf(bestV4 ?: 0, seconds)
+                                } else {
+                                    bestV6 = maxOf(bestV6 ?: 0, seconds)
+                                }
+                            }
+                        }
+                    }
+                    offset += (messageLength + 3) and 3.inv()
+                }
+            }
+            return bestV4 ?: bestV6
+        } finally {
+            Os.close(fd)
+        }
+    }
+
+    /**
+     * One RTM_NEWADDR message: the (family, age seconds) of its
+     * IFA_CACHEINFO when it belongs to [ifindex] and is worth counting,
+     * else null.
+     */
+    private fun parseAddressAge(
+        buf: ByteBuffer,
+        messageOffset: Int,
+        messageLength: Int,
+        ifindex: Int,
+    ): Pair<Int, Long>? {
+        // ifaddrmsg: family u8, prefixlen u8, flags u8, scope u8, index u32.
+        val family = buf.get(messageOffset + 16).toInt() and 0xFF
+        if (family != OsConstants.AF_INET && family != OsConstants.AF_INET6) {
+            return null
+        }
+        if (buf.getInt(messageOffset + 20) != ifindex) return null
+        var linkLocal = false
+        var cstamp: Long? = null
+        var attribute = messageOffset + 24
+        val end = messageOffset + messageLength
+        while (attribute + 4 <= end) {
+            val attributeLength = buf.getShort(attribute).toInt() and 0xFFFF
+            if (attributeLength < 4 || attribute + attributeLength > end) break
+            when (buf.getShort(attribute + 2).toInt() and 0xFFFF) {
+                // IFA_ADDRESS: only read to rule out fe80::/10.
+                IFA_ADDRESS -> if (family == OsConstants.AF_INET6 &&
+                    attributeLength >= 6 &&
+                    buf.get(attribute + 4).toInt() and 0xFF == 0xFE &&
+                    buf.get(attribute + 5).toInt() and 0xC0 == 0x80) {
+                    linkLocal = true
+                }
+                // IFA_CACHEINFO: prefered, valid, cstamp, tstamp (u32 each).
+                IFA_CACHEINFO -> if (attributeLength >= 20) {
+                    cstamp = buf.getInt(attribute + 12).toLong() and 0xFFFFFFFFL
+                }
+            }
+            attribute += (attributeLength + 3) and 3.inv()
+        }
+        val created = cstamp ?: return null
+        if (linkLocal) return null
+        val nowHundredths = SystemClock.uptimeMillis() / 10
+        // u32 wrap-safe difference (cstamp wraps after ~497 days up).
+        val seconds = ((nowHundredths - created) and 0xFFFFFFFFL) / 100
+        return family to seconds
+    }
 
     /**
      * Whether external power is connected, from the sticky
