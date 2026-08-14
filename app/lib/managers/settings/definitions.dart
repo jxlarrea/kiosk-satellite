@@ -1908,6 +1908,22 @@ const screensaverGlanceEntities = SettingDef<String>(
   dependsOn: 'screensaver.glance_enabled',
 );
 
+// Opt-in (issue #209): the full-screen Now Playing view was designed as
+// art alone, so the row only joins it for people who ask. It stays out of
+// the lyrics layouts, which already spend every free pixel on the words.
+const screensaverGlanceNowPlaying = SettingDef<bool>(
+  key: 'screensaver.glance_now_playing',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show on Now Playing',
+  description:
+      'Show the row on the full-screen Now Playing view. It stays hidden '
+      'while lyrics are showing.',
+  category: 'Screensaver',
+  section: 'At a Glance',
+  dependsOn: 'screensaver.glance_enabled',
+);
+
 /// The most entities the row will hold: past four the labels stop being
 /// readable across a room, which is the whole point of the row.
 const screensaverGlanceMax = 4;
@@ -3443,6 +3459,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverWidgetScale,
   screensaverGlanceEnabled,
   screensaverGlanceEntities,
+  screensaverGlanceNowPlaying,
   screensaverDismissOnMotion,
   screensaverPostponeOnMotion,
   motionCamera,

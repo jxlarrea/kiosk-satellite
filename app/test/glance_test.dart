@@ -1,9 +1,37 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/core/command_registry.dart';
+import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
+import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/glance/glance_manager.dart';
+import 'package:kiosk_satellite/managers/home_assistant/home_assistant_manager.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
+import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/ui/glance_row.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Records every subscription attempt instead of opening a socket. Returning
+/// null is the manager's "unreachable" path, which only schedules a retry —
+/// enough to observe whether the gate let the attempt through at all.
+class _RecordingHa extends HomeAssistantManager {
+  _RecordingHa(super.bus, super.commands, super.log, super.settings);
+
+  final attempts = <List<String>>[];
+
+  @override
+  Future<GlanceSubscription?> subscribeEntities(
+    List<String> entityIds,
+    void Function(String entityId, Map<String, Object?> state) onState, {
+    void Function(Map<String, int> precisions)? onPrecision,
+  }) async {
+    attempts.add(List.of(entityIds));
+    return null;
+  }
+}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   GlanceEntity entity(
     String id, {
     String? state,
@@ -234,6 +262,88 @@ void main() {
 
     test('an unmapped domain still gets something', () {
       expect(glanceIcon(entity('counter.x', state: '3')), Icons.sensors);
+    });
+  });
+
+  test('the Now Playing setting registers and gates on the master toggle',
+      () {
+    expect(defs.allSettings, contains(defs.screensaverGlanceNowPlaying));
+    expect(
+      defs.screensaverGlanceNowPlaying.dependsOn,
+      defs.screensaverGlanceEnabled.key,
+    );
+  });
+
+  group('Now Playing subscription gating (#209)', () {
+    late EventBus bus;
+    late GlanceManager glance;
+    late _RecordingHa ha;
+
+    Future<void> build(Map<String, Object> initial) async {
+      SharedPreferences.setMockInitialValues({
+        'ks.screensaver.glance_enabled': true,
+        'ks.screensaver.glance_entities':
+            '[{"entity_id":"sensor.t","name":"T"}]',
+        ...initial,
+      });
+      bus = EventBus();
+      final log = Logger();
+      final commands = CommandRegistry(log);
+      final settings = SettingsManager(bus, commands, log);
+      await settings.init();
+      ha = _RecordingHa(bus, commands, log, settings);
+      glance = GlanceManager(bus, commands, log, settings, ha);
+      await glance.init();
+    }
+
+    tearDown(() async {
+      await glance.dispose();
+      await bus.dispose();
+    });
+
+    Future<void> settle() =>
+        Future<void>.delayed(const Duration(milliseconds: 20));
+
+    test('a non-row mode subscribes only while Now Playing shows the row',
+        () async {
+      await build({
+        'ks.screensaver.mode': 'immich',
+        'ks.sendspin.fullscreen': true,
+        'ks.screensaver.glance_now_playing': true,
+      });
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await settle();
+      expect(ha.attempts, isEmpty);
+      bus.publish(const SendspinNowPlayingChanged(active: true));
+      await settle();
+      expect(ha.attempts.length, 1);
+      expect(ha.attempts.single, ['sensor.t']);
+    });
+
+    test('without the opt-in, playback changes nothing', () async {
+      await build({
+        'ks.screensaver.mode': 'immich',
+        'ks.sendspin.fullscreen': true,
+      });
+      bus.publish(const ScreensaverStateChanged(active: true));
+      bus.publish(const SendspinNowPlayingChanged(active: true));
+      await settle();
+      expect(ha.attempts, isEmpty);
+    });
+
+    test('a row mode keeps its one subscription across playback changes',
+        () async {
+      await build({
+        'ks.screensaver.mode': 'clock',
+        'ks.sendspin.fullscreen': true,
+        'ks.screensaver.glance_now_playing': true,
+      });
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await settle();
+      expect(ha.attempts.length, 1);
+      bus.publish(const SendspinNowPlayingChanged(active: true));
+      await settle();
+      expect(ha.attempts.length, 1);
     });
   });
 }

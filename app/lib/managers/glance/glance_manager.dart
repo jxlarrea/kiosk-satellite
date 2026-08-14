@@ -141,16 +141,19 @@ class GlanceManager extends Manager {
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<ScreensaverStateChanged>? _screensaverSub;
   StreamSubscription<NetworkStateChanged>? _networkSub;
+  StreamSubscription<SendspinNowPlayingChanged>? _sendspinSub;
   GlanceSubscription? _live;
   Timer? _retry;
   bool _screensaverActive = false;
+  bool _nowPlayingActive = false;
 
   @override
   Future<void> init() async {
     _load();
     _settingsSub = bus.on<SettingChanged>().listen((event) {
       if (event.key != defs.screensaverGlanceEntities.key &&
-          event.key != defs.screensaverGlanceEnabled.key) {
+          event.key != defs.screensaverGlanceEnabled.key &&
+          event.key != defs.screensaverGlanceNowPlaying.key) {
         return;
       }
       _load();
@@ -173,6 +176,17 @@ class GlanceManager extends Manager {
     _networkSub = bus.on<NetworkStateChanged>().listen((event) {
       if (!event.up || !_screensaverActive) return;
       if (_live == null || _live!.isClosed) unawaited(_open());
+    });
+    // The full-screen Now Playing view can carry the row too (issue #209),
+    // and it stands in for ANY screensaver mode while music plays. Playback
+    // starting or stopping mid-screensaver changes whether the row is on
+    // screen, so the subscription follows it — but only when the configured
+    // mode would not hold one open anyway.
+    _sendspinSub = bus.on<SendspinNowPlayingChanged>().listen((event) {
+      if (_nowPlayingActive == event.active) return;
+      _nowPlayingActive = event.active;
+      if (!_screensaverActive || _modeWantsRow) return;
+      unawaited(_open());
     });
 
     commands.register(
@@ -204,6 +218,7 @@ class GlanceManager extends Manager {
     await _settingsSub?.cancel();
     await _screensaverSub?.cancel();
     await _networkSub?.cancel();
+    await _sendspinSub?.cancel();
     _retry?.cancel();
     _close();
     entities.dispose();
@@ -248,15 +263,26 @@ class GlanceManager extends Manager {
   /// a subscription open.
   static const _rowModes = {'black', 'clock'};
 
+  /// Whether the configured screensaver mode draws the row. Black with
+  /// "Hide all extras" never does (issue #151), so holding entity state
+  /// live for it would be pure cost.
+  bool get _modeWantsRow {
+    final mode = _settings.get(defs.screensaverMode);
+    if (!_rowModes.contains(mode)) return false;
+    return mode != 'black' ||
+        !_settings.get(defs.screensaverBlackHideExtras);
+  }
+
+  /// Whether the full-screen Now Playing view is standing in for the
+  /// screensaver AND is configured to carry the row (issue #209).
+  bool get _nowPlayingWantsRow =>
+      _nowPlayingActive &&
+      _settings.get(defs.sendspinFullscreen) &&
+      _settings.get(defs.screensaverGlanceNowPlaying);
+
   Future<void> _open() async {
     _close();
-    if (!_rowModes.contains(_settings.get(defs.screensaverMode))) return;
-    // Black with "Hide all extras" never draws the row (issue #151), so
-    // holding entity state live for it would be pure cost.
-    if (_settings.get(defs.screensaverMode) == 'black' &&
-        _settings.get(defs.screensaverBlackHideExtras)) {
-      return;
-    }
+    if (!_modeWantsRow && !_nowPlayingWantsRow) return;
     final ids = [for (final entity in entities.value) entity.entityId];
     if (ids.isEmpty) return;
     final live = await _ha.subscribeEntities(

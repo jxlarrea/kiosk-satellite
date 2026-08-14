@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'glance_row.dart';
 import 'lyrics_view.dart';
 
 import '../app_container.dart';
@@ -135,6 +137,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     super.initState();
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
     c.sendspin.lyrics.addListener(_onNowPlaying);
+    // The entity list going from empty to populated (or back) changes the
+    // whole layout, not just the row, so the view rebuilds with it.
+    c.glance.entities.addListener(_onNowPlaying);
     _onNowPlaying();
   }
 
@@ -142,6 +147,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
     c.sendspin.lyrics.removeListener(_onNowPlaying);
+    c.glance.entities.removeListener(_onNowPlaying);
     super.dispose();
   }
 
@@ -187,6 +193,12 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     final landscape = screen.width > screen.height;
     final showLyrics = haveLyrics && landscape && screen.width >= 560;
     final stackLyrics = haveLyrics && !landscape && screen.height >= 620;
+    // The At a Glance row joins the plain layout only (issue #209): the
+    // lyrics layouts already spend every free pixel on the words.
+    final glance = !showLyrics &&
+        !stackLyrics &&
+        c.settings.get(defs.screensaverGlanceNowPlaying) &&
+        c.glance.entities.value.isNotEmpty;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -285,19 +297,36 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               ],
             ),
           )
-        else
-          Center(
+        else ...[
+          // With the row pinned below, the panel gives back some size and
+          // rides a little high, so both fit a short screen (the Echo
+          // Show's 480px) without touching.
+          Align(
+            alignment: Alignment(0, glance ? -0.35 : 0),
             child: _nowPlayingPanel(
               art: art,
               title: title,
               artist: artist,
-              artSize: artSize,
-              titleSize: titleSize,
-              artistSize: artistSize,
-              gap: gap,
+              artSize: artSize * (glance ? 0.78 : 1.0),
+              titleSize: titleSize * (glance ? 0.85 : 1.0),
+              artistSize: artistSize * (glance ? 0.9 : 1.0),
+              gap: gap * (glance ? 0.6 : 1.0),
               horizontalPadding: 48,
             ),
           ),
+          if (glance)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: screen.height * 0.06,
+              // The default grey-on-black palette reads over the black
+              // backdrop and the scrimmed art alike, so no tint.
+              child: GlanceRow(
+                container: c,
+                scale: min(1.0, screen.height / 480).clamp(0.75, 1.0),
+              ),
+            ),
+        ],
       ],
     );
   }
