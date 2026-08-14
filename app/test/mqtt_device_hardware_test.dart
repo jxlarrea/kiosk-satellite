@@ -122,14 +122,17 @@ void main() {
       final configs =
           link.published['homeassistant/sensor/ks_testdev1/$objectId/config'];
       expect(configs, isNotNull, reason: objectId);
-      final config = jsonDecode(configs!.single) as Map;
+      // The one-time migration retracts the uptime configs (empty payload)
+      // right before the fresh configs re-register them; the last publish
+      // is the live one.
+      final config = jsonDecode(configs!.last) as Map;
       expect(config['entity_category'], 'diagnostic', reason: objectId);
     }
     final uptimeConfig = jsonDecode(link
         .published['homeassistant/sensor/ks_testdev1/app_uptime/config']!
-        .single) as Map;
-    expect(uptimeConfig['device_class'], 'duration');
-    expect(uptimeConfig['unit_of_measurement'], 's');
+        .last) as Map;
+    expect(uptimeConfig['device_class'], 'timestamp');
+    expect(uptimeConfig.containsKey('unit_of_measurement'), isFalse);
   });
 
   test('the Device sensor carries the model with version and build', () async {
@@ -187,19 +190,38 @@ void main() {
         link.published['kiosksatellite/testdev1/ipv6_address/state'], ['']);
   });
 
-  test('uptime publishes seconds, network unknown while offline', () async {
+  test('uptime publishes a start timestamp, network None while offline',
+      () async {
     uptime = const {'app': 4321, 'network': null};
     await build();
-    expect(link.published['kiosksatellite/testdev1/app_uptime/state'],
-        ['4321']);
+    final states =
+        link.published['kiosksatellite/testdev1/app_uptime/state']!;
+    expect(states, hasLength(1));
+    final started = DateTime.parse(states.single);
+    final age = DateTime.now().toUtc().difference(started).inSeconds;
+    expect((age - 4321).abs(), lessThan(60));
     expect(link.published['kiosksatellite/testdev1/network_uptime/state'],
-        ['']);
+        ['None']);
   });
 
-  test('a live network publishes its uptime', () async {
+  test('a live network publishes its own start timestamp', () async {
     uptime = const {'app': 4321, 'network': 99};
     await build();
-    expect(link.published['kiosksatellite/testdev1/network_uptime/state'],
-        ['99']);
+    final states =
+        link.published['kiosksatellite/testdev1/network_uptime/state']!;
+    expect(states, hasLength(1));
+    final started = DateTime.parse(states.single);
+    final age = DateTime.now().toUtc().difference(started).inSeconds;
+    expect((age - 99).abs(), lessThan(60));
+  });
+
+  test('last seen stamps once per connect, not per poll', () async {
+    await build();
+    final states =
+        link.published['kiosksatellite/testdev1/last_seen/state']!;
+    // The bring-up ran the initial publish AND the first stats poll; only
+    // the connect itself may stamp.
+    expect(states, hasLength(1));
+    expect(DateTime.parse(states.single).isUtc, isTrue);
   });
 }

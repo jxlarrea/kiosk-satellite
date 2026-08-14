@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Improvements
+- The App uptime, Network uptime and Last seen sensors no longer write a recorder row every minute (#213). The uptime pair now publishes the moment the app or the network came up as a timestamp entity, which Home Assistant renders as a live "n hours ago" on its own, so the state only changes when a restart or reconnect actually happens; upgraded devices re-register the two entities automatically. Last seen is now stamped once per broker connect and once more on a graceful disconnect instead of every minute; after a hard death the moment of the drop is the availability transition Home Assistant already records on every entity.
+
 ### Fixed
 - Changing the Home Assistant base URL now updates the stored dashboard start URL along with it (#216). The dashboard picker stores an absolute URL built from the base URL at pick time, so a device first set up over an IP address kept loading the dashboard from that IP forever after the base URL moved to a domain, and every URL the page derives from its own address (wake word model downloads, TTS playback) kept the old host too. When the base URL changes, a start URL sitting on the old origin now follows it to the new one and the dashboard reloads there; a start URL pointing at some other site is left alone.
 

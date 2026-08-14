@@ -105,6 +105,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// State plus attributes last published per IP sensor, so the minute poll
   /// only publishes when an address actually moved.
   final _lastIpPayload = <String, String>{};
+
+  /// The start moments last published per uptime sensor (null when the last
+  /// publish was 'None'), so rounding jitter in the now-minus-seconds
+  /// arithmetic never republishes an anchor that has not really moved.
+  final _lastAnchor = <String, DateTime?>{};
   List<Map<String, Object?>> _cameraViews = const [];
   Set<String> _publishedCameraViewIds = {};
 
@@ -921,6 +926,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           link.publishEmpty(topic);
         }
       }
+      // The last honest "alive at" this session can leave behind: the
+      // goodbye moment. A hard death (power cut, crash) cannot stamp
+      // this, so there Last seen keeps the connect-time state and the
+      // drop shows as the availability transition instead.
+      link.publishString('$_base/last_seen/state',
+          DateTime.now().toUtc().toIso8601String(),
+          retain: true);
       // A graceful disconnect never fires the will; say goodbye ourselves.
       link.publishString(_availabilityTopic, 'offline', retain: true);
     }
@@ -1250,6 +1262,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       _publish('$_base/screen/available', ambient ? 'offline' : 'online');
 
   Future<void> _publishInitialStates() async {
+    // When the device last came online (issue #75, reshaped with #213):
+    // one retained timestamp per broker connect instead of one a minute.
+    // A constant state costs the recorder nothing, every reconnect is a
+    // real event worth a row, and the graceful-goodbye stamp in
+    // _disconnect covers "alive until" for everything but a hard death.
+    _publish(
+        '$_base/last_seen/state', DateTime.now().toUtc().toIso8601String());
     final ambient = await commands.execute('getAmbientDisplay', const {});
     _publishScreenAvailability(ambient: ambient.ok && ambient.data == true);
     final on = await commands.execute('isScreenOn', const {});
@@ -1359,6 +1378,30 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     _publish('$_base/$objectId/attributes', attrs);
   }
 
+  /// Publishes a start-moment timestamp only when it genuinely moved. The
+  /// anchor is re-derived every tick as now minus an uptime, which wobbles
+  /// by a second of rounding either way; anything under the tolerance is
+  /// the same moment restated (and would put a recorder row a minute into
+  /// Home Assistant's database forever), anything over it is a real
+  /// restart or reconnect. Null (no network) publishes 'None', the unknown
+  /// a timestamp device class expects, once per transition.
+  void _publishAnchor(String objectId, DateTime? start) {
+    final known = _lastAnchor.containsKey(objectId);
+    final last = _lastAnchor[objectId];
+    if (start == null) {
+      if (known && last == null) return;
+      _lastAnchor[objectId] = null;
+      _publish('$_base/$objectId/state', 'None');
+      return;
+    }
+    if (last != null &&
+        start.difference(last).abs() < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastAnchor[objectId] = start;
+    _publish('$_base/$objectId/state', start.toIso8601String());
+  }
+
   /// The HA update entity's whole world in one JSON payload: versions, the
   /// release page, and the download progress while an install runs.
   Future<void> _publishUpdateState() async {
@@ -1396,29 +1439,31 @@ class MqttManager extends Manager with WidgetsBindingObserver {
 
   Future<void> _pollStats() async {
     if (!_connected) return;
-    // Unconditionally, unlike everything below: proving the device alive is
-    // this timestamp's whole job, so "nothing changed" is not a reason to
-    // skip it (issue #75).
-    _publish(
-        '$_base/last_seen/state', DateTime.now().toUtc().toIso8601String());
     if (++_viewRefreshTicks >= 5) {
       _viewRefreshTicks = 0;
       unawaited(_refreshDashboardViews());
     }
     unawaited(_publishForegroundApp());
     unawaited(_publishIpAddresses());
-    // Uptimes republish every tick like last_seen: the app one always
-    // moved, and the pair costs one platform read.
+    // Timestamp anchors, not counters: each tick re-derives when the app
+    // and the network came up and republishes only when an anchor actually
+    // moved (a restart, a reconnect), so the recorder logs those moments
+    // instead of a new row every minute. Home Assistant renders the
+    // ticking "n hours ago" on its own.
     final up = await commands.execute('getUptime', const {});
     if (up.ok && up.data is Map) {
       final uptime = up.data as Map;
+      final now = DateTime.now().toUtc();
       final app = (uptime['app'] as num?)?.toInt();
-      if (app != null) _publish('$_base/app_uptime/state', '$app');
+      if (app != null) {
+        _publishAnchor('app_uptime', now.subtract(Duration(seconds: app)));
+      }
       final network = (uptime['network'] as num?)?.toInt();
-      // Empty while offline: the sensor reads unknown rather than holding
-      // a stale count.
-      _publish(
-          '$_base/network_uptime/state', network == null ? '' : '$network');
+      _publishAnchor(
+          'network_uptime',
+          network == null
+              ? null
+              : now.subtract(Duration(seconds: network)));
     }
     final result = await commands.execute('getStats', const {});
     final data = result.data;
@@ -1550,7 +1595,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     //     and moved to Configuration (issue #152).
     //  2: the Clear cache and Restart app buttons moved from
     //     Configuration to Controls.
-    const migrationGeneration = 2;
+    //  3: the App uptime and Network uptime sensors turned from duration
+    //     counters into timestamp anchors (issue #213) — device_class and
+    //     unit are registration-time fields.
+    const migrationGeneration = 3;
     final migrated =
         int.tryParse(_settings.internal('mqtt_discovery_generation')) ??
             // The flag generation 1 shipped under, mapped so those
@@ -1562,8 +1610,14 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       if (migrated < 1) {
         _publish('$_prefix/switch/ks_$_deviceId/screensaver/config', '');
       }
-      _publish('$_prefix/button/ks_$_deviceId/clear_cache/config', '');
-      _publish('$_prefix/button/ks_$_deviceId/restart/config', '');
+      if (migrated < 2) {
+        _publish('$_prefix/button/ks_$_deviceId/clear_cache/config', '');
+        _publish('$_prefix/button/ks_$_deviceId/restart/config', '');
+      }
+      if (migrated < 3) {
+        _publish('$_prefix/sensor/ks_$_deviceId/app_uptime/config', '');
+        _publish('$_prefix/sensor/ks_$_deviceId/network_uptime/config', '');
+      }
       await _settings.setInternal(
           'mqtt_discovery_generation', '$migrationGeneration');
       await _settings.setInternal('mqtt_screensaver_switch_migrated', '');
@@ -1709,11 +1763,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'icon': 'mdi:memory',
         'entity_category': 'diagnostic',
       },
-      // When the device last reported in (issue #75): republished every
-      // stats tick whether or not anything changed, retained so it stays
-      // readable across an HA restart. Deliberately no availability topic —
-      // the timestamp exists to be read after the device has dropped, which
-      // is exactly when an availability-gated entity would hide it.
+      // When the device last came online (issue #75, reshaped with #213):
+      // stamped once per broker connect and once more on a graceful
+      // goodbye, not every minute — a constant state costs the recorder
+      // nothing. Retained so it stays readable across an HA restart, and
+      // deliberately no availability topic — the timestamp exists to be
+      // read after the device has dropped, which is exactly when an
+      // availability-gated entity would hide it.
       '$_prefix/sensor/ks_$_deviceId/last_seen/config': {
         ...common('last_seen', 'Last seen'),
         'state_topic': '$_base/last_seen/state',
@@ -1792,19 +1848,21 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'icon': 'mdi:ip-network-outline',
         'entity_category': 'diagnostic',
       },
+      // Timestamps of when the app and the network came up, not second
+      // counters: the state only moves on a real restart or reconnect, so
+      // the recorder logs those moments and nothing else, and HA renders
+      // the ticking "n hours ago" itself (issue #213).
       '$_prefix/sensor/ks_$_deviceId/app_uptime/config': {
         ...common('app_uptime', 'App uptime'),
         'state_topic': '$_base/app_uptime/state',
-        'device_class': 'duration',
-        'unit_of_measurement': 's',
+        'device_class': 'timestamp',
         'icon': 'mdi:timer-outline',
         'entity_category': 'diagnostic',
       },
       '$_prefix/sensor/ks_$_deviceId/network_uptime/config': {
         ...common('network_uptime', 'Network uptime'),
         'state_topic': '$_base/network_uptime/state',
-        'device_class': 'duration',
-        'unit_of_measurement': 's',
+        'device_class': 'timestamp',
         'icon': 'mdi:timer-sync-outline',
         'entity_category': 'diagnostic',
       },
