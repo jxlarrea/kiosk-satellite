@@ -75,6 +75,7 @@ tablet's remote admin (while remote administration is enabled).
 | Ambient light | sensor | The device's light sensor in lux, for automating screen brightness from the room's light. Only devices with the hardware get the entity. Readings are damped (small flicker is ignored, big swings publish immediately) so the recorder is not flooded. If you automate brightness from this, turn the Android adaptive brightness off or the two will fight. |
 | CPU usage, CPU temperature | sensor | Polled once a minute. Usage is measured from how much of the window the cores actually spent idle, so devices whose governor parks the clocks at full speed no longer read a flat 100%. |
 | RAM available, RAM total | sensor | Polled once a minute. |
+| Connectivity | binary_sensor | Whether the device currently holds its broker session (issue #217): on while connected, off the moment the broker's last will fires after a hard death or the app disconnects gracefully. It is the availability signal reread as a state, so it costs no extra traffic at all, and unlike the other entities it does not go unavailable when the device drops; that is the moment it exists to show. Use it as the trigger for offline automations and as a plottable online/offline history timeline; its `last_changed` answers "offline since when" in templates. |
 | Last seen | sensor | When the device last came online, as a timestamp: stamped on every broker connect and once more when the app disconnects gracefully (a restart, the feature being turned off), rather than republished every minute, so it costs the recorder one row per real event instead of one a minute. The one entity that does not go unavailable when the device drops, so the timestamp stays readable while the device is gone (issue #75). After a hard death (power cut, crash) the state keeps the connect-time stamp; the moment of the drop itself is the availability transition, which Home Assistant records on every entity's history when the broker's will fires. |
 | Current page | sensor | The URL the kiosk is showing. |
 | Device | sensor | The device's model name, with the Android version and the OEM build in the `android_version` and `build` attributes (issue #213). |
@@ -95,9 +96,9 @@ tablet's remote admin (while remote administration is enabled).
 
 All entities carry availability: they go unavailable the moment the tablet
 drops off the broker (broker-side last will, so it works however the
-connection dies) and recover automatically when it returns. The one
-deliberate exception is Last seen, which stays readable while the device
-is gone; that is its job.
+connection dies) and recover automatically when it returns. The two
+deliberate exceptions are Last seen and Connectivity, which stay readable
+while the device is gone; that is their job.
 
 ## Topics
 

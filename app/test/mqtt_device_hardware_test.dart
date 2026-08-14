@@ -215,6 +215,25 @@ void main() {
     expect((age - 99).abs(), lessThan(60));
   });
 
+  test('connectivity binds to the availability topic, ungated', () async {
+    await build();
+    final config = jsonDecode(link
+        .published[
+            'homeassistant/binary_sensor/ks_testdev1/connectivity/config']!
+        .last) as Map;
+    expect(config['state_topic'], 'kiosksatellite/testdev1/availability');
+    expect(config['payload_on'], 'online');
+    expect(config['payload_off'], 'offline');
+    expect(config['device_class'], 'connectivity');
+    expect(config['entity_category'], 'diagnostic');
+    // Never gated by the availability it displays.
+    expect(config.containsKey('availability_topic'), isFalse);
+    // And nothing publishes to its state topic beyond the availability
+    // publisher itself ('online' at bring-up).
+    expect(link.published['kiosksatellite/testdev1/availability'],
+        ['online']);
+  });
+
   test('last seen stamps once per connect, not per poll', () async {
     await build();
     final states =

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## v2026.8.43 - 2026-08-14
 
+### Added
+- A Connectivity binary sensor per device (#217): on while the device holds its broker session, off the moment the broker's last will fires after a hard death or the app disconnects gracefully. It is the existing availability signal reread as a state, so it adds no MQTT traffic at all, stays readable (and off) while the device is gone instead of going unavailable, and gives automations a stable "device went offline" trigger plus a plottable online/offline history timeline.
+
 ### Improvements
 - The App uptime, Network uptime and Last seen sensors no longer write a recorder row every minute (#213). The uptime pair now publishes the moment the app or the network came up as a timestamp entity, which Home Assistant renders as a live "n hours ago" on its own, so the state only changes when a restart or reconnect actually happens; upgraded devices re-register the two entities automatically. Last seen is now stamped once per broker connect and once more on a graceful disconnect instead of every minute; after a hard death the moment of the drop is the availability transition Home Assistant already records on every entity.
 

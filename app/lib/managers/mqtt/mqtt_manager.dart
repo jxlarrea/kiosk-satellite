@@ -1527,6 +1527,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         '$_prefix/sensor/ks_$_deviceId/ram_free/config',
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
+        '$_prefix/binary_sensor/ks_$_deviceId/connectivity/config',
         '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
         '$_prefix/sensor/ks_$_deviceId/device_info/config',
         '$_prefix/sensor/ks_$_deviceId/ipv4_address/config',
@@ -1763,6 +1764,24 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'icon': 'mdi:memory',
         'entity_category': 'diagnostic',
       },
+      // The availability topic reread as a state (issue #217): ON while
+      // the device holds its broker session, OFF the moment the will
+      // fires or the app says goodbye. Zero extra traffic — nothing new
+      // is ever published — and it gives automations and history a
+      // stable online/offline entity instead of triggering on some other
+      // entity's unavailability (which can have its own causes: the
+      // Screen light withdraws on ambient displays, camera entities are
+      // retracted with the camera toggle). Deliberately not gated by the
+      // availability it displays: its whole job is to be readable, and
+      // OFF, while the device is gone.
+      '$_prefix/binary_sensor/ks_$_deviceId/connectivity/config': {
+        ...common('connectivity', 'Connectivity'),
+        'state_topic': _availabilityTopic,
+        'payload_on': 'online',
+        'payload_off': 'offline',
+        'device_class': 'connectivity',
+        'entity_category': 'diagnostic',
+      }..remove('availability_topic'),
       // When the device last came online (issue #75, reshaped with #213):
       // stamped once per broker connect and once more on a graceful
       // goodbye, not every minute — a constant state costs the recorder
