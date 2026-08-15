@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The remote API's raw settings import no longer clones the source device's identity when asked not to (#221). `POST /api/settings/import` used to apply a settings dump verbatim, so provisioning a second device from another's export carried the Sendspin player id along and the two devices kicked each other off Music Assistant in an endless reconnect loop, bypassing the identity handling the config import flow gained in #136. The endpoint now takes the same `adoptIdentity` query parameter as `/api/config/import`: pass `0` when cloning a device and it keeps its own device name, MQTT device id, Sendspin player id and Voice Satellite selection, shedding any of them it had already inherited from an earlier verbatim import so the ids regenerate cleanly.
+
 ## v2026.8.43 - 2026-08-14
 
 ### Added

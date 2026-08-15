@@ -230,4 +230,48 @@ void main() {
       expect(settings.get(defs.sendspinClientId), 'backup-id');
     });
   });
+
+  // The raw settings dump path (/api/settings/import) used to apply the
+  // source device's identity verbatim, reintroducing the #136 collision.
+  group('shedImportedIdentity (issue #221)', () {
+    test('drops the identity keys and leaves the rest of the dump', () async {
+      await build({
+        'ks.device.name': 'Kitchen',
+        'ks.mqtt.device_id': 'own-mqtt-id',
+        'ks.sendspin.client_id': 'own-player-id',
+      });
+      final map = <String, Object?>{
+        'device.name': 'Living Room',
+        'mqtt.device_id': 'source-mqtt-id',
+        'sendspin.client_id': 'source-player-id',
+        'screensaver.timeout_seconds': 60,
+      };
+      await settings.shedImportedIdentity(map);
+      // The identity keys must not survive to the import that follows.
+      expect(map.keys, ['screensaver.timeout_seconds']);
+      // This device's own identity is untouched: the incoming values
+      // differ, so there is no inherited collision to shed.
+      expect(settings.get(defs.deviceName), 'Kitchen');
+      expect(settings.get(defs.mqttDeviceId), 'own-mqtt-id');
+      expect(settings.get(defs.sendspinClientId), 'own-player-id');
+    });
+
+    test('a device that had cloned the incoming identity sheds it', () async {
+      await build({
+        'ks.device.name': 'Living Room',
+        'ks.mqtt.device_id': 'source-mqtt-id',
+        'ks.sendspin.client_id': 'source-player-id',
+      });
+      await settings.shedImportedIdentity(<String, Object?>{
+        'device.name': 'Living Room',
+        'mqtt.device_id': 'source-mqtt-id',
+        'sendspin.client_id': 'source-player-id',
+      });
+      // "Keeping its own" would keep the collision; empty makes the ids
+      // regenerate at the next MQTT and Sendspin connect.
+      expect(settings.get(defs.deviceName), isEmpty);
+      expect(settings.get(defs.mqttDeviceId), isEmpty);
+      expect(settings.get(defs.sendspinClientId), isEmpty);
+    });
+  });
 }

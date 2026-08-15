@@ -442,6 +442,20 @@ class RemoteManager extends Manager {
   Future<Response> _import(Request request) async {
     final body = await _body(request);
     if (body == null) return _json(400, {'error': 'invalid JSON'});
+    // Provisioning a second device from another's dump must not carry the
+    // source's identity along, exactly like /api/config/import (issue
+    // #221): adoptIdentity=0 keeps this device's own name, MQTT device id
+    // and Sendspin player id. Default on, matching importConfig, so a
+    // same-device restore keeps its discovered HA device.
+    final adopt = request.url.queryParameters['adoptIdentity'];
+    if (adopt == '0' || adopt == 'false') {
+      await _settings.shedImportedIdentity(body);
+      // A settings dump carries no localStorage, so this seed setting is
+      // the only carrier of the Voice Satellite selection here, and two
+      // devices answering as one assist_satellite displace each other
+      // mid-turn.
+      body.remove(defs.haSatelliteEntity.key);
+    }
     final applied = await _settings.import(body);
     return _json(200, {'applied': applied});
   }
