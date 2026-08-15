@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.44 - 2026-08-15
 
 ### Fixed
 - The Immich screensaver's "Validate connection" now also fetches one preview, so an API key missing Immich's `asset.view` permission fails at the button naming the missing scope instead of passing validation and then failing every image at night (#222). Immich separates viewing previews (`asset.view`) from downloading originals (`asset.download`), and validation previously only exercised album listing and asset search. The screensaver's error message now distinguishes an answering-but-refusing server from an unreachable one: a 401/403 reads as a rejected or under-permissioned API key while "Could not reach the Immich server" is reserved for genuine transport failures, and every failing Immich call is logged with its endpoint and HTTP status so the cause is visible from the app's own logs. The docs now name the three permissions a restricted key needs.
