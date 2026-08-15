@@ -23,9 +23,11 @@ import java.io.File
  * click rides the system stream at its volume, exactly like the
  * framework's own touch sounds.
  *
- * Two kinds: a button 'tap' at full sample volume and a slider 'tick' at
- * a fraction of it, so a drag across steps reads as a soft ratchet rather
- * than a burst of full clicks.
+ * Two kinds: a button 'tap' at the volume the app passes per play (the
+ * user's volume slider; the platform itself never plays touch sounds at
+ * full scale, so 1.0 here is far louder than the system's own clicks)
+ * and a slider 'tick' at a fixed fraction of it, so a drag across steps
+ * reads as a soft ratchet rather than a burst of full clicks.
  *
  * If the sample file is missing (an OEM that relocated it), playback
  * falls back to AudioManager.playSoundEffect with an explicit volume,
@@ -70,7 +72,10 @@ class TapSoundBridge(
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "play" -> {
-                    play(call.argument<String>("kind") ?: "tap")
+                    play(
+                        call.argument<String>("kind") ?: "tap",
+                        call.argument<Double>("volume") ?: 1.0,
+                    )
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -78,8 +83,9 @@ class TapSoundBridge(
         }
     }
 
-    private fun play(kind: String) {
-        val volume = if (kind == "tick") TICK_VOLUME else 1f
+    private fun play(kind: String, base: Double) {
+        val volume = (base.toFloat() * if (kind == "tick") TICK_VOLUME else 1f)
+            .coerceIn(0f, 1f)
         try {
             if (loaded && pool != null) {
                 pool.play(soundId, volume, volume, 1, 0, 1f)

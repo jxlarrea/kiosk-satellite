@@ -1211,10 +1211,12 @@ class _KioskScreenState extends State<KioskScreen>
             }
           }
           if (c.settings.get(defs.haTapSound)) {
+            final volume =
+                c.settings.get(defs.haTapSoundVolume).toDouble() / 100;
             if (tick) {
-              TapSound.tick();
+              TapSound.tick(volume: volume);
             } else {
-              TapSound.tap();
+              TapSound.tap(volume: volume);
             }
           }
         },

@@ -2541,6 +2541,29 @@ const haTapSound = SettingDef<bool>(
   section: 'Haptics',
 );
 
+/// Gain applied to the click sample, read Dart-side per event like the
+/// vibration strength, so the slider applies to the very next tap with no
+/// reload. The platform never plays its own touch sounds at full scale;
+/// it attenuates them by a per-device config value (-6 to -12 dB is
+/// typical), so raw SoundPool playback at 1.0 lands startlingly loud next
+/// to the app's own Flutter clicks. The 25% default sits at the quiet end
+/// of that range; slider ticks keep their fixed fraction of whatever this
+/// says.
+const haTapSoundVolume = SettingDef<num>(
+  key: 'ha.tap_sound_volume',
+  type: SettingType.number,
+  defaultValue: 25,
+  min: 0,
+  max: 100,
+  step: 5,
+  unit: '%',
+  title: 'Tap sound volume',
+  description: 'How loud the tap sound plays.',
+  category: 'Home Assistant',
+  section: 'Haptics',
+  dependsOn: 'ha.tap_sound',
+);
+
 /// Mirror the app's effective theme onto the Home Assistant dashboard
 /// (issue #92): with the App theme on "System", Android flips dark mode on
 /// its own schedule (typically sunset/sunrise), and the dashboard follows.
@@ -3511,6 +3534,7 @@ const List<SettingDef<Object>> allSettings = [
   haHaptics,
   haHapticsStrength,
   haTapSound,
+  haTapSoundVolume,
   themeMatchApp,
   themeAuto,
   themeDarkAt,
