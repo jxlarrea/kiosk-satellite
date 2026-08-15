@@ -2522,6 +2522,25 @@ const haHapticsStrength = SettingDef<String>(
   dependsOn: 'ha.haptics',
 );
 
+/// The system tap sound for the dashboard, riding the same in-page
+/// detector as the haptics above (see haptics_script.dart): the standard
+/// Android click on every accepted button tap, and a quieter one per
+/// slider step. TapSoundBridge.kt plays the platform's own click sample
+/// from an app-owned SoundPool, so it matches the sound the app's Flutter
+/// buttons make while the system's separate "touch sounds" setting cannot
+/// silently veto it.
+const haTapSound = SettingDef<bool>(
+  key: 'ha.tap_sound',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Play tap sounds',
+  description:
+      'Play the standard tap sound when buttons, switches, cards, sliders '
+      'and thermostat dials are used.',
+  category: 'Home Assistant',
+  section: 'Haptics',
+);
+
 /// Mirror the app's effective theme onto the Home Assistant dashboard
 /// (issue #92): with the App theme on "System", Android flips dark mode on
 /// its own schedule (typically sunset/sunrise), and the dashboard follows.
@@ -3491,6 +3510,7 @@ const List<SettingDef<Object>> allSettings = [
   haDashboardCarousel,
   haHaptics,
   haHapticsStrength,
+  haTapSound,
   themeMatchApp,
   themeAuto,
   themeDarkAt,

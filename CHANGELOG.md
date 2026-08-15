@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A "Play tap sounds" toggle under Home Assistant Configuration > Haptics, on by default, plays the standard Android tap sound when a button, switch, chip, card or slider is used on the dashboard, matching the click the app's own interface already makes. Button taps get the full click and slider steps a quieter one, riding the same in-page tap detection as the vibration feedback. The sample is the platform's own touch-sound click played through the app's own audio path at the system sound volume, so the system's separate "touch sounds" setting cannot silently veto it, and it works alongside or independently of the vibration toggle.
+
+### Fixed
+- Haptics and tap sounds now fire for tile cards, chips, scene buttons and every other card activated through a tap action on a touch screen. Home Assistant runs tap actions from the touch gesture itself and suppresses the click event that would normally follow, so the feedback only triggered for plain buttons and controls; the detector now also listens for the activation event the frontend emits for the whole tap_action family, and the existing throttle keeps mouse input from producing doubled feedback.
+
 ## v2026.8.44 - 2026-08-15
 
 ### Fixed

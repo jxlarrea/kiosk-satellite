@@ -1,7 +1,8 @@
-/// Haptics: a short native vibration whenever a tap lands on something
-/// button-shaped in the dashboard, and a lighter tick for every step a
-/// slider crosses while it drags — so a wall panel answers like a
-/// physical switch and a brightness drag feels like a detented knob.
+/// Touch feedback for the dashboard: a short native vibration and/or the
+/// system tap sound whenever a tap lands on something button-shaped, and
+/// a lighter tick for every step a slider crosses while it drags — so a
+/// wall panel answers like a physical switch and a brightness drag feels
+/// like a detented knob.
 ///
 /// Everything is event-driven and idle-free: capture-phase listeners on
 /// the window, no timers, no rAF loops, no observers, and the per-event
@@ -18,6 +19,16 @@
 /// path is walked instead of the retargeted event.target because HA nests
 /// everything in open shadow roots — the target at the window is just
 /// `home-assistant`.
+///
+/// `click` alone is not enough on touch hardware: HA's action-handler
+/// directive runs tap_action from touchend and suppresses the synthetic
+/// click that would follow, so a real finger on a tile card, chip or
+/// Mushroom state item never produces a click event at all (a mouse, or a
+/// synthetic el.click(), still does — which is what made click look
+/// sufficient under test). The directive announces every activation with
+/// a bubbling, composed `action` event instead, so that is the signal for
+/// the whole tap_action world; the shared tap throttle dedupes the mouse
+/// case where the click arrives alongside it.
 ///
 /// What counts as a button: real form controls, HA's web-component zoo by
 /// name fragment (ha-icon-button, ha-switch, ha-control-*, mwc-*, chips,
@@ -51,15 +62,17 @@
 /// thermostat's low and high handles keep separate memories on their
 /// shared element.
 ///
-/// The haptic itself is native (see HapticsBridge.kt): one fire-and-forget
-/// callHandler message per accepted event — 'tap' or 'tick', strength is
-/// the app's business — throttled per kind (taps 90ms, ticks 30ms) so a
-/// synthetic double-dispatch cannot buzz twice and a fast drag reads as
-/// texture rather than saturating the motor.
+/// The feedback itself is native: one fire-and-forget callHandler message
+/// per accepted event — 'tap' or 'tick'; which feedback plays (vibration
+/// via HapticsBridge.kt, the tap sound via TapSoundBridge.kt, or both)
+/// and at what strength is the app's business — throttled per kind (taps
+/// 90ms, ticks 30ms) so a synthetic double-dispatch cannot fire twice and
+/// a fast drag reads as texture rather than saturating the motor.
 ///
-/// Gated by `window.__ksHapticsEnabled`, seeded at document start,
-/// re-asserted on every load and updated live on toggle, so the setting
-/// needs no reload — the same contract as `__ksCarouselEnabled`.
+/// Gated by `window.__ksHapticsEnabled` and `window.__ksTapSoundEnabled`
+/// (the detector runs while either is on), both seeded at document start,
+/// re-asserted on every load and updated live on toggle, so the settings
+/// need no reload — the same contract as `__ksCarouselEnabled`.
 const buttonHapticsScript = '''
 (function () {
   if (window.__ksHaptics) return;
@@ -75,6 +88,11 @@ const buttonHapticsScript = '''
   var EXACT = /^(button|select|summary|a)\$/;
   var TYPES = /^(checkbox|radio|button|submit|reset)\$/;
   var ROLES = /^(button|switch|checkbox|radio|menuitem|option|tab|link)\$/;
+
+  function on() {
+    return window.__ksHapticsEnabled === true ||
+           window.__ksTapSoundEnabled === true;
+  }
 
   function send(kind) {
     try {
@@ -121,10 +139,22 @@ const buttonHapticsScript = '''
   }
 
   addEventListener('click', function (e) {
-    if (window.__ksHapticsEnabled !== true) return;
+    if (!on()) return;
     var now = e.timeStamp || 0;
     if (now - lastTap < TAP_MS) return;
     if (!wantsTap(e)) return;
+    lastTap = now;
+    send('tap');
+  }, { passive: true, capture: true });
+
+  // The tap_action world: HA's (and Mushroom's) action-handler fires this
+  // for tap, hold and double_tap — and on touch it is the ONLY event a
+  // card activation produces, because the directive eats the click.
+  addEventListener('action', function (e) {
+    if (!on()) return;
+    if (!e.detail || !e.detail.action) return;
+    var now = e.timeStamp || 0;
+    if (now - lastTap < TAP_MS) return;
     lastTap = now;
     send('tap');
   }, { passive: true, capture: true });
@@ -163,7 +193,7 @@ const buttonHapticsScript = '''
   }
 
   addEventListener('input', function (e) {
-    if (window.__ksHapticsEnabled !== true) return;
+    if (!on()) return;
     var t = e.composedPath ? e.composedPath()[0] : e.target;
     if (t instanceof Element) sliderTick(t, e.type, null, e.timeStamp || 0);
   }, { passive: true, capture: true });
@@ -171,7 +201,7 @@ const buttonHapticsScript = '''
   var dispatch = EventTarget.prototype.dispatchEvent;
   EventTarget.prototype.dispatchEvent = function (ev) {
     try {
-      if (window.__ksHapticsEnabled === true && ev &&
+      if (on() && ev &&
           SLIDE_EV.test(ev.type) && this instanceof Element) {
         var d = ev.detail;
         sliderTick(this, ev.type,

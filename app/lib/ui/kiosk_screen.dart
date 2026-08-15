@@ -15,6 +15,7 @@ import '../managers/browser/carousel_script.dart';
 import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/haptics_script.dart';
 import '../managers/device/haptics.dart';
+import '../managers/device/tap_sound.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
 import '../managers/browser/ws_filter_script.dart';
@@ -245,11 +246,17 @@ class _KioskScreenState extends State<KioskScreen>
       );
       return;
     }
-    // Button haptics is the same live-flag contract; the script itself has
-    // no state to build or tear down.
+    // Haptics and the tap sound share one live-flag contract; the script
+    // itself has no state to build or tear down.
     if (e.key == defs.haHaptics.key) {
       await c.browser.runJs(
         'window.__ksHapticsEnabled = ${e.value == true};',
+      );
+      return;
+    }
+    if (e.key == defs.haTapSound.key) {
+      await c.browser.runJs(
+        'window.__ksTapSoundEnabled = ${e.value == true};',
       );
       return;
     }
@@ -598,11 +605,13 @@ class _KioskScreenState extends State<KioskScreen>
       source: dashboardCarouselScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
-    // Button haptics: same always-injected, flag-gated contract.
+    // Haptics and the tap sound: same always-injected, flag-gated contract.
     UserScript(
       source:
           'window.__ksHapticsEnabled = '
-          '${c.settings.get(defs.haHaptics)};',
+          '${c.settings.get(defs.haHaptics)};'
+          'window.__ksTapSoundEnabled = '
+          '${c.settings.get(defs.haTapSound)};',
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     UserScript(
@@ -1184,19 +1193,29 @@ class _KioskScreenState extends State<KioskScreen>
           unawaited(c.browser.setDragScrollBars(hidden: active));
         },
       );
-      // Button haptics: one message per accepted tap or slider step (see
-      // haptics_script). The setting is re-checked here so a page that
-      // missed a toggle's live flag still cannot buzz while it is off;
-      // strength is read per event, so the select applies instantly.
+      // Touch feedback: one message per accepted tap or slider step (see
+      // haptics_script). Each setting is re-checked here so a page that
+      // missed a toggle's live flag still cannot buzz or click while it
+      // is off; strength is read per event, so the select applies
+      // instantly.
       controller.addJavaScriptHandler(
         handlerName: 'ksHaptic',
         callback: (args) {
-          if (!c.settings.get(defs.haHaptics)) return;
-          final strength = c.settings.get(defs.haHapticsStrength);
-          if (args.isNotEmpty && args.first == 'tick') {
-            Haptics.tick(strength: strength);
-          } else {
-            Haptics.tap(strength: strength);
+          final tick = args.isNotEmpty && args.first == 'tick';
+          if (c.settings.get(defs.haHaptics)) {
+            final strength = c.settings.get(defs.haHapticsStrength);
+            if (tick) {
+              Haptics.tick(strength: strength);
+            } else {
+              Haptics.tap(strength: strength);
+            }
+          }
+          if (c.settings.get(defs.haTapSound)) {
+            if (tick) {
+              TapSound.tick();
+            } else {
+              TapSound.tap();
+            }
           }
         },
       );
@@ -1220,7 +1239,9 @@ class _KioskScreenState extends State<KioskScreen>
       );
       c.browser.runJs(
         'window.__ksHapticsEnabled = '
-        '${c.settings.get(defs.haHaptics)};',
+        '${c.settings.get(defs.haHaptics)};'
+        'window.__ksTapSoundEnabled = '
+        '${c.settings.get(defs.haTapSound)};',
       );
       if (url != null) c.browser.onPageLoaded(url.toString());
       // Re-apply CSS kiosk mode on every navigation (only does
