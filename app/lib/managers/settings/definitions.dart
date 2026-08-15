@@ -2541,18 +2541,19 @@ const haTapSound = SettingDef<bool>(
   section: 'Haptics',
 );
 
-/// Gain applied to the click sample, read Dart-side per event like the
+/// Gain applied to the click, read Dart-side per event like the
 /// vibration strength, so the slider applies to the very next tap with no
 /// reload. The platform never plays its own touch sounds at full scale;
-/// it attenuates them by a per-device config value (-6 to -12 dB is
-/// typical), so raw SoundPool playback at 1.0 lands startlingly loud next
-/// to the app's own Flutter clicks. The 25% default sits at the quiet end
-/// of that range; slider ticks keep their fixed fraction of whatever this
-/// says.
+/// it attenuates them by a per-device config value, so 100% here lands
+/// startlingly loud next to the app's own Flutter clicks. 50% is the
+/// default because it matched the Flutter interface's loudness by ear on
+/// every device tried (Echo Show and Samsung tablet alike, -6 dB, the
+/// AOSP default attenuation); slider ticks keep their fixed fraction of
+/// whatever this says.
 const haTapSoundVolume = SettingDef<num>(
   key: 'ha.tap_sound_volume',
   type: SettingType.number,
-  defaultValue: 25,
+  defaultValue: 50,
   min: 0,
   max: 100,
   step: 5,

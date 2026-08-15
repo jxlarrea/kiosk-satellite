@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Improvements
+- The default tap sound volume is now 50%, which by ear matches the loudness of the app's own interface clicks on every device tried. A slider that was already moved keeps its value.
+
 ### Fixed
 - The tap sound now plays the same click the device's own interface makes on every brand of firmware. Which audio file the standard tap sound is belongs to the manufacturer, so on devices that customize it the dashboard clicked differently from the rest of the device. The tap now goes through the same system sound call the rest of the interface uses, which honors the manufacturer's mapping and any active sound theme with no file names involved, still at the volume the slider sets and unaffected by the system's own "touch sounds" toggle. Firmware that keeps its interface sounds where the system player cannot find them, where that call would play nothing, keeps the previous behavior of loading the sound file directly.
 
