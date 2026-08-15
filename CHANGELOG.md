@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The tap sound now plays the same click the device's own interface makes on every brand of firmware. Which audio file the standard tap sound is belongs to the manufacturer, so on devices that customize it the dashboard clicked differently from the rest of the device. The tap now goes through the same system sound call the rest of the interface uses, which honors the manufacturer's mapping and any active sound theme with no file names involved, still at the volume the slider sets and unaffected by the system's own "touch sounds" toggle. Firmware that keeps its interface sounds where the system player cannot find them, where that call would play nothing, keeps the previous behavior of loading the sound file directly.
+
 ## v2026.8.46 - 2026-08-15
 
 ### Added
