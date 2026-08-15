@@ -1808,6 +1808,11 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// went away, and the message should say so instead of skipping forever.
   int _failures = 0;
 
+  /// The last fetch failure as a user-readable reason, so the give-up
+  /// message can say what actually went wrong: a rejected API key is not
+  /// an unreachable server (issue #222).
+  String? _lastFailure;
+
   AppContainer get c => widget.container;
 
   @override
@@ -1840,7 +1845,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       if (mounted) {
         setState(
           () => _problem =
-              'Could not reach the Immich server. It will retry next time.',
+              '${c.immich.readableError(e)} It will retry next time.',
         );
       }
     }
@@ -1856,7 +1861,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       return;
     }
     if (_failures >= _assets.length || _failures >= 20) {
-      setState(() => _problem = 'Could not reach the Immich server.');
+      setState(
+        () => _problem = _lastFailure ?? 'Could not reach the Immich server.',
+      );
       await old?.dispose();
       return;
     }
@@ -1891,6 +1898,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
           return;
         }
         _failures = 0;
+        _lastFailure = null;
         _video = video;
         final oldImage = _image;
         setState(() {
@@ -1908,6 +1916,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         c.log.warn('screensaver', 'immich video failed (${asset.id}): $e');
         await video.dispose();
         _failures++;
+        _lastFailure = c.immich.readableError(e);
         if (mounted) unawaited(_show(next + 1));
         await old?.dispose();
         return;
@@ -1921,6 +1930,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       } catch (e) {
         c.log.warn('screensaver', 'immich image failed (${asset.id}): $e');
         _failures++;
+        _lastFailure = c.immich.readableError(e);
         if (mounted) unawaited(_show(next + 1));
         await old?.dispose();
         return;
@@ -1935,6 +1945,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         return;
       }
       _failures = 0;
+      _lastFailure = null;
       final oldImage = _image;
       final mq = MediaQuery.of(context);
       // Screen-width decode cap: server previews can still out-size a

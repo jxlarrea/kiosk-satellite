@@ -88,8 +88,9 @@ class ImmichManager extends Manager {
         name: 'immichValidate',
         description:
             'Validate the configured Immich server and API key, and mark '
-            'the connection validated on success. Checks the two calls the '
-            'screensaver actually needs: album listing and asset search.',
+            'the connection validated on success. Checks the calls the '
+            'screensaver actually needs: album listing, asset search, and '
+            'one preview fetch.',
         handler: (_) async {
           final error = await _validate();
           await _settings.set(defs.screensaverImmichValidated, error == null);
@@ -110,7 +111,7 @@ class ImmichManager extends Manager {
             final albums = await _albums();
             return CommandResult.ok(albums);
           } catch (e) {
-            return CommandResult.fail(_readableError(e));
+            return CommandResult.fail(readableError(e));
           }
         },
       ),
@@ -147,26 +148,43 @@ class ImmichManager extends Manager {
       return 'The server address is not a valid URL.';
     }
     try {
-      // Both calls the screensaver depends on, so a key that can list albums
-      // but not read assets fails here at the button, not at 2am.
+      // Every call the screensaver depends on, so a key that can list
+      // albums but not read assets, or search them but not fetch their
+      // previews (Immich's asset.view is a separate permission from
+      // asset.download, issue #222), fails here at the button, not at 2am.
       await _albums();
-      await _search(page: 1, size: 1);
+      final found = await _search(page: 1, size: 1);
+      final items = (found['items'] as List?) ?? const [];
+      if (items.isNotEmpty) {
+        final id = '${(items.first as Map)['id']}';
+        final response = await http
+            .get(_imageUri(ImmichAsset(id: id, isVideo: false)),
+                headers: _headers)
+            .timeout(const Duration(seconds: 30));
+        _throwUnlessOk(response, scope: 'asset.view');
+      }
       return null;
     } catch (e) {
-      return _readableError(e);
+      return readableError(e);
     }
   }
 
-  String _readableError(Object e) {
+  /// [e] as a message a settings page or the screensaver can show. An HTTP
+  /// rejection and an unreachable host are different problems (issue #222):
+  /// only genuine transport failures read as "could not reach".
+  String readableError(Object e) {
     if (e is _ApiException) {
       if (e.status == 401) return 'The API key was rejected.';
       if (e.status == 403) {
+        if (e.scope != null) {
+          return 'The API key is missing the ${e.scope} permission.';
+        }
         return 'The API key is missing a permission: ${e.message}';
       }
       return 'The server answered ${e.status}: ${e.message}';
     }
     if (e is SocketException || e is TimeoutException) {
-      return 'Could not reach $_base';
+      return 'Could not reach $_base.';
     }
     return 'Could not talk to the server: $e';
   }
@@ -186,7 +204,7 @@ class ImmichManager extends Manager {
     ]);
     final merged = <String, Map<String, Object?>>{};
     for (final response in responses) {
-      _throwUnlessOk(response);
+      _throwUnlessOk(response, scope: 'album.read');
       final list = jsonDecode(response.body) as List;
       for (final album in list.cast<Map<String, dynamic>>()) {
         merged['${album['id']}'] = {
@@ -222,18 +240,26 @@ class ImmichManager extends Manager {
           }),
         )
         .timeout(const Duration(seconds: 20));
-    _throwUnlessOk(response);
+    _throwUnlessOk(response, scope: 'asset.read');
     return (jsonDecode(response.body) as Map<String, dynamic>)['assets']
         as Map<String, dynamic>;
   }
 
-  void _throwUnlessOk(http.Response response) {
+  /// [scope] is the Immich permission the endpoint checks, so a 403 can
+  /// name what the key is missing instead of parroting the server's
+  /// generic denial (issue #222).
+  void _throwUnlessOk(http.Response response, {String? scope}) {
     if (response.statusCode == 200) return;
     String message = response.reasonPhrase ?? '';
     try {
       message = (jsonDecode(response.body) as Map)['message'] as String;
     } catch (_) {}
-    throw _ApiException(response.statusCode, message);
+    throw _ApiException(
+      response.statusCode,
+      message,
+      path: response.request?.url.path,
+      scope: scope,
+    );
   }
 
   /// The playlist: every image and video of the configured source, in the
@@ -296,7 +322,7 @@ class ImmichManager extends Manager {
     final response = await http
         .get(_imageUri(asset), headers: _headers)
         .timeout(const Duration(seconds: 30));
-    _throwUnlessOk(response);
+    _throwUnlessOk(response, scope: 'asset.view');
     final bytes = response.bodyBytes;
     if (caching && cached != null) {
       try {
@@ -330,7 +356,7 @@ class ImmichManager extends Manager {
       final response = await http
           .get(Uri.parse('$_base/api/assets/${asset.id}'), headers: _headers)
           .timeout(const Duration(seconds: 10));
-      _throwUnlessOk(response);
+      _throwUnlessOk(response, scope: 'asset.read');
       final detail = jsonDecode(response.body) as Map<String, dynamic>;
       final exif = (detail['exifInfo'] as Map<String, dynamic>?) ?? const {};
 
@@ -450,11 +476,19 @@ class ImmichManager extends Manager {
 }
 
 class _ApiException implements Exception {
-  const _ApiException(this.status, this.message);
+  const _ApiException(this.status, this.message, {this.path, this.scope});
 
   final int status;
   final String message;
 
+  /// The endpoint that answered, so a logged failure identifies itself
+  /// without instrumenting a reverse proxy (issue #222).
+  final String? path;
+
+  /// The Immich permission the endpoint checks, when known.
+  final String? scope;
+
   @override
-  String toString() => 'HTTP $status: $message';
+  String toString() =>
+      'HTTP $status${path == null ? '' : ' on $path'}: $message';
 }

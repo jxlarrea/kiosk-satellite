@@ -9,17 +9,21 @@ Videos in the selection play too, muted and in full.
 ## Setup
 
 1. In Immich, create an API key under **Account Settings → API Keys**. A
-   full-access key works; a restricted key needs to be able to read
-   albums, search assets, and view and download assets.
+   full-access key works; a restricted key needs the `album.read`,
+   `asset.read` and `asset.view` permissions. Note that Immich separates
+   viewing from downloading: `asset.view` covers the screen-sized previews
+   the screensaver actually fetches, and `asset.download` (originals) is
+   neither a substitute for it nor needed.
 2. On the device, Settings → **Screensaver** → set the screensaver mode to
    **Immich Media** (or do the same from the Screensaver tab in the remote
    admin).
 3. Enter the **Server address** (for example `http://immich.local:2283`)
    and the **API key**, then tap **Validate connection**. Validation
-   checks the exact calls the screensaver needs, so a key that is missing
-   a permission fails here with the reason instead of failing silently at
-   night. The rest of the settings unlock once validation succeeds, and
-   changing the address or key asks for a new validation.
+   checks the exact calls the screensaver needs, album listing, asset
+   search and one preview fetch, so a key that is missing a permission
+   fails here naming it instead of failing silently at night. The rest of
+   the settings unlock once validation succeeds, and changing the address
+   or key asks for a new validation.
 
 ## Settings
 
@@ -83,11 +87,21 @@ its spot, so both are always readable at once.
 ## Troubleshooting
 
 - **Validation fails with a permission message**: the API key is
-  restricted too tightly. Create one that can read albums, search assets,
-  and view and download assets.
+  restricted too tightly. It needs `album.read`, `asset.read` and
+  `asset.view`; the message names the one the failing call was denied.
+- **"The API key is missing the asset.view permission"**: the key can
+  search assets but not fetch their previews. Add `asset.view` to the key
+  in Immich; the change applies immediately, no new key needed.
 - **"Could not reach the Immich server"**: the address is wrong, the
-  server is down, or the tablet cannot route to it. The screensaver tries
-  again on its next activation.
+  server is down, or the tablet cannot route to it. This message is
+  reserved for genuine transport failures (DNS, refused connections,
+  timeouts); a server that answers with an error shows the HTTP status or
+  the missing permission instead. The screensaver tries again on its next
+  activation.
+- **Diagnosing from the device**: every failing Immich call is logged
+  with its endpoint and HTTP status in the app's log (the Logs tab of the
+  remote admin, or `GET /api/logs`), so there is no need to instrument a
+  reverse proxy to see what the server answered.
 - **Self-signed HTTPS**: certificate errors are accepted automatically
   for the configured Immich host (and only that host). One caveat: videos
   play through the platform player, which does its own certificate
