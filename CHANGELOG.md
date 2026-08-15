@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.47 - 2026-08-15
 
 ### Improvements
 - The default tap sound volume is now 50%, which by ear matches the loudness of the app's own interface clicks on every device tried. A slider that was already moved keeps its value.
