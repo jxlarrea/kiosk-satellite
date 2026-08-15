@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.46 - 2026-08-15
 
 ### Added
 - A "Tap sound volume" slider under Home Assistant Configuration > Haptics sets how loud the tap sound plays, defaulting to 25%. Android never plays its own touch sounds at full sample volume; it attenuates them by a per-device amount, so the initial full-scale playback landed much louder than the clicks of the app's own interface. The slider is read per tap, so a change applies to the very next touch, and slider-step ticks keep their fixed fraction of whatever it says.
