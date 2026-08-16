@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.48 - 2026-08-15
 
 ### Added
 - Each entry of a scheduled screensaver now carries "Widgets" and "At a glance" overrides alongside the brightness and motion ones, so the corner widgets and the glance row can show by day and stay off overnight without unconfiguring them twice a day. Default leaves their own settings in charge, On shows them and Off withholds them for that entry's hours, and a boundary between two entries applies live under a showing screensaver. An entry set to On loads the glance row's entities even when the row's own switch is off, so a day entry can carry it while the rest of the day does not.
