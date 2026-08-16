@@ -19,6 +19,7 @@ import '../managers/device/haptics.dart';
 import '../managers/device/tap_sound.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
+import '../managers/browser/visibility_mask_script.dart';
 import '../managers/browser/ws_filter_script.dart';
 import '../managers/kiosk/app_link.dart';
 import '../managers/wake_word/background_listening.dart';
@@ -591,6 +592,14 @@ class _KioskScreenState extends State<KioskScreen>
     ),
     UserScript(
       source: pullToRefreshProbeScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // Hides the freeze from the page: while the dashboard is INVISIBLE under
+    // the screensaver it keeps reporting itself visible, so web apps do not
+    // tear their session down over an optimization they cannot see. Always
+    // injected, and only ever masking while BrowserManager says so.
+    UserScript(
+      source: visibilityMaskScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // The dashboard carousel rides the same contract as the pull probe:

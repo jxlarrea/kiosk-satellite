@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- Pausing the dashboard under the screensaver no longer tells the page it went to the background. Pausing works by hiding the dashboard's view, and the browser reports that to the page exactly as it reports the app being sent behind another app, so web apps tore their session down over an optimization they could not see: Voice Satellite released the microphone and rebuilt its wake word every time the screensaver came up, and Home Assistant's own background throttling applied under it. The page now keeps being told it is visible for as long as the pause is the app's own doing, and hears nothing when the screensaver comes and goes. Being genuinely in the background, behind another app, still reaches the page as before.
+
 ## v2026.8.48 - 2026-08-15
 
 ### Added

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import 'no_cache_script.dart';
+import 'visibility_mask_script.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
@@ -699,8 +700,17 @@ class BrowserManager extends Manager {
       return;
     }
     if (want) {
+      // Mask first: the page must never see the hidden edge this is about to
+      // create, and the event follows the view change immediately.
+      await runJs(maskVisibilityJs(true));
       final n = await WebViewFreeze.setHidden(hidden: true, urlPrefix: prefix);
-      if (n == 0) return; // dashboard not found (mid-rebuild); retried on load
+      if (n == 0) {
+        // Dashboard not found (mid-rebuild); retried on load. Nothing was
+        // hidden, so the mask has to come back off or a genuine background
+        // would be masked too.
+        await runJs(maskVisibilityJs(false));
+        return;
+      }
       _frozen = true;
       _freezeKeepAlive?.cancel();
       _freezeKeepAlive = Timer.periodic(
@@ -717,6 +727,9 @@ class BrowserManager extends Manager {
       _freezeKeepAlive?.cancel();
       _freezeKeepAlive = null;
       await WebViewFreeze.setHidden(hidden: false, urlPrefix: prefix);
+      // The mask lifts itself once the page is really visible again, so the
+      // thaw's own visibilitychange is swallowed whichever order it arrives in.
+      await runJs(maskVisibilityJs(false));
       log.info(name, 'rendering resumed');
       if (_repairOnResume) {
         // The outage check a freeze deferred (see onNetworkAvailable):
@@ -819,6 +832,10 @@ class BrowserManager extends Manager {
     if (loaded != null && isHomeAssistantOrigin(loaded)) {
       unawaited(_captureHaSession());
     }
+    // A page that loaded while the freeze was already up starts unmasked (the
+    // script's default), and would see the thaw's visible edge without ever
+    // having been told it went hidden. Re-assert, as the flag-gated scripts do.
+    if (_frozen) unawaited(runJs(maskVisibilityJs(true)));
     // A WebView rebuilt under an active screensaver reappears visible, and
     // attach() could not re-hide it (no URL to match yet). Now there is one.
     unawaited(_syncFreeze());
