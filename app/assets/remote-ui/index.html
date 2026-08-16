@@ -6259,9 +6259,10 @@ function settingRow(s) {
   // holds only the button; the chosen entities get a row each below it, so
   // the group reads like every other list in this admin instead of cramming
   // four names into one value cell.
-  // The screensaver schedule, mirroring the device's editor: one row per
-  // entry - time, mode, brightness, motion override - plus an add button.
-  // Each entry applies from its time until the next one's.
+  // The screensaver schedule, mirroring the device's editor: one summary
+  // row per entry - its time, mode and overrides - plus an add button, with
+  // every setting edited in a labeled modal, the same shape as the device's
+  // dialog. Each entry applies from its time until the next one's.
   if (s.key === 'screensaver.schedule') {
     let entries = [];
     try { entries = JSON.parse(s.value || '[]') || []; } catch (_) { entries = []; }
@@ -6293,75 +6294,136 @@ function settingRow(s) {
       repaint();
     };
 
-    const entryRow = (e, i) => {
-      const r = document.createElement('div');
-      r.className = 'row';
-      r.style.gap = '10px';
+    // The labeled editor modal, the same fields in the same order as the
+    // device's dialog: time, screensaver, brightness, then the three
+    // overrides. Six controls do not fit in a row on either UI.
+    const editEntry = async (existing) => {
+      const others = entries.filter((e) => e !== existing);
+      const brightnessDef = (state.settings || [])
+        .find((o) => o.key === 'screensaver.brightness_level');
+      const start = existing || {
+        at: '19:00',
+        mode: (modeDef && modeDef.value) || 'clock',
+        brightness: (brightnessDef && typeof brightnessDef.value === 'number')
+          ? brightnessDef.value : 0.2,
+      };
+      const body = document.createElement('div');
+
+      const timeWrap = document.createElement('label');
+      timeWrap.style.cssText =
+        'display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px;';
+      const timeTitle = document.createElement('span');
+      timeTitle.className = 'desc';
+      timeTitle.textContent = 'Time';
       const time = document.createElement('input');
+      time.className = 'field';
       time.type = 'time';
-      time.value = e.at || '19:00';
-      time.style.cssText = 'width:auto; flex-shrink:0;';
-      time.addEventListener('change', () => { e.at = time.value || e.at; persist(); });
-      const sel = document.createElement('select');
-      sel.style.cssText = 'flex:1 1 30%; min-width:110px;';
-      modes.forEach((m) => {
-        const o = document.createElement('option');
-        o.value = m; o.textContent = label(m);
-        sel.appendChild(o);
-      });
-      sel.value = modes.includes(e.mode) ? e.mode : (modeDef && modeDef.value) || 'clock';
-      sel.addEventListener('change', () => { e.mode = sel.value; persist(); });
-      // The brightness glyph in front of the slider, mirroring the
-      // device's row: without it the slider reads as "some percentage".
-      const sun = document.createElement('span');
-      sun.style.cssText = 'flex-shrink:0; display:flex; color:var(--muted);';
-      sun.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12,18V6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,15.31L23.31,12L20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31Z"/></svg>';
-      sun.title = 'Screensaver brightness while this entry is active';
+      time.value = start.at || '19:00';
+      time.style.maxWidth = 'none';
+      timeWrap.append(timeTitle, time);
+
+      const modeSel = cameraSelectField('Screensaver',
+        modes.map((m) => ({ value: m, label: label(m) })),
+        modes.includes(start.mode) ? start.mode : ((modeDef && modeDef.value) || 'clock'));
+
+      // The brightness this entry runs at, always set: an entry carrying
+      // none would silently inherit whatever the global slider says, which
+      // is what a night entry is usually set to escape.
+      const brightWrap = document.createElement('label');
+      brightWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+      const brightTitle = document.createElement('span');
+      brightTitle.className = 'desc';
+      brightTitle.textContent = 'Brightness';
+      const brightLine = document.createElement('div');
+      brightLine.style.cssText = 'display:flex; align-items:center; gap:10px;';
       const rng = document.createElement('input');
       rng.type = 'range'; rng.min = '0'; rng.max = '100'; rng.step = '5';
-      rng.value = String(Math.round(((typeof e.brightness === 'number') ? e.brightness : 0.2) * 100));
-      rng.style.cssText = 'flex:1 1 25%; min-width:80px;';
+      rng.value = String(Math.round(
+        ((typeof start.brightness === 'number') ? start.brightness : 0.2) * 100));
+      rng.style.cssText = 'flex:1;';
       const pct = document.createElement('span');
       pct.className = 'device';
-      pct.style.cssText = 'width:38px; text-align:right; flex-shrink:0;';
+      pct.style.cssText = 'width:42px; text-align:right; flex-shrink:0;';
       pct.textContent = rng.value + '%';
       rng.addEventListener('input', () => { pct.textContent = rng.value + '%'; });
-      rng.addEventListener('change', () => { e.brightness = (+rng.value) / 100; persist(); });
-      // Tri-state motion override, mirroring the device (issue #89): a
-      // Black entry overnight can keep the camera off, a Clock entry can
-      // watch even with the global switch off. Disabled while the Camera
-      // master switch is off (or the device has no camera), same as the
-      // Dismiss on motion switch: no camera, nothing to override.
+      brightLine.append(rng, pct);
+      brightWrap.append(brightTitle, brightLine);
+
+      // The three overrides share one shape: Default follows the matching
+      // setting outside the schedule, On and Off decide it for this entry's
+      // hours.
+      const overrideField = (title, value) => cameraSelectField(title,
+        [{ value: '', label: 'Default' }, { value: 'on', label: 'On' },
+          { value: 'off', label: 'Off' }],
+        (typeof value === 'boolean') ? (value ? 'on' : 'off') : '');
+      // No camera means no motion detection to override, same as the
+      // Dismiss on motion switch.
       const camOn = ((state.settings || []).find((x) => x.key === 'camera.enabled') || {}).value === true
         && state.cameraPresent !== false;
-      const motion = document.createElement('select');
-      motion.style.cssText = 'flex:0 1 auto; min-width:110px;';
-      motion.disabled = !camOn;
-      motion.title = camOn
-        ? 'Dismiss on motion while this entry is active'
-        : 'Requires the camera. Turn it on in the Camera settings first.';
-      [['', 'Motion: default'], ['on', 'Motion: on'], ['off', 'Motion: off']]
-        .forEach(([v, text]) => {
-          const o = document.createElement('option');
-          o.value = v; o.textContent = text;
-          motion.appendChild(o);
-        });
-      motion.value = (typeof e.motion === 'boolean') ? (e.motion ? 'on' : 'off') : '';
-      motion.addEventListener('change', () => {
-        if (motion.value === '') delete e.motion;
-        else e.motion = motion.value === 'on';
-        persist();
+      const motion = overrideField('Dismiss on motion', start.motion);
+      motion.select.disabled = !camOn;
+      if (!camOn) {
+        motion.select.title =
+          'Requires the camera. Turn it on in the Camera settings first.';
+      }
+      const widgets = overrideField('Widgets', start.widgets);
+      const glance = overrideField('At a glance', start.glance);
+
+      body.append(timeWrap, modeSel.wrap, brightWrap, motion.wrap,
+        widgets.wrap, glance.wrap);
+
+      return cameraEditor({
+        title: existing ? String(start.at) : 'Add time',
+        width: 460,
+        body,
+        save: async () => {
+          if (!time.value) return { ok: false, error: 'Pick a time.' };
+          const entry = {
+            at: time.value,
+            mode: modeSel.select.value,
+            brightness: (+rng.value) / 100,
+          };
+          for (const [key, field] of [['motion', motion],
+            ['widgets', widgets], ['glance', glance]]) {
+            if (field.select.value) entry[key] = field.select.value === 'on';
+          }
+          entries = [...others, entry];
+          await persist();
+          return { ok: true };
+        },
       });
-      const del = document.createElement('button');
-      del.className = 'btn-ghost';
-      del.textContent = '×';
-      del.style.cssText = 'flex-shrink:0;';
-      del.addEventListener('click', () => { entries.splice(i, 1); persist(); });
-      r.appendChild(time); r.appendChild(sel); r.appendChild(sun);
-      r.appendChild(rng); r.appendChild(pct); r.appendChild(motion);
-      r.appendChild(del);
-      return r;
     };
+
+    // The row's second line: the mode, then only the overrides actually
+    // set, so a plain entry reads as one word instead of a row of
+    // "default"s. Kept word-for-word with the device's summary.
+    const summary = (e) => {
+      const parts = [label(e.mode)];
+      if (typeof e.brightness === 'number') {
+        parts.push(Math.round(e.brightness * 100) + '% brightness');
+      }
+      if (typeof e.motion === 'boolean') {
+        parts.push('Motion ' + (e.motion ? 'on' : 'off'));
+      }
+      if (typeof e.widgets === 'boolean') {
+        parts.push('Widgets ' + (e.widgets ? 'on' : 'off'));
+      }
+      if (typeof e.glance === 'boolean') {
+        parts.push('At a glance ' + (e.glance ? 'on' : 'off'));
+      }
+      return parts.join(' · ');
+    };
+
+    const entryRow = (e) => cameraListRow(
+      String(e.at), summary(e),
+      [
+        cameraAction('Delete', () => {
+          entries = entries.filter((o) => o !== e);
+          persist();
+        }, false, 'delete'),
+      ],
+      { icon: 'clock', onClick: () => editEntry(e) },
+    );
 
     const repaint = () => {
       const parent = row.parentNode;
@@ -6381,15 +6443,7 @@ function settingRow(s) {
     };
     repaint();
 
-    btn.addEventListener('click', () => {
-      const level = (state.settings || []).find((o) => o.key === 'screensaver.brightness_level');
-      entries.push({
-        at: '19:00',
-        mode: (modeDef && modeDef.value) || 'clock',
-        brightness: (level && typeof level.value === 'number') ? level.value : 0.2,
-      });
-      persist();
-    });
+    btn.addEventListener('click', () => editEntry(null));
     return frag;
   }
 

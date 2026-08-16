@@ -16,6 +16,8 @@ import '../core/events.dart';
 import '../core/logging.dart';
 import '../managers/camera/models.dart' show CameraViewConfig;
 import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
+import '../managers/screensaver/screensaver_manager.dart'
+    show upsertScheduleEntry;
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart';
 import '../managers/settings/export_filename.dart';
@@ -2326,8 +2328,10 @@ class _ScreenOffAdminRowState extends State<_ScreenOffAdminRow>
 }
 
 /// The screensaver schedule editor (mirrored in the remote UI): one row per
-/// entry — time, mode, brightness — plus an add button. Each entry applies
-/// from its time until the next one's.
+/// entry, summarizing its time, mode and overrides, plus an add button.
+/// Each entry applies from its time until the next one's, and its settings
+/// live in a dialog — the row itself would need six controls otherwise,
+/// which fits neither a phone nor the remote admin's row.
 class _ScheduleEditor extends StatefulWidget {
   const _ScheduleEditor({required this.container, required this.onChanged});
 
@@ -2339,11 +2343,6 @@ class _ScheduleEditor extends StatefulWidget {
 }
 
 class _ScheduleEditorState extends State<_ScheduleEditor> {
-  /// Live slider preview while a drag is in flight; saved on release so a
-  /// drag does not spam the settings store.
-  int? _dragIndex;
-  double? _dragLevel;
-
   List<Map<String, Object?>> _entries() {
     try {
       final decoded = jsonDecode(
@@ -2389,27 +2388,195 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
         '${picked.minute.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _add() async {
-    final at = await _pickTime('19:00');
-    if (at == null) return;
-    final s = widget.container.settings;
-    final entries = _entries()
-      ..add({
-        'at': at,
-        'mode': s.get(screensaverMode),
-        'brightness': s.get(screensaverBrightnessLevel).toDouble(),
-      });
-    await _save(entries);
-  }
-
   String _modeLabel(String mode) =>
       screensaverMode.optionLabels?[mode] ??
       (mode.isEmpty ? mode : mode[0].toUpperCase() + mode.substring(1));
 
+  /// The row's second line: the mode, then only the overrides actually set,
+  /// so a plain entry reads as one word instead of a row of "default"s.
+  String _summary(Map<String, Object?> entry) {
+    final parts = <String>[_modeLabel('${entry['mode']}')];
+    final brightness = entry['brightness'];
+    if (brightness is num) {
+      parts.add('${(brightness * 100).round()}% brightness');
+    }
+    if (entry['motion'] is bool) {
+      parts.add('Motion ${entry['motion'] == true ? 'on' : 'off'}');
+    }
+    if (entry['widgets'] is bool) {
+      parts.add('Widgets ${entry['widgets'] == true ? 'on' : 'off'}');
+    }
+    if (entry['glance'] is bool) {
+      parts.add('At a glance ${entry['glance'] == true ? 'on' : 'off'}');
+    }
+    return parts.join(' · ');
+  }
+
+  /// One entry's settings, as a dialog. [index] null adds a new time;
+  /// otherwise it is the position in the stored (time-sorted) list, which is
+  /// how an edit finds the entry it replaces — [_entries] decodes fresh maps
+  /// on every call, so the row's own map is never the one to remove.
+  Future<void> _edit(BuildContext context, int? index) async {
+    final existing = index == null ? null : _entries()[index];
+    final s = widget.container.settings;
+    final entry = <String, Object?>{
+      'at': existing?['at'] ?? '19:00',
+      'mode': existing?['mode'] ?? s.get(screensaverMode),
+      'brightness':
+          (existing?['brightness'] as num?)?.toDouble() ??
+          s.get(screensaverBrightnessLevel).toDouble(),
+      if (existing?['motion'] is bool) 'motion': existing!['motion'],
+      if (existing?['widgets'] is bool) 'widgets': existing!['widgets'],
+      if (existing?['glance'] is bool) 'glance': existing!['glance'],
+    };
+    final cameraOn = widget.container.deviceCamera.effectiveEnabled;
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          // The three overrides share one shape: Default follows the
+          // matching setting outside the schedule, On and Off decide it for
+          // this entry's hours.
+          Widget override(
+            String title,
+            String key, {
+            bool enabled = true,
+            String? helper,
+          }) => DropdownButtonFormField<String>(
+            initialValue: switch (entry[key]) {
+              true => 'on',
+              false => 'off',
+              _ => 'default',
+            },
+            decoration: InputDecoration(
+              labelText: title,
+              helperText: helper,
+              helperMaxLines: 3,
+            ),
+            items: const [
+              DropdownMenuItem(value: 'default', child: Text('Default')),
+              DropdownMenuItem(value: 'on', child: Text('On')),
+              DropdownMenuItem(value: 'off', child: Text('Off')),
+            ],
+            onChanged: !enabled
+                ? null
+                : (choice) => setDialogState(() {
+                    if (choice == null || choice == 'default') {
+                      entry.remove(key);
+                    } else {
+                      entry[key] = choice == 'on';
+                    }
+                  }),
+          );
+          final level = (entry['brightness'] as num).toDouble();
+          return AlertDialog(
+            title: Text(existing == null ? 'Add time' : '${entry['at']}'),
+            content: SizedBox(
+              width: 480,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 12,
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Time'),
+                      subtitle: Text('${entry['at']}'),
+                      trailing: TextButton(
+                        onPressed: () async {
+                          final at = await _pickTime('${entry['at']}');
+                          if (at != null) {
+                            setDialogState(() => entry['at'] = at);
+                          }
+                        },
+                        child: const Text('Choose'),
+                      ),
+                    ),
+                    DropdownButtonFormField<String>(
+                      initialValue:
+                          screensaverMode.options!.contains(entry['mode'])
+                          ? entry['mode'] as String
+                          : screensaverMode.defaultValue,
+                      decoration: const InputDecoration(
+                        labelText: 'Screensaver',
+                      ),
+                      items: [
+                        for (final mode in screensaverMode.options!)
+                          DropdownMenuItem(
+                            value: mode,
+                            child: Text(_modeLabel(mode)),
+                          ),
+                      ],
+                      onChanged: (mode) => setDialogState(
+                        () => entry['mode'] = mode ?? entry['mode'],
+                      ),
+                    ),
+                    // The brightness this entry runs at, always set: an
+                    // entry carrying none would silently inherit whatever
+                    // the global slider says, which is what people set a
+                    // night entry to escape.
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.brightness_6_outlined,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: level.clamp(0.0, 1.0),
+                            onChanged: (v) =>
+                                setDialogState(() => entry['brightness'] = v),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 44,
+                          child: Text(
+                            '${(level * 100).round()}%',
+                            textAlign: TextAlign.end,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                    override(
+                      'Dismiss on motion',
+                      'motion',
+                      enabled: cameraOn,
+                      helper: cameraOn
+                          ? null
+                          : 'Requires the camera. Turn it on in the Camera '
+                                'settings first.',
+                    ),
+                    override('Widgets', 'widgets'),
+                    override('At a glance', 'glance'),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(existing == null ? 'Add' : 'Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (submitted != true) return;
+    await _save(upsertScheduleEntry(_entries(), entry, index));
+  }
+
   @override
   Widget build(BuildContext context) {
     final entries = _entries();
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2418,149 +2585,26 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
             title: const Text('No times yet'),
             subtitle: Text(screensaverSchedule.description),
           ),
-        // Two lines per entry, so nothing fights for width on a narrow
-        // pane: the controls row (time, mode, motion, remove), then the
-        // brightness row with the slider on its own full line.
+        // Indexed, not by identity: every read decodes new maps, so the
+        // position in the stored list is what identifies an entry.
         for (var i = 0; i < entries.length; i++)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 8, 2),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: () async {
-                        final at = await _pickTime('${entries[i]['at']}');
-                        if (at == null) return;
-                        entries[i]['at'] = at;
-                        await _save(entries);
-                      },
-                      child: Text('${entries[i]['at']}'),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: KsDropdown<String>(
-                        expand: true,
-                        value:
-                            screensaverMode.options!.contains(
-                              entries[i]['mode'],
-                            )
-                            ? entries[i]['mode'] as String
-                            : screensaverMode.defaultValue,
-                        items: [
-                          for (final mode in screensaverMode.options!)
-                            DropdownMenuItem(
-                              value: mode,
-                              child: Text(_modeLabel(mode)),
-                            ),
-                        ],
-                        onChanged: (mode) async {
-                          if (mode == null) return;
-                          entries[i]['mode'] = mode;
-                          await _save(entries);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Tri-state motion override (issue #89): a Black entry
-                    // overnight can keep the camera off, a Clock entry can
-                    // watch even with the global switch off. Rendered
-                    // disabled when the Camera master switch is off (or the
-                    // device has no camera), same as the Dismiss on motion
-                    // switch: no camera means no motion detection to
-                    // override.
-                    Tooltip(
-                      message: widget.container.deviceCamera.effectiveEnabled
-                          ? 'Dismiss on motion while this entry is active'
-                          : 'Requires the camera. Turn it on in the Camera '
-                                'settings first.',
-                      child: KsDropdown<String>(
-                        value: switch (entries[i]['motion']) {
-                          true => 'on',
-                          false => 'off',
-                          _ => 'default',
-                        },
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'default',
-                            child: Text('Motion: default'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'on',
-                            child: Text('Motion: on'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'off',
-                            child: Text('Motion: off'),
-                          ),
-                        ],
-                        onChanged:
-                            !widget.container.deviceCamera.effectiveEnabled
-                            ? null
-                            : (choice) async {
-                                if (choice == null) return;
-                                if (choice == 'default') {
-                                  entries[i].remove('motion');
-                                } else {
-                                  entries[i]['motion'] = choice == 'on';
-                                }
-                                await _save(entries);
-                              },
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      tooltip: 'Remove time',
-                      onPressed: () async {
-                        entries.removeAt(i);
-                        await _save(entries);
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const SizedBox(width: 8),
-                    Icon(
-                      Icons.brightness_6_outlined,
-                      size: 18,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    Expanded(
-                      child: Slider(
-                        value: _dragIndex == i
-                            ? _dragLevel!
-                            : ((entries[i]['brightness'] as num?) ?? 0.2)
-                                  .toDouble()
-                                  .clamp(0.0, 1.0),
-                        onChanged: (v) => setState(() {
-                          _dragIndex = i;
-                          _dragLevel = v;
-                        }),
-                        onChangeEnd: (v) async {
-                          _dragIndex = null;
-                          _dragLevel = null;
-                          entries[i]['brightness'] = v;
-                          await _save(entries);
-                        },
-                      ),
-                    ),
-                    Text(
-                      '${(((_dragIndex == i ? _dragLevel! : ((entries[i]['brightness'] as num?) ?? 0.2).toDouble())) * 100).round()}%',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ),
-              ],
+          ListTile(
+            leading: const Icon(Icons.schedule),
+            title: Text('${entries[i]['at']}'),
+            subtitle: Text(_summary(entries[i])),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Remove time',
+              onPressed: () => _save([...entries]..removeAt(i)),
             ),
+            onTap: () => _edit(context, i),
           ),
         Align(
           alignment: Alignment.centerLeft,
           child: Padding(
             padding: const EdgeInsets.only(left: 8, bottom: 4),
             child: TextButton.icon(
-              onPressed: _add,
+              onPressed: () => _edit(context, null),
               icon: const Icon(Icons.add),
               label: const Text('Add time'),
             ),
