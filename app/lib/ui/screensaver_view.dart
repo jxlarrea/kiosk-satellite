@@ -15,6 +15,7 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/locale_dates.dart';
 import '../managers/browser/ha_session_script.dart';
+import '../managers/browser/vs_suppress_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/home_assistant/home_assistant_manager.dart'
     show GlanceSubscription;
@@ -1297,12 +1298,16 @@ setInterval(function () {
         !widget.container.browser.isHomeAssistantOrigin(target)) {
       return const [];
     }
-    return externalKioskModeSources(
-      origin: target.origin,
-      apply: settings.get(defs.haKioskMode),
-      hideHeader: settings.get(defs.haKioskHideHeader),
-      hideSidebar: settings.get(defs.haKioskHideSidebar),
-    );
+    return [
+      // The screensaver is not a second satellite (see vs_suppress_script).
+      vsSuppressScript,
+      ...externalKioskModeSources(
+        origin: target.origin,
+        apply: settings.get(defs.haKioskMode),
+        hideHeader: settings.get(defs.haKioskHideHeader),
+        hideSidebar: settings.get(defs.haKioskHideSidebar),
+      ),
+    ];
   }
 
   @override

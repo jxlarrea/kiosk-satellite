@@ -115,6 +115,12 @@ here shows as the whole screen instead of carrying Home Assistant's
 header and sidebar. Both are held to your own Home Assistant: a page
 anywhere else is shown exactly as its owner built it.
 
+Voice Satellite does not start on it either. It runs on every Home
+Assistant page that loads it, so a dashboard shown here would open a
+second microphone and answer as the same satellite the dashboard behind
+it is already answering as. The dashboard stays the satellite, and the
+screensaver is just a display.
+
 ### WebRTC Camera
 
 A configured [camera view](cameras.md) as the screensaver, picked with

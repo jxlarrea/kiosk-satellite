@@ -14,6 +14,7 @@ import '../core/events.dart';
 import '../managers/browser/carousel_script.dart';
 import '../managers/browser/disable_suspend_script.dart';
 import '../managers/browser/ha_session_script.dart';
+import '../managers/browser/vs_suppress_script.dart';
 import '../managers/browser/haptics_script.dart';
 import '../managers/device/haptics.dart';
 import '../managers/device/tap_sound.dart';
@@ -1785,20 +1786,23 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
     // this page's own origin, so a link onward to somewhere else is left
     // exactly as its owner built it.
     final settings = widget.container.settings;
-    final kiosk = externalKioskModeSources(
-      origin: target.origin,
-      apply: settings.get(defs.haKioskMode),
-      hideHeader: settings.get(defs.haKioskHideHeader),
-      hideSidebar: settings.get(defs.haKioskHideSidebar),
-    );
-    if (session == null && kiosk.isEmpty) return null;
+    final sources = [
+      // An excursion is not a second satellite (see vs_suppress_script).
+      vsSuppressScript,
+      ...externalKioskModeSources(
+        origin: target.origin,
+        apply: settings.get(defs.haKioskMode),
+        hideHeader: settings.get(defs.haKioskHideHeader),
+        hideSidebar: settings.get(defs.haKioskHideSidebar),
+      ),
+    ];
     return UnmodifiableListView([
       if (session != null)
         UserScript(
           source: session,
           injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
         ),
-      for (final source in kiosk)
+      for (final source in sources)
         UserScript(
           source: source,
           injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,

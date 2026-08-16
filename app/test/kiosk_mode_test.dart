@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/browser/vs_suppress_script.dart';
 import 'package:kiosk_satellite/managers/home_assistant/kiosk_mode.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
@@ -112,6 +113,19 @@ void main() {
         hideSidebar: true,
       );
       expect(sources.first, isNot(contains('"+alert(1)+"')));
+    });
+  });
+
+  group('Voice Satellite on external pages', () {
+    test('claims the engine flag before Voice Satellite can boot', () {
+      // The engine guards its own bootstrap on this flag, so holding it is
+      // what keeps a screensaver or link page from opening a second
+      // microphone and registering as the same satellite twice.
+      expect(vsSuppressScript, contains('__vsEngine'));
+    });
+
+    test('never takes a flag the page already set', () {
+      expect(vsSuppressScript, contains('if (!window.__vsEngine)'));
     });
   });
 
