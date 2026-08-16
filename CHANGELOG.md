@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.50 - 2026-08-16
+
+### Fixed
+- The dashboard now keeps running while the app is behind another app. Chromium suspends a page whose window is not on screen, which on a tablet took about a minute: with the page stopped, nothing answered Home Assistant's connection heartbeat, the server dropped the connection, and everything riding it went unavailable until someone brought the kiosk back to the front. Voice Satellite's entities were the visible half of that, going unavailable a minute after the app was sent to the background and returning when it came forward. The dashboard's window is now reported as on screen for as long as the app is alive, so the connection, the timers and anything playing carry on. Pausing the dashboard under the screensaver is unaffected and still stops it drawing.
+
 ## v2026.8.49 - 2026-08-16
 
 ### Changed
