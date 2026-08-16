@@ -1780,12 +1780,29 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
       tokens: widget.container.browser.haSession,
       url: widget.url,
     );
-    if (session == null) return null;
+    // A Home Assistant page opened here hides its header and sidebar the way
+    // the dashboard does, per the same settings (discussion #225). Held to
+    // this page's own origin, so a link onward to somewhere else is left
+    // exactly as its owner built it.
+    final settings = widget.container.settings;
+    final kiosk = externalKioskModeSources(
+      origin: target.origin,
+      apply: settings.get(defs.haKioskMode),
+      hideHeader: settings.get(defs.haKioskHideHeader),
+      hideSidebar: settings.get(defs.haKioskHideSidebar),
+    );
+    if (session == null && kiosk.isEmpty) return null;
     return UnmodifiableListView([
-      UserScript(
-        source: session,
-        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-      ),
+      if (session != null)
+        UserScript(
+          source: session,
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
+      for (final source in kiosk)
+        UserScript(
+          source: source,
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
     ]);
   }
 
@@ -1810,9 +1827,17 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
         // and is left alone.
         onLoadStop: (controller, url) async {
           if (_isMusicAssistant) return;
-          final inject = widget.container.settings.get(
-            defs.browserInjectJsExternal,
+          // A Home Assistant page here follows the dashboard's kiosk mode;
+          // re-asserted per load because this view can outlive a toggle.
+          final settings = widget.container.settings;
+          await controller.evaluateJavascript(
+            source: kioskModeApplyJs(
+              apply: settings.get(defs.haKioskMode),
+              hideHeader: settings.get(defs.haKioskHideHeader),
+              hideSidebar: settings.get(defs.haKioskHideSidebar),
+            ),
           );
+          final inject = settings.get(defs.browserInjectJsExternal);
           if (inject.trim().isEmpty) return;
           await controller.evaluateJavascript(source: inject);
         },

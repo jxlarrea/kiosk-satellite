@@ -62,6 +62,59 @@ void main() {
     expect(settings.get(defs.haKioskMode), isTrue);
   });
 
+  group('external pages', () {
+    // The dashboard's own WebView loads one thing. These views load whatever
+    // address they are given, so kiosk mode is fenced twice: the caller only
+    // asks for it on this Home Assistant's pages, and the script is then held
+    // to that origin for the life of the view.
+    test('a Home Assistant page gets the script, held to its origin', () {
+      final sources = externalKioskModeSources(
+        origin: 'https://ha.example.com',
+        apply: true,
+        hideHeader: true,
+        hideSidebar: true,
+      );
+      expect(sources, isNotEmpty);
+      expect(
+        sources.first,
+        'window.__ksKioskOrigins = ["https://ha.example.com"];',
+      );
+      expect(sources, contains(kioskModeScript));
+      expect(sources.last, contains('__ksKioskApply(true, true, true)'));
+    });
+
+    test('kiosk mode off injects the script inert, not nothing', () {
+      // These views are built once and kept, so a script that only appeared
+      // while the setting was on would leave the page unable to hear about
+      // the setting being turned on later.
+      final sources = externalKioskModeSources(
+        origin: 'https://ha.example.com',
+        apply: false,
+        hideHeader: true,
+        hideSidebar: true,
+      );
+      expect(sources, contains(kioskModeScript));
+      expect(sources.last, contains('__ksKioskApply(false,'));
+    });
+
+    test('a page that navigates on to another site is left alone', () {
+      // The origin list is what the script checks before it styles anything,
+      // so a tapped link that leaves Home Assistant keeps its own chrome.
+      expect(kioskModeScript, contains('__ksKioskOrigins'));
+      expect(kioskModeScript, contains('indexOf(location.origin)'));
+    });
+
+    test('an origin with a quote in it cannot break out of the script', () {
+      final sources = externalKioskModeSources(
+        origin: 'https://evil"+alert(1)+"',
+        apply: true,
+        hideHeader: true,
+        hideSidebar: true,
+      );
+      expect(sources.first, isNot(contains('"+alert(1)+"')));
+    });
+  });
+
   group('the page script', () {
     test('carries the flags it is called with', () {
       expect(

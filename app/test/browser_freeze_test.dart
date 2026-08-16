@@ -138,6 +138,38 @@ void main() {
       expect(calls.last.arguments['hidden'], isFalse);
     });
 
+    test('a Home Assistant page as the website screensaver is never frozen '
+        'over', () async {
+      // The native side hides by URL prefix, so it cannot tell the
+      // screensaver's own page from the dashboard beneath it when both are
+      // the same Home Assistant: freezing blanks the screensaver too, and
+      // the panel shows black (discussion #225).
+      await build({
+        'ks.browser.freeze_on_screensaver': true,
+        'ks.screensaver.website_url': 'http://ha.local:8123/wall-clock/0',
+      });
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      bus.publish(const ScreensaverViewChanged(view: 'website'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls, isEmpty);
+    });
+
+    test('a website screensaver on somebody else\'s site still freezes the '
+        'dashboard', () async {
+      await build({
+        'ks.browser.freeze_on_screensaver': true,
+        'ks.screensaver.website_url': 'https://example.com/wall',
+      });
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      bus.publish(const ScreensaverViewChanged(view: 'website'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+      expect(calls.last.arguments['hidden'], isTrue);
+    });
+
     test('an overlay page freezes the dashboard, and dismissing it thaws '
         'without the paint delay', () async {
       await build({});

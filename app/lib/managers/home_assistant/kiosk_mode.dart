@@ -31,6 +31,8 @@
 /// drawer's `open` attribute is stripped if anything sets it anyway.
 library;
 
+import 'dart:convert';
+
 /// Document-start script. Always injected, and acts only while its flags say
 /// so, so the setting applies live with no page reload (the same contract the
 /// pull-to-refresh and carousel scripts use). [kioskModeApplyJs] drives it.
@@ -48,8 +50,17 @@ const kioskModeScript = '''
       tag === 'hui-root';
   }
 
+  // Outside the dashboard's own WebView the script is handed the one origin
+  // it may touch, so a page that navigates on from Home Assistant to
+  // somewhere else keeps its own header and sidebar. The dashboard sets no
+  // list: everything it loads is the dashboard.
+  function allowedHere() {
+    var o = window.__ksKioskOrigins;
+    return !o || !o.length || o.indexOf(location.origin) >= 0;
+  }
+
   function css(tag) {
-    if (!S.on) return '';
+    if (!S.on || !allowedHere()) return '';
     if (tag === 'home-assistant-main') {
       return S.sidebar
         ? 'ha-drawer{--mdc-drawer-width:0px!important;}' +
@@ -100,7 +111,7 @@ const kioskModeScript = '''
     host.__ksKioskGuard = true;
     try {
       new MutationObserver(function () {
-        if (S.on && S.sidebar && host.hasAttribute('open')) {
+        if (S.on && S.sidebar && allowedHere() && host.hasAttribute('open')) {
           host.removeAttribute('open');
         }
       }).observe(host, { attributes: true, attributeFilter: ['open'] });
@@ -149,7 +160,7 @@ const kioskModeScript = '''
   // The menu button and the edge swipe both ask the app to open the drawer
   // with this event. Capture phase, so it never reaches the handler.
   window.addEventListener('hass-toggle-menu', function (e) {
-    if (S.on && S.sidebar) {
+    if (S.on && S.sidebar && allowedHere()) {
       e.stopImmediatePropagation();
       if (e.preventDefault) e.preventDefault();
     }
@@ -180,3 +191,32 @@ String kioskModeApplyJs({
 }) =>
     'if (window.__ksKioskApply) window.__ksKioskApply('
     '$apply, $hideHeader, $hideSidebar);';
+
+/// The document-start sources that put kiosk mode on a Home Assistant page
+/// shown OUTSIDE the dashboard WebView: a page opened from a dashboard link,
+/// a rotation page, a Home Assistant page set as the website screensaver
+/// (discussion #225). Those views load whatever address they are given, so
+/// this is fenced twice over: the caller only asks for it when the address
+/// belongs to this Home Assistant, and [origin] then holds the script to that
+/// one origin for the life of the view, so a page that navigates onward to
+/// somebody else's site is never touched. On a Home Assistant page that has
+/// no header or sidebar to hide there is simply nothing to match.
+///
+/// Injected whether or not kiosk mode is on, and acting only while the flags
+/// say so — the same contract the dashboard uses. These views are built once
+/// and kept, so a script injected only while the setting was on would leave
+/// the page with no way to hear about the setting being turned on later.
+List<String> externalKioskModeSources({
+  required String origin,
+  required bool apply,
+  required bool hideHeader,
+  required bool hideSidebar,
+}) => [
+  'window.__ksKioskOrigins = [${jsonEncode(origin)}];',
+  kioskModeScript,
+  kioskModeApplyJs(
+    apply: apply,
+    hideHeader: hideHeader,
+    hideSidebar: hideSidebar,
+  ),
+];

@@ -107,6 +107,14 @@ page, so it behaves like every other mode. A page that fails to load, or
 whose server answers with an error, is retried every ten seconds instead
 of parking an error page for the night.
 
+A page from your own Home Assistant gets two things extra. It signs in
+with the session the dashboard already holds, since the login form it
+would otherwise show cannot be answered here (the first touch dismisses
+the screensaver). And it follows **HA kiosk mode**, so a dashboard put
+here shows as the whole screen instead of carrying Home Assistant's
+header and sidebar. Both are held to your own Home Assistant: a page
+anywhere else is shown exactly as its owner built it.
+
 ### WebRTC Camera
 
 A configured [camera view](cameras.md) as the screensaver, picked with

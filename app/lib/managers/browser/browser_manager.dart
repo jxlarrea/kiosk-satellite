@@ -177,7 +177,7 @@ class BrowserManager extends Manager {
       _scheduleFreezeSync();
     });
     bus.on<ScreensaverViewChanged>().listen((e) {
-      _dashboardCovered = e.view != null;
+      _dashboardCovered = e.view != null && !_screensaverIsOwnOrigin(e.view);
       _scheduleFreezeSync();
     });
     // When the panel last woke, for the screenshot command: a capture
@@ -608,6 +608,23 @@ class BrowserManager extends Manager {
 
   bool _screensaverActive = false;
   bool _dashboardCovered = false;
+
+  /// Whether the screensaver on screen is a website screensaver showing a
+  /// page from the dashboard's own origin — a Home Assistant page set as the
+  /// screensaver, which is what a wall clock dashboard is (discussion #225).
+  ///
+  /// Such a screensaver cannot be frozen over: the native side finds the
+  /// views to hide by URL prefix, so it cannot tell the screensaver's page
+  /// from the dashboard underneath and hides both, leaving a black screen
+  /// where the screensaver should be. The same reason overlay pages on the
+  /// dashboard's origin do not report themselves as covering it.
+  bool _screensaverIsOwnOrigin(String? view) {
+    if (view != 'website') return false;
+    final url = Uri.tryParse(
+      _settings.get(defs.screensaverWebsiteUrl).trim(),
+    );
+    return url != null && url.hasScheme && isDashboardOrigin(url);
+  }
 
   /// When the panel last turned on; null while it has never woken during
   /// this process. The screenshot command waits out a fresh wake before

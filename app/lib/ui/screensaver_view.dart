@@ -15,6 +15,7 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/locale_dates.dart';
 import '../managers/browser/ha_session_script.dart';
+import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/home_assistant/home_assistant_manager.dart'
     show GlanceSubscription;
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
@@ -1179,6 +1180,24 @@ class ScreensaverWebView extends StatefulWidget {
 class _ScreensaverWebViewState extends State<ScreensaverWebView> {
   late final String _configJson = _buildConfig();
 
+  /// The live controller, for re-asserting kiosk mode on it.
+  InAppWebViewController? _webView;
+
+  /// Kiosk mode changing while a Home Assistant page is on screen applies to
+  /// it there and then, exactly as it does on the dashboard.
+  StreamSubscription<SettingChanged>? _kioskSub;
+
+  Future<void> _applyKiosk(InAppWebViewController controller) async {
+    final settings = widget.container.settings;
+    await controller.evaluateJavascript(
+      source: kioskModeApplyJs(
+        apply: settings.get(defs.haKioskMode),
+        hideHeader: settings.get(defs.haKioskHideHeader),
+        hideSidebar: settings.get(defs.haKioskHideSidebar),
+      ),
+    );
+  }
+
   /// Bumped to recreate the WebView after its renderer dies. Without the
   /// onRenderProcessGone handler below, Android answers a renderer death
   /// in an unhandling WebView by killing the whole app — the dashboard
@@ -1192,8 +1211,23 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
   Timer? _retry;
 
   @override
+  void initState() {
+    super.initState();
+    _kioskSub = widget.container.bus.on<SettingChanged>().listen((e) {
+      if (e.key != defs.haKioskMode.key &&
+          e.key != defs.haKioskHideHeader.key &&
+          e.key != defs.haKioskHideSidebar.key) {
+        return;
+      }
+      final controller = _webView;
+      if (controller != null) unawaited(_applyKiosk(controller));
+    });
+  }
+
+  @override
   void dispose() {
     _retry?.cancel();
+    _kioskSub?.cancel();
     super.dispose();
   }
 
@@ -1251,6 +1285,26 @@ setInterval(function () {
     return buildHaSessionScript(tokens: browser.haSession, url: url);
   }
 
+  /// Kiosk mode for a Home Assistant page shown as the screensaver: a wall
+  /// clock or a dashboard put here is meant to be the whole screen, and the
+  /// header and sidebar are neither wanted nor reachable — the first touch
+  /// dismisses the screensaver (discussion #225). Follows the same settings
+  /// the dashboard does, and only for this Home Assistant's own pages.
+  List<String> _kioskSources(String url) {
+    final target = Uri.tryParse(url);
+    final settings = widget.container.settings;
+    if (target == null ||
+        !widget.container.browser.isHomeAssistantOrigin(target)) {
+      return const [];
+    }
+    return externalKioskModeSources(
+      origin: target.origin,
+      apply: settings.get(defs.haKioskMode),
+      hideHeader: settings.get(defs.haKioskHideHeader),
+      hideSidebar: settings.get(defs.haKioskHideSidebar),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final website = widget.mode == 'website'
@@ -1277,6 +1331,11 @@ setInterval(function () {
           if (_haSessionScript(website) case final seed?)
             UserScript(
               source: seed,
+              injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+            ),
+          for (final source in _kioskSources(website))
+            UserScript(
+              source: source,
               injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
             ),
           if (widget.container.settings.get(defs.screensaverPixelShift))
@@ -1315,6 +1374,9 @@ setInterval(function () {
       // on; the bundled screensaver is ours.
       onLoadStop: (controller, url) async {
         if (!topLevel) return;
+        // This view outlives a settings change, so the flags baked in at
+        // creation can be stale by the time a page loads.
+        await _applyKiosk(controller);
         final inject = widget.container.settings.get(
           defs.browserInjectJsExternal,
         );
@@ -1343,6 +1405,7 @@ setInterval(function () {
         if (mounted) setState(() => _epoch++);
       },
       onWebViewCreated: (controller) {
+        _webView = controller;
         controller.addJavaScriptHandler(
           handlerName: 'dismiss',
           callback: (_) {
