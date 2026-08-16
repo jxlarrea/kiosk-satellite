@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.49 - 2026-08-16
 
 ### Changed
 - HA kiosk mode now hides the Home Assistant header and sidebar entirely on its own, and no longer has anything to do with the kiosk-mode custom resource. Handing the job to that resource carried a cost that only showed up on a wall tablet: it receives every entity change in your instance to decide what its own options apply to, and Home Assistant disconnects a client that falls behind reading a stream that size, which on a tablet left alone reads as a dashboard that quietly stopped updating. So the setting is now a plain switch, the Off, Auto, Plugin and CSS choice is gone, and a device that had any of the three on comes back with kiosk mode on. The "HA kiosk method" dropdown in Home Assistant disappears with it, while the "HA kiosk mode" switch stays. Hiding the header and hiding the sidebar remain separate choices, both applying the moment they are flipped, with no page reload.
