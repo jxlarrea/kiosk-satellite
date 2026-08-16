@@ -467,6 +467,10 @@ const wsFilterScript = '''
     // the shadow so a view switch right after a reconnect still refreshes.
     S.listeners = [];
     S.subId = null;
+    // The census is per socket: a reconnect re-subscribes everything under
+    // fresh command ids, and keeping the old ones would count every
+    // subscription once more for every reconnect the page has lived through.
+    S.subs = {};
     S.currentWs = ws;
 
     var send = ws.send.bind(ws);
