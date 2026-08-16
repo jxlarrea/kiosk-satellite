@@ -17,6 +17,18 @@
 /// genuine background, where the app really is behind another app, still
 /// reaches the page as it always did.
 ///
+/// Only events the mask itself created are swallowed, and only in pairs: a
+/// `visible` is withheld from the page only when the matching `hidden` was
+/// withheld too. An unpaired `visible` is the one event that must never be
+/// eaten: the Home Assistant frontend blocks every websocket reconnect from
+/// the moment it sees `hidden` until it sees `visible`, so a page that saw
+/// the first and never the second can never reconnect again, and sits on
+/// "Connection lost. Reconnecting…" until it is reloaded (issue #228 is that
+/// state, reached without any mask involved). The mask can straddle a real
+/// background exactly that way: the freeze goes up as the app comes forward,
+/// between the flip of `visibilityState` and the dispatch of its event, and
+/// the mask starts one event too early.
+///
 /// `window.__ksVisibilityMasked` reads back whether the page is being masked
 /// right now, for anyone diagnosing a page that disagrees with the screen.
 ///
@@ -62,10 +74,16 @@ const visibilityMaskScript = '''
   // and the onvisibilitychange properties alike.
   var deferred = null;
   var maskWhenVisible = false;
+  // Whether the page owes a visible: the mask swallowed the hidden edge of
+  // this freeze, so the matching visible is the one to swallow too. Without
+  // it, a mask that started after the page had already been told it went
+  // hidden would swallow the visible that answers it (see above).
+  var swallowedHidden = false;
   function start() {
     masked = true;
     maskWhenVisible = false;
     unmaskWhenVisible = false;
+    swallowedHidden = false;
     window.__ksVisibilityMasked = true;
     if (deferred) { clearTimeout(deferred); deferred = null; }
   }
@@ -73,6 +91,7 @@ const visibilityMaskScript = '''
     masked = false;
     maskWhenVisible = false;
     unmaskWhenVisible = false;
+    swallowedHidden = false;
     window.__ksVisibilityMasked = false;
     if (deferred) { clearTimeout(deferred); deferred = null; }
   }
@@ -84,8 +103,22 @@ const visibilityMaskScript = '''
       if (maskWhenVisible && !reallyHidden()) start();
       return;
     }
-    e.stopImmediatePropagation();
-    if (unmaskWhenVisible && !reallyHidden()) stop();
+    if (reallyHidden()) {
+      // The freeze's own hidden edge: swallow it, and remember that the
+      // visible answering it is ours to swallow as well.
+      swallowedHidden = true;
+      e.stopImmediatePropagation();
+      return;
+    }
+    // A visible the page is owed (its hidden reached it) must go through,
+    // whatever the mask is doing — the page has been sitting on a hidden it
+    // never saw answered, and some of what it stopped doing there only
+    // restarts on this event.
+    if (swallowedHidden) {
+      swallowedHidden = false;
+      e.stopImmediatePropagation();
+    }
+    if (unmaskWhenVisible) stop();
   }, true);
   window.__ksVisibilityMasked = false;
   window.__ksSetVisibilityMask = function (on) {

@@ -19,6 +19,7 @@ import '../managers/device/haptics.dart';
 import '../managers/device/tap_sound.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
+import '../managers/browser/socket_watch_script.dart';
 import '../managers/browser/visibility_mask_script.dart';
 import '../managers/browser/ws_filter_script.dart';
 import '../managers/kiosk/app_link.dart';
@@ -600,6 +601,14 @@ class _KioskScreenState extends State<KioskScreen>
     // injected, and only ever masking while BrowserManager says so.
     UserScript(
       source: visibilityMaskScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // Reports the Home Assistant socket closing, so a dashboard that is not
+    // allowed to reconnect is repaired in seconds rather than at the
+    // watchdog's next poll. Always injected: it is not an optimization, and
+    // it has to work with the ws filter off.
+    UserScript(
+      source: haSocketWatchScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // The dashboard carousel rides the same contract as the pull probe:
@@ -1193,6 +1202,13 @@ class _KioskScreenState extends State<KioskScreen>
       controller.addJavaScriptHandler(
         handlerName: 'ksPullToRefresh',
         callback: (_) => _triggerRefresh(),
+      );
+      // The page's Home Assistant socket closed (see socket_watch_script).
+      // The dashboard watchdog polls for this too; hearing it directly is
+      // what turns minutes of a stranded dashboard into seconds.
+      controller.addJavaScriptHandler(
+        handlerName: 'ksHaSocketClosed',
+        callback: (_) => c.browser.onHaSocketClosed(),
       );
       // The carousel reports its drag edges so the native scrollbars
       // stay asleep during the strip animation (see carousel_script).

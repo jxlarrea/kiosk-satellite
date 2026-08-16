@@ -3561,6 +3561,10 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
     } catch (_) {
       decoded = null;
     }
+    // Something on the page subscribed to every entity change on its own.
+    // Those updates never pass through this filter, and a stream that big is
+    // what gets a tablet dropped by Home Assistant for falling behind.
+    _rawFirehose = decoded is Map && (decoded['stateChangedSubs'] as num? ?? 0) > 0;
     if (decoded is! Map || decoded['mode'] == null) {
       setState(() {
         _ready = false;
@@ -3687,6 +3691,14 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
     );
   }
 
+  /// Whether the page carries a raw entity-change subscription of its own
+  /// (see [_refresh]).
+  bool _rawFirehose = false;
+
+  static const _rawFirehoseNote =
+      ' Something on this page receives every entity update anyway, so '
+      'filtering saves less here.';
+
   Widget _telemetry(ThemeData theme) {
     final s = _stats;
     final pct = (s != null && s.total > 0)
@@ -3698,10 +3710,12 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
     // Filtering with data: the "Watching N entities" sentence is a link that
     // opens the watched-entities list, so the number is inspectable.
     if (_ready && _mode == 'filtering' && s != null) {
-      final rest = pct == null
-          ? ' No updates in the last minute.'
-          : ' Filtered $pct% of updates in the last minute '
-                '(${s.dropped} of ${s.total}).';
+      final rest =
+          (pct == null
+              ? ' No updates in the last minute.'
+              : ' Filtered $pct% of updates in the last minute '
+                    '(${s.dropped} of ${s.total}).') +
+          (_rawFirehose ? _rawFirehoseNote : '');
       return _telemetryRow(
         theme,
         Text.rich(
@@ -3723,9 +3737,10 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
         ),
       );
     }
+    final note = _rawFirehose ? _rawFirehoseNote : '';
     final text = _ready && _mode == 'passthrough'
         ? 'This view\'s entities can\'t be determined, so its updates '
-              'are not filtered.'
+              'are not filtered.$note'
         : 'Waiting for the dashboard to load...';
     return _telemetryRow(theme, Text(text, style: base));
   }

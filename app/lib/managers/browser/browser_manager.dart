@@ -590,6 +590,11 @@ class BrowserManager extends Manager {
     // ScreenStateChanged corrects it.
     final on = await commands.execute('isScreenOn', const {});
     if (on.ok && on.data is bool) _screenIsOn = on.data as bool;
+
+    _healthTimer = Timer.periodic(
+      healthCheckEvery,
+      (_) => unawaited(checkDashboardHealth()),
+    );
   }
 
   void attach(InAppWebViewController controller) {
@@ -962,6 +967,9 @@ class BrowserManager extends Manager {
   Future<void> dispose() async {
     _errorReload?.cancel();
     _freezeDelay?.cancel();
+    _freezeKeepAlive?.cancel();
+    _healthTimer?.cancel();
+    _closeRepair?.cancel();
   }
 
   /// Set by the composition root (see AppContainer): rewrites a URL to its
@@ -1033,15 +1041,26 @@ class BrowserManager extends Manager {
           var ha = document.querySelector('home-assistant');
           var conn = ha && ha.hass && ha.hass.connection;
           if (!conn) return 'no-connection';
+          // A connection with no socket at all is not merely disconnected: the
+          // frontend suspends reconnects for as long as it believes the page
+          // is in the background, and it only lifts that on a visible or focus
+          // event. If one of those went missing the reconnect never happens —
+          // no timer is pending, nothing is retrying, and the page sits on
+          // "Connection lost. Reconnecting…" indefinitely (issue #228).
+          // Cycling the socket cannot fix it either: the frontend's own
+          // reconnect() returns immediately when there is no socket to cycle.
+          // Firing the focus event the frontend is waiting for does, and it is
+          // a no-op on a connection that is not waiting for one.
+          if (!conn.socket) {
+            try { window.dispatchEvent(new Event('focus')); } catch (e) {}
+            return 'unblocked';
+          }
           if (typeof conn.reconnect === 'function') {
             conn.reconnect(true);
             return 'reconnect';
           }
-          if (conn.socket) {
-            conn.socket.close();
-            return 'socket-closed';
-          }
-          return 'no-socket';
+          conn.socket.close();
+          return 'socket-closed';
         } catch (e) { return 'error: ' + e; }
       })()
     ''');
@@ -1111,6 +1130,119 @@ class BrowserManager extends Manager {
       }
     }
     await reconnectHaSocket();
+  }
+
+  /// How often the dashboard's connection is checked, and how many checks in
+  /// a row have to find it down before anything is done about it.
+  @visibleForTesting
+  Duration healthCheckEvery = const Duration(seconds: 60);
+
+  /// How long the repair waits for the connection to come back before giving
+  /// up on it; derived from the freeze state in production.
+  @visibleForTesting
+  Duration? healthRepairTimeout;
+  static const _deadChecksBeforeRepair = 3;
+  Timer? _healthTimer;
+  int _deadChecks = 0;
+  DateTime _lastHealthReload = DateTime.fromMillisecondsSinceEpoch(0);
+  static const _healthReloadCooldown = Duration(minutes: 15);
+
+  /// The dashboard connection watchdog (issue #228).
+  ///
+  /// Every other recovery here is driven by an edge: the network came back,
+  /// the app resumed from the background, a wake word is about to need the
+  /// socket. A wall panel that is never backgrounded, on a network that never
+  /// drops, produces none of them — so a dashboard whose connection dies for
+  /// its own reasons had nothing at all coming for it, and sat on Home
+  /// Assistant's "Connection lost. Reconnecting…" screen behind the
+  /// screensaver until someone walked up to it (seven hours, in the report).
+  /// The frontend does not always retry: it blocks its own reconnects while
+  /// it believes the page is hidden, and it gives up outright on an auth
+  /// failure — both leave a page that is loaded, running, and finished.
+  ///
+  /// So the connection is polled instead. Repair only after several checks in
+  /// a row find it down, because a page that is merely mid-reconnect looks
+  /// identical to a dead one for a few seconds and must not be interrupted.
+  Future<void> checkDashboardHealth() async {
+    if (_controller == null && evalOverride == null) return;
+    // A load that failed has its own retry ladder, and an outage repair in
+    // flight is already doing this.
+    if (loadFailed.value || _networkRepairBusy) return;
+    final state = await _probePageState();
+    // Only a Home Assistant page that is not talking to Home Assistant is
+    // this watchdog's business: the loaded frontend with a dead connection,
+    // and the launch screen that never got one. Anything else is somebody
+    // else's page and nobody's to reload.
+    if (state != 'stale' && state != 'shell') {
+      _deadChecks = 0;
+      return;
+    }
+    _deadChecks++;
+    if (_deadChecks < _deadChecksBeforeRepair) return;
+    log.warn(
+      name,
+      'dashboard connection down for '
+      '${_deadChecks * healthCheckEvery.inSeconds}s; repairing',
+    );
+    // The nudge covers both the half-open socket and the suspended-reconnect
+    // block; a frozen page gets longer, since its timers are throttled and
+    // the frontend's re-subscribe runs on them.
+    if (await ensureHaConnected(
+      timeout:
+          healthRepairTimeout ??
+          Duration(seconds: renderingFrozen ? 20 : 10),
+    )) {
+      log.info(name, 'dashboard connection recovered');
+      _deadChecks = 0;
+      return;
+    }
+    // Nothing short of a reload is left — which is what recovering these by
+    // hand has always meant. Gated on the same setting as every other reload
+    // this app does on its own, and rate limited so a dashboard that cannot
+    // connect at all (Home Assistant down for the night) reloads occasionally
+    // instead of every few minutes.
+    if (!_settings.get(defs.autoReloadOnError)) {
+      log.warn(name, 'dashboard still down; auto-reload is off, leaving it');
+      _deadChecks = 0;
+      return;
+    }
+    if (DateTime.now().difference(_lastHealthReload) < _healthReloadCooldown) {
+      return;
+    }
+    _lastHealthReload = DateTime.now();
+    _deadChecks = 0;
+    log.warn(name, 'dashboard still down after the nudge; reloading');
+    await _renavigate(reason: 'a dead dashboard connection');
+  }
+
+  /// How long a closed Home Assistant socket is given to come back on its own
+  /// before the unblock is sent (see [onHaSocketClosed]).
+  @visibleForTesting
+  Duration socketCloseGrace = const Duration(seconds: 10);
+  Timer? _closeRepair;
+
+  /// The page's Home Assistant socket just closed (reported by
+  /// socket_watch_script).
+  ///
+  /// Closing is ordinary — Home Assistant restarts, Wi-Fi blips, and the
+  /// server drops any client that falls behind its outgoing queue — and the
+  /// frontend reconnects on its own every time it is allowed to. This exists
+  /// for when it is not allowed to: a frontend that believes the page is in
+  /// the background blocks its own reconnects indefinitely, and a close that
+  /// lands in that state is never retried. Waiting for the poll to notice
+  /// takes three minutes, and the page knows now.
+  ///
+  /// So after a grace period, a connection that has not come back is sent the
+  /// event that lifts the block. Nothing more: a reconnect that is merely
+  /// slow (Home Assistant still starting) must not cost a page reload, and
+  /// the watchdog is still there to escalate if this does not take.
+  void onHaSocketClosed() {
+    if (_closeRepair?.isActive ?? false) return;
+    _closeRepair = Timer(socketCloseGrace, () async {
+      if (await _haConnected()) return;
+      log.warn(name, 'the dashboard socket closed and has not come back');
+      await reconnectHaSocket();
+    });
   }
 
   /// Serializes and rate-limits [onNetworkAvailable]: a flapping network
@@ -1237,11 +1369,11 @@ class BrowserManager extends Manager {
   /// repair when rendering resumes, on a page that can actually answer.
   bool _repairOnResume = false;
 
-  Future<void> _renavigate() async {
+  Future<void> _renavigate({String reason = 'network outage'}) async {
     renavigations++;
     final target = _recoveryUrl;
     if (target.isEmpty) return;
-    log.info(name, 'reloading after network outage: $target');
+    log.info(name, 'reloading after $reason: $target');
     // This attempt replaces the pending blind retry, and its failure should
     // start the backoff fresh rather than resume it mid-ladder.
     _clearErrorReload();

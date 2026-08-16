@@ -38,6 +38,7 @@ const wsFilterScript = '''
     shadow: {},           // entity_id -> compressed state
     listeners: [],        // frontend 'message' listeners on the current HA socket
     configCache: {},
+    subs: {},              // command id -> what it subscribed to (census)
     // counters. cTotal counts every entity change seen (both A/B phases, so
     // the load can be shown comparable); cFwd counts those forwarded.
     cTotal: 0, cFwd: 0, evSeen: 0, evDropped: 0, longMs: 0, startTs: 0,
@@ -54,7 +55,15 @@ const wsFilterScript = '''
     // entities cannot be determined, updates flow unfiltered), 'boot'
     // (allowlist not built yet). The UIs word their telemetry from this.
     var mode = S.allow ? 'filtering' : (S.built ? 'passthrough' : 'boot');
+    // Every subscription the page opened, and how many of them ask for the
+    // uncompressed state_changed firehose (see onSend).
+    var subs = [], fire = 0;
+    for (var sid in S.subs) {
+      subs.push(S.subs[sid]);
+      if (S.subs[sid].indexOf('subscribe_events:state_changed') === 0) fire++;
+    }
     return { enabled: S.enabled, allow: S.allow ? S.allow.size : null,
+      subs: subs, stateChangedSubs: fire,
       mode: mode, subId: S.subId, shadow: Object.keys(S.shadow).length,
       cTotal: S.cTotal, cFwd: S.cFwd, evSeen: S.evSeen, evDropped: S.evDropped,
       longMs: Math.round(S.longMs), dt: Math.round(now() - S.startTs) };
@@ -108,11 +117,30 @@ const wsFilterScript = '''
     var evt; try { evt = new MessageEvent('message', { data: str }); } catch (e) { evt = { data: str }; }
     S.listeners.slice().forEach(function (l) { try { l(evt); } catch (e) {} });
   }
-  function pushAdd(eids) {
-    if (S.subId == null || !eids || !eids.length) return;
+  function sendAdd(eids) {
     var a = {}, any = false;
     eids.forEach(function (e) { if (S.shadow[e]) { a[e] = S.shadow[e]; any = true; } });
     if (any) deliver(JSON.stringify({ id: S.subId, type: 'event', event: { a: a } }));
+  }
+  // Replays go out in batches. Lifting the filter on a large instance replays
+  // every entity there is, and handing the frontend all of them in one frame
+  // is a single long task — it rebuilds `hass.states` and re-renders against
+  // it without yielding, and for as long as that runs the page is not reading
+  // its socket, which is the backpressure that gets a client dropped for not
+  // keeping up. Yielding between batches lets the socket drain in between.
+  // A batch mid-flight is abandoned when the socket changes under it: the new
+  // one boots the frontend's state from scratch anyway.
+  var CHUNK = 250;
+  function pushAdd(eids) {
+    if (S.subId == null || !eids || !eids.length) return;
+    if (eids.length <= CHUNK) { sendAdd(eids); return; }
+    var sub = S.subId, i = 0;
+    (function step() {
+      if (S.subId !== sub) return;
+      sendAdd(eids.slice(i, i + CHUNK));
+      i += CHUNK;
+      if (i < eids.length) setTimeout(step, 0);
+    })();
   }
 
   // ---- per-view allowlist from lovelace config ----
@@ -346,7 +374,25 @@ const wsFilterScript = '''
   function onSend(data) {
     if (typeof data !== 'string') return;
     var m; try { m = JSON.parse(data); } catch (e) { return; }
-    if (m && m.type === 'subscribe_entities' && m.id != null && S.subId == null &&
+    if (!m) return;
+    // Census of what this page subscribed to, for `__ksWs.stats().subs`.
+    // Home Assistant drops a client that cannot keep up with its outgoing
+    // queue, and by far the most expensive thing a page can ask for is the
+    // raw `state_changed` firehose: every change with its complete old and
+    // new state, uncompressed, for every entity in the instance — a stream
+    // this filter cannot touch, since it only speaks the compressed
+    // subscribe_entities format. Which subscription is doing that is
+    // otherwise invisible from the device, so it is recorded here.
+    if (typeof m.type === 'string' && m.type.lastIndexOf('subscribe_', 0) === 0 &&
+        m.id != null) {
+      S.subs[m.id] = m.type +
+        (m.event_type ? ':' + m.event_type : '') +
+        (m.entity_ids && m.entity_ids.length ? '(' + m.entity_ids.length + ')' : '');
+    }
+    if (m.type === 'unsubscribe_events' && m.subscription != null) {
+      delete S.subs[m.subscription];
+    }
+    if (m.type === 'subscribe_entities' && m.id != null && S.subId == null &&
         !(m.entity_ids && m.entity_ids.length)) {
       S.subId = m.id; recompute();
     }

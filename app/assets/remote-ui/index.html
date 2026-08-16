@@ -4960,6 +4960,13 @@ async function loadSettings() {
                     body: JSON.stringify({ code: 'JSON.stringify(window.__ksWs ? window.__ksWs.stats() : null)' }) })).json();
                   let st = null;
                   try { st = JSON.parse(r.data); if (typeof st === 'string') st = JSON.parse(st); } catch (_) {}
+                  // Something on the page subscribed to every entity change
+                  // on its own. Those updates never reach this filter, and a
+                  // stream that big is what gets a tablet dropped by Home
+                  // Assistant for falling behind, so it is worth saying.
+                  const raw = st && st.stateChangedSubs > 0
+                    ? ' Something on this page receives every entity update anyway, so filtering saves less here.'
+                    : '';
                   if (!st || !st.mode || st.mode === 'boot') {
                     hist.length = 0;
                     t.textContent = 'Waiting for the dashboard to load…';
@@ -4967,7 +4974,7 @@ async function loadSettings() {
                   }
                   if (st.mode === 'passthrough') {
                     hist.length = 0;
-                    t.textContent = "This view's entities can't be determined, so its updates are not filtered.";
+                    t.textContent = "This view's entities can't be determined, so its updates are not filtered." + raw;
                     return;
                   }
                   const now = Date.now();
@@ -4988,9 +4995,9 @@ async function loadSettings() {
                   link.style.cssText = 'color:var(--primary); text-decoration:underline; cursor:pointer;';
                   link.addEventListener('click', showWatchedEntities);
                   const rest = document.createElement('span');
-                  rest.textContent = pct == null
+                  rest.textContent = (pct == null
                     ? ' No updates in the last minute.'
-                    : ` Filtered ${pct}% of updates in the last minute (${dropped} of ${dTotal}).`;
+                    : ` Filtered ${pct}% of updates in the last minute (${dropped} of ${dTotal}).`) + raw;
                   t.append(link, rest);
                 } catch (_) {}
               };
