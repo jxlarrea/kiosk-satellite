@@ -209,16 +209,12 @@ class _KioskScreenState extends State<KioskScreen>
   }
 
   Future<void> _onSettingChanged(SettingChanged e) async {
-    // HA kiosk mode is applied live (no app restart). The hide choices
-    // ride the same path: re-resolve, re-style, reload for the params.
+    // HA kiosk mode and its hide choices are applied live: restyling the
+    // page in place, with no reload and nothing lost from it.
     if (e.key == defs.haKioskMode.key ||
         e.key == defs.haKioskHideHeader.key ||
         e.key == defs.haKioskHideSidebar.key) {
-      if (e.value == 'auto' && c.homeAssistant.configured) {
-        await c.homeAssistant.detectKioskModePlugin();
-      }
       await _applyKioskMode();
-      await c.browser.loadUrl(_initialUrl); // reload so ?kiosk takes/drops
       return;
     }
     // Mixed-content / SSL / cache / zoom are read only at WebView creation —
@@ -531,34 +527,11 @@ class _KioskScreenState extends State<KioskScreen>
     ''';
   }
 
-  /// `auto` hedges instead of choosing: the plugin params ride the URL when
-  /// the plugin was detected, and the CSS fallback is injected regardless.
-  /// Detection only proves the plugin file exists on the server, not that it
-  /// still works against this HA release (its resource can be served while
-  /// its frontend hook silently fails, as HA's new drawer generation showed),
-  /// and the styles are idempotent so doubling up when the plugin does work
-  /// changes nothing visible.
-  String get _kioskMode => c.settings.get(defs.haKioskMode);
+  String get _initialUrl => c.settings.get(defs.startUrl);
 
-  bool get _usePlugin =>
-      _kioskMode == 'plugin' ||
-      (_kioskMode == 'auto' && c.homeAssistant.kioskPluginDetected);
-  bool get _useCss => _kioskMode == 'css' || _kioskMode == 'auto';
-
-  String get _initialUrl {
-    final url = c.settings.get(defs.startUrl);
-    return _usePlugin
-        ? withKioskParam(
-            url,
-            hideHeader: c.settings.get(defs.haKioskHideHeader),
-            hideSidebar: c.settings.get(defs.haKioskHideSidebar),
-          )
-        : url;
-  }
-
-  /// The JS bridge is always injected at document start. The kiosk-mode CSS
-  /// is applied per-load in [onLoadStop] (not a fixed initial script) so it
-  /// can be toggled live.
+  /// The JS bridge is always injected at document start. Kiosk mode rides
+  /// along as a document-start script too, and is re-asserted per load in
+  /// [onLoadStop] so a page that outlived a toggle catches up.
   List<UserScript> get _userScripts => [
     c.jsApi.buildUserScript(c.device.os),
     // With the proxy on, Home Assistant's absolute URLs (TTS audio,
@@ -601,6 +574,22 @@ class _KioskScreenState extends State<KioskScreen>
     // injected, and only ever masking while BrowserManager says so.
     UserScript(
       source: visibilityMaskScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    // Kiosk mode hides Home Assistant's own header and sidebar. It has to be
+    // in place before the frontend builds anything, since it catches shadow
+    // roots as they are created; it acts only while its flags say so, which
+    // is what lets the toggle apply without a reload.
+    UserScript(
+      source: kioskModeScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
+    UserScript(
+      source: kioskModeApplyJs(
+        apply: c.settings.get(defs.haKioskMode),
+        hideHeader: c.settings.get(defs.haKioskHideHeader),
+        hideSidebar: c.settings.get(defs.haKioskHideSidebar),
+      ),
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     // Reports the Home Assistant socket closing, so a dashboard that is not
@@ -683,11 +672,11 @@ class _KioskScreenState extends State<KioskScreen>
       ),
   ];
 
-  /// Apply or tear down the CSS kiosk mode against the current page.
+  /// Apply or tear down kiosk mode against the current page.
   Future<void> _applyKioskMode() async {
     await c.browser.runJs(
-      kioskModeScript(
-        apply: _useCss,
+      kioskModeApplyJs(
+        apply: c.settings.get(defs.haKioskMode),
         hideHeader: c.settings.get(defs.haKioskHideHeader),
         hideSidebar: c.settings.get(defs.haKioskHideSidebar),
       ),
@@ -1272,9 +1261,10 @@ class _KioskScreenState extends State<KioskScreen>
         '${c.settings.get(defs.haTapSound)};',
       );
       if (url != null) c.browser.onPageLoaded(url.toString());
-      // Re-apply CSS kiosk mode on every navigation (only does
-      // work when the effective mode is 'css').
-      if (_useCss) _applyKioskMode();
+      // Re-assert kiosk mode on every navigation: the document-start script
+      // carries the flags of the load that created it, and a page loaded
+      // before a toggle would otherwise keep the old answer.
+      _applyKioskMode();
       // The zoom-level setting, as CSS zoom on every navigation.
       if (c.settings.get(defs.browserZoom) != 1) c.browser.runJs(_zoomJs);
       // The scroll lock too: its style element dies with each document.
@@ -1678,7 +1668,7 @@ class _IdleDismissState extends State<_IdleDismiss> {
 
 /// A bare WebView for a rotation external page, layered over the dashboard.
 ///
-/// Deliberately minimal: no JS bridge, no wake-word or kiosk-mode scripts,
+/// Deliberately minimal: no JS bridge, no wake-word or kiosk scripts,
 /// no pull-to-refresh — it only displays a page. The dashboard WebView
 /// below it stays fully loaded and interactive the instant this is removed,
 /// so the Voice Satellite session and the wake word never pause.

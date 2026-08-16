@@ -37,6 +37,7 @@ class SettingsManager extends Manager {
   @override
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    await _migrate();
 
     commands
       ..register(
@@ -213,6 +214,24 @@ class SettingsManager extends Manager {
           },
         ),
       );
+  }
+
+  /// Settings whose stored shape changed between releases. A value that no
+  /// longer matches its definition's type is invisible to [get] — it falls
+  /// back to the default — so a rename in place has to be rewritten once,
+  /// here, before anything reads it.
+  Future<void> _migrate() async {
+    // HA kiosk mode was a strategy choice (off/auto/plugin/css) while the
+    // hiding could be handed to the kiosk-mode resource. It does the hiding
+    // itself now, so the setting is a plain switch: anything that was not
+    // 'off' was kiosk mode being on.
+    final kiosk = _prefs.get('${_prefix}ha.kiosk_mode');
+    if (kiosk is String) {
+      await _prefs.setBool('${_prefix}ha.kiosk_mode', kiosk != 'off');
+      log.info(name, 'migrated ha.kiosk_mode ($kiosk)');
+    }
+    // The strategy the drawer toggle used to restore. Nothing to restore now.
+    await _prefs.remove('${_prefix}ha.kiosk_mode_last');
   }
 
   T get<T>(SettingDef<T> def) {

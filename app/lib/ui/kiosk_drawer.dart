@@ -143,40 +143,24 @@ class KioskDrawer extends StatelessWidget {
                                     onSettings();
                                   },
                                 ),
-                              // One tap between off and the user's chosen
-                              // strategy (auto/plugin/css, remembered in the
-                              // hidden ha.kiosk_mode_last) — showing the HA
-                              // header and sidebar briefly is the kind of
-                              // thing done at the wall, without a trip into
-                              // Settings. The kiosk screen reacts to the
-                              // setting change and reloads the page.
+                              // One tap between hidden and shown — bringing
+                              // the HA header and sidebar back briefly is the
+                              // kind of thing done at the wall, without a trip
+                              // into Settings. The kiosk screen reacts to the
+                              // setting change and restyles the page.
                               if (!restricted)
                                 _item(
                                   context,
-                                  c.settings.get(defs.haKioskMode) == 'off'
-                                      ? Icons.fullscreen
-                                      : Icons.fullscreen_exit,
+                                  c.settings.get(defs.haKioskMode)
+                                      ? Icons.fullscreen_exit
+                                      : Icons.fullscreen,
                                   'HA Kiosk Mode',
                                   () async {
                                     onClose();
-                                    final mode = c.settings.get(
+                                    await c.settings.set(
                                       defs.haKioskMode,
+                                      !c.settings.get(defs.haKioskMode),
                                     );
-                                    if (mode == 'off') {
-                                      await c.settings.setFromJson(
-                                        defs.haKioskMode.key,
-                                        c.settings.get(defs.haKioskModeLast),
-                                      );
-                                    } else {
-                                      await c.settings.setFromJson(
-                                        defs.haKioskModeLast.key,
-                                        mode,
-                                      );
-                                      await c.settings.setFromJson(
-                                        defs.haKioskMode.key,
-                                        'off',
-                                      );
-                                    }
                                   },
                                 ),
                               // Only once the default view actually holds

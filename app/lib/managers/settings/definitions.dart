@@ -2429,36 +2429,15 @@ const haSatelliteEntity = SettingDef<String>(
   hidden: true,
 );
 
-/// What the drawer's kiosk-mode toggle returns to: flipping off remembers
-/// the strategy here, flipping back on restores it. Hidden bookkeeping.
-const haKioskModeLast = SettingDef<String>(
-  key: 'ha.kiosk_mode_last',
-  type: SettingType.string,
-  defaultValue: 'auto',
-  title: 'HA kiosk mode to restore',
-  description: 'The strategy the drawer toggle returns to.',
-  category: 'Home Assistant',
-  hidden: true,
-);
-
-const haKioskMode = SettingDef<String>(
+const haKioskMode = SettingDef<bool>(
   key: 'ha.kiosk_mode',
-  type: SettingType.select,
-  defaultValue: 'off',
+  type: SettingType.boolean,
+  defaultValue: false,
   title: 'HA kiosk mode',
   description:
-      'Hide the Home Assistant header and sidebar. Auto injects CSS and '
-      'also uses the kiosk-mode plugin when detected. Applies '
-      'immediately.',
+      'Hide the Home Assistant header and sidebar. Applies immediately.',
   category: 'Home Assistant',
   section: 'User Interface',
-  options: ['off', 'auto', 'plugin', 'css'],
-  optionLabels: {
-    'off': 'Off',
-    'auto': 'Auto',
-    'plugin': 'Plugin',
-    'css': 'CSS',
-  },
 );
 
 // What kiosk mode actually hides. Both default on (the classic full
@@ -3546,7 +3525,6 @@ const List<SettingDef<Object>> allSettings = [
   haToken,
   haSatelliteEntity,
   haKioskMode,
-  haKioskModeLast,
   haKioskHideHeader,
   haKioskHideSidebar,
   haDashboardCarousel,

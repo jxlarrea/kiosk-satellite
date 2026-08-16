@@ -2,156 +2,181 @@
 /// user's choice (some people rely on the header tabs to move between
 /// views, so neither is mandatory).
 ///
-/// Two strategies (setting `ha.kiosk_mode`):
-///   plugin — query parameters handled by the kiosk-mode HACS plugin, which
-///            tracks HA's shadow-DOM changes across releases. Preferred.
-///   css    — inject CSS through the shadow roots ourselves. Version-fragile
-///            by nature; deliberately isolated to this file.
-///   auto   — plugin params AND the CSS fallback. The params are inert
-///            without the plugin, and the CSS also covers a plugin that is
-///            installed but broken against the running HA release.
+/// This used to be able to defer to the kiosk-mode HACS resource, driving it
+/// through `?kiosk` URL parameters. That is gone: the resource opens a
+/// websocket subscription to every state change in the instance and sorts
+/// them out in the browser, which is a heavy enough stream on a wall tablet
+/// that Home Assistant disconnects it for falling behind, and the app cannot
+/// filter what it never sees. Hiding a header is not worth a connection, so
+/// the app does the hiding itself.
+///
+/// Doing it ourselves means reaching into Home Assistant's shadow DOM, which
+/// is private and moves between releases. The approach is chosen to age as
+/// well as that allows:
+///
+///  - Elements are found by custom-element tag name (`ha-drawer`, `hui-root`)
+///    rather than by tree position. Tag names are the most stable thing about
+///    the frontend; the shape around them is not.
+///  - Every shadow root is caught as it is created, by wrapping
+///    `attachShadow` before the frontend runs. No polling, no waiting for a
+///    tree to settle, and panels mounted an hour later are styled the moment
+///    they exist.
+///  - The styles name several generations of each element at once (the mwc
+///    drawer's `.mdc-drawer` and the current `.sidebar-shell`, `app-header`
+///    and `ch-header`), so a release that moves to the next one is already
+///    covered and an obsolete selector just matches nothing.
+///
+/// A hidden sidebar also stays hidden: the edge swipe and the menu button
+/// both work by opening the drawer, so the toggle event is swallowed and the
+/// drawer's `open` attribute is stripped if anything sets it anyway.
 library;
 
-/// Add the kiosk-mode plugin query parameters matching the hide choices.
-/// Both hidden is the plugin's `?kiosk`; one alone uses its dedicated
-/// parameter; neither leaves the URL untouched.
-String withKioskParam(
-  String url, {
-  bool hideHeader = true,
-  bool hideSidebar = true,
-}) {
-  if (!hideHeader && !hideSidebar) return url;
-  final param = hideHeader && hideSidebar
-      ? 'kiosk'
-      : hideHeader
-      ? 'hide_header'
-      : 'hide_sidebar';
-  final uri = Uri.parse(url);
-  if (uri.queryParameters.containsKey(param)) return url;
-  return uri
-      .replace(queryParameters: {...uri.queryParameters, param: ''})
-      .toString();
-}
-
-/// JS that pierces HA's shadow DOM to hide the header and/or sidebar
-/// without the kiosk-mode plugin. Best-effort fallback for setups that
-/// don't run the plugin; HA's internal DOM changes across releases, so the
-/// plugin is preferred when available. Covers both drawer generations: the
-/// old mwc drawer (`.mdc-drawer` + `--mdc-drawer-width`) and the current
-/// one, whose shadow holds `div.sidebar-shell` next to `div.app-content`.
-/// Idempotent; re-applies on HA's client-side route changes and keeps a
-/// MutationObserver so late-mounted panels get styled too. Pass
-/// `apply=false` (or both hides false) to tear the styles back out.
-String kioskModeScript({
-  required bool apply,
-  bool hideHeader = true,
-  bool hideSidebar = true,
-}) =>
-    '''
+/// Document-start script. Always injected, and acts only while its flags say
+/// so, so the setting applies live with no page reload (the same contract the
+/// pull-to-refresh and carousel scripts use). [kioskModeApplyJs] drives it.
+const kioskModeScript = '''
 (function () {
-  const ID = 'kiosk-satellite-kiosk-mode';
-  const APPLY = $apply;
-  const HIDE_HEADER = $hideHeader;
-  const HIDE_SIDEBAR = $hideSidebar;
+  if (window.__ksKiosk) return;
+  var ID = 'ks-kiosk-mode';
+  var S = { on: false, header: true, sidebar: true, roots: [] };
+  window.__ksKiosk = S;
 
-  function styleInto(root, css) {
-    if (!root) return;
-    let el = root.getElementById ? root.getElementById(ID) : null;
-    if (!css) { if (el) el.remove(); return; }
+  // The elements worth styling, by tag. Anything else that grows a shadow
+  // root is none of our business and is not even remembered.
+  function target(tag) {
+    return tag === 'home-assistant-main' || tag === 'ha-drawer' ||
+      tag === 'hui-root';
+  }
+
+  function css(tag) {
+    if (!S.on) return '';
+    if (tag === 'home-assistant-main') {
+      return S.sidebar
+        ? 'ha-drawer{--mdc-drawer-width:0px!important;}' +
+          'ha-sidebar{display:none!important;}'
+        : '';
+    }
+    if (tag === 'ha-drawer') {
+      // The drawer owns the sidebar's container and the content offset that
+      // makes room for it; both live in its own shadow root, out of reach of
+      // the styles above.
+      return S.sidebar
+        ? '.mdc-drawer,.sidebar-shell{display:none!important;width:0!important;' +
+          'min-width:0!important;border:0!important;}' +
+          '.mdc-drawer-scrim{display:none!important;}' +
+          '.mdc-drawer-app-content,.app-content{margin-left:0!important;' +
+          'margin-inline-start:0!important;padding-left:0!important;' +
+          'padding-inline-start:0!important;}'
+        : '';
+    }
+    if (tag === 'hui-root') {
+      return S.header
+        ? '.header,.toolbar,app-header,ch-header{display:none!important;}' +
+          '#view,hui-view{padding-top:0!important;min-height:100vh!important;}'
+        : '';
+    }
+    return '';
+  }
+
+  function style(root) {
+    var host = root && root.host;
+    if (!host) return;
+    var rules = css((host.tagName || '').toLowerCase());
+    var el = root.getElementById ? root.getElementById(ID) : null;
+    if (!rules) { if (el) el.remove(); return; }
     if (!el) {
       el = document.createElement('style');
       el.id = ID;
       root.appendChild(el);
     }
-    el.textContent = css;
+    if (el.textContent !== rules) el.textContent = rules;
   }
 
-  function apply() {
-    const ha = document.querySelector('home-assistant');
-    const main = ha && ha.shadowRoot
-      && ha.shadowRoot.querySelector('home-assistant-main');
-    if (!main || !main.shadowRoot) return false;
-
-    const sidebarCss = (APPLY && HIDE_SIDEBAR)
-      ? ':host{--mdc-drawer-width:0px!important;}' +
-        'ha-drawer{--mdc-drawer-width:0px!important;}' +
-        'ha-sidebar{display:none!important;}'
-      : '';
-    styleInto(main.shadowRoot, sidebarCss);
-
-    // The drawer keeps its own shadow root; the sidebar container lives
-    // there, out of reach of the styles above. Old generation: aside
-    // .mdc-drawer. Current generation: div.sidebar-shell beside
-    // div.app-content.
-    const drawer = main.shadowRoot.querySelector('ha-drawer');
-    if (drawer && drawer.shadowRoot) {
-      styleInto(drawer.shadowRoot, (APPLY && HIDE_SIDEBAR)
-        ? '.mdc-drawer,.sidebar-shell{display:none!important;' +
-          'width:0!important;min-width:0!important;border:0!important;}' +
-          '.mdc-drawer-app-content,.app-content{margin-left:0!important;' +
-          'margin-inline-start:0!important;padding-left:0!important;' +
-          'padding-inline-start:0!important;}'
-        : '');
-    }
-
-    // The dashboard header (toolbar + view tabs) in every lovelace root.
-    const roots = main.shadowRoot.querySelectorAll('ha-panel-lovelace');
-    let styled = false;
-    roots.forEach(function (panel) {
-      const huiRoot = panel.shadowRoot
-        && panel.shadowRoot.querySelector('hui-root');
-      if (huiRoot && huiRoot.shadowRoot) {
-        styleInto(huiRoot.shadowRoot, (APPLY && HIDE_HEADER)
-          ? '.header,.toolbar,app-header,ch-header{display:none!important;}' +
-            '#view,hui-view{padding-top:0!important;min-height:100vh!important;}'
-          : '');
-        styled = true;
-      }
-    });
-    return styled;
+  // A drawer that is told to open anyway (the edge swipe, the menu button on
+  // a release that does not route through the toggle event) is closed again
+  // before it can show. One observer per drawer, for the life of that drawer.
+  function guard(host) {
+    if (host.__ksKioskGuard) return;
+    host.__ksKioskGuard = true;
+    try {
+      new MutationObserver(function () {
+        if (S.on && S.sidebar && host.hasAttribute('open')) {
+          host.removeAttribute('open');
+        }
+      }).observe(host, { attributes: true, attributeFilter: ['open'] });
+    } catch (e) {}
   }
 
-  // One live instance per document. This script is re-run on every load and
-  // on every settings change; without the handoff an older run's watchers
-  // would keep re-asserting their stale choices over the new ones.
-  const prev = window.__ksKioskMode;
-  if (prev) {
-    if (prev.timer) clearInterval(prev.timer);
-    if (prev.observer) prev.observer.disconnect();
-    if (prev.onLocation) {
-      window.removeEventListener('location-changed', prev.onLocation);
+  function track(root) {
+    var host = root && root.host;
+    if (!host) return;
+    var tag = (host.tagName || '').toLowerCase();
+    if (!target(tag)) return;
+    if (S.roots.indexOf(root) < 0) S.roots.push(root);
+    if (tag === 'ha-drawer') guard(host);
+    style(root);
+  }
+
+  // Catch every shadow root as it is born. Registered before the frontend's
+  // own code runs, so nothing that matters is created before this is in
+  // place.
+  var attach = Element.prototype.attachShadow;
+  if (attach) {
+    Element.prototype.attachShadow = function (init) {
+      var root = attach.call(this, init);
+      try { track(root); } catch (e) {}
+      return root;
+    };
+  }
+
+  // Roots that already exist: only relevant when this script reaches a page
+  // that was already up (an app update, a WebView that outlived a reload).
+  // Bounded walk, and it only has to find the three tags above.
+  function sweep(root, depth) {
+    if (!root || depth > 12) return;
+    var nodes;
+    try { nodes = root.querySelectorAll('*'); } catch (e) { return; }
+    for (var i = 0; i < nodes.length; i++) {
+      var sr = nodes[i].shadowRoot;
+      if (sr) { track(sr); sweep(sr, depth + 1); }
     }
   }
-  const state = window.__ksKioskMode =
-      { timer: null, observer: null, onLocation: null };
 
-  // Nothing to hide: strip whatever a previous run styled and stand down.
-  if (!APPLY || (!HIDE_HEADER && !HIDE_SIDEBAR)) { apply(); return; }
-
-  // The observer can only attach once <home-assistant> has a shadow root,
-  // which on a cold load is well after this script runs. It watches the app
-  // root for remounts; panel internals live in deeper shadow roots it cannot
-  // see, so route changes are covered by HA's location-changed event instead.
-  function ensureObserver() {
-    if (state.observer) return;
-    const ha = document.querySelector('home-assistant');
-    if (!ha || !ha.shadowRoot) return;
-    state.observer = new MutationObserver(function () { apply(); });
-    state.observer.observe(ha.shadowRoot, { childList: true, subtree: true });
+  function restyle() {
+    for (var i = 0; i < S.roots.length; i++) style(S.roots[i]);
   }
 
-  // Poll until the dashboard is styled. A cold start can spend a long time
-  // booting (auth restore, service worker, a slow tablet), so the window is
-  // generous; the cap only exists for non-dashboard pages, where the
-  // observer and the location listener keep covering later navigation.
-  let n = 0;
-  state.timer = setInterval(function () {
-    ensureObserver();
-    if ((apply() && state.observer) || ++n > 240) clearInterval(state.timer);
-  }, 250);
-  state.onLocation = function () { setTimeout(apply, 80); };
-  window.addEventListener('location-changed', state.onLocation);
-  ensureObserver();
-  apply();
+  // The menu button and the edge swipe both ask the app to open the drawer
+  // with this event. Capture phase, so it never reaches the handler.
+  window.addEventListener('hass-toggle-menu', function (e) {
+    if (S.on && S.sidebar) {
+      e.stopImmediatePropagation();
+      if (e.preventDefault) e.preventDefault();
+    }
+  }, true);
+
+  window.__ksKioskApply = function (on, header, sidebar) {
+    S.on = !!on;
+    S.header = !!header;
+    S.sidebar = !!sidebar;
+    sweep(document, 0);
+    restyle();
+  };
+
+  // A navigation can mount a panel whose root was created before its
+  // ancestors were styled; re-asserting costs a handful of string compares.
+  window.addEventListener('location-changed', function () {
+    setTimeout(function () { sweep(document, 0); restyle(); }, 80);
+  });
 })();
 ''';
+
+/// Turn kiosk mode on or off in the page, live. No-op on a page loaded
+/// before the script existed.
+String kioskModeApplyJs({
+  required bool apply,
+  bool hideHeader = true,
+  bool hideSidebar = true,
+}) =>
+    'if (window.__ksKioskApply) window.__ksKioskApply('
+    '$apply, $hideHeader, $hideSidebar);';

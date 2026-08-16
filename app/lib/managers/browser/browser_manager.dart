@@ -1475,7 +1475,7 @@ class BrowserManager extends Manager {
   }
 
   /// Evaluate JavaScript in the current page (fire-and-forget helper for the
-  /// UI layer, e.g. applying/removing kiosk-mode CSS).
+  /// UI layer, e.g. applying or lifting HA kiosk mode).
   Future<void> runJs(String source) async {
     try {
       await _controller?.evaluateJavascript(source: source);

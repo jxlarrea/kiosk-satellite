@@ -402,8 +402,8 @@ class MqttManager extends Manager with WidgetsBindingObserver {
               (on) => _settings.set(defs.lockdownEnabled, on),
             ),
             'ha_kiosk': (
-              () => _settings.get(defs.haKioskMode) != 'off',
-              (on) => _settings.set(defs.haKioskMode, on ? 'auto' : 'off'),
+              () => _settings.get(defs.haKioskMode),
+              (on) => _settings.set(defs.haKioskMode, on),
             ),
             'keep_screen_on': (
               () => _settings.get(defs.keepScreenOn),
@@ -458,10 +458,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// The setting-backed dropdowns: object id → (definition, entity name,
   /// icon). HA shows the definition's display labels; state publishes are
   /// mapped to labels and incoming commands mapped back to the stored value,
-  /// so the stored vocabulary never leaks into the HA UI. The HA-kiosk one
-  /// deliberately sits NEXT TO its switch: the switch stays the simple
-  /// toggle, the select is where a plugin/css strategy can actually be
-  /// picked from Home Assistant.
+  /// so the stored vocabulary never leaks into the HA UI.
   static const _settingSelects =
       <String, (defs.SettingDef<String>, String, String)>{
     'screensaver_mode': (
@@ -473,11 +470,6 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       defs.screensaverClockStyle,
       'Clock style',
       'mdi:clock-digital',
-    ),
-    'ha_kiosk_method': (
-      defs.haKioskMode,
-      'HA kiosk method',
-      'mdi:page-layout-header',
     ),
   };
 
@@ -1582,6 +1574,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// upgraded device does not leave a dead twin behind in HA.
   List<String> _legacyDiscoveryTopics() => [
         '$_prefix/binary_sensor/ks_$_deviceId/screensaver/config',
+        // HA kiosk mode had a strategy select next to its switch while the
+        // hiding could be delegated to the kiosk-mode resource. It is one
+        // switch now, so the dropdown has to go rather than linger as a
+        // dead entity.
+        '$_prefix/select/ks_$_deviceId/ha_kiosk_method/config',
       ];
 
   Future<void> _publishDiscovery() async {
