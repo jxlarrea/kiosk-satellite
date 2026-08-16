@@ -128,37 +128,57 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                   // rather than sitting under _Dismissable.
                   'camera' => CameraScreensaver(container: container),
                   // 'black' and anything unexpected: the safe, opaque cover,
-                  // carrying the At a Glance row when there is one.
+                  // carrying the At a Glance row when there is one — unless
+                  // the active schedule entry withholds it for its hours,
+                  // the same override the corner widgets have.
                   _ => _Dismissable(
                     container: container,
-                    child: !blackBare &&
-                            container.settings.get(
-                              defs.screensaverGlanceEnabled,
-                            )
-                        ? GlanceScreensaver(container: container)
-                        : const ColoredBox(color: Colors.black),
+                    child: ValueListenableBuilder<bool?>(
+                      valueListenable: container.screensaver.scheduleGlance,
+                      builder: (context, scheduled, _) =>
+                          !blackBare &&
+                              (scheduled ??
+                                  container.settings.get(
+                                    defs.screensaverGlanceEnabled,
+                                  ))
+                          ? GlanceScreensaver(container: container)
+                          : const ColoredBox(color: Colors.black),
+                    ),
                   ),
                 },
                 // The corner widgets ride over every mode their type
                 // allows (the small clock stays off Clock, which is one
                 // already, and the camera grid, where it sits over a live
-                // feed).
+                // feed). The active schedule entry can withhold them for
+                // its hours — widgets by day, a bare screen at night —
+                // which is why they hang off their own listenable: a
+                // boundary between two entries of the same mode changes
+                // nothing else this widget rebuilds on.
                 if (!blackBare)
-                  for (final spec in decodeScreensaverWidgets(
-                    container.settings.get(defs.screensaverWidgets),
-                  ))
-                    if (screensaverWidgetAllowedOnMode(spec.type, view))
-                      switch (spec.type) {
-                        'clock' => ClockWidgetOverlay(
-                          container: container,
-                          spec: spec,
-                        ),
-                        'weather' => WeatherWidgetOverlay(
-                          container: container,
-                          spec: spec,
-                        ),
-                        _ => const SizedBox.shrink(),
-                      },
+                  ValueListenableBuilder<bool?>(
+                    valueListenable: container.screensaver.scheduleWidgets,
+                    builder: (context, scheduled, _) => Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (scheduled ?? true)
+                          for (final spec in decodeScreensaverWidgets(
+                            container.settings.get(defs.screensaverWidgets),
+                          ))
+                            if (screensaverWidgetAllowedOnMode(spec.type, view))
+                              switch (spec.type) {
+                                'clock' => ClockWidgetOverlay(
+                                  container: container,
+                                  spec: spec,
+                                ),
+                                'weather' => WeatherWidgetOverlay(
+                                  container: container,
+                                  spec: spec,
+                                ),
+                                _ => const SizedBox.shrink(),
+                              },
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),

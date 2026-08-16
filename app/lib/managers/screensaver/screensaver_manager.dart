@@ -44,6 +44,12 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
         // Tri-state motion override (issue #89): absent follows the
         // "Dismiss on motion" switch.
         if (e['motion'] is bool) 'motion': e['motion'],
+        // Tri-state widgets override: absent shows whatever the Widgets
+        // group configures, false hides the corner widgets for this
+        // entry's hours.
+        if (e['widgets'] is bool) 'widgets': e['widgets'],
+        // The same for the At a glance row.
+        if (e['glance'] is bool) 'glance': e['glance'],
       });
     }
     entries.sort((a, b) => scheduleMinutes(a['at'] as String)!
@@ -52,6 +58,27 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
   } catch (_) {
     return const [];
   }
+}
+
+/// [entry] written into [entries]: replacing the one at [index], or appended
+/// when [index] is null (or no longer in range).
+///
+/// Position, not identity: both editors decode the stored JSON afresh on
+/// every read, so the map a row was drawn from is never the same object as
+/// the one in the list being written — matching by identity silently
+/// appended a duplicate instead of replacing.
+List<Map<String, Object?>> upsertScheduleEntry(
+  List<Map<String, Object?>> entries,
+  Map<String, Object?> entry,
+  int? index,
+) {
+  final next = [...entries];
+  if (index != null && index >= 0 && index < next.length) {
+    next[index] = entry;
+  } else {
+    next.add(entry);
+  }
+  return next;
 }
 
 /// The entry in force at [minutesNow]: the latest one at or before it, or —
@@ -438,6 +465,17 @@ class ScreensaverManager extends Manager {
   double? get _scheduleBrightness =>
       (_scheduleEntry?['brightness'] as num?)?.toDouble();
 
+  /// Whether the active schedule entry hides the corner widgets: null
+  /// follows the Widgets group, as it did before any schedule existed.
+  /// Applied during a session, null between them, and re-read at every
+  /// schedule boundary — the UI layer watches this to mount or unmount the
+  /// overlays without the view itself having to change.
+  final ValueNotifier<bool?> scheduleWidgets = ValueNotifier(null);
+
+  /// The same for the At a glance row, which is its own setting and so its
+  /// own override: a night entry can drop the widgets, the row, or both.
+  final ValueNotifier<bool?> scheduleGlance = ValueNotifier(null);
+
   /// The motion policy last announced to the bus, so boundary ticks only
   /// publish actual changes. Applied during a session, null between them.
   bool? _motionPolicy;
@@ -537,6 +575,8 @@ class ScreensaverManager extends Manager {
     final entry = _scheduleEntry;
     _appliedScheduleAt = entry?['at'] as String?;
     _publishMotionPolicy(entry?['motion'] as bool?);
+    scheduleWidgets.value = entry?['widgets'] as bool?;
+    scheduleGlance.value = entry?['glance'] as bool?;
     // Modes that change brightness save their restore point first.
     if (mode == 'dim' || mode == 'black' || _contentDimEnabled(mode)) {
       await _ensureSavedBrightness();
@@ -633,6 +673,8 @@ class ScreensaverManager extends Manager {
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }
     _publishMotionPolicy(null);
+    scheduleWidgets.value = null;
+    scheduleGlance.value = null;
     bus.publish(const ScreensaverStateChanged(active: false));
   }
 

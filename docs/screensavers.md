@@ -234,8 +234,9 @@ dashboard straight back.
 
 **Scheduled screensavers** switches to a different screensaver at set
 times of day. Each entry under **Times** carries a time, a mode, a
-brightness, and a motion override; it applies from its time until the
-next entry, and the last entry of the day carries over past midnight.
+brightness and three overrides — motion, widgets and At a glance —
+edited by tapping the entry; it applies from its time until the next
+entry, and the last entry of the day carries over past midnight.
 There is no day-of-week dimension, deliberately: the schedule describes
 a day, every day.
 
@@ -243,8 +244,14 @@ The typical shape is two entries: photos at a comfortable brightness
 from the morning, Black (or Clock, dimmed) from the evening. The motion
 override sets **Dismiss on motion** per entry, in either direction, so
 an overnight entry can keep the camera off entirely, or a daytime entry
-can enable approach wake even though the global switch is off. Editing
-the schedule while the screensaver is showing applies live.
+can enable approach wake even though the global switch is off. The
+widgets and At a glance overrides do the same for the
+[widgets](#widgets) and the [At a Glance](#at-a-glance) row: leave them
+on Default to follow their own settings, or set them to Off on the
+night entry for a screen with nothing on it but the mode itself. On
+shows what those settings configure, so an override cannot conjure a
+widget that was never added. Editing the schedule while the screensaver
+is showing applies live.
 
 ## Motion detection
 

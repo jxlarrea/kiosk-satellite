@@ -40,10 +40,81 @@ void main() {
       expect(entries[3].containsKey('motion'), isFalse);
     });
 
+    test('the widgets override passes through only as a bool', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"08:00","mode":"clock","widgets":true},'
+          '{"at":"20:00","mode":"clock","widgets":false},'
+          '{"at":"22:00","mode":"black","widgets":"off"},'
+          '{"at":"23:00","mode":"black"}]');
+      expect(entries[0]['widgets'], isTrue);
+      expect(entries[1]['widgets'], isFalse);
+      // A widgets-less entry keeps no key at all, which is what the UI
+      // layer reads as "follow the Widgets group".
+      expect(entries[2].containsKey('widgets'), isFalse);
+      expect(entries[3].containsKey('widgets'), isFalse);
+    });
+
+    test('the glance override passes through only as a bool', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"08:00","mode":"black","glance":true},'
+          '{"at":"20:00","mode":"black","glance":false},'
+          '{"at":"22:00","mode":"black","glance":1},'
+          '{"at":"23:00","mode":"black"}]');
+      expect(entries[0]['glance'], isTrue);
+      expect(entries[1]['glance'], isFalse);
+      expect(entries[2].containsKey('glance'), isFalse);
+      expect(entries[3].containsKey('glance'), isFalse);
+    });
+
+    test('the overrides are independent of each other', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"08:00","mode":"clock","motion":true,"widgets":false,'
+          '"glance":true,"brightness":0.4}]');
+      expect(entries.single['motion'], isTrue);
+      expect(entries.single['widgets'], isFalse);
+      expect(entries.single['glance'], isTrue);
+      expect(entries.single['brightness'], 0.4);
+    });
+
     test('garbage input is an empty schedule', () {
       expect(parseScreensaverSchedule('not json'), isEmpty);
       expect(parseScreensaverSchedule('{"at":"08:00"}'), isEmpty);
       expect(parseScreensaverSchedule('[]'), isEmpty);
+    });
+  });
+
+  group('upsertScheduleEntry', () {
+    // The editors decode the stored JSON afresh on every read, so an edited
+    // entry is never the same object as the one in the list being written.
+    // Matching by identity appended a duplicate instead of replacing it.
+    test('an edit replaces the entry at its position', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"07:00","mode":"clock"},{"at":"19:00","mode":"black"}]');
+      final edited = {'at': '20:00', 'mode': 'black', 'widgets': false};
+      final next = upsertScheduleEntry(entries, edited, 1);
+      expect(next, hasLength(2));
+      expect(next[0]['at'], '07:00');
+      expect(next[1]['at'], '20:00');
+      expect(next[1]['widgets'], isFalse);
+    });
+
+    test('no index adds a time', () {
+      final entries = parseScreensaverSchedule('[{"at":"07:00","mode":"clock"}]');
+      final next = upsertScheduleEntry(entries, {'at': '19:00', 'mode': 'black'}, null);
+      expect(next, hasLength(2));
+    });
+
+    test('an index past the end adds rather than throws', () {
+      final entries = parseScreensaverSchedule('[{"at":"07:00","mode":"clock"}]');
+      final next = upsertScheduleEntry(entries, {'at': '19:00', 'mode': 'black'}, 5);
+      expect(next, hasLength(2));
+      expect(next.last['at'], '19:00');
+    });
+
+    test('the source list is left alone', () {
+      final entries = parseScreensaverSchedule('[{"at":"07:00","mode":"clock"}]');
+      upsertScheduleEntry(entries, {'at': '19:00', 'mode': 'black'}, null);
+      expect(entries, hasLength(1));
     });
   });
 

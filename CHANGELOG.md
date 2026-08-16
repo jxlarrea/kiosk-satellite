@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- Each entry of a scheduled screensaver now carries "Widgets" and "At a glance" overrides alongside the brightness and motion ones, so the corner widgets and the glance row can show by day and stay off overnight without unconfiguring them twice a day. Default leaves their own settings in charge, On shows them and Off withholds them for that entry's hours, and a boundary between two entries applies live under a showing screensaver. An entry set to On loads the glance row's entities even when the row's own switch is off, so a day entry can carry it while the rest of the day does not.
 - An "Inject JavaScript on external pages" field under Browser runs your JavaScript after every load of a page that is not the dashboard: a site opened by a dashboard link or a tap action, a dashboard rotation page, and the website screensaver (#224). These pages live in their own WebView, which the existing injection field never reached, so a site that renders too small on a wall tablet had no way to be adjusted; setting `document.documentElement.style.zoom` from here is the way to zoom one. The Music Assistant page is deliberately left out, since it is the app's own shortcut rather than a site you brought in.
 
 ### Changed

@@ -7,6 +7,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../home_assistant/home_assistant_manager.dart';
+import '../screensaver/screensaver_manager.dart' show parseScreensaverSchedule;
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -153,7 +154,12 @@ class GlanceManager extends Manager {
     _settingsSub = bus.on<SettingChanged>().listen((event) {
       if (event.key != defs.screensaverGlanceEntities.key &&
           event.key != defs.screensaverGlanceEnabled.key &&
-          event.key != defs.screensaverGlanceNowPlaying.key) {
+          event.key != defs.screensaverGlanceNowPlaying.key &&
+          // A schedule entry can turn the row on for its own hours, so the
+          // schedule decides whether the entities load just as the switch
+          // does.
+          event.key != defs.screensaverSchedule.key &&
+          event.key != defs.screensaverScheduleEnabled.key) {
         return;
       }
       _load();
@@ -224,10 +230,21 @@ class GlanceManager extends Manager {
     entities.dispose();
   }
 
+  /// Whether the row is configured to appear at all: the switch, or a
+  /// schedule entry that turns it on for its own hours while the switch is
+  /// off. Without the second half the entities would never load and such an
+  /// entry would show an empty row.
+  bool get _rowConfigured {
+    if (_settings.get(defs.screensaverGlanceEnabled)) return true;
+    if (!_settings.get(defs.screensaverScheduleEnabled)) return false;
+    return parseScreensaverSchedule(_settings.get(defs.screensaverSchedule))
+        .any((e) => e['glance'] == true);
+  }
+
   /// The configured entities, keeping any live state already collected for
   /// ids that survived the edit.
   void _load() {
-    if (!_settings.get(defs.screensaverGlanceEnabled)) {
+    if (!_rowConfigured) {
       entities.value = const [];
       return;
     }
