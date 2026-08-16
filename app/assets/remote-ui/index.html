@@ -122,6 +122,13 @@
      and it fills the box without a zoom. */
   .brand-mark { flex: none; width: 44px; height: 44px;
     background: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4KICAgIDxjbGlwUGF0aCBpZD0ic3EiPjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTE0LjYiLz48L2NsaXBQYXRoPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNWRhM2E2Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjM2E2Zjc4Ii8+PC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPGcgY2xpcC1wYXRoPSJ1cmwoI3NxKSI+PHJlY3Qgd2lkdGg9IjUxMiIgaGVpZ2h0PSI1MTIiIGZpbGw9InVybCgjZykiLz48L2c+CiAgPGcgZmlsbD0iI2ZmZmZmZiI+CiAgICA8cmVjdCB4PSIxNDgiIHk9IjE3MCIgd2lkdGg9Ijc2IiBoZWlnaHQ9IjE1NiIgcng9IjM4Ii8+CiAgICA8cGF0aCBkPSJNIDk2IDI4MCBBIDkwIDkwIDAgMCAwIDI3NiAyODAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIzNCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICA8cmVjdCB4PSIxNjkiIHk9IjM2NiIgd2lkdGg9IjM0IiBoZWlnaHQ9IjcwIi8+CiAgICA8cmVjdCB4PSIyNTYiIHk9IjkwIiB3aWR0aD0iMTcwIiBoZWlnaHQ9IjEzNSIgcng9IjM0Ii8+CiAgICA8cGF0aCBkPSJNIDM2MCAyMTAgTCA0MTggMjEwIEwgMzQ2IDI5MCBaIi8+CiAgPC9nPgogIDxjaXJjbGUgY3g9IjI5OSIgY3k9IjE1NyIgcj0iMTciIGZpbGw9IiNkNjVkMGUiLz4KICA8Y2lyY2xlIGN4PSIzNDEiIGN5PSIxNTciIHI9IjE3IiBmaWxsPSIjZDc5OTIxIi8+CiAgPGNpcmNsZSBjeD0iMzgzIiBjeT0iMTU3IiByPSIxNyIgZmlsbD0iIzY4OWQ2YSIvPgo8L3N2Zz4K) center / 100% no-repeat; }
+  /* The mark doubles as the way back to Overview, in the rail and in the
+     phone top bar: a button, so it is reachable by keyboard too. */
+  button.brand-mark { border: 0; padding: 0; cursor: pointer;
+    transition: opacity .15s ease; }
+  button.brand-mark:hover { opacity: .82; }
+  button.brand-mark:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: 3px; border-radius: 10px; }
   .brand-title .dot { display: inline-block; margin-left: 4px; }
   .dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--debug); }
   .dot.on { background: var(--ok); }
@@ -569,7 +576,7 @@
   <!-- Phone top bar; on wide screens the rail is always visible instead. -->
   <div class="mobilebar">
     <button class="hamburger" id="navToggle" aria-label="Menu" aria-expanded="false"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <span class="brand-mark"></span>
+    <button type="button" class="brand-mark" data-home aria-label="Overview" title="Overview"></button>
     <span class="mtitle">Kiosk Satellite</span>
     <span class="spacer"></span>
     <span class="stat js-cpu"></span>
@@ -580,7 +587,7 @@
     <!-- The rail, mirroring the device's settings split view. -->
     <aside id="sidebar">
       <div class="brand">
-        <span class="brand-mark"></span>
+        <button type="button" class="brand-mark" data-home aria-label="Overview" title="Overview"></button>
         <div class="brand-text">
           <div class="brand-title">Kiosk Satellite <span class="dot" id="connDot"></span></div>
           <div class="brand-sub" id="deviceName"></div>
@@ -1210,6 +1217,10 @@ $('#tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (btn) { showTab(btn.dataset.tab); setNav(false); }
 });
+
+// The app mark, in either bar, goes home to Overview.
+document.querySelectorAll('[data-home]').forEach((el) =>
+  el.addEventListener('click', () => { showTab('dashboard'); setNav(false); }));
 
 // Back/forward, and an address typed by hand.
 window.addEventListener('hashchange', () => showTab(location.hash.slice(1), { push: false }));
