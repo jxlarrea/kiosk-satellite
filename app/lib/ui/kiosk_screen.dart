@@ -1126,6 +1126,16 @@ class _KioskScreenState extends State<KioskScreen>
       // Downloads (an APK update from GitHub, a camera clip): without this
       // the WebView silently ignores them.
       useOnDownloadStart: true,
+      // Keeps the page running while the app is not the app on screen.
+      // Named for audio, but what it does is report the window as visible to
+      // Chromium whatever the Activity is doing (InAppWebView
+      // .onWindowVisibilityChanged): without it Chromium suspends the page a
+      // minute after the app goes behind another one, the frontend stops
+      // answering Home Assistant's websocket heartbeat, and the server drops
+      // the connection - taking Voice Satellite's availability and every
+      // other subscription with it until someone brings the kiosk back. A
+      // kiosk's page is the point of the device, not a background tab.
+      allowBackgroundAudioPlaying: true,
     ),
     onReceivedServerTrustAuthRequest: (controller, challenge) async {
       // Accept untrusted/self-signed certs only when the user opted
