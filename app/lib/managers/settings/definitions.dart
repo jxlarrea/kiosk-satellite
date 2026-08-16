@@ -332,15 +332,32 @@ const browserInjectJs = SettingDef<String>(
   key: 'browser.inject_js',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Inject JavaScript',
+  title: 'Inject JavaScript on the HA dashboard',
   description:
-      'Run this JavaScript code after loading each page. Useful to hide '
-      'distracting elements or tweak sites you do not control.',
+      'Run this JavaScript code after every load of the dashboard page. '
+      'Useful to hide distracting elements or tweak a dashboard you do '
+      'not control.',
   category: 'Browser',
   multiline: true,
   placeholder:
       "// Example: hide a distracting element\n"
       "document.querySelector('#banner').style.display = 'none';",
+);
+
+const browserInjectJsExternal = SettingDef<String>(
+  key: 'browser.inject_js_external',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Inject JavaScript on external pages',
+  description:
+      'Run this JavaScript code after loading each external page: pages '
+      'opened by a dashboard link, dashboard rotation pages and the '
+      'website screensaver. The Music Assistant page is left alone.',
+  category: 'Browser',
+  multiline: true,
+  placeholder:
+      "// Example: zoom a site that ignores the dashboard zoom level\n"
+      "document.documentElement.style.zoom = '1.25';",
 );
 
 const allowMixedContent = SettingDef<bool>(
@@ -3373,6 +3390,7 @@ const List<SettingDef<Object>> allSettings = [
   disableScrolling,
   disableCache,
   browserInjectJs,
+  browserInjectJsExternal,
   allowMixedContent,
   ignoreSslErrors,
   webMicrophone,

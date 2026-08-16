@@ -2,6 +2,15 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- An "Inject JavaScript on external pages" field under Browser runs your JavaScript after every load of a page that is not the dashboard: a site opened by a dashboard link or a tap action, a dashboard rotation page, and the website screensaver (#224). These pages live in their own WebView, which the existing injection field never reached, so a site that renders too small on a wall tablet had no way to be adjusted; setting `document.documentElement.style.zoom` from here is the way to zoom one. The Music Assistant page is deliberately left out, since it is the app's own shortcut rather than a site you brought in.
+
+### Changed
+- The existing "Inject JavaScript" field is now called "Inject JavaScript on the HA dashboard", naming the one page it has always run on. Nothing about its behavior changed and whatever is in it stays there.
+- Home Assistant pages opened outside the dashboard now sign in with the session the dashboard already holds, instead of showing the login form. This is what a Home Assistant page set as the website screensaver used to do, where the form could not even be answered because the first touch dismisses the screensaver, and it also affected links and rotation pages whenever their address did not match the dashboard's origin exactly, which is always the case with the secure context proxy on. The session is only ever handed to your own Home Assistant, matched against the configured base URL and the dashboard's own origin, and it never replaces a session the page already has.
+
 ## v2026.8.47 - 2026-08-15
 
 ### Improvements

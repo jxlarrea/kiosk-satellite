@@ -14,6 +14,7 @@ import 'package:video_player/video_player.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../core/locale_dates.dart';
+import '../managers/browser/ha_session_script.dart';
 import '../managers/home_assistant/home_assistant_manager.dart'
     show GlanceSubscription;
 import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
@@ -1220,6 +1221,16 @@ setInterval(function () {
       'translate(' + x + 'px,' + y + 'px)';
 }, 60000);''';
 
+  /// The dashboard's Home Assistant session for [url], when the site shown
+  /// here is that same Home Assistant. Null for anywhere else: a stranger's
+  /// site never sees these credentials.
+  String? _haSessionScript(String url) {
+    final target = Uri.tryParse(url);
+    final browser = widget.container.browser;
+    if (target == null || !browser.isHomeAssistantOrigin(target)) return null;
+    return buildHaSessionScript(tokens: browser.haSession, url: url);
+  }
+
   @override
   Widget build(BuildContext context) {
     final website = widget.mode == 'website'
@@ -1239,6 +1250,15 @@ setInterval(function () {
             injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
             forMainFrameOnly: false,
           ),
+          // A Home Assistant page shown as the screensaver signs in from the
+          // dashboard's session (discussion #225): the login form it would
+          // otherwise show cannot be answered here — the first touch
+          // dismisses the screensaver.
+          if (_haSessionScript(website) case final seed?)
+            UserScript(
+              source: seed,
+              injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+            ),
           if (widget.container.settings.get(defs.screensaverPixelShift))
             UserScript(
               source: _pixelShiftScript,
@@ -1269,6 +1289,17 @@ setInterval(function () {
         return ServerTrustAuthResponse(
           action: ServerTrustAuthResponseAction.CANCEL,
         );
+      },
+      // The user's pasted JavaScript for external pages, after every load
+      // (issue #224). Only the website mode has a page of theirs to run it
+      // on; the bundled screensaver is ours.
+      onLoadStop: (controller, url) async {
+        if (!topLevel) return;
+        final inject = widget.container.settings.get(
+          defs.browserInjectJsExternal,
+        );
+        if (inject.trim().isEmpty) return;
+        await controller.evaluateJavascript(source: inject);
       },
       onReceivedError: (controller, request, error) {
         if (request.isForMainFrame ?? true) {

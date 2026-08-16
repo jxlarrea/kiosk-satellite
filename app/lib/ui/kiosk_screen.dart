@@ -13,6 +13,7 @@ import 'screensaver_view.dart';
 import '../core/events.dart';
 import '../managers/browser/carousel_script.dart';
 import '../managers/browser/disable_suspend_script.dart';
+import '../managers/browser/ha_session_script.dart';
 import '../managers/browser/haptics_script.dart';
 import '../managers/device/haptics.dart';
 import '../managers/device/tap_sound.dart';
@@ -1713,6 +1714,14 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
     });
   }
 
+  /// Whether this page is the Music Assistant interface: it gets its own
+  /// seeding, and stays out of the external-page JavaScript injection — it
+  /// is the app's own shortcut, not a site the user brought in.
+  bool get _isMusicAssistant => isMusicAssistantOrigin(
+    widget.url,
+    widget.container.settings.get(defs.sendspinMaUrl),
+  );
+
   /// Signing the kiosk into Music Assistant with the token it already has.
   ///
   /// The Music Assistant web interface keeps its session as a JWT in
@@ -1726,23 +1735,40 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
   /// seeding put there itself (remembered alongside it, so a token changed
   /// in the settings replaces the stale one). A session someone signed into
   /// by hand is left alone.
+  /// A Home Assistant page opened here signs in from the dashboard's own
+  /// session instead of asking again (discussion #225).
   UnmodifiableListView<UserScript>? get _seedScripts {
     final token = widget.container.settings.get(defs.sendspinMaToken).trim();
-    final server = widget.container.settings.get(defs.sendspinMaUrl);
-    if (token.isEmpty || !isMusicAssistantOrigin(widget.url, server)) {
+    if (_isMusicAssistant) {
+      if (token.isEmpty) return null;
+      return UnmodifiableListView([
+        UserScript(
+          source:
+              'try {'
+              'var t = ${jsonEncode(token)};'
+              'var cur = localStorage.getItem("ma_access_token");'
+              'if (!cur || cur === localStorage.getItem("ks_ma_seed")) {'
+              'localStorage.setItem("ma_access_token", t);'
+              'localStorage.setItem("ks_ma_seed", t);'
+              '}'
+              '} catch (e) {}',
+          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+        ),
+      ]);
+    }
+    final target = Uri.tryParse(widget.url);
+    if (target == null ||
+        !widget.container.browser.isHomeAssistantOrigin(target)) {
       return null;
     }
+    final session = buildHaSessionScript(
+      tokens: widget.container.browser.haSession,
+      url: widget.url,
+    );
+    if (session == null) return null;
     return UnmodifiableListView([
       UserScript(
-        source:
-            'try {'
-            'var t = ${jsonEncode(token)};'
-            'var cur = localStorage.getItem("ma_access_token");'
-            'if (!cur || cur === localStorage.getItem("ks_ma_seed")) {'
-            'localStorage.setItem("ma_access_token", t);'
-            'localStorage.setItem("ks_ma_seed", t);'
-            '}'
-            '} catch (e) {}',
+        source: session,
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
       ),
     ]);
@@ -1763,6 +1789,17 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
         onWebViewCreated: (controller) {
           _controller = controller;
           if (widget.paused) controller.pause();
+        },
+        // The user's pasted JavaScript for external pages, after every load
+        // (issue #224). The Music Assistant page is the app's own shortcut
+        // and is left alone.
+        onLoadStop: (controller, url) async {
+          if (_isMusicAssistant) return;
+          final inject = widget.container.settings.get(
+            defs.browserInjectJsExternal,
+          );
+          if (inject.trim().isEmpty) return;
+          await controller.evaluateJavascript(source: inject);
         },
         // Same policy as the dashboard WebView: the pages that land here are
         // local servers with certificates of their own making (Music

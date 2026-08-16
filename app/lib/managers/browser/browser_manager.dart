@@ -102,6 +102,43 @@ class BrowserManager extends Manager {
     return sameOrigin(_currentUrl) || sameOrigin(startUrl);
   }
 
+  /// Whether [url] is served by this Home Assistant — the dashboard's own
+  /// origin, or the configured base URL's. The second is what the dashboard
+  /// origin is not when the secure context proxy is on: the page runs on
+  /// loopback, while a screensaver or link URL names the real host.
+  bool isHomeAssistantOrigin(Uri url) {
+    if (isDashboardOrigin(url)) return true;
+    final base = Uri.tryParse(_settings.get(defs.haUrl).trim());
+    return base != null &&
+        base.hasScheme &&
+        base.scheme == url.scheme &&
+        base.host == url.host &&
+        base.port == url.port;
+  }
+
+  /// The Home Assistant session the dashboard is signed in with, as the
+  /// frontend keeps it (localStorage `hassTokens`), or null before the
+  /// dashboard has loaded one. Re-read on every dashboard load, so a
+  /// refreshed or re-authenticated session is the one that gets shared.
+  ///
+  /// External WebViews seed themselves from this (see ha_session_script.dart).
+  String? get haSession => _haSession;
+  String? _haSession;
+
+  Future<void> _captureHaSession() async {
+    final controller = _controller;
+    if (controller == null) return;
+    try {
+      final value = await controller.evaluateJavascript(
+        source: "localStorage.getItem('hassTokens')",
+      );
+      if (value is String && value.trim().isNotEmpty) _haSession = value;
+    } catch (_) {
+      // A page that denies storage access (or none loaded yet): nothing to
+      // share, and the previous session stays as it was.
+    }
+  }
+
   @override
   Future<void> init() async {
     // Rendering freeze (browser.freeze_on_screensaver): while the screensaver
@@ -778,6 +815,10 @@ class BrowserManager extends Manager {
     log.info(name, 'loaded $url');
     bus.publish(PageChanged(url: url));
     unawaited(_applyPendingLocalStorage());
+    final loaded = Uri.tryParse(url);
+    if (loaded != null && isHomeAssistantOrigin(loaded)) {
+      unawaited(_captureHaSession());
+    }
     // A WebView rebuilt under an active screensaver reappears visible, and
     // attach() could not re-hide it (no URL to match yet). Now there is one.
     unawaited(_syncFreeze());
