@@ -57,6 +57,21 @@ class NearbyDeviceTrackerTest {
     }
 
     @Test
+    fun connectedAddressesSurviveExpiryAndCarryTheFlag() {
+        val tracker = NearbyDeviceTracker { now }
+        tracker.observe(advertisement(1))
+        tracker.observe(advertisement(2))
+
+        // Both silent past the horizon; address 1 holds a GATT connection.
+        now += 11 * 60_000L
+        val remaining = tracker.snapshot(connected = setOf(1L))
+        assertEquals(1, remaining.size)
+        val survivor = remaining.single()
+        assertTrue(survivor["address"].toString().endsWith(":01"))
+        assertEquals(true, survivor["connected"])
+    }
+
+    @Test
     fun latestPayloadWinsAndCountAccumulates() {
         val tracker = NearbyDeviceTracker { now }
         tracker.observe(advertisement(7))

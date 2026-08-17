@@ -4099,6 +4099,16 @@ async function loadSettings() {
         (state.settings || []).find((o) => o.key === 'btproxy.nearby_sort')
           ?.value || 'last_seen';
       const byMac = (a, b) => `${a.mac}`.localeCompare(`${b.mac}`);
+      // Connected devices lead whatever the sort, mirroring the device
+      // list: they can never fall past the display cap.
+      if (devices.some((d) => d.connected)) {
+        return [
+          ...nearbySort(devices.filter((d) => d.connected)
+            .map((d) => ({ ...d, connected: false }))).map(
+            (d) => ({ ...d, connected: true })),
+          ...nearbySort(devices.filter((d) => !d.connected)),
+        ];
+      }
       const out = [...devices];
       if (mode === 'name') {
         out.sort((a, b) => {
@@ -4131,6 +4141,16 @@ async function loadSettings() {
         info.querySelector('.name').textContent =
           (d.identity || 'Unknown device') +
           (d.rotating ? '  (rotating address)' : '');
+        if (d.connected) {
+          // The devices this kiosk is actively serving a Home Assistant
+          // connection for; accent, not a signal tier color.
+          const link = document.createElement('span');
+          link.style.cssText = 'background:var(--accent); ' +
+            'color:var(--surface); border-radius:6px; padding:0 6px 1px; ' +
+            'font-size:11.5px; margin-left:8px; white-space:nowrap';
+          link.textContent = 'Connected';
+          info.querySelector('.name').appendChild(link);
+        }
         const seen = d.last_seen ? new Date(d.last_seen) : null;
         const age = seen ? Math.max(0, (Date.now() - seen) / 1000) : null;
         const ageText = age === null ? '' :

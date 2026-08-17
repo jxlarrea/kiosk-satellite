@@ -156,6 +156,9 @@ internal class ApiServer(
 
     fun hasAdvertisementSubscribers(): Boolean = sessions.any { it.wantsAdvertisements }
 
+    /** Fully connected addresses, raw, for the nearby-device tracker. */
+    fun gattConnectedSet(): Set<Long> = synchronized(gattLock) { gattConnected.toSet() }
+
     /** Addresses with an owned connection slot, formatted, for diagnostics. */
     fun activeGattAddresses(): List<String> = synchronized(gattLock) {
         gattOwner.keys.map { address ->

@@ -79,21 +79,28 @@ internal class NearbyDeviceTracker(
     fun clear() = synchronized(lock) { devices.clear() }
 
     /** Callers hold [lock]. */
-    private fun prune(now: Long) {
-        devices.values.removeAll { now - it.lastSeenAt > STALE_MS }
+    private fun prune(now: Long, keep: Set<Long> = emptySet()) {
+        devices.values.removeAll {
+            it.address !in keep && now - it.lastSeenAt > STALE_MS
+        }
     }
 
     /**
      * Snapshot for the bridge, newest first, stale entries expired: the
      * list and its count mean "heard in the last ten minutes", not "ever".
+     * [connected] addresses are exempt from expiry and flagged: a device
+     * with an active GATT link stops advertising, and expiring the row of
+     * the one device the kiosk is actively serving would be absurd.
      * Plain maps: it crosses a MethodChannel.
      */
-    fun snapshot(): List<Map<String, Any?>> = synchronized(lock) {
-        prune(clock())
+    fun snapshot(connected: Set<Long> = emptySet()): List<Map<String, Any?>> =
+        synchronized(lock) {
+        prune(clock(), keep = connected)
         devices.values
             .sortedByDescending { it.lastSeenAt }
             .map { entry ->
                 mapOf(
+                    "connected" to (entry.address in connected),
                     "address" to formatAddress(entry.address),
                     "addressType" to entry.addressType,
                     "name" to entry.name,

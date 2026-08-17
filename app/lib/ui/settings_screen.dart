@@ -3309,9 +3309,41 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
         for (final device in visible)
           ListTile(
             dense: true,
-            title: Text(
-              '${device['identity'] ?? 'Unknown device'}'
-              '${device['rotating'] == true ? '  (rotating address)' : ''}',
+            title: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${device['identity'] ?? 'Unknown device'}'
+                        '${device['rotating'] == true ? '  (rotating address)' : ''}',
+                  ),
+                  // The devices this kiosk is actively serving a Home
+                  // Assistant connection for; the accent tone keeps it
+                  // apart from the signal tiers.
+                  if (device['connected'] == true) ...[
+                    const TextSpan(text: '  '),
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF44686C),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'Connected',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
             subtitle: Text.rich(
               TextSpan(

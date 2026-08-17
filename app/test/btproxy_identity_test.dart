@@ -109,6 +109,22 @@ void main() {
     expect(ouiOf('5c:e7:53:e7:a1:6b'), '5C:E7:53');
   });
 
+  test('connected devices lead the list whatever the sort', () {
+    final devices = [
+      {'mac': 'AA:00:00:00:00:01', 'identity': 'Loud beacon',
+        'rssi': -30, 'last_seen': '2026-08-17T07:00:09'},
+      {'mac': 'BB:00:00:00:00:02', 'identity': 'Quiet EcoFlow',
+        'connected': true, 'rssi': -90, 'last_seen': '2026-08-17T06:00:00'},
+    ];
+    for (final mode in ['last_seen', 'name', 'mac', 'rssi']) {
+      expect(
+        sortNearbyJson(devices, mode).first['mac'],
+        'BB:00:00:00:00:02',
+        reason: 'mode $mode',
+      );
+    }
+  });
+
   test('sortNearbyJson orders by every mode with stable ties', () {
     final devices = [
       {'mac': 'BB:00:00:00:00:02', 'identity': 'Unknown device',

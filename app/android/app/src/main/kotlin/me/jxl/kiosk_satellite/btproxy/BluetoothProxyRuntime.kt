@@ -139,7 +139,11 @@ internal object BluetoothProxyRuntime {
 
     /** The nearby-device inventory, newest first. Empty while stopped. */
     fun nearbyDevices(): List<Map<String, Any?>> =
-        if (isRunning) nearby.snapshot() else emptyList()
+        if (isRunning) {
+            nearby.snapshot(connected = server?.gattConnectedSet() ?: emptySet())
+        } else {
+            emptyList()
+        }
 
     private fun buildIdentity(context: Context, config: Config): ProxyIdentity {
         val suffix = stableSuffix(context)

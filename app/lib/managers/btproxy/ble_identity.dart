@@ -98,6 +98,7 @@ class NearbyDevice {
     required this.rotating,
     required this.rssi,
     required this.lastSeenAt,
+    this.connected = false,
     this.broadcastName,
     this.vendor,
   });
@@ -106,6 +107,9 @@ class NearbyDevice {
 
   /// The best label available: broadcast name, else class/vendor guess.
   final String identity;
+
+  /// An active GATT connection is being carried for this device right now.
+  final bool connected;
 
   /// True for resolvable-private addresses: the MAC changes periodically,
   /// so this row is an appearance, not a stable device.
@@ -123,6 +127,7 @@ class NearbyDevice {
         if (broadcastName != null) 'name': broadcastName,
         if (vendor != null) 'vendor': vendor,
         if (rotating) 'rotating': true,
+        if (connected) 'connected': true,
         'rssi': rssi,
         'last_seen': lastSeenAt.toIso8601String(),
       };
@@ -150,6 +155,24 @@ String ouiOf(String address) =>
 /// a list that reshuffles under the reader every ten seconds is unusable
 /// whatever the primary key.
 List<Map<String, Object?>> sortNearbyJson(
+  List<Map<String, Object?>> devices,
+  String mode,
+) {
+  // Actively connected devices always lead, whatever the sort: they are
+  // the ones the proxy is serving right now, there are at most a few, and
+  // they must never fall past the list's display cap.
+  final connected = [
+    for (final d in devices)
+      if (d['connected'] == true) d,
+  ];
+  final rest = [
+    for (final d in devices)
+      if (d['connected'] != true) d,
+  ];
+  return [..._sortByMode(connected, mode), ..._sortByMode(rest, mode)];
+}
+
+List<Map<String, Object?>> _sortByMode(
   List<Map<String, Object?>> devices,
   String mode,
 ) {
@@ -262,6 +285,7 @@ NearbyDevice classify(
   return NearbyDevice(
     address: address,
     identity: identity,
+    connected: raw['connected'] == true,
     broadcastName: (name != null && name.isEmpty) ? null : name,
     vendor: vendor,
     // Only anonymous devices earn the rotating mark. The top-bits check
