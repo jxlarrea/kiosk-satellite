@@ -67,7 +67,20 @@ internal class MdnsAnnouncer(
                 .also { it.setReferenceCounted(false); it.acquire() }
         }
         Thread({
-            runCatching { socket = MulticastSocket() }
+            // Source port 5353 is not a nicety: RFC 6762 has receivers
+            // silently ignore responses from any other port, and Home
+            // Assistant's zeroconf does exactly that, so an announcer on an
+            // ephemeral port is invisible however perfect its packets. The
+            // fallback stays for devices where something already holds the
+            // port exclusively; direct-IP setup still works there. TTL 255
+            // is the mDNS convention (the default of 1 dies at the first
+            // multicast reflector between VLANs).
+            socket = runCatching { MulticastSocket(MDNS_PORT) }
+                .getOrElse {
+                    Log.w(TAG, "mDNS port 5353 unavailable, announcing from an ephemeral port")
+                    runCatching { MulticastSocket() }.getOrNull()
+                }
+            runCatching { socket?.timeToLive = 255 }
             // Burst of three announcements a second apart (per RFC 6762),
             // then the steady 30s cadence.
             handler.post(announcer)
