@@ -70,7 +70,9 @@ internal class BleScanEngine(
     private var demanded = false
     private var scanning = false
     private var mode = ScannerMode.PASSIVE
-    private var consecutiveFailures = 0
+    // Volatile: written on the handler thread, peeked from the scan
+    // callback's binder thread to decide whether a reset post is needed.
+    @Volatile private var consecutiveFailures = 0
     @Volatile private var lastCallbackAt = 0L
     @Volatile private var receiverRegistered = false
 
@@ -122,6 +124,12 @@ internal class BleScanEngine(
     private val callback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             lastCallbackAt = android.os.SystemClock.elapsedRealtime()
+            // The first delivered result is the real success signal: an
+            // Android scan can "start" cleanly and fail asynchronously a
+            // moment later (seen on the Echo Show 8 while its adapter was
+            // still turning on), so resetting the failure counter at start
+            // time keeps the retry backoff pinned to its shortest step.
+            if (consecutiveFailures != 0) handler.post { consecutiveFailures = 0 }
             val advertisement = toAdvertisement(result) ?: return
             onAdvertisement(advertisement)
         }
@@ -238,7 +246,11 @@ internal class BleScanEngine(
             startTimestamps.addLast(now)
             scanning = true
             lastCallbackAt = now // arm the silence watchdog from start time
-            consecutiveFailures = 0
+            // consecutiveFailures deliberately NOT reset here: startScan
+            // returning is no proof of success (the failure arrives async
+            // via onScanFailed), and resetting early kept the backoff at
+            // its shortest step through an endless failure loop. The first
+            // onScanResult resets it instead.
             onStateChange(ScannerState.RUNNING, mode)
             Log.i(TAG, "scan started ($reason)")
         } catch (e: Exception) {
