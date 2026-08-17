@@ -22,6 +22,16 @@ internal class NearbyDeviceTracker(
     private companion object {
         /** Plenty for a home plus passing traffic; oldest-seen evicts first. */
         const val MAX_DEVICES = 400
+
+        /**
+         * An address unheard this long is gone: rotated away, out of range,
+         * or switched off. BLE advertisers repeat every few seconds, so ten
+         * minutes of silence is decisive. Without expiry a nine-hour soak
+         * pinned the inventory at [MAX_DEVICES]: every Apple and Shield
+         * address rotation added a row and nothing ever left, so the count
+         * sensor read the cap and the list filled with dead appearances.
+         */
+        const val STALE_MS = 10 * 60_000L
     }
 
     private class Entry(val address: Long) {
@@ -45,8 +55,11 @@ internal class NearbyDeviceTracker(
         synchronized(lock) {
             val entry = devices.getOrPut(adv.address) {
                 if (devices.size >= MAX_DEVICES) {
-                    devices.values.minByOrNull { it.lastSeenAt }?.let {
-                        devices.remove(it.address)
+                    prune(now)
+                    if (devices.size >= MAX_DEVICES) {
+                        devices.values.minByOrNull { it.lastSeenAt }?.let {
+                            devices.remove(it.address)
+                        }
                     }
                 }
                 Entry(adv.address)
@@ -65,8 +78,18 @@ internal class NearbyDeviceTracker(
 
     fun clear() = synchronized(lock) { devices.clear() }
 
-    /** Snapshot for the bridge, newest first. Plain maps: it crosses a MethodChannel. */
+    /** Callers hold [lock]. */
+    private fun prune(now: Long) {
+        devices.values.removeAll { now - it.lastSeenAt > STALE_MS }
+    }
+
+    /**
+     * Snapshot for the bridge, newest first, stale entries expired: the
+     * list and its count mean "heard in the last ten minutes", not "ever".
+     * Plain maps: it crosses a MethodChannel.
+     */
     fun snapshot(): List<Map<String, Any?>> = synchronized(lock) {
+        prune(clock())
         devices.values
             .sortedByDescending { it.lastSeenAt }
             .map { entry ->

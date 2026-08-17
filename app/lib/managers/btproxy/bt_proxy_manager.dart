@@ -51,6 +51,14 @@ class BtProxyManager extends Manager {
       if (!e.key.startsWith('btproxy.') && e.key != defs.deviceName.key) {
         return;
       }
+      // UI-only keys: the sort order and the OUI lookup live entirely on
+      // the Dart side and are read live. Restarting the native proxy for
+      // them drops Home Assistant's session for nothing (it cost .71 its
+      // only reconnect of an otherwise unbroken nine-hour soak).
+      if (e.key == defs.btproxyNearbySort.key ||
+          e.key == defs.btproxyMacLookup.key) {
+        return;
+      }
       // The first start writes the generated key into settings; restarting
       // on our own write would bounce the server (and HA's session) for a
       // value the running server already has.
