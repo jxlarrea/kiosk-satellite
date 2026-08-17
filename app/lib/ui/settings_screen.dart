@@ -150,6 +150,12 @@ const _categories = <(String, String, Object, String)>[
     Icons.cast_outlined,
     'Play images, videos and audio remotely',
   ),
+  (
+    'Bluetooth Proxy',
+    'Bluetooth Proxy',
+    Icons.bluetooth_outlined,
+    'Relay Bluetooth devices to Home Assistant',
+  ),
   ('MQTT', 'MQTT Settings', Icons.hub_outlined, 'Publish to an MQTT broker'),
   (
     'Kiosk',
@@ -4881,6 +4887,22 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               'Needed by motion detection, camera snapshots and pages '
               'that ask for the camera.',
           onGrant: () => ensureOsPermission(Permission.camera),
+        ),
+        _row(
+          granted: perms?.bluetooth,
+          needed: settings.get(btproxyEnabled),
+          missingIcon: Icons.bluetooth_disabled_outlined,
+          title: 'Nearby devices',
+          held: 'The Bluetooth proxy can scan for nearby devices.',
+          missing:
+              'The Bluetooth proxy is switched on and cannot scan.',
+          idle: 'Needed by the Bluetooth proxy to scan for devices.',
+          onGrant: () async {
+            // One dialog covers the pair (they share Android's "Nearby
+            // devices" group); the second request returns silently.
+            await ensureOsPermission(Permission.bluetoothScan);
+            await ensureOsPermission(Permission.bluetoothConnect);
+          },
         ),
         _row(
           granted: perms?.notification,

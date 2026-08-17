@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- The kiosk can now act as a Bluetooth proxy for Home Assistant, relaying BLE advertisements from nearby devices (BTHome sensors, thermometers, iBeacons, plant sensors and anything else Home Assistant's Bluetooth integration understands) exactly like an ESPHome Bluetooth proxy, with no ESP32 and no custom integration: Home Assistant discovers the kiosk through its own ESPHome integration and asks for the encryption key the kiosk shows in its settings. Every kiosk becomes a Bluetooth coverage point in its room, and several of them form a mesh on their own, since Home Assistant merges its Bluetooth sources and listens through whichever proxy hears a device best. The proxy is advertisement-only by design and says so to Home Assistant, so no lock or switch ever gets an active connection routed through a path that cannot carry one. Scanning is built to survive what Android does to long-running scans: a watchdog restarts a silently stalled scanner, a Bluetooth toggle or stack crash suspends the proxy and it resumes the moment the adapter returns, restarts are budgeted under Android's own scan-start throttle, the screen turning off does not stop it, and a half-open connection left by a Home Assistant restart is noticed and cleaned up within seconds. On a device whose Bluetooth hardware is genuinely broken the scanner reports itself failed to Home Assistant instead of pretending, and the new `btProxyStatus` remote command shows the proxy's state, counters and recent log end to end.
+
 ## v2026.8.52 - 2026-08-16
 
 ### Added

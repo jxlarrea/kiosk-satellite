@@ -22,6 +22,7 @@ class SystemPermissions {
     required this.batteryUnrestricted,
     required this.camera,
     required this.location,
+    required this.bluetooth,
     required this.deviceAdmin,
     required this.writeSettings,
     required this.allFiles,
@@ -49,6 +50,12 @@ class SystemPermissions {
 
   /// Only a page ever wants this (geolocation). Nothing native here uses it.
   final bool location;
+
+  /// The "Nearby devices" pair (scan + connect) behind the Bluetooth proxy.
+  /// One value for both: Android grants them from the same dialog, and a
+  /// half-granted pair scans nothing anyway. Android 11 and older grant
+  /// Bluetooth at install, so this reads true there.
+  final bool bluetooth;
 
   /// The device admin grant behind the real "Screen off" (lockNow).
   final bool deviceAdmin;
@@ -108,6 +115,8 @@ class SystemPermissions {
         batteryUnrestricted: await BackgroundListening.isBatteryUnrestricted(),
         camera: await Permission.camera.isGranted,
         location: await Permission.locationWhenInUse.isGranted,
+        bluetooth: await Permission.bluetoothScan.isGranted &&
+            await Permission.bluetoothConnect.isGranted,
         deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
         writeSettings: await _canWriteSettings(),
         allFiles: await _hasAllFilesAccess(),
@@ -125,6 +134,7 @@ class SystemPermissions {
     batteryUnrestricted: false,
     camera: false,
     location: false,
+    bluetooth: false,
     deviceAdmin: false,
     writeSettings: false,
     allFiles: false,
@@ -139,6 +149,7 @@ class SystemPermissions {
         'batteryUnrestricted': batteryUnrestricted,
         'camera': camera,
         'location': location,
+        'bluetooth': bluetooth,
         'deviceAdmin': deviceAdmin,
         'writeSettings': writeSettings,
         'allFiles': allFiles,

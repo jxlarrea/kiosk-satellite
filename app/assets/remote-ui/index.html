@@ -651,6 +651,10 @@
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h.01M3 15a4 4 0 0 1 4 4M3 11a8 8 0 0 1 8 8"/><path d="M8 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg></span>
           <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Play images, videos and audio remotely</span></span>
         </button>
+        <button data-tab="btproxy">
+          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg></span>
+          <span class="nav-text"><span class="nav-title">Bluetooth Proxy</span><span class="nav-sub">Relay Bluetooth devices to Home Assistant</span></span>
+        </button>
         <button data-tab="mqtt">
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 6.9 6.3 16m6.8-9.1 4.6 9.1M7.2 18h9.6"/></svg></span>
           <span class="nav-text"><span class="nav-title">MQTT Settings</span><span class="nav-sub">Publish to an MQTT broker</span></span>
@@ -768,6 +772,7 @@
     <div class="tab" id="tab-sendspin"></div>
     <div class="tab" id="tab-cameras"></div>
     <div class="tab" id="tab-dlna"></div>
+    <div class="tab" id="tab-btproxy"></div>
     <div class="tab" id="tab-files"></div>
     <div class="tab" id="tab-gestures"></div>
     <div class="tab" id="tab-device">
@@ -919,7 +924,7 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'launcher', 'screenaudio', 'screensaver',
-  'camera', 'mqtt', 'sendspin', 'cameras', 'dlna', 'files', 'gestures', 'device', 'about', 'logs'];
+  'camera', 'mqtt', 'sendspin', 'cameras', 'dlna', 'btproxy', 'files', 'gestures', 'device', 'about', 'logs'];
 // Old bookmarks from before the tabs were consolidated keep landing
 // somewhere sensible.
 const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs' };
@@ -932,7 +937,8 @@ const TAB_TITLES = {
   mqtt: 'MQTT Settings',
   cameras: 'Camera Streams',
   sendspin: 'Music Assistant',
-  dlna: 'DLNA Renderer', files: 'File Manager', gestures: 'Gestures',
+  dlna: 'DLNA Renderer', btproxy: 'Bluetooth Proxy',
+  files: 'File Manager', gestures: 'Gestures',
   device: 'Device', about: 'About', logs: 'Logs',
 };
 
@@ -996,6 +1002,7 @@ const SEARCH_CATEGORY_TABS = {
   'Screensaver': 'screensaver', 'Camera': 'camera',
   'Home Assistant': 'homeassistant', 'Voice Satellite': 'voicesatellite',
   'MQTT': 'mqtt', 'Sendspin': 'sendspin', 'DLNA': 'dlna',
+  'Bluetooth Proxy': 'btproxy',
   'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
 };
 const SEARCH_EXTRAS = [
@@ -3883,6 +3890,7 @@ const CATEGORY_TABS = [
   ['tab-mqtt', ['MQTT']],
   ['tab-sendspin', ['Sendspin']],
   ['tab-dlna', ['DLNA']],
+  ['tab-btproxy', ['Bluetooth Proxy']],
   ['device-settings', ['Device']],
 ];
 
@@ -4191,6 +4199,12 @@ async function loadSettings() {
         held: 'Motion detection and snapshots can use the camera.',
         missing: 'The camera is switched on and cannot be opened.',
         idle: 'Needed by motion detection, camera snapshots and pages that ask for the camera.' },
+      { key: 'bluetooth', name: 'Nearby devices',
+        ask: ['bluetoothScan', 'bluetoothConnect'],
+        needed: on('btproxy.enabled'),
+        held: 'The Bluetooth proxy can scan for nearby devices.',
+        missing: 'The Bluetooth proxy is switched on and cannot scan.',
+        idle: 'Needed by the Bluetooth proxy to scan for devices.' },
       { key: 'notification', name: 'Notifications', ask: 'notifications',
         needed: background,
         held: 'The ongoing notification that keeps listening alive.',
@@ -4304,8 +4318,9 @@ async function loadSettings() {
               await api('/api/commands/openUiGuardSettings',
                 { method: 'POST', body: '{}' });
             } else {
+              // ask is one name or a list (the Bluetooth pair shares a row).
               await api('/api/commands/requestOsPermissions', { method: 'POST',
-                body: JSON.stringify({ which: [spec.ask] }) });
+                body: JSON.stringify({ which: [].concat(spec.ask) }) });
             }
           } catch (_) {}
           // The grant happens on the tablet; keep re-reading until it lands

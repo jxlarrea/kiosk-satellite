@@ -8,6 +8,7 @@ import 'managers/browser/browser_manager.dart';
 import 'managers/camera/camera_manager.dart';
 import 'managers/device/device_manager.dart';
 import 'managers/device_camera/device_camera_manager.dart';
+import 'managers/btproxy/bt_proxy_manager.dart';
 import 'managers/dlna/dlna_manager.dart';
 import 'managers/files/files_manager.dart';
 import 'managers/gestures/gestures_manager.dart';
@@ -70,6 +71,7 @@ class AppContainer {
     mqtt = MqttManager(bus, commands, log, settings);
     sendspin = SendspinManager(bus, commands, log, settings);
     dlna = DlnaManager(bus, commands, log, settings);
+    btProxy = BtProxyManager(bus, commands, log, settings);
     // Composition-root wiring: the opaque full-screen overlays report their
     // visibility so the dashboard WebView stops compositing underneath
     // them. The settings route reports from the UI, where its transition
@@ -117,6 +119,7 @@ class AppContainer {
   late final MqttManager mqtt;
   late final SendspinManager sendspin;
   late final DlnaManager dlna;
+  late final BtProxyManager btProxy;
   late final FilesManager files;
   late final GlanceManager glance;
   late final SoundManager sound;
@@ -154,6 +157,7 @@ class AppContainer {
     mqtt,
     sendspin,
     dlna,
+    btProxy,
     files,
     glance,
     sound,

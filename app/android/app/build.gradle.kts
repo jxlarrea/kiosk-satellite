@@ -128,4 +128,19 @@ dependencies {
     // plugin is not required.
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+
+    // Bluetooth proxy (me.jxl.kiosk_satellite.btproxy): the ESPHome native
+    // API requires Noise_NNpsk0_25519_ChaChaPoly_SHA256, and the platform
+    // JCA only grows X25519 at API 33 (minSdk is 24). BouncyCastle's
+    // lightweight (non-JCA) API provides X25519 + ChaCha20Poly1305 on every
+    // supported level; R8 strips all but the referenced primitives from the
+    // release build.
+    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
+
+    // The btproxy protocol layer is deliberately Android-free so it runs
+    // under plain JVM unit tests, where a real aioesphomeapi client can
+    // exercise the wire format end to end.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.3.20")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }

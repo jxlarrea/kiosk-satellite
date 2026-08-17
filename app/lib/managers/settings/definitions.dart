@@ -3296,6 +3296,51 @@ String? validatePort(Object? value) {
   return null;
 }
 
+// ── Bluetooth proxy ────────────────────────────────────────────────────
+
+const btproxyEnabled = SettingDef<bool>(
+  key: 'btproxy.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable Bluetooth proxy',
+  description:
+      'Relay nearby Bluetooth devices to Home Assistant, like an ESPHome '
+      'Bluetooth proxy. The device is discovered automatically.',
+  category: 'Bluetooth Proxy',
+);
+
+/// Generated on first enable, then stable for the install's lifetime: Home
+/// Assistant stores it in the config entry, so regenerating would take the
+/// proxy offline until the user re-entered it. Deliberately NOT `secret`:
+/// the whole point of this value is that the user reads it back and pastes
+/// it into Home Assistant's encryption key prompt.
+const btproxyKey = SettingDef<String>(
+  key: 'btproxy.key',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Encryption key',
+  description:
+      'Paste this key into Home Assistant when it asks for the encryption '
+      'key. Generated automatically when the proxy first starts.',
+  category: 'Bluetooth Proxy',
+  placeholder: 'Generated when the proxy starts',
+  dependsOn: 'btproxy.enabled',
+);
+
+const btproxyPort = SettingDef<String>(
+  key: 'btproxy.port',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'API port',
+  description:
+      'The port Home Assistant connects to. Leave empty for the ESPHome '
+      'standard, 6053.',
+  category: 'Bluetooth Proxy',
+  placeholder: '6053',
+  dependsOn: 'btproxy.enabled',
+  validator: validatePort,
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -3602,6 +3647,9 @@ const List<SettingDef<Object>> allSettings = [
   dlnaEnabled,
   dlnaAudioBackground,
   dlnaPort,
+  btproxyEnabled,
+  btproxyKey,
+  btproxyPort,
   deviceName,
   uiTheme,
   disableImpeller,

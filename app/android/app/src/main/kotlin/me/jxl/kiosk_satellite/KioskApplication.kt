@@ -72,6 +72,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
     private lateinit var lightSensor: LightSensor
     private lateinit var haptics: HapticsBridge
     private lateinit var tapSound: TapSoundBridge
+    private lateinit var bluetoothProxy: BluetoothProxyBridge
 
     override fun onCreate() {
         super.onCreate()
@@ -114,5 +115,6 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         lightSensor = LightSensor(applicationContext, messenger)
         haptics = HapticsBridge(applicationContext, messenger)
         tapSound = TapSoundBridge(applicationContext, messenger)
+        bluetoothProxy = BluetoothProxyBridge(applicationContext, messenger)
     }
 }

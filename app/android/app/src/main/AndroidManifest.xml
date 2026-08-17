@@ -33,6 +33,20 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Bluetooth proxy: relaying BLE advertisements to Home Assistant.
+         The modern runtime pair on 12+; neverForLocation keeps the scan
+         grant from dragging location in. The legacy pair below is the whole
+         Bluetooth grant on 11 and older (where scanning also needs the
+         location permissions already declared above, plus location services
+         switched on). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30"/>
     <!-- Background listening. Android freezes cached processes whole, so without
          a foreground service the mic, the WebView and our own Dart all stop the
          moment another app is in front. -->
@@ -43,6 +57,10 @@
          unless a camera-type foreground service is running; the type is only
          attached when the CAMERA permission is granted (WakeWordService). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA"/>
+    <!-- Keeps BLE scan callbacks flowing while the app is not on screen:
+         Android 14+ requires the connectedDevice type for that, and the type
+         requires this permission (BluetoothProxyService). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
     <!-- The service's notification. Denied, the service still runs; it just says
          nothing, which is worse for the person in the room than for us. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
@@ -109,6 +127,12 @@
             android:name=".WakeWordService"
             android:exported="false"
             android:foregroundServiceType="microphone|camera"/>
+        <!-- The Bluetooth proxy's unfreeze exemption; the proxy itself lives
+             in btproxy/BluetoothProxyRuntime. See BluetoothProxyService. -->
+        <service
+            android:name=".BluetoothProxyService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice"/>
         <!-- Crash recovery (issue #94): the sticky restart of this empty
              service is what relaunches the kiosk after a native crash, and
              the heartbeat alarm below is its backstop on OEMs that restart

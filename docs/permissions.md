@@ -32,7 +32,8 @@ do.
 | All files access | The File Manager's shared storage root. Without it the manager still works on the app's own folder. Android 11+; on older versions the storage permission below is the whole grant. |
 | Usage access | Lets the MQTT **Foreground app** sensor name whichever app is on screen. Without it the sensor still reports Kiosk Satellite while the kiosk is frontmost, just never another app. |
 | Device admin | The real **Screen off**: powers the panel down instead of only blacking it out. |
-| Location | Only used by dashboard pages that ask for the device location. Nothing native uses it. |
+| Location | Only used by dashboard pages that ask for the device location. Nothing native uses it, except BLE scanning on Android 11 and older, where the OS requires it (see Nearby devices). |
+| Nearby devices | The Bluetooth scan and connect pair behind the [Bluetooth proxy](bluetooth-proxy.md). A runtime prompt on Android 12+; granted at install before that, where Android instead requires Location plus location services on for scan results. |
 | System UI guard | An accessibility service that closes the notification shade and recents while kiosk protections hold. See [Kiosk and Lockdown](kiosk.md#required-system-permissions). |
 | Media library | Reading the folder the Local Media screensaver was pointed at. |
 
@@ -52,6 +53,10 @@ lines that match the device and let the others fail (a failed `pm grant`
 changes nothing):
 
 ```
+# Android 12 and later: the Bluetooth proxy's scan/connect pair
+adb shell pm grant me.jxl.kiosk_satellite android.permission.BLUETOOTH_SCAN
+adb shell pm grant me.jxl.kiosk_satellite android.permission.BLUETOOTH_CONNECT
+
 # Android 13 and later
 adb shell pm grant me.jxl.kiosk_satellite android.permission.POST_NOTIFICATIONS
 adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_MEDIA_IMAGES

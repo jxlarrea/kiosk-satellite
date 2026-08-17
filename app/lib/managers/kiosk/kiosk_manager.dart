@@ -328,8 +328,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           'which':
               'explicit list of permissions to request (microphone, camera, '
               'notifications, batteryOptimizations, overlay, location, '
-              'writeSettings, allFiles, usageAccess, deviceAdmin); '
-              'overrides full',
+              'bluetoothScan, bluetoothConnect, writeSettings, allFiles, '
+              'usageAccess, deviceAdmin); overrides full',
         },
         handler: (p) async {
           const known = <String, Permission>{
@@ -342,6 +342,12 @@ class KioskManager extends Manager with WidgetsBindingObserver {
             // list offers it like the rest, and the remote admin can only
             // ask through this command (issue #156).
             'location': Permission.locationWhenInUse,
+            // The Bluetooth proxy's pair. One dialog covers both on
+            // Android 12+ (they share the "Nearby devices" group); on
+            // older Android they are install-time grants and both requests
+            // come back granted without a prompt.
+            'bluetoothScan': Permission.bluetoothScan,
+            'bluetoothConnect': Permission.bluetoothConnect,
           };
           final which = p['which'];
           final wanted = which is List
@@ -349,12 +355,19 @@ class KioskManager extends Manager with WidgetsBindingObserver {
                   for (final name in which)
                     if (known.containsKey(name)) name as String,
                 ]
-              // "The recommended set" deliberately excludes location: no
-              // native feature uses it, pages ask for it themselves, and an
-              // unexplained location prompt during onboarding is exactly
-              // the kind of thing that gets an app distrusted.
+              // "The recommended set" deliberately excludes location (no
+              // native feature uses it; pages ask for it themselves) and
+              // the Bluetooth pair (the proxy is off by default): an
+              // unexplained prompt during onboarding is exactly the kind
+              // of thing that gets an app distrusted.
               : p['full'] == true
-              ? [for (final k in known.keys) if (k != 'location') k]
+              ? [
+                  for (final k in known.keys)
+                    if (k != 'location' &&
+                        k != 'bluetoothScan' &&
+                        k != 'bluetoothConnect')
+                      k,
+                ]
               : const ['microphone'];
           final results = <String, bool>{};
           for (final name in wanted) {
