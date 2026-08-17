@@ -4137,11 +4137,23 @@ async function loadSettings() {
           age < 60 ? `${Math.round(age)}s ago` :
           age < 3600 ? `${Math.round(age / 60)}m ago` :
           `${Math.round(age / 3600)}h ago`;
-        info.querySelector('.desc').textContent = [
+        // Same tiers as rssiTier in ble_identity.dart: -65 and up is
+        // same-room, to -84 adjacent-room, below that edge of range.
+        const rssi = d.rssi ?? -128;
+        const tier = rssi >= -65 ? 'var(--ok)' :
+          rssi >= -84 ? 'var(--warn)' : 'var(--error)';
+        const desc = info.querySelector('.desc');
+        desc.textContent = [
           d.mac,
           d.vendor && d.vendor !== d.identity ? d.vendor : null,
-          `${d.rssi} dBm`, ageText,
-        ].filter(Boolean).join('  ·  ');
+          '',
+        ].filter((x) => x !== null).join('  ·  ');
+        const dot = document.createElement('span');
+        dot.style.cssText = `color:${tier}; font-size:10px`;
+        dot.textContent = '● ';
+        desc.appendChild(dot);
+        desc.appendChild(document.createTextNode(
+          `${d.rssi} dBm  ·  ${ageText}`));
         row.appendChild(info);
         card.appendChild(row);
       }

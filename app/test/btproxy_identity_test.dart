@@ -134,6 +134,15 @@ void main() {
     expect('${devices.first['mac']}', 'BB:00:00:00:00:02');
   });
 
+  test('rssiTier buckets at the documented boundaries', () {
+    expect(rssiTier(-35), 'strong');
+    expect(rssiTier(-65), 'strong');
+    expect(rssiTier(-66), 'medium');
+    expect(rssiTier(-84), 'medium');
+    expect(rssiTier(-85), 'weak');
+    expect(rssiTier(-101), 'weak');
+  });
+
   test('toJson carries the fields the MQTT attributes need', () {
     final json = classify(
       raw(name: 'GVH1401A16B', companies: [34883], rssi: -61),

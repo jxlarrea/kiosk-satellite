@@ -189,6 +189,15 @@ List<Map<String, Object?>> sortNearbyJson(
   return sorted;
 }
 
+/// Buckets an RSSI into the three signal tiers the Nearby devices list
+/// colors. BLE through domestic walls: -65 dBm and better is same-room
+/// reception that never drops, down to -84 is an adjacent room and still
+/// dependable for sensors, -85 and below is the edge of range where
+/// advertisements start going missing. Both UIs map these to their
+/// green/yellow/red.
+String rssiTier(int rssi) =>
+    rssi >= -65 ? 'strong' : rssi >= -84 ? 'medium' : 'weak';
+
 /// Whether [address] is a resolvable private address: top two bits 01.
 /// Only these actually rotate; static random addresses (top bits 11, most
 /// Govee/Nordic sensors) are stable for the device's lifetime, and marking

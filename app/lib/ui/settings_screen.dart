@@ -14,7 +14,7 @@ import 'package:flutter/services.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../core/logging.dart';
-import '../managers/btproxy/ble_identity.dart' show sortNearbyJson;
+import '../managers/btproxy/ble_identity.dart' show rssiTier, sortNearbyJson;
 import '../managers/camera/models.dart' show CameraViewConfig;
 import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
 import '../managers/screensaver/screensaver_manager.dart'
@@ -3290,6 +3290,12 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
       widget.container.settings.get(btproxyNearbySort),
     );
     final visible = sorted.take(_shown).toList();
+    final theme = Theme.of(context);
+    Color tierColor(int rssi) => switch (rssiTier(rssi)) {
+      'strong' => Colors.green,
+      'medium' => Colors.orange,
+      _ => theme.colorScheme.error,
+    };
     return Column(
       children: [
         for (final device in visible)
@@ -3299,15 +3305,33 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
               '${device['identity'] ?? 'Unknown device'}'
               '${device['rotating'] == true ? '  (rotating address)' : ''}',
             ),
-            subtitle: Text(
-              [
-                '${device['mac']}',
-                if (device['vendor'] != null &&
-                    '${device['vendor']}' != '${device['identity']}')
-                  '${device['vendor']}',
-                '${device['rssi']} dBm',
-                _age(device['last_seen']),
-              ].join('  ·  '),
+            subtitle: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: [
+                      '${device['mac']}',
+                      if (device['vendor'] != null &&
+                          '${device['vendor']}' != '${device['identity']}')
+                        '${device['vendor']}',
+                      '',
+                    ].join('  ·  '),
+                  ),
+                  TextSpan(
+                    text: '● ',
+                    style: TextStyle(
+                      color: tierColor((device['rssi'] as int?) ?? -128),
+                      // The dot reads as a badge, not a character: keep it
+                      // from towering over the text line.
+                      fontSize: 10,
+                    ),
+                  ),
+                  TextSpan(
+                    text: '${device['rssi']} dBm'
+                        '  ·  ${_age(device['last_seen'])}',
+                  ),
+                ],
+              ),
             ),
           ),
         if (_devices.length > _shown)
