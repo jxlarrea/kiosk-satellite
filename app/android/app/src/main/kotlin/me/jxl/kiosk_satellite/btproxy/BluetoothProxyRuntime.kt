@@ -131,6 +131,7 @@ internal object BluetoothProxyRuntime {
             "received" to (s?.receivedCount?.get() ?: 0L),
             "forwarded" to (s?.forwardedCount?.get() ?: 0L),
             "subscribers" to (s?.hasAdvertisementSubscribers() ?: false),
+            "connections" to (s?.activeGattAddresses() ?: emptyList<String>()),
             "lastAdvertisementAt" to (s?.lastReceivedAt?.get() ?: 0L),
             "log" to synchronized(logRing) { logRing.toList() },
         )

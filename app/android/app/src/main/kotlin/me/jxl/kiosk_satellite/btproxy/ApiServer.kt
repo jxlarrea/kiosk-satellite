@@ -156,6 +156,14 @@ internal class ApiServer(
 
     fun hasAdvertisementSubscribers(): Boolean = sessions.any { it.wantsAdvertisements }
 
+    /** Addresses with an owned connection slot, formatted, for diagnostics. */
+    fun activeGattAddresses(): List<String> = synchronized(gattLock) {
+        gattOwner.keys.map { address ->
+            (5 downTo 0).joinToString(":") { "%02X".format((address shr (it * 8)) and 0xFF) } +
+                if (address in gattConnected) "" else " (connecting)"
+        }
+    }
+
     /** Callable from any thread, including the BLE scan callback. Cheap: map put under one lock. */
     fun publishAdvertisement(adv: BleAdvertisement) {
         receivedCount.incrementAndGet()
@@ -184,17 +192,21 @@ internal class ApiServer(
         when (event) {
             is GattEvent.Connected -> {
                 synchronized(gattLock) { gattConnected.add(event.address) }
+                log("GATT connected ${formatGattAddress(event.address)} mtu=${event.mtu}")
                 owner?.enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
                     GattCodec.connectionResponse(event.address, true, event.mtu, 0))
                 broadcastConnectionsFree()
             }
             is GattEvent.ConnectFailed -> {
+                log("GATT connect failed ${formatGattAddress(event.address)} error=${event.error}")
                 releaseGattAddress(event.address)
                 owner?.enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
                     GattCodec.connectionResponse(event.address, false, 0, event.error))
                 broadcastConnectionsFree()
             }
             is GattEvent.Disconnected -> {
+                log("GATT disconnected ${formatGattAddress(event.address)}" +
+                    if (event.error != 0) " error=${event.error}" else "")
                 releaseGattAddress(event.address)
                 owner?.enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
                     GattCodec.connectionResponse(event.address, false, 0, event.error))
@@ -237,6 +249,9 @@ internal class ApiServer(
                     GattCodec.clearCacheResponse(event.address, event.success, event.error))
         }
     }
+
+    private fun formatGattAddress(address: Long): String =
+        (5 downTo 0).joinToString(":") { "%02X".format((address shr (it * 8)) and 0xFF) }
 
     private fun releaseGattAddress(address: Long) {
         synchronized(gattLock) {
