@@ -30,9 +30,9 @@ import java.util.UUID
  *    stack callbacks post in, events go out in causal order. GATT
  *    notification streams have no sequence numbers; ordering is the
  *    correctness model.
- *  - One operation in flight per connection, pumped from a queue, each
- *    with a timeout. Android's GATT silently drops a second concurrent
- *    operation on the same client.
+ *  - One operation in flight across ALL connections, pumped from a global
+ *    queue, each with a timeout. The API permits concurrency across GATT
+ *    clients; real stacks refuse it with a bare false.
  *  - MTU is requested immediately on link-up (delaying it interrupts
  *    encryption setup on bonded devices) but every other operation waits
  *    for the MTU result or a short timeout.
@@ -66,8 +66,14 @@ internal class GattEngine(
         const val OPERATION_TIMEOUT_MS = 10_000L
         const val DISCONNECT_WATCHDOG_MS = 4_000L
         const val RETRY_133_DELAY_MS = 600L
-        const val COOLDOWN_BASE_MS = 30_000L
-        const val COOLDOWN_MAX_MS = 5 * 60_000L
+        // Gentle by design: the cooldown exists to break rapid 133 retry
+        // loops, not to punish a device that was merely busy. EcoFlows
+        // accept one central at a time and evict the proxy whenever the
+        // vendor app is open; with the old 30s-doubling-to-5min ladder,
+        // closing the app still left Home Assistant locked out for
+        // minutes and every entity unavailable.
+        const val COOLDOWN_BASE_MS = 10_000L
+        const val COOLDOWN_MAX_MS = 60_000L
         const val REQUESTED_MTU = 517
         /** ATT error for "not connected / not ready", what bleak expects. */
         const val ERROR_NOT_CONNECTED = 0x81
@@ -288,21 +294,28 @@ internal class GattEngine(
                 } catch (e: Exception) {
                     connections.remove(retry.address)
                     scanPause(false)
-                    startCooldown(retry.address)
+                    startCooldown(retry.address, 133)
                     deliver(GattEvent.ConnectFailed(retry.address, 133))
                 }
             }, RETRY_133_DELAY_MS)
             return
         }
-        startCooldown(connection.address)
+        startCooldown(connection.address, error)
         deliver(GattEvent.ConnectFailed(connection.address, error))
     }
 
-    private fun startCooldown(address: Long) {
-        val step = (cooldownStep[address] ?: (COOLDOWN_BASE_MS / 2)) * 2
-        cooldownStep[address] = step.coerceAtMost(COOLDOWN_MAX_MS)
-        cooldownUntil[address] =
-            android.os.SystemClock.elapsedRealtime() + cooldownStep[address]!!
+    private fun startCooldown(address: Long, error: Int) {
+        // Only stack-level 133 escalates: that is the failure mode where
+        // rapid retries genuinely make things worse. A peer that hung up
+        // (19) or timed out gets one flat, short breather.
+        val step = if (error == 133) {
+            ((cooldownStep[address] ?: (COOLDOWN_BASE_MS / 2)) * 2)
+                .coerceAtMost(COOLDOWN_MAX_MS)
+        } else {
+            COOLDOWN_BASE_MS
+        }
+        cooldownStep[address] = step
+        cooldownUntil[address] = android.os.SystemClock.elapsedRealtime() + step
     }
 
     @SuppressLint("MissingPermission")
