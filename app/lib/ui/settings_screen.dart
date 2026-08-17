@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../core/logging.dart';
+import '../managers/btproxy/ble_identity.dart' show sortNearbyJson;
 import '../managers/camera/models.dart' show CameraViewConfig;
 import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
 import '../managers/screensaver/screensaver_manager.dart'
@@ -1536,16 +1537,27 @@ class _CategoryContentState extends State<_CategoryContent> {
                 mqttPassword.key: _MqttValidateRow(container: container),
               if (widget.category == 'Sendspin')
                 sendspinMaToken.key: _MaValidateRow(container: container),
-              // The live list right under the lookup toggle that colors it.
-              // Rides the toggle's dependsOn: with the proxy off there is
-              // nothing to list and neither row renders.
+              // The live list right under the sort picker that orders it.
+              // Rides the section's dependsOn: with the proxy off there is
+              // nothing to list and none of these rows render.
               if (widget.category == 'Bluetooth Proxy')
-                btproxyMacLookup.key: SearchLandingTarget(
+                btproxyNearbySort.key: SearchLandingTarget(
                   id: 'x:btproxy_nearby',
                   child: _BtNearbyDevicesRow(container: container),
                 ),
             },
           ),
+        // Same shape as the Voice Satellite and Kiosk groups: the grant the
+        // feature needs, at the end of the feature's own page.
+        if (widget.category == 'Bluetooth Proxy') ...[
+          const SectionHeading('Required system permissions'),
+          SearchLandingTarget(
+            id: 'x:btproxy_permissions',
+            child: const SettingsCard(
+              children: [_BtProxyPermissionsTile()],
+            ),
+          ),
+        ],
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
         // has no page on the device, so its grants live here too.
@@ -3273,7 +3285,11 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
         'scanning.',
       );
     }
-    final visible = _devices.take(_shown).toList();
+    final sorted = sortNearbyJson(
+      _devices,
+      widget.container.settings.get(btproxyNearbySort),
+    );
+    final visible = sorted.take(_shown).toList();
     return Column(
       children: [
         for (final device in visible)
@@ -3295,7 +3311,7 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
             ),
           ),
         if (_devices.length > _shown)
-          HintRow('And ${_devices.length - _shown} more, newest first.'),
+          HintRow('Showing the first $_shown of ${_devices.length}.'),
       ],
     );
   }
@@ -5275,6 +5291,84 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
             onGrant: BackgroundListening.requestBatteryUnrestricted,
           ),
       ]),
+    );
+  }
+}
+
+/// The Bluetooth proxy's grant, in the per-feature shape Voice Satellite
+/// and Kiosk Mode use: what the feature needs, where the feature lives.
+/// The Device page's Permissions Manager stays the whole-app view.
+class _BtProxyPermissionsTile extends StatefulWidget {
+  const _BtProxyPermissionsTile();
+
+  @override
+  State<_BtProxyPermissionsTile> createState() =>
+      _BtProxyPermissionsTileState();
+}
+
+class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
+    with WidgetsBindingObserver {
+  bool? _bluetooth;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The dialog reports nothing on the way back; re-read on return.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final perms = await SystemPermissions.read();
+      if (!mounted) return;
+      setState(() => _bluetooth = perms.bluetooth);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _bluetooth = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final granted = _bluetooth;
+    return ListTile(
+      leading: Icon(
+        granted == true
+            ? Icons.check_circle_outline
+            : Icons.bluetooth_disabled_outlined,
+        color: granted == true ? null : theme.colorScheme.error,
+      ),
+      title: const Text('Nearby devices'),
+      subtitle: Text(
+        granted == true
+            ? 'The proxy can scan for nearby Bluetooth devices.'
+            : 'Without this the proxy cannot scan for devices.',
+      ),
+      trailing: granted == true
+          ? null
+          : TextButton(
+              onPressed: () async {
+                // One dialog covers the pair (Android's "Nearby devices"
+                // group); the second request returns silently.
+                await ensureOsPermission(Permission.bluetoothScan);
+                await ensureOsPermission(Permission.bluetoothConnect);
+                await _refresh();
+              },
+              child: const Text('Grant'),
+            ),
     );
   }
 }

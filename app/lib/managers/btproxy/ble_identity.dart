@@ -142,6 +142,53 @@ bool hasRealOui(String address) {
 String ouiOf(String address) =>
     address.split(':').take(3).join(':').toUpperCase();
 
+/// Orders the Nearby devices list (as the JSON maps [NearbyDevice.toJson]
+/// produces) by the user's chosen sort. Shared by the on-device list; the
+/// remote UI mirrors the same rules in its own renderer.
+///
+/// Ties fall back to the address so the order is stable between refreshes:
+/// a list that reshuffles under the reader every ten seconds is unusable
+/// whatever the primary key.
+List<Map<String, Object?>> sortNearbyJson(
+  List<Map<String, Object?>> devices,
+  String mode,
+) {
+  final sorted = List<Map<String, Object?>>.of(devices);
+  int byMac(Map<String, Object?> a, Map<String, Object?> b) =>
+      '${a['mac']}'.compareTo('${b['mac']}');
+  switch (mode) {
+    case 'name':
+      // Alphabetical by the shown label; unknowns sink to the bottom
+      // rather than clustering under U.
+      sorted.sort((a, b) {
+        final an = '${a['identity']}'.toLowerCase();
+        final bn = '${b['identity']}'.toLowerCase();
+        final aUnknown = an.startsWith('unknown');
+        final bUnknown = bn.startsWith('unknown');
+        if (aUnknown != bUnknown) return aUnknown ? 1 : -1;
+        final cmp = an.compareTo(bn);
+        return cmp != 0 ? cmp : byMac(a, b);
+      });
+    case 'mac':
+      sorted.sort(byMac);
+    case 'rssi':
+      // Strongest first: the devices actually in this room on top.
+      sorted.sort((a, b) {
+        final cmp = ((b['rssi'] as int?) ?? -128)
+            .compareTo((a['rssi'] as int?) ?? -128);
+        return cmp != 0 ? cmp : byMac(a, b);
+      });
+    default:
+      // last_seen: newest first, the order the tracker already emits;
+      // re-sorted anyway so a stale caller cannot depend on luck.
+      sorted.sort((a, b) {
+        final cmp = '${b['last_seen']}'.compareTo('${a['last_seen']}');
+        return cmp != 0 ? cmp : byMac(a, b);
+      });
+  }
+  return sorted;
+}
+
 /// Whether [address] is a resolvable private address: top two bits 01.
 /// Only these actually rotate; static random addresses (top bits 11, most
 /// Govee/Nordic sensors) are stable for the device's lifetime, and marking

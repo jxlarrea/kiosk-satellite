@@ -1008,6 +1008,9 @@ const SEARCH_CATEGORY_TABS = {
 const SEARCH_EXTRAS = [
   { tab: 'btproxy', title: 'Nearby devices',
     desc: 'The Bluetooth devices this kiosk hears, with names where known.' },
+  { tab: 'btproxy', title: 'Required system permissions',
+    desc: 'The Nearby devices grant the Bluetooth proxy needs to scan.',
+    heading: 'Required system permissions' },
   { tab: 'homeassistant', title: 'Validate connection',
     desc: 'Check the URL and token against your Home Assistant.' },
   { tab: 'homeassistant', title: 'Secure context proxy',
@@ -4087,9 +4090,38 @@ async function loadSettings() {
     empty.textContent = 'Nothing heard yet.';
     card.appendChild(empty);
     root.appendChild(card);
+    // Same ordering rules as the device list (sortNearbyJson in
+    // ble_identity.dart); the sort select saves like any setting, and the
+    // re-render plus the 15s poll both read its live value from the row.
+    const nearbySort = (devices) => {
+      const mode = document.querySelector(
+        '[data-key="btproxy.nearby_sort"] select')?.value ||
+        (state.settings || []).find((o) => o.key === 'btproxy.nearby_sort')
+          ?.value || 'last_seen';
+      const byMac = (a, b) => `${a.mac}`.localeCompare(`${b.mac}`);
+      const out = [...devices];
+      if (mode === 'name') {
+        out.sort((a, b) => {
+          const an = `${a.identity || ''}`.toLowerCase();
+          const bn = `${b.identity || ''}`.toLowerCase();
+          const au = an.startsWith('unknown'), bu = bn.startsWith('unknown');
+          if (au !== bu) return au ? 1 : -1;
+          return an.localeCompare(bn) || byMac(a, b);
+        });
+      } else if (mode === 'mac') {
+        out.sort(byMac);
+      } else if (mode === 'rssi') {
+        out.sort((a, b) => ((b.rssi ?? -128) - (a.rssi ?? -128)) || byMac(a, b));
+      } else {
+        out.sort((a, b) =>
+          `${b.last_seen}`.localeCompare(`${a.last_seen}`) || byMac(a, b));
+      }
+      return out;
+    };
     const renderNearby = (devices) => {
       card.innerHTML = '';
       if (!devices.length) { card.appendChild(empty); return; }
+      devices = nearbySort(devices);
       for (const d of devices.slice(0, 25)) {
         const row = document.createElement('div');
         row.className = 'row';
@@ -4117,7 +4149,7 @@ async function loadSettings() {
         const more = document.createElement('div');
         more.className = 'desc';
         more.style.cssText = 'margin-top:8px';
-        more.textContent = `And ${devices.length - 25} more, newest first.`;
+        more.textContent = `Showing the first 25 of ${devices.length}.`;
         card.appendChild(more);
       }
     };
@@ -4128,7 +4160,68 @@ async function loadSettings() {
       .catch(() => {});
     if (window.__btNearbyTimer) clearInterval(window.__btNearbyTimer);
     window.__btNearbyTimer = setInterval(pollNearby, 15000);
+    // Flipping the sort re-orders the list now, not at the next poll.
+    document.querySelector('[data-key="btproxy.nearby_sort"] select')
+      ?.addEventListener('change', () => setTimeout(pollNearby, 50));
     pollNearby();
+
+    // Required system permissions, the per-feature group the Voice
+    // Satellite and Kiosk tabs carry. The grant dialog opens on the
+    // device; the row polls until it lands, like the Kiosk rows.
+    {
+      const h = document.createElement('h2');
+      h.className = 'card-title';
+      h.textContent = 'Required system permissions';
+      const permCard = document.createElement('div');
+      permCard.className = 'card';
+      const row = document.createElement('div');
+      row.className = 'row';
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+      info.querySelector('.name').textContent = 'Nearby devices';
+      info.querySelector('.desc').textContent = 'Checking...';
+      row.appendChild(info);
+      const stateEl = document.createElement('span');
+      stateEl.style.whiteSpace = 'nowrap';
+      row.appendChild(stateEl);
+      permCard.appendChild(row);
+      root.appendChild(h);
+      root.appendChild(permCard);
+      const readPerm = () => api('/api/commands/getSystemPermissions',
+        { method: 'POST', body: '{}' }).then((r) => r.json())
+        .then((res) => (res.data || {}).bluetooth ?? null).catch(() => null);
+      const paint = (ok) => {
+        info.querySelector('.desc').textContent = ok === null
+          ? 'Status unavailable.'
+          : ok ? 'The proxy can scan for nearby Bluetooth devices.'
+               : 'Without this the proxy cannot scan for devices.';
+        stateEl.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
+        stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
+        row.querySelector('button')?.remove();
+        if (ok !== false) return;
+        const btn = document.createElement('button');
+        btn.className = 'btn-ghost';
+        btn.textContent = 'Grant on device';
+        btn.style.cssText = 'flex-shrink:0;';
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            await api('/api/commands/requestOsPermissions', { method: 'POST',
+              body: JSON.stringify(
+                { which: ['bluetoothScan', 'bluetoothConnect'] }) });
+          } catch (_) {}
+          for (let i = 0; i < 30; i++) {
+            await new Promise((r) => setTimeout(r, 2500));
+            const now = await readPerm();
+            if (now === true) { paint(true); return; }
+          }
+          btn.disabled = false;
+        });
+        row.appendChild(btn);
+      };
+      readPerm().then(paint);
+    }
   }
 
   // ── Lockdown Mode note ────────────────────────────────────────────────

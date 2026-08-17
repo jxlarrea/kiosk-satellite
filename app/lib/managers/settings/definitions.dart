@@ -3346,6 +3346,24 @@ const btproxyMacLookup = SettingDef<bool>(
   dependsOn: 'btproxy.enabled',
 );
 
+const btproxyNearbySort = SettingDef<String>(
+  key: 'btproxy.nearby_sort',
+  type: SettingType.select,
+  defaultValue: 'last_seen',
+  title: 'Sort by',
+  description: 'The order of the nearby devices list below.',
+  category: 'Bluetooth Proxy',
+  section: 'Nearby devices',
+  options: ['last_seen', 'name', 'mac', 'rssi'],
+  optionLabels: {
+    'last_seen': 'Last seen',
+    'name': 'Name',
+    'mac': 'MAC address',
+    'rssi': 'Signal strength',
+  },
+  dependsOn: 'btproxy.enabled',
+);
+
 const btproxyPort = SettingDef<String>(
   key: 'btproxy.port',
   type: SettingType.string,
@@ -3670,6 +3688,7 @@ const List<SettingDef<Object>> allSettings = [
   btproxyKey,
   btproxyPort,
   btproxyMacLookup,
+  btproxyNearbySort,
   deviceName,
   uiTheme,
   disableImpeller,

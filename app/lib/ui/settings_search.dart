@@ -146,6 +146,12 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
         'The Bluetooth devices this kiosk hears, with names where known.',
     anchorId: 'x:btproxy_nearby',
   ),
+  SettingsSearchEntry(
+    category: 'Bluetooth Proxy',
+    title: 'Required system permissions',
+    description: 'The Nearby devices grant the Bluetooth proxy needs to scan.',
+    anchorId: 'x:btproxy_permissions',
+  ),
 ];
 
 /// The full index: the category pages, every non-hidden definition whose
