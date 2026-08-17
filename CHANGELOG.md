@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- The Immich screensaver can now show two portrait photos side by side, filling a landscape screen with photos instead of leaving most of it to the blurred backdrop behind a single portrait shot. "Pair portrait photos" is on by default: each portrait photo reaches ahead for the next portrait photo in the playlist, wherever it sits, and the two share the screen half each and hold together as one slide, so portrait shots scattered between landscape ones are paired rather than left to whatever happens to follow them. Nothing is shown twice or skipped, only reordered, and turning the setting off gives every photo the screen to itself as before. Square photos and videos never pair, and a portrait screen does not either, since two halves of it would be slivers. With the metadata overlay on, a pair carries the left photo's details in the bottom-left corner and the right photo's in the bottom-right, and any corner widget in those two spots hides for as long as the pair is on screen so nothing sits on top of them. Metadata in a right-hand corner now also puts its icons on the right of the text, as the weather widget does, instead of hanging them off the inner edge.
+
+### Fixed
+- The photo screensavers now judge a photo's shape by how it will actually appear. A phone photographing in portrait usually stores a landscape frame plus an orientation tag, and only the frame was being measured, so those photos were treated as landscape: "Fill the screen" cropped them as though they matched the panel, and the new portrait pairing passed them over. The orientation tag is now read as well, on the device and from the Immich server's own metadata.
+
 ## v2026.8.51 - 2026-08-16
 
 ### Fixed

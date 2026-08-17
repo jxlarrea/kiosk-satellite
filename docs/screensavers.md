@@ -94,8 +94,8 @@ app storage so they survive reboots), **Seconds per photo**, **Shuffle**,
 ### Immich Media
 
 An [Immich](https://immich.app/) server as a photo frame, with a local
-cache and an optional metadata overlay. It has its own page:
-[Immich](immich.md).
+cache, an optional metadata overlay, and optional pairing of portrait
+photos side by side. It has its own page: [Immich](immich.md).
 
 ### Website
 
@@ -158,7 +158,10 @@ type allows, but never over Black with Hide all extras. The group's
 the screen, and moving it while the screensaver shows previews live.
 Widgets own their corners: the Immich metadata overlay steps to the
 first free corner when a widget claims its spot, and hides only when
-every corner is taken.
+every corner is taken. The one exception is a pair of portrait Immich
+photos, which needs both bottom corners for its two sets of details: a
+widget there hides for as long as the pair is on screen and comes back
+with the next single photo.
 
 ### Small clock
 

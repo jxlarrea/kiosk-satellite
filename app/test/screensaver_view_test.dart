@@ -57,4 +57,17 @@ void main() {
     await pumpEventQueue();
     expect(views, ['clock']);
   });
+
+  // The Immich screensaver claims both bottom corners while a pair of
+  // portrait photos shares the screen, so the corner widgets there stand
+  // down instead of landing on the two metadata panels.
+  test('claimed corners start empty and are released on stop', () async {
+    await build('immich');
+    expect(saver.claimedCorners.value, isEmpty);
+    await saver.start();
+    saver.claimedCorners.value = const {'bottom_left', 'bottom_right'};
+    await saver.stop();
+    await pumpEventQueue();
+    expect(saver.claimedCorners.value, isEmpty);
+  });
 }

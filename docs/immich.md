@@ -35,6 +35,7 @@ Videos in the selection play too, muted and in full.
 | Shuffle | off | Random order instead of the server's newest-first order. |
 | Transition | Crossfade | The same set every slideshow mode offers: none, crossfade, slide, zoom, Ken Burns, or random. |
 | Fill the screen | on | See below. |
+| Pair portrait photos | on | See below. |
 | Cache media locally | on | See below. |
 | Cache size (items) | 500 | The oldest cached items are deleted once the cache is full. Live usage shows under the field. |
 | Show metadata | off | See below. |
@@ -53,6 +54,39 @@ either orientation. Portrait and square photos, which such a crop would
 ruin, keep their full frame and get the photo itself, enlarged, blurred
 and dimmed, as the backdrop instead of black bars.
 
+## Pair portrait photos
+
+A photo taken in portrait uses about a third of a landscape screen and
+leaves the rest to the blurred backdrop. **Pair portrait photos**, on by
+default, shows two portrait photos in a row side by side instead, half
+the screen each, so the panel is filled with photos rather than
+backdrop. Turn it off to give every photo the screen to itself.
+The pair counts as one slide: it holds for the usual interval and then
+both are replaced together.
+
+A portrait photo is not limited to the photo that happens to follow it.
+When the playlist is read, each portrait photo reaches ahead for the next
+portrait photo anywhere in the list and brings it back to its side, so a
+library with portrait shots scattered between landscape ones still pairs
+them all. Nothing is shown twice or skipped; the order is only
+rearranged, and it happens after the shuffle so it follows the order the
+slideshow actually runs in.
+
+Pairing needs both photos taller than wide (square ones do not pair,
+since half a screen each would show them small) and the screen itself
+landscape; videos never pair. A photo left without a partner, the odd one
+out of an odd number of portrait shots, shows on its own exactly as
+before. Photos are measured by the shape Immich reports, including the
+orientation tag phones set instead of rotating the pixels, so a portrait
+photo stored as a landscape frame still counts as portrait.
+
+With the metadata overlay on, a pair carries two sets of details: the
+left photo's in the bottom-left corner and the right photo's in the
+bottom-right, each under its own photo. For as long as the pair is on
+screen, any [widget](screensavers.md#widgets) in those two corners is
+hidden, so nothing sits on top of the details; it reappears with the
+next single photo.
+
 ## Metadata overlay
 
 **Show metadata** puts the photo's details in a corner of the screen
@@ -64,6 +98,12 @@ actually carries the information:
 - Date taken.
 - Camera details: focal length, aperture and ISO from EXIF.
 - Location: city, state and country from EXIF.
+
+In a right-hand corner the lines are right-aligned with their icons on
+the right, mirroring the layout of the corner widgets.
+
+A pair of portrait photos overrides the chosen corner, using both bottom
+corners so each photo's details sit under it.
 
 ## The local cache
 

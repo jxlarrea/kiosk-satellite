@@ -472,6 +472,14 @@ class ScreensaverManager extends Manager {
   /// overlays without the view itself having to change.
   final ValueNotifier<bool?> scheduleWidgets = ValueNotifier(null);
 
+  /// Corners the running mode has taken for itself, which the corner
+  /// widgets stand down from for as long as it holds them. The Immich
+  /// screensaver claims both bottom corners while a pair of portrait photos
+  /// shares the screen: each photo's metadata sits under its own half, and
+  /// a clock or weather widget there would land on top of it. Empty the
+  /// rest of the time, so widgets behave exactly as before.
+  final ValueNotifier<Set<String>> claimedCorners = ValueNotifier(const {});
+
   /// The same for the At a glance row, which is its own setting and so its
   /// own override: a night entry can drop the widgets, the row, or both.
   final ValueNotifier<bool?> scheduleGlance = ValueNotifier(null);
@@ -675,6 +683,7 @@ class ScreensaverManager extends Manager {
     _publishMotionPolicy(null);
     scheduleWidgets.value = null;
     scheduleGlance.value = null;
+    claimedCorners.value = const {};
     bus.publish(const ScreensaverStateChanged(active: false));
   }
 

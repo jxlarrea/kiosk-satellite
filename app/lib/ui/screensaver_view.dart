@@ -13,13 +13,20 @@ import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
+import '../core/image_orientation.dart';
 import '../core/locale_dates.dart';
 import '../managers/browser/ha_session_script.dart';
 import '../managers/browser/vs_suppress_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/home_assistant/home_assistant_manager.dart'
     show GlanceSubscription;
-import '../managers/screensaver/immich_manager.dart' show ImmichAsset;
+import '../managers/screensaver/immich_manager.dart'
+    show
+        ImmichAsset,
+        arrangeImmichPairs,
+        immichPairableScreen,
+        immichPairsPortrait,
+        immichPortraitPhoto;
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
@@ -159,26 +166,39 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                 if (!blackBare)
                   ValueListenableBuilder<bool?>(
                     valueListenable: container.screensaver.scheduleWidgets,
-                    builder: (context, scheduled, _) => Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (scheduled ?? true)
-                          for (final spec in decodeScreensaverWidgets(
-                            container.settings.get(defs.screensaverWidgets),
-                          ))
-                            if (screensaverWidgetAllowedOnMode(spec.type, view))
-                              switch (spec.type) {
-                                'clock' => ClockWidgetOverlay(
-                                  container: container,
-                                  spec: spec,
-                                ),
-                                'weather' => WeatherWidgetOverlay(
-                                  container: container,
-                                  spec: spec,
-                                ),
-                                _ => const SizedBox.shrink(),
-                              },
-                      ],
+                    // A mode can also claim corners for itself while it
+                    // runs (the Immich pair's two metadata panels): a
+                    // widget in a claimed corner stands down until the
+                    // corner is free again, rather than sitting on top of
+                    // what claimed it.
+                    builder: (context, scheduled, _) =>
+                        ValueListenableBuilder<Set<String>>(
+                      valueListenable: container.screensaver.claimedCorners,
+                      builder: (context, claimed, _) => Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          if (scheduled ?? true)
+                            for (final spec in decodeScreensaverWidgets(
+                              container.settings.get(defs.screensaverWidgets),
+                            ))
+                              if (screensaverWidgetAllowedOnMode(
+                                    spec.type,
+                                    view,
+                                  ) &&
+                                  !claimed.contains(spec.position))
+                                switch (spec.type) {
+                                  'clock' => ClockWidgetOverlay(
+                                    container: container,
+                                    spec: spec,
+                                  ),
+                                  'weather' => WeatherWidgetOverlay(
+                                    container: container,
+                                    spec: spec,
+                                  ),
+                                  _ => const SizedBox.shrink(),
+                                },
+                        ],
+                      ),
                     ),
                   ),
               ],
@@ -1433,16 +1453,25 @@ setInterval(function () {
   }
 }
 
-/// The image's aspect ratio read from its header — no full decode, so it
-/// costs microseconds, not a second of jank before every slide.
+/// The image's aspect ratio as it will appear on screen, read from its
+/// header — no full decode, so it costs microseconds, not a second of jank
+/// before every slide.
+///
+/// EXIF orientation included: a photo taken in portrait is commonly stored
+/// landscape with a "turn me" tag, and the renderer turns it. Measuring the
+/// stored dimensions alone called those photos landscape, so they were
+/// judged backwards by both the fill decision and the portrait pairing.
 Future<double?> _aspectOf(Uint8List bytes) async {
   try {
     final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
     try {
       final descriptor = await ui.ImageDescriptor.encoded(buffer);
-      final aspect = descriptor.width / descriptor.height;
+      final width = descriptor.width;
+      final height = descriptor.height;
       descriptor.dispose();
-      return aspect;
+      return orientationSwapsAxes(jpegOrientation(bytes))
+          ? height / width
+          : width / height;
     } finally {
       buffer.dispose();
     }
@@ -1915,13 +1944,40 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// Width over height of the current image, or null when unknown; feeds
   /// the fill-the-screen decision.
   double? _imageAspect;
+
+  /// The second half of a pair of portrait photos: the playlist index right
+  /// after [_index], its decoded provider and its aspect. Null whenever one
+  /// photo (or a video) has the screen to itself, which is every landscape
+  /// slide and every slide at all with "Pair portrait photos" off.
+  int? _pairIndex;
+  ImageProvider? _pairImage;
+  double? _pairAspect;
+
+  /// How many playlist entries the current slide consumed, so the advance
+  /// steps over both halves of a pair.
+  int get _span => _pairIndex == null ? 1 : 2;
+
   Timer? _timer;
   VideoPlayerController? _video;
   String? _problem;
 
-  /// The next image slide, fetched during the current hold.
-  int? _prefetchedIndex;
-  Uint8List? _prefetchedBytes;
+  /// Image slides fetched during the current hold, by playlist index. Two
+  /// at most: the next slide, and the portrait photo that may join it, so a
+  /// pair hands off as promptly as a single photo does.
+  final _warm = <int, Uint8List>{};
+
+  /// Whether the metadata overlay is on and so the pair's two panels
+  /// actually occupy the bottom corners.
+  bool get _metadataOn => c.settings.get(defs.screensaverImmichMetadata);
+
+  /// Tell the widget layer which corners this slide has taken. A pair puts
+  /// a metadata panel under each half, so both bottom corners are spoken
+  /// for; anything else leaves every corner to the widgets.
+  void _claimCorners() {
+    c.screensaver.claimedCorners.value = _pairIndex != null && _metadataOn
+        ? const {'bottom_left', 'bottom_right'}
+        : const {};
+  }
 
   /// Consecutive fetch failures; a whole playlist of them means the server
   /// went away, and the message should say so instead of skipping forever.
@@ -1957,7 +2013,17 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         assets.shuffle(Random());
       }
       if (!mounted) return;
-      setState(() => _assets = assets);
+      // After the shuffle, so a portrait photo reaches for its partner in
+      // the order the slideshow will actually run in.
+      final size = MediaQuery.of(context).size;
+      final arranged =
+          c.settings.get(defs.screensaverImmichPairPortrait) && size.height > 0
+          ? arrangeImmichPairs(
+              assets,
+              screenAspect: size.width / size.height,
+            )
+          : assets;
+      setState(() => _assets = arranged);
       _show(0);
     } catch (e) {
       c.log.warn('screensaver', 'immich listing failed: $e');
@@ -2020,16 +2086,21 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         _lastFailure = null;
         _video = video;
         final oldImage = _image;
+        final oldPair = _pairImage;
         setState(() {
           _index = next;
           _imageBytes = null;
           _image = null;
+          _pairIndex = null;
+          _pairImage = null;
+          _pairAspect = null;
         });
+        _claimCorners();
         if (oldImage != null) unawaited(oldImage.evict());
+        if (oldPair != null) unawaited(oldPair.evict());
         // A warmed buffer for a slide we already passed would sit through
         // the whole video for nothing.
-        _prefetchedIndex = null;
-        _prefetchedBytes = null;
+        _warm.clear();
         await video.play();
       } catch (e) {
         c.log.warn('screensaver', 'immich video failed (${asset.id}): $e');
@@ -2043,9 +2114,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     } else {
       Uint8List bytes;
       try {
-        bytes = (_prefetchedIndex == next && _prefetchedBytes != null)
-            ? _prefetchedBytes!
-            : await c.immich.imageBytes(asset);
+        // Consumed, so it never outlives its one use; the pairing below
+        // reads its own entry, and whatever is left is stale by then.
+        bytes = _warm.remove(next) ?? await c.immich.imageBytes(asset);
       } catch (e) {
         c.log.warn('screensaver', 'immich image failed (${asset.id}): $e');
         _failures++;
@@ -2054,10 +2125,6 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         await old?.dispose();
         return;
       }
-      // Consumed (or stale): drop the warm buffer so it never outlives
-      // its one use.
-      _prefetchedIndex = null;
-      _prefetchedBytes = null;
       final aspect = await _aspectOf(bytes);
       if (!mounted) {
         await old?.dispose();
@@ -2066,19 +2133,40 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       _failures = 0;
       _lastFailure = null;
       final oldImage = _image;
+      final oldPair = _pairImage;
       final mq = MediaQuery.of(context);
+      // A portrait photo wastes most of a landscape panel on its own, so
+      // the one after it joins it when it is portrait too (each half then
+      // covers its own half-screen). Only worth the extra fetch once the
+      // first photo is portrait and the panel is wide enough, so an ordinary
+      // landscape slideshow does no extra work at all.
+      final pair = await _pairFor(next, aspect, mq.size);
+      if (!mounted) {
+        await old?.dispose();
+        return;
+      }
+      _warm.clear();
       // Screen-width decode cap: server previews can still out-size a
-      // small panel (Echo Show class) several times over.
-      final image = ResizeImage(
-        MemoryImage(bytes),
-        width: (mq.size.width * mq.devicePixelRatio).round(),
+      // small panel (Echo Show class) several times over. A paired photo
+      // only ever paints half the width, so it decodes to half.
+      ImageProvider sized(Uint8List data) => ResizeImage(
+        MemoryImage(data),
+        width:
+            (mq.size.width * mq.devicePixelRatio / (pair == null ? 1 : 2))
+                .round(),
       );
+      final image = sized(bytes);
+      final pairImage = pair == null ? null : sized(pair.bytes);
       // Decode before the hand-off: the switcher starts fading the moment
       // the new slide mounts, and a decode still in flight paints as
       // nothing, so the old photo would fade into black and the new one
       // pop in late (#212). Waiting here just holds the current photo a
       // beat longer, then the crossfade blends image into image.
-      await precacheImage(image, context, onError: (_, _) {});
+      await Future.wait([
+        precacheImage(image, context, onError: (_, _) {}),
+        if (pairImage != null)
+          precacheImage(pairImage, context, onError: (_, _) {}),
+      ]);
       if (!mounted) {
         await old?.dispose();
         return;
@@ -2089,35 +2177,89 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         _imageBytes = bytes;
         _imageAspect = aspect;
         _image = image;
+        _pairIndex = pair?.index;
+        _pairImage = pairImage;
+        _pairAspect = pair?.aspect;
       });
+      _claimCorners();
       if (oldImage != null) unawaited(oldImage.evict());
+      if (oldPair != null) unawaited(oldPair.evict());
       final seconds = c.settings
           .get(defs.screensaverImmichInterval)
           .toInt()
           .clamp(2, 3600);
       _timer = Timer(Duration(seconds: seconds), _advance);
-      unawaited(_prefetch(next + 1));
+      unawaited(_prefetch(next + _span));
     }
     _retire(old);
+  }
+
+  /// The photo that should share the screen with the one at [index], or
+  /// null when this slide stands alone: pairing off, panel too narrow,
+  /// either photo not portrait, the next entry a video, a playlist with
+  /// nothing else in it, or a fetch that failed (a pair is a bonus, never
+  /// a reason to stall the slideshow).
+  Future<({int index, Uint8List bytes, double? aspect})?> _pairFor(
+    int index,
+    double? aspect,
+    Size screen,
+  ) async {
+    if (!c.settings.get(defs.screensaverImmichPairPortrait)) return null;
+    if (_assets.length < 2) return null;
+    final screenAspect = screen.height == 0 ? 0.0 : screen.width / screen.height;
+    if (!immichPairableScreen(screenAspect) || !immichPortraitPhoto(aspect)) {
+      return null;
+    }
+    final candidate = (index + 1) % _assets.length;
+    final asset = _assets[candidate];
+    if (asset.isVideo) return null;
+    try {
+      final bytes = _warm[candidate] ?? await c.immich.imageBytes(asset);
+      final pairAspect = await _aspectOf(bytes);
+      if (!immichPairsPortrait(
+        screenAspect: screenAspect,
+        first: aspect,
+        second: pairAspect,
+      )) {
+        return null;
+      }
+      return (index: candidate, bytes: bytes, aspect: pairAspect);
+    } catch (e) {
+      // The second half is optional; the first photo shows on its own and
+      // the failing asset gets its own turn (and its own error handling)
+      // on the next advance.
+      c.log.debug('screensaver', 'immich pair fetch failed: $e');
+      return null;
+    }
   }
 
   /// Pull the next image into memory during the current hold. Videos are
   /// skipped: they stream, and warming them means downloading them. The
   /// metadata lookup is warmed for both, so the overlay appears with the
   /// slide instead of trailing it.
-  Future<void> _prefetch(int index) async {
+  /// [partner] marks the second call of a pair, which never warms a third
+  /// photo: a slideshow of portrait photos would otherwise warm its way
+  /// through the whole playlist.
+  Future<void> _prefetch(int index, {bool partner = false}) async {
     if (_assets.isEmpty) return;
     final next = index % _assets.length;
     final asset = _assets[next];
     if (c.settings.get(defs.screensaverImmichMetadata)) {
       unawaited(c.immich.assetDetails(asset));
     }
-    if (asset.isVideo || _prefetchedIndex == next) return;
+    if (asset.isVideo || _warm.containsKey(next)) return;
     try {
       final bytes = await c.immich.imageBytes(asset);
       if (!mounted) return;
-      _prefetchedIndex = next;
-      _prefetchedBytes = bytes;
+      _warm[next] = bytes;
+      // A portrait warm slide will most likely want a partner, and pairing
+      // at hand-off time would mean fetching it while the current photo
+      // waits. Warm that one too, so both halves are already in hand.
+      if (!partner &&
+          c.settings.get(defs.screensaverImmichPairPortrait) &&
+          immichPortraitPhoto(await _aspectOf(bytes))) {
+        unawaited(_prefetch(next + 1, partner: true));
+      }
     } catch (_) {
       // The show path retries and reports; a failed warm-up is not news.
     }
@@ -2140,7 +2282,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
 
   void _advance() {
     if (!mounted || _assets.isEmpty) return;
-    _show(_index + 1);
+    // Over both halves when a pair is showing: the second photo has had
+    // its turn already.
+    _show(_index + _span);
   }
 
   @override
@@ -2154,6 +2298,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       v.dispose();
     }
     _image?.evict();
+    _pairImage?.evict();
+    // The corners go back to the widgets with the screensaver.
+    c.screensaver.claimedCorners.value = const {};
     super.dispose();
   }
 
@@ -2163,6 +2310,88 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   String get _transition {
     final setting = c.settings.get(defs.screensaverImmichTransition);
     return setting == 'random' ? _rolled : setting;
+  }
+
+  /// One photo filling the frame it is given: the whole panel on its own,
+  /// or half of it when it shares the screen with another portrait shot.
+  ///
+  /// Fill the screen: a photo shaped close enough to its frame is
+  /// cover-fitted edge to edge. "Close enough" caps the crop at roughly a
+  /// quarter along one axis (1.45x ratio mismatch) — it admits the common
+  /// cases (4:3 or 16:9 camera frames on a 16:10 panel, either
+  /// orientation, and a portrait shot in a portrait half) while shapes a
+  /// crop would gut keep their full frame. Those framed photos get the
+  /// photo itself, blurred and dimmed, as the backdrop instead of black
+  /// bars — the Now Playing treatment.
+  Widget _photoBlock({
+    required ImageProvider image,
+    required double? aspect,
+    required double frameAspect,
+    required int index,
+    required String transition,
+  }) {
+    final fillWanted = c.settings.get(defs.screensaverImmichFill);
+    var covers = false;
+    if (fillWanted && aspect != null && frameAspect > 0) {
+      covers = max(aspect / frameAspect, frameAspect / aspect) <= 1.45;
+    }
+    Widget picture = Image(
+      image: image,
+      fit: covers ? BoxFit.cover : BoxFit.contain,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const SizedBox.expand(),
+    );
+    if (transition == 'kenburns') {
+      // The drift wraps only the photo: the blurred backdrop stays
+      // static behind it, so it rasterizes once per slide instead of
+      // re-blurring the whole screen on every animation frame.
+      picture = _KenBurnsDrift(
+        index: index,
+        duration:
+            Duration(
+              seconds: c.settings
+                  .get(defs.screensaverImmichInterval)
+                  .toInt()
+                  .clamp(2, 3600),
+            ) +
+            const Duration(seconds: 2),
+        child: SizedBox.expand(child: picture),
+      );
+    }
+    if (!fillWanted || covers) return SizedBox.expand(child: picture);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Blur + scrim so the backdrop reads as atmosphere, not a second
+        // copy of the photo (sendspin_player_overlay established the
+        // recipe). ImageFiltered over the same provider, not
+        // BackdropFilter: a backdrop filter must re-sample the scene every
+        // frame it composites, which on weak tablet GPUs is a standing
+        // 60fps blur tax.
+        RepaintBoundary(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ImageFiltered(
+                imageFilter: ui.ImageFilter.blur(
+                  sigmaX: 40,
+                  sigmaY: 40,
+                  tileMode: ui.TileMode.clamp,
+                ),
+                child: Image(
+                  image: image,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  errorBuilder: (_, _, _) => const SizedBox.expand(),
+                ),
+              ),
+              const ColoredBox(color: Color(0x99000000)),
+            ],
+          ),
+        ),
+        picture,
+      ],
+    );
   }
 
   @override
@@ -2182,24 +2411,14 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     } else {
       final transition = _transition;
       final isVideoSlide = video != null && video.value.isInitialized;
-      final key = ValueKey('$_index:${_assets[_index].id}');
-      // Fill the screen: photos shaped close enough to the panel are
-      // cover-fitted edge to edge. "Close enough" caps the crop at roughly
-      // a quarter along one axis (1.45x ratio mismatch) — it admits the
-      // common cases (4:3 or 16:9 camera frames on a 16:10 panel, either
-      // orientation) while portrait and square photos on a landscape
-      // screen keep their full frame, exactly the shots a crop would gut.
-      // Those framed photos get the photo itself, blurred and dimmed, as
-      // the backdrop instead of black bars — the Now Playing treatment.
-      final fillWanted =
-          !isVideoSlide && c.settings.get(defs.screensaverImmichFill);
-      var covers = false;
-      if (fillWanted && _imageAspect != null) {
-        final size = MediaQuery.of(context).size;
-        final screen = size.width / size.height;
-        final photo = _imageAspect!;
-        covers = max(photo / screen, screen / photo) <= 1.45;
-      }
+      final pairIndex = _pairIndex;
+      // A pair is one slide, and its key names both halves so the switcher
+      // hands off once, not twice.
+      final key = ValueKey(
+        '$_index:${_assets[_index].id}'
+        '${pairIndex == null ? '' : '+${_assets[pairIndex].id}'}',
+      );
+      final size = MediaQuery.of(context).size;
       final Widget inner;
       if (isVideoSlide) {
         inner = Center(
@@ -2208,66 +2427,42 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
             child: VideoPlayer(video),
           ),
         );
-      } else {
-        Widget picture = Image(
+      } else if (pairIndex == null) {
+        inner = _photoBlock(
           image: _image!,
-          fit: covers ? BoxFit.cover : BoxFit.contain,
-          gaplessPlayback: true,
-          errorBuilder: (_, _, _) => const SizedBox.expand(),
+          aspect: _imageAspect,
+          frameAspect: size.height == 0 ? 1 : size.width / size.height,
+          index: _index,
+          transition: transition,
         );
-        if (transition == 'kenburns') {
-          // The drift wraps only the photo: the blurred backdrop stays
-          // static behind it, so it rasterizes once per slide instead of
-          // re-blurring the whole screen on every animation frame.
-          picture = _KenBurnsDrift(
-            index: _index,
-            duration:
-                Duration(
-                  seconds: c.settings
-                      .get(defs.screensaverImmichInterval)
-                      .toInt()
-                      .clamp(2, 3600),
-                ) +
-                const Duration(seconds: 2),
-            child: SizedBox.expand(child: picture),
-          );
-        }
-        inner = fillWanted && !covers
-            ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Blur + scrim so the backdrop reads as atmosphere, not
-                  // a second copy of the photo (sendspin_player_overlay
-                  // established the recipe). ImageFiltered over the same
-                  // provider, not BackdropFilter: a backdrop filter must
-                  // re-sample the scene every frame it composites, which
-                  // on weak tablet GPUs is a standing 60fps blur tax.
-                  RepaintBoundary(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ImageFiltered(
-                          imageFilter: ui.ImageFilter.blur(
-                            sigmaX: 40,
-                            sigmaY: 40,
-                            tileMode: ui.TileMode.clamp,
-                          ),
-                          child: Image(
-                            image: _image!,
-                            fit: BoxFit.cover,
-                            gaplessPlayback: true,
-                            errorBuilder: (_, _, _) =>
-                                const SizedBox.expand(),
-                          ),
-                        ),
-                        const ColoredBox(color: Color(0x99000000)),
-                      ],
-                    ),
-                  ),
-                  picture,
-                ],
-              )
-            : SizedBox.expand(child: picture);
+      } else {
+        // Two portrait photos, half the panel each: no gutter between them,
+        // since the whole point is that no screen goes to waste. Each half
+        // makes its own fill decision against its half-width frame, so an
+        // ordinary portrait shot covers its side completely.
+        final half = size.height == 0 ? 1.0 : size.width / 2 / size.height;
+        inner = Row(
+          children: [
+            Expanded(
+              child: _photoBlock(
+                image: _image!,
+                aspect: _imageAspect,
+                frameAspect: half,
+                index: _index,
+                transition: transition,
+              ),
+            ),
+            Expanded(
+              child: _photoBlock(
+                image: _pairImage!,
+                aspect: _pairAspect,
+                frameAspect: half,
+                index: pairIndex,
+                transition: transition,
+              ),
+            ),
+          ],
+        );
       }
       final Widget slide = KeyedSubtree(key: key, child: inner);
       body = transition == 'none'
@@ -2292,6 +2487,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         _assets.isNotEmpty &&
         (_imageBytes != null || video != null) &&
         c.settings.get(defs.screensaverImmichMetadata);
+    final pairIndex = _pairIndex;
     return ColoredBox(
       color: Colors.black,
       child: showMetadata
@@ -2299,7 +2495,24 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
               fit: StackFit.expand,
               children: [
                 body,
-                _ImmichMetadata(container: c, asset: _assets[_index]),
+                // A pair gets a panel per photo, each under its own half,
+                // rather than one panel speaking for a photo it may not
+                // even be next to. The corners are fixed here — the widget
+                // layer stands down from both while the pair holds them.
+                if (pairIndex == null)
+                  _ImmichMetadata(container: c, asset: _assets[_index])
+                else ...[
+                  _ImmichMetadata(
+                    container: c,
+                    asset: _assets[_index],
+                    corner: 'bottom_left',
+                  ),
+                  _ImmichMetadata(
+                    container: c,
+                    asset: _assets[pairIndex],
+                    corner: 'bottom_right',
+                  ),
+                ],
               ],
             )
           : body,
@@ -2314,10 +2527,19 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
 /// the old one and back in with the new. Remounting the whole panel per
 /// slide read as a hard blink against the crossfading photos.
 class _ImmichMetadata extends StatefulWidget {
-  const _ImmichMetadata({required this.container, required this.asset});
+  const _ImmichMetadata({
+    required this.container,
+    required this.asset,
+    this.corner,
+  });
 
   final AppContainer container;
   final ImmichAsset asset;
+
+  /// The corner this panel must sit in, overriding both the setting and the
+  /// step-past-a-widget search: a pair's two panels belong under their own
+  /// photos, and the widgets give those corners up instead.
+  final String? corner;
 
   @override
   State<_ImmichMetadata> createState() => _ImmichMetadataState();
@@ -2361,6 +2583,8 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
   @override
   Widget build(BuildContext context) {
     final container = widget.container;
+    final forced = widget.corner;
+    if (forced != null) return _panel(_cornerAlignment(forced));
     // Widgets own their corners: rather than stacking two panels into
     // one corner, the metadata steps to the first free one, and stands
     // down entirely on the (unlikely) fully claimed screen.
@@ -2377,7 +2601,11 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
         .where((c) => !claimed.contains(c))
         .firstOrNull;
     if (spot == null) return const SizedBox.shrink();
-    final corner = _cornerAlignment(spot);
+    return _panel(_cornerAlignment(spot));
+  }
+
+  /// The panel itself, anchored to [corner].
+  Widget _panel(Alignment corner) {
     const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
     TextStyle style({double size = 16, FontWeight? weight, double alpha = 1}) =>
         TextStyle(
@@ -2391,26 +2619,33 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
     final details = _details;
     // One icon per row; the two camera lines (model and exposure)
     // share the exif icon as a single logical entry.
-    Widget row(String icon, List<Widget> texts) => Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SvgPicture.asset(
-          'assets/svg/$icon.svg',
-          width: 15,
-          height: 15,
-          colorFilter: ColorFilter.mode(
-            Colors.white.withValues(alpha: 0.85),
-            BlendMode.srcIn,
-          ),
+    // In a right-hand corner the icons sit on the right of their text and
+    // the lines run to the right edge, mirroring the weather widget: an
+    // icon column hanging off the inner side of a right-aligned block
+    // reads as a ragged edge pointing at nothing.
+    final right = corner.x > 0;
+    Widget row(String icon, List<Widget> texts) {
+      final glyph = SvgPicture.asset(
+        'assets/svg/$icon.svg',
+        width: 15,
+        height: 15,
+        colorFilter: ColorFilter.mode(
+          Colors.white.withValues(alpha: 0.85),
+          BlendMode.srcIn,
         ),
-        const SizedBox(width: 9),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: texts,
-        ),
-      ],
-    );
+      );
+      const gap = SizedBox(width: 9);
+      final text = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment:
+            right ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: texts,
+      );
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: right ? [text, gap, glyph] : [glyph, gap, text],
+      );
+    }
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,

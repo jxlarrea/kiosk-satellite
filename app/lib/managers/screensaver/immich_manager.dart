@@ -15,10 +15,99 @@ import '../settings/settings_manager.dart';
 
 /// One entry of the Immich screensaver playlist.
 class ImmichAsset {
-  const ImmichAsset({required this.id, required this.isVideo});
+  const ImmichAsset({required this.id, required this.isVideo, this.aspect});
 
   final String id;
   final bool isVideo;
+
+  /// Width over height as the photo will appear, from the server's EXIF,
+  /// or null when the server did not say. Known up front, it lets the
+  /// playlist be arranged into pairs without downloading anything.
+  final double? aspect;
+}
+
+/// An aspect ratio (width over height) counts as portrait below this. Not
+/// 1.0: a square photo pairs badly, reading as two small pictures rather
+/// than one full screen.
+const _portraitAspect = 0.95;
+
+/// A screen this wide (or wider) has room for two portrait photos. Narrower
+/// panels would halve into slivers, which is worse than the empty sides the
+/// pairing exists to avoid.
+const _pairableScreenAspect = 1.2;
+
+/// Whether a photo of this shape (width over height, null when the decoder
+/// could not say) is portrait. An unmeasurable photo never pairs.
+bool immichPortraitPhoto(double? aspect) =>
+    aspect != null && aspect < _portraitAspect;
+
+/// Whether a panel of this shape has room for a pair.
+bool immichPairableScreen(double screenAspect) =>
+    screenAspect >= _pairableScreenAspect;
+
+/// Whether two consecutive photos should share the screen: both portrait,
+/// on a landscape panel.
+bool immichPairsPortrait({
+  required double screenAspect,
+  required double? first,
+  required double? second,
+}) =>
+    immichPairableScreen(screenAspect) &&
+    immichPortraitPhoto(first) &&
+    immichPortraitPhoto(second);
+
+/// The shape a photo will appear in, from an Immich `exifInfo` block:
+/// width over height, with the axes swapped when the orientation tag says
+/// the picture is turned a quarter circle (a portrait phone photo is
+/// commonly stored as a landscape frame plus that tag). Null when the
+/// server reported no usable dimensions.
+double? exifAspect(Object? exifInfo) {
+  if (exifInfo is! Map) return null;
+  final width = (exifInfo['exifImageWidth'] as num?)?.toDouble();
+  final height = (exifInfo['exifImageHeight'] as num?)?.toDouble();
+  if (width == null || height == null || width <= 0 || height <= 0) {
+    return null;
+  }
+  // Immich passes the tag through as the string exiftool read, so "6" and
+  // 6 both turn up depending on the version.
+  final orientation = int.tryParse('${exifInfo['orientation'] ?? ''}') ?? 1;
+  final turned = orientation >= 5 && orientation <= 8;
+  return turned ? height / width : width / height;
+}
+
+/// [assets] reordered so every portrait photo is followed by the portrait
+/// photo that will share the screen with it.
+///
+/// Pairing at display time can only look at the next entry, so a portrait
+/// photo between two landscape ones would never find a partner however many
+/// other portrait shots the album holds. Here the whole playlist is known,
+/// so each portrait photo reaches forward for the next one and brings it
+/// back to sit beside it. Everything else keeps its order, and no photo is
+/// shown twice or dropped: this is a reordering, nothing more.
+///
+/// A photo whose shape the server did not report stays where it is and
+/// takes its chances with the display-time check, which measures the file
+/// itself.
+List<ImmichAsset> arrangeImmichPairs(
+  List<ImmichAsset> assets, {
+  required double screenAspect,
+}) {
+  if (!immichPairableScreen(screenAspect)) return assets;
+  final remaining = [...assets];
+  final out = <ImmichAsset>[];
+  while (remaining.isNotEmpty) {
+    final asset = remaining.removeAt(0);
+    out.add(asset);
+    if (asset.isVideo || !immichPortraitPhoto(asset.aspect)) continue;
+    // The next portrait photo anywhere ahead, pulled back to sit beside
+    // this one. None left means this photo shows on its own, which is the
+    // honest answer at the tail of the playlist.
+    final partner = remaining.indexWhere(
+      (a) => !a.isVideo && immichPortraitPhoto(a.aspect),
+    );
+    if (partner >= 0) out.add(remaining.removeAt(partner));
+  }
+  return out;
 }
 
 /// The Immich Media screensaver's server side: connection validation, album
@@ -227,6 +316,7 @@ class ImmichManager extends Manager {
     required int page,
     required int size,
     String? albumId,
+    bool withExif = false,
   }) async {
     final response = await http
         .post(
@@ -235,7 +325,7 @@ class ImmichManager extends Manager {
           body: jsonEncode({
             'page': page,
             'size': size,
-            'withExif': false,
+            'withExif': withExif,
             if (albumId != null && albumId.isNotEmpty) 'albumIds': [albumId],
           }),
         )
@@ -271,10 +361,19 @@ class ImmichManager extends Manager {
   Future<List<ImmichAsset>> listAssets() async {
     final albumId = _settings.get(defs.screensaverImmichAlbum);
     final photosOnly = _settings.get(defs.screensaverImmichPhotosOnly);
+    // The EXIF comes along only when something wants it: pairing portrait
+    // photos needs every photo's shape up front to arrange the playlist,
+    // and it is the one feature that does.
+    final withExif = _settings.get(defs.screensaverImmichPairPortrait);
     final assets = <ImmichAsset>[];
     var page = 1;
     while (assets.length < _maxPlaylist) {
-      final result = await _search(page: page, size: 500, albumId: albumId);
+      final result = await _search(
+        page: page,
+        size: 500,
+        albumId: albumId,
+        withExif: withExif,
+      );
       for (final item in (result['items'] as List).cast<Map>()) {
         final isVideo = item['type'] == 'VIDEO';
         if (photosOnly && isVideo) continue;
@@ -282,6 +381,7 @@ class ImmichManager extends Manager {
           ImmichAsset(
             id: item['id'] as String,
             isVideo: isVideo,
+            aspect: isVideo ? null : exifAspect(item['exifInfo']),
           ),
         );
       }

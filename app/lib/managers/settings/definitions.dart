@@ -1728,6 +1728,22 @@ const screensaverImmichFill = SettingDef<bool>(
   dependsOn: 'screensaver.immich_validated',
 );
 
+// Two portrait photos side by side instead of one framed by empty screen:
+// the pair fills a landscape panel the way a single portrait shot never
+// can. On by default, like Fill the screen, since filling the panel is
+// what people want from a photo frame.
+const screensaverImmichPairPortrait = SettingDef<bool>(
+  key: 'screensaver.immich_pair_portrait',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Pair portrait photos',
+  description:
+      'Show two portrait photos side by side so they fill the screen.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_validated',
+);
+
 const screensaverImmichCache = SettingDef<bool>(
   key: 'screensaver.immich_cache',
   type: SettingType.boolean,
@@ -3486,6 +3502,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichShuffle,
   screensaverImmichTransition,
   screensaverImmichFill,
+  screensaverImmichPairPortrait,
   screensaverImmichCache,
   screensaverImmichCacheMax,
   screensaverImmichMetadata,
