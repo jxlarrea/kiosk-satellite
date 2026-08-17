@@ -192,6 +192,10 @@ class ProxyManager extends Manager {
       // free port works, mapUrl always uses the live one.
       _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     }
+    // A proxied response should carry Home Assistant's headers and nothing
+    // else; Dart's defaults (content-type, x-frame-options, nosniff) would be
+    // merged into every one of them, including the 304s that must stay bare.
+    _server!.defaultResponseHeaders.clear();
     _server!.listen(_handle, onError: (Object e) {
       log.warn(name, 'server error: $e');
     });
@@ -269,19 +273,46 @@ class ProxyManager extends Manager {
 
     final res = req.response;
     res.statusCode = upstream.statusCode;
-    res.contentLength = upstream.contentLength;
+    // 304/204 and the informational codes carry no body by definition. Left
+    // at -1 the response would go out chunked, and the terminating `0\r\n\r\n`
+    // the page never reads stays in the socket: the next response on that
+    // keep-alive connection is then parsed starting from that garbage.
+    res.contentLength =
+        _bodyless(upstream.statusCode) ? 0 : upstream.contentLength;
     upstream.headers.forEach((k, values) {
       final lk = k.toLowerCase();
       if (_hopByHop.contains(lk) || lk == 'content-length') return;
+      // set() for the first value, add() only after: a response's headers are
+      // seeded from HttpServer.defaultResponseHeaders by reference, so add()
+      // on a name that is already there (x-frame-options, nosniff — Home
+      // Assistant sends exactly the ones Dart defaults) appends to the
+      // *server's* list and every later response inherits the extra copy.
+      // Left alone it grows one value per proxied response until the header
+      // block passes the browser's 256 KB cap and every page load dies with
+      // ERR_RESPONSE_HEADERS_TOO_BIG.
+      var first = true;
       for (var v in values) {
         if (lk == 'location') v = mapUrl(v);
-        res.headers.add(k, v);
+        if (first) {
+          res.headers.set(k, v);
+          first = false;
+        } else {
+          res.headers.add(k, v);
+        }
       }
     });
     // Streamed, not buffered: camera MJPEG and event streams never end.
     await res.addStream(upstream);
     await res.close();
   }
+
+  /// Statuses whose response never has a body, whatever the upstream headers
+  /// say: 1xx, 204 No Content and 304 Not Modified (Home Assistant answers
+  /// every cached frontend asset with one).
+  static bool _bodyless(int status) =>
+      status < 200 ||
+      status == HttpStatus.noContent ||
+      status == HttpStatus.notModified;
 
   Future<void> _bridgeWebSocket(HttpRequest req, Uri t) async {
     final page = await WebSocketTransformer.upgrade(req);
