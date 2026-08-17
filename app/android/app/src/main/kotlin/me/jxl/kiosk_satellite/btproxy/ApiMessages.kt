@@ -39,12 +39,41 @@ internal object Msg {
     const val GET_TIME_RESPONSE = 37
     const val SUBSCRIBE_HOME_ASSISTANT_STATES_REQUEST = 38
     const val SUBSCRIBE_BLE_ADVERTISEMENTS_REQUEST = 66
+    const val BT_DEVICE_REQUEST = 68
+    const val BT_DEVICE_CONNECTION_RESPONSE = 69
+    const val GATT_GET_SERVICES_REQUEST = 70
+    const val GATT_GET_SERVICES_RESPONSE = 71
+    const val GATT_GET_SERVICES_DONE_RESPONSE = 72
+    const val GATT_READ_REQUEST = 73
+    const val GATT_READ_RESPONSE = 74
+    const val GATT_WRITE_REQUEST = 75
+    const val GATT_READ_DESCRIPTOR_REQUEST = 76
+    const val GATT_WRITE_DESCRIPTOR_REQUEST = 77
+    const val GATT_NOTIFY_REQUEST = 78
+    const val GATT_NOTIFY_DATA_RESPONSE = 79
     const val SUBSCRIBE_BT_CONNECTIONS_FREE_REQUEST = 80
     const val BT_CONNECTIONS_FREE_RESPONSE = 81
+    const val GATT_ERROR_RESPONSE = 82
+    const val GATT_WRITE_RESPONSE = 83
+    const val GATT_NOTIFY_RESPONSE = 84
+    const val BT_DEVICE_PAIRING_RESPONSE = 85
+    const val BT_DEVICE_UNPAIRING_RESPONSE = 86
     const val UNSUBSCRIBE_BLE_ADVERTISEMENTS_REQUEST = 87
+    const val BT_DEVICE_CLEAR_CACHE_RESPONSE = 88
     const val BLE_RAW_ADVERTISEMENTS_RESPONSE = 93
     const val BT_SCANNER_STATE_RESPONSE = 126
     const val BT_SCANNER_SET_MODE_REQUEST = 127
+}
+
+/** BluetoothDeviceRequest.request_type values (api.proto). */
+internal object BtDeviceRequestType {
+    const val CONNECT = 0
+    const val DISCONNECT = 1
+    const val PAIR = 2
+    const val UNPAIR = 3
+    const val CONNECT_V3_WITH_CACHE = 4
+    const val CONNECT_V3_WITHOUT_CACHE = 5
+    const val CLEAR_CACHE = 6
 }
 
 /** DeviceInfoResponse.bluetooth_proxy_feature_flags bits (api.proto). */
@@ -57,8 +86,16 @@ internal object BtProxyFeature {
     const val RAW_ADVERTISEMENTS = 1 shl 5
     const val STATE_AND_MODE = 1 shl 6
 
-    /** Everything v1 actually honors. */
+    /** Everything the advertisement-only mode honors. */
     const val V1 = PASSIVE_SCAN or RAW_ADVERTISEMENTS or STATE_AND_MODE
+
+    /**
+     * With connections enabled: everything V1 promises plus active GATT
+     * connections, the v3 cached/uncached connect variants, pairing, and
+     * cache clearing. Still only what the engine actually implements.
+     */
+    const val WITH_CONNECTIONS =
+        V1 or ACTIVE_CONNECTIONS or REMOTE_CACHING or PAIRING or CACHE_CLEARING
 }
 
 /** BluetoothScannerStateResponse.state values. */
@@ -134,7 +171,11 @@ internal object ApiCodec {
     /** ConnectResponse: 1=invalid_password. Noise replaced passwords; never invalid. */
     fun connectResponse(): ByteArray = ProtoWriter().toByteArray()
 
-    fun deviceInfoResponse(identity: ProxyIdentity, bluetoothMac: String): ByteArray =
+    fun deviceInfoResponse(
+        identity: ProxyIdentity,
+        bluetoothMac: String,
+        featureFlags: Int,
+    ): ByteArray =
         ProtoWriter().run {
             bool(1, false) // uses_password
             string(2, identity.name)
@@ -149,7 +190,7 @@ internal object ApiCodec {
             varint(11, 5)
             string(12, identity.manufacturer)
             string(13, identity.friendlyName)
-            varint(15, BtProxyFeature.V1)
+            varint(15, featureFlags)
             string(18, bluetoothMac)
             bool(19, true) // api_encryption_supported
             toByteArray()

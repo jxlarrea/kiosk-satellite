@@ -61,7 +61,11 @@ internal class ApiServer(
     private val backend: ScannerBackend,
     private val log: (String) -> Unit,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** Null = advertisement-only; the feature flags follow automatically. */
+    private val gatt: GattBackend? = null,
 ) {
+    private val featureFlags: Int =
+        if (gatt != null) BtProxyFeature.WITH_CONNECTIONS else BtProxyFeature.V1
     private companion object {
         const val MAX_SESSIONS = 8
         const val WRITE_QUEUE_FRAMES = 256
@@ -98,6 +102,14 @@ internal class ApiServer(
     private val pending = LinkedHashMap<Long, BleAdvertisement>()
     private val forwardState = HashMap<Long, ForwardState>()
 
+    // GATT ownership: each connection belongs to the session that asked for
+    // it, and every response routes there and only there. Broadcasting GATT
+    // traffic to all sessions is how a lingering half-open socket ends up
+    // consuming another session's responses. Guarded by gattLock.
+    private val gattLock = Any()
+    private val gattOwner = HashMap<Long, Session>()
+    private val gattConnected = HashSet<Long>()
+
     val receivedCount = AtomicLong(0)
     val forwardedCount = AtomicLong(0)
     val lastReceivedAt = AtomicLong(0)
@@ -129,6 +141,11 @@ internal class ApiServer(
         scheduler.shutdownNow()
         for (session in sessions) session.close("server stopping")
         sessions.clear()
+        gatt?.disconnectAll()
+        synchronized(gattLock) {
+            gattOwner.clear()
+            gattConnected.clear()
+        }
         synchronized(advLock) {
             pending.clear()
             forwardState.clear()
@@ -154,6 +171,93 @@ internal class ApiServer(
             // roughly by recency of update.
             pending.remove(adv.address)
             pending[adv.address] = adv
+        }
+    }
+
+    /**
+     * The GATT engine's event stream, single-threaded and in causal order.
+     * Everything routes to the owning session; connection transitions also
+     * update the free-slot broadcast and the advertisement suppression set.
+     */
+    fun deliverGattEvent(event: GattEvent) {
+        val owner = synchronized(gattLock) { gattOwner[event.address] }
+        when (event) {
+            is GattEvent.Connected -> {
+                synchronized(gattLock) { gattConnected.add(event.address) }
+                owner?.enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
+                    GattCodec.connectionResponse(event.address, true, event.mtu, 0))
+                broadcastConnectionsFree()
+            }
+            is GattEvent.ConnectFailed -> {
+                releaseGattAddress(event.address)
+                owner?.enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
+                    GattCodec.connectionResponse(event.address, false, 0, event.error))
+                broadcastConnectionsFree()
+            }
+            is GattEvent.Disconnected -> {
+                releaseGattAddress(event.address)
+                owner?.enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
+                    GattCodec.connectionResponse(event.address, false, 0, event.error))
+                broadcastConnectionsFree()
+            }
+            is GattEvent.Services -> {
+                // Every batch and the done marker in one dispatch, in order:
+                // a done marker that overtakes the last service leaves the
+                // client with a truncated table it will trust forever.
+                for (service in event.services) {
+                    owner?.enqueue(Msg.GATT_GET_SERVICES_RESPONSE,
+                        GattCodec.servicesResponse(event.address, service))
+                }
+                owner?.enqueue(Msg.GATT_GET_SERVICES_DONE_RESPONSE,
+                    GattCodec.servicesDone(event.address))
+            }
+            is GattEvent.ReadResult ->
+                owner?.enqueue(Msg.GATT_READ_RESPONSE,
+                    GattCodec.readResponse(event.address, event.handle, event.data))
+            is GattEvent.WriteDone ->
+                owner?.enqueue(Msg.GATT_WRITE_RESPONSE,
+                    GattCodec.writeResponse(event.address, event.handle))
+            is GattEvent.NotifyStateDone ->
+                owner?.enqueue(Msg.GATT_NOTIFY_RESPONSE,
+                    GattCodec.notifyResponse(event.address, event.handle))
+            is GattEvent.NotifyData ->
+                owner?.enqueue(Msg.GATT_NOTIFY_DATA_RESPONSE,
+                    GattCodec.notifyData(event.address, event.handle, event.data))
+            is GattEvent.OperationError ->
+                owner?.enqueue(Msg.GATT_ERROR_RESPONSE,
+                    GattCodec.gattError(event.address, event.handle, event.error))
+            is GattEvent.PairResult ->
+                owner?.enqueue(Msg.BT_DEVICE_PAIRING_RESPONSE,
+                    GattCodec.pairingResponse(event.address, event.paired, event.error))
+            is GattEvent.UnpairResult ->
+                owner?.enqueue(Msg.BT_DEVICE_UNPAIRING_RESPONSE,
+                    GattCodec.unpairingResponse(event.address, event.success, event.error))
+            is GattEvent.ClearCacheResult ->
+                owner?.enqueue(Msg.BT_DEVICE_CLEAR_CACHE_RESPONSE,
+                    GattCodec.clearCacheResponse(event.address, event.success, event.error))
+        }
+    }
+
+    private fun releaseGattAddress(address: Long) {
+        synchronized(gattLock) {
+            gattOwner.remove(address)
+            gattConnected.remove(address)
+        }
+    }
+
+    private fun broadcastConnectionsFree() {
+        val gattBackend = gatt ?: return
+        val payload = synchronized(gattLock) {
+            GattCodec.connectionsFree(
+                (gattBackend.connectionLimit - gattOwner.size).coerceAtLeast(0),
+                gattBackend.connectionLimit,
+                gattOwner.keys.toList(),
+            )
+        }
+        for (session in sessions) {
+            if (session.wantsConnectionsFree) {
+                session.enqueue(Msg.BT_CONNECTIONS_FREE_RESPONSE, payload)
+            }
         }
     }
 
@@ -216,10 +320,17 @@ internal class ApiServer(
         while (batchesSent < MAX_BATCHES_PER_FLUSH) {
             batch.clear()
             synchronized(advLock) {
+                val suppressed = synchronized(gattLock) {
+                    if (gattConnected.isEmpty()) emptySet() else gattConnected.toSet()
+                }
                 val iterator = pending.entries.iterator()
                 while (iterator.hasNext() && batch.size < ADVERTISEMENT_BATCH) {
                     val entry = iterator.next()
                     iterator.remove()
+                    // A connected device's advertisements (mostly stray scan
+                    // responses) stay off the wire: the link owner is doing
+                    // GATT work and the traffic only competes with it.
+                    if (entry.key in suppressed) continue
                     val adv = entry.value
                     val hash = adv.data.contentHashCode()
                     val state = forwardState[adv.address]
@@ -263,6 +374,7 @@ internal class ApiServer(
     private inner class Session(private val socket: Socket, val id: Int) {
         @Volatile var wantsAdvertisements = false
             private set
+        @Volatile var wantsConnectionsFree = false
         @Volatile var handshaken = false
         @Volatile var lastInboundAt = clock()
         @Volatile var lastPingSentAt = 0L
@@ -297,6 +409,13 @@ internal class ApiServer(
                 wantsAdvertisements = false
                 updateScanDemand()
             }
+            // A dying client's connections die with it: ESPHome semantics,
+            // and the only behavior that cannot leak slots to a peer that
+            // will never send the disconnect.
+            val orphaned = synchronized(gattLock) {
+                gattOwner.filterValues { it === this }.keys.toList()
+            }
+            for (address in orphaned) gatt?.disconnect(address)
             log("session #$id ($peer) closed: $reason")
         }
 
@@ -351,6 +470,55 @@ internal class ApiServer(
             }
         }
 
+        private fun handleDeviceRequest(payload: ByteArray) {
+            val request = GattCodec.parseDeviceRequest(payload)
+            val gattBackend = gatt
+            if (gattBackend == null) {
+                // Flags never advertised connections; a request anyway gets
+                // an immediate refusal instead of silence.
+                enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
+                    GattCodec.connectionResponse(request.address, false, 0, 0x7F))
+                return
+            }
+            when (request.requestType) {
+                BtDeviceRequestType.CONNECT,
+                BtDeviceRequestType.CONNECT_V3_WITH_CACHE,
+                BtDeviceRequestType.CONNECT_V3_WITHOUT_CACHE -> {
+                    val accepted = synchronized(gattLock) {
+                        when {
+                            gattOwner.containsKey(request.address) -> {
+                                gattOwner[request.address] = this
+                                true // reconnect attempt on an existing slot
+                            }
+                            gattOwner.size >= gattBackend.connectionLimit -> false
+                            else -> {
+                                gattOwner[request.address] = this
+                                true
+                            }
+                        }
+                    }
+                    if (!accepted) {
+                        // Slot budget spent: refuse now so HA can pick
+                        // another proxy instead of waiting on a timeout.
+                        enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
+                            GattCodec.connectionResponse(request.address, false, 0, 0x7F))
+                        return
+                    }
+                    broadcastConnectionsFree()
+                    gattBackend.connect(
+                        request.address,
+                        request.addressType,
+                        withCache = request.requestType !=
+                            BtDeviceRequestType.CONNECT_V3_WITHOUT_CACHE,
+                    )
+                }
+                BtDeviceRequestType.DISCONNECT -> gattBackend.disconnect(request.address)
+                BtDeviceRequestType.PAIR -> gattBackend.pair(request.address)
+                BtDeviceRequestType.UNPAIR -> gattBackend.unpair(request.address)
+                BtDeviceRequestType.CLEAR_CACHE -> gattBackend.clearCache(request.address)
+            }
+        }
+
         private fun writerLoop(t: ApiTransport) {
             try {
                 while (!closed.get()) {
@@ -385,7 +553,7 @@ internal class ApiServer(
                     Msg.PING_RESPONSE -> Unit // lastInboundAt already refreshed
                     Msg.DEVICE_INFO_REQUEST ->
                         enqueue(Msg.DEVICE_INFO_RESPONSE,
-                            ApiCodec.deviceInfoResponse(identity, bluetoothMac))
+                            ApiCodec.deviceInfoResponse(identity, bluetoothMac, featureFlags))
                     Msg.LIST_ENTITIES_REQUEST ->
                         enqueue(Msg.LIST_ENTITIES_DONE_RESPONSE, ByteArray(0))
                     Msg.GET_TIME_REQUEST ->
@@ -402,8 +570,47 @@ internal class ApiServer(
                         wantsAdvertisements = false
                         updateScanDemand()
                     }
-                    Msg.SUBSCRIBE_BT_CONNECTIONS_FREE_REQUEST ->
-                        enqueue(Msg.BT_CONNECTIONS_FREE_RESPONSE, ApiCodec.connectionsFreeResponse())
+                    Msg.SUBSCRIBE_BT_CONNECTIONS_FREE_REQUEST -> {
+                        wantsConnectionsFree = true
+                        val gattBackend = gatt
+                        enqueue(Msg.BT_CONNECTIONS_FREE_RESPONSE,
+                            if (gattBackend == null) {
+                                ApiCodec.connectionsFreeResponse()
+                            } else {
+                                synchronized(gattLock) {
+                                    GattCodec.connectionsFree(
+                                        (gattBackend.connectionLimit - gattOwner.size)
+                                            .coerceAtLeast(0),
+                                        gattBackend.connectionLimit,
+                                        gattOwner.keys.toList(),
+                                    )
+                                }
+                            })
+                    }
+                    Msg.BT_DEVICE_REQUEST -> handleDeviceRequest(frame.payload)
+                    Msg.GATT_GET_SERVICES_REQUEST ->
+                        gatt?.getServices(GattCodec.parseAddress(frame.payload))
+                    Msg.GATT_READ_REQUEST -> {
+                        val request = GattCodec.parseHandleRequest(frame.payload)
+                        gatt?.read(request.address, request.handle)
+                    }
+                    Msg.GATT_WRITE_REQUEST -> {
+                        val request = GattCodec.parseWriteRequest(frame.payload)
+                        gatt?.write(request.address, request.handle, request.data,
+                            request.response)
+                    }
+                    Msg.GATT_READ_DESCRIPTOR_REQUEST -> {
+                        val request = GattCodec.parseHandleRequest(frame.payload)
+                        gatt?.readDescriptor(request.address, request.handle)
+                    }
+                    Msg.GATT_WRITE_DESCRIPTOR_REQUEST -> {
+                        val request = GattCodec.parseWriteDescriptor(frame.payload)
+                        gatt?.writeDescriptor(request.address, request.handle, request.data)
+                    }
+                    Msg.GATT_NOTIFY_REQUEST -> {
+                        val request = GattCodec.parseNotifyRequest(frame.payload)
+                        gatt?.setNotify(request.address, request.handle, request.enable)
+                    }
                     Msg.BT_SCANNER_SET_MODE_REQUEST -> {
                         val requested = ApiCodec.parseScannerSetMode(frame.payload)
                         if (requested == scannerMode) {

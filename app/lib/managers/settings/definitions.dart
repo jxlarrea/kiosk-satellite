@@ -3309,6 +3309,19 @@ const btproxyEnabled = SettingDef<bool>(
   category: 'Bluetooth Proxy',
 );
 
+const btproxyConnections = SettingDef<bool>(
+  key: 'btproxy.connections',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Allow device connections',
+  description:
+      'Home Assistant can connect to Bluetooth devices through this kiosk, '
+      'not just hear them. Needed for locks, buttons and anything Home '
+      'Assistant controls over Bluetooth.',
+  category: 'Bluetooth Proxy',
+  dependsOn: 'btproxy.enabled',
+);
+
 /// Generated on first enable, then stable for the install's lifetime: Home
 /// Assistant stores it in the config entry, so regenerating would take the
 /// proxy offline until the user re-entered it. Deliberately NOT `secret`:
@@ -3685,6 +3698,7 @@ const List<SettingDef<Object>> allSettings = [
   dlnaAudioBackground,
   dlnaPort,
   btproxyEnabled,
+  btproxyConnections,
   btproxyKey,
   btproxyPort,
   btproxyMacLookup,

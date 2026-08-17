@@ -38,6 +38,7 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                 psk = psk,
                                 port = call.argument<Int>("port") ?: 6053,
                                 projectVersion = call.argument<String>("projectVersion") ?: "0",
+                                connections = call.argument<Boolean>("connections") ?: false,
                             ),
                         )
                         BluetoothProxyService.start(context)

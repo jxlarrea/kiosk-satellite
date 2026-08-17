@@ -70,6 +70,10 @@ internal class BleScanEngine(
     private var demanded = false
     private var scanning = false
     private var mode = ScannerMode.PASSIVE
+    // While > 0 the scan stays down: GATT connection establishment and a
+    // LOW_LATENCY scan fight over the radio, and on shared-antenna chips
+    // the connect loses. Guarded by the handler thread like everything else.
+    private var gattHolds = 0
     // Volatile: written on the handler thread, peeked from the scan
     // callback's binder thread to decide whether a reset post is needed.
     @Volatile private var consecutiveFailures = 0
@@ -94,6 +98,23 @@ internal class BleScanEngine(
         handler.post {
             demanded = false
             stopScanInternal(ScannerState.STOPPED)
+        }
+    }
+
+    /**
+     * A GATT connect window opened (true) or closed (false). Reference
+     * counted: overlapping connects keep the scan down until the last one
+     * resolves, then the ordinary demand logic brings it back through the
+     * rate gate.
+     */
+    fun setGattBusy(busy: Boolean) {
+        handler.post {
+            gattHolds = (gattHolds + if (busy) 1 else -1).coerceAtLeast(0)
+            if (gattHolds > 0) {
+                if (scanning) stopScanInternal(ScannerState.STOPPING)
+            } else if (demanded && !scanning) {
+                startScanIfNeeded("gatt idle")
+            }
         }
     }
 
@@ -188,7 +209,7 @@ internal class BleScanEngine(
 
     @SuppressLint("MissingPermission")
     private fun startScanIfNeeded(reason: String) {
-        if (scanning || !demanded) return
+        if (scanning || !demanded || gattHolds > 0) return
         if (!receiverRegistered) {
             receiverRegistered = true
             context.registerReceiver(

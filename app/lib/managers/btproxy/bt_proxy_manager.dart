@@ -225,6 +225,7 @@ class BtProxyManager extends Manager {
         'psk': key,
         'port': port,
         'projectVersion': _appVersion,
+        'connections': _settings.get(defs.btproxyConnections),
       });
       _running = true;
       log.info(name, 'started (port $port)');

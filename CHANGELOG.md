@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- The Bluetooth proxy now carries active GATT connections, not just advertisements: Home Assistant can connect to locks, buttons, curtain motors and anything else it controls over Bluetooth through the kiosk, including pairing, unpairing and device cache management, exactly as it would through an ESP32 proxy. "Allow device connections" is on by default under Bluetooth Proxy and can be switched off to return the proxy to advertisement-only, with Home Assistant told either way. The connection budget is honest (two concurrent links on Android 11 and older, three on newer devices) and advertised to Home Assistant so it routes extra devices through another proxy; connecting pauses scanning for the handshake since both fight over the same radio, the one routine Android connect failure is retried once, a device that keeps failing goes on a doubling cooldown instead of being hammered, every disconnect is watchdogged so a connection slot can never leak, and a connection only reports ready after its services are freshly discovered so Home Assistant never caches an empty service table.
+
 ### Fixed
 - The Bluetooth proxy's scan retry backoff now escalates properly through repeated failures. Android reports a scan as started and only fails it a moment later, so the failure counter was being reset before the failure arrived and every retry ran at the shortest delay; the counter now resets on the first delivered scan result instead, the only real proof a scan is running. Found live on an Echo Show 8 whose adapter was mid-startup.
 

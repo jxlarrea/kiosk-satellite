@@ -31,15 +31,22 @@ the **API port** setting).
 
 ## What it relays
 
-This proxy is advertisement-only, deliberately. It announces exactly the
-capabilities it has (passive scanning and raw advertisements), so Home
-Assistant never routes active GATT connections, pairing, or cache
-operations through it. Broadcast sensors and presence tracking work fully;
-devices that need Home Assistant to connect to them (some locks and
-switches with encrypted GATT control) still need a proxy with connection
-support, such as an ESP32. Announcing capabilities a device cannot honor
-is how Bluetooth proxies get a reputation for breaking locks; this one
-does not.
+Advertisements always: broadcast sensors and presence tracking work the
+moment the proxy is on. With **Allow device connections** (on by default),
+Home Assistant can also connect to Bluetooth devices through the kiosk:
+locks, buttons, curtain motors, anything Home Assistant controls over an
+active connection, including pairing and cache management. Turning the
+switch off returns the proxy to advertisement-only and tells Home
+Assistant so; the proxy only ever announces capabilities it actually
+serves, because announcing more is how Bluetooth proxies get a reputation
+for breaking locks.
+
+Connections are budgeted honestly: two at a time on older devices
+(Android 11 and below), three on modern ones, and Home Assistant is told
+the budget so it can route further devices through another proxy. Each
+connection attempt pauses scanning for its handshake (they compete for
+the same radio), retries the one routine Android failure once, and puts a
+persistently failing device on a cooldown instead of hammering it.
 
 ## Nearby devices
 

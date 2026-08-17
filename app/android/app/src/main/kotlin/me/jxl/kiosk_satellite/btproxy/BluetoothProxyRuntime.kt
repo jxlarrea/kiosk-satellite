@@ -27,6 +27,8 @@ internal object BluetoothProxyRuntime {
         val psk: ByteArray,
         val port: Int,
         val projectVersion: String,
+        /** Advertise and serve active GATT connections. */
+        val connections: Boolean,
     )
 
     @Volatile var isRunning = false
@@ -34,6 +36,7 @@ internal object BluetoothProxyRuntime {
 
     private var server: ApiServer? = null
     private var engine: BleScanEngine? = null
+    private var gattEngine: GattEngine? = null
     private var announcer: MdnsAnnouncer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val logRing = ArrayDeque<String>()
@@ -53,6 +56,15 @@ internal object BluetoothProxyRuntime {
             },
             onStateChange = { state, mode -> server?.reportScannerState(state, mode) },
         )
+        val connections = if (config.connections) {
+            GattEngine(
+                appContext,
+                deliver = { event -> server?.deliverGattEvent(event) },
+                scanPause = { busy -> scanEngine.setGattBusy(busy) },
+            )
+        } else {
+            null
+        }
         val apiServer = ApiServer(
             identity = identity,
             bluetoothMac = syntheticMac(appContext, salt = "bt"),
@@ -63,6 +75,7 @@ internal object BluetoothProxyRuntime {
                 override fun onScanRelease() = scanEngine.requestStop()
             },
             log = ::log,
+            gatt = connections,
         )
 
         try {
@@ -83,9 +96,12 @@ internal object BluetoothProxyRuntime {
 
         server = apiServer
         engine = scanEngine
+        gattEngine = connections
         announcer = mdns
         isRunning = true
-        log("Bluetooth proxy started as ${identity.name} on :${apiServer.boundPort}")
+        log("Bluetooth proxy started as ${identity.name} on :${apiServer.boundPort}" +
+            if (connections != null) " (connections enabled, ${connections.connectionLimit} slots)"
+            else "")
     }
 
     @Synchronized
@@ -98,6 +114,8 @@ internal object BluetoothProxyRuntime {
         engine = null
         server?.stop()
         server = null
+        gattEngine?.shutdown()
+        gattEngine = null
         nearby.clear()
         wakeLock?.let { runCatching { if (it.isHeld) it.release() } }
         wakeLock = null
