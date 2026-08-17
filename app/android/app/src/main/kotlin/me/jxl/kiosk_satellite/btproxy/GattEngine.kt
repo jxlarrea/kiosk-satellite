@@ -81,6 +81,17 @@ internal class GattEngine(
 
     private val handler = Handler(Looper.getMainLooper())
     private val connections = HashMap<Long, Connection>()
+
+    // ONE operation in flight across ALL connections, not one per
+    // connection: the Android API permits concurrent operations on
+    // separate GATT clients, but real stacks (the API 30 Echo Shows
+    // first among them) refuse the second one with a bare false. Found
+    // live: an EcoFlow CCCD write failed with error 129 the moment a
+    // second device's operation was mid-flight on the other slot.
+    private val opQueue = ArrayDeque<Pair<Connection, Op>>()
+    private var inFlightConnection: Connection? = null
+    private var inFlightOp: Op? = null
+    private var opTimeout: Runnable? = null
     private val cooldownUntil = HashMap<Long, Long>()
     private val cooldownStep = HashMap<Long, Long>()
     private var bondReceiverRegistered = false
@@ -104,8 +115,6 @@ internal class GattEngine(
         var disconnectedDelivered = false
         var servicesTree: List<GattService>? = null
         var servicesRequested = false
-        val opQueue = ArrayDeque<Op>()
-        var inFlight: Op? = null
         val handleToCharacteristic = HashMap<Int, BluetoothGattCharacteristic>()
         val handleToDescriptor = HashMap<Int, BluetoothGattDescriptor>()
         val characteristicToHandle = HashMap<BluetoothGattCharacteristic, Int>()
@@ -317,7 +326,14 @@ internal class GattEngine(
         if (connection.disconnectedDelivered) return
         connection.disconnectedDelivered = true
         connection.clearTimeout()
-        connection.opTimeout?.let(handler::removeCallbacks)
+        if (inFlightConnection === connection) {
+            opTimeout?.let(handler::removeCallbacks)
+            opTimeout = null
+            inFlightConnection = null
+            inFlightOp = null
+            handler.post { pump() }
+        }
+        opQueue.removeAll { it.first === connection }
         runCatching { connection.gatt?.close() }
         connections.remove(connection.address)
         if (connection.state == State.CONNECTING || connection.state == State.MTU_WAIT ||
@@ -361,39 +377,47 @@ internal class GattEngine(
         handler.post {
             val connection = connections[address]
             if (connection == null || connection.state != State.READY) {
-                val handle = when (op) {
-                    is Op.Read -> op.handle
-                    is Op.Write -> op.handle
-                    is Op.ReadDescriptor -> op.handle
-                    is Op.WriteDescriptor -> op.handle
-                    is Op.Notify -> op.handle
-                }
-                deliver(GattEvent.OperationError(address, handle, ERROR_NOT_CONNECTED))
+                deliver(GattEvent.OperationError(address, handleOf(op), ERROR_NOT_CONNECTED))
                 return@post
             }
-            connection.opQueue.addLast(op)
-            pump(connection)
+            opQueue.addLast(connection to op)
+            pump()
         }
+    }
+
+    private fun handleOf(op: Op): Int = when (op) {
+        is Op.Read -> op.handle
+        is Op.Write -> op.handle
+        is Op.ReadDescriptor -> op.handle
+        is Op.WriteDescriptor -> op.handle
+        is Op.Notify -> op.handle
     }
 
     @Suppress("DEPRECATION")
     @SuppressLint("MissingPermission")
-    private fun pump(connection: Connection) {
-        if (connection.inFlight != null || connection.state != State.READY) return
-        val op = connection.opQueue.removeFirstOrNull() ?: return
-        connection.inFlight = op
-        connection.opTimeout = Runnable {
-            Log.w(TAG, "operation timeout for ${formatAddress(connection.address)}")
-            val handle = when (op) {
-                is Op.Read -> op.handle
-                is Op.Write -> op.handle
-                is Op.ReadDescriptor -> op.handle
-                is Op.WriteDescriptor -> op.handle
-                is Op.Notify -> op.handle
+    private fun pump() {
+        if (inFlightOp != null) return
+        // Skip ops whose connection died while they queued; their futures
+        // resolve through the disconnect the client already saw.
+        var next: Pair<Connection, Op>? = null
+        while (opQueue.isNotEmpty()) {
+            val candidate = opQueue.removeFirst()
+            if (candidate.first.state == State.READY &&
+                connections[candidate.first.address] === candidate.first) {
+                next = candidate
+                break
             }
-            deliver(GattEvent.OperationError(connection.address, handle, ERROR_NOT_CONNECTED))
-            connection.inFlight = null
-            pump(connection)
+        }
+        val (connection, op) = next ?: return
+        inFlightConnection = connection
+        inFlightOp = op
+        opTimeout = Runnable {
+            Log.w(TAG, "operation timeout for ${formatAddress(connection.address)}")
+            deliver(GattEvent.OperationError(
+                connection.address, handleOf(op), ERROR_NOT_CONNECTED))
+            inFlightConnection = null
+            inFlightOp = null
+            pump()
         }.also { handler.postDelayed(it, OPERATION_TIMEOUT_MS) }
 
         val gatt = connection.gatt
@@ -437,7 +461,7 @@ internal class GattEngine(
                     val cccd = characteristic.getDescriptor(CCCD_UUID)
                     if (cccd == null) {
                         // No CCCD to write: the enable is already complete.
-                        completeOp(connection)
+                        completeOp()
                         deliver(GattEvent.NotifyStateDone(connection.address, op.handle))
                         return
                     }
@@ -453,25 +477,22 @@ internal class GattEngine(
             }
         }
         if (!started) {
-            connection.opTimeout?.let(handler::removeCallbacks)
-            val handle = when (op) {
-                is Op.Read -> op.handle
-                is Op.Write -> op.handle
-                is Op.ReadDescriptor -> op.handle
-                is Op.WriteDescriptor -> op.handle
-                is Op.Notify -> op.handle
-            }
-            deliver(GattEvent.OperationError(connection.address, handle, ERROR_NOT_CONNECTED))
-            connection.inFlight = null
-            pump(connection)
+            opTimeout?.let(handler::removeCallbacks)
+            opTimeout = null
+            deliver(GattEvent.OperationError(
+                connection.address, handleOf(op), ERROR_NOT_CONNECTED))
+            inFlightConnection = null
+            inFlightOp = null
+            pump()
         }
     }
 
-    private fun completeOp(connection: Connection) {
-        connection.opTimeout?.let(handler::removeCallbacks)
-        connection.opTimeout = null
-        connection.inFlight = null
-        handler.post { pump(connection) }
+    private fun completeOp() {
+        opTimeout?.let(handler::removeCallbacks)
+        opTimeout = null
+        inFlightConnection = null
+        inFlightOp = null
+        handler.post { pump() }
     }
 
     // --- Stack callbacks: re-posted to the handler thread ---
@@ -531,13 +552,14 @@ internal class GattEngine(
             val data = characteristic.value ?: ByteArray(0)
             handler.post {
                 if (connections[connection.address] !== connection) return@post
-                val op = connection.inFlight as? Op.Read ?: return@post
+                if (inFlightConnection !== connection) return@post
+                val op = inFlightOp as? Op.Read ?: return@post
                 if (status == 0) {
                     deliver(GattEvent.ReadResult(connection.address, op.handle, data))
                 } else {
                     deliver(GattEvent.OperationError(connection.address, op.handle, status))
                 }
-                completeOp(connection)
+                completeOp()
             }
         }
 
@@ -548,13 +570,14 @@ internal class GattEngine(
         ) {
             handler.post {
                 if (connections[connection.address] !== connection) return@post
-                val op = connection.inFlight as? Op.Write ?: return@post
+                if (inFlightConnection !== connection) return@post
+                val op = inFlightOp as? Op.Write ?: return@post
                 if (status != 0) {
                     deliver(GattEvent.OperationError(connection.address, op.handle, status))
                 } else if (op.withResponse) {
                     deliver(GattEvent.WriteDone(connection.address, op.handle))
                 }
-                completeOp(connection)
+                completeOp()
             }
         }
 
@@ -567,13 +590,14 @@ internal class GattEngine(
             val data = descriptor.value ?: ByteArray(0)
             handler.post {
                 if (connections[connection.address] !== connection) return@post
-                val op = connection.inFlight as? Op.ReadDescriptor ?: return@post
+                if (inFlightConnection !== connection) return@post
+                val op = inFlightOp as? Op.ReadDescriptor ?: return@post
                 if (status == 0) {
                     deliver(GattEvent.ReadResult(connection.address, op.handle, data))
                 } else {
                     deliver(GattEvent.OperationError(connection.address, op.handle, status))
                 }
-                completeOp(connection)
+                completeOp()
             }
         }
 
@@ -584,7 +608,8 @@ internal class GattEngine(
         ) {
             handler.post {
                 if (connections[connection.address] !== connection) return@post
-                when (val op = connection.inFlight) {
+                if (inFlightConnection !== connection) return@post
+                when (val op = inFlightOp) {
                     is Op.WriteDescriptor -> {
                         if (status == 0) {
                             deliver(GattEvent.WriteDone(connection.address, op.handle))
@@ -592,7 +617,7 @@ internal class GattEngine(
                             deliver(GattEvent.OperationError(
                                 connection.address, op.handle, status))
                         }
-                        completeOp(connection)
+                        completeOp()
                     }
                     is Op.Notify -> {
                         if (status == 0) {
@@ -601,7 +626,7 @@ internal class GattEngine(
                             deliver(GattEvent.OperationError(
                                 connection.address, op.handle, status))
                         }
-                        completeOp(connection)
+                        completeOp()
                     }
                     else -> Unit
                 }
