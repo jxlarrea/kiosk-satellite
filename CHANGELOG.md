@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.51 - 2026-08-16
 
 ### Fixed
 - The dashboard no longer stops loading with "ERR_RESPONSE_HEADERS_TOO_BIG" after the app has been running for a while, on an installation using the secure context proxy (#230). Every response the proxy passed back to the page left a copy of two of Home Assistant's headers behind in the proxy's own defaults, so each page load carried a slightly larger header block than the one before it, and once it passed the browser's quarter megabyte limit nothing on that Home Assistant would load until the app was restarted. Responses now carry exactly the headers Home Assistant sent, and nothing accumulates.
