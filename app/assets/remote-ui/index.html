@@ -4071,11 +4071,14 @@ async function loadSettings() {
   // the btProxyNearby command's identified inventory. Only with the proxy
   // on; refreshes itself while the page is open (the timer is module-level
   // so a settings re-render replaces it instead of stacking another).
-  if (on('btproxy.enabled')) {
+  // byKey, not the permissions block's on() helper: that one is const
+  // inside a later block, and reaching for it from here is a
+  // ReferenceError that kills everything loadSettings still had to do.
+  if (byKey['btproxy.enabled']?.value === true) {
+    // No heading of its own: the lookup toggle's "Nearby devices" section
+    // heading (from the definitions) already labels this stretch of the
+    // tab, and the list card slots in right under it.
     const root = document.getElementById('tab-btproxy');
-    const heading = document.createElement('h2');
-    heading.className = 'card-title';
-    heading.textContent = 'Nearby devices';
     const card = document.createElement('div');
     card.className = 'card';
     card.id = 'btproxy-nearby-card';
@@ -4083,7 +4086,6 @@ async function loadSettings() {
     empty.className = 'desc';
     empty.textContent = 'Nothing heard yet.';
     card.appendChild(empty);
-    root.appendChild(heading);
     root.appendChild(card);
     const renderNearby = (devices) => {
       card.innerHTML = '';
