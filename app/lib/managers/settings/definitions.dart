@@ -3327,6 +3327,25 @@ const btproxyKey = SettingDef<String>(
   dependsOn: 'btproxy.enabled',
 );
 
+/// Off by default, and the description names the exact host: Home Assistant
+/// households run local-first on purpose, and a wall tablet quietly calling
+/// an internet API is precisely what they de-install apps over. The lookup
+/// sends hardware address prefixes only (never full addresses), one request
+/// per manufacturer prefix ever, cached forever after.
+const btproxyMacLookup = SettingDef<bool>(
+  key: 'btproxy.mac_lookup',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Look up device manufacturers online',
+  description:
+      'Names unknown nearby devices by their hardware address prefix using '
+      'api.macvendors.com. Only the 3-byte manufacturer prefix is sent, '
+      'once per manufacturer; nothing else leaves the device.',
+  category: 'Bluetooth Proxy',
+  section: 'Nearby devices',
+  dependsOn: 'btproxy.enabled',
+);
+
 const btproxyPort = SettingDef<String>(
   key: 'btproxy.port',
   type: SettingType.string,
@@ -3650,6 +3669,7 @@ const List<SettingDef<Object>> allSettings = [
   btproxyEnabled,
   btproxyKey,
   btproxyPort,
+  btproxyMacLookup,
   deviceName,
   uiTheme,
   disableImpeller,

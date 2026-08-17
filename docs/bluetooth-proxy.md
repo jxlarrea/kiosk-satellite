@@ -41,6 +41,27 @@ support, such as an ESP32. Announcing capabilities a device cannot honor
 is how Bluetooth proxies get a reputation for breaking locks; this one
 does not.
 
+## Nearby devices
+
+The Bluetooth Proxy settings page lists what the kiosk currently hears,
+identified as far as honesty allows: the name a device broadcasts, else
+its class from the advertisement (a BTHome sensor, an Apple Find My
+device, a Windows PC), else its manufacturer. Devices using rotating
+private addresses are marked; their row is an appearance, not a stable
+device, and only Home Assistant's Private BLE Device integration (with
+the device's IRK) can give those a lasting identity.
+
+The same list reaches Home Assistant as a diagnostic sensor per kiosk,
+**Bluetooth devices nearby** (the count as its state, the identified list
+as attributes), so a dashboard can show what each room hears.
+
+**Look up device manufacturers online** is off by default. Switched on,
+unknown devices with real hardware addresses are named by their
+manufacturer prefix using api.macvendors.com. Only the 3-byte prefix is
+ever sent, once per manufacturer, and the answer is cached on the device
+permanently; nothing else leaves the network, and the relay to Home
+Assistant is untouched either way.
+
 ## Permissions by Android version
 
 | Android | What scanning needs |

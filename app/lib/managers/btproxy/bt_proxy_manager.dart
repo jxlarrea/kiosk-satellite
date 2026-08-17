@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'dart:math' show Random;
 
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'ble_identity.dart';
 
 /// Runs the native Bluetooth proxy (an ESPHome-compatible API server plus
 /// BLE scanner, see android btproxy/) and owns its policy: the enable
@@ -32,6 +34,13 @@ class BtProxyManager extends Manager {
   String _appVersion = '0';
   String _liveKey = '';
   bool _running = false;
+
+  // The OUI vendor cache: prefix "AA:BB:CC" to vendor name, '' for a
+  // registry miss. Persisted so each prefix is looked up once per install,
+  // ever; a home's radio horizon holds a few dozen prefixes at most.
+  Map<String, String> _ouiCache = {};
+  final List<String> _ouiQueue = [];
+  Timer? _ouiTimer;
 
   @override
   String get name => 'btproxy';
@@ -70,6 +79,22 @@ class BtProxyManager extends Manager {
         },
       ),
     );
+    commands.register(
+      Command(
+        name: 'btProxyNearby',
+        description:
+            'Nearby Bluetooth devices the proxy hears, with best-effort '
+            'identification (name, vendor, class, RSSI, last seen)',
+        handler: (_) async {
+          final devices = await refreshNearby();
+          return CommandResult.ok({
+            'count': devices.length,
+            'devices': [for (final d in devices) d.toJson()],
+          });
+        },
+      ),
+    );
+    _ouiCache = _loadOuiCache();
     final version = await commands.execute('getDeviceInfo', const {});
     _appVersion =
         ((version.data as Map?)?['appVersion'] as String?) ?? '0';
@@ -78,9 +103,93 @@ class BtProxyManager extends Manager {
     }
   }
 
+  /// Pulls the native tracker's inventory and classifies it. Queues online
+  /// OUI lookups for still-anonymous hardware when the user opted in; those
+  /// resolve into later refreshes through the cache.
+  Future<List<NearbyDevice>> refreshNearby() async {
+    List<dynamic> raw;
+    try {
+      raw = await _channel.invokeMethod<List<dynamic>>('nearby') ?? const [];
+    } catch (_) {
+      return const [];
+    }
+    final lookupEnabled = _settings.get(defs.btproxyMacLookup);
+    final devices = <NearbyDevice>[];
+    for (final entry in raw) {
+      if (entry is! Map) continue;
+      final address = '${entry['address'] ?? ''}';
+      String? ouiVendor;
+      if (hasRealOui(address)) {
+        ouiVendor = _ouiCache[ouiOf(address)];
+        if (ouiVendor != null && ouiVendor.isEmpty) ouiVendor = null;
+      }
+      final device = classify(entry, ouiVendor: ouiVendor);
+      if (lookupEnabled &&
+          device.vendor == null &&
+          hasRealOui(address) &&
+          !_ouiCache.containsKey(ouiOf(address))) {
+        _queueOuiLookup(ouiOf(address));
+      }
+      devices.add(device);
+    }
+    return devices;
+  }
+
+  Map<String, String> _loadOuiCache() {
+    try {
+      final stored = _settings.internal('btproxy_oui_cache');
+      if (stored.isEmpty) return {};
+      return Map<String, String>.from(jsonDecode(stored) as Map);
+    } catch (_) {
+      return {};
+    }
+  }
+
+  void _queueOuiLookup(String oui) {
+    if (_ouiQueue.contains(oui)) return;
+    _ouiQueue.add(oui);
+    _ouiTimer ??= Timer.periodic(
+      // Under api.macvendors.com's free-tier rate limit, with margin.
+      const Duration(seconds: 3),
+      (_) => _drainOuiQueue(),
+    );
+  }
+
+  Future<void> _drainOuiQueue() async {
+    if (_ouiQueue.isEmpty) {
+      _ouiTimer?.cancel();
+      _ouiTimer = null;
+      return;
+    }
+    if (!_settings.get(defs.btproxyMacLookup)) {
+      _ouiQueue.clear();
+      return;
+    }
+    final oui = _ouiQueue.removeAt(0);
+    try {
+      final response = await http
+          .get(Uri.parse('https://api.macvendors.com/$oui'))
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        _ouiCache[oui] = response.body.trim();
+      } else if (response.statusCode == 404) {
+        // A registry miss is an answer too: cache it so the prefix is
+        // never asked about again.
+        _ouiCache[oui] = '';
+      } else {
+        return; // rate limited or server trouble: drop, retry on a later pass
+      }
+      await _settings.setInternal('btproxy_oui_cache', jsonEncode(_ouiCache));
+    } catch (e) {
+      log.warn(name, 'OUI lookup failed for $oui: $e');
+    }
+  }
+
   @override
   Future<void> dispose() async {
     _restartDebounce?.cancel();
+    _ouiTimer?.cancel();
+    _ouiTimer = null;
     await _settingsSub?.cancel();
     _settingsSub = null;
     await _stop();

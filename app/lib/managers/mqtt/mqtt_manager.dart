@@ -98,6 +98,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// sensor only publishes on change; the nudge timer batches the lifecycle
   /// flurries around an app launch into one read.
   String _lastForeground = '';
+  String _lastBtNearby = '';
   Timer? _foregroundNudge;
   int? _lastRamFreeMb;
   int? _lastRamTotalMb;
@@ -387,6 +388,25 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         jsonEncode({'label': pkg == null ? null : '${data['label'] ?? pkg}'}));
   }
 
+  /// The Bluetooth proxy's nearby-device inventory (count as the state, the
+  /// identified list as attributes), so a dashboard can show what each room
+  /// hears without opening the app. Top of the list by recency, capped: the
+  /// attribute JSON rides the same connection as everything else and a busy
+  /// street of rotating addresses could otherwise grow it without bound.
+  Future<void> _publishBtProxyNearby() async {
+    if (!_connected) return;
+    if (!_settings.get(defs.btproxyEnabled)) return;
+    final result = await commands.execute('btProxyNearby', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map) return;
+    final devices = (data['devices'] as List? ?? const []).take(40).toList();
+    final payload = jsonEncode({'devices': devices});
+    if (payload == _lastBtNearby) return;
+    _lastBtNearby = payload;
+    _publish('$_base/btproxy_nearby/state', '${data['count'] ?? devices.length}');
+    _publish('$_base/btproxy_nearby/attributes', payload);
+  }
+
   /// The setting-backed switches: object id → (setting read, apply). The
   /// HA-kiosk one is a select underneath ('off'/'auto'/'plugin'/'css'); its
   /// switch reads "anything but off" and writes auto/off, leaving a
@@ -615,6 +635,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       // The Open app launcher button follows the master switch: published
       // when it goes on, retracted when it goes off (the dispatch side is
       // gated too — showAppLauncher refuses while disabled).
+      if (_connected) unawaited(_publishDiscovery());
+      return;
+    }
+    if (e.key == defs.btproxyEnabled.key) {
+      // The nearby-devices sensor follows the proxy's master switch, same
+      // shape as the launcher button above.
+      _lastBtNearby = '';
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
@@ -1437,6 +1464,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     }
     unawaited(_publishForegroundApp());
     unawaited(_publishIpAddresses());
+    unawaited(_publishBtProxyNearby());
     // Timestamp anchors, not counters: each tick re-derives when the app
     // and the network came up and republishes only when an anchor actually
     // moved (a restart, a reconnect), so the recorder logs those moments
@@ -1521,6 +1549,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
         '$_prefix/binary_sensor/ks_$_deviceId/connectivity/config',
         '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
+        '$_prefix/sensor/ks_$_deviceId/btproxy_nearby/config',
         '$_prefix/sensor/ks_$_deviceId/device_info/config',
         '$_prefix/sensor/ks_$_deviceId/ipv4_address/config',
         '$_prefix/sensor/ks_$_deviceId/ipv6_address/config',
@@ -1840,6 +1869,17 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'icon': 'mdi:application-outline',
         'entity_category': 'diagnostic',
       },
+      // What the Bluetooth proxy hears, identified as far as honesty
+      // allows: the count as the state, the device list (name, vendor,
+      // RSSI, last seen) as attributes for dashboards and templates.
+      if (_settings.get(defs.btproxyEnabled))
+        '$_prefix/sensor/ks_$_deviceId/btproxy_nearby/config': {
+          ...common('btproxy_nearby', 'Bluetooth devices nearby'),
+          'state_topic': '$_base/btproxy_nearby/state',
+          'json_attributes_topic': '$_base/btproxy_nearby/attributes',
+          'icon': 'mdi:bluetooth-audio',
+          'entity_category': 'diagnostic',
+        },
       // The hardware identity and addresses the remote admin's Device page
       // shows, as diagnostic sensors (issue #213), so dashboards and
       // scripts can read them without opening the admin.

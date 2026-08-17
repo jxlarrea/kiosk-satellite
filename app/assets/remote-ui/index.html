@@ -1006,6 +1006,8 @@ const SEARCH_CATEGORY_TABS = {
   'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
 };
 const SEARCH_EXTRAS = [
+  { tab: 'btproxy', title: 'Nearby devices',
+    desc: 'The Bluetooth devices this kiosk hears, with names where known.' },
   { tab: 'homeassistant', title: 'Validate connection',
     desc: 'Check the URL and token against your Home Assistant.' },
   { tab: 'homeassistant', title: 'Secure context proxy',
@@ -4062,6 +4064,69 @@ async function loadSettings() {
           + 'Enable Kiosk Satellite under Accessibility on the tablet.',
         'Open settings on device', openGuard, pollGuard),
     ]);
+  }
+
+  // ── Bluetooth Proxy nearby devices ───────────────────────────────────
+  // The live list the device shows under the lookup toggle, same data:
+  // the btProxyNearby command's identified inventory. Only with the proxy
+  // on; refreshes itself while the page is open (the timer is module-level
+  // so a settings re-render replaces it instead of stacking another).
+  if (on('btproxy.enabled')) {
+    const root = document.getElementById('tab-btproxy');
+    const heading = document.createElement('h2');
+    heading.className = 'card-title';
+    heading.textContent = 'Nearby devices';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'btproxy-nearby-card';
+    const empty = document.createElement('div');
+    empty.className = 'desc';
+    empty.textContent = 'Nothing heard yet.';
+    card.appendChild(empty);
+    root.appendChild(heading);
+    root.appendChild(card);
+    const renderNearby = (devices) => {
+      card.innerHTML = '';
+      if (!devices.length) { card.appendChild(empty); return; }
+      for (const d of devices.slice(0, 25)) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const info = document.createElement('div');
+        info.className = 'info';
+        info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+        info.querySelector('.name').textContent =
+          (d.identity || 'Unknown device') +
+          (d.rotating ? '  (rotating address)' : '');
+        const seen = d.last_seen ? new Date(d.last_seen) : null;
+        const age = seen ? Math.max(0, (Date.now() - seen) / 1000) : null;
+        const ageText = age === null ? '' :
+          age < 60 ? `${Math.round(age)}s ago` :
+          age < 3600 ? `${Math.round(age / 60)}m ago` :
+          `${Math.round(age / 3600)}h ago`;
+        info.querySelector('.desc').textContent = [
+          d.mac,
+          d.vendor && d.vendor !== d.identity ? d.vendor : null,
+          `${d.rssi} dBm`, ageText,
+        ].filter(Boolean).join('  ·  ');
+        row.appendChild(info);
+        card.appendChild(row);
+      }
+      if (devices.length > 25) {
+        const more = document.createElement('div');
+        more.className = 'desc';
+        more.style.cssText = 'margin-top:8px';
+        more.textContent = `And ${devices.length - 25} more, newest first.`;
+        card.appendChild(more);
+      }
+    };
+    const pollNearby = () => api('/api/commands/btProxyNearby',
+      { method: 'POST', body: '{}' }).then((r) => r.json())
+      .then((res) => { if (document.getElementById('btproxy-nearby-card'))
+        renderNearby(res.data?.devices || []); })
+      .catch(() => {});
+    if (window.__btNearbyTimer) clearInterval(window.__btNearbyTimer);
+    window.__btNearbyTimer = setInterval(pollNearby, 15000);
+    pollNearby();
   }
 
   // ── Lockdown Mode note ────────────────────────────────────────────────

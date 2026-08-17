@@ -139,6 +139,13 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     description: "Replace this device's settings from an exported file.",
     anchorId: 'x:import_config',
   ),
+  SettingsSearchEntry(
+    category: 'Bluetooth Proxy',
+    title: 'Nearby devices',
+    description:
+        'The Bluetooth devices this kiosk hears, with names where known.',
+    anchorId: 'x:btproxy_nearby',
+  ),
 ];
 
 /// The full index: the category pages, every non-hidden definition whose

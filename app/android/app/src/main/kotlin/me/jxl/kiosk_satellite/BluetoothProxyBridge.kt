@@ -52,6 +52,7 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                     result.success(null)
                 }
                 "status" -> result.success(BluetoothProxyRuntime.status())
+                "nearby" -> result.success(BluetoothProxyRuntime.nearbyDevices())
                 else -> result.notImplemented()
             }
         }

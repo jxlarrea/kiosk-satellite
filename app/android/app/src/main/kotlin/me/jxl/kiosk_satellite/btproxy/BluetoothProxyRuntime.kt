@@ -37,6 +37,7 @@ internal object BluetoothProxyRuntime {
     private var announcer: MdnsAnnouncer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val logRing = ArrayDeque<String>()
+    private val nearby = NearbyDeviceTracker()
 
     @Synchronized
     fun start(context: Context, config: Config) {
@@ -46,7 +47,10 @@ internal object BluetoothProxyRuntime {
 
         val scanEngine = BleScanEngine(
             appContext,
-            onAdvertisement = { adv -> server?.publishAdvertisement(adv) },
+            onAdvertisement = { adv ->
+                server?.publishAdvertisement(adv)
+                nearby.observe(adv)
+            },
             onStateChange = { state, mode -> server?.reportScannerState(state, mode) },
         )
         val apiServer = ApiServer(
@@ -94,6 +98,7 @@ internal object BluetoothProxyRuntime {
         engine = null
         server?.stop()
         server = null
+        nearby.clear()
         wakeLock?.let { runCatching { if (it.isHeld) it.release() } }
         wakeLock = null
         log("Bluetooth proxy stopped")
@@ -112,6 +117,10 @@ internal object BluetoothProxyRuntime {
             "log" to synchronized(logRing) { logRing.toList() },
         )
     }
+
+    /** The nearby-device inventory, newest first. Empty while stopped. */
+    fun nearbyDevices(): List<Map<String, Any?>> =
+        if (isRunning) nearby.snapshot() else emptyList()
 
     private fun buildIdentity(context: Context, config: Config): ProxyIdentity {
         val suffix = stableSuffix(context)

@@ -1536,6 +1536,14 @@ class _CategoryContentState extends State<_CategoryContent> {
                 mqttPassword.key: _MqttValidateRow(container: container),
               if (widget.category == 'Sendspin')
                 sendspinMaToken.key: _MaValidateRow(container: container),
+              // The live list right under the lookup toggle that colors it.
+              // Rides the toggle's dependsOn: with the proxy off there is
+              // nothing to list and neither row renders.
+              if (widget.category == 'Bluetooth Proxy')
+                btproxyMacLookup.key: SearchLandingTarget(
+                  id: 'x:btproxy_nearby',
+                  child: _BtNearbyDevicesRow(container: container),
+                ),
             },
           ),
         // Last and on their own card, like the Voice Satellite permissions:
@@ -3194,6 +3202,103 @@ class _MqttValidateRowState extends State<_MqttValidateRow> {
           ),
     onTap: _validating ? null : _validate,
   );
+}
+
+/// The live nearby-device list under the Bluetooth proxy's lookup toggle:
+/// what this kiosk hears right now, identified as far as honesty allows
+/// (broadcast name, then device class, then vendor). Refreshes itself while
+/// on screen; rotating-address devices are marked because their row is an
+/// appearance, not a stable device.
+class _BtNearbyDevicesRow extends StatefulWidget {
+  const _BtNearbyDevicesRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_BtNearbyDevicesRow> createState() => _BtNearbyDevicesRowState();
+}
+
+class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
+  static const _shown = 25;
+  List<Map<String, Object?>> _devices = const [];
+  Timer? _refresh;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _poll();
+    _refresh = Timer.periodic(const Duration(seconds: 10), (_) => _poll());
+  }
+
+  @override
+  void dispose() {
+    _refresh?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _poll() async {
+    final result = await widget.container.commands.execute(
+      'btProxyNearby',
+      const {},
+    );
+    if (!mounted) return;
+    final data = result.data;
+    setState(() {
+      _loaded = true;
+      _devices = result.ok && data is Map
+          ? [
+              for (final d in (data['devices'] as List? ?? const []))
+                if (d is Map) Map<String, Object?>.from(d),
+            ]
+          : const [];
+    });
+  }
+
+  String _age(Object? iso) {
+    final seen = DateTime.tryParse('$iso');
+    if (seen == null) return '';
+    final age = DateTime.now().difference(seen);
+    if (age.inSeconds < 60) return '${age.inSeconds}s ago';
+    if (age.inMinutes < 60) return '${age.inMinutes}m ago';
+    return '${age.inHours}h ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded) return const SizedBox.shrink();
+    if (_devices.isEmpty) {
+      return const HintRow(
+        'Nothing heard yet. Devices appear here once the proxy is '
+        'scanning.',
+      );
+    }
+    final visible = _devices.take(_shown).toList();
+    return Column(
+      children: [
+        for (final device in visible)
+          ListTile(
+            dense: true,
+            title: Text(
+              '${device['identity'] ?? 'Unknown device'}'
+              '${device['rotating'] == true ? '  (rotating address)' : ''}',
+            ),
+            subtitle: Text(
+              [
+                '${device['mac']}',
+                if (device['vendor'] != null &&
+                    '${device['vendor']}' != '${device['identity']}')
+                  '${device['vendor']}',
+                '${device['rssi']} dBm',
+                _age(device['last_seen']),
+              ].join('  ·  '),
+            ),
+          ),
+        if (_devices.length > _shown)
+          HintRow('And ${_devices.length - _shown} more, newest first.'),
+      ],
+    );
+  }
 }
 
 /// The Music Assistant check, mirroring the Home Assistant, Immich and MQTT
