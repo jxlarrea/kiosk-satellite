@@ -4148,12 +4148,16 @@ async function loadSettings() {
           d.vendor && d.vendor !== d.identity ? d.vendor : null,
           '',
         ].filter((x) => x !== null).join('  ·  ');
-        const dot = document.createElement('span');
-        dot.style.cssText = `color:${tier}; font-size:10px`;
-        dot.textContent = '● ';
-        desc.appendChild(dot);
-        desc.appendChild(document.createTextNode(
-          `${d.rssi} dBm  ·  ${ageText}`));
+        // A tag, not a dot: the number itself wears the tier color.
+        // var(--surface) as the text keeps contrast in both themes (white
+        // on the dark-toned light palette, near-black on the dark one).
+        const tag = document.createElement('span');
+        tag.style.cssText = `background:${tier}; color:var(--surface); ` +
+          'border-radius:6px; padding:0 6px 1px; font-size:11.5px; ' +
+          'white-space:nowrap';
+        tag.textContent = `${d.rssi} dBm`;
+        desc.appendChild(tag);
+        desc.appendChild(document.createTextNode(`  ·  ${ageText}`));
         row.appendChild(info);
         card.appendChild(row);
       }
@@ -4198,8 +4202,16 @@ async function loadSettings() {
       stateEl.style.whiteSpace = 'nowrap';
       row.appendChild(stateEl);
       permCard.appendChild(row);
-      root.appendChild(h);
-      root.appendChild(permCard);
+      // Under the first card, before the Nearby devices section, same as
+      // the device page: the grant gates everything below it.
+      const firstHeading = root.querySelector('h2.card-title');
+      if (firstHeading) {
+        root.insertBefore(h, firstHeading);
+        root.insertBefore(permCard, firstHeading);
+      } else {
+        root.appendChild(h);
+        root.appendChild(permCard);
+      }
       const readPerm = () => api('/api/commands/getSystemPermissions',
         { method: 'POST', body: '{}' }).then((r) => r.json())
         .then((res) => (res.data || {}).bluetooth ?? null).catch(() => null);

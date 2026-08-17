@@ -805,6 +805,24 @@ class _CategoryContent extends StatefulWidget {
 }
 
 class _CategoryContentState extends State<_CategoryContent> {
+  /// Splices the Bluetooth proxy's "Required system permissions" group in
+  /// right under the page's first card (the master switch and its keys),
+  /// before the Nearby devices section: the grant gates everything below
+  /// it, so it reads top-down as switch, grant, results. Every other
+  /// category passes through untouched.
+  List<Widget> _withBtProxyPermissions(List<Widget> cards) {
+    if (widget.category != 'Bluetooth Proxy') return cards;
+    const permissions = <Widget>[
+      SectionHeading('Required system permissions'),
+      SearchLandingTarget(
+        id: 'x:btproxy_permissions',
+        child: SettingsCard(children: [_BtProxyPermissionsTile()]),
+      ),
+    ];
+    if (cards.isEmpty) return permissions;
+    return [cards.first, ...permissions, ...cards.skip(1)];
+  }
+
   Future<bool>? _vsDetected;
 
   /// Held rather than started in build(): a fresh Future on every rebuild
@@ -1431,7 +1449,7 @@ class _CategoryContentState extends State<_CategoryContent> {
             ],
           ),
         ] else
-          ..._sectionedCards(
+          ..._withBtProxyPermissions(_sectionedCards(
             container,
             // With the Camera master switch off (or no camera on the
             // device at all), motion detection cannot run: the dismiss
@@ -1546,18 +1564,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   child: _BtNearbyDevicesRow(container: container),
                 ),
             },
-          ),
-        // Same shape as the Voice Satellite and Kiosk groups: the grant the
-        // feature needs, at the end of the feature's own page.
-        if (widget.category == 'Bluetooth Proxy') ...[
-          const SectionHeading('Required system permissions'),
-          SearchLandingTarget(
-            id: 'x:btproxy_permissions',
-            child: const SettingsCard(
-              children: [_BtProxyPermissionsTile()],
-            ),
-          ),
-        ],
+          )),
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
         // has no page on the device, so its grants live here too.
@@ -3290,11 +3297,12 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
       widget.container.settings.get(btproxyNearbySort),
     );
     final visible = sorted.take(_shown).toList();
-    final theme = Theme.of(context);
+    // The remote admin's tier palette, verbatim: dark enough tones that the
+    // tag text reads in either app theme, and both UIs color alike.
     Color tierColor(int rssi) => switch (rssiTier(rssi)) {
-      'strong' => Colors.green,
-      'medium' => Colors.orange,
-      _ => theme.colorScheme.error,
+      'strong' => const Color(0xFF56814F),
+      'medium' => const Color(0xFF9C742A),
+      _ => const Color(0xFFA9501F),
     };
     return Column(
       children: [
@@ -3317,19 +3325,27 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
                       '',
                     ].join('  ·  '),
                   ),
-                  TextSpan(
-                    text: '● ',
-                    style: TextStyle(
-                      color: tierColor((device['rssi'] as int?) ?? -128),
-                      // The dot reads as a badge, not a character: keep it
-                      // from towering over the text line.
-                      fontSize: 10,
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tierColor((device['rssi'] as int?) ?? -128),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${device['rssi']} dBm',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                        ),
+                      ),
                     ),
                   ),
-                  TextSpan(
-                    text: '${device['rssi']} dBm'
-                        '  ·  ${_age(device['last_seen'])}',
-                  ),
+                  TextSpan(text: '  ·  ${_age(device['last_seen'])}'),
                 ],
               ),
             ),
