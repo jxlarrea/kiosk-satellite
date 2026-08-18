@@ -836,16 +836,25 @@ class _CategoryContentState extends State<_CategoryContent> {
         child: SettingsCard(children: [_BtProxyPermissionsTile()]),
       ),
     ];
+    // A dead server right where its switch is: without this the page
+    // renders identically whether the server runs or not (issue #240).
+    final startError = <Widget>[
+      if (_espStartError != null &&
+          widget.container.settings.get(esphomeEnabled))
+        WarnRow('The ESPHome server failed to start: $_espStartError'),
+    ];
     // Everything from the "Bluetooth Proxy" section heading down is the
     // Bluetooth side of the page; before it sits the general ESPHome card.
     final split = cards.indexWhere(
         (w) => w is SectionHeading && w.text == 'Bluetooth Proxy');
     if (split < 0) {
-      // ESPHome disabled: only the general card renders; nothing below
-      // needs a grant and nothing is Bluetooth.
-      return cards;
+      // No Bluetooth section (ESPHome or the proxy disabled): only the
+      // general rows render, but a failed start still says so.
+      return cards.isEmpty
+          ? cards
+          : [cards.first, ...startError, ...cards.skip(1)];
     }
-    final general = cards.sublist(0, split);
+    final general = <Widget>[...cards.sublist(0, split), ...startError];
     // The permissions group lands under the Bluetooth Proxy section's card:
     // heading, card, grant, then the Nearby devices section.
     final nearby = cards.indexWhere(
@@ -873,11 +882,27 @@ class _CategoryContentState extends State<_CategoryContent> {
   bool? _btAdapterOn;
   Timer? _btAdapterTimer;
 
+  /// Why the ESPHome server is down, or null while healthy: without this
+  /// row a failed start (a port conflict, issue #240) renders a page that
+  /// looks exactly like a working one.
+  String? _espStartError;
+
   Future<void> _pollBtAdapter() async {
     final result = await widget.container.commands.execute(
       'btProxyAdapterOn',
       const {},
     );
+    final status = await widget.container.commands.execute(
+      'btProxyStatus',
+      const {},
+    );
+    String? error;
+    if (status.ok && status.data is Map) {
+      error = (status.data as Map)['startError'] as String?;
+    }
+    if (mounted && error != _espStartError) {
+      setState(() => _espStartError = error);
+    }
     if (!result.ok) return;
     final on = (result.data as Map?)?['on'] == true;
     if (mounted && on != _btAdapterOn) setState(() => _btAdapterOn = on);

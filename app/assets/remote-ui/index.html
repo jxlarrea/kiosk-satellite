@@ -4409,6 +4409,36 @@ async function loadSettings() {
         'Bluetooth is off on the device. Turn it on to use the proxy.';
       root.insertBefore(div, heading);
     };
+    // A dead server right where its switch is, mirroring the device
+    // page: without this the tab renders identically whether the server
+    // runs or not (issue #240).
+    const paintError = (message) => {
+      let row = root.querySelector('.esphome-start-error');
+      if (!message) { row?.remove(); return; }
+      const text = 'The ESPHome server failed to start: ' + message;
+      if (row) { row.querySelector('span').textContent = text; return; }
+      row = document.createElement('div');
+      row.className = 'esphome-start-error';
+      row.style.cssText = 'display:flex; gap:8px; align-items:flex-start; ' +
+        'margin:0 0 14px; font-size:13px; color:var(--error); line-height:1.5';
+      row.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" ' +
+        'fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" ' +
+        'style="flex:none; margin-top:2px">' +
+        '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 ' +
+        '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
+        '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
+      row.querySelector('span').textContent = text;
+      const firstCard = root.querySelector('.card');
+      if (firstCard) firstCard.insertAdjacentElement('afterend', row);
+      else root.appendChild(row);
+    };
+    const pollError = () => api('/api/commands/btProxyStatus',
+      { method: 'POST', body: '{}' }).then((r) => r.json())
+      .then((res) => paintError(res.data?.startError || null))
+      .catch(() => {});
+    pollError();
+
     const poll = () => api('/api/commands/btProxyAdapterOn',
       { method: 'POST', body: '{}' }).then((r) => r.json())
       .then((res) => {
@@ -4418,7 +4448,7 @@ async function loadSettings() {
       })
       .catch(() => {});
     if (window.__btAdapterTimer) clearInterval(window.__btAdapterTimer);
-    window.__btAdapterTimer = setInterval(poll, 5000);
+    window.__btAdapterTimer = setInterval(() => { poll(); pollError(); }, 5000);
     poll();
   }
 

@@ -35,6 +35,12 @@ class BtProxyManager extends Manager {
   String _appVersion = '0';
   String _liveKey = '';
   bool _running = false;
+
+  /// Why the last start failed, or null while healthy. Surfaced on the
+  /// ESPHome settings pages: a server that silently fails to start looks
+  /// exactly like a working one there otherwise (issue #240, a bind
+  /// conflict on one of two identical tablets).
+  String? _startError;
   late final EspEntitySurface _entities =
       EspEntitySurface(bus, commands, log, _settings);
 
@@ -101,9 +107,15 @@ class BtProxyManager extends Manager {
         handler: (_) async {
           try {
             final status = await _channel.invokeMethod<Map>('status');
-            return CommandResult.ok(
-                Map<String, Object?>.from(status ?? const {}));
+            return CommandResult.ok({
+              ...Map<String, Object?>.from(status ?? const {}),
+              if (_startError != null) 'startError': _startError,
+            });
           } catch (e) {
+            if (_startError != null) {
+              return CommandResult.ok(
+                  {'running': false, 'startError': _startError});
+            }
             return CommandResult.fail('$e');
           }
         },
@@ -271,6 +283,7 @@ class BtProxyManager extends Manager {
             : const <Map<String, Object?>>[],
       });
       _running = true;
+      _startError = null;
       if (_settings.get(defs.esphomeEntities)) {
         _entities.attach(
           (objectId, value) => _channel.invokeMethod(
@@ -282,11 +295,13 @@ class BtProxyManager extends Manager {
     } catch (e) {
       // Not-Android hosts (tests) and denied permissions land here; the
       // toggle stays on so enabling works once the grant exists.
+      _startError = e is PlatformException ? (e.message ?? '$e') : '$e';
       log.warn(name, 'failed to start: $e');
     }
   }
 
   Future<void> _stop() async {
+    _startError = null;
     if (!_running) return;
     _running = false;
     _entities.detach();
