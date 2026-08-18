@@ -1,16 +1,25 @@
 <!--
-  The ESPHome mark, simplified to a flat monochrome glyph: the house drawn
-  as one circuit trace with node dots at its three terminals, which is the
-  shape the project's logo builds on. Stroke plus filled circles so a
-  single srcIn tint colors the whole mark; the viewBox is padded to carry
-  the same optical margin as the Material glyphs beside it.
+  The ESPHome mark, monochrome: the rounded house silhouette carries the
+  serpentine-trace "E" as holes, so a single filled path reads as the logo
+  in whatever color it is given (the same treatment as the Music Assistant
+  mark beside it). Geometry traced from the project's official icon in
+  home-assistant/brands (brands.home-assistant.io/esphome/icon.png).
 -->
-<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M25 82 L25 46 L50 24 L75 46 L75 82"
-        stroke="#000" stroke-width="9" stroke-linecap="round"
-        stroke-linejoin="round"/>
-  <circle cx="25" cy="82" r="8" fill="#000"/>
-  <circle cx="75" cy="82" r="8" fill="#000"/>
-  <circle cx="50" cy="24" r="8" fill="#000"/>
-  <circle cx="50" cy="60" r="7" fill="#000"/>
+<svg width="256" height="256" viewBox="-14 -14 284 284" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" fill="#000" d="
+M118 6 Q128 -2 138 6 L246 90 Q254 96 254 106 L254 234 Q254 254 234 254
+L22 254 Q2 254 2 234 L2 106 Q2 96 10 90 Z
+M80 88 h12 v164 h-12 z
+M92 88 h88 v12 h-88 z
+M168 100 h12 v12 h-12 z
+M108 112 h72 v12 h-72 z
+M108 124 h12 v13 h-12 z
+M108 137 h72 v12 h-72 z
+M168 149 h12 v15 h-12 z
+M108 164 h72 v12 h-72 z
+M108 176 h12 v14 h-12 z
+M108 190 h72 v12 h-72 z
+M168 202 h12 v12 h-12 z
+M108 214 h72 v12 h-72 z
+"/>
 </svg>

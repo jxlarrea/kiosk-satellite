@@ -3326,8 +3326,7 @@ const esphomeEnabled = SettingDef<bool>(
   title: 'Enable ESPHome',
   description:
       'Serve this kiosk to Home Assistant as an ESPHome device: its '
-      'sensors and controls as native entities, no MQTT broker needed. '
-      'Discovered automatically.',
+      'sensors and controls as native entities. Discovered automatically.',
   category: 'ESPHome',
 );
 
@@ -3336,9 +3335,7 @@ const btproxyEnabled = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Enable Bluetooth proxy',
-  description:
-      'Relay nearby Bluetooth devices to Home Assistant, like an ESPHome '
-      'Bluetooth proxy.',
+  description: 'Relay nearby Bluetooth devices to Home Assistant.',
   category: 'ESPHome',
   section: 'Bluetooth Proxy',
   dependsOn: 'esphome.enabled',
@@ -3350,9 +3347,7 @@ const btproxyConnections = SettingDef<bool>(
   defaultValue: true,
   title: 'Allow device connections',
   description:
-      'Home Assistant can connect to Bluetooth devices through this kiosk, '
-      'not just hear them. Needed for locks, buttons and anything Home '
-      'Assistant controls over Bluetooth.',
+      'Home Assistant can connect to Bluetooth devices through this device.',
   category: 'ESPHome',
   section: 'Bluetooth Proxy',
   dependsOn: 'btproxy.enabled',
