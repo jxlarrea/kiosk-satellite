@@ -254,7 +254,16 @@ internal class BleScanEngine(
                 bluetoothAdapter.isLeExtendedAdvertisingSupported) {
                 // Without this, BLE 5 extended advertisers are invisible.
                 setLegacy(false)
-                setPhy(ScanSettings.PHY_LE_ALL_SUPPORTED)
+                // 1M only, NOT PHY_LE_ALL_SUPPORTED: all-PHY scanning makes
+                // the controller time-slice its scan windows between 1M and
+                // Coded, and the lost duty makes slow advertisers (a
+                // battery lock beaconing at long intervals) statistically
+                // invisible while chatty ones still land. Found live: two
+                // BLE5 tablets sitting next to a Yale lock never heard it
+                // while a legacy-only Echo across the house did. Extended
+                // advertisers overwhelmingly use 1M as their primary PHY,
+                // so this keeps them visible at full scan duty.
+                setPhy(android.bluetooth.BluetoothDevice.PHY_LE_1M)
             }
         }.build()
         // One match-everything filter. An empty filter LIST is an
