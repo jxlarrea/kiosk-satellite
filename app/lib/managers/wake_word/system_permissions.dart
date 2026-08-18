@@ -25,6 +25,8 @@ class SystemPermissions {
     required this.camera,
     required this.location,
     required this.bluetooth,
+    required this.bluetoothNeedsLocation,
+    required this.locationServicesOn,
     required this.deviceAdmin,
     required this.writeSettings,
     required this.allFiles,
@@ -61,6 +63,17 @@ class SystemPermissions {
   /// location permission and location services on, the scanner runs and
   /// hears nothing (issue #240), so that is what this reads there.
   final bool bluetooth;
+
+  /// True on Android 11 and older, where [bluetooth] reads the location
+  /// gate. Lets the permission rows name the real blocker instead of a
+  /// bare "Missing": issue #240 was solved by a system-wide location
+  /// switch nobody thought to connect to Bluetooth.
+  final bool bluetoothNeedsLocation;
+
+  /// The system-wide location switch. Only meaningful for the Bluetooth
+  /// row when [bluetoothNeedsLocation] is set; reported everywhere so the
+  /// remote admin can tell "permission missing" from "switch off".
+  final bool locationServicesOn;
 
   /// The device admin grant behind the real "Screen off" (lockNow).
   final bool deviceAdmin;
@@ -169,6 +182,9 @@ class SystemPermissions {
         camera: await Permission.camera.isGranted,
         location: await Permission.locationWhenInUse.isGranted,
         bluetooth: await _bluetoothSatisfied(),
+        bluetoothNeedsLocation: await legacyBluetooth(),
+        locationServicesOn:
+            (await Permission.location.serviceStatus).isEnabled,
         deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
         writeSettings: await _canWriteSettings(),
         allFiles: await _hasAllFilesAccess(),
@@ -187,6 +203,8 @@ class SystemPermissions {
     camera: false,
     location: false,
     bluetooth: false,
+    bluetoothNeedsLocation: false,
+    locationServicesOn: true,
     deviceAdmin: false,
     writeSettings: false,
     allFiles: false,
@@ -202,6 +220,8 @@ class SystemPermissions {
         'camera': camera,
         'location': location,
         'bluetooth': bluetooth,
+        'bluetoothNeedsLocation': bluetoothNeedsLocation,
+        'locationServicesOn': locationServicesOn,
         'deviceAdmin': deviceAdmin,
         'writeSettings': writeSettings,
         'allFiles': allFiles,

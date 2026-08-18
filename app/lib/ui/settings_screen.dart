@@ -5215,8 +5215,16 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missingIcon: Icons.bluetooth_disabled_outlined,
           title: 'Nearby devices',
           held: 'The Bluetooth proxy can scan for nearby devices.',
-          missing:
-              'The Bluetooth proxy is switched on and cannot scan.',
+          // On old Android the blocker is location, and naming it is the
+          // whole battle: issue #240 was a system-wide location switch
+          // nobody thought to connect to Bluetooth.
+          missing: perms?.bluetoothNeedsLocation != true
+              ? 'The Bluetooth proxy is switched on and cannot scan.'
+              : perms?.locationServicesOn == false
+                  ? 'Location is off in the device settings, so Bluetooth '
+                      'scanning finds nothing.'
+                  : 'This Android version needs the Location permission '
+                      'for Bluetooth scanning.',
           idle: 'Needed by the Bluetooth proxy to scan for devices.',
           // On 12+ that is the "Nearby devices" pair; below it is the
           // location permission (and the location switch), the gate scan
@@ -5560,6 +5568,7 @@ class _BtProxyPermissionsTile extends StatefulWidget {
 class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
     with WidgetsBindingObserver {
   bool? _bluetooth;
+  SystemPermissions? _perms;
 
   @override
   void initState() {
@@ -5584,7 +5593,10 @@ class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
     try {
       final perms = await SystemPermissions.read();
       if (!mounted) return;
-      setState(() => _bluetooth = perms.bluetooth);
+      setState(() {
+        _bluetooth = perms.bluetooth;
+        _perms = perms;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _bluetooth = null);
@@ -5606,7 +5618,13 @@ class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
       subtitle: Text(
         granted == true
             ? 'The proxy can scan for nearby Bluetooth devices.'
-            : 'Without this the proxy cannot scan for devices.',
+            : _perms?.bluetoothNeedsLocation != true
+                ? 'Without this the proxy cannot scan for devices.'
+                : _perms?.locationServicesOn == false
+                    ? 'Location is off in the device settings, so Bluetooth '
+                        'scanning finds nothing.'
+                    : 'This Android version needs the Location permission '
+                        'for Bluetooth scanning.',
       ),
       trailing: granted == true
           ? null

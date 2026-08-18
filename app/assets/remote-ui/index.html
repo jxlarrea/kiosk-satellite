@@ -4348,12 +4348,21 @@ async function loadSettings() {
       }
       const readPerm = () => api('/api/commands/getSystemPermissions',
         { method: 'POST', body: '{}' }).then((r) => r.json())
-        .then((res) => (res.data || {}).bluetooth ?? null).catch(() => null);
-      const paint = (ok) => {
+        .then((res) => res.data || null).catch(() => null);
+      // On Android 11 and older the blocker is location, not Bluetooth,
+      // and naming it is the whole battle (issue #240: a system-wide
+      // location switch nobody thought to connect to Bluetooth).
+      const missingDesc = (perms) => !perms.bluetoothNeedsLocation
+        ? 'Without this the proxy cannot scan for devices.'
+        : perms.locationServicesOn === false
+          ? 'Location is off in the device settings, so Bluetooth scanning finds nothing.'
+          : 'This Android version needs the Location permission for Bluetooth scanning.';
+      const paint = (perms) => {
+        const ok = perms === null ? null : perms.bluetooth === true;
         info.querySelector('.desc').textContent = ok === null
           ? 'Status unavailable.'
           : ok ? 'The proxy can scan for nearby Bluetooth devices.'
-               : 'Without this the proxy cannot scan for devices.';
+               : missingDesc(perms);
         stateEl.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
         stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
         row.querySelector('button')?.remove();
@@ -4372,7 +4381,7 @@ async function loadSettings() {
           for (let i = 0; i < 30; i++) {
             await new Promise((r) => setTimeout(r, 2500));
             const now = await readPerm();
-            if (now === true) { paint(true); return; }
+            if (now && now.bluetooth === true) { paint(now); return; }
           }
           btn.disabled = false;
         });
@@ -4591,8 +4600,18 @@ async function loadSettings() {
         ask: ['bluetoothScan', 'bluetoothConnect'],
         needed: on('btproxy.enabled'),
         held: 'The Bluetooth proxy can scan for nearby devices.',
-        missing: 'The Bluetooth proxy is switched on and cannot scan.',
-        idle: 'Needed by the Bluetooth proxy to scan for devices.' },
+        // A function of the full payload: on Android 11 and older the
+        // blocker is location, and naming it is the whole battle (issue
+        // #240 was a system-wide location switch nobody thought to
+        // connect to Bluetooth). Same wording as the ESPHome tab's card.
+        missing: (all) => !all.bluetoothNeedsLocation
+          ? 'The Bluetooth proxy is switched on and cannot scan.'
+          : all.locationServicesOn === false
+            ? 'Location is off in the device settings, so Bluetooth scanning finds nothing.'
+            : 'This Android version needs the Location permission for Bluetooth scanning.',
+        idle: (all) => !all.bluetoothNeedsLocation
+          ? 'Needed by the Bluetooth proxy to scan for devices.'
+          : 'Needed by the Bluetooth proxy: this Android version gates Bluetooth scanning on location.' },
       { key: 'notification', name: 'Notifications', ask: 'notifications',
         needed: background,
         held: 'The ongoing notification that keeps listening alive.',
@@ -4686,9 +4705,12 @@ async function loadSettings() {
       for (const { spec, row, info, state } of rendered) {
         const ok = all[spec.key] === true;
         const unknownState = all[spec.key] === undefined;
+        // A spec text may be a function of the full payload (the Bluetooth
+        // row words its "missing" by what actually blocks it).
+        const text = (t) => typeof t === 'function' ? t(all) : t;
         info.querySelector('.desc').textContent = unknownState
           ? 'Status unavailable.'
-          : ok ? spec.held : (spec.needed ? spec.missing : spec.idle);
+          : text(ok ? spec.held : (spec.needed ? spec.missing : spec.idle));
         state.textContent = unknownState ? ''
           : ok ? 'Granted' : (spec.needed ? 'Missing' : 'Not granted');
         state.style.color = ok ? 'var(--ok)'
