@@ -5764,6 +5764,94 @@ class SettingTile extends StatelessWidget {
   String _formatNum(num v) =>
       v == v.roundToDouble() ? v.toInt().toString() : v.toString();
 
+  /// Photo Gallery selection, through the system gallery picker; the
+  /// modern Android photo picker needs no permission at all. The picker
+  /// hands back cache copies, which the OS may purge, so the selection is
+  /// copied into app documents where it survives reboots and cache trims;
+  /// re-picking replaces the set.
+  ///
+  /// Big picks are the fragile part (issue #233): the picker keeps
+  /// draining originals into its cache long after DONE (cloud-backed
+  /// photos download one by one), and one bad item fails the whole batch.
+  /// So a progress barrier covers the whole wait, the copy stages into a
+  /// scratch folder that only replaces the previous set once it is
+  /// complete, and a failure surfaces as a snackbar instead of vanishing
+  /// as an unhandled async error after the old selection is already gone.
+  Future<void> _pickGalleryPhotos(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final progress = ValueNotifier<String?>(null);
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: ValueListenableBuilder<String?>(
+                    valueListenable: progress,
+                    builder: (context, label, _) =>
+                        Text(label ?? 'Loading photos...'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    try {
+      var picked = await ImagePicker().pickMultipleMedia();
+      if (picked.isEmpty) {
+        // Empty usually means cancel, but Android may have recreated the
+        // activity behind a long-running pick; the plugin parks the
+        // result for exactly that case.
+        picked = (await ImagePicker().retrieveLostData()).files ?? const [];
+        if (picked.isEmpty) return;
+      }
+      final docs = await getApplicationDocumentsDirectory();
+      final staging = Directory('${docs.path}/gallery_staging');
+      if (await staging.exists()) await staging.delete(recursive: true);
+      await staging.create(recursive: true);
+      final names = <String>[];
+      for (var i = 0; i < picked.length; i++) {
+        progress.value = 'Copying photo ${i + 1} of ${picked.length}...';
+        final name =
+            '${i.toString().padLeft(4, '0')}_'
+            '${picked[i].name.replaceAll('/', '_')}';
+        await File(picked[i].path).copy('${staging.path}/$name');
+        names.add(name);
+      }
+      final dir = Directory('${docs.path}/gallery');
+      if (await dir.exists()) await dir.delete(recursive: true);
+      await staging.rename(dir.path);
+      await c.settings.setFromJson(
+        def.key,
+        jsonEncode([for (final n in names) '${dir.path}/$n']),
+      );
+      onChanged();
+    } catch (e) {
+      c.log.warn('screensaver', 'gallery pick failed: $e');
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Could not copy the photos. Try a smaller selection.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      navigator.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) =>
       // Every definition-rendered row is a search landing: the settings
@@ -5908,11 +5996,8 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
-        // Photo Gallery: picked with the system gallery picker — the
-        // modern Android photo picker needs no permission at all. The
-        // picker hands back cache copies, which the OS may purge, so the
-        // selection is copied into app documents where it survives reboots
-        // and cache trims; re-picking replaces the set.
+        // Photo Gallery: picked with the system gallery picker, in
+        // _pickGalleryPhotos below.
         if (def.key == screensaverGalleryItems.key) {
           var count = 0;
           try {
@@ -5924,24 +6009,7 @@ class SettingTile extends StatelessWidget {
               count == 0 ? 'No photos selected' : '$count selected',
             ),
             trailing: TextButton(
-              onPressed: () async {
-                final picked = await ImagePicker().pickMultipleMedia();
-                if (picked.isEmpty) return;
-                final docs = await getApplicationDocumentsDirectory();
-                final dir = Directory('${docs.path}/gallery');
-                if (await dir.exists()) await dir.delete(recursive: true);
-                await dir.create(recursive: true);
-                final paths = <String>[];
-                for (var i = 0; i < picked.length; i++) {
-                  final name = picked[i].name.replaceAll('/', '_');
-                  final dest =
-                      '${dir.path}/${i.toString().padLeft(4, '0')}_$name';
-                  await File(picked[i].path).copy(dest);
-                  paths.add(dest);
-                }
-                await c.settings.setFromJson(def.key, jsonEncode(paths));
-                onChanged();
-              },
+              onPressed: () => _pickGalleryPhotos(context),
               child: const Text('Browse'),
             ),
           );

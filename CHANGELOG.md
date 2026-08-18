@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- Picking a large photo set for the Photo Gallery screensaver no longer fails silently (#233). Hundreds of photos, cloud-backed Google Photos items among them, take the picker a long while to hand over after DONE, and a single item that failed to copy aborted the whole batch without a word, after the previous selection had already been deleted. The wait is now covered by a progress dialog, the new set only replaces the old one once every photo has been copied so a failure keeps the previous selection intact, and an error shows a message instead of nothing happening.
 - HA Kiosk Mode no longer leaves a black bar at the bottom of panel views. Cards that fill a panel view, the advanced camera card among them, size themselves against the header height Home Assistant publishes, honoring the zero override the kiosk-mode plugin used to declare when it hid the header; the built-in kiosk mode now declares the same override, so a full-screen camera panel really fills the screen. The hidden header's slot also keeps the display cutout inset it used to absorb, so on a notched screen the dashboard is not pushed under the cutout. (#232)
 
 ### Added
