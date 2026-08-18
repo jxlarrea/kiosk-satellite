@@ -4080,6 +4080,25 @@ async function loadSettings() {
     ]);
   }
 
+  // ── Freshly generated encryption key ─────────────────────────────────
+  // The key is written by the manager ~500ms after Enable ESPHome is
+  // switched on, after the re-render this very code runs in, so the key
+  // row would keep its placeholder and the page would read as if enabling
+  // did nothing. Re-render shortly until the key shows up (bounded: the
+  // key always exists once the manager has run).
+  if (byKey['esphome.enabled']?.value === true &&
+      !(byKey['btproxy.key']?.value) && !window.__esphomeKeyWait) {
+    window.__esphomeKeyRetries = (window.__esphomeKeyRetries || 0) + 1;
+    if (window.__esphomeKeyRetries <= 5) {
+      window.__esphomeKeyWait = setTimeout(() => {
+        window.__esphomeKeyWait = null;
+        loadSettings();
+      }, 1500);
+    }
+  } else if (byKey['btproxy.key']?.value) {
+    window.__esphomeKeyRetries = 0;
+  }
+
   // ── MQTT sunset notice ───────────────────────────────────────────────
   // Atop the MQTT tab: ESPHome is the integration path now, and nobody
   // should build new automations on a surface with a removal date.

@@ -912,12 +912,23 @@ class _CategoryContentState extends State<_CategoryContent> {
         const Duration(seconds: 5),
         (_) => _pollBtAdapter(),
       );
+      // The encryption key is written by the manager ~500ms after Enable
+      // ESPHome is switched on (behind the restart debounce), which is
+      // AFTER the toggle's own rebuild. Without this, the key row keeps
+      // its placeholder until the next unrelated tap and the page reads
+      // as if enabling did nothing.
+      _keyEcho = widget.container.bus.on<SettingChanged>().listen((e) {
+        if (e.key == btproxyKey.key && mounted) setState(() {});
+      });
     }
   }
+
+  StreamSubscription<SettingChanged>? _keyEcho;
 
   @override
   void dispose() {
     _btAdapterTimer?.cancel();
+    _keyEcho?.cancel();
     super.dispose();
   }
 
