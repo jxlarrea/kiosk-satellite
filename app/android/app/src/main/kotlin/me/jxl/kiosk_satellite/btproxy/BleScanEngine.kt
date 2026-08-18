@@ -93,6 +93,10 @@ internal class BleScanEngine(
     @Volatile private var consecutiveFailures = 0
     @Volatile private var lastCallbackAt = 0L
     @Volatile private var receiverRegistered = false
+    // Sticky within a run, never walked back on success: if the rich scan
+    // settings are what the stack objects to, re-trying them after every
+    // recovery would just re-break the scanner on a cycle (issue #239).
+    private var minimalSettings = false
 
     val isScanning: Boolean get() = scanning
     val lastAdvertisementAt: Long get() = lastCallbackAt
@@ -270,24 +274,31 @@ internal class BleScanEngine(
             setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             setReportDelay(0)
-            if (Build.VERSION.SDK_INT >= 23) {
-                setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
-                setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
-            }
-            if (Build.VERSION.SDK_INT >= 26 &&
-                bluetoothAdapter.isLeExtendedAdvertisingSupported) {
-                // Without this, BLE 5 extended advertisers are invisible.
-                setLegacy(false)
-                // 1M only, NOT PHY_LE_ALL_SUPPORTED: all-PHY scanning makes
-                // the controller time-slice its scan windows between 1M and
-                // Coded, and the lost duty makes slow advertisers (a
-                // battery lock beaconing at long intervals) statistically
-                // invisible while chatty ones still land. Found live: two
-                // BLE5 tablets sitting next to a Yale lock never heard it
-                // while a legacy-only Echo across the house did. Extended
-                // advertisers overwhelmingly use 1M as their primary PHY,
-                // so this keeps them visible at full scan duty.
-                setPhy(android.bluetooth.BluetoothDevice.PHY_LE_1M)
+            // Everything below is a refinement some stacks reject outright:
+            // a Meta Portal answered every start with SCAN_FAILED_INTERNAL_
+            // ERROR forever (issue #239). Once repeated failures push the
+            // engine into the minimal tier, the plain settings above are
+            // the whole request; a degraded scanner beats a dead one.
+            if (!minimalSettings) {
+                if (Build.VERSION.SDK_INT >= 23) {
+                    setMatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE)
+                    setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
+                }
+                if (Build.VERSION.SDK_INT >= 26 &&
+                    bluetoothAdapter.isLeExtendedAdvertisingSupported) {
+                    // Without this, BLE 5 extended advertisers are invisible.
+                    setLegacy(false)
+                    // 1M only, NOT PHY_LE_ALL_SUPPORTED: all-PHY scanning makes
+                    // the controller time-slice its scan windows between 1M and
+                    // Coded, and the lost duty makes slow advertisers (a
+                    // battery lock beaconing at long intervals) statistically
+                    // invisible while chatty ones still land. Found live: two
+                    // BLE5 tablets sitting next to a Yale lock never heard it
+                    // while a legacy-only Echo across the house did. Extended
+                    // advertisers overwhelmingly use 1M as their primary PHY,
+                    // so this keeps them visible at full scan duty.
+                    setPhy(android.bluetooth.BluetoothDevice.PHY_LE_1M)
+                }
             }
         }.build()
         // One match-everything filter. An empty filter LIST is an
@@ -350,6 +361,14 @@ internal class BleScanEngine(
         }
         consecutiveFailures++
         note("scan failed (code=$errorCode, attempt=$consecutiveFailures), retry in ${backoff}ms")
+        // Three straight refusals with the rich settings: from here on ask
+        // for the plainest scan Android knows. Some old stacks (a Meta
+        // Portal, issue #239) reject the match-mode and PHY refinements
+        // with INTERNAL_ERROR on every attempt, forever.
+        if (!minimalSettings && consecutiveFailures >= 3) {
+            minimalSettings = true
+            note("scan keeps failing, retrying with minimal scan settings")
+        }
         handler.postDelayed({ startScanIfNeeded("failure retry") }, backoff)
     }
 
