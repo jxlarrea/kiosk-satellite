@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- A trailing slash in the Home Assistant base URL no longer breaks the voice pipeline socket. The URL field accepted "http://ha:8123/" but stored it verbatim, so the native pipeline dialled "http://ha:8123//api/websocket" and every wake word died with a WebSocket upgrade error while the rest of the app, which normalized the URL on read, kept working. The setting is now canonicalized to its origin (scheme, host, port) on every write, and a value stored with a trailing slash by an older version is rewritten once at startup.
+
 ## v2026.8.57 - 2026-08-18
 
 ### Added

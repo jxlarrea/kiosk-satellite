@@ -27,6 +27,7 @@ class SettingDef<T> {
     this.unit,
     this.optionLabels,
     this.validator,
+    this.normalizer,
     this.multiline = false,
     this.placeholder,
   });
@@ -101,6 +102,17 @@ class SettingDef<T> {
   /// import all funnel through setFromJson). Returns an error message, or
   /// null for a valid value.
   final String? Function(Object? value)? validator;
+
+  /// Optional canonicalization applied to every accepted write, after
+  /// [validator]. The stored value is the normalized one, so consumers
+  /// never have to defend against equivalent spellings — e.g. a base URL
+  /// keeps or drops its trailing slash depending on how it was typed, and
+  /// only one of those survives `'$base/api/websocket'`.
+  ///
+  /// Takes and returns [Object] rather than [T]: most callers hold a
+  /// `SettingDef<Object>` (via defByKey), and reading a `T`-typed function
+  /// field through that covariant view throws at runtime.
+  final Object Function(Object value)? normalizer;
 }
 
 /// A Home Assistant *base* URL: scheme + host (+ port), nothing after.
@@ -124,6 +136,23 @@ String? validateBaseUrl(Object? value) {
   }
   return null;
 }
+
+/// Canonical stored form of a base URL: the origin alone. The validator
+/// tolerates a bare trailing slash (an easy paste of the address bar), but
+/// storing it breaks every consumer that appends a path — the pipeline
+/// socket would dial `http://ha:8123//api/websocket`.
+String normalizeBaseUrl(String value) {
+  final trimmed = value.trim();
+  final uri = Uri.tryParse(trimmed);
+  if (uri == null || !uri.hasScheme || uri.host.isEmpty) return trimmed;
+  return uri.hasPort
+      ? '${uri.scheme}://${uri.host}:${uri.port}'
+      : '${uri.scheme}://${uri.host}';
+}
+
+/// [SettingDef.normalizer] adapter for [normalizeBaseUrl].
+Object normalizeBaseUrlSetting(Object value) =>
+    value is String ? normalizeBaseUrl(value) : value;
 
 // ── Browser ────────────────────────────────────────────────────────────
 
@@ -2419,6 +2448,7 @@ const haUrl = SettingDef<String>(
       'e.g. https://homeassistant.local:8123, without a dashboard path.',
   category: 'Home Assistant',
   validator: validateBaseUrl,
+  normalizer: normalizeBaseUrlSetting,
 );
 
 const haToken = SettingDef<String>(

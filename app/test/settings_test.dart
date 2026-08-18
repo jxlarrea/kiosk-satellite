@@ -53,6 +53,36 @@ void main() {
     expect(reopened.get(defs.webCamera), isTrue);
   });
 
+  group('ha.url normalization', () {
+    test('a trailing slash is dropped on write', () async {
+      await build({});
+      // The validator accepts a bare trailing slash, so the write path has
+      // to canonicalize it — stored verbatim it dialled
+      // 'http://ha:8123//api/websocket' on the pipeline socket.
+      expect(
+        await settings.setFromJson('ha.url', 'http://192.168.178.26:8123/'),
+        isTrue,
+      );
+      expect(settings.get(defs.haUrl), 'http://192.168.178.26:8123');
+    });
+
+    test('typed set() normalizes too (setup wizard path)', () async {
+      await build({});
+      await settings.set(defs.haUrl, ' https://homeassistant.local:8123/ ');
+      expect(settings.get(defs.haUrl), 'https://homeassistant.local:8123');
+    });
+
+    test('a stored trailing slash migrates to the origin on init', () async {
+      await build({'ks.ha.url': 'http://192.168.178.26:8123/'});
+      expect(settings.get(defs.haUrl), 'http://192.168.178.26:8123');
+    });
+
+    test('an already-clean value is left untouched', () async {
+      await build({'ks.ha.url': 'https://ha.example'});
+      expect(settings.get(defs.haUrl), 'https://ha.example');
+    });
+  });
+
   test('secrets are masked in describe but report set/unset', () async {
     await build({'ks.remote.password': 'hunter2'});
     final described = settings.describe();

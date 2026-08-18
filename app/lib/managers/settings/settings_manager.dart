@@ -241,6 +241,14 @@ class SettingsManager extends Manager {
       await _prefs.setBool('${_prefix}esphome.enabled', true);
       log.info(name, 'migrated btproxy.enabled -> esphome.enabled');
     }
+    // The HA base URL is normalized to its origin on write now, but a value
+    // saved with a trailing slash by an older version keeps breaking the
+    // pipeline socket ('http://ha:8123//api/websocket') until rewritten.
+    final ha = _prefs.getString('${_prefix}ha.url');
+    if (ha != null && ha.isNotEmpty && ha != normalizeBaseUrl(ha)) {
+      await _prefs.setString('${_prefix}ha.url', normalizeBaseUrl(ha));
+      log.info(name, 'migrated ha.url to its origin form');
+    }
   }
 
   T get<T>(SettingDef<T> def) {
@@ -255,6 +263,8 @@ class SettingsManager extends Manager {
   }
 
   Future<void> set<T>(SettingDef<T> def, T value) async {
+    final normalizer = def.normalizer;
+    if (normalizer != null) value = normalizer(value as Object) as T;
     final previous = get(def);
     switch (value) {
       case final bool v:
