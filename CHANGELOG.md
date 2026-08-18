@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.57 - 2026-08-18
+
+### Added
+- The Bluetooth scanner falls back to minimal scan settings when a device's stack keeps refusing the rich ones (#239). A Meta Portal answered every scan start with an internal error, forever; after three straight refusals the proxy now retries with the plainest scan Android knows (dropping the aggressive match mode and PHY refinements) and says so in the log, since a degraded scanner beats a dead one. The fallback is sticky until the proxy restarts, so a stack that objects to the refinements is not re-broken on every recovery.
+
 ## v2026.8.56 - 2026-08-18
 
 ### Fixed
@@ -11,7 +16,6 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - A hand-edited encryption key is validated before the server starts (#239). The ESPHome protocol's key must be the base64 form of 32 random bytes; a typed-in word used to kill the server silently, taking discovery down with it and leaving Home Assistant's generic "unable to connect" as the only symptom. An invalid key now surfaces as a clear failure reason on the settings pages, with the recovery spelled out: clear the field and a fresh key is generated.
 - Bluetooth scanner failures now land in the proxy log that btProxyStatus and the remote admin show, named with their reason, instead of only Android's internal logcat. A scanner killed by a permission error or a stack failure used to look exactly like a healthy one from every surface a user could reach (#240).
-- The Bluetooth scanner falls back to minimal scan settings when a device's stack keeps refusing the rich ones (#239). A Meta Portal answered every scan start with an internal error, forever; after three straight refusals the proxy now retries with the plainest scan Android knows (dropping the aggressive match mode and PHY refinements) and says so in the log, since a degraded scanner beats a dead one. The fallback is sticky until the proxy restarts, so a stack that objects to the refinements is not re-broken on every recovery.
 - The proxy log now states the server's bind scope and the IP address announced to Home Assistant over mDNS (logged whenever it changes). When discovery shows a device that then refuses to connect, which address Home Assistant was told to dial is the first question, and on multi-interface devices it was previously unanswerable (#239).
 
 ## v2026.8.55 - 2026-08-18
