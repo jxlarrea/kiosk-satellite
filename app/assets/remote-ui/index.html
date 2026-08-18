@@ -4080,6 +4080,53 @@ async function loadSettings() {
     ]);
   }
 
+  // ── MQTT sunset notice ───────────────────────────────────────────────
+  // Atop the MQTT tab: ESPHome is the integration path now, and nobody
+  // should build new automations on a surface with a removal date.
+  {
+    const root = document.getElementById('tab-mqtt');
+    const warn = document.createElement('div');
+    warn.style.cssText = 'display:flex; gap:8px; align-items:flex-start; ' +
+      'margin:0 0 14px; font-size:13px; color:var(--warn); line-height:1.5';
+    warn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" ' +
+      'fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" ' +
+      'style="flex:none; margin-top:2px">' +
+      '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 ' +
+      '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
+      '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
+    warn.querySelector('span').textContent =
+      'ESPHome is now the preferred integration and MQTT will be removed ' +
+      'in a future version. See the ESPHome page to migrate.';
+    root.insertBefore(warn, root.firstChild);
+  }
+
+  // ── Duplicate-entities warning ───────────────────────────────────────
+  // Both entity surfaces on at once means every kiosk entity exists
+  // twice in Home Assistant; warn where the choice is made, mirroring
+  // the device page.
+  if (byKey['esphome.entities']?.value === true &&
+      byKey['mqtt.enabled']?.value === true) {
+    const row = document.querySelector('[data-key="esphome.entities"]');
+    if (row) {
+      const warn = document.createElement('div');
+      warn.style.cssText = 'display:flex; gap:8px; ' +
+        'align-items:flex-start; margin:6px 0 10px; ' +
+        'font-size:12.5px; color:var(--warn); line-height:1.5';
+      warn.innerHTML = '<svg width="15" height="15" ' +
+        'viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" ' +
+        'stroke-linejoin="round" style="flex:none; margin-top:2px">' +
+        '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 ' +
+        '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
+        '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
+      warn.querySelector('span').textContent =
+        'MQTT is also enabled: these entities will exist twice in ' +
+        'Home Assistant, once per integration.';
+      row.insertAdjacentElement('afterend', warn);
+    }
+  }
+
   // ── Bluetooth Proxy nearby devices ───────────────────────────────────
   // The live list the device shows under the lookup toggle, same data:
   // the btProxyNearby command's identified inventory. Only with the proxy
@@ -4217,11 +4264,19 @@ async function loadSettings() {
             '[data-key="btproxy.connections"]');
           if (!slots || !row) return;
           const note = document.createElement('div');
-          note.className = 'group-note';
-          note.style.cssText = 'margin: 4px 20px 10px';
-          note.textContent = `Up to ${slots} devices can be connected ` +
-            'at once through this kiosk. Home Assistant routes further ' +
-            'devices through other proxies.';
+          note.style.cssText = 'display:flex; gap:8px; ' +
+            'align-items:flex-start; margin:6px 0 10px; ' +
+            'font-size:12.5px; color:var(--muted); line-height:1.5';
+          note.innerHTML = '<svg width="15" height="15" ' +
+            'viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+            'stroke-width="2" stroke-linecap="round" ' +
+            'style="flex:none; margin-top:2px">' +
+            '<circle cx="12" cy="12" r="9"/>' +
+            '<path d="M12 8h.01M12 11.5V16"/></svg><span></span>';
+          note.querySelector('span').textContent =
+            `Up to ${slots} devices can be connected at once through ` +
+            'this proxy. Home Assistant routes further devices through ' +
+            'other proxies.';
           row.insertAdjacentElement('afterend', note);
         })
         .catch(() => {});

@@ -813,6 +813,20 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// general ESPHome group above), and with the adapter off everything
   /// Bluetooth goes inert under a notice while the entity server above
   /// keeps its live controls. Every other category passes through.
+  /// The sunset notice atop the MQTT page: ESPHome is the integration
+  /// path now, and nobody should build new automations on a surface with
+  /// a removal date.
+  List<Widget> _withMqttDeprecation(List<Widget> cards) {
+    if (widget.category != 'MQTT') return cards;
+    return [
+      const WarnRow(
+        'ESPHome is now the preferred integration and MQTT will be '
+        'removed in a future version. See the ESPHome page to migrate.',
+      ),
+      ...cards,
+    ];
+  }
+
   List<Widget> _withBtProxyPermissions(List<Widget> cards) {
     if (widget.category != 'ESPHome') return cards;
     const permissions = <Widget>[
@@ -1510,7 +1524,7 @@ class _CategoryContentState extends State<_CategoryContent> {
             ],
           ),
         ] else
-          ..._withBtProxyPermissions(_sectionedCards(
+          ..._withMqttDeprecation(_withBtProxyPermissions(_sectionedCards(
             container,
             // With the Camera master switch off (or no camera on the
             // device at all), motion detection cannot run: the dismiss
@@ -1619,6 +1633,16 @@ class _CategoryContentState extends State<_CategoryContent> {
               // The live list right under the sort picker that orders it.
               // Rides the section's dependsOn: with the proxy off there is
               // nothing to list and none of these rows render.
+              // Both entity surfaces on at once means every kiosk entity
+              // exists twice in Home Assistant; say so where the choice is
+              // made instead of letting the duplicates say it.
+              if (widget.category == 'ESPHome' &&
+                  container.settings.get(esphomeEntities) &&
+                  container.settings.get(mqttEnabled))
+                esphomeEntities.key: const WarnRow(
+                  'MQTT is also enabled: these entities will exist twice '
+                  'in Home Assistant, once per integration.',
+                ),
               // The connection budget, right under the toggle that spends
               // it: a hard Android-stack limit per proxy, and the thing a
               // user must know before wondering why a fifth device will
@@ -1632,7 +1656,7 @@ class _CategoryContentState extends State<_CategoryContent> {
                   child: _BtNearbyDevicesRow(container: container),
                 ),
             },
-          )),
+          ))),
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
         // has no page on the device, so its grants live here too.
@@ -5485,7 +5509,7 @@ class _BtSlotsHintRowState extends State<_BtSlotsHintRow> {
       return const SizedBox.shrink();
     }
     return HintRow(
-      'Up to $_slots devices can be connected at once through this kiosk. '
+      'Up to $_slots devices can be connected at once through this proxy. '
       'Home Assistant routes further devices through other proxies.',
     );
   }

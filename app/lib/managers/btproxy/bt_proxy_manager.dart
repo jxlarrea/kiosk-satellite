@@ -266,14 +266,18 @@ class BtProxyManager extends Manager {
         'minConnectRssi': int.tryParse(
                 _settings.get(defs.btproxyMinConnectRssi)) ??
             0,
-        'entities': await _entities.build(),
+        'entities': _settings.get(defs.esphomeEntities)
+            ? await _entities.build()
+            : const <Map<String, Object?>>[],
       });
       _running = true;
-      _entities.attach(
-        (objectId, value) => _channel.invokeMethod(
-            'entityState', {'objectId': objectId, 'value': value}),
-        (jpeg) => _channel.invokeMethod('cameraImage', {'jpeg': jpeg}),
-      );
+      if (_settings.get(defs.esphomeEntities)) {
+        _entities.attach(
+          (objectId, value) => _channel.invokeMethod(
+              'entityState', {'objectId': objectId, 'value': value}),
+          (jpeg) => _channel.invokeMethod('cameraImage', {'jpeg': jpeg}),
+        );
+      }
       log.info(name, 'started (port $port)');
     } catch (e) {
       // Not-Android hosts (tests) and denied permissions land here; the

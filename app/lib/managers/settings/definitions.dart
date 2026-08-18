@@ -3330,6 +3330,20 @@ const esphomeEnabled = SettingDef<bool>(
   category: 'ESPHome',
 );
 
+/// Decoupled from the master switch on purpose: a household happy with
+/// its MQTT entities can still run the Bluetooth proxy without growing a
+/// duplicate entity set, and migrate whenever it suits them.
+const esphomeEntities = SettingDef<bool>(
+  key: 'esphome.entities',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Expose kiosk entities',
+  description:
+      "Serve this kiosk's sensors and controls as ESPHome entities.",
+  category: 'ESPHome',
+  dependsOn: 'esphome.enabled',
+);
+
 const btproxyEnabled = SettingDef<bool>(
   key: 'btproxy.enabled',
   type: SettingType.boolean,
@@ -3347,7 +3361,7 @@ const btproxyConnections = SettingDef<bool>(
   defaultValue: false,
   title: 'Allow device connections',
   description:
-      'Home Assistant can connect to Bluetooth devices through this device.',
+      'Home Assistant can connect to Bluetooth devices through this proxy.',
   category: 'ESPHome',
   section: 'Bluetooth Proxy',
   dependsOn: 'btproxy.enabled',
@@ -3756,6 +3770,7 @@ const List<SettingDef<Object>> allSettings = [
   dlnaAudioBackground,
   dlnaPort,
   esphomeEnabled,
+  esphomeEntities,
   btproxyKey,
   btproxyPort,
   btproxyEnabled,
