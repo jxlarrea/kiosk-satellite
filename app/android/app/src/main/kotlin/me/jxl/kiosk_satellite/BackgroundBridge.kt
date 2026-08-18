@@ -156,6 +156,22 @@ class BackgroundBridge(
                         result.error("files", e.message, null)
                     }
                 }
+                // Below Android 12 Bluetooth scan results ride on location
+                // services (issue #240): when the system-wide switch is off,
+                // this screen is the only place that can flip it.
+                "openLocationSettings" -> {
+                    try {
+                        context.startActivity(
+                            Intent(
+                                android.provider.Settings
+                                    .ACTION_LOCATION_SOURCE_SETTINGS,
+                            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("location", e.message, null)
+                    }
+                }
                 // The Foreground app sensor (issue #192). Which app is on
                 // screen is special-grant information ("Usage access", a
                 // settings screen like All files access); without it the

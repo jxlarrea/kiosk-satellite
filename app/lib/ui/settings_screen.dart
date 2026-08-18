@@ -5218,12 +5218,10 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missing:
               'The Bluetooth proxy is switched on and cannot scan.',
           idle: 'Needed by the Bluetooth proxy to scan for devices.',
-          onGrant: () async {
-            // One dialog covers the pair (they share Android's "Nearby
-            // devices" group); the second request returns silently.
-            await ensureOsPermission(Permission.bluetoothScan);
-            await ensureOsPermission(Permission.bluetoothConnect);
-          },
+          // On 12+ that is the "Nearby devices" pair; below it is the
+          // location permission (and the location switch), the gate scan
+          // results actually ride on there (issue #240).
+          onGrant: SystemPermissions.requestBluetooth,
         ),
         _row(
           granted: perms?.notification,
@@ -5614,10 +5612,8 @@ class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
           ? null
           : TextButton(
               onPressed: () async {
-                // One dialog covers the pair (Android's "Nearby devices"
-                // group); the second request returns silently.
-                await ensureOsPermission(Permission.bluetoothScan);
-                await ensureOsPermission(Permission.bluetoothConnect);
+                // The pair on 12+, location below (issue #240).
+                await SystemPermissions.requestBluetooth();
                 await _refresh();
               },
               child: const Text('Grant'),

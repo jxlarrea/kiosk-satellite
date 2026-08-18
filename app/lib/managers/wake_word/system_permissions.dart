@@ -1,6 +1,8 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../core/permissions.dart';
 import 'background_listening.dart';
 
 /// The OS grants native wake-word detection needs, read in one place.
@@ -51,10 +53,13 @@ class SystemPermissions {
   /// Only a page ever wants this (geolocation). Nothing native here uses it.
   final bool location;
 
-  /// The "Nearby devices" pair (scan + connect) behind the Bluetooth proxy.
-  /// One value for both: Android grants them from the same dialog, and a
-  /// half-granted pair scans nothing anyway. Android 11 and older grant
-  /// Bluetooth at install, so this reads true there.
+  /// Whatever actually gates Bluetooth scanning on this Android. On 12+
+  /// that is the "Nearby devices" pair (scan + connect), one value for
+  /// both: Android grants them from the same dialog, and a half-granted
+  /// pair scans nothing anyway. Android 11 and older grant Bluetooth at
+  /// install and gate scan RESULTS on location instead: without the
+  /// location permission and location services on, the scanner runs and
+  /// hears nothing (issue #240), so that is what this reads there.
   final bool bluetooth;
 
   /// The device admin grant behind the real "Screen off" (lockNow).
@@ -99,6 +104,54 @@ class SystemPermissions {
     }
   }
 
+  static int? _sdkInt;
+
+  /// Below Android 12 there are no runtime Bluetooth permissions: the pair
+  /// is granted at install, and the OS gates scan results on location
+  /// instead. Everything that shows or requests the "Nearby devices" grant
+  /// must route through this so old devices see the gate that actually
+  /// applies (issue #240, a Fire tablet scanning "actively" and hearing
+  /// nothing).
+  static Future<bool> legacyBluetooth() async {
+    try {
+      _sdkInt ??= (await DeviceInfoPlugin().androidInfo).version.sdkInt;
+    } catch (_) {
+      return false; // not Android (tests): keep the modern reading
+    }
+    return _sdkInt! < 31;
+  }
+
+  static Future<bool> _bluetoothSatisfied() async {
+    if (await legacyBluetooth()) {
+      return await Permission.locationWhenInUse.isGranted &&
+          (await Permission.location.serviceStatus).isEnabled;
+    }
+    return await Permission.bluetoothScan.isGranted &&
+        await Permission.bluetoothConnect.isGranted;
+  }
+
+  /// Ask for whatever [bluetooth] needs on this Android, returning whether
+  /// scanning is actually unblocked. On 12+ one dialog covers the pair (they
+  /// share the "Nearby devices" group; the second request returns silently).
+  /// Below that it is the location permission, and when the permission is
+  /// held but the system-wide location switch is off, the OS location
+  /// settings screen is opened, the only place that can flip it.
+  static Future<bool> requestBluetooth() async {
+    if (await legacyBluetooth()) {
+      if (!await ensureOsPermission(Permission.locationWhenInUse)) {
+        return false;
+      }
+      if ((await Permission.location.serviceStatus).isEnabled) return true;
+      try {
+        await _backgroundChannel.invokeMethod('openLocationSettings');
+      } catch (_) {}
+      return false;
+    }
+    final scan = await ensureOsPermission(Permission.bluetoothScan);
+    final connect = await ensureOsPermission(Permission.bluetoothConnect);
+    return scan && connect;
+  }
+
   static Future<bool> _canWriteSettings() async {
     try {
       return await _brightnessChannel.invokeMethod<bool>('canWrite') ?? false;
@@ -115,8 +168,7 @@ class SystemPermissions {
         batteryUnrestricted: await BackgroundListening.isBatteryUnrestricted(),
         camera: await Permission.camera.isGranted,
         location: await Permission.locationWhenInUse.isGranted,
-        bluetooth: await Permission.bluetoothScan.isGranted &&
-            await Permission.bluetoothConnect.isGranted,
+        bluetooth: await _bluetoothSatisfied(),
         deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
         writeSettings: await _canWriteSettings(),
         allFiles: await _hasAllFilesAccess(),

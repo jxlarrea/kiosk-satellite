@@ -12,6 +12,7 @@ import '../files/files_manager.dart' show legacyStorage;
 import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import '../wake_word/system_permissions.dart' show SystemPermissions;
 
 /// Lockdown: keeping the device in the app and the app on the device.
 ///
@@ -342,10 +343,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
             // list offers it like the rest, and the remote admin can only
             // ask through this command (issue #156).
             'location': Permission.locationWhenInUse,
-            // The Bluetooth proxy's pair. One dialog covers both on
-            // Android 12+ (they share the "Nearby devices" group); on
-            // older Android they are install-time grants and both requests
-            // come back granted without a prompt.
+            // The Bluetooth proxy's pair. Requested through
+            // SystemPermissions.requestBluetooth below: one dialog covers
+            // both on Android 12+ (they share the "Nearby devices" group);
+            // below that the real gate is location (issue #240).
             'bluetoothScan': Permission.bluetoothScan,
             'bluetoothConnect': Permission.bluetoothConnect,
           };
@@ -372,7 +373,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           final results = <String, bool>{};
           for (final name in wanted) {
             try {
-              results[name] = (await known[name]!.request()).isGranted;
+              results[name] =
+                  name == 'bluetoothScan' || name == 'bluetoothConnect'
+                      ? await SystemPermissions.requestBluetooth()
+                      : (await known[name]!.request()).isGranted;
             } catch (_) {
               results[name] = false;
             }
