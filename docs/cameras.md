@@ -120,6 +120,20 @@ Use the normal `button.press` action in a Home Assistant automation to show a
 specific view. View buttons use stable internal IDs, so renaming a view does
 not replace its Home Assistant entity.
 
+## Sound
+
+Playback is silent by default. **Play sound for a single camera** (Settings,
+then Camera Streams, then Playback) plays a camera's audio when it is the
+only one on screen: a view with one camera, or the camera focused with a tap
+in a larger view. Made for the baby-monitor case, where the picture matters
+less than the sound (issue #235).
+
+Grids with several cameras always stay silent, whatever the setting, since
+several microphones playing over each other is noise rather than audio. The
+camera also has to publish an audio track Kiosk Satellite can play: AAC and
+Opus are the safe choices, while a camera that streams no audio, or a codec
+the device cannot decode, simply plays silently.
+
 ## Auto-dismiss
 
 **Auto-dismiss after** (Settings, then Camera Streams, then Playback) closes
@@ -175,7 +189,8 @@ Assistant cameras are WebRTC by definition and are not affected.
 ## Performance
 
 The camera player is created only while a view is visible. One WebView owns all
-peer connections, camera audio is not negotiated, and hidden cameras are
+peer connections, camera audio is not negotiated unless
+[a single camera's sound](#sound) is enabled, and hidden cameras are
 disconnected in focus mode. Streams are released once the page has been hidden
 for ten seconds, so a view left open when the panel turns off stops decoding,
 and they come back when the screen does.

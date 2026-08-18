@@ -309,6 +309,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
       'grid': widget.view.effectiveGrid,
       'allowH265': widget.container.settings.get(defs.cameraAllowH265),
       'preferMse': widget.container.settings.get(defs.cameraPreferMse),
+      'singleAudio': widget.container.settings.get(defs.cameraSingleAudio),
       'interactive': widget.interactive,
       'focusedCameraId': widget.interactive
           ? widget.container.camera.focusedCameraId.value

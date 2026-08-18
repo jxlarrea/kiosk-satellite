@@ -2888,6 +2888,22 @@ const cameraPreferMse = SettingDef<bool>(
   category: 'Cameras',
 );
 
+// Sound only ever makes sense for one camera at a time: a grid playing four
+// microphones at once is noise, so the grid stays video-only and this toggle
+// applies where exactly one camera fills the view — a one-camera view, or a
+// focused tile. Off by default; the baby-monitor case turns it on (issue
+// #235).
+const cameraSingleAudio = SettingDef<bool>(
+  key: 'camera.single_audio',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Play sound for a single camera',
+  description:
+      "Play the camera's sound when only one camera is on screen. Grids "
+      'with several cameras stay silent.',
+  category: 'Cameras',
+);
+
 // A glance at the cameras from a clap or a corner tap should not stay up
 // forever on a wall panel. Applies to the camera view overlay however it was
 // opened (gesture, MQTT, the drawer); the screensaver's camera mode is its
@@ -3695,6 +3711,7 @@ const List<SettingDef<Object>> allSettings = [
   mqttDeviceId,
   cameraAllowH265,
   cameraPreferMse,
+  cameraSingleAudio,
   cameraAutoDismissSeconds,
   cameraConfig,
   // Music Assistant leads the page it names: the server is what the kiosk

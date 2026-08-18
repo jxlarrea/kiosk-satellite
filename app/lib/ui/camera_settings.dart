@@ -237,15 +237,30 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               ),
             ),
             SearchLandingTarget(
+              id: defs.cameraSingleAudio.key,
+              child: SwitchListTile(
+                title: Text(defs.cameraSingleAudio.title),
+                subtitle: Text(defs.cameraSingleAudio.description),
+                value: widget.container.settings.get(defs.cameraSingleAudio),
+                onChanged: (value) async {
+                  await widget.container.settings.setFromJson(
+                    defs.cameraSingleAudio.key,
+                    value,
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
+            ),
+            SearchLandingTarget(
               id: defs.cameraAutoDismissSeconds.key,
               child: _autoDismissRow(context),
             ),
           ],
         ),
         const GroupNote(
-          'Grid playback is video-only. For low-power devices, use lower '
-          'resolution Go2RTC streams in views and optionally set a separate '
-          'fullscreen stream.',
+          'Grids with several cameras are video-only. For low-power devices, '
+          'use lower resolution Go2RTC streams in views and optionally set a '
+          'separate fullscreen stream.',
         ),
       ],
     );

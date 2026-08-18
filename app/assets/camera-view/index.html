@@ -74,22 +74,35 @@ const MODE_STRIKE_LIMIT = 3;
 // MSE receiving no data: allow a slow first keyframe, then reconnect.
 const MSE_STALL_POLL_MS = 5000;
 const MSE_STALL_MS = 12000;
+// Sound is opt-in and only ever for one camera at a time: several cameras
+// playing their microphones over each other is noise, so a multi-camera
+// grid stays muted and video-only, and a camera qualifies only when it is
+// alone on screen — a one-camera view, or the focused tile (issue #235).
+const SINGLE_AUDIO = CFG.singleAudio === true;
+function audioFor(cameraId) {
+  return SINGLE_AUDIO && (CFG.cameras.length === 1 || focusId === cameraId);
+}
 
-// The codec families offered in the Go2RTC MSE handshake. Video only, like
-// the WebRTC transceiver: the grid is muted and a silent audio track is
-// bandwidth for nothing. isTypeSupported is honest for MSE (unlike the
-// WebRTC receiver capabilities that started issue #160), but H.265 stays
-// gated on the same setting so both transports tell one story.
+// The codec families offered in the Go2RTC MSE handshake. Video only unless
+// the session carries sound (see SINGLE_AUDIO): for a muted grid a silent
+// audio track is bandwidth for nothing. isTypeSupported is honest for MSE
+// (unlike the WebRTC receiver capabilities that started issue #160), but
+// H.265 stays gated on the same setting so both transports tell one story.
 const MSE_CODECS = [
   'avc1.640029', 'avc1.64002A', 'avc1.4D401F', 'avc1.42E01F',
   'hvc1.1.6.L153.B0', 'hev1.1.6.L153.B0',
 ];
-function mseCodecs() {
+const MSE_AUDIO_CODECS = ['mp4a.40.2', 'mp4a.40.5', 'flac', 'opus'];
+function mseCodecs(audio) {
   if (!window.MediaSource) return '';
-  return MSE_CODECS
+  const video = MSE_CODECS
     .filter((codec) => ALLOW_H265 || !/^h(vc|ev)1/i.test(codec))
     .filter((codec) =>
-      MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`))
+      MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`));
+  if (!video.length) return '';
+  return video
+    .concat(audio ? MSE_AUDIO_CODECS.filter((codec) =>
+      MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`)) : [])
     .join(',');
 }
 
@@ -115,7 +128,9 @@ function signalingFailure(result) {
 
 // 'video/H265' as a person writes it.
 function codecLabel(mimeType) {
-  return (mimeType || 'unknown').replace('video/', '').replace(/^H26/i, 'H.26');
+  return (mimeType || 'unknown')
+    .replace(/^(video|audio)\//, '')
+    .replace(/^H26/i, 'H.26');
 }
 
 // The human name of the first codec in an MSE mime ('video/mp4;
@@ -297,7 +312,7 @@ async function start(cameraId, fullscreen) {
     wanted: true, pc: null, ws: null, mediaSource: null, sourceBuffer: null,
     queue: [], video: null, retry: null, grace: null, decode: null,
     mseWatch: null, attempt: 0, modes, modeIndex: 0, modeFailures: 0,
-    fullscreen: !!fullscreen,
+    fullscreen: !!fullscreen, audio: audioFor(cameraId),
   };
   sessions.set(cameraId, session);
 
@@ -321,9 +336,9 @@ async function start(cameraId, fullscreen) {
     if (!video) {
       video = document.createElement('video');
       video.autoplay = true;
-      video.muted = true;
+      video.muted = !session.audio;
       video.playsInline = true;
-      video.setAttribute('muted', '');
+      if (!session.audio) video.setAttribute('muted', '');
       video.setAttribute('playsinline', '');
       // Chromium overlays a Cast button on any src-backed video the moment
       // a cast target exists on the network, so MSE tiles grew a gray icon
@@ -381,11 +396,15 @@ async function start(cameraId, fullscreen) {
       let stats;
       try { stats = await pc.getStats(); } catch (_) { return; }
       let inbound = null;
+      let inboundAudio = null;
       const codecs = new Map();
       stats.forEach((report) => {
         if (report.type === 'codec') codecs.set(report.id, report.mimeType);
         if (report.type === 'inbound-rtp' && report.kind === 'video') {
           inbound = report;
+        }
+        if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+          inboundAudio = report;
         }
       });
       if (!inbound) return;
@@ -393,8 +412,16 @@ async function start(cameraId, fullscreen) {
       if (inbound.framesDecoded > 0) {
         clearInterval(session.decode);
         session.decode = null;
+        // A session carrying sound says what its microphone track is doing:
+        // "no audio received" is the answer to the first question a silent
+        // baby monitor raises (issue #235).
+        const sound = !session.audio
+          ? ''
+          : inboundAudio && inboundAudio.packetsReceived > 0
+            ? ` with ${codecLabel(codecs.get(inboundAudio.codecId))} sound`
+            : ', no audio received from the camera';
         log(`${cameraId}: playing ${codec} `
-          + `${inbound.frameWidth}x${inbound.frameHeight}`);
+          + `${inbound.frameWidth}x${inbound.frameHeight}${sound}`);
         return;
       }
       if (waited < DECODE_GRACE_MS || !inbound.packetsReceived) return;
@@ -453,7 +480,7 @@ async function start(cameraId, fullscreen) {
 
   const connectMse = async () => {
     setStatus(cameraId, 'Connecting...');
-    const codecs = mseCodecs();
+    const codecs = mseCodecs(session.audio);
     if (!codecs) {
       log(`${cameraId}: MSE unavailable (no MediaSource or no codec)`, 'warn');
       if (session.modes.length > 1) {
@@ -625,6 +652,7 @@ async function start(cameraId, fullscreen) {
       rtcConfig && rtcConfig.iceServers ? { iceServers: rtcConfig.iceServers } : {});
     session.pc = pc;
     const transceiver = pc.addTransceiver('video', { direction: 'recvonly' });
+    if (session.audio) pc.addTransceiver('audio', { direction: 'recvonly' });
     // Leaving H.265 out of the offer costs nothing where a stream is H.264
     // already, and turns an undecodable H.265 camera into either a Go2RTC
     // transcode (servers that carry ffmpeg) or a visible signaling error.
@@ -643,6 +671,10 @@ async function start(cameraId, fullscreen) {
       if (!session.wanted || !event.streams.length) return;
       const video = ensureVideo();
       if (!video) return;
+      // With sound negotiated this fires once per track for the same
+      // stream; reattaching it would restart the element's load and abort
+      // the play() already in flight.
+      if (video.srcObject === event.streams[0]) return;
       // The tile may have carried an MSE source on a previous attempt.
       if (video.src) {
         video.removeAttribute('src');
@@ -714,10 +746,13 @@ function syncPeers() {
       stop(camera.id);
     } else if (!session) {
       start(camera.id, fullscreen);
-    } else if (session.fullscreen !== fullscreen && camera.hasFullscreen) {
+    } else if ((session.fullscreen !== fullscreen && camera.hasFullscreen)
+        || session.audio !== audioFor(camera.id)) {
       // Focusing a camera that is already streaming has to renegotiate, or
       // the grid's deliberately small stream is what fills the screen. Only
-      // worth the interruption for a camera that has a separate one.
+      // worth the interruption for a camera that has a separate stream —
+      // or when focus changes whether this camera carries sound, which
+      // needs an audio track negotiated in or out (issue #235).
       start(camera.id, fullscreen);
     }
   }
