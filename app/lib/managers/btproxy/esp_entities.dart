@@ -362,8 +362,12 @@ class EspEntitySurface {
       diagnostic('foreground_app', 'Foreground app',
           icon: 'mdi:application-outline', type: 'text_sensor'),
       if (_settings.get(defs.btproxyEnabled))
+        // state_class matters beyond statistics here: without it (or a
+        // unit) Home Assistant treats the sensor as non-numeric, so the
+        // count renders as the raw "13.0" string and history shows no
+        // graph.
         diagnostic('btproxy_nearby', 'Bluetooth devices nearby',
-            icon: 'mdi:bluetooth-audio'),
+            icon: 'mdi:bluetooth-audio', stateClass: 1),
       diagnostic('device_info', 'Device',
           icon: 'mdi:information-outline', type: 'text_sensor'),
       diagnostic('ipv4_address', 'IPv4 address',
