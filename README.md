@@ -102,10 +102,18 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
  <img src="assets/screenshots/dashboard.png" alt="Dashboard" width="650"/>
 </p>
 
-&bull; **Ready-made Home Assistant entities over MQTT**: point the app at
-  your broker and every tablet appears as its own device via MQTT
-  discovery, no YAML needed: a screen light, battery, charging, current
-  page, volume and screensaver sensors, all with live availability.
+&bull; **Native ESPHome device**: enable ESPHome and Home Assistant
+  discovers every tablet on its own, no broker, no YAML, one pasted key.
+  The device carries the full entity catalog: a screen light, volume
+  sliders, screensaver and settings switches, action buttons, camera view
+  and dashboard selects, an update entity, a live camera, and the whole
+  diagnostics set. (Entities over [MQTT](docs/mqtt.md) still work, with
+  ESPHome now the preferred path.)
+
+&bull; **Bluetooth proxy**: the same ESPHome connection relays BLE
+  advertisements and carries active device connections, exactly like an
+  ESP32 proxy: BTHome sensors, thermometers, presence beacons, locks and
+  buttons, with several kiosks forming a Bluetooth mesh on their own.
 
 &bull; **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
   awake, default brightness, scheduled light/dark theme, custom
@@ -124,7 +132,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
 &bull; **WebRTC cameras**: import streams from Go2RTC or add WHEP cameras
   manually, then arrange up to four cameras into responsive
   [camera views](docs/cameras.md) that can be opened from the tablet,
-  Remote Admin or Home Assistant through MQTT.
+  Remote Admin or Home Assistant.
 
 <p align="center">
  <img src="assets/screenshots/camera-1.png" alt="Cameras" width="650"/>
