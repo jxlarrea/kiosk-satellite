@@ -2,6 +2,16 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.56 - 2026-08-18
+
+### Fixed
+- The "Nearby devices" permission row tells the truth on Android 11 and older (#240). Those versions grant the Bluetooth permissions at install but gate scan results on location: without the Location permission and location services on, the scanner runs and hears nothing, which the row nevertheless reported as Granted, leaving a Fire tablet scanning "actively" with a permanently empty Nearby list and nothing for Bermuda. On old devices the row now reads the location gate instead, its Grant button asks for the Location permission, and when the system-wide location switch is the blocker it opens the OS location settings screen, the only place that can flip it.
+
+### Added
+- A hand-edited encryption key is validated before the server starts (#239). The ESPHome protocol's key must be the base64 form of 32 random bytes; a typed-in word used to kill the server silently, taking discovery down with it and leaving Home Assistant's generic "unable to connect" as the only symptom. An invalid key now surfaces as a clear failure reason on the settings pages, with the recovery spelled out: clear the field and a fresh key is generated.
+- Bluetooth scanner failures now land in the proxy log that btProxyStatus and the remote admin show, named with their reason, instead of only Android's internal logcat. A scanner killed by a permission error or a stack failure used to look exactly like a healthy one from every surface a user could reach (#240).
+- The proxy log now states the server's bind scope and the IP address announced to Home Assistant over mDNS (logged whenever it changes). When discovery shows a device that then refuses to connect, which address Home Assistant was told to dial is the first question, and on multi-interface devices it was previously unanswerable (#239).
+
 ## v2026.8.55 - 2026-08-18
 
 ### Added
@@ -10,13 +20,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Fixed
 - Slow Bluetooth advertisers are no longer invisible on some BLE 5 devices, which kept marking a Yale lock unavailable in Home Assistant between its brief battery-saving connections. Two independent causes, found live with two tablets sitting next to a lock that only a legacy-only device across the house could hear: scanning across every supported PHY made the controller time-slice its scan windows between the 1M and Coded bands (the proxy now scans 1M only, where extended advertisers overwhelmingly live), and some scan stacks report each static advertiser roughly once per scan session and then suppress its duplicates whatever the scan settings request, so quiet devices faded out minutes into every session while chatty ones kept flowing. The proxy now rotates its scan session every two minutes, comfortably inside Home Assistant's staleness window, so every advertiser re-reports before its availability can expire; verified with the previously flapping lock heard continuously across a half-hour soak.
 
-### Fixed
-- The "Nearby devices" permission row tells the truth on Android 11 and older (#240). Those versions grant the Bluetooth permissions at install but gate scan results on location: without the Location permission and location services on, the scanner runs and hears nothing, which the row nevertheless reported as Granted, leaving a Fire tablet scanning "actively" with a permanently empty Nearby list and nothing for Bermuda. On old devices the row now reads the location gate instead, its Grant button asks for the Location permission, and when the system-wide location switch is the blocker it opens the OS location settings screen, the only place that can flip it.
-
 ### Added
-- Bluetooth scanner failures now land in the proxy log that btProxyStatus and the remote admin show, named with their reason, instead of only Android's internal logcat. A scanner killed by a permission error or a stack failure used to look exactly like a healthy one from every surface a user could reach (#240).
-- A hand-edited encryption key is validated before the server starts (#239). The ESPHome protocol's key must be the base64 form of 32 random bytes; a typed-in word used to kill the server silently, taking discovery down with it and leaving Home Assistant's generic "unable to connect" as the only symptom. An invalid key now surfaces as a clear failure reason on the settings pages, with the recovery spelled out: clear the field and a fresh key is generated.
-- The proxy log now states the server's bind scope and the IP address announced to Home Assistant over mDNS (logged whenever it changes). When discovery shows a device that then refuses to connect, which address Home Assistant was told to dial is the first question, and on multi-interface devices it was previously unanswerable (#239).
 - The ESPHome settings page says when the server is down and why. A server that failed to start, a port conflict on one of two identical tablets being the live case (#240), used to render a page indistinguishable from a working one: toggles on, no error anywhere. Both the device page and the remote admin now show the failure reason right under the master switch, and the btProxyStatus command carries it for remote diagnosis.
 
 ## v2026.8.54 - 2026-08-18
