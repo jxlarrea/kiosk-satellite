@@ -25,8 +25,12 @@ room-presence setups like Bermuda get one measuring point per kiosk.
    encryption key and shows it in the same section. Turn on **Enable
    Bluetooth proxy** in the section below if the kiosk should relay
    Bluetooth too.
-2. On Android 12 or later, grant **Nearby devices** when prompted (also
-   available under **Settings, Device, Permissions Manager**).
+2. Grant **Nearby devices** when prompted (also available under
+   **Settings, Device, Permissions Manager**). On Android 11 and older,
+   including Fire tablets and similar devices, this asks for **Location**
+   instead and the device's own location switch must be on too; see
+   [Permissions by Android version](#permissions-by-android-version) for
+   why.
 3. In Home Assistant, the device appears under **Settings, Devices &
    services** as a discovered ESPHome device named
    `kiosk-satellite-<id>`. Hit **Configure** and paste the encryption key
@@ -120,6 +124,22 @@ Assistant is untouched either way.
 | --- | --- |
 | 12+ | The **Nearby devices** runtime pair (scan + connect). Location is not required; the app declares its scans are not used for location. |
 | 6 to 11 | Bluetooth is granted at install, but Android requires the **Location** permission and location services switched on for BLE scan results to be delivered. |
+
+The second row is the one that surprises people, because nothing about it
+looks like Bluetooth. On Android 11 and older (Fire tablets, Echo Shows,
+Meta Portals and other devices of that generation), two separate things
+must be true or the scanner runs and hears nothing: the app must hold the
+**Location** permission, and the tablet-wide location switch in the
+device's own settings (on Fire tablets under **Location Based Services**)
+must be on. The symptom of a missing half is always the same: the proxy
+reports itself as scanning, the Nearby devices list stays empty forever,
+and Home Assistant sees a proxy that never delivers an advertisement. The
+**Nearby devices** permission row on the settings pages reads this gate on
+old devices and names whichever half is blocking scanning; its Grant
+button asks for the permission, or opens the system's location settings
+screen when the switch is what is off. Location is used for nothing else:
+the app never reads the device's position for this feature, the
+requirement is Android's own rule about BLE scanning on those versions.
 
 ## Reliability
 
