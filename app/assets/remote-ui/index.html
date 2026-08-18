@@ -4106,6 +4106,7 @@ async function loadSettings() {
   // twice in Home Assistant; warn where the choice is made, mirroring
   // the device page.
   if (byKey['esphome.entities']?.value === true &&
+      depSatisfied(byKey['esphome.entities']) &&
       byKey['mqtt.enabled']?.value === true) {
     const row = document.querySelector('[data-key="esphome.entities"]');
     if (row) {
@@ -4135,7 +4136,12 @@ async function loadSettings() {
   // byKey, not the permissions block's on() helper: that one is const
   // inside a later block, and reaching for it from here is a
   // ReferenceError that kills everything loadSettings still had to do.
-  if (byKey['btproxy.enabled']?.value === true) {
+  // Value AND chain: btproxy.enabled keeps its stored true while the
+  // ESPHome master is off, but its row (and everything riding it) is
+  // gated away; the hand-built cards must follow the same rule or they
+  // linger on a page whose settings rows have all vanished.
+  if (byKey['btproxy.enabled']?.value === true &&
+      depSatisfied(byKey['btproxy.enabled'])) {
     // No heading of its own: the lookup toggle's "Nearby devices" section
     // heading (from the definitions) already labels this stretch of the
     // tab, and the list card slots in right under it.
