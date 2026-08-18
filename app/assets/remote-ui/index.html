@@ -313,7 +313,7 @@
      survives the adapter coming back. */
   .bt-off-banner { font-size: 13px; color: var(--warn);
     line-height: 1.5; margin: 0 0 14px; }
-  #tab-btproxy .bt-inert { pointer-events: none; opacity: 0.45; }
+  #tab-esphome .bt-inert { pointer-events: none; opacity: 0.45; }
   .row input[type=text], .row input[type=password], .row input[type=number],
   .row input[type=time], .row select {
     background: var(--surface-2); border: 1px solid var(--border);
@@ -659,7 +659,7 @@
           <span class="disc d1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19h.01M3 15a4 4 0 0 1 4 4M3 11a8 8 0 0 1 8 8"/><path d="M8 5h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4"/></svg></span>
           <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Play images, videos and audio remotely</span></span>
         </button>
-        <button data-tab="btproxy">
+        <button data-tab="esphome">
           <!-- The ESPHome mark: the house silhouette with the
                serpentine-trace "E" as holes, traced from the project's
                official icon (same rendition as assets/svg/esphome.svg). -->
@@ -783,7 +783,7 @@
     <div class="tab" id="tab-sendspin"></div>
     <div class="tab" id="tab-cameras"></div>
     <div class="tab" id="tab-dlna"></div>
-    <div class="tab" id="tab-btproxy"></div>
+    <div class="tab" id="tab-esphome"></div>
     <div class="tab" id="tab-files"></div>
     <div class="tab" id="tab-gestures"></div>
     <div class="tab" id="tab-device">
@@ -935,10 +935,10 @@ function logout() {
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
 const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'launcher', 'screenaudio', 'screensaver',
-  'camera', 'mqtt', 'sendspin', 'cameras', 'dlna', 'btproxy', 'files', 'gestures', 'device', 'about', 'logs'];
+  'camera', 'mqtt', 'sendspin', 'cameras', 'dlna', 'esphome', 'files', 'gestures', 'device', 'about', 'logs'];
 // Old bookmarks from before the tabs were consolidated keep landing
 // somewhere sensible.
-const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs' };
+const LEGACY_TABS = { screen: 'screenaudio', audio: 'screenaudio', remote: 'device', console: 'logs', btproxy: 'esphome' };
 const TAB_TITLES = {
   dashboard: 'Overview', browser: 'Web Browsing',
   kiosk: 'Kiosk Mode', lockdown: 'Lockdown Mode', launcher: 'App Launcher', screenaudio: 'Screen & Audio', screensaver: 'Screensaver',
@@ -948,7 +948,7 @@ const TAB_TITLES = {
   mqtt: 'MQTT Settings',
   cameras: 'Camera Streams',
   sendspin: 'Music Assistant',
-  dlna: 'DLNA Renderer', btproxy: 'ESPHome',
+  dlna: 'DLNA Renderer', esphome: 'ESPHome',
   files: 'File Manager', gestures: 'Gestures',
   device: 'Device', about: 'About', logs: 'Logs',
 };
@@ -1013,13 +1013,13 @@ const SEARCH_CATEGORY_TABS = {
   'Screensaver': 'screensaver', 'Camera': 'camera',
   'Home Assistant': 'homeassistant', 'Voice Satellite': 'voicesatellite',
   'MQTT': 'mqtt', 'Sendspin': 'sendspin', 'DLNA': 'dlna',
-  'ESPHome': 'btproxy',
+  'ESPHome': 'esphome',
   'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
 };
 const SEARCH_EXTRAS = [
-  { tab: 'btproxy', title: 'Nearby devices',
+  { tab: 'esphome', title: 'Nearby devices',
     desc: 'The Bluetooth devices this kiosk hears, with names where known.' },
-  { tab: 'btproxy', title: 'Required system permissions',
+  { tab: 'esphome', title: 'Required system permissions',
     desc: 'The Nearby devices grant the Bluetooth proxy needs to scan.',
     heading: 'Required system permissions' },
   { tab: 'homeassistant', title: 'Validate connection',
@@ -3906,7 +3906,7 @@ const CATEGORY_TABS = [
   ['tab-mqtt', ['MQTT']],
   ['tab-sendspin', ['Sendspin']],
   ['tab-dlna', ['DLNA']],
-  ['tab-btproxy', ['ESPHome']],
+  ['tab-esphome', ['ESPHome']],
   ['device-settings', ['Device']],
 ];
 
@@ -4139,7 +4139,7 @@ async function loadSettings() {
     // No heading of its own: the lookup toggle's "Nearby devices" section
     // heading (from the definitions) already labels this stretch of the
     // tab, and the list card slots in right under it.
-    const root = document.getElementById('tab-btproxy');
+    const root = document.getElementById('tab-esphome');
     const card = document.createElement('div');
     card.className = 'card';
     card.id = 'btproxy-nearby-card';
@@ -4365,7 +4365,7 @@ async function loadSettings() {
   // radio). Module-level timer for the same reason as the nearby poll; a
   // settings re-render clears the markers, so the poll repaints.
   {
-    const root = document.getElementById('tab-btproxy');
+    const root = document.getElementById('tab-esphome');
     const paint = (on) => {
       root.querySelectorAll('.bt-inert')
         .forEach((el) => el.classList.remove('bt-inert'));
