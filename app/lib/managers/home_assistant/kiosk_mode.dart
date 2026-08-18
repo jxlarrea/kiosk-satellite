@@ -81,9 +81,17 @@ const kioskModeScript = '''
         : '';
     }
     if (tag === 'hui-root') {
+      // Panel cards size themselves against the header through
+      // var(--kiosk-header-height, var(--header-height)), the contract the
+      // kiosk-mode resource established (the advanced camera card among
+      // them), so hiding the header must also declare the kiosk height as
+      // zero or a panel card ends a header short (#232). The padding keeps
+      // the safe-area share the header's offset used to carry.
       return S.header
         ? '.header,.toolbar,app-header,ch-header{display:none!important;}' +
-          '#view,hui-view{padding-top:0!important;min-height:100vh!important;}'
+          '#view,hui-view{padding-top:calc(var(--safe-area-inset-top,0px) + ' +
+          'var(--view-container-padding-top,0px))!important;' +
+          'min-height:100vh!important;--kiosk-header-height:0px;}'
         : '';
     }
     return '';

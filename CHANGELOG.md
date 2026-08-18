@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- HA Kiosk Mode no longer leaves a black bar at the bottom of panel views. Cards that fill a panel view, the advanced camera card among them, size themselves against the header height Home Assistant publishes, honoring the zero override the kiosk-mode plugin used to declare when it hid the header; the built-in kiosk mode now declares the same override, so a full-screen camera panel really fills the screen. The hidden header's slot also keeps the display cutout inset it used to absorb, so on a notched screen the dashboard is not pushed under the cutout. (#232)
+
 ### Added
 - The Bluetooth proxy settings now carry a "Minimum signal for connections" floor: with several proxies in the house, a kiosk refuses connection requests for devices it last heard below the chosen signal level, so Home Assistant immediately fails over to a closer proxy instead of a distant kiosk winning a link it cannot hold while its occupied slot blocks the proxy that could. Devices the kiosk has never heard always pass, so pairing flows keep working. The Bluetooth Proxy settings page and remote admin tab also now gray themselves out under a notice whenever the device's Bluetooth adapter is off, and clear the moment it returns.
 

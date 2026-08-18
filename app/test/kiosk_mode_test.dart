@@ -161,6 +161,14 @@ void main() {
       }
     });
 
+    test('declares a zero kiosk header height for panel cards', () {
+      // Cards that fill a panel view size themselves with
+      // calc(100vh - var(--kiosk-header-height, var(--header-height))), the
+      // contract the kiosk-mode resource established. Without the
+      // declaration a panel card ends a header short of the screen (#232).
+      expect(kioskModeScript, contains('--kiosk-header-height:0px'));
+    });
+
     test('keeps a hidden sidebar hidden', () {
       // The menu button and the edge swipe both open the drawer, so the
       // toggle event is swallowed and a drawer opened anyway is closed.
