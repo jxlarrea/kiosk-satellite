@@ -3344,7 +3344,7 @@ const btproxyEnabled = SettingDef<bool>(
 const btproxyConnections = SettingDef<bool>(
   key: 'btproxy.connections',
   type: SettingType.boolean,
-  defaultValue: true,
+  defaultValue: false,
   title: 'Allow device connections',
   description:
       'Home Assistant can connect to Bluetooth devices through this device.',

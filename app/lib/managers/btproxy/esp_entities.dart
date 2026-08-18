@@ -368,6 +368,14 @@ class EspEntitySurface {
         // graph.
         diagnostic('btproxy_nearby', 'Bluetooth devices nearby',
             icon: 'mdi:bluetooth-audio', stateClass: 1),
+      if (_settings.get(defs.btproxyEnabled) &&
+          _settings.get(defs.btproxyConnections))
+        // "1 of 3" where the user will look before filing "my fifth
+        // device won't connect": the budget is a hard Android-stack
+        // limit per proxy, and Home Assistant spreads extra devices
+        // across other proxies only if there are other proxies.
+        diagnostic('bt_connections', 'Bluetooth connections',
+            icon: 'mdi:bluetooth-connect', type: 'text_sensor'),
       diagnostic('device_info', 'Device',
           icon: 'mdi:information-outline', type: 'text_sensor'),
       diagnostic('ipv4_address', 'IPv4 address',
@@ -896,6 +904,16 @@ class EspEntitySurface {
       final count =
           nearby.ok && nearby.data is Map ? (nearby.data as Map)['count'] : null;
       if (count is num) await _send('btproxy_nearby', count.toInt());
+      if (_settings.get(defs.btproxyConnections)) {
+        final status = await commands.execute('btProxyStatus', const {});
+        final data =
+            status.ok && status.data is Map ? status.data as Map : const {};
+        final used = (data['connections'] as List?)?.length;
+        final slots = (data['connectionSlots'] as num?)?.toInt() ?? 0;
+        if (used != null && slots > 0) {
+          await _send('bt_connections', '$used of $slots');
+        }
+      }
     }
     // Every completed poll IS a sighting, like the MQTT twin.
     await _send('last_seen', DateTime.now().toUtc().toIso8601String());

@@ -1619,6 +1619,13 @@ class _CategoryContentState extends State<_CategoryContent> {
               // The live list right under the sort picker that orders it.
               // Rides the section's dependsOn: with the proxy off there is
               // nothing to list and none of these rows render.
+              // The connection budget, right under the toggle that spends
+              // it: a hard Android-stack limit per proxy, and the thing a
+              // user must know before wondering why a fifth device will
+              // not connect.
+              if (widget.category == 'ESPHome')
+                btproxyConnections.key:
+                    _BtSlotsHintRow(key: UniqueKey(), container: container),
               if (widget.category == 'ESPHome')
                 btproxyNearbySort.key: SearchLandingTarget(
                   id: 'x:btproxy_nearby',
@@ -5431,6 +5438,59 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
 /// The Bluetooth proxy's grant, in the per-feature shape Voice Satellite
 /// and Kiosk Mode use: what the feature needs, where the feature lives.
 /// The Device page's Permissions Manager stays the whole-app view.
+/// The device-connection budget under the toggle that spends it. The
+/// number comes from the running server (two slots on Android 11 and
+/// older, three on newer stacks), so the row only renders while the
+/// server runs with connections on.
+class _BtSlotsHintRow extends StatefulWidget {
+  const _BtSlotsHintRow({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_BtSlotsHintRow> createState() => _BtSlotsHintRowState();
+}
+
+class _BtSlotsHintRowState extends State<_BtSlotsHintRow> {
+  int _slots = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    // One quiet retry: a settings flip restarts the proxy (debounced), and
+    // the first read can race the bounce.
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final result =
+          await widget.container.commands.execute('btProxyStatus', const {});
+      final slots = result.ok && result.data is Map
+          ? ((result.data as Map)['connectionSlots'] as num?)?.toInt() ?? 0
+          : 0;
+      if (slots > 0) {
+        if (mounted) setState(() => _slots = slots);
+        return;
+      }
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_slots <= 0 ||
+        !widget.container.settings.get(btproxyConnections)) {
+      return const SizedBox.shrink();
+    }
+    return HintRow(
+      'Up to $_slots devices can be connected at once through this kiosk. '
+      'Home Assistant routes further devices through other proxies.',
+    );
+  }
+}
+
 class _BtProxyPermissionsTile extends StatefulWidget {
   const _BtProxyPermissionsTile();
 

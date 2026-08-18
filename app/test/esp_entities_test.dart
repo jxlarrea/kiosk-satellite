@@ -28,6 +28,7 @@ void main() {
       'ks.camera.enabled': true,
       'ks.launcher.enabled': true,
       'ks.btproxy.enabled': true,
+      'ks.btproxy.connections': true,
       'ks.motion.sensor': true,
       'ks.screensaver.brightness_level': 0.4,
     });
@@ -84,6 +85,10 @@ void main() {
     });
     stub('foregroundApp', {'package': 'me.jxl.kiosk_satellite'});
     stub('btProxyNearby', {'count': 13});
+    stub('btProxyStatus', {
+      'connections': ['AA:BB:CC:DD:EE:FF'],
+      'connectionSlots': 3,
+    });
     stub('isScreenOn', true);
     stub('getBrightness', 0.4);
     stub('getVolume', 55);
@@ -140,6 +145,7 @@ void main() {
           'ipv6_address', 'app_uptime', 'network_uptime', 'admin_url',
         ]));
     expect(ids, contains('connectivity'));
+    expect(ids, contains('bt_connections'));
     expect(ids, contains('last_seen'));
     final byId = {for (final d in catalog) d['objectId']: d};
     // Only views with cameras become options; 'Closed' leads. The
@@ -186,6 +192,7 @@ void main() {
     expect(DateTime.parse('${byId['last_seen']}'), isA<DateTime>());
     expect(byId['foreground_app'], 'me.jxl.kiosk_satellite');
     expect(byId['btproxy_nearby'], 13);
+    expect(byId['bt_connections'], '1 of 3');
     expect(byId['volume'], 55);
     expect(byId['screen'], {'on': true, 'brightness': 0.4});
     expect((byId['update'] as Map)['latest'], '2026.8.53');

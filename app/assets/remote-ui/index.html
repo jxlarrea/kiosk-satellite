@@ -4205,6 +4205,27 @@ async function loadSettings() {
       .then((res) => { if (document.getElementById('btproxy-nearby-card'))
         renderNearby(res.data?.devices || []); })
       .catch(() => {});
+
+    // The connection budget under the toggle that spends it, mirroring
+    // the device page: a hard Android-stack limit per proxy.
+    if (byKey['btproxy.connections']?.value === true) {
+      api('/api/commands/btProxyStatus', { method: 'POST', body: '{}' })
+        .then((r) => r.json())
+        .then((res) => {
+          const slots = res.data?.connectionSlots || 0;
+          const row = document.querySelector(
+            '[data-key="btproxy.connections"]');
+          if (!slots || !row) return;
+          const note = document.createElement('div');
+          note.className = 'group-note';
+          note.style.cssText = 'margin: 4px 20px 10px';
+          note.textContent = `Up to ${slots} devices can be connected ` +
+            'at once through this kiosk. Home Assistant routes further ' +
+            'devices through other proxies.';
+          row.insertAdjacentElement('afterend', note);
+        })
+        .catch(() => {});
+    }
     if (window.__btNearbyTimer) clearInterval(window.__btNearbyTimer);
     window.__btNearbyTimer = setInterval(pollNearby, 15000);
     // Flipping the sort re-orders the list now, not at the next poll.
