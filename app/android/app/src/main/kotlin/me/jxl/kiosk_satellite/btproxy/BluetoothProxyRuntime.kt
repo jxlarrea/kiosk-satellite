@@ -43,6 +43,10 @@ internal object BluetoothProxyRuntime {
     @Volatile var isRunning = false
         private set
 
+    /** Whether this run carries the Bluetooth proxy (the service
+     *  notification says what is actually being served). */
+    val bluetoothProxyActive: Boolean get() = engine != null
+
     private var server: ApiServer? = null
     private var engine: BleScanEngine? = null
     private var gattEngine: GattEngine? = null

@@ -95,13 +95,16 @@ class BluetoothProxyService : Service() {
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        // Re-creating a channel with the same id updates its mutable
+        // fields, so installs that saw the old "Bluetooth proxy" name
+        // pick the rename up.
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Bluetooth proxy",
+            "ESPHome",
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "Shown while Kiosk Satellite relays Bluetooth " +
-                "devices to Home Assistant."
+            description = "Shown while Kiosk Satellite serves Home " +
+                "Assistant as an ESPHome device."
             setShowBadge(false)
         }
         getSystemService(NotificationManager::class.java)
@@ -118,8 +121,14 @@ class BluetoothProxyService : Service() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Bluetooth proxy active")
-            .setContentText("Relaying Bluetooth devices to Home Assistant.")
+            .setContentTitle("ESPHome active")
+            .setContentText(
+                if (me.jxl.kiosk_satellite.btproxy
+                        .BluetoothProxyRuntime.bluetoothProxyActive) {
+                    "Serving Home Assistant and relaying Bluetooth devices."
+                } else {
+                    "Serving Home Assistant."
+                })
             .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setContentIntent(open)
             .setOngoing(true)
