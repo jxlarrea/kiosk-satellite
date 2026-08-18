@@ -200,13 +200,13 @@ from the default HACS repository.
 
 - [JavaScript API](docs/js-api.md): `window.kioskSatellite`, wake-word handoff protocol
 - [Remote API](docs/remote-api.md): REST + WebSocket surface
+- [ESPHome](docs/esphome.md): native Home Assistant entities and a Bluetooth proxy over the ESPHome API.
 - [MQTT](docs/mqtt.md): Home Assistant entities via MQTT discovery, topics, troubleshooting
 - [Camera streams](docs/cameras.md): Go2RTC import, camera views, and Home Assistant controls
 - [Screensavers](docs/screensavers.md): the modes, schedule, brightness, motion wake, and what starts and dismisses them.
 - [Device camera](docs/camera.md): the tablet's own camera as a Home Assistant still camera and motion detector.
 - [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
-- [ESPHome](docs/esphome.md): native Home Assistant entities and a Bluetooth proxy over the ESPHome API, no broker needed.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the Black and Clock screensavers.
 - [Kiosk and Lockdown](docs/kiosk.md): Kiosk Mode's protections, Lockdown Mode, the grants they need, and the device owner tier.

@@ -3330,16 +3330,17 @@ const esphomeEnabled = SettingDef<bool>(
   category: 'ESPHome',
 );
 
-/// Decoupled from the master switch on purpose: a household happy with
-/// its MQTT entities can still run the Bluetooth proxy without growing a
-/// duplicate entity set, and migrate whenever it suits them.
+/// Decoupled from the master switch, and off by default, on purpose: a
+/// household with MQTT enabled that turns on ESPHome just for the
+/// Bluetooth proxy must not wake up to a duplicate entity set; entities
+/// are an explicit step, taken when the user is ready to migrate.
 const esphomeEntities = SettingDef<bool>(
   key: 'esphome.entities',
   type: SettingType.boolean,
-  defaultValue: true,
+  defaultValue: false,
   title: 'Expose kiosk entities',
   description:
-      "Serve this kiosk's sensors and controls as ESPHome entities.",
+      'Serve the sensors and controls of this device as ESPHome entities.',
   category: 'ESPHome',
   dependsOn: 'esphome.enabled',
 );

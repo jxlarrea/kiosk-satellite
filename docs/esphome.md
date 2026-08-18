@@ -68,8 +68,8 @@ are always allowed through, so pairing flows keep working.
 
 ## Kiosk entities
 
-With **Expose kiosk entities** on (the default), the kiosk's sensors
-and controls come with the integration, the full catalog the MQTT
+Turn on **Expose kiosk entities** and the kiosk's sensors and controls
+come with the integration, the full catalog the MQTT
 integration publishes, under the device Home Assistant
 already discovered: the Screen light with brightness, screensaver and
 settings switches, volume sliders, the action buttons, the Camera view
@@ -79,9 +79,9 @@ names mirror the MQTT ones, so a migrating automation only swaps the
 device half of the entity id. While the MQTT integration is enabled
 alongside, entities exist twice, once per integration, and Home
 Assistant suffixes whichever registered second; migrate automations to
-the ESPHome ones at your own pace, then turn MQTT off. Prefer to stay
-on MQTT for now? Turn **Expose kiosk entities** off and the kiosk stays
-a pure Bluetooth proxy with no duplicate entities.
+the ESPHome ones at your own pace, then turn MQTT off. The toggle is off by default so that
+enabling ESPHome just for the Bluetooth proxy never creates duplicates
+next to an existing MQTT setup; flip it when you are ready to migrate.
 
 One deliberate difference from the MQTT catalog: the ESPHome camera
 protocol allows exactly one camera per device, so the kiosk serves its
