@@ -119,6 +119,29 @@ internal class GattEngine(
         var mtu = 23
         var retried133 = false
         var disconnectedDelivered = false
+        /**
+         * Whether this connection holds the scan pause. Tracked here, not
+         * derived from [state]: disconnectInternal overwrites the state to
+         * DISCONNECTING, so a phase-based release check misses connections
+         * torn down mid-connect and leaks the hold - which is a permanently
+         * stopped scanner, found live when a retry storm on one EcoFlow
+         * left a kiosk relaying nothing until app restart.
+         */
+        var holdsScanPause = false
+
+        fun takeScanPause() {
+            if (!holdsScanPause) {
+                holdsScanPause = true
+                scanPause(true)
+            }
+        }
+
+        fun releaseScanPause() {
+            if (holdsScanPause) {
+                holdsScanPause = false
+                scanPause(false)
+            }
+        }
         var servicesTree: List<GattService>? = null
         var servicesRequested = false
         val handleToCharacteristic = HashMap<Int, BluetoothGattCharacteristic>()
@@ -255,14 +278,14 @@ internal class GattEngine(
         }
         val connection = Connection(address, withCache)
         connections[address] = connection
-        scanPause(true)
+        connection.takeScanPause()
         try {
             connection.gatt = remoteDevice(address).connectGatt(
                 context, false, callbackFor(connection), BluetoothDevice.TRANSPORT_LE)
         } catch (e: Exception) {
             Log.w(TAG, "connectGatt threw: $e")
             connections.remove(address)
-            scanPause(false)
+            connection.releaseScanPause()
             deliver(GattEvent.ConnectFailed(address, ERROR_NOT_CONNECTED))
             return
         }
@@ -277,7 +300,7 @@ internal class GattEngine(
         connection.clearTimeout()
         runCatching { connection.gatt?.close() }
         connections.remove(connection.address)
-        scanPause(false)
+        connection.releaseScanPause()
         if (error == 133 && !connection.retried133) {
             // One quick retry absorbs the everyday 133; more retries only
             // feed the cascade, so afterwards the address cools down.
@@ -286,14 +309,14 @@ internal class GattEngine(
                 val retry = Connection(connection.address, connection.withCache)
                 retry.retried133 = true
                 connections[connection.address] = retry
-                scanPause(true)
+                retry.takeScanPause()
                 try {
                     retry.gatt = remoteDevice(retry.address).connectGatt(
                         context, false, callbackFor(retry), BluetoothDevice.TRANSPORT_LE)
                     retry.armTimeout(CONNECT_TIMEOUT_MS) { failConnect(retry, 133) }
                 } catch (e: Exception) {
                     connections.remove(retry.address)
-                    scanPause(false)
+                    retry.releaseScanPause()
                     startCooldown(retry.address, 133)
                     deliver(GattEvent.ConnectFailed(retry.address, 133))
                 }
@@ -349,10 +372,7 @@ internal class GattEngine(
         opQueue.removeAll { it.first === connection }
         runCatching { connection.gatt?.close() }
         connections.remove(connection.address)
-        if (connection.state == State.CONNECTING || connection.state == State.MTU_WAIT ||
-            connection.state == State.DISCOVERING) {
-            scanPause(false)
-        }
+        connection.releaseScanPause()
         deliver(GattEvent.Disconnected(connection.address, error))
     }
 
@@ -374,7 +394,7 @@ internal class GattEngine(
         // Success clears the address's cooldown history.
         cooldownStep.remove(connection.address)
         cooldownUntil.remove(connection.address)
-        scanPause(false)
+        connection.releaseScanPause()
         deliver(GattEvent.Connected(connection.address, connection.mtu))
         if (connection.servicesRequested) {
             connection.servicesRequested = false
@@ -490,6 +510,9 @@ internal class GattEngine(
             }
         }
         if (!started) {
+            Log.w(TAG, "op ${op.javaClass.simpleName} refused for " +
+                "${formatAddress(connection.address)} handle=${handleOf(op)} " +
+                "(unknown handle or stack refusal)")
             opTimeout?.let(handler::removeCallbacks)
             opTimeout = null
             deliver(GattEvent.OperationError(
@@ -663,11 +686,15 @@ internal class GattEngine(
     private fun afterMtuPhase(connection: Connection) {
         connection.clearTimeout()
         if (connection.state != State.MTU_WAIT) return
-        if (connection.withCache) {
-            becomeReady(connection)
-        } else {
-            startDiscovery(connection)
-        }
+        // Discovery runs on cached connects too. The cache flag spares the
+        // CLIENT its services request; it cannot spare us discovery, because
+        // operations route through this connection's handle maps and only
+        // discovery populates them. Skipping it here left every op on a
+        // cached reconnect failing 0x81 with an empty map - found live the
+        // first night Home Assistant reconnected EcoFlows with a warm
+        // services cache and could never re-establish them. Android keeps
+        // its own GATT database cache, so the on-air cost is small.
+        startDiscovery(connection)
     }
 
     private fun buildServiceTree(connection: Connection, gatt: BluetoothGatt) {
@@ -737,6 +764,36 @@ internal class GattEngine(
         }
     }
 
+    // The adapter dying takes every link with it, but whether Android
+    // still delivers per-connection disconnect callbacks afterwards is
+    // stack-dependent. This makes the outcome deterministic: finalize
+    // every connection the moment the adapter reports off (close, free
+    // the slot, tell the client), instead of leaving Home Assistant to
+    // find out one operation timeout at a time. No STATE_ON branch here:
+    // reconnection is the client's move, and connectInternal already
+    // refuses cleanly until the adapter is really back.
+    private val adapterReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context, intent: Intent) {
+            if (intent.action != BluetoothAdapter.ACTION_STATE_CHANGED) return
+            if (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)
+                != BluetoothAdapter.STATE_OFF) return
+            handler.post {
+                if (connections.isEmpty()) return@post
+                Log.w(TAG, "adapter off, dropping ${connections.size} GATT connection(s)")
+                for (address in connections.keys.toList()) {
+                    connections[address]?.let {
+                        finalizeDisconnect(it, ERROR_NOT_CONNECTED)
+                    }
+                }
+            }
+        }
+    }
+
+    init {
+        context.registerReceiver(
+            adapterReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+    }
+
     private val bondReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context, intent: Intent) {
             if (intent.action != BluetoothDevice.ACTION_BOND_STATE_CHANGED) return
@@ -769,6 +826,7 @@ internal class GattEngine(
                 bondReceiverRegistered = false
                 runCatching { context.unregisterReceiver(bondReceiver) }
             }
+            runCatching { context.unregisterReceiver(adapterReceiver) }
         }
     }
 

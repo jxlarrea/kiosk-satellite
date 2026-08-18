@@ -1,5 +1,6 @@
 package me.jxl.kiosk_satellite
 
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.util.Base64
 import io.flutter.plugin.common.BinaryMessenger
@@ -39,6 +40,8 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                 port = call.argument<Int>("port") ?: 6053,
                                 projectVersion = call.argument<String>("projectVersion") ?: "0",
                                 connections = call.argument<Boolean>("connections") ?: false,
+                                minConnectRssi =
+                                    call.argument<Int>("minConnectRssi") ?: 0,
                             ),
                         )
                         BluetoothProxyService.start(context)
@@ -54,6 +57,12 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                 }
                 "status" -> result.success(BluetoothProxyRuntime.status())
                 "nearby" -> result.success(BluetoothProxyRuntime.nearbyDevices())
+                // Whether the device's Bluetooth adapter is on: the settings
+                // pages gray themselves out and say so while it is not,
+                // whatever state the proxy itself is in.
+                "adapterOn" -> result.success(
+                    (context.getSystemService(Context.BLUETOOTH_SERVICE)
+                        as? BluetoothManager)?.adapter?.isEnabled == true)
                 else -> result.notImplemented()
             }
         }

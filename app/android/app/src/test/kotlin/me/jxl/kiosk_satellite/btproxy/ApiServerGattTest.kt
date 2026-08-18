@@ -209,6 +209,48 @@ class ApiServerGattTest {
     }
 
     @Test
+    fun rssiFloorRefusesWeakDevicesButNotUnknownOnes() {
+        val gatt = ScriptedGatt()
+        val backend = object : ScannerBackend {
+            override fun onScanDemand(mode: ScannerMode) {}
+            override fun onScanRelease() {}
+        }
+        // Address 1 is heard at -92 (below the -85 floor), address 2 at
+        // -60, address 3 was never heard at all.
+        val s = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, null, backend,
+            log = {}, gatt = gatt, minConnectRssi = -85,
+            rssiOf = { addr -> mapOf(1L to -92, 2L to -60)[addr] })
+        gatt.server = s
+        s.start()
+        server = s
+        val c = connectClient(s)
+
+        c.send(Msg.BT_DEVICE_REQUEST,
+            deviceRequest(1, BtDeviceRequestType.CONNECT_V3_WITH_CACHE))
+        val refused = c.readUntil(Msg.BT_DEVICE_CONNECTION_RESPONSE)
+        var connected = false; var error = 0
+        ProtoReader(refused.payload).let { r ->
+            while (r.next()) when (r.field) {
+                2 -> connected = r.asBool()
+                4 -> error = r.asInt()
+            }
+        }
+        assertEquals(false, connected)
+        assertEquals(133, error)
+        assertTrue(gatt.calls.none { it.startsWith("connect:1") })
+
+        // Strong and never-heard devices both pass the gate.
+        c.send(Msg.BT_DEVICE_REQUEST,
+            deviceRequest(2, BtDeviceRequestType.CONNECT_V3_WITH_CACHE))
+        c.readUntil(Msg.BT_DEVICE_CONNECTION_RESPONSE)
+        c.send(Msg.BT_DEVICE_REQUEST,
+            deviceRequest(3, BtDeviceRequestType.CONNECT_V3_WITH_CACHE))
+        c.readUntil(Msg.BT_DEVICE_CONNECTION_RESPONSE)
+        assertTrue(gatt.calls.any { it.startsWith("connect:2") })
+        assertTrue(gatt.calls.any { it.startsWith("connect:3") })
+    }
+
+    @Test
     fun connectionsFreeTracksAllocations() {
         val gatt = ScriptedGatt()
         val c = connectClient(start(gatt))

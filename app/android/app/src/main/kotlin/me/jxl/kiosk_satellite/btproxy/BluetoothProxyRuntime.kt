@@ -29,6 +29,8 @@ internal object BluetoothProxyRuntime {
         val projectVersion: String,
         /** Advertise and serve active GATT connections. */
         val connections: Boolean,
+        /** Refuse connects for devices heard below this RSSI; 0 = no gate. */
+        val minConnectRssi: Int = 0,
     )
 
     @Volatile var isRunning = false
@@ -76,6 +78,8 @@ internal object BluetoothProxyRuntime {
             },
             log = ::log,
             gatt = connections,
+            minConnectRssi = config.minConnectRssi,
+            rssiOf = nearby::lastRssi,
         )
 
         try {

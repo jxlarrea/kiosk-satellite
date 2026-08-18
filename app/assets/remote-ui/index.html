@@ -306,6 +306,14 @@
      up with the row text inside the card above it. */
   .group-note { font-size: 12.5px; color: var(--muted);
     line-height: 1.5; margin: 10px 20px 0; }
+  /* Bluetooth adapter off: the proxy tab keeps rendering but goes inert,
+     mirroring the device page's grayed state. Class over per-control
+     disabled attributes so the gated-row machinery's own disabled state
+     survives the adapter coming back. */
+  .bt-off-banner { font-size: 13px; color: var(--warn);
+    line-height: 1.5; margin: 0 0 14px; }
+  #tab-btproxy.bt-adapter-off > :not(.bt-off-banner) {
+    pointer-events: none; opacity: 0.45; }
   .row input[type=text], .row input[type=password], .row input[type=number],
   .row input[type=time], .row select {
     background: var(--surface-2); border: 1px solid var(--border);
@@ -4266,6 +4274,39 @@ async function loadSettings() {
       };
       readPerm().then(paint);
     }
+  }
+
+  // ── Bluetooth adapter state ──────────────────────────────────────────
+  // Whatever state the proxy itself is in, the tab reflects the device's
+  // actual adapter: off means a notice above the first group and every
+  // control inert until it comes back. Runs even with the proxy disabled
+  // (the enable switch is as useless as the rest while Bluetooth is off).
+  // Module-level timer for the same reason as the nearby poll; a settings
+  // re-render clears the banner, so the poll repaints rather than caching.
+  {
+    const root = document.getElementById('tab-btproxy');
+    const paint = (on) => {
+      root.classList.toggle('bt-adapter-off', on === false);
+      const banner = root.querySelector('.bt-off-banner');
+      if (on !== false) { banner?.remove(); return; }
+      if (banner) return;
+      const div = document.createElement('div');
+      div.className = 'bt-off-banner';
+      div.textContent =
+        'Bluetooth is off on the device. Turn it on to use the proxy.';
+      root.insertBefore(div, root.firstChild);
+    };
+    const poll = () => api('/api/commands/btProxyAdapterOn',
+      { method: 'POST', body: '{}' }).then((r) => r.json())
+      .then((res) => {
+        if (res && res.data && typeof res.data.on === 'boolean') {
+          paint(res.data.on);
+        }
+      })
+      .catch(() => {});
+    if (window.__btAdapterTimer) clearInterval(window.__btAdapterTimer);
+    window.__btAdapterTimer = setInterval(poll, 5000);
+    poll();
   }
 
   // ── Lockdown Mode note ────────────────────────────────────────────────

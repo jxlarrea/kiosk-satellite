@@ -79,6 +79,10 @@ internal class NearbyDeviceTracker(
     fun clear() = synchronized(lock) { devices.clear() }
 
     /** Callers hold [lock]. */
+    /** Latest advertisement RSSI for an address, for the connect gate. */
+    fun lastRssi(address: Long): Int? =
+        synchronized(lock) { devices[address]?.rssi }
+
     private fun prune(now: Long, keep: Set<Long> = emptySet()) {
         devices.values.removeAll {
             it.address !in keep && now - it.lastSeenAt > STALE_MS

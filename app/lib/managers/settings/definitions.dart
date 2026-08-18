@@ -3322,6 +3322,31 @@ const btproxyConnections = SettingDef<bool>(
   dependsOn: 'btproxy.enabled',
 );
 
+/// Born from a kiosk across the house that kept winning an EcoFlow's
+/// connection, completing auth, then losing the link to distance seconds
+/// later, all while its held slot blocked the proxy that could actually
+/// hold it. Refusing weak connects makes Home Assistant fail over to a
+/// closer proxy immediately.
+const btproxyMinConnectRssi = SettingDef<String>(
+  key: 'btproxy.min_connect_rssi',
+  type: SettingType.select,
+  defaultValue: '',
+  title: 'Minimum signal for connections',
+  description:
+      'Refuse device connections heard weaker than this, so a closer '
+      'proxy takes them instead.',
+  category: 'Bluetooth Proxy',
+  options: ['', '-70', '-80', '-85', '-90'],
+  optionLabels: {
+    '': 'No limit',
+    '-70': '-70 dBm (same room)',
+    '-80': '-80 dBm',
+    '-85': '-85 dBm',
+    '-90': '-90 dBm (edge of range)',
+  },
+  dependsOn: 'btproxy.connections',
+);
+
 /// Generated on first enable, then stable for the install's lifetime: Home
 /// Assistant stores it in the config entry, so regenerating would take the
 /// proxy offline until the user re-entered it. Deliberately NOT `secret`:
@@ -3699,6 +3724,7 @@ const List<SettingDef<Object>> allSettings = [
   dlnaPort,
   btproxyEnabled,
   btproxyConnections,
+  btproxyMinConnectRssi,
   btproxyKey,
   btproxyPort,
   btproxyMacLookup,

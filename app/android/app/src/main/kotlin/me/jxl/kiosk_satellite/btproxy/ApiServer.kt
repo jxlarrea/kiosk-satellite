@@ -63,6 +63,17 @@ internal class ApiServer(
     private val clock: () -> Long = System::currentTimeMillis,
     /** Null = advertisement-only; the feature flags follow automatically. */
     private val gatt: GattBackend? = null,
+    /**
+     * Connect requests for devices last heard below this RSSI (dBm) are
+     * refused so Home Assistant fails over to a closer proxy, instead of
+     * this one accepting a link it cannot hold. 0 disables the gate.
+     * Found the hard way: a kiosk across the house kept winning an
+     * EcoFlow's connection, completing auth, then losing the link to
+     * range seconds later - while its held slot blocked the closer proxy.
+     */
+    private val minConnectRssi: Int = 0,
+    /** Latest advertisement RSSI per address, for the connect gate. */
+    private val rssiOf: (Long) -> Int? = { null },
 ) {
     private val featureFlags: Int =
         if (gatt != null) BtProxyFeature.WITH_CONNECTIONS else BtProxyFeature.V1
@@ -502,6 +513,22 @@ internal class ApiServer(
                 BtDeviceRequestType.CONNECT,
                 BtDeviceRequestType.CONNECT_V3_WITH_CACHE,
                 BtDeviceRequestType.CONNECT_V3_WITHOUT_CACHE -> {
+                    // The signal floor, checked before a slot is claimed.
+                    // Devices we already own skip it (their advertisement
+                    // RSSI is stale the moment they connect), and unknown
+                    // devices pass (never block a pairing flow on a gap in
+                    // the tracker).
+                    if (minConnectRssi != 0 &&
+                        synchronized(gattLock) { !gattOwner.containsKey(request.address) }) {
+                        val rssi = rssiOf(request.address)
+                        if (rssi != null && rssi < minConnectRssi) {
+                            log("connect refused ${formatGattAddress(request.address)}: " +
+                                "RSSI $rssi below floor $minConnectRssi")
+                            enqueue(Msg.BT_DEVICE_CONNECTION_RESPONSE,
+                                GattCodec.connectionResponse(request.address, false, 0, 133))
+                            return
+                        }
+                    }
                     val accepted = synchronized(gattLock) {
                         when {
                             gattOwner.containsKey(request.address) -> {

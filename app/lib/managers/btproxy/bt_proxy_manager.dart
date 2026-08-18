@@ -102,6 +102,20 @@ class BtProxyManager extends Manager {
         },
       ),
     );
+    commands.register(
+      Command(
+        name: 'btProxyAdapterOn',
+        description: "Whether the device's Bluetooth adapter is turned on",
+        handler: (_) async {
+          try {
+            final on = await _channel.invokeMethod<bool>('adapterOn');
+            return CommandResult.ok({'on': on == true});
+          } catch (e) {
+            return CommandResult.fail('$e');
+          }
+        },
+      ),
+    );
     _ouiCache = _loadOuiCache();
     final version = await commands.execute('getDeviceInfo', const {});
     _appVersion =
@@ -226,6 +240,9 @@ class BtProxyManager extends Manager {
         'port': port,
         'projectVersion': _appVersion,
         'connections': _settings.get(defs.btproxyConnections),
+        'minConnectRssi': int.tryParse(
+                _settings.get(defs.btproxyMinConnectRssi)) ??
+            0,
       });
       _running = true;
       log.info(name, 'started (port $port)');

@@ -48,6 +48,15 @@ connection attempt pauses scanning for its handshake (they compete for
 the same radio), retries the one routine Android failure once, and puts a
 persistently failing device on a cooldown instead of hammering it.
 
+With several proxies in the house, **Minimum signal for connections**
+keeps a distant kiosk from volunteering for devices it can barely hear:
+connection requests for devices last heard below the chosen signal level
+are refused immediately, and Home Assistant fails over to a closer proxy.
+A kiosk at the edge of a device's range can often complete a connection
+it cannot hold, and while it holds the slot the closer proxy cannot take
+over; the floor ends that tug-of-war. Devices the kiosk has never heard
+are always allowed through, so pairing flows keep working.
+
 ## Nearby devices
 
 The Bluetooth Proxy settings page lists what the kiosk currently hears,

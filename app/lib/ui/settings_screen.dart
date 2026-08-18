@@ -819,8 +819,34 @@ class _CategoryContentState extends State<_CategoryContent> {
         child: SettingsCard(children: [_BtProxyPermissionsTile()]),
       ),
     ];
-    if (cards.isEmpty) return permissions;
-    return [cards.first, ...permissions, ...cards.skip(1)];
+    final assembled = cards.isEmpty
+        ? permissions
+        : <Widget>[cards.first, ...permissions, ...cards.skip(1)];
+    if (_btAdapterOn != false) return assembled;
+    // The adapter itself is off: nothing on this page can do anything, so
+    // say so above the first group and render every control inert. The
+    // poll in initState lifts this the moment Bluetooth comes back.
+    return [
+      const WarnRow('Bluetooth is off. Turn it on to use the proxy.'),
+      AbsorbPointer(
+        child: Opacity(opacity: 0.45, child: Column(children: assembled)),
+      ),
+    ];
+  }
+
+  /// null until the first probe answers; only a definite false grays the
+  /// page (a failed probe must not condemn a working setup).
+  bool? _btAdapterOn;
+  Timer? _btAdapterTimer;
+
+  Future<void> _pollBtAdapter() async {
+    final result = await widget.container.commands.execute(
+      'btProxyAdapterOn',
+      const {},
+    );
+    if (!result.ok) return;
+    final on = (result.data as Map?)?['on'] == true;
+    if (mounted && on != _btAdapterOn) setState(() => _btAdapterOn = on);
   }
 
   Future<bool>? _vsDetected;
@@ -844,6 +870,21 @@ class _CategoryContentState extends State<_CategoryContent> {
         if (mounted) setState(() {});
       });
     }
+    // The proxy page reflects the adapter live: grayed with a notice while
+    // Bluetooth is off, back to normal when it returns, no reopen needed.
+    if (widget.category == 'Bluetooth Proxy') {
+      _pollBtAdapter();
+      _btAdapterTimer = Timer.periodic(
+        const Duration(seconds: 5),
+        (_) => _pollBtAdapter(),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _btAdapterTimer?.cancel();
+    super.dispose();
   }
 
   void _toast(String message) {
