@@ -36,6 +36,7 @@ internal class MdnsAnnouncer(
     private val context: Context,
     private val identity: ProxyIdentity,
     private val port: Int,
+    private val onLog: (String) -> Unit = {},
 ) {
     private companion object {
         const val TAG = "KsBtProxy"
@@ -48,6 +49,12 @@ internal class MdnsAnnouncer(
     private var socket: MulticastSocket? = null
     private var multicastLock: WifiManager.MulticastLock? = null
     private var running = false
+    // Logged on change only: announcements repeat every 30 seconds and the
+    // ring log holds 50 lines. Which address Home Assistant is told to
+    // connect to is THE question when discovery finds a device that then
+    // refuses to connect (issue #239): a multi-interface device announcing
+    // the wrong one is invisible without this line.
+    private var loggedAddress: String? = null
 
     private val announcer = object : Runnable {
         override fun run() {
@@ -109,7 +116,18 @@ internal class MdnsAnnouncer(
     private fun sendAnnouncement(ttl: Int, hostTtl: Int) {
         val address = localIpv4() ?: run {
             Log.w(TAG, "mDNS announce skipped: no IPv4 yet")
+            if (ttl != 0 && loggedAddress != "none") {
+                loggedAddress = "none"
+                onLog("mDNS announce skipped: no IPv4 address yet")
+            }
             return
+        }
+        if (ttl != 0) { // the goodbye packet is not an announcement
+            val ip = address.hostAddress ?: address.toString()
+            if (ip != loggedAddress) {
+                loggedAddress = ip
+                onLog("announcing $ip:$port to Home Assistant (mDNS)")
+            }
         }
         val packet = buildPacket(address, ttl, hostTtl)
         Thread({

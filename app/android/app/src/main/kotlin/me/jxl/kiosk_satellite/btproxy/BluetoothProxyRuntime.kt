@@ -119,7 +119,7 @@ internal object BluetoothProxyRuntime {
             scanEngine?.shutdown()
             throw e
         }
-        val mdns = MdnsAnnouncer(appContext, identity, apiServer.boundPort)
+        val mdns = MdnsAnnouncer(appContext, identity, apiServer.boundPort, onLog = ::log)
         mdns.start()
 
         runCatching {
@@ -134,7 +134,7 @@ internal object BluetoothProxyRuntime {
         entityHub = hub
         announcer = mdns
         isRunning = true
-        log("ESPHome server started as ${identity.name} on :${apiServer.boundPort}" +
+        log("ESPHome server started as ${identity.name} on 0.0.0.0:${apiServer.boundPort} (all interfaces)" +
             (if (scanEngine != null) " (bluetooth proxy)" else "") +
             (if (connections != null)
                 " (connections enabled, ${connections.connectionLimit} slots)" else "") +

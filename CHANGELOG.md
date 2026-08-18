@@ -15,6 +15,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ### Added
 - Bluetooth scanner failures now land in the proxy log that btProxyStatus and the remote admin show, named with their reason, instead of only Android's internal logcat. A scanner killed by a permission error or a stack failure used to look exactly like a healthy one from every surface a user could reach (#240).
+- The proxy log now states the server's bind scope and the IP address announced to Home Assistant over mDNS (logged whenever it changes). When discovery shows a device that then refuses to connect, which address Home Assistant was told to dial is the first question, and on multi-interface devices it was previously unanswerable (#239).
 - The ESPHome settings page says when the server is down and why. A server that failed to start, a port conflict on one of two identical tablets being the live case (#240), used to render a page indistinguishable from a working one: toggles on, no error anywhere. Both the device page and the remote admin now show the failure reason right under the master switch, and the btProxyStatus command carries it for remote diagnosis.
 
 ## v2026.8.54 - 2026-08-18
