@@ -306,14 +306,14 @@
      up with the row text inside the card above it. */
   .group-note { font-size: 12.5px; color: var(--muted);
     line-height: 1.5; margin: 10px 20px 0; }
-  /* Bluetooth adapter off: the proxy tab keeps rendering but goes inert,
-     mirroring the device page's grayed state. Class over per-control
+  /* Bluetooth adapter off: the Bluetooth Proxy stretch of the ESPHome tab
+     goes inert under a notice while the entity server's own rows above
+     stay live, mirroring the device page. A marker class over per-control
      disabled attributes so the gated-row machinery's own disabled state
      survives the adapter coming back. */
   .bt-off-banner { font-size: 13px; color: var(--warn);
     line-height: 1.5; margin: 0 0 14px; }
-  #tab-btproxy.bt-adapter-off > :not(.bt-off-banner) {
-    pointer-events: none; opacity: 0.45; }
+  #tab-btproxy .bt-inert { pointer-events: none; opacity: 0.45; }
   .row input[type=text], .row input[type=password], .row input[type=number],
   .row input[type=time], .row select {
     background: var(--surface-2); border: 1px solid var(--border);
@@ -660,8 +660,10 @@
           <span class="nav-text"><span class="nav-title">DLNA Renderer</span><span class="nav-sub">Play images, videos and audio remotely</span></span>
         </button>
         <button data-tab="btproxy">
-          <span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg></span>
-          <span class="nav-text"><span class="nav-title">Bluetooth Proxy</span><span class="nav-sub">Relay Bluetooth devices to Home Assistant</span></span>
+          <!-- The ESPHome mark, simplified: the house as a circuit trace
+               with node dots, same rendition as assets/svg/esphome.svg. -->
+          <span class="disc d3"><svg viewBox="0 0 100 100" fill="none"><path d="M25 82 L25 46 L50 24 L75 46 L75 82" stroke="currentColor" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25" cy="82" r="8" fill="currentColor"/><circle cx="75" cy="82" r="8" fill="currentColor"/><circle cx="50" cy="24" r="8" fill="currentColor"/><circle cx="50" cy="60" r="7" fill="currentColor"/></svg></span>
+          <span class="nav-text"><span class="nav-title">ESPHome</span><span class="nav-sub">Native entities and Bluetooth proxy</span></span>
         </button>
         <button data-tab="mqtt">
           <span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 6.9 6.3 16m6.8-9.1 4.6 9.1M7.2 18h9.6"/></svg></span>
@@ -945,7 +947,7 @@ const TAB_TITLES = {
   mqtt: 'MQTT Settings',
   cameras: 'Camera Streams',
   sendspin: 'Music Assistant',
-  dlna: 'DLNA Renderer', btproxy: 'Bluetooth Proxy',
+  dlna: 'DLNA Renderer', btproxy: 'ESPHome',
   files: 'File Manager', gestures: 'Gestures',
   device: 'Device', about: 'About', logs: 'Logs',
 };
@@ -1010,7 +1012,7 @@ const SEARCH_CATEGORY_TABS = {
   'Screensaver': 'screensaver', 'Camera': 'camera',
   'Home Assistant': 'homeassistant', 'Voice Satellite': 'voicesatellite',
   'MQTT': 'mqtt', 'Sendspin': 'sendspin', 'DLNA': 'dlna',
-  'Bluetooth Proxy': 'btproxy',
+  'ESPHome': 'btproxy',
   'Device': 'device', 'Cameras': 'cameras', 'Gestures': 'gestures',
 };
 const SEARCH_EXTRAS = [
@@ -3903,7 +3905,7 @@ const CATEGORY_TABS = [
   ['tab-mqtt', ['MQTT']],
   ['tab-sendspin', ['Sendspin']],
   ['tab-dlna', ['DLNA']],
-  ['tab-btproxy', ['Bluetooth Proxy']],
+  ['tab-btproxy', ['ESPHome']],
   ['device-settings', ['Device']],
 ];
 
@@ -4230,12 +4232,14 @@ async function loadSettings() {
       stateEl.style.whiteSpace = 'nowrap';
       row.appendChild(stateEl);
       permCard.appendChild(row);
-      // Under the first card, before the Nearby devices section, same as
-      // the device page: the grant gates everything below it.
-      const firstHeading = root.querySelector('h2.card-title');
-      if (firstHeading) {
-        root.insertBefore(h, firstHeading);
-        root.insertBefore(permCard, firstHeading);
+      // Under the Bluetooth Proxy section's card, before the Nearby
+      // devices section, same as the device page: the grant gates the
+      // Bluetooth side of the page, not the ESPHome general group above.
+      const nearbyHeading = [...root.querySelectorAll('h2.card-title')]
+        .find((el) => el.textContent === 'Nearby devices');
+      if (nearbyHeading) {
+        root.insertBefore(h, nearbyHeading);
+        root.insertBefore(permCard, nearbyHeading);
       } else {
         root.appendChild(h);
         root.appendChild(permCard);
@@ -4278,23 +4282,30 @@ async function loadSettings() {
 
   // ── Bluetooth adapter state ──────────────────────────────────────────
   // Whatever state the proxy itself is in, the tab reflects the device's
-  // actual adapter: off means a notice above the first group and every
-  // control inert until it comes back. Runs even with the proxy disabled
-  // (the enable switch is as useless as the rest while Bluetooth is off).
-  // Module-level timer for the same reason as the nearby poll; a settings
-  // re-render clears the banner, so the poll repaints rather than caching.
+  // actual adapter: off means a notice above the Bluetooth Proxy section
+  // and everything from there down inert until it comes back; the ESPHome
+  // general rows above stay live (the entity server does not need the
+  // radio). Module-level timer for the same reason as the nearby poll; a
+  // settings re-render clears the markers, so the poll repaints.
   {
     const root = document.getElementById('tab-btproxy');
     const paint = (on) => {
-      root.classList.toggle('bt-adapter-off', on === false);
+      root.querySelectorAll('.bt-inert')
+        .forEach((el) => el.classList.remove('bt-inert'));
       const banner = root.querySelector('.bt-off-banner');
       if (on !== false) { banner?.remove(); return; }
+      const heading = [...root.querySelectorAll('h2.card-title')]
+        .find((el) => el.textContent === 'Bluetooth Proxy');
+      if (!heading) { banner?.remove(); return; }
+      for (let el = heading; el; el = el.nextElementSibling) {
+        el.classList.add('bt-inert');
+      }
       if (banner) return;
       const div = document.createElement('div');
       div.className = 'bt-off-banner';
       div.textContent =
         'Bluetooth is off on the device. Turn it on to use the proxy.';
-      root.insertBefore(div, root.firstChild);
+      root.insertBefore(div, heading);
     };
     const poll = () => api('/api/commands/btProxyAdapterOn',
       { method: 'POST', body: '{}' }).then((r) => r.json())

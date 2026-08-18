@@ -262,6 +262,36 @@ class ApiServerEntitiesTest {
     }
 
     @Test
+    fun pureEntityDeviceClaimsNoBluetoothCapability() {
+        val backend = object : ScannerBackend {
+            override fun onScanDemand(mode: ScannerMode) {}
+            override fun onScanRelease() {}
+        }
+        val hub = EntityHub(catalog) { _, _ -> }
+        val s = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, null, backend,
+            log = {}, bluetoothProxy = false, entities = hub)
+        s.start()
+        server = s
+        val c = connectClient(s)
+        c.send(Msg.DEVICE_INFO_REQUEST)
+        var flags = -1
+        var legacySeen = false
+        ProtoReader(c.read().payload).let { r ->
+            while (r.next()) when (r.field) {
+                11 -> legacySeen = true
+                15 -> flags = r.asInt()
+            }
+        }
+        // Proto3 zero-omission: no Bluetooth capability means neither the
+        // flags field nor the legacy version field appears at all.
+        assertEquals(-1, flags)
+        assertEquals(false, legacySeen)
+        // The entity surface still serves.
+        c.send(Msg.LIST_ENTITIES_REQUEST)
+        assertEquals(Msg.LIST_ENTITIES_SENSOR_RESPONSE, c.read().type)
+    }
+
+    @Test
     fun entitylessServerStillAnswersListEntitiesWithBareDone() {
         val backend = object : ScannerBackend {
             override fun onScanDemand(mode: ScannerMode) {}

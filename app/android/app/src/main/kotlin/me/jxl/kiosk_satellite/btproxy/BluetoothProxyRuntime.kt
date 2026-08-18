@@ -27,6 +27,9 @@ internal object BluetoothProxyRuntime {
         val psk: ByteArray,
         val port: Int,
         val projectVersion: String,
+        /** Run the BLE scanner and advertise Bluetooth-proxy capability.
+         *  Off = pure ESPHome entity device: no radio use, no BT flags. */
+        val bluetoothProxy: Boolean = true,
         /** Advertise and serve active GATT connections. */
         val connections: Boolean,
         /** Refuse connects for devices heard below this RSSI; 0 = no gate. */
@@ -55,21 +58,30 @@ internal object BluetoothProxyRuntime {
         val appContext = context.applicationContext
         val identity = buildIdentity(appContext, config)
 
-        val scanEngine = BleScanEngine(
-            appContext,
-            onAdvertisement = { adv ->
-                server?.publishAdvertisement(adv)
-                nearby.observe(adv)
-            },
-            onStateChange = { state, mode -> server?.reportScannerState(state, mode) },
-        )
+        // With the Bluetooth proxy off, no radio machinery exists at all:
+        // the server is a pure entity device and never touches Bluetooth
+        // (or its permissions).
+        val scanEngine = if (config.bluetoothProxy) {
+            BleScanEngine(
+                appContext,
+                onAdvertisement = { adv ->
+                    server?.publishAdvertisement(adv)
+                    nearby.observe(adv)
+                },
+                onStateChange = { state, mode ->
+                    server?.reportScannerState(state, mode)
+                },
+            )
+        } else {
+            null
+        }
         val hub = if (config.entities.isEmpty()) null
             else EntityHub(config.entities, config.onEntityCommand)
-        val connections = if (config.connections) {
+        val connections = if (config.bluetoothProxy && config.connections) {
             GattEngine(
                 appContext,
                 deliver = { event -> server?.deliverGattEvent(event) },
-                scanPause = { busy -> scanEngine.setGattBusy(busy) },
+                scanPause = { busy -> scanEngine?.setGattBusy(busy) },
             )
         } else {
             null
@@ -80,10 +92,15 @@ internal object BluetoothProxyRuntime {
             port = config.port,
             psk = config.psk,
             backend = object : ScannerBackend {
-                override fun onScanDemand(mode: ScannerMode) = scanEngine.requestStart(mode)
-                override fun onScanRelease() = scanEngine.requestStop()
+                override fun onScanDemand(mode: ScannerMode) {
+                    scanEngine?.requestStart(mode)
+                }
+                override fun onScanRelease() {
+                    scanEngine?.requestStop()
+                }
             },
             log = ::log,
+            bluetoothProxy = config.bluetoothProxy,
             gatt = connections,
             minConnectRssi = config.minConnectRssi,
             rssiOf = nearby::lastRssi,
@@ -94,7 +111,7 @@ internal object BluetoothProxyRuntime {
             apiServer.start()
         } catch (e: Exception) {
             Log.e(TAG, "API server failed to start: $e")
-            scanEngine.shutdown()
+            scanEngine?.shutdown()
             throw e
         }
         val mdns = MdnsAnnouncer(appContext, identity, apiServer.boundPort)
@@ -112,7 +129,8 @@ internal object BluetoothProxyRuntime {
         entityHub = hub
         announcer = mdns
         isRunning = true
-        log("Bluetooth proxy started as ${identity.name} on :${apiServer.boundPort}" +
+        log("ESPHome server started as ${identity.name} on :${apiServer.boundPort}" +
+            (if (scanEngine != null) " (bluetooth proxy)" else "") +
             (if (connections != null)
                 " (connections enabled, ${connections.connectionLimit} slots)" else "") +
             (if (hub != null) " (${config.entities.size} entities)" else ""))

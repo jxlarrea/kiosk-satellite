@@ -206,7 +206,7 @@ from the default HACS repository.
 - [Device camera](docs/camera.md): the tablet's own camera as a Home Assistant still camera and motion detector.
 - [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
 - [DLNA](docs/dlna.md): push images, video and cameras to the kiosk from Home Assistant or any other DLNA app.
-- [Bluetooth Proxy](docs/bluetooth-proxy.md): relay BLE advertisements to Home Assistant like an ESPHome Bluetooth proxy.
+- [ESPHome](docs/esphome.md): native Home Assistant entities and a Bluetooth proxy over the ESPHome API, no broker needed.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the Black and Clock screensavers.
 - [Kiosk and Lockdown](docs/kiosk.md): Kiosk Mode's protections, Lockdown Mode, the grants they need, and the device owner tier.

@@ -203,8 +203,9 @@ internal object ApiCodec {
             string(9, identity.projectVersion)
             // legacy_bluetooth_proxy_version: the pre-flags capability number;
             // 5 is the last value the legacy field ever carried, and HA still
-            // reads it before trusting the flags field.
-            varint(11, 5)
+            // reads it before trusting the flags field. A device with no
+            // Bluetooth capability (flags 0) must not claim it either.
+            if (featureFlags != 0) varint(11, 5)
             string(12, identity.manufacturer)
             string(13, identity.friendlyName)
             varint(15, featureFlags)

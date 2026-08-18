@@ -152,10 +152,12 @@ const _categories = <(String, String, Object, String)>[
     'Play images, videos and audio remotely',
   ),
   (
-    'Bluetooth Proxy',
-    'Bluetooth Proxy',
-    Icons.bluetooth_outlined,
-    'Relay Bluetooth devices to Home Assistant',
+    'ESPHome',
+    'ESPHome',
+    // Another product-named category (like Music Assistant): it wears the
+    // ESPHome mark, not a Material glyph.
+    'assets/svg/esphome.svg',
+    'Native entities and Bluetooth proxy',
   ),
   ('MQTT', 'MQTT Settings', Icons.hub_outlined, 'Publish to an MQTT broker'),
   (
@@ -805,13 +807,14 @@ class _CategoryContent extends StatefulWidget {
 }
 
 class _CategoryContentState extends State<_CategoryContent> {
-  /// Splices the Bluetooth proxy's "Required system permissions" group in
-  /// right under the page's first card (the master switch and its keys),
-  /// before the Nearby devices section: the grant gates everything below
-  /// it, so it reads top-down as switch, grant, results. Every other
-  /// category passes through untouched.
+  /// The ESPHome page's hand assembly: the Bluetooth proxy's "Required
+  /// system permissions" group goes under the Bluetooth Proxy section's
+  /// card (the grant gates that section and the Nearby list below, not the
+  /// general ESPHome group above), and with the adapter off everything
+  /// Bluetooth goes inert under a notice while the entity server above
+  /// keeps its live controls. Every other category passes through.
   List<Widget> _withBtProxyPermissions(List<Widget> cards) {
-    if (widget.category != 'Bluetooth Proxy') return cards;
+    if (widget.category != 'ESPHome') return cards;
     const permissions = <Widget>[
       SectionHeading('Required system permissions'),
       SearchLandingTarget(
@@ -819,17 +822,34 @@ class _CategoryContentState extends State<_CategoryContent> {
         child: SettingsCard(children: [_BtProxyPermissionsTile()]),
       ),
     ];
-    final assembled = cards.isEmpty
-        ? permissions
-        : <Widget>[cards.first, ...permissions, ...cards.skip(1)];
-    if (_btAdapterOn != false) return assembled;
-    // The adapter itself is off: nothing on this page can do anything, so
-    // say so above the first group and render every control inert. The
-    // poll in initState lifts this the moment Bluetooth comes back.
+    // Everything from the "Bluetooth Proxy" section heading down is the
+    // Bluetooth side of the page; before it sits the general ESPHome card.
+    final split = cards.indexWhere(
+        (w) => w is SectionHeading && w.text == 'Bluetooth Proxy');
+    if (split < 0) {
+      // ESPHome disabled: only the general card renders; nothing below
+      // needs a grant and nothing is Bluetooth.
+      return cards;
+    }
+    final general = cards.sublist(0, split);
+    // The permissions group lands under the Bluetooth Proxy section's card:
+    // heading, card, grant, then the Nearby devices section.
+    final nearby = cards.indexWhere(
+        (w) => w is SectionHeading && w.text == 'Nearby devices', split);
+    final bluetooth = <Widget>[
+      ...cards.sublist(split, nearby < 0 ? cards.length : nearby),
+      ...permissions,
+      if (nearby >= 0) ...cards.sublist(nearby),
+    ];
+    if (_btAdapterOn != false) return [...general, ...bluetooth];
+    // The adapter is off: the Bluetooth half of the page can do nothing,
+    // so say so above it and render it inert. The poll in initState lifts
+    // this the moment Bluetooth comes back.
     return [
+      ...general,
       const WarnRow('Bluetooth is off. Turn it on to use the proxy.'),
       AbsorbPointer(
-        child: Opacity(opacity: 0.45, child: Column(children: assembled)),
+        child: Opacity(opacity: 0.45, child: Column(children: bluetooth)),
       ),
     ];
   }
@@ -872,7 +892,7 @@ class _CategoryContentState extends State<_CategoryContent> {
     }
     // The proxy page reflects the adapter live: grayed with a notice while
     // Bluetooth is off, back to normal when it returns, no reopen needed.
-    if (widget.category == 'Bluetooth Proxy') {
+    if (widget.category == 'ESPHome') {
       _pollBtAdapter();
       _btAdapterTimer = Timer.periodic(
         const Duration(seconds: 5),
@@ -1599,7 +1619,7 @@ class _CategoryContentState extends State<_CategoryContent> {
               // The live list right under the sort picker that orders it.
               // Rides the section's dependsOn: with the proxy off there is
               // nothing to list and none of these rows render.
-              if (widget.category == 'Bluetooth Proxy')
+              if (widget.category == 'ESPHome')
                 btproxyNearbySort.key: SearchLandingTarget(
                   id: 'x:btproxy_nearby',
                   child: _BtNearbyDevicesRow(container: container),

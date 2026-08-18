@@ -59,7 +59,9 @@ class BtProxyManager extends Manager {
       return null;
     });
     _settingsSub = bus.on<SettingChanged>().listen((e) {
-      if (!e.key.startsWith('btproxy.') && e.key != defs.deviceName.key) {
+      if (!e.key.startsWith('btproxy.') &&
+          !e.key.startsWith('esphome.') &&
+          e.key != defs.deviceName.key) {
         return;
       }
       // UI-only keys: the sort order and the OUI lookup live entirely on
@@ -131,7 +133,7 @@ class BtProxyManager extends Manager {
     final version = await commands.execute('getDeviceInfo', const {});
     _appVersion =
         ((version.data as Map?)?['appVersion'] as String?) ?? '0';
-    if (_settings.get(defs.btproxyEnabled)) {
+    if (_settings.get(defs.esphomeEnabled)) {
       _transition = _transition.then((_) => _start());
     }
   }
@@ -230,7 +232,7 @@ class BtProxyManager extends Manager {
 
   Future<void> _restart() async {
     await _stop();
-    if (_settings.get(defs.btproxyEnabled)) await _start();
+    if (_settings.get(defs.esphomeEnabled)) await _start();
   }
 
   Future<void> _start() async {
@@ -244,24 +246,22 @@ class BtProxyManager extends Manager {
     final friendly = _settings.get(defs.deviceName).trim();
     final port =
         int.tryParse(_settings.get(defs.btproxyPort).trim()) ?? 6053;
-    final entitiesOn = _settings.get(defs.btproxyEntities);
     try {
       await _channel.invokeMethod('start', {
         'friendlyName': friendly.isEmpty ? 'Kiosk Satellite' : friendly,
         'psk': key,
         'port': port,
         'projectVersion': _appVersion,
+        'bluetoothProxy': _settings.get(defs.btproxyEnabled),
         'connections': _settings.get(defs.btproxyConnections),
         'minConnectRssi': int.tryParse(
                 _settings.get(defs.btproxyMinConnectRssi)) ??
             0,
-        'entities': entitiesOn ? _entities.descriptors() : const [],
+        'entities': _entities.descriptors(),
       });
       _running = true;
-      if (entitiesOn) {
-        _entities.attach((objectId, value) => _channel.invokeMethod(
-            'entityState', {'objectId': objectId, 'value': value}));
-      }
+      _entities.attach((objectId, value) => _channel.invokeMethod(
+          'entityState', {'objectId': objectId, 'value': value}));
       log.info(name, 'started (port $port)');
     } catch (e) {
       // Not-Android hosts (tests) and denied permissions land here; the

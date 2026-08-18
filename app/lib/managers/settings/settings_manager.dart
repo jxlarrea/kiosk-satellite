@@ -232,6 +232,15 @@ class SettingsManager extends Manager {
     }
     // The strategy the drawer toggle used to restore. Nothing to restore now.
     await _prefs.remove('${_prefix}ha.kiosk_mode_last');
+    // The Bluetooth proxy toggle used to be the master switch for the whole
+    // ESPHome server; now esphome.enabled is. An install that ran the proxy
+    // must keep its server (and its Home Assistant config entry) across the
+    // update without anyone touching a setting.
+    if (_prefs.get('${_prefix}esphome.enabled') == null &&
+        _prefs.get('${_prefix}btproxy.enabled') == true) {
+      await _prefs.setBool('${_prefix}esphome.enabled', true);
+      log.info(name, 'migrated btproxy.enabled -> esphome.enabled');
+    }
   }
 
   T get<T>(SettingDef<T> def) {

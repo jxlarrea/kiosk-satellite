@@ -140,14 +140,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     anchorId: 'x:import_config',
   ),
   SettingsSearchEntry(
-    category: 'Bluetooth Proxy',
+    category: 'ESPHome',
     title: 'Nearby devices',
     description:
         'The Bluetooth devices this kiosk hears, with names where known.',
     anchorId: 'x:btproxy_nearby',
   ),
   SettingsSearchEntry(
-    category: 'Bluetooth Proxy',
+    category: 'ESPHome',
     title: 'Required system permissions',
     description: 'The Nearby devices grant the Bluetooth proxy needs to scan.',
     anchorId: 'x:btproxy_permissions',

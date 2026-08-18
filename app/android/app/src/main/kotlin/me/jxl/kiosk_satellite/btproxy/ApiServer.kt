@@ -61,6 +61,8 @@ internal class ApiServer(
     private val backend: ScannerBackend,
     private val log: (String) -> Unit,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** False = no Bluetooth capability at all: a pure entity device. */
+    private val bluetoothProxy: Boolean = true,
     /** Null = advertisement-only; the feature flags follow automatically. */
     private val gatt: GattBackend? = null,
     /**
@@ -80,8 +82,11 @@ internal class ApiServer(
      */
     private val entities: EntityHub? = null,
 ) {
-    private val featureFlags: Int =
-        if (gatt != null) BtProxyFeature.WITH_CONNECTIONS else BtProxyFeature.V1
+    private val featureFlags: Int = when {
+        !bluetoothProxy -> 0
+        gatt != null -> BtProxyFeature.WITH_CONNECTIONS
+        else -> BtProxyFeature.V1
+    }
     private companion object {
         const val MAX_SESSIONS = 8
         const val WRITE_QUEUE_FRAMES = 256

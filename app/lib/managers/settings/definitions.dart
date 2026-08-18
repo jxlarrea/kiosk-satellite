@@ -3312,7 +3312,24 @@ String? validatePort(Object? value) {
   return null;
 }
 
-// ── Bluetooth proxy ────────────────────────────────────────────────────
+// ── ESPHome ────────────────────────────────────────────────────────────
+// The kiosk as a native ESPHome device (issue: sunset the MQTT broker
+// requirement): one master switch runs the API server and the kiosk's
+// entity surface; the Bluetooth proxy is a subsystem on the same
+// connection, in its own section below. The btproxy.* key names predate
+// the page and stay for settings-export compatibility.
+
+const esphomeEnabled = SettingDef<bool>(
+  key: 'esphome.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Enable ESPHome',
+  description:
+      'Serve this kiosk to Home Assistant as an ESPHome device: its '
+      'sensors and controls as native entities, no MQTT broker needed. '
+      'Discovered automatically.',
+  category: 'ESPHome',
+);
 
 const btproxyEnabled = SettingDef<bool>(
   key: 'btproxy.enabled',
@@ -3321,8 +3338,10 @@ const btproxyEnabled = SettingDef<bool>(
   title: 'Enable Bluetooth proxy',
   description:
       'Relay nearby Bluetooth devices to Home Assistant, like an ESPHome '
-      'Bluetooth proxy. The device is discovered automatically.',
-  category: 'Bluetooth Proxy',
+      'Bluetooth proxy.',
+  category: 'ESPHome',
+  section: 'Bluetooth Proxy',
+  dependsOn: 'esphome.enabled',
 );
 
 const btproxyConnections = SettingDef<bool>(
@@ -3334,21 +3353,8 @@ const btproxyConnections = SettingDef<bool>(
       'Home Assistant can connect to Bluetooth devices through this kiosk, '
       'not just hear them. Needed for locks, buttons and anything Home '
       'Assistant controls over Bluetooth.',
-  category: 'Bluetooth Proxy',
-  dependsOn: 'btproxy.enabled',
-);
-
-/// The first step of retiring the MQTT broker requirement: the same
-/// sensors and controls MQTT publishes, served natively over the ESPHome
-/// connection Home Assistant already discovered, no broker involved.
-const btproxyEntities = SettingDef<bool>(
-  key: 'btproxy.entities',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Expose kiosk entities',
-  description:
-      "Adds the kiosk's sensors and controls to its Home Assistant device.",
-  category: 'Bluetooth Proxy',
+  category: 'ESPHome',
+  section: 'Bluetooth Proxy',
   dependsOn: 'btproxy.enabled',
 );
 
@@ -3364,10 +3370,10 @@ const btproxyKey = SettingDef<String>(
   title: 'Encryption key',
   description:
       'Paste this key into Home Assistant when it asks for the encryption '
-      'key. Generated automatically when the proxy first starts.',
-  category: 'Bluetooth Proxy',
-  placeholder: 'Generated when the proxy starts',
-  dependsOn: 'btproxy.enabled',
+      'key. Generated automatically on first start.',
+  category: 'ESPHome',
+  placeholder: 'Generated on first start',
+  dependsOn: 'esphome.enabled',
 );
 
 /// Off by default, and the description names the exact host: Home Assistant
@@ -3384,7 +3390,7 @@ const btproxyMacLookup = SettingDef<bool>(
       'Names unknown nearby devices by their hardware address prefix using '
       'api.macvendors.com. Only the 3-byte manufacturer prefix is sent, '
       'once per manufacturer; nothing else leaves the device.',
-  category: 'Bluetooth Proxy',
+  category: 'ESPHome',
   section: 'Nearby devices',
   dependsOn: 'btproxy.enabled',
 );
@@ -3395,7 +3401,7 @@ const btproxyNearbySort = SettingDef<String>(
   defaultValue: 'last_seen',
   title: 'Sort by',
   description: 'The order of the nearby devices list below.',
-  category: 'Bluetooth Proxy',
+  category: 'ESPHome',
   section: 'Nearby devices',
   options: ['last_seen', 'name', 'mac', 'rssi'],
   optionLabels: {
@@ -3415,9 +3421,9 @@ const btproxyPort = SettingDef<String>(
   description:
       'The port Home Assistant connects to. Leave empty for the ESPHome '
       'standard, 6053.',
-  category: 'Bluetooth Proxy',
+  category: 'ESPHome',
   placeholder: '6053',
-  dependsOn: 'btproxy.enabled',
+  dependsOn: 'esphome.enabled',
   validator: validatePort,
 );
 
@@ -3434,7 +3440,8 @@ const btproxyMinConnectRssi = SettingDef<String>(
   description:
       'Refuse device connections heard weaker than this, so a closer '
       'proxy takes them instead.',
-  category: 'Bluetooth Proxy',
+  category: 'ESPHome',
+  section: 'Bluetooth Proxy',
   options: ['', '-70', '-80', '-85', '-90'],
   optionLabels: {
     '': 'No limit',
@@ -3753,11 +3760,11 @@ const List<SettingDef<Object>> allSettings = [
   dlnaEnabled,
   dlnaAudioBackground,
   dlnaPort,
-  btproxyEnabled,
-  btproxyConnections,
-  btproxyEntities,
+  esphomeEnabled,
   btproxyKey,
   btproxyPort,
+  btproxyEnabled,
+  btproxyConnections,
   btproxyMinConnectRssi,
   btproxyMacLookup,
   btproxyNearbySort,

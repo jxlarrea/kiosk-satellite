@@ -1,12 +1,19 @@
-# Bluetooth Proxy
+# ESPHome
 
-Turns the kiosk into an ESPHome-compatible Bluetooth proxy: BLE
+Serves the kiosk to Home Assistant as a native ESPHome device: its
+sensors and controls appear as entities on the device Home Assistant
+discovers automatically, with no MQTT broker and no custom integration
+anywhere. This is the integration path going forward; the MQTT
+integration keeps working but will be sunset, so new setups should start
+here and existing ones migrate at their own pace.
+
+The same connection optionally carries a full **Bluetooth proxy**: BLE
 advertisements from nearby devices (BTHome sensors, Xiaomi and Govee
 thermometers, iBeacons, plant sensors, scales) are relayed to Home
-Assistant as if they were in range of the server itself. Every kiosk on a
-wall extends Home Assistant's Bluetooth coverage into that room, with no
-ESP32 to flash and no custom integration to install: Home Assistant sees a
-standard ESPHome Bluetooth proxy through its own ESPHome integration.
+Assistant as if they were in range of the server itself, and Home
+Assistant can hold active connections to locks, buttons and curtain
+motors through the kiosk. Every kiosk on a wall extends Home Assistant's
+Bluetooth coverage into that room, with no ESP32 to flash.
 
 Multiple kiosks work as a mesh out of the box. Home Assistant merges all
 of its Bluetooth sources and uses whichever proxy hears a device best, so
@@ -14,8 +21,10 @@ room-presence setups like Bermuda get one measuring point per kiosk.
 
 ## Setup
 
-1. **Settings, Bluetooth Proxy, Enable Bluetooth proxy.** The first start
-   generates the encryption key and shows it in the same section.
+1. **Settings, ESPHome, Enable ESPHome.** The first start generates the
+   encryption key and shows it in the same section. Turn on **Enable
+   Bluetooth proxy** in the section below if the kiosk should relay
+   Bluetooth too.
 2. On Android 12 or later, grant **Nearby devices** when prompted (also
    available under **Settings, Device, Permissions Manager**).
 3. In Home Assistant, the device appears under **Settings, Devices &
@@ -59,16 +68,15 @@ are always allowed through, so pairing flows keep working.
 
 ## Kiosk entities
 
-With **Expose kiosk entities** on (the default), the same ESPHome
-connection carries the kiosk's own sensors and controls: a Screensaver
-switch, a Screen brightness slider, a Reload dashboard button, and
-Battery, Charging, Uptime and IP address diagnostics, all under the
-device Home Assistant already discovered. No broker, no extra setup;
-this is the beginning of a native alternative to the MQTT integration,
-and the rest of the MQTT entity catalog will move over in coming
-releases. While both surfaces are enabled the entities exist twice,
-once per integration; Home Assistant suffixes whichever registered
-second.
+The kiosk's own sensors and controls come with the integration: a
+Screensaver switch, a Screen brightness slider, a Reload dashboard
+button, and Battery, Charging, Uptime and IP address diagnostics, all
+under the device Home Assistant already discovered. No broker, no extra
+setup; the rest of the MQTT entity catalog moves over in coming
+releases. While the MQTT integration is enabled alongside, the entities
+exist twice, once per integration, and Home Assistant suffixes
+whichever registered second; migrate automations to the ESPHome ones at
+your own pace, then turn MQTT off.
 
 ## Nearby devices
 
