@@ -11,6 +11,7 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'ble_identity.dart';
+import 'esp_entities.dart';
 
 /// Runs the native Bluetooth proxy (an ESPHome-compatible API server plus
 /// BLE scanner, see android btproxy/) and owns its policy: the enable
@@ -34,6 +35,8 @@ class BtProxyManager extends Manager {
   String _appVersion = '0';
   String _liveKey = '';
   bool _running = false;
+  late final EspEntitySurface _entities =
+      EspEntitySurface(bus, commands, log);
 
   // The OUI vendor cache: prefix "AA:BB:CC" to vendor name, '' for a
   // registry miss. Persisted so each prefix is looked up once per install,
@@ -47,6 +50,14 @@ class BtProxyManager extends Manager {
 
   @override
   Future<void> init() async {
+    // Entity commands from Home Assistant, relayed by the native hub.
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'entityCommand' && call.arguments is Map) {
+        final args = call.arguments as Map;
+        await _entities.handleCommand('${args['objectId']}', args['value']);
+      }
+      return null;
+    });
     _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('btproxy.') && e.key != defs.deviceName.key) {
         return;
@@ -233,6 +244,7 @@ class BtProxyManager extends Manager {
     final friendly = _settings.get(defs.deviceName).trim();
     final port =
         int.tryParse(_settings.get(defs.btproxyPort).trim()) ?? 6053;
+    final entitiesOn = _settings.get(defs.btproxyEntities);
     try {
       await _channel.invokeMethod('start', {
         'friendlyName': friendly.isEmpty ? 'Kiosk Satellite' : friendly,
@@ -243,8 +255,13 @@ class BtProxyManager extends Manager {
         'minConnectRssi': int.tryParse(
                 _settings.get(defs.btproxyMinConnectRssi)) ??
             0,
+        'entities': entitiesOn ? _entities.descriptors() : const [],
       });
       _running = true;
+      if (entitiesOn) {
+        _entities.attach((objectId, value) => _channel.invokeMethod(
+            'entityState', {'objectId': objectId, 'value': value}));
+      }
       log.info(name, 'started (port $port)');
     } catch (e) {
       // Not-Android hosts (tests) and denied permissions land here; the
@@ -256,6 +273,7 @@ class BtProxyManager extends Manager {
   Future<void> _stop() async {
     if (!_running) return;
     _running = false;
+    _entities.detach();
     try {
       await _channel.invokeMethod('stop');
     } catch (_) {}

@@ -118,6 +118,138 @@ class AioesphomeapiE2eTest {
         asyncio.run(main())
     """.trimIndent()
 
+    private val entitiesScript = """
+        import asyncio, sys
+
+        async def main():
+            from aioesphomeapi import APIClient
+            port = int(sys.argv[1]); psk = sys.argv[2]
+            cli = APIClient("127.0.0.1", port, None, noise_psk=psk)
+            await cli.connect(login=True)
+            entities, services = await cli.list_entities_services()
+            by_obj = {e.object_id: e for e in entities}
+            expected = {"battery", "charging", "ipv4", "screensaver",
+                        "brightness", "view", "reload"}
+            assert set(by_obj) == expected, sorted(by_obj)
+            sensor = by_obj["battery"]
+            assert sensor.unit_of_measurement == "%", sensor
+            assert sensor.device_class == "battery", sensor
+            number = by_obj["brightness"]
+            assert abs(number.max_value - 100.0) < 1e-6, number
+            assert abs(number.step - 1.0) < 1e-6, number
+            select = by_obj["view"]
+            assert list(select.options) == ["Home", "Cameras"], select
+            print("LIST_OK", flush=True)
+
+            loop = asyncio.get_running_loop()
+            states = {}
+            switch_on = loop.create_future()
+
+            def on_state(st):
+                states[st.key] = st
+                if (st.key == by_obj["screensaver"].key
+                        and getattr(st, "state", False)
+                        and not switch_on.done()):
+                    switch_on.set_result(st)
+
+            cli.subscribe_states(on_state)
+            await asyncio.sleep(1.0)
+            bat = states.get(sensor.key)
+            assert bat is not None and abs(bat.state - 87.0) < 1e-6, bat
+            ip = states.get(by_obj["ipv4"].key)
+            assert ip is not None and ip.state == "192.168.1.5", ip
+            print("STATES_OK", flush=True)
+
+            cli.switch_command(by_obj["screensaver"].key, True)
+            await asyncio.wait_for(switch_on, 10)
+            print("SWITCH_ECHO_OK", flush=True)
+            cli.number_command(number.key, 55.0)
+            cli.select_command(select.key, "Cameras")
+            cli.button_command(by_obj["reload"].key)
+            await asyncio.sleep(0.5)
+            await cli.disconnect()
+
+        asyncio.run(main())
+    """.trimIndent()
+
+    @Test
+    fun realClientEntitiesRoundTrip() {
+        val python = System.getenv("KS_AIOESPHOME_PYTHON") ?: "python3"
+        val available = runCatching {
+            ProcessBuilder(python, "-c", "import aioesphomeapi")
+                .redirectErrorStream(true).start()
+                .let { it.waitFor(30, TimeUnit.SECONDS) && it.exitValue() == 0 }
+        }.getOrDefault(false)
+        assumeTrue("aioesphomeapi not available for $python; skipping", available)
+
+        val psk = ByteArray(32) { (it * 11 + 5).toByte() }
+        val identity = ProxyIdentity(
+            name = "kiosk-satellite-test",
+            friendlyName = "Test Kiosk",
+            macAddress = "02:11:22:33:44:55",
+            esphomeVersion = "2026.8.0",
+            model = "Test",
+            manufacturer = "KS",
+            projectName = "kiosk_satellite.bluetooth_proxy",
+            projectVersion = "1.0",
+        )
+        val backend = object : ScannerBackend {
+            override fun onScanDemand(mode: ScannerMode) {}
+            override fun onScanRelease() {}
+        }
+        val commands = java.util.concurrent.CopyOnWriteArrayList<Pair<String, Any?>>()
+        lateinit var hub: EntityHub
+        hub = EntityHub(listOf(
+            EspEntity.Sensor("battery", "Battery", deviceClass = "battery",
+                category = 2, unit = "%", stateClass = 1),
+            EspEntity.BinarySensor("charging", "Charging",
+                deviceClass = "battery_charging", category = 2),
+            EspEntity.TextSensor("ipv4", "IP address", category = 2),
+            EspEntity.Switch("screensaver", "Screensaver"),
+            EspEntity.Number("brightness", "Screen brightness", min = 0f,
+                max = 100f, step = 1f, unit = "%", mode = 2),
+            EspEntity.Select("view", "View", options = listOf("Home", "Cameras")),
+            EspEntity.Button("reload", "Reload dashboard"),
+        )) { objectId, value ->
+            commands.add(objectId to value)
+            // The Dart side echoes real state after acting on a command;
+            // mirror that so the client sees its switch flip.
+            if (objectId == "screensaver") hub.updateState(objectId, value)
+        }
+        hub.updateState("battery", 87)
+        hub.updateState("ipv4", "192.168.1.5")
+        val server = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, psk, backend,
+            log = {}, entities = hub)
+        server.start()
+        try {
+            val scriptFile = File.createTempFile("btproxy_entities_e2e", ".py").apply {
+                writeText(entitiesScript)
+                deleteOnExit()
+            }
+            val process = ProcessBuilder(
+                python, scriptFile.absolutePath,
+                server.boundPort.toString(),
+                Base64.getEncoder().encodeToString(psk),
+            ).redirectErrorStream(true).start()
+            val finished = process.waitFor(60, TimeUnit.SECONDS)
+            val output = process.inputStream.bufferedReader().readText()
+            if (!finished) process.destroyForcibly()
+            assertEquals(0, if (finished) process.exitValue() else -1,
+                "aioesphomeapi entities round trip failed:\n$output")
+            assertEquals(
+                listOf<Pair<String, Any?>>(
+                    "screensaver" to true,
+                    "brightness" to 55f,
+                    "view" to "Cameras",
+                    "reload" to null,
+                ),
+                commands.toList(),
+            )
+        } finally {
+            server.stop()
+        }
+    }
+
     @Test
     fun realClientGattRoundTrip() {
         val python = System.getenv("KS_AIOESPHOME_PYTHON") ?: "python3"

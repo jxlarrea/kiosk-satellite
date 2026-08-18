@@ -46,6 +46,12 @@ internal class ProtoWriter {
         out.write((value ushr 24) and 0xFF)
     }
 
+    /** IEEE-754 float as fixed32; proto3 zero-omission applies. */
+    fun float(field: Int, value: Float) {
+        if (value == 0f) return
+        fixed32(field, value.toRawBits())
+    }
+
     fun string(field: Int, value: String) {
         if (value.isEmpty()) return
         bytes(field, value.toByteArray(Charsets.UTF_8))
@@ -129,6 +135,15 @@ internal class ProtoReader(private val data: ByteArray) {
     fun asBool(): Boolean = varintValue != 0L
     fun asString(): String = String(data, chunkStart, chunkLength, Charsets.UTF_8)
     fun asBytes(): ByteArray = data.copyOfRange(chunkStart, chunkStart + chunkLength)
+
+    /** Little-endian fixed32 (wire type 5). */
+    fun asFixed32(): Int =
+        (data[chunkStart].toInt() and 0xFF) or
+            ((data[chunkStart + 1].toInt() and 0xFF) shl 8) or
+            ((data[chunkStart + 2].toInt() and 0xFF) shl 16) or
+            ((data[chunkStart + 3].toInt() and 0xFF) shl 24)
+
+    fun asFloat(): Float = Float.fromBits(asFixed32())
 
     private fun readRawVarint(): Long {
         var shift = 0

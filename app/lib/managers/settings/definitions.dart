@@ -3338,6 +3338,20 @@ const btproxyConnections = SettingDef<bool>(
   dependsOn: 'btproxy.enabled',
 );
 
+/// The first step of retiring the MQTT broker requirement: the same
+/// sensors and controls MQTT publishes, served natively over the ESPHome
+/// connection Home Assistant already discovered, no broker involved.
+const btproxyEntities = SettingDef<bool>(
+  key: 'btproxy.entities',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Expose kiosk entities',
+  description:
+      "Adds the kiosk's sensors and controls to its Home Assistant device.",
+  category: 'Bluetooth Proxy',
+  dependsOn: 'btproxy.enabled',
+);
+
 /// Generated on first enable, then stable for the install's lifetime: Home
 /// Assistant stores it in the config entry, so regenerating would take the
 /// proxy offline until the user re-entered it. Deliberately NOT `secret`:
@@ -3741,6 +3755,7 @@ const List<SettingDef<Object>> allSettings = [
   dlnaPort,
   btproxyEnabled,
   btproxyConnections,
+  btproxyEntities,
   btproxyKey,
   btproxyPort,
   btproxyMinConnectRssi,

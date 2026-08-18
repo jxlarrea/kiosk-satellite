@@ -31,6 +31,10 @@ internal object BluetoothProxyRuntime {
         val connections: Boolean,
         /** Refuse connects for devices heard below this RSSI; 0 = no gate. */
         val minConnectRssi: Int = 0,
+        /** The kiosk's own entities to serve over the API; empty = none. */
+        val entities: List<EspEntity> = emptyList(),
+        /** Where entity commands from Home Assistant land (objectId, value). */
+        val onEntityCommand: (String, Any?) -> Unit = { _, _ -> },
     )
 
     @Volatile var isRunning = false
@@ -39,6 +43,7 @@ internal object BluetoothProxyRuntime {
     private var server: ApiServer? = null
     private var engine: BleScanEngine? = null
     private var gattEngine: GattEngine? = null
+    private var entityHub: EntityHub? = null
     private var announcer: MdnsAnnouncer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val logRing = ArrayDeque<String>()
@@ -58,6 +63,8 @@ internal object BluetoothProxyRuntime {
             },
             onStateChange = { state, mode -> server?.reportScannerState(state, mode) },
         )
+        val hub = if (config.entities.isEmpty()) null
+            else EntityHub(config.entities, config.onEntityCommand)
         val connections = if (config.connections) {
             GattEngine(
                 appContext,
@@ -80,6 +87,7 @@ internal object BluetoothProxyRuntime {
             gatt = connections,
             minConnectRssi = config.minConnectRssi,
             rssiOf = nearby::lastRssi,
+            entities = hub,
         )
 
         try {
@@ -101,11 +109,18 @@ internal object BluetoothProxyRuntime {
         server = apiServer
         engine = scanEngine
         gattEngine = connections
+        entityHub = hub
         announcer = mdns
         isRunning = true
         log("Bluetooth proxy started as ${identity.name} on :${apiServer.boundPort}" +
-            if (connections != null) " (connections enabled, ${connections.connectionLimit} slots)"
-            else "")
+            (if (connections != null)
+                " (connections enabled, ${connections.connectionLimit} slots)" else "") +
+            (if (hub != null) " (${config.entities.size} entities)" else ""))
+    }
+
+    /** Push one entity's new value; ignored while stopped or unknown ids. */
+    fun updateEntityState(objectId: String, value: Any?) {
+        entityHub?.updateState(objectId, value)
     }
 
     @Synchronized
@@ -120,6 +135,7 @@ internal object BluetoothProxyRuntime {
         server = null
         gattEngine?.shutdown()
         gattEngine = null
+        entityHub = null
         nearby.clear()
         wakeLock?.let { runCatching { if (it.isHeld) it.release() } }
         wakeLock = null

@@ -57,6 +57,19 @@ it cannot hold, and while it holds the slot the closer proxy cannot take
 over; the floor ends that tug-of-war. Devices the kiosk has never heard
 are always allowed through, so pairing flows keep working.
 
+## Kiosk entities
+
+With **Expose kiosk entities** on (the default), the same ESPHome
+connection carries the kiosk's own sensors and controls: a Screensaver
+switch, a Screen brightness slider, a Reload dashboard button, and
+Battery, Charging, Uptime and IP address diagnostics, all under the
+device Home Assistant already discovered. No broker, no extra setup;
+this is the beginning of a native alternative to the MQTT integration,
+and the rest of the MQTT entity catalog will move over in coming
+releases. While both surfaces are enabled the entities exist twice,
+once per integration; Home Assistant suffixes whichever registered
+second.
+
 ## Nearby devices
 
 The Bluetooth Proxy settings page lists what the kiosk currently hears,

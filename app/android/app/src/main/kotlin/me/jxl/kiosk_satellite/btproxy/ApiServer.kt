@@ -74,6 +74,11 @@ internal class ApiServer(
     private val minConnectRssi: Int = 0,
     /** Latest advertisement RSSI per address, for the connect gate. */
     private val rssiOf: (Long) -> Int? = { null },
+    /**
+     * The kiosk's own entities (sensors, switches, ...) served over this
+     * same connection; null keeps the server a pure Bluetooth proxy.
+     */
+    private val entities: EntityHub? = null,
 ) {
     private val featureFlags: Int =
         if (gatt != null) BtProxyFeature.WITH_CONNECTIONS else BtProxyFeature.V1
@@ -142,11 +147,19 @@ internal class ApiServer(
         scheduler.scheduleWithFixedDelay(
             ::flushAdvertisements, FLUSH_INTERVAL_MS, FLUSH_INTERVAL_MS, TimeUnit.MILLISECONDS)
         scheduler.scheduleWithFixedDelay(::sweepSessions, 5_000, 5_000, TimeUnit.MILLISECONDS)
+        entities?.onStateChanged = { entity, value ->
+            EntityCodec.state(entity, value)?.let { (type, payload) ->
+                for (session in sessions) {
+                    if (session.wantsStates) session.enqueue(type, payload)
+                }
+            }
+        }
         log("API server listening on :$port (${if (psk != null) "noise" else "plaintext"})")
     }
 
     fun stop() {
         if (!running.compareAndSet(true, false)) return
+        entities?.onStateChanged = null
         runCatching { serverSocket?.close() }
         serverSocket = null
         scheduler.shutdownNow()
@@ -404,6 +417,7 @@ internal class ApiServer(
         @Volatile var wantsAdvertisements = false
             private set
         @Volatile var wantsConnectionsFree = false
+        @Volatile var wantsStates = false
         @Volatile var handshaken = false
         @Volatile var lastInboundAt = clock()
         @Volatile var lastPingSentAt = 0L
@@ -599,8 +613,17 @@ internal class ApiServer(
                     Msg.DEVICE_INFO_REQUEST ->
                         enqueue(Msg.DEVICE_INFO_RESPONSE,
                             ApiCodec.deviceInfoResponse(identity, bluetoothMac, featureFlags))
-                    Msg.LIST_ENTITIES_REQUEST ->
+                    Msg.LIST_ENTITIES_REQUEST -> {
+                        val hub = entities
+                        if (hub != null) {
+                            for (entity in hub.all) {
+                                val (type, payload) =
+                                    EntityCodec.describe(entity, identity.name)
+                                enqueue(type, payload)
+                            }
+                        }
                         enqueue(Msg.LIST_ENTITIES_DONE_RESPONSE, ByteArray(0))
+                    }
                     Msg.GET_TIME_REQUEST ->
                         enqueue(Msg.GET_TIME_RESPONSE, ApiCodec.getTimeResponse(clock() / 1000))
                     Msg.SUBSCRIBE_BLE_ADVERTISEMENTS_REQUEST -> {
@@ -669,9 +692,29 @@ internal class ApiServer(
                             if (hasAdvertisementSubscribers()) backend.onScanDemand(requested)
                         }
                     }
+                    Msg.SUBSCRIBE_STATES_REQUEST -> {
+                        wantsStates = true
+                        // Replay everything known so HA renders current
+                        // values immediately instead of "unknown" until the
+                        // next change.
+                        val hub = entities
+                        if (hub != null) {
+                            for (entity in hub.all) {
+                                EntityCodec.state(entity, hub.valueOf(entity))
+                                    ?.let { (type, payload) ->
+                                        enqueue(type, payload)
+                                    }
+                            }
+                        }
+                    }
+                    Msg.SWITCH_COMMAND_REQUEST,
+                    Msg.NUMBER_COMMAND_REQUEST,
+                    Msg.SELECT_COMMAND_REQUEST,
+                    Msg.BUTTON_COMMAND_REQUEST ->
+                        EntityCodec.parseCommand(frame.type, frame.payload)
+                            ?.let { entities?.dispatchCommand(it) }
                     // Required-ack subscriptions with nothing behind them: a
-                    // proxy has no states, services, or logs to stream.
-                    Msg.SUBSCRIBE_STATES_REQUEST,
+                    // proxy has no services or logs to stream.
                     Msg.SUBSCRIBE_LOGS_REQUEST,
                     Msg.SUBSCRIBE_HOMEASSISTANT_SERVICES_REQUEST,
                     Msg.SUBSCRIBE_HOME_ASSISTANT_STATES_REQUEST -> Unit

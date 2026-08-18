@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- The kiosk now serves its own Home Assistant entities natively over the ESPHome connection the Bluetooth proxy already holds, the first step toward retiring the MQTT broker requirement: enable the proxy, paste one key, and the discovered device grows sensors and controls with no broker anywhere. The starter set covers a Screensaver switch, a Screen brightness slider, a Reload dashboard button, and Battery, Charging, Uptime and IP address diagnostics; commands run through the exact same handlers the MQTT entities use, and states echo back from the device's real events rather than optimistic assumptions, so Home Assistant always shows what actually happened. "Expose kiosk entities" under Bluetooth Proxy (on by default) controls the whole surface. The remaining MQTT catalog migrates in a follow-up pass before MQTT enters its deprecation window.
+
 ### Fixed
 - Chimes and TTS now survive a broken hardware audio decoder (#234). On a device whose vendor codec service has crashed, every hardware MP3 decode dies the moment it starts, which left the assistant answering visually in total silence. A sound that fails this way is now retried once on the device's software decoders, which run inside the app and keep working when the vendor service is down, and a chime whose first decode hits the broken codec is no longer blacklisted from the fast clip path for the rest of the session.
 
