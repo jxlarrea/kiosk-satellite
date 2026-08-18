@@ -82,6 +82,12 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                         call.argument<Any?>("value"))
                     result.success(null)
                 }
+                "cameraImage" -> {
+                    call.argument<ByteArray>("jpeg")?.let {
+                        BluetoothProxyRuntime.publishCameraImage(it)
+                    }
+                    result.success(null)
+                }
                 // Whether the device's Bluetooth adapter is on: the settings
                 // pages gray themselves out and say so while it is not,
                 // whatever state the proxy itself is in.

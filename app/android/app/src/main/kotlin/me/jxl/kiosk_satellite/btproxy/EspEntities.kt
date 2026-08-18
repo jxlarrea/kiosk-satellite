@@ -104,6 +104,65 @@ internal sealed class EspEntity {
         override val disabledByDefault: Boolean = false,
     ) : EspEntity()
 
+    /**
+     * On/off plus brightness, declared through the legacy capability flag:
+     * the modern color-modes vocabulary buys nothing for a screen and the
+     * legacy path is the one every old ESP32 exercises daily.
+     * State value: map {on: Bool, brightness: Double 0..1}.
+     * Command value: map with the fields the client sent.
+     */
+    class Light(
+        override val objectId: String,
+        override val name: String,
+        override val icon: String = "",
+        override val category: Int = 0,
+        override val disabledByDefault: Boolean = false,
+    ) : EspEntity() {
+        override val deviceClass: String get() = ""
+    }
+
+    /** A free-text config value. State/command value: String. */
+    class Text(
+        override val objectId: String,
+        override val name: String,
+        override val icon: String = "",
+        override val category: Int = 0,
+        override val disabledByDefault: Boolean = false,
+        val maxLength: Int = 255,
+    ) : EspEntity() {
+        override val deviceClass: String get() = ""
+    }
+
+    /**
+     * The app-update entity. State value: map {current, latest, title,
+     * summary, url: String, progress: Double?, inProgress: Bool}.
+     * Command value delivered as "install" or "check".
+     */
+    class Update(
+        override val objectId: String,
+        override val name: String,
+        override val icon: String = "",
+        override val deviceClass: String = "",
+        override val category: Int = 0,
+        override val disabledByDefault: Boolean = false,
+    ) : EspEntity()
+
+    /**
+     * A still camera. ESPHome allows exactly ONE per device (the image
+     * request carries no key), enforced at hub construction. Images flow
+     * through [EntityHub.onCameraRequest] and the server's chunked
+     * CameraImageResponse path, not through the state store.
+     */
+    class Camera(
+        override val objectId: String,
+        override val name: String,
+        override val icon: String = "",
+        override val category: Int = 0,
+        override val disabledByDefault: Boolean = false,
+    ) : EspEntity() {
+        override val deviceClass: String get() = ""
+    }
+
     companion object {
         fun fnv1a(s: String): Int {
             var hash = -2128831035 // 2166136261 as signed Int
@@ -145,6 +204,15 @@ internal sealed class EspEntity {
                     (m["options"] as? List<*>)?.map { "$it" } ?: emptyList())
                 "button" -> Button(objectId, name, s("icon"), s("deviceClass"),
                     i("category"), b("disabled"))
+                "light" -> Light(objectId, name, s("icon"), i("category"),
+                    b("disabled"))
+                "text" -> Text(objectId, name, s("icon"), i("category"),
+                    b("disabled"),
+                    (m["maxLength"] as? kotlin.Number)?.toInt() ?: 255)
+                "update" -> Update(objectId, name, s("icon"), s("deviceClass"),
+                    i("category"), b("disabled"))
+                "camera" -> Camera(objectId, name, s("icon"), i("category"),
+                    b("disabled"))
                 else -> throw IllegalArgumentException("unknown entity type '$type'")
             }
         }
@@ -220,6 +288,36 @@ internal object EntityCodec {
                 w.string(8, entity.deviceClass)
                 Msg.LIST_ENTITIES_BUTTON_RESPONSE to w.toByteArray()
             }
+            is EspEntity.Light -> {
+                // Legacy brightness capability only: HA still speaks the
+                // pre-color-modes dialect for every old ESP32, and a screen
+                // needs nothing richer.
+                w.bool(5, true) // legacy_supports_brightness
+                w.bool(13, entity.disabledByDefault)
+                w.string(14, entity.icon)
+                w.varint(15, entity.category)
+                Msg.LIST_ENTITIES_LIGHT_RESPONSE to w.toByteArray()
+            }
+            is EspEntity.Text -> {
+                w.string(5, entity.icon)
+                w.bool(6, entity.disabledByDefault)
+                w.varint(7, entity.category)
+                w.varint(9, entity.maxLength)
+                Msg.LIST_ENTITIES_TEXT_RESPONSE to w.toByteArray()
+            }
+            is EspEntity.Update -> {
+                w.string(5, entity.icon)
+                w.bool(6, entity.disabledByDefault)
+                w.varint(7, entity.category)
+                w.string(8, entity.deviceClass)
+                Msg.LIST_ENTITIES_UPDATE_RESPONSE to w.toByteArray()
+            }
+            is EspEntity.Camera -> {
+                w.bool(5, entity.disabledByDefault)
+                w.string(6, entity.icon)
+                w.varint(7, entity.category)
+                Msg.LIST_ENTITIES_CAMERA_RESPONSE to w.toByteArray()
+            }
         }
     }
 
@@ -260,6 +358,37 @@ internal object EntityCodec {
                 if (value == null) w.bool(3, true) else w.string(2, "$value")
                 Msg.SELECT_STATE_RESPONSE to w.toByteArray()
             }
+            is EspEntity.Light -> {
+                val map = value as? Map<*, *> ?: return null
+                w.bool(2, map["on"] == true)
+                (map["brightness"] as? kotlin.Number)?.let {
+                    w.float(3, it.toFloat())
+                }
+                Msg.LIGHT_STATE_RESPONSE to w.toByteArray()
+            }
+            is EspEntity.Text -> {
+                if (value == null) w.bool(3, true) else w.string(2, "$value")
+                Msg.TEXT_STATE_RESPONSE to w.toByteArray()
+            }
+            is EspEntity.Update -> {
+                val map = value as? Map<*, *>
+                if (map == null) {
+                    w.bool(2, true) // missing_state
+                } else {
+                    w.bool(3, map["inProgress"] == true)
+                    (map["progress"] as? kotlin.Number)?.let {
+                        w.bool(4, true)
+                        w.float(5, it.toFloat())
+                    }
+                    w.string(6, "${map["current"] ?: ""}")
+                    w.string(7, "${map["latest"] ?: ""}")
+                    w.string(8, "${map["title"] ?: ""}")
+                    w.string(9, "${map["summary"] ?: ""}")
+                    w.string(10, "${map["url"] ?: ""}")
+                }
+                Msg.UPDATE_STATE_RESPONSE to w.toByteArray()
+            }
+            is EspEntity.Camera -> null // images ride their own path
         }
     }
 
@@ -271,20 +400,47 @@ internal object EntityCodec {
         var boolValue = false
         var floatValue = 0f
         var stringValue = ""
+        // LightCommandRequest's has_/value pairs and Update's command enum.
+        var hasState = false
+        var lightOn = false
+        var hasBrightness = false
+        var brightness = 0f
+        var updateCommand = 0
         val r = ProtoReader(payload)
-        while (r.next()) when (r.field) {
-            1 -> key = r.asFixed32()
-            2 -> when (type) {
-                Msg.SWITCH_COMMAND_REQUEST -> boolValue = r.asBool()
-                Msg.NUMBER_COMMAND_REQUEST -> floatValue = r.asFloat()
-                Msg.SELECT_COMMAND_REQUEST -> stringValue = r.asString()
+        while (r.next()) when (type) {
+            Msg.LIGHT_COMMAND_REQUEST -> when (r.field) {
+                1 -> key = r.asFixed32()
+                2 -> hasState = r.asBool()
+                3 -> lightOn = r.asBool()
+                4 -> hasBrightness = r.asBool()
+                5 -> brightness = r.asFloat()
+            }
+            Msg.UPDATE_COMMAND_REQUEST -> when (r.field) {
+                1 -> key = r.asFixed32()
+                2 -> updateCommand = r.asInt()
+            }
+            else -> when (r.field) {
+                1 -> key = r.asFixed32()
+                2 -> when (type) {
+                    Msg.SWITCH_COMMAND_REQUEST -> boolValue = r.asBool()
+                    Msg.NUMBER_COMMAND_REQUEST -> floatValue = r.asFloat()
+                    Msg.SELECT_COMMAND_REQUEST,
+                    Msg.TEXT_COMMAND_REQUEST -> stringValue = r.asString()
+                }
             }
         }
         return when (type) {
             Msg.SWITCH_COMMAND_REQUEST -> Command(key, boolValue)
             Msg.NUMBER_COMMAND_REQUEST -> Command(key, floatValue)
             Msg.SELECT_COMMAND_REQUEST -> Command(key, stringValue)
+            Msg.TEXT_COMMAND_REQUEST -> Command(key, stringValue)
             Msg.BUTTON_COMMAND_REQUEST -> Command(key, null)
+            Msg.LIGHT_COMMAND_REQUEST -> Command(key, buildMap<String, Any> {
+                if (hasState) put("on", lightOn)
+                if (hasBrightness) put("brightness", brightness.toDouble())
+            })
+            Msg.UPDATE_COMMAND_REQUEST ->
+                Command(key, if (updateCommand == 1) "install" else "check")
             else -> null
         }
     }
@@ -308,6 +464,9 @@ internal class EntityHub(
     @Volatile
     var onStateChanged: ((EspEntity, Any?) -> Unit)? = null
 
+    /** The single camera entity, if the catalog carries one. */
+    val camera: EspEntity.Camera?
+
     init {
         for (entity in entities) {
             val clash = byKey.put(entity.key, entity)
@@ -315,6 +474,17 @@ internal class EntityHub(
                 "entity key collision: ${clash?.objectId} / ${entity.objectId}"
             }
         }
+        val cameras = entities.filterIsInstance<EspEntity.Camera>()
+        require(cameras.size <= 1) {
+            "ESPHome allows one camera per device (the image request has no key)"
+        }
+        camera = cameras.firstOrNull()
+    }
+
+    /** A client asked for a frame; the Dart side captures and pushes one. */
+    fun requestCameraImage() {
+        val target = camera ?: return
+        onCommand(target.objectId, "capture")
     }
 
     val all: List<EspEntity>

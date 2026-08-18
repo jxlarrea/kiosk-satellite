@@ -36,7 +36,7 @@ class BtProxyManager extends Manager {
   String _liveKey = '';
   bool _running = false;
   late final EspEntitySurface _entities =
-      EspEntitySurface(bus, commands, log);
+      EspEntitySurface(bus, commands, log, _settings);
 
   // The OUI vendor cache: prefix "AA:BB:CC" to vendor name, '' for a
   // registry miss. Persisted so each prefix is looked up once per install,
@@ -58,9 +58,18 @@ class BtProxyManager extends Manager {
       }
       return null;
     });
+    // Settings that shape the entity CATALOG (not just a value): flipping
+    // one changes which entities exist, and only a server restart re-lists
+    // them to Home Assistant.
+    const catalogKeys = {
+      'camera.enabled',
+      'launcher.enabled',
+      'motion.sensor',
+    };
     _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('btproxy.') &&
           !e.key.startsWith('esphome.') &&
+          !catalogKeys.contains(e.key) &&
           e.key != defs.deviceName.key) {
         return;
       }
@@ -257,11 +266,14 @@ class BtProxyManager extends Manager {
         'minConnectRssi': int.tryParse(
                 _settings.get(defs.btproxyMinConnectRssi)) ??
             0,
-        'entities': _entities.descriptors(),
+        'entities': await _entities.build(),
       });
       _running = true;
-      _entities.attach((objectId, value) => _channel.invokeMethod(
-          'entityState', {'objectId': objectId, 'value': value}));
+      _entities.attach(
+        (objectId, value) => _channel.invokeMethod(
+            'entityState', {'objectId': objectId, 'value': value}),
+        (jpeg) => _channel.invokeMethod('cameraImage', {'jpeg': jpeg}),
+      );
       log.info(name, 'started (port $port)');
     } catch (e) {
       // Not-Android hosts (tests) and denied permissions land here; the

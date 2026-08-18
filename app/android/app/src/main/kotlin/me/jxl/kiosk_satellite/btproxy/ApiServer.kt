@@ -308,6 +308,35 @@ internal class ApiServer(
         }
     }
 
+    /**
+     * A fresh camera frame from the capture side: chunked to every session
+     * with an outstanding image request (16KB chunks stay far under the
+     * Noise transport's 65535-byte frame ceiling), done flag on the last.
+     */
+    fun publishCameraImage(jpeg: ByteArray) {
+        val cameraKey = entities?.camera?.key ?: return
+        val waiting = sessions.filter { it.wantsCameraFrame }
+        if (waiting.isEmpty()) return
+        val chunks = ArrayList<Pair<ByteArray, Boolean>>()
+        var offset = 0
+        while (offset < jpeg.size) {
+            val end = minOf(offset + 16_384, jpeg.size)
+            chunks.add(jpeg.copyOfRange(offset, end) to (end == jpeg.size))
+            offset = end
+        }
+        if (chunks.isEmpty()) chunks.add(ByteArray(0) to true)
+        for (session in waiting) {
+            session.wantsCameraFrame = false
+            for ((data, done) in chunks) {
+                val w = ProtoWriter()
+                w.fixed32(1, cameraKey)
+                w.bytes(2, data)
+                w.bool(3, done)
+                session.enqueue(Msg.CAMERA_IMAGE_RESPONSE, w.toByteArray())
+            }
+        }
+    }
+
     /** Android layer reports scanner lifecycle; broadcast to subscribers. */
     fun reportScannerState(state: ScannerState, mode: ScannerMode) {
         scannerState = state
@@ -423,6 +452,8 @@ internal class ApiServer(
             private set
         @Volatile var wantsConnectionsFree = false
         @Volatile var wantsStates = false
+        /** A CameraImageRequest is outstanding; cleared when a frame ships. */
+        @Volatile var wantsCameraFrame = false
         @Volatile var handshaken = false
         @Volatile var lastInboundAt = clock()
         @Volatile var lastPingSentAt = 0L
@@ -715,9 +746,22 @@ internal class ApiServer(
                     Msg.SWITCH_COMMAND_REQUEST,
                     Msg.NUMBER_COMMAND_REQUEST,
                     Msg.SELECT_COMMAND_REQUEST,
+                    Msg.TEXT_COMMAND_REQUEST,
+                    Msg.LIGHT_COMMAND_REQUEST,
+                    Msg.UPDATE_COMMAND_REQUEST,
                     Msg.BUTTON_COMMAND_REQUEST ->
                         EntityCodec.parseCommand(frame.type, frame.payload)
                             ?.let { entities?.dispatchCommand(it) }
+                    Msg.CAMERA_IMAGE_REQUEST -> {
+                        // The request carries no key: ESPHome devices have
+                        // at most one camera. Remember who asked; the frame
+                        // arrives asynchronously from the capture side.
+                        val hub = entities
+                        if (hub?.camera != null) {
+                            wantsCameraFrame = true
+                            hub.requestCameraImage()
+                        }
+                    }
                     // Required-ack subscriptions with nothing behind them: a
                     // proxy has no services or logs to stream.
                     Msg.SUBSCRIBE_LOGS_REQUEST,

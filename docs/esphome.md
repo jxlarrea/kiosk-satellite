@@ -68,15 +68,27 @@ are always allowed through, so pairing flows keep working.
 
 ## Kiosk entities
 
-The kiosk's own sensors and controls come with the integration: a
-Screensaver switch, a Screen brightness slider, a Reload dashboard
-button, and Battery, Charging, Uptime and IP address diagnostics, all
-under the device Home Assistant already discovered. No broker, no extra
-setup; the rest of the MQTT entity catalog moves over in coming
-releases. While the MQTT integration is enabled alongside, the entities
-exist twice, once per integration, and Home Assistant suffixes
-whichever registered second; migrate automations to the ESPHome ones at
-your own pace, then turn MQTT off.
+The kiosk's sensors and controls come with the integration, the full
+catalog the MQTT integration publishes, under the device Home Assistant
+already discovered: the Screen light with brightness, screensaver and
+settings switches, volume sliders, the action buttons, the Camera view
+and Dashboard view selects, the Update entity with install-from-HA, a
+camera streaming real frames, and the complete diagnostics set. Entity
+names mirror the MQTT ones, so a migrating automation only swaps the
+device half of the entity id. While the MQTT integration is enabled
+alongside, entities exist twice, once per integration, and Home
+Assistant suffixes whichever registered second; migrate automations to
+the ESPHome ones at your own pace, then turn MQTT off.
+
+Three deliberate differences from the MQTT catalog: connectivity and
+last-seen sensors have no ESPHome twins (the API connection itself is
+the liveness signal, and every entity goes unavailable the moment the
+kiosk does), the per-view camera buttons fold into the Camera view
+select, and the ESPHome camera protocol allows exactly one camera per
+device, so the kiosk serves its device camera when present and enabled,
+else the screenshot camera. The Camera view and Dashboard view option
+lists are learned when the server starts; after adding views, toggle
+ESPHome off and on (or restart the app) to refresh them.
 
 ## Nearby devices
 

@@ -172,6 +172,134 @@ class AioesphomeapiE2eTest {
         asyncio.run(main())
     """.trimIndent()
 
+    private val richEntitiesScript = """
+        import asyncio, sys
+
+        async def main():
+            from aioesphomeapi import APIClient
+            port = int(sys.argv[1]); psk = sys.argv[2]
+            cli = APIClient("127.0.0.1", port, None, noise_psk=psk)
+            await cli.connect(login=True)
+            entities, services = await cli.list_entities_services()
+            by_obj = {e.object_id: e for e in entities}
+            expected = {"screen", "clock_background", "update", "snap"}
+            assert set(by_obj) == expected, sorted(by_obj)
+            assert type(by_obj["screen"]).__name__ == "LightInfo", by_obj
+            assert type(by_obj["snap"]).__name__ == "CameraInfo", by_obj
+            print("LIST_OK", flush=True)
+
+            loop = asyncio.get_running_loop()
+            states = {}
+            image = loop.create_future()
+
+            def on_state(st):
+                if type(st).__name__ == "CameraState":
+                    if not image.done():
+                        image.set_result(bytes(st.data))
+                    return
+                states[st.key] = st
+
+            cli.subscribe_states(on_state)
+            await asyncio.sleep(1.0)
+            light = states.get(by_obj["screen"].key)
+            assert light is not None and light.state, light
+            assert abs(light.brightness - 0.75) < 1e-3, light
+            update = states.get(by_obj["update"].key)
+            assert update is not None, states
+            assert update.current_version == "1.0.0", update
+            assert update.latest_version == "1.1.0", update
+            text = states.get(by_obj["clock_background"].key)
+            assert text is not None and text.state == "kitchen.jpg", text
+            print("STATES_OK", flush=True)
+
+            cli.light_command(by_obj["screen"].key, state=True, brightness=0.5)
+            cli.text_command(by_obj["clock_background"].key, "sunset.jpg")
+            await asyncio.sleep(0.5)
+            print("COMMANDS_OK", flush=True)
+
+            cli.request_single_image()
+            data = await asyncio.wait_for(image, 10)
+            assert len(data) == 40_000 and data[0] == 0x7A, (len(data), data[:2])
+            print("CAMERA_OK", flush=True)
+            await cli.disconnect()
+
+        asyncio.run(main())
+    """.trimIndent()
+
+    @Test
+    fun realClientRichEntityTypesRoundTrip() {
+        val python = System.getenv("KS_AIOESPHOME_PYTHON") ?: "python3"
+        val available = runCatching {
+            ProcessBuilder(python, "-c", "import aioesphomeapi")
+                .redirectErrorStream(true).start()
+                .let { it.waitFor(30, TimeUnit.SECONDS) && it.exitValue() == 0 }
+        }.getOrDefault(false)
+        assumeTrue("aioesphomeapi not available for $python; skipping", available)
+
+        val psk = ByteArray(32) { (it * 13 + 7).toByte() }
+        val identity = ProxyIdentity(
+            name = "kiosk-satellite-test",
+            friendlyName = "Test Kiosk",
+            macAddress = "02:11:22:33:44:55",
+            esphomeVersion = "2026.8.0",
+            model = "Test",
+            manufacturer = "KS",
+            projectName = "kiosk_satellite.bluetooth_proxy",
+            projectVersion = "1.0",
+        )
+        val backend = object : ScannerBackend {
+            override fun onScanDemand(mode: ScannerMode) {}
+            override fun onScanRelease() {}
+        }
+        val commands = java.util.concurrent.CopyOnWriteArrayList<Pair<String, Any?>>()
+        // A 40KB "jpeg" exercises the 16KB chunking (3 chunks, done last).
+        val jpeg = ByteArray(40_000) { 0x7A }
+        lateinit var server: ApiServer
+        val hub = EntityHub(listOf(
+            EspEntity.Light("screen", "Screen"),
+            EspEntity.Text("clock_background", "Clock background"),
+            EspEntity.Update("update", "Update", deviceClass = "firmware"),
+            EspEntity.Camera("snap", "Snapshot"),
+        )) { objectId, value ->
+            commands.add(objectId to value)
+            if (objectId == "snap" && value == "capture") {
+                server.publishCameraImage(jpeg)
+            }
+        }
+        hub.updateState("screen", mapOf("on" to true, "brightness" to 0.75))
+        hub.updateState("clock_background", "kitchen.jpg")
+        hub.updateState("update", mapOf(
+            "current" to "1.0.0", "latest" to "1.1.0",
+            "title" to "Kiosk Satellite", "summary" to "notes",
+            "url" to "https://example/r", "inProgress" to false))
+        server = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, psk, backend,
+            log = {}, entities = hub)
+        server.start()
+        try {
+            val scriptFile = File.createTempFile("btproxy_rich_e2e", ".py").apply {
+                writeText(richEntitiesScript)
+                deleteOnExit()
+            }
+            val process = ProcessBuilder(
+                python, scriptFile.absolutePath,
+                server.boundPort.toString(),
+                Base64.getEncoder().encodeToString(psk),
+            ).redirectErrorStream(true).start()
+            val finished = process.waitFor(60, TimeUnit.SECONDS)
+            val output = process.inputStream.bufferedReader().readText()
+            if (!finished) process.destroyForcibly()
+            assertEquals(0, if (finished) process.exitValue() else -1,
+                "aioesphomeapi rich-entity round trip failed:\n$output")
+            // Light command decoded with its typed fields, text as string.
+            val light = commands.firstOrNull { it.first == "screen" }?.second
+            assertEquals(mapOf("on" to true, "brightness" to 0.5), light)
+            assertEquals("sunset.jpg",
+                commands.firstOrNull { it.first == "clock_background" }?.second)
+        } finally {
+            server.stop()
+        }
+    }
+
     @Test
     fun realClientEntitiesRoundTrip() {
         val python = System.getenv("KS_AIOESPHOME_PYTHON") ?: "python3"
