@@ -821,7 +821,7 @@ class _CategoryContentState extends State<_CategoryContent> {
     return [
       const WarnRow(
         'ESPHome is now the preferred integration and MQTT will be '
-        'removed in a future version. See the ESPHome page to migrate.',
+        'removed in a future version. See the ESPHome section to migrate.',
       ),
       ...cards,
     ];
