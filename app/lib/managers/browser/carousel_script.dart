@@ -67,6 +67,13 @@
 /// HA's own scrolling. A gesture starting on an open dialog, an
 /// interactive control (sliders above all) or an element that scrolls
 /// horizontally itself is never claimed — those keep their own gestures.
+/// Media elements and cards that run their own swipe gestures also yield
+/// by default, but the opt-in `__ksCarouselOverCards` flag (#238, the
+/// fullscreen camera card that left nowhere to swipe) claims them for
+/// the carousel: a locked drag then stopPropagation()s the touch AND
+/// pointer streams — allowed from a passive listener, and capture-phase
+/// on window runs before anything the card listens on — so the card
+/// never sees the drag it lost.
 ///
 /// Cost note: while the toggle is on, up to two already-visited views
 /// stay mounted (invisible) between gestures, so their cards keep any
@@ -166,8 +173,21 @@ const dashboardCarouselScript = '''
   // rather than an exact list: HA and custom cards ship endless slider and
   // dialog variants, and a missed one here means a light dims while the
   // view flies away.
-  var BLOCK = /^(input|textarea|select|button|a|video|audio|canvas|iframe)\$/;
+  //
+  // Two tiers. BLOCK always wins: deliberate interactions (sliders above
+  // all, per the reporter of #238) and natively scrolling cards, whose
+  // scroll only preventDefault could stop and these listeners are
+  // passive. YIELD wins only by default: media elements and cards that
+  // run their own swipe gestures through JS listeners. A fullscreen
+  // camera card is a fullscreen <video>, which made it a dead zone for
+  // view navigation — the opt-in `__ksCarouselOverCards` flag claims
+  // those swipes for the carousel instead, and the locked drag then eats
+  // the event streams (see the gesture handlers) so the card cannot also
+  // react.
+  var BLOCK = /^(input|textarea|select|button|a)\$/;
+  var YIELD = /^(video|audio|canvas|iframe)\$/;
   function blockedPath(e) {
+    var greedy = window.__ksCarouselOverCards === true;
     var path = e.composedPath ? e.composedPath() : [];
     for (var i = 0; i < path.length; i++) {
       var n = path[i];
@@ -176,8 +196,11 @@ const dashboardCarouselScript = '''
       if (BLOCK.test(name) ||
           name.indexOf('slider') !== -1 ||
           name.indexOf('dialog') !== -1 ||
-          name.indexOf('-map') !== -1 ||
-          name.indexOf('swipe') !== -1) {
+          name.indexOf('-map') !== -1) {
+        return true;
+      }
+      if (!greedy &&
+          (YIELD.test(name) || name.indexOf('swipe') !== -1)) {
         return true;
       }
       // A card that scrolls sideways on its own (a horizontal stack, a
@@ -848,7 +871,29 @@ const dashboardCarouselScript = '''
       drag.preview = previewFor(drag, dir);
       drag.pvDir = dir;
     }
+    // Opt-in exclusivity: past this point the drag is locked, so keep
+    // the card underneath from reacting to the same gesture. Only ever
+    // for locked drags — taps, vertical scrolls and rejected touches
+    // flow untouched.
+    if (window.__ksCarouselOverCards === true) e.stopPropagation();
   }, { passive: true, capture: true });
+
+  // Cards increasingly drive their gestures with pointer events, a
+  // dispatch stream separate from touch: silencing touchmove does
+  // nothing to a pointermove-driven library (embla, the advanced camera
+  // card's engine, among them). Same rule as the touch eaters — only
+  // while a drag is locked and the opt-in flag is on. pointerup fires
+  // before its touchend, so `drag` is still live when it arrives.
+  function eatPointer(e) {
+    if (drag && e.pointerType === 'touch' &&
+        window.__ksCarouselOverCards === true) {
+      e.stopPropagation();
+    }
+  }
+  addEventListener('pointermove', eatPointer,
+    { passive: true, capture: true });
+  addEventListener('pointerup', eatPointer,
+    { passive: true, capture: true });
 
   addEventListener('touchend', function (e) {
     lastTouch = performance.now();
@@ -865,6 +910,7 @@ const dashboardCarouselScript = '''
       return;
     }
     if (d) {
+      if (window.__ksCarouselOverCards === true) e.stopPropagation();
       var flick = Math.abs(d.vx) > FLICK_V &&
         d.vx * d.dx > 0 && Math.abs(d.dx) > LOCK_DX;
       if (Math.abs(d.dx) >= COMMIT_DX || flick) {
@@ -886,6 +932,10 @@ const dashboardCarouselScript = '''
     }
     var hr = huiRoot();
     if (!hr || panelHidden()) return;
+    // The card saw the whole ultra-fast flick (nothing ever locked), but
+    // eating the release still stops touch-driven libraries, which only
+    // act on it.
+    if (window.__ksCarouselOverCards === true) e.stopPropagation();
     commit({ hr: hr, container: viewContainer(hr), dx: dx, preview: null },
       dx < 0 ? 1 : -1);
   }, { passive: true, capture: true });

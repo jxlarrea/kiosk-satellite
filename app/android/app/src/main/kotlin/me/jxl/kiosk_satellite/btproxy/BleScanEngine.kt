@@ -59,8 +59,21 @@ internal class BleScanEngine(
         const val START_WINDOW_MS = 30_000L
         const val WATCHDOG_INTERVAL_MS = 10_000L
         const val SILENCE_RESTART_MS = 45_000L
-        /** Proactive scan-session rotation keeps long-running stacks fresh. */
-        const val ROTATION_MS = 30 * 60_000L
+        /**
+         * Proactive scan-session rotation. Two minutes, not a keep-fresh
+         * half hour: some controllers (Samsung's BLE5 stacks, found live
+         * with a Yale lock) report each static advertiser roughly ONCE per
+         * scan session and then suppress its duplicates, whatever the
+         * filter setup and match settings say. Chatty payload-changing
+         * devices keep flowing, quiet ones go silent minutes into every
+         * session, and Home Assistant marks them unavailable once its
+         * staleness window (about three minutes) runs dry. Restarting the
+         * session re-reports everything, so a cadence comfortably inside
+         * that window keeps slow advertisers continuously visible. One
+         * start per two minutes is far under the 4-per-30s budget, and the
+         * restart gap is milliseconds.
+         */
+        const val ROTATION_MS = 120_000L
         val FAILURE_BACKOFF_MS = longArrayOf(5_000, 15_000, 60_000, 300_000)
     }
 
@@ -270,6 +283,9 @@ internal class BleScanEngine(
         // "unfiltered" scan, which Android 8.1+ suppresses whenever the
         // screen is off; a list with one criteria-less filter counts as
         // filtered and keeps advertisements flowing on a dark kiosk.
+        // (Filter choice does NOT influence the per-session duplicate
+        // suppression some stacks apply; the short session rotation above
+        // is what handles that.)
         val filters = listOf(ScanFilter.Builder().build())
         try {
             scanner.startScan(filters, settings, callback)

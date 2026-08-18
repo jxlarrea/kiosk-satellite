@@ -2498,6 +2498,30 @@ const haDashboardCarousel = SettingDef<bool>(
   section: 'User Interface',
 );
 
+/// Carousel priority over gesture-handling cards (#238). By default a
+/// swipe that starts on a media element or a card that handles swipes
+/// itself is never claimed, which makes a fullscreen camera card (a
+/// fullscreen video under the finger) a dead zone for view navigation.
+/// With this on, the carousel claims those swipes and eats the touch and
+/// pointer streams once a drag locks, so the card cannot also react.
+/// Sliders, dialogs, maps, form controls and natively scrolling cards
+/// stay protected either way: a natively scrolling card cannot be
+/// silenced (only preventDefault stops native scroll, and the carousel's
+/// listeners are passive), and a slider swallowing a swipe is exactly
+/// the regression the reporter warned about.
+const haCarouselOverCards = SettingDef<bool>(
+  key: 'ha.carousel_over_cards',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Capture swipe gestures over cards',
+  description:
+      'Switch views even when the swipe starts on a card that reacts '
+      'to swipes. Sliders still work normally.',
+  category: 'Home Assistant',
+  section: 'User Interface',
+  dependsOn: 'ha.dashboard_carousel',
+);
+
 /// Haptic feedback for the dashboard (in-page script, see
 /// haptics_script.dart): a short native click whenever a tap lands on
 /// something button-shaped, and a lighter tick per step while a slider
@@ -3712,6 +3736,7 @@ const List<SettingDef<Object>> allSettings = [
   haKioskHideHeader,
   haKioskHideSidebar,
   haDashboardCarousel,
+  haCarouselOverCards,
   haHaptics,
   haHapticsStrength,
   haTapSound,

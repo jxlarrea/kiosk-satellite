@@ -246,6 +246,14 @@ class _KioskScreenState extends State<KioskScreen>
       );
       return;
     }
+    // Same live-flag contract; read only on the touch path, so there is
+    // no strip state to sync.
+    if (e.key == defs.haCarouselOverCards.key) {
+      await c.browser.runJs(
+        'window.__ksCarouselOverCards = ${e.value == true};',
+      );
+      return;
+    }
     // Haptics and the tap sound share one live-flag contract; the script
     // itself has no state to build or tear down.
     if (e.key == defs.haHaptics.key) {
@@ -607,7 +615,9 @@ class _KioskScreenState extends State<KioskScreen>
     UserScript(
       source:
           'window.__ksCarouselEnabled = '
-          '${c.settings.get(defs.haDashboardCarousel)};',
+          '${c.settings.get(defs.haDashboardCarousel)};'
+          'window.__ksCarouselOverCards = '
+          '${c.settings.get(defs.haCarouselOverCards)};',
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
     UserScript(
@@ -1263,7 +1273,9 @@ class _KioskScreenState extends State<KioskScreen>
       c.browser.runJs('window.__ksPtrEnabled = $_ptrEnabled;');
       c.browser.runJs(
         'window.__ksCarouselEnabled = '
-        '${c.settings.get(defs.haDashboardCarousel)};',
+        '${c.settings.get(defs.haDashboardCarousel)};'
+        'window.__ksCarouselOverCards = '
+        '${c.settings.get(defs.haCarouselOverCards)};',
       );
       c.browser.runJs(
         'window.__ksHapticsEnabled = '
