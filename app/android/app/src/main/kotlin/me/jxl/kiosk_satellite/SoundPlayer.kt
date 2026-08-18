@@ -26,6 +26,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.TeeAudioProcessor
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -66,6 +67,15 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
          *  first audio fast; ExoPlayer's 2.5s default reads as lag. */
         private const val STREAM_STARTUP_BUFFER_MS = 250
         private const val STREAM_REBUFFER_MS = 500
+
+        /** Playback errors that mean the decoder, not the sound: worth one
+         *  retry on software decoders, which need no vendor codec service. */
+        private val DECODER_ERROR_CODES = setOf(
+            PlaybackException.ERROR_CODE_DECODER_INIT_FAILED,
+            PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED,
+            PlaybackException.ERROR_CODE_DECODING_FAILED,
+            PlaybackException.ERROR_CODE_DECODING_RESOURCES_RECLAIMED,
+        )
 
         /** Level-tap envelope: per-window decay (50 ms windows, so a pause
          *  of a few seconds re-adapts), the mean amplitude below which a
@@ -344,9 +354,14 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
      * taps the decoded PCM for the page's reactive bar, replacing the
      * Visualizer and its RECORD_AUDIO dependency for these sounds.
      */
-    private fun playWithExo(id: String, source: String, target: AudioDeviceInfo?): Boolean {
+    private fun playWithExo(
+        id: String,
+        source: String,
+        target: AudioDeviceInfo?,
+        softwareDecoders: Boolean = false,
+    ): Boolean {
         return try {
-            val player = ExoPlayer.Builder(appContext, exoRenderersFactory(id))
+            val player = ExoPlayer.Builder(appContext, exoRenderersFactory(id, softwareDecoders))
                 // Media3's default HTTP stack announces itself, not the app;
                 // a Home Assistant access log should name the kiosk that
                 // pulled the TTS clip.
@@ -400,7 +415,27 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 }
 
                 override fun onPlayerError(error: PlaybackException) {
-                    if (exoPlayers[id] === player) finish(id, error.errorCodeName)
+                    if (exoPlayers[id] !== player) return
+                    // A vendor codec service can be crashed outright (issue
+                    // #234's MediaTek HAL: every hardware MP3 decode dies
+                    // with DEAD_OBJECT). Software decoders run in-process
+                    // and keep working - retry the sound on them once.
+                    if (!softwareDecoders && error.errorCode in DECODER_ERROR_CODES) {
+                        Log.w(
+                            TAG,
+                            "sound $id decoder failed (${error.errorCodeName}); " +
+                                "retrying with software decoders",
+                        )
+                        exoPlayers.remove(id)
+                        try { player.release() } catch (_: Exception) {}
+                        // Re-resolved: the original AudioDeviceInfo may be stale.
+                        playWithExo(
+                            id, source, AudioRouting.currentOutput(),
+                            softwareDecoders = true,
+                        )
+                        return
+                    }
+                    finish(id, error.errorCodeName)
                 }
             })
             player.setMediaItem(MediaItem.fromUri(source))
@@ -432,8 +467,13 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
     }
 
     /** An audio-only renderers factory whose sink taps decoded PCM for the
-     *  page's reactive bar. One per sound: the tap closure carries the id. */
-    private fun exoRenderersFactory(id: String): DefaultRenderersFactory =
+     *  page's reactive bar. One per sound: the tap closure carries the id.
+     *  With [softwareDecoders], only software codecs are eligible - the
+     *  retry path for a crashed vendor codec service (issue #234). */
+    private fun exoRenderersFactory(
+        id: String,
+        softwareDecoders: Boolean,
+    ): DefaultRenderersFactory =
         object : DefaultRenderersFactory(appContext) {
             override fun buildAudioSink(
                 context: Context,
@@ -442,6 +482,21 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             ): AudioSink = DefaultAudioSink.Builder(context)
                 .setAudioProcessors(arrayOf(levelTap(id)))
                 .build()
+        }.apply {
+            setEnableDecoderFallback(true)
+            if (softwareDecoders) setMediaCodecSelector(softwareCodecSelector)
+        }
+
+    /** [MediaCodecSelector.DEFAULT] narrowed to software decoders, which
+     *  need no vendor codec service. Empty results fall back to the full
+     *  list: a mime only a hardware decoder handles keeps its one chance. */
+    private val softwareCodecSelector =
+        MediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunnelingDecoder ->
+            val all = MediaCodecSelector.DEFAULT.getDecoderInfos(
+                mimeType, requiresSecureDecoder, requiresTunnelingDecoder,
+            )
+            val software = all.filter { it.softwareOnly }
+            software.ifEmpty { all }
         }
 
     /**

@@ -1,8 +1,10 @@
 package me.jxl.kiosk_satellite
 
 import android.media.MediaCodec
+import android.media.MediaCodecList
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.os.Build
 import android.util.Log
 import java.io.File
 import java.nio.ByteBuffer
@@ -69,15 +71,33 @@ object SoundClips {
         cache[key]?.let { return it }
         if (key in rejected) return null
         val clip = try {
-            decode(path)
+            decode(path, softwareDecoder = false)
         } catch (e: Exception) {
-            Log.w(TAG, "decode failed for $path: ${e.message}")
-            null
+            // A codec exception is the decoder failing, not the file: a
+            // crashed vendor codec service kills every hardware decode this
+            // way (issue #234). Retry on a software decoder, and never
+            // reject the path for it - the failure is transient.
+            Log.w(
+                TAG,
+                "decode failed for $path: ${e.message}; retrying with software decoder",
+            )
+            return try {
+                decode(path, softwareDecoder = true)?.also { cachePut(key, it) }
+            } catch (e2: Exception) {
+                Log.w(TAG, "software decode failed for $path: ${e2.message}")
+                null
+            }
         }
         if (clip == null) {
+            // Format-level rejection (no audio track, too long): permanent.
             rejected += key
             return null
         }
+        cachePut(key, clip)
+        return clip
+    }
+
+    private fun cachePut(key: String, clip: Clip) {
         cache[key] = clip
         cachedBytes += clip.pcm.size
         // Oldest-used out first; the chimes in rotation stay resident.
@@ -88,10 +108,29 @@ object SoundClips {
             cachedBytes -= entry.value.pcm.size
             it.remove()
         }
-        return clip
     }
 
-    private fun decode(path: String): Clip? {
+    /** The first software decoder for [mime], or null when only hardware
+     *  decoders exist for it. Software decoders run in-process and survive
+     *  a crashed vendor codec service. */
+    private fun softwareDecoderName(mime: String): String? {
+        for (info in MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos) {
+            if (info.isEncoder) continue
+            val software = if (Build.VERSION.SDK_INT >= 29) {
+                info.isSoftwareOnly
+            } else {
+                info.name.startsWith("OMX.google.") ||
+                    info.name.startsWith("c2.android.")
+            }
+            if (!software) continue
+            if (info.supportedTypes.any { it.equals(mime, ignoreCase = true) }) {
+                return info.name
+            }
+        }
+        return null
+    }
+
+    private fun decode(path: String, softwareDecoder: Boolean): Clip? {
         val extractor = MediaExtractor()
         extractor.setDataSource(path)
         var track = -1
@@ -119,9 +158,17 @@ object SoundClips {
         }
         extractor.selectTrack(track)
 
-        val codec = MediaCodec.createDecoderByType(
-            format.getString(MediaFormat.KEY_MIME)!!,
-        )
+        val mime = format.getString(MediaFormat.KEY_MIME)!!
+        val codec = if (softwareDecoder) {
+            val name = softwareDecoderName(mime)
+            if (name == null) {
+                extractor.release()
+                throw IllegalStateException("no software decoder for $mime")
+            }
+            MediaCodec.createByCodecName(name)
+        } else {
+            MediaCodec.createDecoderByType(mime)
+        }
         codec.configure(format, null, null, 0)
         codec.start()
 

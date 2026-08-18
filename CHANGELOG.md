@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- Chimes and TTS now survive a broken hardware audio decoder (#234). On a device whose vendor codec service has crashed, every hardware MP3 decode dies the moment it starts, which left the assistant answering visually in total silence. A sound that fails this way is now retried once on the device's software decoders, which run inside the app and keep working when the vendor service is down, and a chime whose first decode hits the broken codec is no longer blacklisted from the fast clip path for the rest of the session.
+
 ### Added
 - Camera views can now play sound (#235). "Play sound for a single camera", off by default under Camera Streams, then Playback, plays a camera's audio whenever it is the only one on screen: a view with a single camera, the camera focused with a tap in a larger view, or the camera screensaver showing a one-camera view, which is the baby-monitor setup the feature was asked for. Grids with several cameras always stay silent, and the audio track is only negotiated at all while the setting is on, so nothing changes for existing views. Works over both WebRTC and MSE; the camera needs to publish an audio codec the device can play, AAC and Opus being the safe choices.
 
