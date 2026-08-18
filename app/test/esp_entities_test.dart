@@ -95,6 +95,7 @@ void main() {
     });
     stub('getNextAlarm', {'at': '2026-08-19T07:00:00+00:00'});
     stub('getDeviceInfo', {'model': 'samsung SM-X700', 'ip': '192.168.1.5'});
+    stub('evalJs', '"https://ha.local/lovelace/home"');
     stub('screenshot', base64Encode([1, 2, 3]));
     for (final name in [
       'screenOn', 'screenOff', 'setBrightness', 'setVolume',
@@ -142,8 +143,11 @@ void main() {
     expect(ids, isNot(contains('connectivity')));
     expect(ids, isNot(contains('last_seen')));
     final byId = {for (final d in catalog) d['objectId']: d};
-    // Only views with cameras become options; 'Closed' leads.
+    // Only views with cameras become options; 'Closed' leads. The
+    // per-view show buttons ride along, exactly like MQTT.
     expect(byId['camera_view']!['options'], ['Closed', 'Front door']);
+    expect(byId['camera_view_v1']!['name'], 'Show Front door');
+    expect(byId.containsKey('camera_view_v2'), isFalse);
     expect(byId['dashboard_view']!['options'],
         ['lovelace/home', 'lovelace/cameras']);
     // With a camera present and enabled it takes the one camera slot.
@@ -187,6 +191,11 @@ void main() {
     expect(byId['camera_enabled'], true);
     expect(byId['screensaver_brightness_level'], 40);
     expect(byId['illuminance'], 42);
+    // The selects report first values instead of sitting on "unknown".
+    expect(byId['camera_view'], 'Closed');
+    expect(byId['active_camera_view'], 'none');
+    expect(byId['url'], 'https://ha.local/lovelace/home');
+    expect(byId['dashboard_view'], 'lovelace/home');
   });
 
   test('commands land on the same handlers MQTT uses', () async {
@@ -197,15 +206,17 @@ void main() {
     await surface.handleCommand('screen', {'brightness': 0.7});
     await surface.handleCommand('volume', 30.0);
     await surface.handleCommand('camera_view', 'Front door');
+    await surface.handleCommand('camera_view_v1', null);
     await surface.handleCommand('camera_view', 'Closed');
     await surface.handleCommand('dashboard_view', 'lovelace/cameras');
     await surface.handleCommand('update', 'install');
     expect(executed.map((e) => e.$1).toList(), [
       'screenOff', 'setBrightness', 'setVolume', 'showCameraView',
-      'hideCameraView', 'haNavigate', 'installUpdate',
+      'showCameraView', 'hideCameraView', 'haNavigate', 'installUpdate',
     ]);
     expect(executed[3].$2['viewId'], 'v1');
-    expect(executed[5].$2['path'], 'lovelace/cameras');
+    expect(executed[4].$2['viewId'], 'v1');
+    expect(executed[6].$2['path'], 'lovelace/cameras');
   });
 
   test('setting-backed entities write settings and echo real state',

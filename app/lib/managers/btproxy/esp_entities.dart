@@ -212,6 +212,12 @@ class EspEntitySurface {
             for (final view in _cameraViews) '${view['name']}',
           ],
         },
+        // One press-to-show button per view too, exactly like MQTT: the
+        // select is the compact form, the buttons are what dashboards and
+        // scripts press.
+        for (final view in _cameraViews)
+          button('camera_view_${view['id']}', 'Show ${view['name']}',
+              'mdi:cctv'),
         button('close_camera_view', 'Close camera view',
             'mdi:close-box-outline'),
         {
@@ -521,6 +527,9 @@ class EspEntitySurface {
         }
       case 'close_camera_view':
         await commands.execute('hideCameraView', const {});
+      case String id when id.startsWith('camera_view_'):
+        await commands.execute(
+            'showCameraView', {'viewId': id.substring('camera_view_'.length)});
       case 'dashboard_view':
         await commands.execute('haNavigate', {'path': '$value'});
       case 'update':
@@ -627,6 +636,23 @@ class EspEntitySurface {
     }
     await _send(
         'clock_background', _settings.get(defs.screensaverClockBackground));
+    // MQTT inherits these from broker retention; here they need an
+    // explicit first value or the selects sit on "unknown" until the
+    // first change. No camera view is open at server start, and the
+    // dashboard select derives from the page currently showing.
+    await _send('camera_view', 'Closed');
+    await _send('active_camera_view', 'none');
+    final href = await commands.execute('evalJs', {'code': 'location.href'});
+    // WebView eval results come back JSON-encoded; a string wears quotes.
+    var url = href.ok ? '${href.data ?? ''}' : '';
+    if (url.length >= 2 && url.startsWith('"') && url.endsWith('"')) {
+      url = url.substring(1, url.length - 1);
+    }
+    if (url.startsWith('http')) {
+      await _send('url', url);
+      final match = matchDashboardView(url, _dashboardViews);
+      if (match != null) await _send('dashboard_view', match);
+    }
     final light = await commands.execute('getLightLevel', const {});
     final lux = light.ok && light.data is Map
         ? ((light.data as Map)['lux'] as num?)
