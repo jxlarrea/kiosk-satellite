@@ -262,6 +262,17 @@ class BtProxyManager extends Manager {
       key = _generateKey();
       _liveKey = key;
       await _settings.set(defs.btproxyKey, key);
+    } else if (!_validKey(key)) {
+      // A hand-typed key ("a single word as a test", issue #239) cannot
+      // work: the ESPHome protocol's key is the base64 form of 32 random
+      // bytes, nothing else survives the native require(). Failing here
+      // with a recovery hint beats a dead server whose only symptom is
+      // Home Assistant's generic "unable to connect".
+      _startError =
+          'the encryption key is not valid; it must be the base64 form of '
+          '32 random bytes. Clear the field to generate a fresh key.';
+      log.warn(name, 'failed to start: invalid encryption key');
+      return;
     }
     _liveKey = key;
     final friendly = _settings.get(defs.deviceName).trim();
@@ -315,5 +326,13 @@ class BtProxyManager extends Manager {
   String _generateKey() {
     final rng = Random.secure();
     return base64Encode(List<int>.generate(32, (_) => rng.nextInt(256)));
+  }
+
+  static bool _validKey(String key) {
+    try {
+      return base64Decode(key).length == 32;
+    } catch (_) {
+      return false;
+    }
   }
 }
