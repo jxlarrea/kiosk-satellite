@@ -2,6 +2,15 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## v2026.8.54 - 2026-08-18
+
+### Fixed
+- Exit application really exits now. The ESPHome server's foreground service, which runs whenever ESPHome is enabled, was missing from the shutdown sequence of a deliberate quit: Android revived the sticky service moments after the process ended, the revival read as a crash, and the crash recovery relaunched the app the user had just closed.
+- The encryption key appears the moment it is generated. Enabling ESPHome generates the key a moment after the toggle flips, which was after the settings page had already redrawn, so the key row kept showing its placeholder until the next unrelated tap and the page read as if enabling had done nothing. Both the device page and the remote admin now refresh the row as soon as the key lands.
+
+### Changed
+- The foreground notification says what is actually running: "ESPHome active", with "Serving Home Assistant" or "Serving Home Assistant and relaying Bluetooth devices" depending on whether the Bluetooth proxy is on, instead of always claiming to be a Bluetooth proxy. The notification channel is renamed to ESPHome accordingly.
+
 ## v2026.8.53 - 2026-08-18
 
 ### Added
