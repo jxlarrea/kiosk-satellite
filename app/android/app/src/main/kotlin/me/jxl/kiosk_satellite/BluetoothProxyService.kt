@@ -38,6 +38,15 @@ class BluetoothProxyService : Service() {
         var isRunning = false
             private set
 
+        /**
+         * Set by [BackgroundBridge.exitApp] before it stops the service: a
+         * sticky restart racing a deliberate quit must not read as a crash
+         * worth undoing, or "Exit application" relaunches the app it just
+         * closed.
+         */
+        @Volatile
+        var exiting = false
+
         fun start(context: Context) {
             ContextCompat.startForegroundService(
                 context, Intent(context, BluetoothProxyService::class.java),
@@ -80,7 +89,7 @@ class BluetoothProxyService : Service() {
     // settings sync. A null intent is the sticky-restart signature, the same
     // moment the kiosk UI may need reviving.
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent == null) CrashSelfHeal.maybeRelaunch(this)
+        if (intent == null && !exiting) CrashSelfHeal.maybeRelaunch(this)
         return START_STICKY
     }
 

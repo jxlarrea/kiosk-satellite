@@ -646,6 +646,17 @@ class BackgroundBridge(
         // A real quit also stands down the crash recovery hooks, or the
         // heartbeat alarm would count the kill as a crash worth undoing.
         CrashSelfHeal.disarm(context)
+        // The Bluetooth proxy's foreground service is START_STICKY like the
+        // others: left started, Android revives it after the kill below and
+        // its null-intent restart reads as a crash, relaunching the app the
+        // user just closed. Stop it (and the ESPHome server it shields)
+        // before the process goes.
+        val btProxyWasRunning = BluetoothProxyService.isRunning
+        if (btProxyWasRunning) {
+            BluetoothProxyService.exiting = true
+            me.jxl.kiosk_satellite.btproxy.BluetoothProxyRuntime.stop()
+            BluetoothProxyService.stop(context)
+        }
         if (WakeWordService.isRunning) {
             // The keep-alive foreground service is what fights a clean exit: kill
             // the process on a timer while it is still started and START_STICKY
@@ -669,11 +680,14 @@ class BackgroundBridge(
                 android.os.Process.killProcess(android.os.Process.myPid())
             }, 2000)
         } else {
-            // Nothing keeping the process alive; end it once the task-removal
-            // above has drained off the main looper.
+            // Nothing else keeping the process alive; end it once the
+            // task-removal above has drained off the main looper. If the
+            // proxy service was the one started state, give its stop the
+            // same grace the other services get, so it has left the
+            // started state for good before the kill.
             handler.postDelayed({
                 android.os.Process.killProcess(android.os.Process.myPid())
-            }, 200)
+            }, if (btProxyWasRunning) 2000 else 200)
         }
     }
 
