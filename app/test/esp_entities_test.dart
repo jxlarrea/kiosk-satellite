@@ -139,9 +139,8 @@ void main() {
           'foreground_app', 'btproxy_nearby', 'device_info', 'ipv4_address',
           'ipv6_address', 'app_uptime', 'network_uptime', 'admin_url',
         ]));
-    // Replaced by the API connection itself, deliberately absent.
-    expect(ids, isNot(contains('connectivity')));
-    expect(ids, isNot(contains('last_seen')));
+    expect(ids, contains('connectivity'));
+    expect(ids, contains('last_seen'));
     final byId = {for (final d in catalog) d['objectId']: d};
     // Only views with cameras become options; 'Closed' leads. The
     // per-view show buttons ride along, exactly like MQTT.
@@ -178,7 +177,13 @@ void main() {
     expect(byId['ram_total'], 4096);
     expect(byId['ipv4_address'], '192.168.1.5');
     expect(byId['ipv6_address'], 'fe80::1');
-    expect(byId['app_uptime'], 4200);
+    // Uptimes are timestamp anchors like their MQTT twins: the moment the
+    // app started, rendered by HA as "n hours ago".
+    final appAnchor = DateTime.parse('${byId['app_uptime']}');
+    final drift =
+        DateTime.now().toUtc().difference(appAnchor).inSeconds - 4200;
+    expect(drift.abs(), lessThan(30));
+    expect(DateTime.parse('${byId['last_seen']}'), isA<DateTime>());
     expect(byId['foreground_app'], 'me.jxl.kiosk_satellite');
     expect(byId['btproxy_nearby'], 13);
     expect(byId['volume'], 55);

@@ -23,13 +23,10 @@ import '../settings/settings_manager.dart';
 /// automations, and both mirror the MQTT catalog so a migrating automation
 /// only swaps the device half of the id. Never rename one casually.
 ///
-/// Deliberately absent, with reasons:
-///  - connectivity, last_seen: the API connection itself is the liveness
-///    signal; Home Assistant marks every entity unavailable on disconnect.
-///  - per-view camera buttons: consolidated into the Camera view select.
-///  - a second camera: the ESPHome camera protocol has no entity key in
-///    its image request, so one camera exists per device - the device
-///    camera when present and enabled, else the screenshot camera.
+/// The one deliberate absence: a second camera. The ESPHome camera
+/// protocol has no entity key in its image request, so one camera exists
+/// per device - the device camera when present and enabled, else the
+/// screenshot camera.
 class EspEntitySurface {
   EspEntitySurface(this.bus, this.commands, this.log, this._settings);
 
@@ -55,6 +52,11 @@ class EspEntitySurface {
   List<String> _dashboardViews = const [];
   bool _deviceCameraIsTheCamera = false;
   bool _screensaverActive = false;
+
+  /// Uptime anchors last pushed, so a poll only republishes when the
+  /// start moment genuinely moved (same 5-second tolerance as MQTT:
+  /// second-to-second jitter in "now minus uptime" is not a restart).
+  final Map<String, DateTime?> _lastAnchor = {};
 
   /// Settings-backed switches: objectId -> (name, icon, definition).
   /// Mirrors the MQTT _settingSwitches map, entity ids and all.
@@ -368,16 +370,28 @@ class EspEntitySurface {
           icon: 'mdi:ip-network', type: 'text_sensor'),
       diagnostic('ipv6_address', 'IPv6 address',
           icon: 'mdi:ip-network-outline', type: 'text_sensor'),
+      // Timestamps like their MQTT twins: the recorder logs the moments
+      // the anchors move (a restart, a reconnect) and Home Assistant
+      // renders the ticking "n hours ago" on its own, instead of a
+      // seconds counter churning the recorder every poll.
       diagnostic('app_uptime', 'App uptime',
           icon: 'mdi:timer-outline',
-          deviceClass: 'duration',
-          unit: 's',
-          stateClass: 2),
+          deviceClass: 'timestamp',
+          type: 'text_sensor'),
       diagnostic('network_uptime', 'Network uptime',
           icon: 'mdi:timer-sync-outline',
-          deviceClass: 'duration',
-          unit: 's',
-          stateClass: 2),
+          deviceClass: 'timestamp',
+          type: 'text_sensor'),
+      diagnostic('last_seen', 'Last seen',
+          icon: 'mdi:clock-check-outline',
+          deviceClass: 'timestamp',
+          type: 'text_sensor'),
+      // Strictly redundant over ESPHome (a lost connection makes every
+      // entity unavailable), but automations written against the MQTT
+      // sensor check for 'on', and 'unavailable' satisfies their
+      // "not on" branch the same way 'off' did.
+      diagnostic('connectivity', 'Connectivity',
+          deviceClass: 'connectivity', type: 'binary_sensor'),
       diagnostic('admin_url', 'Remote admin',
           icon: 'mdi:remote-desktop', type: 'text_sensor'),
     ];
@@ -408,8 +422,15 @@ class EspEntitySurface {
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _sendNextAlarm()));
     _subs.add(bus.on<PowerChanged>().listen(
         (e) => _send('charging', e.charging)));
-    _subs.add(bus.on<LightLevelChanged>().listen(
-        (e) => _send('illuminance', e.lux.round())));
+    _subs.add(bus.on<LightLevelChanged>().listen((e) {
+      _send('illuminance', e.lux.round());
+      // The MQTT twin never shows "unknown" because the broker retains
+      // its last value across restarts; with no broker, this store plays
+      // that role. Some drivers (the Echo Show's) emit nothing at
+      // registration, so a restart in a stable dark room would otherwise
+      // read unknown until the light physically changes.
+      _settings.setInternal('esphome_last_lux', '${e.lux.round()}');
+    }));
     _subs.add(bus.on<CameraViewStateChanged>().listen((e) {
       _send('active_camera_view', e.viewName ?? 'none');
       _send('camera_view', e.viewName ?? 'Closed');
@@ -605,6 +626,23 @@ class EspEntitySurface {
     } catch (_) {}
   }
 
+  Future<void> _sendAnchor(String objectId, DateTime? start) async {
+    final known = _lastAnchor.containsKey(objectId);
+    final last = _lastAnchor[objectId];
+    if (start == null) {
+      if (known && last == null) return;
+      _lastAnchor[objectId] = null;
+      await _send(objectId, null);
+      return;
+    }
+    if (last != null &&
+        start.difference(last).abs() < const Duration(seconds: 5)) {
+      return;
+    }
+    _lastAnchor[objectId] = start;
+    await _send(objectId, start.toIso8601String());
+  }
+
   Future<void> _sendImage(Uint8List jpeg) async {
     try {
       await _pushImage?.call(jpeg);
@@ -642,6 +680,10 @@ class EspEntitySurface {
     // dashboard select derives from the page currently showing.
     await _send('camera_view', 'Closed');
     await _send('active_camera_view', 'none');
+    // The server (re)started: that IS a fresh sighting, and readable
+    // connectivity is by definition on.
+    await _send('last_seen', DateTime.now().toUtc().toIso8601String());
+    await _send('connectivity', true);
     final href = await commands.execute('evalJs', {'code': 'location.href'});
     // WebView eval results come back JSON-encoded; a string wears quotes.
     var url = href.ok ? '${href.data ?? ''}' : '';
@@ -653,11 +695,6 @@ class EspEntitySurface {
       final match = matchDashboardView(url, _dashboardViews);
       if (match != null) await _send('dashboard_view', match);
     }
-    final light = await commands.execute('getLightLevel', const {});
-    final lux = light.ok && light.data is Map
-        ? ((light.data as Map)['lux'] as num?)
-        : null;
-    if (lux != null) await _send('illuminance', lux.round());
     await _send('motion', false);
   }
 
@@ -809,11 +846,24 @@ class EspEntitySurface {
     final up = await commands.execute('getUptime', const {});
     if (up.ok && up.data is Map) {
       final uptime = up.data as Map;
+      final now = DateTime.now().toUtc();
       final app = (uptime['app'] as num?)?.toInt();
-      if (app != null) await _send('app_uptime', app);
+      if (app != null) {
+        await _sendAnchor('app_uptime', now.subtract(Duration(seconds: app)));
+      }
       final network = (uptime['network'] as num?)?.toInt();
-      await _send('network_uptime', network);
+      await _sendAnchor(
+          'network_uptime',
+          network == null ? null : now.subtract(Duration(seconds: network)));
     }
+    final light = await commands.execute('getLightLevel', const {});
+    var lux = light.ok && light.data is Map
+        ? ((light.data as Map)['lux'] as num?)
+        : null;
+    // No live reading yet: fall back to the persisted last one, the same
+    // last-known-value semantics broker retention gives the MQTT twin.
+    lux ??= int.tryParse(_settings.internal('esphome_last_lux'));
+    if (lux != null) await _send('illuminance', lux.round());
     final ips = await commands.execute('getIpAddresses', const {});
     if (ips.ok && ips.data is Map) {
       for (final (family, objectId) in [
@@ -843,5 +893,7 @@ class EspEntitySurface {
           nearby.ok && nearby.data is Map ? (nearby.data as Map)['count'] : null;
       if (count is num) await _send('btproxy_nearby', count.toInt());
     }
+    // Every completed poll IS a sighting, like the MQTT twin.
+    await _send('last_seen', DateTime.now().toUtc().toIso8601String());
   }
 }

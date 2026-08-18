@@ -80,15 +80,15 @@ alongside, entities exist twice, once per integration, and Home
 Assistant suffixes whichever registered second; migrate automations to
 the ESPHome ones at your own pace, then turn MQTT off.
 
-Three deliberate differences from the MQTT catalog: connectivity and
-last-seen sensors have no ESPHome twins (the API connection itself is
-the liveness signal, and every entity goes unavailable the moment the
-kiosk does), the per-view camera buttons fold into the Camera view
-select, and the ESPHome camera protocol allows exactly one camera per
-device, so the kiosk serves its device camera when present and enabled,
-else the screenshot camera. The Camera view and Dashboard view option
-lists are learned when the server starts; after adding views, toggle
-ESPHome off and on (or restart the app) to refresh them.
+One deliberate difference from the MQTT catalog: the ESPHome camera
+protocol allows exactly one camera per device, so the kiosk serves its
+device camera when present and enabled, else the screenshot camera.
+The Camera view and Dashboard view option lists are learned when the
+server starts; after adding views, toggle ESPHome off and on (or
+restart the app) to refresh them. A note on Connectivity: with ESPHome
+the entity reads "on" while the kiosk is reachable and "unavailable"
+(rather than "off") when it is not, since a lost connection takes every
+entity with it.
 
 ## Nearby devices
 

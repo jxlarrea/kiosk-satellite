@@ -5,6 +5,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
@@ -37,6 +39,10 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
     private var listener: SensorEventListener? = null
     private var lastSent = -1f
     private var lastSentAt = 0L
+    private val handler = Handler(Looper.getMainLooper())
+
+    /** Set by the first delivered sample; the register nudge stops on it. */
+    @Volatile private var receivedAny = false
 
     init {
         methods.setMethodCallHandler { call, result ->
@@ -52,9 +58,12 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
                     sink.endOfStream()
                     return
                 }
+                lastSent = -1f
+                receivedAny = false
                 val l = object : SensorEventListener {
                     override fun onSensorChanged(event: SensorEvent) {
                         val lux = event.values.firstOrNull() ?: return
+                        receivedAny = true
                         val now = SystemClock.elapsedRealtime()
                         if (lastSent >= 0) {
                             val delta = abs(lux - lastSent)
@@ -73,6 +82,23 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
                 listener = l
                 sensorManager.registerListener(
                     l, s, SensorManager.SENSOR_DELAY_NORMAL)
+                // On-change sensors owe one sample at registration, but some
+                // drivers (the Echo Show's amazon-oss one) lose it when the
+                // register races boot. In a room where the light then never
+                // changes, that silence lasts until morning and the entity
+                // sits on "unknown". Re-registering coerces the initial
+                // sample; give the driver a few chances, then leave it to
+                // the first genuine change.
+                fun nudge(remaining: Int) {
+                    handler.postDelayed({
+                        if (receivedAny || listener !== l) return@postDelayed
+                        sensorManager.unregisterListener(l)
+                        sensorManager.registerListener(
+                            l, s, SensorManager.SENSOR_DELAY_NORMAL)
+                        if (remaining > 1) nudge(remaining - 1)
+                    }, 4_000)
+                }
+                nudge(3)
             }
 
             override fun onCancel(args: Any?) {
