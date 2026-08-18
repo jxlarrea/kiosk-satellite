@@ -75,6 +75,7 @@ internal object BluetoothProxyRuntime {
                 onStateChange = { state, mode ->
                     server?.reportScannerState(state, mode)
                 },
+                onLog = { line -> log("scan: $line") },
             )
         } else {
             null

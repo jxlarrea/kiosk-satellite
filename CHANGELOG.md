@@ -14,6 +14,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - The "Nearby devices" permission row tells the truth on Android 11 and older (#240). Those versions grant the Bluetooth permissions at install but gate scan results on location: without the Location permission and location services on, the scanner runs and hears nothing, which the row nevertheless reported as Granted, leaving a Fire tablet scanning "actively" with a permanently empty Nearby list and nothing for Bermuda. On old devices the row now reads the location gate instead, its Grant button asks for the Location permission, and when the system-wide location switch is the blocker it opens the OS location settings screen, the only place that can flip it.
 
 ### Added
+- Bluetooth scanner failures now land in the proxy log that btProxyStatus and the remote admin show, named with their reason, instead of only Android's internal logcat. A scanner killed by a permission error or a stack failure used to look exactly like a healthy one from every surface a user could reach (#240).
 - The ESPHome settings page says when the server is down and why. A server that failed to start, a port conflict on one of two identical tablets being the live case (#240), used to render a page indistinguishable from a working one: toggles on, no error anywhere. Both the device page and the remote admin now show the failure reason right under the master switch, and the btProxyStatus command carries it for remote diagnosis.
 
 ## v2026.8.54 - 2026-08-18

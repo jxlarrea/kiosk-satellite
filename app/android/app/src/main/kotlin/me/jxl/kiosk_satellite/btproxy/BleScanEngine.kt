@@ -51,6 +51,7 @@ internal class BleScanEngine(
     private val context: Context,
     private val onAdvertisement: (BleAdvertisement) -> Unit,
     private val onStateChange: (ScannerState, ScannerMode) -> Unit,
+    private val onLog: (String) -> Unit = {},
 ) {
     private companion object {
         const val TAG = "KsBtProxy"
@@ -98,6 +99,16 @@ internal class BleScanEngine(
 
     private val adapter: BluetoothAdapter?
         get() = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+
+    // A failure worth showing the user, not just logcat: these lines reach
+    // the runtime's ring log and with it btProxyStatus and the remote
+    // admin, where "scanning but hearing nothing" is otherwise invisible
+    // (issue #240: a SecurityException-killed scan looked exactly like a
+    // healthy one from every surface the reporter could reach).
+    private fun note(line: String) {
+        Log.w(TAG, line)
+        onLog(line)
+    }
 
     fun requestStart(requestedMode: ScannerMode) {
         handler.post {
@@ -183,7 +194,7 @@ internal class BleScanEngine(
                     if (scanning) {
                         scanning = false
                         onStateChange(ScannerState.FAILED, mode)
-                        Log.w(TAG, "adapter off, scanner suspended")
+                        note("adapter off, scanner suspended")
                     }
                 }
                 BluetoothAdapter.STATE_ON -> handler.post {
@@ -202,7 +213,7 @@ internal class BleScanEngine(
             if (demanded && scanning) {
                 val silence = android.os.SystemClock.elapsedRealtime() - lastCallbackAt
                 if (lastCallbackAt != 0L && silence > SILENCE_RESTART_MS) {
-                    Log.w(TAG, "no advertisements for ${silence / 1000}s, restarting scan")
+                    note("no advertisements for ${silence / 1000}s, restarting scan")
                     restartScan("silence watchdog")
                 }
             }
@@ -233,7 +244,7 @@ internal class BleScanEngine(
         val bluetoothAdapter = adapter
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
             onStateChange(ScannerState.FAILED, mode)
-            Log.w(TAG, "cannot scan: adapter ${if (bluetoothAdapter == null) "absent" else "disabled"}")
+            note("cannot scan: adapter ${if (bluetoothAdapter == null) "absent" else "disabled"}")
             return // the STATE_ON receiver resumes us
         }
         val scanner = bluetoothAdapter.bluetoothLeScanner
@@ -300,7 +311,7 @@ internal class BleScanEngine(
             onStateChange(ScannerState.RUNNING, mode)
             Log.i(TAG, "scan started ($reason)")
         } catch (e: Exception) {
-            Log.w(TAG, "startScan threw: $e")
+            note("startScan threw: $e")
             handleScanFailure(-1)
         }
     }
@@ -338,7 +349,7 @@ internal class BleScanEngine(
             }
         }
         consecutiveFailures++
-        Log.w(TAG, "scan failed (code=$errorCode, attempt=$consecutiveFailures), retry in ${backoff}ms")
+        note("scan failed (code=$errorCode, attempt=$consecutiveFailures), retry in ${backoff}ms")
         handler.postDelayed({ startScanIfNeeded("failure retry") }, backoff)
     }
 
