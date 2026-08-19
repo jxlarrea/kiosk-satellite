@@ -17,6 +17,7 @@ import '../../core/manager.dart';
 import '../browser/rotation_fade_script.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'dashboard_list.dart';
 
 /// Home Assistant connection: long-lived-token auth, connection validation,
 /// and the dashboard list used by the dashboard picker.
@@ -1576,8 +1577,8 @@ class HomeAssistantManager extends Manager {
     };
   }
 
-  /// Dashboards via the websocket API (`lovelace/dashboards/list`), plus the
-  /// default `lovelace` which the API does not include.
+  /// Dashboards via the websocket API (`lovelace/dashboards/list`), plus
+  /// the default `lovelace` when the API does not include it.
   Future<List<Map<String, Object?>>?> listDashboards() async {
     if (!configured) return null;
     // Source the list from the page's `hass.panels` — HA's own registry of
@@ -1593,12 +1594,10 @@ class HomeAssistantManager extends Manager {
     try {
       final result = await _wsCommand({'type': 'lovelace/dashboards/list'});
       if (result is! List) return null;
-      return [
-        {'url_path': 'lovelace', 'title': 'Default'},
-        for (final d in result.cast<Map>())
-          if (d['mode'] == 'storage')
-            {'url_path': d['url_path'], 'title': d['title']},
-      ];
+      // YAML-mode dashboards included: they read over `lovelace/config`
+      // the same as storage ones. Keeping only storage dashboards here
+      // dropped every YAML dashboard from the view selects (issue #244).
+      return dashboardsFromWsList(result);
     } catch (e) {
       log.warn(name, 'listDashboards failed: $e');
       return null;
@@ -1696,6 +1695,15 @@ class HomeAssistantManager extends Manager {
       // Reporting it as an error made every remote UI load log 400s.
       if ('$e'.contains('config_not_found')) return const [];
       log.warn(name, 'listDashboardViews($urlPath) failed: $e');
+      // Any other error HA itself answered with (a YAML dashboard whose
+      // file will not parse, an admin-gated dashboard this token cannot
+      // read) condemns only this dashboard, not the connection: report
+      // it as view-less so the crawl moves on, offering the dashboard by
+      // its bare path like a strategy one (the kiosk's logged-in page
+      // user may well render what this token cannot read). The null
+      // failure, which aborts a whole crawl to protect the last known
+      // list (issue #214), is reserved for transport-level trouble.
+      if (e is HaWsError) return const [];
       return null;
     }
   }
@@ -1911,7 +1919,7 @@ class HomeAssistantManager extends Manager {
               if (msg['success'] == true) {
                 completer.complete(msg['result']);
               } else {
-                completer.completeError(StateError('${msg['error']}'));
+                completer.completeError(HaWsError('${msg['error']}'));
               }
           }
         },
@@ -1939,6 +1947,16 @@ class HomeAssistantManager extends Manager {
     _returnHomeTimer?.cancel();
     WidgetsBinding.instance.removeObserver(_brightnessWatch);
   }
+}
+
+/// An error Home Assistant itself answered with (a `result` frame carrying
+/// `success: false`), as opposed to transport failures (socket down,
+/// timeout), which keep their own exception types. The distinction lets
+/// callers tell "HA said no to this request" from "HA is unreachable".
+/// Extends StateError so the message keeps its historical "Bad state:"
+/// rendering for logs and substring checks.
+class HaWsError extends StateError {
+  HaWsError(super.message);
 }
 
 /// A live Home Assistant WebRTC signaling session (issue #124): the socket
