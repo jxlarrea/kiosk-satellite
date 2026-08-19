@@ -1049,7 +1049,7 @@ const SEARCH_EXTRAS = [
   { tab: 'voicesatellite', title: 'Wake word sensitivity',
     desc: 'How easily the wake word triggers.' },
   { tab: 'voicesatellite', title: 'Wake word noise gate',
-    desc: 'Skip wake word scoring while the room is quiet, saving CPU.' },
+    desc: 'Skip local wake word inference while the room is quiet, saving CPU.' },
   { tab: 'voicesatellite', title: 'Stop word interruption',
     desc: 'Say the stop word to interrupt responses.' },
   { tab: 'voicesatellite', title: 'Wake word 1',
@@ -5743,7 +5743,7 @@ async function renderVsControls(root) {
     entityRow('wake_word_sensitivity', 'Wake word sensitivity',
       'How easily the wake word triggers.'),
     entitySwitchRow('noise_gate', 'Wake word noise gate',
-      'Skip wake word scoring while the room is quiet, saving CPU.'),
+      'Skip local wake word inference while the room is quiet, saving CPU.'),
     entitySwitchRow('stop_word', 'Stop word interruption',
       'Say the stop word to interrupt responses.'),
   ].filter(Boolean);

@@ -134,7 +134,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     category: 'Voice Satellite',
     title: 'Wake word noise gate',
     description:
-        'Skip wake word scoring while the room is quiet, saving CPU.',
+        'Skip local wake word inference while the room is quiet, saving CPU.',
     anchorId: 'x:vs_wake',
   ),
   SettingsSearchEntry(
