@@ -5596,12 +5596,30 @@ function vsSliderRow(name, desc, min, max, step, unit, value, onChange) {
   return row;
 }
 
-async function renderVsControls(root) {
+let vsControlsJson = null;
+
+async function renderVsControls(root, { auto = false } = {}) {
   let data = null;
   try {
     const r = await cmd('vsControls');
     if (r.ok) data = r.data;
   } catch (_) {}
+  // Auto refreshes (the poll, a wake state push) follow external changes
+  // only: an unchanged read re-renders nothing, and a hand mid-interaction
+  // is never disturbed by a rebuild underneath it.
+  if (auto) {
+    const j = JSON.stringify(data);
+    if (j === vsControlsJson && root.querySelector('#vsGeneralCard')) return;
+    const focus = document.activeElement;
+    if (focus && ['SELECT', 'INPUT'].includes(focus.tagName)
+        && (focus.closest('#vsGeneralCard') || focus.closest('#vsWakeCard')
+          || focus.closest('#vsAppearanceCard'))) {
+      return;
+    }
+    vsControlsJson = j;
+  } else {
+    vsControlsJson = JSON.stringify(data);
+  }
   // Re-render in place: writes rebuild these three cards only, never the
   // whole settings page. The adopted "Keep listening in the background"
   // row (a declarative setting the General card borrows) must survive the
@@ -5820,6 +5838,15 @@ async function renderVsControls(root) {
   root.prepend(wakeWrap);
   root.prepend(generalWrap);
 }
+
+// External changes (the HA UI, the Voice Satellite panel, a voice command)
+// move the controlled entities without touching this page; while the cards
+// are on screen, follow along. Unchanged reads render nothing.
+setInterval(() => {
+  const card = document.getElementById('vsGeneralCard');
+  if (!card || !card.offsetParent) return;
+  renderVsControls(document.getElementById('tab-voicesatellite'), { auto: true });
+}, 10000);
 
 /* ---- Voice Satellite wake word (read-only, pushed by the VS card) ---- */
 // Not a setting: nothing here is ours to change. The card owns the engine, the
@@ -8075,7 +8102,15 @@ function connectWs() {
     else if (msg.type === 'event' && msg.event === 'screenon') loadScreenshot();
     // The device's own settings screen updates live off the same event; this
     // panel has to as well, or the two disagree about the same device.
-    else if (msg.type === 'wakeword-state') loadWakeWord();
+    else if (msg.type === 'wakeword-state') {
+      loadWakeWord();
+      // A wake state change usually means the controlled entities moved too
+      // (an engine or wake word change re-negotiates); follow instantly.
+      const vsRoot = document.getElementById('tab-voicesatellite');
+      if (vsRoot && document.getElementById('vsGeneralCard')) {
+        renderVsControls(vsRoot, { auto: true });
+      }
+    }
     // The screensaver and the card both dim behind our back.
     else if (msg.type === 'brightness') showBrightness(msg.level);
     else if (msg.type === 'micLevel') renderMicLevel(msg.rms);

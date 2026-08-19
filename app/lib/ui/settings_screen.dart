@@ -6569,10 +6569,29 @@ class VsControlsSection extends StatefulWidget {
 class _VsControlsSectionState extends State<VsControlsSection> {
   Map<String, dynamic>? _data;
 
+  /// External changes (the HA UI, the Voice Satellite panel, a voice
+  /// command) move these entities without touching this page, so the rows
+  /// follow: instantly on a wake state change, and on a slow poll for the
+  /// selects no wake event announces. Unchanged reads are dropped before
+  /// setState so the poll never disturbs the page.
+  Timer? _refresh;
+  StreamSubscription<WakeWordStateChanged>? _wakeSub;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _wakeSub = widget.container.bus.on<WakeWordStateChanged>().listen(
+      (_) => _load(),
+    );
+    _refresh = Timer.periodic(const Duration(seconds: 10), (_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _refresh?.cancel();
+    _wakeSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -6581,11 +6600,11 @@ class _VsControlsSectionState extends State<VsControlsSection> {
       const {},
     );
     if (!mounted) return;
-    setState(() {
-      _data = result.ok && result.data is Map
-          ? (result.data as Map).cast<String, dynamic>()
-          : <String, dynamic>{};
-    });
+    final next = result.ok && result.data is Map
+        ? (result.data as Map).cast<String, dynamic>()
+        : <String, dynamic>{};
+    if (_data != null && jsonEncode(next) == jsonEncode(_data)) return;
+    setState(() => _data = next);
   }
 
   Map<String, dynamic>? _entity(String key) {
