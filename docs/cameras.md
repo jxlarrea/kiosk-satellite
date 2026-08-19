@@ -126,7 +126,7 @@ Playback is silent by default. **Play sound for a single camera** (Settings,
 then Camera Streams, then Playback) plays a camera's audio when it is the
 only one on screen: a view with one camera, or the camera focused with a tap
 in a larger view. Made for the baby-monitor case, where the picture matters
-less than the sound (issue #235).
+less than the sound.
 
 Grids with several cameras always stay silent, whatever the setting, since
 several microphones playing over each other is noise rather than audio. The
@@ -155,7 +155,7 @@ Kiosk Satellite asks for H.264 (and VP8, VP9, AV1) and deliberately leaves
 H.265 out of the request. Android WebViews advertise H.265 support whether or
 not the device can decode it: the stream connects, video data arrives, and not
 a single frame is ever decoded, which looks like a permanently blank camera
-with nothing in the logs (issue #160).
+with nothing in the logs.
 
 With H.265 out of the way, a Go2RTC server that has `ffmpeg` available
 transcodes an H.265 camera to H.264 on its own and the camera plays. A server

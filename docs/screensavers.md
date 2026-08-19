@@ -58,14 +58,14 @@ follow the device language.
 | Show date | Digital only, on by default. |
 | Clock size | 50 to 300 percent. |
 | Clock color | Digital only; Flip and Roller have their own digit and card or background colors. |
-| Background color | Digital only; the solid color behind the clock, black by default. White here with a black clock color gives the inverted face e-ink panels read best (issue #173). |
+| Background color | Digital only; the solid color behind the clock, black by default. White here with a black clock color gives the inverted face e-ink panels read best. |
 | Background photo | A photo behind the clock instead of the solid color, any face. |
 
 The **Background photo** is picked on the device (the picker copies it
 into app storage), or set remotely: the remote admin and the MQTT
 **Clock background** text entity write a device file path into the same
 setting, applied live even while the clock is on screen, and an empty
-value clears it (issue #150). The photo gets the same fill treatment as
+value clears it. The photo gets the same fill treatment as
 the photo modes, with a scrim so the clock stays readable.
 
 ### Home Assistant Media
@@ -102,7 +102,7 @@ photos side by side. It has its own page: [Immich](immich.md).
 Any web page, full screen. The page loads as a top-level page in its own
 view, not embedded in a frame, and shares the app's cookie jar, so
 private URLs that rely on session cookies (a DAKboard private URL, say)
-work (issue #118). Tap-to-dismiss and pixel shift are injected into the
+work. Tap-to-dismiss and pixel shift are injected into the
 page, so it behaves like every other mode. A page that fails to load, or
 whose server answers with an error, is retried every ten seconds instead
 of parking an error page for the night.
