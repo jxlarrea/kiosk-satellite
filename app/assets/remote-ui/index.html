@@ -5733,19 +5733,26 @@ async function renderVsControls(root) {
   // Wake Word: the card's engine and wake word selects, above the app's
   // own detection card.
   const [wakeWrap, wakeCard] = section('vsWakeCard', 'Wake Word');
+  // With detection handed to the Home Assistant server or off entirely,
+  // the on-device rows (models, sensitivity, gate, stop word) configure
+  // nothing; only the engine select stays.
+  const engineState = entity('wake_word_detection')?.state;
+  const onDevice = engineState !== 'Home Assistant' && engineState !== 'Disabled';
   const wakeRows = [
     entityRow('wake_word_detection', 'Wake word engine',
       'Where detection runs and which engine listens.'),
-    entityRow('wake_word_model', 'Wake word 1',
-      'The word that starts a voice command.'),
-    entityRow('wake_word_model_2', 'Wake word 2',
-      'A second wake word, answered by Assist pipeline 2.'),
-    entityRow('wake_word_sensitivity', 'Wake word sensitivity',
-      'How easily the wake word triggers.'),
-    entitySwitchRow('noise_gate', 'Wake word noise gate',
-      'Skip local wake word inference while the room is quiet, saving CPU.'),
-    entitySwitchRow('stop_word', 'Stop word interruption',
-      'Say the stop word to interrupt responses.'),
+    ...(onDevice ? [
+      entityRow('wake_word_model', 'Wake word 1',
+        'The word that starts a voice command.'),
+      entityRow('wake_word_model_2', 'Wake word 2',
+        'A second wake word, answered by Assist pipeline 2.'),
+      entityRow('wake_word_sensitivity', 'Wake word sensitivity',
+        'How easily the wake word triggers.'),
+      entitySwitchRow('noise_gate', 'Wake word noise gate',
+        'Skip local wake word inference while the room is quiet, saving CPU.'),
+      entitySwitchRow('stop_word', 'Stop word interruption',
+        'Say the stop word to interrupt responses.'),
+    ] : []),
   ].filter(Boolean);
   if (wakeRows.length) {
     for (const row of wakeRows) wakeCard.appendChild(row);

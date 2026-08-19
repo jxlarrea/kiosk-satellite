@@ -6868,37 +6868,46 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         ),
     ];
 
+    // With detection handed to the Home Assistant server or off entirely,
+    // the on-device rows (models, sensitivity, gate, stop word) configure
+    // nothing; only the engine select stays.
+    final engineState = '${_entity('wake_word_detection')?['state'] ?? ''}';
+    final onDevice =
+        engineState != 'Home Assistant' && engineState != 'Disabled';
     final wake = <Widget>[
       ?_entityRow(
         'wake_word_detection',
         'Wake word engine',
         'Where detection runs and which engine listens.',
       ),
-      ?_entityRow(
-        'wake_word_model',
-        'Wake word 1',
-        'The word that starts a voice command.',
-      ),
-      ?_entityRow(
-        'wake_word_model_2',
-        'Wake word 2',
-        'A second wake word, answered by Assist pipeline 2.',
-      ),
-      ?_entityRow(
-        'wake_word_sensitivity',
-        'Wake word sensitivity',
-        'How easily the wake word triggers.',
-      ),
-      ?_entitySwitchRow(
-        'noise_gate',
-        'Wake word noise gate',
-        'Skip local wake word inference while the room is quiet, saving CPU.',
-      ),
-      ?_entitySwitchRow(
-        'stop_word',
-        'Stop word interruption',
-        'Say the stop word to interrupt responses.',
-      ),
+      if (onDevice) ...[
+        ?_entityRow(
+          'wake_word_model',
+          'Wake word 1',
+          'The word that starts a voice command.',
+        ),
+        ?_entityRow(
+          'wake_word_model_2',
+          'Wake word 2',
+          'A second wake word, answered by Assist pipeline 2.',
+        ),
+        ?_entityRow(
+          'wake_word_sensitivity',
+          'Wake word sensitivity',
+          'How easily the wake word triggers.',
+        ),
+        ?_entitySwitchRow(
+          'noise_gate',
+          'Wake word noise gate',
+          'Skip local wake word inference while the room is quiet, '
+              'saving CPU.',
+        ),
+        ?_entitySwitchRow(
+          'stop_word',
+          'Stop word interruption',
+          'Say the stop word to interrupt responses.',
+        ),
+      ],
     ];
 
     final appearance = <Widget>[
