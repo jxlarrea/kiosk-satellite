@@ -15,6 +15,7 @@ import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import 'dashboard_views.dart' as shared;
 import '../settings/settings_manager.dart';
+import 'interaction_stamp.dart';
 import 'mqtt_link.dart';
 
 /// Ready-made Home Assistant entities over MQTT discovery (issue #11).
@@ -155,6 +156,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   double? _lastLuxPublished;
   DateTime _lastLuxPublishedAt = DateTime.fromMillisecondsSinceEpoch(0);
 
+  /// The Last interaction sensor's stamp (issue #241). Retained on the
+  /// broker, so the value survives app restarts the way the other
+  /// retained states do.
+  late final _interaction = InteractionStamp((stamp) =>
+      _publish('$_base/last_interaction/state', stamp.toIso8601String()));
+
   String get _base => 'kiosksatellite/$_deviceId';
   String get _availabilityTopic => '$_base/availability';
 
@@ -268,6 +275,17 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       _lastLuxPublishedAt = DateTime.now();
       _publish('$_base/illuminance/state', e.lux.round().toString());
     }));
+    // Touches and spoken turns stamp the Last interaction sensor (issue
+    // #241), so automations can tell an idle kiosk from one in use. Motion
+    // deliberately does not count: someone walking past is exactly what an
+    // idle automation wants to keep ignoring.
+    _subs.add(bus.on<ActivityDetected>().listen((e) {
+      if (e.source == 'touch') _interaction.mark();
+    }));
+    _subs.add(bus.on<WakeWordDetected>().listen((_) => _interaction.mark()));
+    _subs.add(bus.on<VoiceInteractionChanged>().listen((e) {
+      if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
+    }));
 
     await _refreshCameraViews();
     try {
@@ -350,6 +368,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     for (final s in _subs) {
       await s.cancel();
     }
+    _interaction.dispose();
     _reconnectDebounce?.cancel();
     await _disconnect(clearDiscovery: false);
   }
@@ -1289,6 +1308,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // _disconnect covers "alive until" for everything but a hard death.
     _publish(
         '$_base/last_seen/state', DateTime.now().toUtc().toIso8601String());
+    // Interactions stamped while the link was down never left the device;
+    // the freshest one this run has seen beats the broker's retained copy.
+    final lastInteraction = _interaction.latest;
+    if (lastInteraction != null) {
+      _publish('$_base/last_interaction/state',
+          lastInteraction.toIso8601String());
+    }
     final ambient = await commands.execute('getAmbientDisplay', const {});
     _publishScreenAvailability(ambient: ambient.ok && ambient.data == true);
     final on = await commands.execute('isScreenOn', const {});
@@ -1548,6 +1574,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         '$_prefix/sensor/ks_$_deviceId/ram_free/config',
         '$_prefix/sensor/ks_$_deviceId/ram_total/config',
         '$_prefix/sensor/ks_$_deviceId/last_seen/config',
+        '$_prefix/sensor/ks_$_deviceId/last_interaction/config',
         '$_prefix/binary_sensor/ks_$_deviceId/connectivity/config',
         '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
         '$_prefix/sensor/ks_$_deviceId/btproxy_nearby/config',
@@ -1852,6 +1879,18 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'json_attributes_topic': '$_base/next_alarm/attributes',
         'device_class': 'timestamp',
         'icon': 'mdi:alarm',
+      },
+      // When the user last touched the screen or spoke to the device
+      // (issue #241): an idle kiosk is one whose stamp is old, which a
+      // template can read directly (now() minus the state) instead of the
+      // app guessing an idle threshold for everyone. Throttled to one
+      // publish a minute under a continuous stream of touches, with the
+      // final touch always stamped accurately.
+      '$_prefix/sensor/ks_$_deviceId/last_interaction/config': {
+        ...common('last_interaction', 'Last interaction'),
+        'state_topic': '$_base/last_interaction/state',
+        'device_class': 'timestamp',
+        'icon': 'mdi:gesture-tap',
       },
       '$_prefix/sensor/ks_$_deviceId/admin_url/config': {
         ...common('admin_url', 'Remote admin'),

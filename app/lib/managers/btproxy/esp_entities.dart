@@ -8,6 +8,7 @@ import '../../core/event_bus.dart';
 import '../../core/events.dart';
 import '../../core/logging.dart';
 import '../mqtt/dashboard_views.dart';
+import '../mqtt/interaction_stamp.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -57,6 +58,15 @@ class EspEntitySurface {
   /// start moment genuinely moved (same 5-second tolerance as MQTT:
   /// second-to-second jitter in "now minus uptime" is not a restart).
   final Map<String, DateTime?> _lastAnchor = {};
+
+  /// The Last interaction sensor's stamp (issue #241). Persisted like the
+  /// last lux reading: with no broker to retain it, the store is what keeps
+  /// a restarted device from reading idle-since-boot.
+  late final _interaction = InteractionStamp((stamp) {
+    final iso = stamp.toIso8601String();
+    _send('last_interaction', iso);
+    _settings.setInternal('esphome_last_interaction', iso);
+  });
 
   /// Settings-backed switches: objectId -> (name, icon, definition).
   /// Mirrors the MQTT _settingSwitches map, entity ids and all.
@@ -298,6 +308,16 @@ class EspEntitySurface {
         'icon': 'mdi:alarm',
         'deviceClass': 'timestamp',
       },
+      // When the user last touched the screen or spoke to the device
+      // (issue #241), so automations can tell an idle kiosk from one in
+      // use with plain timestamp arithmetic.
+      {
+        'type': 'text_sensor',
+        'objectId': 'last_interaction',
+        'name': 'Last interaction',
+        'icon': 'mdi:gesture-tap',
+        'deviceClass': 'timestamp',
+      },
       // ── Config ───────────────────────────────────────────────────────
       for (final e in _settingNumbers.entries)
         {
@@ -462,6 +482,16 @@ class EspEntitySurface {
         _send('motion', false);
       });
     }));
+    // Touches and spoken turns stamp the Last interaction sensor (issue
+    // #241). Motion deliberately does not count: someone walking past is
+    // exactly what an idle automation wants to keep ignoring.
+    _subs.add(bus.on<ActivityDetected>().listen((e) {
+      if (e.source == 'touch') _interaction.mark();
+    }));
+    _subs.add(bus.on<WakeWordDetected>().listen((_) => _interaction.mark()));
+    _subs.add(bus.on<VoiceInteractionChanged>().listen((e) {
+      if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
+    }));
     _subs.add(bus.on<SettingChanged>().listen(_onSettingChanged));
     _poll = Timer.periodic(_pollInterval, (_) => _refresh());
     _sendInitial();
@@ -478,6 +508,7 @@ class EspEntitySurface {
     _poll = null;
     _motionOff?.cancel();
     _motionOff = null;
+    _interaction.dispose();
   }
 
   /// A command from Home Assistant landed (via the native hub). State
@@ -696,6 +727,14 @@ class EspEntitySurface {
     // connectivity is by definition on.
     await _send('last_seen', DateTime.now().toUtc().toIso8601String());
     await _send('connectivity', true);
+    // The freshest stamp this run has seen, else the persisted one from
+    // before the restart; without either the sensor reads unknown until
+    // the first real touch.
+    final lastInteraction = _interaction.latest?.toIso8601String() ??
+        _settings.internal('esphome_last_interaction');
+    if (lastInteraction.isNotEmpty) {
+      await _send('last_interaction', lastInteraction);
+    }
     final href = await commands.execute('evalJs', {'code': 'location.href'});
     // WebView eval results come back JSON-encoded; a string wears quotes.
     var url = href.ok ? '${href.data ?? ''}' : '';

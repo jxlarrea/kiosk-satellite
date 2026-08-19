@@ -135,7 +135,8 @@ void main() {
           'close_camera_view', 'active_camera_view', 'dashboard_view',
           'update', 'device_camera', 'take_snapshot', 'last_snapshot',
           'take_screenshot', 'last_screenshot', 'illuminance', 'motion',
-          'next_alarm', 'screensaver_brightness_level', 'assistant_volume',
+          'next_alarm', 'last_interaction',
+          'screensaver_brightness_level', 'assistant_volume',
           'media_volume', 'clock_background', 'kiosk', 'lockdown',
           'ha_kiosk', 'keep_screen_on', 'remote', 'screensaver_brightness',
           'screensaver', 'camera_enabled', 'screensaver_motion',
@@ -270,5 +271,35 @@ void main() {
     bus.publish(const MotionDetected());
     await Future<void>.delayed(const Duration(milliseconds: 30));
     expect(pushed, contains(('motion', true)));
+  });
+
+  test('touches and spoken turns stamp Last interaction, ambient noise '
+      'does not', () async {
+    await surface.build();
+    await attach();
+    pushed.clear();
+    // None of these count as the user interacting.
+    bus.publish(const MotionDetected());
+    bus.publish(const ActivityDetected(source: 'motion'));
+    bus.publish(const VoiceInteractionChanged(active: true, reason: 'media'));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(pushed.any((p) => p.$1 == 'last_interaction'), isFalse);
+    bus.publish(const ActivityDetected(source: 'touch'));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    final stamps = [for (final p in pushed) if (p.$1 == 'last_interaction') p];
+    expect(stamps, hasLength(1));
+    expect(DateTime.parse('${stamps.single.$2}'), isA<DateTime>());
+    // Persisted so a restart can reseed it, broker-retention style.
+    expect(settings.internal('esphome_last_interaction'),
+        '${stamps.single.$2}');
+  });
+
+  test('the persisted stamp reseeds Last interaction at attach', () async {
+    await settings.setInternal(
+        'esphome_last_interaction', '2026-08-18T20:00:00.000Z');
+    await surface.build();
+    await attach();
+    final byId = {for (final (id, value) in pushed) id: value};
+    expect(byId['last_interaction'], '2026-08-18T20:00:00.000Z');
   });
 }
