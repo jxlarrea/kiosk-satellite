@@ -77,6 +77,74 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
+    title: 'Auto start',
+    description: 'Start the voice assistant when the dashboard loads.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Assist pipeline 1',
+    description: 'The Assist pipeline voice commands run through.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Assist pipeline 2',
+    description: 'The pipeline used when the second wake word triggers.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Wake word engine',
+    description: 'Where detection runs and which engine listens.',
+    anchorId: 'x:vs_wake',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Wake word 1',
+    description: 'The word that starts a voice command.',
+    anchorId: 'x:vs_wake',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Wake word 2',
+    description: 'A second wake word, answered by Assist pipeline 2.',
+    anchorId: 'x:vs_wake',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Skin',
+    description: 'The look of the voice assistant overlay.',
+    anchorId: 'x:vs_appearance',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Theme mode',
+    description: 'Light or dark rendering of the overlay.',
+    anchorId: 'x:vs_appearance',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Reactive activity bar',
+    description: 'The activity bar moves with the sound.',
+    anchorId: 'x:vs_appearance',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Reactive bar update rate',
+    description:
+        'How often the activity bar redraws. Higher is smoother and uses '
+        'more CPU.',
+    anchorId: 'x:vs_appearance',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Text scale',
+    description: 'The size of the overlay text.',
+    anchorId: 'x:vs_appearance',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
     title: 'Wake Word Tester',
     description: 'A live look at what the engine hears and scores.',
     anchorId: 'x:wake_word_tester',

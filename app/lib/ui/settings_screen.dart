@@ -910,17 +910,11 @@ class _CategoryContentState extends State<_CategoryContent> {
 
   Future<bool>? _vsDetected;
 
-  /// Held rather than started in build(): a fresh Future on every rebuild
-  /// sends the row back to "…" and re-runs the page query, so flipping any
-  /// switch on this page made the card above it blink.
-  Future<String>? _satellite;
-
   @override
   void initState() {
     super.initState();
     if (widget.category == 'Voice Satellite') {
       _vsDetected = widget.container.homeAssistant.detectVoiceSatellite();
-      _satellite = _assignedSatellite(widget.container);
     }
     // These panes render differently on a camera-less device (disabled
     // switch, hidden rows); rebuild once the async probe has its answer.
@@ -2003,18 +1997,6 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// The Voice Satellite page: gated on the proven HA connection like the
   /// rest of the HA-derived configuration, then on the integration actually
   /// being installed.
-  /// The assist_satellite entity this kiosk identifies as. The page's own
-  /// choice wins (localStorage, changeable in the Voice Satellite panel);
-  /// the wizard's stored pick is the fallback before the page has booted.
-  Future<String> _assignedSatellite(AppContainer container) async {
-    final result = await container.commands.execute('evalJs', {
-      'code': "localStorage.getItem('vs-satellite-entity')",
-    });
-    final data = result.ok ? result.data : null;
-    if (data is String && data.isNotEmpty && data != 'null') return data;
-    return container.settings.get(haSatelliteEntity);
-  }
-
   List<Widget> _vsContent(AppContainer container) {
     if (!container.homeAssistant.connectionOk.value) {
       return const [
@@ -2154,48 +2136,27 @@ class _CategoryContentState extends State<_CategoryContent> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              FutureBuilder<String>(
-                future: _satellite,
-                builder: (context, snap) => SearchLandingTarget(
-                  id: 'x:assigned_satellite',
-                  child: SettingsCard(
-                    children: [
-                      ListTile(
-                        title: const Text('Assigned satellite'),
-                        subtitle: const Text(
-                          'The assist_satellite entity this kiosk identifies '
-                          'as in Home Assistant.',
+              VsControlsSection(
+                container: container,
+                detectionCard: SettingsCard(
+                  children: [
+                    for (final def in _defsFor('Voice Satellite'))
+                      if (def.section == null &&
+                          container.settings.visible(def))
+                        SettingTile(
+                          container: container,
+                          def: def,
+                          onChanged: () => setState(() {}),
                         ),
-                        trailing: Text(
-                          snap.connectionState != ConnectionState.done
-                              ? '…'
-                              : ((snap.data ?? '').isEmpty
-                                    ? 'None assigned'
-                                    : snap.data!),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
+                    // Not a setting, but a row on the same card, so it sits
+                    // behind the same line as the rest. Gone with the rest
+                    // when detection is off: there is no state to report
+                    // about a thing that is not running, and "it is off" is
+                    // already said by the switch above.
+                    if (container.settings.get(wakeWordEnabled))
+                      WakeWordStatusTile(container: container),
+                  ],
                 ),
-              ),
-              SettingsCard(
-                children: [
-                  for (final def in _defsFor('Voice Satellite'))
-                    if (def.section == null && container.settings.visible(def))
-                      SettingTile(
-                        container: container,
-                        def: def,
-                        onChanged: () => setState(() {}),
-                      ),
-                  // Not a setting, but a row on the same card, so it sits
-                  // behind the same line as the rest. Gone with the rest
-                  // when detection is off: there is no state to report
-                  // about a thing that is not running, and "it is off" is
-                  // already said by the switch above.
-                  if (container.settings.get(wakeWordEnabled))
-                    WakeWordStatusTile(container: container),
-                ],
               ),
               // The tester: a live look at what the engine hears and scores,
               // for diagnosing "the wake word isn't triggering".
@@ -6556,5 +6517,406 @@ class SettingTile extends StatelessWidget {
       await c.settings.setFromJson(def.key, value);
       onChanged();
     }
+  }
+}
+
+/// The Voice Satellite control surface: the settings that live in Home
+/// Assistant (the satellite binding and its sibling select entities) and
+/// in the page itself (auto start and appearance), editable from the kiosk
+/// and synced back. One snapshot read (the vsControls command) serves all
+/// three cards; entity writes re-read after a beat so dependent option
+/// lists (wake word models per engine, pipeline 2 availability) follow.
+class VsControlsSection extends StatefulWidget {
+  const VsControlsSection({
+    super.key,
+    required this.container,
+    required this.detectionCard,
+  });
+
+  final AppContainer container;
+
+  /// The app's own wake word detection card, rendered under the Wake Word
+  /// heading so the whole topic reads as one group.
+  final Widget detectionCard;
+
+  @override
+  State<VsControlsSection> createState() => _VsControlsSectionState();
+}
+
+class _VsControlsSectionState extends State<VsControlsSection> {
+  Map<String, dynamic>? _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final result = await widget.container.commands.execute(
+      'vsControls',
+      const {},
+    );
+    if (!mounted) return;
+    setState(() {
+      _data = result.ok && result.data is Map
+          ? (result.data as Map).cast<String, dynamic>()
+          : <String, dynamic>{};
+    });
+  }
+
+  Map<String, dynamic>? _entity(String key) {
+    final entities = _data?['entities'];
+    final entity = entities is Map ? entities[key] : null;
+    return entity is Map ? entity.cast<String, dynamic>() : null;
+  }
+
+  Map<String, dynamic>? get _browserConfig {
+    final browser = _data?['browser'];
+    final config = browser is Map ? browser['config'] : null;
+    return config is Map ? config.cast<String, dynamic>() : null;
+  }
+
+  Future<void> _selectOption(String key, String option) async {
+    final entity = _entity(key);
+    if (entity == null) return;
+    setState(() => entity['state'] = option);
+    await widget.container.commands.execute('haCallService', {
+      'domain': 'select',
+      'service': 'select_option',
+      'entity_id': entity['entity_id'],
+      'data': {'option': option},
+    });
+    // Engine and wake word picks reshape the sibling selects; re-read
+    // once Home Assistant has settled.
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    if (mounted) await _load();
+  }
+
+  Future<void> _applyBrowser(Map<String, Object?> partial) async {
+    final config = _browserConfig;
+    if (config == null) return;
+    setState(() => config.addAll(partial));
+    final result = await widget.container.commands.execute(
+      'vsSetBrowserSettings',
+      {'settings': partial},
+    );
+    if (!mounted) return;
+    final updated = result.ok && result.data is Map
+        ? (result.data as Map)['config']
+        : null;
+    if (updated is Map) {
+      setState(
+        () => (_data!['browser'] as Map)['config'] = updated
+            .cast<String, dynamic>(),
+      );
+    }
+  }
+
+  Future<void> _setSatellite(String entity) async {
+    setState(() => _data?['satellite'] = entity);
+    await widget.container.commands.execute('vsSetSatellite', {
+      'entity_id': entity,
+    });
+    // The page reloads to renegotiate; give it a moment before re-reading
+    // so the browser half answers for the new satellite.
+    await Future<void>.delayed(const Duration(seconds: 3));
+    if (mounted) await _load();
+  }
+
+  Widget? _entityRow(String key, String title, String description) {
+    final entity = _entity(key);
+    if (entity == null) return null;
+    final options = [
+      for (final o in (entity['options'] as List? ?? const [])) '$o',
+    ];
+    final state = '${entity['state'] ?? ''}';
+    if (entity['available'] != true || options.isEmpty) {
+      return ListTile(
+        title: Text(title),
+        subtitle: Text(description),
+        trailing: Text(
+          'Not available',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+    return DropdownRow<String>(
+      title: title,
+      description: description,
+      value: options.contains(state) ? state : null,
+      options: [for (final o in options) (o, o)],
+      onChanged: (v) {
+        if (v != null && v != state) _selectOption(key, v);
+      },
+    );
+  }
+
+  Widget _satelliteRow(BuildContext context) {
+    const title = 'Assigned satellite';
+    const description =
+        'The assist_satellite entity this kiosk identifies as in Home '
+        'Assistant. Changing it reloads the dashboard.';
+    final list = _data?['satellites'];
+    final satellites = [
+      for (final s in (list is List ? list : const []))
+        if (s is Map) ('${s['entity_id']}', '${s['name']}'),
+    ];
+    final current = '${_data?['satellite'] ?? ''}';
+    if (satellites.isEmpty) {
+      return ListTile(
+        title: const Text(title),
+        subtitle: const Text(description),
+        trailing: Text(
+          current.isEmpty ? 'None assigned' : current,
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+    final options = [
+      ...satellites,
+      if (current.isNotEmpty && !satellites.any((s) => s.$1 == current))
+        (current, current),
+    ];
+    return DropdownRow<String>(
+      title: title,
+      description: description,
+      value: current.isEmpty ? null : current,
+      options: options,
+      onChanged: (v) {
+        if (v != null && v != current) _setSatellite(v);
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = _data;
+    if (data == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SettingsCard(
+            children: [
+              ListTile(
+                title: Text('Loading Voice Satellite controls…'),
+                trailing: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.4),
+                ),
+              ),
+            ],
+          ),
+          const SectionHeading('Wake Word'),
+          widget.detectionCard,
+        ],
+      );
+    }
+
+    final browser = _browserConfig;
+    const browserHint =
+        'Available while the kiosk is showing your Home Assistant '
+        'dashboard.';
+
+    final general = <Widget>[
+      _satelliteRow(context),
+      if (browser != null)
+        SwitchListTile(
+          title: const Text('Auto start'),
+          subtitle: const Text(
+            'Start the voice assistant when the dashboard loads.',
+          ),
+          value: browser['auto_start'] != false,
+          onChanged: (v) => _applyBrowser({'auto_start': v}),
+        ),
+      ?_entityRow(
+        'pipeline',
+        'Assist pipeline 1',
+        'The Assist pipeline voice commands run through.',
+      ),
+      ?_entityRow(
+        'pipeline_2',
+        'Assist pipeline 2',
+        'The pipeline used when the second wake word triggers.',
+      ),
+    ];
+
+    final wake = <Widget>[
+      ?_entityRow(
+        'wake_word_detection',
+        'Wake word engine',
+        'Where detection runs and which engine listens.',
+      ),
+      ?_entityRow(
+        'wake_word_model',
+        'Wake word 1',
+        'The word that starts a voice command.',
+      ),
+      ?_entityRow(
+        'wake_word_model_2',
+        'Wake word 2',
+        'A second wake word, answered by Assist pipeline 2.',
+      ),
+    ];
+
+    final appearance = <Widget>[
+      if (browser == null)
+        const HintRow(browserHint)
+      else ...[
+        DropdownRow<String>(
+          title: 'Skin',
+          description: 'The look of the voice assistant overlay.',
+          value: '${browser['skin'] ?? 'default'}',
+          options: [
+            for (final s in ((_data?['browser'] as Map?)?['skins'] as List? ??
+                const []))
+              if (s is Map) ('${s['value']}', '${s['label']}'),
+          ],
+          onChanged: (v) {
+            if (v != null) _applyBrowser({'skin': v});
+          },
+        ),
+        DropdownRow<String>(
+          title: 'Theme mode',
+          description: 'Light or dark rendering of the overlay.',
+          value: '${browser['theme_mode'] ?? 'auto'}',
+          options: const [('auto', 'Auto'), ('light', 'Light'),
+              ('dark', 'Dark')],
+          onChanged: (v) {
+            if (v != null) _applyBrowser({'theme_mode': v});
+          },
+        ),
+        SwitchListTile(
+          title: const Text('Reactive activity bar'),
+          subtitle: const Text('The activity bar moves with the sound.'),
+          value: browser['reactive_bar'] != false,
+          onChanged: (v) => _applyBrowser({'reactive_bar': v}),
+        ),
+        _VsSliderRow(
+          title: 'Reactive bar update rate',
+          description:
+              'How often the activity bar redraws. Higher is smoother and '
+              'uses more CPU.',
+          min: 5,
+          max: 60,
+          step: 1,
+          unit: ' fps',
+          value:
+              (1000 /
+                      ((browser['reactive_bar_update_interval_ms'] as num?) ??
+                          33))
+                  .roundToDouble()
+                  .clamp(5, 60),
+          onChanged: (fps) => _applyBrowser({
+            'reactive_bar_update_interval_ms': (1000 / fps).round(),
+          }),
+        ),
+        _VsSliderRow(
+          title: 'Text scale',
+          description: 'The size of the overlay text.',
+          min: 50,
+          max: 200,
+          step: 5,
+          unit: '%',
+          value: ((browser['text_scale'] as num?) ?? 100)
+              .toDouble()
+              .clamp(50, 200),
+          onChanged: (v) => _applyBrowser({'text_scale': v.round()}),
+        ),
+      ],
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SectionHeading('General'),
+        SearchLandingTarget(
+          id: 'x:assigned_satellite',
+          child: SettingsCard(children: general),
+        ),
+        const SectionHeading('Wake Word'),
+        SearchLandingTarget(
+          id: 'x:vs_wake',
+          child: SettingsCard(
+            children: wake.isEmpty
+                ? const [
+                    HintRow('Assign a satellite to control these settings.'),
+                  ]
+                : wake,
+          ),
+        ),
+        widget.detectionCard,
+        const SectionHeading('Appearance'),
+        SearchLandingTarget(
+          id: 'x:vs_appearance',
+          child: SettingsCard(children: appearance),
+        ),
+      ],
+    );
+  }
+}
+
+/// A hand-built slider row for the Voice Satellite appearance card, where
+/// the value is the page's rather than a declared setting's. Same layout
+/// as the declarative slider rows.
+class _VsSliderRow extends StatefulWidget {
+  const _VsSliderRow({
+    required this.title,
+    required this.description,
+    required this.min,
+    required this.max,
+    required this.step,
+    required this.unit,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String description;
+  final double min;
+  final double max;
+  final double step;
+  final String unit;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  State<_VsSliderRow> createState() => _VsSliderRowState();
+}
+
+class _VsSliderRowState extends State<_VsSliderRow> {
+  /// Value under the finger mid-drag; null reads the passed value.
+  double? _drag;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = (_drag ?? widget.value).clamp(widget.min, widget.max);
+    return Column(
+      children: [
+        ListTile(
+          title: Text(widget.title),
+          subtitle: Text(widget.description),
+          trailing: Text(
+            '${value.round()}${widget.unit}',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Slider(
+            value: value,
+            min: widget.min,
+            max: widget.max,
+            divisions: ((widget.max - widget.min) / widget.step).round(),
+            onChanged: (v) => setState(() => _drag = v),
+            onChangeEnd: (v) {
+              _drag = null;
+              widget.onChanged(v);
+            },
+          ),
+        ),
+      ],
+    );
   }
 }

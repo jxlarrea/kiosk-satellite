@@ -2333,8 +2333,8 @@ const wakeWordEnabled = SettingDef<bool>(
   defaultValue: true,
   title: 'Wake word detection',
   description:
-      'Master switch. Engine and models are inherited from Voice Satellite '
-      'in Home Assistant, so there is nothing to configure here.',
+      'Master switch. The engine and wake words follow the Wake Word '
+      'settings above.',
   category: 'Voice Satellite',
 );
 

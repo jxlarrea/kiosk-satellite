@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- The Voice Satellite settings page can now change the integration's settings, not just read them, on both the device and the remote admin. A General card carries the assigned satellite (now a picker that rebinds the kiosk and reloads the dashboard), Auto start, and both Assist pipelines; a Wake Word card carries the wake word engine and both wake words; an Appearance card carries the skin, theme mode, reactive activity bar, its update rate (as frames per second instead of milliseconds) and the text scale. The Home Assistant half writes through the satellite's own select entities, so the change lands exactly where the Voice Satellite panel would put it; the browser half goes through a new page hook that persists to the panel profile in Home Assistant and applies live, so a skin change repaints without a reload and survives one. Needs a Voice Satellite version that ships the hook for the browser-side rows; the entity rows work with any version.
+
 ## v2026.8.58 - 2026-08-18
 
 ### Fixed

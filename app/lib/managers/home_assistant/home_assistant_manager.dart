@@ -405,6 +405,82 @@ class HomeAssistantManager extends Manager {
                 : CommandResult.ok(node);
           },
         ),
+      )
+      ..register(
+        Command(
+          name: 'vsControls',
+          description:
+              'Everything the Voice Satellite settings page controls: the '
+              'satellite binding, its sibling select entities (pipelines, '
+              'wake word engine and models) with current values and '
+              'options, and the browser-local appearance settings from the '
+              'page.',
+          handler: (_) async {
+            if (!configured) {
+              return const CommandResult.fail('Home Assistant not configured');
+            }
+            return CommandResult.ok(await vsControlsSnapshot());
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'vsSetBrowserSettings',
+          description:
+              'Change the browser-local Voice Satellite settings (auto '
+              'start, skin, theme mode, reactive bar, text scale) through '
+              'the page hook, which persists them to the Home Assistant '
+              'panel profile and applies them live.',
+          params: const {'settings': 'partial config object'},
+          handler: (p) async {
+            final settings = p['settings'];
+            if (settings is! Map || settings.isEmpty) {
+              return const CommandResult.fail('settings object required');
+            }
+            final code =
+                'JSON.stringify(window.__vsExternalSettings '
+                '? window.__vsExternalSettings.apply(${jsonEncode(settings)}) '
+                ': null)';
+            final result = await commands.execute('evalJs', {'code': code});
+            final data = result.ok ? result.data : null;
+            if (data is String && data.isNotEmpty && data != 'null') {
+              return CommandResult.ok(jsonDecode(data));
+            }
+            return const CommandResult.fail(
+              'the page has no Voice Satellite settings hook — the kiosk '
+              'must be showing Home Assistant with a current Voice '
+              'Satellite version',
+            );
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'vsSetSatellite',
+          description:
+              'Rebind this kiosk to another assist_satellite entity: '
+              'rewrites the page binding, keeps the app fallback in step, '
+              'and reloads the page so Voice Satellite renegotiates.',
+          params: const {'entity_id': 'the assist_satellite entity'},
+          handler: (p) async {
+            final entity = '${p['entity_id'] ?? ''}'.trim();
+            if (!entity.startsWith('assist_satellite.')) {
+              return const CommandResult.fail(
+                'an assist_satellite entity is required',
+              );
+            }
+            await commands.execute('evalJs', {
+              'code':
+                  "localStorage.setItem('vs-satellite-entity', "
+                  '${jsonEncode(entity)})',
+            });
+            await _settings.setFromJson(defs.haSatelliteEntity.key, entity);
+            // The engine binds the satellite at start; a reload is the
+            // clean renegotiation (profile hydration included).
+            await commands.execute('reload', const {});
+            return const CommandResult.ok();
+          },
+        ),
       );
 
     // Day/night theme. Re-assert on every full page load (login, logout,
@@ -1284,6 +1360,129 @@ class HomeAssistantManager extends Manager {
       log.warn(name, 'listVoiceSatellites failed: $e');
       return null;
     }
+  }
+
+  /// The Voice Satellite control surface in one read: the satellite this
+  /// kiosk identifies as, the satellites to choose from, the satellite's
+  /// sibling select entities keyed by their stable translation_key
+  /// (pipeline, pipeline_2, wake_word_detection, wake_word_model,
+  /// wake_word_model_2) with current value and options, and the
+  /// browser-local settings from the page hook. Every part degrades to
+  /// null/empty on its own so the settings page can say precisely what is
+  /// missing (no satellite, no page hook) instead of failing whole.
+  Future<Map<String, Object?>> vsControlsSnapshot() async {
+    // The page's own binding wins (localStorage, changeable in the Voice
+    // Satellite panel); the wizard's stored pick is the fallback.
+    var satellite = '';
+    final stored = await commands.execute('evalJs', {
+      'code': "localStorage.getItem('vs-satellite-entity')",
+    });
+    final storedData = stored.ok ? stored.data : null;
+    if (storedData is String && storedData.isNotEmpty && storedData != 'null') {
+      satellite = storedData;
+    }
+    if (satellite.isEmpty) {
+      satellite = _settings.get(defs.haSatelliteEntity).trim();
+    }
+
+    final satellites = await listVoiceSatellites();
+
+    // The satellite's sibling selects, located by device rather than by
+    // entity_id (ids are user-renamable; the device and translation_key
+    // are stable). Same resolution the card's own settings gate uses.
+    final entities = <String, Object?>{};
+    if (satellite.isNotEmpty) {
+      try {
+        final registry = await _wsCommand({
+          'type': 'config/entity_registry/list',
+        });
+        if (registry is List) {
+          final entries = registry.cast<Map>();
+          final own = entries.firstWhere(
+            (e) => e['entity_id'] == satellite,
+            orElse: () => const {},
+          );
+          final deviceId = own['device_id'];
+          if (deviceId != null) {
+            // Only the selects the settings page controls; the device
+            // carries many more. Older HA lists omit translation_key;
+            // the original name is the fallback identity then.
+            const controlled = {
+              'pipeline',
+              'pipeline_2',
+              'wake_word_detection',
+              'wake_word_model',
+              'wake_word_model_2',
+            };
+            const byName = {
+              'pipeline 1': 'pipeline',
+              'pipeline 2': 'pipeline_2',
+              'wake word detection': 'wake_word_detection',
+              'wake word 1': 'wake_word_model',
+              'wake word 2': 'wake_word_model_2',
+            };
+            final wanted = <String, String>{}; // key -> entity_id
+            for (final e in entries) {
+              if (e['device_id'] != deviceId ||
+                  e['platform'] != 'voice_satellite') {
+                continue;
+              }
+              final id = '${e['entity_id']}';
+              if (!id.startsWith('select.')) continue;
+              final key =
+                  e['translation_key'] as String? ??
+                  byName['${e['original_name'] ?? ''}'.toLowerCase()];
+              if (key != null && controlled.contains(key)) wanted[key] = id;
+            }
+            if (wanted.isNotEmpty) {
+              final states = await fetchStates();
+              for (final entry in wanted.entries) {
+                final state = states?.firstWhere(
+                  (s) => s['entity_id'] == entry.value,
+                  orElse: () => const {},
+                );
+                final attributes = state?['attributes'];
+                entities[entry.key] = {
+                  'entity_id': entry.value,
+                  'state': state?['state'],
+                  'available':
+                      state?['state'] != null &&
+                      state?['state'] != 'unavailable',
+                  'options': attributes is Map
+                      ? attributes['options'] ?? const []
+                      : const [],
+                };
+              }
+            }
+          }
+        }
+      } catch (e) {
+        log.warn(name, 'vsControls sibling lookup failed: $e');
+      }
+    }
+
+    // The browser-local half, via the hook the Voice Satellite bundle
+    // installs. Null when the page is not a current Voice Satellite (old
+    // bundle, non-HA page, page still loading) — the UIs say so.
+    Object? browser;
+    final hook = await commands.execute('evalJs', {
+      'code':
+          'JSON.stringify(window.__vsExternalSettings '
+          '? window.__vsExternalSettings.get() : null)',
+    });
+    final hookData = hook.ok ? hook.data : null;
+    if (hookData is String && hookData.isNotEmpty && hookData != 'null') {
+      try {
+        browser = jsonDecode(hookData);
+      } catch (_) {}
+    }
+
+    return {
+      'satellite': satellite,
+      'satellites': satellites ?? const [],
+      'entities': entities,
+      'browser': browser,
+    };
   }
 
   /// Dashboards via the websocket API (`lovelace/dashboards/list`), plus the
