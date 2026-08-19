@@ -85,12 +85,14 @@ const kioskModeScript = '''
       // var(--kiosk-header-height, var(--header-height)), the contract the
       // kiosk-mode resource established (the advanced camera card among
       // them), so hiding the header must also declare the kiosk height as
-      // zero or a panel card ends a header short (#232). The padding keeps
-      // the safe-area share the header's offset used to carry.
+      // zero or a panel card ends a header short (#232). The padding must be
+      // zero, nothing cleverer: the view container pads itself by the header
+      // height plus the safe-area inset, and a padding that keeps the inset
+      // leaves a cutout-sized band where the header was, doubled because
+      // #view and hui-view nest (#249).
       return S.header
         ? '.header,.toolbar,app-header,ch-header{display:none!important;}' +
-          '#view,hui-view{padding-top:calc(var(--safe-area-inset-top,0px) + ' +
-          'var(--view-container-padding-top,0px))!important;' +
+          '#view,hui-view{padding-top:0!important;' +
           'min-height:100vh!important;--kiosk-header-height:0px;}'
         : '';
     }

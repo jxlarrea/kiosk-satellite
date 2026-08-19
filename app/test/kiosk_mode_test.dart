@@ -169,6 +169,16 @@ void main() {
       expect(kioskModeScript, contains('--kiosk-header-height:0px'));
     });
 
+    test('reclaims the hidden header space outright', () {
+      // The view container pads itself by the header height plus the
+      // safe-area inset. A padding that keeps the inset leaves a
+      // cutout-sized band where the header was, doubled because #view and
+      // hui-view nest, so the only padding that reclaims the space is zero
+      // (#249).
+      expect(kioskModeScript, contains('padding-top:0!important'));
+      expect(kioskModeScript, isNot(contains('--safe-area-inset-top')));
+    });
+
     test('keeps a hidden sidebar hidden', () {
       // The menu button and the edge swipe both open the drawer, so the
       // toggle event is swallowed and a drawer opened anyway is closed.

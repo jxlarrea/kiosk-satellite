@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- HA Kiosk Mode reclaims the hidden header's space again. The fix that removed the black bar under panel views also began padding the dashboard by the display's safe-area inset, and because the rule landed on two nested view elements the inset counted twice, so on any device that reports one (a camera cutout, or an Android 15 status bar even while hidden) the dashboard kept a band of empty space where the header used to be. The padding is now simply zero: hiding the header gives the whole screen to the dashboard, and the panel-view sizing fix stays as it was.
+
 ## v2026.8.60 - 2026-08-19
 
 ### Fixed
