@@ -7,6 +7,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Fixed
 - A trailing slash in the Home Assistant base URL no longer breaks the voice pipeline socket. The URL field accepted "http://ha:8123/" but stored it verbatim, so the native pipeline dialled "http://ha:8123//api/websocket" and every wake word died with a WebSocket upgrade error while the rest of the app, which normalized the URL on read, kept working. The setting is now canonicalized to its origin (scheme, host, port) on every write, and a value stored with a trailing slash by an older version is rewritten once at startup.
 
+## Unreleased
+
+### Fixed
+- The ESPHome Screen light is dimmable again (#242). The entity described its brightness support only through the protocol's legacy field, which modern Home Assistant ignores in favor of the color-mode list, so the light that carried a working brightness slider on MQTT came over as bare on/off. The entity now declares the brightness color mode in both its description and its state; existing devices pick it up on the next reconnect, no re-adding needed.
+
 ## v2026.8.57 - 2026-08-18
 
 ### Added

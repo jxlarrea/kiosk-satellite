@@ -292,7 +292,12 @@ internal object EntityCodec {
                 // Legacy brightness capability only: HA still speaks the
                 // pre-color-modes dialect for every old ESP32, and a screen
                 // needs nothing richer.
-                w.bool(5, true) // legacy_supports_brightness
+                w.bool(5, true) // legacy_supports_brightness, pre-1.6 clients
+                // supported_color_modes: modern Home Assistant IGNORES the
+                // legacy field whenever the API version is 1.6+, so without
+                // this the light renders as bare on/off (issue #242).
+                // COLOR_MODE_BRIGHTNESS (3) carries the on/off bit too.
+                w.varint(12, 3)
                 w.bool(13, entity.disabledByDefault)
                 w.string(14, entity.icon)
                 w.varint(15, entity.category)
@@ -364,6 +369,10 @@ internal object EntityCodec {
                 (map["brightness"] as? kotlin.Number)?.let {
                     w.float(3, it.toFloat())
                 }
+                // color_mode: matches the single mode the description
+                // advertises; a color-mode client shows the brightness
+                // slider only when the state claims the mode (issue #242).
+                w.varint(11, 3)
                 Msg.LIGHT_STATE_RESPONSE to w.toByteArray()
             }
             is EspEntity.Text -> {

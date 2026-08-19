@@ -185,6 +185,10 @@ class AioesphomeapiE2eTest {
             expected = {"screen", "clock_background", "update", "snap"}
             assert set(by_obj) == expected, sorted(by_obj)
             assert type(by_obj["screen"]).__name__ == "LightInfo", by_obj
+            # Modern clients ignore legacy_supports_brightness (issue #242):
+            # the color-mode list is what makes the light dimmable.
+            modes = list(by_obj["screen"].supported_color_modes)
+            assert [int(m) for m in modes] == [3], modes  # BRIGHTNESS
             assert type(by_obj["snap"]).__name__ == "CameraInfo", by_obj
             print("LIST_OK", flush=True)
 
@@ -204,6 +208,7 @@ class AioesphomeapiE2eTest {
             light = states.get(by_obj["screen"].key)
             assert light is not None and light.state, light
             assert abs(light.brightness - 0.75) < 1e-3, light
+            assert int(light.color_mode) == 3, light  # BRIGHTNESS
             update = states.get(by_obj["update"].key)
             assert update is not None, states
             assert update.current_version == "1.0.0", update
