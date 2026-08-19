@@ -78,7 +78,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Auto start',
-    description: 'Start the voice assistant when the dashboard loads.',
+    description: 'Auto start Voice Satellite on dashboard load.',
     anchorId: 'x:assigned_satellite',
   ),
   SettingsSearchEntry(
@@ -95,6 +95,13 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
+    title: 'Engine',
+    description:
+        'Start or Stop the Voice Satellite engine.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
     title: 'Mute',
     description: 'Stop listening for wake words.',
     anchorId: 'x:assigned_satellite',
@@ -103,6 +110,12 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     category: 'Voice Satellite',
     title: 'Finished speaking detection',
     description: 'How long a pause ends a voice command.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Voice Satellite version',
+    description: 'The integration version installed in Home Assistant.',
     anchorId: 'x:assigned_satellite',
   ),
   SettingsSearchEntry(
@@ -150,7 +163,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Reactive activity bar',
-    description: 'The activity bar moves with the sound.',
+    description: 'The activity bar reacts to audio. NOT RECOMMENDED for low-power devices like the Echo Show.',
     anchorId: 'x:vs_appearance',
   ),
   SettingsSearchEntry(

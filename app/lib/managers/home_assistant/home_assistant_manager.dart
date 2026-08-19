@@ -456,6 +456,36 @@ class HomeAssistantManager extends Manager {
       )
       ..register(
         Command(
+          name: 'vsEngine',
+          description:
+              'Start or stop the Voice Satellite engine in the page, '
+              "through the same path as the panel's own Start and Stop "
+              'buttons.',
+          params: const {'action': "'start' or 'stop'"},
+          handler: (p) async {
+            final action = '${p['action'] ?? ''}'.trim();
+            if (action != 'start' && action != 'stop') {
+              return const CommandResult.fail('action must be start or stop');
+            }
+            final fn = action == 'start' ? 'startEngine' : 'stopEngine';
+            final code =
+                'JSON.stringify(window.__vsExternalSettings '
+                '? window.__vsExternalSettings.$fn() : null)';
+            final result = await commands.execute('evalJs', {'code': code});
+            final data = result.ok ? result.data : null;
+            if (data is String && data.isNotEmpty && data != 'null') {
+              return CommandResult.ok(jsonDecode(data));
+            }
+            return const CommandResult.fail(
+              'the page has no Voice Satellite settings hook — the kiosk '
+              'must be showing Home Assistant with a current Voice '
+              'Satellite version',
+            );
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'vsSetSatellite',
           description:
               'Rebind this kiosk to another assist_satellite entity, or '
@@ -1420,6 +1450,7 @@ class HomeAssistantManager extends Manager {
     // entity_id (ids are user-renamable; the device and translation_key
     // are stable). Same resolution the card's own settings gate uses.
     final entities = <String, Object?>{};
+    String? version;
     if (satellite.isNotEmpty) {
       try {
         final registry = await _wsCommand({
@@ -1476,6 +1507,16 @@ class HomeAssistantManager extends Manager {
             }
             if (wanted.isNotEmpty) {
               final states = await fetchStates();
+              // The integration's installed version rides on the
+              // satellite entity itself.
+              final own = states?.firstWhere(
+                (s) => s['entity_id'] == satellite,
+                orElse: () => const {},
+              );
+              final attrs = own?['attributes'];
+              if (attrs is Map && attrs['integration_version'] != null) {
+                version = '${attrs['integration_version']}';
+              }
               for (final entry in wanted.entries) {
                 final state = states?.firstWhere(
                   (s) => s['entity_id'] == entry.value,
@@ -1502,18 +1543,25 @@ class HomeAssistantManager extends Manager {
     }
 
     // The browser-local half, via the hook the Voice Satellite bundle
-    // installs. Null when the page is not a current Voice Satellite (old
-    // bundle, non-HA page, page still loading) — the UIs say so.
+    // installs. Absent, the reason matters to the UIs: a running Voice
+    // Satellite without the hook is an outdated bundle (say "update"),
+    // no engine at all is a page that is not the dashboard.
     Object? browser;
+    var browserState = 'unavailable';
     final hook = await commands.execute('evalJs', {
       'code':
           'JSON.stringify(window.__vsExternalSettings '
-          '? window.__vsExternalSettings.get() : null)',
+          '? {state: "ok", data: window.__vsExternalSettings.get()} '
+          ': {state: window.__vsEngine ? "outdated" : "unavailable"})',
     });
     final hookData = hook.ok ? hook.data : null;
     if (hookData is String && hookData.isNotEmpty && hookData != 'null') {
       try {
-        browser = jsonDecode(hookData);
+        final decoded = jsonDecode(hookData);
+        if (decoded is Map) {
+          browserState = '${decoded['state'] ?? 'unavailable'}';
+          browser = decoded['data'];
+        }
       } catch (_) {}
     }
 
@@ -1521,7 +1569,9 @@ class HomeAssistantManager extends Manager {
       'satellite': satellite,
       'satellites': satellites ?? const [],
       'entities': entities,
+      'version': version,
       'browser': browser,
+      'browserState': browserState,
     };
   }
 

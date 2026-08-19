@@ -6593,6 +6593,59 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     if (mounted) await _load();
   }
 
+  bool _engineBusy = false;
+
+  Future<void> _engine(String action) async {
+    setState(() => _engineBusy = true);
+    await widget.container.commands.execute('vsEngine', {'action': action});
+    // Starting is a next-frame affair in the page; let it settle before
+    // re-reading so the row lands on the real state.
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+    await _load();
+    if (mounted) setState(() => _engineBusy = false);
+  }
+
+  Widget? _engineRow(BuildContext context) {
+    final browser = _data?['browser'];
+    final engine = browser is Map ? browser['engine'] : null;
+    if (engine is! Map) return null;
+    final running = engine['running'] == true;
+    final canStart = engine['canStart'] == true;
+    return ListTile(
+      title: const Text('Engine'),
+      subtitle: const Text(
+        'Start or Stop the Voice Satellite engine.',
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            running ? 'Running' : 'Stopped',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: running
+                  ? Colors.green
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: running
+                  ? Colors.red.shade600
+                  : Colors.green.shade600,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: _engineBusy || (!running && !canStart)
+                ? null
+                : () => _engine(running ? 'stop' : 'start'),
+            child: Text(_engineBusy ? '…' : (running ? 'Stop' : 'Start')),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _switchEntity(String key, bool on) async {
     final entity = _entity(key);
     if (entity == null) return;
@@ -6761,17 +6814,22 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     }
 
     final browser = _browserConfig;
-    const browserHint =
-        'Available while the kiosk is showing your Home Assistant '
-        'dashboard.';
+    // An outdated Voice Satellite runs without the settings hook; that
+    // asks for an update, not for showing the dashboard.
+    final browserHint = '${_data?['browserState']}' == 'outdated'
+        ? 'Update the Voice Satellite integration in Home Assistant to '
+              'control these settings from the kiosk.'
+        : 'Available while the kiosk is showing your Home Assistant '
+              'dashboard.';
 
     final general = <Widget>[
+      ?_engineRow(context),
       _satelliteRow(context),
       if (browser != null)
         SwitchListTile(
           title: const Text('Auto start'),
           subtitle: const Text(
-            'Start the voice assistant when the dashboard loads.',
+            'Auto start Voice Satellite on dashboard load.',
           ),
           value: browser['auto_start'] != false,
           onChanged: (v) => _applyBrowser({'auto_start': v}),
@@ -6797,6 +6855,17 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         'How long a pause ends a voice command.',
         capitalize: true,
       ),
+      if ('${_data?['version'] ?? ''}'.isNotEmpty)
+        ListTile(
+          title: const Text('Voice Satellite version'),
+          subtitle: const Text(
+            'The integration version installed in Home Assistant.',
+          ),
+          trailing: Text(
+            'v${_data?['version']}',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
     ];
 
     final wake = <Widget>[
@@ -6829,7 +6898,7 @@ class _VsControlsSectionState extends State<VsControlsSection> {
 
     final appearance = <Widget>[
       if (browser == null)
-        const HintRow(browserHint)
+        HintRow(browserHint)
       else ...[
         DropdownRow<String>(
           title: 'Skin',
@@ -6856,7 +6925,10 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         ),
         SwitchListTile(
           title: const Text('Reactive activity bar'),
-          subtitle: const Text('The activity bar moves with the sound.'),
+          subtitle: const Text(
+            'The activity bar reacts to audio. NOT RECOMMENDED for '
+            'low-power devices like the Echo Show.',
+          ),
           value: browser['reactive_bar'] != false,
           onChanged: (v) => _applyBrowser({'reactive_bar': v}),
         ),

@@ -404,12 +404,10 @@ class ScreensaverManager extends Manager {
         Command(
           name: 'getScreensaverSuppressed',
           description:
-              'Whether the page should stand down its own screensaver '
-              'because this app runs one and is set to take precedence',
-          handler: (_) async => CommandResult.ok(
-            _settings.get(defs.screensaverEnabled) &&
-                _settings.get(defs.vsSuppressScreensaver),
-          ),
+              'Whether the page should stand down its own screensaver. '
+              'Always true: this app owns the screen, so two screensavers '
+              'fighting over it is never the right outcome.',
+          handler: (_) async => const CommandResult.ok(true),
         ),
       );
 

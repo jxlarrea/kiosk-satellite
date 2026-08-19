@@ -1031,15 +1031,19 @@ const SEARCH_EXTRAS = [
   { tab: 'voicesatellite', title: 'Assigned satellite',
     desc: 'The assist_satellite entity this kiosk identifies as in Home Assistant.' },
   { tab: 'voicesatellite', title: 'Auto start',
-    desc: 'Start the voice assistant when the dashboard loads.' },
+    desc: 'Auto start Voice Satellite on dashboard load.' },
   { tab: 'voicesatellite', title: 'Assist pipeline 1',
     desc: 'The Assist pipeline voice commands run through.' },
   { tab: 'voicesatellite', title: 'Assist pipeline 2',
     desc: 'The pipeline used when the second wake word triggers.' },
+  { tab: 'voicesatellite', title: 'Engine',
+    desc: 'Start or Stop the Voice Satellite engine.' },
   { tab: 'voicesatellite', title: 'Mute',
     desc: 'Stop listening for wake words.' },
   { tab: 'voicesatellite', title: 'Finished speaking detection',
     desc: 'How long a pause ends a voice command.' },
+  { tab: 'voicesatellite', title: 'Voice Satellite version',
+    desc: 'The integration version installed in Home Assistant.' },
   { tab: 'voicesatellite', title: 'Wake word engine',
     desc: 'Where detection runs and which engine listens.' },
   { tab: 'voicesatellite', title: 'Wake word sensitivity',
@@ -1055,7 +1059,7 @@ const SEARCH_EXTRAS = [
   { tab: 'voicesatellite', title: 'Theme mode',
     desc: 'Light or dark rendering of the overlay.' },
   { tab: 'voicesatellite', title: 'Reactive activity bar',
-    desc: 'The activity bar moves with the sound.' },
+    desc: 'The activity bar reacts to audio. NOT RECOMMENDED for low-power devices like the Echo Show.' },
   { tab: 'voicesatellite', title: 'Reactive bar update rate',
     desc: 'How often the activity bar redraws. Higher is smoother and uses more CPU.' },
   { tab: 'voicesatellite', title: 'Text scale',
@@ -5660,8 +5664,32 @@ async function renderVsControls(root) {
     return [wrap, card];
   };
 
-  // General: the satellite binding, auto start and the pipelines.
+  // General: the engine, the satellite binding, auto start and the
+  // pipelines.
   const [generalWrap, generalCard] = section('vsGeneralCard', 'General');
+  const engine = data.browser && data.browser.engine;
+  if (engine) {
+    const row = readOnlyRow('Engine',
+      'Start or Stop the Voice Satellite engine.', '');
+    const status = row.querySelector('span');
+    status.textContent = engine.running ? 'Running' : 'Stopped';
+    status.style.color = engine.running ? 'var(--ok)' : 'var(--muted)';
+    status.style.marginRight = '10px';
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost';
+    btn.textContent = engine.running ? 'Stop' : 'Start';
+    btn.style.cssText = engine.running
+      ? 'background:var(--error); border-color:transparent; color:#fff'
+      : 'background:var(--ok); border-color:transparent; color:#fff';
+    btn.disabled = !engine.running && !engine.canStart;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try { await cmd('vsEngine', { action: engine.running ? 'stop' : 'start' }); } catch (_) {}
+      rebuild(1200);
+    });
+    row.appendChild(btn);
+    generalCard.appendChild(row);
+  }
   const satDesc = 'The assist_satellite entity this kiosk identifies as in ' +
     'Home Assistant. Changing it reloads the dashboard.';
   const sats = data.satellites || [];
@@ -5682,7 +5710,7 @@ async function renderVsControls(root) {
   }
   if (browser) {
     generalCard.appendChild(toggleRow('Auto start',
-      'Start the voice assistant when the dashboard loads.',
+      'Auto start Voice Satellite on dashboard load.',
       browser.auto_start !== false, (v) => applyBrowser({ auto_start: v })));
   }
   for (const row of [
@@ -5694,6 +5722,11 @@ async function renderVsControls(root) {
     entityRow('vad_sensitivity', 'Finished speaking detection',
       'How long a pause ends a voice command.', true),
   ]) if (row) generalCard.appendChild(row);
+  if (data.version) {
+    generalCard.appendChild(readOnlyRow('Voice Satellite version',
+      'The integration version installed in Home Assistant.',
+      `v${data.version}`));
+  }
 
   // Wake Word: the card's engine and wake word selects, above the app's
   // own detection card.
@@ -5721,8 +5754,12 @@ async function renderVsControls(root) {
   const [appearanceWrap, appearanceCard] =
     section('vsAppearanceCard', 'Appearance');
   if (!browser) {
+    // An outdated Voice Satellite runs without the settings hook; that
+    // asks for an update, not for showing the dashboard.
     appearanceCard.appendChild(readOnlyRow('Not available',
-      'Available while the kiosk is showing your Home Assistant dashboard.',
+      data.browserState === 'outdated'
+        ? 'Update the Voice Satellite integration in Home Assistant to control these settings from the kiosk.'
+        : 'Available while the kiosk is showing your Home Assistant dashboard.',
       ''));
   } else {
     const skins = (data.browser.skins || [])
@@ -5736,7 +5773,7 @@ async function renderVsControls(root) {
        { value: 'dark', label: 'Dark' }],
       browser.theme_mode || 'auto', (v) => applyBrowser({ theme_mode: v })));
     appearanceCard.appendChild(toggleRow('Reactive activity bar',
-      'The activity bar moves with the sound.',
+      'The activity bar reacts to audio. NOT RECOMMENDED for low-power devices like the Echo Show.',
       browser.reactive_bar !== false,
       (v) => applyBrowser({ reactive_bar: v })));
     const fps = Math.min(60, Math.max(5,

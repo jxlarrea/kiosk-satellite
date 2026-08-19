@@ -2426,17 +2426,6 @@ const vsNativePipeline = SettingDef<bool>(
   hidden: true,
 );
 
-const vsSuppressScreensaver = SettingDef<bool>(
-  key: 'vs.suppress_screensaver',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Turn off the Voice Satellite screensaver',
-  description:
-      'While this app\'s screensaver is enabled, the Voice Satellite '
-      'screensaver stands down so the two never run at once.',
-  category: 'Voice Satellite',
-);
-
 // ── Home Assistant ─────────────────────────────────────────────────────
 
 const haUrl = SettingDef<String>(
@@ -3758,7 +3747,6 @@ const List<SettingDef<Object>> allSettings = [
   wakeWordBackground,
   wakeWordResumeTimeoutSeconds,
   vsNativePipeline,
-  vsSuppressScreensaver,
   haUrl,
   haToken,
   haSatelliteEntity,
