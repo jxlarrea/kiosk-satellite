@@ -5603,7 +5603,14 @@ async function renderVsControls(root) {
     if (r.ok) data = r.data;
   } catch (_) {}
   // Re-render in place: writes rebuild these three cards only, never the
-  // whole settings page.
+  // whole settings page. The adopted "Keep listening in the background"
+  // row (a declarative setting the General card borrows) must survive the
+  // rebuild: park it back on the detection card before its host goes.
+  const parked = root.querySelector('#vsGeneralCard [data-key="wake_word.background"]');
+  if (parked) {
+    const home = root.querySelector('[data-key="wake_word.enabled"]')?.closest('.card');
+    if (home) home.appendChild(parked); else parked.remove();
+  }
   root.querySelector('#vsGeneralCard')?.remove();
   root.querySelector('#vsWakeCard')?.remove();
   root.querySelector('#vsAppearanceCard')?.remove();
@@ -5683,7 +5690,9 @@ async function renderVsControls(root) {
     btn.style.cssText = engine.running
       ? 'background:var(--error); border-color:transparent; color:#fff'
       : 'background:var(--ok); border-color:transparent; color:#fff';
-    btn.disabled = !engine.running && !engine.canStart;
+    // Both halves must agree a start can work: the page's own answer AND a
+    // satellite actually assigned - without one there is nothing to start.
+    btn.disabled = !engine.running && !(engine.canStart && data.satellite);
     btn.addEventListener('click', async () => {
       btn.disabled = true;
       try { await cmd('vsEngine', { action: engine.running ? 'stop' : 'start' }); } catch (_) {}
@@ -5715,6 +5724,11 @@ async function renderVsControls(root) {
       'Auto start Voice Satellite on dashboard load.',
       browser.auto_start !== false, (v) => applyBrowser({ auto_start: v })));
   }
+  // Adopt the declarative "Keep listening in the background" row out of the
+  // detection card: important enough to sit with the important rows, and
+  // moving the live node keeps its save wiring and gating intact.
+  const bgRow = root.querySelector('[data-key="wake_word.background"]');
+  if (bgRow) generalCard.appendChild(bgRow);
   for (const row of [
     entitySwitchRow('mute', 'Mute', 'Stop listening for wake words.'),
     entityRow('pipeline', 'Assist pipeline 1',

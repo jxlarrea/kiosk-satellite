@@ -2327,15 +2327,24 @@ const micGainDb = SettingDef<num>(
 
 // ── Wake word ──────────────────────────────────────────────────────────
 
+/// [SettingDef.normalizer] for the retired master switch: any write lands
+/// as on, so an import of an old config cannot strand a device off.
+Object alwaysOnSetting(Object _) => true;
+
+/// The old wake word master switch, retired: with Voice Satellite installed
+/// the app always takes detection over (turning that down was never the
+/// right call, and the Wake word engine select in Home Assistant is the
+/// real off switch). Hidden and forced on; the key survives for old
+/// configs and the readers that gate on it.
 const wakeWordEnabled = SettingDef<bool>(
   key: 'wake_word.enabled',
   type: SettingType.boolean,
   defaultValue: true,
   title: 'Wake word detection',
-  description:
-      'Master switch. The engine and wake words follow the Wake Word '
-      'settings above.',
+  description: 'Always on. The Wake word engine select is the off switch.',
   category: 'Voice Satellite',
+  hidden: true,
+  normalizer: alwaysOnSetting,
 );
 
 /// Kiosk Satellite fetches the quantized `int8/` model siblings by default

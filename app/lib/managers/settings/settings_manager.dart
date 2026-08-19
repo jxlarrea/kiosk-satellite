@@ -249,6 +249,13 @@ class SettingsManager extends Manager {
       await _prefs.setString('${_prefix}ha.url', normalizeBaseUrl(ha));
       log.info(name, 'migrated ha.url to its origin form');
     }
+    // The wake word master switch is retired (hidden, forced on): with the
+    // switch gone from the UI, a stored false would strand detection off
+    // with no way back, so it is rewritten once.
+    if (_prefs.get('${_prefix}wake_word.enabled') == false) {
+      await _prefs.setBool('${_prefix}wake_word.enabled', true);
+      log.info(name, 'migrated wake_word.enabled to always-on');
+    }
   }
 
   T get<T>(SettingDef<T> def) {

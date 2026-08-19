@@ -217,13 +217,15 @@ void main() {
       expect((state['models'] as List).single, containsPair('wakeWord', 'Okay Nabu'));
     });
 
-    test('a disabled engine explains itself rather than going blank', () async {
+    test('the retired master switch cannot be turned off', () async {
       await commands.execute('setWakeWordConfig', vsConfig);
+      // The switch is hidden and forced on: with Voice Satellite installed
+      // the app always takes detection over, and the Wake word engine
+      // select in Home Assistant is the real off switch. Any write (an old
+      // config import, a stale remote) must land as on.
       await settings.setFromJson('wake_word.enabled', false);
-      final state = wakeWord.describeState();
-      expect(state['status'], 'disabled');
-      expect(state['statusLabel'], contains('off'));
-      expect(state['available'], isFalse);
+      expect(settings.get(defs.wakeWordEnabled), isTrue);
+      expect(wakeWord.describeState()['status'], isNot('disabled'));
     });
 
     test('the stop word is reported so both UIs can show it', () async {

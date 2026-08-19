@@ -2138,10 +2138,20 @@ class _CategoryContentState extends State<_CategoryContent> {
             children: [
               VsControlsSection(
                 container: container,
+                // An important switch lives with the important rows: pulled
+                // out of the detection card into General, below Auto start.
+                backgroundTile: container.settings.visible(wakeWordBackground)
+                    ? SettingTile(
+                        container: container,
+                        def: wakeWordBackground,
+                        onChanged: () => setState(() {}),
+                      )
+                    : null,
                 detectionCard: SettingsCard(
                   children: [
                     for (final def in _defsFor('Voice Satellite'))
                       if (def.section == null &&
+                          def.key != wakeWordBackground.key &&
                           container.settings.visible(def))
                         SettingTile(
                           container: container,
@@ -6531,6 +6541,7 @@ class VsControlsSection extends StatefulWidget {
     super.key,
     required this.container,
     required this.detectionCard,
+    this.backgroundTile,
   });
 
   final AppContainer container;
@@ -6538,6 +6549,10 @@ class VsControlsSection extends StatefulWidget {
   /// The app's own wake word detection card, rendered under the Wake Word
   /// heading so the whole topic reads as one group.
   final Widget detectionCard;
+
+  /// The "Keep listening in the background" setting tile, shown in the
+  /// General card below Auto start; null while its dependency hides it.
+  final Widget? backgroundTile;
 
   @override
   State<VsControlsSection> createState() => _VsControlsSectionState();
@@ -6611,7 +6626,10 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     final engine = browser is Map ? browser['engine'] : null;
     if (engine is! Map) return null;
     final running = engine['running'] == true;
-    final canStart = engine['canStart'] == true;
+    // Both halves must agree a start can work: the page's own answer AND a
+    // satellite actually assigned - without one there is nothing to start.
+    final canStart =
+        engine['canStart'] == true && '${_data?['satellite'] ?? ''}'.isNotEmpty;
     return ListTile(
       title: const Text('Engine'),
       subtitle: const Text(
@@ -6834,6 +6852,7 @@ class _VsControlsSectionState extends State<VsControlsSection> {
           value: browser['auto_start'] != false,
           onChanged: (v) => _applyBrowser({'auto_start': v}),
         ),
+      ?widget.backgroundTile,
       ?_entitySwitchRow(
         'mute',
         'Mute',

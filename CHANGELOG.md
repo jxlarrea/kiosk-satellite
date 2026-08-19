@@ -9,6 +9,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - An Engine row on the Voice Satellite page starts or stops the voice assistant in the dashboard page, through the same path as the Voice Satellite panel's own Start and Stop buttons, with the running state shown next to it. The General card also reports the installed Voice Satellite integration version.
 
 ### Changed
+- The "Wake word detection" master switch is gone: with Voice Satellite installed the app always takes detection over, and the Wake word engine select in Home Assistant is the real off switch. The setting is forced on, and a device that had it off is migrated once at startup so nothing is stranded silent. "Keep listening in the background" moved up into the General card, below Auto start, where an important switch belongs.
 - The Voice Satellite screensaver is now always off inside the kiosk, and the "Turn off the Voice Satellite screensaver" toggle is gone. The app owns the screen and runs its own screensaver management, so two screensavers negotiating over one panel was never a real choice; the page is told to stand down unconditionally, and the Voice Satellite panel now renders its screensaver toggle off and disabled with a note pointing at the app's own screensaver settings.
 
 ## v2026.8.58 - 2026-08-18
