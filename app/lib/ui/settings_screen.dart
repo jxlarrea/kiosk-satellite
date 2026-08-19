@@ -6890,6 +6890,11 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         'How easily the wake word triggers.',
       ),
       ?_entitySwitchRow(
+        'noise_gate',
+        'Wake word noise gate',
+        'Skip wake word scoring while the room is quiet, saving CPU.',
+      ),
+      ?_entitySwitchRow(
         'stop_word',
         'Stop word interruption',
         'Say the stop word to interrupt responses.',

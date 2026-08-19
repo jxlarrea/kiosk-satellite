@@ -1476,7 +1476,7 @@ class HomeAssistantManager extends Manager {
               'wake_word_model_2',
               'wake_word_sensitivity',
             };
-            const controlledSwitches = {'mute', 'stop_word'};
+            const controlledSwitches = {'mute', 'stop_word', 'noise_gate'};
             const byName = {
               'pipeline 1': 'pipeline',
               'pipeline 2': 'pipeline_2',
@@ -1487,6 +1487,7 @@ class HomeAssistantManager extends Manager {
               'wake word sensitivity': 'wake_word_sensitivity',
               'mute': 'mute',
               'stop word interruption': 'stop_word',
+              'wake word noise gate': 'noise_gate',
             };
             final wanted = <String, String>{}; // key -> entity_id
             for (final e in entries) {
