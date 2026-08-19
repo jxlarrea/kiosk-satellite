@@ -1036,8 +1036,16 @@ const SEARCH_EXTRAS = [
     desc: 'The Assist pipeline voice commands run through.' },
   { tab: 'voicesatellite', title: 'Assist pipeline 2',
     desc: 'The pipeline used when the second wake word triggers.' },
+  { tab: 'voicesatellite', title: 'Mute',
+    desc: 'Stop listening for wake words.' },
+  { tab: 'voicesatellite', title: 'Finished speaking detection',
+    desc: 'How long a pause ends a voice command.' },
   { tab: 'voicesatellite', title: 'Wake word engine',
     desc: 'Where detection runs and which engine listens.' },
+  { tab: 'voicesatellite', title: 'Wake word sensitivity',
+    desc: 'How easily the wake word triggers.' },
+  { tab: 'voicesatellite', title: 'Stop word interruption',
+    desc: 'Say the stop word to interrupt responses.' },
   { tab: 'voicesatellite', title: 'Wake word 1',
     desc: 'The word that starts a voice command.' },
   { tab: 'voicesatellite', title: 'Wake word 2',
@@ -5611,14 +5619,33 @@ async function renderVsControls(root) {
     } catch (_) {}
     rebuild(900);
   };
-  const entityRow = (key, title, desc) => {
+  const switchEntity = async (key, on) => {
+    const ent = entity(key);
+    if (!ent) return;
+    try {
+      await cmd('haCallService', { domain: 'switch',
+        service: on ? 'turn_on' : 'turn_off', entity_id: ent.entity_id });
+    } catch (_) {}
+    rebuild(900);
+  };
+  const entitySwitchRow = (key, title, desc) => {
+    const ent = entity(key);
+    if (!ent) return null;
+    if (!ent.available) return readOnlyRow(title, desc, 'Not available');
+    return toggleRow(title, desc, ent.state === 'on',
+      (v) => switchEntity(key, v));
+  };
+  const entityRow = (key, title, desc, capitalize) => {
     const ent = entity(key);
     if (!ent) return null;
     if (!ent.available || !(ent.options || []).length) {
       return readOnlyRow(title, desc, 'Not available');
     }
+    // Options whose values are bare lowercase words render like Home
+    // Assistant shows them; the raw value is what gets written.
+    const label = (o) => capitalize && o ? o[0].toUpperCase() + o.slice(1) : o;
     return vsSelectRow(title, desc,
-      (ent.options || []).map((o) => ({ value: o, label: o })),
+      (ent.options || []).map((o) => ({ value: o, label: label(o) })),
       ent.state, (v) => selectEntity(key, v));
   };
   const section = (id, title) => {
@@ -5640,8 +5667,11 @@ async function renderVsControls(root) {
   const sats = data.satellites || [];
   if (sats.length) {
     generalCard.appendChild(vsSelectRow('Assigned satellite', satDesc,
-      sats.map((s) => ({ value: s.entity_id, label: s.name })),
-      data.satellite || null,
+      // Disabled clears the binding: the kiosk stops identifying as a
+      // satellite until one is picked again.
+      [{ value: '', label: 'Disabled' },
+       ...sats.map((s) => ({ value: s.entity_id, label: s.name }))],
+      data.satellite || '',
       async (v) => {
         try { await cmd('vsSetSatellite', { entity_id: v }); } catch (_) {}
         rebuild(3000);
@@ -5656,10 +5686,13 @@ async function renderVsControls(root) {
       browser.auto_start !== false, (v) => applyBrowser({ auto_start: v })));
   }
   for (const row of [
+    entitySwitchRow('mute', 'Mute', 'Stop listening for wake words.'),
     entityRow('pipeline', 'Assist pipeline 1',
       'The Assist pipeline voice commands run through.'),
     entityRow('pipeline_2', 'Assist pipeline 2',
       'The pipeline used when the second wake word triggers.'),
+    entityRow('vad_sensitivity', 'Finished speaking detection',
+      'How long a pause ends a voice command.', true),
   ]) if (row) generalCard.appendChild(row);
 
   // Wake Word: the card's engine and wake word selects, above the app's
@@ -5672,6 +5705,10 @@ async function renderVsControls(root) {
       'The word that starts a voice command.'),
     entityRow('wake_word_model_2', 'Wake word 2',
       'A second wake word, answered by Assist pipeline 2.'),
+    entityRow('wake_word_sensitivity', 'Wake word sensitivity',
+      'How easily the wake word triggers.'),
+    entitySwitchRow('stop_word', 'Stop word interruption',
+      'Say the stop word to interrupt responses.'),
   ].filter(Boolean);
   if (wakeRows.length) {
     for (const row of wakeRows) wakeCard.appendChild(row);
@@ -6291,6 +6328,10 @@ async function loadPermissions() {
     card.appendChild(note);
   }
 
+  // Again right before appending: the removal at the top sits before an
+  // await, so two overlapping runs (a wakeword-state push during the tab
+  // load) would otherwise both pass it and stack two cards.
+  root.querySelector('#permsCard')?.remove();
   root.appendChild(wrap);
 }
 

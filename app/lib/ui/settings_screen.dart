@@ -6593,6 +6593,40 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     if (mounted) await _load();
   }
 
+  Future<void> _switchEntity(String key, bool on) async {
+    final entity = _entity(key);
+    if (entity == null) return;
+    setState(() => entity['state'] = on ? 'on' : 'off');
+    await widget.container.commands.execute('haCallService', {
+      'domain': 'switch',
+      'service': on ? 'turn_on' : 'turn_off',
+      'entity_id': entity['entity_id'],
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 800));
+    if (mounted) await _load();
+  }
+
+  Widget? _entitySwitchRow(String key, String title, String description) {
+    final entity = _entity(key);
+    if (entity == null) return null;
+    if (entity['available'] != true) {
+      return ListTile(
+        title: Text(title),
+        subtitle: Text(description),
+        trailing: Text(
+          'Not available',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+    return SwitchListTile(
+      title: Text(title),
+      subtitle: Text(description),
+      value: '${entity['state']}' == 'on',
+      onChanged: (v) => _switchEntity(key, v),
+    );
+  }
+
   Future<void> _applyBrowser(Map<String, Object?> partial) async {
     final config = _browserConfig;
     if (config == null) return;
@@ -6624,7 +6658,12 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     if (mounted) await _load();
   }
 
-  Widget? _entityRow(String key, String title, String description) {
+  Widget? _entityRow(
+    String key,
+    String title,
+    String description, {
+    bool capitalize = false,
+  }) {
     final entity = _entity(key);
     if (entity == null) return null;
     final options = [
@@ -6641,11 +6680,15 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         ),
       );
     }
+    // Options whose values are bare lowercase words render like Home
+    // Assistant shows them; the raw value is what gets written.
+    String label(String o) =>
+        capitalize && o.isNotEmpty ? o[0].toUpperCase() + o.substring(1) : o;
     return DropdownRow<String>(
       title: title,
       description: description,
       value: options.contains(state) ? state : null,
-      options: [for (final o in options) (o, o)],
+      options: [for (final o in options) (o, label(o))],
       onChanged: (v) {
         if (v != null && v != state) _selectOption(key, v);
       },
@@ -6674,6 +6717,9 @@ class _VsControlsSectionState extends State<VsControlsSection> {
       );
     }
     final options = [
+      // Disabled clears the binding: this kiosk stops identifying as a
+      // satellite until one is picked again.
+      ('', 'Disabled'),
       ...satellites,
       if (current.isNotEmpty && !satellites.any((s) => s.$1 == current))
         (current, current),
@@ -6681,7 +6727,7 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     return DropdownRow<String>(
       title: title,
       description: description,
-      value: current.isEmpty ? null : current,
+      value: current,
       options: options,
       onChanged: (v) {
         if (v != null && v != current) _setSatellite(v);
@@ -6730,6 +6776,11 @@ class _VsControlsSectionState extends State<VsControlsSection> {
           value: browser['auto_start'] != false,
           onChanged: (v) => _applyBrowser({'auto_start': v}),
         ),
+      ?_entitySwitchRow(
+        'mute',
+        'Mute',
+        'Stop listening for wake words.',
+      ),
       ?_entityRow(
         'pipeline',
         'Assist pipeline 1',
@@ -6739,6 +6790,12 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         'pipeline_2',
         'Assist pipeline 2',
         'The pipeline used when the second wake word triggers.',
+      ),
+      ?_entityRow(
+        'vad_sensitivity',
+        'Finished speaking detection',
+        'How long a pause ends a voice command.',
+        capitalize: true,
       ),
     ];
 
@@ -6757,6 +6814,16 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         'wake_word_model_2',
         'Wake word 2',
         'A second wake word, answered by Assist pipeline 2.',
+      ),
+      ?_entityRow(
+        'wake_word_sensitivity',
+        'Wake word sensitivity',
+        'How easily the wake word triggers.',
+      ),
+      ?_entitySwitchRow(
+        'stop_word',
+        'Stop word interruption',
+        'Say the stop word to interrupt responses.',
       ),
     ];
 

@@ -357,6 +357,13 @@ class _KioskScreenState extends State<KioskScreen>
       await c.browser.runJs('location.reload();');
       return;
     }
+    // The satellite seed script is fixed at WebView creation, so a plain
+    // reload re-runs the stale one — clearing the binding would be undone
+    // at the next document start. Rebuild for fresh user scripts.
+    if (e.key == defs.haSatelliteEntity.key) {
+      setState(() => _webViewEpoch++);
+      return;
+    }
     // Voice Satellite reads getScreensaverSuppressed once per page load, so
     // anything that changes the answer re-negotiates with a reload. The
     // screensaver toggle only matters while suppression is on.

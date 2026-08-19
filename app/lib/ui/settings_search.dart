@@ -95,8 +95,32 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
+    title: 'Mute',
+    description: 'Stop listening for wake words.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Finished speaking detection',
+    description: 'How long a pause ends a voice command.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
     title: 'Wake word engine',
     description: 'Where detection runs and which engine listens.',
+    anchorId: 'x:vs_wake',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Wake word sensitivity',
+    description: 'How easily the wake word triggers.',
+    anchorId: 'x:vs_wake',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Stop word interruption',
+    description: 'Say the stop word to interrupt responses.',
     anchorId: 'x:vs_wake',
   ),
   SettingsSearchEntry(

@@ -458,26 +458,55 @@ class HomeAssistantManager extends Manager {
         Command(
           name: 'vsSetSatellite',
           description:
-              'Rebind this kiosk to another assist_satellite entity: '
-              'rewrites the page binding, keeps the app fallback in step, '
-              'and reloads the page so Voice Satellite renegotiates.',
-          params: const {'entity_id': 'the assist_satellite entity'},
+              'Rebind this kiosk to another assist_satellite entity, or '
+              'clear the binding with an empty entity_id: rewrites the '
+              'page binding, keeps the app fallback in step, and reloads '
+              'the page so Voice Satellite renegotiates.',
+          params: const {'entity_id': 'the assist_satellite entity, or empty'},
           handler: (p) async {
             final entity = '${p['entity_id'] ?? ''}'.trim();
-            if (!entity.startsWith('assist_satellite.')) {
+            if (entity.isNotEmpty &&
+                !entity.startsWith('assist_satellite.')) {
               return const CommandResult.fail(
                 'an assist_satellite entity is required',
               );
             }
-            await commands.execute('evalJs', {
-              'code':
-                  "localStorage.setItem('vs-satellite-entity', "
-                  '${jsonEncode(entity)})',
-            });
+            if (entity.isEmpty) {
+              // Clearing must hit both halves of the page binding: the
+              // dedicated key and the panel-config copy resolveEntity
+              // falls back to, which would otherwise revive it.
+              await commands.execute('evalJs', {
+                'code': '''
+(function () {
+  localStorage.removeItem('vs-satellite-entity');
+  try {
+    var raw = localStorage.getItem('vs-panel-config');
+    if (raw) {
+      var cfg = JSON.parse(raw);
+      delete cfg.satellite_entity;
+      localStorage.setItem('vs-panel-config', JSON.stringify(cfg));
+    }
+  } catch (e) {}
+})()''',
+              });
+            } else {
+              await commands.execute('evalJs', {
+                'code':
+                    "localStorage.setItem('vs-satellite-entity', "
+                    '${jsonEncode(entity)})',
+              });
+            }
+            // The engine binds the satellite at start, so the page must
+            // come back up for the renegotiation (profile hydration
+            // included; a cleared binding leaves the engine dormant).
+            // When the fallback setting changes, the kiosk screen
+            // rebuilds the WebView so the seed user script is fresh — a
+            // plain reload would re-run the stale one and undo a clear.
+            final previous = _settings.get(defs.haSatelliteEntity).trim();
             await _settings.setFromJson(defs.haSatelliteEntity.key, entity);
-            // The engine binds the satellite at start; a reload is the
-            // clean renegotiation (profile hydration included).
-            await commands.execute('reload', const {});
+            if (previous == entity) {
+              await commands.execute('reload', const {});
+            }
             return const CommandResult.ok();
           },
         ),
@@ -1404,22 +1433,29 @@ class HomeAssistantManager extends Manager {
           );
           final deviceId = own['device_id'];
           if (deviceId != null) {
-            // Only the selects the settings page controls; the device
+            // Only the entities the settings page controls; the device
             // carries many more. Older HA lists omit translation_key;
             // the original name is the fallback identity then.
-            const controlled = {
+            const controlledSelects = {
               'pipeline',
               'pipeline_2',
+              'vad_sensitivity',
               'wake_word_detection',
               'wake_word_model',
               'wake_word_model_2',
+              'wake_word_sensitivity',
             };
+            const controlledSwitches = {'mute', 'stop_word'};
             const byName = {
               'pipeline 1': 'pipeline',
               'pipeline 2': 'pipeline_2',
+              'finished speaking detection': 'vad_sensitivity',
               'wake word detection': 'wake_word_detection',
               'wake word 1': 'wake_word_model',
               'wake word 2': 'wake_word_model_2',
+              'wake word sensitivity': 'wake_word_sensitivity',
+              'mute': 'mute',
+              'stop word interruption': 'stop_word',
             };
             final wanted = <String, String>{}; // key -> entity_id
             for (final e in entries) {
@@ -1428,11 +1464,15 @@ class HomeAssistantManager extends Manager {
                 continue;
               }
               final id = '${e['entity_id']}';
-              if (!id.startsWith('select.')) continue;
               final key =
                   e['translation_key'] as String? ??
                   byName['${e['original_name'] ?? ''}'.toLowerCase()];
-              if (key != null && controlled.contains(key)) wanted[key] = id;
+              if (key == null) continue;
+              final ok = id.startsWith('select.')
+                  ? controlledSelects.contains(key)
+                  : id.startsWith('switch.') &&
+                        controlledSwitches.contains(key);
+              if (ok) wanted[key] = id;
             }
             if (wanted.isNotEmpty) {
               final states = await fetchStates();
