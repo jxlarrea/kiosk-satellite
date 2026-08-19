@@ -4858,61 +4858,69 @@ class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
           ),
         ),
         if (wake.canRetry) WakeWordRecoveryTile(container: widget.container),
-        ListTile(
-          leading: const Icon(Icons.graphic_eq),
-          title: const Text('Engine'),
-          subtitle: const Text('Running in Kiosk'),
-          trailing: Text(
-            config.engine.label,
-            style: theme.textTheme.titleMedium,
-          ),
-        ),
-        if (config.models.isNotEmpty)
+        // Everything below Status describes the kiosk running detection;
+        // while it does not (released: stopped, muted, or the engine select
+        // is Home Assistant/Disabled so the browser owns it) every one of
+        // those rows would be a lie. The status sentence carries the whole
+        // story then. Mirrored in the remote admin's loadWakeWord().
+        if (!wake.released) ...[
           ListTile(
-            leading: const Icon(Icons.record_voice_over),
-            title: const Text('Wake words'),
+            leading: const Icon(Icons.graphic_eq),
+            title: const Text('Engine'),
             subtitle: const Text('Running in Kiosk'),
+            trailing: Text(
+              config.engine.label,
+              style: theme.textTheme.titleMedium,
+            ),
+          ),
+          if (config.models.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.record_voice_over),
+              title: const Text('Wake words'),
+              subtitle: const Text('Running in Kiosk'),
+              trailing: _rowValue(
+                context,
+                config.models.map((m) => m.wakeWord).join(', '),
+              ),
+            ),
+          if (config.stopModel != null)
+            ListTile(
+              leading: const Icon(Icons.front_hand_outlined),
+              title: const Text('Stop word'),
+              subtitle: Text(
+                wake.stopWordAvailable
+                    ? 'Running in Kiosk'
+                    : 'Voice Satellite keeps this one in the browser',
+              ),
+              trailing: _rowValue(context, config.stopModel!.wakeWord),
+            ),
+          if (wake.modelPrecision != null)
+            ListTile(
+              leading: const Icon(Icons.memory),
+              title: const Text('Model precision'),
+              subtitle: Text(switch (wake.modelPrecision) {
+                'int8' => 'Quantized for faster listening',
+                'fp32' => 'Original full-precision models',
+                _ => 'Some models fell back to fp32',
+              }),
+              trailing: _rowValue(context, wake.modelPrecision!),
+            ),
+          ListTile(
+            leading: const Icon(Icons.sync_alt),
+            title: const Text('Native voice pipeline'),
+            subtitle: Text(
+              wake.nativePipelineSupported
+                  ? 'Voice audio flows through the app during turns'
+                  : 'This Voice Satellite version runs voice audio in the '
+                      'browser',
+            ),
             trailing: _rowValue(
               context,
-              config.models.map((m) => m.wakeWord).join(', '),
+              wake.nativePipelineSupported ? 'Supported' : 'Not supported',
             ),
           ),
-        if (config.stopModel != null)
-          ListTile(
-            leading: const Icon(Icons.front_hand_outlined),
-            title: const Text('Stop word'),
-            subtitle: Text(
-              wake.stopWordAvailable
-                  ? 'Running in Kiosk'
-                  : 'Voice Satellite keeps this one in the browser',
-            ),
-            trailing: _rowValue(context, config.stopModel!.wakeWord),
-          ),
-        if (wake.modelPrecision != null)
-          ListTile(
-            leading: const Icon(Icons.memory),
-            title: const Text('Model precision'),
-            subtitle: Text(switch (wake.modelPrecision) {
-              'int8' => 'Quantized for faster listening',
-              'fp32' => 'Original full-precision models',
-              _ => 'Some models fell back to fp32',
-            }),
-            trailing: _rowValue(context, wake.modelPrecision!),
-          ),
-        ListTile(
-          leading: const Icon(Icons.sync_alt),
-          title: const Text('Native voice pipeline'),
-          subtitle: Text(
-            wake.nativePipelineSupported
-                ? 'Voice audio flows through the app during turns'
-                : 'This Voice Satellite version runs voice audio in the browser',
-          ),
-          trailing: _rowValue(
-            context,
-            wake.nativePipelineSupported ? 'Supported' : 'Not supported',
-          ),
-        ),
-        ClearModelCacheTile(container: widget.container),
+          ClearModelCacheTile(container: widget.container),
+        ],
       ]),
     );
   }

@@ -5898,55 +5898,62 @@ async function loadWakeWord() {
     card.appendChild(row);
   }
 
-  if (s.engineLabel) {
-    card.appendChild(readOnlyRow('Engine', 'Running in Kiosk', s.engineLabel));
-  }
-  const words = (s.models || []).map((m) => m.wakeWord).filter(Boolean);
-  if (words.length) {
-    card.appendChild(readOnlyRow('Wake words', 'Running in Kiosk', words.join(', ')));
-  }
-  if (s.stopWord) {
+  // Everything below Status describes the kiosk running detection; while it
+  // does not (released: stopped, muted, or the engine select is Home
+  // Assistant/Disabled so the browser owns it - or no config ever pushed)
+  // every one of those rows would be a lie. The status sentence carries the
+  // whole story then.
+  if (!s.released && s.status !== 'waiting') {
+    if (s.engineLabel) {
+      card.appendChild(readOnlyRow('Engine', 'Running in Kiosk', s.engineLabel));
+    }
+    const words = (s.models || []).map((m) => m.wakeWord).filter(Boolean);
+    if (words.length) {
+      card.appendChild(readOnlyRow('Wake words', 'Running in Kiosk', words.join(', ')));
+    }
+    if (s.stopWord) {
+      card.appendChild(readOnlyRow(
+        'Stop word',
+        s.stopWordAvailable ? 'Running in Kiosk' : 'Voice Satellite keeps this one in the browser',
+        s.stopWord));
+    }
+    if (s.modelPrecision) {
+      card.appendChild(readOnlyRow(
+        'Model precision',
+        s.modelPrecision === 'int8' ? 'Quantized for faster listening'
+          : s.modelPrecision === 'fp32' ? 'Original full-precision models'
+          : 'Some models fell back to fp32',
+        s.modelPrecision));
+    }
     card.appendChild(readOnlyRow(
-      'Stop word',
-      s.stopWordAvailable ? 'Running in Kiosk' : 'Voice Satellite keeps this one in the browser',
-      s.stopWord));
-  }
-  if (s.modelPrecision) {
-    card.appendChild(readOnlyRow(
-      'Model precision',
-      s.modelPrecision === 'int8' ? 'Quantized for faster listening'
-        : s.modelPrecision === 'fp32' ? 'Original full-precision models'
-        : 'Some models fell back to fp32',
-      s.modelPrecision));
-  }
-  card.appendChild(readOnlyRow(
-    'Native voice pipeline',
-    s.nativePipeline
-      ? 'Voice audio flows through the app during turns'
-      : 'This Voice Satellite version runs voice audio in the browser',
-    s.nativePipeline ? 'Supported' : 'Not supported'));
+      'Native voice pipeline',
+      s.nativePipeline
+        ? 'Voice audio flows through the app during turns'
+        : 'This Voice Satellite version runs voice audio in the browser',
+      s.nativePipeline ? 'Supported' : 'Not supported'));
 
-  // Models are cached by URL, so re-publishing one on Home Assistant under the
-  // same name is invisible to this device until the cache is dropped.
-  const row = document.createElement('div'); row.className = 'row';
-  const info = document.createElement('div'); info.className = 'info';
-  info.innerHTML = `<div class="name">Cached models</div>` +
-    `<div class="desc">Re-download from Home Assistant. Use after re-publishing a model.</div>`;
-  row.appendChild(info);
-  const btn = document.createElement('button');
-  btn.className = 'btn-ghost';
-  btn.textContent = 'Clear cache';
-  btn.addEventListener('click', async () => {
-    btn.disabled = true;
-    btn.textContent = 'Clearing…';
-    try {
-      const r = await cmd('clearWakeWordModels');
-      btn.textContent = r.ok ? `Cleared ${r.data.removed}` : 'Failed';
-    } catch { btn.textContent = 'Failed'; }
-    setTimeout(() => { btn.disabled = false; btn.textContent = 'Clear cache'; loadWakeWord(); }, 1200);
-  });
-  row.appendChild(btn);
-  card.appendChild(row);
+    // Models are cached by URL, so re-publishing one on Home Assistant under
+    // the same name is invisible to this device until the cache is dropped.
+    const row = document.createElement('div'); row.className = 'row';
+    const info = document.createElement('div'); info.className = 'info';
+    info.innerHTML = `<div class="name">Cached models</div>` +
+      `<div class="desc">Re-download from Home Assistant. Use after re-publishing a model.</div>`;
+    row.appendChild(info);
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Clear cache';
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = 'Clearing…';
+      try {
+        const r = await cmd('clearWakeWordModels');
+        btn.textContent = r.ok ? `Cleared ${r.data.removed}` : 'Failed';
+      } catch { btn.textContent = 'Failed'; }
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'Clear cache'; loadWakeWord(); }, 1200);
+    });
+    row.appendChild(btn);
+    card.appendChild(row);
+  }
 
   const root = $('#tab-voicesatellite');
   root.querySelector('#wakeWordCard')?.remove();

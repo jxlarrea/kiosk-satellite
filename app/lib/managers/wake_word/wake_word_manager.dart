@@ -247,6 +247,12 @@ class WakeWordManager extends Manager implements NativeAudioSource {
   /// nothing. Unmuting is what fixes a mute, and that comes from the card.
   bool get canRetry => _failed && !_released;
 
+  /// Whether the page released the mic (engine stopped, muted, or detection
+  /// handed back to the browser). The settings UIs collapse the "Running in
+  /// Kiosk" rows behind this: the retained config only describes what the
+  /// next push would run.
+  bool get released => _released;
+
   /// What went wrong, or null when nothing has — or when it no longer matters
   /// because the card has since taken the microphone back.
   EngineFailure? get failure => canRetry ? _failure : null;
