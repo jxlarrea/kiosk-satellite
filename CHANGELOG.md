@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.60 - 2026-08-19
 
 ### Fixed
 - YAML-mode dashboards now appear in the Dashboard view select. When the option list was learned before the dashboard page was up (an app start, a reconnect), the fallback crawl kept only storage-mode dashboards, so an instance whose dashboards live in configuration.yaml offered nothing but the default dashboard's views plus Map, no matter how many dashboards the sidebar showed. The same crawl also duplicated the default dashboard's views whenever a dashboard is registered on the default url path, and gave up on the entire list when any single dashboard's config could not be read, freezing the select on whatever it knew last; now an unreadable dashboard (a YAML file that will not parse, an admin-only dashboard the token cannot open) is offered by its bare path like a strategy dashboard, and only a dead connection preserves the last known list.
