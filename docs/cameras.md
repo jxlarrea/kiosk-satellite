@@ -1,8 +1,11 @@
 # Camera Streams
 
-Kiosk Satellite can show up to four low-latency WebRTC cameras in a
-full-screen view. Camera streams come from Home Assistant itself, from
-Go2RTC, or from a direct WHEP endpoint.
+Kiosk Satellite can show up to twelve cameras in a full-screen view. Camera
+streams come from Home Assistant itself, from Go2RTC, or from a direct WHEP
+endpoint, and play over WebRTC, MSE, or HLS. WebRTC leads for its
+near-realtime latency where a camera offers it; MSE (Go2RTC cameras) and
+HLS (Home Assistant cameras) carry the cameras and devices WebRTC cannot
+serve, switching over automatically.
 
 ## Import cameras from Home Assistant
 
@@ -67,7 +70,7 @@ fullscreen focus.
 
 ## Create a view
 
-A view contains one to four cameras, in the order you arrange them. In the
+A view contains one to twelve cameras, in the order you arrange them. In the
 view editor the chosen cameras sit in their own list: drag a row by its handle
 to reorder it (or use the arrows on a touch screen), and add or remove cameras
 from the list below. The view's **Show camera names** option controls whether
@@ -77,6 +80,8 @@ labels appear over the video.
 - Two cameras use columns in landscape and rows in portrait.
 - Three cameras use a balanced orientation-aware layout.
 - Four cameras use a 2 by 2 grid.
+- Larger counts use balanced grids where the first cameras get the biggest
+  tiles, transposed automatically in portrait.
 
 Tap a camera in a multi-camera view to focus it. Kiosk Satellite closes the
 other peer connections while focused. Press Back, use the back swipe gesture,
@@ -206,6 +211,15 @@ to HLS only when WebRTC does not work out on the device.
 The stream is whatever Home Assistant produces, so the H.265 notes above
 apply: a device that cannot decode the stream says so on the tile rather
 than staying silently blank.
+
+**Prefer HLS over WebRTC** (Settings, then Camera Streams, then Playback)
+flips the order for Home Assistant cameras that offer both transports, the
+counterpart of the MSE toggle above: for devices whose WebRTC cannot play
+these streams, and the switch to force HLS when testing. WebRTC then
+becomes the fallback.
+
+Each camera's row in the Cameras list names the formats it can play with,
+so which transport a camera has available is visible at a glance.
 
 ## Performance
 

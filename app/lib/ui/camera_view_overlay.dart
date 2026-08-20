@@ -330,8 +330,9 @@ class _CameraPlayerState extends State<CameraPlayer> {
   /// them. A Go2RTC server serves the same stream over WebRTC and MSE
   /// (issue #160, "Prefer MSE" flips that order); an `ha` camera offers
   /// what Home Assistant reported at import — WebRTC signaling (issue
-  /// #124), HLS, or both — and one added by hand (unknown types) tries
-  /// WebRTC first with HLS as the fallback; WHEP is WebRTC by definition.
+  /// #124), HLS, or both, with "Prefer HLS" flipping that order — and one
+  /// added by hand (unknown types) is offered both; WHEP is WebRTC by
+  /// definition.
   List<String> _transportsFor(CameraSource camera) {
     switch (camera.kind) {
       case 'go2rtc':
@@ -341,12 +342,13 @@ class _CameraPlayerState extends State<CameraPlayer> {
             : const ['webrtc', 'mse'];
       case 'ha':
         final types = camera.streamTypes;
-        if (types == null) return const ['webrtc', 'hls'];
+        final preferHls = widget.container.settings.get(defs.cameraPreferHls);
         final transports = [
-          if (types.contains('web_rtc')) 'webrtc',
-          if (types.contains('hls')) 'hls',
+          if (types == null || types.contains('web_rtc')) 'webrtc',
+          if (types == null || types.contains('hls')) 'hls',
         ];
-        return transports.isEmpty ? const ['webrtc'] : transports;
+        if (transports.isEmpty) return const ['webrtc'];
+        return preferHls ? transports.reversed.toList() : transports;
       default:
         return const ['webrtc'];
     }

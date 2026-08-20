@@ -3121,14 +3121,27 @@ async function loadCameras() {
     ));
   }
   const serverNames = Object.fromEntries(config.servers.map((server) => [server.id, server.name]));
+  // The stream formats a camera can play with, for its list row.
+  // Mirrored from ui/camera_settings.dart (_cameraFormats).
+  const cameraFormats = (camera) => {
+    if (camera.kind === 'go2rtc') return 'WebRTC, MSE';
+    if (camera.kind !== 'ha') return 'WebRTC';
+    if (!camera.streamTypes) return 'WebRTC, HLS';
+    const formats = [
+      camera.streamTypes.includes('web_rtc') && 'WebRTC',
+      camera.streamTypes.includes('hls') && 'HLS',
+    ].filter(Boolean);
+    return formats.length ? formats.join(', ') : 'WebRTC';
+  };
   for (const camera of config.cameras) {
+    const formats = ` · ${cameraFormats(camera)}`;
     const description = camera.kind === 'whep'
-      ? camera.whepUrl
+      ? `${camera.whepUrl}${formats}`
       : camera.kind === 'ha'
         ? `Home Assistant: ${camera.entityId || ''}`
-          + (camera.missing ? ' (missing)' : '')
+          + (camera.missing ? ' (missing)' : '') + formats
         : `${serverNames[camera.serverId] || 'Unknown server'}: ${camera.streamName}`
-          + (camera.missing ? ' (missing)' : '');
+          + (camera.missing ? ' (missing)' : '') + formats;
     camerasCard.appendChild(cameraListRow(camera.name, description, [
       cameraAction('Delete', async () => {
         const choice = await messageBox({
@@ -3220,7 +3233,8 @@ async function loadCameras() {
 
   // Mirrors the device's Playback section (ui/camera_settings.dart).
   const playbackKeys = ['camera.allow_h265', 'camera.prefer_mse',
-    'camera.single_audio', 'camera.auto_dismiss_seconds'];
+    'camera.prefer_hls', 'camera.single_audio',
+    'camera.auto_dismiss_seconds'];
   const playback = playbackKeys
     .map((key) => settings.find((setting) => setting.key === key))
     .filter(Boolean);

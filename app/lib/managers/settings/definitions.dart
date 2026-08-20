@@ -2954,6 +2954,21 @@ const cameraPreferMse = SettingDef<bool>(
   category: 'Cameras',
 );
 
+// The HLS twin of the toggle above, for Home Assistant cameras that offer
+// both transports: WebRTC leads for latency, HLS is the automatic fallback.
+// On, the order flips — for devices whose WebRTC cannot play these streams,
+// and for forcing HLS to test it.
+const cameraPreferHls = SettingDef<bool>(
+  key: 'camera.prefer_hls',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Prefer HLS over WebRTC',
+  description:
+      'Stream Home Assistant cameras over HLS first. For devices that '
+      'cannot play WebRTC; adds a few seconds of delay.',
+  category: 'Cameras',
+);
+
 // Sound only ever makes sense for one camera at a time: a grid playing four
 // microphones at once is noise, so the grid stays video-only and this toggle
 // applies where exactly one camera fills the view — a one-camera view, or a
@@ -3809,6 +3824,7 @@ const List<SettingDef<Object>> allSettings = [
   mqttDeviceId,
   cameraAllowH265,
   cameraPreferMse,
+  cameraPreferHls,
   cameraSingleAudio,
   cameraAutoDismissSeconds,
   cameraConfig,

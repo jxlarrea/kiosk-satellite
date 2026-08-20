@@ -237,6 +237,21 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               ),
             ),
             SearchLandingTarget(
+              id: defs.cameraPreferHls.key,
+              child: SwitchListTile(
+                title: Text(defs.cameraPreferHls.title),
+                subtitle: Text(defs.cameraPreferHls.description),
+                value: widget.container.settings.get(defs.cameraPreferHls),
+                onChanged: (value) async {
+                  await widget.container.settings.setFromJson(
+                    defs.cameraPreferHls.key,
+                    value,
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
+            ),
+            SearchLandingTarget(
               id: defs.cameraSingleAudio.key,
               child: SwitchListTile(
                 title: Text(defs.cameraSingleAudio.title),
@@ -335,20 +350,40 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     if (mounted) Navigator.of(context).pop();
   }
 
+  /// The stream formats this camera can play with, for its list row.
+  /// Mirrored in remote-ui/index.html.
+  String _cameraFormats(CameraSource camera) {
+    switch (camera.kind) {
+      case 'go2rtc':
+        return 'WebRTC, MSE';
+      case 'ha':
+        final types = camera.streamTypes;
+        if (types == null) return 'WebRTC, HLS';
+        final formats = [
+          if (types.contains('web_rtc')) 'WebRTC',
+          if (types.contains('hls')) 'HLS',
+        ];
+        return formats.isEmpty ? 'WebRTC' : formats.join(', ');
+      default:
+        return 'WebRTC';
+    }
+  }
+
   String _cameraSubtitle(
     CameraSource camera,
     CameraConfiguration configuration,
   ) {
-    if (camera.kind == 'whep') return camera.whepUrl ?? 'WHEP';
+    final formats = ' · ${_cameraFormats(camera)}';
+    if (camera.kind == 'whep') return '${camera.whepUrl ?? 'WHEP'}$formats';
     final status = camera.missing ? ' (missing)' : '';
     if (camera.kind == 'ha') {
-      return 'Home Assistant: ${camera.entityId ?? ''}$status';
+      return 'Home Assistant: ${camera.entityId ?? ''}$status$formats';
     }
     final server = configuration.servers
         .where((item) => item.id == camera.serverId)
         .firstOrNull;
     return '${server?.name ?? 'Unknown server'}: '
-        '${camera.streamName ?? ''}$status';
+        '${camera.streamName ?? ''}$status$formats';
   }
 
   Future<void> _import(CameraServer server) => _run(() async {
