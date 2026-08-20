@@ -178,7 +178,16 @@ internal class BleScanEngine(
             // moment later (seen on the Echo Show 8 while its adapter was
             // still turning on), so resetting the failure counter at start
             // time keeps the retry backoff pinned to its shortest step.
-            if (consecutiveFailures != 0) handler.post { consecutiveFailures = 0 }
+            if (consecutiveFailures != 0) handler.post {
+                if (consecutiveFailures != 0) {
+                    consecutiveFailures = 0
+                    // Closes the loop the failure notes open: without this a
+                    // log full of "scan failed" lines never says whether the
+                    // fallback (or a retry) eventually worked.
+                    note("scanning recovered, advertisements flowing" +
+                        if (minimalSettings) " (minimal scan settings)" else "")
+                }
+            }
             val advertisement = toAdvertisement(result) ?: return
             onAdvertisement(advertisement)
         }

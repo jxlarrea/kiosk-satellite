@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- The ESPHome proxy log now shows whether Home Assistant is actually taking the Bluetooth advertisements (#246). Each session's advertisement subscribe and unsubscribe is logged, a relay watchdog writes one line when the device keeps hearing advertisements but none have been forwarded to Home Assistant for two minutes (with the received and forwarded counters) and another when forwarding resumes, and the scanner logs a recovery line when advertisements start flowing again after a failure streak, naming whether the minimal-settings fallback is in effect. Together these split the case a full Nearby list and an empty Home Assistant side could not distinguish before: scanning trouble, a missing subscription, or a wedged relay.
+
 ### Fixed
 - The app launcher works while "Disable home button" holds. Launching an app from a pinned kiosk only produced Android's "to unpin, swipe up and hold" toast, and manually unpinning to get around it left the kiosk unpinned until the setting was toggled. The kiosk now unpins itself for the launch and re-checks the pin every time it returns to the foreground, so the pin comes back on its own after the launched app, and after a manual unpin too. On devices without device ownership the re-pin shows Android's pinning confirmation again, the ceiling Android sets for screen pinning; the Apps row under Allowed Actions now says the launch drops the pin.
 

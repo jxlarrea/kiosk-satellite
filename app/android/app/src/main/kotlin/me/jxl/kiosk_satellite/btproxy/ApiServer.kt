@@ -94,6 +94,9 @@ internal class ApiServer(
         const val PING_IDLE_MS = 20_000L
         const val SESSION_SILENCE_TIMEOUT_MS = 90_000L
         const val FLUSH_INTERVAL_MS = 100L
+        // A healthy relay forwards within one flush interval of hearing
+        // anything; two minutes of hearing-but-not-forwarding is a wedge.
+        const val RELAY_STALL_MS = 120_000L
         const val ADVERTISEMENT_BATCH = 16
         const val MAX_BATCHES_PER_FLUSH = 4
         const val MAX_PENDING = 2048
@@ -382,6 +385,38 @@ internal class ApiServer(
                 session.enqueue(Msg.PING_REQUEST, ByteArray(0))
             }
         }
+        checkRelayHealth(now)
+    }
+
+    // One line per episode, cleared on recovery: catches the failure shape
+    // where the device's Nearby list fills happily while Home Assistant
+    // receives nothing (issue #246, a LineageOS tablet), which no other
+    // surface can distinguish from a working proxy.
+    private var subscribedSince = 0L
+    private var relayStallLogged = false
+
+    private fun checkRelayHealth(now: Long) {
+        if (!sessions.any { it.wantsAdvertisements }) {
+            subscribedSince = 0L
+            relayStallLogged = false
+            return
+        }
+        if (subscribedSince == 0L) subscribedSince = now
+        val received = lastReceivedAt.get()
+        val forwarded = lastForwardedAt.get()
+        val hearing = received != 0L && now - received < 30_000
+        val stalled = hearing &&
+            now - subscribedSince > RELAY_STALL_MS &&
+            (forwarded == 0L || now - forwarded > RELAY_STALL_MS)
+        if (stalled && !relayStallLogged) {
+            relayStallLogged = true
+            log("relay stalled: hearing advertisements but none forwarded to " +
+                "Home Assistant for ${RELAY_STALL_MS / 60_000} minutes " +
+                "(received ${receivedCount.get()}, forwarded ${forwardedCount.get()})")
+        } else if (relayStallLogged && forwarded != 0L && now - forwarded < 30_000) {
+            relayStallLogged = false
+            log("relay recovered: advertisements forwarding to Home Assistant again")
+        }
     }
 
     private fun flushAdvertisements() {
@@ -664,6 +699,11 @@ internal class ApiServer(
                         enqueue(Msg.GET_TIME_RESPONSE, ApiCodec.getTimeResponse(clock() / 1000))
                     Msg.SUBSCRIBE_BLE_ADVERTISEMENTS_REQUEST -> {
                         wantsAdvertisements = true
+                        // Logged because its absence is a diagnosis: a full
+                        // Nearby list with an empty Home Assistant side and
+                        // no subscribe line means HA never asked for the
+                        // advertisements at all (issue #246).
+                        log("session #$id subscribed to Bluetooth advertisements")
                         // Replay current scanner state so HA renders the
                         // scanner entity immediately.
                         enqueue(Msg.BT_SCANNER_STATE_RESPONSE,
@@ -672,6 +712,7 @@ internal class ApiServer(
                     }
                     Msg.UNSUBSCRIBE_BLE_ADVERTISEMENTS_REQUEST -> {
                         wantsAdvertisements = false
+                        log("session #$id unsubscribed from Bluetooth advertisements")
                         updateScanDemand()
                     }
                     Msg.SUBSCRIBE_BT_CONNECTIONS_FREE_REQUEST -> {
