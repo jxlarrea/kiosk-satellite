@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.67 - 2026-08-20
 
 ### Added
 - Home Assistant cameras that cannot stream at all play over MJPEG. Every camera entity serves Home Assistant's camera proxy stream, so stills-only cameras such as UniFi package cameras now show a live picture instead of failing, and MJPEG is the automatic last resort for every other Home Assistant camera whose WebRTC and HLS paths fail on a device. The import now accepts every camera entity, a hand-added Home Assistant camera asks Home Assistant what the entity really offers instead of assuming WebRTC and HLS (its formats label now tells the truth), and a transport the server itself refuses is skipped immediately rather than retried three times before moving on.
