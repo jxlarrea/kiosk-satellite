@@ -693,6 +693,161 @@ void main() {
     expect(result.ok, isTrue);
     expect(cameras.config.cameras.single.missing, isTrue);
     expect(cameras.config.cameras.single.streamTypes, ['web_rtc', 'hls']);
+
+    // A stills-only entity (no stream types at all) is still imported:
+    // MJPEG over the camera proxy is its transport.
+    ha.streamable = [
+      (entityId: 'camera.door', name: 'Door', streamTypes: ['web_rtc']),
+      (entityId: 'camera.package', name: 'Package', streamTypes: <String>[]),
+    ];
+    result = await commands.execute('cameraImportHomeAssistant', {});
+    expect(result.ok, isTrue);
+    final package = cameras.config.cameras
+        .firstWhere((camera) => camera.entityId == 'camera.package');
+    expect(package.streamTypes, isEmpty);
+  });
+
+  test('a hand-added ha camera asks Home Assistant for its stream types',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final ha = _FakeHaManager(bus, commands, logger, settings)
+      ..capabilities = <String>[];
+    final cameras = CameraManager(bus, commands, logger, settings, ha);
+    await cameras.init();
+    addTearDown(cameras.dispose);
+
+    // A stills-only entity records its (empty) types at save time, so the
+    // player goes straight to MJPEG instead of laddering through
+    // transports the entity does not have.
+    final put = await commands.execute('cameraPutSource', {
+      'name': 'Package',
+      'kind': 'ha',
+      'entityId': 'camera.package',
+    });
+    expect(put.ok, isTrue);
+    expect(cameras.config.cameras.single.streamTypes, isEmpty);
+
+    // A rename keeps the known types rather than asking again.
+    ha.capabilities = ['web_rtc'];
+    final rename = await commands.execute('cameraPutSource', {
+      'id': cameras.config.cameras.single.id,
+      'name': 'Package Camera',
+      'kind': 'ha',
+      'entityId': 'camera.package',
+    });
+    expect(rename.ok, isTrue);
+    expect(cameras.config.cameras.single.name, 'Package Camera');
+    expect(cameras.config.cameras.single.streamTypes, isEmpty);
+
+    // Home Assistant unreachable at save time: unknown, not incapable.
+    ha.capabilities = null;
+    final blind = await commands.execute('cameraPutSource', {
+      'name': 'Blind',
+      'kind': 'ha',
+      'entityId': 'camera.blind',
+    });
+    expect(blind.ok, isTrue);
+    expect(
+      cameras.config.cameras
+          .firstWhere((camera) => camera.entityId == 'camera.blind')
+          .streamTypes,
+      isNull,
+    );
+  });
+
+  test('the MJPEG relay streams the camera proxy with the bearer token, '
+      'single use', () async {
+    HttpOverrides.global = _RealHttpOverrides();
+    addTearDown(() => HttpOverrides.global = null);
+    // A fake Home Assistant camera proxy: records the Authorization
+    // header, answers a short multipart stream.
+    String? sawAuth;
+    final haServer = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => haServer.close(force: true));
+    haServer.listen((request) async {
+      sawAuth = request.headers.value(HttpHeaders.authorizationHeader);
+      final response = request.response;
+      if (request.uri.path == '/api/camera_proxy_stream/camera.package') {
+        response.headers.contentType =
+            ContentType.parse('multipart/x-mixed-replace; boundary=frame');
+        response.add(const [1, 2, 3, 4, 5]);
+      } else {
+        response.statusCode = HttpStatus.notFound;
+      }
+      await response.close();
+    });
+
+    const config = CameraConfiguration(
+      cameras: [
+        CameraSource(
+          id: 'package',
+          name: 'Package',
+          kind: 'ha',
+          entityId: 'camera.package',
+          streamTypes: [],
+        ),
+        CameraSource(
+          id: 'street',
+          name: 'Street',
+          kind: 'whep',
+          whepUrl: 'https://example.net/whep',
+        ),
+      ],
+    );
+    SharedPreferences.setMockInitialValues({
+      'ks.camera.config': config.encode(),
+    });
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final ha = _FakeHaManager(bus, commands, logger, settings)
+      ..mjpegTarget = (
+        uri: Uri.parse(
+          'http://127.0.0.1:${haServer.port}'
+          '/api/camera_proxy_stream/camera.package',
+        ),
+        token: 'secret-token',
+      );
+    final cameras = CameraManager(bus, commands, logger, settings, ha);
+    await cameras.init();
+    addTearDown(cameras.dispose);
+
+    // Only ha cameras have an MJPEG endpoint to hand out.
+    final refused = await cameras.mjpegEndpoint(cameraId: 'street');
+    expect(refused['ok'], isFalse);
+
+    final endpoint = await cameras.mjpegEndpoint(cameraId: 'package');
+    expect(endpoint['ok'], isTrue, reason: '${endpoint['error']}');
+    final url = Uri.parse('${endpoint['url']}');
+
+    final client = HttpClient();
+    addTearDown(() => client.close(force: true));
+    final response = await (await client.getUrl(url)).close();
+    expect(response.statusCode, HttpStatus.ok);
+    expect(
+      response.headers.contentType?.mimeType,
+      'multipart/x-mixed-replace',
+    );
+    expect(response.headers.contentType?.parameters['boundary'], 'frame');
+    final bytes = await response.fold<List<int>>(
+      [],
+      (all, chunk) => all..addAll(chunk),
+    );
+    expect(bytes, const [1, 2, 3, 4, 5]);
+    expect(sawAuth, 'Bearer secret-token',
+        reason: 'the relay must carry the login the page img cannot');
+
+    // A token is single use: replaying the same url is refused.
+    final replay = await (await client.getUrl(url)).close();
+    expect(replay.statusCode, HttpStatus.notFound);
+    await replay.drain<void>();
   });
 
   test('the HLS relay proxies playlists and segments with CORS, pinned to '
@@ -822,6 +977,8 @@ class _FakeHaManager extends HomeAssistantManager {
 
   String? streamUrl;
   List<({String entityId, String name, List<String> streamTypes})>? streamable;
+  List<String>? capabilities;
+  ({Uri uri, String token})? mjpegTarget;
 
   @override
   Future<String?> cameraStreamUrl(String entityId) async => streamUrl;
@@ -829,4 +986,11 @@ class _FakeHaManager extends HomeAssistantManager {
   @override
   Future<List<({String entityId, String name, List<String> streamTypes})>?>
   listStreamableCameras() async => streamable;
+
+  @override
+  Future<List<String>?> cameraCapabilities(String entityId) async =>
+      capabilities;
+
+  @override
+  ({Uri uri, String token})? cameraMjpegTarget(String entityId) => mjpegTarget;
 }

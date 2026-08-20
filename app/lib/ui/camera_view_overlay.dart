@@ -346,13 +346,20 @@ class _CameraPlayerState extends State<CameraPlayer> {
             : const ['webrtc', 'mse'];
       case 'ha':
         final types = camera.streamTypes;
-        final preferHls = widget.container.settings.get(defs.cameraPreferHls);
+        // MJPEG closes every list: Home Assistant's camera proxy serves
+        // it for every camera entity, so a stills-only camera (empty
+        // types) plays over it alone and everything else keeps it as the
+        // rung of last resort.
         final transports = [
           if (types == null || types.contains('web_rtc')) 'webrtc',
           if (types == null || types.contains('hls')) 'hls',
+          'mjpeg',
         ];
-        if (transports.isEmpty) return const ['webrtc'];
-        return preferHls ? transports.reversed.toList() : transports;
+        if (widget.container.settings.get(defs.cameraPreferHls) &&
+            transports.remove('hls')) {
+          transports.insert(0, 'hls');
+        }
+        return transports;
       default:
         return const ['webrtc'];
     }
@@ -527,6 +534,19 @@ class _CameraPlayerState extends State<CameraPlayer> {
             try {
               final request = (args.first as Map).cast<String, Object?>();
               return await widget.container.camera.hlsEndpoint(
+                cameraId: '${request['cameraId'] ?? ''}',
+              );
+            } catch (error) {
+              return {'ok': false, 'error': '$error'};
+            }
+          },
+        );
+        controller.addJavaScriptHandler(
+          handlerName: 'cameraMjpeg',
+          callback: (args) async {
+            try {
+              final request = (args.first as Map).cast<String, Object?>();
+              return await widget.container.camera.mjpegEndpoint(
                 cameraId: '${request['cameraId'] ?? ''}',
               );
             } catch (error) {

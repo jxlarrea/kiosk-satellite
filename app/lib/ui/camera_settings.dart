@@ -66,8 +66,9 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               leading: const Icon(Icons.download_outlined),
               title: const Text('Import cameras from Home Assistant'),
               subtitle: const Text(
-                'Add every camera the connected Home Assistant can stream '
-                'over WebRTC or HLS. Importing again merges new cameras.',
+                'Add every camera of the connected Home Assistant, playing '
+                'over WebRTC, HLS or MJPEG. Importing again merges new '
+                'cameras.',
               ),
               onTap: _busy ? null : _importHomeAssistant,
             ),
@@ -357,13 +358,16 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
       case 'go2rtc':
         return 'WebRTC, MSE';
       case 'ha':
+        // MJPEG is always on the list: every Home Assistant camera
+        // entity serves the camera proxy stream, stills-only ones
+        // exclusively so.
         final types = camera.streamTypes;
-        if (types == null) return 'WebRTC, HLS';
-        final formats = [
+        if (types == null) return 'WebRTC, HLS, MJPEG';
+        return [
           if (types.contains('web_rtc')) 'WebRTC',
           if (types.contains('hls')) 'HLS',
-        ];
-        return formats.isEmpty ? 'WebRTC' : formats.join(', ');
+          'MJPEG',
+        ].join(', ');
       default:
         return 'WebRTC';
     }

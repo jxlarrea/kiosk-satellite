@@ -157,8 +157,9 @@ class CameraManager extends Manager {
         Command(
           name: 'cameraImportHomeAssistant',
           description:
-              'Import and merge the streamable (WebRTC or HLS) camera '
-              'entities of the connected Home Assistant (issue #124).',
+              'Import and merge the camera entities of the connected Home '
+              'Assistant (issue #124); they play over WebRTC, HLS or MJPEG '
+              'as each entity allows.',
           handler: (_) => importHomeAssistantCameras(),
         ),
       )
@@ -530,6 +531,19 @@ class CameraManager extends Manager {
       }
     }
     final id = existing?.id ?? _newId();
+    // An edit (rename, and the remote UI resubmits every field) must not
+    // cost an imported camera its known stream types; they change only
+    // when the entity itself changes. A new or re-pointed `ha` camera asks
+    // Home Assistant what the entity offers, so a hand-added camera gets
+    // the same honest transports (and formats label) an imported one has;
+    // when HA cannot answer right now the types stay unknown and the
+    // player tries everything.
+    var streamTypes = kind == 'ha' && entityId == existing?.entityId
+        ? existing?.streamTypes
+        : null;
+    if (kind == 'ha' && streamTypes == null) {
+      streamTypes = await _homeAssistant.cameraCapabilities(entityId);
+    }
     final source = CameraSource(
       id: id,
       name: name,
@@ -538,12 +552,7 @@ class CameraManager extends Manager {
       streamName: kind == 'go2rtc' ? streamName : null,
       whepUrl: kind == 'whep' ? whepUrl : null,
       entityId: kind == 'ha' ? entityId : null,
-      // An edit (rename, and the remote UI resubmits every field) must not
-      // cost an imported camera its known stream types; they change only
-      // when the entity itself changes.
-      streamTypes: kind == 'ha' && entityId == existing?.entityId
-          ? existing?.streamTypes
-          : null,
+      streamTypes: streamTypes,
       fullscreenStreamName:
           '${params['fullscreenStreamName'] ?? existing?.fullscreenStreamName ?? ''}'
               .trim(),
@@ -967,15 +976,52 @@ class CameraManager extends Manager {
     }
   }
 
+  /// A loopback URL serving [cameraId]'s MJPEG stream through the relay:
+  /// Home Assistant's camera proxy stream, which every camera entity
+  /// serves, streams included — it is the only path for stills-only
+  /// cameras (UniFi package cameras and their kin) and the last rung of
+  /// the ladder for everything else. The page's `<img>` cannot send the
+  /// Authorization header, so the relay fetches upstream with it.
+  Future<Map<String, Object?>> mjpegEndpoint({required String cameraId}) async {
+    final camera = _config.cameras
+        .where((item) => item.id == cameraId)
+        .firstOrNull;
+    if (camera == null) return {'ok': false, 'error': 'camera not found'};
+    final entityId = camera.entityId ?? '';
+    if (camera.kind != 'ha' || entityId.isEmpty) {
+      return {
+        'ok': false,
+        'error':
+            'MJPEG streaming needs a Home Assistant camera (this one is '
+            '${camera.kind})',
+      };
+    }
+    final target = _homeAssistant.cameraMjpegTarget(entityId);
+    if (target == null) {
+      return {'ok': false, 'error': 'Home Assistant is not configured'};
+    }
+    try {
+      final port = await _ensureRelay();
+      final token = _relayToken();
+      _mjpegPending[token] = target;
+      // A token the page never fetches must not accumulate.
+      Timer(const Duration(seconds: 30), () => _mjpegPending.remove(token));
+      return {'ok': true, 'url': 'http://127.0.0.1:$port/mjpeg/$token'};
+    } catch (e) {
+      return {'ok': false, 'error': 'MJPEG relay failed: $e'};
+    }
+  }
+
   HttpServer? _relayServer;
   final _msePending = <String, ({Uri uri, CameraServer server})>{};
+  final _mjpegPending = <String, ({Uri uri, String token})>{};
   final _mseSockets = <WebSocket>{};
 
   /// Live HLS proxy sessions by token; the value is the playlist URL HA
   /// handed out, kept to pin every proxied fetch to its origin.
   final _hlsSessions = <String, Uri>{};
   final _hlsByCamera = <String, String>{};
-  HttpClient? _hlsClient;
+  HttpClient? _relayClient;
 
   String _relayToken() {
     final random = Random.secure();
@@ -1000,7 +1046,51 @@ class CameraManager extends Manager {
       await _serveHls(request, segments[1]);
       return;
     }
+    if (segments.length == 2 && segments.first == 'mjpeg') {
+      await _serveMjpeg(request, segments[1]);
+      return;
+    }
     await _handleMseUpgrade(request);
+  }
+
+  /// Serve one proxied MJPEG stream: a single-use token bought from
+  /// [mjpegEndpoint], fetched upstream with the Authorization header the
+  /// page cannot send, and piped for as long as both sides stay open.
+  Future<void> _serveMjpeg(HttpRequest request, String token) async {
+    final response = request.response;
+    final target = _mjpegPending.remove(token);
+    if (target == null) {
+      response.statusCode = HttpStatus.notFound;
+      await response.close();
+      return;
+    }
+    try {
+      final client = _relayClient ??= HttpClient()
+        ..connectionTimeout = const Duration(seconds: 15);
+      final upstreamRequest = await client.getUrl(target.uri);
+      upstreamRequest.headers.set(
+        HttpHeaders.authorizationHeader,
+        'Bearer ${target.token}',
+      );
+      final upstreamResponse = await upstreamRequest.close();
+      response.statusCode = upstreamResponse.statusCode;
+      // The multipart content type carries the frame boundary; without it
+      // the img renders nothing.
+      final contentType = upstreamResponse.headers.contentType;
+      if (contentType != null) response.headers.contentType = contentType;
+      // Frames must leave as they arrive: a buffered live stream is a
+      // frozen one.
+      response.bufferOutput = false;
+      await response.addStream(upstreamResponse);
+      await response.close();
+    } catch (e) {
+      // The page dropping its img mid-stream lands here; only note it.
+      log.debug(name, 'MJPEG proxy stream ended: $e');
+      try {
+        response.statusCode = HttpStatus.badGateway;
+        await response.close();
+      } catch (_) {}
+    }
   }
 
   /// Serve one proxied HLS fetch: `/hls/{token}/r?u={absolute upstream
@@ -1027,7 +1117,7 @@ class CameraManager extends Manager {
       return;
     }
     try {
-      final client = _hlsClient ??= HttpClient()
+      final client = _relayClient ??= HttpClient()
         ..connectionTimeout = const Duration(seconds: 15);
       final upstreamRequest = await client.getUrl(upstream);
       final range = request.headers.value(HttpHeaders.rangeHeader);
@@ -1147,11 +1237,12 @@ class CameraManager extends Manager {
     }
     _mseSockets.clear();
     _msePending.clear();
+    _mjpegPending.clear();
     _hlsSessions.clear();
     _hlsByCamera.clear();
     // Aborts in-flight upstream fetches; recreated lazily on the next use.
-    _hlsClient?.close(force: true);
-    _hlsClient = null;
+    _relayClient?.close(force: true);
+    _relayClient = null;
   }
 
   Future<_HttpResult> _request(

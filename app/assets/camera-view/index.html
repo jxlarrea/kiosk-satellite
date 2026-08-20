@@ -16,7 +16,8 @@
     background: #000; }
   .tile.hidden { display: none; }
   .tile.focused { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
-  video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  video, img.mjpeg { width: 100%; height: 100%; object-fit: contain;
+    background: #000; display: block; }
   /* Belt for WebViews that predate disableRemotePlayback: never draw the
      media-controls overlay cast button on a camera tile. */
   video::-internal-media-controls-overlay-cast-button { display: none !important; }
@@ -82,7 +83,7 @@ const MSE_STALL_MS = 12000;
 // Each camera carries its transports in preference order (built by the
 // app: Go2RTC does WebRTC/MSE with "Prefer MSE" deciding which leads,
 // issue #160; HA cameras do WebRTC signaling and/or HLS; WHEP is WebRTC).
-const MODE_LABEL = { webrtc: 'WebRTC', mse: 'MSE', hls: 'HLS' };
+const MODE_LABEL = { webrtc: 'WebRTC', mse: 'MSE', hls: 'HLS', mjpeg: 'MJPEG' };
 // Sound is opt-in and only ever for one camera at a time: several cameras
 // playing their microphones over each other is noise, so a multi-camera
 // grid stays muted and video-only, and a camera qualifies only when it is
@@ -280,6 +281,12 @@ function stop(cameraId) {
     session.video.load();
     session.video.remove();
   }
+  if (session.img) {
+    session.img.onerror = null;
+    session.img.removeAttribute('src');
+    session.img.remove();
+    session.img = null;
+  }
   sessions.delete(cameraId);
 }
 
@@ -324,9 +331,10 @@ async function start(cameraId, fullscreen) {
     : ['webrtc'];
   const session = {
     wanted: true, pc: null, ws: null, hls: null, mediaSource: null,
-    sourceBuffer: null, queue: [], video: null, retry: null, grace: null,
-    decode: null, stallWatch: null, attempt: 0, modes, modeIndex: 0,
-    modeFailures: 0, fullscreen: !!fullscreen, audio: audioFor(cameraId),
+    sourceBuffer: null, queue: [], video: null, img: null, retry: null,
+    grace: null, decode: null, stallWatch: null, attempt: 0, modes,
+    modeIndex: 0, modeFailures: 0, fullscreen: !!fullscreen,
+    audio: audioFor(cameraId),
   };
   sessions.set(cameraId, session);
 
@@ -346,6 +354,13 @@ async function start(cameraId, fullscreen) {
   const ensureVideo = () => {
     const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
     if (!tile) return null;
+    // A previous attempt may have run over MJPEG; the img gives way.
+    const stray = tile.querySelector('img.mjpeg');
+    if (stray) {
+      stray.onerror = null;
+      stray.remove();
+      if (session.img === stray) session.img = null;
+    }
     let video = tile.querySelector('video');
     if (!video) {
       video = document.createElement('video');
@@ -377,6 +392,13 @@ async function start(cameraId, fullscreen) {
     session.stallWatch = null;
     clearTimeout(session.grace);
     session.grace = null;
+    if (session.img) {
+      // Unlike the video element, the img's src IS its connection, so a
+      // retry has to drop it; the element itself stays for the next
+      // attempt to reuse.
+      session.img.onerror = null;
+      session.img.removeAttribute('src');
+    }
     if (session.hls) {
       try { session.hls.destroy(); } catch (_) {}
       session.hls = null;
@@ -495,9 +517,82 @@ async function start(cameraId, fullscreen) {
       connectMse();
     } else if (modeName() === 'hls') {
       connectHls();
+    } else if (modeName() === 'mjpeg') {
+      connectMjpeg();
     } else {
       connectWebrtc();
     }
+  };
+
+  // Home Assistant's camera proxy stream: multipart JPEG into an <img>,
+  // no decoder negotiation at all. The only transport a stills-only
+  // camera (UniFi package cameras and their kin) has, and the last rung
+  // for every other Home Assistant camera. Video only, frame rates are
+  // whatever the camera produces, and the proxy transcodes server-side,
+  // so the fancier transports always get their chance first.
+  const connectMjpeg = async () => {
+    setStatus(cameraId, 'Connecting...');
+    let info = null;
+    try {
+      info = await bridge('cameraMjpeg', { cameraId });
+    } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    if (!info || info.ok !== true) {
+      log(`${cameraId}: MJPEG endpoint failed: ${info && info.error}`);
+      retry((seconds) =>
+        `Cannot reach Home Assistant. Retrying in ${seconds}s`,
+        session.modes.length > 1);
+      return;
+    }
+    const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
+    if (!tile) return;
+    // The tile may have carried a video transport on a previous attempt.
+    const video = tile.querySelector('video');
+    if (video) {
+      if (video.srcObject) {
+        for (const track of video.srcObject.getTracks()) track.stop();
+      }
+      video.remove();
+      session.video = null;
+    }
+    let img = tile.querySelector('img.mjpeg');
+    if (!img) {
+      img = document.createElement('img');
+      img.className = 'mjpeg';
+      tile.insertBefore(img, tile.firstChild);
+    }
+    session.img = img;
+    const stale = () => !session.wanted || session.img !== img;
+    img.onerror = () => {
+      if (stale()) return;
+      log(`${cameraId}: MJPEG stream failed`, 'warn');
+      retry(() => 'Reconnecting...');
+    };
+    img.src = info.url;
+    // Multipart images fire no reliable load event per frame; the first
+    // decoded frame shows up as a natural size instead.
+    const startedAt = performance.now();
+    session.decode = setInterval(() => {
+      if (stale()) {
+        clearInterval(session.decode);
+        session.decode = null;
+        return;
+      }
+      if (img.naturalWidth > 0) {
+        clearInterval(session.decode);
+        session.decode = null;
+        session.attempt = 0;
+        session.modeFailures = 0;
+        setStatus(cameraId, '');
+        log(`${cameraId}: playing over MJPEG `
+          + `(${img.naturalWidth}x${img.naturalHeight})`);
+      } else if (performance.now() - startedAt > MSE_STALL_MS) {
+        clearInterval(session.decode);
+        session.decode = null;
+        log(`${cameraId}: MJPEG delivered no frame`, 'warn');
+        retry(() => 'Reconnecting...');
+      }
+    }, 500);
   };
 
   const connectMse = async () => {
@@ -682,9 +777,14 @@ async function start(cameraId, fullscreen) {
     } catch (_) {}
     if (!session.wanted || sessions.get(cameraId) !== session) return;
     if (!info || info.ok !== true) {
+      // Home Assistant saying no to the stream is this transport's
+      // answer, not a blip: a camera advertised as streamable that is
+      // not (it happens) moves on to MJPEG right away instead of
+      // striking out three times first.
       log(`${cameraId}: HLS endpoint failed: ${info && info.error}`);
       retry((seconds) =>
-        `Home Assistant could not start this stream. Retrying in ${seconds}s`);
+        `Home Assistant could not start this stream. Retrying in ${seconds}s`,
+        session.modes.length > 1);
       return;
     }
     const video = ensureVideo();
@@ -861,7 +961,14 @@ async function start(cameraId, fullscreen) {
     } catch (error) {
       log(`connect ${cameraId}: ${error}`);
       const headline = signalingFailure(signaling);
-      retry((seconds) => `${headline}. Retrying in ${seconds}s`);
+      // A server that answered and refused has told this transport no;
+      // where another transport exists, try it now rather than after
+      // three identical refusals. Network failures keep the strikes:
+      // they condemn the network, not the transport.
+      const refused = !!signaling && signaling.ok !== true &&
+        signaling.kind !== 'network';
+      retry((seconds) => `${headline}. Retrying in ${seconds}s`,
+        refused && session.modes.length > 1);
     }
   };
   connect();

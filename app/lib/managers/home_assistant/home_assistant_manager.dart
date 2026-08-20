@@ -1729,12 +1729,13 @@ class HomeAssistantManager extends Manager {
     }
   }
 
-  /// The `camera.*` entities whose frontend can stream at all — WebRTC
-  /// (issue #124) or HLS — for the camera import. Reads all states for
-  /// names, then asks `camera/capabilities` (HA 2024.11+) per entity;
-  /// entities the command fails for (older HA, odd integrations) are
-  /// simply not offered. Null when Home Assistant is not configured or
-  /// unreachable.
+  /// The `camera.*` entities for the camera import, each with the stream
+  /// types its frontend offers — WebRTC (issue #124), HLS, or none at
+  /// all, in which case MJPEG over the camera proxy is its only path.
+  /// Reads all states for names, then asks `camera/capabilities`
+  /// (HA 2024.11+) per entity; entities the command fails for (removed
+  /// mid-listing, odd integrations) are simply not offered. Null when
+  /// Home Assistant is not configured or unreachable.
   Future<List<({String entityId, String name, List<String> streamTypes})>?>
   listStreamableCameras() async {
     final states = await fetchStates();
@@ -1744,25 +1745,8 @@ class HomeAssistantManager extends Manager {
     for (final state in states) {
       final entityId = '${state['entity_id'] ?? ''}';
       if (!entityId.startsWith('camera.')) continue;
-      final streamTypes = <String>[];
-      try {
-        final capabilities = await _wsCommand({
-          'type': 'camera/capabilities',
-          'entity_id': entityId,
-        });
-        final types = capabilities is Map
-            ? capabilities['frontend_stream_types']
-            : null;
-        if (types is! List) continue;
-        streamTypes.addAll([
-          for (final type in types)
-            if (type == 'web_rtc' || type == 'hls') '$type',
-        ]);
-        if (streamTypes.isEmpty) continue;
-      } catch (e) {
-        log.debug(name, 'camera/capabilities($entityId) failed: $e');
-        continue;
-      }
+      final streamTypes = await cameraCapabilities(entityId);
+      if (streamTypes == null) continue;
       final attributes = (state['attributes'] as Map?) ?? const {};
       final friendly = '${attributes['friendly_name'] ?? ''}'.trim();
       result.add((
@@ -1775,6 +1759,44 @@ class HomeAssistantManager extends Manager {
     }
     result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     return result;
+  }
+
+  /// The frontend stream types (`web_rtc`, `hls`) Home Assistant reports
+  /// for one camera entity, empty when the entity cannot stream at all (a
+  /// stills-only camera such as UniFi's package camera: MJPEG is its only
+  /// path). Null when Home Assistant is not configured or the query
+  /// failed, which callers treat as unknown rather than incapable.
+  Future<List<String>?> cameraCapabilities(String entityId) async {
+    if (!configured) return null;
+    try {
+      final capabilities = await _wsCommand({
+        'type': 'camera/capabilities',
+        'entity_id': entityId,
+      });
+      final types = capabilities is Map
+          ? capabilities['frontend_stream_types']
+          : null;
+      if (types is! List) return null;
+      return [
+        for (final type in types)
+          if (type == 'web_rtc' || type == 'hls') '$type',
+      ];
+    } catch (e) {
+      log.debug(name, 'camera/capabilities($entityId) failed: $e');
+      return null;
+    }
+  }
+
+  /// The authenticated MJPEG target for [entityId]: Home Assistant's
+  /// camera proxy stream, which every camera entity serves regardless of
+  /// stream support, plus the bearer token the request must carry (an
+  /// `<img>` cannot send headers, so the camera relay fetches it). Null
+  /// when Home Assistant is not configured.
+  ({Uri uri, String token})? cameraMjpegTarget(String entityId) {
+    if (!configured) return null;
+    final uri = Uri.tryParse('$baseUrl/api/camera_proxy_stream/$entityId');
+    if (uri == null) return null;
+    return (uri: uri, token: _settings.get(defs.haToken));
   }
 
   /// The absolute URL of a fresh HLS playlist for [entityId]

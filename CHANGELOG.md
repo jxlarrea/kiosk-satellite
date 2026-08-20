@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- Home Assistant cameras that cannot stream at all play over MJPEG. Every camera entity serves Home Assistant's camera proxy stream, so stills-only cameras such as UniFi package cameras now show a live picture instead of failing, and MJPEG is the automatic last resort for every other Home Assistant camera whose WebRTC and HLS paths fail on a device. The import now accepts every camera entity, a hand-added Home Assistant camera asks Home Assistant what the entity really offers instead of assuming WebRTC and HLS (its formats label now tells the truth), and a transport the server itself refuses is skipped immediately rather than retried three times before moving on.
+
 ### Fixed
 - Cards that make room for the Home Assistant sidebar (navbar-card among them) now sit flush to the screen edge when kiosk mode hides the sidebar. The frontend publishes the sidebar's width under two names across generations, and kiosk mode only zeroed the older one, so cards reading the newer variable kept dodging a sidebar that was no longer there. Verified live on an Echo Show 8: the navbar moved from 272px in to its intended 16px inset.
 - Opening a camera view no longer flashes white as it slides up. Two causes stacked: hls.js was parsed in the page's critical path, delaying the first black paint (it now loads deferred, and the HLS player waits for it), and Android composites a fresh WebView's default white background for a frame or two before any page paints at all (the view now keeps a black cover over the WebView until the page reports its first frame, and the WebView background is transparent over the black surface behind it). Verified frame by frame on an Echo Show 8 screen recording.

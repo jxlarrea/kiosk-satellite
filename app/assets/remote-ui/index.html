@@ -3046,8 +3046,8 @@ async function loadCameras() {
   const haCard = card();
   haCard.appendChild(cameraListRow(
     'Import cameras from Home Assistant',
-    'Add every camera the connected Home Assistant can stream over '
-      + 'WebRTC or HLS. Importing again merges new cameras.',
+    'Add every camera of the connected Home Assistant, playing over '
+      + 'WebRTC, HLS or MJPEG. Importing again merges new cameras.',
     [
       cameraAction('Import', async () => {
         const imported = await cmd('cameraImportHomeAssistant');
@@ -3126,12 +3126,12 @@ async function loadCameras() {
   const cameraFormats = (camera) => {
     if (camera.kind === 'go2rtc') return 'WebRTC, MSE';
     if (camera.kind !== 'ha') return 'WebRTC';
-    if (!camera.streamTypes) return 'WebRTC, HLS';
-    const formats = [
+    if (!camera.streamTypes) return 'WebRTC, HLS, MJPEG';
+    return [
       camera.streamTypes.includes('web_rtc') && 'WebRTC',
       camera.streamTypes.includes('hls') && 'HLS',
-    ].filter(Boolean);
-    return formats.length ? formats.join(', ') : 'WebRTC';
+      'MJPEG',
+    ].filter(Boolean).join(', ');
   };
   for (const camera of config.cameras) {
     const formats = ` · ${cameraFormats(camera)}`;

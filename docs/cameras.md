@@ -2,22 +2,24 @@
 
 Kiosk Satellite can show up to twelve cameras in a full-screen view. Camera
 streams come from Home Assistant itself, from Go2RTC, or from a direct WHEP
-endpoint, and play over WebRTC, MSE, or HLS. WebRTC leads for its
-near-realtime latency where a camera offers it; MSE (Go2RTC cameras) and
-HLS (Home Assistant cameras) carry the cameras and devices WebRTC cannot
-serve, switching over automatically.
+endpoint, and play over WebRTC, MSE, HLS, or MJPEG. WebRTC leads for its
+near-realtime latency where a camera offers it; MSE (Go2RTC cameras), HLS
+and MJPEG (Home Assistant cameras) carry the cameras and devices WebRTC
+cannot serve, switching over automatically.
 
 ## Import cameras from Home Assistant
 
 Open Settings, then Camera Streams, and select **Import cameras from Home
 Assistant**. Kiosk Satellite asks the connected Home Assistant for every
-`camera.*` entity that can stream at all (Home Assistant 2024.11 or newer)
-and adds them as cameras. Entities that stream WebRTC play through Home
-Assistant's own WebRTC signaling over the existing connection; entities that
-only offer HLS, which is most cameras without a WebRTC provider behind them,
-play [over HLS](#home-assistant-cameras-and-hls) instead. No Go2RTC URL, port
-or WHEP setup is involved: if a camera streams video in the Home Assistant
-frontend, it works here.
+`camera.*` entity (Home Assistant 2024.11 or newer) and adds them as
+cameras. Entities that stream WebRTC play through Home Assistant's own
+WebRTC signaling over the existing connection; entities that only offer
+HLS, which is most cameras without a WebRTC provider behind them, play
+[over HLS](#home-assistant-cameras-and-hls) instead; entities that cannot
+stream at all, such as UniFi package cameras, play
+[over MJPEG](#mjpeg-cameras). No Go2RTC URL, port or WHEP setup is
+involved: if a camera shows a picture in the Home Assistant frontend, it
+works here.
 
 Importing again merges new entities, preserves camera names and view
 membership, refreshes which stream types each entity offers, and marks
@@ -220,6 +222,17 @@ becomes the fallback.
 
 Each camera's row in the Cameras list names the formats it can play with,
 so which transport a camera has available is visible at a glance.
+
+## MJPEG cameras
+
+Every Home Assistant camera entity can serve its picture as an MJPEG
+stream, whether or not it supports real streaming, and Kiosk Satellite
+uses that as the transport of last resort: a camera whose WebRTC and HLS
+paths fail switches to MJPEG on its own, and a camera that cannot stream
+at all, such as a UniFi package camera or another stills-only entity,
+plays over MJPEG from the start. Frame rates are whatever the camera
+produces, there is no audio, and Home Assistant transcodes the stream
+server-side, so the fancier transports always get their chance first.
 
 ## Performance
 
