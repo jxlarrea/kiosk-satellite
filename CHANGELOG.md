@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.61 - 2026-08-19
 
 ### Added
 - A "Double tap to dismiss" switch in the Website screensaver settings. With it on, single taps interact with the page instead of waking the kiosk, so an interactive site shown as the screensaver (Immich Kiosk's navigation and rating buttons, a dashboard's controls) stays usable, and two quick taps anywhere bring the kiosk back. Off by default, and only offered for the Website mode, whose page is the only thing a single tap could talk to.
