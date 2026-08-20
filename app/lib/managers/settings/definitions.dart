@@ -1460,6 +1460,18 @@ const screensaverWebsiteUrl = SettingDef<String>(
   dependsOnValue: 'website',
 );
 
+const screensaverWebsiteDoubleTap = SettingDef<bool>(
+  key: 'screensaver.website_double_tap',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Double tap to dismiss',
+  description: 'Single taps interact with the website instead of dismissing.',
+  category: 'Screensaver',
+  section: 'Website',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'website',
+);
+
 // ── Burn-in ──
 
 // ── Photo gallery (mode: gallery) ──
@@ -3727,6 +3739,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichMetadata,
   screensaverImmichMetadataPosition,
   screensaverWebsiteUrl,
+  screensaverWebsiteDoubleTap,
   screensaverCameraView,
   screensaverCameraViewName,
   // The Widgets group: corner overlays riding over the mode panels above,

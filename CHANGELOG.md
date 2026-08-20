@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- A "Double tap to dismiss" switch in the Website screensaver settings. With it on, single taps interact with the page instead of waking the kiosk, so an interactive site shown as the screensaver (Immich Kiosk's navigation and rating buttons, a dashboard's controls) stays usable, and two quick taps anywhere bring the kiosk back. Off by default, and only offered for the Website mode, whose page is the only thing a single tap could talk to.
+
 ### Fixed
 - HA Kiosk Mode reclaims the hidden header's space again. The fix that removed the black bar under panel views also began padding the dashboard by the display's safe-area inset, and because the rule landed on two nested view elements the inset counted twice, so on any device that reports one (a camera cutout, or an Android 15 status bar even while hidden) the dashboard kept a band of empty space where the header used to be. The padding is now simply zero: hiding the header gives the whole screen to the dashboard, and the panel-view sizing fix stays as it was.
 

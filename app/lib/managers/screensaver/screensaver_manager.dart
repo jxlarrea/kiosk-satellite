@@ -157,6 +157,31 @@ class ScreensaverManager extends Manager {
   /// mirrored from its bus event for the motion-dismiss policy above.
   bool _sendspinNowPlaying = false;
 
+  /// The double-tap dismiss chain (discussion #248). One physical tap
+  /// reports here twice — the kiosk screen's raw pointer Listener
+  /// ('touch') and the screensaver WebView's JS bridge ('touch_page') —
+  /// and timing cannot tell that echo from a genuinely fast double tap,
+  /// so only the Listener's reports count for the chain and the bridge's
+  /// are dropped while the gate holds. Reports faster than [_tapDebounce]
+  /// after the chain opened are the other fingers of one gesture (a
+  /// pinch), not a second tap.
+  DateTime? _tapChainStart;
+  static const _tapDebounce = Duration(milliseconds: 120);
+  static const _doubleTapWindow = Duration(milliseconds: 400);
+
+  /// Wall clock, injectable for the double-tap tests only.
+  @visibleForTesting
+  DateTime Function() clock = DateTime.now;
+
+  /// Whether dismissal currently takes two taps: only the website
+  /// screensaver offers the option (its page is the only thing a single
+  /// tap could talk to), and never while the Sendspin now-playing view
+  /// has taken the slot over — that view is ours, not a page.
+  bool get _doubleTapToDismiss =>
+      activeView.value == 'website' &&
+      !_nowPlayingTakeover &&
+      _settings.get(defs.screensaverWebsiteDoubleTap);
+
   @override
   Future<void> init() async {
     await _migrateMiniClock24h();
@@ -419,6 +444,22 @@ class ScreensaverManager extends Manager {
   void notifySlideChanged() => bus.publish(const ScreensaverSlideChanged());
 
   void notifyActivity(String source) {
+    if (_active &&
+        _doubleTapToDismiss &&
+        (source == 'touch' || source == 'touch_page')) {
+      // The bridge echoes taps the Listener already delivered.
+      if (source == 'touch_page') return;
+      final now = clock();
+      final start = _tapChainStart;
+      if (start == null || now.difference(start) > _doubleTapWindow) {
+        // A first tap belongs to the page underneath; only its double
+        // dismisses. Motion, voice and every other source stay single.
+        _tapChainStart = now;
+        return;
+      }
+      if (now.difference(start) < _tapDebounce) return;
+      _tapChainStart = null;
+    }
     if (_active) {
       log.debug(name, 'dismissed by $source');
       stop();
@@ -513,6 +554,8 @@ class ScreensaverManager extends Manager {
       return;
     }
     _active = true;
+    // A fresh session starts with no half-open double-tap chain.
+    _tapChainStart = null;
     // Hold the panel on for the whole screensaver, every mode. The screensaver
     // owns the display while it is up — black means brightness 0 under a black
     // overlay, not the OS powering the panel off, which would also freeze the

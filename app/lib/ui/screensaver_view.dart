@@ -1280,8 +1280,14 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
   /// Flutter's gestures, so the page reports the tap itself; capture
   /// phase and every frame, so a site that stops propagation (or hosts
   /// its content in its own iframes) still dismisses.
+  ///
+  /// Only primary pointers report: a pinch's second finger would otherwise
+  /// read as a second tap the instant it lands, dismissing right through
+  /// the double-tap option below. The single-tap default loses nothing —
+  /// the first finger of any gesture is the primary one.
   static const _dismissScript = '''
-document.addEventListener('pointerdown', function () {
+document.addEventListener('pointerdown', function (e) {
+  if (e.isPrimary === false) return;
   if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
     window.flutter_inappwebview.callHandler('dismiss');
   }
@@ -1434,7 +1440,12 @@ setInterval(function () {
         controller.addJavaScriptHandler(
           handlerName: 'dismiss',
           callback: (_) {
-            widget.container.screensaver.notifyActivity('touch');
+            // 'touch_page', not 'touch': the kiosk screen's raw pointer
+            // Listener reports the same taps, and under the double-tap
+            // option (discussion #248) the manager must count each tap
+            // once, so the bridge's reports carry their own name for it
+            // to drop while that gate holds.
+            widget.container.screensaver.notifyActivity('touch_page');
             return null;
           },
         );
