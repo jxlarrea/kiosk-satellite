@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.62 - 2026-08-20
 
 ### Added
 - The ESPHome proxy log now shows whether Home Assistant is actually taking the Bluetooth advertisements (#246). Each session's advertisement subscribe and unsubscribe is logged, a relay watchdog writes one line when the device keeps hearing advertisements but none have been forwarded to Home Assistant for two minutes (with the received and forwarded counters) and another when forwarding resumes, and the scanner logs a recovery line when advertisements start flowing again after a failure streak, naming whether the minimal-settings fallback is in effect. Together these split the case a full Nearby list and an empty Home Assistant side could not distinguish before: scanning trouble, a missing subscription, or a wedged relay.
