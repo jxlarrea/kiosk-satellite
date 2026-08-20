@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.64 - 2026-08-20
 
 ### Added
 - The Bluetooth proxy heals a wedged scanner by itself where Android allows it (#246 follow-up). A stack whose scan-client table is stuck (seen live on an Echo Show after app updates killed it mid-scan) refuses every scan registration until the adapter restarts, which Home Assistant's "power cycle the device" banner asks the user to do by hand; on Android 12L and older, exactly the device generation that wedges, the proxy now restarts the adapter itself after repeated registration failures and resumes scanning when it returns. Scan failures in the log also carry their name now ("registration failed", "internal error") instead of a bare code.
