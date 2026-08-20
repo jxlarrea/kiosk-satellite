@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- Opening a camera view no longer flashes white as it slides up. Two causes stacked: hls.js was parsed in the page's critical path, delaying the first black paint (it now loads deferred, and the HLS player waits for it), and Android composites a fresh WebView's default white background for a frame or two before any page paints at all (the view now keeps a black cover over the WebView until the page reports its first frame, and the WebView background is transparent over the black surface behind it). Verified frame by frame on an Echo Show 8 screen recording.
+- The bundled hls.js is now the light build, the same file the Voice Satellite integration ships: a third smaller and quicker to parse, dropping only subtitle, alternate-audio and DRM support that a camera stream never carries.
+
 ## v2026.8.66 - 2026-08-20
 
 ### Added

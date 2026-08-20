@@ -255,6 +255,10 @@ class _CameraPlayerState extends State<CameraPlayer> {
   InAppWebViewController? _controller;
   bool _tornDown = false;
 
+  /// Whether the page has committed its first visible frame; until then a
+  /// black cover hides the WebView (see [build]).
+  bool _pageVisible = false;
+
   /// Bumped to recreate the WebView after its renderer dies (WebRTC video
   /// decoding is exactly the kind of load that kills renderers on low-RAM
   /// devices). An unhandled renderer death here would take the whole app
@@ -392,7 +396,23 @@ class _CameraPlayerState extends State<CameraPlayer> {
   @override
   Widget build(BuildContext context) => ColoredBox(
     color: Colors.black,
-    child: InAppWebView(
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildWebView(),
+        // Android composites a fresh WebView surface before the page's
+        // first frame exists, and what it composites is white — a visible
+        // flash as the view slides up. Cover the WebView in black until
+        // the page reports its first frame committed; the page paints
+        // black immediately (hls.js is deferred off the parse path), so
+        // the cover lifts within the entrance animation.
+        if (!_pageVisible)
+          const Positioned.fill(child: ColoredBox(color: Colors.black)),
+      ],
+    ),
+  );
+
+  Widget _buildWebView() => InAppWebView(
       key: ValueKey(_epoch),
       onRenderProcessGone: (controller, detail) {
         widget.container.log.warn(
@@ -403,7 +423,16 @@ class _CameraPlayerState extends State<CameraPlayer> {
         // The old renderer took its streams with it; a fresh page
         // renegotiates from the injected config. _tornDown stays false so
         // the eventual real teardown still runs against the new page.
-        if (mounted) setState(() => _epoch++);
+        // The cover comes back for the fresh surface's own white phase.
+        if (mounted) {
+          setState(() {
+            _epoch++;
+            _pageVisible = false;
+          });
+        }
+      },
+      onPageCommitVisible: (controller, url) {
+        if (mounted && !_pageVisible) setState(() => _pageVisible = true);
       },
       initialFile: 'assets/camera-view/index.html',
       initialUserScripts: UnmodifiableListView([
@@ -413,7 +442,12 @@ class _CameraPlayerState extends State<CameraPlayer> {
         ),
       ]),
       initialSettings: InAppWebViewSettings(
-        transparentBackground: false,
+        // Transparent, with the black ColoredBox behind showing through:
+        // an opaque WebView composites its default white background for
+        // the first frame or two before the page paints, which flashed
+        // white as the view slid up (worse once hls.js sat in the parse
+        // path, but present without it).
+        transparentBackground: true,
         mediaPlaybackRequiresUserGesture: false,
         allowsInlineMediaPlayback: true,
         supportZoom: false,
@@ -543,6 +577,5 @@ class _CameraPlayerState extends State<CameraPlayer> {
           },
         );
       },
-    ),
-  );
+    );
 }

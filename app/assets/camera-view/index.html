@@ -32,10 +32,16 @@
 </head>
 <body>
 <div id="grid"></div>
-<!-- hls.js v1.6.13, vendored: the page is a local asset and loads nothing
-     remote. Drives the HLS transport for Home Assistant cameras that do
-     not stream WebRTC (plays through MediaSource, like the MSE rung). -->
-<script src="hls.min.js"></script>
+<!-- hls.js light build v1.6.16 (the same file Voice Satellite vendors):
+     the page is a local asset and loads nothing remote. Drives the HLS
+     transport for Home Assistant cameras that do not stream WebRTC
+     (plays through MediaSource, like the MSE rung). The light build
+     drops subtitles, alternate audio renditions and DRM, none of which
+     a camera stream carries. Deferred: parsing a third of a megabyte
+     blocks the page's first paint, which showed as a white flash while
+     the view slid up. Only connectHls needs it, and it waits for
+     DOMContentLoaded. -->
+<script defer src="hls.light.min.js"></script>
 <script>
 'use strict';
 const CFG = window.__ksCameraView || { cameras: [], showCameraNames: true };
@@ -653,6 +659,14 @@ async function start(cameraId, fullscreen) {
   // which is why this rung never outranks a WebRTC transport.
   const connectHls = async () => {
     setStatus(cameraId, 'Connecting...');
+    // hls.js loads deferred (see the script tag); it has run by
+    // DOMContentLoaded, so a connect racing the page load waits rather
+    // than misreading a still-parsing player as HLS-incapable.
+    if (!window.Hls && document.readyState === 'loading') {
+      await new Promise((resolve) =>
+        document.addEventListener('DOMContentLoaded', resolve, { once: true }));
+      if (!session.wanted || sessions.get(cameraId) !== session) return;
+    }
     if (!window.Hls || !Hls.isSupported()) {
       log(`${cameraId}: HLS unavailable (no MediaSource)`, 'warn');
       if (session.modes.length > 1) {
