@@ -1729,18 +1729,22 @@ class HomeAssistantManager extends Manager {
     }
   }
 
-  /// The `camera.*` entities whose frontend can stream WebRTC, for the
-  /// camera import (issue #124). Reads all states for names, then asks
-  /// `camera/capabilities` (HA 2024.11+) per entity; entities the command
-  /// fails for (older HA, odd integrations) are simply not offered. Null
-  /// when Home Assistant is not configured or unreachable.
-  Future<List<({String entityId, String name})>?> listWebRtcCameras() async {
+  /// The `camera.*` entities whose frontend can stream at all — WebRTC
+  /// (issue #124) or HLS — for the camera import. Reads all states for
+  /// names, then asks `camera/capabilities` (HA 2024.11+) per entity;
+  /// entities the command fails for (older HA, odd integrations) are
+  /// simply not offered. Null when Home Assistant is not configured or
+  /// unreachable.
+  Future<List<({String entityId, String name, List<String> streamTypes})>?>
+  listStreamableCameras() async {
     final states = await fetchStates();
     if (states == null) return null;
-    final result = <({String entityId, String name})>[];
+    final result =
+        <({String entityId, String name, List<String> streamTypes})>[];
     for (final state in states) {
       final entityId = '${state['entity_id'] ?? ''}';
       if (!entityId.startsWith('camera.')) continue;
+      final streamTypes = <String>[];
       try {
         final capabilities = await _wsCommand({
           'type': 'camera/capabilities',
@@ -1749,7 +1753,12 @@ class HomeAssistantManager extends Manager {
         final types = capabilities is Map
             ? capabilities['frontend_stream_types']
             : null;
-        if (types is! List || !types.contains('web_rtc')) continue;
+        if (types is! List) continue;
+        streamTypes.addAll([
+          for (final type in types)
+            if (type == 'web_rtc' || type == 'hls') '$type',
+        ]);
+        if (streamTypes.isEmpty) continue;
       } catch (e) {
         log.debug(name, 'camera/capabilities($entityId) failed: $e');
         continue;
@@ -1761,10 +1770,32 @@ class HomeAssistantManager extends Manager {
         name: friendly.isEmpty
             ? entityId.substring('camera.'.length)
             : friendly,
+        streamTypes: streamTypes,
       ));
     }
     result.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     return result;
+  }
+
+  /// The absolute URL of a fresh HLS playlist for [entityId]
+  /// (`camera/stream`): how cameras with no WebRTC path stream at all.
+  /// The URL is token-signed by HA, so fetching it (and the segments it
+  /// references) needs no Authorization header. Null when Home Assistant
+  /// is not configured or could not start the stream.
+  Future<String?> cameraStreamUrl(String entityId) async {
+    if (!configured) return null;
+    try {
+      final result = await _wsCommand({
+        'type': 'camera/stream',
+        'entity_id': entityId,
+      });
+      final url = result is Map ? '${result['url'] ?? ''}' : '';
+      if (url.isEmpty) return null;
+      return url.startsWith('http') ? url : '$baseUrl$url';
+    } catch (e) {
+      log.warn(name, 'camera/stream($entityId) failed: $e');
+      return null;
+    }
   }
 
   /// The RTCConfiguration Home Assistant asks WebRTC clients to use for

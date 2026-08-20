@@ -599,6 +599,234 @@ void main() {
     expect(sawSrc, 'front_main');
     await fullSocket.close();
   });
+
+  test('ha camera stream types round trip', () {
+    const source = CameraSource(
+      id: 'x',
+      name: 'Door',
+      kind: 'ha',
+      entityId: 'camera.door',
+      streamTypes: ['web_rtc', 'hls'],
+    );
+    final decoded = CameraSource.fromJson(
+      jsonDecode(jsonEncode(source.toJson())) as Map,
+    );
+    expect(decoded.streamTypes, ['web_rtc', 'hls']);
+    // Absent stays null (unknown), which is not the same as empty.
+    const bare = CameraSource(id: 'y', name: 'Y', kind: 'ha');
+    expect(
+      CameraSource.fromJson(
+        jsonDecode(jsonEncode(bare.toJson())) as Map,
+      ).streamTypes,
+      isNull,
+    );
+  });
+
+  test('HLS playlist rewriting proxies every URI, relative and absolute', () {
+    final upstream = Uri.parse('https://ha.example/api/hls/tok/playlist.m3u8');
+    const body =
+        '#EXTM3U\n'
+        '#EXT-X-MAP:URI="init.mp4"\n'
+        '#EXTINF:2.000,\n'
+        'segment/1.m4s\n'
+        '#EXTINF:2.000,\n'
+        '/api/hls/tok/segment/2.m4s\n';
+    final out = CameraManager.rewriteHlsPlaylist(body, upstream);
+    expect(
+      out,
+      contains(
+        'URI="r?u=https%3A%2F%2Fha.example%2Fapi%2Fhls%2Ftok%2Finit.mp4"',
+      ),
+    );
+    expect(
+      out,
+      contains('r?u=https%3A%2F%2Fha.example%2Fapi%2Fhls%2Ftok'
+          '%2Fsegment%2F1.m4s'),
+    );
+    expect(
+      out,
+      contains('r?u=https%3A%2F%2Fha.example%2Fapi%2Fhls%2Ftok'
+          '%2Fsegment%2F2.m4s'),
+    );
+    // Every URI line goes through the relay; none reaches upstream direct.
+    for (final line in out.split('\n')) {
+      if (line.isEmpty || line.startsWith('#')) continue;
+      expect(line, startsWith('r?u='));
+    }
+    expect(out, endsWith('\n'));
+  });
+
+  test('the HA import records and refreshes stream types', () async {
+    SharedPreferences.setMockInitialValues({});
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final ha = _FakeHaManager(bus, commands, logger, settings);
+    final cameras = CameraManager(bus, commands, logger, settings, ha);
+    await cameras.init();
+    addTearDown(cameras.dispose);
+
+    ha.streamable = [
+      (entityId: 'camera.door', name: 'Door', streamTypes: ['hls']),
+    ];
+    var result = await commands.execute('cameraImportHomeAssistant', {});
+    expect(result.ok, isTrue);
+    expect(cameras.config.cameras.single.streamTypes, ['hls']);
+
+    // The entity grew a WebRTC provider: a re-import refreshes the types.
+    ha.streamable = [
+      (
+        entityId: 'camera.door',
+        name: 'Door',
+        streamTypes: ['web_rtc', 'hls'],
+      ),
+    ];
+    result = await commands.execute('cameraImportHomeAssistant', {});
+    expect(result.ok, isTrue);
+    expect(cameras.config.cameras.single.streamTypes, ['web_rtc', 'hls']);
+
+    // Gone entirely: marked missing, last known types retained.
+    ha.streamable = [];
+    result = await commands.execute('cameraImportHomeAssistant', {});
+    expect(result.ok, isTrue);
+    expect(cameras.config.cameras.single.missing, isTrue);
+    expect(cameras.config.cameras.single.streamTypes, ['web_rtc', 'hls']);
+  });
+
+  test('the HLS relay proxies playlists and segments with CORS, pinned to '
+      'the stream origin', () async {
+    HttpOverrides.global = _RealHttpOverrides();
+    addTearDown(() => HttpOverrides.global = null);
+    // A fake Home Assistant HLS endpoint: master playlist referencing the
+    // variant by absolute path, variant referencing its init section and
+    // segment relatively, one binary "segment".
+    final haServer = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    addTearDown(() => haServer.close(force: true));
+    final mpegUrl = ContentType.parse('application/vnd.apple.mpegurl');
+    haServer.listen((request) async {
+      final response = request.response;
+      switch (request.uri.path) {
+        case '/api/hls/tok/master_playlist.m3u8':
+          response.headers.contentType = mpegUrl;
+          response.write(
+            '#EXTM3U\n'
+            '#EXT-X-STREAM-INF:BANDWIDTH=100\n'
+            '/api/hls/tok/playlist.m3u8\n',
+          );
+        case '/api/hls/tok/playlist.m3u8':
+          response.headers.contentType = mpegUrl;
+          response.write(
+            '#EXTM3U\n'
+            '#EXT-X-MAP:URI="init.mp4"\n'
+            '#EXTINF:2.000,\n'
+            'segment/1.m4s\n',
+          );
+        case '/api/hls/tok/init.mp4':
+          response.add(const [1, 2, 3, 4]);
+        default:
+          response.statusCode = HttpStatus.notFound;
+      }
+      await response.close();
+    });
+
+    const config = CameraConfiguration(
+      cameras: [
+        CameraSource(
+          id: 'door',
+          name: 'Door',
+          kind: 'ha',
+          entityId: 'camera.door',
+          streamTypes: ['hls'],
+        ),
+        CameraSource(
+          id: 'street',
+          name: 'Street',
+          kind: 'whep',
+          whepUrl: 'https://example.net/whep',
+        ),
+      ],
+    );
+    SharedPreferences.setMockInitialValues({
+      'ks.camera.config': config.encode(),
+    });
+    final bus = EventBus();
+    final logger = Logger();
+    final commands = CommandRegistry(logger);
+    final settings = SettingsManager(bus, commands, logger);
+    await settings.init();
+    final ha = _FakeHaManager(bus, commands, logger, settings)
+      ..streamUrl =
+          'http://127.0.0.1:${haServer.port}/api/hls/tok/master_playlist.m3u8';
+    final cameras = CameraManager(bus, commands, logger, settings, ha);
+    await cameras.init();
+    addTearDown(cameras.dispose);
+
+    // Only ha cameras have an HLS endpoint to hand out.
+    final refused = await cameras.hlsEndpoint(cameraId: 'street');
+    expect(refused['ok'], isFalse);
+
+    final endpoint = await cameras.hlsEndpoint(cameraId: 'door');
+    expect(endpoint['ok'], isTrue, reason: '${endpoint['error']}');
+    final entry = Uri.parse('${endpoint['url']}');
+    expect('$entry', startsWith('http://127.0.0.1:'));
+
+    final client = HttpClient();
+    addTearDown(() => client.close(force: true));
+    Future<(HttpClientResponse, String)> fetch(Uri uri) async {
+      final response = await (await client.getUrl(uri)).close();
+      final body = await utf8.decoder.bind(response).join();
+      return (response, body);
+    }
+
+    final (masterResponse, master) = await fetch(entry);
+    expect(masterResponse.statusCode, HttpStatus.ok);
+    expect(
+      masterResponse.headers.value('access-control-allow-origin'),
+      '*',
+      reason: 'the page is a file:// origin; without CORS nothing plays',
+    );
+    final variantRef = master
+        .split('\n')
+        .firstWhere((line) => line.isNotEmpty && !line.startsWith('#'));
+    expect(variantRef, startsWith('r?u='));
+
+    final (_, variant) = await fetch(entry.resolve(variantRef));
+    final initRef = RegExp(r'URI="([^"]+)"').firstMatch(variant)![1]!;
+    expect(initRef, startsWith('r?u='));
+
+    final initResponse =
+        await (await client.getUrl(entry.resolve(initRef))).close();
+    final bytes = await initResponse.fold<List<int>>(
+      [],
+      (all, chunk) => all..addAll(chunk),
+    );
+    expect(bytes, const [1, 2, 3, 4]);
+    expect(initResponse.headers.value('access-control-allow-origin'), '*');
+
+    // The relay is not an open proxy: another origin is refused.
+    final foreign = entry.replace(
+      queryParameters: {'u': 'http://127.0.0.1:1/etc/passwd'},
+    );
+    final foreignResponse = await (await client.getUrl(foreign)).close();
+    expect(foreignResponse.statusCode, HttpStatus.notFound);
+    await foreignResponse.drain<void>();
+  });
 }
 
 class _RealHttpOverrides extends HttpOverrides {}
+
+class _FakeHaManager extends HomeAssistantManager {
+  _FakeHaManager(super.bus, super.commands, super.log, super.settings);
+
+  String? streamUrl;
+  List<({String entityId, String name, List<String> streamTypes})>? streamable;
+
+  @override
+  Future<String?> cameraStreamUrl(String entityId) async => streamUrl;
+
+  @override
+  Future<List<({String entityId, String name, List<String> streamTypes})>?>
+  listStreamableCameras() async => streamable;
+}

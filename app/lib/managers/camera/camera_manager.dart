@@ -157,8 +157,8 @@ class CameraManager extends Manager {
         Command(
           name: 'cameraImportHomeAssistant',
           description:
-              'Import and merge the WebRTC-capable camera entities of the '
-              'connected Home Assistant (issue #124).',
+              'Import and merge the streamable (WebRTC or HLS) camera '
+              'entities of the connected Home Assistant (issue #124).',
           handler: (_) => importHomeAssistantCameras(),
         ),
       )
@@ -264,9 +264,9 @@ class CameraManager extends Manager {
     await _settingsSub?.cancel();
     await _voiceSub?.cancel();
     closeHaSessions();
-    closeMseSessions();
-    await _mseServer?.close(force: true);
-    _mseServer = null;
+    closeRelaySessions();
+    await _relayServer?.close(force: true);
+    _relayServer = null;
     activeViewId.dispose();
     focusedCameraId.dispose();
   }
@@ -438,11 +438,14 @@ class CameraManager extends Manager {
   /// Same merge semantics as the Go2RTC import, keyed by entity id:
   /// re-importing adds new entities, keeps names and view membership of
   /// existing ones, and marks entities that stopped answering (removed,
-  /// or no longer WebRTC-capable) as missing rather than deleting them.
+  /// or no longer streamable) as missing rather than deleting them. The
+  /// stream types HA reports (`web_rtc`, `hls`) ride along and refresh on
+  /// every import — they decide which transports the player offers.
   Future<CommandResult> importHomeAssistantCameras() async {
-    final List<({String entityId, String name})>? found;
+    final List<({String entityId, String name, List<String> streamTypes})>?
+    found;
     try {
-      found = await _homeAssistant.listWebRtcCameras();
+      found = await _homeAssistant.listStreamableCameras();
     } catch (error) {
       return CommandResult.fail('could not read Home Assistant: $error');
     }
@@ -460,9 +463,11 @@ class CameraManager extends Manager {
         cameras.add(camera);
         continue;
       }
-      final present = byEntity.remove(camera.entityId) != null;
-      if (present && camera.missing) restored++;
-      cameras.add(camera.copyWith(missing: !present));
+      final item = byEntity.remove(camera.entityId);
+      if (item != null && camera.missing) restored++;
+      cameras.add(
+        camera.copyWith(missing: item == null, streamTypes: item?.streamTypes),
+      );
     }
     for (final item in byEntity.values) {
       cameras.add(
@@ -471,6 +476,7 @@ class CameraManager extends Manager {
           name: item.name,
           kind: 'ha',
           entityId: item.entityId,
+          streamTypes: item.streamTypes,
           imported: true,
         ),
       );
@@ -532,6 +538,12 @@ class CameraManager extends Manager {
       streamName: kind == 'go2rtc' ? streamName : null,
       whepUrl: kind == 'whep' ? whepUrl : null,
       entityId: kind == 'ha' ? entityId : null,
+      // An edit (rename, and the remote UI resubmits every field) must not
+      // cost an imported camera its known stream types; they change only
+      // when the entity itself changes.
+      streamTypes: kind == 'ha' && entityId == existing?.entityId
+          ? existing?.streamTypes
+          : null,
       fullscreenStreamName:
           '${params['fullscreenStreamName'] ?? existing?.fullscreenStreamName ?? ''}'
               .trim(),
@@ -895,8 +907,8 @@ class CameraManager extends Manager {
     var uri = _serverUri(server, 'api/ws', {'src': stream});
     uri = uri.replace(scheme: uri.scheme == 'https' ? 'wss' : 'ws');
     try {
-      final port = await _ensureMseRelay();
-      final token = _mseToken();
+      final port = await _ensureRelay();
+      final token = _relayToken();
       _msePending[token] = (uri: uri, server: server);
       // A token the page never connects must not accumulate.
       Timer(const Duration(seconds: 30), () => _msePending.remove(token));
@@ -906,11 +918,66 @@ class CameraManager extends Manager {
     }
   }
 
-  HttpServer? _mseServer;
+  /// A loopback URL serving the HLS playlist for [cameraId] through the
+  /// relay: how `ha` cameras with no WebRTC path stream at all. Every
+  /// playlist and segment fetch goes through the relay because the page
+  /// is a file:// origin whose fetches Home Assistant would refuse (CORS)
+  /// and whose certificate trust only dart:io honors; the relay fetches
+  /// upstream with the app's HTTP stack and answers with permissive CORS.
+  Future<Map<String, Object?>> hlsEndpoint({required String cameraId}) async {
+    final camera = _config.cameras
+        .where((item) => item.id == cameraId)
+        .firstOrNull;
+    if (camera == null) return {'ok': false, 'error': 'camera not found'};
+    final entityId = camera.entityId ?? '';
+    if (camera.kind != 'ha' || entityId.isEmpty) {
+      return {
+        'ok': false,
+        'error':
+            'HLS streaming needs a Home Assistant camera (this one is '
+            '${camera.kind})',
+      };
+    }
+    final url = await _homeAssistant.cameraStreamUrl(entityId);
+    final playlist = url == null ? null : Uri.tryParse(url);
+    if (playlist == null ||
+        (playlist.scheme != 'http' && playlist.scheme != 'https')) {
+      return {
+        'ok': false,
+        'error': 'Home Assistant could not start an HLS stream for $entityId',
+      };
+    }
+    try {
+      final port = await _ensureRelay();
+      // One live session per camera: a retry replaces the old token, so a
+      // long-lived view cannot accumulate them.
+      final previous = _hlsByCamera.remove(cameraId);
+      if (previous != null) _hlsSessions.remove(previous);
+      final token = _relayToken();
+      _hlsSessions[token] = playlist;
+      _hlsByCamera[cameraId] = token;
+      return {
+        'ok': true,
+        'url':
+            'http://127.0.0.1:$port/hls/$token/r?u='
+            '${Uri.encodeQueryComponent(playlist.toString())}',
+      };
+    } catch (e) {
+      return {'ok': false, 'error': 'HLS relay failed: $e'};
+    }
+  }
+
+  HttpServer? _relayServer;
   final _msePending = <String, ({Uri uri, CameraServer server})>{};
   final _mseSockets = <WebSocket>{};
 
-  String _mseToken() {
+  /// Live HLS proxy sessions by token; the value is the playlist URL HA
+  /// handed out, kept to pin every proxied fetch to its origin.
+  final _hlsSessions = <String, Uri>{};
+  final _hlsByCamera = <String, String>{};
+  HttpClient? _hlsClient;
+
+  String _relayToken() {
     final random = Random.secure();
     return List.generate(
       16,
@@ -918,13 +985,100 @@ class CameraManager extends Manager {
     ).join();
   }
 
-  Future<int> _ensureMseRelay() async {
-    final existing = _mseServer;
+  Future<int> _ensureRelay() async {
+    final existing = _relayServer;
     if (existing != null) return existing.port;
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    _mseServer = server;
-    server.listen(_handleMseUpgrade, onError: (Object _) {});
+    _relayServer = server;
+    server.listen(_handleRelayRequest, onError: (Object _) {});
     return server.port;
+  }
+
+  Future<void> _handleRelayRequest(HttpRequest request) async {
+    final segments = request.uri.pathSegments;
+    if (segments.length == 3 && segments.first == 'hls') {
+      await _serveHls(request, segments[1]);
+      return;
+    }
+    await _handleMseUpgrade(request);
+  }
+
+  /// Serve one proxied HLS fetch: `/hls/{token}/r?u={absolute upstream
+  /// url}`. Playlists come back with every URI they reference rewritten
+  /// into the same shape, so the page only ever talks to the relay.
+  Future<void> _serveHls(HttpRequest request, String token) async {
+    final response = request.response;
+    // The page's fetches come from a file:// origin; without this header
+    // every one of them fails CORS.
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    final session = _hlsSessions[token];
+    final upstream = Uri.tryParse(request.uri.queryParameters['u'] ?? '');
+    // Pinned to the origin HA handed out: the relay proxies one stream,
+    // it is not a general fetcher. (The scheme check also keeps .origin
+    // from throwing on garbage.)
+    if (session == null ||
+        request.uri.pathSegments.last != 'r' ||
+        upstream == null ||
+        (upstream.scheme != 'http' && upstream.scheme != 'https') ||
+        !upstream.hasAuthority ||
+        upstream.origin != session.origin) {
+      response.statusCode = HttpStatus.notFound;
+      await response.close();
+      return;
+    }
+    try {
+      final client = _hlsClient ??= HttpClient()
+        ..connectionTimeout = const Duration(seconds: 15);
+      final upstreamRequest = await client.getUrl(upstream);
+      final range = request.headers.value(HttpHeaders.rangeHeader);
+      if (range != null) {
+        upstreamRequest.headers.set(HttpHeaders.rangeHeader, range);
+      }
+      final upstreamResponse = await upstreamRequest.close();
+      response.statusCode = upstreamResponse.statusCode;
+      final contentType = upstreamResponse.headers.contentType;
+      final isPlaylist =
+          upstream.path.endsWith('.m3u8') ||
+          (contentType?.mimeType.contains('mpegurl') ?? false);
+      if (contentType != null) response.headers.contentType = contentType;
+      if (isPlaylist && upstreamResponse.statusCode == HttpStatus.ok) {
+        final body = await utf8.decoder.bind(upstreamResponse).join();
+        response.write(rewriteHlsPlaylist(body, upstream));
+      } else {
+        await response.addStream(upstreamResponse);
+      }
+      await response.close();
+    } catch (e) {
+      log.warn(name, 'HLS proxy fetch failed: $e');
+      try {
+        response.statusCode = HttpStatus.badGateway;
+        await response.close();
+      } catch (_) {}
+    }
+  }
+
+  /// [body] (an m3u8 playlist fetched from [upstream]) with every URI it
+  /// references — segment lines and URI="" attributes (init sections,
+  /// alternate renditions), relative or absolute — rewritten to the
+  /// relay's `r?u=` form. Relative rewrites resolve against [upstream],
+  /// and the browser resolves `r?u=...` against the relay URL it fetched
+  /// this playlist from, so nesting works without tracking any state.
+  @visibleForTesting
+  static String rewriteHlsPlaylist(String body, Uri upstream) {
+    String proxied(String uri) =>
+        'r?u=${Uri.encodeQueryComponent(upstream.resolve(uri.trim()).toString())}';
+    final lines = const LineSplitter().convert(body);
+    final out = [
+      for (final line in lines)
+        if (line.isEmpty || line.startsWith('#'))
+          line.replaceAllMapped(
+            RegExp(r'URI="([^"]+)"'),
+            (match) => 'URI="${proxied(match[1]!)}"',
+          )
+        else
+          proxied(line),
+    ];
+    return out.join('\n') + (body.endsWith('\n') ? '\n' : '');
   }
 
   Future<void> _handleMseUpgrade(HttpRequest request) async {
@@ -983,15 +1137,21 @@ class CameraManager extends Manager {
     );
   }
 
-  /// Close every relayed MSE stream. Runs alongside [closeHaSessions] when
-  /// the camera surface goes away: each open socket is a live decoder on
-  /// the page and a live stream on the server.
-  void closeMseSessions() {
+  /// Close every relayed stream, MSE and HLS. Runs alongside
+  /// [closeHaSessions] when the camera surface goes away: each open MSE
+  /// socket is a live decoder on the page, and a lingering HLS token
+  /// would keep proxying for a page that no longer exists.
+  void closeRelaySessions() {
     for (final socket in _mseSockets.toList()) {
       socket.close();
     }
     _mseSockets.clear();
     _msePending.clear();
+    _hlsSessions.clear();
+    _hlsByCamera.clear();
+    // Aborts in-flight upstream fetches; recreated lazily on the next use.
+    _hlsClient?.close(force: true);
+    _hlsClient = null;
   }
 
   Future<_HttpResult> _request(

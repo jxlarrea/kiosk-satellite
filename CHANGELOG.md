@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- Home Assistant cameras without a WebRTC path stream over HLS, so any camera the Home Assistant frontend can play now works in camera views. The Home Assistant import accepts every streamable camera entity instead of only WebRTC-capable ones and remembers which transports each offers; a camera that does both tries WebRTC first for its near-realtime latency and falls back to HLS on its own when WebRTC does not work out on the device, joining the existing WebRTC-to-MSE ladder. HLS playback runs through the app's loopback relay (the page cannot fetch from Home Assistant directly) and hls.js, vendored into the app like every other asset.
+
+### Fixed
+- A camera view shown again while it was still sliding out no longer comes back invisible. The re-show landed in the closing player without replaying its entrance, so the exit finished underneath it: a black panel with every stream still connected and decoding behind it, which no later close could reach, and stale cameras on every later open of that view. Re-showing now plays the view back in mid-exit, or mounts a fresh player when the old one was already torn down. Found and verified live on an Echo Show 8 by toggling a view closed and open in under a second, the timing an MQTT automation or a doubled gesture produces.
+
 ## v2026.8.64 - 2026-08-20
 
 ### Added

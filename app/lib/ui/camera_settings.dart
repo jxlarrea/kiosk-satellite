@@ -64,10 +64,10 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
           children: [
             ListTile(
               leading: const Icon(Icons.download_outlined),
-              title: const Text('Import WebRTC cameras from Home Assistant'),
+              title: const Text('Import cameras from Home Assistant'),
               subtitle: const Text(
                 'Add every camera the connected Home Assistant can stream '
-                'over WebRTC. Importing again merges new cameras.',
+                'over WebRTC or HLS. Importing again merges new cameras.',
               ),
               onTap: _busy ? null : _importHomeAssistant,
             ),

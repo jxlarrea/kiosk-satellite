@@ -6,18 +6,21 @@ Go2RTC, or from a direct WHEP endpoint.
 
 ## Import cameras from Home Assistant
 
-Open Settings, then Camera Streams, and select **Import WebRTC cameras from
-Home Assistant**. Kiosk Satellite asks the connected Home Assistant for every
-`camera.*` entity that can stream WebRTC (Home Assistant 2024.11 or newer)
-and adds them as cameras, streaming through Home Assistant's own WebRTC
-signaling over the existing connection. No Go2RTC URL, port or WHEP setup is
-involved: if a camera streams low-latency video in the Home Assistant
+Open Settings, then Camera Streams, and select **Import cameras from Home
+Assistant**. Kiosk Satellite asks the connected Home Assistant for every
+`camera.*` entity that can stream at all (Home Assistant 2024.11 or newer)
+and adds them as cameras. Entities that stream WebRTC play through Home
+Assistant's own WebRTC signaling over the existing connection; entities that
+only offer HLS, which is most cameras without a WebRTC provider behind them,
+play [over HLS](#home-assistant-cameras-and-hls) instead. No Go2RTC URL, port
+or WHEP setup is involved: if a camera streams video in the Home Assistant
 frontend, it works here.
 
 Importing again merges new entities, preserves camera names and view
-membership, and marks entities that disappeared (or lost WebRTC support) as
-missing. Home Assistant hands the player its ICE server configuration, so
-setups that stream through Home Assistant Cloud work too.
+membership, refreshes which stream types each entity offers, and marks
+entities that disappeared (or stopped streaming) as missing. Home Assistant
+hands the WebRTC player its ICE server configuration, so setups that stream
+through Home Assistant Cloud work too.
 
 ## Add a Go2RTC server
 
@@ -52,7 +55,8 @@ A manual camera can reference:
 - A stream name on a configured Go2RTC server.
 - A direct HTTP or HTTPS WHEP endpoint.
 - A Home Assistant `camera.*` entity (streamed through Home Assistant's
-  WebRTC signaling, like the import).
+  WebRTC signaling when the entity supports it, falling back to HLS
+  otherwise, like the import).
 
 Raw RTSP URLs are not supported by the app player. Add the RTSP source to
 Go2RTC first, then reference its stream name.
@@ -183,8 +187,25 @@ a second or two of delay.
 
 **Prefer MSE over WebRTC** (Settings, then Camera Streams, then Playback)
 flips the order for devices known to lack WebRTC, and is also the switch to
-force MSE when testing. WebRTC then becomes the fallback. WHEP and Home
-Assistant cameras are WebRTC by definition and are not affected.
+force MSE when testing. WebRTC then becomes the fallback. WHEP cameras are
+WebRTC by definition, and Home Assistant cameras have
+[their own fallback](#home-assistant-cameras-and-hls), so neither is
+affected.
+
+## Home Assistant cameras and HLS
+
+A Home Assistant camera with no WebRTC path, which is most cameras unless a
+WebRTC provider such as go2rtc is set up in Home Assistant, streams over
+HLS: the same stream the Home Assistant frontend itself plays. Kiosk
+Satellite asks Home Assistant to start the stream and plays it through
+ordinary video buffering, so it works on nearly every WebView, Fire tablets
+included. The cost is HLS-typical latency of a few seconds, which is why a
+camera that offers both transports always tries WebRTC first and falls back
+to HLS only when WebRTC does not work out on the device.
+
+The stream is whatever Home Assistant produces, so the H.265 notes above
+apply: a device that cannot decode the stream says so on the tile rather
+than staying silently blank.
 
 ## Performance
 

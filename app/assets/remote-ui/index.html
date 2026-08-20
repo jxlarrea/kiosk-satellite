@@ -3045,9 +3045,9 @@ async function loadCameras() {
   heading('Home Assistant');
   const haCard = card();
   haCard.appendChild(cameraListRow(
-    'Import WebRTC cameras from Home Assistant',
+    'Import cameras from Home Assistant',
     'Add every camera the connected Home Assistant can stream over '
-      + 'WebRTC. Importing again merges new cameras.',
+      + 'WebRTC or HLS. Importing again merges new cameras.',
     [
       cameraAction('Import', async () => {
         const imported = await cmd('cameraImportHomeAssistant');

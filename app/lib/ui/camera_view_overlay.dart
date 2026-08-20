@@ -69,6 +69,12 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
   bool _closing = false;
   Timer? _drop;
 
+  /// Bumped when the same view is re-shown after its exit already tore the
+  /// player down: the torn-down player (dead page, [_CameraPlayerState]
+  /// with its teardown latched) can only be replaced, and the key is what
+  /// replaces it.
+  int _generation = 0;
+
   static const _shutdownGrace = Duration(milliseconds: 600);
 
   /// The opened camera view rises from the bottom edge and leaves the same
@@ -110,6 +116,29 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
     super.didUpdateWidget(old);
     final next = widget.view;
     if (next?.id == _mounted?.id && (next == null) == (_mounted == null)) {
+      // The same view re-shown while it is on its way out. Without this,
+      // the exit keeps running underneath the "open" view and finishes
+      // with the player mounted but off screen: a black panel with every
+      // stream still decoding behind it, which no later close can reach
+      // (reversing an already-dismissed animation fires no status).
+      if (next != null) {
+        _drop?.cancel();
+        _drop = null;
+        if (_closing) {
+          // The exit already tore this player down; only a fresh player
+          // can bring the view back.
+          setState(() {
+            _closing = false;
+            _generation++;
+          });
+          if (widget.interactive) _slide.forward(from: 0);
+        } else if (widget.interactive &&
+            (_slide.status == AnimationStatus.reverse ||
+                _slide.status == AnimationStatus.dismissed)) {
+          // Caught mid-exit before the teardown: play it back in.
+          _slide.forward(from: _slide.value);
+        }
+      }
       return;
     }
     _drop?.cancel();
@@ -177,7 +206,7 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
         child: SlideTransition(
           position: _slideOffset,
           child: CameraPlayer(
-            key: ValueKey('${view.id}-${widget.interactive}'),
+            key: ValueKey('${view.id}-${widget.interactive}-$_generation'),
             container: widget.container,
             view: view,
             interactive: widget.interactive,
@@ -264,7 +293,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
       widget.container.camera.onRemoteCandidate = null;
     }
     widget.container.camera.closeHaSessions();
-    widget.container.camera.closeMseSessions();
+    widget.container.camera.closeRelaySessions();
     controller.evaluateJavascript(source: 'shutdown();');
     controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
   }
@@ -297,6 +326,32 @@ class _CameraPlayerState extends State<CameraPlayer> {
     );
   }
 
+  /// The transports this camera can use, in the order the page should try
+  /// them. A Go2RTC server serves the same stream over WebRTC and MSE
+  /// (issue #160, "Prefer MSE" flips that order); an `ha` camera offers
+  /// what Home Assistant reported at import — WebRTC signaling (issue
+  /// #124), HLS, or both — and one added by hand (unknown types) tries
+  /// WebRTC first with HLS as the fallback; WHEP is WebRTC by definition.
+  List<String> _transportsFor(CameraSource camera) {
+    switch (camera.kind) {
+      case 'go2rtc':
+        if (camera.missing) return const ['webrtc'];
+        return widget.container.settings.get(defs.cameraPreferMse)
+            ? const ['mse', 'webrtc']
+            : const ['webrtc', 'mse'];
+      case 'ha':
+        final types = camera.streamTypes;
+        if (types == null) return const ['webrtc', 'hls'];
+        final transports = [
+          if (types.contains('web_rtc')) 'webrtc',
+          if (types.contains('hls')) 'hls',
+        ];
+        return transports.isEmpty ? const ['webrtc'] : transports;
+      default:
+        return const ['webrtc'];
+    }
+  }
+
   String _buildConfig() {
     final camerasById = {
       for (final camera in widget.container.camera.config.cameras)
@@ -308,7 +363,6 @@ class _CameraPlayerState extends State<CameraPlayer> {
       'showCameraNames': widget.view.showCameraNames,
       'grid': widget.view.effectiveGrid,
       'allowH265': widget.container.settings.get(defs.cameraAllowH265),
-      'preferMse': widget.container.settings.get(defs.cameraPreferMse),
       'singleAudio': widget.container.settings.get(defs.cameraSingleAudio),
       'interactive': widget.interactive,
       'focusedCameraId': widget.interactive
@@ -327,10 +381,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
                   camera.fullscreenStreamName != null &&
                   camera.fullscreenStreamName!.isNotEmpty &&
                   camera.fullscreenStreamName != camera.streamName,
-              // Whether this camera can stream over MSE: a Go2RTC server
-              // serves the same stream both ways, WHEP and HA are
-              // WebRTC-only (issue #160).
-              'mse': camera.kind == 'go2rtc' && !camera.missing,
+              'transports': _transportsFor(camera),
             },
       ],
     });
@@ -428,6 +479,19 @@ class _CameraPlayerState extends State<CameraPlayer> {
               return await widget.container.camera.mseEndpoint(
                 cameraId: '${request['cameraId'] ?? ''}',
                 fullscreen: request['fullscreen'] == true,
+              );
+            } catch (error) {
+              return {'ok': false, 'error': '$error'};
+            }
+          },
+        );
+        controller.addJavaScriptHandler(
+          handlerName: 'cameraHls',
+          callback: (args) async {
+            try {
+              final request = (args.first as Map).cast<String, Object?>();
+              return await widget.container.camera.hlsEndpoint(
+                cameraId: '${request['cameraId'] ?? ''}',
               );
             } catch (error) {
               return {'ok': false, 'error': '$error'};

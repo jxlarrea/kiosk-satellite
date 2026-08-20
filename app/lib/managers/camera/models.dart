@@ -63,6 +63,7 @@ class CameraSource {
     this.streamName,
     this.whepUrl,
     this.entityId,
+    this.streamTypes,
     this.fullscreenStreamName,
     this.imported = false,
     this.missing = false,
@@ -80,6 +81,12 @@ class CameraSource {
 
   /// The `camera.*` entity id backing a `ha` camera.
   final String? entityId;
+
+  /// The frontend stream types Home Assistant reported for a `ha` camera
+  /// when it was imported (`web_rtc`, `hls`). Null means unknown (a camera
+  /// added by hand, or imported before HLS support existed): the player
+  /// tries WebRTC first and falls back to HLS.
+  final List<String>? streamTypes;
   final String? fullscreenStreamName;
   final bool imported;
   final bool missing;
@@ -90,6 +97,7 @@ class CameraSource {
     String? streamName,
     String? whepUrl,
     String? entityId,
+    List<String>? streamTypes,
     String? fullscreenStreamName,
     bool? imported,
     bool? missing,
@@ -101,6 +109,7 @@ class CameraSource {
     streamName: streamName ?? this.streamName,
     whepUrl: whepUrl ?? this.whepUrl,
     entityId: entityId ?? this.entityId,
+    streamTypes: streamTypes ?? this.streamTypes,
     fullscreenStreamName: fullscreenStreamName ?? this.fullscreenStreamName,
     imported: imported ?? this.imported,
     missing: missing ?? this.missing,
@@ -114,6 +123,7 @@ class CameraSource {
     if (streamName != null) 'streamName': streamName,
     if (whepUrl != null) 'whepUrl': whepUrl,
     if (entityId != null) 'entityId': entityId,
+    if (streamTypes != null) 'streamTypes': streamTypes,
     if (fullscreenStreamName != null && fullscreenStreamName!.isNotEmpty)
       'fullscreenStreamName': fullscreenStreamName,
     if (imported) 'imported': imported,
@@ -128,6 +138,12 @@ class CameraSource {
     streamName: json['streamName'] as String?,
     whepUrl: json['whepUrl'] as String?,
     entityId: json['entityId'] as String?,
+    streamTypes: json['streamTypes'] is List
+        ? [
+            for (final type in json['streamTypes'] as List)
+              if (type is String) type,
+          ]
+        : null,
     fullscreenStreamName: json['fullscreenStreamName'] as String?,
     imported: json['imported'] == true,
     missing: json['missing'] == true,

@@ -32,6 +32,10 @@
 </head>
 <body>
 <div id="grid"></div>
+<!-- hls.js v1.6.13, vendored: the page is a local asset and loads nothing
+     remote. Drives the HLS transport for Home Assistant cameras that do
+     not stream WebRTC (plays through MediaSource, like the MSE rung). -->
+<script src="hls.min.js"></script>
 <script>
 'use strict';
 const CFG = window.__ksCameraView || { cameras: [], showCameraNames: true };
@@ -61,19 +65,18 @@ const DECODE_GRACE_MS = 10000;
 // can decode it, so the offer leaves it out unless the setting says the
 // device really plays it (issue #160).
 const ALLOW_H265 = CFG.allowH265 === true;
-// Go2RTC serves the same stream over MSE, which is what devices whose
-// WebView cannot do WebRTC at all (Fire tablets) can play. WebRTC stays
-// first for its near-realtime latency; MSE is the fallback a dead decode
-// or failed negotiation switches to — unless the "Prefer MSE over WebRTC"
-// setting flips the order (issue #160).
-const PREFER_MSE = CFG.preferMse === true;
-// Same-mode failures in a row before trying the other transport anyway:
+// Same-mode failures in a row before trying the next transport anyway:
 // covers failures that never name a culprit (a WebView that cannot even
 // form a WebRTC offer fails generically).
 const MODE_STRIKE_LIMIT = 3;
-// MSE receiving no data: allow a slow first keyframe, then reconnect.
+// A live stream (MSE or HLS) receiving no data: allow a slow first
+// keyframe, then reconnect.
 const MSE_STALL_POLL_MS = 5000;
 const MSE_STALL_MS = 12000;
+// Each camera carries its transports in preference order (built by the
+// app: Go2RTC does WebRTC/MSE with "Prefer MSE" deciding which leads,
+// issue #160; HA cameras do WebRTC signaling and/or HLS; WHEP is WebRTC).
+const MODE_LABEL = { webrtc: 'WebRTC', mse: 'MSE', hls: 'HLS' };
 // Sound is opt-in and only ever for one camera at a time: several cameras
 // playing their microphones over each other is noise, so a multi-camera
 // grid stays muted and video-only, and a camera qualifies only when it is
@@ -242,7 +245,11 @@ function stop(cameraId) {
   clearTimeout(session.retry);
   clearTimeout(session.grace);
   clearInterval(session.decode);
-  clearInterval(session.mseWatch);
+  clearInterval(session.stallWatch);
+  if (session.hls) {
+    try { session.hls.destroy(); } catch (_) {}
+    session.hls = null;
+  }
   if (session.pc) {
     session.pc.ontrack = null;
     session.pc.onconnectionstatechange = null;
@@ -303,16 +310,17 @@ function closeView() {
 async function start(cameraId, fullscreen) {
   stop(cameraId);
   const camera = CFG.cameras.find((candidate) => candidate.id === cameraId);
-  // The transports this camera can use, in preference order. WHEP and HA
-  // cameras are WebRTC by definition; Go2RTC serves both.
-  const modes = camera && camera.mse
-    ? (PREFER_MSE ? ['mse', 'webrtc'] : ['webrtc', 'mse'])
+  // The transports this camera can use, in preference order (built by the
+  // app from what the camera's server or Home Assistant offers).
+  const modes = camera && Array.isArray(camera.transports)
+      && camera.transports.length
+    ? camera.transports.slice()
     : ['webrtc'];
   const session = {
-    wanted: true, pc: null, ws: null, mediaSource: null, sourceBuffer: null,
-    queue: [], video: null, retry: null, grace: null, decode: null,
-    mseWatch: null, attempt: 0, modes, modeIndex: 0, modeFailures: 0,
-    fullscreen: !!fullscreen, audio: audioFor(cameraId),
+    wanted: true, pc: null, ws: null, hls: null, mediaSource: null,
+    sourceBuffer: null, queue: [], video: null, retry: null, grace: null,
+    decode: null, stallWatch: null, attempt: 0, modes, modeIndex: 0,
+    modeFailures: 0, fullscreen: !!fullscreen, audio: audioFor(cameraId),
   };
   sessions.set(cameraId, session);
 
@@ -359,10 +367,14 @@ async function start(cameraId, fullscreen) {
   const releaseTransport = () => {
     clearInterval(session.decode);
     session.decode = null;
-    clearInterval(session.mseWatch);
-    session.mseWatch = null;
+    clearInterval(session.stallWatch);
+    session.stallWatch = null;
     clearTimeout(session.grace);
     session.grace = null;
+    if (session.hls) {
+      try { session.hls.destroy(); } catch (_) {}
+      session.hls = null;
+    }
     if (session.pc) {
       discard(session.pc);
       session.pc = null;
@@ -431,10 +443,10 @@ async function start(cameraId, fullscreen) {
         + `(${inbound.packetsReceived} packets, ${inbound.framesReceived} `
         + 'frames) but decoded 0 frames; this device cannot play it', 'warn');
       // The one failure that names WebRTC itself: connected, fed, decoding
-      // nothing. Where the camera also streams over MSE, switch instead of
+      // nothing. Where the camera has another transport, switch instead of
       // parking an error on the tile (issue #160).
       if (session.modes.length > 1) {
-        retry(() => 'Trying MSE...', true);
+        retry(`Trying ${nextModeLabel()}...`, true);
       } else {
         setStatus(cameraId, `This device cannot decode ${codec}`);
       }
@@ -442,6 +454,8 @@ async function start(cameraId, fullscreen) {
   };
 
   const modeName = () => session.modes[session.modeIndex];
+  const nextModeLabel = () =>
+    MODE_LABEL[session.modes[(session.modeIndex + 1) % session.modes.length]];
 
   // One retry ladder across both transports. A hard failure that names the
   // transport as the problem (a connected stream decoding nothing, an MSE
@@ -458,7 +472,7 @@ async function start(cameraId, fullscreen) {
         (switchMode || session.modeFailures >= MODE_STRIKE_LIMIT)) {
       session.modeIndex = (session.modeIndex + 1) % session.modes.length;
       session.modeFailures = 0;
-      log(`${cameraId}: switching to ${modeName() === 'mse' ? 'MSE' : 'WebRTC'}`);
+      log(`${cameraId}: switching to ${MODE_LABEL[modeName()]}`);
     }
     const delay = Math.min(30000, 1000 * Math.pow(2, session.attempt));
     setStatus(cameraId,
@@ -473,6 +487,8 @@ async function start(cameraId, fullscreen) {
     session.grace = null;
     if (modeName() === 'mse') {
       connectMse();
+    } else if (modeName() === 'hls') {
+      connectHls();
     } else {
       connectWebrtc();
     }
@@ -484,7 +500,7 @@ async function start(cameraId, fullscreen) {
     if (!codecs) {
       log(`${cameraId}: MSE unavailable (no MediaSource or no codec)`, 'warn');
       if (session.modes.length > 1) {
-        retry(() => 'Trying WebRTC...', true);
+        retry(`Trying ${nextModeLabel()}...`, true);
       } else {
         setStatus(cameraId, 'This device cannot play MSE streams');
       }
@@ -549,7 +565,7 @@ async function start(cameraId, fullscreen) {
       if (!MediaSource.isTypeSupported(mime)) {
         log(`${cameraId}: MSE offered ${mime}, unsupported here`, 'warn');
         if (session.modes.length > 1) {
-          retry(() => 'Trying WebRTC...', true);
+          retry(`Trying ${nextModeLabel()}...`, true);
         } else {
           releaseTransport();
           setStatus(cameraId, `This device cannot decode ${label}`);
@@ -613,7 +629,7 @@ async function start(cameraId, fullscreen) {
     };
     // A socket that stays open while frames stop coming, and a live stream
     // drifting behind its own buffer, are both silent failures without this.
-    session.mseWatch = setInterval(() => {
+    session.stallWatch = setInterval(() => {
       if (stale()) return;
       if (performance.now() - lastDataAt > MSE_STALL_MS) {
         log(`${cameraId}: MSE stalled (no data)`, 'warn');
@@ -630,13 +646,113 @@ async function start(cameraId, fullscreen) {
     }, MSE_STALL_POLL_MS);
   };
 
+  // Home Assistant cameras with no WebRTC path stream HLS through the
+  // app's loopback relay (hls.js on top of the same MediaSource the MSE
+  // rung uses; the relay handles Home Assistant's CORS and certificates).
+  // Latency is HLS-typical — seconds, not the near-realtime of WebRTC —
+  // which is why this rung never outranks a WebRTC transport.
+  const connectHls = async () => {
+    setStatus(cameraId, 'Connecting...');
+    if (!window.Hls || !Hls.isSupported()) {
+      log(`${cameraId}: HLS unavailable (no MediaSource)`, 'warn');
+      if (session.modes.length > 1) {
+        retry(`Trying ${nextModeLabel()}...`, true);
+      } else {
+        setStatus(cameraId, 'This device cannot play HLS streams');
+      }
+      return;
+    }
+    let info = null;
+    try {
+      info = await bridge('cameraHls', { cameraId });
+    } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    if (!info || info.ok !== true) {
+      log(`${cameraId}: HLS endpoint failed: ${info && info.error}`);
+      retry((seconds) =>
+        `Home Assistant could not start this stream. Retrying in ${seconds}s`);
+      return;
+    }
+    const video = ensureVideo();
+    if (!video) return;
+    // The tile may have carried a WebRTC stream on a previous attempt.
+    if (video.srcObject) {
+      for (const track of video.srcObject.getTracks()) track.stop();
+      video.srcObject = null;
+    }
+    const hls = new Hls({
+      // A camera is an endless live stream, not a recording: no duration,
+      // a short tail (an all-day view must not grow buffers), and a seek
+      // back to the live edge when playback falls too far behind it.
+      liveDurationInfinity: true,
+      backBufferLength: 30,
+      liveSyncDurationCount: 3,
+      liveMaxLatencyDurationCount: 10,
+    });
+    session.hls = hls;
+    const stale = () => !session.wanted || session.hls !== hls;
+    let playingLogged = false;
+    let recovered = false;
+    let lastDataAt = performance.now();
+    hls.on(Hls.Events.FRAG_BUFFERED, () => {
+      if (stale()) return;
+      lastDataAt = performance.now();
+      if (playingLogged) return;
+      playingLogged = true;
+      session.attempt = 0;
+      session.modeFailures = 0;
+      setStatus(cameraId, '');
+      const level = hls.levels && hls.levels[hls.currentLevel];
+      log(`${cameraId}: playing over HLS`
+        + (level && level.codecs ? ` (${level.codecs})` : ''));
+    });
+    hls.on(Hls.Events.ERROR, (event, data) => {
+      if (stale() || !data || !data.fatal) return;
+      log(`${cameraId}: HLS ${data.type}: ${data.details}`, 'warn');
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        // hls.js's own second chance first (flush and re-append); past
+        // that the failure names the transport — this device cannot play
+        // what the stream carries — so switch rather than hammer on.
+        if (!recovered) {
+          recovered = true;
+          try {
+            hls.recoverMediaError();
+            return;
+          } catch (_) {}
+        }
+        if (session.modes.length > 1) {
+          retry(`Trying ${nextModeLabel()}...`, true);
+        } else {
+          releaseTransport();
+          setStatus(cameraId, 'This device cannot decode this stream');
+        }
+        return;
+      }
+      // Network trouble, or the stream's signed URL aged out: the retry
+      // asks Home Assistant for a fresh playlist either way.
+      retry(() => 'Reconnecting...');
+    });
+    hls.loadSource(info.url);
+    hls.attachMedia(video);
+    video.play().catch((error) => log(`play ${cameraId}: ${error}`));
+    // Playlists that keep answering while segments stop coming are the
+    // same silent failure the MSE stall watch exists for.
+    session.stallWatch = setInterval(() => {
+      if (stale()) return;
+      if (performance.now() - lastDataAt > MSE_STALL_MS) {
+        log(`${cameraId}: HLS stalled (no data)`, 'warn');
+        retry(() => 'Reconnecting...');
+      }
+    }, MSE_STALL_POLL_MS);
+  };
+
   const connectWebrtc = async () => {
     setStatus(cameraId, 'Connecting...');
     if (!window.RTCPeerConnection) {
       // The Fire-tablet case in its purest form: no WebRTC at all.
       log(`${cameraId}: this WebView has no WebRTC`, 'warn');
       if (session.modes.length > 1) {
-        retry(() => 'Trying MSE...', true);
+        retry(`Trying ${nextModeLabel()}...`, true);
       } else {
         setStatus(cameraId, 'This device cannot play WebRTC streams');
       }
