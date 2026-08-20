@@ -97,6 +97,10 @@ internal class BleScanEngine(
     // settings are what the stack objects to, re-trying them after every
     // recovery would just re-break the scanner on a cycle (issue #239).
     private var minimalSettings = false
+    // One adapter restart per run: a bounce that does not clear the stack
+    // will not clear it on a loop either, and each one drops the proxy's
+    // GATT connections for nothing.
+    private var adapterBounced = false
 
     val isScanning: Boolean get() = scanning
     val lastAdvertisementAt: Long get() = lastCallbackAt
@@ -350,6 +354,17 @@ internal class BleScanEngine(
         startScanIfNeeded(reason)
     }
 
+    private fun failureName(errorCode: Int): String = when (errorCode) {
+        1 -> "already started"
+        2 -> "registration failed"
+        3 -> "internal error"
+        4 -> "feature unsupported"
+        5 -> "out of hardware resources"
+        6 -> "scanning too frequently"
+        else -> "unknown"
+    }
+
+    @SuppressLint("MissingPermission")
     private fun handleScanFailure(errorCode: Int) {
         scanning = false
         onStateChange(ScannerState.FAILED, mode)
@@ -369,7 +384,8 @@ internal class BleScanEngine(
             }
         }
         consecutiveFailures++
-        note("scan failed (code=$errorCode, attempt=$consecutiveFailures), retry in ${backoff}ms")
+        note("scan failed (code=$errorCode ${failureName(errorCode)}, " +
+            "attempt=$consecutiveFailures), retry in ${backoff}ms")
         // Three straight refusals with the rich settings: from here on ask
         // for the plainest scan Android knows. Some old stacks (a Meta
         // Portal, issue #239) reject the match-mode and PHY refinements
@@ -377,6 +393,28 @@ internal class BleScanEngine(
         if (!minimalSettings && consecutiveFailures >= 3) {
             minimalSettings = true
             note("scan keeps failing, retrying with minimal scan settings")
+        }
+        // Registration failures mean the stack's scan-client table is
+        // wedged (seen live on an Echo Show after app updates killed it
+        // mid-scan, issue #246 follow-up): no scan settings can fix that,
+        // only an adapter restart clears it, which Home Assistant's
+        // "power cycle the device" banner asks the user to do by hand.
+        // Where Android still allows an app to do it (12L and older,
+        // exactly the Fire OS generation that wedges), do it ourselves,
+        // once: the STATE_ON receiver resumes scanning when the adapter
+        // returns. Deprecated calls, guarded, best effort.
+        if (errorCode == ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED &&
+            consecutiveFailures >= 3 && !adapterBounced &&
+            Build.VERSION.SDK_INT <= 32) {
+            adapterBounced = true
+            note("scan registration keeps failing: restarting the Bluetooth " +
+                "adapter to clear the stack")
+            @Suppress("DEPRECATION")
+            runCatching { adapter?.disable() }
+            handler.postDelayed({
+                @Suppress("DEPRECATION")
+                runCatching { adapter?.enable() }
+            }, 4_000)
         }
         handler.postDelayed({ startScanIfNeeded("failure retry") }, backoff)
     }
