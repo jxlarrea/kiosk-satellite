@@ -161,6 +161,16 @@ void main() {
       }
     });
 
+    test('zeroes both generations of the sidebar width variable', () {
+      // The sidebar's width is published as --mdc-drawer-width by the mwc
+      // generation and as --ha-sidebar-width by the current frontend. Cards
+      // that dodge the sidebar (navbar-card, #253) prefer the newer one, so
+      // a script that only zeroes the old variable leaves fixed-position
+      // cards offset by a sidebar that is not there.
+      expect(kioskModeScript, contains('--ha-sidebar-width:0px!important'));
+      expect(kioskModeScript, contains('--mdc-drawer-width:0px!important'));
+    });
+
     test('declares a zero kiosk header height for panel cards', () {
       // Cards that fill a panel view size themselves with
       // calc(100vh - var(--kiosk-header-height, var(--header-height))), the

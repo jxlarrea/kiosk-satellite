@@ -62,8 +62,15 @@ const kioskModeScript = '''
   function css(tag) {
     if (!S.on || !allowedHere()) return '';
     if (tag === 'home-assistant-main') {
+      // The sidebar's width is published twice: the mwc generation reads
+      // --mdc-drawer-width, the current frontend declares --ha-sidebar-width
+      // on this host and sizes the drawer shell and content padding from it.
+      // Cards that dodge the sidebar (navbar-card among them, #253) read the
+      // same variables, so both must say zero or a fixed-position card keeps
+      // leaving room for a sidebar that is not there.
       return S.sidebar
-        ? 'ha-drawer{--mdc-drawer-width:0px!important;}' +
+        ? ':host{--ha-sidebar-width:0px!important;}' +
+          'ha-drawer{--mdc-drawer-width:0px!important;}' +
           'ha-sidebar{display:none!important;}'
         : '';
     }

@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- Cards that make room for the Home Assistant sidebar (navbar-card among them) now sit flush to the screen edge when kiosk mode hides the sidebar. The frontend publishes the sidebar's width under two names across generations, and kiosk mode only zeroed the older one, so cards reading the newer variable kept dodging a sidebar that was no longer there. Verified live on an Echo Show 8: the navbar moved from 272px in to its intended 16px inset.
 - Opening a camera view no longer flashes white as it slides up. Two causes stacked: hls.js was parsed in the page's critical path, delaying the first black paint (it now loads deferred, and the HLS player waits for it), and Android composites a fresh WebView's default white background for a frame or two before any page paints at all (the view now keeps a black cover over the WebView until the page reports its first frame, and the WebView background is transparent over the black surface behind it). Verified frame by frame on an Echo Show 8 screen recording.
 - The bundled hls.js is now the light build, the same file the Voice Satellite integration ships: a third smaller and quicker to parse, dropping only subtitle, alternate-audio and DRM support that a camera stream never carries.
 
