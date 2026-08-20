@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The app launcher works while "Disable home button" holds. Launching an app from a pinned kiosk only produced Android's "to unpin, swipe up and hold" toast, and manually unpinning to get around it left the kiosk unpinned until the setting was toggled. The kiosk now unpins itself for the launch and re-checks the pin every time it returns to the foreground, so the pin comes back on its own after the launched app, and after a manual unpin too. On devices without device ownership the re-pin shows Android's pinning confirmation again, the ceiling Android sets for screen pinning; the Apps row under Allowed Actions now says the launch drops the pin.
+
 ## v2026.8.61 - 2026-08-19
 
 ### Added

@@ -727,7 +727,9 @@ const kioskAllowApps = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: true,
   title: 'Apps',
-  description: 'Open the app launcher.',
+  description:
+      'Open the app launcher. With Disable home button on, launching an '
+      'app unpins the kiosk until it returns.',
   category: 'Kiosk',
   section: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',

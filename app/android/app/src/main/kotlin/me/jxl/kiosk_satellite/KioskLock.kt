@@ -188,6 +188,25 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     )
                     result.success(null)
                 }
+                // Stand the pin down for a sanctioned outward launch (issue
+                // #250): Android refuses to switch away from a pinned task,
+                // so launchApp under Disable home button only produced the
+                // system's unpin toast. Returns whether a pin was actually
+                // dropped, so Dart can re-arm right away if the launch then
+                // fails (its resume re-pin never fires without a pause).
+                "unpin" -> {
+                    val am = activity.getSystemService(ActivityManager::class.java)
+                    val pinned = am.lockTaskModeState !=
+                        ActivityManager.LOCK_TASK_MODE_NONE
+                    if (pinned) {
+                        try {
+                            activity.stopLockTask()
+                        } catch (_: Exception) {
+                            // Racing the pin state is not fatal.
+                        }
+                    }
+                    result.success(pinned)
+                }
                 else -> result.notImplemented()
             }
         }

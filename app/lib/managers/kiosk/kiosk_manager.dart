@@ -46,6 +46,13 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   DateTime? _appLaunchedAt;
   static const _launchGrace = Duration(seconds: 15);
 
+  /// Last resume-triggered re-pin attempt; see [_repinOnResume]. On devices
+  /// without ownership startLockTask pops a consent dialog, and on OEMs
+  /// where that dialog pauses the Activity, declining it would resume us
+  /// straight into asking again, forever. The cooldown breaks that loop.
+  DateTime? _repinAt;
+  static const _repinCooldown = Duration(seconds: 5);
+
   /// The kiosk is standing down for an update install (issue #170): lock
   /// task pinning blocks Android's install confirmation screen outright,
   /// and the foreground reclaim would pull the kiosk back over it within
@@ -119,18 +126,28 @@ class KioskManager extends Manager with WidgetsBindingObserver {
         name: 'launchApp',
         description:
             'Open another Android app by package name, leaving the kiosk '
-            'running behind it (issue #44). Fails when the package is not '
-            'installed or has nothing launchable.',
+            'running behind it (issue #44). Unpins first when Disable home '
+            'button holds; the kiosk re-pins when it returns (issue #250). '
+            'Fails when the package is not installed or has nothing '
+            'launchable.',
         params: const {'package': 'Android package, e.g. com.android.deskclock'},
         handler: (p) async {
           final package = '${p['package'] ?? ''}'.trim();
           if (package.isEmpty) {
             return const CommandResult.fail('package required');
           }
+          // A pinned task cannot be switched away from: the launch used to
+          // "succeed" while Android showed its unpin toast instead of the
+          // app (issue #250). The resume re-pin in
+          // didChangeAppLifecycleState arms the pin again on the way back.
+          final wasPinned = await _invoke<bool>('unpin') ?? false;
           try {
             final launched = await _backgroundChannel
                 .invokeMethod<bool>('launchApp', {'package': package});
             if (launched != true) {
+              // Nothing came up, so no pause and no resume re-pin: put the
+              // pin back now rather than leave the kiosk unprotected.
+              if (wasPinned) await _apply();
               return CommandResult.fail(
                 '$package is not installed, or has no app to open',
               );
@@ -139,6 +156,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
             bus.publish(AppLaunched(package: package));
             return const CommandResult.ok();
           } on PlatformException catch (e) {
+            if (wasPinned) await _apply();
             return CommandResult.fail('could not open $package: $e');
           } on MissingPluginException {
             return const CommandResult.fail('opening apps is Android-only');
@@ -580,7 +598,26 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed) {
       _reclaimTimer?.cancel();
       _reclaimTimer = null;
+      _repinOnResume();
     }
+  }
+
+  /// The pinned half of the same protection (issue #250): the pin stands
+  /// down for a sanctioned launch, and a manual unpin used to defeat
+  /// Disable home button until the setting was toggled. Every return to
+  /// the foreground re-checks; setPinned no-ops while the pin holds, so an
+  /// ordinary resume costs one channel call. menuBusy resumes are the
+  /// owner coming back from a grant screen they opened themselves, not a
+  /// moment to pop a pinning consent dialog over.
+  void _repinOnResume() {
+    if (_installPause || menuBusy) return;
+    if (!lockdownActive && !_kioskHomeGuard) return;
+    final last = _repinAt;
+    if (last != null && DateTime.now().difference(last) < _repinCooldown) {
+      return;
+    }
+    _repinAt = DateTime.now();
+    unawaited(_apply());
   }
 
   Future<void> _reclaimForeground() async {
@@ -613,11 +650,17 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     _installPauseTimer = null;
   }
 
+  /// Whether the flag bundle actually goes to the platform. Keyed off the
+  /// OS in real use; headless tests flip it on so they can watch "apply"
+  /// land on the mocked channel.
+  @visibleForTesting
+  bool pushFlags = Platform.isAndroid;
+
   /// Push the armed flags to the Activity. With [force] false the bundle is
   /// all-off regardless of settings (used on exit, where staying pinned
   /// would block the app from closing).
   Future<void> _apply({bool force = true}) async {
-    if (!Platform.isAndroid) return;
+    if (!pushFlags) return;
     // While the kiosk stands down for an install confirmation, any apply
     // that races it (a settings change, a fresh Activity's ready) must not
     // re-arm over Android's install screen. resumeKioskAfterInstall clears
