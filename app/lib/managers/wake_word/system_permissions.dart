@@ -25,6 +25,7 @@ class SystemPermissions {
     required this.camera,
     required this.location,
     required this.bluetooth,
+    required this.bluetoothPair,
     required this.bluetoothNeedsLocation,
     required this.locationServicesOn,
     required this.deviceAdmin,
@@ -55,24 +56,27 @@ class SystemPermissions {
   /// Only a page ever wants this (geolocation). Nothing native here uses it.
   final bool location;
 
-  /// Whatever actually gates Bluetooth scanning on this Android. On 12+
-  /// that is the "Nearby devices" pair (scan + connect), one value for
-  /// both: Android grants them from the same dialog, and a half-granted
-  /// pair scans nothing anyway. Android 11 and older grant Bluetooth at
-  /// install and gate scan RESULTS on location instead: without the
-  /// location permission and location services on, the scanner runs and
-  /// hears nothing (issue #240), so that is what this reads there.
+  /// Whether the proxy can actually scan on this Android: the "Nearby
+  /// devices" pair (granted at install below 12) AND the location gate.
+  /// Location gates scanning on EVERY version: 11 and older tie scan
+  /// results to it outright (issue #240), and on 12+ the app deliberately
+  /// scans without the neverForLocation flag, because that flag makes
+  /// Android strip iBeacon and Eddystone frames, the exact traffic a
+  /// presence setup needs relayed (issue #246); the un-flagged scan then
+  /// needs the location permission and services just like old Android.
   final bool bluetooth;
 
-  /// True on Android 11 and older, where [bluetooth] reads the location
-  /// gate. Lets the permission rows name the real blocker instead of a
-  /// bare "Missing": issue #240 was solved by a system-wide location
-  /// switch nobody thought to connect to Bluetooth.
+  /// The 12+ runtime pair alone, for the row that shows it separately
+  /// from the location half. Reads true below 12 (install-time grants).
+  final bool bluetoothPair;
+
+  /// Kept true on every version now that location gates all scanning;
+  /// remote admin pages built from this payload choose the row wording
+  /// with it.
   final bool bluetoothNeedsLocation;
 
-  /// The system-wide location switch. Only meaningful for the Bluetooth
-  /// row when [bluetoothNeedsLocation] is set; reported everywhere so the
-  /// remote admin can tell "permission missing" from "switch off".
+  /// The system-wide location switch, so the rows can tell "permission
+  /// missing" from "switch off".
   final bool locationServicesOn;
 
   /// The device admin grant behind the real "Screen off" (lockNow).
@@ -120,11 +124,9 @@ class SystemPermissions {
   static int? _sdkInt;
 
   /// Below Android 12 there are no runtime Bluetooth permissions: the pair
-  /// is granted at install, and the OS gates scan results on location
-  /// instead. Everything that shows or requests the "Nearby devices" grant
-  /// must route through this so old devices see the gate that actually
-  /// applies (issue #240, a Fire tablet scanning "actively" and hearing
-  /// nothing).
+  /// is granted at install and only the location gate applies (issue #240,
+  /// a Fire tablet scanning "actively" and hearing nothing). On 12+ both
+  /// halves are real; see [bluetooth].
   static Future<bool> legacyBluetooth() async {
     try {
       _sdkInt ??= (await DeviceInfoPlugin().androidInfo).version.sdkInt;
@@ -134,35 +136,37 @@ class SystemPermissions {
     return _sdkInt! < 31;
   }
 
-  static Future<bool> _bluetoothSatisfied() async {
-    if (await legacyBluetooth()) {
-      return await Permission.locationWhenInUse.isGranted &&
-          (await Permission.location.serviceStatus).isEnabled;
-    }
+  static Future<bool> _bluetoothPairSatisfied() async {
+    if (await legacyBluetooth()) return true; // install-time grants
     return await Permission.bluetoothScan.isGranted &&
         await Permission.bluetoothConnect.isGranted;
   }
 
+  static Future<bool> _locationGateSatisfied() async =>
+      await Permission.locationWhenInUse.isGranted &&
+      (await Permission.location.serviceStatus).isEnabled;
+
   /// Ask for whatever [bluetooth] needs on this Android, returning whether
-  /// scanning is actually unblocked. On 12+ one dialog covers the pair (they
-  /// share the "Nearby devices" group; the second request returns silently).
-  /// Below that it is the location permission, and when the permission is
+  /// scanning is actually unblocked. On 12+ one dialog covers the pair
+  /// (they share the "Nearby devices" group; the second request returns
+  /// silently), then the location dialog; below 12 the pair is granted at
+  /// install and only location is asked. When the location permission is
   /// held but the system-wide location switch is off, the OS location
   /// settings screen is opened, the only place that can flip it.
   static Future<bool> requestBluetooth() async {
-    if (await legacyBluetooth()) {
-      if (!await ensureOsPermission(Permission.locationWhenInUse)) {
-        return false;
-      }
-      if ((await Permission.location.serviceStatus).isEnabled) return true;
-      try {
-        await _backgroundChannel.invokeMethod('openLocationSettings');
-      } catch (_) {}
+    if (!await legacyBluetooth()) {
+      final scan = await ensureOsPermission(Permission.bluetoothScan);
+      final connect = await ensureOsPermission(Permission.bluetoothConnect);
+      if (!scan || !connect) return false;
+    }
+    if (!await ensureOsPermission(Permission.locationWhenInUse)) {
       return false;
     }
-    final scan = await ensureOsPermission(Permission.bluetoothScan);
-    final connect = await ensureOsPermission(Permission.bluetoothConnect);
-    return scan && connect;
+    if ((await Permission.location.serviceStatus).isEnabled) return true;
+    try {
+      await _backgroundChannel.invokeMethod('openLocationSettings');
+    } catch (_) {}
+    return false;
   }
 
   static Future<bool> _canWriteSettings() async {
@@ -181,8 +185,10 @@ class SystemPermissions {
         batteryUnrestricted: await BackgroundListening.isBatteryUnrestricted(),
         camera: await Permission.camera.isGranted,
         location: await Permission.locationWhenInUse.isGranted,
-        bluetooth: await _bluetoothSatisfied(),
-        bluetoothNeedsLocation: await legacyBluetooth(),
+        bluetooth:
+            await _bluetoothPairSatisfied() && await _locationGateSatisfied(),
+        bluetoothPair: await _bluetoothPairSatisfied(),
+        bluetoothNeedsLocation: true,
         locationServicesOn:
             (await Permission.location.serviceStatus).isEnabled,
         deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
@@ -203,6 +209,7 @@ class SystemPermissions {
     camera: false,
     location: false,
     bluetooth: false,
+    bluetoothPair: false,
     bluetoothNeedsLocation: false,
     locationServicesOn: true,
     deviceAdmin: false,
@@ -220,6 +227,7 @@ class SystemPermissions {
         'camera': camera,
         'location': location,
         'bluetooth': bluetooth,
+        'bluetoothPair': bluetoothPair,
         'bluetoothNeedsLocation': bluetoothNeedsLocation,
         'locationServicesOn': locationServicesOn,
         'deviceAdmin': deviceAdmin,

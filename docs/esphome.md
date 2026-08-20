@@ -25,10 +25,11 @@ room-presence setups like Bermuda get one measuring point per kiosk.
    encryption key and shows it in the same section. Turn on **Enable
    Bluetooth proxy** in the section below if the kiosk should relay
    Bluetooth too.
-2. Grant **Nearby devices** when prompted (also available under
-   **Settings, Device, Permissions Manager**). On Android 11 and older,
-   including Fire tablets and similar devices, this asks for **Location**
-   instead and the device's own location switch must be on too; see
+2. Grant **Nearby devices** and **Location** when prompted (both also
+   available under **Settings, Device, Permissions Manager**), and keep
+   the device's own location switch on. Android ties Bluetooth scanning
+   to Location on every version and the app never reads the device's
+   position; see
    [Permissions by Android version](#permissions-by-android-version) for
    why.
 3. In Home Assistant, the device appears under **Settings, Devices &
@@ -122,24 +123,29 @@ Assistant is untouched either way.
 
 | Android | What scanning needs |
 | --- | --- |
-| 12+ | The **Nearby devices** runtime pair (scan + connect). Location is not required; the app declares its scans are not used for location. |
-| 6 to 11 | Bluetooth is granted at install, but Android requires the **Location** permission and location services switched on for BLE scan results to be delivered. |
+| 12+ | The **Nearby devices** runtime pair (scan + connect), plus the **Location** permission and location services switched on. |
+| 6 to 11 | Bluetooth is granted at install; the **Location** permission and location services must be on. |
 
-The second row is the one that surprises people, because nothing about it
-looks like Bluetooth. On Android 11 and older (Fire tablets, Echo Shows,
-Meta Portals and other devices of that generation), two separate things
-must be true or the scanner runs and hears nothing: the app must hold the
-**Location** permission, and the tablet-wide location switch in the
-device's own settings (on Fire tablets under **Location Based Services**)
-must be on. The symptom of a missing half is always the same: the proxy
-reports itself as scanning, the Nearby devices list stays empty forever,
-and Home Assistant sees a proxy that never delivers an advertisement. The
-**Nearby devices** permission row on the settings pages reads this gate on
-old devices and names whichever half is blocking scanning; its Grant
-button asks for the permission, or opens the system's location settings
-screen when the switch is what is off. Location is used for nothing else:
-the app never reads the device's position for this feature, the
-requirement is Android's own rule about BLE scanning on those versions.
+The Location requirement surprises people, because nothing about it looks
+like Bluetooth, but it applies on every Android version and it is
+deliberate. Android considers Bluetooth beacons location-inferable, and an
+app that scans with location detached (the `neverForLocation` flag) never
+receives iBeacon or Eddystone frames at all on Android 12 and newer, which
+is precisely the traffic a Bermuda or iBeacon presence setup needs
+relayed: phones become invisible to the proxy while everything else shows
+up. The proxy therefore scans with location attached, and Android in turn
+requires the **Location** permission and the device-wide location switch
+(on Fire tablets under **Location Based Services**) on every version. The
+app never reads the device's position; the grant only unlocks scan
+delivery.
+
+The symptom of a missing half is always the same: the proxy reports
+itself as scanning, the phone (or on old Android every device) never
+appears, and Home Assistant sees a proxy that delivers little or nothing.
+The permission rows on the settings pages read the real gate and name
+whichever half is blocking scanning; the Grant button asks for the right
+permissions in order, and opens the system's location settings screen
+when the switch is what is off.
 
 ## Reliability
 

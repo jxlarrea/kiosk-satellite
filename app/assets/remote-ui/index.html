@@ -4358,18 +4358,26 @@ async function loadSettings() {
       h.textContent = 'Required system permissions';
       const permCard = document.createElement('div');
       permCard.className = 'card';
-      const row = document.createElement('div');
-      row.className = 'row';
-      const info = document.createElement('div');
-      info.className = 'info';
-      info.innerHTML = '<div class="name"></div><div class="desc"></div>';
-      info.querySelector('.name').textContent = 'Nearby devices';
-      info.querySelector('.desc').textContent = 'Checking...';
-      row.appendChild(info);
-      const stateEl = document.createElement('span');
-      stateEl.style.whiteSpace = 'nowrap';
-      row.appendChild(stateEl);
-      permCard.appendChild(row);
+      // Two rows, two grants: the Bluetooth pair (a formality below
+      // Android 12) and the location gate Android ties Bluetooth scanning
+      // to on every version, beacons included (issues #240, #246).
+      const makeRow = (name) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const info = document.createElement('div');
+        info.className = 'info';
+        info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+        info.querySelector('.name').textContent = name;
+        info.querySelector('.desc').textContent = 'Checking...';
+        row.appendChild(info);
+        const stateEl = document.createElement('span');
+        stateEl.style.whiteSpace = 'nowrap';
+        row.appendChild(stateEl);
+        permCard.appendChild(row);
+        return { row, info, stateEl };
+      };
+      const pairRow = makeRow('Nearby devices');
+      const locRow = makeRow('Location');
       // Under the Bluetooth Proxy section's card, before the Nearby
       // devices section, same as the device page: the grant gates the
       // Bluetooth side of the page, not the ESPHome general group above.
@@ -4385,20 +4393,9 @@ async function loadSettings() {
       const readPerm = () => api('/api/commands/getSystemPermissions',
         { method: 'POST', body: '{}' }).then((r) => r.json())
         .then((res) => res.data || null).catch(() => null);
-      // On Android 11 and older the blocker is location, not Bluetooth,
-      // and naming it is the whole battle (issue #240: a system-wide
-      // location switch nobody thought to connect to Bluetooth).
-      const missingDesc = (perms) => !perms.bluetoothNeedsLocation
-        ? 'Without this the proxy cannot scan for devices.'
-        : perms.locationServicesOn === false
-          ? 'Location is off in the device settings, so Bluetooth scanning finds nothing.'
-          : 'This Android version needs the Location permission for Bluetooth scanning.';
-      const paint = (perms) => {
-        const ok = perms === null ? null : perms.bluetooth === true;
+      const paintRow = ({ row, info, stateEl }, ok, held, missing) => {
         info.querySelector('.desc').textContent = ok === null
-          ? 'Status unavailable.'
-          : ok ? 'The proxy can scan for nearby Bluetooth devices.'
-               : missingDesc(perms);
+          ? 'Status unavailable.' : ok ? held : missing;
         stateEl.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
         stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
         row.querySelector('button')?.remove();
@@ -4410,6 +4407,9 @@ async function loadSettings() {
         btn.addEventListener('click', async () => {
           btn.disabled = true;
           try {
+            // One request covers both rows: the device runs the whole
+            // flow (pair dialog, location dialog, location settings
+            // screen when the system switch is off).
             await api('/api/commands/requestOsPermissions', { method: 'POST',
               body: JSON.stringify(
                 { which: ['bluetoothScan', 'bluetoothConnect'] }) });
@@ -4422,6 +4422,19 @@ async function loadSettings() {
           btn.disabled = false;
         });
         row.appendChild(btn);
+      };
+      const paint = (perms) => {
+        const p = perms === null ? null : perms;
+        paintRow(pairRow, p === null ? null : p.bluetoothPair === true,
+          'The proxy can scan for nearby Bluetooth devices.',
+          'Without this the proxy cannot scan for devices.');
+        paintRow(locRow,
+          p === null ? null : p.location === true &&
+            p.locationServicesOn !== false,
+          'Bluetooth scanning can hear beacons.',
+          p !== null && p.location === true
+            ? 'Location is off in the device settings, so Bluetooth scanning finds nothing.'
+            : 'Android only delivers Bluetooth scan results, beacons included, with Location granted. The app never reads the device position.');
       };
       readPerm().then(paint);
     }
@@ -4636,18 +4649,16 @@ async function loadSettings() {
         ask: ['bluetoothScan', 'bluetoothConnect'],
         needed: on('btproxy.enabled'),
         held: 'The Bluetooth proxy can scan for nearby devices.',
-        // A function of the full payload: on Android 11 and older the
-        // blocker is location, and naming it is the whole battle (issue
-        // #240 was a system-wide location switch nobody thought to
-        // connect to Bluetooth). Same wording as the ESPHome tab's card.
-        missing: (all) => !all.bluetoothNeedsLocation
+        // A function of the full payload: name the actual blocker, the
+        // pair, the location grant, or the system-wide location switch
+        // (issues #240, #246; location gates Bluetooth scanning on every
+        // Android version). Same wording as the ESPHome tab's card.
+        missing: (all) => all.bluetoothPair === false
           ? 'The Bluetooth proxy is switched on and cannot scan.'
-          : all.locationServicesOn === false
-            ? 'Location is off in the device settings, so Bluetooth scanning finds nothing.'
-            : 'This Android version needs the Location permission for Bluetooth scanning.',
-        idle: (all) => !all.bluetoothNeedsLocation
-          ? 'Needed by the Bluetooth proxy to scan for devices.'
-          : 'Needed by the Bluetooth proxy: this Android version gates Bluetooth scanning on location.' },
+          : all.location === false
+            ? 'Bluetooth scanning needs the Location permission.'
+            : 'Location is off in the device settings, so Bluetooth scanning finds nothing.',
+        idle: 'Needed by the Bluetooth proxy to scan for devices.' },
       { key: 'notification', name: 'Notifications', ask: 'notifications',
         needed: background,
         held: 'The ongoing notification that keeps listening alive.',
@@ -4685,10 +4696,10 @@ async function loadSettings() {
         missing: '',
         idle: 'Lets the Foreground app sensor name apps other than Kiosk Satellite.' },
       { key: 'location', name: 'Location', ask: 'location',
-        needed: false,
-        held: 'Pages can use the device location.',
-        missing: '',
-        idle: 'Only used by dashboard pages that ask for your location.' },
+        needed: on('btproxy.enabled'),
+        held: 'Pages and Bluetooth scanning can use the device location.',
+        missing: 'Android will not deliver Bluetooth scan results without Location. The app never reads the device position.',
+        idle: 'Used by pages that ask for your location, and needed by Bluetooth scanning.' },
     ];
 
     const readAll = async () => {

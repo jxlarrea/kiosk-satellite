@@ -34,13 +34,15 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Bluetooth proxy: relaying BLE advertisements to Home Assistant.
-         The modern runtime pair on 12+; neverForLocation keeps the scan
-         grant from dragging location in. The legacy pair below is the whole
-         Bluetooth grant on 11 and older (where scanning also needs the
-         location permissions already declared above, plus location services
-         switched on). -->
+         The modern runtime pair on 12+. Deliberately NOT neverForLocation:
+         with that flag Android 12+ silently strips every location-inferable
+         beacon frame (iBeacon, Eddystone) from scan results, which is
+         exactly the traffic a Bermuda-style presence setup needs relayed
+         (issue #246, phones invisible to every modern proxy). The price is
+         that scanning on every Android version now needs the location
+         permission and location services on; the app still never reads the
+         device's position. -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation"
         tools:targetApi="s"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
     <uses-permission android:name="android.permission.BLUETOOTH"

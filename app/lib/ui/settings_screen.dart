@@ -5194,16 +5194,15 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missingIcon: Icons.bluetooth_disabled_outlined,
           title: 'Nearby devices',
           held: 'The Bluetooth proxy can scan for nearby devices.',
-          // On old Android the blocker is location, and naming it is the
-          // whole battle: issue #240 was a system-wide location switch
-          // nobody thought to connect to Bluetooth.
-          missing: perms?.bluetoothNeedsLocation != true
+          // Name the actual blocker: the pair, the location grant, or the
+          // system-wide location switch (issues #240, #246; location gates
+          // Bluetooth scanning on every Android version).
+          missing: perms?.bluetoothPair == false
               ? 'The Bluetooth proxy is switched on and cannot scan.'
-              : perms?.locationServicesOn == false
-                  ? 'Location is off in the device settings, so Bluetooth '
-                      'scanning finds nothing.'
-                  : 'This Android version needs the Location permission '
-                      'for Bluetooth scanning.',
+              : perms?.location == false
+                  ? 'Bluetooth scanning needs the Location permission.'
+                  : 'Location is off in the device settings, so Bluetooth '
+                      'scanning finds nothing.',
           idle: 'Needed by the Bluetooth proxy to scan for devices.',
           // On 12+ that is the "Nearby devices" pair; below it is the
           // location permission (and the location switch), the gate scan
@@ -5318,16 +5317,20 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               'Kiosk Satellite.',
           onGrant: () => _requestVia('usageAccess'),
         ),
-        // Pages ask for this themselves when they need it; nothing native
-        // here uses it, so it is listed for completeness only.
+        // Pages ask for this themselves when they need it, and Bluetooth
+        // scanning cannot run without it on any Android version: the scan
+        // deliberately drops neverForLocation so beacon frames survive
+        // (issue #246). The app itself never reads the device position.
         _row(
           granted: perms?.location,
-          needed: false,
+          needed: settings.get(btproxyEnabled),
           missingIcon: Icons.location_off_outlined,
           title: 'Location',
-          held: 'Pages can use the device location.',
-          missing: '',
-          idle: 'Only used by dashboard pages that ask for your location.',
+          held: 'Pages and Bluetooth scanning can use the device location.',
+          missing: 'Android will not deliver Bluetooth scan results '
+              'without Location. The app never reads the device position.',
+          idle: 'Used by pages that ask for your location, and needed by '
+              'Bluetooth scanning.',
           onGrant: () => ensureOsPermission(Permission.locationWhenInUse),
         ),
       ]),
@@ -5582,39 +5585,70 @@ class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _row({
+    required bool? granted,
+    required IconData missingIcon,
+    required String title,
+    required String subtitle,
+  }) {
     final theme = Theme.of(context);
-    final granted = _bluetooth;
     return ListTile(
       leading: Icon(
-        granted == true
-            ? Icons.check_circle_outline
-            : Icons.bluetooth_disabled_outlined,
+        granted == true ? Icons.check_circle_outline : missingIcon,
         color: granted == true ? null : theme.colorScheme.error,
       ),
-      title: const Text('Nearby devices'),
-      subtitle: Text(
-        granted == true
-            ? 'The proxy can scan for nearby Bluetooth devices.'
-            : _perms?.bluetoothNeedsLocation != true
-                ? 'Without this the proxy cannot scan for devices.'
-                : _perms?.locationServicesOn == false
-                    ? 'Location is off in the device settings, so Bluetooth '
-                        'scanning finds nothing.'
-                    : 'This Android version needs the Location permission '
-                        'for Bluetooth scanning.',
-      ),
+      title: Text(title),
+      subtitle: Text(subtitle),
       trailing: granted == true
           ? null
           : TextButton(
               onPressed: () async {
-                // The pair on 12+, location below (issue #240).
+                // One flow covers both rows: the pair on 12+, then the
+                // location grant, then the location settings screen when
+                // the system switch is what is off (issues #240, #246).
                 await SystemPermissions.requestBluetooth();
                 await _refresh();
               },
               child: const Text('Grant'),
             ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final perms = _perms;
+    // Two rows because they are two different grants: the Bluetooth pair
+    // (a formality below Android 12) and the location gate Android ties
+    // Bluetooth scanning to on every version, beacons included (#246).
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _row(
+          granted: _bluetooth == null ? null : perms?.bluetoothPair,
+          missingIcon: Icons.bluetooth_disabled_outlined,
+          title: 'Nearby devices',
+          subtitle: perms?.bluetoothPair == true
+              ? 'The proxy can scan for nearby Bluetooth devices.'
+              : 'Without this the proxy cannot scan for devices.',
+        ),
+        _row(
+          granted: _bluetooth == null
+              ? null
+              : perms != null &&
+                  perms.location &&
+                  perms.locationServicesOn,
+          missingIcon: Icons.location_off_outlined,
+          title: 'Location',
+          subtitle: perms == null || !perms.location
+              ? 'Android only delivers Bluetooth scan results, beacons '
+                  'included, with Location granted. The app never reads '
+                  'the device position.'
+              : !perms.locationServicesOn
+                  ? 'Location is off in the device settings, so Bluetooth '
+                      'scanning finds nothing.'
+                  : 'Bluetooth scanning can hear beacons.',
+        ),
+      ],
     );
   }
 }

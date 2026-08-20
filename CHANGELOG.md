@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- Phones and beacons are no longer invisible to the Bluetooth proxy on Android 12 and newer (#246). The proxy scanned with Android's neverForLocation flag, and Android honors that flag by silently stripping every location-inferable beacon frame, iBeacon and Eddystone alike, from scan results: exactly the traffic a Bermuda or iBeacon presence setup needs relayed. Phones were invisible to every modern proxy device while ESP32 proxies and Android 11 devices heard them fine. The scan now runs with location attached, which makes Android require the Location permission and location services on every version; existing proxies on Android 12+ must grant Location once after updating (the ESPHome page's permission rows say so and walk through it), and the app still never reads the device's position. Verified end to end live: a phone invisible to a Tab S9 for days appeared within seconds of the change and Bermuda now tracks it through that kiosk.
+- The ESPHome page's Required system permissions group now shows two rows, Nearby devices and Location, each reading its own half of the gate and naming what is blocking scanning, with one Grant flow that walks through the pair dialog, the location dialog and the location settings screen in order.
+
 ## v2026.8.62 - 2026-08-20
 
 ### Added
