@@ -36,6 +36,12 @@ internal object BluetoothProxyRuntime {
         val minConnectRssi: Int = 0,
         /** The kiosk's own entities to serve over the API; empty = none. */
         val entities: List<EspEntity> = emptyList(),
+        /** The real Wi-Fi MAC to report as the API identity instead of the
+         *  synthetic one, so Home Assistant links this kiosk with the same
+         *  device from router integrations (issue #252). Null = synthetic.
+         *  The Dart manager owns the policy (setting, one-time adoption);
+         *  this is only ever the already-adopted value. */
+        val macOverride: String? = null,
         /** Where entity commands from Home Assistant land (objectId, value). */
         val onEntityCommand: (String, Any?) -> Unit = { _, _ -> },
     )
@@ -199,7 +205,7 @@ internal object BluetoothProxyRuntime {
         return ProxyIdentity(
             name = "kiosk-satellite-$suffix",
             friendlyName = config.friendlyName,
-            macAddress = syntheticMac(context, salt = "api"),
+            macAddress = config.macOverride ?: syntheticMac(context, salt = "api"),
             // The version HA's repair system compares against its minimum
             // supported ESPHome release. Bump alongside app releases; HA
             // nags proxies that report versions it considers stale.

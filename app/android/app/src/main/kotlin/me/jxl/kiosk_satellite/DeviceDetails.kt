@@ -40,7 +40,9 @@ import java.nio.ByteOrder
  * 02:00:00:00:00:00 for the first (and by 16 not even an adb shell can read the
  * sysfs node), and the second needs the special "Usage access" grant. Both
  * could only ever have rendered as "not available", which is a row that costs
- * space and teaches nothing.
+ * space and teaches nothing. The wifiMac method is the one exception, and it
+ * is not a display row: it answers only on devices where [WifiMac]'s doors
+ * open, and the caller falls back silently where it declines.
  */
 /** SoC-package zone spellings accepted when no zone names "cpu" at all:
  *  Qualcomm (tsens, cpuss is cpu-matched anyway), Exynos clusters
@@ -128,6 +130,9 @@ class DeviceDetails(
                 "androidId" -> result.success(
                     Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
                 )
+                // The real Wi-Fi hardware address, or null where Android
+                // hides it (issue #252). See WifiMac for the doors tried.
+                "wifiMac" -> result.success(WifiMac.read(context))
                 // Dozens of sysfs reads, polled every few seconds while an
                 // admin tab is open — off the main thread, so a stats tick
                 // can never cost the UI a frame.

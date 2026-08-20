@@ -98,6 +98,31 @@ the entity reads "on" while the kiosk is reachable and "unavailable"
 (rather than "off") when it is not, since a lost connection takes every
 entity with it.
 
+## Device identity
+
+The kiosk normally identifies itself to Home Assistant with a generated
+hardware address, because Android hides the real one from apps. That
+keeps the ESPHome device separate from the entries router and network
+integrations (UniFi, OPNsense, DHCP tracking) register for the same
+hardware, which all carry the real Wi-Fi MAC. Turn on **Use real Wi-Fi
+MAC address** and, where the address can be read at all, the kiosk
+reports it instead and Home Assistant merges those entries into one
+device.
+
+The address is readable on Android 9 and older, and on any version when
+the app is the device owner. Elsewhere the switch says so right below
+itself and the generated identity stays in use. The first address read
+is kept for good, so the identity survives OS upgrades that close the
+door it came through. Flip the switch only when you are prepared to re-add the kiosk in Home
+Assistant: an existing ESPHome entry is keyed on the old identity and
+refuses the connection ("Unexpected device found") until you delete the
+entry and let discovery re-add the kiosk. Turning the switch back off
+restores the old identity, but Home Assistant stops retrying after the
+mismatch: reload the kiosk's entry (or restart Home Assistant) and the
+old device comes back as it was. The MQTT integration's
+device follows the same switch, so both integrations land on the same
+merged device.
+
 ## Nearby devices
 
 The Bluetooth Proxy settings page lists what the kiosk currently hears,

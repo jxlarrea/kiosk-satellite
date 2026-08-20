@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A "Use real Wi-Fi MAC address" switch on the ESPHome page. The kiosk normally identifies itself with a generated hardware address (Android hides the real one from apps), which keeps its ESPHome device separate from the entries router and network integrations register for the same hardware. With the switch on, and where the address can be read at all (Android 9 and older, or any version with the app as device owner), the kiosk reports its real Wi-Fi MAC and Home Assistant merges those entries into one device; the MQTT integration's device block carries the same address, so it lands in the merged device too. The first address read is stored for good, keeping the identity stable across OS upgrades that close the door it came through, and where Android will not reveal the address the switch says so right below itself instead of silently changing nothing. Off by default, since adopting the new identity makes Home Assistant treat the kiosk as a new ESPHome device.
+
 ## v2026.8.65 - 2026-08-20
 
 ### Added

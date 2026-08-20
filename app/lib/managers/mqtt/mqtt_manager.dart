@@ -12,6 +12,7 @@ import 'package:flutter/widgets.dart'
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../device/wifi_mac.dart';
 import '../settings/definitions.dart' as defs;
 import 'dashboard_views.dart' as shared;
 import '../settings/settings_manager.dart';
@@ -604,6 +605,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   void _onSettingChanged(SettingChanged e) {
     if (e.key == defs.deviceName.key) {
       // The HA device is named after the kiosk; keep them in step.
+      if (_connected) unawaited(_publishDiscovery());
+      return;
+    }
+    if (e.key == defs.esphomeRealMac.key) {
+      // The discovery device block's connections entry follows the real-MAC
+      // identity setting (issue #252).
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
@@ -1679,8 +1686,17 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     }
     final configuredName = _settings.get(defs.deviceName).trim();
     final model = _deviceInfo['model'];
+    // The adopted real Wi-Fi MAC (issue #252): as a connections entry it
+    // merges this device with the ESPHome device and with the entries
+    // router integrations register for the same hardware. Absent while the
+    // setting is off or the platform hides the address.
+    final realMac = await adoptedWifiMac(_settings);
     final deviceBlock = {
       'identifiers': ['ks_$_deviceId'],
+      if (realMac != null)
+        'connections': [
+          ['mac', realMac.toLowerCase()],
+        ],
       'name': configuredName.isEmpty
           ? (model is String && model.isNotEmpty
               ? model

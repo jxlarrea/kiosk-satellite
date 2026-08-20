@@ -34,6 +34,19 @@ class DeviceDetails {
     }
   }
 
+  /// The device's real Wi-Fi hardware address, uppercase colon form, or null
+  /// where Android hides it (any non-device-owner install on Android 11+).
+  /// Read on demand and never displayed as a row: it exists to be adopted as
+  /// the ESPHome identity so Home Assistant links this kiosk with the same
+  /// device from router integrations (issue #252).
+  static Future<String?> wifiMac() async {
+    try {
+      return await _channel.invokeMethod<String>('wifiMac');
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Live CPU load (`usage`, 0-100) and temperature (`temp`, °C). Either is
   /// null when the platform declines; the whole map is empty off-Android.
   static Future<Map<String, Object?>> cpu() async {

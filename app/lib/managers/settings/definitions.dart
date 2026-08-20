@@ -3426,6 +3426,24 @@ const esphomeEntities = SettingDef<bool>(
   dependsOn: 'esphome.enabled',
 );
 
+/// Off by default because flipping it changes the identity Home Assistant
+/// keys the ESPHome device entry on: existing installs have a device built
+/// on the generated address, and adopting the real one creates a new entry.
+/// The first successful read is stored (see adoptedWifiMac), so the identity
+/// holds even if the address later becomes unreadable.
+const esphomeRealMac = SettingDef<bool>(
+  key: 'esphome.real_mac',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Use real Wi-Fi MAC address',
+  description:
+      'Home Assistant links this kiosk with the same device your network '
+      'integrations already track. Changing this creates a new ESPHome '
+      'device in Home Assistant.',
+  category: 'ESPHome',
+  dependsOn: 'esphome.enabled',
+);
+
 const btproxyEnabled = SettingDef<bool>(
   key: 'btproxy.enabled',
   type: SettingType.boolean,
@@ -3857,6 +3875,7 @@ const List<SettingDef<Object>> allSettings = [
   esphomeEntities,
   btproxyKey,
   btproxyPort,
+  esphomeRealMac,
   btproxyEnabled,
   btproxyConnections,
   btproxyMinConnectRssi,

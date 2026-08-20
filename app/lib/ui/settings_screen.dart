@@ -20,6 +20,7 @@ import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
 import '../managers/screensaver/screensaver_manager.dart'
     show upsertScheduleEntry;
 import '../managers/screensaver/screensaver_widgets.dart';
+import '../managers/device/wifi_mac.dart' show adoptedWifiMac;
 import '../managers/settings/definitions.dart';
 import '../managers/settings/export_filename.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -1673,6 +1674,13 @@ class _CategoryContentState extends State<_CategoryContent> {
                   'MQTT is also enabled: these entities will exist twice '
                   'in Home Assistant, once per integration.',
                 ),
+              // What the real-MAC switch actually did, right under it: with
+              // the address unreadable the flip is otherwise a silent no-op
+              // that renders identically to a working one.
+              if (widget.category == 'ESPHome' &&
+                  container.settings.get(esphomeRealMac))
+                esphomeRealMac.key:
+                    _RealMacStatusRow(key: UniqueKey(), container: container),
               // The connection budget, right under the toggle that spends
               // it: a hard Android-stack limit per proxy, and the thing a
               // user must know before wondering why a fifth device will
@@ -5535,6 +5543,41 @@ class _BtSlotsHintRowState extends State<_BtSlotsHintRow> {
     return HintRow(
       'Up to $_slots devices can be connected at once through this proxy. '
       'Home Assistant routes further devices through other proxies.',
+    );
+  }
+}
+
+/// The outcome of the real-MAC switch (issue #252): the adopted address, or
+/// the fact that Android would not reveal one — in which case the switch
+/// changed nothing and only this row says so.
+class _RealMacStatusRow extends StatefulWidget {
+  const _RealMacStatusRow({super.key, required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_RealMacStatusRow> createState() => _RealMacStatusRowState();
+}
+
+class _RealMacStatusRowState extends State<_RealMacStatusRow> {
+  String? _mac;
+  bool _resolved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    adoptedWifiMac(widget.container.settings).then((mac) {
+      if (mounted) setState(() { _mac = mac; _resolved = true; });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_resolved) return const SizedBox.shrink();
+    if (_mac != null) return HintRow('Reporting $_mac.');
+    return const WarnRow(
+      'Android will not reveal this device\'s hardware address, so the '
+      'generated one stays in use.',
     );
   }
 }

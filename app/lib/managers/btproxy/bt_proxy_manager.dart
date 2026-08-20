@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../device/wifi_mac.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'ble_identity.dart';
@@ -105,11 +106,17 @@ class BtProxyManager extends Manager {
         description:
             'Bluetooth proxy state: running, scanning, counters, recent log',
         handler: (_) async {
+          // The adopted real-MAC identity, for the settings pages: with the
+          // setting on, null here means the platform would not reveal the
+          // address and the generated identity stayed in use — a silent
+          // no-op unless the page says so (issue #252).
+          final realMac = await adoptedWifiMac(_settings);
           try {
             final status = await _channel.invokeMethod<Map>('status');
             return CommandResult.ok({
               ...Map<String, Object?>.from(status ?? const {}),
               if (_startError != null) 'startError': _startError,
+              'realMac': ?realMac,
             });
           } catch (e) {
             if (_startError != null) {
@@ -278,6 +285,9 @@ class BtProxyManager extends Manager {
     final friendly = _settings.get(defs.deviceName).trim();
     final port =
         int.tryParse(_settings.get(defs.btproxyPort).trim()) ?? 6053;
+    // Null while the setting is off or the platform hides the address; the
+    // native side then keeps its synthetic identity (issue #252).
+    final realMac = await adoptedWifiMac(_settings);
     try {
       await _channel.invokeMethod('start', {
         'friendlyName': friendly.isEmpty ? 'Kiosk Satellite' : friendly,
@@ -292,6 +302,7 @@ class BtProxyManager extends Manager {
         'entities': _settings.get(defs.esphomeEntities)
             ? await _entities.build()
             : const <Map<String, Object?>>[],
+        'macOverride': ?realMac,
       });
       _running = true;
       _startError = null;
