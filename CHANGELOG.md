@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.65 - 2026-08-20
 
 ### Added
 - Home Assistant cameras without a WebRTC path stream over HLS, so any camera the Home Assistant frontend can play now works in camera views. The Home Assistant import accepts every streamable camera entity instead of only WebRTC-capable ones and remembers which transports each offers; a camera that does both tries WebRTC first for its near-realtime latency and falls back to HLS on its own when WebRTC does not work out on the device, joining the existing WebRTC-to-MSE ladder. HLS playback runs through the app's loopback relay (the page cannot fetch from Home Assistant directly) and hls.js, vendored into the app like every other asset. A "Prefer HLS over WebRTC" toggle (Camera Streams, Playback) flips the order for devices whose WebRTC cannot play these streams, the counterpart of the MSE toggle, and each row in the Cameras list now names the formats that camera can play with.
