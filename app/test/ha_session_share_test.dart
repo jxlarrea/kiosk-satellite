@@ -120,4 +120,37 @@ void main() {
       );
     });
   });
+
+  group('buildHaAutoLoginScript', () {
+    test('seeds a session built from the long-lived token', () {
+      final script = buildHaAutoLoginScript(token: '  llat-token  ');
+      expect(script, isNotNull);
+      // The token lands JSON-encoded, trimmed of the paste's whitespace.
+      expect(script, contains('access_token: "llat-token"'));
+      // The origin fields come from the page itself, so the seed stays
+      // correct under the loopback proxy and the frontend's own-origin
+      // check passes.
+      expect(
+        script,
+        contains('hassUrl: location.protocol + "//" + location.host'),
+      );
+      expect(
+        script,
+        contains('clientId: location.protocol + "//" + location.host + "/"'),
+      );
+      // Far-future expiry: the frontend must never try the refresh flow
+      // it has no refresh token for.
+      expect(script, contains('expires: Date.now() + 315360000000'));
+    });
+
+    test('never overwrites a session the page already has', () {
+      final script = buildHaAutoLoginScript(token: 'llat');
+      expect(script, contains('if (!localStorage.getItem("hassTokens"))'));
+    });
+
+    test('no token, nothing injected', () {
+      expect(buildHaAutoLoginScript(token: null), isNull);
+      expect(buildHaAutoLoginScript(token: '   '), isNull);
+    });
+  });
 }

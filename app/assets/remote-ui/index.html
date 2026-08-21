@@ -4981,6 +4981,10 @@ async function loadSettings() {
       spRow.appendChild(spLbl);
       connCard.appendChild(spRow);
     }
+    // Auto-login, with the connection it borrows the token from - the
+    // same placement as the device's connection card.
+    const alSetting = ha.find((s) => s.key === 'ha.auto_login');
+    if (alSetting) connCard.appendChild(settingRow(alSetting));
     root.appendChild(connCard);
     const vdesc = vrow.querySelector('.desc');
 
@@ -5107,6 +5111,7 @@ async function loadSettings() {
       // needs the live dashboards, which the generic renderer cannot
       // supply.
       const rest = ha.filter((s) => s.key !== 'ha.url' && s.key !== 'ha.token'
+        && s.key !== 'ha.auto_login'
         && s.key !== 'ha.rotation_enabled' && s.key !== 'ha.rotation_seconds'
         && s.key !== 'ha.rotation_pause_seconds' && s.key !== 'ha.rotation_crossfade'
         // Rendered below the rotation group, which its switch is gated on.
@@ -8611,6 +8616,24 @@ function wizardSteps() {
             wizard.satellite === s.entity_id,
             () => { wizard.satellite = s.entity_id; wizardRender(); }));
         });
+        // The same pointer the device wizard shows under its list: an
+        // existing satellite belongs to the device already using it.
+        const hint = document.createElement('div');
+        hint.style.cssText = 'display:flex; gap:10px; align-items:flex-start; '
+          + 'color:var(--muted); font-size:13px; font-weight:600; '
+          + 'line-height:1.5; padding:0 6px 14px;';
+        hint.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" '
+          + 'fill="none" stroke="currentColor" stroke-width="2" '
+          + 'stroke-linecap="round" style="flex:none; margin-top:1px" '
+          + 'aria-hidden="true"><circle cx="12" cy="12" r="9"/>'
+          + '<path d="M12 8h.01M12 12v4"/></svg>';
+        const hintText = document.createElement('span');
+        hintText.textContent = 'If this is a new device, create a new '
+          + 'satellite entity in Home Assistant first. Settings → '
+          + 'Devices & Services → Voice Satellite → Add Entry. '
+          + 'IMPORTANT: Two devices cannot share the same entity.';
+        hint.appendChild(hintText);
+        b.appendChild(hint);
       }
       // The settings pages' own switch control, not a checkbox glyph.
       const toggleRow = (label, desc, on, locked, onClick) => {

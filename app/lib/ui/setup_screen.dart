@@ -716,6 +716,32 @@ class _SetupScreenState extends State<SetupScreen> {
         ),
       ),
     );
+    // A quiet pointer under the card it belongs to: an info glyph and a
+    // muted line, for the things a person should know before pressing on.
+    Widget hint(String text) => Padding(
+      padding: const EdgeInsets.fromLTRB(8, 2, 8, 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
     // The step's content, with the error (if any) directly under the card
     // it belongs to — where the eye already is, not anchored to the screen
     // edge.
@@ -735,16 +761,10 @@ class _SetupScreenState extends State<SetupScreen> {
           _Card([
             SwitchListTile(
               title: const Text('Enable remote administration'),
-              subtitle: Text(
-                _remoteWanted && _deviceIp != null
-                    ? 'Continue this setup from a web browser at '
-                          'http://$_deviceIp:2324, where pasting the Home '
-                          'Assistant access token is much easier.'
-                    : 'Keep managing this kiosk from a web browser after '
-                          'setup. During setup the wizard is always '
-                          'reachable at http://${_deviceIp ?? '<device-ip>'}:2324 '
-                          'regardless. This switch decides what happens '
-                          'afterwards.',
+              subtitle: const Text(
+                'Keep managing this kiosk from a web browser after setup, '
+                'where pasting the Home Assistant access token is much '
+                'easier.',
               ),
               value: _remoteWanted,
               onChanged: (v) => setState(() => _remoteWanted = v),
@@ -760,8 +780,28 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                 ),
               ),
+            // A full row rather than a footnote, in the palette's ochre —
+            // the notice color — because the address is the one thing
+            // worth walking away with from this step.
+            ListTile(
+              leading: Icon(
+                Icons.info_outline,
+                color: theme.colorScheme.tertiary,
+              ),
+              title: Text(
+                'You can continue this setup remotely from a web browser '
+                'at http://${_deviceIp ?? '<device-ip>'}:2324, whether the '
+                'switch above is on or not.',
+                // The tile-title style recolored and a step smaller: the
+                // ochre already carries the emphasis, so full title size
+                // on a near-full-width line reads louder than intended.
+                style: theme.listTileTheme.titleTextStyle?.copyWith(
+                  color: theme.colorScheme.tertiary,
+                  fontSize: 15,
+                ),
+              ),
+            ),
           ]),
-          const SizedBox(height: 16),
           _Card([
             ListTile(
               leading: const Icon(Icons.settings_backup_restore_outlined),
@@ -880,7 +920,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
             ])
-          else
+          else ...[
             _Card([
               for (final s in _satellites!)
                 ListTile(
@@ -898,6 +938,13 @@ class _SetupScreenState extends State<SetupScreen> {
                       setState(() => _satellite = s['entity_id'] as String?),
                 ),
             ]),
+            hint(
+              'If this is a new device, create a new satellite entity in '
+              'Home Assistant first. Settings → Devices & Services → '
+              'Voice Satellite → Add Entry. IMPORTANT: Two devices cannot '
+              'share the same entity.',
+            ),
+          ],
           _Card([
             SwitchListTile(
               title: const Text('Apply all recommended settings'),

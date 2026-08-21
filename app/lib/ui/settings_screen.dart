@@ -1878,6 +1878,13 @@ class _CategoryContentState extends State<_CategoryContent> {
               },
             ),
           ),
+          // Auto-login lives with the connection it borrows the token
+          // from (and is mirrored in the remote UI's connection card).
+          SettingTile(
+            container: container,
+            def: haAutoLogin,
+            onChanged: () => setState(() {}),
+          ),
         ],
       ),
     ];
@@ -1945,6 +1952,8 @@ class _CategoryContentState extends State<_CategoryContent> {
         for (final def in _defsFor('Home Assistant'))
           if (def.key != haUrl.key &&
               def.key != haToken.key &&
+              // In the connection card above, with the token it borrows.
+              def.key != haAutoLogin.key &&
               // Redundant while the theme mirror is on: the schedule
               // already targets the app theme then (issue #92).
               (def.key != themeAutoApp.key ||

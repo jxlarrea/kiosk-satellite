@@ -274,6 +274,7 @@ class _KioskScreenState extends State<KioskScreen>
         e.key == defs.pinchToZoom.key ||
         e.key == defs.wsFilter.key ||
         e.key == defs.disableSuspend.key ||
+        e.key == defs.haAutoLogin.key ||
         e.key == defs.kioskDisableContextMenus.key) {
       setState(() => _webViewEpoch++);
       return;
@@ -647,6 +648,18 @@ class _KioskScreenState extends State<KioskScreen>
     if (c.settings.get(defs.wsFilter))
       UserScript(
         source: wsFilterScript,
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+      ),
+    // Auto-login (ha.auto_login): hand the frontend a session built from
+    // the long-lived access token, so the dashboard signs itself in
+    // instead of presenting the login form. Only seeded while the page
+    // has no session of its own — a login someone did by hand, or a
+    // session the frontend refreshed, always wins. Frozen at WebView
+    // creation; the toggle rebuilds the WebView (see _onSettingChanged).
+    if (c.settings.get(defs.haAutoLogin) &&
+        c.settings.get(defs.haToken).trim().isNotEmpty)
+      UserScript(
+        source: buildHaAutoLoginScript(token: c.settings.get(defs.haToken))!,
         injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
       ),
     // The wizard's satellite choice, handed to Voice Satellite before its

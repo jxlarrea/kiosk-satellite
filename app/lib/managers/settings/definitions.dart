@@ -2473,6 +2473,24 @@ const haToken = SettingDef<String>(
   secret: true,
 );
 
+/// Sign the dashboard in with the long-lived access token the app already
+/// holds: the token is seeded as the frontend's session (localStorage
+/// `hassTokens`, see ha_session_script.dart) at document start, so a fresh
+/// kiosk never shows the Home Assistant login form. Seeded only where the
+/// page has no session of its own — a login someone did by hand, or a
+/// session the frontend refreshed, always wins — so turning this off stops
+/// future seeding without logging anything out.
+const haAutoLogin = SettingDef<bool>(
+  key: 'ha.auto_login',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Log in automatically',
+  description:
+      'Sign in to the dashboard with the access token above instead of '
+      'showing the Home Assistant login page.',
+  category: 'Home Assistant',
+);
+
 // Hidden: written by the setup wizard's satellite picker. Seeded into the
 // dashboard page's localStorage (vs-satellite-entity) at document start so
 // Voice Satellite selects its assist_satellite, hydrates its server-side
@@ -3806,6 +3824,7 @@ const List<SettingDef<Object>> allSettings = [
   vsNativePipeline,
   haUrl,
   haToken,
+  haAutoLogin,
   haSatelliteEntity,
   haKioskMode,
   haKioskHideHeader,

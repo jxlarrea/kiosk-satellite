@@ -7,9 +7,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - A "Show Music Assistant" button on the kiosk's Home Assistant device, over both the ESPHome and MQTT integrations. Pressing it wakes the screen, brings the kiosk forward and opens the Music Assistant web interface over the dashboard, the same page the kiosk menu entry opens. The button exists only while a Music Assistant server address is configured, appearing and retiring on its own as the address is set or cleared.
 - A "Debug logging" switch in the Voice Satellite settings' General group, on the device and in the remote admin. It flips the same browser-console logging the Voice Satellite sidebar panel offers, so wake word scores and pipeline events can be turned on without leaving the kiosk's settings. Shown once the installed Voice Satellite version supports controlling it externally.
+- The dashboard signs itself in. A new "Log in automatically" toggle in the Home Assistant settings (on by default) hands the page a session built from the long-lived access token the app already holds, so a freshly set up kiosk lands on its dashboard instead of the Home Assistant login form. A login someone did by hand, or a session the page already has, is never overwritten, and turning the toggle off stops future sign-ins without logging anything out.
 
 ### Changed
 - The Voice Satellite status group is gone from the settings, on the device and in the remote admin: everything it reported is already told by the Wake Word settings themselves. Its "Cached models" clear button lives on, moved into the Wake Word group.
+- The setup wizard's first step now calls out, on its own highlighted row, that setup can be continued from a web browser at the device's address whether remote administration is kept on or not. The satellite step now reminds that a new device needs its own satellite entity, with the Home Assistant menu path to create one, since two devices cannot share the same entity; the reminder appears in the on-device and the remote wizard alike.
 
 ## v2026.8.68 - 2026-08-20
 
