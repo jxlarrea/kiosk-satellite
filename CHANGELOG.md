@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.69 - 2026-08-21
 
 ### Added
 - A "Show Music Assistant" button on the kiosk's Home Assistant device, over both the ESPHome and MQTT integrations. Pressing it wakes the screen, brings the kiosk forward and opens the Music Assistant web interface over the dashboard, the same page the kiosk menu entry opens. The button exists only while a Music Assistant server address is configured, appearing and retiring on its own as the address is set or cleared.
