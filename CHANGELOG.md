@@ -2,6 +2,18 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A show/hide entry for the floating Sendspin player in the kiosk menu. Enabled with a new opt-in "Show in the kiosk menu" toggle in the Sendspin player settings, it reads "Show Sendspin Player" or "Hide Sendspin Player" to match what is on screen: showing brings back a card that was flung away, timed out paused, or belongs to a paused queue the app has not seen since it restarted, and works even while "Show the floating media player" is off, without changing that setting; hiding tucks the card away without stopping the music. In Kiosk Mode a new "Sendspin Player" allowed action decides whether the entry appears in the quick actions menu.
+
+### Changed
+- The "Show the Sendspin player" gesture no longer switches the "Show the floating media player" setting on permanently; like the new menu entry, it now reveals the card for the current playback session only.
+
+### Fixed
+- A locked kiosk whose only allowed quick actions were Music Assistant, the Sendspin player or Apps never offered the edge swipe; the availability check now counts every allowed action that would actually show.
+- Dropdowns, dialogs and three-dot menus land where they belong under a zoom level other than 1x, instead of drifting off toward the screen edge. The zoom level used to be applied as a CSS zoom on the page, and Home Assistant's floating menus position themselves by measuring their anchor and writing the result back in pixels; under CSS zoom those pixels get scaled a second time, pushing every overlay past its anchor by the zoom factor, often clean off an 8-inch screen at 1.35x. The setting now zooms the way a desktop browser does, by scaling the viewport itself, which keeps every measurement and the layout in one consistent coordinate space. Pinch to zoom, the display cutout behavior and returning to 1x all carry over unchanged.
+
 ## v2026.8.69 - 2026-08-21
 
 ### Added

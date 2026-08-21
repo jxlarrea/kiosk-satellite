@@ -208,9 +208,9 @@ class SoundEnded extends AppEvent {
 
   @override
   Map<String, Object?> toJson() => {
-        'id': id,
-        if (error != null) 'error': error,
-      };
+    'id': id,
+    if (error != null) 'error': error,
+  };
 }
 
 /// Any user/motion/page activity that should reset the idle timer.
@@ -293,8 +293,11 @@ class AudioChunk extends AppEvent {
   final bool preRoll;
 
   @override
-  Map<String, Object?> toJson() =>
-      {'pcm': base64, 'sampleRate': sampleRate, 'preRoll': preRoll};
+  Map<String, Object?> toJson() => {
+    'pcm': base64,
+    'sampleRate': sampleRate,
+    'preRoll': preRoll,
+  };
 }
 
 // ── Native pipeline transport ──────────────────────────────────────────
@@ -386,8 +389,11 @@ class ConsoleLine extends AppEvent {
   final int timeMs; // epoch millis (stamped by the browser manager)
 
   @override
-  Map<String, Object?> toJson() =>
-      {'level': level, 'message': message, 'time': timeMs};
+  Map<String, Object?> toJson() => {
+    'level': level,
+    'message': message,
+    'time': timeMs,
+  };
 }
 
 /// The user asked for the docked web console from somewhere other than the
@@ -449,11 +455,11 @@ class CameraViewStateChanged extends AppEvent {
 
   @override
   Map<String, Object?> toJson() => {
-        'active': active,
-        'viewId': viewId,
-        'viewName': viewName,
-        'focusedCameraId': focusedCameraId,
-      };
+    'active': active,
+    'viewId': viewId,
+    'viewName': viewName,
+    'focusedCameraId': focusedCameraId,
+  };
 }
 
 // ── Kiosk lockdown ─────────────────────────────────────────────────────
@@ -489,7 +495,6 @@ class GestureDetected extends AppEvent {
   final String id;
 }
 
-
 // ── Sendspin ───────────────────────────────────────────────────────────
 
 /// The Sendspin now-playing display state: true while a track is loaded
@@ -502,10 +507,12 @@ class SendspinNowPlayingChanged extends AppEvent {
 }
 
 /// Someone asked for the floating player card right now (the "Show the
-/// Sendspin player" gesture action). The overlay clears its own dismissal
-/// on this — a flung-away or paused-out card is hidden by widget-local
-/// state that no setting can reach, which is exactly why the gesture
-/// cannot just write `sendspin.show_player`.
+/// Sendspin player" gesture action, or the kiosk menu's Show player
+/// entry). The overlay flips the card override to shown on this — which
+/// clears a fling or paused-out dismissal and reveals the card even while
+/// `sendspin.show_player` is off, without writing that setting — and the
+/// manager recovers a paused queue from Music Assistant when there is
+/// nothing on screen to show.
 class SendspinShowPlayerRequested extends AppEvent {
   const SendspinShowPlayerRequested();
 }

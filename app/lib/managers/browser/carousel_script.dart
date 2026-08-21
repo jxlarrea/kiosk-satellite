@@ -378,8 +378,11 @@ const dashboardCarouselScript = '''
 
   // A scrolled-down page: align the preview's top with what the eye
   // sees, not with the container's content top. gBCR comes back in
-  // zoom-multiplied pixels under the CSS zoom this app itself sets
-  // (the #147 lesson), so divide it back out.
+  // zoom-multiplied pixels under a CSS zoom (the #147 lesson), so divide
+  // it back out. The zoom-level setting no longer uses CSS zoom (it is a
+  // viewport scale since #259, which keeps gBCR consistent), but a user's
+  // injected JS can still set one — the compensation self-neutralizes to
+  // dividing by 1 otherwise.
   function computeTop(container) {
     if (container.scrollTop > 0) return container.scrollTop;
     var r = container.getBoundingClientRect();

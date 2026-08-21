@@ -700,6 +700,17 @@ const kioskAllowMusic = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
+const kioskAllowSendspinPlayer = SettingDef<bool>(
+  key: 'kiosk.allow_sendspin_player',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Sendspin Player',
+  description: 'Show or hide the floating Sendspin player.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
 const kioskAllowScreensaver = SettingDef<bool>(
   key: 'kiosk.allow_screensaver',
   type: SettingType.boolean,
@@ -1780,8 +1791,7 @@ const screensaverImmichPairPortrait = SettingDef<bool>(
   type: SettingType.boolean,
   defaultValue: true,
   title: 'Pair portrait photos',
-  description:
-      'Show two portrait photos side by side so they fill the screen.',
+  description: 'Show two portrait photos side by side so they fill the screen.',
   category: 'Screensaver',
   section: 'Immich Media',
   dependsOn: 'screensaver.immich_validated',
@@ -3100,6 +3110,25 @@ const sendspinShowPlayer = SettingDef<bool>(
   dependsOn: 'sendspin.enabled',
 );
 
+/// The floating player's own menu entry (issue #257): show or hide the
+/// card without a gesture to configure or remember. Deliberately
+/// independent of `sendspin.show_player` — a player configured not to pop
+/// up on its own can still be summoned from the menu, for this session
+/// only, without that setting changing underneath its owner.
+const sendspinPlayerShortcut = SettingDef<bool>(
+  key: 'sendspin.player_shortcut',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show in the kiosk menu',
+  description:
+      'Add an entry in the kiosk menu that shows or hides the floating '
+      "Sendspin player. WARNING: If nothing is playing or there is no "
+      "queue for this player, it won't show up.",
+  category: 'Sendspin',
+  section: 'Sendspin player',
+  dependsOn: 'sendspin.enabled',
+);
+
 const sendspinPlayerSize = SettingDef<String>(
   key: 'sendspin.player_size',
   type: SettingType.select,
@@ -3694,6 +3723,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowDashboard,
   kioskAllowCamera,
   kioskAllowMusic,
+  kioskAllowSendspinPlayer,
   kioskAllowScreensaver,
   kioskAllowTheme,
   kioskAllowApps,
@@ -3880,6 +3910,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinSyncOffset,
   sendspinDuckPercent,
   sendspinShowPlayer,
+  sendspinPlayerShortcut,
   sendspinPlayerSize,
   sendspinPausedHideMinutes,
   sendspinDismissKeepsPlaying,

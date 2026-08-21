@@ -53,14 +53,16 @@ void main() {
 
   group('nativeGestureTriggers', () {
     test('flattens id and trigger fields, skipping absent ones', () {
-      final triggers = nativeGestureTriggers(decodeGestureMappings(
-        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
-        '"taps":3},"action":{"type":"menu"}},'
-        '{"id":"g2","trigger":{"type":"finger_hold","fingers":2,'
-        '"holdMs":1500},"action":{"type":"menu"}},'
-        '{"id":"g3","trigger":{"type":"corner_sequence",'
-        '"sequence":["tl","tr","bl"]},"action":{"type":"menu"}}]',
-      ));
+      final triggers = nativeGestureTriggers(
+        decodeGestureMappings(
+          '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
+          '"taps":3},"action":{"type":"menu"}},'
+          '{"id":"g2","trigger":{"type":"finger_hold","fingers":2,'
+          '"holdMs":1500},"action":{"type":"menu"}},'
+          '{"id":"g3","trigger":{"type":"corner_sequence",'
+          '"sequence":["tl","tr","bl"]},"action":{"type":"menu"}}]',
+        ),
+      );
       expect(triggers, [
         {'id': 'g1', 'type': 'corner_taps', 'corner': 'tl', 'taps': 3},
         {'id': 'g2', 'type': 'finger_hold', 'fingers': 2, 'holdMs': 1500},
@@ -76,7 +78,11 @@ void main() {
   group('describe helpers', () {
     test('trigger labels', () {
       expect(
-        describeGestureTrigger({'type': 'corner_taps', 'corner': 'tl', 'taps': 3}),
+        describeGestureTrigger({
+          'type': 'corner_taps',
+          'corner': 'tl',
+          'taps': 3,
+        }),
         '3 taps in the top-left corner',
       );
       expect(
@@ -167,14 +173,16 @@ void main() {
         'haCallService',
         'haFireEvent',
       ]) {
-        commands.register(Command(
-          name: name,
-          description: 'test stub',
-          handler: (p) async {
-            executed.add((name, p));
-            return const CommandResult.ok();
-          },
-        ));
+        commands.register(
+          Command(
+            name: name,
+            description: 'test stub',
+            handler: (p) async {
+              executed.add((name, p));
+              return const CommandResult.ok();
+            },
+          ),
+        );
       }
       settings = SettingsManager(bus, commands, log);
       await settings.init();
@@ -258,17 +266,17 @@ void main() {
       expect(executed.single.$1, 'startScreensaver');
     });
 
-    test('sendspin_player turns the show_player setting on', () async {
+    test('sendspin_player leaves the show_player setting alone', () async {
       await build(
         '[{"id":"g1","trigger":{"type":"finger_hold","fingers":2,'
         '"holdMs":1000},"action":{"type":"sendspin_player"}}]',
       );
+      // The reveal goes through the card override (issue #257): a player
+      // configured not to pop up on its own can still be summoned for the
+      // session, without the setting changing underneath its owner.
       await settings.set(defs.sendspinShowPlayer, false);
       await fire('g1');
-      expect(settings.get(defs.sendspinShowPlayer), isTrue);
-      // Show only: firing again never hides it.
-      await fire('g1');
-      expect(settings.get(defs.sendspinShowPlayer), isTrue);
+      expect(settings.get(defs.sendspinShowPlayer), isFalse);
     });
 
     test('sendspin_player publishes the reveal, which is what actually '
@@ -277,9 +285,9 @@ void main() {
         '[{"id":"g1","trigger":{"type":"finger_hold","fingers":2,'
         '"holdMs":1000},"action":{"type":"sendspin_player"}}]',
       );
-      // The card hidden by a fling (or the paused-hide timer) is
-      // widget-local state; the setting is usually still true, so writing
-      // it again changes nothing and only this event reaches the overlay.
+      // The card hidden by a fling (or the paused-hide timer) is the
+      // override state, and only this event reaches the overlay that
+      // owns it (and the manager's queue recovery behind it).
       var revealed = 0;
       bus.on<SendspinShowPlayerRequested>().listen((_) => revealed++);
       await fire('g1');
@@ -358,14 +366,16 @@ void main() {
       final log = Logger();
       final commands = CommandRegistry(log);
       executed = [];
-      commands.register(Command(
-        name: 'haNavigate',
-        description: 'test stub',
-        handler: (p) async {
-          executed.add(('haNavigate', p));
-          return const CommandResult.ok();
-        },
-      ));
+      commands.register(
+        Command(
+          name: 'haNavigate',
+          description: 'test stub',
+          handler: (p) async {
+            executed.add(('haNavigate', p));
+            return const CommandResult.ok();
+          },
+        ),
+      );
       settings = SettingsManager(bus, commands, log);
       await settings.init();
       mic = StreamController<Uint8List>.broadcast();
@@ -390,8 +400,7 @@ void main() {
       final bytes = pcmOf(samples);
       const chunk = 2560;
       for (var i = 0; i < bytes.length; i += chunk) {
-        mic.add(Uint8List.sublistView(
-            bytes, i, min(i + chunk, bytes.length)));
+        mic.add(Uint8List.sublistView(bytes, i, min(i + chunk, bytes.length)));
       }
       await settle();
     }
@@ -427,8 +436,9 @@ void main() {
 
     test('muting the satellite closes the capture, unmuting reopens', () async {
       await build(clapMapping);
-      bus.publish(const WakeWordStateChanged(
-          active: true, listening: false, muted: true));
+      bus.publish(
+        const WakeWordStateChanged(active: true, listening: false, muted: true),
+      );
       await settle();
       expect(mic.hasListener, isFalse, reason: 'muted means not listening');
       bus.publish(const WakeWordStateChanged(active: true, listening: true));

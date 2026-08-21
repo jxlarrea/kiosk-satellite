@@ -107,10 +107,23 @@ class _KioskScreenState extends State<KioskScreen>
     if (!c.settings.get(defs.kioskAllowDrawer)) return false;
     final hasCameras =
         c.camera.config.defaultView?.cameraIds.isNotEmpty ?? false;
+    // Mirrors the drawer's own conditions per entry: an allowed action
+    // whose entry would not actually render must not count.
+    final hasMusic =
+        c.settings.get(defs.sendspinMaShortcut) &&
+        musicAssistantWebUrl(c.settings.get(defs.sendspinMaUrl)) != null;
+    final hasPlayer =
+        c.settings.get(defs.sendspinEnabled) &&
+        c.settings.get(defs.sendspinPlayerShortcut);
+    final hasApps =
+        c.settings.get(defs.launcherEnabled) && c.launcher.apps.isNotEmpty;
     return c.settings.get(defs.kioskAllowDashboard) ||
         c.settings.get(defs.kioskAllowScreensaver) ||
         c.settings.get(defs.kioskAllowTheme) ||
-        (c.settings.get(defs.kioskAllowCamera) && hasCameras);
+        (c.settings.get(defs.kioskAllowCamera) && hasCameras) ||
+        (c.settings.get(defs.kioskAllowMusic) && hasMusic) ||
+        (c.settings.get(defs.kioskAllowSendspinPlayer) && hasPlayer) ||
+        (c.settings.get(defs.kioskAllowApps) && hasApps);
   }
 
   /// Pull-to-refresh as the user experiences it: the Web Browsing toggle,
@@ -222,10 +235,7 @@ class _KioskScreenState extends State<KioskScreen>
     // rebuild it (preserving the current URL) so the change applies without
     // a restart. The rebuild is storage-safe: localStorage is per-origin and
     // outlives the widget, so a page's saved config is not lost.
-    // Zoom applies live via CSS — no rebuild, no reload. CSS zoom, not
-    // the WebView's initial-scale: responsive pages (Home Assistant
-    // included) declare a viewport meta that overrides initial-scale,
-    // while CSS zoom rescales the layout regardless.
+    // Zoom applies live via the viewport meta — no rebuild, no reload.
     if (e.key == defs.browserZoom.key) {
       await c.browser.runJs(_zoomJs);
       return;
@@ -257,15 +267,11 @@ class _KioskScreenState extends State<KioskScreen>
     // Haptics and the tap sound share one live-flag contract; the script
     // itself has no state to build or tear down.
     if (e.key == defs.haHaptics.key) {
-      await c.browser.runJs(
-        'window.__ksHapticsEnabled = ${e.value == true};',
-      );
+      await c.browser.runJs('window.__ksHapticsEnabled = ${e.value == true};');
       return;
     }
     if (e.key == defs.haTapSound.key) {
-      await c.browser.runJs(
-        'window.__ksTapSoundEnabled = ${e.value == true};',
-      );
+      await c.browser.runJs('window.__ksTapSoundEnabled = ${e.value == true};');
       return;
     }
     if (e.key == defs.allowMixedContent.key ||
@@ -500,13 +506,78 @@ class _KioskScreenState extends State<KioskScreen>
     if (mounted) setState(() => _activityAttached = true);
   }
 
-  /// The zoom-level setting as a CSS zoom on the document root. Idempotent
-  /// and reversible: 1x clears the property entirely.
+  /// The zoom-level setting as a viewport-meta scale — what desktop browser
+  /// zoom actually is — NOT CSS zoom on the document root. CSS zoom breaks
+  /// imperatively positioned overlays (issue #259): Home Assistant's menus
+  /// and dialogs measure their anchor with getBoundingClientRect(), which
+  /// under standardized CSS zoom returns visually scaled coordinates, then
+  /// write them back as px that the zoomed root scales AGAIN — landing every
+  /// dropdown at anchor-times-zoom, off screen at 1.35x on a small tablet.
+  ///
+  /// A viewport scale has no such mismatch: with `initial-scale=z` and no
+  /// `width`, the layout viewport becomes visible-width/z (the spec's
+  /// extend-to-zoom width), rendered scaled to fill the screen — one
+  /// consistent CSS px space, recomputed by Chromium on rotation. Chromium
+  /// only honors initial-scale at navigation though; a live change applies
+  /// through the min/max clamp, so both are pinned to z. With pinch to zoom
+  /// enabled the clamp is relaxed a frame later — the forced scale sticks,
+  /// pinching stays free.
+  ///
+  /// The page's own meta (HA declares one) is saved in data-ks-orig and its
+  /// non-scale keys — viewport-fit=cover above all, edge-to-edge depends on
+  /// it — are carried into the rewritten content. Idempotent and reversible:
+  /// 1x restores the original meta, or removes one this script created.
   String get _zoomJs {
     final zoom = c.settings.get(defs.browserZoom);
-    return zoom == 1
-        ? "document.documentElement.style.zoom = '';"
-        : "document.documentElement.style.zoom = '$zoom';";
+    final pinch = c.settings.get(defs.pinchToZoom);
+    return '''
+      (function () {
+        var z = $zoom;
+        var ms = document.querySelectorAll('meta[name=viewport]');
+        var m = ms.length ? ms[ms.length - 1] : null;
+        if (z === 1) {
+          if (m && m.hasAttribute('data-ks-zoom')) {
+            var orig = m.getAttribute('data-ks-orig');
+            if (orig === null) { m.remove(); return; }
+            m.setAttribute('content', orig);
+            m.removeAttribute('data-ks-orig');
+            m.removeAttribute('data-ks-zoom');
+          }
+          return;
+        }
+        if (!m) {
+          m = document.createElement('meta');
+          m.name = 'viewport';
+          (document.head || document.documentElement).appendChild(m);
+          m.setAttribute('data-ks-zoom', '1');
+        } else if (!m.hasAttribute('data-ks-zoom')) {
+          var c0 = m.getAttribute('content');
+          if (c0 !== null) m.setAttribute('data-ks-orig', c0);
+          m.setAttribute('data-ks-zoom', '1');
+        }
+        var scaleKeys =
+            ['width', 'height', 'initial-scale', 'minimum-scale',
+             'maximum-scale', 'user-scalable'];
+        var keep = [];
+        (m.getAttribute('data-ks-orig') || '').split(',').forEach(
+          function (part) {
+            var k = part.split('=')[0].trim().toLowerCase();
+            if (k && scaleKeys.indexOf(k) < 0) keep.push(part.trim());
+          },
+        );
+        var base = keep.concat(['initial-scale=' + z]);
+        m.setAttribute('content', base.concat(
+          ['minimum-scale=' + z, 'maximum-scale=' + z, 'user-scalable=no'],
+        ).join(', '));
+        if ($pinch) {
+          requestAnimationFrame(function () {
+            m.setAttribute('content', base.concat(
+              ['minimum-scale=0.25', 'maximum-scale=5', 'user-scalable=yes'],
+            ).join(', '));
+          });
+        }
+      })();
+    ''';
   }
 
   /// The scroll lock, as page CSS rather than the plugin's native
@@ -778,7 +849,8 @@ class _KioskScreenState extends State<KioskScreen>
   void _syncLockdownCover() {
     c.browser.setCovered(
       'lockdown',
-      covered: c.settings.get(defs.lockdownEnabled) &&
+      covered:
+          c.settings.get(defs.lockdownEnabled) &&
           c.settings.get(defs.lockdownBlackout),
     );
   }
@@ -1299,7 +1371,8 @@ class _KioskScreenState extends State<KioskScreen>
       // carries the flags of the load that created it, and a page loaded
       // before a toggle would otherwise keep the old answer.
       _applyKioskMode();
-      // The zoom-level setting, as CSS zoom on every navigation.
+      // The zoom-level setting, re-asserted on every navigation: the
+      // rewritten viewport meta dies with each document.
       if (c.settings.get(defs.browserZoom) != 1) c.browser.runJs(_zoomJs);
       // The scroll lock too: its style element dies with each document.
       if (c.settings.get(defs.disableScrolling)) {
@@ -1464,14 +1537,14 @@ class _OverlayHostState extends State<_OverlayHost>
     value: 1,
   )..addStatusListener(_onSlideStatus);
 
-  late final Animation<Offset> _slideOffset = Tween(
-    begin: const Offset(0, 1),
-    end: Offset.zero,
-  ).animate(CurvedAnimation(
-    parent: _slide,
-    curve: Curves.easeOutCubic,
-    reverseCurve: Curves.easeInCubic,
-  ));
+  late final Animation<Offset> _slideOffset =
+      Tween(begin: const Offset(0, 1), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _slide,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        ),
+      );
 
   @override
   void initState() {

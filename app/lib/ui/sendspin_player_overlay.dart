@@ -188,14 +188,16 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     // landscape screen, the space under the cover on a portrait one. A panel
     // too small for either keeps the plain now-playing look rather than
     // squeezing two lines of lyric into a corner.
-    final haveLyrics = c.settings.get(defs.sendspinLyrics) &&
+    final haveLyrics =
+        c.settings.get(defs.sendspinLyrics) &&
         c.sendspin.lyrics.value.isNotEmpty;
     final landscape = screen.width > screen.height;
     final showLyrics = haveLyrics && landscape && screen.width >= 560;
     final stackLyrics = haveLyrics && !landscape && screen.height >= 620;
     // The At a Glance row joins the plain layout only (issue #209): the
     // lyrics layouts already spend every free pixel on the words.
-    final glance = !showLyrics &&
+    final glance =
+        !showLyrics &&
         !stackLyrics &&
         c.settings.get(defs.screensaverGlanceNowPlaying) &&
         c.glance.entities.value.isNotEmpty;
@@ -345,68 +347,62 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     required double horizontalPadding,
   }) {
     return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 700),
-            child: Column(
-              // Keyed on the track so the whole panel (art + text) fades as
-              // one between songs.
-              key: ValueKey('$title|$_artUrl'),
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (art != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Image.memory(
-                      art,
-                      width: artSize,
-                      height: artSize,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                    ),
-                  )
-                else
-                  Icon(
-                    Icons.music_note,
-                    size: artSize * 0.45,
-                    color: Colors.white24,
-                  ),
-                SizedBox(height: gap),
-                Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  child: Text(
-                    title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.w700,
-                      height: 1.15,
-                    ),
-                  ),
-                ),
-                if (artist.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: horizontalPadding),
-                    child: Text(
-                      artist,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: artistSize,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+      duration: const Duration(milliseconds: 700),
+      child: Column(
+        // Keyed on the track so the whole panel (art + text) fades as
+        // one between songs.
+        key: ValueKey('$title|$_artUrl'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (art != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Image.memory(
+                art,
+                width: artSize,
+                height: artSize,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+              ),
+            )
+          else
+            Icon(Icons.music_note, size: artSize * 0.45, color: Colors.white24),
+          SizedBox(height: gap),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: titleSize,
+                fontWeight: FontWeight.w700,
+                height: 1.15,
+              ),
             ),
-        );
+          ),
+          if (artist.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Text(
+                artist,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: artistSize,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 
@@ -463,10 +459,13 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   /// Ticks the progress bar between metadata pushes.
   Timer? _tick;
 
-  /// Manually closed (the X while paused) or timed out paused: hidden
-  /// until playback next starts. A paused card is resumable, but it must
-  /// not squat on the dashboard forever.
-  bool _dismissed = false;
+  /// Dismissals and reveals live in [SendspinManager.cardOverride] so the
+  /// kiosk menu can read and flip them; this widget owns the transitions.
+  /// A fling or the paused-hide timer writes false (hidden until playback
+  /// next starts — a paused card is resumable, but it must not squat on
+  /// the dashboard forever); the menu or a gesture writes true, which
+  /// shows the card even while sendspin.show_player is off.
+  ValueNotifier<bool?> get _override => c.sendspin.cardOverride;
   bool _wasPlaying = false;
   Timer? _pausedHide;
   StreamSubscription<SendspinShowPlayerRequested>? _reveal;
@@ -499,14 +498,16 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         0.98;
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
     c.sendspin.voiceActive.addListener(_onVoiceActive);
-    // The "Show the Sendspin player" gesture: a fling (or the paused-hide
-    // timer) hides the card via _dismissed, which no setting reaches, so
-    // the reveal arrives as its own event.
+    _override.addListener(_onOverride);
+    // The "Show the Sendspin player" gesture and the kiosk menu entry: a
+    // fling (or the paused-hide timer) hides the card via the override,
+    // and the reveal arrives as its own event so it can also clear the
+    // paused-hide timer and trigger the queue recovery in the manager.
     _reveal = c.bus.on<SendspinShowPlayerRequested>().listen((_) {
       if (!mounted) return;
       _pausedHide?.cancel();
       _pausedHide = null;
-      setState(() => _dismissed = false);
+      _override.value = true;
     });
     _onNowPlaying();
   }
@@ -515,6 +516,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
     c.sendspin.voiceActive.removeListener(_onVoiceActive);
+    _override.removeListener(_onOverride);
     _reveal?.cancel();
     _tick?.cancel();
     _pausedHide?.cancel();
@@ -522,6 +524,10 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
   }
 
   void _onVoiceActive() {
+    if (mounted) setState(() {});
+  }
+
+  void _onOverride() {
     if (mounted) setState(() {});
   }
 
@@ -542,9 +548,14 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
     // A dismissal ends only when playback actually STARTS (false to true
     // transition) or the session ends. Level-checking `playing` here
     // un-dismissed a flung card during the stop's grace window, where the
-    // snapshot still reads playing, so it popped back paused.
-    if (now == null || (playing && !_wasPlaying)) {
-      _dismissed = false;
+    // snapshot still reads playing, so it popped back paused. An explicit
+    // reveal (override true) survives playback starting — the card was
+    // just summoned — but resets with the session like everything else,
+    // so a player configured not to pop up stays summoned-per-session.
+    if (now == null) {
+      _override.value = null;
+    } else if (playing && !_wasPlaying && _override.value == false) {
+      _override.value = null;
     }
     _wasPlaying = playing;
     if (playing || now == null) {
@@ -556,7 +567,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
           minutes: c.settings.get(defs.sendspinPausedHideMinutes).toInt(),
         ),
         () {
-          if (mounted) setState(() => _dismissed = true);
+          if (mounted) _override.value = false;
         },
       );
     }
@@ -603,9 +614,8 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
     // Hidden during voice interactions: Voice Satellite's own UI owns the
     // screen for the duration, and the card would sit on top of it.
     if (now == null ||
-        _dismissed ||
         c.sendspin.voiceActive.value ||
-        !c.settings.get(defs.sendspinShowPlayer)) {
+        !(_override.value ?? c.settings.get(defs.sendspinShowPlayer))) {
       return const SizedBox.shrink();
     }
 
@@ -659,7 +669,7 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                         !c.settings.get(defs.sendspinDismissKeepsPlaying)) {
                       c.sendspin.control('stop');
                     }
-                    setState(() => _dismissed = true);
+                    _override.value = false;
                     return;
                   }
                   c.settings.set(

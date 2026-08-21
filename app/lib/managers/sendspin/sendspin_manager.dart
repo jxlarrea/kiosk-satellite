@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:math' show Random;
 
-import 'package:flutter/foundation.dart'
-    show ValueNotifier, visibleForTesting;
+import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../core/command_registry.dart';
@@ -55,6 +54,23 @@ class SendspinManager extends Manager {
   /// True while any non-media interaction (voice, announcement, timer) is
   /// in progress: the floating player hides and playback ducks.
   final voiceActive = ValueNotifier<bool>(false);
+
+  /// The floating card's visibility override: null follows the
+  /// `sendspin.show_player` setting, true is an explicit reveal (the menu
+  /// entry or a gesture, which works even while that setting is off), false
+  /// an explicit dismissal (a fling, the paused-hide timer, the menu's
+  /// Hide). The overlay owns the transitions back to null — a dismissal
+  /// ends when playback next starts, everything resets when the session
+  /// ends; it lives here so the kiosk menu can read the card's state and
+  /// flip it.
+  final cardOverride = ValueNotifier<bool?>(null);
+
+  /// Whether the floating card is on screen (ignoring the momentary hide
+  /// during voice interactions): what the kiosk menu's show/hide entry
+  /// keys its label and action on.
+  bool get cardShown =>
+      nowPlaying.value != null &&
+      (cardOverride.value ?? _settings.get(defs.sendspinShowPlayer));
   final _voiceReasons = <String>{};
 
   Timer? _idleGrace;
@@ -294,9 +310,13 @@ class SendspinManager extends Manager {
       // The sync offset applies live inside the running player: a slider
       // being tuned by ear must not restart the music it is tuned against.
       if (e.key == defs.sendspinSyncOffset.key) {
-        unawaited(_channel.invokeMethod('setSyncOffset', {
-          'ms': _settings.get(defs.sendspinSyncOffset).toInt(),
-        }).catchError((_) {}));
+        unawaited(
+          _channel
+              .invokeMethod('setSyncOffset', {
+                'ms': _settings.get(defs.sendspinSyncOffset).toInt(),
+              })
+              .catchError((_) {}),
+        );
         return;
       }
       const uiOnly = [
@@ -314,9 +334,10 @@ class SendspinManager extends Manager {
         // the music it is tuned against.
         'sendspin.lyrics',
         'sendspin.lyrics_offset',
-        // A menu entry the kiosk drawer draws, and nothing the player does.
+        // Menu entries the kiosk drawer draws, and nothing the player does.
         'sendspin.ma_shortcut',
         'sendspin.ma_auto_close',
+        'sendspin.player_shortcut',
       ];
       final relevant =
           e.key.startsWith('sendspin.') &&
@@ -344,8 +365,7 @@ class SendspinManager extends Manager {
           // state); the bridge computes them live.
           var live = const <String, Object?>{};
           try {
-            live = ((await _channel.invokeMethod<Map>('getStatus')) ??
-                    const {})
+            live = ((await _channel.invokeMethod<Map>('getStatus')) ?? const {})
                 .cast<String, Object?>();
           } catch (_) {}
           return CommandResult.ok({
@@ -412,7 +432,10 @@ class SendspinManager extends Manager {
           // one.
           final result = await api.call('auth');
           if (!result.ok) {
-            log.warn(name, 'Music Assistant validation failed: ${result.error}');
+            log.warn(
+              name,
+              'Music Assistant validation failed: ${result.error}',
+            );
             return CommandResult.fail(result.error!);
           }
           final info = result.serverInfo;

@@ -40,9 +40,9 @@ class GesturesManager extends Manager {
     this._settings, {
     Stream<Uint8List> Function()? micStream,
     Future<PermissionOutcome> Function()? micPermission,
-  })  : _micStream = micStream ?? (() => MicHub.instance.stream()),
-        _micPermission =
-            micPermission ?? (() => requestOsPermission(Permission.microphone));
+  }) : _micStream = micStream ?? (() => MicHub.instance.stream()),
+       _micPermission =
+           micPermission ?? (() => requestOsPermission(Permission.microphone));
 
   final SettingsManager _settings;
   final Stream<Uint8List> Function() _micStream;
@@ -50,8 +50,10 @@ class GesturesManager extends Manager {
 
   StreamSubscription<GestureDetected>? _sub;
   StreamSubscription<Uint8List>? _micSub;
-  late final ClapDetector _detector =
-      ClapDetector(onClaps: _onClaps, onDiscard: _onClapsDiscarded);
+  late final ClapDetector _detector = ClapDetector(
+    onClaps: _onClaps,
+    onDiscard: _onClapsDiscarded,
+  );
 
   /// Discard diagnostics, rate limited: under continuous music the veto can
   /// discard every second or two, and a debug line each time would flood
@@ -154,9 +156,10 @@ class GesturesManager extends Manager {
         }
         if (_micOutcome != PermissionOutcome.granted) {
           log.error(
-              name,
-              'clap detection needs the microphone and it was '
-              '${_micOutcome == PermissionOutcome.blocked ? 'blocked: allow it in the app settings' : 'declined'}');
+            name,
+            'clap detection needs the microphone and it was '
+            '${_micOutcome == PermissionOutcome.blocked ? 'blocked: allow it in the app settings' : 'declined'}',
+          );
           return;
         }
       }
@@ -252,11 +255,10 @@ class GesturesManager extends Manager {
         }
       case 'sendspin_player':
         // Show only: the fling on the card is already the way to hide it.
-        // The setting covers a player disabled in Settings; the event is
-        // what actually brings back a card the fling (or the paused-hide
-        // timer) dismissed, because those hide via widget-local state the
-        // setting cannot reach.
-        await _settings.set(defs.sendspinShowPlayer, true);
+        // The event clears the overlay's dismissal and, with nothing on
+        // screen, recovers a paused queue from Music Assistant; it also
+        // reveals the card while sendspin.show_player is off (the card
+        // override), so the setting itself stays untouched.
         bus.publish(const SendspinShowPlayerRequested());
       case 'screensaver':
         await _run('startScreensaver', const {});

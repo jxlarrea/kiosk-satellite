@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../app_container.dart';
+import '../core/events.dart';
 import '../managers/sendspin/music_assistant_api.dart';
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/update/update_manager.dart';
@@ -200,6 +201,45 @@ class KioskDrawer extends StatelessWidget {
                                       c.commands.execute('showLinkPage', {
                                         'url': url,
                                       });
+                                    },
+                                  ),
+                              // The floating player's menu entry (issue
+                              // #257). The label follows the card live —
+                              // Show also recovers a paused queue the app
+                              // has never seen (the reveal event), and
+                              // works while the auto-show setting is off;
+                              // Hide hides the card without stopping the
+                              // music, unlike the fling, because a menu
+                              // tap is deliberate about exactly this.
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowSendspinPlayer))
+                                if (c.settings.get(defs.sendspinEnabled) &&
+                                    c.settings.get(defs.sendspinPlayerShortcut))
+                                  ListenableBuilder(
+                                    listenable: Listenable.merge([
+                                      c.sendspin.nowPlaying,
+                                      c.sendspin.cardOverride,
+                                    ]),
+                                    builder: (context, _) {
+                                      final shown = c.sendspin.cardShown;
+                                      return _item(
+                                        context,
+                                        Icons.play_circle_outlined,
+                                        shown
+                                            ? 'Hide Sendspin Player'
+                                            : 'Show Sendspin Player',
+                                        () {
+                                          onClose();
+                                          if (shown) {
+                                            c.sendspin.cardOverride.value =
+                                                false;
+                                          } else {
+                                            c.bus.publish(
+                                              const SendspinShowPlayerRequested(),
+                                            );
+                                          }
+                                        },
+                                      );
                                     },
                                   ),
                               if (!restricted ||

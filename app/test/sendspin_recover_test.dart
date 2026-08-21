@@ -40,6 +40,7 @@ void main() {
 
   late EventBus bus;
   late SendspinManager sendspin;
+  late SettingsManager settings;
   late _FakeApi api;
 
   Future<void> build(Map<String, Object?>? track) async {
@@ -53,7 +54,7 @@ void main() {
     bus = EventBus();
     final log = Logger();
     final commands = CommandRegistry(log);
-    final settings = SettingsManager(bus, commands, log);
+    settings = SettingsManager(bus, commands, log);
     await settings.init();
     sendspin = SendspinManager(bus, commands, log, settings);
     api = _FakeApi(track);
@@ -125,5 +126,26 @@ void main() {
     // The second reveal is the overlay's own business (un-dismissing);
     // no new lookup happens while a card exists.
     expect(api.calls, 1);
+  });
+
+  test('cardShown follows the override over the show_player setting', () async {
+    await build({'state': 'paused', 'title': 'First Time'});
+    // Nothing on screen yet: hidden whatever the setting says.
+    expect(sendspin.cardShown, isFalse);
+
+    await reveal();
+    // A card with the default setting (show_player on) and no override.
+    expect(sendspin.cardShown, isTrue);
+
+    // The kiosk menu's Hide: override false wins over the setting.
+    sendspin.cardOverride.value = false;
+    expect(sendspin.cardShown, isFalse);
+
+    // An explicit reveal wins over a switched-off setting (issue #257).
+    await settings.set(defs.sendspinShowPlayer, false);
+    sendspin.cardOverride.value = true;
+    expect(sendspin.cardShown, isTrue);
+    sendspin.cardOverride.value = null;
+    expect(sendspin.cardShown, isFalse);
   });
 }

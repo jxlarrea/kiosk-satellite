@@ -151,6 +151,10 @@ void main() {
       expect(settings.get(defs.kioskAllowCamera), isTrue);
       expect(settings.get(defs.kioskAllowScreensaver), isTrue);
       expect(settings.get(defs.kioskAllowTheme), isTrue);
+      expect(settings.get(defs.kioskAllowSendspinPlayer), isTrue);
+      // The drawer entry the Sendspin Player action admits is itself
+      // opt-in (issue #257), so the allowed action alone shows nothing.
+      expect(settings.get(defs.sendspinPlayerShortcut), isFalse);
     },
   );
 
@@ -182,6 +186,7 @@ void main() {
       expect(settings.visible(defs.kioskAllowCamera), isTrue);
       expect(settings.visible(defs.kioskAllowScreensaver), isTrue);
       expect(settings.visible(defs.kioskAllowTheme), isTrue);
+      expect(settings.visible(defs.kioskAllowSendspinPlayer), isTrue);
       // Closing the outer gate hides the whole group again.
       await settings.set(defs.kioskEnabled, false);
       expect(settings.visible(defs.kioskAllowDashboard), isFalse);
@@ -212,43 +217,44 @@ void main() {
     }
 
     Map<String, Object> backup() => {
-          'config': {
-            'kind': 'kiosk-satellite-config',
-            'version': 1,
-            'settings': {'sendspin.client_id': 'backup-id'},
-          },
-        };
+      'config': {
+        'kind': 'kiosk-satellite-config',
+        'version': 1,
+        'settings': {'sendspin.client_id': 'backup-id'},
+      },
+    };
 
-    test('restore as a new device keeps its own Sendspin player id',
-        () async {
+    test('restore as a new device keeps its own Sendspin player id', () async {
       await buildWithCommands({
         'ks.browser.start_url': 'http://ha.local:8123',
         'ks.sendspin.client_id': 'own-id',
       });
-      final result = await commands
-          .execute('importConfig', {...backup(), 'adoptIdentity': false});
+      final result = await commands.execute('importConfig', {
+        ...backup(),
+        'adoptIdentity': false,
+      });
       expect(result.ok, isTrue);
       // Two players under one id displace each other at the Sendspin
       // server, so the backup's id must not come along.
       expect(settings.get(defs.sendspinClientId), 'own-id');
     });
 
-    test('a device that had cloned the backup id verbatim sheds it',
-        () async {
+    test('a device that had cloned the backup id verbatim sheds it', () async {
       await buildWithCommands({
         'ks.browser.start_url': 'http://ha.local:8123',
         'ks.sendspin.client_id': 'backup-id',
       });
-      final result = await commands
-          .execute('importConfig', {...backup(), 'adoptIdentity': false});
+      final result = await commands.execute('importConfig', {
+        ...backup(),
+        'adoptIdentity': false,
+      });
       expect(result.ok, isTrue);
       // "Keeping its own" would keep the collision; empty makes the
       // Sendspin manager mint a fresh id at the next player start.
       expect(settings.get(defs.sendspinClientId), isEmpty);
     });
 
-    test('a replacement-device restore adopts the backup player id',
-        () async {
+    test('a replacement-device restore adopts the backup player id', () async {
       await buildWithCommands({
         'ks.browser.start_url': 'http://ha.local:8123',
         'ks.sendspin.client_id': 'own-id',
