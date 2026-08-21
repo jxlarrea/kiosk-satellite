@@ -892,6 +892,18 @@ const cmd = (name, params = {}) =>
   api(`/api/commands/${name}`, { method: 'POST', body: JSON.stringify(params) })
     .then((r) => r.json());
 
+/* ---- Views ---- */
+// Login, wizard and app are three full-page sections of one document, and
+// exactly one of them is ever the page. Showing one without hiding the other
+// two stacked them instead of replacing them: the wizard filled the screen
+// and the settings UI of a not-yet-configured device sat right below it, one
+// scroll away. Route every switch through here so that cannot happen again.
+function showView(which) {
+  for (const id of ['login', 'wizard', 'app']) {
+    $(`#${id}`).classList.toggle('hidden', id !== which);
+  }
+}
+
 /* ---- Auth ---- */
 async function login() {
   $('#loginError').textContent = '';
@@ -914,19 +926,16 @@ async function login() {
 function logout() {
   state.token = null; localStorage.removeItem('ks_token');
   if (state.ws) { state.ws.onclose = null; state.ws.close(); state.ws = null; }
-  $('#app').classList.add('hidden');
+  showView('login');
   // A wiped or factory-fresh device has no password to log in with - its
   // login screen is a dead end (empty passwords never match, by design).
   // That is exactly when a stale browser token 401s: route back into the
   // wizard instead of stranding the user at login.
   fetch('api/setup/status').then((r) => r.json()).then((setup) => {
     if (setup && setup.setupNeeded && setup.passwordNeeded) {
-      $('#login').classList.add('hidden');
       startWizard({ needPassword: true });
-    } else {
-      $('#login').classList.remove('hidden');
     }
-  }).catch(() => { $('#login').classList.remove('hidden'); });
+  }).catch(() => { /* no answer: the login screen is the safe place to wait */ });
 }
 
 /* ---- Tabs ---- */
@@ -8241,14 +8250,21 @@ function showBrightness(level) {
 
 /* ---- Boot ---- */
 async function start() {
-  // An unconfigured device continues into the wizard, not the app, the
+  // An unconfigured device continues into the wizard, not the app - the
   // login (with the password the device wizard set) was just the door.
-  if (state.wizardAfterLogin) {
-    state.wizardAfterLogin = false;
+  //
+  // Asked fresh on every entry rather than latched once at boot. A 401
+  // anywhere in the wizard logs the page out, and the login that follows
+  // came back through here: with a one-shot flag that second pass fell
+  // through and opened the full settings UI of a device nobody had set up.
+  let setup = null;
+  try { setup = await (await fetch('api/setup/status')).json(); } catch (_) {}
+  if (setup?.setupNeeded) {
+    if (setup.importPending) { showImportPending(); return; }
     startWizard({ needPassword: false });
     return;
   }
-  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  showView('app');
   const info = await (await api('/api/info')).json();
   applyInfo(info, info.currentUrl);
   refreshUpdateBadge();
@@ -8368,9 +8384,7 @@ function wizardApplyTheme(theme) {
 
 function wizardShow() {
   wizardApplyTheme('light');
-  $('#login').classList.add('hidden');
-  $('#app').classList.add('hidden');
-  $('#wizard').classList.remove('hidden');
+  showView('wizard');
   wizardRender();
 }
 
@@ -8853,8 +8867,7 @@ $('#logoutBtn').addEventListener('click', logout);
     if (setup.importPending) { showImportPending(); return; }
     if (setup.passwordNeeded) { startWizard({ needPassword: true }); return; }
     // A password exists (set in the device wizard's first step): log in
-    // first, then continue the setup here.
-    state.wizardAfterLogin = true;
+    // first. start() asks again and continues the setup here.
   }
   if (state.token) start().catch((e) => console.warn('start failed', e));
 })();
