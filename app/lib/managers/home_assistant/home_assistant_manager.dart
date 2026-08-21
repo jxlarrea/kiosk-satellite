@@ -429,7 +429,8 @@ class HomeAssistantManager extends Manager {
           name: 'vsSetBrowserSettings',
           description:
               'Change the browser-local Voice Satellite settings (auto '
-              'start, skin, theme mode, reactive bar, text scale) through '
+              'start, debug logging, skin, theme mode, reactive bar, text '
+              'scale) through '
               'the page hook, which persists them to the Home Assistant '
               'panel profile and applies them live.',
           params: const {'settings': 'partial config object'},
@@ -496,8 +497,7 @@ class HomeAssistantManager extends Manager {
           params: const {'entity_id': 'the assist_satellite entity, or empty'},
           handler: (p) async {
             final entity = '${p['entity_id'] ?? ''}'.trim();
-            if (entity.isNotEmpty &&
-                !entity.startsWith('assist_satellite.')) {
+            if (entity.isNotEmpty && !entity.startsWith('assist_satellite.')) {
               return const CommandResult.fail(
                 'an assist_satellite entity is required',
               );
@@ -1447,7 +1447,8 @@ class HomeAssistantManager extends Manager {
     List<Map<String, Object?>>? satellites,
     Map<String, String> wanted,
     DateTime at,
-  })? _vsControlsCache;
+  })?
+  _vsControlsCache;
 
   Future<Map<String, Object?>> vsControlsSnapshot() async {
     // The page's own binding wins (localStorage, changeable in the Voice

@@ -96,8 +96,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Engine',
-    description:
-        'Start or Stop the Voice Satellite engine.',
+    description: 'Start or Stop the Voice Satellite engine.',
     anchorId: 'x:assigned_satellite',
   ),
   SettingsSearchEntry(
@@ -110,6 +109,12 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     category: 'Voice Satellite',
     title: 'Finished speaking detection',
     description: 'How long a pause ends a voice command.',
+    anchorId: 'x:assigned_satellite',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
+    title: 'Debug logging',
+    description: 'Show Voice Satellite debug info in the browser console.',
     anchorId: 'x:assigned_satellite',
   ),
   SettingsSearchEntry(
@@ -157,6 +162,13 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
+    title: 'Cached models',
+    description:
+        'Re-download from Home Assistant. Use after re-publishing a model.',
+    anchorId: 'x:vs_wake',
+  ),
+  SettingsSearchEntry(
+    category: 'Voice Satellite',
     title: 'Skin',
     description: 'The look of the voice assistant overlay.',
     anchorId: 'x:vs_appearance',
@@ -170,7 +182,8 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Reactive activity bar',
-    description: 'The activity bar reacts to audio. NOT RECOMMENDED for low-power devices like the Echo Show.',
+    description:
+        'The activity bar reacts to audio. NOT RECOMMENDED for low-power devices like the Echo Show.',
     anchorId: 'x:vs_appearance',
   ),
   SettingsSearchEntry(
@@ -216,7 +229,8 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   SettingsSearchEntry(
     category: 'Screen & Audio',
     title: 'Master volume',
-    description: 'The device volume the media and assistant faders scale '
+    description:
+        'The device volume the media and assistant faders scale '
         'under.',
     anchorId: 'x:master_volume',
   ),
@@ -241,8 +255,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   SettingsSearchEntry(
     category: 'Device',
     title: 'Export configuration',
-    description:
-        "Save every setting and the page's local storage to a file.",
+    description: "Save every setting and the page's local storage to a file.",
     anchorId: 'x:export_config',
   ),
   SettingsSearchEntry(
@@ -319,7 +332,8 @@ List<SettingsSearchEntry> searchSettings(
     return 2;
   }
 
-  final scored = <(int categoryRank, int score, int order, SettingsSearchEntry)>[];
+  final scored =
+      <(int categoryRank, int score, int order, SettingsSearchEntry)>[];
   for (final (order, entry) in index.indexed) {
     final s = score(entry);
     if (s == null) continue;

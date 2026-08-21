@@ -1051,6 +1051,8 @@ const SEARCH_EXTRAS = [
     desc: 'Stop listening for wake words.' },
   { tab: 'voicesatellite', title: 'Finished speaking detection',
     desc: 'How long a pause ends a voice command.' },
+  { tab: 'voicesatellite', title: 'Debug logging',
+    desc: 'Show Voice Satellite debug info in the browser console.' },
   { tab: 'voicesatellite', title: 'Voice Satellite version',
     desc: 'The integration version installed in Home Assistant.' },
   { tab: 'voicesatellite', title: 'Wake word engine',
@@ -1065,6 +1067,8 @@ const SEARCH_EXTRAS = [
     desc: 'The word that starts a voice command.' },
   { tab: 'voicesatellite', title: 'Wake word 2',
     desc: 'A second wake word, answered by Assist pipeline 2.' },
+  { tab: 'voicesatellite', title: 'Cached models',
+    desc: 'Re-download from Home Assistant. Use after re-publishing a model.' },
   { tab: 'voicesatellite', title: 'Skin',
     desc: 'The look of the voice assistant overlay.' },
   { tab: 'voicesatellite', title: 'Theme mode',
@@ -4863,7 +4867,7 @@ async function loadSettings() {
 
   // ── Voice Satellite ───────────────────────────────────────────────────
   // Its own page under Home Assistant Configuration, gated the same way;
-  // loadWakeWord() appends the live status and permissions cards.
+  // loadVsPermissions() appends the permissions card.
   {
     const root = document.getElementById('tab-voicesatellite');
     root.innerHTML = '';
@@ -5012,7 +5016,7 @@ async function loadSettings() {
       vbtn.disabled = true; vbtn.textContent = 'Checking\u2026';
       const out = await (await api('/api/commands/haCheckConnection', { method: 'POST', body: '{}' })).json().catch(() => ({}));
       vbtn.disabled = false; vbtn.textContent = 'Validate';
-      if (out.ok) { state.dashboardsCache = null; await loadSettings(); await loadWakeWord(); loadViewJump(); }
+      if (out.ok) { state.dashboardsCache = null; await loadSettings(); await loadVsPermissions(); loadViewJump(); }
       else vdesc.textContent = out.error || 'Could not connect.';
     });
 
@@ -5609,9 +5613,9 @@ async function loadSettings() {
     });
   }
 
-  // The on-device settings screen shows the wake-word config inherited from
-  // Voice Satellite under the same heading. This tab mirrors it.
-  await loadWakeWord();
+  // The permissions card lands last on the Voice Satellite tab, same as the
+  // on-device settings screen.
+  await loadVsPermissions();
 
   // Counterpart to the capture at the top: put the view back where the
   // person was. One extra frame so late async renders have laid out.
@@ -5831,6 +5835,13 @@ async function renderVsControls(root, { auto = false } = {}) {
     entityRow('vad_sensitivity', 'Finished speaking detection',
       'How long a pause ends a voice command.', true),
   ]) if (row) generalCard.appendChild(row);
+  // Only offered once the settings hook reports the key: an older Voice
+  // Satellite silently drops writes it does not know.
+  if (browser && 'debug' in browser) {
+    generalCard.appendChild(toggleRow('Debug logging',
+      'Show Voice Satellite debug info in the browser console.',
+      browser.debug === true, (v) => applyBrowser({ debug: v })));
+  }
   if (data.version) {
     generalCard.appendChild(readOnlyRow('Voice Satellite version',
       'The integration version installed in Home Assistant.',
@@ -5863,6 +5874,29 @@ async function renderVsControls(root, { auto = false } = {}) {
   ].filter(Boolean);
   if (wakeRows.length) {
     for (const row of wakeRows) wakeCard.appendChild(row);
+    // Models are cached by URL, so re-publishing one on Home Assistant under
+    // the same name is invisible to this device until the cache is dropped.
+    if (onDevice) {
+      const row = document.createElement('div'); row.className = 'row';
+      const info = document.createElement('div'); info.className = 'info';
+      info.innerHTML = `<div class="name">Cached models</div>` +
+        `<div class="desc">Re-download from Home Assistant. Use after re-publishing a model.</div>`;
+      row.appendChild(info);
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost';
+      btn.textContent = 'Clear cache';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.textContent = 'Clearing…';
+        try {
+          const r = await cmd('clearWakeWordModels');
+          btn.textContent = r.ok ? `Cleared ${r.data.removed}` : 'Failed';
+        } catch { btn.textContent = 'Failed'; }
+        setTimeout(() => { btn.disabled = false; btn.textContent = 'Clear cache'; }, 1200);
+      });
+      row.appendChild(btn);
+      wakeCard.appendChild(row);
+    }
   } else {
     wakeCard.appendChild(readOnlyRow('Wake word',
       'Assign a satellite to control these settings.', ''));
@@ -5906,9 +5940,9 @@ async function renderVsControls(root, { auto = false } = {}) {
   }
 
   // General and Wake Word above the app's own settings card, Appearance
-  // below it; the wake word status card appends after (loadWakeWord).
-  const statusCard = root.querySelector('#wakeWordCard');
-  if (statusCard) root.insertBefore(appearanceWrap, statusCard);
+  // below it; the permissions card stays last (loadVsPermissions).
+  const permsCard = root.querySelector('#permsCard');
+  if (permsCard) root.insertBefore(appearanceWrap, permsCard);
   else root.appendChild(appearanceWrap);
   root.prepend(wakeWrap);
   root.prepend(generalWrap);
@@ -5923,143 +5957,15 @@ setInterval(() => {
   renderVsControls(document.getElementById('tab-voicesatellite'), { auto: true });
 }, 10000);
 
-/* ---- Voice Satellite wake word (read-only, pushed by the VS card) ---- */
-// Not a setting: nothing here is ours to change. The card owns the engine, the
-// wake words and the sensitivity, and pushes them to this device. We report.
-async function loadWakeWord() {
-  // Behind the connection gate with the rest of the HA page.
+/* ---- Voice Satellite permissions ---- */
+// The Voice Satellite status card used to build here; the Wake Word card
+// now says the same things, so only the permissions card remains, behind
+// the connection gate with the rest of the HA page.
+async function loadVsPermissions() {
   if (!state.haConnected) {
-    document.querySelector('#tab-voicesatellite #wakeWordCard')?.remove();
     document.querySelector('#tab-voicesatellite #permsCard')?.remove();
     return;
   }
-  let s;
-  try {
-    const res = await cmd('getWakeWordState');
-    if (!res.ok) return;
-    s = res.data;
-  } catch { return; }
-
-  const wrap = document.createElement('div');
-  wrap.id = 'wakeWordCard';
-  const h = document.createElement('h2');
-  h.className = 'card-title';
-  h.textContent = 'Voice Satellite status';
-  const card = document.createElement('div');
-  card.className = 'card';
-  wrap.append(h, card);
-
-  // Status first: it is the answer to "is this thing working?".
-  const status = document.createElement('div');
-  status.className = 'row';
-  const bad = ['micBlocked', 'micDeclined', 'micLost', 'modelsUnavailable', 'crashed', 'unavailable'];
-  const dot = s.status === 'listening' ? 'var(--ok)'
-    : bad.includes(s.status) ? 'var(--error)'
-    : 'var(--muted)';
-  status.innerHTML =
-    `<div class="info"><div class="name">Status</div>` +
-    `<div class="desc"></div></div>` +
-    `<span style="color:${dot}; white-space:nowrap"></span>`;
-  status.querySelector('.desc').textContent = s.statusLabel || '';
-  status.querySelector('span').textContent = s.status || '';
-  card.appendChild(status);
-
-  // The way out, offered on exactly the terms the device decided, a blocked
-  // mic needs the OS settings, a declined one only needs asking again. The
-  // on-device settings screen shows the same two buttons off the same flags.
-  if (s.canRetry) {
-    const row = document.createElement('div'); row.className = 'row';
-    const info = document.createElement('div'); info.className = 'info';
-    info.innerHTML = `<div class="name">Recover</div><div class="desc"></div>`;
-    // The status row above already carries the sentence; this one says what
-    // the buttons will do about it.
-    info.querySelector('.desc').textContent = s.needsAppSettings
-      ? 'Open the app settings on the device and allow the microphone, then retry.'
-      : 'Try starting the engine again.';
-    row.appendChild(info);
-
-    if (s.needsAppSettings) {
-      const open = document.createElement('button');
-      open.className = 'btn-ghost';
-      open.textContent = 'Open app settings';
-      // Puts the *device* on its settings screen; someone still has to tap
-      // Allow there. That is the whole of the way back, so say so plainly.
-      open.addEventListener('click', () => cmd('openAppSettings'));
-      row.appendChild(open);
-    }
-    const retry = document.createElement('button');
-    retry.className = 'btn-ghost';
-    retry.textContent = 'Retry';
-    retry.addEventListener('click', async () => {
-      retry.disabled = true; retry.textContent = 'Retrying…';
-      try { await cmd('retryWakeWord'); } catch {}
-      retry.disabled = false; retry.textContent = 'Retry';
-      loadWakeWord();
-    });
-    row.appendChild(retry);
-    card.appendChild(row);
-  }
-
-  // Everything below Status describes the kiosk running detection; while it
-  // does not (released: stopped, muted, or the engine select is Home
-  // Assistant/Disabled so the browser owns it - or no config ever pushed)
-  // every one of those rows would be a lie. The status sentence carries the
-  // whole story then.
-  if (!s.released && s.status !== 'waiting') {
-    if (s.engineLabel) {
-      card.appendChild(readOnlyRow('Engine', 'Running in Kiosk', s.engineLabel));
-    }
-    const words = (s.models || []).map((m) => m.wakeWord).filter(Boolean);
-    if (words.length) {
-      card.appendChild(readOnlyRow('Wake words', 'Running in Kiosk', words.join(', ')));
-    }
-    if (s.stopWord) {
-      card.appendChild(readOnlyRow(
-        'Stop word',
-        s.stopWordAvailable ? 'Running in Kiosk' : 'Voice Satellite keeps this one in the browser',
-        s.stopWord));
-    }
-    if (s.modelPrecision) {
-      card.appendChild(readOnlyRow(
-        'Model precision',
-        s.modelPrecision === 'int8' ? 'Quantized for faster listening'
-          : s.modelPrecision === 'fp32' ? 'Original full-precision models'
-          : 'Some models fell back to fp32',
-        s.modelPrecision));
-    }
-    card.appendChild(readOnlyRow(
-      'Native voice pipeline',
-      s.nativePipeline
-        ? 'Voice audio flows through the app during turns'
-        : 'This Voice Satellite version runs voice audio in the browser',
-      s.nativePipeline ? 'Supported' : 'Not supported'));
-
-    // Models are cached by URL, so re-publishing one on Home Assistant under
-    // the same name is invisible to this device until the cache is dropped.
-    const row = document.createElement('div'); row.className = 'row';
-    const info = document.createElement('div'); info.className = 'info';
-    info.innerHTML = `<div class="name">Cached models</div>` +
-      `<div class="desc">Re-download from Home Assistant. Use after re-publishing a model.</div>`;
-    row.appendChild(info);
-    const btn = document.createElement('button');
-    btn.className = 'btn-ghost';
-    btn.textContent = 'Clear cache';
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      btn.textContent = 'Clearing…';
-      try {
-        const r = await cmd('clearWakeWordModels');
-        btn.textContent = r.ok ? `Cleared ${r.data.removed}` : 'Failed';
-      } catch { btn.textContent = 'Failed'; }
-      setTimeout(() => { btn.disabled = false; btn.textContent = 'Clear cache'; loadWakeWord(); }, 1200);
-    });
-    row.appendChild(btn);
-    card.appendChild(row);
-  }
-
-  const root = $('#tab-voicesatellite');
-  root.querySelector('#wakeWordCard')?.remove();
-  root.appendChild(wrap);
   await loadPermissions();
 }
 
@@ -8200,9 +8106,10 @@ function queueVsControlsRefresh() {
   clearTimeout(vsRefreshTimer);
   vsRefreshTimer = setTimeout(() => {
     vsRefreshTimer = null;
-    loadWakeWord();
-    // A wake state change can mean the controlled entities moved too
-    // (an engine or wake word change re-negotiates); follow along.
+    // A wake state change can move the permissions story (a lost
+    // microphone) and the controlled entities (an engine or wake word
+    // change re-negotiates); follow along.
+    loadVsPermissions();
     const vsRoot = document.getElementById('tab-voicesatellite');
     if (vsRoot && document.getElementById('vsGeneralCard')) {
       renderVsControls(vsRoot, { auto: true });

@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A "Debug logging" switch in the Voice Satellite settings' General group, on the device and in the remote admin. It flips the same browser-console logging the Voice Satellite sidebar panel offers, so wake word scores and pipeline events can be turned on without leaving the kiosk's settings. Shown once the installed Voice Satellite version supports controlling it externally.
+
+### Changed
+- The Voice Satellite status group is gone from the settings, on the device and in the remote admin: everything it reported is already told by the Wake Word settings themselves. Its "Cached models" clear button lives on, moved into the Wake Word group.
+
 ## v2026.8.68 - 2026-08-20
 
 ### Fixed

@@ -28,7 +28,6 @@ import 'package:permission_handler/permission_handler.dart';
 import '../core/permissions.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
-import '../managers/wake_word/engine.dart';
 import 'color_picker.dart';
 import 'gesture_settings.dart';
 import 'glance_entity_picker.dart';
@@ -173,12 +172,7 @@ const _categories = <(String, String, Object, String)>[
     Icons.apps_outlined,
     'Open other apps from the kiosk',
   ),
-  (
-    'Gestures',
-    'Gestures',
-    Icons.gesture,
-    'Touch and clap gestures',
-  ),
+  ('Gestures', 'Gestures', Icons.gesture, 'Touch and clap gestures'),
   (
     'Device',
     'Device',
@@ -847,7 +841,8 @@ class _CategoryContentState extends State<_CategoryContent> {
     // Everything from the "Bluetooth Proxy" section heading down is the
     // Bluetooth side of the page; before it sits the general ESPHome card.
     final split = cards.indexWhere(
-        (w) => w is SectionHeading && w.text == 'Bluetooth Proxy');
+      (w) => w is SectionHeading && w.text == 'Bluetooth Proxy',
+    );
     if (split < 0) {
       // No Bluetooth section (ESPHome or the proxy disabled): only the
       // general rows render, but a failed start still says so.
@@ -859,7 +854,9 @@ class _CategoryContentState extends State<_CategoryContent> {
     // The permissions group lands under the Bluetooth Proxy section's card:
     // heading, card, grant, then the Nearby devices section.
     final nearby = cards.indexWhere(
-        (w) => w is SectionHeading && w.text == 'Nearby devices', split);
+      (w) => w is SectionHeading && w.text == 'Nearby devices',
+      split,
+    );
     final bluetooth = <Widget>[
       ...cards.sublist(split, nearby < 0 ? cards.length : nearby),
       ...permissions,
@@ -1555,146 +1552,156 @@ class _CategoryContentState extends State<_CategoryContent> {
             ],
           ),
         ] else
-          ..._withMqttDeprecation(_withBtProxyPermissions(_sectionedCards(
-            container,
-            // With the Camera master switch off (or no camera on the
-            // device at all), motion detection cannot run: the dismiss
-            // switch renders disabled (below) with the reason, instead of
-            // lying enabled; its tuning rows live in the Camera section
-            // now and hide with the master there. A camera-less device
-            // keeps only the disabled master switch.
-            widget.category == 'Camera' &&
-                    container.deviceCamera.cameraKnownAbsent
-                ? const [cameraEnabled]
-                : _defsFor(widget.category),
-            () => setState(() {}),
-            replace: {
-              if (widget.category == 'Screensaver' &&
-                  !container.deviceCamera.effectiveEnabled)
-                screensaverDismissOnMotion.key: SearchLandingTarget(
-                  id: screensaverDismissOnMotion.key,
-                  child: const SwitchListTile(
-                    title: Text('Dismiss on motion'),
-                    subtitle: Text(
-                      'Requires the camera. Turn it on in the Camera '
-                      'settings first.',
+          ..._withMqttDeprecation(
+            _withBtProxyPermissions(
+              _sectionedCards(
+                container,
+                // With the Camera master switch off (or no camera on the
+                // device at all), motion detection cannot run: the dismiss
+                // switch renders disabled (below) with the reason, instead of
+                // lying enabled; its tuning rows live in the Camera section
+                // now and hide with the master there. A camera-less device
+                // keeps only the disabled master switch.
+                widget.category == 'Camera' &&
+                        container.deviceCamera.cameraKnownAbsent
+                    ? const [cameraEnabled]
+                    : _defsFor(widget.category),
+                () => setState(() {}),
+                replace: {
+                  if (widget.category == 'Screensaver' &&
+                      !container.deviceCamera.effectiveEnabled)
+                    screensaverDismissOnMotion.key: SearchLandingTarget(
+                      id: screensaverDismissOnMotion.key,
+                      child: const SwitchListTile(
+                        title: Text('Dismiss on motion'),
+                        subtitle: Text(
+                          'Requires the camera. Turn it on in the Camera '
+                          'settings first.',
+                        ),
+                        value: false,
+                        onChanged: null,
+                      ),
                     ),
-                    value: false,
-                    onChanged: null,
-                  ),
-                ),
-              if (widget.category == 'Camera' &&
-                  container.deviceCamera.cameraKnownAbsent)
-                cameraEnabled.key: SearchLandingTarget(
-                  id: cameraEnabled.key,
-                  child: SwitchListTile(
-                    title: Text(cameraEnabled.title),
-                    subtitle: Text(cameraEnabled.description),
-                    value: false,
-                    onChanged: null,
-                  ),
-                ),
-              // One camera means no front/back choice to offer (the
-              // capture falls back to the camera present regardless of
-              // the stored value).
-              if (widget.category == 'Camera' &&
-                  container.deviceCamera.knownFacings?.length == 1)
-                cameraDevice.key: SearchLandingTarget(
-                  id: cameraDevice.key,
-                  child: ListTile(
-                    title: Text(cameraDevice.title),
-                    subtitle: const Text('The only camera this device has.'),
-                    trailing: Text(
-                      cameraDevice.optionLabels?[container
-                              .deviceCamera
-                              .knownFacings!
-                              .single] ??
-                          container.deviceCamera.knownFacings!.single,
+                  if (widget.category == 'Camera' &&
+                      container.deviceCamera.cameraKnownAbsent)
+                    cameraEnabled.key: SearchLandingTarget(
+                      id: cameraEnabled.key,
+                      child: SwitchListTile(
+                        title: Text(cameraEnabled.title),
+                        subtitle: Text(cameraEnabled.description),
+                        value: false,
+                        onChanged: null,
+                      ),
                     ),
-                  ),
-                ),
-            },
-            after: {
-              if (widget.category == 'Browser' &&
-                  container.settings.get(autoReloadOnError))
-                autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
-              if (widget.category == 'Camera')
-                cameraEnabled.key: Column(
-                  children: [
-                    _NoCameraRow(container: container),
-                    if (container.deviceCamera.effectiveEnabled)
-                      _CameraGrantRow(key: UniqueKey()),
-                  ],
-                ),
-              // Where the tuning rows used to be: camera pick, frame rate
-              // and sensitivity are Camera-settings decisions now.
-              if (widget.category == 'Screensaver')
-                screensaverPostponeOnMotion.key: const HintRow(
-                  'Motion detection is tuned in the Camera settings.',
-                ),
-              // The screen-off timer fails quietly without device admin;
-              // this row is what says so, right where the slider is.
-              if (widget.category == 'Screensaver')
-                screensaverScreenOffMinutes.key: _ScreenOffAdminRow(
-                  key: UniqueKey(),
-                  container: container,
-                ),
-              // Dim is the one mode the pause-dashboard optimization cannot
-              // help: there is no overlay, the page IS the display. Lives in
-              // the Dim group, whose rows only render while Dim is selected.
-              if (widget.category == 'Screensaver' &&
-                  container.settings.get(screensaverMode) == 'dim')
-                screensaverDimLevel.key: const WarnRow(_dimModeNote),
-              if (widget.category == 'Screensaver') ...{
-                // Rendered only while their anchor rows are (mode: immich).
-                screensaverImmichApiKey.key: _ImmichValidateRow(
-                  container: container,
-                  onChanged: () => setState(() {}),
-                ),
-                screensaverImmichCacheMax.key: _ImmichCacheStatsRow(
-                  container: container,
-                ),
-              },
-              // Under the last credential field, where the Home Assistant
-              // and Immich cards put theirs.
-              if (widget.category == 'MQTT')
-                mqttPassword.key: _MqttValidateRow(container: container),
-              if (widget.category == 'Sendspin')
-                sendspinMaToken.key: _MaValidateRow(container: container),
-              // The live list right under the sort picker that orders it.
-              // Rides the section's dependsOn: with the proxy off there is
-              // nothing to list and none of these rows render.
-              // Both entity surfaces on at once means every kiosk entity
-              // exists twice in Home Assistant; say so where the choice is
-              // made instead of letting the duplicates say it.
-              if (widget.category == 'ESPHome' &&
-                  container.settings.get(esphomeEntities) &&
-                  container.settings.get(mqttEnabled))
-                esphomeEntities.key: const WarnRow(
-                  'MQTT is also enabled: these entities will exist twice '
-                  'in Home Assistant, once per integration.',
-                ),
-              // What the real-MAC switch actually did, right under it: with
-              // the address unreadable the flip is otherwise a silent no-op
-              // that renders identically to a working one.
-              if (widget.category == 'ESPHome' &&
-                  container.settings.get(esphomeRealMac))
-                esphomeRealMac.key:
-                    _RealMacStatusRow(key: UniqueKey(), container: container),
-              // The connection budget, right under the toggle that spends
-              // it: a hard Android-stack limit per proxy, and the thing a
-              // user must know before wondering why a fifth device will
-              // not connect.
-              if (widget.category == 'ESPHome')
-                btproxyConnections.key:
-                    _BtSlotsHintRow(key: UniqueKey(), container: container),
-              if (widget.category == 'ESPHome')
-                btproxyNearbySort.key: SearchLandingTarget(
-                  id: 'x:btproxy_nearby',
-                  child: _BtNearbyDevicesRow(container: container),
-                ),
-            },
-          ))),
+                  // One camera means no front/back choice to offer (the
+                  // capture falls back to the camera present regardless of
+                  // the stored value).
+                  if (widget.category == 'Camera' &&
+                      container.deviceCamera.knownFacings?.length == 1)
+                    cameraDevice.key: SearchLandingTarget(
+                      id: cameraDevice.key,
+                      child: ListTile(
+                        title: Text(cameraDevice.title),
+                        subtitle: const Text(
+                          'The only camera this device has.',
+                        ),
+                        trailing: Text(
+                          cameraDevice.optionLabels?[container
+                                  .deviceCamera
+                                  .knownFacings!
+                                  .single] ??
+                              container.deviceCamera.knownFacings!.single,
+                        ),
+                      ),
+                    ),
+                },
+                after: {
+                  if (widget.category == 'Browser' &&
+                      container.settings.get(autoReloadOnError))
+                    autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
+                  if (widget.category == 'Camera')
+                    cameraEnabled.key: Column(
+                      children: [
+                        _NoCameraRow(container: container),
+                        if (container.deviceCamera.effectiveEnabled)
+                          _CameraGrantRow(key: UniqueKey()),
+                      ],
+                    ),
+                  // Where the tuning rows used to be: camera pick, frame rate
+                  // and sensitivity are Camera-settings decisions now.
+                  if (widget.category == 'Screensaver')
+                    screensaverPostponeOnMotion.key: const HintRow(
+                      'Motion detection is tuned in the Camera settings.',
+                    ),
+                  // The screen-off timer fails quietly without device admin;
+                  // this row is what says so, right where the slider is.
+                  if (widget.category == 'Screensaver')
+                    screensaverScreenOffMinutes.key: _ScreenOffAdminRow(
+                      key: UniqueKey(),
+                      container: container,
+                    ),
+                  // Dim is the one mode the pause-dashboard optimization cannot
+                  // help: there is no overlay, the page IS the display. Lives in
+                  // the Dim group, whose rows only render while Dim is selected.
+                  if (widget.category == 'Screensaver' &&
+                      container.settings.get(screensaverMode) == 'dim')
+                    screensaverDimLevel.key: const WarnRow(_dimModeNote),
+                  if (widget.category == 'Screensaver') ...{
+                    // Rendered only while their anchor rows are (mode: immich).
+                    screensaverImmichApiKey.key: _ImmichValidateRow(
+                      container: container,
+                      onChanged: () => setState(() {}),
+                    ),
+                    screensaverImmichCacheMax.key: _ImmichCacheStatsRow(
+                      container: container,
+                    ),
+                  },
+                  // Under the last credential field, where the Home Assistant
+                  // and Immich cards put theirs.
+                  if (widget.category == 'MQTT')
+                    mqttPassword.key: _MqttValidateRow(container: container),
+                  if (widget.category == 'Sendspin')
+                    sendspinMaToken.key: _MaValidateRow(container: container),
+                  // The live list right under the sort picker that orders it.
+                  // Rides the section's dependsOn: with the proxy off there is
+                  // nothing to list and none of these rows render.
+                  // Both entity surfaces on at once means every kiosk entity
+                  // exists twice in Home Assistant; say so where the choice is
+                  // made instead of letting the duplicates say it.
+                  if (widget.category == 'ESPHome' &&
+                      container.settings.get(esphomeEntities) &&
+                      container.settings.get(mqttEnabled))
+                    esphomeEntities.key: const WarnRow(
+                      'MQTT is also enabled: these entities will exist twice '
+                      'in Home Assistant, once per integration.',
+                    ),
+                  // What the real-MAC switch actually did, right under it: with
+                  // the address unreadable the flip is otherwise a silent no-op
+                  // that renders identically to a working one.
+                  if (widget.category == 'ESPHome' &&
+                      container.settings.get(esphomeRealMac))
+                    esphomeRealMac.key: _RealMacStatusRow(
+                      key: UniqueKey(),
+                      container: container,
+                    ),
+                  // The connection budget, right under the toggle that spends
+                  // it: a hard Android-stack limit per proxy, and the thing a
+                  // user must know before wondering why a fifth device will
+                  // not connect.
+                  if (widget.category == 'ESPHome')
+                    btproxyConnections.key: _BtSlotsHintRow(
+                      key: UniqueKey(),
+                      container: container,
+                    ),
+                  if (widget.category == 'ESPHome')
+                    btproxyNearbySort.key: SearchLandingTarget(
+                      id: 'x:btproxy_nearby',
+                      child: _BtNearbyDevicesRow(container: container),
+                    ),
+                },
+              ),
+            ),
+          ),
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
         // has no page on the device, so its grants live here too.
@@ -2168,11 +2175,10 @@ class _CategoryContentState extends State<_CategoryContent> {
                         ),
                     // Not a setting, but a row on the same card, so it sits
                     // behind the same line as the rest. Gone with the rest
-                    // when detection is off: there is no state to report
-                    // about a thing that is not running, and "it is off" is
-                    // already said by the switch above.
+                    // when detection is off: with nothing running in the
+                    // kiosk there is no cache to clear.
                     if (container.settings.get(wakeWordEnabled))
-                      WakeWordStatusTile(container: container),
+                      ClearModelCacheTile(container: container),
                   ],
                 ),
               ),
@@ -2834,17 +2840,12 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     return showRadioPicker<(String, String)>(
       context,
       title: 'Weather entity',
-      options: [
-        for (final e in entities) PickerOption(e, e.$2, detail: e.$1),
-      ],
+      options: [for (final e in entities) PickerOption(e, e.$2, detail: e.$1)],
       selected: entities.where((e) => e.$1 == current).firstOrNull,
     );
   }
 
-  Future<void> _edit(
-    BuildContext context,
-    ScreensaverWidget? existing,
-  ) async {
+  Future<void> _edit(BuildContext context, ScreensaverWidget? existing) async {
     final others = [
       for (final w in _widgets())
         if (w.position != existing?.position) w,
@@ -2864,9 +2865,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     };
     // The weather location override; a controller so edits survive the
     // dialog's rebuilds.
-    final labelCtrl = TextEditingController(
-      text: '${config['label'] ?? ''}',
-    );
+    final labelCtrl = TextEditingController(text: '${config['label'] ?? ''}');
 
     final submitted = await showDialog<bool>(
       context: context,
@@ -3014,8 +3013,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                         controller: labelCtrl,
                         decoration: const InputDecoration(
                           labelText: 'Location name',
-                          helperText:
-                              'Leave empty to hide the location line.',
+                          helperText: 'Leave empty to hide the location line.',
                         ),
                         onChanged: (v) => config['label'] = v.trim(),
                       ),
@@ -3079,10 +3077,9 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
             trailing: IconButton(
               icon: const Icon(Icons.delete_outline),
               tooltip: 'Remove widget',
-              onPressed: () =>
-                  _save([...widgets]..removeWhere(
-                      (x) => x.position == w.position,
-                    )),
+              onPressed: () => _save(
+                [...widgets]..removeWhere((x) => x.position == w.position),
+              ),
             ),
             onTap: () => _edit(context, w),
           ),
@@ -3420,7 +3417,8 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
               TextSpan(
                 children: [
                   TextSpan(
-                    text: '${device['identity'] ?? 'Unknown device'}'
+                    text:
+                        '${device['identity'] ?? 'Unknown device'}'
                         '${device['rotating'] == true ? '  (rotating address)' : ''}',
                   ),
                   // The devices this kiosk is actively serving a Home
@@ -3441,10 +3439,7 @@ class _BtNearbyDevicesRowState extends State<_BtNearbyDevicesRow> {
                         ),
                         child: const Text(
                           'Connected',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11.5,
-                          ),
+                          style: TextStyle(color: Colors.white, fontSize: 11.5),
                         ),
                       ),
                     ),
@@ -3870,7 +3865,8 @@ class _OptimizationsCardState extends State<_OptimizationsCard> {
     // Something on the page subscribed to every entity change on its own.
     // Those updates never pass through this filter, and a stream that big is
     // what gets a tablet dropped by Home Assistant for falling behind.
-    _rawFirehose = decoded is Map && (decoded['stateChangedSubs'] as num? ?? 0) > 0;
+    _rawFirehose =
+        decoded is Map && (decoded['stateChangedSubs'] as num? ?? 0) > 0;
     if (decoded is! Map || decoded['mode'] == null) {
       setState(() {
         _ready = false;
@@ -4784,236 +4780,6 @@ class _MicChannelTileState extends State<MicChannelTile> {
   }
 }
 
-/// Read-only status of the wake-word config inherited from Voice Satellite:
-/// the active engine, the wake word(s), and whether native inference is
-/// running. Updates live as the VS card pushes config / state changes.
-class WakeWordStatusTile extends StatefulWidget {
-  const WakeWordStatusTile({super.key, required this.container});
-
-  final AppContainer container;
-
-  @override
-  State<WakeWordStatusTile> createState() => _WakeWordStatusTileState();
-}
-
-class _WakeWordStatusTileState extends State<WakeWordStatusTile> {
-  StreamSubscription<WakeWordStateChanged>? _sub;
-
-  @override
-  void initState() {
-    super.initState();
-    _sub = widget.container.bus.on<WakeWordStateChanged>().listen(
-      (_) => setState(() {}),
-    );
-  }
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final wake = widget.container.wakeWord;
-    final config = wake.config;
-    final status = wake.status;
-
-    // Before the card has pushed a config there is nothing to show but the
-    // status itself. The wording is the manager's, so the web admin says it
-    // word for word (see WakeWordManager.status).
-    if (config == null || !wake.enabled) {
-      return ListTile(
-        leading: Icon(
-          status.code == 'disabled'
-              ? Icons.mic_off_outlined
-              : Icons.hourglass_empty,
-        ),
-        title: Text(
-          status.code == 'disabled'
-              ? 'Wake word detection is off'
-              : 'Waiting for Voice Satellite',
-        ),
-        subtitle: Text(status.label),
-      );
-    }
-
-    final statusColor = wake.available
-        ? (wake.listening
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurface)
-        : theme.colorScheme.error;
-
-    // Every row the same shape: label on the left, value on the right. These
-    // are the same rows the remote admin lists, in the same order, because they
-    // describe the same device — see loadWakeWord() in
-    // assets/remote-ui/index.html.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: separatedRows([
-        ListTile(
-          leading: Icon(
-            wake.available
-                ? (wake.listening ? Icons.mic : Icons.mic_none)
-                : Icons.warning_amber_rounded,
-            color: statusColor,
-          ),
-          title: const Text('Status'),
-          subtitle: Text(
-            status.label,
-            style: theme.textTheme.bodyMedium?.copyWith(color: statusColor),
-          ),
-        ),
-        if (wake.canRetry) WakeWordRecoveryTile(container: widget.container),
-        // Everything below Status describes the kiosk running detection;
-        // while it does not (released: stopped, muted, or the engine select
-        // is Home Assistant/Disabled so the browser owns it) every one of
-        // those rows would be a lie. The status sentence carries the whole
-        // story then. Mirrored in the remote admin's loadWakeWord().
-        if (!wake.released) ...[
-          ListTile(
-            leading: const Icon(Icons.graphic_eq),
-            title: const Text('Engine'),
-            subtitle: const Text('Running in Kiosk'),
-            trailing: Text(
-              config.engine.label,
-              style: theme.textTheme.titleMedium,
-            ),
-          ),
-          if (config.models.isNotEmpty)
-            ListTile(
-              leading: const Icon(Icons.record_voice_over),
-              title: const Text('Wake words'),
-              subtitle: const Text('Running in Kiosk'),
-              trailing: _rowValue(
-                context,
-                config.models.map((m) => m.wakeWord).join(', '),
-              ),
-            ),
-          if (config.stopModel != null)
-            ListTile(
-              leading: const Icon(Icons.front_hand_outlined),
-              title: const Text('Stop word'),
-              subtitle: Text(
-                wake.stopWordAvailable
-                    ? 'Running in Kiosk'
-                    : 'Voice Satellite keeps this one in the browser',
-              ),
-              trailing: _rowValue(context, config.stopModel!.wakeWord),
-            ),
-          if (wake.modelPrecision != null)
-            ListTile(
-              leading: const Icon(Icons.memory),
-              title: const Text('Model precision'),
-              subtitle: Text(switch (wake.modelPrecision) {
-                'int8' => 'Quantized for faster listening',
-                'fp32' => 'Original full-precision models',
-                _ => 'Some models fell back to fp32',
-              }),
-              trailing: _rowValue(context, wake.modelPrecision!),
-            ),
-          ListTile(
-            leading: const Icon(Icons.sync_alt),
-            title: const Text('Native voice pipeline'),
-            subtitle: Text(
-              wake.nativePipelineSupported
-                  ? 'Voice audio flows through the app during turns'
-                  : 'This Voice Satellite version runs voice audio in the '
-                      'browser',
-            ),
-            trailing: _rowValue(
-              context,
-              wake.nativePipelineSupported ? 'Supported' : 'Not supported',
-            ),
-          ),
-          ClearModelCacheTile(container: widget.container),
-        ],
-      ]),
-    );
-  }
-}
-
-/// A row's value, right-aligned. Bounded because a ListTile's trailing sits in
-/// an unconstrained Row: two wake words are wider than they look.
-Widget _rowValue(BuildContext context, String text) => ConstrainedBox(
-  constraints: const BoxConstraints(maxWidth: 280),
-  child: Text(
-    text,
-    textAlign: TextAlign.end,
-    overflow: TextOverflow.ellipsis,
-    style: Theme.of(context).textTheme.bodyLarge,
-  ),
-);
-
-/// The way out of a failed engine.
-///
-/// Mirrored by the web admin, which offers the same two actions from the same
-/// state (`canRetry` / `needsAppSettings`). A blocked microphone is the reason
-/// this exists: Android stops asking after the second refusal, the browser
-/// fallback needs the same permission and goes quiet too, and without an offer
-/// to open the OS settings a single stray tap disables wake words for good on a
-/// device whose owner may never see a system UI again.
-class WakeWordRecoveryTile extends StatefulWidget {
-  const WakeWordRecoveryTile({super.key, required this.container});
-
-  final AppContainer container;
-
-  @override
-  State<WakeWordRecoveryTile> createState() => _WakeWordRecoveryTileState();
-}
-
-class _WakeWordRecoveryTileState extends State<WakeWordRecoveryTile> {
-  bool _busy = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final wake = widget.container.wakeWord;
-    final settingsFirst = wake.needsAppSettings;
-
-    // What went wrong is the Status row's job, right above this. This row is
-    // what to do about it — same split as the remote admin's Recover row.
-    return ListTile(
-      leading: const Icon(Icons.build_outlined),
-      title: const Text('Recover'),
-      subtitle: Text(
-        settingsFirst
-            ? 'Allow the microphone in the app settings, then retry.'
-            : 'Try starting the engine again.',
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (settingsFirst)
-            TextButton(
-              onPressed: _busy
-                  ? null
-                  : () => widget.container.commands.execute(
-                      'openAppSettings',
-                      const {},
-                    ),
-              child: const Text('App settings'),
-            ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: _busy
-                ? null
-                : () async {
-                    setState(() => _busy = true);
-                    await widget.container.commands.execute(
-                      'retryWakeWord',
-                      const {},
-                    );
-                    if (mounted) setState(() => _busy = false);
-                  },
-            child: Text(_busy ? 'Retrying…' : 'Retry'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Every OS grant the app can use, in one list, on the Device page (issue
 /// #156).
 ///
@@ -5208,9 +4974,9 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missing: perms?.bluetoothPair == false
               ? 'The Bluetooth proxy is switched on and cannot scan.'
               : perms?.location == false
-                  ? 'Bluetooth scanning needs the Location permission.'
-                  : 'Location is off in the device settings, so Bluetooth '
-                      'scanning finds nothing.',
+              ? 'Bluetooth scanning needs the Location permission.'
+              : 'Location is off in the device settings, so Bluetooth '
+                    'scanning finds nothing.',
           idle: 'Needed by the Bluetooth proxy to scan for devices.',
           // On 12+ that is the "Nearby devices" pair; below it is the
           // location permission (and the location switch), the gate scan
@@ -5317,7 +5083,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           needed: false,
           missingIcon: Icons.apps_outage,
           title: 'Usage access',
-          held: 'The Foreground app sensor can name whichever app is on '
+          held:
+              'The Foreground app sensor can name whichever app is on '
               'screen.',
           missing: '',
           idle:
@@ -5335,9 +5102,11 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           missingIcon: Icons.location_off_outlined,
           title: 'Location',
           held: 'Pages and Bluetooth scanning can use the device location.',
-          missing: 'Android will not deliver Bluetooth scan results '
+          missing:
+              'Android will not deliver Bluetooth scan results '
               'without Location. The app never reads the device position.',
-          idle: 'Used by pages that ask for your location, and needed by '
+          idle:
+              'Used by pages that ask for your location, and needed by '
               'Bluetooth scanning.',
           onGrant: () => ensureOsPermission(Permission.locationWhenInUse),
         ),
@@ -5520,8 +5289,10 @@ class _BtSlotsHintRowState extends State<_BtSlotsHintRow> {
     // One quiet retry: a settings flip restarts the proxy (debounced), and
     // the first read can race the bounce.
     for (var attempt = 0; attempt < 2; attempt++) {
-      final result =
-          await widget.container.commands.execute('btProxyStatus', const {});
+      final result = await widget.container.commands.execute(
+        'btProxyStatus',
+        const {},
+      );
       final slots = result.ok && result.data is Map
           ? ((result.data as Map)['connectionSlots'] as num?)?.toInt() ?? 0
           : 0;
@@ -5536,8 +5307,7 @@ class _BtSlotsHintRowState extends State<_BtSlotsHintRow> {
 
   @override
   Widget build(BuildContext context) {
-    if (_slots <= 0 ||
-        !widget.container.settings.get(btproxyConnections)) {
+    if (_slots <= 0 || !widget.container.settings.get(btproxyConnections)) {
       return const SizedBox.shrink();
     }
     return HintRow(
@@ -5567,7 +5337,11 @@ class _RealMacStatusRowState extends State<_RealMacStatusRow> {
   void initState() {
     super.initState();
     adoptedWifiMac(widget.container.settings).then((mac) {
-      if (mounted) setState(() { _mac = mac; _resolved = true; });
+      if (mounted)
+        setState(() {
+          _mac = mac;
+          _resolved = true;
+        });
     });
   }
 
@@ -5677,19 +5451,17 @@ class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
         _row(
           granted: _bluetooth == null
               ? null
-              : perms != null &&
-                  perms.location &&
-                  perms.locationServicesOn,
+              : perms != null && perms.location && perms.locationServicesOn,
           missingIcon: Icons.location_off_outlined,
           title: 'Location',
           subtitle: perms == null || !perms.location
               ? 'Android only delivers Bluetooth scan results, beacons '
-                  'included, with Location granted. The app never reads '
-                  'the device position.'
+                    'included, with Location granted. The app never reads '
+                    'the device position.'
               : !perms.locationServicesOn
-                  ? 'Location is off in the device settings, so Bluetooth '
-                      'scanning finds nothing.'
-                  : 'Bluetooth scanning can hear beacons.',
+              ? 'Location is off in the device settings, so Bluetooth '
+                    'scanning finds nothing.'
+              : 'Bluetooth scanning can hear beacons.',
         ),
       ],
     );
@@ -6736,9 +6508,7 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         engine['canStart'] == true && '${_data?['satellite'] ?? ''}'.isNotEmpty;
     return ListTile(
       title: const Text('Engine'),
-      subtitle: const Text(
-        'Start or Stop the Voice Satellite engine.',
-      ),
+      subtitle: const Text('Start or Stop the Voice Satellite engine.'),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -6950,18 +6720,12 @@ class _VsControlsSectionState extends State<VsControlsSection> {
       if (browser != null)
         SwitchListTile(
           title: const Text('Auto start'),
-          subtitle: const Text(
-            'Auto start Voice Satellite on dashboard load.',
-          ),
+          subtitle: const Text('Auto start Voice Satellite on dashboard load.'),
           value: browser['auto_start'] != false,
           onChanged: (v) => _applyBrowser({'auto_start': v}),
         ),
       ?widget.backgroundTile,
-      ?_entitySwitchRow(
-        'mute',
-        'Mute',
-        'Stop listening for wake words.',
-      ),
+      ?_entitySwitchRow('mute', 'Mute', 'Stop listening for wake words.'),
       ?_entityRow(
         'pipeline',
         'Assist pipeline 1',
@@ -6978,6 +6742,17 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         'How long a pause ends a voice command.',
         capitalize: true,
       ),
+      // Only offered once the settings hook reports the key: an older
+      // Voice Satellite silently drops writes it does not know.
+      if (browser != null && browser.containsKey('debug'))
+        SwitchListTile(
+          title: const Text('Debug logging'),
+          subtitle: const Text(
+            'Show Voice Satellite debug info in the browser console.',
+          ),
+          value: browser['debug'] == true,
+          onChanged: (v) => _applyBrowser({'debug': v}),
+        ),
       if ('${_data?['version'] ?? ''}'.isNotEmpty)
         ListTile(
           title: const Text('Voice Satellite version'),
@@ -7042,8 +6817,8 @@ class _VsControlsSectionState extends State<VsControlsSection> {
           description: 'The look of the voice assistant overlay.',
           value: '${browser['skin'] ?? 'default'}',
           options: [
-            for (final s in ((_data?['browser'] as Map?)?['skins'] as List? ??
-                const []))
+            for (final s
+                in ((_data?['browser'] as Map?)?['skins'] as List? ?? const []))
               if (s is Map) ('${s['value']}', '${s['label']}'),
           ],
           onChanged: (v) {
@@ -7054,8 +6829,11 @@ class _VsControlsSectionState extends State<VsControlsSection> {
           title: 'Theme mode',
           description: 'Light or dark rendering of the overlay.',
           value: '${browser['theme_mode'] ?? 'auto'}',
-          options: const [('auto', 'Auto'), ('light', 'Light'),
-              ('dark', 'Dark')],
+          options: const [
+            ('auto', 'Auto'),
+            ('light', 'Light'),
+            ('dark', 'Dark'),
+          ],
           onChanged: (v) {
             if (v != null) _applyBrowser({'theme_mode': v});
           },
@@ -7095,9 +6873,10 @@ class _VsControlsSectionState extends State<VsControlsSection> {
           max: 200,
           step: 5,
           unit: '%',
-          value: ((browser['text_scale'] as num?) ?? 100)
-              .toDouble()
-              .clamp(50, 200),
+          value: ((browser['text_scale'] as num?) ?? 100).toDouble().clamp(
+            50,
+            200,
+          ),
           onChanged: (v) => _applyBrowser({'text_scale': v.round()}),
         ),
       ],
