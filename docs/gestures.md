@@ -64,6 +64,7 @@ The chooser groups them: Kiosk Satellite, Android, Home Assistant.
 | Show the Sendspin player | The floating player card; a fling on the card is how it hides. |
 | Start the screensaver | Whatever mode is configured. |
 | Stop the screensaver | Redundant for touch (any tap dismisses), made for claps: the screen comes back from across the room. |
+| Toggle hold mode | Pins the current view (screensaver, dashboard rotation and the return to home timer pause); the same gesture again releases it. Works well as a clap mapping while cooking from a recipe. |
 | Open another app | By package name, kiosk still running behind it. |
 | Open a deep link | Any URI another app claims, `myapp://path`. |
 | Open Android Settings | |

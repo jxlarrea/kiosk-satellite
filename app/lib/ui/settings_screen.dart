@@ -1968,6 +1968,10 @@ class _CategoryContentState extends State<_CategoryContent> {
               // gated on.
               def.key != haReturnHomeEnabled.key &&
               def.key != haReturnHomeSeconds.key &&
+              // Hold mode sits between the return-home group and the
+              // Optimizations, in idle-behavior company (issue #266).
+              def.key != haHoldMode.key &&
+              def.key != haHoldReleaseMinutes.key &&
               // Optimizations are hand-built last so the filter can show live
               // telemetry beneath its toggle.
               def.key != disableSuspend.key &&
@@ -2003,6 +2007,13 @@ class _CategoryContentState extends State<_CategoryContent> {
             haReturnHomeEnabled.key: HintRow(_returnHomeTargetHint(container)),
         },
       ),
+      // Hold mode (issue #266): the toggle is the live state, so this
+      // card doubles as the on-device release for a hold engaged from
+      // anywhere else.
+      ..._sectionedCards(container, [
+        haHoldMode,
+        haHoldReleaseMinutes,
+      ], () => setState(() {})),
       const SectionHeading('Optimizations'),
       _OptimizationsCard(container: container),
     ];
@@ -5637,6 +5648,17 @@ class _SliderTileState extends State<_SliderTile> {
     if (def.unit == '%') {
       // max <= 1 marks a 0..1 fraction stored, percentage shown.
       return '${(def.max! <= 1 ? v * 100 : v).round()}%';
+    }
+    // Hold mode's auto-release reads as a clock, not a raw minute count:
+    // 0 is "Never" (the description carries the meaning; a bare "0" did
+    // not) and 90 is "1 h 30 min". Wording mirrored in the remote admin.
+    if (def.key == haHoldReleaseMinutes.key) {
+      final minutes = v.round();
+      if (minutes <= 0) return 'Never';
+      final h = minutes ~/ 60;
+      final m = minutes % 60;
+      if (h == 0) return '$m min';
+      return m == 0 ? '$h h' : '$h h $m min';
     }
     final text = v == v.roundToDouble()
         ? v.toInt().toString()

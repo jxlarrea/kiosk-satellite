@@ -65,8 +65,8 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// Builds the protocol links. Swapped in tests; production always hands
   /// back the real ones.
   @visibleForTesting
-  MqttLink Function({required bool legacy}) linkFactory =
-      ({required legacy}) => legacy ? Mqtt311Link() : Mqtt5Link();
+  MqttLink Function({required bool legacy}) linkFactory = ({required legacy}) =>
+      legacy ? Mqtt311Link() : Mqtt5Link();
 
   /// The connect flow, for the protocol-ladder tests.
   @visibleForTesting
@@ -161,8 +161,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// The Last interaction sensor's stamp (issue #241). Retained on the
   /// broker, so the value survives app restarts the way the other
   /// retained states do.
-  late final _interaction = InteractionStamp((stamp) =>
-      _publish('$_base/last_interaction/state', stamp.toIso8601String()));
+  late final _interaction = InteractionStamp(
+    (stamp) =>
+        _publish('$_base/last_interaction/state', stamp.toIso8601String()),
+  );
 
   String get _base => 'kiosksatellite/$_deviceId';
   String get _availabilityTopic => '$_base/availability';
@@ -183,41 +185,58 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // that happen entirely behind other apps.
     _subs.add(bus.on<AppLaunched>().listen((_) => _nudgeForegroundApp()));
     if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
-    _subs.add(bus.on<ScreenStateChanged>().listen(
-        (e) => _publish('$_base/screen/state', e.on ? 'ON' : 'OFF')));
-    _subs.add(bus.on<BrightnessChanged>().listen((e) => _publish(
-        '$_base/brightness/state',
-        (e.level.clamp(0.0, 1.0) * 255).round().toString())));
-    _subs.add(bus.on<PageChanged>().listen((e) {
-      _publish('$_base/url/state', e.url);
-      _publishDashboardViewState(e.url);
-      // A full load means HA may have just come up (login, reload): a good
-      // moment to learn the view list. Slightly deferred so the frontend
-      // has a hass to answer with.
-      Timer(const Duration(seconds: 5), () {
-        if (_connected) unawaited(_refreshDashboardViews());
-      });
-    }));
+    _subs.add(
+      bus.on<ScreenStateChanged>().listen(
+        (e) => _publish('$_base/screen/state', e.on ? 'ON' : 'OFF'),
+      ),
+    );
+    _subs.add(
+      bus.on<BrightnessChanged>().listen(
+        (e) => _publish(
+          '$_base/brightness/state',
+          (e.level.clamp(0.0, 1.0) * 255).round().toString(),
+        ),
+      ),
+    );
+    _subs.add(
+      bus.on<PageChanged>().listen((e) {
+        _publish('$_base/url/state', e.url);
+        _publishDashboardViewState(e.url);
+        // A full load means HA may have just come up (login, reload): a good
+        // moment to learn the view list. Slightly deferred so the frontend
+        // has a hass to answer with.
+        Timer(const Duration(seconds: 5), () {
+          if (_connected) unawaited(_refreshDashboardViews());
+        });
+      }),
+    );
     // SPA navigations (view switches) never hit PageChanged; this keeps
     // the url sensor and the dashboard view select honest between loads.
-    _subs.add(bus.on<UrlChanged>().listen((e) {
-      _publish('$_base/url/state', e.url);
-      _publishDashboardViewState(e.url);
-    }));
-    _subs.add(bus.on<ScreensaverStateChanged>().listen((e) {
-      _screensaverActive = e.active;
-      _publish('$_base/screensaver_active/state', e.active ? 'ON' : 'OFF');
-    }));
+    _subs.add(
+      bus.on<UrlChanged>().listen((e) {
+        _publish('$_base/url/state', e.url);
+        _publishDashboardViewState(e.url);
+      }),
+    );
+    _subs.add(
+      bus.on<ScreensaverStateChanged>().listen((e) {
+        _screensaverActive = e.active;
+        _publish('$_base/screensaver_active/state', e.active ? 'ON' : 'OFF');
+      }),
+    );
     // Covers every path the volume moves: an MQTT command, the hardware
     // rocker, another app (the platform side broadcasts them all).
     _subs.add(bus.on<VolumeChanged>().listen((_) => _publishVolume()));
     // The updater already throttles progress to whole percents.
     _subs.add(
-        bus.on<UpdateStateChanged>().listen((_) => _publishUpdateState()));
-    _subs.add(bus.on<CameraConfigurationChanged>().listen((_) async {
-      await _refreshCameraViews();
-      if (_connected) await _publishDiscovery();
-    }));
+      bus.on<UpdateStateChanged>().listen((_) => _publishUpdateState()),
+    );
+    _subs.add(
+      bus.on<CameraConfigurationChanged>().listen((_) async {
+        await _refreshCameraViews();
+        if (_connected) await _publishDiscovery();
+      }),
+    );
     _subs.add(bus.on<CameraViewStateChanged>().listen(_publishCameraViewState));
     // Every capture the device camera manager makes (interval, the HA
     // button, the remote admin) lands on the camera entity. Retained, so
@@ -225,69 +244,88 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // rides along: the camera entity's own state never moves (a still
     // camera is forever "idle"), so the Last snapshot sensor is how HA can
     // see, and automate on, frame freshness.
-    _subs.add(bus.on<CameraSnapshotTaken>().listen((e) {
-      _publishBytes('$_base/camera_snapshot/image', e.jpeg);
-      _publish('$_base/camera_snapshot/at',
-          DateTime.now().toUtc().toIso8601String());
-    }));
-    _subs.add(bus.on<MotionDetected>().listen((_) {
-      if (!_settings.get(defs.motionSensor)) return;
-      // Never retained: a retained ON replayed on an HA restart or broker
-      // reconnect would read as fresh motion and restart the off_delay.
-      // The OFF side is HA's job entirely (off_delay in the discovery
-      // config); the app only ever reports motion, not its absence.
-      _publish('$_base/motion/state', 'ON', retain: false);
-    }));
+    _subs.add(
+      bus.on<CameraSnapshotTaken>().listen((e) {
+        _publishBytes('$_base/camera_snapshot/image', e.jpeg);
+        _publish(
+          '$_base/camera_snapshot/at',
+          DateTime.now().toUtc().toIso8601String(),
+        );
+      }),
+    );
+    _subs.add(
+      bus.on<MotionDetected>().listen((_) {
+        if (!_settings.get(defs.motionSensor)) return;
+        // Never retained: a retained ON replayed on an HA restart or broker
+        // reconnect would read as fresh motion and restart the off_delay.
+        // The OFF side is HA's job entirely (off_delay in the discovery
+        // config); the app only ever reports motion, not its absence.
+        _publish('$_base/motion/state', 'ON', retain: false);
+      }),
+    );
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _publishNextAlarm()));
     // The network returned from an outage: if the initial connect had
     // failed and the retry timer is sitting out its backoff, go now.
     // A live-but-disconnected client is the package's business — its
     // auto-reconnect already retries every few seconds.
-    _subs.add(bus.on<NetworkStateChanged>().listen((e) {
-      if (e.up && _link == null && _retryTimer != null) _retryNow();
-      // Addresses change exactly at these transitions, and the minute poll
-      // would leave the IP sensors stale for up to a minute. Deferred a
-      // moment so DHCP has settled by the time we look.
-      if (_connected) {
-        Timer(const Duration(seconds: 3), () {
-          if (_connected) unawaited(_publishIpAddresses());
-        });
-      }
-    }));
-    _subs.add(bus.on<AmbientDisplayChanged>().listen(
-        (e) => _publishScreenAvailability(ambient: e.on)));
+    _subs.add(
+      bus.on<NetworkStateChanged>().listen((e) {
+        if (e.up && _link == null && _retryTimer != null) _retryNow();
+        // Addresses change exactly at these transitions, and the minute poll
+        // would leave the IP sensors stale for up to a minute. Deferred a
+        // moment so DHCP has settled by the time we look.
+        if (_connected) {
+          Timer(const Duration(seconds: 3), () {
+            if (_connected) unawaited(_publishIpAddresses());
+          });
+        }
+      }),
+    );
+    _subs.add(
+      bus.on<AmbientDisplayChanged>().listen(
+        (e) => _publishScreenAvailability(ambient: e.on),
+      ),
+    );
     // Charging flips push immediately; the minute poll left the entity
     // trailing the cable by up to a minute (issue #205).
-    _subs.add(bus.on<PowerChanged>().listen((e) {
-      if (e.charging == _lastCharging) return;
-      _lastCharging = e.charging;
-      _publish('$_base/charging/state', e.charging ? 'ON' : 'OFF');
-    }));
+    _subs.add(
+      bus.on<PowerChanged>().listen((e) {
+        if (e.charging == _lastCharging) return;
+        _lastCharging = e.charging;
+        _publish('$_base/charging/state', e.charging ? 'ON' : 'OFF');
+      }),
+    );
     // The native side damps flicker; this only guards the recorder's disk:
     // at most one publish per 15s, unless the level swung hard (lights on).
-    _subs.add(bus.on<LightLevelChanged>().listen((e) {
-      if (!_lightSensorPresent) return;
-      final last = _lastLuxPublished;
-      final delta = last == null ? double.infinity : (e.lux - last).abs();
-      final elapsed = DateTime.now().difference(_lastLuxPublishedAt);
-      if (elapsed.inSeconds < 15 && delta < 50 && delta < (last ?? 0) * 0.5) {
-        return;
-      }
-      _lastLuxPublished = e.lux;
-      _lastLuxPublishedAt = DateTime.now();
-      _publish('$_base/illuminance/state', e.lux.round().toString());
-    }));
+    _subs.add(
+      bus.on<LightLevelChanged>().listen((e) {
+        if (!_lightSensorPresent) return;
+        final last = _lastLuxPublished;
+        final delta = last == null ? double.infinity : (e.lux - last).abs();
+        final elapsed = DateTime.now().difference(_lastLuxPublishedAt);
+        if (elapsed.inSeconds < 15 && delta < 50 && delta < (last ?? 0) * 0.5) {
+          return;
+        }
+        _lastLuxPublished = e.lux;
+        _lastLuxPublishedAt = DateTime.now();
+        _publish('$_base/illuminance/state', e.lux.round().toString());
+      }),
+    );
     // Touches and spoken turns stamp the Last interaction sensor (issue
     // #241), so automations can tell an idle kiosk from one in use. Motion
     // deliberately does not count: someone walking past is exactly what an
     // idle automation wants to keep ignoring.
-    _subs.add(bus.on<ActivityDetected>().listen((e) {
-      if (e.source == 'touch') _interaction.mark();
-    }));
+    _subs.add(
+      bus.on<ActivityDetected>().listen((e) {
+        if (e.source == 'touch') _interaction.mark();
+      }),
+    );
     _subs.add(bus.on<WakeWordDetected>().listen((_) => _interaction.mark()));
-    _subs.add(bus.on<VoiceInteractionChanged>().listen((e) {
-      if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
-    }));
+    _subs.add(
+      bus.on<VoiceInteractionChanged>().listen((e) {
+        if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
+      }),
+    );
 
     await _refreshCameraViews();
     try {
@@ -341,8 +379,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       host: host,
       port: port,
       tls: _settings.get(defs.mqttTls),
-      clientId:
-          'kiosksatellite_probe_${DateTime.now().millisecondsSinceEpoch}',
+      clientId: 'kiosksatellite_probe_${DateTime.now().millisecondsSinceEpoch}',
       username: username.isEmpty ? null : username,
       password: password.isEmpty ? null : password,
       keepAliveSeconds: 10,
@@ -355,8 +392,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       error = await probe.connect(config);
       if (error == null) {
         probe.disconnect();
-        return CommandResult.ok(
-            {'connected': true, 'host': host, 'port': port});
+        return CommandResult.ok({
+          'connected': true,
+          'host': host,
+          'port': port,
+        });
       }
     }
     log.warn(name, 'validation against $host:$port failed: $error');
@@ -406,8 +446,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     if (key == _lastForeground) return;
     _lastForeground = key;
     _publish('$_base/foreground_app/state', key);
-    _publish('$_base/foreground_app/attributes',
-        jsonEncode({'label': pkg == null ? null : '${data['label'] ?? pkg}'}));
+    _publish(
+      '$_base/foreground_app/attributes',
+      jsonEncode({'label': pkg == null ? null : '${data['label'] ?? pkg}'}),
+    );
   }
 
   /// The Bluetooth proxy's nearby-device inventory (count as the state, the
@@ -425,7 +467,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     final payload = jsonEncode({'devices': devices});
     if (payload == _lastBtNearby) return;
     _lastBtNearby = payload;
-    _publish('$_base/btproxy_nearby/state', '${data['count'] ?? devices.length}');
+    _publish(
+      '$_base/btproxy_nearby/state',
+      '${data['count'] ?? devices.length}',
+    );
     _publish('$_base/btproxy_nearby/attributes', payload);
   }
 
@@ -434,56 +479,63 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// switch reads "anything but off" and writes auto/off, leaving a
   /// hand-picked plugin/css choice alone until someone actually flips it.
   Map<String, (bool Function(), Future<void> Function(bool))>
-      get _settingSwitches => {
-            'kiosk': (
-              () => _settings.get(defs.kioskEnabled),
-              (on) => _settings.set(defs.kioskEnabled, on),
-            ),
-            'lockdown': (
-              () => _settings.get(defs.lockdownEnabled),
-              (on) => _settings.set(defs.lockdownEnabled, on),
-            ),
-            'ha_kiosk': (
-              () => _settings.get(defs.haKioskMode),
-              (on) => _settings.set(defs.haKioskMode, on),
-            ),
-            'keep_screen_on': (
-              () => _settings.get(defs.keepScreenOn),
-              (on) => _settings.set(defs.keepScreenOn, on),
-            ),
-            'remote': (
-              () => _settings.get(defs.remoteEnabled),
-              (on) => _settings.set(defs.remoteEnabled, on),
-            ),
-            'screensaver_brightness': (
-              () => _settings.get(defs.screensaverBrightnessEnabled),
-              (on) => _settings.set(defs.screensaverBrightnessEnabled, on),
-            ),
-            // The master enable/disable, same as the Screensaver toggle in
-            // the settings UI (issue #152). Kept under the object id the
-            // start/stop switch used to hold, so existing automations that
-            // flip switch.*_screensaver now control the master toggle the
-            // way that entity always claimed to.
-            'screensaver': (
-              () => _settings.get(defs.screensaverEnabled),
-              (on) => _settings.set(defs.screensaverEnabled, on),
-            ),
-            // The camera master toggle (discussion #155): an automation
-            // with a wider motion sensor can keep the camera, and its 10%
-            // CPU cost, off until someone is near, then arm camera motion
-            // detection for the final approach.
-            'camera_enabled': (
-              () => _settings.get(defs.cameraEnabled),
-              (on) => _settings.set(defs.cameraEnabled, on),
-            ),
-            // Dismiss on motion, under the name the feature goes by. Rides
-            // the same automations as the camera switch above: arm the
-            // approach detection only while somebody could be approaching.
-            'screensaver_motion': (
-              () => _settings.get(defs.screensaverDismissOnMotion),
-              (on) => _settings.set(defs.screensaverDismissOnMotion, on),
-            ),
-          };
+  get _settingSwitches => {
+    'kiosk': (
+      () => _settings.get(defs.kioskEnabled),
+      (on) => _settings.set(defs.kioskEnabled, on),
+    ),
+    'lockdown': (
+      () => _settings.get(defs.lockdownEnabled),
+      (on) => _settings.set(defs.lockdownEnabled, on),
+    ),
+    'ha_kiosk': (
+      () => _settings.get(defs.haKioskMode),
+      (on) => _settings.set(defs.haKioskMode, on),
+    ),
+    'keep_screen_on': (
+      () => _settings.get(defs.keepScreenOn),
+      (on) => _settings.set(defs.keepScreenOn, on),
+    ),
+    'remote': (
+      () => _settings.get(defs.remoteEnabled),
+      (on) => _settings.set(defs.remoteEnabled, on),
+    ),
+    'screensaver_brightness': (
+      () => _settings.get(defs.screensaverBrightnessEnabled),
+      (on) => _settings.set(defs.screensaverBrightnessEnabled, on),
+    ),
+    // The master enable/disable, same as the Screensaver toggle in
+    // the settings UI (issue #152). Kept under the object id the
+    // start/stop switch used to hold, so existing automations that
+    // flip switch.*_screensaver now control the master toggle the
+    // way that entity always claimed to.
+    'screensaver': (
+      () => _settings.get(defs.screensaverEnabled),
+      (on) => _settings.set(defs.screensaverEnabled, on),
+    ),
+    // Hold mode (issue #266): pin the current view. The switch IS
+    // the setting, so an automation can say "hold for media
+    // playback" and see the state either way.
+    'hold_mode': (
+      () => _settings.get(defs.haHoldMode),
+      (on) => _settings.set(defs.haHoldMode, on),
+    ),
+    // The camera master toggle (discussion #155): an automation
+    // with a wider motion sensor can keep the camera, and its 10%
+    // CPU cost, off until someone is near, then arm camera motion
+    // detection for the final approach.
+    'camera_enabled': (
+      () => _settings.get(defs.cameraEnabled),
+      (on) => _settings.set(defs.cameraEnabled, on),
+    ),
+    // Dismiss on motion, under the name the feature goes by. Rides
+    // the same automations as the camera switch above: arm the
+    // approach detection only while somebody could be approaching.
+    'screensaver_motion': (
+      () => _settings.get(defs.screensaverDismissOnMotion),
+      (on) => _settings.set(defs.screensaverDismissOnMotion, on),
+    ),
+  };
 
   static const _switchSettingKeys = [
     'kiosk.enabled',
@@ -493,6 +545,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     'remote.enabled',
     'screensaver.brightness_enabled',
     'screensaver.enabled',
+    'ha.hold_mode',
     'camera.enabled',
     'screensaver.dismiss_on_motion',
   ];
@@ -503,24 +556,26 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// so the stored vocabulary never leaks into the HA UI.
   static const _settingSelects =
       <String, (defs.SettingDef<String>, String, String)>{
-    'screensaver_mode': (
-      defs.screensaverMode,
-      'Screensaver mode',
-      'mdi:monitor-shimmer',
-    ),
-    'screensaver_clock_style': (
-      defs.screensaverClockStyle,
-      'Clock style',
-      'mdi:clock-digital',
-    ),
-  };
+        'screensaver_mode': (
+          defs.screensaverMode,
+          'Screensaver mode',
+          'mdi:monitor-shimmer',
+        ),
+        'screensaver_clock_style': (
+          defs.screensaverClockStyle,
+          'Clock style',
+          'mdi:clock-digital',
+        ),
+      };
 
   bool _isSelectSettingKey(String key) =>
       _settingSelects.values.any((s) => s.$1.key == key);
 
   void _publishSettingSwitchStates() {
-    _settingSwitches.forEach((objectId, actions) =>
-        _publish('$_base/$objectId/state', actions.$1() ? 'ON' : 'OFF'));
+    _settingSwitches.forEach(
+      (objectId, actions) =>
+          _publish('$_base/$objectId/state', actions.$1() ? 'ON' : 'OFF'),
+    );
   }
 
   /// The camera master toggle flipped (any surface: device UI, remote
@@ -528,8 +583,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   void _syncCameraEntities(Object? enabled) {
     if (!_connected) return;
     if (enabled == true && _cameraPresent) {
-      unawaited(_publishDiscovery()
-          .then((_) => commands.execute('takeCameraSnapshot', const {})));
+      unawaited(
+        _publishDiscovery().then(
+          (_) => commands.execute('takeCameraSnapshot', const {}),
+        ),
+      );
     } else if (enabled == true) {
       // Enabled on a camera-less device: nothing to publish.
       return;
@@ -559,26 +617,34 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// pass-through of the setting: whatever picked the photo (the device
   /// picker, an MQTT write), the HA text box shows the same path.
   void _publishClockBackground() {
-    _publish('$_base/clock_background/state',
-        _settings.get(defs.screensaverClockBackground));
+    _publish(
+      '$_base/clock_background/state',
+      _settings.get(defs.screensaverClockBackground),
+    );
   }
 
   void _publishScreensaverBrightnessLevel() {
     final level = _settings.get(defs.screensaverBrightnessLevel).toDouble();
-    _publish('$_base/screensaver_brightness_level/state',
-        (level.clamp(0.0, 1.0) * 100).round().toString());
+    _publish(
+      '$_base/screensaver_brightness_level/state',
+      (level.clamp(0.0, 1.0) * 100).round().toString(),
+    );
   }
 
   void _publishAssistantVolume() {
     final pct = _settings.get(defs.assistantVolume).toDouble();
-    _publish('$_base/assistant_volume/state',
-        pct.clamp(0.0, 100.0).round().toString());
+    _publish(
+      '$_base/assistant_volume/state',
+      pct.clamp(0.0, 100.0).round().toString(),
+    );
   }
 
   void _publishMediaVolume() {
     final pct = _settings.get(defs.mediaVolume).toDouble();
     _publish(
-        '$_base/media_volume/state', pct.clamp(0.0, 100.0).round().toString());
+      '$_base/media_volume/state',
+      pct.clamp(0.0, 100.0).round().toString(),
+    );
   }
 
   /// The remote admin's address as a sensor, so a dashboard can deep-link
@@ -705,8 +771,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     _reconnectDebounce?.cancel();
     _reconnectDebounce = Timer(const Duration(seconds: 1), () {
       _transition = _transition.then((_) async {
-        await _disconnect(
-            clearDiscovery: !_settings.get(defs.mqttEnabled));
+        await _disconnect(clearDiscovery: !_settings.get(defs.mqttEnabled));
         if (_settings.get(defs.mqttEnabled)) await _connect();
       });
     });
@@ -733,8 +798,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     _deviceId = _settings.get(defs.mqttDeviceId);
     if (_deviceId.isEmpty) {
       final rng = Random.secure();
-      _deviceId = List.generate(8, (_) => rng.nextInt(16).toRadixString(16))
-          .join();
+      _deviceId = List.generate(
+        8,
+        (_) => rng.nextInt(16).toRadixString(16),
+      ).join();
       await _settings.set(defs.mqttDeviceId, _deviceId);
     }
     final port = _settings.get(defs.mqttPort).toInt();
@@ -809,9 +876,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // auto-reconnects on purpose — the radio matters most exactly while
     // the session struggles. Best-effort: off Android there is nothing
     // to hold.
-    unawaited(_background
-        .invokeMethod('setWifiLockHeld', {'held': true})
-        .catchError((_) {}));
+    unawaited(
+      _background
+          .invokeMethod('setWifiLockHeld', {'held': true})
+          .catchError((_) {}),
+    );
 
     _updatesSub = link.messages.listen((m) => _onMessage([m]));
     for (final topic in [
@@ -957,7 +1026,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     unawaited(_refreshDashboardViews());
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(
-        const Duration(seconds: 60), (_) => _pollStats());
+      const Duration(seconds: 60),
+      (_) => _pollStats(),
+    );
     await _pollStats();
   }
 
@@ -984,18 +1055,22 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       // goodbye moment. A hard death (power cut, crash) cannot stamp
       // this, so there Last seen keeps the connect-time state and the
       // drop shows as the availability transition instead.
-      link.publishString('$_base/last_seen/state',
-          DateTime.now().toUtc().toIso8601String(),
-          retain: true);
+      link.publishString(
+        '$_base/last_seen/state',
+        DateTime.now().toUtc().toIso8601String(),
+        retain: true,
+      );
       // A graceful disconnect never fires the will; say goodbye ourselves.
       link.publishString(_availabilityTopic, 'offline', retain: true);
     }
     link.disconnect();
     // The feature is off (or the manager is going down): let the radio
     // sleep again unless another holder still needs it.
-    unawaited(_background
-        .invokeMethod('setWifiLockHeld', {'held': false})
-        .catchError((_) {}));
+    unawaited(
+      _background
+          .invokeMethod('setWifiLockHeld', {'held': false})
+          .catchError((_) {}),
+    );
   }
 
   // ── Incoming commands ───────────────────────────────────────────────
@@ -1027,20 +1102,25 @@ class MqttManager extends Manager with WidgetsBindingObserver {
             // so the HA toggle snaps back instead of showing a lie.
             log.warn(name, 'screenOff over MQTT failed: ${result.error}');
             final on = await commands.execute('isScreenOn', const {});
-            _publish('$_base/screen/state',
-                on.ok && on.data == false ? 'OFF' : 'ON');
+            _publish(
+              '$_base/screen/state',
+              on.ok && on.data == false ? 'OFF' : 'ON',
+            );
           }
         }
       } else if (topic == '$_base/brightness/set') {
         log.info(name, 'command $topic = $text');
         final raw = int.tryParse(text);
         if (raw == null) continue;
-        await commands.execute(
-            'setBrightness', {'level': (raw.clamp(0, 255)) / 255});
+        await commands.execute('setBrightness', {
+          'level': (raw.clamp(0, 255)) / 255,
+        });
       } else if (topic == '$_base/screensaver_active/set') {
         log.info(name, 'command $topic = $text');
         await commands.execute(
-            text == 'ON' ? 'startScreensaver' : 'stopScreensaver', const {});
+          text == 'ON' ? 'startScreensaver' : 'stopScreensaver',
+          const {},
+        );
       } else if (topic == '$_base/postpone_screensaver/set') {
         // External activity (issue #129): an automation presses this off
         // any HA sensor — a door contact, a motion sensor across the room —
@@ -1100,7 +1180,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         final result = await commands.execute('showMusicAssistant', const {});
         if (!result.ok) {
           log.warn(
-              name, 'showMusicAssistant over MQTT failed: ${result.error}');
+            name,
+            'showMusicAssistant over MQTT failed: ${result.error}',
+          );
         }
       } else if (topic == '$_base/restart/set') {
         // The process dies mid-restart; the broker's will flips the device
@@ -1116,8 +1198,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         log.info(name, 'command $topic = $text');
         final percent = num.tryParse(text);
         if (percent == null) continue;
-        await _settings.set(defs.screensaverBrightnessLevel,
-            percent.clamp(0, 100) / 100);
+        await _settings.set(
+          defs.screensaverBrightnessLevel,
+          percent.clamp(0, 100) / 100,
+        );
       } else if (topic == '$_base/clock_background/set') {
         // A device-local file path, overwriting the photo picked on the
         // device (issue #150); empty clears the background. Not validated
@@ -1204,8 +1288,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         log.info(name, 'snapshot command');
         final result = await commands.execute('takeCameraSnapshot', const {});
         if (!result.ok) {
-          log.warn(name, 'takeCameraSnapshot over MQTT failed: '
-              '${result.error}');
+          log.warn(
+            name,
+            'takeCameraSnapshot over MQTT failed: '
+            '${result.error}',
+          );
         }
       } else if (topic == '$_base/screenshot/set') {
         log.info(name, 'screenshot command');
@@ -1216,13 +1303,16 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         // allocated (issue #168).
         final size = PlatformDispatcher.instance.implicitView?.physicalSize;
         final portrait = size != null && size.height > size.width;
-        final result = await commands
-            .execute('screenshot', {'width': portrait ? 1080 : 1920});
+        final result = await commands.execute('screenshot', {
+          'width': portrait ? 1080 : 1920,
+        });
         final jpeg = result.data;
         if (result.ok && jpeg is String) {
           _publishBytes('$_base/screenshot/image', base64Decode(jpeg));
-          _publish('$_base/screenshot/at',
-              DateTime.now().toUtc().toIso8601String());
+          _publish(
+            '$_base/screenshot/at',
+            DateTime.now().toUtc().toIso8601String(),
+          );
         } else {
           log.warn(name, 'screenshot over MQTT failed: ${result.error}');
         }
@@ -1285,9 +1375,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // covers the topic and the fixed header and properties around it.
     final max = link.brokerMaximumPacketSize;
     if (max != null && bytes.length + topic.length + 64 > max) {
-      log.warn(name, 'not publishing ${bytes.length} bytes to $topic: '
-          'the broker caps MQTT packets at $max bytes. Lower the camera '
-          'snapshot resolution or raise the broker limit.');
+      log.warn(
+        name,
+        'not publishing ${bytes.length} bytes to $topic: '
+        'the broker caps MQTT packets at $max bytes. Lower the camera '
+        'snapshot resolution or raise the broker limit.',
+      );
       return;
     }
     try {
@@ -1308,10 +1401,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       _publish('$_base/next_alarm/state', '${data['at']}');
       _publish(
         '$_base/next_alarm/attributes',
-        jsonEncode({
-          'local_time': data['local'],
-          'package': data['package'],
-        }),
+        jsonEncode({'local_time': data['local'], 'package': data['package']}),
       );
     } else {
       _publish('$_base/next_alarm/state', 'None');
@@ -1332,13 +1422,17 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // real event worth a row, and the graceful-goodbye stamp in
     // _disconnect covers "alive until" for everything but a hard death.
     _publish(
-        '$_base/last_seen/state', DateTime.now().toUtc().toIso8601String());
+      '$_base/last_seen/state',
+      DateTime.now().toUtc().toIso8601String(),
+    );
     // Interactions stamped while the link was down never left the device;
     // the freshest one this run has seen beats the broker's retained copy.
     final lastInteraction = _interaction.latest;
     if (lastInteraction != null) {
-      _publish('$_base/last_interaction/state',
-          lastInteraction.toIso8601String());
+      _publish(
+        '$_base/last_interaction/state',
+        lastInteraction.toIso8601String(),
+      );
     }
     final ambient = await commands.execute('getAmbientDisplay', const {});
     _publishScreenAvailability(ambient: ambient.ok && ambient.data == true);
@@ -1348,11 +1442,15 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     final brightness = await commands.execute('getBrightness', const {});
     final level = brightness.data;
     if (brightness.ok && level is num) {
-      _publish('$_base/brightness/state',
-          (level.clamp(0.0, 1.0) * 255).round().toString());
+      _publish(
+        '$_base/brightness/state',
+        (level.clamp(0.0, 1.0) * 255).round().toString(),
+      );
     }
     _publish(
-        '$_base/screensaver_active/state', _screensaverActive ? 'ON' : 'OFF');
+      '$_base/screensaver_active/state',
+      _screensaverActive ? 'ON' : 'OFF',
+    );
     _publishSettingSwitchStates();
     _publishSettingSelectStates();
     _publishClockBackground();
@@ -1393,11 +1491,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         : null;
     _publish('$_base/device_info/state', model);
     _publish(
-        '$_base/device_info/attributes',
-        jsonEncode({
-          'android_version': _deviceInfo['osVersion'],
-          'build': build,
-        }));
+      '$_base/device_info/attributes',
+      jsonEncode({'android_version': _deviceInfo['osVersion'], 'build': build}),
+    );
   }
 
   /// The IP address sensors (issue #213): the primary address as the state,
@@ -1413,8 +1509,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     _publishAddressFamily('ipv6_address', data['ipv6'], preferGlobal: true);
   }
 
-  void _publishAddressFamily(String objectId, Object? raw,
-      {required bool preferGlobal}) {
+  void _publishAddressFamily(
+    String objectId,
+    Object? raw, {
+    required bool preferGlobal,
+  }) {
     final byInterface = <String, List<String>>{
       if (raw is Map)
         for (final entry in raw.entries)
@@ -1485,22 +1584,23 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     final notes = (data['availableNotes'] as String? ?? '').trim();
     final progress = data['progress'] as num?;
     _publish(
-        '$_base/update/state',
-        jsonEncode({
-          'installed_version': current,
-          'latest_version': latest,
-          'title': 'Kiosk Satellite',
-          if (data['releaseUrl'] is String) 'release_url': data['releaseUrl'],
-          // HA renders the summary as markdown but caps the payload; the
-          // full notes stay one tap away behind the release link.
-          if (notes.isNotEmpty)
-            'release_summary': notes.length > 255
-                ? '${notes.substring(0, 252)}...'
-                : notes,
-          'in_progress': progress != null,
-          if (progress != null)
-            'update_percentage': (progress.clamp(0, 1) * 100).round(),
-        }));
+      '$_base/update/state',
+      jsonEncode({
+        'installed_version': current,
+        'latest_version': latest,
+        'title': 'Kiosk Satellite',
+        if (data['releaseUrl'] is String) 'release_url': data['releaseUrl'],
+        // HA renders the summary as markdown but caps the payload; the
+        // full notes stay one tap away behind the release link.
+        if (notes.isNotEmpty)
+          'release_summary': notes.length > 255
+              ? '${notes.substring(0, 252)}...'
+              : notes,
+        'in_progress': progress != null,
+        if (progress != null)
+          'update_percentage': (progress.clamp(0, 1) * 100).round(),
+      }),
+    );
   }
 
   /// Minute ticks since the last dashboard view refresh; every fifth poll
@@ -1532,10 +1632,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       }
       final network = (uptime['network'] as num?)?.toInt();
       _publishAnchor(
-          'network_uptime',
-          network == null
-              ? null
-              : now.subtract(Duration(seconds: network)));
+        'network_uptime',
+        network == null ? null : now.subtract(Duration(seconds: network)),
+      );
     }
     final result = await commands.execute('getStats', const {});
     final data = result.data;
@@ -1590,79 +1689,79 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   // ── Discovery ───────────────────────────────────────────────────────
 
   List<String> _discoveryTopics() => [
-        '$_prefix/light/ks_$_deviceId/screen/config',
-        '$_prefix/sensor/ks_$_deviceId/battery/config',
-        '$_prefix/binary_sensor/ks_$_deviceId/charging/config',
-        '$_prefix/sensor/ks_$_deviceId/url/config',
-        '$_prefix/sensor/ks_$_deviceId/cpu/config',
-        '$_prefix/sensor/ks_$_deviceId/cpu_temp/config',
-        '$_prefix/sensor/ks_$_deviceId/ram_free/config',
-        '$_prefix/sensor/ks_$_deviceId/ram_total/config',
-        '$_prefix/sensor/ks_$_deviceId/last_seen/config',
-        '$_prefix/sensor/ks_$_deviceId/last_interaction/config',
-        '$_prefix/binary_sensor/ks_$_deviceId/connectivity/config',
-        '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
-        '$_prefix/sensor/ks_$_deviceId/btproxy_nearby/config',
-        '$_prefix/sensor/ks_$_deviceId/device_info/config',
-        '$_prefix/sensor/ks_$_deviceId/ipv4_address/config',
-        '$_prefix/sensor/ks_$_deviceId/ipv6_address/config',
-        '$_prefix/sensor/ks_$_deviceId/app_uptime/config',
-        '$_prefix/sensor/ks_$_deviceId/network_uptime/config',
-        '$_prefix/switch/ks_$_deviceId/screensaver_active/config',
-        '$_prefix/button/ks_$_deviceId/postpone_screensaver/config',
-        '$_prefix/button/ks_$_deviceId/reload/config',
-        '$_prefix/button/ks_$_deviceId/load_start_url/config',
-        '$_prefix/button/ks_$_deviceId/clear_cache/config',
-        '$_prefix/button/ks_$_deviceId/restart/config',
-        '$_prefix/button/ks_$_deviceId/bring_to_front/config',
-        '$_prefix/button/ks_$_deviceId/open_launcher/config',
-        '$_prefix/button/ks_$_deviceId/show_music_assistant/config',
-        '$_prefix/update/ks_$_deviceId/update/config',
-        // Always in the retraction list even though it is published
-        // conditionally: a config export moved to sensor-less hardware must
-        // still clean the entity up.
-        '$_prefix/sensor/ks_$_deviceId/illuminance/config',
-        // Conditional too (motion sensor toggle + camera enabled).
-        '$_prefix/binary_sensor/ks_$_deviceId/motion/config',
-        '$_prefix/select/ks_$_deviceId/dashboard_view/config',
-        '$_prefix/sensor/ks_$_deviceId/admin_url/config',
-        '$_prefix/text/ks_$_deviceId/clock_background/config',
-        '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
-        '$_prefix/number/ks_$_deviceId/assistant_volume/config',
-        '$_prefix/number/ks_$_deviceId/media_volume/config',
-        '$_prefix/sensor/ks_$_deviceId/active_camera_view/config',
-        '$_prefix/button/ks_$_deviceId/close_camera_view/config',
-        // Conditional like illuminance: published only with the camera
-        // enabled, always retracted so turning it off cleans up.
-        '$_prefix/camera/ks_$_deviceId/device_camera/config',
-        '$_prefix/button/ks_$_deviceId/take_snapshot/config',
-        '$_prefix/sensor/ks_$_deviceId/last_snapshot/config',
-        '$_prefix/camera/ks_$_deviceId/screenshot/config',
-        '$_prefix/button/ks_$_deviceId/take_screenshot/config',
-        '$_prefix/sensor/ks_$_deviceId/last_screenshot/config',
-        for (final id in {
-          ..._publishedCameraViewIds,
-          for (final view in _cameraViews) '${view['id']}',
-        })
-          '$_prefix/button/ks_$_deviceId/camera_view_$id/config',
-        for (final objectId in _settingSwitches.keys)
-          '$_prefix/switch/ks_$_deviceId/$objectId/config',
-        for (final objectId in _settingSelects.keys)
-          '$_prefix/select/ks_$_deviceId/$objectId/config',
-      ];
+    '$_prefix/light/ks_$_deviceId/screen/config',
+    '$_prefix/sensor/ks_$_deviceId/battery/config',
+    '$_prefix/binary_sensor/ks_$_deviceId/charging/config',
+    '$_prefix/sensor/ks_$_deviceId/url/config',
+    '$_prefix/sensor/ks_$_deviceId/cpu/config',
+    '$_prefix/sensor/ks_$_deviceId/cpu_temp/config',
+    '$_prefix/sensor/ks_$_deviceId/ram_free/config',
+    '$_prefix/sensor/ks_$_deviceId/ram_total/config',
+    '$_prefix/sensor/ks_$_deviceId/last_seen/config',
+    '$_prefix/sensor/ks_$_deviceId/last_interaction/config',
+    '$_prefix/binary_sensor/ks_$_deviceId/connectivity/config',
+    '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
+    '$_prefix/sensor/ks_$_deviceId/btproxy_nearby/config',
+    '$_prefix/sensor/ks_$_deviceId/device_info/config',
+    '$_prefix/sensor/ks_$_deviceId/ipv4_address/config',
+    '$_prefix/sensor/ks_$_deviceId/ipv6_address/config',
+    '$_prefix/sensor/ks_$_deviceId/app_uptime/config',
+    '$_prefix/sensor/ks_$_deviceId/network_uptime/config',
+    '$_prefix/switch/ks_$_deviceId/screensaver_active/config',
+    '$_prefix/button/ks_$_deviceId/postpone_screensaver/config',
+    '$_prefix/button/ks_$_deviceId/reload/config',
+    '$_prefix/button/ks_$_deviceId/load_start_url/config',
+    '$_prefix/button/ks_$_deviceId/clear_cache/config',
+    '$_prefix/button/ks_$_deviceId/restart/config',
+    '$_prefix/button/ks_$_deviceId/bring_to_front/config',
+    '$_prefix/button/ks_$_deviceId/open_launcher/config',
+    '$_prefix/button/ks_$_deviceId/show_music_assistant/config',
+    '$_prefix/update/ks_$_deviceId/update/config',
+    // Always in the retraction list even though it is published
+    // conditionally: a config export moved to sensor-less hardware must
+    // still clean the entity up.
+    '$_prefix/sensor/ks_$_deviceId/illuminance/config',
+    // Conditional too (motion sensor toggle + camera enabled).
+    '$_prefix/binary_sensor/ks_$_deviceId/motion/config',
+    '$_prefix/select/ks_$_deviceId/dashboard_view/config',
+    '$_prefix/sensor/ks_$_deviceId/admin_url/config',
+    '$_prefix/text/ks_$_deviceId/clock_background/config',
+    '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config',
+    '$_prefix/number/ks_$_deviceId/assistant_volume/config',
+    '$_prefix/number/ks_$_deviceId/media_volume/config',
+    '$_prefix/sensor/ks_$_deviceId/active_camera_view/config',
+    '$_prefix/button/ks_$_deviceId/close_camera_view/config',
+    // Conditional like illuminance: published only with the camera
+    // enabled, always retracted so turning it off cleans up.
+    '$_prefix/camera/ks_$_deviceId/device_camera/config',
+    '$_prefix/button/ks_$_deviceId/take_snapshot/config',
+    '$_prefix/sensor/ks_$_deviceId/last_snapshot/config',
+    '$_prefix/camera/ks_$_deviceId/screenshot/config',
+    '$_prefix/button/ks_$_deviceId/take_screenshot/config',
+    '$_prefix/sensor/ks_$_deviceId/last_screenshot/config',
+    for (final id in {
+      ..._publishedCameraViewIds,
+      for (final view in _cameraViews) '${view['id']}',
+    })
+      '$_prefix/button/ks_$_deviceId/camera_view_$id/config',
+    for (final objectId in _settingSwitches.keys)
+      '$_prefix/switch/ks_$_deviceId/$objectId/config',
+    for (final objectId in _settingSelects.keys)
+      '$_prefix/select/ks_$_deviceId/$objectId/config',
+  ];
 
   /// Config topics of entities that shipped in earlier builds under another
   /// component and moved since (the screensaver was a binary_sensor before
   /// it grew a command side). Retracted on every discovery publish so an
   /// upgraded device does not leave a dead twin behind in HA.
   List<String> _legacyDiscoveryTopics() => [
-        '$_prefix/binary_sensor/ks_$_deviceId/screensaver/config',
-        // HA kiosk mode had a strategy select next to its switch while the
-        // hiding could be delegated to the kiosk-mode resource. It is one
-        // switch now, so the dropdown has to go rather than linger as a
-        // dead entity.
-        '$_prefix/select/ks_$_deviceId/ha_kiosk_method/config',
-      ];
+    '$_prefix/binary_sensor/ks_$_deviceId/screensaver/config',
+    // HA kiosk mode had a strategy select next to its switch while the
+    // hiding could be delegated to the kiosk-mode resource. It is one
+    // switch now, so the dropdown has to go rather than linger as a
+    // dead entity.
+    '$_prefix/select/ks_$_deviceId/ha_kiosk_method/config',
+  ];
 
   Future<void> _publishDiscovery() async {
     // One-time migrations: Home Assistant only re-reads entity_category
@@ -1682,11 +1781,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     const migrationGeneration = 3;
     final migrated =
         int.tryParse(_settings.internal('mqtt_discovery_generation')) ??
-            // The flag generation 1 shipped under, mapped so those
-            // devices skip only what they already did.
-            (_settings.internal('mqtt_screensaver_switch_migrated') == '1'
-                ? 1
-                : 0);
+        // The flag generation 1 shipped under, mapped so those
+        // devices skip only what they already did.
+        (_settings.internal('mqtt_screensaver_switch_migrated') == '1' ? 1 : 0);
     if (_connected && migrated < migrationGeneration) {
       if (migrated < 1) {
         _publish('$_prefix/switch/ks_$_deviceId/screensaver/config', '');
@@ -1700,7 +1797,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         _publish('$_prefix/sensor/ks_$_deviceId/network_uptime/config', '');
       }
       await _settings.setInternal(
-          'mqtt_discovery_generation', '$migrationGeneration');
+        'mqtt_discovery_generation',
+        '$migrationGeneration',
+      );
       await _settings.setInternal('mqtt_screensaver_switch_migrated', '');
     }
     final configuredName = _settings.get(defs.deviceName).trim();
@@ -1717,9 +1816,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           ['mac', realMac.toLowerCase()],
         ],
       'name': configuredName.isEmpty
-          ? (model is String && model.isNotEmpty
-              ? model
-              : 'Kiosk Satellite')
+          ? (model is String && model.isNotEmpty ? model : 'Kiosk Satellite')
           : configuredName,
       'manufacturer': 'Kiosk Satellite',
       if (model is String && model.isNotEmpty) 'model': model,
@@ -1735,30 +1832,33 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     };
     final origin = {
       'name': 'Kiosk Satellite',
-      if (_deviceInfo['appVersion'] is String)
-        'sw': _deviceInfo['appVersion'],
+      if (_deviceInfo['appVersion'] is String) 'sw': _deviceInfo['appVersion'],
       'url': 'https://github.com/jxlarrea/kiosk-satellite',
     };
     Map<String, Object?> common(String objectId, String entityName) => {
-          'unique_id': 'ks_${_deviceId}_$objectId',
-          'name': entityName,
-          'availability_topic': _availabilityTopic,
-          'device': deviceBlock,
-          'origin': origin,
-        };
+      'unique_id': 'ks_${_deviceId}_$objectId',
+      'name': entityName,
+      'availability_topic': _availabilityTopic,
+      'device': deviceBlock,
+      'origin': origin,
+    };
 
-    Map<String, Object?> settingSwitch(String objectId, String entityName,
-            String icon) =>
-        {
-          ...common(objectId, entityName),
-          'state_topic': '$_base/$objectId/state',
-          'command_topic': '$_base/$objectId/set',
-          'icon': icon,
-          'entity_category': 'config',
-        };
+    Map<String, Object?> settingSwitch(
+      String objectId,
+      String entityName,
+      String icon,
+    ) => {
+      ...common(objectId, entityName),
+      'state_topic': '$_base/$objectId/state',
+      'command_topic': '$_base/$objectId/set',
+      'icon': icon,
+      'entity_category': 'config',
+    };
 
     Map<String, Object?> settingSelect(
-            String objectId, (defs.SettingDef<String>, String, String) entry) {
+      String objectId,
+      (defs.SettingDef<String>, String, String) entry,
+    ) {
       final (def, entityName, icon) = entry;
       return {
         ...common(objectId, entityName),
@@ -1901,8 +2001,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           ...common('motion', 'Motion'),
           'state_topic': '$_base/motion/state',
           'device_class': 'motion',
-          'off_delay':
-              _settings.get(defs.motionSensorOffDelay).toInt().clamp(1, 300),
+          'off_delay': _settings
+              .get(defs.motionSensorOffDelay)
+              .toInt()
+              .clamp(1, 300),
         },
       // The device's own alarm clock (issue #42), so a wake-up automation
       // can run off the alarm someone set on the tablet itself. A timestamp
@@ -2055,10 +2157,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       },
       for (final view in _cameraViews)
         '$_prefix/button/ks_$_deviceId/camera_view_${view['id']}/config': {
-          ...common(
-            'camera_view_${view['id']}',
-            'Show ${view['name']}',
-          ),
+          ...common('camera_view_${view['id']}', 'Show ${view['name']}'),
           'command_topic': '$_base/camera/view/set',
           'payload_press': '${view['id']}',
           'icon': 'mdi:cctv',
@@ -2175,7 +2274,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       },
       '$_prefix/number/ks_$_deviceId/screensaver_brightness_level/config': {
         ...common(
-            'screensaver_brightness_level', 'Screensaver brightness level'),
+          'screensaver_brightness_level',
+          'Screensaver brightness level',
+        ),
         'state_topic': '$_base/screensaver_brightness_level/state',
         'command_topic': '$_base/screensaver_brightness_level/set',
         'min': 0,
@@ -2210,36 +2311,69 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'icon': 'mdi:music-note',
         'entity_category': 'config',
       },
-      '$_prefix/switch/ks_$_deviceId/kiosk/config':
-          settingSwitch('kiosk', 'Kiosk mode', 'mdi:lock-outline'),
-      '$_prefix/switch/ks_$_deviceId/lockdown/config':
-          settingSwitch('lockdown', 'Lockdown mode', 'mdi:shield-lock'),
-      '$_prefix/switch/ks_$_deviceId/ha_kiosk/config':
-          settingSwitch('ha_kiosk', 'HA kiosk mode', 'mdi:dock-top'),
+      '$_prefix/switch/ks_$_deviceId/kiosk/config': settingSwitch(
+        'kiosk',
+        'Kiosk mode',
+        'mdi:lock-outline',
+      ),
+      '$_prefix/switch/ks_$_deviceId/lockdown/config': settingSwitch(
+        'lockdown',
+        'Lockdown mode',
+        'mdi:shield-lock',
+      ),
+      '$_prefix/switch/ks_$_deviceId/ha_kiosk/config': settingSwitch(
+        'ha_kiosk',
+        'HA kiosk mode',
+        'mdi:dock-top',
+      ),
       '$_prefix/switch/ks_$_deviceId/keep_screen_on/config': settingSwitch(
-          'keep_screen_on', 'Keep screen on', 'mdi:lightbulb-on-outline'),
+        'keep_screen_on',
+        'Keep screen on',
+        'mdi:lightbulb-on-outline',
+      ),
       '$_prefix/switch/ks_$_deviceId/remote/config': settingSwitch(
-          'remote', 'Remote management', 'mdi:remote-desktop'),
+        'remote',
+        'Remote management',
+        'mdi:remote-desktop',
+      ),
       '$_prefix/switch/ks_$_deviceId/screensaver_brightness/config':
-          settingSwitch('screensaver_brightness', 'Screensaver brightness',
-              'mdi:brightness-4'),
-      '$_prefix/switch/ks_$_deviceId/screensaver/config':
-          settingSwitch('screensaver', 'Screensaver', 'mdi:sleep'),
+          settingSwitch(
+            'screensaver_brightness',
+            'Screensaver brightness',
+            'mdi:brightness-4',
+          ),
+      '$_prefix/switch/ks_$_deviceId/screensaver/config': settingSwitch(
+        'screensaver',
+        'Screensaver',
+        'mdi:sleep',
+      ),
+      '$_prefix/switch/ks_$_deviceId/hold_mode/config': settingSwitch(
+        'hold_mode',
+        'Hold mode',
+        'mdi:pause-circle-outline',
+      ),
       // Camera-dependent controls (discussion #155): only on hardware
       // that can actually run them, retracted below otherwise. Unlike
       // the camera entities they do NOT ride the enable toggle — the
       // switch is the way to flip that toggle remotely.
       if (_cameraPresent) ...{
-        '$_prefix/switch/ks_$_deviceId/camera_enabled/config':
-            settingSwitch('camera_enabled', 'Camera enabled',
-                'mdi:camera-outline'),
+        '$_prefix/switch/ks_$_deviceId/camera_enabled/config': settingSwitch(
+          'camera_enabled',
+          'Camera enabled',
+          'mdi:camera-outline',
+        ),
         '$_prefix/switch/ks_$_deviceId/screensaver_motion/config':
-            settingSwitch('screensaver_motion', 'Screensaver motion detection',
-                'mdi:motion-sensor'),
+            settingSwitch(
+              'screensaver_motion',
+              'Screensaver motion detection',
+              'mdi:motion-sensor',
+            ),
       },
       for (final entry in _settingSelects.entries)
-        '$_prefix/select/ks_$_deviceId/${entry.key}/config':
-            settingSelect(entry.key, entry.value),
+        '$_prefix/select/ks_$_deviceId/${entry.key}/config': settingSelect(
+          entry.key,
+          entry.value,
+        ),
     };
     for (final topic in _legacyDiscoveryTopics()) {
       _publish(topic, '');
@@ -2250,8 +2384,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     }
     // And the Music Assistant button while no server address is set.
     if (musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)) == null) {
-      _publish(
-          '$_prefix/button/ks_$_deviceId/show_music_assistant/config', '');
+      _publish('$_prefix/button/ks_$_deviceId/show_music_assistant/config', '');
     }
     // A CPU temperature config from an older build (or an optimistic
     // default) is retracted once the probe has said this device cannot
@@ -2273,14 +2406,9 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       _publish('$_prefix/switch/ks_$_deviceId/camera_enabled/config', '');
       _publish('$_prefix/switch/ks_$_deviceId/screensaver_motion/config', '');
     }
-    final currentIds = {
-      for (final view in _cameraViews) '${view['id']}',
-    };
+    final currentIds = {for (final view in _cameraViews) '${view['id']}'};
     for (final staleId in _publishedCameraViewIds.difference(currentIds)) {
-      _publish(
-        '$_prefix/button/ks_$_deviceId/camera_view_$staleId/config',
-        '',
-      );
+      _publish('$_prefix/button/ks_$_deviceId/camera_view_$staleId/config', '');
     }
     configs.forEach((topic, config) => _publish(topic, jsonEncode(config)));
     _publishedCameraViewIds = currentIds;
@@ -2327,14 +2455,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           options.add(urlPath);
         }
       }
-      if (options.isEmpty || jsonEncode(options) == jsonEncode(_dashboardViews)) {
+      if (options.isEmpty ||
+          jsonEncode(options) == jsonEncode(_dashboardViews)) {
         return;
       }
       _dashboardViews = options;
-      await _settings.setInternal(
-        'mqtt_dashboard_views',
-        jsonEncode(options),
-      );
+      await _settings.setInternal('mqtt_dashboard_views', jsonEncode(options));
       if (_connected) await _publishDiscovery();
     } finally {
       _refreshingDashboardViews = false;
@@ -2378,10 +2504,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // options. The empty state is "Closed", never "None" — Home Assistant
     // reserves that payload and would blank the select to unknown.
     _publish('$_base/camera/view/selected', event.viewName ?? 'Closed');
-    _publish(
-      '$_base/camera/view/attributes',
-      jsonEncode(event.toJson()),
-    );
+    _publish('$_base/camera/view/attributes', jsonEncode(event.toJson()));
   }
 
   Future<void> _publishCurrentCameraViewState() async {

@@ -266,6 +266,11 @@ class GesturesManager extends Manager {
         // Redundant for touch (any tap dismisses), real for claps: hands
         // full across the room, the screen comes back without walking over.
         await _run('stopScreensaver', const {});
+      case 'hold_mode':
+        // Toggle, not set: the same gesture pins the recipe and, performed
+        // again, releases it (issue #266). The setting IS the state, so
+        // every other surface follows.
+        await _settings.set(defs.haHoldMode, !_settings.get(defs.haHoldMode));
       case 'launch_app':
         await _run('launchApp', {'package': a['package']});
       case 'open_uri':

@@ -25,9 +25,19 @@ import 'dashboard_list.dart';
 /// Later milestones add MQTT discovery publishing and HA event
 /// subscriptions for event-driven navigation.
 class HomeAssistantManager extends Manager {
-  HomeAssistantManager(super.bus, super.commands, super.log, this._settings);
+  HomeAssistantManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this._settings, {
+    this._holdReleaseUnit = const Duration(minutes: 1),
+  });
 
   final SettingsManager _settings;
+
+  /// One "minute" of the hold auto-release clock; injectable so tests can
+  /// shrink it (the screensaver's screenOffUnit pattern).
+  final Duration _holdReleaseUnit;
 
   @override
   String get name => 'home_assistant';
@@ -585,6 +595,15 @@ class HomeAssistantManager extends Manager {
       } else if (e.key == defs.haReturnHomeEnabled.key ||
           e.key == defs.haReturnHomeSeconds.key) {
         _configureReturnHome();
+      } else if (e.key == defs.haHoldMode.key ||
+          e.key == defs.haHoldReleaseMinutes.key) {
+        // Hold mode (issue #266): the return-home clock stands down while
+        // it is on, and the optional auto-release clock follows the toggle
+        // (moving the slider mid-hold restarts the countdown at the new
+        // value). Rotation needs no rebuild: its tick checks hold live and
+        // freezes in place, resuming on the next tick after release.
+        _configureHoldRelease();
+        _configureReturnHome();
       } else if (e.key == defs.haRotationDashboards.key ||
           e.key == defs.haRotationUrls.key) {
         // Ring contents changed: restart from the top of the new list, but
@@ -613,7 +632,7 @@ class HomeAssistantManager extends Manager {
         // works with the dashboard WebView hidden.
         _returnHomeTimer?.cancel();
         _returnHomeTimer = null;
-        if (_returnHomeConfigured) unawaited(_returnHome());
+        if (_returnHomeConfigured && !_holdActive) unawaited(_returnHome());
       } else {
         _configureReturnHome();
       }
@@ -673,6 +692,9 @@ class HomeAssistantManager extends Manager {
     });
     _configureRotation();
     _configureReturnHome();
+    // A hold that survived a restart (the setting persists on purpose)
+    // gets its auto-release clock back too.
+    _configureHoldRelease();
   }
 
   Timer? _rotationTimer;
@@ -806,6 +828,7 @@ class HomeAssistantManager extends Manager {
     // (i.e. for the whole first foreground session) — null means resumed.
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (_screensaverActive ||
+        _holdActive ||
         (lifecycle != null && lifecycle != AppLifecycleState.resumed)) {
       return;
     }
@@ -864,7 +887,12 @@ class HomeAssistantManager extends Manager {
     _returnHomeTimer?.cancel();
     _returnHomeTimer = null;
     if (!_returnHomeConfigured) return;
-    if (_screensaverActive || _voiceInteracting || _cameraViewActive) return;
+    if (_screensaverActive ||
+        _voiceInteracting ||
+        _cameraViewActive ||
+        _holdActive) {
+      return;
+    }
     final seconds = _settings
         .get(defs.haReturnHomeSeconds)
         .toInt()
@@ -873,6 +901,36 @@ class HomeAssistantManager extends Manager {
       _returnHomeTimer = null;
       log.info(name, 'idle: returning to the dashboard');
       unawaited(_returnHome());
+    });
+  }
+
+  // ── Hold mode (issue #266) ──────────────────────────────────────────
+  // Pin the current view: while ha.hold_mode is on, the screensaver will
+  // not start (gated in its manager), rotation's tick freezes in place,
+  // the return-home clock above stands down and the display stays awake
+  // (ScreenManager). The toggle is the live state; this manager only owns
+  // the optional auto-release clock.
+
+  Timer? _holdReleaseTimer;
+
+  bool get _holdActive => _settings.get(defs.haHoldMode);
+
+  /// (Re)arm the auto-release countdown, or stop it: runs on every flip of
+  /// the toggle or the duration slider, and once at startup for a hold
+  /// that persisted across a restart.
+  void _configureHoldRelease() {
+    _holdReleaseTimer?.cancel();
+    _holdReleaseTimer = null;
+    if (!_holdActive) return;
+    final minutes = _settings
+        .get(defs.haHoldReleaseMinutes)
+        .toInt()
+        .clamp(0, 1440);
+    if (minutes <= 0) return;
+    _holdReleaseTimer = Timer(_holdReleaseUnit * minutes, () {
+      _holdReleaseTimer = null;
+      log.info(name, 'hold mode released after ${minutes}m');
+      unawaited(_settings.set(defs.haHoldMode, false));
     });
   }
 
@@ -2052,6 +2110,7 @@ class HomeAssistantManager extends Manager {
     _touchPauseTimer?.cancel();
     _voiceSafetyTimer?.cancel();
     _returnHomeTimer?.cancel();
+    _holdReleaseTimer?.cancel();
     WidgetsBinding.instance.removeObserver(_brightnessWatch);
   }
 }

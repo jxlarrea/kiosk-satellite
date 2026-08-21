@@ -42,25 +42,37 @@ void main() {
     images = [];
     executed = [];
 
-    void stub(String name, Object? result) => commands.register(Command(
-          name: name,
-          description: name,
-          handler: (p) async {
-            executed.add((name, Map<String, Object?>.from(p)));
-            return CommandResult.ok(result);
-          },
-        ));
+    void stub(String name, Object? result) => commands.register(
+      Command(
+        name: name,
+        description: name,
+        handler: (p) async {
+          executed.add((name, Map<String, Object?>.from(p)));
+          return CommandResult.ok(result);
+        },
+      ),
+    );
     stub('getLightLevel', {'present': true, 'lux': 42.0});
-    commands.register(Command(
-      name: 'hasDeviceCamera',
-      description: 'stub',
-      handler: (_) async => CommandResult.ok(cameraPresent),
-    ));
-    stub('getStats',
-        {'battery': 73, 'charging': true, 'cpu': 12.4, 'temp': 41});
+    commands.register(
+      Command(
+        name: 'hasDeviceCamera',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(cameraPresent),
+      ),
+    );
+    stub('getStats', {
+      'battery': 73,
+      'charging': true,
+      'cpu': 12.4,
+      'temp': 41,
+    });
     stub('cameraGetConfig', {
       'views': [
-        {'id': 'v1', 'name': 'Front door', 'cameraIds': ['c1']},
+        {
+          'id': 'v1',
+          'name': 'Front door',
+          'cameraIds': ['c1'],
+        },
         {'id': 'v2', 'name': 'Empty view', 'cameraIds': []},
       ],
     });
@@ -77,10 +89,10 @@ void main() {
     stub('getUptime', {'app': 4200, 'network': 100});
     stub('getIpAddresses', {
       'ipv4': {
-        'wlan0': ['192.168.1.5']
+        'wlan0': ['192.168.1.5'],
       },
       'ipv6': {
-        'wlan0': ['fe80::1']
+        'wlan0': ['fe80::1'],
       },
     });
     stub('foregroundApp', {'package': 'me.jxl.kiosk_satellite'});
@@ -103,11 +115,25 @@ void main() {
     stub('evalJs', '"https://ha.local/lovelace/home"');
     stub('screenshot', base64Encode([1, 2, 3]));
     for (final name in [
-      'screenOn', 'screenOff', 'setBrightness', 'setVolume',
-      'startScreensaver', 'stopScreensaver', 'postponeScreensaver', 'reload',
-      'loadStartUrl', 'clearWebCache', 'restartApp', 'bringToFront',
-      'showAppLauncher', 'showMusicAssistant', 'hideCameraView',
-      'showCameraView', 'haNavigate', 'installUpdate', 'takeCameraSnapshot',
+      'screenOn',
+      'screenOff',
+      'setBrightness',
+      'setVolume',
+      'startScreensaver',
+      'stopScreensaver',
+      'postponeScreensaver',
+      'reload',
+      'loadStartUrl',
+      'clearWebCache',
+      'restartApp',
+      'bringToFront',
+      'showAppLauncher',
+      'showMusicAssistant',
+      'hideCameraView',
+      'showCameraView',
+      'haNavigate',
+      'installUpdate',
+      'takeCameraSnapshot',
     ]) {
       stub(name, null);
     }
@@ -127,24 +153,65 @@ void main() {
     final catalog = await surface.build();
     final ids = [for (final d in catalog) '${d['objectId']}'];
     expect(
-        ids,
-        containsAll([
-          'screen', 'screensaver_active', 'volume', 'postpone_screensaver',
-          'reload', 'load_start_url', 'clear_cache', 'restart',
-          'bring_to_front', 'open_launcher', 'camera_view',
-          'close_camera_view', 'active_camera_view', 'dashboard_view',
-          'update', 'device_camera', 'take_snapshot', 'last_snapshot',
-          'take_screenshot', 'last_screenshot', 'illuminance', 'motion',
-          'next_alarm', 'last_interaction',
-          'screensaver_brightness_level', 'assistant_volume',
-          'media_volume', 'clock_background', 'kiosk', 'lockdown',
-          'ha_kiosk', 'keep_screen_on', 'remote', 'screensaver_brightness',
-          'screensaver', 'camera_enabled', 'screensaver_motion',
-          'screensaver_mode', 'screensaver_clock_style', 'battery',
-          'charging', 'cpu', 'cpu_temp', 'ram_free', 'ram_total', 'url',
-          'foreground_app', 'btproxy_nearby', 'device_info', 'ipv4_address',
-          'ipv6_address', 'app_uptime', 'network_uptime', 'admin_url',
-        ]));
+      ids,
+      containsAll([
+        'screen',
+        'screensaver_active',
+        'volume',
+        'postpone_screensaver',
+        'reload',
+        'load_start_url',
+        'clear_cache',
+        'restart',
+        'bring_to_front',
+        'open_launcher',
+        'camera_view',
+        'close_camera_view',
+        'active_camera_view',
+        'dashboard_view',
+        'update',
+        'device_camera',
+        'take_snapshot',
+        'last_snapshot',
+        'take_screenshot',
+        'last_screenshot',
+        'illuminance',
+        'motion',
+        'next_alarm',
+        'last_interaction',
+        'screensaver_brightness_level',
+        'assistant_volume',
+        'media_volume',
+        'clock_background',
+        'kiosk',
+        'lockdown',
+        'ha_kiosk',
+        'keep_screen_on',
+        'remote',
+        'screensaver_brightness',
+        'screensaver',
+        'hold_mode',
+        'camera_enabled',
+        'screensaver_motion',
+        'screensaver_mode',
+        'screensaver_clock_style',
+        'battery',
+        'charging',
+        'cpu',
+        'cpu_temp',
+        'ram_free',
+        'ram_total',
+        'url',
+        'foreground_app',
+        'btproxy_nearby',
+        'device_info',
+        'ipv4_address',
+        'ipv6_address',
+        'app_uptime',
+        'network_uptime',
+        'admin_url',
+      ]),
+    );
     expect(ids, contains('connectivity'));
     expect(ids, contains('bt_connections'));
     expect(ids, contains('last_seen'));
@@ -154,8 +221,10 @@ void main() {
     expect(byId['camera_view']!['options'], ['Closed', 'Front door']);
     expect(byId['camera_view_v1']!['name'], 'Show Front door');
     expect(byId.containsKey('camera_view_v2'), isFalse);
-    expect(byId['dashboard_view']!['options'],
-        ['lovelace/home', 'lovelace/cameras']);
+    expect(byId['dashboard_view']!['options'], [
+      'lovelace/home',
+      'lovelace/cameras',
+    ]);
     // With a camera present and enabled it takes the one camera slot.
     expect(byId['device_camera']!['type'], 'camera');
     expect(byId.containsKey('screenshot'), isFalse);
@@ -201,8 +270,7 @@ void main() {
     // Uptimes are timestamp anchors like their MQTT twins: the moment the
     // app started, rendered by HA as "n hours ago".
     final appAnchor = DateTime.parse('${byId['app_uptime']}');
-    final drift =
-        DateTime.now().toUtc().difference(appAnchor).inSeconds - 4200;
+    final drift = DateTime.now().toUtc().difference(appAnchor).inSeconds - 4200;
     expect(drift.abs(), lessThan(30));
     expect(DateTime.parse('${byId['last_seen']}'), isA<DateTime>());
     expect(byId['foreground_app'], 'me.jxl.kiosk_satellite');
@@ -238,16 +306,21 @@ void main() {
     await surface.handleCommand('dashboard_view', 'lovelace/cameras');
     await surface.handleCommand('update', 'install');
     expect(executed.map((e) => e.$1).toList(), [
-      'screenOff', 'setBrightness', 'setVolume', 'showCameraView',
-      'showCameraView', 'hideCameraView', 'haNavigate', 'installUpdate',
+      'screenOff',
+      'setBrightness',
+      'setVolume',
+      'showCameraView',
+      'showCameraView',
+      'hideCameraView',
+      'haNavigate',
+      'installUpdate',
     ]);
     expect(executed[3].$2['viewId'], 'v1');
     expect(executed[4].$2['viewId'], 'v1');
     expect(executed[6].$2['path'], 'lovelace/cameras');
   });
 
-  test('setting-backed entities write settings and echo real state',
-      () async {
+  test('setting-backed entities write settings and echo real state', () async {
     await surface.build();
     await attach();
     pushed.clear();
@@ -266,17 +339,19 @@ void main() {
     expect(pushed, contains(('screensaver_brightness_level', 30)));
   });
 
-  test('the screenshot capture feeds the camera on camera-less devices',
-      () async {
-    cameraPresent = false;
-    await surface.build();
-    await attach();
-    await surface.handleCommand('screenshot', 'capture');
-    expect(images, [
-      [1, 2, 3]
-    ]);
-    expect(pushed.any((p) => p.$1 == 'last_screenshot'), isTrue);
-  });
+  test(
+    'the screenshot capture feeds the camera on camera-less devices',
+    () async {
+      cameraPresent = false;
+      await surface.build();
+      await attach();
+      await surface.handleCommand('screenshot', 'capture');
+      expect(images, [
+        [1, 2, 3],
+      ]);
+      expect(pushed.any((p) => p.$1 == 'last_screenshot'), isTrue);
+    },
+  );
 
   test('motion pulses on and back off after the configured delay', () async {
     await surface.build();
@@ -300,17 +375,24 @@ void main() {
     expect(pushed.any((p) => p.$1 == 'last_interaction'), isFalse);
     bus.publish(const ActivityDetected(source: 'touch'));
     await Future<void>.delayed(const Duration(milliseconds: 30));
-    final stamps = [for (final p in pushed) if (p.$1 == 'last_interaction') p];
+    final stamps = [
+      for (final p in pushed)
+        if (p.$1 == 'last_interaction') p,
+    ];
     expect(stamps, hasLength(1));
     expect(DateTime.parse('${stamps.single.$2}'), isA<DateTime>());
     // Persisted so a restart can reseed it, broker-retention style.
-    expect(settings.internal('esphome_last_interaction'),
-        '${stamps.single.$2}');
+    expect(
+      settings.internal('esphome_last_interaction'),
+      '${stamps.single.$2}',
+    );
   });
 
   test('the persisted stamp reseeds Last interaction at attach', () async {
     await settings.setInternal(
-        'esphome_last_interaction', '2026-08-18T20:00:00.000Z');
+      'esphome_last_interaction',
+      '2026-08-18T20:00:00.000Z',
+    );
     await surface.build();
     await attach();
     final byId = {for (final (id, value) in pushed) id: value};

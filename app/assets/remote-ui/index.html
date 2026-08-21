@@ -2227,6 +2227,8 @@ const CAMERA_ICONS = {
   doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
   playCircle: '<circle cx="12" cy="12" r="9"/>'
     + '<path d="m10 8.5 5.5 3.5-5.5 3.5z"/>',
+  pauseCircle: '<circle cx="12" cy="12" r="9"/>'
+    + '<path d="M10 9v6M14 9v6"/>',
   announce: '<path d="M4 9v6h4l5 4V5L8 9z"/>'
     + '<path d="M16.5 8.5a5 5 0 0 1 0 7"/>',
 };
@@ -3284,6 +3286,7 @@ const GESTURE_ACTION_GROUPS = [
     ['sendspin_player', 'Show the Sendspin player', 'speaker'],
     ['screensaver', 'Start the screensaver', 'moon'],
     ['screensaver_stop', 'Stop the screensaver', 'sun'],
+    ['hold_mode', 'Toggle hold mode', 'pauseCircle'],
   ]],
   ['Android', [
     ['launch_app', 'Open another app', 'apps'],
@@ -3333,6 +3336,7 @@ function describeGestureAction(a) {
     case 'sendspin_player': return 'Show the Sendspin player';
     case 'screensaver': return 'Start the screensaver';
     case 'screensaver_stop': return 'Stop the screensaver';
+    case 'hold_mode': return 'Toggle hold mode';
     case 'launch_app': return `Open app ${a.package}`;
     case 'open_uri': return `Open ${a.uri}`;
     case 'android_settings': return 'Open Android Settings';
@@ -3661,7 +3665,7 @@ async function pickGestureAction(current) {
   const carried = current?.type === type ? current : null;
   switch (type) {
     case 'android_settings': case 'sendspin_player': case 'screensaver':
-    case 'screensaver_stop':
+    case 'screensaver_stop': case 'hold_mode':
       return { type };
     case 'navigate': return configureGestureNavigate(carried);
     case 'url': return configureGestureText(carried, {
@@ -5116,6 +5120,9 @@ async function loadSettings() {
         && s.key !== 'ha.rotation_pause_seconds' && s.key !== 'ha.rotation_crossfade'
         // Rendered below the rotation group, which its switch is gated on.
         && s.key !== 'ha.return_home_enabled' && s.key !== 'ha.return_home_seconds'
+        // Hold mode is hand-built between the return-home group and the
+        // Optimizations, mirroring the device.
+        && s.key !== 'ha.hold_mode' && s.key !== 'ha.hold_release_minutes'
         // The Theme card is hand-built below: its toggles swap the
         // dependent rows in place instead of reloading the tab.
         && s.key !== 'ha.theme_match_app'
@@ -5426,6 +5433,26 @@ async function loadSettings() {
             }
           };
           renderReturnCard();
+        }
+      }
+
+      // Hold mode (issue #266), mirroring the device: the toggle is the
+      // live state (pin the current view; screensaver, rotation and the
+      // return-home timer stand down), so this card is also the remote
+      // release for a hold engaged at the wall.
+      {
+        const hm = byKey['ha.hold_mode'];
+        const hr = byKey['ha.hold_release_minutes'];
+        if (hm) {
+          const hh = document.createElement('h2');
+          hh.className = 'card-title';
+          hh.textContent = 'Hold mode';
+          root.appendChild(hh);
+          const hcard = document.createElement('div');
+          hcard.className = 'card';
+          root.appendChild(hcard);
+          hcard.appendChild(settingRow(hm));
+          if (hr) hcard.appendChild(settingRow(hr));
         }
       }
 
@@ -7594,9 +7621,20 @@ function settingRow(s) {
   // A bounded number is dragged, not typed, the same slider the device
   // shows. Label updates live; the value saves once, on release.
   if (s.type === 'number' && s.min != null && s.max != null) {
-    const label = (v) => s.unit === '%'
-      ? `${Math.round(s.max <= 1 ? v * 100 : v)}%`
-      : `${v}${s.unit || ''}`;
+    const label = (v) => {
+      // Hold mode's auto-release reads as a clock: 0 is "Never" and 90 is
+      // "1 h 30 min". Kept identical to the device's copy.
+      if (s.key === 'ha.hold_release_minutes') {
+        const minutes = Math.round(v);
+        if (minutes <= 0) return 'Never';
+        const h = Math.floor(minutes / 60), m = minutes % 60;
+        if (h === 0) return `${m} min`;
+        return m === 0 ? `${h} h` : `${h} h ${m} min`;
+      }
+      return s.unit === '%'
+        ? `${Math.round(s.max <= 1 ? v * 100 : v)}%`
+        : `${v}${s.unit || ''}`;
+    };
     const controls = document.createElement('div');
     controls.style.cssText = 'display:flex; align-items:center; gap:10px; min-width:0';
     const inp = document.createElement('input');

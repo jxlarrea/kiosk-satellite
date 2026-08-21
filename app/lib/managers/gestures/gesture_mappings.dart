@@ -31,6 +31,7 @@
 ///  - sendspin_player:  show the floating player card (a fling hides it)
 ///  - screensaver:      start the screensaver
 ///  - screensaver_stop: stop it (redundant for touch, made for claps)
+///  - hold_mode:        toggle hold mode (pin the current view, issue #266)
 ///  - launch_app:       package
 ///  - open_uri:         uri, an Android deep link (ACTION_VIEW)
 ///  - android_settings
@@ -56,8 +57,11 @@ class GestureMapping {
   String get triggerType => '${trigger['type'] ?? ''}';
   String get actionType => '${action['type'] ?? ''}';
 
-  Map<String, Object?> toJson() =>
-      {'id': id, 'trigger': trigger, 'action': action};
+  Map<String, Object?> toJson() => {
+    'id': id,
+    'trigger': trigger,
+    'action': action,
+  };
 }
 
 /// Decode the gestures.mappings JSON, dropping anything malformed rather
@@ -95,20 +99,19 @@ List<Map<String, Object?>> nativeGestureTriggers(
 ) => [
   for (final m in mappings)
     if (m.triggerType != 'claps')
-    {
-      'id': m.id,
-      'type': m.triggerType,
-      if (m.trigger['corner'] != null) 'corner': '${m.trigger['corner']}',
-      if (m.trigger['taps'] is num) 'taps': (m.trigger['taps'] as num).toInt(),
-      if (m.trigger['fingers'] is num)
-        'fingers': (m.trigger['fingers'] as num).toInt(),
-      if (m.trigger['holdMs'] is num)
-        'holdMs': (m.trigger['holdMs'] as num).toInt(),
-      if (m.trigger['sequence'] is List)
-        'sequence': [
-          for (final c in m.trigger['sequence'] as List) '$c',
-        ],
-    },
+      {
+        'id': m.id,
+        'type': m.triggerType,
+        if (m.trigger['corner'] != null) 'corner': '${m.trigger['corner']}',
+        if (m.trigger['taps'] is num)
+          'taps': (m.trigger['taps'] as num).toInt(),
+        if (m.trigger['fingers'] is num)
+          'fingers': (m.trigger['fingers'] as num).toInt(),
+        if (m.trigger['holdMs'] is num)
+          'holdMs': (m.trigger['holdMs'] as num).toInt(),
+        if (m.trigger['sequence'] is List)
+          'sequence': [for (final c in m.trigger['sequence'] as List) '$c'],
+      },
 ];
 
 const cornerNames = {
@@ -126,7 +129,9 @@ String describeGestureTrigger(Map<String, Object?> trigger) {
       return '${trigger['taps']} taps in the $corner corner';
     case 'corner_hold':
       final s = ((trigger['holdMs'] as num? ?? 1500) / 1000);
-      final label = s == s.roundToDouble() ? '${s.round()}' : s.toStringAsFixed(1);
+      final label = s == s.roundToDouble()
+          ? '${s.round()}'
+          : s.toStringAsFixed(1);
       return 'Hold the $corner corner for ${label}s';
     case 'finger_taps':
       final taps = (trigger['taps'] as num? ?? 1).toInt();
@@ -135,7 +140,9 @@ String describeGestureTrigger(Map<String, Object?> trigger) {
           : '${trigger['fingers']}-finger tap';
     case 'finger_hold':
       final s = ((trigger['holdMs'] as num? ?? 1500) / 1000);
-      final label = s == s.roundToDouble() ? '${s.round()}' : s.toStringAsFixed(1);
+      final label = s == s.roundToDouble()
+          ? '${s.round()}'
+          : s.toStringAsFixed(1);
       return '${trigger['fingers']}-finger hold for ${label}s';
     case 'corner_sequence':
       final seq = trigger['sequence'];
@@ -168,13 +175,17 @@ String describeGestureAction(Map<String, Object?> action) {
     case 'camera_view':
       if (action['mode'] == 'hide') return 'Close the camera view';
       final name = '${action['viewName'] ?? ''}';
-      return name.isEmpty ? 'Toggle the camera view' : 'Toggle camera view $name';
+      return name.isEmpty
+          ? 'Toggle the camera view'
+          : 'Toggle camera view $name';
     case 'sendspin_player':
       return 'Show the Sendspin player';
     case 'screensaver':
       return 'Start the screensaver';
     case 'screensaver_stop':
       return 'Stop the screensaver';
+    case 'hold_mode':
+      return 'Toggle hold mode';
     case 'launch_app':
       return 'Open app ${action['package']}';
     case 'open_uri':

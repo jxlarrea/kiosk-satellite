@@ -321,6 +321,14 @@ Any touch dismisses it and resets the timer. Beyond touch:
   screensaver down when turned off; **Screensaver active** turned off
   and the **Postpone screensaver** button dismiss one and re-arm the
   timeout.
+- **Hold mode** (Home Assistant settings) pins the current view for as
+  long as it is on: the screensaver will not start, dashboard view
+  rotation and the return to home timer pause, and the display stays
+  awake. Turning it on dismisses a showing screensaver. It is the
+  sustained sibling of the one-shot Postpone screensaver button, made
+  for keeping a recipe or a video on screen; flip it from the settings,
+  the drawer notice, a gesture, or the Hold mode switch in Home
+  Assistant, and an optional timer ends the hold by itself.
 
 ## Around the dashboard
 

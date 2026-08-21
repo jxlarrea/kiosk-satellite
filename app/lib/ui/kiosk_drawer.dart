@@ -347,6 +347,76 @@ class KioskDrawer extends StatelessWidget {
                   ),
                 ),
               ),
+              // Hold mode's lasting reminder (issue #266): the toast at the
+              // flip is long gone when someone later wonders why the
+              // screensaver never comes on. Shown in the restricted menu
+              // too: releasing a hold is a harmless quick action, and the
+              // person who pinned a recipe on a locked kiosk is the one who
+              // needs to unpin it.
+              StreamBuilder<SettingChanged>(
+                stream: c.bus.on<SettingChanged>().where(
+                  (e) => e.key == defs.haHoldMode.key,
+                ),
+                builder: (context, _) {
+                  if (!c.settings.get(defs.haHoldMode)) {
+                    return const SizedBox.shrink();
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                    child: Material(
+                      color: theme.colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.circular(Ks.radiusRow),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () =>
+                            unawaited(c.settings.set(defs.haHoldMode, false)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.pause_circle_outline,
+                                color: theme.colorScheme.onTertiaryContainer,
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Hold mode is on',
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: theme
+                                                .colorScheme
+                                                .onTertiaryContainer,
+                                          ),
+                                    ),
+                                    Text(
+                                      'Screensaver and timers are paused · '
+                                      'tap to turn off',
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onTertiaryContainer,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
               // Above the theme switcher: the update notice when GitHub has
               // a newer release, the running version otherwise — the wall is
               // where an update is noticed, not the repo page. Not in the

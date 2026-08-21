@@ -35,6 +35,7 @@ const _actionGroups = <(String, List<(String, String, IconData)>)>[
       ('sendspin_player', 'Show the Sendspin player', Icons.speaker_outlined),
       ('screensaver', 'Start the screensaver', Icons.nightlight_outlined),
       ('screensaver_stop', 'Stop the screensaver', Icons.light_mode_outlined),
+      ('hold_mode', 'Toggle hold mode', Icons.pause_circle_outline),
     ],
   ),
   (
@@ -115,9 +116,11 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
             for (final mapping in mappings)
               ListTile(
                 // Claps are heard, not touched; the row icon says which.
-                leading: Icon(mapping.triggerType == 'claps'
-                    ? Icons.sign_language_outlined
-                    : Icons.gesture),
+                leading: Icon(
+                  mapping.triggerType == 'claps'
+                      ? Icons.sign_language_outlined
+                      : Icons.gesture,
+                ),
                 title: Text(describeGestureTrigger(mapping.trigger)),
                 subtitle: Text(describeGestureAction(mapping.action)),
                 onTap: () => _edit(mapping),
@@ -471,7 +474,8 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
       'android_settings' ||
       'sendspin_player' ||
       'screensaver' ||
-      'screensaver_stop' => {'type': type},
+      'screensaver_stop' ||
+      'hold_mode' => {'type': type},
       'navigate' => _configureNavigate(carried),
       'url' => _configureText(
         carried,

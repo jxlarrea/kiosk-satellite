@@ -52,8 +52,11 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
         if (e['glance'] is bool) 'glance': e['glance'],
       });
     }
-    entries.sort((a, b) => scheduleMinutes(a['at'] as String)!
-        .compareTo(scheduleMinutes(b['at'] as String)!));
+    entries.sort(
+      (a, b) => scheduleMinutes(
+        a['at'] as String,
+      )!.compareTo(scheduleMinutes(b['at'] as String)!),
+    );
     return entries;
   } catch (_) {
     return const [];
@@ -85,7 +88,9 @@ List<Map<String, Object?>> upsertScheduleEntry(
 /// before the day's first entry — the last one, still holding from
 /// yesterday. Null only for an empty schedule.
 Map<String, Object?>? activeScheduleEntry(
-    List<Map<String, Object?>> entries, int minutesNow) {
+  List<Map<String, Object?>> entries,
+  int minutesNow,
+) {
   if (entries.isEmpty) return null;
   Map<String, Object?>? current;
   for (final e in entries) {
@@ -112,8 +117,13 @@ Map<String, Object?>? activeScheduleEntry(
 /// it back up. The session stays active across the power-off, which is what
 /// routes every dismiss source through [stop] and its screenOn.
 class ScreensaverManager extends Manager {
-  ScreensaverManager(super.bus, super.commands, super.log, this._settings,
-      {this._screenOffUnit = const Duration(minutes: 1)});
+  ScreensaverManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this._settings, {
+    this._screenOffUnit = const Duration(minutes: 1),
+  });
 
   final SettingsManager _settings;
 
@@ -274,8 +284,7 @@ class ScreensaverManager extends Manager {
       }
       // The active schedule entry's motion override (issue #89) wins over
       // the switch, matching the camera's own gating in MotionManager.
-      if (!(_motionPolicy ??
-          _settings.get(defs.screensaverDismissOnMotion))) {
+      if (!(_motionPolicy ?? _settings.get(defs.screensaverDismissOnMotion))) {
         return;
       }
       // The full-screen now-playing view has its own motion policy: it is
@@ -314,8 +323,7 @@ class ScreensaverManager extends Manager {
       // screensaver stops, and start() refuses below until it lifts —
       // unless the owner opted in to letting it run under the shield.
       if (e.key == defs.lockdownEnabled.key) {
-        if (e.value == true &&
-            !_settings.get(defs.lockdownAllowScreensaver)) {
+        if (e.value == true && !_settings.get(defs.lockdownAllowScreensaver)) {
           unawaited(stop());
           _idleTimer?.cancel();
         } else {
@@ -330,6 +338,18 @@ class ScreensaverManager extends Manager {
         } else {
           unawaited(stop());
           _idleTimer?.cancel();
+        }
+      }
+      // Hold mode pins whatever is on screen right now (issue #266): a
+      // showing screensaver is never what the user meant to pin, so
+      // engaging hold dismisses it and stops the idle clock; releasing
+      // the hold puts the clock back.
+      if (e.key == defs.haHoldMode.key) {
+        if (e.value == true) {
+          unawaited(stop());
+          _idleTimer?.cancel();
+        } else {
+          _resetIdleTimer();
         }
       }
       // Moving the screen-off slider under a running session applies to it:
@@ -356,8 +376,10 @@ class ScreensaverManager extends Manager {
     });
     // The schedule's clock: cheap check on a short period so a boundary
     // lands within seconds of the set time, reapplying only on a change.
-    _scheduleTimer =
-        Timer.periodic(const Duration(seconds: 20), (_) => _scheduleTick());
+    _scheduleTimer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => _scheduleTick(),
+    );
 
     // A process death mid-screensaver loses the in-memory restore point; the
     // persisted copy keeps the dim level from becoming the new normal. Runs
@@ -473,6 +495,10 @@ class ScreensaverManager extends Manager {
     if (!_settings.get(defs.screensaverEnabled) || _paused || _voiceTurn) {
       return;
     }
+    // Hold mode (issue #266): the current view stays put, so the idle
+    // clock never arms while it is on. Releasing the hold re-arms it
+    // through the SettingChanged branch above.
+    if (_settings.get(defs.haHoldMode)) return;
     final seconds = _settings.get(defs.screensaverTimeoutSeconds).toInt();
     if (seconds <= 0) return;
     _idleTimer = Timer(Duration(seconds: seconds), start);
@@ -487,8 +513,9 @@ class ScreensaverManager extends Manager {
   /// off or empty.
   Map<String, Object?>? get _scheduleEntry {
     if (!_settings.get(defs.screensaverScheduleEnabled)) return null;
-    final entries =
-        parseScreensaverSchedule(_settings.get(defs.screensaverSchedule));
+    final entries = parseScreensaverSchedule(
+      _settings.get(defs.screensaverSchedule),
+    );
     final now = DateTime.now();
     return activeScheduleEntry(entries, now.hour * 60 + now.minute);
   }
@@ -545,6 +572,10 @@ class ScreensaverManager extends Manager {
 
   Future<void> start() async {
     if (_active || _paused || _cameraViewActive) return;
+    // Hold mode refuses every start, commanded ones included: "keep this
+    // view on screen" beats a startScreensaver arriving over MQTT or a
+    // gesture (issue #266).
+    if (_settings.get(defs.haHoldMode)) return;
     // No screensaver under Lockdown Mode unless the owner opted in: by
     // default the locked dashboard stays glanceable. Opted in, it renders
     // under the screen-level shield — visible, but untouchable like
@@ -644,7 +675,8 @@ class ScreensaverManager extends Manager {
         // Backlight only — no overlay. stop() restores the saved level.
         // A scheduled brightness wins over the configured dim level.
         _setView(null);
-        final dim = _scheduleBrightness ??
+        final dim =
+            _scheduleBrightness ??
             _settings.get(defs.screensaverDimLevel).toDouble();
         await commands.execute('setBrightness', {'level': dim});
       case 'black':
@@ -662,7 +694,8 @@ class ScreensaverManager extends Manager {
         // not glow all night).
         _setView(mode);
         if (_contentDimEnabled(mode)) {
-          final level = _scheduleBrightness ??
+          final level =
+              _scheduleBrightness ??
               _settings.get(defs.screensaverBrightnessLevel).toDouble();
           await commands.execute('setBrightness', {'level': level});
         } else if (_savedBrightness != null) {
@@ -692,8 +725,9 @@ class ScreensaverManager extends Manager {
       await _ensureSavedBrightness();
       // An active schedule entry's brightness still wins over the slider.
       await commands.execute('setBrightness', {
-        'level': _scheduleBrightness ??
-            _settings.get(defs.screensaverBrightnessLevel).toDouble()
+        'level':
+            _scheduleBrightness ??
+            _settings.get(defs.screensaverBrightnessLevel).toDouble(),
       });
     } else if (_savedBrightness != null) {
       await commands.execute('setBrightness', {'level': _savedBrightness});

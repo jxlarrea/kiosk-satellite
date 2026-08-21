@@ -2856,6 +2856,42 @@ const haReturnHomeSeconds = SettingDef<num>(
   dependsOn: 'ha.return_home_enabled',
 );
 
+/// Hold mode (issue #266): pin the current view until released. The toggle
+/// IS the live state, not a feature gate: flipping it here, from the remote
+/// admin, over MQTT/ESPHome or by gesture all drive the same setting, so
+/// every surface stays in step and the state survives a restart. While on,
+/// the screensaver will not start, dashboard view rotation freezes in
+/// place, the return-home timer stands down and the display stays awake.
+const haHoldMode = SettingDef<bool>(
+  key: 'ha.hold_mode',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Hold mode',
+  description:
+      'Keep the current view on screen: the screensaver, dashboard view '
+      'rotation and the return to home timer are paused until turned off.',
+  category: 'Home Assistant',
+  section: 'Hold mode',
+);
+
+/// The forgotten-hold guard: a kiosk left on hold overnight never sleeps
+/// again, so an optional clock releases it. Not gated on the toggle: the
+/// duration is configured ahead of time, before hold is ever engaged.
+const haHoldReleaseMinutes = SettingDef<num>(
+  key: 'ha.hold_release_minutes',
+  type: SettingType.number,
+  defaultValue: 0,
+  min: 0,
+  max: 360,
+  step: 15,
+  title: 'End hold automatically after',
+  description:
+      'Turns hold mode off by itself after the set time. Set to 0 to hold '
+      'until turned off manually.',
+  category: 'Home Assistant',
+  section: 'Hold mode',
+);
+
 // ── MQTT ───────────────────────────────────────────────────────────────
 // Ready-made Home Assistant entities over MQTT discovery (issue #11). The
 // broker settings live here; everything the entities do routes through the
@@ -3881,6 +3917,8 @@ const List<SettingDef<Object>> allSettings = [
   haRotationCrossfade,
   haReturnHomeEnabled,
   haReturnHomeSeconds,
+  haHoldMode,
+  haHoldReleaseMinutes,
   mqttEnabled,
   mqttHost,
   mqttPort,

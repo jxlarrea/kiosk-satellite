@@ -73,77 +73,86 @@ class EspEntitySurface {
   /// Mirrors the MQTT _settingSwitches map, entity ids and all.
   static final _settingSwitches =
       <String, (String, String, defs.SettingDef<bool>)>{
-    'kiosk': ('Kiosk mode', 'mdi:lock-outline', defs.kioskEnabled),
-    'lockdown': ('Lockdown mode', 'mdi:shield-lock', defs.lockdownEnabled),
-    'ha_kiosk': ('HA kiosk mode', 'mdi:dock-top', defs.haKioskMode),
-    'keep_screen_on': (
-      'Keep screen on',
-      'mdi:lightbulb-on-outline',
-      defs.keepScreenOn,
-    ),
-    'remote': ('Remote management', 'mdi:remote-desktop', defs.remoteEnabled),
-    'screensaver_brightness': (
-      'Screensaver brightness',
-      'mdi:brightness-4',
-      defs.screensaverBrightnessEnabled,
-    ),
-    'screensaver': ('Screensaver', 'mdi:sleep', defs.screensaverEnabled),
-    'camera_enabled': (
-      'Camera enabled',
-      'mdi:camera-outline',
-      defs.cameraEnabled,
-    ),
-    'screensaver_motion': (
-      'Screensaver motion detection',
-      'mdi:motion-sensor',
-      defs.screensaverDismissOnMotion,
-    ),
-  };
+        'kiosk': ('Kiosk mode', 'mdi:lock-outline', defs.kioskEnabled),
+        'lockdown': ('Lockdown mode', 'mdi:shield-lock', defs.lockdownEnabled),
+        'ha_kiosk': ('HA kiosk mode', 'mdi:dock-top', defs.haKioskMode),
+        'keep_screen_on': (
+          'Keep screen on',
+          'mdi:lightbulb-on-outline',
+          defs.keepScreenOn,
+        ),
+        'remote': (
+          'Remote management',
+          'mdi:remote-desktop',
+          defs.remoteEnabled,
+        ),
+        'screensaver_brightness': (
+          'Screensaver brightness',
+          'mdi:brightness-4',
+          defs.screensaverBrightnessEnabled,
+        ),
+        'screensaver': ('Screensaver', 'mdi:sleep', defs.screensaverEnabled),
+        'hold_mode': ('Hold mode', 'mdi:pause-circle-outline', defs.haHoldMode),
+        'camera_enabled': (
+          'Camera enabled',
+          'mdi:camera-outline',
+          defs.cameraEnabled,
+        ),
+        'screensaver_motion': (
+          'Screensaver motion detection',
+          'mdi:motion-sensor',
+          defs.screensaverDismissOnMotion,
+        ),
+      };
 
   /// Settings-backed selects: objectId -> (name, icon, definition). The
   /// options are the definitions' display labels, the stored value maps
   /// through them, matching the MQTT contract.
   static final _settingSelects =
       <String, (String, String, defs.SettingDef<String>)>{
-    'screensaver_mode': (
-      'Screensaver mode',
-      'mdi:monitor-shimmer',
-      defs.screensaverMode,
-    ),
-    'screensaver_clock_style': (
-      'Clock style',
-      'mdi:clock-digital',
-      defs.screensaverClockStyle,
-    ),
-  };
+        'screensaver_mode': (
+          'Screensaver mode',
+          'mdi:monitor-shimmer',
+          defs.screensaverMode,
+        ),
+        'screensaver_clock_style': (
+          'Clock style',
+          'mdi:clock-digital',
+          defs.screensaverClockStyle,
+        ),
+      };
 
   /// Settings-backed numbers shown as 0-100 percent sliders:
   /// objectId -> (name, icon, definition, stored 0..1 instead of 0..100).
   static final _settingNumbers =
       <String, (String, String, defs.SettingDef<num>, bool)>{
-    'screensaver_brightness_level': (
-      'Screensaver brightness level',
-      'mdi:brightness-6',
-      defs.screensaverBrightnessLevel,
-      true,
-    ),
-    'assistant_volume': (
-      'Assistant volume',
-      'mdi:account-voice',
-      defs.assistantVolume,
-      false,
-    ),
-    'media_volume': ('Media volume', 'mdi:music-note', defs.mediaVolume, false),
-  };
+        'screensaver_brightness_level': (
+          'Screensaver brightness level',
+          'mdi:brightness-6',
+          defs.screensaverBrightnessLevel,
+          true,
+        ),
+        'assistant_volume': (
+          'Assistant volume',
+          'mdi:account-voice',
+          defs.assistantVolume,
+          false,
+        ),
+        'media_volume': (
+          'Media volume',
+          'mdi:music-note',
+          defs.mediaVolume,
+          false,
+        ),
+      };
 
   /// Probes the hardware and Home Assistant, then lays out the catalog.
   /// The set is fixed for one server run; the manager restarts the server
   /// on the settings that change it.
   Future<List<Map<String, Object?>>> build() async {
     final light = await commands.execute('getLightLevel', const {});
-    final lightSensorPresent = light.ok &&
-        light.data is Map &&
-        (light.data as Map)['present'] == true;
+    final lightSensorPresent =
+        light.ok && light.data is Map && (light.data as Map)['present'] == true;
     final cam = await commands.execute('hasDeviceCamera', const {});
     final cameraPresent = !(cam.ok && cam.data == false);
     final stats = await commands.execute('getStats', const {});
@@ -154,31 +163,36 @@ class EspEntitySurface {
     await _refreshCameraViews();
     await _refreshDashboardViews();
 
-    Map<String, Object?> button(String id, String name, String icon,
-            {String deviceClass = ''}) =>
-        {
-          'type': 'button',
-          'objectId': id,
-          'name': name,
-          'icon': icon,
-          'deviceClass': deviceClass,
-        };
-    Map<String, Object?> diagnostic(String id, String name,
-            {String icon = '',
-            String deviceClass = '',
-            String unit = '',
-            int stateClass = 0,
-            String type = 'sensor'}) =>
-        {
-          'type': type,
-          'objectId': id,
-          'name': name,
-          'icon': icon,
-          'deviceClass': deviceClass,
-          'unit': unit,
-          'stateClass': stateClass,
-          'category': 2,
-        };
+    Map<String, Object?> button(
+      String id,
+      String name,
+      String icon, {
+      String deviceClass = '',
+    }) => {
+      'type': 'button',
+      'objectId': id,
+      'name': name,
+      'icon': icon,
+      'deviceClass': deviceClass,
+    };
+    Map<String, Object?> diagnostic(
+      String id,
+      String name, {
+      String icon = '',
+      String deviceClass = '',
+      String unit = '',
+      int stateClass = 0,
+      String type = 'sensor',
+    }) => {
+      'type': type,
+      'objectId': id,
+      'name': name,
+      'icon': icon,
+      'deviceClass': deviceClass,
+      'unit': unit,
+      'stateClass': stateClass,
+      'category': 2,
+    };
 
     return [
       // ── Controls ─────────────────────────────────────────────────────
@@ -205,8 +219,11 @@ class EspEntitySurface {
         'unit': '%',
         'mode': 2,
       },
-      button('postpone_screensaver', 'Postpone screensaver',
-          'mdi:timer-refresh-outline'),
+      button(
+        'postpone_screensaver',
+        'Postpone screensaver',
+        'mdi:timer-refresh-outline',
+      ),
       button('reload', 'Reload page', 'mdi:refresh'),
       button('load_start_url', 'Go to dashboard', 'mdi:view-dashboard'),
       button('clear_cache', 'Clear cache', 'mdi:broom'),
@@ -218,8 +235,11 @@ class EspEntitySurface {
       // the kiosk menu entry: a button that can only fail is worse than no
       // button.
       if (musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)) != null)
-        button('show_music_assistant', 'Show Music Assistant',
-            'mdi:music-box-multiple'),
+        button(
+          'show_music_assistant',
+          'Show Music Assistant',
+          'mdi:music-box-multiple',
+        ),
       if (_cameraViews.isNotEmpty) ...[
         {
           'type': 'select',
@@ -235,10 +255,16 @@ class EspEntitySurface {
         // select is the compact form, the buttons are what dashboards and
         // scripts press.
         for (final view in _cameraViews)
-          button('camera_view_${view['id']}', 'Show ${view['name']}',
-              'mdi:cctv'),
-        button('close_camera_view', 'Close camera view',
-            'mdi:close-box-outline'),
+          button(
+            'camera_view_${view['id']}',
+            'Show ${view['name']}',
+            'mdi:cctv',
+          ),
+        button(
+          'close_camera_view',
+          'Close camera view',
+          'mdi:close-box-outline',
+        ),
         {
           'type': 'text_sensor',
           'objectId': 'active_camera_view',
@@ -263,17 +289,9 @@ class EspEntitySurface {
       // The one camera slot the protocol allows: the device camera when
       // it exists and is enabled, else the screenshot camera.
       if (cameraWanted)
-        {
-          'type': 'camera',
-          'objectId': 'device_camera',
-          'name': 'Camera',
-        }
+        {'type': 'camera', 'objectId': 'device_camera', 'name': 'Camera'}
       else
-        {
-          'type': 'camera',
-          'objectId': 'screenshot',
-          'name': 'Screenshot',
-        },
+        {'type': 'camera', 'objectId': 'screenshot', 'name': 'Screenshot'},
       if (cameraWanted) ...[
         button('take_snapshot', 'Take camera snapshot', 'mdi:camera-iris'),
         {
@@ -369,70 +387,138 @@ class EspEntitySurface {
           'category': 1,
         },
       // ── Diagnostics ──────────────────────────────────────────────────
-      diagnostic('battery', 'Battery',
-          deviceClass: 'battery', unit: '%', stateClass: 1),
-      diagnostic('charging', 'Charging',
-          deviceClass: 'battery_charging', type: 'binary_sensor'),
-      diagnostic('cpu', 'CPU usage',
-          icon: 'mdi:chip', unit: '%', stateClass: 1),
+      diagnostic(
+        'battery',
+        'Battery',
+        deviceClass: 'battery',
+        unit: '%',
+        stateClass: 1,
+      ),
+      diagnostic(
+        'charging',
+        'Charging',
+        deviceClass: 'battery_charging',
+        type: 'binary_sensor',
+      ),
+      diagnostic(
+        'cpu',
+        'CPU usage',
+        icon: 'mdi:chip',
+        unit: '%',
+        stateClass: 1,
+      ),
       if (cpuTempPresent)
-        diagnostic('cpu_temp', 'CPU temperature',
-            deviceClass: 'temperature', unit: '°C', stateClass: 1),
-      diagnostic('ram_free', 'RAM available',
-          icon: 'mdi:memory',
-          deviceClass: 'data_size',
-          unit: 'MB',
-          stateClass: 1),
-      diagnostic('ram_total', 'RAM total',
-          icon: 'mdi:memory', deviceClass: 'data_size', unit: 'MB'),
+        diagnostic(
+          'cpu_temp',
+          'CPU temperature',
+          deviceClass: 'temperature',
+          unit: '°C',
+          stateClass: 1,
+        ),
+      diagnostic(
+        'ram_free',
+        'RAM available',
+        icon: 'mdi:memory',
+        deviceClass: 'data_size',
+        unit: 'MB',
+        stateClass: 1,
+      ),
+      diagnostic(
+        'ram_total',
+        'RAM total',
+        icon: 'mdi:memory',
+        deviceClass: 'data_size',
+        unit: 'MB',
+      ),
       diagnostic('url', 'Current page', icon: 'mdi:web', type: 'text_sensor'),
-      diagnostic('foreground_app', 'Foreground app',
-          icon: 'mdi:application-outline', type: 'text_sensor'),
+      diagnostic(
+        'foreground_app',
+        'Foreground app',
+        icon: 'mdi:application-outline',
+        type: 'text_sensor',
+      ),
       if (_settings.get(defs.btproxyEnabled))
         // state_class matters beyond statistics here: without it (or a
         // unit) Home Assistant treats the sensor as non-numeric, so the
         // count renders as the raw "13.0" string and history shows no
         // graph.
-        diagnostic('btproxy_nearby', 'Bluetooth devices nearby',
-            icon: 'mdi:bluetooth-audio', stateClass: 1),
+        diagnostic(
+          'btproxy_nearby',
+          'Bluetooth devices nearby',
+          icon: 'mdi:bluetooth-audio',
+          stateClass: 1,
+        ),
       if (_settings.get(defs.btproxyEnabled) &&
           _settings.get(defs.btproxyConnections))
         // "1 of 3" where the user will look before filing "my fifth
         // device won't connect": the budget is a hard Android-stack
         // limit per proxy, and Home Assistant spreads extra devices
         // across other proxies only if there are other proxies.
-        diagnostic('bt_connections', 'Bluetooth connections',
-            icon: 'mdi:bluetooth-connect', type: 'text_sensor'),
-      diagnostic('device_info', 'Device',
-          icon: 'mdi:information-outline', type: 'text_sensor'),
-      diagnostic('ipv4_address', 'IPv4 address',
-          icon: 'mdi:ip-network', type: 'text_sensor'),
-      diagnostic('ipv6_address', 'IPv6 address',
-          icon: 'mdi:ip-network-outline', type: 'text_sensor'),
+        diagnostic(
+          'bt_connections',
+          'Bluetooth connections',
+          icon: 'mdi:bluetooth-connect',
+          type: 'text_sensor',
+        ),
+      diagnostic(
+        'device_info',
+        'Device',
+        icon: 'mdi:information-outline',
+        type: 'text_sensor',
+      ),
+      diagnostic(
+        'ipv4_address',
+        'IPv4 address',
+        icon: 'mdi:ip-network',
+        type: 'text_sensor',
+      ),
+      diagnostic(
+        'ipv6_address',
+        'IPv6 address',
+        icon: 'mdi:ip-network-outline',
+        type: 'text_sensor',
+      ),
       // Timestamps like their MQTT twins: the recorder logs the moments
       // the anchors move (a restart, a reconnect) and Home Assistant
       // renders the ticking "n hours ago" on its own, instead of a
       // seconds counter churning the recorder every poll.
-      diagnostic('app_uptime', 'App uptime',
-          icon: 'mdi:timer-outline',
-          deviceClass: 'timestamp',
-          type: 'text_sensor'),
-      diagnostic('network_uptime', 'Network uptime',
-          icon: 'mdi:timer-sync-outline',
-          deviceClass: 'timestamp',
-          type: 'text_sensor'),
-      diagnostic('last_seen', 'Last seen',
-          icon: 'mdi:clock-check-outline',
-          deviceClass: 'timestamp',
-          type: 'text_sensor'),
+      diagnostic(
+        'app_uptime',
+        'App uptime',
+        icon: 'mdi:timer-outline',
+        deviceClass: 'timestamp',
+        type: 'text_sensor',
+      ),
+      diagnostic(
+        'network_uptime',
+        'Network uptime',
+        icon: 'mdi:timer-sync-outline',
+        deviceClass: 'timestamp',
+        type: 'text_sensor',
+      ),
+      diagnostic(
+        'last_seen',
+        'Last seen',
+        icon: 'mdi:clock-check-outline',
+        deviceClass: 'timestamp',
+        type: 'text_sensor',
+      ),
       // Strictly redundant over ESPHome (a lost connection makes every
       // entity unavailable), but automations written against the MQTT
       // sensor check for 'on', and 'unavailable' satisfies their
       // "not on" branch the same way 'off' did.
-      diagnostic('connectivity', 'Connectivity',
-          deviceClass: 'connectivity', type: 'binary_sensor'),
-      diagnostic('admin_url', 'Remote admin',
-          icon: 'mdi:remote-desktop', type: 'text_sensor'),
+      diagnostic(
+        'connectivity',
+        'Connectivity',
+        deviceClass: 'connectivity',
+        type: 'binary_sensor',
+      ),
+      diagnostic(
+        'admin_url',
+        'Remote admin',
+        icon: 'mdi:remote-desktop',
+        type: 'text_sensor',
+      ),
     ];
   }
 
@@ -443,62 +529,78 @@ class EspEntitySurface {
   ) {
     _push = push;
     _pushImage = pushImage;
-    _subs.add(bus.on<ScreensaverStateChanged>().listen((e) {
-      _screensaverActive = e.active;
-      _send('screensaver_active', e.active);
-    }));
+    _subs.add(
+      bus.on<ScreensaverStateChanged>().listen((e) {
+        _screensaverActive = e.active;
+        _send('screensaver_active', e.active);
+      }),
+    );
     _subs.add(bus.on<ScreenStateChanged>().listen((_) => _sendScreen()));
     _subs.add(bus.on<BrightnessChanged>().listen((_) => _sendScreen()));
     _subs.add(bus.on<VolumeChanged>().listen((_) => _sendVolume()));
-    _subs.add(bus.on<UrlChanged>().listen((e) {
-      _send('url', e.url);
-      final match = matchDashboardView(e.url, _dashboardViews);
-      if (match != null) _send('dashboard_view', match);
-    }));
-    _subs.add(bus.on<PageChanged>().listen((e) => _send('url', e.url)));
     _subs.add(
-        bus.on<UpdateStateChanged>().listen((_) => _sendUpdateState()));
+      bus.on<UrlChanged>().listen((e) {
+        _send('url', e.url);
+        final match = matchDashboardView(e.url, _dashboardViews);
+        if (match != null) _send('dashboard_view', match);
+      }),
+    );
+    _subs.add(bus.on<PageChanged>().listen((e) => _send('url', e.url)));
+    _subs.add(bus.on<UpdateStateChanged>().listen((_) => _sendUpdateState()));
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _sendNextAlarm()));
-    _subs.add(bus.on<PowerChanged>().listen(
-        (e) => _send('charging', e.charging)));
-    _subs.add(bus.on<LightLevelChanged>().listen((e) {
-      _send('illuminance', e.lux.round());
-      // The MQTT twin never shows "unknown" because the broker retains
-      // its last value across restarts; with no broker, this store plays
-      // that role. Some drivers (the Echo Show's) emit nothing at
-      // registration, so a restart in a stable dark room would otherwise
-      // read unknown until the light physically changes.
-      _settings.setInternal('esphome_last_lux', '${e.lux.round()}');
-    }));
-    _subs.add(bus.on<CameraViewStateChanged>().listen((e) {
-      _send('active_camera_view', e.viewName ?? 'none');
-      _send('camera_view', e.viewName ?? 'Closed');
-    }));
-    _subs.add(bus.on<CameraSnapshotTaken>().listen((e) {
-      if (_deviceCameraIsTheCamera) {
-        _sendImage(e.jpeg);
-        _send('last_snapshot', DateTime.now().toUtc().toIso8601String());
-      }
-    }));
-    _subs.add(bus.on<MotionDetected>().listen((_) {
-      if (!_settings.get(defs.motionSensor)) return;
-      _send('motion', true);
-      _motionOff?.cancel();
-      final delay = _settings.get(defs.motionSensorOffDelay).toInt();
-      _motionOff = Timer(Duration(seconds: delay.clamp(1, 300)), () {
-        _send('motion', false);
-      });
-    }));
+    _subs.add(
+      bus.on<PowerChanged>().listen((e) => _send('charging', e.charging)),
+    );
+    _subs.add(
+      bus.on<LightLevelChanged>().listen((e) {
+        _send('illuminance', e.lux.round());
+        // The MQTT twin never shows "unknown" because the broker retains
+        // its last value across restarts; with no broker, this store plays
+        // that role. Some drivers (the Echo Show's) emit nothing at
+        // registration, so a restart in a stable dark room would otherwise
+        // read unknown until the light physically changes.
+        _settings.setInternal('esphome_last_lux', '${e.lux.round()}');
+      }),
+    );
+    _subs.add(
+      bus.on<CameraViewStateChanged>().listen((e) {
+        _send('active_camera_view', e.viewName ?? 'none');
+        _send('camera_view', e.viewName ?? 'Closed');
+      }),
+    );
+    _subs.add(
+      bus.on<CameraSnapshotTaken>().listen((e) {
+        if (_deviceCameraIsTheCamera) {
+          _sendImage(e.jpeg);
+          _send('last_snapshot', DateTime.now().toUtc().toIso8601String());
+        }
+      }),
+    );
+    _subs.add(
+      bus.on<MotionDetected>().listen((_) {
+        if (!_settings.get(defs.motionSensor)) return;
+        _send('motion', true);
+        _motionOff?.cancel();
+        final delay = _settings.get(defs.motionSensorOffDelay).toInt();
+        _motionOff = Timer(Duration(seconds: delay.clamp(1, 300)), () {
+          _send('motion', false);
+        });
+      }),
+    );
     // Touches and spoken turns stamp the Last interaction sensor (issue
     // #241). Motion deliberately does not count: someone walking past is
     // exactly what an idle automation wants to keep ignoring.
-    _subs.add(bus.on<ActivityDetected>().listen((e) {
-      if (e.source == 'touch') _interaction.mark();
-    }));
+    _subs.add(
+      bus.on<ActivityDetected>().listen((e) {
+        if (e.source == 'touch') _interaction.mark();
+      }),
+    );
     _subs.add(bus.on<WakeWordDetected>().listen((_) => _interaction.mark()));
-    _subs.add(bus.on<VoiceInteractionChanged>().listen((e) {
-      if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
-    }));
+    _subs.add(
+      bus.on<VoiceInteractionChanged>().listen((e) {
+        if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
+      }),
+    );
     _subs.add(bus.on<SettingChanged>().listen(_onSettingChanged));
     _poll = Timer.periodic(_pollInterval, (_) => _refresh());
     _sendInitial();
@@ -547,7 +649,9 @@ class EspEntitySurface {
     if (settingNumber != null) {
       final percent = ((value as num?) ?? 0).clamp(0, 100);
       await _settings.set(
-          settingNumber.$3, settingNumber.$4 ? percent / 100.0 : percent);
+        settingNumber.$3,
+        settingNumber.$4 ? percent / 100.0 : percent,
+      );
       return;
     }
     switch (objectId) {
@@ -560,15 +664,19 @@ class EspEntitySurface {
         }
         final brightness = map['brightness'];
         if (brightness is num) {
-          await commands.execute(
-              'setBrightness', {'level': brightness.clamp(0.0, 1.0)});
+          await commands.execute('setBrightness', {
+            'level': brightness.clamp(0.0, 1.0),
+          });
         }
       case 'screensaver_active':
         await commands.execute(
-            value == true ? 'startScreensaver' : 'stopScreensaver', const {});
+          value == true ? 'startScreensaver' : 'stopScreensaver',
+          const {},
+        );
       case 'volume':
-        await commands
-            .execute('setVolume', {'percent': ((value as num?) ?? 0)});
+        await commands.execute('setVolume', {
+          'percent': ((value as num?) ?? 0),
+        });
       case 'postpone_screensaver':
         await commands.execute('postponeScreensaver', const {});
       case 'reload':
@@ -594,15 +702,17 @@ class EspEntitySurface {
             orElse: () => const {},
           );
           if (view.isNotEmpty) {
-            await commands
-                .execute('showCameraView', {'viewId': '${view['id']}'});
+            await commands.execute('showCameraView', {
+              'viewId': '${view['id']}',
+            });
           }
         }
       case 'close_camera_view':
         await commands.execute('hideCameraView', const {});
       case String id when id.startsWith('camera_view_'):
-        await commands.execute(
-            'showCameraView', {'viewId': id.substring('camera_view_'.length)});
+        await commands.execute('showCameraView', {
+          'viewId': id.substring('camera_view_'.length),
+        });
       case 'dashboard_view':
         await commands.execute('haNavigate', {'path': '$value'});
       case 'update':
@@ -629,13 +739,13 @@ class EspEntitySurface {
   Future<void> _takeScreenshot() async {
     final size = PlatformDispatcher.instance.implicitView?.physicalSize;
     final portrait = size != null && size.height > size.width;
-    final result =
-        await commands.execute('screenshot', {'width': portrait ? 1080 : 1920});
+    final result = await commands.execute('screenshot', {
+      'width': portrait ? 1080 : 1920,
+    });
     final jpeg = result.data;
     if (result.ok && jpeg is String) {
       if (!_deviceCameraIsTheCamera) _sendImage(base64Decode(jpeg));
-      await _send(
-          'last_screenshot', DateTime.now().toUtc().toIso8601String());
+      await _send('last_screenshot', DateTime.now().toUtc().toIso8601String());
     } else {
       log.warn('btproxy', 'screenshot failed: ${result.error}');
     }
@@ -659,8 +769,7 @@ class EspEntitySurface {
     for (final entry in _settingNumbers.entries) {
       if (entry.value.$3.key == e.key) {
         final raw = (e.value as num?) ?? 0;
-        _send(entry.key,
-            (entry.value.$4 ? raw.toDouble() * 100 : raw).round());
+        _send(entry.key, (entry.value.$4 ? raw.toDouble() * 100 : raw).round());
         return;
       }
     }
@@ -721,11 +830,15 @@ class EspEntitySurface {
     }
     for (final entry in _settingNumbers.entries) {
       final raw = _settings.get(entry.value.$3);
-      await _send(entry.key,
-          (entry.value.$4 ? raw.toDouble() * 100 : raw).round());
+      await _send(
+        entry.key,
+        (entry.value.$4 ? raw.toDouble() * 100 : raw).round(),
+      );
     }
     await _send(
-        'clock_background', _settings.get(defs.screensaverClockBackground));
+      'clock_background',
+      _settings.get(defs.screensaverClockBackground),
+    );
     // MQTT inherits these from broker retention; here they need an
     // explicit first value or the selects sit on "unknown" until the
     // first change. No camera view is open at server start, and the
@@ -739,7 +852,8 @@ class EspEntitySurface {
     // The freshest stamp this run has seen, else the persisted one from
     // before the restart; without either the sensor reads unknown until
     // the first real touch.
-    final lastInteraction = _interaction.latest?.toIso8601String() ??
+    final lastInteraction =
+        _interaction.latest?.toIso8601String() ??
         _settings.internal('esphome_last_interaction');
     if (lastInteraction.isNotEmpty) {
       await _send('last_interaction', lastInteraction);
@@ -796,8 +910,7 @@ class EspEntitySurface {
   Future<void> _sendNextAlarm() async {
     final result = await commands.execute('getNextAlarm', const {});
     final data = result.ok ? result.data : null;
-    await _send(
-        'next_alarm', data is Map ? '${data['at']}' : null);
+    await _send('next_alarm', data is Map ? '${data['at']}' : null);
   }
 
   Future<void> _sendAdminUrl() async {
@@ -806,11 +919,14 @@ class EspEntitySurface {
       return;
     }
     final info = await commands.execute('getDeviceInfo', const {});
-    final ip =
-        info.ok && info.data is Map ? (info.data as Map)['ip'] as String? : null;
+    final ip = info.ok && info.data is Map
+        ? (info.data as Map)['ip'] as String?
+        : null;
     if (ip == null || ip.isEmpty) return;
     await _send(
-        'admin_url', 'http://$ip:${_settings.get(defs.remotePort).toInt()}');
+      'admin_url',
+      'http://$ip:${_settings.get(defs.remotePort).toInt()}',
+    );
   }
 
   Future<void> _sendDeviceInfo() async {
@@ -846,8 +962,9 @@ class EspEntitySurface {
         if (d is! Map) continue;
         final urlPath = '${d['url_path'] ?? ''}';
         if (urlPath.isEmpty) continue;
-        final views = await commands
-            .execute('haListDashboardViews', {'url_path': urlPath});
+        final views = await commands.execute('haListDashboardViews', {
+          'url_path': urlPath,
+        });
         if (!views.ok) {
           options.clear();
           break;
@@ -913,8 +1030,9 @@ class EspEntitySurface {
       }
       final network = (uptime['network'] as num?)?.toInt();
       await _sendAnchor(
-          'network_uptime',
-          network == null ? null : now.subtract(Duration(seconds: network)));
+        'network_uptime',
+        network == null ? null : now.subtract(Duration(seconds: network)),
+      );
     }
     final light = await commands.execute('getLightLevel', const {});
     var lux = light.ok && light.data is Map
@@ -949,13 +1067,15 @@ class EspEntitySurface {
     }
     if (_settings.get(defs.btproxyEnabled)) {
       final nearby = await commands.execute('btProxyNearby', const {});
-      final count =
-          nearby.ok && nearby.data is Map ? (nearby.data as Map)['count'] : null;
+      final count = nearby.ok && nearby.data is Map
+          ? (nearby.data as Map)['count']
+          : null;
       if (count is num) await _send('btproxy_nearby', count.toInt());
       if (_settings.get(defs.btproxyConnections)) {
         final status = await commands.execute('btProxyStatus', const {});
-        final data =
-            status.ok && status.data is Map ? status.data as Map : const {};
+        final data = status.ok && status.data is Map
+            ? status.data as Map
+            : const {};
         final used = (data['connections'] as List?)?.length;
         final slots = (data['connectionSlots'] as num?)?.toInt() ?? 0;
         if (used != null && slots > 0) {

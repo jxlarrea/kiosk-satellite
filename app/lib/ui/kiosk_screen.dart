@@ -285,6 +285,22 @@ class _KioskScreenState extends State<KioskScreen>
       setState(() => _webViewEpoch++);
       return;
     }
+    // Hold mode flips silently from gestures, HA and the remote admin, so
+    // the screen itself says what just happened (issue #266). The drawer
+    // notice carries the lasting reminder; this is only the moment's
+    // feedback.
+    if (e.key == defs.haHoldMode.key) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.value == true ? 'Hold mode is on' : 'Hold mode is off',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     // Kiosk mode swaps the drawer swipe for the exit gesture (KioskManager
     // pushes the native flags itself; this re-renders the gate — and
     // rebuilds the WebView when the master switch changes whether the

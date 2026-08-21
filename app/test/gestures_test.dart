@@ -319,6 +319,20 @@ void main() {
       await fire('g1');
       expect(executed.single.$1, 'stopScreensaver');
     });
+
+    test('hold_mode toggles the setting each time (issue #266)', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"claps","claps":3},'
+        '"action":{"type":"hold_mode"}}]',
+      );
+      // The same gesture pins and, performed again, releases: the setting
+      // IS the live state every other surface (HA switch, remote admin,
+      // drawer notice) observes.
+      await fire('g1');
+      expect(settings.get(defs.haHoldMode), isTrue);
+      await fire('g1');
+      expect(settings.get(defs.haHoldMode), isFalse);
+    });
   });
 
   group('clapTargets', () {

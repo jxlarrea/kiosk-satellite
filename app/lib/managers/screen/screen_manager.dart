@@ -71,14 +71,15 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     // Through BackgroundListening, which multiplexes this channel: setting a
     // handler on it directly would replace the one carrying download and
     // volume pushes.
-    BackgroundListening.onScreenStateChanged =
-        (on) => _setScreenOn(on, source: 'system');
+    BackgroundListening.onScreenStateChanged = (on) =>
+        _setScreenOn(on, source: 'system');
     // Seed from reality rather than assuming on: a device whose screen is
     // already off when the app starts would otherwise report on until
     // something happened to change it.
     try {
-      final interactive =
-          await _background.invokeMethod<bool>('isScreenInteractive');
+      final interactive = await _background.invokeMethod<bool>(
+        'isScreenInteractive',
+      );
       if (interactive != null) _screenOn = interactive;
     } catch (_) {}
 
@@ -90,7 +91,8 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     BackgroundListening.onAmbientDisplayChanged = _applyAmbientSetting;
     try {
       _applyAmbientSetting(
-          await _background.invokeMethod<int>('ambientDisplaySetting') ?? -1);
+        await _background.invokeMethod<int>('ambientDisplaySetting') ?? -1,
+      );
     } catch (_) {}
 
     // External brightness changes (quick settings, adaptive brightness):
@@ -118,7 +120,9 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     }
 
     bus.on<SettingChanged>().listen((e) async {
-      if (e.key == defs.keepScreenOn.key) await _applyWakelock();
+      if (e.key == defs.keepScreenOn.key || e.key == defs.haHoldMode.key) {
+        await _applyWakelock();
+      }
       if (e.key == defs.defaultBrightness.key &&
           _settings.get(defs.setBrightnessOnLaunch)) {
         await setBrightness((e.value as num).toDouble());
@@ -129,90 +133,107 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     });
 
     commands
-      ..register(Command(
-        name: 'getBrightness',
-        description: 'Current screen brightness (0..1)',
-        handler: (_) async => CommandResult.ok(await getBrightness()),
-      ))
-      ..register(Command(
-        name: 'isScreenOn',
-        description: 'Whether the screen is (logically) on',
-        handler: (_) async => CommandResult.ok(isScreenOn),
-      ))
-      ..register(Command(
-        name: 'getAmbientDisplay',
-        description:
-            'Whether this device leaves an ambient lock screen lit after the '
-            'screen is turned off, which no app can override',
-        handler: (_) async => CommandResult.ok(ambientDisplay),
-      ))
-      ..register(Command(
-        name: 'setBrightness',
-        description: 'Set screen brightness',
-        params: const {'level': 'Brightness 0..1'},
-        handler: (p) async {
-          final level = (p['level'] as num?)?.toDouble();
-          if (level == null || level < 0 || level > 1) {
-            return const CommandResult.fail('level must be 0..1');
-          }
-          await setBrightness(level);
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'screenOn',
-        description: 'Wake the display (works on a sleeping panel)',
-        handler: (_) async {
-          await screenOn();
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'screenOff',
-        description:
-            'Turn the display off (needs the device admin permission)',
-        params: const {
-          'prompt': 'false to fail quietly without raising the device '
-              'admin grant screen (unattended callers like the '
-              'screensaver timer)',
-        },
-        handler: (p) async {
-          if (await screenOff()) return const CommandResult.ok();
-          if (p['prompt'] == false) {
-            return const CommandResult.fail(
-                'the device admin permission is not active');
-          }
-          // Missing grant: put Android's own activation screen up on the
-          // device — one tap there and the next press works. Via the
-          // Activity when one is up (Samsung shows the proper dialog only
-          // then); the app-context fallback covers a detached Activity.
-          try {
-            await _admin.invokeMethod('requestScreenOffAdmin');
-          } catch (_) {
+      ..register(
+        Command(
+          name: 'getBrightness',
+          description: 'Current screen brightness (0..1)',
+          handler: (_) async => CommandResult.ok(await getBrightness()),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'isScreenOn',
+          description: 'Whether the screen is (logically) on',
+          handler: (_) async => CommandResult.ok(isScreenOn),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'getAmbientDisplay',
+          description:
+              'Whether this device leaves an ambient lock screen lit after the '
+              'screen is turned off, which no app can override',
+          handler: (_) async => CommandResult.ok(ambientDisplay),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'setBrightness',
+          description: 'Set screen brightness',
+          params: const {'level': 'Brightness 0..1'},
+          handler: (p) async {
+            final level = (p['level'] as num?)?.toDouble();
+            if (level == null || level < 0 || level > 1) {
+              return const CommandResult.fail('level must be 0..1');
+            }
+            await setBrightness(level);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'screenOn',
+          description: 'Wake the display (works on a sleeping panel)',
+          handler: (_) async {
+            await screenOn();
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'screenOff',
+          description:
+              'Turn the display off (needs the device admin permission)',
+          params: const {
+            'prompt':
+                'false to fail quietly without raising the device '
+                'admin grant screen (unattended callers like the '
+                'screensaver timer)',
+          },
+          handler: (p) async {
+            if (await screenOff()) return const CommandResult.ok();
+            if (p['prompt'] == false) {
+              return const CommandResult.fail(
+                'the device admin permission is not active',
+              );
+            }
+            // Missing grant: put Android's own activation screen up on the
+            // device — one tap there and the next press works. Via the
+            // Activity when one is up (Samsung shows the proper dialog only
+            // then); the app-context fallback covers a detached Activity.
             try {
-              await _background.invokeMethod('requestScreenOffAdmin');
-            } catch (_) {}
-          }
-          return const CommandResult.fail(
-            'Turning the screen off needs a one-time permission. The tablet '
-            'is now showing the "device admin" grant screen. Approve it '
-            'there, then try again.',
-          );
-        },
-      ))
-      ..register(Command(
-        name: 'keepScreenAwake',
-        description: 'Hold the panel on regardless of the keep-awake setting. '
-            'The screensaver uses this so a black overlay stays black-and-on '
-            'rather than letting the OS power the display off underneath it, '
-            'which would also freeze the app and drop the admin server.',
-        params: const {'enabled': 'true to hold the screen on'},
-        handler: (p) async {
-          _screensaverHold = p['enabled'] == true;
-          await _applyWakelock();
-          return const CommandResult.ok();
-        },
-      ));
+              await _admin.invokeMethod('requestScreenOffAdmin');
+            } catch (_) {
+              try {
+                await _background.invokeMethod('requestScreenOffAdmin');
+              } catch (_) {}
+            }
+            return const CommandResult.fail(
+              'Turning the screen off needs a one-time permission. The tablet '
+              'is now showing the "device admin" grant screen. Approve it '
+              'there, then try again.',
+            );
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'keepScreenAwake',
+          description:
+              'Hold the panel on regardless of the keep-awake setting. '
+              'The screensaver uses this so a black overlay stays black-and-on '
+              'rather than letting the OS power the display off underneath it, '
+              'which would also freeze the app and drop the admin server.',
+          params: const {'enabled': 'true to hold the screen on'},
+          handler: (p) async {
+            _screensaverHold = p['enabled'] == true;
+            await _applyWakelock();
+            return const CommandResult.ok();
+          },
+        ),
+      );
   }
 
   /// See the observer registration in [init]: a resume means there is now a
@@ -230,12 +251,17 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
   }
 
-  /// Keep the screen on when either the user's setting asks for it or the
-  /// screensaver is holding it. `FLAG_KEEP_SCREEN_ON` (via wakelock_plus) stops
+  /// Keep the screen on when the user's setting asks for it, the
+  /// screensaver is holding it, or hold mode is pinning the current view
+  /// (issue #266: a held recipe that goes dark defeats the point).
+  /// `FLAG_KEEP_SCREEN_ON` (via wakelock_plus) stops
   /// the OS display timeout — the panel stays powered, brightness is ours to
   /// set (0 for black), and the app is never backgrounded into a freeze.
   Future<void> _applyWakelock() async {
-    final want = _settings.get(defs.keepScreenOn) || _screensaverHold;
+    final want =
+        _settings.get(defs.keepScreenOn) ||
+        _screensaverHold ||
+        _settings.get(defs.haHoldMode);
     try {
       want ? await WakelockPlus.enable() : await WakelockPlus.disable();
       if (_wakelockRetryPending) {
@@ -371,9 +397,9 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       name,
       on
           ? 'this device keeps its panel lit after a screen off (always-on '
-              'display); the Home Assistant screen entity is withdrawn'
+                'display); the Home Assistant screen entity is withdrawn'
           : 'the panel goes dark on a screen off; the Home Assistant screen '
-              'entity is back',
+                'entity is back',
     );
     bus.publish(AmbientDisplayChanged(on: on));
   }
@@ -388,7 +414,10 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   /// reading would call every device ambient.
   Future<void> _probeAmbientDisplay() async {
     var lit = false;
-    for (final delay in const [Duration(milliseconds: 1500), Duration(seconds: 5)]) {
+    for (final delay in const [
+      Duration(milliseconds: 1500),
+      Duration(seconds: 5),
+    ]) {
       await Future<void>.delayed(delay);
       // A wake in the meantime makes the reading meaningless: the panel is
       // on because the screen is on.
