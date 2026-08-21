@@ -9,6 +9,7 @@ import '../../core/events.dart';
 import '../../core/logging.dart';
 import '../mqtt/dashboard_views.dart';
 import '../mqtt/interaction_stamp.dart';
+import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -213,6 +214,12 @@ class EspEntitySurface {
       button('bring_to_front', 'Bring to front', 'mdi:flip-to-front'),
       if (_settings.get(defs.launcherEnabled))
         button('open_launcher', 'Open app launcher', 'mdi:apps'),
+      // Only with a Music Assistant server address configured, exactly like
+      // the kiosk menu entry: a button that can only fail is worse than no
+      // button.
+      if (musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)) != null)
+        button('show_music_assistant', 'Show Music Assistant',
+            'mdi:music-box-multiple'),
       if (_cameraViews.isNotEmpty) ...[
         {
           'type': 'select',
@@ -576,6 +583,8 @@ class EspEntitySurface {
         await commands.execute('bringToFront', const {});
       case 'open_launcher':
         await commands.execute('showAppLauncher', const {});
+      case 'show_music_assistant':
+        await commands.execute('showMusicAssistant', const {});
       case 'camera_view':
         if ('$value' == 'Closed') {
           await commands.execute('hideCameraView', const {});

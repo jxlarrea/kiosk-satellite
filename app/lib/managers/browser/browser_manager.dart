@@ -12,6 +12,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../device/screen_capture.dart';
 import '../device/webview_freeze.dart';
+import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
@@ -277,6 +278,31 @@ class BrowserManager extends Manager {
             if (url == null || url.isEmpty) {
               return const CommandResult.fail('url required');
             }
+            showLinkOverlay(url);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'showMusicAssistant',
+          description:
+              'Show the Music Assistant web interface over the dashboard, '
+              'waking the screen first — the remote face of the kiosk menu '
+              'entry. Fails when no server address is configured.',
+          handler: (_) async {
+            final url =
+                musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl));
+            if (url == null) {
+              return const CommandResult.fail(
+                  'no Music Assistant server address configured');
+            }
+            // Same wake-up a camera view gets: pressed from Home Assistant
+            // the device may be dark, backgrounded, or on the screensaver,
+            // and the page must land somewhere visible.
+            await commands.execute('screenOn', const {});
+            await commands.execute('bringToFront', const {});
+            await commands.execute('stopScreensaver', const {});
             showLinkOverlay(url);
             return const CommandResult.ok();
           },

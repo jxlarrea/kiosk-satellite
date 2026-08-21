@@ -72,6 +72,9 @@ class BtProxyManager extends Manager {
       'camera.enabled',
       'launcher.enabled',
       'motion.sensor',
+      // The Show Music Assistant button exists only while a server address
+      // is configured.
+      'sendspin.ma_url',
     };
     _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('btproxy.') &&

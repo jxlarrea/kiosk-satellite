@@ -13,6 +13,7 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../device/wifi_mac.dart';
+import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
 import 'dashboard_views.dart' as shared;
 import '../settings/settings_manager.dart';
@@ -665,6 +666,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
+    if (e.key == defs.sendspinMaUrl.key) {
+      // The Show Music Assistant button follows the server address:
+      // published once one is set, retracted when it is cleared.
+      if (_connected) unawaited(_publishDiscovery());
+      return;
+    }
     if (e.key == defs.btproxyEnabled.key) {
       // The nearby-devices sensor follows the proxy's master switch, same
       // shape as the launcher button above.
@@ -819,6 +826,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       '$_base/restart/set',
       '$_base/bring_to_front/set',
       '$_base/open_launcher/set',
+      '$_base/show_music_assistant/set',
       '$_base/update/set',
       '$_base/screensaver_brightness_level/set',
       '$_base/clock_background/set',
@@ -1083,6 +1091,16 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         final result = await commands.execute('showAppLauncher', const {});
         if (!result.ok) {
           log.warn(name, 'showAppLauncher over MQTT failed: ${result.error}');
+        }
+      } else if (topic == '$_base/show_music_assistant/set') {
+        // The Music Assistant web interface over the dashboard — the HA
+        // button face of the kiosk menu entry. The command wakes the screen
+        // and pulls the kiosk forward first, same as a camera view.
+        log.info(name, 'command $topic');
+        final result = await commands.execute('showMusicAssistant', const {});
+        if (!result.ok) {
+          log.warn(
+              name, 'showMusicAssistant over MQTT failed: ${result.error}');
         }
       } else if (topic == '$_base/restart/set') {
         // The process dies mid-restart; the broker's will flips the device
@@ -1598,6 +1616,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         '$_prefix/button/ks_$_deviceId/restart/config',
         '$_prefix/button/ks_$_deviceId/bring_to_front/config',
         '$_prefix/button/ks_$_deviceId/open_launcher/config',
+        '$_prefix/button/ks_$_deviceId/show_music_assistant/config',
         '$_prefix/update/ks_$_deviceId/update/config',
         // Always in the retraction list even though it is published
         // conditionally: a config export moved to sensor-less hardware must
@@ -2129,6 +2148,14 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           'command_topic': '$_base/open_launcher/set',
           'icon': 'mdi:apps',
         },
+      // Only with a Music Assistant server address configured, exactly like
+      // the kiosk menu entry (retraction below, and in _discoveryTopics).
+      if (musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)) != null)
+        '$_prefix/button/ks_$_deviceId/show_music_assistant/config': {
+          ...common('show_music_assistant', 'Show Music Assistant'),
+          'command_topic': '$_base/show_music_assistant/set',
+          'icon': 'mdi:music-box-multiple',
+        },
       '$_prefix/update/ks_$_deviceId/update/config': {
         ...common('update', 'Update'),
         'state_topic': '$_base/update/state',
@@ -2220,6 +2247,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // Same for the app launcher's button while the launcher is off.
     if (!_settings.get(defs.launcherEnabled)) {
       _publish('$_prefix/button/ks_$_deviceId/open_launcher/config', '');
+    }
+    // And the Music Assistant button while no server address is set.
+    if (musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl)) == null) {
+      _publish(
+          '$_prefix/button/ks_$_deviceId/show_music_assistant/config', '');
     }
     // A CPU temperature config from an older build (or an optimistic
     // default) is retracted once the probe has said this device cannot

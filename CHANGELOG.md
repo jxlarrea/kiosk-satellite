@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- A "Show Music Assistant" button on the kiosk's Home Assistant device, over both the ESPHome and MQTT integrations. Pressing it wakes the screen, brings the kiosk forward and opens the Music Assistant web interface over the dashboard, the same page the kiosk menu entry opens. The button exists only while a Music Assistant server address is configured, appearing and retiring on its own as the address is set or cleared.
 - A "Debug logging" switch in the Voice Satellite settings' General group, on the device and in the remote admin. It flips the same browser-console logging the Voice Satellite sidebar panel offers, so wake word scores and pipeline events can be turned on without leaving the kiosk's settings. Shown once the installed Voice Satellite version supports controlling it externally.
 
 ### Changed

@@ -15,9 +15,10 @@ void main() {
   late CommandRegistry commands;
   late BrowserManager browser;
 
-  Future<void> build() async {
+  Future<void> build({Map<String, Object> extra = const {}}) async {
     SharedPreferences.setMockInitialValues({
       'ks.browser.start_url': 'http://192.168.1.10:8123/lovelace/home',
+      ...extra,
     });
     final bus = EventBus();
     final log = Logger();
@@ -84,6 +85,36 @@ void main() {
           .execute('showOverlayPage', {'url': 'https://example.com/weather'});
       expect(browser.overlayUrl.value, 'https://example.com/weather');
       expect(browser.overlayDismissible.value, isFalse);
+    });
+
+    test('showMusicAssistant refuses without a server address', () async {
+      await build();
+      final result = await commands.execute('showMusicAssistant', const {});
+      expect(result.ok, isFalse);
+      expect(browser.overlayUrl.value, isNull);
+    });
+
+    test('showMusicAssistant wakes the device and opens the web interface',
+        () async {
+      await build(extra: {'ks.sendspin.ma_url': '192.168.1.10:8095'});
+      final woke = <String>[];
+      for (final name in ['screenOn', 'bringToFront', 'stopScreensaver']) {
+        commands.register(Command(
+          name: name,
+          description: name,
+          handler: (_) async {
+            woke.add(name);
+            return const CommandResult.ok();
+          },
+        ));
+      }
+      final result = await commands.execute('showMusicAssistant', const {});
+      expect(result.ok, isTrue);
+      expect(woke, ['screenOn', 'bringToFront', 'stopScreensaver']);
+      // The bare address gets the https scheme, the same URL the kiosk
+      // menu entry opens, on the dismissible overlay a tapped link gets.
+      expect(browser.overlayUrl.value, 'https://192.168.1.10:8095');
+      expect(browser.overlayDismissible.value, isTrue);
     });
 
     test('dismissal clears both, from every path', () async {

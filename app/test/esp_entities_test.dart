@@ -106,8 +106,8 @@ void main() {
       'screenOn', 'screenOff', 'setBrightness', 'setVolume',
       'startScreensaver', 'stopScreensaver', 'postponeScreensaver', 'reload',
       'loadStartUrl', 'clearWebCache', 'restartApp', 'bringToFront',
-      'showAppLauncher', 'hideCameraView', 'showCameraView', 'haNavigate',
-      'installUpdate', 'takeCameraSnapshot',
+      'showAppLauncher', 'showMusicAssistant', 'hideCameraView',
+      'showCameraView', 'haNavigate', 'installUpdate', 'takeCameraSnapshot',
     ]) {
       stub(name, null);
     }
@@ -170,6 +170,20 @@ void main() {
     expect(ids, isNot(contains('device_camera')));
     expect(ids, isNot(contains('take_snapshot')));
     expect(ids, isNot(contains('motion'))); // rides the camera
+  });
+
+  test('the Music Assistant button follows the server address', () async {
+    // No address configured: no button.
+    var ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, isNot(contains('show_music_assistant')));
+
+    await settings.set(defs.sendspinMaUrl, '192.168.1.10:8095');
+    ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, contains('show_music_assistant'));
+
+    executed.clear();
+    await surface.handleCommand('show_music_assistant', null);
+    expect(executed.map((e) => e.$1).toList(), ['showMusicAssistant']);
   });
 
   test('attach pushes an initial snapshot from the live sources', () async {
