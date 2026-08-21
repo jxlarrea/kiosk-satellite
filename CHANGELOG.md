@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.70 - 2026-08-21
 
 ### Added
 - A show/hide entry for the floating Sendspin player in the kiosk menu. Enabled with a new opt-in "Show in the kiosk menu" toggle in the Sendspin player settings, it reads "Show Sendspin Player" or "Hide Sendspin Player" to match what is on screen: showing brings back a card that was flung away, timed out paused, or belongs to a paused queue the app has not seen since it restarted, and works even while "Show the floating media player" is off, without changing that setting; hiding tucks the card away without stopping the music. In Kiosk Mode a new "Sendspin Player" allowed action decides whether the entry appears in the quick actions menu.
