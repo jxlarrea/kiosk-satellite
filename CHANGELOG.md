@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.68 - 2026-08-20
 
 ### Fixed
 - An open remote admin page no longer freezes the kiosk's reactive bar mid-turn and delays the done chime. The admin page refreshes its Voice Satellite panel on every wake-word state change, and those fire at the start and end of every voice turn; each refresh made the kiosk download and parse its Home Assistant instance's full entity registry twice plus the complete state table, megabytes of JSON on the same thread that animates the page, right while it was speaking. The registry half is now cached for five minutes and only the dozen entities the panel shows are read fresh, and the admin page itself no longer refreshes from a background tab, catching up when it next becomes visible instead.
