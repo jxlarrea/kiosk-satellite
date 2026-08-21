@@ -8178,19 +8178,44 @@ function connectWs() {
     // The device's own settings screen updates live off the same event; this
     // panel has to as well, or the two disagree about the same device.
     else if (msg.type === 'wakeword-state') {
-      loadWakeWord();
-      // A wake state change usually means the controlled entities moved too
-      // (an engine or wake word change re-negotiates); follow instantly.
-      const vsRoot = document.getElementById('tab-voicesatellite');
-      if (vsRoot && document.getElementById('vsGeneralCard')) {
-        renderVsControls(vsRoot, { auto: true });
-      }
+      queueVsControlsRefresh();
     }
     // The screensaver and the card both dim behind our back.
     else if (msg.type === 'brightness') showBrightness(msg.level);
     else if (msg.type === 'micLevel') renderMicLevel(msg.rms);
   };
 }
+/* Wake-word state pushes arrive at the START and END of every voice turn
+   (detection suspends while the tablet's own speaker answers). Refreshing
+   the Voice Satellite panel per push made this page an accomplice in a
+   per-turn freeze ON THE KIOSK: each refresh runs the vsControls snapshot
+   over there, and an admin tab left open - usually in a background tab -
+   was hammering it exactly while it tried to animate a voice turn. So:
+   never refresh from a hidden tab (catch up on return instead), and
+   coalesce the turn's start/end burst into one refresh after quiet. */
+let vsRefreshTimer = null;
+let vsRefreshPending = false;
+function queueVsControlsRefresh() {
+  if (document.hidden) { vsRefreshPending = true; return; }
+  clearTimeout(vsRefreshTimer);
+  vsRefreshTimer = setTimeout(() => {
+    vsRefreshTimer = null;
+    loadWakeWord();
+    // A wake state change can mean the controlled entities moved too
+    // (an engine or wake word change re-negotiates); follow along.
+    const vsRoot = document.getElementById('tab-voicesatellite');
+    if (vsRoot && document.getElementById('vsGeneralCard')) {
+      renderVsControls(vsRoot, { auto: true });
+    }
+  }, 2000);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && vsRefreshPending) {
+    vsRefreshPending = false;
+    queueVsControlsRefresh();
+  }
+});
+
 function setConn(s) { $('#connDot').className = `dot ${s}`; }
 function applyInfo(device, currentUrl) {
   if (!device) return;

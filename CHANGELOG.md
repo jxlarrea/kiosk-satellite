@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- An open remote admin page no longer freezes the kiosk's reactive bar mid-turn and delays the done chime. The admin page refreshes its Voice Satellite panel on every wake-word state change, and those fire at the start and end of every voice turn; each refresh made the kiosk download and parse its Home Assistant instance's full entity registry twice plus the complete state table, megabytes of JSON on the same thread that animates the page, right while it was speaking. The registry half is now cached for five minutes and only the dozen entities the panel shows are read fresh, and the admin page itself no longer refreshes from a background tab, catching up when it next becomes visible instead.
+- The done chime follows the end of speech immediately instead of a second or two later, and the reactive bar no longer freezes in that gap. When a natively played sound finished, the player's teardown ran on the interface thread before the finished signal was sent, and on devices with slow media decoders that teardown stalled the thread for most of a second; the chime's own start then queued behind the same stall. The finished signal now goes out first and the teardown is capped so it can never hold the interface thread.
+- Voice interactions that speak through a remote media player now end when the speaker stops instead of thirty seconds later. The kiosk trims the Home Assistant websocket to the entities a view actually uses, and it already made an exception for the Voice Satellite device so its own controls never go stale. The speaker chosen as the satellite's TTS output is not part of that device, though, so its updates were dropped: the page kept reading it as unavailable, Voice Satellite never saw the playback finish, and only its safety timeout closed the turn, firing the done chime half a minute after the speech ended. Any entity the satellite's own entities point at now rides along on the allowlist, and switching the TTS output to a different speaker rebuilds it right away.
+- The remote setup wizard no longer leaves the full settings interface sitting one scroll below it. Logging in, wizard and settings are three full-page views of the same page, and the code that revealed one never hid the others, so they stacked. On top of that, the decision to continue into the wizard after logging in was made once when the page loaded: any sign-out and second login during setup, including the automatic one when a stale session expires, then opened the settings of a kiosk that had never been set up. Each login now asks the kiosk whether setup is still pending, and switching views always replaces the one on screen.
+
 ## v2026.8.67 - 2026-08-20
 
 ### Added

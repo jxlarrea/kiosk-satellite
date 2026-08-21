@@ -1430,6 +1430,25 @@ class HomeAssistantManager extends Manager {
   /// browser-local settings from the page hook. Every part degrades to
   /// null/empty on its own so the settings page can say precisely what is
   /// missing (no satellite, no page hook) instead of failing whole.
+  /// Registry-derived half of [vsControlsSnapshot], cached: the satellites
+  /// to choose from and the chosen satellite's sibling entity map. The
+  /// registry list is the whole instance (a megabyte-plus of JSON on a big
+  /// install) over a fresh TLS websocket, and the snapshot used to fetch
+  /// it twice and then /api/states (everything again, bigger) on every
+  /// call. The remote admin page refreshes this snapshot on each wake-word
+  /// state push - which fires at TTS start AND end of every voice turn -
+  /// so each turn parsed megabytes of JSON on the UI thread of the very
+  /// tablet that was trying to animate its reactive bar and play its done
+  /// chime. Registries change when integrations are added, not per turn;
+  /// five minutes of staleness here is invisible, the per-turn freeze
+  /// was not.
+  ({
+    String satellite,
+    List<Map<String, Object?>>? satellites,
+    Map<String, String> wanted,
+    DateTime at,
+  })? _vsControlsCache;
+
   Future<Map<String, Object?>> vsControlsSnapshot() async {
     // The page's own binding wins (localStorage, changeable in the Voice
     // Satellite panel); the wizard's stored pick is the fallback.
@@ -1445,14 +1464,22 @@ class HomeAssistantManager extends Manager {
       satellite = _settings.get(defs.haSatelliteEntity).trim();
     }
 
-    final satellites = await listVoiceSatellites();
+    final cached = _vsControlsCache;
+    final cacheHit =
+        cached != null &&
+        cached.satellite == satellite &&
+        DateTime.now().difference(cached.at) < const Duration(minutes: 5);
+    final satellites = cacheHit
+        ? cached.satellites
+        : await listVoiceSatellites();
 
     // The satellite's sibling selects, located by device rather than by
     // entity_id (ids are user-renamable; the device and translation_key
     // are stable). Same resolution the card's own settings gate uses.
-    final entities = <String, Object?>{};
-    String? version;
-    if (satellite.isNotEmpty) {
+    var wanted = const <String, String>{};
+    if (cacheHit) {
+      wanted = cached.wanted;
+    } else if (satellite.isNotEmpty) {
       try {
         final registry = await _wsCommand({
           'type': 'config/entity_registry/list',
@@ -1490,7 +1517,7 @@ class HomeAssistantManager extends Manager {
               'stop word interruption': 'stop_word',
               'wake word noise gate': 'noise_gate',
             };
-            final wanted = <String, String>{}; // key -> entity_id
+            final resolved = <String, String>{}; // key -> entity_id
             for (final e in entries) {
               if (e['device_id'] != deviceId ||
                   e['platform'] != 'voice_satellite') {
@@ -1505,42 +1532,68 @@ class HomeAssistantManager extends Manager {
                   ? controlledSelects.contains(key)
                   : id.startsWith('switch.') &&
                         controlledSwitches.contains(key);
-              if (ok) wanted[key] = id;
+              if (ok) resolved[key] = id;
             }
-            if (wanted.isNotEmpty) {
-              final states = await fetchStates();
-              // The integration's installed version rides on the
-              // satellite entity itself.
-              final own = states?.firstWhere(
-                (s) => s['entity_id'] == satellite,
-                orElse: () => const {},
-              );
-              final attrs = own?['attributes'];
-              if (attrs is Map && attrs['integration_version'] != null) {
-                version = '${attrs['integration_version']}';
-              }
-              for (final entry in wanted.entries) {
-                final state = states?.firstWhere(
-                  (s) => s['entity_id'] == entry.value,
-                  orElse: () => const {},
-                );
-                final attributes = state?['attributes'];
-                entities[entry.key] = {
-                  'entity_id': entry.value,
-                  'state': state?['state'],
-                  'available':
-                      state?['state'] != null &&
-                      state?['state'] != 'unavailable',
-                  'options': attributes is Map
-                      ? attributes['options'] ?? const []
-                      : const [],
-                };
-              }
-            }
+            wanted = resolved;
           }
         }
+        _vsControlsCache = (
+          satellite: satellite,
+          satellites: satellites,
+          wanted: wanted,
+          at: DateTime.now(),
+        );
       } catch (e) {
         log.warn(name, 'vsControls sibling lookup failed: $e');
+      }
+    }
+
+    // Fresh states for just the sibling entities plus the satellite itself
+    // (its attributes carry the integration version): a dozen one-kilobyte
+    // reads on one keep-alive connection, never the whole state table.
+    final entities = <String, Object?>{};
+    String? version;
+    if (wanted.isNotEmpty) {
+      final client = http.Client();
+      try {
+        Future<Map<String, Object?>?> read(String id) async {
+          try {
+            final response = await client
+                .get(
+                  Uri.parse('$baseUrl/api/states/$id'),
+                  headers: {
+                    'Authorization': 'Bearer ${_settings.get(defs.haToken)}',
+                  },
+                )
+                .timeout(const Duration(seconds: 10));
+            if (response.statusCode != 200) return null;
+            final decoded = jsonDecode(response.body);
+            return decoded is Map ? decoded.cast<String, Object?>() : null;
+          } catch (_) {
+            return null;
+          }
+        }
+
+        final ownState = await read(satellite);
+        final attrs = ownState?['attributes'];
+        if (attrs is Map && attrs['integration_version'] != null) {
+          version = '${attrs['integration_version']}';
+        }
+        for (final entry in wanted.entries) {
+          final state = await read(entry.value);
+          final attributes = state?['attributes'];
+          entities[entry.key] = {
+            'entity_id': entry.value,
+            'state': state?['state'],
+            'available':
+                state?['state'] != null && state?['state'] != 'unavailable',
+            'options': attributes is Map
+                ? attributes['options'] ?? const []
+                : const [],
+          };
+        }
+      } finally {
+        client.close();
       }
     }
 
