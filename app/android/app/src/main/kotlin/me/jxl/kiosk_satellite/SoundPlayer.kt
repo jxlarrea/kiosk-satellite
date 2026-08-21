@@ -68,6 +68,10 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         private const val STREAM_STARTUP_BUFFER_MS = 250
         private const val STREAM_REBUFFER_MS = 500
 
+        /** Cap on how long ExoPlayer.release() may block its caller (the
+         *  main thread) waiting for the internal playback thread. */
+        private const val RELEASE_TIMEOUT_MS = 50L
+
         /** Playback errors that mean the decoder, not the sound: worth one
          *  retry on software decoders, which need no vendor codec service. */
         private val DECODER_ERROR_CODES = setOf(
@@ -384,6 +388,13 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                         )
                         .build(),
                 )
+                // release() waits synchronously on the internal playback
+                // thread up to this long. The default 500ms is a real main-
+                // thread stall on slow codec teardown (measured on the Echo
+                // Show's MediaTek HAL); these are one-shot TTS/chime sounds,
+                // so let the teardown finish in the background instead of
+                // holding the thread that draws the dashboard.
+                .setReleaseTimeoutMs(RELEASE_TIMEOUT_MS)
                 .build()
             exoPlayers[id] = player
             player.setAudioAttributes(
@@ -779,18 +790,27 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         val mp = players.remove(id)
         val exo = exoPlayers.remove(id)
         if (mp == null && exo == null) return
+        // The ended event goes out BEFORE any teardown. Everything the user
+        // is waiting for hangs off it - the page's completion logic and the
+        // done chime it fires - and player release is pure cleanup. It used
+        // to be sent last, after an ExoPlayer release that blocks this
+        // (main) thread for up to its 500ms internal timeout on a slow
+        // codec teardown; that block, plus its place in the main queue, is
+        // exactly the silent gap users heard between TTS and the done
+        // chime (with the reactive bar frozen, since level events and the
+        // ended event ride the same thread).
+        channel.invokeMethod("ended", mapOf("id" to id, "error" to error))
         // Releasing a MediaPlayer tears down the decoder and its track,
         // which is tens of milliseconds of this thread - and this thread is
         // the one drawing the dashboard. The player is already out of the
         // map, so nothing can reach it while the worker lets it go.
         // ExoPlayer must be released from its application thread (this
-        // one), and its release only posts to an internal playback thread.
+        // one); the builder caps how long that call may block.
         if (mp != null) {
             workerHandler.post {
                 try { mp.release() } catch (_: Exception) {}
             }
         }
         try { exo?.release() } catch (_: Exception) {}
-        channel.invokeMethod("ended", mapOf("id" to id, "error" to error))
     }
 }
