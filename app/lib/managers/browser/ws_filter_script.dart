@@ -94,7 +94,20 @@ const wsFilterScript = '''
         if ('lc' in p) cur.lc = p.lc;
         if ('lu' in p) cur.lu = p.lu;
         if ('c' in p) cur.c = p.c;
-        if (p.a) { cur.a = cur.a || {}; for (var k in p.a) cur.a[k] = p.a[k]; }
+        if (p.a) {
+          cur.a = cur.a || {};
+          // Retarget: the pointer an allowed entity carries now names a
+          // different entity (the TTS output was switched to another
+          // speaker). The allowlist was built around the old one, so
+          // rebuild rather than leave the new target's updates dropped
+          // until the next navigation.
+          if ('entity_id' in p.a && S.allow && S.allow.has(e)
+            && JSON.stringify(p.a.entity_id) !== JSON.stringify(cur.a.entity_id)) {
+            clearTimeout(S.tgtTimer);
+            S.tgtTimer = setTimeout(function () { if (S.enabled) recompute(); }, 250);
+          }
+          for (var k in p.a) cur.a[k] = p.a[k];
+        }
       }
       if (d['-'] && d['-'].a && cur.a) {
         var rm = d['-'].a;
@@ -103,6 +116,18 @@ const wsFilterScript = '''
     }
   }
   function applyRemove(r) { (r || []).forEach(function (e) { delete S.shadow[e]; }); }
+
+  // An entity whose `entity_id` attribute names OTHER entities (Voice
+  // Satellite's TTS output select, group-shaped helpers) drags those onto
+  // the allowlist with it: whoever reads the pointer reads the target's
+  // state next.
+  function addTargets(st, acc) {
+    var t = st && st.attributes && st.attributes.entity_id;
+    if (!t) return;
+    (Array.isArray(t) ? t : [t]).forEach(function (id) {
+      if (typeof id === 'string' && id.indexOf('.') > 0) acc.add(id);
+    });
+  }
 
   // update.* always passes: the sidebar's update badges live outside every
   // view, and update entities change state rarely enough that forwarding
@@ -320,7 +345,18 @@ const wsFilterScript = '''
         var dev = se && se.device_id;
         if (dev) {
           for (var eid in hass.entities) {
-            if (hass.entities[eid].device_id === dev) acc.add(eid);
+            if (hass.entities[eid].device_id === dev) {
+              acc.add(eid);
+              // Some of the satellite's own entities POINT AT one somewhere
+              // else — the TTS output select names the media_player the card
+              // speaks through, and the card watches that player's state to
+              // know when speech ended. It belongs to the Cast (or Sonos, or
+              // DLNA) integration, so nothing above ever put it on the list,
+              // and its updates were dropped: every remote-TTS turn hung
+              // until the card's 30-second safety timeout gave up, firing
+              // the done chime half a minute after the speaker went quiet.
+              addTargets(hass.states[eid], acc);
+            }
           }
         }
       }
