@@ -6,6 +6,7 @@ import '../app_container.dart';
 import '../managers/gestures/gesture_mappings.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
+import 'toast.dart';
 import 'settings_search.dart';
 
 /// The Gestures page (issue #99): the list of gestures and the
@@ -779,14 +780,11 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
     }
     if (!mounted) return null;
     if (entries.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Could not list dashboards. Is Home Assistant '
-            'connected?',
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showToast(
+        context,
+        title: 'Could not list dashboards',
+        message: 'Is Home Assistant connected?',
+        kind: ToastKind.error,
       );
       return null;
     }

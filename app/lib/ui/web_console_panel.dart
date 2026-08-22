@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../managers/browser/browser_manager.dart';
+import 'toast.dart';
 
 /// Bottom-docked JavaScript console for the WebView: live console.log /
 /// warn / error output with level colors, plus copy/share for bug reports.
@@ -58,18 +59,20 @@ class _WebConsolePanelState extends State<WebConsolePanel> {
   }
 
   String _export() => [
-        for (final e in widget.browser.consoleEntries)
-          '${e.time.toIso8601String()} [${e.level}] ${e.message}',
-      ].join('\n');
+    for (final e in widget.browser.consoleEntries)
+      '${e.time.toIso8601String()} [${e.level}] ${e.message}',
+  ].join('\n');
 
   Future<void> _copy() async {
     await Clipboard.setData(ClipboardData(text: _export()));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Console log copied'),
-      duration: Duration(seconds: 2),
-      behavior: SnackBarBehavior.floating,
-    ));
+    showToast(
+      context,
+      title: 'Copied',
+      message: 'The console log is on the clipboard.',
+      kind: ToastKind.success,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   Future<void> _share() async {
@@ -93,14 +96,16 @@ class _WebConsolePanelState extends State<WebConsolePanel> {
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(color: theme.colorScheme.outlineVariant),
-                    bottom:
-                        BorderSide(color: theme.colorScheme.outlineVariant),
+                    bottom: BorderSide(color: theme.colorScheme.outlineVariant),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.terminal_outlined,
-                        size: 18, color: theme.colorScheme.primary),
+                    Icon(
+                      Icons.terminal_outlined,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
                     const SizedBox(width: 8),
                     Text('Web Console', style: theme.textTheme.titleSmall),
                     const Spacer(),
@@ -141,29 +146,36 @@ class _WebConsolePanelState extends State<WebConsolePanel> {
                     });
                     if (entries.isEmpty) {
                       return Center(
-                        child: Text('No console output yet',
-                            style: theme.textTheme.bodySmall),
+                        child: Text(
+                          'No console output yet',
+                          style: theme.textTheme.bodySmall,
+                        ),
                       );
                     }
                     return ListView.builder(
                       controller: _scroll,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                       itemCount: entries.length,
                       itemBuilder: (context, index) {
                         final entry = entries[index];
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 1),
                           child: Text.rich(
-                            TextSpan(children: [
-                              TextSpan(
-                                text:
-                                    '${entry.time.toIso8601String().substring(11, 19)} ',
-                                style: TextStyle(
-                                    color: theme.colorScheme.outline),
-                              ),
-                              TextSpan(text: entry.message),
-                            ]),
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text:
+                                      '${entry.time.toIso8601String().substring(11, 19)} ',
+                                  style: TextStyle(
+                                    color: theme.colorScheme.outline,
+                                  ),
+                                ),
+                                TextSpan(text: entry.message),
+                              ],
+                            ),
                             style: TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 12,

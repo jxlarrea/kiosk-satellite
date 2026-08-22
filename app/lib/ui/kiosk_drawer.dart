@@ -10,6 +10,7 @@ import '../managers/settings/definitions.dart' as defs;
 import '../managers/update/update_manager.dart';
 import 'kit.dart';
 import 'theme.dart';
+import 'toast.dart';
 
 /// Slide-out menu (swipe from the left edge), Fully Kiosk style: Home,
 /// Settings, Clear web cache, Log out, Exit Application.
@@ -655,22 +656,26 @@ class KioskDrawer extends StatelessWidget {
   /// line for the notice via its ValueListenableBuilder on its own; the
   /// other two outcomes only exist as this feedback.
   Future<void> _checkNow(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Checking for updates…')),
-    );
+    final overlay = Overlay.of(context, rootOverlay: true);
+    showToastIn(overlay, title: 'Checking for updates…', sticky: true);
     final reachable = await c.update.check();
-    messenger.hideCurrentSnackBar();
+    dismissToast();
     if (c.update.available.value != null) return;
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          reachable
-              ? 'You are on the latest version.'
-              : 'Update check failed. Is the device online?',
-        ),
-      ),
-    );
+    if (reachable) {
+      showToastIn(
+        overlay,
+        title: 'Up to date',
+        message: 'You are on the latest version.',
+        kind: ToastKind.success,
+      );
+    } else {
+      showToastIn(
+        overlay,
+        title: 'Update check failed',
+        message: 'Is the device online?',
+        kind: ToastKind.error,
+      );
+    }
   }
 
   /// Release notes → download (progress dialog) → hand off to the Android

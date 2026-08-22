@@ -36,6 +36,7 @@ import 'import_options_dialog.dart';
 import 'kit.dart';
 import 'media_picker.dart';
 import 'theme.dart';
+import 'toast.dart';
 import 'mic_level_meter.dart';
 import 'settings_search.dart';
 import 'wake_word_tester.dart';
@@ -949,11 +950,13 @@ class _CategoryContentState extends State<_CategoryContent> {
     super.dispose();
   }
 
-  void _toast(String message) {
+  void _toast(
+    String title, {
+    String? message,
+    ToastKind kind = ToastKind.info,
+  }) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-    );
+    showToast(context, title: title, message: message, kind: kind);
   }
 
   Future<void> _exportConfig() async {
@@ -962,7 +965,7 @@ class _CategoryContentState extends State<_CategoryContent> {
       const {},
     );
     if (!result.ok) {
-      _toast('Export failed: ${result.error}');
+      _toast('Export failed', message: result.error, kind: ToastKind.error);
       return;
     }
     final bytes = utf8.encode(
@@ -979,7 +982,9 @@ class _CategoryContentState extends State<_CategoryContent> {
       allowedExtensions: const ['json'],
       bytes: Uint8List.fromList(bytes),
     );
-    if (path != null) _toast('Configuration exported');
+    if (path != null) {
+      _toast('Configuration exported', kind: ToastKind.success);
+    }
   }
 
   Future<void> _importConfig() async {
@@ -994,7 +999,11 @@ class _CategoryContentState extends State<_CategoryContent> {
     try {
       config = jsonDecode(utf8.decode(bytes));
     } catch (_) {
-      _toast('That file is not valid JSON');
+      _toast(
+        'Import failed',
+        message: 'That file is not valid JSON.',
+        kind: ToastKind.error,
+      );
       return;
     }
     if (!mounted) return;
@@ -1011,10 +1020,14 @@ class _CategoryContentState extends State<_CategoryContent> {
       'importLocalStorage': options.importLocalStorage,
     });
     if (result.ok) {
-      _toast('Applied ${(result.data as Map)['applied']} settings');
+      _toast(
+        'Import complete',
+        message: "Applied ${(result.data as Map)['applied']} settings.",
+        kind: ToastKind.success,
+      );
       if (mounted) setState(() {});
     } else {
-      _toast('Import failed: ${result.error}');
+      _toast('Import failed', message: result.error, kind: ToastKind.error);
     }
   }
 
@@ -1134,12 +1147,12 @@ class _CategoryContentState extends State<_CategoryContent> {
                       ),
                     );
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Log copied'),
-                        duration: Duration(seconds: 2),
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    showToast(
+                      context,
+                      title: 'Copied',
+                      message: 'The log is on the clipboard.',
+                      kind: ToastKind.success,
+                      duration: const Duration(seconds: 2),
                     );
                   },
                 ),
@@ -1285,7 +1298,6 @@ class _CategoryContentState extends State<_CategoryContent> {
                           tooltip: 'Copy log',
                           icon: const Icon(Icons.copy_outlined, size: 20),
                           onPressed: () async {
-                            final messenger = ScaffoldMessenger.of(context);
                             await Clipboard.setData(
                               ClipboardData(
                                 text: [
@@ -1295,13 +1307,13 @@ class _CategoryContentState extends State<_CategoryContent> {
                                 ].join('\n'),
                               ),
                             );
-                            if (!mounted) return;
-                            messenger.showSnackBar(
-                              const SnackBar(
-                                content: Text('Console log copied'),
-                                duration: Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
+                            if (!context.mounted) return;
+                            showToast(
+                              context,
+                              title: 'Copied',
+                              message: 'The console log is on the clipboard.',
+                              kind: ToastKind.success,
+                              duration: const Duration(seconds: 2),
                             );
                           },
                         ),
@@ -2862,8 +2874,10 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     final data = result.data;
     if (!result.ok || data is! List) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not reach Home Assistant.')),
+        showToast(
+          context,
+          title: 'Could not reach Home Assistant',
+          kind: ToastKind.error,
         );
       }
       return null;
@@ -2875,10 +2889,11 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     ];
     if (entities.isEmpty) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Home Assistant has no weather entities.'),
-          ),
+        showToast(
+          context,
+          title: 'No weather entities',
+          message: 'Home Assistant reported none.',
+          kind: ToastKind.warning,
         );
       }
       return null;
@@ -3662,10 +3677,7 @@ class _MaPlayerRowState extends State<_MaPlayerRow> {
                   final id = value ?? '';
                   final name = id.isEmpty
                       ? ''
-                      : '${players.firstWhere(
-                          (p) => '${p['id']}' == id,
-                          orElse: () => const {},
-                        )['name'] ?? ''}';
+                      : '${players.firstWhere((p) => '${p['id']}' == id, orElse: () => const {})['name'] ?? ''}';
                   Navigator.pop(ctx, [id, name]);
                 },
                 child: ListView(
@@ -5511,11 +5523,12 @@ class _RealMacStatusRowState extends State<_RealMacStatusRow> {
   void initState() {
     super.initState();
     adoptedWifiMac(widget.container.settings).then((mac) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _mac = mac;
           _resolved = true;
         });
+      }
     });
   }
 
@@ -5942,10 +5955,10 @@ class SettingTile extends StatelessWidget {
   /// photos download one by one), and one bad item fails the whole batch.
   /// So a progress barrier covers the whole wait, the copy stages into a
   /// scratch folder that only replaces the previous set once it is
-  /// complete, and a failure surfaces as a snackbar instead of vanishing
+  /// complete, and a failure surfaces as a toast instead of vanishing
   /// as an unhandled async error after the old selection is already gone.
   Future<void> _pickGalleryPhotos(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final overlay = Overlay.of(context, rootOverlay: true);
     final navigator = Navigator.of(context, rootNavigator: true);
     final progress = ValueNotifier<String?>(null);
     unawaited(
@@ -6008,11 +6021,11 @@ class SettingTile extends StatelessWidget {
       onChanged();
     } catch (e) {
       c.log.warn('screensaver', 'gallery pick failed: $e');
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Could not copy the photos. Try a smaller selection.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showToastIn(
+        overlay,
+        title: 'Could not copy the photos',
+        message: 'Try a smaller selection.',
+        kind: ToastKind.error,
       );
     } finally {
       navigator.pop();
@@ -6396,8 +6409,11 @@ class SettingTile extends StatelessWidget {
     final result = await c.commands.execute('immichAlbums', const {});
     if (!context.mounted) return;
     if (!result.ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.error ?? 'Could not list the albums')),
+      showToast(
+        context,
+        title: 'Could not list the albums',
+        message: result.error,
+        kind: ToastKind.error,
       );
       return;
     }
@@ -6430,8 +6446,11 @@ class SettingTile extends StatelessWidget {
     final result = await c.commands.execute('installedApps', const {});
     if (!context.mounted) return;
     if (!result.ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.error ?? 'Could not list the apps')),
+      showToast(
+        context,
+        title: 'Could not list the apps',
+        message: result.error,
+        kind: ToastKind.error,
       );
       return;
     }

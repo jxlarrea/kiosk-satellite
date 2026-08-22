@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../app_container.dart';
 import '../managers/wake_word/engine.dart';
 import 'kit.dart';
+import 'toast.dart';
 
 /// One inference's telemetry, as the engine reports it.
 class _Sample {
@@ -172,11 +173,11 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
       // model decoded, so a miss reads as "heard X, wanted Y". Deduped and
       // rate-limited so the log is readable, not a firehose.
       final nowMs = DateTime.now().millisecondsSinceEpoch;
-      final notable = s.nearMiss ||
+      final notable =
+          s.nearMiss ||
           s.decoded.isNotEmpty ||
           (s.threshold > 0 && s.score >= s.threshold * 0.75);
-      if (notable &&
-          (s.decoded != _lastLogged || nowMs - _lastNearMs > 500)) {
+      if (notable && (s.decoded != _lastLogged || nowMs - _lastNearMs > 500)) {
         _nearMisses++;
         _lastLogged = s.decoded;
         _lastNearMs = nowMs;
@@ -245,10 +246,7 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
     final theme = Theme.of(context);
     final lat = _latency();
     final last = _samples.isNotEmpty ? _samples.last : null;
-    final peak = _samples.fold<double>(
-      0,
-      (p, s) => math.max(p, s.score),
-    );
+    final peak = _samples.fold<double>(0, (p, s) => math.max(p, s.score));
 
     return Dialog(
       insetPadding: const EdgeInsets.all(20),
@@ -393,12 +391,12 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
                               ),
                             );
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Log copied'),
-                                duration: Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
+                            showToast(
+                              context,
+                              title: 'Copied',
+                              message: 'The log is on the clipboard.',
+                              kind: ToastKind.success,
+                              duration: const Duration(seconds: 2),
                             );
                           },
                     icon: const Icon(Icons.copy_outlined, size: 16),
@@ -421,73 +419,77 @@ class _WakeWordTesterDialogState extends State<_WakeWordTesterDialog> {
                   ),
                   child: LayoutBuilder(
                     builder: (context, cons) {
-                    final logW = cons.maxWidth;
-                    return _log.isEmpty
-                      ? Text(
-                          'Detections and near misses will appear here.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                      // No wrap: long lines (a full decoded phoneme run)
-                      // scroll horizontally instead of folding. Both bars
-                      // shown; each scrollbar reacts only to its own axis so
-                      // the nested views do not fight.
-                      : Scrollbar(
-                          controller: _logScroll,
-                          thumbVisibility: true,
-                          notificationPredicate: (n) =>
-                              n.metrics.axis == Axis.vertical,
-                          child: SingleChildScrollView(
-                            controller: _logScroll,
-                            child: Scrollbar(
-                              controller: _logScrollH,
+                      final logW = cons.maxWidth;
+                      return _log.isEmpty
+                          ? Text(
+                              'Detections and near misses will appear here.',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            )
+                          // No wrap: long lines (a full decoded phoneme run)
+                          // scroll horizontally instead of folding. Both bars
+                          // shown; each scrollbar reacts only to its own axis so
+                          // the nested views do not fight.
+                          : Scrollbar(
+                              controller: _logScroll,
                               thumbVisibility: true,
                               notificationPredicate: (n) =>
-                                  n.metrics.axis == Axis.horizontal,
+                                  n.metrics.axis == Axis.vertical,
                               child: SingleChildScrollView(
-                                controller: _logScrollH,
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.only(bottom: 12),
-                                // Fill the pane's width so short logs still
-                                // occupy the whole field and the horizontal
-                                // bar only appears when a line truly overruns,
-                                // otherwise the bars jitter as text lands.
-                                child: ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: logW),
-                                  child: SelectableText.rich(
-                                  TextSpan(
-                                    children: [
-                                      for (final (i, entry)
-                                          in _log.indexed)
+                                controller: _logScroll,
+                                child: Scrollbar(
+                                  controller: _logScrollH,
+                                  thumbVisibility: true,
+                                  notificationPredicate: (n) =>
+                                      n.metrics.axis == Axis.horizontal,
+                                  child: SingleChildScrollView(
+                                    controller: _logScrollH,
+                                    scrollDirection: Axis.horizontal,
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    // Fill the pane's width so short logs still
+                                    // occupy the whole field and the horizontal
+                                    // bar only appears when a line truly overruns,
+                                    // otherwise the bars jitter as text lands.
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        minWidth: logW,
+                                      ),
+                                      child: SelectableText.rich(
                                         TextSpan(
-                                          text: entry.$1 +
-                                              (i == _log.length - 1
-                                                  ? ''
-                                                  : '\n'),
-                                          style: entry.$2
-                                              ? TextStyle(
-                                                  color: theme
-                                                      .colorScheme.primary,
-                                                  fontWeight:
-                                                      FontWeight.w600,
-                                                )
-                                              : null,
+                                          children: [
+                                            for (final (i, entry)
+                                                in _log.indexed)
+                                              TextSpan(
+                                                text:
+                                                    entry.$1 +
+                                                    (i == _log.length - 1
+                                                        ? ''
+                                                        : '\n'),
+                                                style: entry.$2
+                                                    ? TextStyle(
+                                                        color: theme
+                                                            .colorScheme
+                                                            .primary,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      )
+                                                    : null,
+                                              ),
+                                          ],
                                         ),
-                                    ],
+                                        maxLines: null,
+                                        style: const TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 12,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  maxLines: null,
-                                  style: const TextStyle(
-                                    fontFamily: 'monospace',
-                                    fontSize: 12,
-                                    height: 1.4,
-                                  ),
-                                ),
                                 ),
                               ),
-                            ),
-                          ),
-                        );
+                            );
                     },
                   ),
                 ),
@@ -592,7 +594,10 @@ class _ScorePainter extends CustomPainter {
     for (var t = 0; t <= 4; t++) {
       final yy = y(lo + span * t / 4);
       canvas.drawLine(
-          Offset(plotLeft, yy), Offset(plotLeft + plotW, yy), gridPaint);
+        Offset(plotLeft, yy),
+        Offset(plotLeft + plotW, yy),
+        gridPaint,
+      );
       final tp = _cLabels![t];
       tp.paint(canvas, Offset(plotLeft - tp.width - 6, yy - tp.height / 2));
     }

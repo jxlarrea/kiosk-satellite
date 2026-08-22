@@ -242,11 +242,5 @@ ThemeData buildTheme(Brightness brightness) {
         padding: const EdgeInsets.symmetric(horizontal: 12),
       ),
     ),
-    snackBarTheme: SnackBarThemeData(
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Ks.radiusControl),
-      ),
-    ),
   );
 }

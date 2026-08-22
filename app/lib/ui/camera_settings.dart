@@ -7,6 +7,7 @@ import '../core/events.dart';
 import '../managers/camera/models.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'kit.dart';
+import 'toast.dart';
 import 'settings_search.dart';
 
 class CameraSettingsPanel extends StatefulWidget {
@@ -36,11 +37,13 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
     super.dispose();
   }
 
-  void _message(String text) {
+  void _message(
+    String title, {
+    String? message,
+    ToastKind kind = ToastKind.info,
+  }) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), behavior: SnackBarBehavior.floating),
-    );
+    showToast(context, title: title, message: message, kind: kind);
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -289,10 +292,11 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
   /// def-backed slider; hand-built here because the Playback card is.
   Widget _autoDismissRow(BuildContext context) {
     final def = defs.cameraAutoDismissSeconds;
-    final value = _autoDismissDrag ??
-        (widget.container.settings.get(def))
-            .toDouble()
-            .clamp(def.min!.toDouble(), def.max!.toDouble());
+    final value =
+        _autoDismissDrag ??
+        (widget.container.settings.get(
+          def,
+        )).toDouble().clamp(def.min!.toDouble(), def.max!.toDouble());
     return Column(
       children: [
         ListTile(
@@ -345,7 +349,11 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
   Future<void> _showView(CameraViewConfig view) async {
     final result = await widget.container.camera.showView(view.id);
     if (!result.ok) {
-      _message('Could not show view: ${result.error}');
+      _message(
+        'Could not show the view',
+        message: result.error,
+        kind: ToastKind.error,
+      );
       return;
     }
     if (mounted) Navigator.of(context).pop();
@@ -396,13 +404,14 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
       {'serverId': server.id},
     );
     if (!result.ok) {
-      _message('Import failed: ${result.error}');
+      _message('Import failed', message: result.error, kind: ToastKind.error);
       return;
     }
     final data = result.data as Map;
     _message(
-      'Import complete: ${data['added']} added, '
-      '${data['missing']} missing.',
+      'Import complete',
+      message: "${data['added']} added, ${data['missing']} missing.",
+      kind: ToastKind.success,
     );
   });
 
@@ -412,13 +421,14 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
       const {},
     );
     if (!result.ok) {
-      _message('Import failed: ${result.error}');
+      _message('Import failed', message: result.error, kind: ToastKind.error);
       return;
     }
     final data = result.data as Map;
     _message(
-      'Import complete: ${data['added']} added, '
-      '${data['missing']} missing.',
+      'Import complete',
+      message: "${data['added']} added, ${data['missing']} missing.",
+      kind: ToastKind.success,
     );
   });
 
@@ -511,7 +521,13 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         'cameraPutServer',
         params,
       );
-      if (!result.ok) _message('Could not save server: ${result.error}');
+      if (!result.ok) {
+        _message(
+          'Could not save the server',
+          message: result.error,
+          kind: ToastKind.error,
+        );
+      }
     });
   }
 
@@ -646,7 +662,13 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             'entityId': entity.text,
             'fullscreenStreamName': fullscreen.text,
           });
-      if (!result.ok) _message('Could not save camera: ${result.error}');
+      if (!result.ok) {
+        _message(
+          'Could not save the camera',
+          message: result.error,
+          kind: ToastKind.error,
+        );
+      }
     });
   }
 
@@ -824,7 +846,13 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         if (selected.isNotEmpty)
           'grid': (grid ?? selected.length).clamp(selected.length, 12),
       });
-      if (!result.ok) _message('Could not save view: ${result.error}');
+      if (!result.ok) {
+        _message(
+          'Could not save the view',
+          message: result.error,
+          kind: ToastKind.error,
+        );
+      }
     });
   }
 

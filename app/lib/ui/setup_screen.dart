@@ -13,6 +13,7 @@ import '../managers/settings/definitions.dart' as defs;
 import 'import_options_dialog.dart';
 import 'kiosk_screen.dart';
 import 'theme.dart';
+import 'toast.dart';
 import 'token_qr_scanner.dart';
 
 /// First-run onboarding: a five-step wizard, Home Assistant-oriented from
@@ -105,21 +106,20 @@ class _SetupScreenState extends State<SetupScreen> {
     final outcome = await requestOsPermission(Permission.camera);
     if (!mounted) return;
     if (outcome != PermissionOutcome.granted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            outcome == PermissionOutcome.blocked
-                ? 'Allow the camera for Kiosk Satellite in the Android '
-                      'settings to scan the QR code.'
-                : 'Allow the camera to scan the QR code.',
-          ),
-        ),
+      showToast(
+        context,
+        title: 'Camera permission needed',
+        message: outcome == PermissionOutcome.blocked
+            ? 'Allow the camera for Kiosk Satellite in the Android '
+                  'settings to scan the QR code.'
+            : 'Allow the camera to scan the QR code.',
+        kind: ToastKind.warning,
       );
       return;
     }
-    final token = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const TokenQrScanner()),
-    );
+    final token = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => const TokenQrScanner()));
     if (token != null && token.isNotEmpty && mounted) {
       setState(() => _haToken.text = token);
     }

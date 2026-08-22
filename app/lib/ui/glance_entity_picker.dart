@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../managers/settings/definitions.dart';
 import 'kit.dart';
+import 'toast.dart';
 
 /// Chooses the entities the At a Glance row shows: the chosen ones on top in
 /// the order they will appear, a search below for adding more.
@@ -112,8 +113,10 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
     );
     if (!mounted) return;
     if (!result.ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not reach Home Assistant.')),
+      showToast(
+        context,
+        title: 'Could not reach Home Assistant',
+        kind: ToastKind.error,
       );
       return;
     }
@@ -125,8 +128,9 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
             !_hiddenAttributes.contains(entry.key))
           '${entry.key}',
     ]..sort();
-    final controller =
-        TextEditingController(text: '${entity['custom_name'] ?? ''}');
+    final controller = TextEditingController(
+      text: '${entity['custom_name'] ?? ''}',
+    );
     var attribute = entity['attribute'] as String? ?? '';
     final submitted = await showDialog<bool>(
       context: context,

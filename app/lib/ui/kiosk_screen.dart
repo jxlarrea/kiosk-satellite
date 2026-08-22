@@ -36,6 +36,7 @@ import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'kiosk_drawer.dart';
 import 'sendspin_player_overlay.dart';
+import 'toast.dart';
 import 'settings_screen.dart';
 import 'web_console_panel.dart';
 
@@ -293,14 +294,15 @@ class _KioskScreenState extends State<KioskScreen>
     // feedback.
     if (e.key == defs.haHoldMode.key) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.value == true ? 'Hold mode is on' : 'Hold mode is off',
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      if (e.value == true) {
+        showToast(
+          context,
+          title: 'Hold mode on',
+          message: 'The current view stays until you turn it off.',
+        );
+      } else {
+        showToast(context, title: 'Hold mode off');
+      }
       return;
     }
     // Kiosk mode swaps the drawer swipe for the exit gesture (KioskManager
@@ -465,34 +467,35 @@ class _KioskScreenState extends State<KioskScreen>
       final name = (filename == null || filename.isEmpty)
           ? 'Download'
           : filename;
-      ScaffoldMessenger.of(context).showSnackBar(
-        success
-            ? SnackBar(
-                content: Text('$name downloaded'),
-                duration: const Duration(seconds: 10),
-                behavior: SnackBarBehavior.floating,
-                action: SnackBarAction(
-                  label: 'Open',
-                  onPressed: () => BackgroundListening.openDownload(id),
-                ),
-              )
-            : SnackBar(
-                content: Text('$name failed to download'),
-                duration: const Duration(seconds: 6),
-                behavior: SnackBarBehavior.floating,
-              ),
-      );
+      if (success) {
+        showToast(
+          context,
+          title: 'Download complete',
+          message: name,
+          kind: ToastKind.success,
+          duration: const Duration(seconds: 10),
+          actionLabel: 'Open',
+          onAction: () => BackgroundListening.openDownload(id),
+        );
+      } else {
+        showToast(
+          context,
+          title: 'Download failed',
+          message: name,
+          kind: ToastKind.error,
+          duration: const Duration(seconds: 6),
+        );
+      }
     };
 
     if (widget.showMenuHint) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tip: swipe from the left edge to open the menu'),
-            duration: Duration(seconds: 10),
-            behavior: SnackBarBehavior.floating,
-          ),
+        showToast(
+          context,
+          title: 'Tip',
+          message: 'Swipe from the left edge to open the menu.',
+          duration: const Duration(seconds: 10),
         );
       });
     }
@@ -1297,11 +1300,11 @@ class _KioskScreenState extends State<KioskScreen>
         'package': package,
       });
       if (!result.ok && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.error ?? 'Could not open $package'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        showToast(
+          context,
+          title: 'Could not open the app',
+          message: result.error ?? package,
+          kind: ToastKind.error,
         );
       }
       return NavigationActionPolicy.CANCEL;
@@ -1429,13 +1432,7 @@ class _KioskScreenState extends State<KioskScreen>
       }
       c.browser.log.info('browser', 'downloading $name (${request.url})');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Downloading $name'),
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showToast(context, title: 'Downloading', message: name);
       }
       await BackgroundListening.download(
         url: request.url.toString(),
@@ -1684,8 +1681,7 @@ class _OverlayHostState extends State<_OverlayHost>
                     // full-screen "now playing" menu sits exactly under
                     // the button.
                     if (c.browser.overlayDismissible.value &&
-                        !(isMaPage &&
-                            c.settings.get(defs.sendspinMaHideClose)))
+                        !(isMaPage && c.settings.get(defs.sendspinMaHideClose)))
                       Positioned(
                         top: 12,
                         right: 12,

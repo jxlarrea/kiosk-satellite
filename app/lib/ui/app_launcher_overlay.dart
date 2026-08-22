@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../managers/launcher/app_launcher_manager.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'toast.dart';
 
 /// The app launcher (issue #114): the whitelisted apps as a grid or list
 /// over the dashboard. Shown and hidden through the manager's [visible]
@@ -33,7 +34,7 @@ class _LauncherPanel extends StatelessWidget {
   void _close() => container.launcher.visible.value = false;
 
   Future<void> _open(BuildContext context, LauncherApp app) async {
-    final messenger = ScaffoldMessenger.maybeOf(context);
+    final overlay = Overlay.of(context, rootOverlay: true);
     _close();
     final result = await container.commands.execute('launchApp', {
       'package': app.package,
@@ -41,11 +42,11 @@ class _LauncherPanel extends StatelessWidget {
     // The one visible failure mode is an app uninstalled since it was
     // picked; silence would read as a dead button.
     if (!result.ok) {
-      messenger?.showSnackBar(
-        SnackBar(
-          content: Text('Could not open ${app.label}'),
-          behavior: SnackBarBehavior.floating,
-        ),
+      showToastIn(
+        overlay,
+        title: 'Could not open ${app.label}',
+        message: 'It may have been uninstalled.',
+        kind: ToastKind.error,
       );
     }
   }
