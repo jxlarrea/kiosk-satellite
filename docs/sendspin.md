@@ -59,8 +59,8 @@ server side.
 
 By default the floating card and the "Now Playing" screen belong to this
 device's own player: what plays here is what they show. **Player to
-control** points them at any other Music Assistant player instead — the
-kitchen speakers, a Sonos, a whole sync group — for the wall tablet whose
+control** points them at any other Music Assistant player instead (the
+kitchen speakers, a Sonos, a whole sync group), for the wall tablet whose
 job is to show and steer the music without making any of it. Pick a player
 from the list (it is the server's own, fetched live) and the card, the
 full-screen view and the transport buttons all follow that player: its
@@ -70,7 +70,7 @@ Music Assistant shortcut opens on that player too.
 With a remote player picked the device is a remote control, not a player:
 its own Sendspin player shuts down and shows as offline in Music
 Assistant, so nobody queues music to a screen that was never meant to make
-any. The settings follow suit — everything about the local player (the
+any. The settings follow suit: everything about the local player (the
 enable switch, server, codec, sync offset, voice ducking, lyrics) leaves
 the settings for the duration, while the card and Now Playing rows stay,
 since they are what the mode is for. Pick **This device** and the player
@@ -93,7 +93,7 @@ The interface is Music Assistant's, not a copy of it, so browsing and
 queueing stay whatever the server's current version makes them. Playback
 itself needs nothing more than the Sendspin player above: queue to this
 device and it plays here. The page opens with the right player already
-selected — this device's own, or the controlled player when **Player to
+selected: this device's own, or the controlled player when **Player to
 control** points elsewhere.
 
 **Close after inactivity** puts the dashboard back on its own, for the wall
