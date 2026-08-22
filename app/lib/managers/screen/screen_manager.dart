@@ -109,8 +109,31 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
           bus.publish(BrightnessChanged(level: level));
         }
       }
+      // Both of these are here to be readable in a device's own log: what
+      // levels mean on this panel is invisible from outside, and it decides
+      // whether a level lands where it was asked for (issue #270).
+      if (call.method == 'brightnessRange') {
+        _logBrightnessScale(call.arguments as Map?);
+      }
+      if (call.method == 'brightnessClamped') {
+        final args = (call.arguments as Map?) ?? const {};
+        log.warn(
+          name,
+          'brightness written as ${args['asked']}, the system kept '
+          '${args['kept']}',
+        );
+      }
       return null;
     });
+
+    // Logged once at start, since a panel whose scale is not the usual
+    // 0..255 is the difference between a brightness slider that works and
+    // one that lands in the dark.
+    try {
+      _logBrightnessScale(
+        await _brightness.invokeMethod<Map<Object?, Object?>>('range'),
+      );
+    } catch (_) {}
 
     // The default brightness, applied at start when its gate is on. Also
     // applied live as the slider moves (or the gate turns on) — brightness
@@ -283,6 +306,11 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   /// [setBrightness]; while set, IT is what the panel shows, so reads
   /// report it and system-value observer events are ignored.
   double? _overrideLevel;
+
+  void _logBrightnessScale(Map<Object?, Object?>? range) {
+    if (range == null) return;
+    log.info(name, 'brightness scale ${range['min']}..${range['max']}');
+  }
 
   /// The panel's actual brightness: the window override while one is up
   /// (the no-grant fallback), else the system setting — never the plugin's

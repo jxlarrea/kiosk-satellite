@@ -2,6 +2,7 @@ package me.jxl.kiosk_satellite
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Handler
@@ -9,6 +10,7 @@ import android.os.Looper
 import android.provider.Settings
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import kotlin.math.abs
 
 /**
  * The panel's real brightness — the system setting quick-settings moves — as
@@ -22,6 +24,10 @@ import io.flutter.plugin.common.MethodChannel
  * to Dart, so the remote admin and Home Assistant see what the panel is
  * actually doing.
  *
+ * Levels cross the channel as 0..1; what they mean in the units the
+ * setting itself stores is a per-device range, and lives in
+ * [BrightnessScale].
+ *
  * Writing needs the "Modify system settings" grant (a special appop, not a
  * runtime permission); [canWrite]/[requestWrite] expose the state and
  * Android's grant screen. Reading and observing need nothing.
@@ -32,10 +38,35 @@ class BrightnessBridge(
 ) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/brightness")
 
+    // What a 0..1 level means in the units this panel's setting stores; see
+    // [BrightnessScale]. Read once from the framework constants, and widened
+    // if the panel ever shows us a value the scale calls impossible.
+    private var scale = BrightnessScale.default
+
+    private fun configInt(name: String): Int? {
+        val res = Resources.getSystem()
+        val id = res.getIdentifier(name, "integer", "android")
+        if (id == 0) return null
+        return try {
+            res.getInteger(id)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun pushScale() = channel.invokeMethod(
+        "brightnessRange", mapOf("min" to scale.min, "max" to scale.max),
+    )
+
     private fun read(): Double = try {
-        Settings.System.getInt(
+        val raw = Settings.System.getInt(
             context.contentResolver, Settings.System.SCREEN_BRIGHTNESS,
-        ).coerceIn(0, 255) / 255.0
+        )
+        scale.widenedTo(raw)?.let {
+            scale = it
+            pushScale()
+        }
+        scale.toLevel(raw)
     } catch (_: Exception) {
         -1.0
     }
@@ -48,6 +79,10 @@ class BrightnessBridge(
     }
 
     init {
+        scale = BrightnessScale.of(
+            configInt("config_screenBrightnessSettingMinimum"),
+            configInt("config_screenBrightnessSettingMaximum"),
+        )
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "get" -> result.success(read().takeIf { it >= 0 })
@@ -55,6 +90,8 @@ class BrightnessBridge(
                     val level = (call.argument<Number>("level"))?.toDouble()
                     result.success(level != null && write(level))
                 }
+                "range" ->
+                    result.success(mapOf("min" to scale.min, "max" to scale.max))
                 "canWrite" -> result.success(canWrite())
                 "requestWrite" -> {
                     context.startActivity(
@@ -88,11 +125,23 @@ class BrightnessBridge(
                 Settings.System.SCREEN_BRIGHTNESS_MODE,
                 Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
             )
+            val target = scale.toRaw(level)
             Settings.System.putInt(
                 context.contentResolver,
                 Settings.System.SCREEN_BRIGHTNESS,
-                (level.coerceIn(0.0, 1.0) * 255).toInt(),
+                target,
             )
+            // A value that does not survive the write is the ROM enforcing
+            // limits of its own, which is otherwise invisible: the app would
+            // report the level it asked for while the panel shows another.
+            val stored = Settings.System.getInt(
+                context.contentResolver, Settings.System.SCREEN_BRIGHTNESS,
+            )
+            if (abs(stored - target) > 1) {
+                channel.invokeMethod(
+                    "brightnessClamped", mapOf("asked" to target, "kept" to stored),
+                )
+            }
             true
         } catch (_: Exception) {
             false
