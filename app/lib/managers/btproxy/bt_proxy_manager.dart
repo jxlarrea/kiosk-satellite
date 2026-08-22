@@ -13,6 +13,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'ble_identity.dart';
 import 'esp_entities.dart';
+import 'node_name.dart';
 
 /// Runs the native Bluetooth proxy (an ESPHome-compatible API server plus
 /// BLE scanner, see android btproxy/) and owns its policy: the enable
@@ -42,6 +43,10 @@ class BtProxyManager extends Manager {
   /// exactly like a working one there otherwise (issue #240, a bind
   /// conflict on one of two identical tablets).
   String? _startError;
+
+  /// The node name the running server came up under, so writing it back
+  /// into settings does not bounce the server (as with [_liveKey]).
+  String _liveNodeName = '';
   late final EspEntitySurface _entities =
       EspEntitySurface(bus, commands, log, _settings);
 
@@ -62,6 +67,13 @@ class BtProxyManager extends Manager {
       if (call.method == 'entityCommand' && call.arguments is Map) {
         final args = call.arguments as Map;
         await _entities.handleCommand('${args['objectId']}', args['value']);
+      }
+      if (call.method == 'serviceCall' && call.arguments is Map) {
+        final payload = call.arguments as Map;
+        await _entities.handleService(
+          '${payload['name']}',
+          (payload['args'] as Map?)?.cast<String, Object?>() ?? const {},
+        );
       }
       return null;
     });
@@ -96,6 +108,12 @@ class BtProxyManager extends Manager {
       // value the running server already has.
       if (e.key == defs.btproxyKey.key &&
           _settings.get(defs.btproxyKey).trim() == _liveKey) {
+        return;
+      }
+      // Same story for the node name the first start writes back.
+      if (e.key == defs.esphomeNodeName.key &&
+          esphomeNodeSlug(_settings.get(defs.esphomeNodeName)) ==
+              _liveNodeName) {
         return;
       }
       _restartDebounce?.cancel();
@@ -261,6 +279,16 @@ class BtProxyManager extends Manager {
     await _stop();
   }
 
+  /// The node name to serve under: what the user set, or on a brand-new
+  /// install a slug of the device name, so Home Assistant's action names
+  /// read like the kiosk. Empty leaves the native generated identity,
+  /// which is what every install that already has an entry keeps.
+  String _nodeName({required bool firstEver}) {
+    final chosen = esphomeNodeSlug(_settings.get(defs.esphomeNodeName));
+    if (chosen.isNotEmpty) return chosen;
+    return firstEver ? esphomeNodeSlug(_settings.get(defs.deviceName)) : '';
+  }
+
   Future<void> _restart() async {
     await _stop();
     if (_settings.get(defs.esphomeEnabled)) await _start();
@@ -268,6 +296,10 @@ class BtProxyManager extends Manager {
 
   Future<void> _start() async {
     var key = _settings.get(defs.btproxyKey).trim();
+    // Read before the key is generated below: an empty key is what says
+    // this install has never announced itself, which is what decides
+    // whether the node name may be taken from the device name.
+    final firstEver = key.isEmpty;
     if (key.isEmpty) {
       key = _generateKey();
       _liveKey = key;
@@ -286,13 +318,14 @@ class BtProxyManager extends Manager {
     }
     _liveKey = key;
     final friendly = _settings.get(defs.deviceName).trim();
+    final node = _nodeName(firstEver: firstEver);
     final port =
         int.tryParse(_settings.get(defs.btproxyPort).trim()) ?? 6053;
     // Null while the setting is off or the platform hides the address; the
     // native side then keeps its synthetic identity (issue #252).
     final realMac = await adoptedWifiMac(_settings);
     try {
-      await _channel.invokeMethod('start', {
+      final resolved = await _channel.invokeMethod<String>('start', {
         'friendlyName': friendly.isEmpty ? 'Kiosk Satellite' : friendly,
         'psk': key,
         'port': port,
@@ -305,10 +338,27 @@ class BtProxyManager extends Manager {
         'entities': _settings.get(defs.esphomeEntities)
             ? await _entities.build()
             : const <Map<String, Object?>>[],
+        // The actions ride the entity surface's toggle: they are served in
+        // the same listing and land on the same Home Assistant device.
+        'services': _settings.get(defs.esphomeEntities)
+            ? _entities.buildServices()
+            : const <Map<String, Object?>>[],
         'macOverride': ?realMac,
+        // Empty leaves the generated kiosk-satellite-<id> identity in
+        // place; the native side answers with whichever it used.
+        'nodeName': node,
       });
       _running = true;
       _startError = null;
+      // Whatever name the server came up under is written back, so the
+      // settings row shows the real one instead of a placeholder and the
+      // next start reads it from there. Identical writes are ignored by
+      // the settings store; the listener above skips the rest.
+      final live = esphomeNodeSlug(resolved ?? '');
+      if (live.isNotEmpty) {
+        _liveNodeName = live;
+        await _settings.set(defs.esphomeNodeName, live);
+      }
       if (_settings.get(defs.esphomeEntities)) {
         _entities.attach(
           (objectId, value) => _channel.invokeMethod(

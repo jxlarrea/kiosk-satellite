@@ -464,6 +464,10 @@ internal object EntityCodec {
 internal class EntityHub(
     entities: List<EspEntity>,
     private val onCommand: (objectId: String, value: Any?) -> Unit,
+    /** User-defined actions served alongside the entities (see EspServices). */
+    val services: List<EspService> = emptyList(),
+    private val onServiceCall: (name: String, args: Map<String, Any?>) -> Unit =
+        { _, _ -> },
 ) {
     private val lock = Any()
     private val byKey = LinkedHashMap<Int, EspEntity>()
@@ -514,5 +518,26 @@ internal class EntityHub(
     fun dispatchCommand(command: EntityCodec.Command) {
         val entity = synchronized(lock) { byKey[command.key] } ?: return
         onCommand(entity.objectId, command.value)
+    }
+
+    /**
+     * A Home Assistant action call: values arrive positionally and unnamed,
+     * so the declaration is what turns them back into a map. A value the
+     * client left at its protobuf default arrives as nothing at all; the
+     * declared type says what that default was.
+     */
+    fun dispatchService(call: ServiceCodec.Call) {
+        val service = services.firstOrNull { it.key == call.key } ?: return
+        val args = LinkedHashMap<String, Any?>(service.args.size)
+        service.args.forEachIndexed { index, arg ->
+            val value = call.values.getOrNull(index) ?: when (arg.type) {
+                EspService.BOOL -> false
+                EspService.INT -> 0
+                EspService.FLOAT -> 0f
+                else -> ""
+            }
+            args[arg.name] = value
+        }
+        onServiceCall(service.name, args)
     }
 }

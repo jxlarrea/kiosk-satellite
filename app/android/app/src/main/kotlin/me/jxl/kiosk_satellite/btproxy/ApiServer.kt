@@ -692,6 +692,13 @@ internal class ApiServer(
                                     EntityCodec.describe(entity, identity.name)
                                 enqueue(type, payload)
                             }
+                            // Actions ride the same listing: aioesphomeapi
+                            // collects entities and services from the one
+                            // ListEntities exchange.
+                            for (service in hub.services) {
+                                enqueue(Msg.LIST_ENTITIES_SERVICES_RESPONSE,
+                                    ServiceCodec.describe(service))
+                            }
                         }
                         enqueue(Msg.LIST_ENTITIES_DONE_RESPONSE, ByteArray(0))
                     }
@@ -793,6 +800,9 @@ internal class ApiServer(
                     Msg.BUTTON_COMMAND_REQUEST ->
                         EntityCodec.parseCommand(frame.type, frame.payload)
                             ?.let { entities?.dispatchCommand(it) }
+                    Msg.EXECUTE_SERVICE_REQUEST ->
+                        entities?.dispatchService(
+                            ServiceCodec.parseExecute(frame.payload))
                     Msg.CAMERA_IMAGE_REQUEST -> {
                         // The request carries no key: ESPHome devices have
                         // at most one camera. Remember who asked; the frame
@@ -803,8 +813,10 @@ internal class ApiServer(
                             hub.requestCameraImage()
                         }
                     }
-                    // Required-ack subscriptions with nothing behind them: a
-                    // proxy has no services or logs to stream.
+                    // Required-ack subscriptions with nothing behind them:
+                    // this device streams no logs and calls nothing back on
+                    // Home Assistant (its own actions are served above, in
+                    // the entity listing).
                     Msg.SUBSCRIBE_LOGS_REQUEST,
                     Msg.SUBSCRIBE_HOMEASSISTANT_SERVICES_REQUEST,
                     Msg.SUBSCRIBE_HOME_ASSISTANT_STATES_REQUEST -> Unit

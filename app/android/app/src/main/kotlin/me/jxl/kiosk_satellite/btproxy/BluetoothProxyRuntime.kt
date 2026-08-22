@@ -34,8 +34,17 @@ internal object BluetoothProxyRuntime {
         val connections: Boolean,
         /** Refuse connects for devices heard below this RSSI; 0 = no gate. */
         val minConnectRssi: Int = 0,
+        /** The ESPHome node name to answer as: the mDNS instance, the
+         *  <name>.local host, and what Home Assistant builds this
+         *  device's action names from. Empty keeps the generated
+         *  kiosk-satellite-<install id> identity. Sanitized here too;
+         *  the Dart side owns the policy, this owns the wire. */
+        val nodeName: String = "",
         /** The kiosk's own entities to serve over the API; empty = none. */
         val entities: List<EspEntity> = emptyList(),
+        /** User-defined actions served with them (notifications); the
+         *  entity surface owns the toggle, so these ship or not with it. */
+        val services: List<EspService> = emptyList(),
         /** The real Wi-Fi MAC to report as the API identity instead of the
          *  synthetic one, so Home Assistant links this kiosk with the same
          *  device from router integrations (issue #252). Null = synthetic.
@@ -44,6 +53,8 @@ internal object BluetoothProxyRuntime {
         val macOverride: String? = null,
         /** Where entity commands from Home Assistant land (objectId, value). */
         val onEntityCommand: (String, Any?) -> Unit = { _, _ -> },
+        /** Where action calls land (action name, arguments by name). */
+        val onServiceCall: (String, Map<String, Any?>) -> Unit = { _, _ -> },
     )
 
     @Volatile var isRunning = false
@@ -87,7 +98,8 @@ internal object BluetoothProxyRuntime {
             null
         }
         val hub = if (config.entities.isEmpty()) null
-            else EntityHub(config.entities, config.onEntityCommand)
+            else EntityHub(config.entities, config.onEntityCommand,
+                config.services, config.onServiceCall)
         val connections = if (config.bluetoothProxy && config.connections) {
             GattEngine(
                 appContext,
@@ -135,6 +147,7 @@ internal object BluetoothProxyRuntime {
         }
 
         server = apiServer
+        liveNodeName = identity.name
         engine = scanEngine
         gattEngine = connections
         entityHub = hub
@@ -202,8 +215,9 @@ internal object BluetoothProxyRuntime {
 
     private fun buildIdentity(context: Context, config: Config): ProxyIdentity {
         val suffix = stableSuffix(context)
+        val chosen = sanitizeNodeName(config.nodeName)
         return ProxyIdentity(
-            name = "kiosk-satellite-$suffix",
+            name = chosen.ifEmpty { "kiosk-satellite-$suffix" },
             friendlyName = config.friendlyName,
             macAddress = config.macOverride ?: syntheticMac(context, salt = "api"),
             // The version HA's repair system compares against its minimum
@@ -224,6 +238,33 @@ internal object BluetoothProxyRuntime {
      * device registry need.
      */
     @SuppressLint("HardwareIds")
+    /**
+     * A DNS label out of whatever arrived: lowercase letters, digits and
+     * single hyphens, 40 characters at most. The name is published as an
+     * mDNS instance and hostname, so an unusable one must fall back to
+     * the generated identity rather than break discovery.
+     */
+    private fun sanitizeNodeName(raw: String): String {
+        val out = StringBuilder()
+        var pendingHyphen = false
+        for (c in raw.trim().lowercase()) {
+            if (c in 'a'..'z' || c in '0'..'9') {
+                if (pendingHyphen && out.isNotEmpty()) out.append('-')
+                pendingHyphen = false
+                out.append(c)
+                if (out.length >= 40) break
+            } else {
+                pendingHyphen = true
+            }
+        }
+        return out.toString()
+    }
+
+    /** The name the running server answers as; empty while stopped. */
+    val nodeName: String get() = if (isRunning) liveNodeName else ""
+
+    @Volatile private var liveNodeName = ""
+
     private fun stableSuffix(context: Context): String {
         val androidId = Settings.Secure.getString(
             context.contentResolver, Settings.Secure.ANDROID_ID) ?: "0000000000000000"

@@ -3627,6 +3627,26 @@ const esphomeEntities = SettingDef<bool>(
   dependsOn: 'esphome.enabled',
 );
 
+/// Empty until the first start, which fills it in: a fresh install takes
+/// a slug of the device name, so Home Assistant's action names read like
+/// the kiosk (`esphome.kitchen_tablet_notification`), and an install that
+/// has already announced itself keeps the generated
+/// `kiosk-satellite-<id>` name it was discovered under. The value is
+/// slugified to a DNS label before it goes on the wire (see
+/// node_name.dart): it is also the mDNS instance and hostname.
+const esphomeNodeName = SettingDef<String>(
+  key: 'esphome.node_name',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Node name',
+  description:
+      'Names this kiosk on the network, and Home Assistant builds its '
+      'action names from it. Renaming it renames those actions.',
+  category: 'ESPHome',
+  placeholder: 'Set on first start',
+  dependsOn: 'esphome.enabled',
+);
+
 /// Off by default because flipping it changes the identity Home Assistant
 /// keys the ESPHome device entry on: existing installs have a device built
 /// on the generated address, and adopting the real one creates a new entry.
@@ -4088,6 +4108,7 @@ const List<SettingDef<Object>> allSettings = [
   esphomeEntities,
   btproxyKey,
   btproxyPort,
+  esphomeNodeName,
   esphomeRealMac,
   btproxyEnabled,
   btproxyConnections,

@@ -45,6 +45,8 @@ internal object Msg {
     const val TEXT_SENSOR_STATE_RESPONSE = 27
     const val LIGHT_COMMAND_REQUEST = 32
     const val SWITCH_COMMAND_REQUEST = 33
+    const val LIST_ENTITIES_SERVICES_RESPONSE = 41
+    const val EXECUTE_SERVICE_REQUEST = 42
     const val LIST_ENTITIES_CAMERA_RESPONSE = 43
     const val CAMERA_IMAGE_RESPONSE = 44
     const val CAMERA_IMAGE_REQUEST = 45

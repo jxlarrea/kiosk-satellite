@@ -407,7 +407,11 @@ class SettingsManager extends Manager {
   /// Sendspin player id, under which two devices kick each other off Music
   /// Assistant in a reconnect loop so neither ever syncs (issue #136).
   /// Shared by the importConfig command and the raw /api/settings/import
-  /// endpoint, which used to apply the dump verbatim (issue #221).
+  /// endpoint, which used to apply the dump verbatim (issue #221). The
+  /// ESPHome node name goes with them: it is the mDNS instance and the
+  /// `<name>.local` host, so two kiosks answering to it is a name clash
+  /// on the network (the next start names this one after its own device
+  /// name, or falls back to its generated identity).
   ///
   /// A device that inherited one of these identities from an older
   /// verbatim clone would keep colliding by "keeping its own"; equality
@@ -418,6 +422,7 @@ class SettingsManager extends Manager {
     final importedId = map.remove(mqttDeviceId.key);
     final importedName = map.remove(deviceName.key);
     final importedPlayer = map.remove(sendspinClientId.key);
+    final importedNode = map.remove(esphomeNodeName.key);
     if (importedId is String &&
         importedId.isNotEmpty &&
         get(mqttDeviceId) == importedId) {
@@ -432,6 +437,11 @@ class SettingsManager extends Manager {
         importedPlayer.isNotEmpty &&
         get(sendspinClientId) == importedPlayer) {
       await set(sendspinClientId, '');
+    }
+    if (importedNode is String &&
+        importedNode.isNotEmpty &&
+        get(esphomeNodeName) == importedNode) {
+      await set(esphomeNodeName, '');
     }
   }
 

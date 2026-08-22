@@ -98,6 +98,102 @@ the entity reads "on" while the kiosk is reachable and "unavailable"
 (rather than "off") when it is not, since a lost connection takes every
 entity with it.
 
+## Notifications
+
+Home Assistant can push a message at the kiosk and have it appear over
+whatever is on screen, the screensaver included: a large card at the top
+of the display with a chime, for the things a wall tablet is there to
+say ("Washing machine finished", "Front door opened", "Leak detected").
+It needs no dashboard card and no browser popup, and it does not disturb
+what the kiosk was showing: the screensaver keeps running underneath and
+the notification slides away by itself.
+
+This rides an ESPHome action rather than an entity, because an action is
+the one thing in the protocol that carries a payload. Turn on **Expose
+kiosk entities** and Home Assistant registers
+`esphome.<node name>_notification`, where the node name is the kiosk's
+own (see Node name below) with underscores in place of hyphens; the
+exact name is in Home Assistant's action picker under ESPHome.
+
+```yaml
+action: esphome.kitchen_tablet_notification
+data:
+  message: Washing machine finished
+  title: Utility room
+  duration: 30
+  type: info
+  chime: true
+```
+
+An ESPHome device can call it directly, with no automation in between:
+
+```yaml
+binary_sensor:
+  - platform: gpio
+    pin: GPIO4
+    on_press:
+      - homeassistant.action:
+          action: esphome.kitchen_tablet_notification
+          data:
+            message: Front door opened
+            title: ""
+            duration: "20"
+            type: warning
+            chime: "true"
+```
+
+Every argument is required, because the ESPHome protocol has no optional
+ones, so each has a value that means "as you were":
+
+| Argument | Meaning |
+|---|---|
+| `message` | The text, in the largest type on the card |
+| `title` | A heading above it. Empty for a message on its own |
+| `duration` | Seconds on screen. `0` stays up until someone taps it or Home Assistant takes it down; a negative number uses the default of 30 |
+| `type` | `info`, `success`, `warning` or `error`, which picks the icon and its color. Empty falls back to `info` |
+| `chime` | Whether to play the notification chime. It plays through the selected speaker like every other app sound |
+
+Notifications stack, newest on top, up to four at a time: two things
+happening at once is ordinary, and the second one arriving is no reason
+to forget the first. Each keeps its own countdown and goes when it is
+done. A fifth pushes the oldest out, so a stuck automation cannot paper
+over the screen. The same message twice is two notifications: a second
+call means it happened again.
+
+A tap anywhere on a card dismisses that card and leaves the rest. To take
+one down from Home Assistant, call the kiosk's `dismissNotification`
+command over the [remote API](remote-api.md), with the id
+`showNotification` returned for a single card or nothing at all to clear
+the screen; `showNotification` is that same command the action calls, for
+setups driving the kiosk over REST instead.
+
+## Node name
+
+The kiosk answers to a node name on the network: it is the mDNS name
+Home Assistant discovers (`<node name>.local`), and Home Assistant builds
+this device's action names from it, so
+`kitchen-tablet` is what makes the notification action read
+`esphome.kitchen_tablet_notification`. A kiosk set up from scratch names
+itself after its device name, and one that has already been discovered
+keeps the generated `kiosk-satellite-<id>` name it was found under.
+
+Either way the name is in **Settings, ESPHome, Node name**, and it can be
+changed there. Anything typed is reduced to what a network name allows:
+lower case, digits and single hyphens, so "Kitchen Tablet" becomes
+`kitchen-tablet`. It has to be unique among the kiosks on the network.
+
+Renaming is cheap but not free. Home Assistant keys the device and every
+entity on the hardware address, not on this, so entities, their history
+and their entity ids all survive a rename. What does not survive is the
+action names built from it: automations calling
+`esphome.old_name_notification` need updating to the new one.
+
+Home Assistant also needs a nudge to notice. It reads the name when it
+sets the device up, so after a rename, reload the kiosk's entry
+(**Settings, Devices and services, ESPHome**, the kiosk's three dot menu,
+**Reload**) and the action appears under its new name. The old name stays
+in the action list until Home Assistant restarts; it does nothing.
+
 ## Device identity
 
 The kiosk normally identifies itself to Home Assistant with a generated

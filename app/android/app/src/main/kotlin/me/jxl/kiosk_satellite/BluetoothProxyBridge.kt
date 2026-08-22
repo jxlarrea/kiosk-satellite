@@ -9,13 +9,15 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import me.jxl.kiosk_satellite.btproxy.BluetoothProxyRuntime
 import me.jxl.kiosk_satellite.btproxy.EspEntity
+import me.jxl.kiosk_satellite.btproxy.EspService
 
 /**
  * Flutter bridge for the Bluetooth proxy.
  *
  * Methods:
- *  - start {friendlyName, psk (base64, 32 bytes), port, projectVersion}:
- *    boots the runtime and its foreground service. Idempotent.
+ *  - start {friendlyName, psk (base64, 32 bytes), port, projectVersion,
+ *    nodeName, ...}: boots the runtime and its foreground service, and
+ *    answers with the node name it came up under. Idempotent.
  *  - stop: tears both down. Idempotent.
  *  - status: runtime counters and recent log lines for diagnostics.
  *
@@ -38,6 +40,9 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                         val entities =
                             (call.argument<List<Map<String, Any?>>>("entities")
                                 ?: emptyList()).map { EspEntity.fromMap(it) }
+                        val services =
+                            (call.argument<List<Map<String, Any?>>>("services")
+                                ?: emptyList()).map { EspService.fromMap(it) }
                         BluetoothProxyRuntime.start(
                             context,
                             BluetoothProxyRuntime.Config(
@@ -52,7 +57,9 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                 minConnectRssi =
                                     call.argument<Int>("minConnectRssi") ?: 0,
                                 entities = entities,
+                                services = services,
                                 macOverride = call.argument<String>("macOverride"),
+                                nodeName = call.argument<String>("nodeName") ?: "",
                                 // Session reader threads land here; the Dart
                                 // side of the channel only exists on main.
                                 onEntityCommand = { objectId, value ->
@@ -62,10 +69,20 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                                 "value" to value))
                                     }
                                 },
+                                onServiceCall = { name, args ->
+                                    mainHandler.post {
+                                        channel.invokeMethod("serviceCall",
+                                            mapOf("name" to name,
+                                                "args" to args))
+                                    }
+                                },
                             ),
                         )
                         BluetoothProxyService.start(context)
-                        result.success(null)
+                        // The name it came up under: the Dart side writes
+                        // it back into settings, so the node name a user
+                        // sees is the one on the wire.
+                        result.success(BluetoothProxyRuntime.nodeName)
                     } catch (e: Exception) {
                         result.error("start_failed", e.message, null)
                     }

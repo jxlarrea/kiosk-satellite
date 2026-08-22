@@ -30,6 +30,19 @@ class ApiServerEntitiesTest {
     private var server: ApiServer? = null
     private var client: Client? = null
     private val commands = CopyOnWriteArrayList<Pair<String, Any?>>()
+    private val actions =
+        CopyOnWriteArrayList<Pair<String, Map<String, Any?>>>()
+
+    /** The notification action (issue #269), the one user-defined action
+     *  the kiosk serves. */
+    private val services = listOf(
+        EspService("notification", listOf(
+            EspService.Arg("message", EspService.STRING),
+            EspService.Arg("title", EspService.STRING),
+            EspService.Arg("duration", EspService.INT),
+            EspService.Arg("chime", EspService.BOOL),
+        )),
+    )
 
     private val catalog = listOf(
         EspEntity.Sensor("battery", "Battery", deviceClass = "battery",
@@ -55,9 +68,11 @@ class ApiServerEntitiesTest {
             override fun onScanDemand(mode: ScannerMode) {}
             override fun onScanRelease() {}
         }
-        val hub = EntityHub(catalog) { objectId, value ->
+        val hub = EntityHub(catalog, onCommand = { objectId, value ->
             commands.add(objectId to value)
-        }
+        }, services = services, onServiceCall = { name, args ->
+            actions.add(name to args)
+        })
         val s = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, null, backend,
             log = {}, entities = hub)
         s.start()
@@ -149,6 +164,9 @@ class ApiServerEntitiesTest {
                 Msg.LIST_ENTITIES_NUMBER_RESPONSE,
                 Msg.LIST_ENTITIES_SELECT_RESPONSE,
                 Msg.LIST_ENTITIES_BUTTON_RESPONSE,
+                // Actions are listed in the same exchange, after the
+                // entities and before done.
+                Msg.LIST_ENTITIES_SERVICES_RESPONSE,
             ),
             seen.map { it.type },
         )
@@ -267,7 +285,7 @@ class ApiServerEntitiesTest {
             override fun onScanDemand(mode: ScannerMode) {}
             override fun onScanRelease() {}
         }
-        val hub = EntityHub(catalog) { _, _ -> }
+        val hub = EntityHub(catalog, onCommand = { _, _ -> })
         val s = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, null, backend,
             log = {}, bluetoothProxy = false, entities = hub)
         s.start()
@@ -289,6 +307,95 @@ class ApiServerEntitiesTest {
         // The entity surface still serves.
         c.send(Msg.LIST_ENTITIES_REQUEST)
         assertEquals(Msg.LIST_ENTITIES_SENSOR_RESPONSE, c.read().type)
+    }
+
+    @Test
+    fun listEntitiesDescribesTheActionAndItsArguments() {
+        val (s, _) = start()
+        val c = connectClient(s)
+        c.send(Msg.LIST_ENTITIES_REQUEST)
+        val frame = c.readUntil(Msg.LIST_ENTITIES_SERVICES_RESPONSE)
+        var name = ""
+        var key = 0
+        val args = mutableListOf<Pair<String, Int>>()
+        ProtoReader(frame.payload).let { r ->
+            while (r.next()) when (r.field) {
+                1 -> name = r.asString()
+                2 -> key = r.asFixed32()
+                3 -> {
+                    var argName = ""
+                    var argType = 0
+                    ProtoReader(r.asBytes()).let { a ->
+                        while (a.next()) when (a.field) {
+                            1 -> argName = a.asString()
+                            2 -> argType = a.asInt()
+                        }
+                    }
+                    args.add(argName to argType)
+                }
+            }
+        }
+        assertEquals("notification", name)
+        assertEquals(EspEntity.fnv1a("service:notification"), key)
+        assertEquals(
+            listOf(
+                "message" to EspService.STRING,
+                "title" to EspService.STRING,
+                "duration" to EspService.INT,
+                "chime" to EspService.BOOL,
+            ),
+            args,
+        )
+    }
+
+    @Test
+    fun executeServiceNamesThePositionalArgumentsItArrivesWith() {
+        val (s, _) = start()
+        val c = connectClient(s)
+        // Exactly the shape aioesphomeapi sends: values in declaration
+        // order, the string in field 4, the int zigzagged into field 5,
+        // the bool in field 1 - and an argument left at its default (the
+        // empty title) as an empty message, carrying no field at all.
+        val payload = ProtoWriter().run {
+            fixed32(1, services[0].key)
+            message(2, ProtoWriter().run {
+                string(4, "Laundry is done"); toByteArray()
+            })
+            message(2, ByteArray(0))
+            message(2, ProtoWriter().run { sint32(5, 12); toByteArray() })
+            message(2, ProtoWriter().run { bool(1, true); toByteArray() })
+            toByteArray()
+        }
+        c.send(Msg.EXECUTE_SERVICE_REQUEST, payload)
+        val deadline = System.currentTimeMillis() + 3_000
+        while (actions.isEmpty() && System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+        }
+        assertEquals(1, actions.size)
+        assertEquals("notification", actions[0].first)
+        assertEquals(
+            mapOf<String, Any?>(
+                "message" to "Laundry is done",
+                "title" to "",
+                "duration" to 12,
+                "chime" to true,
+            ),
+            actions[0].second,
+        )
+    }
+
+    @Test
+    fun executeServiceForAnUnknownKeyIsIgnored() {
+        val (s, _) = start()
+        val c = connectClient(s)
+        c.send(Msg.EXECUTE_SERVICE_REQUEST, ProtoWriter().run {
+            fixed32(1, 0x1234)
+            toByteArray()
+        })
+        // The session survives it, and nothing was dispatched.
+        c.send(Msg.PING_REQUEST)
+        assertEquals(Msg.PING_RESPONSE, c.readUntil(Msg.PING_RESPONSE).type)
+        assertTrue(actions.isEmpty())
     }
 
     @Test

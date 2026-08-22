@@ -31,6 +31,7 @@ import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'app_launcher_overlay.dart';
 import 'lockdown_shield.dart';
+import 'notification_overlay.dart';
 import 'offline_notice.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
@@ -1157,6 +1158,13 @@ class _KioskScreenState extends State<KioskScreen>
                   // display, drawer open or not.
                   ScreensaverOverlay(container: c),
                   CameraViewOverlay(container: c),
+                  // Above every overlay a notification could arrive
+                  // behind — the screensaver, a camera wall — because a
+                  // message from the house is worth covering them for,
+                  // and below the lockdown shield, which is the one
+                  // thing whose whole job is that nothing here answers
+                  // a touch.
+                  NotificationOverlay(notifications: c.notifications),
                   // Lockdown Mode's touch shield: topmost, above every
                   // overlay, so nothing on screen is tappable while it
                   // holds. Transparent by default — the dashboard stays

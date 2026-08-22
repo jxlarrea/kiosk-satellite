@@ -18,6 +18,7 @@ import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
 import 'managers/launcher/app_launcher_manager.dart';
 import 'managers/motion/motion_manager.dart';
+import 'managers/notifications/notification_manager.dart';
 import 'managers/mqtt/mqtt_manager.dart';
 import 'managers/proxy/proxy_manager.dart';
 import 'managers/remote/remote_manager.dart';
@@ -89,6 +90,7 @@ class AppContainer {
     dlna.pending.addListener(syncDlnaCover);
     files = FilesManager(bus, commands, log);
     sound = SoundManager(bus, commands, log);
+    notifications = NotificationManager(bus, commands, log);
     update = UpdateManager(bus, commands, log);
     // After homeAssistant: it reads states through it for the fallback.
     glance = GlanceManager(bus, commands, log, settings, homeAssistant);
@@ -123,6 +125,7 @@ class AppContainer {
   late final FilesManager files;
   late final GlanceManager glance;
   late final SoundManager sound;
+  late final NotificationManager notifications;
   late final UpdateManager update;
   late final RemoteManager remote;
 
@@ -161,6 +164,7 @@ class AppContainer {
     files,
     glance,
     sound,
+    notifications,
     update,
     remote,
   ];

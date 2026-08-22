@@ -145,6 +145,10 @@ internal class ProtoReader(private val data: ByteArray) {
 
     fun asFloat(): Float = Float.fromBits(asFixed32())
 
+    /** ZigZag-decoded sint32 (ExecuteServiceArgument.int_). */
+    fun asSint32(): Int =
+        ((varintValue ushr 1) xor -(varintValue and 1)).toInt()
+
     private fun readRawVarint(): Long {
         var shift = 0
         var result = 0L

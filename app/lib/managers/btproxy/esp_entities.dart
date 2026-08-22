@@ -522,6 +522,50 @@ class EspEntitySurface {
     ];
   }
 
+  /// The user-defined actions served next to the entities, as Home
+  /// Assistant `esphome.<device>_<name>` actions. Entity commands can only
+  /// set one value on one entity; an action is the only way for Home
+  /// Assistant to hand this device a payload, which is what a notification
+  /// is (issue #269).
+  ///
+  /// Every argument is required on the Home Assistant side - its action
+  /// schema marks them all so, and the ESPHome protocol has no optional
+  /// arguments - so each one has a value that means "as you were": an
+  /// empty title is no title, a negative duration is the default one.
+  /// Argument names and order are permanent API, like entity object ids:
+  /// values arrive positionally on the wire and land in users'
+  /// automations by name.
+  List<Map<String, Object?>> buildServices() => const [
+    {
+      'name': 'notification',
+      'args': [
+        {'name': 'message', 'type': 'string'},
+        {'name': 'title', 'type': 'string'},
+        {'name': 'duration', 'type': 'int'},
+        {'name': 'type', 'type': 'string'},
+        {'name': 'chime', 'type': 'bool'},
+      ],
+    },
+  ];
+
+  /// An action call from Home Assistant landed (via the native hub).
+  Future<void> handleService(String name, Map<String, Object?> args) async {
+    switch (name) {
+      case 'notification':
+        await commands.execute('showNotification', {
+          'message': '${args['message'] ?? ''}',
+          'title': '${args['title'] ?? ''}',
+          // The action cannot leave a number out, so its own "unset" is
+          // anything negative; showNotification reads it the same way.
+          'duration': args['duration'] ?? -1,
+          'type': '${args['type'] ?? ''}',
+          'chime': args['chime'] ?? true,
+        });
+      default:
+        log.warn('esphome', 'unknown action $name');
+    }
+  }
+
   /// Starts serving values: initial snapshot, change events, slow poll.
   void attach(
     Future<void> Function(String, Object?) push,

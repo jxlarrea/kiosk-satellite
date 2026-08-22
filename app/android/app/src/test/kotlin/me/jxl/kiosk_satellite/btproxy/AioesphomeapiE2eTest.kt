@@ -192,6 +192,15 @@ class AioesphomeapiE2eTest {
             assert type(by_obj["snap"]).__name__ == "CameraInfo", by_obj
             print("LIST_OK", flush=True)
 
+            # The user-defined action (issue #269): what Home Assistant
+            # turns into esphome.<device>_notification.
+            assert [s.name for s in services] == ["notification"], services
+            action = services[0]
+            assert [(a.name, int(a.type)) for a in action.args] == [
+                ("message", 3), ("title", 3), ("duration", 1),
+                ("type", 3), ("chime", 0)], action.args
+            print("SERVICES_OK", flush=True)
+
             loop = asyncio.get_running_loop()
             states = {}
             image = loop.create_future()
@@ -226,6 +235,20 @@ class AioesphomeapiE2eTest {
             data = await asyncio.wait_for(image, 10)
             assert len(data) == 40_000 and data[0] == 0x7A, (len(data), data[:2])
             print("CAMERA_OK", flush=True)
+
+            # Arguments travel positionally and untyped-by-name; the ints
+            # ride the zigzag sint32 field current clients use.
+            result = cli.execute_service(action, {
+                "message": "Laundry is done",
+                "title": "Utility room",
+                "duration": 12,
+                "type": "warning",
+                "chime": True,
+            })
+            if asyncio.iscoroutine(result):
+                await result
+            await asyncio.sleep(0.5)
+            print("ACTION_OK", flush=True)
             await cli.disconnect()
 
         asyncio.run(main())
@@ -257,6 +280,8 @@ class AioesphomeapiE2eTest {
             override fun onScanRelease() {}
         }
         val commands = java.util.concurrent.CopyOnWriteArrayList<Pair<String, Any?>>()
+        val actions =
+            java.util.concurrent.CopyOnWriteArrayList<Pair<String, Map<String, Any?>>>()
         // A 40KB "jpeg" exercises the 16KB chunking (3 chunks, done last).
         val jpeg = ByteArray(40_000) { 0x7A }
         lateinit var server: ApiServer
@@ -265,12 +290,20 @@ class AioesphomeapiE2eTest {
             EspEntity.Text("clock_background", "Clock background"),
             EspEntity.Update("update", "Update", deviceClass = "firmware"),
             EspEntity.Camera("snap", "Snapshot"),
-        )) { objectId, value ->
+        ), onCommand = { objectId, value ->
             commands.add(objectId to value)
             if (objectId == "snap" && value == "capture") {
                 server.publishCameraImage(jpeg)
             }
-        }
+        }, services = listOf(
+            EspService("notification", listOf(
+                EspService.Arg("message", EspService.STRING),
+                EspService.Arg("title", EspService.STRING),
+                EspService.Arg("duration", EspService.INT),
+                EspService.Arg("type", EspService.STRING),
+                EspService.Arg("chime", EspService.BOOL),
+            )),
+        ), onServiceCall = { name, args -> actions.add(name to args) })
         hub.updateState("screen", mapOf("on" to true, "brightness" to 0.75))
         hub.updateState("clock_background", "kitchen.jpg")
         hub.updateState("update", mapOf(
@@ -300,6 +333,15 @@ class AioesphomeapiE2eTest {
             assertEquals(mapOf("on" to true, "brightness" to 0.5), light)
             assertEquals("sunset.jpg",
                 commands.firstOrNull { it.first == "clock_background" }?.second)
+            assertEquals(
+                "notification" to mapOf<String, Any?>(
+                    "message" to "Laundry is done",
+                    "title" to "Utility room",
+                    "duration" to 12,
+                    "type" to "warning",
+                    "chime" to true,
+                ),
+                actions.firstOrNull())
         } finally {
             server.stop()
         }
@@ -343,12 +385,12 @@ class AioesphomeapiE2eTest {
                 max = 100f, step = 1f, unit = "%", mode = 2),
             EspEntity.Select("view", "View", options = listOf("Home", "Cameras")),
             EspEntity.Button("reload", "Reload dashboard"),
-        )) { objectId, value ->
+        ), onCommand = { objectId, value ->
             commands.add(objectId to value)
             // The Dart side echoes real state after acting on a command;
             // mirror that so the client sees its switch flip.
             if (objectId == "screensaver") hub.updateState(objectId, value)
-        }
+        })
         hub.updateState("battery", 87)
         hub.updateState("ipv4", "192.168.1.5")
         val server = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, psk, backend,

@@ -32,11 +32,18 @@ class SoundManager extends Manager {
 
   static const _channel = MethodChannel('kiosk_satellite/sound');
 
+  /// The chime that announces a notification pushed from Home Assistant
+  /// (see NotificationManager).
+  static const _notificationChime = 'assets/sounds/notification.ogg';
+
   @override
   String get name => 'sound';
 
   /// url -> local file path, for cache:true fetches.
   final _cached = <String, String>{};
+
+  /// asset key -> the copy of it on disk (see [_bundled]).
+  final _assets = <String, String>{};
 
   /// id -> temp file path to delete when the sound ends (cache:false).
   final _ephemeral = <String, String>{};
@@ -148,6 +155,29 @@ class SoundManager extends Manager {
         },
       ))
       ..register(Command(
+        name: 'playChime',
+        description:
+            "Play the app's own notification chime natively (honors the "
+            'speaker selection)',
+        params: const {'volume': '0..1 (default 1)'},
+        handler: (p) async {
+          final String source;
+          try {
+            source = await _bundled(_notificationChime);
+          } catch (e) {
+            return CommandResult.fail('chime unavailable: $e');
+          }
+          final ok = await _channel.invokeMethod<bool>('play', {
+            'id': 'chime${++_nextId}',
+            'source': source,
+            'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
+          });
+          return ok == true
+              ? const CommandResult.ok()
+              : const CommandResult.fail('native playback failed');
+        },
+      ))
+      ..register(Command(
         name: 'stopSound',
         description: 'Stop a playing sound by its playSound id',
         params: const {'id': 'id returned by playSound'},
@@ -173,6 +203,20 @@ class SoundManager extends Manager {
           return const CommandResult.ok();
         },
       ));
+  }
+
+  /// Copies a bundled sound out of the APK once and returns its path. The
+  /// native player opens files, not asset handles, and a short local file
+  /// is exactly what its decoded-PCM path is for (no MediaPlayer stall).
+  Future<String> _bundled(String asset) async {
+    final hit = _assets[asset];
+    if (hit != null && File(hit).existsSync()) return hit;
+    final data = await rootBundle.load(asset);
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/ks_${asset.split('/').last}');
+    await file.writeAsBytes(data.buffer.asUint8List(), flush: true);
+    _assets[asset] = file.path;
+    return file.path;
   }
 
   Future<String> _fetch(String url, {required bool cache}) async {
