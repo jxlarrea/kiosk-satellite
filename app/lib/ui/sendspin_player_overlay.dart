@@ -10,6 +10,7 @@ import 'lyrics_view.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
+import '../managers/sendspin/music_assistant_api.dart';
 import '../managers/settings/definitions.dart' as defs;
 
 /// The floating now-playing card for the Sendspin player.
@@ -407,7 +408,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
 }
 
 /// Fetch artwork accepting a bad TLS certificate only for the configured
-/// Sendspin server's host (Music Assistant's image proxy is self-signed).
+/// Sendspin server's host or the Music Assistant server's (its image
+/// proxy is self-signed, and a remote player's artwork comes from the
+/// Music Assistant address, which need not be the Sendspin one).
 /// Shared by the floating card and the full-screen view.
 Future<Uint8List?> fetchSendspinArtwork(AppContainer c, String url) async {
   if (url.isEmpty) return null;
@@ -415,9 +418,14 @@ Future<Uint8List?> fetchSendspinArtwork(AppContainer c, String url) async {
     final serverHost = Uri.parse(
       'ws://${c.settings.get(defs.sendspinServer).trim()}',
     ).host;
+    final maHost =
+        Uri.tryParse(
+          musicAssistantWebUrl(c.settings.get(defs.sendspinMaUrl)) ?? '',
+        )?.host ??
+        '';
     final client = HttpClient()
       ..badCertificateCallback = (cert, host, port) =>
-          host == serverHost && serverHost.isNotEmpty;
+          host.isNotEmpty && (host == serverHost || host == maHost);
     final request = await client.getUrl(Uri.parse(url));
     final response = await request.close();
     final bytes = <int>[];

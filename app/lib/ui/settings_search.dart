@@ -277,6 +277,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     description: 'The Nearby devices grant the Bluetooth proxy needs to scan.',
     anchorId: 'x:btproxy_permissions',
   ),
+  SettingsSearchEntry(
+    category: 'Sendspin',
+    title: 'Player to control',
+    description:
+        'Show and control another Music Assistant player instead of this '
+        'device.',
+    anchorId: 'x:ma_player',
+  ),
 ];
 
 /// The full index: the category pages, every non-hidden definition whose

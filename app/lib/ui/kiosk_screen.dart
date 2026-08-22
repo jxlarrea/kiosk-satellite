@@ -113,7 +113,7 @@ class _KioskScreenState extends State<KioskScreen>
         c.settings.get(defs.sendspinMaShortcut) &&
         musicAssistantWebUrl(c.settings.get(defs.sendspinMaUrl)) != null;
     final hasPlayer =
-        c.settings.get(defs.sendspinEnabled) &&
+        c.settings.get(defs.sendspinPlayerActive) &&
         c.settings.get(defs.sendspinPlayerShortcut);
     final hasApps =
         c.settings.get(defs.launcherEnabled) && c.launcher.apps.isNotEmpty;

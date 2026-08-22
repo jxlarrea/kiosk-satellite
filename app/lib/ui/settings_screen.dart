@@ -1661,7 +1661,32 @@ class _CategoryContentState extends State<_CategoryContent> {
                   if (widget.category == 'MQTT')
                     mqttPassword.key: _MqttValidateRow(container: container),
                   if (widget.category == 'Sendspin')
-                    sendspinMaToken.key: _MaValidateRow(container: container),
+                    sendspinMaToken.key: Column(
+                      children: [
+                        _MaValidateRow(container: container),
+                        // The remote-player pick (issue #265), right under
+                        // the credentials that make its list possible.
+                        SearchLandingTarget(
+                          id: 'x:ma_player',
+                          child: _MaPlayerRow(
+                            container: container,
+                            onChanged: () => setState(() {}),
+                          ),
+                        ),
+                        // Say what the pick just did to this device: its
+                        // own player is gone from the server, and the
+                        // rows about it are gone from this page.
+                        if (container.settings
+                            .get(sendspinMaPlayer)
+                            .trim()
+                            .isNotEmpty)
+                          const WarnRow(
+                            "This device's own player is disconnected from "
+                            'Music Assistant while another player is '
+                            'controlled.',
+                          ),
+                      ],
+                    ),
                   // The live list right under the sort picker that orders it.
                   // Rides the section's dependsOn: with the proxy off there is
                   // nothing to list and none of these rows render.
@@ -3579,6 +3604,133 @@ class _MaValidateRowState extends State<_MaValidateRow> {
           ),
     onTap: _validating ? null : _validate,
   );
+}
+
+/// Which Music Assistant player the Now Playing card follows (issue #265):
+/// this device's own Sendspin player, or any player the server offers — a
+/// wall tablet showing and controlling the kitchen speakers instead of
+/// itself. The list is the server's, fetched when the row is tapped.
+class _MaPlayerRow extends StatefulWidget {
+  const _MaPlayerRow({required this.container, required this.onChanged});
+
+  final AppContainer container;
+
+  /// Rebuilds the pane: the lyrics rows gate on this pick and must come
+  /// and go with it.
+  final VoidCallback onChanged;
+
+  @override
+  State<_MaPlayerRow> createState() => _MaPlayerRowState();
+}
+
+class _MaPlayerRowState extends State<_MaPlayerRow> {
+  Future<void> _pick() async {
+    final container = widget.container;
+    final current = container.settings.get(sendspinMaPlayer);
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Player to control'),
+        contentPadding: const EdgeInsets.fromLTRB(0, 20, 0, 8),
+        content: SizedBox(
+          width: 420,
+          child: FutureBuilder(
+            future: container.commands.execute('maPlayers', const {}),
+            builder: (ctx, snapshot) {
+              final result = snapshot.data;
+              if (result == null) {
+                return const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (!result.ok) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  child: Text('${result.error}'),
+                );
+              }
+              final players = (result.data as List? ?? const [])
+                  .whereType<Map>()
+                  .toList();
+              return RadioGroup<String>(
+                groupValue: current,
+                onChanged: (value) {
+                  final id = value ?? '';
+                  final name = id.isEmpty
+                      ? ''
+                      : '${players.firstWhere(
+                          (p) => '${p['id']}' == id,
+                          orElse: () => const {},
+                        )['name'] ?? ''}';
+                  Navigator.pop(ctx, [id, name]);
+                },
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    const RadioListTile<String>(
+                      value: '',
+                      title: Text('This device'),
+                    ),
+                    for (final p in players)
+                      RadioListTile<String>(
+                        value: '${p['id']}',
+                        title: Text('${p['name']}'),
+                        subtitle: p['available'] == false
+                            ? const Text('Offline')
+                            : null,
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+    if (result == null) return;
+    await container.settings.set(sendspinMaPlayer, result[0]);
+    await container.settings.set(sendspinMaPlayerName, result[1]);
+    // The manager maintains this flag from the same inputs, but over the
+    // async bus — write it here too so the pane rebuild below already
+    // sees the rows it should.
+    await container.settings.set(
+      sendspinPlayerActive,
+      container.settings.get(sendspinEnabled) || result[0].isNotEmpty,
+    );
+    if (mounted) setState(() {});
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = widget.container.settings.get(sendspinMaPlayerName);
+    final remote = widget.container.settings
+        .get(sendspinMaPlayer)
+        .trim()
+        .isNotEmpty;
+    return ListTile(
+      title: const Text('Player to control'),
+      subtitle: Text(
+        remote
+            ? 'The player this screen shows and controls. This device stops '
+                  'being a player itself.'
+            : 'Show and control another Music Assistant player instead of '
+                  'this device.',
+      ),
+      trailing: Text(remote ? name : 'This device'),
+      onTap: _pick,
+    );
+  }
 }
 
 /// Cache usage, directly under the cache size field: how many items sit on

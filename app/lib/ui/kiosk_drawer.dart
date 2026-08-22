@@ -48,7 +48,16 @@ class KioskDrawer extends StatelessWidget {
   /// The Music Assistant web interface to offer, or null when the shortcut
   /// is switched off or no server address has been set.
   String? get _musicUrl => c.settings.get(defs.sendspinMaShortcut)
-      ? musicAssistantWebUrl(c.settings.get(defs.sendspinMaUrl))
+      ? musicAssistantWebUrl(
+          c.settings.get(defs.sendspinMaUrl),
+          // Land on the player this kiosk represents (issue #265): the
+          // followed remote player, or this device's own.
+          player: maLandingPlayer(
+            remotePlayerName: c.settings.get(defs.sendspinMaPlayerName),
+            localPlayerName: c.settings.get(defs.sendspinLocalPlayerName),
+            localPlayerEnabled: c.settings.get(defs.sendspinEnabled),
+          ),
+        )
       : null;
 
   @override
@@ -213,7 +222,7 @@ class KioskDrawer extends StatelessWidget {
                               // tap is deliberate about exactly this.
                               if (!restricted ||
                                   c.settings.get(defs.kioskAllowSendspinPlayer))
-                                if (c.settings.get(defs.sendspinEnabled) &&
+                                if (c.settings.get(defs.sendspinPlayerActive) &&
                                     c.settings.get(defs.sendspinPlayerShortcut))
                                   ListenableBuilder(
                                     listenable: Listenable.merge([

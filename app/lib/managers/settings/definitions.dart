@@ -3114,6 +3114,11 @@ const cameraConfig = SettingDef<String>(
 
 const sendspinEnabled = SettingDef<bool>(
   key: 'sendspin.enabled',
+  // Gone while a remote player is followed (issue #265): the local player
+  // never runs in that mode, so the switch could not do anything. The
+  // local-audio rows below ride this dependsOn transitively.
+  dependsOn: 'sendspin.ma_player',
+  dependsOnValue: '',
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Enable Sendspin player',
@@ -3168,7 +3173,7 @@ const sendspinShowPlayer = SettingDef<bool>(
       'the position is remembered.',
   category: 'Sendspin',
   section: 'Sendspin player',
-  dependsOn: 'sendspin.enabled',
+  dependsOn: 'sendspin.player_active',
 );
 
 /// The floating player's own menu entry (issue #257): show or hide the
@@ -3187,7 +3192,7 @@ const sendspinPlayerShortcut = SettingDef<bool>(
       "queue for this player, it won't show up.",
   category: 'Sendspin',
   section: 'Sendspin player',
-  dependsOn: 'sendspin.enabled',
+  dependsOn: 'sendspin.player_active',
 );
 
 const sendspinPlayerSize = SettingDef<String>(
@@ -3252,7 +3257,7 @@ const sendspinFullscreen = SettingDef<bool>(
       'screensaver runs.',
   category: 'Sendspin',
   section: 'Sendspin player',
-  dependsOn: 'sendspin.enabled',
+  dependsOn: 'sendspin.player_active',
 );
 
 const sendspinFullscreenMotion = SettingDef<bool>(
@@ -3279,7 +3284,7 @@ const sendspinDismissKeepsPlaying = SettingDef<bool>(
       'music.',
   category: 'Sendspin',
   section: 'Sendspin player',
-  dependsOn: 'sendspin.enabled',
+  dependsOn: 'sendspin.player_active',
 );
 
 /// The floating player's position as "x,y" fractions of the free area.
@@ -3342,6 +3347,68 @@ const sendspinMaToken = SettingDef<String>(
   secret: true,
 );
 
+/// Which Music Assistant player the Now Playing card, full-screen view and
+/// transport controls follow: empty is this device's own Sendspin player,
+/// anything else a player id from the server (issue #265). Hidden: a
+/// hand-built picker row owns it on both settings surfaces, offering the
+/// server's live player list.
+const sendspinMaPlayer = SettingDef<String>(
+  key: 'sendspin.ma_player',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Player to control',
+  description:
+      'Show and control another Music Assistant player instead of this '
+      "device's own.",
+  category: 'Sendspin',
+  section: 'Music Assistant',
+  hidden: true,
+);
+
+/// The picked player's display name: what the settings rows show and what
+/// the web interface's player= parameter wants. Stored beside the id so
+/// neither surface needs the server just to say what is selected.
+const sendspinMaPlayerName = SettingDef<String>(
+  key: 'sendspin.ma_player_name',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Controlled player name',
+  description: 'Internal display name of the controlled player.',
+  category: 'Sendspin',
+  section: 'Music Assistant',
+  hidden: true,
+);
+
+/// The name the local player last registered with in Music Assistant —
+/// the device name, or the hardware model when none is set. Stored by
+/// SendspinManager at every player start so the Music Assistant shortcut
+/// can land the web interface on this device's own player without
+/// re-deriving the name (issue #265).
+const sendspinLocalPlayerName = SettingDef<String>(
+  key: 'sendspin.local_player_name',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Local player name',
+  description: 'Internal: the name the local player wears in Music Assistant.',
+  category: 'Sendspin',
+  hidden: true,
+);
+
+/// Whether the player surface (the card, the full-screen view, the menu
+/// entries) has anything to show for: the local player is enabled, or a
+/// remote player is followed. A bookkeeping flag maintained by
+/// SendspinManager, existing so the card rows can gate on "either mode"
+/// — dependsOn can express a chain of ANDs but not an OR.
+const sendspinPlayerActive = SettingDef<bool>(
+  key: 'sendspin.player_active',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Sendspin player surface active',
+  description: 'Internal: the player card has a source in either mode.',
+  category: 'Sendspin',
+  hidden: true,
+);
+
 /// The kiosk menu's way into Music Assistant itself (browsing, queueing,
 /// playlists). Deliberately not a player UI of our own: Music Assistant's
 /// web interface is already complete, already maintained, and already the
@@ -3391,6 +3458,12 @@ const sendspinLyrics = SettingDef<bool>(
       'included); tracks it cannot match are looked up on LRCLIB directly.',
   category: 'Sendspin',
   section: 'Music Assistant',
+  // Gone, not greyed, while a remote player is followed: lyrics are forced
+  // off there (the position reporting is too coarse to sing along with),
+  // and a switch that cannot do anything only invites flipping it. The
+  // timing row below rides this row's dependsOn transitively.
+  dependsOn: 'sendspin.ma_player',
+  dependsOnValue: '',
 );
 
 /// Per-device playback offset (issue: Bluetooth speakers). The sync engine
@@ -3412,6 +3485,7 @@ const sendspinSyncOffset = SettingDef<num>(
       'the group (Bluetooth). Tune by ear; applies live.',
   category: 'Sendspin',
   section: 'Sendspin player',
+  dependsOn: 'sendspin.enabled',
 );
 
 const sendspinLyricsOffset = SettingDef<num>(
@@ -3965,6 +4039,8 @@ const List<SettingDef<Object>> allSettings = [
   // Sendspin player below is one of the things it drives.
   sendspinMaUrl,
   sendspinMaToken,
+  sendspinMaPlayer,
+  sendspinMaPlayerName,
   sendspinMaShortcut,
   sendspinMaAutoClose,
   sendspinLyrics,
@@ -3983,6 +4059,8 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,
+  sendspinPlayerActive,
+  sendspinLocalPlayerName,
   dlnaEnabled,
   dlnaAudioBackground,
   dlnaPort,

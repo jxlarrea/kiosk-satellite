@@ -291,8 +291,16 @@ class BrowserManager extends Manager {
               'waking the screen first — the remote face of the kiosk menu '
               'entry. Fails when no server address is configured.',
           handler: (_) async {
-            final url =
-                musicAssistantWebUrl(_settings.get(defs.sendspinMaUrl));
+            final url = musicAssistantWebUrl(
+              _settings.get(defs.sendspinMaUrl),
+              // The same landing the kiosk menu entry uses: the followed
+              // remote player, or this device's own.
+              player: maLandingPlayer(
+                remotePlayerName: _settings.get(defs.sendspinMaPlayerName),
+                localPlayerName: _settings.get(defs.sendspinLocalPlayerName),
+                localPlayerEnabled: _settings.get(defs.sendspinEnabled),
+              ),
+            );
             if (url == null) {
               return const CommandResult.fail(
                   'no Music Assistant server address configured');

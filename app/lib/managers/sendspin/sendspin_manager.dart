@@ -6,11 +6,13 @@ import 'package:flutter/services.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
+import '../../core/logging.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'lrclib.dart';
 import 'lyrics.dart';
+import 'ma_remote_player.dart';
 import 'music_assistant_api.dart';
 
 /// The device as a synchronized Sendspin audio player.
@@ -102,6 +104,28 @@ class SendspinManager extends Manager {
   MusicAssistantApi Function({required String baseUrl, required String token})
   apiFactory = MusicAssistantApi.new;
 
+  /// Builds the remote-player follower (issue #265). Swapped in tests so a
+  /// manager test never opens a socket.
+  @visibleForTesting
+  MaRemotePlayer Function({
+    required String baseUrl,
+    required String token,
+    required String playerId,
+    required void Function(Map<String, Object?>?) onSnapshot,
+    required Logger log,
+  })
+  remoteFactory = MaRemotePlayer.new;
+
+  /// Live while a remote Music Assistant player is followed instead of
+  /// this device's own (sendspin.ma_player): it feeds [nowPlaying] and
+  /// takes the transport commands; the local player keeps playing audio
+  /// but stops speaking to the UI.
+  MaRemotePlayer? _remote;
+
+  /// What [_syncRemote] last built a follower for, so an unrelated
+  /// settings burst does not tear a healthy connection down.
+  String _remoteKey = '';
+
   /// One queue recovery in flight at a time (see [_recoverQueue]).
   bool _recovering = false;
 
@@ -112,7 +136,10 @@ class SendspinManager extends Manager {
   /// lyrics is remembered as such by its key, so it is not asked for again
   /// every few seconds for the length of the song.
   Future<void> _refreshLyrics() async {
-    if (!_settings.get(defs.sendspinLyrics)) {
+    // No lyrics while following a remote player: Music Assistant reports
+    // its position too coarsely to sing along with, and lyrics that lag
+    // the music are worse than none.
+    if (!_settings.get(defs.sendspinLyrics) || _remote != null) {
       if (lyrics.value.isNotEmpty) lyrics.value = const [];
       _lyricsKey = '';
       return;
@@ -272,8 +299,14 @@ class SendspinManager extends Manager {
             }
           }
       }
-      _publishNowPlaying();
-      unawaited(_refreshLyrics());
+      // With a remote player followed, the local stream's metadata stays
+      // off screen: the side effects above (volume, ducking, the
+      // screensaver hold for audible local audio) still count, but the
+      // card belongs to the remote snapshot.
+      if (_remote == null) {
+        _publishNowPlaying();
+        unawaited(_refreshLyrics());
+      }
       return null;
     });
 
@@ -304,6 +337,19 @@ class SendspinManager extends Manager {
     });
 
     bus.on<SettingChanged>().listen((e) {
+      // The card-surface flag rides the two settings that decide it.
+      if (e.key == defs.sendspinMaPlayer.key ||
+          e.key == defs.sendspinEnabled.key) {
+        _syncFlags();
+      }
+      // The remote follower has its own lifecycle, deliberately not tied
+      // to the local player's enable switch: following a remote player is
+      // what the device does INSTEAD of being a player.
+      if (e.key == defs.sendspinMaPlayer.key ||
+          e.key == defs.sendspinMaUrl.key ||
+          e.key == defs.sendspinMaToken.key) {
+        _syncRemote();
+      }
       // Only connection-shaping settings restart the client; the UI-only
       // ones (card visibility, size, position, fullscreen mode) must not
       // interrupt playback when toggled.
@@ -338,6 +384,13 @@ class SendspinManager extends Manager {
         'sendspin.ma_shortcut',
         'sendspin.ma_auto_close',
         'sendspin.player_shortcut',
+        // The follower's display name and the bookkeeping flag: neither
+        // touches the audio client. The pick itself (sendspin.ma_player)
+        // is deliberately NOT here — it decides whether the local player
+        // runs at all, so it goes through the restart below.
+        'sendspin.ma_player_name',
+        'sendspin.player_active',
+        'sendspin.local_player_name',
       ];
       final relevant =
           e.key.startsWith('sendspin.') &&
@@ -349,7 +402,9 @@ class SendspinManager extends Manager {
       _restartDebounce = Timer(const Duration(seconds: 1), () {
         _transition = _transition.then((_) async {
           await _stop();
-          if (_settings.get(defs.sendspinEnabled)) await _start();
+          if (_settings.get(defs.sendspinEnabled) && !_remotePicked) {
+            await _start();
+          }
         });
       });
     });
@@ -372,6 +427,8 @@ class SendspinManager extends Manager {
             'enabled': _settings.get(defs.sendspinEnabled),
             'running': _running,
             'playing': _playing,
+            if (_remote != null)
+              'remotePlayer': _settings.get(defs.sendspinMaPlayerName),
             ..._status,
             ...live,
           });
@@ -384,7 +441,8 @@ class SendspinManager extends Manager {
         name: 'sendspinControl',
         description:
             'Send a transport command to the Sendspin group this player '
-            'belongs to (play, pause, next, previous).',
+            'belongs to, or to the followed Music Assistant player when one '
+            'is set (play, pause, next, previous).',
         params: const {'command': 'play | pause | next | previous'},
         handler: (p) async {
           final ok = await control('${p['command'] ?? ''}');
@@ -448,14 +506,128 @@ class SendspinManager extends Manager {
       ),
     );
 
-    if (_settings.get(defs.sendspinEnabled)) {
+    commands.register(
+      Command(
+        name: 'maPlayers',
+        description:
+            'List the players Music Assistant knows, for picking which one '
+            'the Now Playing card follows. Returns id, name and '
+            'availability per player.',
+        handler: (_) async {
+          final api = apiFactory(
+            baseUrl: _settings.get(defs.sendspinMaUrl),
+            token: _settings.get(defs.sendspinMaToken),
+          );
+          final result = await api.call('players/all');
+          if (!result.ok) return CommandResult.fail(result.error!);
+          // This device's own player has no business in the list: "This
+          // device" already is that choice, and picking it remotely would
+          // take offline the very player being followed. Music Assistant
+          // knows it by the Sendspin client id — bare, or embedded in a
+          // wrapper's id (universal players prefix it).
+          final selfId = _settings.get(defs.sendspinClientId).trim();
+          final players =
+              ((result.result as List?) ?? const [])
+                  .whereType<Map>()
+                  .where((p) => p['enabled'] != false)
+                  .where(
+                    (p) =>
+                        selfId.isEmpty ||
+                        !'${p['player_id']}'.toLowerCase().contains(
+                          selfId.toLowerCase(),
+                        ),
+                  )
+                  .map(
+                    (p) => <String, Object?>{
+                      'id': '${p['player_id'] ?? ''}',
+                      'name':
+                          '${p['display_name'] ?? p['name'] ?? p['player_id']}',
+                      'available': p['available'] == true,
+                    },
+                  )
+                  .toList()
+                ..sort(
+                  (a, b) => '${a['name']}'.toLowerCase().compareTo(
+                    '${b['name']}'.toLowerCase(),
+                  ),
+                );
+          return CommandResult.ok(players);
+        },
+      ),
+    );
+
+    _syncFlags();
+    // A remote pick means the device is a remote control, not a player:
+    // the local client stays down so Music Assistant shows this device
+    // offline rather than as a speaker nobody should queue to.
+    if (_settings.get(defs.sendspinEnabled) && !_remotePicked) {
       _transition = _transition.then((_) => _start());
     }
+    _syncRemote();
+  }
+
+  /// A remote player is picked, whether or not the server is reachable.
+  bool get _remotePicked =>
+      _settings.get(defs.sendspinMaPlayer).trim().isNotEmpty;
+
+  /// Keep the card-surface flag (sendspin.player_active) true whenever the
+  /// card has a source — the local player enabled, or a remote player
+  /// followed — so the player-UI settings rows can gate on one key.
+  void _syncFlags() {
+    final active = _settings.get(defs.sendspinEnabled) || _remotePicked;
+    if (_settings.get(defs.sendspinPlayerActive) != active) {
+      unawaited(_settings.set(defs.sendspinPlayerActive, active));
+    }
+  }
+
+  /// Bring the remote follower in line with the settings: build one when a
+  /// player is picked (and the server is configured), tear it down when
+  /// the pick is cleared, rebuild it when the pick or the credentials
+  /// change — and never touch a healthy one otherwise.
+  void _syncRemote() {
+    final playerId = _settings.get(defs.sendspinMaPlayer).trim();
+    final baseUrl = _settings.get(defs.sendspinMaUrl).trim();
+    final token = _settings.get(defs.sendspinMaToken).trim();
+    final want = playerId.isNotEmpty && baseUrl.isNotEmpty && token.isNotEmpty;
+    final key = want ? '$playerId|$baseUrl|$token' : '';
+    if (key == _remoteKey) return;
+    _remoteKey = key;
+    final old = _remote;
+    _remote = null;
+    if (old != null) {
+      unawaited(old.stop());
+      // Whatever the remote showed is over; the local player's own state
+      // repopulates the card (or clears it) through the normal path.
+      _setNowPlaying(null);
+      _publishNowPlaying();
+    }
+    if (!want) return;
+    log.info(name, 'following Music Assistant player $playerId');
+    // The local card hands the screen over to the remote one.
+    _setNowPlaying(null);
+    lyrics.value = const [];
+    _lyricsKey = '';
+    _remote = remoteFactory(
+      baseUrl: baseUrl,
+      token: token,
+      playerId: playerId,
+      onSnapshot: _onRemoteSnapshot,
+      log: log,
+    )..start();
+  }
+
+  void _onRemoteSnapshot(Map<String, Object?>? snapshot) {
+    // A follower being torn down may answer one last time.
+    if (_remote == null) return;
+    _setNowPlaying(snapshot);
   }
 
   @override
   Future<void> dispose() async {
     _restartDebounce?.cancel();
+    final remote = _remote;
+    _remote = null;
+    await remote?.stop();
     await _stop();
   }
 
@@ -473,6 +645,12 @@ class SendspinManager extends Manager {
   /// A playing queue is left alone: its metadata is already streaming in,
   /// and a card conjured a moment earlier would only fight it.
   Future<void> _recoverQueue() async {
+    // Following a remote player: its follower already holds the live
+    // queue, so the reveal just asks it to surface a paused one.
+    if (_remote case final remote?) {
+      if (nowPlaying.value == null) remote.reveal();
+      return;
+    }
     if (nowPlaying.value != null || _playing || _recovering || !_running) {
       return;
     }
@@ -495,7 +673,7 @@ class SendspinManager extends Manager {
       _status = {
         ..._status,
         for (final e in track.entries)
-          if (e.key != 'state') e.key: e.value,
+          if (e.key != 'state' && e.key != 'positionAtMs') e.key: e.value,
         'receivedAt': DateTime.now().millisecondsSinceEpoch,
       };
       _uiPlaying = false;
@@ -512,8 +690,11 @@ class SendspinManager extends Manager {
   }
 
   /// Group transport control (the controller role). False when the server
-  /// does not support the command or nothing is connected.
+  /// does not support the command or nothing is connected. With a remote
+  /// player followed, the command goes to Music Assistant for that player
+  /// instead of into the local Sendspin group.
   Future<bool> control(String command) async {
+    if (_remote case final remote?) return remote.control(command);
     try {
       return await _channel.invokeMethod<bool>('control', {
             'command': command,
@@ -533,6 +714,11 @@ class SendspinManager extends Manager {
       final info = await commands.execute('getDeviceInfo', const {});
       final data = info.data;
       if (info.ok && data is Map) playerName = '${data['name'] ?? 'Kiosk'}';
+    }
+    // Remembered for the Music Assistant shortcut, which lands the web
+    // interface on this player by this name (issue #265).
+    if (_settings.get(defs.sendspinLocalPlayerName) != playerName) {
+      unawaited(_settings.set(defs.sendspinLocalPlayerName, playerName));
     }
     // Checked at every start, not just boot: an identity-shedding import
     // (restore as a new device) clears the id, and the next start must
@@ -579,6 +765,7 @@ class SendspinManager extends Manager {
     _idleGrace?.cancel();
     _idleGrace = null;
     _uiPlaying = false;
-    _setNowPlaying(null);
+    // A remote follower owns the card; a local restart must not blank it.
+    if (_remote == null) _setNowPlaying(null);
   }
 }

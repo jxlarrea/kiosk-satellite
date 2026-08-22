@@ -17,7 +17,11 @@ String? lyricsRetryArtist(String artist) {
 /// user typed is a host they can also open in a WebView, so a missing scheme
 /// becomes https (as with the API) and a websocket scheme is mapped back to
 /// the http one it was derived from.
-String? musicAssistantWebUrl(String raw) {
+///
+/// A non-empty [player] lands the interface on that player instead of
+/// whichever one it showed last: Music Assistant's frontend routes in the
+/// URL fragment, so the parameter goes after the hash (issue #265).
+String? musicAssistantWebUrl(String raw, {String player = ''}) {
   final trimmed = raw.trim().replaceAll(RegExp(r'/+$'), '');
   if (trimmed.isEmpty) return null;
   final withScheme = trimmed.startsWith('http') || trimmed.startsWith('ws')
@@ -25,7 +29,7 @@ String? musicAssistantWebUrl(String raw) {
       : 'https://$trimmed';
   final uri = Uri.tryParse(withScheme);
   if (uri == null || !uri.hasAuthority) return null;
-  return uri
+  final base = uri
       .replace(
         scheme: switch (uri.scheme) {
           'ws' => 'http',
@@ -34,6 +38,23 @@ String? musicAssistantWebUrl(String raw) {
         },
       )
       .toString();
+  if (player.trim().isEmpty) return base;
+  return '$base/#/?player=${Uri.encodeComponent(player.trim())}';
+}
+
+/// The player the Music Assistant web interface should land on: the
+/// followed remote player when one is picked, otherwise this device's own
+/// player — provided it is enabled, since selecting a player that is not
+/// registered does nothing. Empty means leave the interface on whatever
+/// it showed last.
+String maLandingPlayer({
+  required String remotePlayerName,
+  required String localPlayerName,
+  required bool localPlayerEnabled,
+}) {
+  final remote = remotePlayerName.trim();
+  if (remote.isNotEmpty) return remote;
+  return localPlayerEnabled ? localPlayerName.trim() : '';
 }
 
 /// Whether [url] is a page on the Music Assistant server configured as
@@ -72,13 +93,13 @@ class MusicAssistantApi {
   /// A Music Assistant address is typically https with a self-signed
   /// certificate (the add-on generates its own), so a normal client refuses
   /// it. The user typed this address themselves, on their own network.
-  static HttpClient _client() =>
+  static HttpClient newHttpClient() =>
       HttpClient()
         ..connectionTimeout = const Duration(seconds: 10)
         ..badCertificateCallback = (_, _, _) => true;
 
   /// `wss://host:8095/ws` from the address as typed, however it was typed.
-  Uri get _socketUri {
+  Uri get socketUri {
     final trimmed = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
     final withScheme =
         trimmed.startsWith('http') || trimmed.startsWith('ws')
@@ -111,71 +132,19 @@ class MusicAssistantApi {
     if (token.trim().isEmpty) {
       return const MusicAssistantResult.failure('No auth token set.');
     }
-    final client = _client();
+    final client = newHttpClient();
     WebSocket? socket;
     try {
       socket = await WebSocket.connect(
-        _socketUri.toString(),
+        socketUri.toString(),
         customClient: client,
       ).timeout(timeout);
-      final pending = <String, Completer<Object?>>{};
-      Map<String, Object?>? serverInfo;
-      final closed = Completer<void>();
-      socket.listen(
-        (raw) {
-          final decoded = jsonDecode('$raw');
-          if (decoded is! Map) return;
-          final message = decoded.cast<String, Object?>();
-          final id = message['message_id'];
-          if (id == null) {
-            // The opening frame, which carries the server's identity.
-            serverInfo ??= message;
-            return;
-          }
-          final completer = pending.remove('$id');
-          if (completer == null || completer.isCompleted) return;
-          if (message.containsKey('error_code')) {
-            completer.completeError(
-              MusicAssistantError(
-                '${message['details'] ?? message['error_code']}',
-              ),
-            );
-          } else {
-            completer.complete(message['result']);
-          }
-        },
-        onError: (Object error) {
-          if (!closed.isCompleted) closed.completeError(error);
-        },
-        onDone: () {
-          if (!closed.isCompleted) closed.complete();
-          for (final completer in pending.values) {
-            if (!completer.isCompleted) {
-              completer.completeError(
-                const MusicAssistantError('the server closed the connection'),
-              );
-            }
-          }
-          pending.clear();
-        },
-      );
-
-      var nextId = 0;
-      Future<Object?> send(String name, Map<String, Object?> arguments) {
-        final id = '${++nextId}';
-        final completer = Completer<Object?>();
-        pending[id] = completer;
-        socket!.add(jsonEncode({
-          'message_id': id,
-          'command': name,
-          if (arguments.isNotEmpty) 'args': arguments,
-        }));
-        return completer.future.timeout(timeout);
-      }
-
-      await send('auth', {'token': token});
-      final result = command == 'auth' ? null : await send(command, args);
-      return MusicAssistantResult.success(result, serverInfo ?? const {});
+      final session = MaSession(socket);
+      await session.send('auth', {'token': token}, timeout: timeout);
+      final result = command == 'auth'
+          ? null
+          : await session.send(command, args, timeout: timeout);
+      return MusicAssistantResult.success(result, session.serverInfo);
     } on MusicAssistantError catch (error) {
       return MusicAssistantResult.failure(error.message);
     } on TimeoutException {
@@ -199,7 +168,7 @@ class MusicAssistantApi {
   }
 
   String _describeHost() {
-    final uri = _socketUri;
+    final uri = socketUri;
     return '${uri.host}:${uri.port}';
   }
 
@@ -225,71 +194,25 @@ class MusicAssistantApi {
         token.trim().isEmpty) {
       return null;
     }
-    final client = _client();
+    final client = newHttpClient();
     WebSocket? socket;
     try {
       socket = await WebSocket.connect(
-        _socketUri.toString(),
+        socketUri.toString(),
         customClient: client,
       ).timeout(const Duration(seconds: 15));
-      final session = _Session(socket);
+      final session = MaSession(socket);
       await session.send('auth', {'token': token});
       final queue = await session.send('player_queues/get_active_queue', {
         'player_id': playerId,
       });
-      if (queue is! Map) return null;
-      final item = queue['current_item'];
-      if (item is! Map) return null;
-      final media = item['media_item'] is Map
-          ? (item['media_item'] as Map).cast<String, Object?>()
-          : const <String, Object?>{};
-      final title = '${media['name'] ?? item['name'] ?? ''}';
-      if (title.trim().isEmpty) return null;
-      // Sendspin credits multiple artists as one slash-joined string; the
-      // recovered card reads the same as a live one.
-      final artist = ((media['artists'] as List?) ?? const [])
-          .map((a) => a is Map ? '${a['name'] ?? ''}' : '')
-          .where((s) => s.isNotEmpty)
-          .join('/');
-      final album = media['album'] is Map
-          ? '${(media['album'] as Map)['name'] ?? ''}'
-          : '';
-      final duration =
-          (item['duration'] as num?) ?? (media['duration'] as num?);
-      final elapsed = queue['elapsed_time'] as num?;
-      return {
-        'state': '${queue['state'] ?? ''}',
-        'title': title,
-        if (artist.isNotEmpty) 'artist': artist,
-        if (album.isNotEmpty) 'album': album,
-        if (duration != null) 'durationMs': (duration * 1000).round(),
-        'positionMs': ((elapsed ?? 0) * 1000).round(),
-        ...switch (_imageUrl(item['image'])) {
-          final url? => {'artworkUrl': url},
-          null => const <String, Object?>{},
-        },
-      };
+      return queueTrackSnapshot(queue, webBase: musicAssistantWebUrl(baseUrl));
     } catch (_) {
       return null;
     } finally {
       await socket?.close();
       client.close(force: true);
     }
-  }
-
-  /// A fetchable URL for a queue item's image: the path itself when it is
-  /// a plain web URL, otherwise the server's image proxy via the image's
-  /// deterministic proxy id. Null when there is no image to offer.
-  String? _imageUrl(Object? image) {
-    if (image is! Map) return null;
-    final path = '${image['path'] ?? ''}';
-    if (image['remotely_accessible'] == true && path.startsWith('http')) {
-      return path;
-    }
-    final proxyId = '${image['proxy_id'] ?? ''}';
-    final base = musicAssistantWebUrl(baseUrl);
-    if (proxyId.isEmpty || base == null) return null;
-    return '$base/imageproxy/$proxyId?size=512&fmt=jpg';
   }
 
   /// The synced lyrics for a track, or null when there are none.
@@ -309,14 +232,14 @@ class MusicAssistantApi {
     String album = '',
   }) async {
     if (title.trim().isEmpty) return null;
-    final client = _client();
+    final client = newHttpClient();
     WebSocket? socket;
     try {
       socket = await WebSocket.connect(
-        _socketUri.toString(),
+        socketUri.toString(),
         customClient: client,
       ).timeout(const Duration(seconds: 15));
-      final session = _Session(socket);
+      final session = MaSession(socket);
       await session.send('auth', {'token': token});
       var track = await session.send('music/track_by_name', {
         'track_name': title,
@@ -359,24 +282,117 @@ class MusicAssistantApi {
   }
 }
 
-/// Request/response bookkeeping for one open connection.
-class _Session {
-  _Session(this._socket) {
+/// The current track of a Music Assistant queue dict, in the same key
+/// shape as Sendspin metadata ('title', 'artist', 'album', 'durationMs',
+/// 'positionMs', 'artworkUrl'), plus 'state' (the queue's
+/// playing/paused/idle) and 'positionAtMs' (epoch ms the server measured
+/// the position at) for the caller to decide with. Null when [queue] is
+/// not a queue, has no current item, or the item has no name.
+///
+/// One parser for both queue sources: the one-shot
+/// [MusicAssistantApi.fetchActiveQueueTrack] and the live queue_updated
+/// events a remote-controlled player streams (issue #265) — the event's
+/// data IS the queue dict.
+Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
+  if (queue is! Map) return null;
+  final item = queue['current_item'];
+  if (item is! Map) return null;
+  final media = item['media_item'] is Map
+      ? (item['media_item'] as Map).cast<String, Object?>()
+      : const <String, Object?>{};
+  final title = '${media['name'] ?? item['name'] ?? ''}';
+  if (title.trim().isEmpty) return null;
+  // Sendspin credits multiple artists as one slash-joined string; the
+  // recovered card reads the same as a live one.
+  final artist = ((media['artists'] as List?) ?? const [])
+      .map((a) => a is Map ? '${a['name'] ?? ''}' : '')
+      .where((s) => s.isNotEmpty)
+      .join('/');
+  final album = media['album'] is Map
+      ? '${(media['album'] as Map)['name'] ?? ''}'
+      : '';
+  final duration = (item['duration'] as num?) ?? (media['duration'] as num?);
+  final elapsed = queue['elapsed_time'] as num?;
+  final measuredAt = queue['elapsed_time_last_updated'] as num?;
+  return {
+    'state': '${queue['state'] ?? ''}',
+    'title': title,
+    if (artist.isNotEmpty) 'artist': artist,
+    if (album.isNotEmpty) 'album': album,
+    if (duration != null) 'durationMs': (duration * 1000).round(),
+    'positionMs': ((elapsed ?? 0) * 1000).round(),
+    if (measuredAt != null) 'positionAtMs': (measuredAt * 1000).round(),
+    ...switch (queueImageUrl(item['image'], webBase)) {
+      final url? => {'artworkUrl': url},
+      null => const <String, Object?>{},
+    },
+  };
+}
+
+/// A fetchable URL for a queue item's image: the path itself when it is
+/// a plain web URL, otherwise the server's image proxy (rooted at
+/// [webBase]) via the image's deterministic proxy id. Null when there is
+/// no image to offer.
+String? queueImageUrl(Object? image, String? webBase) {
+  if (image is! Map) return null;
+  final path = '${image['path'] ?? ''}';
+  if (image['remotely_accessible'] == true && path.startsWith('http')) {
+    return path;
+  }
+  final proxyId = '${image['proxy_id'] ?? ''}';
+  if (proxyId.isEmpty || webBase == null) return null;
+  return '$webBase/imageproxy/$proxyId?size=512&fmt=jpg';
+}
+
+/// Request/response bookkeeping for one open connection, plus the events
+/// Music Assistant pushes at every authenticated client.
+///
+/// Large results arrive chunked ({partial: true} frames carrying list
+/// slices under the request's id, then a final frame with the tail);
+/// [send] hands back the reassembled whole.
+class MaSession {
+  MaSession(this._socket, {this.onEvent, this.onDone}) {
     _socket.listen(
       (raw) {
         final decoded = jsonDecode('$raw');
         if (decoded is! Map) return;
         final message = decoded.cast<String, Object?>();
+        if (message.containsKey('event')) {
+          onEvent?.call(
+            '${message['event']}',
+            '${message['object_id'] ?? ''}',
+            message['data'],
+          );
+          return;
+        }
         final id = message['message_id'];
-        if (id == null) return;
+        if (id == null) {
+          // The opening frame, which carries the server's identity.
+          if (serverInfo.isEmpty) serverInfo = message;
+          return;
+        }
+        if (message['partial'] == true) {
+          final part = message['result'];
+          _partials['$id'] = [
+            ...?_partials['$id'],
+            ...(part is List ? part : [part]),
+          ];
+          return;
+        }
         final completer = _pending.remove('$id');
+        final held = _partials.remove('$id');
         if (completer == null || completer.isCompleted) return;
         if (message.containsKey('error_code')) {
           completer.completeError(
             MusicAssistantError('${message['details'] ?? message['error_code']}'),
           );
         } else {
-          completer.complete(message['result']);
+          final result = message['result'];
+          completer.complete(
+            held == null
+                ? result
+                : [...held, ...(result is List ? result : const [])],
+          );
         }
       },
       onDone: () {
@@ -388,13 +404,27 @@ class _Session {
           }
         }
         _pending.clear();
+        _partials.clear();
+        onDone?.call();
       },
       onError: (Object _) {},
     );
   }
 
   final WebSocket _socket;
+
+  /// A pushed event: name, the id of what it concerns, and its payload.
+  final void Function(String event, String objectId, Object? data)? onEvent;
+
+  /// The connection ended, however it ended (pending requests have already
+  /// been failed).
+  final void Function()? onDone;
+
+  /// The server's opening frame (name, versions), once it has arrived.
+  Map<String, Object?> serverInfo = const {};
+
   final _pending = <String, Completer<Object?>>{};
+  final _partials = <String, List<Object?>>{};
   var _nextId = 0;
 
   Future<Object?> send(

@@ -44,6 +44,7 @@ own API, which is a separate address with its own token.
 | Server address | | The Music Assistant server's address as its web interface shows it, usually https on port 8095. A self-signed certificate is accepted. |
 | Auth token | | A long-lived token from Music Assistant, under Settings then Users. Read access is enough for lyrics; the shortcut below browses as whoever the token belongs to. |
 | Validate connection | | Opens the API and authenticates, so a wrong port and a wrong token report differently. |
+| Player to control | This device | Follow and control another Music Assistant player instead of this device's own, described below. |
 | Show in the kiosk menu | on | The shortcut described below. |
 | Close after inactivity | 0s | Seconds without a touch on the Music Assistant page before it closes itself and the dashboard returns. Zero leaves it open until someone closes it. |
 | Show lyrics | off | Synced lyrics on the "Now Playing" screen, described below. |
@@ -52,6 +53,31 @@ own API, which is a separate address with its own token.
 Music Assistant's Sendspin provider is built in and always enabled, and
 players register themselves on connection: there is nothing to add on the
 server side.
+
+## Controlling another player
+
+By default the floating card and the "Now Playing" screen belong to this
+device's own player: what plays here is what they show. **Player to
+control** points them at any other Music Assistant player instead — the
+kitchen speakers, a Sonos, a whole sync group — for the wall tablet whose
+job is to show and steer the music without making any of it. Pick a player
+from the list (it is the server's own, fetched live) and the card, the
+full-screen view and the transport buttons all follow that player: its
+track, its artwork, its progress, its play and pause. The kiosk menu's
+Music Assistant shortcut opens on that player too.
+
+With a remote player picked the device is a remote control, not a player:
+its own Sendspin player shuts down and shows as offline in Music
+Assistant, so nobody queues music to a screen that was never meant to make
+any. The settings follow suit — everything about the local player (the
+enable switch, server, codec, sync offset, voice ducking, lyrics) leaves
+the settings for the duration, while the card and Now Playing rows stay,
+since they are what the mode is for. Pick **This device** and the player
+comes back online with all of its rows.
+
+One behavior carries over unchanged: flinging the card away stops the
+remote player's music, exactly as it does locally, unless "Keep playing
+when dismissed" says otherwise.
 
 ## The Music Assistant shortcut
 
@@ -65,7 +91,9 @@ never left.
 The interface is Music Assistant's, not a copy of it, so browsing and
 queueing stay whatever the server's current version makes them. Playback
 itself needs nothing more than the Sendspin player above: queue to this
-device and it plays here.
+device and it plays here. The page opens with the right player already
+selected — this device's own, or the controlled player when **Player to
+control** points elsewhere.
 
 **Close after inactivity** puts the dashboard back on its own, for the wall
 tablet whose visitor queued a song and walked away: up to a minute without a
