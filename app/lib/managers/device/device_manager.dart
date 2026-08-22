@@ -375,6 +375,8 @@ class DeviceManager extends Manager {
         description:
             'Battery, CPU load and temperature only: the live header '
             'numbers, without everything else getDeviceInfo gathers.',
+        // Executed every 4 seconds for as long as an admin page is open.
+        quiet: true,
         handler: (_) async => CommandResult.ok(await stats()),
       ),
     );

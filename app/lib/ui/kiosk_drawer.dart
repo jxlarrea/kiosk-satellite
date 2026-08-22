@@ -755,6 +755,15 @@ class KioskDrawer extends StatelessWidget {
               ],
             ),
           ),
+          actions: [
+            // No pop of its own: the cancel unwinds the download, whose
+            // completion closes this dialog through the path below like
+            // every other way a download ends (#272).
+            TextButton(
+              onPressed: c.update.cancelDownload,
+              child: const Text('Cancel'),
+            ),
+          ],
         ),
       ),
     );

@@ -2,6 +2,17 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- An update download can now be cancelled. The downloading dialog on the device has a Cancel button, and the remote admin shows one beside the progress while a download runs. Cancelling keeps the update notice up, so the download can simply be started again, which is the escape hatch for a download that stalls on flaky Wi-Fi and used to block every retry until the app was restarted. A download that stops delivering data now also gives up on its own after 60 seconds and reports the stall instead of pretending to run forever.
+
+### Changed
+- The remote admin attaches to an update download that is already running (one started on the device, or after a page reload mid-download) instead of failing with "a download is already running", it keeps riding through brief Wi-Fi blips on the tablet, and it now reports how the download actually ended: a cancelled or failed download re-offers the Install button (with the failure message), a silent install says so, and only an install genuinely waiting on the device screen asks to be confirmed there.
+
+### Fixed
+- Downloading an update no longer floods the device with status traffic. Every whole percent of progress fanned out to the Home Assistant integrations and wrote log lines, several times a second on a fast connection, which showed up as heavy CPU load and a log full of getUpdateStatus entries on weaker tablets; mid-download updates are now capped to one per second, progress notifications advance in whole percents instead of per network chunk, and the download buffers at most a few megabytes ahead of what the storage has written.
+
 ## v2026.8.72 - 2026-08-22
 
 ### Changed

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/update/update_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -324,6 +326,104 @@ void main() {
     // The callback can only owe one re-arm; a stray repeat changes nothing.
     await installerEvent('installFailed');
     expect(kioskCalls, ['pause', 'resume']);
+  });
+
+  /// A client whose APK response streams from [apkBytes], so a test can
+  /// hold the transfer open, stall it, or feed it chunk by chunk.
+  http.Client Function() streamingClient(
+    StreamController<List<int>> apkBytes, {
+    int contentLength = 4096,
+  }) =>
+      () => MockClient.streaming((request, _) async {
+            if (isReleaseQuery(request)) {
+              return http.StreamedResponse(
+                Stream.value(utf8.encode(release('1.1.0'))),
+                200,
+              );
+            }
+            return http.StreamedResponse(
+              apkBytes.stream,
+              200,
+              contentLength: contentLength,
+            );
+          });
+
+  test('cancelUpdateDownload aborts a running download and keeps the notice',
+      () async {
+    await notice('1.1.0');
+    final apkBytes = StreamController<List<int>>();
+    update.clientFactory = streamingClient(apkBytes);
+
+    final result = update.downloadAndInstall();
+    apkBytes.add(List.filled(1024, 7)); // 25%: mid-download, held open
+    while ((update.progress.value ?? 0) == 0) {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+    }
+
+    final cancel = await registry.execute('cancelUpdateDownload', const {});
+    expect(cancel.ok, isTrue);
+    expect(await result, isNull);
+
+    expect(installed, isEmpty);
+    // The notice stays up, so the download can simply be started again.
+    expect(update.available.value?.version, '1.1.0');
+    expect(update.progress.value, isNull);
+    final status = await registry.execute('getUpdateStatus', const {});
+    expect((status.data as Map)['lastOutcome'], 'cancelled');
+    // A second cancel with nothing running is refused, not a crash.
+    expect((await registry.execute('cancelUpdateDownload', const {})).ok,
+        isFalse);
+    await apkBytes.close();
+  });
+
+  test('a stalled download fails instead of running forever', () async {
+    await notice('1.1.0');
+    update.stallTimeout = const Duration(milliseconds: 100);
+    final apkBytes = StreamController<List<int>>(); // never delivers a byte
+    update.clientFactory = streamingClient(apkBytes);
+
+    final error = await update.downloadAndInstall();
+
+    expect(error, contains('stalled'));
+    expect(installed, isEmpty);
+    expect(update.available.value?.version, '1.1.0');
+    expect(update.progress.value, isNull);
+    final status = await registry.execute('getUpdateStatus', const {});
+    expect((status.data as Map)['lastOutcome'], 'failed');
+    await apkBytes.close();
+  });
+
+  test('progress moves in whole percents, not per network chunk', () async {
+    await notice('1.1.0');
+    final apkBytes = StreamController<List<int>>();
+    update.clientFactory = streamingClient(apkBytes, contentLength: 100000);
+
+    var progressSets = 0;
+    update.progress.addListener(() => progressSets++);
+    var busEvents = 0;
+    final sub =
+        update.bus.on<UpdateStateChanged>().listen((_) => busEvents++);
+
+    final result = update.downloadAndInstall();
+    // 50 chunks all inside the first whole percent, then one that crosses
+    // to 5%. Unquantized, every chunk notified every listener (#272).
+    for (var i = 0; i < 50; i++) {
+      apkBytes.add(List.filled(10, 7));
+    }
+    apkBytes.add(List.filled(4500, 7));
+    await pumpEventQueue();
+    await apkBytes.close();
+    expect(await result, isNull);
+    await pumpEventQueue();
+
+    // null -> 0 at the start, 0 -> 0.05 at the percent crossing, -> null
+    // at the end: three, not fifty-one.
+    expect(progressSets, 3);
+    // Start, the fresh-release adoption, the first percent, the end. The
+    // in-between percents are capped to one a second on top of the whole-
+    // percent gate, so a chunk storm never becomes a bus storm.
+    expect(busEvents, 4);
+    await sub.cancel();
   });
 
   test('a silent install never touches the kiosk', () async {

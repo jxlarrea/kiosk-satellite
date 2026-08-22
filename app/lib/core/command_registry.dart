@@ -26,10 +26,17 @@ class Command {
     required this.description,
     required this.handler,
     this.params = const {},
+    this.quiet = false,
   });
 
   final String name;
   final String description;
+
+  /// Skips the per-execution info log. For side-effect-free status reads
+  /// executed on a cadence (pollers, event fan-out): logging each one turns
+  /// the app log into a metronome — a download had getUpdateStatus logged
+  /// several times a second, which read as something being wrong (#272).
+  final bool quiet;
 
   /// Human-readable parameter descriptions, keyed by param name
   /// (e.g. {'level': 'Brightness 0..1'}). Documentation, not validation.
@@ -61,7 +68,9 @@ class CommandRegistry {
     final command = _commands[name];
     if (command == null) return CommandResult.fail('unknown command: $name');
     try {
-      _log.info('command', '$name ${params.isEmpty ? '' : params}');
+      if (!command.quiet) {
+        _log.info('command', '$name ${params.isEmpty ? '' : params}');
+      }
       return await command.handler(params);
     } catch (e) {
       _log.error('command', '$name failed: $e');

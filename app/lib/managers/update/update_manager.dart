@@ -80,8 +80,36 @@ class UpdateManager extends Manager {
   final ValueNotifier<UpdateInfo?> available = ValueNotifier(null);
 
   /// 0..1 while a download runs, null otherwise. Doubles as the re-entry
-  /// guard: a second tap while downloading is a no-op.
+  /// guard: a second tap while downloading is a no-op. Advances in whole
+  /// percents, not per network chunk: every set notifies every listener
+  /// (the drawer's progress dialog rebuilds on each one), and per-chunk
+  /// sets are hundreds of notifications a second of pure churn (#272).
   final ValueNotifier<double?> progress = ValueNotifier(null);
+
+  /// How the last download attempt ended: `silent` or `confirm` (handed to
+  /// the installer), `cancelled`, `failed`, or `uptodate` (the offered
+  /// release vanished and the running version is the latest). Null while a
+  /// download runs or before any ran. What lets the remote admin tell a
+  /// cancelled or failed download from one waiting on the device screen.
+  String? _lastOutcome;
+
+  /// The user-facing message of a failed attempt, for the remote admin
+  /// (the command that started the download returned before it failed).
+  String? _lastError;
+
+  /// Abort hook for the in-flight download: cancels the byte stream's
+  /// subscription so [cancelDownload] unblocks even a stalled transfer
+  /// whose next chunk would otherwise never come.
+  void Function()? _abort;
+  http.Client? _downloadClient;
+  bool _cancelRequested = false;
+
+  /// How long the download waits between chunks before giving up. A slow
+  /// connection delivers something well inside this; a dead one delivers
+  /// nothing and used to leave the download "running" forever, blocking
+  /// retries until an app restart (#272).
+  @visibleForTesting
+  Duration stallTimeout = const Duration(seconds: 60);
 
   late final String _currentVersion;
 
@@ -103,6 +131,10 @@ class UpdateManager extends Manager {
   /// Last whole percent pushed onto the bus; keeps the progress stream from
   /// flooding listeners (MQTT republishes every event it hears).
   int _lastPercent = -1;
+
+  /// When the last mid-download percent went onto the bus (see the
+  /// progress listener's one-a-second cap).
+  DateTime _lastProgressPublish = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   Future<void> init() async {
@@ -133,6 +165,20 @@ class UpdateManager extends Manager {
       final p = progress.value;
       final percent = p == null ? -1 : (p * 100).floor();
       if (percent == _lastPercent) return;
+      // At most one mid-download publish a second: each one fans out to a
+      // getUpdateStatus execution and a state push on MQTT and the ESPHome
+      // surface apiece, and on a fast download the percent flips several
+      // times a second — a storm reported as log spam and CPU load on weak
+      // tablets (#272). The transitions in and out of "downloading" always
+      // go out, so nothing ever misses the start or the end.
+      final now = DateTime.now();
+      final transition = p == null || _lastPercent == -1;
+      if (!transition &&
+          now.difference(_lastProgressPublish) <
+              const Duration(seconds: 1)) {
+        return;
+      }
+      _lastProgressPublish = now;
       _lastPercent = percent;
       bus.publish(const UpdateStateChanged());
     });
@@ -144,12 +190,17 @@ class UpdateManager extends Manager {
           description:
               'Running version, the newer GitHub release if any, and the '
               'APK download progress (0..1, null while idle)',
+          // Executed per progress event by the MQTT and ESPHome listeners
+          // and once a second by a remote admin riding a download.
+          quiet: true,
           handler: (_) async => CommandResult.ok({
             'currentVersion': _currentVersion,
             'availableVersion': available.value?.version,
             'availableNotes': available.value?.notes,
             'releaseUrl': available.value?.releaseUrl,
             'progress': progress.value,
+            'lastOutcome': _lastOutcome,
+            'lastError': _lastError,
             'canRelaunch': await canRelaunch(),
           }),
         ),
@@ -191,6 +242,21 @@ class UpdateManager extends Manager {
             }
             unawaited(downloadAndInstall());
             return CommandResult.ok(true);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'cancelUpdateDownload',
+          description:
+              'Abort the running update download. The update notice stays '
+              'up, so the download can be started again',
+          handler: (_) async {
+            if (progress.value == null) {
+              return CommandResult.fail('no download is running');
+            }
+            cancelDownload();
+            return const CommandResult.ok(true);
           },
         ),
       );
@@ -344,7 +410,11 @@ class UpdateManager extends Manager {
     var info = available.value;
     if (info == null || progress.value != null) return null;
     progress.value = 0;
+    _lastOutcome = null;
+    _lastError = null;
+    _cancelRequested = false;
     final client = clientFactory();
+    _downloadClient = client;
     try {
       // The notice can be half a day old (the periodic check runs twice a
       // day) and stays up until it is acted on, so a release cut in the
@@ -364,6 +434,7 @@ class UpdateManager extends Manager {
             '$_currentVersion is the latest release',
           );
           available.value = null;
+          _lastOutcome = 'uptodate';
           return 'Already up to date. Version $_currentVersion is the latest '
               'release.';
         }
@@ -417,19 +488,73 @@ class UpdateManager extends Manager {
           http.Request('GET', Uri.parse(info.apkUrl)),
         );
         if (res.statusCode != 200) {
-          return 'Download failed (HTTP ${res.statusCode}).';
+          return _fail('Download failed (HTTP ${res.statusCode}).');
         }
         final sink = file.openWrite();
         final total = res.contentLength ?? 0;
         var got = 0;
         try {
-          await for (final chunk in res.stream) {
-            sink.add(chunk);
-            got += chunk.length;
-            if (total > 0) progress.value = got / total;
+          // A listen()ed subscription rather than await-for: cancelling
+          // must unblock even a stalled transfer, whose await-for would
+          // sit inside the loop until a chunk that never comes.
+          final done = Completer<void>();
+          var flushed = 0;
+          late final StreamSubscription<List<int>> sub;
+          sub = res.stream
+              .timeout(
+                stallTimeout,
+                onTimeout: (s) => s.addError(
+                  'The download stalled: no data arrived for '
+                  '${stallTimeout.inSeconds} seconds.',
+                ),
+              )
+              .listen(
+                (chunk) {
+                  sink.add(chunk);
+                  got += chunk.length;
+                  // sink.add only queues; when flash writes lag the
+                  // network the queue is unbounded heap. Pause the
+                  // transfer every few MB until the file has caught up —
+                  // on a 1GB tablet the alternative is GC churn.
+                  if (got - flushed > 4 * 1024 * 1024) {
+                    flushed = got;
+                    sub.pause();
+                    unawaited(sink.flush().whenComplete(sub.resume));
+                  }
+                  if (total > 0) {
+                    final frac = got / total;
+                    if ((frac * 100).floor() >
+                        ((progress.value ?? 0) * 100).floor()) {
+                      progress.value = frac;
+                    }
+                  }
+                },
+                onDone: () {
+                  if (!done.isCompleted) done.complete();
+                },
+                onError: (Object e) {
+                  if (!done.isCompleted) done.completeError(e);
+                },
+                cancelOnError: true,
+              );
+          _abort = () {
+            unawaited(sub.cancel());
+            if (!done.isCompleted) done.complete();
+          };
+          try {
+            await done.future;
+          } finally {
+            _abort = null;
+            await sub.cancel();
           }
         } finally {
           await sink.close();
+        }
+        if (_cancelRequested) {
+          log.info(name, 'download cancelled');
+          if (await file.exists()) await file.delete();
+          _lastOutcome = 'cancelled';
+          return null;
         }
         log.info(
           name,
@@ -457,6 +582,7 @@ class UpdateManager extends Manager {
       }
       final mode =
           await _installer.invokeMethod<String>('installApk', {'path': file.path});
+      _lastOutcome = mode == 'silent' ? 'silent' : 'confirm';
       log.info(
         name,
         mode == 'silent'
@@ -465,13 +591,42 @@ class UpdateManager extends Manager {
       );
       return null;
     } catch (e) {
+      // A cancel closes the client mid-transfer, which surfaces here as a
+      // connection error; that is the cancel doing its job, not a failure.
+      if (_cancelRequested) {
+        log.info(name, 'download cancelled');
+        _lastOutcome = 'cancelled';
+        return null;
+      }
       log.warn(name, 'update failed: $e');
       await _resumeKioskIfPaused();
-      return 'Update failed: $e';
+      return _fail('Update failed: $e');
     } finally {
+      _downloadClient = null;
+      _abort = null;
       client.close();
       progress.value = null;
     }
+  }
+
+  /// Records a failed attempt for getUpdateStatus and hands the message on.
+  String _fail(String message) {
+    _lastOutcome = 'failed';
+    _lastError = message;
+    return message;
+  }
+
+  /// Aborts the running download; a no-op while none runs. The update
+  /// notice stays up, so the download can simply be started again — the
+  /// escape hatch for a transfer that stalled and would otherwise block
+  /// retries until an app restart (#272).
+  void cancelDownload() {
+    if (progress.value == null) return;
+    _cancelRequested = true;
+    // Both ends: the subscription so the waiter unblocks now, and the
+    // client so the socket actually dies rather than draining on.
+    _abort?.call();
+    _downloadClient?.close();
   }
 
   /// Whether the coming install will put Android's confirmation screen up
