@@ -112,6 +112,9 @@ class HomeAssistantManager extends Manager {
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.haUrl.key || e.key == defs.haToken.key) {
         connectionOk.value = false;
+        // Another server may speak another language.
+        _language = null;
+        _stateTranslations.clear();
       }
     });
     commands
@@ -2055,6 +2058,66 @@ class HomeAssistantManager extends Manager {
     }
   }
 
+  /// The language Home Assistant itself is configured in ("it", "en-GB"),
+  /// from its core config. Cached for the run — it changes about as often
+  /// as the server moves house, and a failed read is not cached so the next
+  /// caller retries.
+  String? _language;
+
+  /// Per-domain state translations, keyed by domain. An empty map is a
+  /// cached "nothing to translate" (an English server, or a domain Home
+  /// Assistant has no translations for), not a miss.
+  final _stateTranslations = <String, Map<String, String>>{};
+
+  Future<String> serverLanguage() async {
+    final cached = _language;
+    if (cached != null) return cached;
+    if (!configured) return 'en';
+    try {
+      final config = await _wsCommand({'type': 'get_config'});
+      final language = config is Map ? '${config['language'] ?? ''}'.trim() : '';
+      if (language.isEmpty) return 'en';
+      return _language = language;
+    } catch (e) {
+      log.debug(name, 'language lookup failed: $e');
+      return 'en';
+    }
+  }
+
+  /// Home Assistant's own translations for a domain's entity states, keyed
+  /// by state ("fog" -> "Nebbia"), in the server's language (issue #268).
+  /// This is exactly what the frontend renders states with, so a kiosk in a
+  /// Dutch or Italian house reads like the rest of the house.
+  ///
+  /// Empty when the server speaks English (the app's own wording already
+  /// is, and it is often the better wording), when the domain carries no
+  /// state translations, or when the lookup fails: every caller falls back
+  /// to its built-in labels.
+  Future<Map<String, String>> stateTranslations(String domain) async {
+    final cached = _stateTranslations[domain];
+    if (cached != null) return cached;
+    if (!configured) return const {};
+    final language = await serverLanguage();
+    if (language.toLowerCase().startsWith('en')) {
+      return _stateTranslations[domain] = const {};
+    }
+    try {
+      final result = await _wsCommand({
+        'type': 'frontend/get_translations',
+        'language': language,
+        'category': 'entity_component',
+        'integration': [domain],
+      });
+      return _stateTranslations[domain] = parseStateTranslations(
+        result,
+        domain,
+      );
+    } catch (e) {
+      log.debug(name, 'state translations for $domain failed: $e');
+      return const {};
+    }
+  }
+
   Future<Object?> _wsCommand(Map<String, Object?> command) async {
     final wsBase = baseUrl
         .replaceFirst('https://', 'wss://')
@@ -2113,6 +2176,28 @@ class HomeAssistantManager extends Manager {
     _holdReleaseTimer?.cancel();
     WidgetsBinding.instance.removeObserver(_brightnessWatch);
   }
+}
+
+/// The state translations out of a `frontend/get_translations` result, keyed
+/// by bare state. Home Assistant answers with one flat map of dotted keys —
+/// `component.weather.entity_component._.state.fog` — where the segment
+/// before `.state.` names a device class and `_` is the domain's own,
+/// class-less states. Only those are wanted here: a device class ("humidity"
+/// sensors and such) translates the same states differently, and picking one
+/// at random would be worse than the built-in wording.
+Map<String, String> parseStateTranslations(Object? result, String domain) {
+  final resources = result is Map ? result['resources'] : null;
+  if (resources is! Map) return const {};
+  final prefix = 'component.$domain.entity_component._.state.';
+  final out = <String, String>{};
+  for (final entry in resources.entries) {
+    final key = '${entry.key}';
+    final value = entry.value;
+    if (key.startsWith(prefix) && value is String && value.isNotEmpty) {
+      out[key.substring(prefix.length)] = value;
+    }
+  }
+  return out;
 }
 
 /// An error Home Assistant itself answered with (a `result` frame carrying

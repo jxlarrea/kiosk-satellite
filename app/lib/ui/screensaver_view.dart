@@ -24,6 +24,9 @@ import '../managers/screensaver/immich_manager.dart'
     show
         ImmichAsset,
         arrangeImmichPairs,
+        immichMetadataFieldOn,
+        immichMetadataFields,
+        immichMetadataVisible,
         immichPairableScreen,
         immichPairsPortrait,
         immichPortraitPhoto;
@@ -62,12 +65,17 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     // admin can) applies immediately: the widget list is read at build,
     // so a changed list needs this rebuild to mount or unmount overlays.
     // The scaling slider rides along and doubles as a live preview.
+    // The Immich metadata lines ride along for the same reason: their
+    // toggles are read at build, so turning one off has to reach the
+    // panel already on screen.
+    final live = {
+      defs.screensaverWidgets.key,
+      defs.screensaverWidgetScale.key,
+      defs.screensaverImmichMetadata.key,
+      for (final def in immichMetadataFields.values) def.key,
+    };
     _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
-      if ((e.key == defs.screensaverWidgets.key ||
-              e.key == defs.screensaverWidgetScale.key) &&
-          mounted) {
-        setState(() {});
-      }
+      if (live.contains(e.key) && mounted) setState(() {});
     });
   }
 
@@ -867,6 +875,12 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
   /// the condition.
   String _forecastText = '';
 
+  /// Home Assistant's own translation of the weather conditions, keyed by
+  /// condition, in the language the server is set to (issue #268). Empty on
+  /// an English server and whenever the lookup fails, and then the built-in
+  /// labels below speak.
+  Map<String, String> _translated = const {};
+
   /// OpenWeatherMap's naming; a missing companion simply never reports.
   String? _companion(String entity) {
     final parts = entity.split('.');
@@ -877,6 +891,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
   void initState() {
     super.initState();
     unawaited(_open());
+    unawaited(_loadTranslations());
     // The same slow OLED-protecting nudge the small clock does.
     _shift = Timer.periodic(const Duration(minutes: 1), (_) {
       if (!widget.container.settings.get(defs.screensaverPixelShift)) return;
@@ -889,6 +904,16 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
         );
       });
     });
+  }
+
+  /// Cached in the manager after the first widget asks, so this costs one
+  /// lookup per app run rather than one per screensaver.
+  Future<void> _loadTranslations() async {
+    final translated = await widget.container.homeAssistant.stateTranslations(
+      'weather',
+    );
+    if (!mounted || translated.isEmpty) return;
+    setState(() => _translated = translated);
   }
 
   Future<void> _open() async {
@@ -1011,7 +1036,9 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       fontSize: size * scale,
       fontWeight: weight ?? FontWeight.w400,
       shadows: shadows,
-      height: 1.2,
+      // The Immich metadata panel's line height: the two blocks share a
+      // corner vocabulary, and the tighter 1.2 read as cramped beside it.
+      height: 1.35,
     );
 
     // One reading with its monochrome icon, tinted like the text. The
@@ -1054,11 +1081,15 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     // The readings sit in their own tighter column, so the list reads as
     // one block under the temperature rather than four spaced lines.
     final details = <Widget>[
+      // Home Assistant's own translation first: the companion sensor's
+      // richer wording ("overcast clouds") is only ever English, and an
+      // English line in an Italian house is what issue #268 is about.
       if (_on('forecast') && _condition.isNotEmpty)
         detail(
-          _forecastText.isNotEmpty
-              ? _sentenceCase(_forecastText)
-              : _conditionLabel(_condition),
+          _translated[_condition] ??
+              (_forecastText.isNotEmpty
+                  ? _sentenceCase(_forecastText)
+                  : _conditionLabel(_condition)),
           _conditionIcon(_condition),
         ),
       if (_on('humidity') && humidity != null)
@@ -1978,8 +2009,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   final _warm = <int, Uint8List>{};
 
   /// Whether the metadata overlay is on and so the pair's two panels
-  /// actually occupy the bottom corners.
-  bool get _metadataOn => c.settings.get(defs.screensaverImmichMetadata);
+  /// actually occupy the bottom corners. Every line turned off counts as
+  /// off: there would be nothing under the photos to protect.
+  bool get _metadataOn => immichMetadataVisible(c.settings);
 
   /// Tell the widget layer which corners this slide has taken. A pair puts
   /// a metadata panel under each half, so both bottom corners are spoken
@@ -2255,7 +2287,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     if (_assets.isEmpty) return;
     final next = index % _assets.length;
     final asset = _assets[next];
-    if (c.settings.get(defs.screensaverImmichMetadata)) {
+    if (immichMetadataVisible(c.settings)) {
       unawaited(c.immich.assetDetails(asset));
     }
     if (asset.isVideo || _warm.containsKey(next)) return;
@@ -2497,7 +2529,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         _problem == null &&
         _assets.isNotEmpty &&
         (_imageBytes != null || video != null) &&
-        c.settings.get(defs.screensaverImmichMetadata);
+        immichMetadataVisible(c.settings);
     final pairIndex = _pairIndex;
     return ColoredBox(
       color: Colors.black,
@@ -2628,8 +2660,7 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
           height: 1.35,
         );
     final details = _details;
-    // One icon per row; the two camera lines (model and exposure)
-    // share the exif icon as a single logical entry.
+    // One icon per row.
     // In a right-hand corner the icons sit on the right of their text and
     // the lines run to the right edge, mirroring the weather widget: an
     // icon column hanging off the inner side of a right-aligned block
@@ -2657,6 +2688,35 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
         children: right ? [text, gap, glyph] : [glyph, gap, text],
       );
     }
+    // Only the lines the user kept (issue #268) and the asset actually
+    // carries. An empty list takes the vignette with it: a corner darkened
+    // for nothing reads as a smudge on the photo.
+    String? kept(String field) =>
+        immichMetadataFieldOn(widget.container.settings, field)
+        ? details[field]
+        : null;
+    final album = kept('album');
+    final date = kept('date');
+    final camera = kept('camera');
+    final exposure = kept('settings');
+    final place = kept('location');
+    final lines = <Widget>[
+      if (album != null)
+        row('album', [
+          Text(album, style: style(size: 18, weight: FontWeight.w600)),
+        ]),
+      if (date != null)
+        row('calendar', [Text(date, style: style(alpha: 0.9))]),
+      // The camera and its exposure read as two facts, so they get a line
+      // and an icon each: the camera body, then the aperture glyph over
+      // the exposure it was shot at.
+      if (camera != null)
+        row('camera', [Text(camera, style: style(alpha: 0.9))]),
+      if (exposure != null)
+        row('exif', [Text(exposure, style: style(alpha: 0.8))]),
+      if (place != null)
+        row('location', [Text(place, style: style(alpha: 0.9))]),
+    ];
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
@@ -2664,12 +2724,12 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
           // The vignette fades with content presence, not with the slide:
           // consecutive photos with metadata keep one steady vignette.
           AnimatedOpacity(
-            opacity: details.isEmpty ? 0 : 1,
+            opacity: lines.isEmpty ? 0 : 1,
             duration: _fade,
             child: _cornerVignette(corner, radius: 0.6),
           ),
           AnimatedOpacity(
-            opacity: _textVisible && details.isNotEmpty ? 1 : 0,
+            opacity: _textVisible && lines.isNotEmpty ? 1 : 0,
             duration: _fade,
             child: Align(
               alignment: corner,
@@ -2681,27 +2741,7 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
                   crossAxisAlignment: corner.x < 0
                       ? CrossAxisAlignment.start
                       : CrossAxisAlignment.end,
-                  children: [
-                    if (details['album'] != null)
-                      row('album', [
-                        Text(
-                          details['album']!,
-                          style: style(size: 18, weight: FontWeight.w600),
-                        ),
-                      ]),
-                    if (details['date'] != null)
-                      row('calendar', [
-                        Text(details['date']!, style: style(alpha: 0.9)),
-                      ]),
-                    if (details['settings'] != null)
-                      row('exif', [
-                        Text(details['settings']!, style: style(alpha: 0.8)),
-                      ]),
-                    if (details['location'] != null)
-                      row('location', [
-                        Text(details['location']!, style: style(alpha: 0.9)),
-                      ]),
-                  ],
+                  children: lines,
                 ),
               ),
             ),

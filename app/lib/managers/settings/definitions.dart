@@ -1841,6 +1841,54 @@ const screensaverImmichMetadata = SettingDef<bool>(
   dependsOn: 'screensaver.immich_validated',
 );
 
+// Which lines the overlay carries (issue #268): people who point the
+// screensaver at one album do not need its name on every photo, and the
+// same goes for any other line. All on, so the overlay reads exactly as
+// it always did until someone turns a line off.
+const screensaverImmichMetadataAlbum = SettingDef<bool>(
+  key: 'screensaver.immich_metadata_album',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Album name',
+  description: 'Show which album the photo comes from.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_metadata',
+);
+
+const screensaverImmichMetadataDate = SettingDef<bool>(
+  key: 'screensaver.immich_metadata_date',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Date taken',
+  description: 'Show when the photo was taken.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_metadata',
+);
+
+const screensaverImmichMetadataCamera = SettingDef<bool>(
+  key: 'screensaver.immich_metadata_camera',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Camera details',
+  description: 'Show focal length, aperture and ISO.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_metadata',
+);
+
+const screensaverImmichMetadataLocation = SettingDef<bool>(
+  key: 'screensaver.immich_metadata_location',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Location',
+  description: 'Show the place the photo was taken.',
+  category: 'Screensaver',
+  section: 'Immich Media',
+  dependsOn: 'screensaver.immich_metadata',
+);
+
 const screensaverImmichMetadataPosition = SettingDef<String>(
   key: 'screensaver.immich_metadata_position',
   type: SettingType.select,
@@ -3995,6 +4043,10 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichCache,
   screensaverImmichCacheMax,
   screensaverImmichMetadata,
+  screensaverImmichMetadataAlbum,
+  screensaverImmichMetadataDate,
+  screensaverImmichMetadataCamera,
+  screensaverImmichMetadataLocation,
   screensaverImmichMetadataPosition,
   screensaverWebsiteUrl,
   screensaverWebsiteDoubleTap,

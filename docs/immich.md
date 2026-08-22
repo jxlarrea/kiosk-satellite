@@ -39,6 +39,7 @@ Videos in the selection play too, muted and in full.
 | Cache media locally | on | See below. |
 | Cache size (items) | 500 | The oldest cached items are deleted once the cache is full. Live usage shows under the field. |
 | Show metadata | off | See below. |
+| Album name, Date taken, Camera details, Location | on | One toggle per metadata line. |
 
 The playlist is fetched from the server each time the screensaver
 activates, so new uploads and album changes are picked up on the next
@@ -96,8 +97,16 @@ actually carries the information:
 - Album name: the selected album, or, in All media mode, the first album
   the photo belongs to.
 - Date taken.
-- Camera details: focal length, aperture and ISO from EXIF.
+- Camera details: the camera the photo was taken with, and its focal
+  length, aperture and ISO, from EXIF. A line each, one toggle.
 - Location: city, state and country from EXIF.
+
+Each line has its own toggle, all on: pointing the screensaver at one
+album makes its name the same on every photo, and the same goes for any
+other line somebody would rather not read. With the album line off the
+lookup it needs is never made either. Turn every line off and the
+overlay stands down entirely, vignette included, exactly as if **Show
+metadata** were off.
 
 In a right-hand corner the lines are right-aligned with their icons on
 the right, mirroring the layout of the corner widgets.

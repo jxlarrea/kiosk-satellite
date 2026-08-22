@@ -26,6 +26,33 @@ class ImmichAsset {
   final double? aspect;
 }
 
+/// The metadata overlay's lines and the setting that carries each, in the
+/// order they are drawn (issue #268). The panel, the corner bookkeeping and
+/// the detail lookup all read the same map, so a line that is off is a line
+/// nobody works for.
+/// `camera` (the model) and `settings` (the exposure) are the two halves of
+/// one line and share a toggle.
+const immichMetadataFields = <String, defs.SettingDef<bool>>{
+  'album': defs.screensaverImmichMetadataAlbum,
+  'date': defs.screensaverImmichMetadataDate,
+  'camera': defs.screensaverImmichMetadataCamera,
+  'settings': defs.screensaverImmichMetadataCamera,
+  'location': defs.screensaverImmichMetadataLocation,
+};
+
+/// Whether one metadata line is on. Lines the overlay itself is off for
+/// never count.
+bool immichMetadataFieldOn(SettingsManager settings, String field) =>
+    settings.get(defs.screensaverImmichMetadata) &&
+    settings.get(immichMetadataFields[field]!);
+
+/// Whether the overlay has anything left to say: the master toggle on and
+/// at least one line kept. With every line off the panel stands down
+/// entirely rather than claiming a corner for an empty block.
+bool immichMetadataVisible(SettingsManager settings) =>
+    settings.get(defs.screensaverImmichMetadata) &&
+    immichMetadataFields.values.any((def) => settings.get(def));
+
 /// An aspect ratio (width over height) counts as portrait below this. Not
 /// 1.0: a square photo pairs badly, reading as two small pictures rather
 /// than one full screen.
@@ -169,6 +196,13 @@ class ImmichManager extends Manager {
       // cache is full" must hold even then.
       if (e.key == defs.screensaverImmichCacheMax.key) {
         unawaited(_evict());
+      }
+      // Turning the album line back on has to re-look-up: the cached
+      // details were gathered while the line was off, so they carry no
+      // album and would keep the row empty until the app restarts.
+      if (e.key == defs.screensaverImmichMetadataAlbum.key ||
+          e.key == defs.screensaverImmichMetadata.key) {
+        _details.clear();
       }
     });
 
@@ -487,22 +521,25 @@ class ImmichManager extends Manager {
 
       // The album line: the configured album when one is selected, else the
       // first album the asset belongs to (if any) — its own request, and
-      // only worth making in whole-library mode.
+      // only worth making in whole-library mode. Turned off, the line costs
+      // nothing at all: the extra request is never made.
       final configured = _settings.get(defs.screensaverImmichAlbumName);
-      if (_settings.get(defs.screensaverImmichAlbum).isNotEmpty &&
-          configured.isNotEmpty) {
-        out['album'] = configured;
-      } else {
-        final albums = await http
-            .get(
-              Uri.parse('$_base/api/albums?assetId=${asset.id}'),
-              headers: _headers,
-            )
-            .timeout(const Duration(seconds: 10));
-        if (albums.statusCode == 200) {
-          final list = jsonDecode(albums.body) as List;
-          if (list.isNotEmpty) {
-            out['album'] = '${(list.first as Map)['albumName'] ?? ''}';
+      if (immichMetadataFieldOn(_settings, 'album')) {
+        if (_settings.get(defs.screensaverImmichAlbum).isNotEmpty &&
+            configured.isNotEmpty) {
+          out['album'] = configured;
+        } else {
+          final albums = await http
+              .get(
+                Uri.parse('$_base/api/albums?assetId=${asset.id}'),
+                headers: _headers,
+              )
+              .timeout(const Duration(seconds: 10));
+          if (albums.statusCode == 200) {
+            final list = jsonDecode(albums.body) as List;
+            if (list.isNotEmpty) {
+              out['album'] = '${(list.first as Map)['albumName'] ?? ''}';
+            }
           }
         }
       }

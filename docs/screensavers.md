@@ -203,6 +203,12 @@ Readings arrive over a live Home Assistant subscription while the
 screensaver shows, so they stay current without polling, and the last
 known values survive a short Home Assistant outage.
 
+The forecast line speaks Home Assistant's language: the condition is
+written with Home Assistant's own translation of it, so a server set to
+Italian reads "Nebbia" where an English one reads "Fog". Nothing to
+configure, and nothing changes on an English server. The translations
+are fetched from the server once per app start.
+
 ## Brightness
 
 **Screensaver brightness** gives the screensaver its own panel
