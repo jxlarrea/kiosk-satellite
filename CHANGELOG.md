@@ -5,6 +5,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- An opt-in "Hide the close button" toggle in the Music Assistant settings, under "Close after inactivity". Music Assistant's full-screen Now Playing view puts its three-dot menu in the very corner the floating close button occupies, leaving the menu unreachable; hiding the button hands that corner back to the page. The back button, a wake word and the inactivity timer still close the page, and every other overlay keeps its close button.
+
+### Added
 - Hold mode: pin whatever is on screen until you say otherwise, made for keeping a recipe or a video up while you cook along. While it is on, the screensaver will not start (a showing one is dismissed the moment hold engages), dashboard view rotation freezes in place, the "return to home dashboard view" timer stands down, and the display stays awake. The toggle lives in a new Hold mode group in the Home Assistant settings, on the device and in the remote admin, together with an optional auto release slider (15-minute steps up to 6 hours, 0 holds forever) that ends a forgotten hold by itself. The same live state is everywhere it is useful: a "Hold mode" switch on the kiosk's Home Assistant device over both ESPHome and MQTT, a "Toggle hold mode" gesture action (claps included, for flour-covered hands), a notice in the kiosk menu that shows while a hold is active and releases it on a tap, and an on-screen note each time hold mode turns on or off. An opt-in "Show in the kiosk menu" toggle adds a "Turn On/Off Hold Mode" entry to the kiosk menu, with a matching Hold Mode allowed action in the Kiosk Mode settings deciding whether it appears in the restricted quick actions menu.
 
 ### Added

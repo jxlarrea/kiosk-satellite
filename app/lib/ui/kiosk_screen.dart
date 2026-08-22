@@ -1633,6 +1633,10 @@ class _OverlayHostState extends State<_OverlayHost>
         // dashboard. Always mounted (with 0 seconds standing for off) so
         // the tree shape never changes underneath the live WebView; it
         // counts only while this page is the one on screen.
+        final isMaPage = isMusicAssistantOrigin(
+          kept,
+          c.settings.get(defs.sendspinMaUrl),
+        );
         return Offstage(
           // The rotation's page waits offstage between passes. A dismissed
           // link page stays on stage a moment longer: it is what the exit
@@ -1645,12 +1649,7 @@ class _OverlayHostState extends State<_OverlayHost>
             child: SlideTransition(
               position: _slideOffset,
               child: _IdleDismiss(
-                seconds:
-                    url != null &&
-                        isMusicAssistantOrigin(
-                          kept,
-                          c.settings.get(defs.sendspinMaUrl),
-                        )
+                seconds: url != null && isMaPage
                     ? c.settings.get(defs.sendspinMaAutoClose).toInt()
                     : 0,
                 onIdle: () {
@@ -1680,8 +1679,13 @@ class _OverlayHostState extends State<_OverlayHost>
                     // A link-opened overlay has no rotation pass to move it
                     // along (issue #86): the floating close is the visible
                     // way back to the dashboard. The back button and a wake
-                    // word work too.
-                    if (c.browser.overlayDismissible.value)
+                    // word work too — which is why the Music Assistant page
+                    // can opt out of it entirely (issue #264): its
+                    // full-screen "now playing" menu sits exactly under
+                    // the button.
+                    if (c.browser.overlayDismissible.value &&
+                        !(isMaPage &&
+                            c.settings.get(defs.sendspinMaHideClose)))
                       Positioned(
                         top: 12,
                         right: 12,

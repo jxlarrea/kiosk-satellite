@@ -3447,6 +3447,25 @@ const sendspinMaAutoClose = SettingDef<num>(
   unit: 's',
 );
 
+/// Music Assistant's full-screen "now playing" view puts its own
+/// three-dot menu exactly where the overlay's floating close button sits,
+/// so the button steals those taps (issue #264). Opt-in removal for the
+/// people who use that menu: the back button, a wake word and the
+/// inactivity timer still close the page.
+const sendspinMaHideClose = SettingDef<bool>(
+  key: 'sendspin.ma_hide_close',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Hide the close button',
+  description:
+      'The floating close button can sit on top of Music Assistant\'s own '
+      'controls, like the Now Playing menu. Without it, dismiss with the '
+      "back button or by using the kiosk's drawer menu.",
+  category: 'Sendspin',
+  section: 'Music Assistant',
+  dependsOn: 'sendspin.ma_shortcut',
+);
+
 const sendspinLyrics = SettingDef<bool>(
   key: 'sendspin.lyrics',
   type: SettingType.boolean,
@@ -4043,6 +4062,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinMaPlayerName,
   sendspinMaShortcut,
   sendspinMaAutoClose,
+  sendspinMaHideClose,
   sendspinLyrics,
   sendspinLyricsOffset,
   sendspinEnabled,

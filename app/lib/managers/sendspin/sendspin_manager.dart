@@ -383,6 +383,7 @@ class SendspinManager extends Manager {
         // Menu entries the kiosk drawer draws, and nothing the player does.
         'sendspin.ma_shortcut',
         'sendspin.ma_auto_close',
+        'sendspin.ma_hide_close',
         'sendspin.player_shortcut',
         // The follower's display name and the bookkeeping flag: neither
         // touches the audio client. The pick itself (sendspin.ma_player)

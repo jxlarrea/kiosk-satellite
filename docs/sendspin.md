@@ -47,6 +47,7 @@ own API, which is a separate address with its own token.
 | Player to control | This device | Follow and control another Music Assistant player instead of this device's own, described below. |
 | Show in the kiosk menu | on | The shortcut described below. |
 | Close after inactivity | 0s | Seconds without a touch on the Music Assistant page before it closes itself and the dashboard returns. Zero leaves it open until someone closes it. |
+| Hide the close button | off | Remove the floating close button from the Music Assistant page, for the corner it shares with the page's own controls. The back button and the inactivity timer still close it. |
 | Show lyrics | off | Synced lyrics on the "Now Playing" screen, described below. |
 | Lyrics timing | +0.3s | Shifts the lyrics against the music. Positive shows each line earlier. |
 
@@ -102,6 +103,12 @@ and tapping count, so reading a long album page keeps it up. At zero it
 stays until someone closes it, which is what a desk or a kitchen counter
 wants. Everything else that closes it works the same as ever: the close
 button, the back button, and a wake word.
+
+**Hide the close button** is for the corner the button shares with Music
+Assistant's own controls: the full-screen "now playing" view puts its
+three-dot menu exactly there, unreachable under the button. With the
+button hidden, the back button, a wake word and the inactivity timer
+still lead back to the dashboard.
 
 **No second sign-in.** Music Assistant keeps its own session, so the shortcut
 would land on its login screen every time storage is cleared. Instead the
