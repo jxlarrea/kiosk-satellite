@@ -117,12 +117,14 @@ class _KioskScreenState extends State<KioskScreen>
         c.settings.get(defs.sendspinPlayerShortcut);
     final hasApps =
         c.settings.get(defs.launcherEnabled) && c.launcher.apps.isNotEmpty;
+    final hasHold = c.settings.get(defs.haHoldMenu);
     return c.settings.get(defs.kioskAllowDashboard) ||
         c.settings.get(defs.kioskAllowScreensaver) ||
         c.settings.get(defs.kioskAllowTheme) ||
         (c.settings.get(defs.kioskAllowCamera) && hasCameras) ||
         (c.settings.get(defs.kioskAllowMusic) && hasMusic) ||
         (c.settings.get(defs.kioskAllowSendspinPlayer) && hasPlayer) ||
+        (c.settings.get(defs.kioskAllowHold) && hasHold) ||
         (c.settings.get(defs.kioskAllowApps) && hasApps);
   }
 

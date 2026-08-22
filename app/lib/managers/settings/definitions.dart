@@ -722,6 +722,17 @@ const kioskAllowScreensaver = SettingDef<bool>(
   dependsOn: 'kiosk.allow_drawer',
 );
 
+const kioskAllowHold = SettingDef<bool>(
+  key: 'kiosk.allow_hold',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Hold Mode',
+  description: 'Turn hold mode on or off.',
+  category: 'Kiosk',
+  section: 'Allowed Actions',
+  dependsOn: 'kiosk.allow_drawer',
+);
+
 const kioskAllowTheme = SettingDef<bool>(
   key: 'kiosk.allow_theme',
   type: SettingType.boolean,
@@ -2892,6 +2903,20 @@ const haHoldReleaseMinutes = SettingDef<num>(
   section: 'Hold mode',
 );
 
+/// The on-device way in, opt-in like the Sendspin player's menu entry
+/// (issue #257): the drawer entry reads "Turn On/Off Hold Mode" following
+/// the live state. The active-hold notice shows regardless of this toggle;
+/// this only adds the entry that can also engage a hold.
+const haHoldMenu = SettingDef<bool>(
+  key: 'ha.hold_menu',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show in the kiosk menu',
+  description: 'Adds a menu entry that turns hold mode on and off.',
+  category: 'Home Assistant',
+  section: 'Hold mode',
+);
+
 // ── MQTT ───────────────────────────────────────────────────────────────
 // Ready-made Home Assistant entities over MQTT discovery (issue #11). The
 // broker settings live here; everything the entities do routes through the
@@ -3761,6 +3786,7 @@ const List<SettingDef<Object>> allSettings = [
   kioskAllowMusic,
   kioskAllowSendspinPlayer,
   kioskAllowScreensaver,
+  kioskAllowHold,
   kioskAllowTheme,
   kioskAllowApps,
   lockdownEnabled,
@@ -3919,6 +3945,7 @@ const List<SettingDef<Object>> allSettings = [
   haReturnHomeSeconds,
   haHoldMode,
   haHoldReleaseMinutes,
+  haHoldMenu,
   mqttEnabled,
   mqttHost,
   mqttPort,

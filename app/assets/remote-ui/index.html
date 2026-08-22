@@ -5123,6 +5123,7 @@ async function loadSettings() {
         // Hold mode is hand-built between the return-home group and the
         // Optimizations, mirroring the device.
         && s.key !== 'ha.hold_mode' && s.key !== 'ha.hold_release_minutes'
+        && s.key !== 'ha.hold_menu'
         // The Theme card is hand-built below: its toggles swap the
         // dependent rows in place instead of reloading the tab.
         && s.key !== 'ha.theme_match_app'
@@ -5453,6 +5454,8 @@ async function loadSettings() {
           root.appendChild(hcard);
           hcard.appendChild(settingRow(hm));
           if (hr) hcard.appendChild(settingRow(hr));
+          const hmenu = byKey['ha.hold_menu'];
+          if (hmenu) hcard.appendChild(settingRow(hmenu));
         }
       }
 

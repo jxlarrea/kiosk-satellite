@@ -327,8 +327,10 @@ Any touch dismisses it and resets the timer. Beyond touch:
   awake. Turning it on dismisses a showing screensaver. It is the
   sustained sibling of the one-shot Postpone screensaver button, made
   for keeping a recipe or a video on screen; flip it from the settings,
-  the drawer notice, a gesture, or the Hold mode switch in Home
-  Assistant, and an optional timer ends the hold by itself.
+  the drawer notice, a gesture, the opt-in kiosk menu entry ("Show in
+  the kiosk menu", with its own Hold Mode allowed action in Kiosk Mode),
+  or the Hold mode switch in Home Assistant, and an optional timer ends
+  the hold by itself.
 
 ## Around the dashboard
 

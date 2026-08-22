@@ -256,6 +256,43 @@ class KioskDrawer extends StatelessWidget {
                                     );
                                   },
                                 ),
+                              // Hold mode's menu entry (issue #266): opt-in
+                              // like the Sendspin one, and unlike the notice
+                              // below it can also ENGAGE a hold. The label
+                              // follows the live state, and the opt-in gate
+                              // sits INSIDE the builder: the drawer widget
+                              // stays mounted between opens, so a gate in
+                              // the collection-if would freeze at whatever
+                              // the toggle said when the kiosk screen last
+                              // rebuilt (a remote-admin flip never shows).
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowHold))
+                                StreamBuilder<SettingChanged>(
+                                  stream: c.bus.on<SettingChanged>().where(
+                                    (e) =>
+                                        e.key == defs.haHoldMode.key ||
+                                        e.key == defs.haHoldMenu.key,
+                                  ),
+                                  builder: (context, _) {
+                                    if (!c.settings.get(defs.haHoldMenu)) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final on = c.settings.get(defs.haHoldMode);
+                                    return _item(
+                                      context,
+                                      Icons.pause_circle_outline,
+                                      on
+                                          ? 'Turn Off Hold Mode'
+                                          : 'Turn On Hold Mode',
+                                      () {
+                                        onClose();
+                                        unawaited(
+                                          c.settings.set(defs.haHoldMode, !on),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
                               // Only with the launcher enabled and apps
                               // actually whitelisted: an empty launcher is
                               // the placeholder every install starts with,

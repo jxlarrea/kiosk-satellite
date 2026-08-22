@@ -1972,6 +1972,7 @@ class _CategoryContentState extends State<_CategoryContent> {
               // Optimizations, in idle-behavior company (issue #266).
               def.key != haHoldMode.key &&
               def.key != haHoldReleaseMinutes.key &&
+              def.key != haHoldMenu.key &&
               // Optimizations are hand-built last so the filter can show live
               // telemetry beneath its toggle.
               def.key != disableSuspend.key &&
@@ -2013,6 +2014,7 @@ class _CategoryContentState extends State<_CategoryContent> {
       ..._sectionedCards(container, [
         haHoldMode,
         haHoldReleaseMinutes,
+        haHoldMenu,
       ], () => setState(() {})),
       const SectionHeading('Optimizations'),
       _OptimizationsCard(container: container),
