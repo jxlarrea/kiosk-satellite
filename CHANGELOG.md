@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.72 - 2026-08-22
 
 ### Changed
 - In-app notifications now use the app's own toast instead of the stock Android-style snackbar: a compact rounded card that follows the app's light or dark theme, with a title, a message and a colored icon that says what kind of note it is (informational, success, warning or error). Toasts sit centered near the bottom at a comfortable width instead of stretching across the screen, and taps pass straight through the informational ones to the dashboard beneath. Finished downloads keep their Open button.
