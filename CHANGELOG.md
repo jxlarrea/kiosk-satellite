@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.73 - 2026-08-22
 
 ### Added
 - Toggles for each line of the Immich screensaver's metadata overlay: Album name, Date taken, Camera details and Location, all on, under Show metadata on the device and in the remote admin. A screensaver pointed at one album repeats its name on every photo, and now that line (or any other) can simply be turned off. With the album line off the extra lookup it needs is never made, and with every line off the overlay stands down entirely, vignette included. Camera details now also names the camera the photo was taken with, on its own line above the focal length, aperture and ISO.
