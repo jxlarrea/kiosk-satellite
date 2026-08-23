@@ -20,8 +20,11 @@ Videos in the selection play too, muted and in full.
 3. Enter the **Server address** (for example `http://immich.local:2283`)
    and the **API key**, then tap **Validate connection**. Validation
    checks the exact calls the screensaver needs, album listing, asset
-   search and one preview fetch, so a key that is missing a permission
-   fails here naming it instead of failing silently at night. The rest of
+   search and a preview fetch, so a key that is missing a permission
+   fails here naming it instead of failing silently at night. The preview
+   check tries up to five assets of the selected source and passes on the
+   first one that answers, since an asset the server has not generated a
+   preview for yet says nothing about the key. The rest of
    the settings unlock once validation succeeds, and changing the address
    or key asks for a new validation.
 
@@ -141,6 +144,11 @@ its spot, so both are always readable at once.
 - **"The API key is missing the asset.view permission"**: the key can
   search assets but not fetch their previews. Add `asset.view` to the key
   in Immich; the change applies immediately, no new key needed.
+- **Validation passes but the log says a preview probe was skipped**:
+  that asset has no preview on the server yet (still being processed,
+  generation failed, an external library not scanned, or the file is
+  offline). Validation moves on to the next asset, and the screensaver
+  skips such photos when it meets them.
 - **"Could not reach the Immich server"**: the address is wrong, the
   server is down, or the tablet cannot route to it. This message is
   reserved for genuine transport failures (DNS, refused connections,

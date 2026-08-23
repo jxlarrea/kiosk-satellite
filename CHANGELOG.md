@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The Immich screensaver's "Validate connection" no longer fails on an asset the server has not finished processing. Validation fetches one preview to prove the API key may view them, and it was asking for the single newest asset in the whole library: on a server taking phone backups that is routinely an asset whose preview Immich has not generated yet, which answers "The server answered 404: Asset media not found" and blocked every setting below the button, on credentials that were perfectly good. It now asks within the album the screensaver is actually pointed at, tries up to five assets and passes on the first preview that arrives, and treats a missing preview as what it is, a per-asset condition that says nothing about the key. A key that genuinely cannot view previews still fails naming the permission, even when an unprocessed asset sits ahead of it. Validation also writes what it did to the app log now: the endpoint, the status and the reason for every call it gave up on, which the button had been keeping to itself.
+- The Immich validate button reports the press it just answered. A failure the command could not put into words, or a stored flag written behind the press, could leave the row reading the untouched "Not validated yet" as though nothing had been pressed, so the button had to be pressed a second time to learn what happened.
+
 ## v2026.8.74 - 2026-08-23
 
 ### Changed

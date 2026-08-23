@@ -26,12 +26,21 @@ void main() {
   late ImmichManager immich;
 
   /// What the fake server answers per area; the test flips these.
-  var thumbnailStatus = 200;
+  /// [thumbnailStatuses] is per asset id, so a library whose newest asset
+  /// has no preview yet can be described exactly (issue #285).
+  var thumbnailStatuses = <String, int>{'asset-1': 200};
+  var assetIds = <String>['asset-1'];
   var libraryEmpty = false;
 
+  /// Every thumbnail path the server was asked for, newest-first order
+  /// preserved, so a test can assert the probe moved on.
+  final probed = <String>[];
+
   setUp(() async {
-    thumbnailStatus = 200;
+    thumbnailStatuses = {'asset-1': 200};
+    assetIds = ['asset-1'];
     libraryEmpty = false;
+    probed.clear();
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) {
       final path = request.uri.path;
@@ -41,24 +50,36 @@ void main() {
         response.write('[]');
       } else if (path == '/api/search/metadata') {
         response.headers.contentType = ContentType.json;
-        response.write(jsonEncode({
-          'assets': {
-            'items': libraryEmpty
-                ? []
-                : [
-                    {'id': 'asset-1', 'type': 'IMAGE'},
-                  ],
-            'nextPage': null,
-          },
-        }));
-      } else if (path == '/api/assets/asset-1/thumbnail') {
-        response.statusCode = thumbnailStatus;
-        response.headers.contentType = thumbnailStatus == 200
+        response.write(
+          jsonEncode({
+            'assets': {
+              'items': libraryEmpty
+                  ? []
+                  : [
+                      for (final id in assetIds) {'id': id, 'type': 'IMAGE'},
+                    ],
+              'nextPage': null,
+            },
+          }),
+        );
+      } else if (path.startsWith('/api/assets/') &&
+          path.endsWith('/thumbnail')) {
+        probed.add(path);
+        final id = path.split('/')[3];
+        final status = thumbnailStatuses[id] ?? 200;
+        response.statusCode = status;
+        response.headers.contentType = status == 200
             ? ContentType('image', 'jpeg')
             : ContentType.json;
-        response.write(thumbnailStatus == 200
-            ? 'jpegbytes'
-            : jsonEncode({'message': 'Not found or no asset.view access'}));
+        response.write(
+          status == 200
+              ? 'jpegbytes'
+              : jsonEncode({
+                  'message': status == 404
+                      ? 'Asset media not found'
+                      : 'Not found or no asset.view access',
+                }),
+        );
       } else {
         response.statusCode = 404;
       }
@@ -83,7 +104,7 @@ void main() {
   tearDown(() => server.close(force: true));
 
   test('a key that cannot fetch previews fails validation by name', () async {
-    thumbnailStatus = 403;
+    thumbnailStatuses['asset-1'] = 403;
     final result = await commands.execute('immichValidate', const {});
     expect(result.ok, isFalse);
     // The message must name the missing Immich scope, not read as a
@@ -105,6 +126,40 @@ void main() {
     expect(result.ok, isTrue);
   });
 
+  test('an asset with no preview yet does not fail validation', () async {
+    // The newest asset in a library taking phone backups is routinely
+    // still being processed: Immich answers 404 "Asset media not found",
+    // which says nothing about the key (issue #285). The probe moves on.
+    assetIds = ['asset-1', 'asset-2'];
+    thumbnailStatuses = {'asset-1': 404, 'asset-2': 200};
+    final result = await commands.execute('immichValidate', const {});
+    expect(result.ok, isTrue);
+    expect(settings.get(defs.screensaverImmichValidated), isTrue);
+    expect(probed, [
+      '/api/assets/asset-1/thumbnail',
+      '/api/assets/asset-2/thumbnail',
+    ]);
+  });
+
+  test('a library with no previews at all still validates', () async {
+    assetIds = ['asset-1', 'asset-2'];
+    thumbnailStatuses = {'asset-1': 404, 'asset-2': 404};
+    final result = await commands.execute('immichValidate', const {});
+    expect(result.ok, isTrue);
+    expect(settings.get(defs.screensaverImmichValidated), isTrue);
+  });
+
+  test('a rejected key still fails behind a preview-less asset', () async {
+    // A 404 is skipped, a 403 is not: the probe exists to catch a key
+    // without asset.view, and one unprocessed asset ahead of it must not
+    // hide that.
+    assetIds = ['asset-1', 'asset-2'];
+    thumbnailStatuses = {'asset-1': 404, 'asset-2': 403};
+    final result = await commands.execute('immichValidate', const {});
+    expect(result.ok, isFalse);
+    expect(result.error, 'The API key is missing the asset.view permission.');
+  });
+
   test('a transport failure reads as could-not-reach', () async {
     await server.close(force: true);
     final result = await commands.execute('immichValidate', const {});
@@ -113,7 +168,7 @@ void main() {
   });
 
   test('a fetch error names the endpoint for the app log', () async {
-    thumbnailStatus = 403;
+    thumbnailStatuses['asset-1'] = 403;
     // The screensaver logs the exception's toString on every failed
     // fetch; it must identify the endpoint and status so the cause is
     // visible without instrumenting a reverse proxy.

@@ -2161,7 +2161,11 @@ class _CategoryContentState extends State<_CategoryContent> {
       screensaverDimLevel.key: const WarnRow(_dimModeNote),
     if (widget.category == 'Screensaver') ...{
       // Rendered only while their anchor rows are (mode: immich).
+      // Keyed: the press writes its outcome into the row's own state, and
+      // the rebuild that follows must not hand that state to a fresh row
+      // (which would drop the message the press just produced).
       screensaverImmichApiKey.key: _ImmichValidateRow(
+        key: const ValueKey('immich-validate'),
         container: container,
         onChanged: () => setState(() {}),
       ),
@@ -3587,7 +3591,11 @@ class _CameraGrantRowState extends State<_CameraGrantRow> {
 /// Assistant connection card's gate. The rows below it only exist once the
 /// server has actually answered with the calls the screensaver needs.
 class _ImmichValidateRow extends StatefulWidget {
-  const _ImmichValidateRow({required this.container, required this.onChanged});
+  const _ImmichValidateRow({
+    super.key,
+    required this.container,
+    required this.onChanged,
+  });
 
   final AppContainer container;
   final VoidCallback onChanged;
@@ -3599,6 +3607,12 @@ class _ImmichValidateRow extends StatefulWidget {
 class _ImmichValidateRowState extends State<_ImmichValidateRow> {
   bool _validating = false;
   String? _error;
+
+  /// What the last press actually answered, kept beside the stored flag so
+  /// the row always reports the button the user just pressed. Reading the
+  /// flag alone let a failure with no message, or a write landing after the
+  /// press, read as the untouched "Not validated yet" (issue #285).
+  bool? _lastOk;
 
   Future<void> _validate() async {
     setState(() {
@@ -3612,7 +3626,12 @@ class _ImmichValidateRowState extends State<_ImmichValidateRow> {
     if (!mounted) return;
     setState(() {
       _validating = false;
-      _error = result.ok ? null : result.error;
+      _lastOk = result.ok;
+      _error = result.ok
+          ? null
+          : (result.error?.trim().isNotEmpty ?? false)
+          ? result.error
+          : 'Validation failed. See the app log for the failing call.';
     });
     widget.onChanged();
   }
@@ -3626,7 +3645,7 @@ class _ImmichValidateRowState extends State<_ImmichValidateRow> {
         _validating
             ? 'Checking…'
             : _error ??
-                  (validated
+                  (validated || _lastOk == true
                       ? 'Connected'
                       : 'Not validated yet. The settings below unlock once '
                             'the connection checks out.'),
@@ -3638,7 +3657,9 @@ class _ImmichValidateRowState extends State<_ImmichValidateRow> {
               child: CircularProgressIndicator(strokeWidth: 2.4),
             )
           : Icon(
-              validated ? Icons.cloud_done_outlined : Icons.cloud_off_outlined,
+              validated || (_error == null && _lastOk == true)
+                  ? Icons.cloud_done_outlined
+                  : Icons.cloud_off_outlined,
             ),
       onTap: _validating ? null : _validate,
     );

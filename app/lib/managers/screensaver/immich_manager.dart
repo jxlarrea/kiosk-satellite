@@ -276,21 +276,61 @@ class ImmichManager extends Manager {
       // previews (Immich's asset.view is a separate permission from
       // asset.download, issue #222), fails here at the button, not at 2am.
       await _albums();
-      final found = await _search(page: 1, size: 1);
-      final items = (found['items'] as List?) ?? const [];
-      if (items.isNotEmpty) {
-        final id = '${(items.first as Map)['id']}';
+      final albumId = _settings.get(defs.screensaverImmichAlbum);
+      final found = await _search(
+        page: 1,
+        size: _probeAssets,
+        albumId: albumId,
+      );
+      final items = ((found['items'] as List?) ?? const []).cast<Map>();
+      // Several assets, not one: the search answers newest first, and the
+      // newest asset in a library taking phone backups is routinely the one
+      // Immich has not generated a preview for yet. One 200 proves the key
+      // may view previews, which is all this probe is here to establish.
+      _ApiException? lastMissing;
+      for (final item in items) {
+        final id = '${item['id']}';
         final response = await http
-            .get(_imageUri(ImmichAsset(id: id, isVideo: false)),
-                headers: _headers)
+            .get(
+              _imageUri(ImmichAsset(id: id, isVideo: false)),
+              headers: _headers,
+            )
             .timeout(const Duration(seconds: 30));
-        _throwUnlessOk(response, scope: 'asset.view');
+        try {
+          _throwUnlessOk(response, scope: 'asset.view');
+          return null;
+        } on _ApiException catch (e) {
+          // A 404 is the server saying this one asset has no preview file
+          // (still processing, generation failed, external library not
+          // scanned, file offline) — a per-asset condition that says
+          // nothing about the key, so try the next asset (issue #285).
+          // Anything else is about the credentials and fails the button.
+          if (e.status != 404) rethrow;
+          lastMissing = e;
+          log.warn(name, 'validate: preview probe skipped ($e)');
+        }
+      }
+      // Every asset tried came back without a preview. The screensaver
+      // would have nothing to show, but the connection itself is sound, so
+      // this passes with the reason in the log rather than blocking every
+      // setting below the button on the server's processing queue.
+      if (lastMissing != null) {
+        log.warn(
+          name,
+          'validate: no asset had a preview to fetch; passing on '
+          'albums and search alone',
+        );
       }
       return null;
     } catch (e) {
+      log.warn(name, 'validate failed: $e');
       return readableError(e);
     }
   }
+
+  /// How many assets the validation preview probe may try before giving up
+  /// on finding one with a preview.
+  static const _probeAssets = 5;
 
   /// [e] as a message a settings page or the screensaver can show. An HTTP
   /// rejection and an unreachable host are different problems (issue #222):
@@ -339,9 +379,8 @@ class ImmichManager extends Manager {
     }
     final albums = merged.values.toList();
     albums.sort(
-      (a, b) => '${a['name']}'.toLowerCase().compareTo(
-        '${b['name']}'.toLowerCase(),
-      ),
+      (a, b) =>
+          '${a['name']}'.toLowerCase().compareTo('${b['name']}'.toLowerCase()),
     );
     return albums;
   }
@@ -447,9 +486,7 @@ class ImmichManager extends Manager {
       if (await cached.exists()) {
         // Touch so eviction's "oldest" means least-recently-shown, not
         // first-ever-downloaded.
-        unawaited(
-          cached.setLastModified(DateTime.now()).catchError((_) {}),
-        );
+        unawaited(cached.setLastModified(DateTime.now()).catchError((_) {}));
         return cached.readAsBytes();
       }
     }
@@ -494,8 +531,7 @@ class ImmichManager extends Manager {
       final detail = jsonDecode(response.body) as Map<String, dynamic>;
       final exif = (detail['exifInfo'] as Map<String, dynamic>?) ?? const {};
 
-      final when =
-          exif['dateTimeOriginal'] ?? detail['localDateTime'] ?? '';
+      final when = exif['dateTimeOriginal'] ?? detail['localDateTime'] ?? '';
       final date = DateTime.tryParse('$when');
       if (date != null) out['date'] = _formatDate(date);
 
@@ -557,9 +593,8 @@ class ImmichManager extends Manager {
   static String _formatDate(DateTime date) => longDate(date);
 
   /// 6.0 → "6", 1.7 → "1.7": EXIF numbers read like camera markings.
-  static String _trimNum(num value) => value == value.toInt()
-      ? '${value.toInt()}'
-      : value.toStringAsFixed(1);
+  static String _trimNum(num value) =>
+      value == value.toInt() ? '${value.toInt()}' : value.toStringAsFixed(1);
 
   Directory? _cacheDirMemo;
 
