@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/manager.dart';
+import '../../ui/mdi_icon.dart';
 
 /// What a notification is about: picks its icon and the color behind it.
 enum NotificationLevel { info, success, warning, error }
@@ -16,6 +17,8 @@ class KioskNotification {
     required this.message,
     this.title,
     this.level = NotificationLevel.info,
+    this.scale = 1,
+    this.icon,
   });
 
   /// Rising per notification; the auto-dismiss timer carries the id it was
@@ -25,6 +28,17 @@ class KioskNotification {
   final String? title;
   final NotificationLevel level;
 
+  /// How much bigger than the ordinary card to draw this one, 1 to
+  /// [NotificationManager.maxScale]. Everything grows with it - type,
+  /// icon, padding, width - so a 3 is legible from across a room without
+  /// taking the screen away from the dashboard the way a full-screen
+  /// takeover would.
+  final double scale;
+
+  /// A Material Design Icon name to draw instead of the one the level
+  /// picks ("washing-machine"), already stripped of the `mdi:` prefix, or
+  /// null for the level's own icon.
+  final String? icon;
 }
 
 /// Notifications pushed at the kiosk from outside: the ESPHome
@@ -61,6 +75,12 @@ class NotificationManager extends Manager {
   /// keeps a wild number from arithmetic-overflowing the timer.
   static const _maxDuration = Duration(hours: 6);
 
+  /// The largest a caller may ask a notification to be drawn. Four is
+  /// already a card read from the far side of a room, and about as much
+  /// as a tablet screen holds; past it the notification simply outgrows
+  /// the display.
+  static const maxScale = 4.0;
+
   /// How many stay on screen at once. Four fills the top of a tablet
   /// without burying the dashboard behind it.
   static const maxVisible = 4;
@@ -92,6 +112,13 @@ class NotificationManager extends Manager {
                 'negative uses the default 30',
             'type': 'info (default), success, warning or error',
             'chime': 'play the notification chime (default true)',
+            'scale':
+                'how large to draw it, 1 (default) to 4, decimals allowed; '
+                '0 or negative uses the default',
+            'icon':
+                'a Material Design Icon to draw instead of the one the '
+                'type picks, named as Home Assistant names it '
+                '(mdi:washing-machine); empty for the type icon',
           },
           handler: (p) async {
             final message = '${p['message'] ?? ''}'.trim();
@@ -107,6 +134,8 @@ class NotificationManager extends Manager {
               message: message.isEmpty ? title : message,
               title: message.isEmpty || title.isEmpty ? null : title,
               level: _level(p['type']),
+              scale: _scale(p['scale']),
+              icon: _icon(p['icon']),
             );
             final stack = [note, ...current.value];
             // Oldest out when the stack is full: the newest arrival is
@@ -126,7 +155,8 @@ class NotificationManager extends Manager {
             }
             log.info(
               name,
-              'notification #$id ${duration == Duration.zero
+              'notification #$id ${note.scale == 1 ? '' : 'x${note.scale} '}'
+              '${duration == Duration.zero
                   ? '(until dismissed)'
                   : '(${duration.inSeconds}s)'}'
               '${current.value.length > 1
@@ -184,6 +214,24 @@ class NotificationManager extends Manager {
     }
     _timers.clear();
     current.dispose();
+  }
+
+  /// The icon name to draw, or null for the level's own. A name that is
+  /// not an icon at all is dropped here rather than drawn as a blank
+  /// circle.
+  String? _icon(Object? value) {
+    if (value == null) return null;
+    final name = MdiIcons.normalize('$value');
+    return MdiIcons.looksLikeIcon(name) ? name : null;
+  }
+
+  /// The size multiplier, clamped to something drawable. As with the
+  /// duration, the ESPHome action cannot leave a number out, so anything
+  /// at or below zero means "the ordinary size".
+  double _scale(Object? value) {
+    final asked = value is num ? value.toDouble() : double.tryParse('$value');
+    if (asked == null || asked <= 0) return 1;
+    return asked.clamp(1, maxScale).toDouble();
   }
 
   /// Seconds to a duration, with the two sentinels the ESPHome action

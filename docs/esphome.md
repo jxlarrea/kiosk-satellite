@@ -123,6 +123,8 @@ data:
   duration: 30
   type: info
   chime: true
+  scale: 1
+  icon: mdi:washing-machine
 ```
 
 An ESPHome device can call it directly, with no automation in between:
@@ -140,6 +142,8 @@ binary_sensor:
             duration: "20"
             type: warning
             chime: "true"
+            scale: "2"
+            icon: mdi:door-open
 ```
 
 Every argument is required, because the ESPHome protocol has no optional
@@ -152,6 +156,8 @@ ones, so each has a value that means "as you were":
 | `duration` | Seconds on screen. `0` stays up until someone taps it or Home Assistant takes it down; a negative number uses the default of 30 |
 | `type` | `info`, `success`, `warning` or `error`, which picks the icon and its color. Empty falls back to `info` |
 | `chime` | Whether to play the notification chime. It plays through the selected speaker like every other app sound |
+| `icon` | A Material Design Icon to draw instead of the one the type picks, named as Home Assistant names it (`mdi:washing-machine`). The full set is bundled, so anything valid in a dashboard works here, and the color still comes from the type. Empty for the type's own icon |
+| `scale` | How large to draw it, `1` (the ordinary card) to `4`, decimals allowed. Everything grows together: type, icon, padding and width, so a `3` on a wall panel reads from the far side of a room without taking the screen over. `0` means the ordinary size |
 
 Notifications stack, newest on top, up to four at a time: two things
 happening at once is ordinary, and the second one arriving is no reason

@@ -544,6 +544,8 @@ class EspEntitySurface {
         {'name': 'duration', 'type': 'int'},
         {'name': 'type', 'type': 'string'},
         {'name': 'chime', 'type': 'bool'},
+        {'name': 'scale', 'type': 'float'},
+        {'name': 'icon', 'type': 'string'},
       ],
     },
   ];
@@ -560,6 +562,12 @@ class EspEntitySurface {
           'duration': args['duration'] ?? -1,
           'type': '${args['type'] ?? ''}',
           'chime': args['chime'] ?? true,
+          // Same "unset" story as the duration: 0 is what a caller who
+          // does not care sends, and it means the ordinary size.
+          'scale': args['scale'] ?? 0,
+          // Empty is how the action says "no icon of my own", the same
+          // way an empty title says "no title".
+          'icon': '${args['icon'] ?? ''}',
         });
       default:
         log.warn('esphome', 'unknown action $name');

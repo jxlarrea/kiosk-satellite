@@ -88,10 +88,12 @@ screensaver first),
 launchable app as `[{package, label}]`), `showAppLauncher` /
 `hideAppLauncher` (the app launcher overlay;
 `showAppLauncher` refuses while the App Launcher is disabled in
-settings), `showNotification {message, title, duration, type, chime}` and
+settings), `showNotification {message, title, duration, type, chime, scale, icon}` and
 `dismissNotification {id}` (a message over whatever is on screen, the
 screensaver included; `duration` is seconds, `0` stays until dismissed,
-omitted uses 30, and `chime` defaults to on. `showNotification` answers
+omitted uses 30, `chime` defaults to on, and `scale` draws the card
+larger, 1 to 4 with decimals, and `icon` takes any Material Design Icon
+name (`mdi:washing-machine`) in place of the one the type picks. `showNotification` answers
 with the `id` to dismiss later, notifications stack newest on top up to
 four, and `dismissNotification` without an id clears them all. Home
 Assistant setups can push the same thing as an ESPHome action, see

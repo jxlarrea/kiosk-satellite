@@ -146,6 +146,41 @@ void main() {
     expect(notifications.current.value, hasLength(1));
   });
 
+  test('scale takes decimals, clamps, and reads 0 as the ordinary size',
+      () async {
+    await show({'message': 'Half again as big', 'scale': 1.5, 'duration': 0});
+    expect(notifications.current.value.first.scale, 1.5);
+    // The action cannot leave a number out, so 0 means "as usual".
+    await show({'message': 'Ordinary', 'scale': 0, 'duration': 0});
+    expect(notifications.current.value.first.scale, 1);
+    await show({'message': 'Too big', 'scale': 12, 'duration': 0});
+    expect(
+      notifications.current.value.first.scale,
+      NotificationManager.maxScale,
+    );
+    // Under one would be smaller than the design, not larger.
+    await show({'message': 'Too small', 'scale': 0.2, 'duration': 0});
+    expect(notifications.current.value.first.scale, 1);
+    // REST and JS callers send strings.
+    await show({'message': 'From REST', 'scale': '2.5', 'duration': 0});
+    expect(notifications.current.value.first.scale, 2.5);
+  });
+
+  test('an icon name is kept, prefix and case and all', () async {
+    await show({
+      'message': 'Laundry',
+      'icon': 'mdi:washing-machine',
+      'duration': 0,
+    });
+    expect(notifications.current.value.first.icon, 'washing-machine');
+    // The action sends an empty string when the caller wants the icon
+    // the type picks, and nonsense must not become a blank circle.
+    await show({'message': 'No icon', 'icon': '', 'duration': 0});
+    expect(notifications.current.value.first.icon, isNull);
+    await show({'message': 'Bad icon', 'icon': 'not an icon!', 'duration': 0});
+    expect(notifications.current.value.first.icon, isNull);
+  });
+
   test('a call with nothing to say is refused', () async {
     final result = await commands.execute('showNotification', {
       'message': '',
@@ -184,7 +219,7 @@ void main() {
     expect(
       [for (final arg in service['args']! as List) (arg as Map)['name']],
       // Order is API: the wire carries values positionally.
-      ['message', 'title', 'duration', 'type', 'chime'],
+      ['message', 'title', 'duration', 'type', 'chime', 'scale', 'icon'],
     );
 
     await surface.handleService('notification', {
@@ -193,6 +228,8 @@ void main() {
       'duration': 0,
       'type': 'success',
       'chime': true,
+      'scale': 0,
+      'icon': '',
     });
     final shown = notifications.current.value.single;
     expect(shown.message, 'Dinner is ready');
@@ -246,6 +283,27 @@ void main() {
       tester.getRect(find.text('Front door opened')).top,
       lessThan(tester.getRect(find.text('Utility room')).top),
     );
+
+    // A scaled card draws everything larger, type included.
+    await show({
+      'message': 'Read me from the kitchen',
+      'title': 'Big',
+      'duration': 0,
+      'scale': 2.5,
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    final big = tester.widget<Text>(find.text('Big'));
+    expect(big.style!.fontSize, 24 * 2.5);
+    expect(
+      tester.getSize(find.text('Read me from the kitchen')).height,
+      greaterThan(
+        tester.getSize(find.text('Washing machine finished')).height,
+      ),
+    );
+    await tester.tap(find.text('Read me from the kitchen'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     // A tap takes down that card and leaves the other standing.
     await tester.tap(find.text('Front door opened'));

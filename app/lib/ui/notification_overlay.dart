@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../managers/notifications/notification_manager.dart';
+import 'mdi_icon.dart';
 import 'theme.dart';
 
 /// Draws the notifications pushed from Home Assistant (see
@@ -75,26 +76,33 @@ class _NotificationOverlayState extends State<NotificationOverlay> {
   @override
   Widget build(BuildContext context) {
     if (_drawn.isEmpty) return const SizedBox.shrink();
-    return Align(
-      alignment: Alignment.topCenter,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(Ks.inset, 16, Ks.inset, 0),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final note in _drawn)
-                  _NotificationCard(
-                    key: ValueKey(note.id),
-                    note: note,
-                    leaving: _leaving.contains(note.id),
-                    onDismiss: () =>
-                        widget.notifications.dismiss(id: note.id),
-                    onGone: () => _gone(note.id),
-                  ),
-              ],
+    return ClipRect(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Ks.inset, 16, Ks.inset, 0),
+            // Scaled cards can outgrow the screen. Letting the column lay
+            // out unbounded and clipping what falls off the bottom keeps
+            // the newest ones, which are on top, whole; bounding it would
+            // be a layout overflow and would squeeze nothing usefully.
+            child: OverflowBox(
+              alignment: Alignment.topCenter,
+              maxHeight: double.infinity,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final note in _drawn)
+                    _NotificationCard(
+                      key: ValueKey(note.id),
+                      note: note,
+                      leaving: _leaving.contains(note.id),
+                      onDismiss: () =>
+                          widget.notifications.dismiss(id: note.id),
+                      onGone: () => _gone(note.id),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -176,101 +184,131 @@ class _NotificationCardState extends State<_NotificationCard>
       reverseCurve: Curves.easeIn,
     );
     final title = widget.note.title;
-    return SizeTransition(
-      sizeFactor: curve,
-      alignment: Alignment.topCenter,
-      child: FadeTransition(
-        opacity: curve,
-        child: SlideTransition(
-          position: Tween(
-            begin: const Offset(0, -0.35),
-            end: Offset.zero,
-          ).animate(curve),
-          child: Padding(
-            // Between cards only: the stack's own top edge is the
-            // overlay's padding.
-            padding: const EdgeInsets.only(bottom: 12),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(Ks.radiusCard),
-                border: Border.all(color: scheme.outlineVariant),
-                // A notification lands over arbitrary content - a
-                // dashboard, a photo - so it carries a shadow to lift it
-                // off same-tone backgrounds.
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Material(
-                type: MaterialType.transparency,
-                borderRadius: BorderRadius.circular(Ks.radiusCard),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(Ks.radiusCard),
-                  // Anywhere on the card dismisses that card: the whole
-                  // surface is the target for someone reaching past a
-                  // counter, and it is the only way out of a pinned one
-                  // (duration 0) short of Home Assistant.
-                  onTap: widget.onDismiss,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 18, 12, 18),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: iconBg,
-                            shape: BoxShape.circle,
+    final mdi = widget.note.icon;
+    // One multiplier over every measurement on the card, so a scaled
+    // notification grows as a whole instead of turning into big text in
+    // a small box.
+    final scale = widget.note.scale;
+    double px(double value) => value * scale;
+    return ConstrainedBox(
+      // Per card, not per stack: 720 is an ordinary notification's width
+      // and a scaled one is wider in proportion, up to the screen. A small
+      // card beside a big one must not be stretched to match it.
+      constraints: BoxConstraints(maxWidth: px(720)),
+      child: SizeTransition(
+        sizeFactor: curve,
+        alignment: Alignment.topCenter,
+        child: FadeTransition(
+          opacity: curve,
+          child: SlideTransition(
+            position: Tween(
+              begin: const Offset(0, -0.35),
+              end: Offset.zero,
+            ).animate(curve),
+            child: Padding(
+              // Between cards only: the stack's own top edge is the
+              // overlay's padding.
+              padding: EdgeInsets.only(bottom: px(12)),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
+                  border: Border.all(color: scheme.outlineVariant),
+                  // A notification lands over arbitrary content - a
+                  // dashboard, a photo - so it carries a shadow to lift it
+                  // off same-tone backgrounds.
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: px(16),
+                      offset: Offset(0, px(4)),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
+                    // Anywhere on the card dismisses that card: the whole
+                    // surface is the target for someone reaching past a
+                    // counter, and it is the only way out of a pinned one
+                    // (duration 0) short of Home Assistant.
+                    onTap: widget.onDismiss,
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        px(20),
+                        px(18),
+                        px(12),
+                        px(18),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: px(52),
+                            height: px(52),
+                            decoration: BoxDecoration(
+                              color: iconBg,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              // A caller's own icon wins over the one the
+                              // kind picks, and falls back to it while the
+                              // path is read or when the name is not an
+                              // icon at all.
+                              child: mdi == null
+                                  ? Icon(icon, size: px(30), color: iconFg)
+                                  : MdiIcon(
+                                      name: mdi,
+                                      size: px(30),
+                                      color: iconFg,
+                                      fallback: icon,
+                                    ),
+                            ),
                           ),
-                          child: Icon(icon, size: 30, color: iconFg),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (title != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 4),
-                                  child: Text(
-                                    title,
-                                    style: TextStyle(
-                                      fontFamily: Ks.displayFont,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.2,
-                                      color: scheme.onSurface,
+                          SizedBox(width: px(16)),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (title != null)
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: px(4)),
+                                    child: Text(
+                                      title,
+                                      style: TextStyle(
+                                        fontFamily: Ks.displayFont,
+                                        fontSize: px(24),
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.2,
+                                        color: scheme.onSurface,
+                                      ),
                                     ),
                                   ),
+                                Text(
+                                  widget.note.message,
+                                  style: TextStyle(
+                                    fontSize: px(20),
+                                    height: 1.35,
+                                    color: title == null
+                                        ? scheme.onSurface
+                                        : scheme.onSurfaceVariant,
+                                  ),
                                 ),
-                              Text(
-                                widget.note.message,
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  height: 1.35,
-                                  color: title == null
-                                      ? scheme.onSurface
-                                      : scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          iconSize: 26,
-                          color: scheme.onSurfaceVariant,
-                          onPressed: widget.onDismiss,
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ],
+                          SizedBox(width: px(8)),
+                          IconButton(
+                            iconSize: px(26),
+                            color: scheme.onSurfaceVariant,
+                            onPressed: widget.onDismiss,
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
