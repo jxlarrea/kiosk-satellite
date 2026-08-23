@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.75 - 2026-08-23
 
 ### Added
 - Pinch to zoom on a camera filling the screen. Two fingers scale the picture up to five times, one finger moves around it, and a double tap puts it back, which is what a wide-angle camera has been missing: the door, the cot or the driveway sits in a corner of a very wide frame, and a kiosk had no way of getting closer to it. Nothing is asked of the camera and no stream changes, this is purely which part of the frame is on screen, so it works with every camera and every transport. It applies where one camera fills the display, a one-camera view or the camera focused with a tap in a larger one, and never to a grid, where a pinch would land on whichever tiles the fingers covered; leaving focus or closing the view puts the zoom back. While a picture is zoomed the back swipe moves around it instead of closing the view, so the double tap does the leaving: once to drop the zoom, again to close. A "Pinch to zoom a single camera" switch under Camera Streams, then Playback, turns it off for panels where the camera view should not be handled at all. The camera screensaver is unaffected, since a touch there wakes the kiosk as it always has.
