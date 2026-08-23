@@ -127,8 +127,10 @@ class DeviceManager extends Manager {
           final crash =
               await background.invokeMethod<String>('getLastCrash') ?? '';
           if (crash.trim().isNotEmpty) {
-            log.error(name,
-                'a previous run crashed; the recorded trace follows\n$crash');
+            log.error(
+              name,
+              'a previous run crashed; the recorded trace follows\n$crash',
+            );
           }
         } catch (_) {}
       }());
@@ -184,6 +186,25 @@ class DeviceManager extends Manager {
       ),
     );
 
+    // Links coming up and going down reach the sensors as an event; the
+    // poll alone would miss a lock connected through the proxy for half a
+    // minute (issue #281).
+    DeviceDetails.listenBluetooth(
+      () => bus.publish(const BluetoothLinksChanged()),
+    );
+    commands.register(
+      Command(
+        name: 'getBluetoothConnections',
+        description:
+            'The Bluetooth devices the kiosk is linked to right now: '
+            '{connected: n, devices: [name, ...], enabled: bool}. Empty '
+            'where Android will not say (no adapter, or the Nearby devices '
+            'grant missing on Android 12+).',
+        handler: (_) async =>
+            CommandResult.ok(await DeviceDetails.bluetooth() ?? const {}),
+      ),
+    );
+
     commands.register(
       Command(
         name: 'getUptime',
@@ -212,10 +233,8 @@ class DeviceManager extends Manager {
         description:
             'The ambient light sensor: whether the device has one, and the '
             'latest reading in lux',
-        handler: (_) async => CommandResult.ok({
-          'present': hasLightSensor,
-          'lux': lightLux,
-        }),
+        handler: (_) async =>
+            CommandResult.ok({'present': hasLightSensor, 'lux': lightLux}),
       ),
     );
 
@@ -231,8 +250,9 @@ class DeviceManager extends Manager {
     };
     try {
       _setNextAlarm(
-        (await background.invokeMethod<Map>('nextAlarm'))
-            ?.cast<String, Object?>(),
+        (await background.invokeMethod<Map>(
+          'nextAlarm',
+        ))?.cast<String, Object?>(),
       );
     } catch (_) {}
     commands.register(
@@ -268,8 +288,8 @@ class DeviceManager extends Manager {
     // Media volume, percent both ways. No OS permission involved:
     // STREAM_MUSIC is freely settable (only ring/notification streams under
     // Do Not Disturb are gated, and those are never touched).
-    BackgroundListening.onVolumeChanged =
-        () => bus.publish(const VolumeChanged());
+    BackgroundListening.onVolumeChanged = () =>
+        bus.publish(const VolumeChanged());
     _volumeSub = bus.on<VolumeChanged>().listen((_) => _refreshMediaGain());
     // The media and assistant faders live in settings; the platform side
     // applies them (issue #79), so hand them down at start and on every
@@ -303,8 +323,10 @@ class DeviceManager extends Manager {
         description: 'Set the media volume',
         params: const {'percent': 'target volume, 0-100'},
         handler: (p) async {
-          final percent =
-              ((p['percent'] as num?)?.toDouble() ?? 0).clamp(0.0, 100.0);
+          final percent = ((p['percent'] as num?)?.toDouble() ?? 0).clamp(
+            0.0,
+            100.0,
+          );
           final raw = await background.invokeMethod<Map>('getVolume');
           final max = (raw?['max'] as num?)?.toInt() ?? 15;
           await background.invokeMethod('setVolume', {
@@ -335,9 +357,17 @@ class DeviceManager extends Manager {
             // the few real lines among the last N spammy ones. So: dump
             // the whole buffer filtered and take the tail ourselves.
             final proc = await Process.start('logcat', [
-              '-b', 'main', '-b', 'system', '-b', 'crash',
-              '-d', '-v', 'time',
-              'View:W', '*:V',
+              '-b',
+              'main',
+              '-b',
+              'system',
+              '-b',
+              'crash',
+              '-d',
+              '-v',
+              'time',
+              'View:W',
+              '*:V',
             ]);
             // Tail through a bounded queue while the dump streams:
             // Process.run would hold the whole multi-MB buffer dump in
@@ -352,14 +382,13 @@ class DeviceManager extends Manager {
                     if (tail.length >= lines) tail.removeFirst();
                     tail.add(line);
                   }),
-              proc.stderr
-                  .transform(utf8.decoder)
-                  .forEach(stderrTail.write),
+              proc.stderr.transform(utf8.decoder).forEach(stderrTail.write),
             ]);
             final exitCode = await proc.exitCode;
             if (exitCode != 0) {
               return CommandResult.fail(
-                  'logcat failed: ${stderrTail.isEmpty ? exitCode : stderrTail}');
+                'logcat failed: ${stderrTail.isEmpty ? exitCode : stderrTail}',
+              );
             }
             return CommandResult.ok(tail.join('\n'));
           } catch (e) {
@@ -393,8 +422,7 @@ class DeviceManager extends Manager {
     final plugged = await DeviceDetails.plugged();
     if (plugged != null) return plugged;
     final s = state ?? await _battery.batteryState;
-    return s == BatteryState.charging ||
-        s == BatteryState.connectedNotCharging;
+    return s == BatteryState.charging || s == BatteryState.connectedNotCharging;
   }
 
   StreamSubscription<BatteryState>? _powerSub;
@@ -409,15 +437,18 @@ class DeviceManager extends Manager {
   /// by up to a minute, the MQTT poll interval.
   void _watchPower() {
     try {
-      _powerSub = _battery.onBatteryStateChanged.listen((state) async {
-        final charging = await _chargingNow(state);
-        if (charging == _chargingSeen) return;
-        _chargingSeen = charging;
-        bus.publish(PowerChanged(charging: charging));
-      }, onError: (Object e) {
-        // Hosts without the battery event channel (tests, desktop): the
-        // minute poll still covers charging.
-      });
+      _powerSub = _battery.onBatteryStateChanged.listen(
+        (state) async {
+          final charging = await _chargingNow(state);
+          if (charging == _chargingSeen) return;
+          _chargingSeen = charging;
+          bus.publish(PowerChanged(charging: charging));
+        },
+        onError: (Object e) {
+          // Hosts without the battery event channel (tests, desktop): the
+          // minute poll still covers charging.
+        },
+      );
     } catch (_) {}
   }
 
@@ -475,7 +506,8 @@ class DeviceManager extends Manager {
   /// link-local one that no longer routes looks identical from here unless
   /// both are shown. Empty when the network has none, which is not an error.
   Future<Map<String, List<String>>> addressesByInterface(
-      InternetAddressType type) async {
+    InternetAddressType type,
+  ) async {
     try {
       final interfaces = await NetworkInterface.list(
         type: type,
@@ -498,18 +530,20 @@ class DeviceManager extends Manager {
   /// Every non-loopback IPv6 address, in interface order. See
   /// [addressesByInterface] for why link-local addresses are included.
   Future<List<String>> ipv6Addresses() async => [
-        for (final addresses
-            in (await addressesByInterface(InternetAddressType.IPv6)).values)
-          ...addresses,
-      ];
+    for (final addresses in (await addressesByInterface(
+      InternetAddressType.IPv6,
+    )).values)
+      ...addresses,
+  ];
 
   /// First non-loopback IPv4 address, or null (e.g. no network). Link-local
   /// 169.254 addresses are skipped: this is the address the admin URL and
   /// the setup screen print for people to visit, and a DHCP-failure address
   /// routes nowhere.
   Future<String?> ipAddress() async {
-    for (final addresses
-        in (await addressesByInterface(InternetAddressType.IPv4)).values) {
+    for (final addresses in (await addressesByInterface(
+      InternetAddressType.IPv4,
+    )).values) {
       for (final address in addresses) {
         if (address.startsWith('169.254.')) continue;
         return address;
@@ -531,14 +565,17 @@ class DeviceManager extends Manager {
         return;
       }
       const stream = EventChannel('kiosk_satellite/light_sensor_stream');
-      _lightSub = stream.receiveBroadcastStream().listen((v) {
-        final lux = (v as num?)?.toDouble();
-        if (lux == null) return;
-        lightLux = lux;
-        bus.publish(LightLevelChanged(lux: lux));
-      }, onError: (Object e) {
-        log.warn(name, 'light sensor stream failed: $e');
-      });
+      _lightSub = stream.receiveBroadcastStream().listen(
+        (v) {
+          final lux = (v as num?)?.toDouble();
+          if (lux == null) return;
+          lightLux = lux;
+          bus.publish(LightLevelChanged(lux: lux));
+        },
+        onError: (Object e) {
+          log.warn(name, 'light sensor stream failed: $e');
+        },
+      );
       log.info(name, 'ambient light sensor streaming');
     } catch (e) {
       // A host without the channel (tests, older platform code): no sensor.

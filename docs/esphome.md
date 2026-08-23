@@ -246,6 +246,22 @@ The same list reaches Home Assistant as a diagnostic sensor per kiosk,
 **Bluetooth devices nearby** (the count as its state, the identified list
 as attributes), so a dashboard can show what each room hears.
 
+Alongside it, **Bluetooth devices connected** counts the devices this
+kiosk itself is linked to right now, with their names as attributes, so a
+dashboard can answer "is the room's speaker still on the panel" without
+walking over to it. It counts every link the adapter holds, including any
+the proxy has open for Home Assistant, which is what a connection count
+means from the device's side; the **Bluetooth connections** sensor next to
+it is the proxy's slot budget instead, an entirely different number. Both
+follow the links as they happen rather than on a poll, so a device Home
+Assistant connects to for a few seconds (a lock taking a command through
+the proxy) shows up for as long as the link lasts. Both
+sensors come and go with the Bluetooth Proxy switch, and both are
+published by the MQTT integration too. Devices whose Android will not
+report their Bluetooth links at all (no adapter, or the Nearby devices
+permission not granted on Android 12 and newer) get no sensor rather than
+one stuck on unknown.
+
 **Look up device manufacturers online** is off by default. Switched on,
 unknown devices with real hardware addresses are named by their
 manufacturer prefix using api.macvendors.com. Only the 3-byte prefix is

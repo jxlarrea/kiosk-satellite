@@ -172,6 +172,15 @@ class AudioDevicesChanged extends AppEvent {
   final bool capturePathChanged;
 }
 
+/// A Bluetooth link came up or went down (the ACL broadcasts), so the
+/// connected-devices sensors publish the change instead of waiting for the
+/// minute poll. Home Assistant connecting to a lock through the Bluetooth
+/// proxy holds the link for half a minute, which a poll can miss entirely
+/// (issue #281).
+class BluetoothLinksChanged extends AppEvent {
+  const BluetoothLinksChanged();
+}
+
 /// A microphone capture level sample (RMS, 0..1, at most ~10/s), published
 /// only while a remote admin client holds a mic-level watch. No wireName:
 /// the page computes its own mic levels, this exists for the admin UI's

@@ -1,9 +1,15 @@
 package me.jxl.kiosk_satellite
 
 import android.app.ActivityManager
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.BatteryManager
 import android.net.Network
@@ -97,6 +103,34 @@ class DeviceDetails(
      */
     @Volatile private var currentNetwork: Network? = null
 
+    /** Bound Bluetooth profile services, by profile constant. */
+    private val profileProxies = java.util.concurrent.ConcurrentHashMap<Int, BluetoothProfile>()
+
+    /** Whether the profile binds have been asked for (they are asked once). */
+    @Volatile private var profilesRequested = false
+
+    /**
+     * Links coming up and going down, pushed to Dart rather than waited for
+     * by the minute poll: Home Assistant connecting to a lock through the
+     * Bluetooth proxy holds the link for half a minute, which two polls a
+     * minute apart can miss entirely (issue #281).
+     */
+    private val aclReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                BluetoothDevice.ACTION_ACL_CONNECTED,
+                BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                -> Handler(Looper.getMainLooper()).post {
+                    try {
+                        channel.invokeMethod("bluetoothChanged", null)
+                    } catch (e: Exception) {
+                        // The engine is gone; nothing to tell.
+                    }
+                }
+            }
+        }
+    }
+
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             currentNetwork = network
@@ -119,11 +153,26 @@ class DeviceDetails(
             // Too many callbacks registered on this device, or no such
             // service: network uptime stays null rather than wrong.
         }
+        try {
+            val filter = IntentFilter().apply {
+                addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+                addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(aclReceiver, filter, Context.RECEIVER_EXPORTED)
+            } else {
+                context.registerReceiver(aclReceiver, filter)
+            }
+        } catch (e: Exception) {
+            // No Bluetooth on this build: the poll still answers.
+        }
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "read" -> result.success(read())
                 "uptime" -> result.success(uptime())
                 "plugged" -> result.success(plugged())
+                // The Bluetooth links this device holds (issue #281).
+                "bluetooth" -> result.success(bluetooth())
                 // The SSAID: stable per device + app signing key, surviving
                 // reinstalls (a factory reset changes it). The seed for the
                 // licensing Device ID — a value that has to outlive app data.
@@ -147,6 +196,21 @@ class DeviceDetails(
 
     fun dispose() {
         channel.setMethodCallHandler(null)
+        try {
+            context.unregisterReceiver(aclReceiver)
+        } catch (e: Exception) {
+            // Never registered; nothing to undo.
+        }
+        val adapter = (context.getSystemService(Context.BLUETOOTH_SERVICE)
+            as? BluetoothManager)?.adapter
+        for ((profile, proxy) in profileProxies) {
+            try {
+                adapter?.closeProfileProxy(profile, proxy)
+            } catch (e: Exception) {
+                // Already gone with the adapter.
+            }
+        }
+        profileProxies.clear()
         try {
             (context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager)
                 .unregisterNetworkCallback(networkCallback)
@@ -338,6 +402,117 @@ class DeviceDetails(
         } ?: return null
         val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
         return if (plugged < 0) null else plugged > 0
+    }
+
+    /**
+     * The Bluetooth devices this kiosk holds a live link to right now
+     * (issue #281): `connected` as the count, `devices` as their names, and
+     * `enabled` for the adapter's own switch. `null` when Android will not
+     * answer at all (no adapter, or the Nearby devices grant missing on
+     * Android 12+), which is what keeps the sensor from existing on devices
+     * that could only ever report unknown.
+     *
+     * Three sources, deduplicated by hardware address, because no single one
+     * sees every link: bonded devices (the speaker, keyboard or headset a
+     * person means by "connected"), the adapter's GATT tables (BLE links,
+     * including any the Bluetooth proxy itself holds) and the classic
+     * profile proxies (the public route to A2DP and headset connections,
+     * which the bonded read misses whenever the hidden isConnected is
+     * refused).
+     */
+    private fun bluetooth(): Map<String, Any?>? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            context.checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+            != PackageManager.PERMISSION_GRANTED) return null
+        val manager = context.getSystemService(Context.BLUETOOTH_SERVICE)
+            as? BluetoothManager ?: return null
+        val adapter = manager.adapter ?: return null
+        if (!adapter.isEnabled) {
+            return mapOf("connected" to 0, "devices" to emptyList<String>(), "enabled" to false)
+        }
+        bindProfileProxies(adapter)
+        val byAddress = LinkedHashMap<String, String>()
+        fun add(device: BluetoothDevice) {
+            val name = try {
+                device.name
+            } catch (e: Exception) {
+                null
+            }
+            byAddress[device.address] = if (name.isNullOrBlank()) device.address else name
+        }
+        try {
+            for (device in adapter.bondedDevices.orEmpty()) {
+                if (isConnected(device)) add(device)
+            }
+        } catch (e: Exception) {
+            // A ROM that refuses the bonded list still has the two reads below.
+        }
+        for (profile in intArrayOf(BluetoothProfile.GATT, BluetoothProfile.GATT_SERVER)) {
+            try {
+                for (device in manager.getConnectedDevices(profile)) add(device)
+            } catch (e: Exception) {
+                // Not every build answers for both tables.
+            }
+        }
+        for (proxy in profileProxies.values) {
+            try {
+                for (device in proxy.connectedDevices) add(device)
+            } catch (e: Exception) {
+                // A proxy can outlive its service; the others still count.
+            }
+        }
+        return mapOf(
+            "connected" to byAddress.size,
+            "devices" to byAddress.values.toList(),
+            "enabled" to true,
+        )
+    }
+
+    /**
+     * Whether a bonded device currently holds a link, over the framework's
+     * own isConnected. It is not public API and never has been, so the call
+     * is reflective and a refusal reads as "not connected": the profile
+     * proxies below then answer for everything but exotic profiles, which is
+     * why they are bound at all.
+     */
+    private fun isConnected(device: BluetoothDevice): Boolean = try {
+        BluetoothDevice::class.java.getMethod("isConnected").invoke(device) as? Boolean ?: false
+    } catch (e: Throwable) {
+        false
+    }
+
+    /**
+     * Binds the classic profile proxies once and keeps them, so every read
+     * afterwards is a plain synchronous connectedDevices call. Binding is
+     * asynchronous, so the first read after a start can miss a classic
+     * connection; the next poll has it.
+     */
+    private fun bindProfileProxies(adapter: BluetoothAdapter) {
+        if (profilesRequested) return
+        profilesRequested = true
+        // Headset and A2DP are the two the platform lets an ordinary app
+        // bind; the input-device profile is system-only, so keyboards and
+        // mice are left to the bonded read above.
+        val profiles = mutableListOf(BluetoothProfile.HEADSET, BluetoothProfile.A2DP)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            profiles.add(BluetoothProfile.HEARING_AID)
+        }
+        val listener = object : BluetoothProfile.ServiceListener {
+            override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+                profileProxies[profile] = proxy
+            }
+
+            override fun onServiceDisconnected(profile: Int) {
+                profileProxies.remove(profile)
+            }
+        }
+        for (profile in profiles) {
+            try {
+                adapter.getProfileProxy(context, listener, profile)
+            } catch (e: Exception) {
+                // A profile this build has no service for: skip it.
+            }
+        }
     }
 
     private fun read(): Map<String, Any?> = mapOf(

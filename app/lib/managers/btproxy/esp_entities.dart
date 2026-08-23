@@ -49,6 +49,10 @@ class EspEntitySurface {
   Timer? _poll;
   Timer? _motionOff;
 
+  /// Coalesces the ACL broadcast flurry one connection makes into a single
+  /// read of the link count.
+  Timer? _btNudge;
+
   // Learned at build time; commands and states need them afterwards.
   List<Map<String, Object?>> _cameraViews = const [];
   List<String> _dashboardViews = const [];
@@ -158,6 +162,18 @@ class EspEntitySurface {
     final stats = await commands.execute('getStats', const {});
     final cpuTempPresent =
         stats.ok && stats.data is Map && (stats.data as Map)['temp'] != null;
+    // Bluetooth connections ride the proxy's master switch, and only exist
+    // where Android answers at all: with no adapter, or no Nearby devices
+    // grant on Android 12+, the sensor could never report anything but
+    // unknown (issue #281).
+    final bt = _settings.get(defs.btproxyEnabled)
+        ? await commands.execute('getBluetoothConnections', const {})
+        : null;
+    final btConnectionsReadable =
+        bt != null &&
+        bt.ok &&
+        bt.data is Map &&
+        (bt.data as Map)['connected'] != null;
     final cameraWanted = cameraPresent && _settings.get(defs.cameraEnabled);
     _deviceCameraIsTheCamera = cameraWanted;
     await _refreshCameraViews();
@@ -460,6 +476,18 @@ class EspEntitySurface {
           icon: 'mdi:bluetooth-connect',
           type: 'text_sensor',
         ),
+      if (btConnectionsReadable)
+        // The kiosk's own Bluetooth links: the speaker, keyboard or headset
+        // paired with it, plus any BLE connection the proxy is holding, so
+        // "is the speaker still on it" is answerable from Home Assistant
+        // (issue #281). Deliberately separate from the proxy's slot count
+        // above, which is a budget rather than an inventory.
+        diagnostic(
+          'bt_devices_connected',
+          'Bluetooth devices connected',
+          icon: 'mdi:bluetooth-connect',
+          stateClass: 1,
+        ),
       diagnostic(
         'device_info',
         'Device',
@@ -588,6 +616,19 @@ class EspEntitySurface {
       }),
     );
     _subs.add(bus.on<ScreenStateChanged>().listen((_) => _sendScreen()));
+    // A link coming up or going down, rather than the minute poll: a lock
+    // Home Assistant holds for half a minute would otherwise never show
+    // (issue #281). Coalesced, since one connection fires several
+    // broadcasts and the count is the same for all of them.
+    _subs.add(
+      bus.on<BluetoothLinksChanged>().listen((_) {
+        _btNudge?.cancel();
+        _btNudge = Timer(
+          const Duration(milliseconds: 700),
+          () => unawaited(_sendBluetooth()),
+        );
+      }),
+    );
     _subs.add(bus.on<BrightnessChanged>().listen((_) => _sendScreen()));
     _subs.add(bus.on<VolumeChanged>().listen((_) => _sendVolume()));
     _subs.add(
@@ -669,6 +710,8 @@ class EspEntitySurface {
     _poll = null;
     _motionOff?.cancel();
     _motionOff = null;
+    _btNudge?.cancel();
+    _btNudge = null;
     _interaction.dispose();
   }
 
@@ -924,6 +967,30 @@ class EspEntitySurface {
     await _send('motion', false);
   }
 
+  /// The kiosk's own Bluetooth links, and the proxy's slot usage with them:
+  /// both move at the same moments, and both are cheap enough to answer on
+  /// a link event rather than only on the poll.
+  Future<void> _sendBluetooth() async {
+    if (!_settings.get(defs.btproxyEnabled)) return;
+    final bt = await commands.execute('getBluetoothConnections', const {});
+    final connected = bt.ok && bt.data is Map
+        ? (bt.data as Map)['connected']
+        : null;
+    if (connected is num) {
+      await _send('bt_devices_connected', connected.toInt());
+    }
+    if (!_settings.get(defs.btproxyConnections)) return;
+    final status = await commands.execute('btProxyStatus', const {});
+    final data = status.ok && status.data is Map
+        ? status.data as Map
+        : const {};
+    final used = (data['connections'] as List?)?.length;
+    final slots = (data['connectionSlots'] as num?)?.toInt() ?? 0;
+    if (used != null && slots > 0) {
+      await _send('bt_connections', '$used of $slots');
+    }
+  }
+
   Future<void> _sendScreen() async {
     final on = await commands.execute('isScreenOn', const {});
     final brightness = await commands.execute('getBrightness', const {});
@@ -1118,22 +1185,12 @@ class EspEntitySurface {
       await _send('foreground_app', pkg ?? 'unknown');
     }
     if (_settings.get(defs.btproxyEnabled)) {
+      await _sendBluetooth();
       final nearby = await commands.execute('btProxyNearby', const {});
       final count = nearby.ok && nearby.data is Map
           ? (nearby.data as Map)['count']
           : null;
       if (count is num) await _send('btproxy_nearby', count.toInt());
-      if (_settings.get(defs.btproxyConnections)) {
-        final status = await commands.execute('btProxyStatus', const {});
-        final data = status.ok && status.data is Map
-            ? status.data as Map
-            : const {};
-        final used = (data['connections'] as List?)?.length;
-        final slots = (data['connectionSlots'] as num?)?.toInt() ?? 0;
-        if (used != null && slots > 0) {
-          await _send('bt_connections', '$used of $slots');
-        }
-      }
     }
     // Every completed poll IS a sighting, like the MQTT twin.
     await _send('last_seen', DateTime.now().toUtc().toIso8601String());

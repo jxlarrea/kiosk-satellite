@@ -21,9 +21,15 @@ void main() {
   late List<List<int>> images;
   late List<(String, Map<String, Object?>)> executed;
   var cameraPresent = true;
+  var bluetooth = <String, Object?>{};
 
   setUp(() async {
     cameraPresent = true;
+    bluetooth = {
+      'connected': 2,
+      'devices': ['Kitchen Speaker', 'Keyboard'],
+      'enabled': true,
+    };
     SharedPreferences.setMockInitialValues({
       'ks.camera.enabled': true,
       'ks.launcher.enabled': true,
@@ -96,6 +102,13 @@ void main() {
       },
     });
     stub('foregroundApp', {'package': 'me.jxl.kiosk_satellite'});
+    commands.register(
+      Command(
+        name: 'getBluetoothConnections',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(bluetooth),
+      ),
+    );
     stub('btProxyNearby', {'count': 13});
     stub('btProxyStatus', {
       'connections': ['AA:BB:CC:DD:EE:FF'],
@@ -214,6 +227,7 @@ void main() {
     );
     expect(ids, contains('connectivity'));
     expect(ids, contains('bt_connections'));
+    expect(ids, contains('bt_devices_connected'));
     expect(ids, contains('last_seen'));
     final byId = {for (final d in catalog) d['objectId']: d};
     // Only views with cameras become options; 'Closed' leads. The
@@ -229,6 +243,44 @@ void main() {
     expect(byId['device_camera']!['type'], 'camera');
     expect(byId.containsKey('screenshot'), isFalse);
     expect(byId['screensaver_mode']!['options'], isNotEmpty);
+  });
+
+  test('connected Bluetooth devices ride the proxy switch', () async {
+    // Off with the proxy, whatever the platform would answer.
+    await settings.set(defs.btproxyEnabled, false);
+    var ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, isNot(contains('bt_devices_connected')));
+
+    // Back on, and the sensor comes with the rest of the proxy set.
+    await settings.set(defs.btproxyEnabled, true);
+    ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, contains('bt_devices_connected'));
+  });
+
+  test('a device Android will not answer for gets no sensor', () async {
+    // No adapter, or no Nearby devices grant: an entity that could only
+    // ever read unknown is not published at all.
+    bluetooth = {};
+    final ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, isNot(contains('bt_devices_connected')));
+    expect(ids, contains('btproxy_nearby'));
+  });
+
+  test('a link coming up pushes without waiting for the poll', () async {
+    await surface.build();
+    await attach();
+    pushed.clear();
+    bluetooth = {
+      'connected': 3,
+      'devices': ['Kitchen Speaker', 'Keyboard', 'Yale Lock'],
+      'enabled': true,
+    };
+    bus.publish(const BluetoothLinksChanged());
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    final byId = {for (final (id, value) in pushed) id: value};
+    expect(byId['bt_devices_connected'], 3);
+    // The proxy's slot count moves at the same moment, so it rides along.
+    expect(byId['bt_connections'], '1 of 3');
   });
 
   test('a camera-less device gets the screenshot camera instead', () async {
@@ -276,6 +328,7 @@ void main() {
     expect(byId['foreground_app'], 'me.jxl.kiosk_satellite');
     expect(byId['btproxy_nearby'], 13);
     expect(byId['bt_connections'], '1 of 3');
+    expect(byId['bt_devices_connected'], 2);
     expect(byId['volume'], 55);
     expect(byId['screen'], {'on': true, 'brightness': 0.4});
     expect((byId['update'] as Map)['latest'], '2026.8.53');

@@ -69,6 +69,35 @@ class DeviceDetails {
     }
   }
 
+  /// Called whenever a Bluetooth link comes up or goes down, from the
+  /// platform's own ACL broadcasts. The connected-devices sensors publish on
+  /// it instead of waiting for the minute poll, which a link held for half a
+  /// minute (Home Assistant talking to a lock through the proxy) falls
+  /// straight through.
+  static void listenBluetooth(void Function() onChanged) {
+    _onBluetoothChanged = onChanged;
+    if (_bluetoothHandlerInstalled) return;
+    _bluetoothHandlerInstalled = true;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'bluetoothChanged') _onBluetoothChanged?.call();
+    });
+  }
+
+  static void Function()? _onBluetoothChanged;
+  static bool _bluetoothHandlerInstalled = false;
+
+  /// The Bluetooth devices this kiosk holds a link to right now:
+  /// `connected` (the count), `devices` (their names) and `enabled` (the
+  /// adapter's own switch). Null where Android will not answer at all: no
+  /// adapter, or the Nearby devices grant missing on Android 12+.
+  static Future<Map<String, Object?>?> bluetooth() async {
+    try {
+      return await _channel.invokeMapMethod<String, Object?>('bluetooth');
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Seconds since the process started (`app`) and since the default network
   /// last came up (`network`, null while offline). The network number reads
   /// the kernel's own timestamp on the interface's IP address where it can,

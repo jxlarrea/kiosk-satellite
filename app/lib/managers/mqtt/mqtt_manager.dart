@@ -153,6 +153,21 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// bring-up, revived by any later successful reading (issue #138).
   bool _cpuTempPresent = true;
 
+  /// Whether Android will tell this app about its Bluetooth links at all;
+  /// probed at bring-up and revived by any later answer, so granting the
+  /// Nearby devices permission brings the sensor with it (issue #281).
+  bool _btConnectionsPresent = false;
+
+  /// The connected-device count and name list last published, so the minute
+  /// poll only costs the recorder a row when something actually connected
+  /// or dropped.
+  int? _lastBtConnected;
+  String _lastBtDevices = '';
+
+  /// Coalesces the ACL broadcast flurry one connection makes into a single
+  /// read of the link count.
+  Timer? _btNudge;
+
   /// Rate limiting for the illuminance publishes: the recorder does not need
   /// every damped native event, but big swings (lights on) should land now.
   double? _lastLuxPublished;
@@ -227,6 +242,18 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // Covers every path the volume moves: an MQTT command, the hardware
     // rocker, another app (the platform side broadcasts them all).
     _subs.add(bus.on<VolumeChanged>().listen((_) => _publishVolume()));
+    // Bluetooth links move between polls: a lock Home Assistant connects to
+    // through the proxy is gone again within half a minute (issue #281).
+    // One connection fires several broadcasts, so the read is coalesced.
+    _subs.add(
+      bus.on<BluetoothLinksChanged>().listen((_) {
+        _btNudge?.cancel();
+        _btNudge = Timer(
+          const Duration(milliseconds: 700),
+          () => unawaited(_publishBluetoothConnections()),
+        );
+      }),
+    );
     // The updater already throttles progress to whole percents.
     _subs.add(
       bus.on<UpdateStateChanged>().listen((_) => _publishUpdateState()),
@@ -407,6 +434,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   Future<void> dispose() async {
     if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
     _foregroundNudge?.cancel();
+    _btNudge?.cancel();
     for (final s in _subs) {
       await s.cancel();
     }
@@ -472,6 +500,37 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       '${data['count'] ?? devices.length}',
     );
     _publish('$_base/btproxy_nearby/attributes', payload);
+  }
+
+  /// The Bluetooth devices the kiosk itself is linked to (issue #281): the
+  /// count as the state, their names as attributes, so a dashboard can show
+  /// whether the room's speaker is still on the panel. Counts every link the
+  /// device holds, including any the Bluetooth proxy has open, which is what
+  /// "connections" means from the adapter's side.
+  Future<void> _publishBluetoothConnections() async {
+    if (!_connected) return;
+    if (!_settings.get(defs.btproxyEnabled)) return;
+    final result = await commands.execute('getBluetoothConnections', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map) return;
+    final connected = (data['connected'] as num?)?.toInt();
+    if (connected == null) return;
+    if (!_btConnectionsPresent) {
+      // The bring-up probe was refused (the grant landed later): the sensor
+      // exists after all.
+      _btConnectionsPresent = true;
+      unawaited(_publishDiscovery());
+    }
+    final devices = jsonEncode({
+      'devices': [
+        for (final name in data['devices'] as List? ?? const []) '$name',
+      ],
+    });
+    if (connected == _lastBtConnected && devices == _lastBtDevices) return;
+    _lastBtConnected = connected;
+    _lastBtDevices = devices;
+    _publish('$_base/bt_devices_connected/state', '$connected');
+    _publish('$_base/bt_devices_connected/attributes', devices);
   }
 
   /// The setting-backed switches: object id → (setting read, apply). The
@@ -739,10 +798,18 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       return;
     }
     if (e.key == defs.btproxyEnabled.key) {
-      // The nearby-devices sensor follows the proxy's master switch, same
-      // shape as the launcher button above.
+      // The nearby-devices and connected-devices sensors follow the
+      // proxy's master switch, same shape as the launcher button above.
       _lastBtNearby = '';
-      if (_connected) unawaited(_publishDiscovery());
+      _lastBtConnected = null;
+      _lastBtDevices = '';
+      if (_connected) {
+        unawaited(_publishDiscovery());
+        // Switched on: read the links now rather than at the next minute
+        // tick, since that read is also what revives the sensor when the
+        // bring-up probe ran with the proxy off.
+        unawaited(_publishBluetoothConnections());
+      }
       return;
     }
     if (e.key == defs.motionSensor.key ||
@@ -1006,6 +1073,18 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     final stats = await commands.execute('getStats', const {});
     _cpuTempPresent =
         stats.ok && stats.data is Map && (stats.data as Map)['temp'] != null;
+    // And for the Bluetooth links: they ride the proxy's master switch, and
+    // a device with no adapter, or one whose Nearby devices grant is missing
+    // on Android 12+, gets no sensor rather than one stuck on unknown
+    // (issue #281).
+    final bt = _settings.get(defs.btproxyEnabled)
+        ? await commands.execute('getBluetoothConnections', const {})
+        : null;
+    _btConnectionsPresent =
+        bt != null &&
+        bt.ok &&
+        bt.data is Map &&
+        (bt.data as Map)['connected'] != null;
     _publish(_availabilityTopic, 'online');
     await _publishDiscovery();
     await _publishInitialStates();
@@ -1466,6 +1545,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     _lastForeground = '';
     await _publishForegroundApp();
     await _publishDeviceIdentity();
+    // Fresh link, fresh answer, like the foreground app above.
+    _lastBtConnected = null;
+    _lastBtDevices = '';
+    await _publishBluetoothConnections();
     if (_lightSensorPresent) {
       final light = await commands.execute('getLightLevel', const {});
       final lux = light.ok && light.data is Map
@@ -1617,6 +1700,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     unawaited(_publishForegroundApp());
     unawaited(_publishIpAddresses());
     unawaited(_publishBtProxyNearby());
+    unawaited(_publishBluetoothConnections());
     // Timestamp anchors, not counters: each tick re-derives when the app
     // and the network came up and republishes only when an anchor actually
     // moved (a restart, a reconnect), so the recorder logs those moments
@@ -1702,6 +1786,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     '$_prefix/binary_sensor/ks_$_deviceId/connectivity/config',
     '$_prefix/sensor/ks_$_deviceId/foreground_app/config',
     '$_prefix/sensor/ks_$_deviceId/btproxy_nearby/config',
+    '$_prefix/sensor/ks_$_deviceId/bt_devices_connected/config',
     '$_prefix/sensor/ks_$_deviceId/device_info/config',
     '$_prefix/sensor/ks_$_deviceId/ipv4_address/config',
     '$_prefix/sensor/ks_$_deviceId/ipv6_address/config',
@@ -2057,6 +2142,18 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           'icon': 'mdi:bluetooth-audio',
           'entity_category': 'diagnostic',
         },
+      // The kiosk's own Bluetooth links (issue #281), separate from the
+      // proxy's nearby inventory above: how many devices it is connected to
+      // right now, with their names as attributes.
+      if (_btConnectionsPresent && _settings.get(defs.btproxyEnabled))
+        '$_prefix/sensor/ks_$_deviceId/bt_devices_connected/config': {
+          ...common('bt_devices_connected', 'Bluetooth devices connected'),
+          'state_topic': '$_base/bt_devices_connected/state',
+          'json_attributes_topic': '$_base/bt_devices_connected/attributes',
+          'icon': 'mdi:bluetooth-connect',
+          'state_class': 'measurement',
+          'entity_category': 'diagnostic',
+        },
       // The hardware identity and addresses the remote admin's Device page
       // shows, as diagnostic sensors (issue #213), so dashboards and
       // scripts can read them without opening the admin.
@@ -2391,6 +2488,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // read one, instead of lingering as a dead entity.
     if (!_cpuTempPresent) {
       _publish('$_prefix/sensor/ks_$_deviceId/cpu_temp/config', '');
+    }
+    // Same for the Bluetooth links, off with the proxy switch or on a
+    // device that will not report them.
+    if (!_btConnectionsPresent || !_settings.get(defs.btproxyEnabled)) {
+      _publish('$_prefix/sensor/ks_$_deviceId/bt_devices_connected/config', '');
     }
     // Self-correcting: a camera config published before the presence probe
     // answered (or before the feature was turned off) is retracted on the
