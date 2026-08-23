@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.MotionEvent
@@ -40,6 +41,7 @@ import android.widget.TextView
  * lets touches fall through to the app.
  */
 object LockShieldOverlay {
+    private const val TAG = "LockShieldOverlay"
     private val main = Handler(Looper.getMainLooper())
     private var view: FrameLayout? = null
     private var pill: TextView? = null
@@ -104,9 +106,10 @@ object LockShieldOverlay {
                 .addView(root, params())
             view = root
             pill = text
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // A racing grant revocation; the Flutter shield still holds
             // inside the app and the reclaim watchdog holds outside it.
+            Log.w(TAG, "the lockdown shield was refused: $e")
         }
     }
 
@@ -134,7 +137,7 @@ object LockShieldOverlay {
         val p = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            overlayWindowType(),
             flags,
             PixelFormat.TRANSLUCENT,
         )

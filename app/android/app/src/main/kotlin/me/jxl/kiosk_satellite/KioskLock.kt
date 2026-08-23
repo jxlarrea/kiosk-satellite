@@ -16,6 +16,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -51,6 +52,8 @@ import kotlin.math.abs
  */
 class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     companion object {
+        private const val TAG = "KioskLock"
+
         /**
          * When this app last powered the screen off on purpose, on the
          * elapsed-realtime clock (0 = never).
@@ -403,18 +406,31 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 band,
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                overlayWindowType(),
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                         or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT,
             )
             params.gravity = Gravity.TOP
-            activity.getSystemService(WindowManager::class.java)
-                .addView(view, params)
-            shield = view
+            // A refused window must not take the rest of "apply" with it:
+            // this call sits in the middle of the bundle, so an uncaught
+            // throw here left the pin, the bar watcher, the System UI
+            // guard and the lockdown shield unarmed on every apply
+            // (issue #280).
+            try {
+                activity.getSystemService(WindowManager::class.java)
+                    .addView(view, params)
+                shield = view
+            } catch (e: Exception) {
+                Log.w(TAG, "the status bar shield was refused: $e")
+            }
         } else if (!enabled && shield != null) {
-            activity.getSystemService(WindowManager::class.java)
-                .removeView(shield)
+            try {
+                activity.getSystemService(WindowManager::class.java)
+                    .removeView(shield)
+            } catch (e: Exception) {
+                Log.w(TAG, "removing the status bar shield failed: $e")
+            }
             shield = null
         }
     }
