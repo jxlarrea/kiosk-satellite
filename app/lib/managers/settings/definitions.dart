@@ -2101,6 +2101,11 @@ const screensaverNotificationBrightness = SettingDef<bool>(
   description:
       'Lift the screensaver dimming while a notification is on screen.',
   category: 'Screensaver',
+  // Shown under the switch it qualifies. Dim and Black dim without it, so
+  // their lift is governed by a row that is out of sight there; on is the
+  // right thing for both, and the two dark modes are where an unreadable
+  // notification is most likely in the first place.
+  dependsOn: 'screensaver.brightness_enabled',
 );
 
 // The screensaver deliberately holds the panel awake (see the manager's
