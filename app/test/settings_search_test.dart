@@ -49,6 +49,24 @@ void main() {
         isNotEmpty,
       );
     });
+
+    test('second-level pages are findable, landing on their entry row', () {
+      final entry = index.singleWhere((e) => e.title == 'User Interface');
+      expect(entry.category, 'Home Assistant');
+      expect(entry.isPage, isTrue);
+      expect(entry.anchorId, 'sub:User Interface');
+      // The hint the entry row shows is what the search matches on.
+      expect(entry.description, subpageHints['User Interface']);
+    });
+
+    test('a setting that moved onto a subpage is still indexed itself', () {
+      // Moving the group must not cost the rows their own search results.
+      expect(
+        index.where((e) => e.defKey == haHaptics.key),
+        isNotEmpty,
+        reason: 'haptics row',
+      );
+    });
   });
 
   group('searchSettings', () {
@@ -107,7 +125,10 @@ void main() {
         index.firstWhere((e) => e.defKey == key);
 
     test('a visible setting lands on itself', () {
-      final anchor = resolveSearchAnchor(entryFor(kioskEnabled.key), (_) => true);
+      final anchor = resolveSearchAnchor(
+        entryFor(kioskEnabled.key),
+        (_) => true,
+      );
       expect(anchor, kioskEnabled.key);
     });
 

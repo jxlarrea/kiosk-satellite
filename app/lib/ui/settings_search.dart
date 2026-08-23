@@ -21,6 +21,7 @@ class SettingsSearchEntry {
     this.defKey,
     this.isPage = false,
     this.anchorId,
+    this.subpage,
   });
 
   /// The definitions category ('Home Assistant'), which is also the pane the
@@ -41,6 +42,12 @@ class SettingsSearchEntry {
   /// definition; null means the top of the pane. Definition-backed entries
   /// resolve their landing from [defKey] instead (see [resolveSearchAnchor]).
   final String? anchorId;
+
+  /// The second-level page this row is on, for hand-built rows that moved
+  /// onto one. Definition-backed entries take it from the definition
+  /// instead, and page entries leave it null: they land on the entry row,
+  /// which is on the page above.
+  final String? subpage;
 }
 
 /// Rows both UIs hand-build outside the definitions, so a search for
@@ -128,12 +135,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     title: 'Wake word engine',
     description: 'Where detection runs and which engine listens.',
     anchorId: 'x:vs_wake',
+    subpage: 'Wake Word',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Wake word sensitivity',
     description: 'How easily the wake word triggers.',
     anchorId: 'x:vs_wake',
+    subpage: 'Wake Word',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
@@ -141,24 +150,28 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     description:
         'Skip local wake word inference while the room is quiet, saving CPU.',
     anchorId: 'x:vs_wake',
+    subpage: 'Wake Word',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Stop word interruption',
     description: 'Say the stop word to interrupt responses.',
     anchorId: 'x:vs_wake',
+    subpage: 'Wake Word',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Wake word 1',
     description: 'The word that starts a voice command.',
     anchorId: 'x:vs_wake',
+    subpage: 'Wake Word',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Wake word 2',
     description: 'A second wake word, answered by Assist pipeline 2.',
     anchorId: 'x:vs_wake',
+    subpage: 'Wake Word',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
@@ -166,18 +179,21 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     description:
         'Re-download from Home Assistant. Use after re-publishing a model.',
     anchorId: 'x:vs_wake',
+    subpage: 'Wake Word',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Skin',
     description: 'The look of the voice assistant overlay.',
     anchorId: 'x:vs_appearance',
+    subpage: 'Appearance',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Theme mode',
     description: 'Light or dark rendering of the overlay.',
     anchorId: 'x:vs_appearance',
+    subpage: 'Appearance',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
@@ -185,6 +201,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     description:
         'The activity bar reacts to audio. NOT RECOMMENDED for low-power devices like the Echo Show.',
     anchorId: 'x:vs_appearance',
+    subpage: 'Appearance',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
@@ -193,12 +210,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
         'How often the activity bar redraws. Higher is smoother and uses '
         'more CPU.',
     anchorId: 'x:vs_appearance',
+    subpage: 'Appearance',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
     title: 'Text scale',
     description: 'The size of the overlay text.',
     anchorId: 'x:vs_appearance',
+    subpage: 'Appearance',
   ),
   SettingsSearchEntry(
     category: 'Voice Satellite',
@@ -278,6 +297,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     description:
         'The Bluetooth devices this kiosk hears, with names where known.',
     anchorId: 'x:btproxy_nearby',
+    subpage: 'Bluetooth Proxy',
   ),
   SettingsSearchEntry(
     category: 'ESPHome',
@@ -308,6 +328,22 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
         category: category,
         title: title,
         description: subtitle,
+        isPage: true,
+      ),
+    // The second-level pages, findable like the category pages above; a
+    // tapped result lands on the entry row that opens them.
+    for (final subpage in {
+      for (final def in allSettings)
+        if (!def.hidden &&
+            def.subpage != null &&
+            categories.contains(def.category))
+          (def.category, def.subpage!),
+    })
+      SettingsSearchEntry(
+        category: subpage.$1,
+        title: subpage.$2,
+        description: subpageHints[subpage.$2] ?? '',
+        anchorId: 'sub:${subpage.$2}',
         isPage: true,
       ),
     for (final def in allSettings)

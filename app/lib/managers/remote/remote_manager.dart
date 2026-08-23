@@ -262,7 +262,12 @@ class RemoteManager extends Manager {
       case ('GET', 'api/info'):
         return _info();
       case ('GET', 'api/settings'):
-        return _json(200, {'settings': _settings.describe()});
+        return _json(200, {
+          'settings': _settings.describe(),
+          // Named second-level pages, so the remote can label an entry
+          // row for a page that has no settings of its own.
+          'subpageHints': subpageHints,
+        });
       case ('PATCH', 'api/settings'):
         return _patchSettings(request);
       case ('GET', 'api/settings/export'):
@@ -290,10 +295,7 @@ class RemoteManager extends Manager {
           'adoptIdentity': flag('adoptIdentity'),
           'importLocalStorage': flag('importLocalStorage'),
         });
-        return _json(
-          imported.ok ? 200 : 400,
-          imported.toJson(),
-        );
+        return _json(imported.ok ? 200 : 400, imported.toJson());
       case ('GET', 'api/commands'):
         return _json(200, {
           'commands': [
@@ -319,11 +321,14 @@ class RemoteManager extends Manager {
         if (snapshot == null) {
           return _json(404, {'error': 'no snapshot has been taken yet'});
         }
-        return Response.ok(snapshot, headers: {
-          'Content-Type': 'image/jpeg',
-          'Cache-Control': 'no-store',
-          'X-Snapshot-At': _lastSnapshotAt!.toUtc().toIso8601String(),
-        });
+        return Response.ok(
+          snapshot,
+          headers: {
+            'Content-Type': 'image/jpeg',
+            'Cache-Control': 'no-store',
+            'X-Snapshot-At': _lastSnapshotAt!.toUtc().toIso8601String(),
+          },
+        );
       case ('GET', 'api/files/download'):
         return _fileDownload(request);
       case ('POST', 'api/files/upload'):
@@ -506,7 +511,9 @@ class RemoteManager extends Manager {
         await sink.close();
       }
     } on FileSystemException catch (e) {
-      return _json(500, {'error': 'write failed: ${e.osError?.message ?? e.message}'});
+      return _json(500, {
+        'error': 'write failed: ${e.osError?.message ?? e.message}',
+      });
     }
     log.info(name, 'uploaded ${file.path} (${await file.length()} bytes)');
     return _json(200, {'ok': true, 'size': await file.length()});

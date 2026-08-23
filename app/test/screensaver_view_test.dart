@@ -186,7 +186,7 @@ void main() {
       // Schema-driven surfaces (device, remote, search) all render from
       // the definition, so the gating is the feature's whole visibility.
       expect(defs.screensaverWebsiteDoubleTap.defaultValue, isFalse);
-      expect(defs.screensaverWebsiteDoubleTap.section, 'Website');
+      expect(defs.screensaverWebsiteDoubleTap.section, 'Website screensaver');
       expect(defs.screensaverWebsiteDoubleTap.dependsOn, 'screensaver.mode');
       expect(defs.screensaverWebsiteDoubleTap.dependsOnValue, 'website');
     });

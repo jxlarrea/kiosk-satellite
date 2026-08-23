@@ -16,6 +16,7 @@ class SettingDef<T> {
     required this.description,
     this.category = 'General',
     this.section,
+    this.subpage,
     this.options,
     this.secret = false,
     this.dependsOn,
@@ -44,6 +45,13 @@ class SettingDef<T> {
   /// e.g. the motion controls grouped under "Motion Detection" on the
   /// Screensaver page.
   final String? section;
+
+  /// An optional second-level page within [category], One UI style. Settings
+  /// sharing a subpage disappear from the category page, which shows a single
+  /// entry row in their place (titled with the subpage name, hinted by
+  /// [subpageHints]); tapping it opens a page of its own where the settings
+  /// render in their usual [section] cards. Both UIs honor it, like [section].
+  final String? subpage;
 
   /// Allowed values for [SettingType.select].
   final List<String>? options;
@@ -114,6 +122,48 @@ class SettingDef<T> {
   /// field through that covariant view throws at runtime.
   final Object Function(Object value)? normalizer;
 }
+
+/// The hint line each subpage's entry row shows on its parent page, keyed by
+/// [SettingDef.subpage] — a short list of what moved inside, so the row still
+/// says what it holds. Curated rather than generated from the titles, which
+/// read clumsily strung together. Served to the remote UI with the
+/// definitions.
+const Map<String, String> subpageHints = {
+  'User Interface': 'Kiosk mode, dashboard carousel, haptics, tap sounds',
+  'Theme': 'Match the app, or switch dark and light on a schedule',
+  'Dashboard View Rotation': 'Cycle through views, dwell time, fade',
+  'Return to home dashboard view': 'Go back to the home view when left idle',
+  'Hold mode': 'Pin the current view, automatic release, menu entry',
+  'Optimizations': 'Background connection, screensaver pause, update filter',
+  // Voice Satellite. Both pages are mostly live rows from the
+  // integration rather than settings, so the pages themselves are
+  // placed by the Voice Satellite page; only their names live here.
+  'Wake Word': 'Engine, wake words, sensitivity, cached models',
+  'Appearance': 'Overlay skin, theme, activity bar, text size',
+  // Screen & Audio.
+  'Microphone settings': 'Capture mode, channel, gain, live level',
+  // Screensaver. The four mode pages only exist while that mode is the
+  // one selected, since every setting on them gates on it.
+  'Clock screensaver': 'Style, size, colors, background photo',
+  'Local Media screensaver': 'Folder, timing, shuffle, transition',
+  'Photo Gallery screensaver': 'Photos, timing, shuffle, transition',
+  'Immich Media screensaver': 'Server, album, timing, caching, metadata',
+  'Widgets': 'Corner overlays and their scale',
+  'At a Glance': 'Entities shown over the screensaver',
+  'Motion Detection': 'Dismiss or postpone the screensaver on motion',
+  'Scheduled Screensavers':
+      'Switch to a different screensaver at set times of day.',
+  // ESPHome.
+  'Bluetooth Proxy': 'Relay nearby Bluetooth devices to Home Assistant',
+  // Kiosk.
+  'Allowed Actions': 'Which quick actions the kiosk menu offers',
+  // Device. Read-only reports the remote admin shows about the tablet;
+  // the device's own settings page has no equivalent.
+  'Remote Administration': 'Manage this kiosk from a browser on your network',
+  'Hardware': 'Model, Android version, addresses, memory, uptime',
+  'Home Assistant': 'Connection, version and what the kiosk shows',
+  'WebView': 'Engine version, renderer and user agent',
+};
 
 /// A Home Assistant *base* URL: scheme + host (+ port), nothing after.
 /// Dashboard paths belong to the dashboard picker, not here.
@@ -204,6 +254,7 @@ const disableSuspend = SettingDef<bool>(
       'screen goes off.',
   category: 'Home Assistant',
   section: 'Optimizations',
+  subpage: 'Optimizations',
 );
 
 /// Stops the dashboard WebView's rendering while the screensaver covers it,
@@ -227,6 +278,7 @@ const freezeOnScreensaver = SettingDef<bool>(
       'Dim screensaver.',
   category: 'Home Assistant',
   section: 'Optimizations',
+  subpage: 'Optimizations',
 );
 
 /// Filters the HA entity-update stream to just the current view's entities, so
@@ -245,6 +297,7 @@ const wsFilter = SettingDef<bool>(
       'stay unfiltered.',
   category: 'Home Assistant',
   section: 'Optimizations',
+  subpage: 'Optimizations',
 );
 
 const autoReloadOnError = SettingDef<bool>(
@@ -664,6 +717,7 @@ const kioskAllowDrawer = SettingDef<bool>(
       'limited to the actions selected below.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.enabled',
 );
 
@@ -675,6 +729,7 @@ const kioskAllowDashboard = SettingDef<bool>(
   description: 'Reload the start page.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -686,6 +741,7 @@ const kioskAllowCamera = SettingDef<bool>(
   description: 'Open the default camera view.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -697,6 +753,7 @@ const kioskAllowMusic = SettingDef<bool>(
   description: 'Open the Music Assistant web interface.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -708,6 +765,7 @@ const kioskAllowSendspinPlayer = SettingDef<bool>(
   description: 'Show or hide the floating Sendspin player.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -719,6 +777,7 @@ const kioskAllowScreensaver = SettingDef<bool>(
   description: 'Start the screensaver now.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -730,6 +789,7 @@ const kioskAllowHold = SettingDef<bool>(
   description: 'Turn hold mode on or off.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -741,6 +801,7 @@ const kioskAllowTheme = SettingDef<bool>(
   description: 'Switch between the light and dark themes.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -754,6 +815,7 @@ const kioskAllowApps = SettingDef<bool>(
       'app unpins the kiosk until it returns.',
   category: 'Kiosk',
   section: 'Allowed Actions',
+  subpage: 'Allowed Actions',
   dependsOn: 'kiosk.allow_drawer',
 );
 
@@ -1051,6 +1113,7 @@ const screensaverWidgets = SettingDef<String>(
   description: 'Small overlays in the corners of the screensaver.',
   category: 'Screensaver',
   section: 'Widgets',
+  subpage: 'Widgets',
 );
 
 // One knob for every widget rather than per-entry sizes: the corners all
@@ -1063,6 +1126,7 @@ const screensaverWidgetScale = SettingDef<num>(
   description: 'Scale all widgets to better fit your screen size.',
   category: 'Screensaver',
   section: 'Widgets',
+  subpage: 'Widgets',
   min: 50,
   max: 150,
   step: 5,
@@ -1182,7 +1246,7 @@ const screensaverBlackHideExtras = SettingDef<bool>(
       'Keeps the screen fully black: no small clock, At a Glance '
       'entities, or other overlays.',
   category: 'Screensaver',
-  section: 'Black',
+  section: 'Black screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'black',
 );
@@ -1201,7 +1265,8 @@ const screensaverClockStyle = SettingDef<String>(
   title: 'Style',
   description: 'How the clock is drawn.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   options: ['digital', 'flip', 'roller'],
   optionLabels: {
     'digital': 'Digital Clock',
@@ -1219,7 +1284,8 @@ const screensaverClock24h = SettingDef<bool>(
   title: '24-hour clock',
   description: 'Show a 24-hour time instead of AM/PM.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
 );
@@ -1231,7 +1297,8 @@ const screensaverClockSeconds = SettingDef<bool>(
   title: 'Show seconds',
   description: 'Include seconds in the clock.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'digital',
 );
@@ -1243,7 +1310,8 @@ const screensaverClockDate = SettingDef<bool>(
   title: 'Show date',
   description: 'Show the weekday and date under the clock.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'digital',
 );
@@ -1255,7 +1323,8 @@ const screensaverClockScale = SettingDef<num>(
   title: 'Clock size',
   description: 'Scale the clock from 50 to 300 percent for this screen.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
   min: 50,
@@ -1272,7 +1341,8 @@ const screensaverClockColor = SettingDef<String>(
   title: 'Clock color',
   description: 'The color of the clock text.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'digital',
 );
@@ -1287,7 +1357,8 @@ const screensaverClockBgColor = SettingDef<String>(
   title: 'Background color',
   description: 'The color behind the clock.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'digital',
 );
@@ -1305,7 +1376,8 @@ const screensaverClockBackground = SettingDef<String>(
   title: 'Background photo',
   description: 'Show a photo behind the clock instead of the solid color.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
   placeholder: 'Path to an image on the device',
@@ -1322,7 +1394,8 @@ const screensaverFlipDigitColor = SettingDef<String>(
   title: 'Digit color',
   description: 'The color of the flip digits.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'flip',
 );
@@ -1336,7 +1409,8 @@ const screensaverFlipBgColor = SettingDef<String>(
       'The color of the cards. The backdrop shades itself to '
       'match.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'flip',
 );
@@ -1348,7 +1422,8 @@ const screensaverRollerDigitColor = SettingDef<String>(
   title: 'Digit color',
   description: 'The color of the rolling digits.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'roller',
 );
@@ -1360,7 +1435,8 @@ const screensaverRollerBgColor = SettingDef<String>(
   title: 'Background color',
   description: 'The color behind the digits.',
   category: 'Screensaver',
-  section: 'Clock',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'roller',
 );
@@ -1378,7 +1454,7 @@ const screensaverMediaId = SettingDef<String>(
       'A Home Assistant media item, folder, or camera. Use Browse to '
       'pick one.',
   category: 'Screensaver',
-  section: 'Home Assistant Media',
+  section: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
 );
@@ -1393,7 +1469,7 @@ const screensaverMediaIsFolder = SettingDef<bool>(
   title: 'Media is a folder',
   description: '',
   category: 'Screensaver',
-  section: 'Home Assistant Media',
+  section: 'Home Assistant Media screensaver',
   hidden: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
@@ -1407,7 +1483,7 @@ const screensaverMediaInterval = SettingDef<num>(
   description:
       'How long each image shows before the next. Videos play in full.',
   category: 'Screensaver',
-  section: 'Home Assistant Media',
+  section: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -1418,7 +1494,7 @@ const screensaverMediaShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Play a folder in random order.',
   category: 'Screensaver',
-  section: 'Home Assistant Media',
+  section: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -1429,7 +1505,7 @@ const screensaverMediaRecursive = SettingDef<bool>(
   title: 'Include subfolders',
   description: 'Descend into subfolders when a folder is chosen.',
   category: 'Screensaver',
-  section: 'Home Assistant Media',
+  section: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -1464,7 +1540,7 @@ const screensaverMediaTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one item hands off to the next.',
   category: 'Screensaver',
-  section: 'Home Assistant Media',
+  section: 'Home Assistant Media screensaver',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.media_is_folder',
@@ -1479,7 +1555,7 @@ const screensaverWebsiteUrl = SettingDef<String>(
   title: 'Website URL',
   description: 'A page to show full-screen. It must allow being embedded.',
   category: 'Screensaver',
-  section: 'Website',
+  section: 'Website screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'website',
 );
@@ -1491,7 +1567,7 @@ const screensaverWebsiteDoubleTap = SettingDef<bool>(
   title: 'Double tap to dismiss',
   description: 'Single taps interact with the website instead of dismissing.',
   category: 'Screensaver',
-  section: 'Website',
+  section: 'Website screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'website',
 );
@@ -1516,7 +1592,8 @@ const screensaverGalleryItems = SettingDef<String>(
       'The photos and videos this screensaver cycles. Picked from the '
       'gallery on the device; picking again replaces the selection.',
   category: 'Screensaver',
-  section: 'Photo Gallery',
+  section: 'Photo Gallery screensaver',
+  subpage: 'Photo Gallery screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -1529,7 +1606,8 @@ const screensaverGalleryInterval = SettingDef<num>(
   description:
       'How long each photo shows before the next. Videos play in full.',
   category: 'Screensaver',
-  section: 'Photo Gallery',
+  section: 'Photo Gallery screensaver',
+  subpage: 'Photo Gallery screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -1541,7 +1619,8 @@ const screensaverGalleryShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Cycle the selection in random order.',
   category: 'Screensaver',
-  section: 'Photo Gallery',
+  section: 'Photo Gallery screensaver',
+  subpage: 'Photo Gallery screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -1553,7 +1632,8 @@ const screensaverGalleryTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one photo hands off to the next.',
   category: 'Screensaver',
-  section: 'Photo Gallery',
+  section: 'Photo Gallery screensaver',
+  subpage: 'Photo Gallery screensaver',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.mode',
@@ -1569,7 +1649,8 @@ const screensaverGalleryFill = SettingDef<bool>(
       'Enlarge photos that match the screen shape to cover it fully. '
       'Others keep their full frame.',
   category: 'Screensaver',
-  section: 'Photo Gallery',
+  section: 'Photo Gallery screensaver',
+  subpage: 'Photo Gallery screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -1586,7 +1667,8 @@ const screensaverLocalFolder = SettingDef<String>(
       'cycles through. Picked on the device; the path can also be typed '
       'here remotely.',
   category: 'Screensaver',
-  section: 'Local Media',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -1599,7 +1681,8 @@ const screensaverLocalInterval = SettingDef<num>(
   description:
       'How long each photo shows before the next. Videos play in full.',
   category: 'Screensaver',
-  section: 'Local Media',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -1611,7 +1694,8 @@ const screensaverLocalShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Cycle the folder in random order instead of by name.',
   category: 'Screensaver',
-  section: 'Local Media',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -1623,7 +1707,8 @@ const screensaverLocalRecursive = SettingDef<bool>(
   title: 'Include subfolders',
   description: 'Also cycle photos and videos inside subfolders.',
   category: 'Screensaver',
-  section: 'Local Media',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -1635,7 +1720,8 @@ const screensaverLocalTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one photo hands off to the next.',
   category: 'Screensaver',
-  section: 'Local Media',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.mode',
@@ -1651,7 +1737,8 @@ const screensaverLocalFill = SettingDef<bool>(
       'Enlarge photos that match the screen shape to cover it fully. '
       'Others keep their full frame.',
   category: 'Screensaver',
-  section: 'Local Media',
+  section: 'Local Media screensaver',
+  subpage: 'Local Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -1671,7 +1758,8 @@ const screensaverImmichUrl = SettingDef<String>(
   description: 'The address of your Immich server, with its port.',
   placeholder: 'http://immich.local:2283',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'immich',
 );
@@ -1683,7 +1771,8 @@ const screensaverImmichApiKey = SettingDef<String>(
   title: 'API key',
   description: 'Created in Immich under Account Settings → API Keys.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   secret: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'immich',
@@ -1699,7 +1788,8 @@ const screensaverImmichValidated = SettingDef<bool>(
   title: 'Connection validated',
   description: '',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   hidden: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'immich',
@@ -1714,7 +1804,8 @@ const screensaverImmichAlbum = SettingDef<String>(
   title: 'Media source',
   description: 'The whole library, or a single album.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1727,7 +1818,8 @@ const screensaverImmichPhotosOnly = SettingDef<bool>(
   title: 'Photos only',
   description: 'Skip videos in the slideshow.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1739,7 +1831,8 @@ const screensaverImmichAlbumName = SettingDef<String>(
   title: 'Album name',
   description: '',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   hidden: true,
   dependsOn: 'screensaver.immich_validated',
 );
@@ -1752,7 +1845,8 @@ const screensaverImmichInterval = SettingDef<num>(
   description:
       'How long each image shows before the next. Videos play in full.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1763,7 +1857,8 @@ const screensaverImmichShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Cycle the media in random order.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1774,7 +1869,8 @@ const screensaverImmichTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one item hands off to the next.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.immich_validated',
@@ -1789,7 +1885,8 @@ const screensaverImmichFill = SettingDef<bool>(
       'Enlarge photos that match the screen shape to cover it fully. '
       'Others keep their full frame.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1804,7 +1901,8 @@ const screensaverImmichPairPortrait = SettingDef<bool>(
   title: 'Pair portrait photos',
   description: 'Show two portrait photos side by side so they fill the screen.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1815,7 +1913,8 @@ const screensaverImmichCache = SettingDef<bool>(
   title: 'Cache media locally',
   description: 'Keep copies on the device so images load instantly.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1826,7 +1925,8 @@ const screensaverImmichCacheMax = SettingDef<num>(
   title: 'Cache size (items)',
   description: 'The oldest items are deleted once the cache is full.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_cache',
 );
 
@@ -1837,7 +1937,8 @@ const screensaverImmichMetadata = SettingDef<bool>(
   title: 'Show metadata',
   description: 'Album, date, camera and location over the media.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
@@ -1852,7 +1953,8 @@ const screensaverImmichMetadataAlbum = SettingDef<bool>(
   title: 'Album name',
   description: 'Show which album the photo comes from.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
 
@@ -1863,7 +1965,8 @@ const screensaverImmichMetadataDate = SettingDef<bool>(
   title: 'Date taken',
   description: 'Show when the photo was taken.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
 
@@ -1874,7 +1977,8 @@ const screensaverImmichMetadataCamera = SettingDef<bool>(
   title: 'Camera details',
   description: 'Show focal length, aperture and ISO.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
 
@@ -1885,7 +1989,8 @@ const screensaverImmichMetadataLocation = SettingDef<bool>(
   title: 'Location',
   description: 'Show the place the photo was taken.',
   category: 'Screensaver',
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
 
@@ -1900,7 +2005,8 @@ const screensaverImmichMetadataPosition = SettingDef<String>(
   category: 'Screensaver',
   options: cornerOptions,
   optionLabels: cornerLabels,
-  section: 'Immich Media',
+  section: 'Immich Media screensaver',
+  subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
 
@@ -1925,7 +2031,7 @@ const screensaverCameraView = SettingDef<String>(
   title: 'Camera view',
   description: 'Which camera view the screensaver shows.',
   category: 'Screensaver',
-  section: 'WebRTC Camera',
+  section: 'WebRTC Camera screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'camera',
 );
@@ -1947,7 +2053,7 @@ const screensaverDimLevel = SettingDef<num>(
   title: 'Dim level',
   description: 'Screen brightness while the screensaver is dimming.',
   category: 'Screensaver',
-  section: 'Dim',
+  section: 'Dim screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'dim',
   min: 0,
@@ -2034,6 +2140,7 @@ const screensaverGlanceEnabled = SettingDef<bool>(
       'screensavers.',
   category: 'Screensaver',
   section: 'At a Glance',
+  subpage: 'At a Glance',
 );
 
 // The chosen entities as a JSON list of {entity_id, name} plus optional
@@ -2050,6 +2157,7 @@ const screensaverGlanceEntities = SettingDef<String>(
       'name.',
   category: 'Screensaver',
   section: 'At a Glance',
+  subpage: 'At a Glance',
   dependsOn: 'screensaver.glance_enabled',
 );
 
@@ -2066,6 +2174,7 @@ const screensaverGlanceNowPlaying = SettingDef<bool>(
       'while lyrics are showing.',
   category: 'Screensaver',
   section: 'At a Glance',
+  subpage: 'At a Glance',
   dependsOn: 'screensaver.glance_enabled',
 );
 
@@ -2086,6 +2195,7 @@ const screensaverDismissOnMotion = SettingDef<bool>(
       'screensaver.',
   category: 'Screensaver',
   section: 'Motion Detection',
+  subpage: 'Motion Detection',
 );
 
 // Opt-in because it is the expensive direction (discussion #126): unlike
@@ -2103,6 +2213,7 @@ const screensaverPostponeOnMotion = SettingDef<bool>(
       'WARNING: Keeps the camera running permanently.',
   category: 'Screensaver',
   section: 'Motion Detection',
+  subpage: 'Motion Detection',
   dependsOn: 'screensaver.dismiss_on_motion',
 );
 
@@ -2117,6 +2228,7 @@ const motionCamera = SettingDef<String>(
   description: 'Which camera watches for motion.',
   category: 'Screensaver',
   section: 'Motion Detection',
+  subpage: 'Motion Detection',
   options: ['front', 'back'],
   optionLabels: {'front': 'Front', 'back': 'Back'},
   hidden: true,
@@ -2304,10 +2416,11 @@ const screensaverScheduleEnabled = SettingDef<bool>(
   key: 'screensaver.schedule_enabled',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Scheduled screensavers',
+  title: 'Enable scheduled screensavers',
   description: 'Switch to a different screensaver at set times of day.',
   category: 'Screensaver',
-  section: 'Schedule',
+  section: 'Scheduled Screensavers',
+  subpage: 'Scheduled Screensavers',
 );
 
 /// JSON list of `{"at": "HH:MM", "mode": "...", "brightness": 0..1}`
@@ -2322,7 +2435,8 @@ const screensaverSchedule = SettingDef<String>(
   title: 'Times',
   description: 'Each time switches the screensaver from then on.',
   category: 'Screensaver',
-  section: 'Schedule',
+  section: 'Scheduled Screensavers',
+  subpage: 'Scheduled Screensavers',
   dependsOn: 'screensaver.schedule_enabled',
 );
 
@@ -2350,6 +2464,7 @@ const micAudioSource = SettingDef<String>(
       'recorder app.',
   category: 'Screen & Audio',
   section: 'Microphone settings',
+  subpage: 'Microphone settings',
 );
 
 // Hidden: rendered as a hand-built dropdown (device settings screen and the
@@ -2371,6 +2486,7 @@ const micChannel = SettingDef<num>(
       'recognition; picking it can improve detection.',
   category: 'Screen & Audio',
   section: 'Microphone settings',
+  subpage: 'Microphone settings',
   hidden: true,
 );
 
@@ -2385,6 +2501,7 @@ const micAgc = SettingDef<bool>(
       'all.',
   category: 'Screen & Audio',
   section: 'Microphone settings',
+  subpage: 'Microphone settings',
 );
 
 const micGainDb = SettingDef<num>(
@@ -2402,6 +2519,7 @@ const micGainDb = SettingDef<num>(
       'speech and hurts detection.',
   category: 'Screen & Audio',
   section: 'Microphone settings',
+  subpage: 'Microphone settings',
   // Hidden while Android is doing the levelling: a fixed gain under an
   // adaptive one is two controls fighting over the same number.
   dependsOn: 'audio.mic_agc',
@@ -2442,6 +2560,7 @@ const wakeWordPreferFp32 = SettingDef<bool>(
       'Uses fp32 models instead of smaller int8 versions. Adds 10-30% '
       'more CPU usage while listening to avoid about 2% confidence drift.',
   category: 'Voice Satellite',
+  subpage: 'Wake Word',
   dependsOn: 'wake_word.enabled',
 );
 
@@ -2469,6 +2588,7 @@ const wakeWordResumeTimeoutSeconds = SettingDef<num>(
       'Self-heal: resume listening if the page never calls '
       'setWakeWordActive(true) after a handoff.',
   category: 'Voice Satellite',
+  subpage: 'Wake Word',
   dependsOn: 'wake_word.enabled',
 );
 
@@ -2583,6 +2703,7 @@ const haKioskMode = SettingDef<bool>(
       'Hide the Home Assistant header and sidebar. Applies immediately.',
   category: 'Home Assistant',
   section: 'User Interface',
+  subpage: 'User Interface',
 );
 
 // What kiosk mode actually hides. Both default on (the classic full
@@ -2598,6 +2719,7 @@ const haKioskHideHeader = SettingDef<bool>(
       'on. Leave off if you switch views from the header.',
   category: 'Home Assistant',
   section: 'User Interface',
+  subpage: 'User Interface',
 );
 
 const haKioskHideSidebar = SettingDef<bool>(
@@ -2608,6 +2730,7 @@ const haKioskHideSidebar = SettingDef<bool>(
   description: 'Hide the navigation sidebar while HA kiosk mode is on.',
   category: 'Home Assistant',
   section: 'User Interface',
+  subpage: 'User Interface',
 );
 
 /// Swipe navigation between the current dashboard's views (in-page script,
@@ -2625,6 +2748,7 @@ const haDashboardCarousel = SettingDef<bool>(
       'Swipes on sliders, maps and scrolling cards are left alone.',
   category: 'Home Assistant',
   section: 'User Interface',
+  subpage: 'User Interface',
 );
 
 /// Carousel priority over gesture-handling cards (#238). By default a
@@ -2648,6 +2772,7 @@ const haCarouselOverCards = SettingDef<bool>(
       'to swipes. Sliders still work normally.',
   category: 'Home Assistant',
   section: 'User Interface',
+  subpage: 'User Interface',
   dependsOn: 'ha.dashboard_carousel',
 );
 
@@ -2668,6 +2793,7 @@ const haHaptics = SettingDef<bool>(
       'dials are used. Requires a vibration motor.',
   category: 'Home Assistant',
   section: 'Haptics',
+  subpage: 'User Interface',
 );
 
 /// How hard the buzz hits. Read Dart-side per tap (never seeded into the
@@ -2682,6 +2808,7 @@ const haHapticsStrength = SettingDef<String>(
   description: 'How strong the vibration feels.',
   category: 'Home Assistant',
   section: 'Haptics',
+  subpage: 'User Interface',
   options: ['light', 'medium', 'strong'],
   optionLabels: {'light': 'Light', 'medium': 'Medium', 'strong': 'Strong'},
   dependsOn: 'ha.haptics',
@@ -2704,6 +2831,7 @@ const haTapSound = SettingDef<bool>(
       'and thermostat dials are used.',
   category: 'Home Assistant',
   section: 'Haptics',
+  subpage: 'User Interface',
 );
 
 /// Gain applied to the click, read Dart-side per event like the
@@ -2727,6 +2855,7 @@ const haTapSoundVolume = SettingDef<num>(
   description: 'How loud the tap sound plays.',
   category: 'Home Assistant',
   section: 'Haptics',
+  subpage: 'User Interface',
   dependsOn: 'ha.tap_sound',
 );
 
@@ -2747,6 +2876,7 @@ const themeMatchApp = SettingDef<bool>(
       'Satellite interface.',
   category: 'Home Assistant',
   section: 'Theme',
+  subpage: 'Theme',
 );
 
 const themeAuto = SettingDef<bool>(
@@ -2759,6 +2889,7 @@ const themeAuto = SettingDef<bool>(
       'Keeps whatever theme is selected, flipping only its light/dark variant.',
   category: 'Home Assistant',
   section: 'Theme',
+  subpage: 'Theme',
 );
 
 const themeDarkAt = SettingDef<String>(
@@ -2769,6 +2900,7 @@ const themeDarkAt = SettingDef<String>(
   description: 'Local time to switch to the dark theme.',
   category: 'Home Assistant',
   section: 'Theme',
+  subpage: 'Theme',
   dependsOn: 'ha.theme_auto',
 );
 
@@ -2780,6 +2912,7 @@ const themeLightAt = SettingDef<String>(
   description: 'Local time to switch back to the light theme.',
   category: 'Home Assistant',
   section: 'Theme',
+  subpage: 'Theme',
   dependsOn: 'ha.theme_auto',
 );
 
@@ -2793,6 +2926,7 @@ const themeAutoApp = SettingDef<bool>(
       'the scheduled Home Assistant change.',
   category: 'Home Assistant',
   section: 'Theme',
+  subpage: 'Theme',
   dependsOn: 'ha.theme_auto',
 );
 
@@ -2812,6 +2946,7 @@ const haRotationEnabled = SettingDef<bool>(
       'showing each one for the chosen number of seconds.',
   category: 'Home Assistant',
   section: 'Dashboard View Rotation',
+  subpage: 'Dashboard View Rotation',
 );
 
 /// JSON array of navigation paths ("url_path/view-route"), in rotation
@@ -2823,6 +2958,7 @@ const haRotationDashboards = SettingDef<String>(
   title: 'Views to rotate',
   description: 'The dashboard views included in the rotation.',
   category: 'Home Assistant',
+  subpage: 'Dashboard View Rotation',
   hidden: true,
 );
 
@@ -2836,6 +2972,7 @@ const haRotationUrls = SettingDef<String>(
   title: 'Rotation external pages',
   description: 'External pages included in the dashboard view rotation.',
   category: 'Home Assistant',
+  subpage: 'Dashboard View Rotation',
   hidden: true,
 );
 
@@ -2847,6 +2984,7 @@ const haRotationSeconds = SettingDef<num>(
   description: 'How long each view stays on screen.',
   category: 'Home Assistant',
   section: 'Dashboard View Rotation',
+  subpage: 'Dashboard View Rotation',
   dependsOn: 'ha.rotation_enabled',
 );
 
@@ -2861,6 +2999,7 @@ const haRotationPauseSeconds = SettingDef<num>(
       'they end. 0 keeps rotating through touches.',
   category: 'Home Assistant',
   section: 'Dashboard View Rotation',
+  subpage: 'Dashboard View Rotation',
   dependsOn: 'ha.rotation_enabled',
 );
 
@@ -2881,6 +3020,7 @@ const haRotationCrossfade = SettingDef<bool>(
       'external page still switches instantly.',
   category: 'Home Assistant',
   section: 'Dashboard View Rotation',
+  subpage: 'Dashboard View Rotation',
   dependsOn: 'ha.rotation_enabled',
 );
 
@@ -2901,6 +3041,7 @@ const haReturnHomeEnabled = SettingDef<bool>(
       'inactivity.',
   category: 'Home Assistant',
   section: 'Return to home dashboard view',
+  subpage: 'Return to home dashboard view',
 );
 
 const haReturnHomeSeconds = SettingDef<num>(
@@ -2912,6 +3053,7 @@ const haReturnHomeSeconds = SettingDef<num>(
   description: 'Inactivity period before the kiosk goes back.',
   category: 'Home Assistant',
   section: 'Return to home dashboard view',
+  subpage: 'Return to home dashboard view',
   dependsOn: 'ha.return_home_enabled',
 );
 
@@ -2931,6 +3073,7 @@ const haHoldMode = SettingDef<bool>(
       'rotation and the return to home timer are paused until turned off.',
   category: 'Home Assistant',
   section: 'Hold mode',
+  subpage: 'Hold mode',
 );
 
 /// The forgotten-hold guard: a kiosk left on hold overnight never sleeps
@@ -2949,6 +3092,7 @@ const haHoldReleaseMinutes = SettingDef<num>(
       'until turned off manually.',
   category: 'Home Assistant',
   section: 'Hold mode',
+  subpage: 'Hold mode',
 );
 
 /// The on-device way in, opt-in like the Sendspin player's menu entry
@@ -2963,6 +3107,7 @@ const haHoldMenu = SettingDef<bool>(
   description: 'Adds a menu entry that turns hold mode on and off.',
   category: 'Home Assistant',
   section: 'Hold mode',
+  subpage: 'Hold mode',
 );
 
 // ── MQTT ───────────────────────────────────────────────────────────────
@@ -3721,6 +3866,7 @@ const btproxyEnabled = SettingDef<bool>(
   description: 'Relay nearby Bluetooth devices to Home Assistant.',
   category: 'ESPHome',
   section: 'Bluetooth Proxy',
+  subpage: 'Bluetooth Proxy',
   dependsOn: 'esphome.enabled',
 );
 
@@ -3733,6 +3879,7 @@ const btproxyConnections = SettingDef<bool>(
       'Home Assistant can connect to Bluetooth devices through this proxy.',
   category: 'ESPHome',
   section: 'Bluetooth Proxy',
+  subpage: 'Bluetooth Proxy',
   dependsOn: 'btproxy.enabled',
 );
 
@@ -3770,6 +3917,7 @@ const btproxyMacLookup = SettingDef<bool>(
       'once per manufacturer; nothing else leaves the device.',
   category: 'ESPHome',
   section: 'Nearby devices',
+  subpage: 'Bluetooth Proxy',
   dependsOn: 'btproxy.enabled',
 );
 
@@ -3781,6 +3929,7 @@ const btproxyNearbySort = SettingDef<String>(
   description: 'The order of the nearby devices list below.',
   category: 'ESPHome',
   section: 'Nearby devices',
+  subpage: 'Bluetooth Proxy',
   options: ['last_seen', 'name', 'mac', 'rssi'],
   optionLabels: {
     'last_seen': 'Last seen',
@@ -3820,6 +3969,7 @@ const btproxyMinConnectRssi = SettingDef<String>(
       'proxy takes them instead.',
   category: 'ESPHome',
   section: 'Bluetooth Proxy',
+  subpage: 'Bluetooth Proxy',
   options: ['', '-70', '-80', '-85', '-90'],
   optionLabels: {
     '': 'No limit',
@@ -3841,6 +3991,7 @@ const remoteEnabled = SettingDef<bool>(
   description: 'Run the embedded admin web server.',
   category: 'Device',
   section: 'Remote Administration',
+  subpage: 'Remote Administration',
 );
 
 const remotePort = SettingDef<num>(
@@ -3851,6 +4002,7 @@ const remotePort = SettingDef<num>(
   description: 'Port for the remote admin interface.',
   category: 'Device',
   section: 'Remote Administration',
+  subpage: 'Remote Administration',
 );
 
 const remotePassword = SettingDef<String>(
@@ -3861,6 +4013,7 @@ const remotePassword = SettingDef<String>(
   description: 'Required to log in to the remote interface.',
   category: 'Device',
   section: 'Remote Administration',
+  subpage: 'Remote Administration',
   secret: true,
 );
 
@@ -4097,9 +4250,6 @@ const List<SettingDef<Object>> allSettings = [
   themeDarkAt,
   themeLightAt,
   themeAutoApp,
-  disableSuspend,
-  freezeOnScreensaver,
-  wsFilter,
   haRotationEnabled,
   haRotationDashboards,
   haRotationUrls,
@@ -4111,6 +4261,9 @@ const List<SettingDef<Object>> allSettings = [
   haHoldMode,
   haHoldReleaseMinutes,
   haHoldMenu,
+  disableSuspend,
+  freezeOnScreensaver,
+  wsFilter,
   mqttEnabled,
   mqttHost,
   mqttPort,

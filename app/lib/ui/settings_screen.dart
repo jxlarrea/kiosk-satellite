@@ -56,6 +56,10 @@ List<Widget> _sectionedCards(
   // the generic tile (the motion switch shown disabled while the Camera
   // section's master switch is off).
   Map<String, Widget> replace = const {},
+  // The second-level page being rendered, if any. Definitions declaring a
+  // *different* subpage collapse into one entry card here (the row that
+  // opens their page); definitions declaring *this* subpage render normally.
+  String? subpage,
 }) {
   final settings = container.settings;
   final visible = [
@@ -64,34 +68,51 @@ List<Widget> _sectionedCards(
   ];
   final out = <Widget>[];
   String? current;
-  var buffer = <SettingDef<Object>>[];
+  // Whether the last thing emitted was a page entry. Each one is a
+  // destination of its own, so it gets its own card: stacking unrelated
+  // destinations in one card reads as a group of related settings.
+  var entryRun = false;
+  var buffer = <Widget>[];
   void flush() {
     if (buffer.isEmpty) return;
-    out.add(
-      SettingsCard(
-        children: [
-          for (final def in buffer) ...[
-            replace[def.key] ??
-                SettingTile(
-                  container: container,
-                  def: def,
-                  onChanged: onChanged,
-                ),
-            if (after[def.key] != null) after[def.key]!,
-          ],
-        ],
-      ),
-    );
+    out.add(SettingsCard(children: buffer));
     buffer = [];
   }
 
+  final subpagesEmitted = <String>{};
   for (final def in visible) {
-    if (def.section != current) {
-      flush();
-      current = def.section;
-      if (current != null) out.add(SectionHeading(current));
+    if (def.subpage != subpage) {
+      // Lives on a second-level page: the first def of each subpage puts
+      // the entry row where the group used to sit; the rest add nothing.
+      if (def.subpage != null && subpagesEmitted.add(def.subpage!)) {
+        flush();
+        current = null;
+        entryRun = true;
+        buffer.add(
+          _SubpageEntryTile(
+            container: container,
+            category: def.category,
+            subpage: def.subpage!,
+          ),
+        );
+      }
+      continue;
     }
-    buffer.add(def);
+    if (entryRun || def.section != current) {
+      flush();
+      entryRun = false;
+      current = def.section;
+      // A page whose only group repeats its own title says it twice; the
+      // bar already carries the name, so the heading goes.
+      if (current != null && !(out.isEmpty && current == subpage)) {
+        out.add(SectionHeading(current));
+      }
+    }
+    buffer.add(
+      replace[def.key] ??
+          SettingTile(container: container, def: def, onChanged: onChanged),
+    );
+    if (after[def.key] != null) buffer.add(after[def.key]!);
   }
   flush();
   return out;
@@ -264,6 +285,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _landing;
   int _landingEpoch = 0;
 
+  /// The open second-level page, wide screens only. Narrow screens push
+  /// [SubpageSettingsScreen] on top of the category page instead; here the
+  /// rail must stay put, so the subpage takes over the right pane with a
+  /// back arrow of its own — One UI's tablet behavior.
+  String? _subpage;
+
   late final List<SettingsSearchEntry> _searchIndex = buildSettingsSearchIndex([
     for (final (category, title, _, subtitle) in _categories)
       (category, title, subtitle),
@@ -285,27 +312,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
       entry,
       widget.container.settings.visible,
     );
+    // A row that moved onto a second-level page has no target on the
+    // category pane; open its subpage on top and land there instead. A
+    // hand-built row carries its own page, since no definition speaks for it.
+    final subpage =
+        entry.subpage ??
+        (anchor == null
+            ? null
+            : allSettings.where((d) => d.key == anchor).firstOrNull?.subpage);
+    final (category, title, _, _) = _categories[index];
     final wide = MediaQuery.sizeOf(context).width >= 720;
     if (wide) {
+      // The right pane goes straight to the subpage, so the landing target
+      // is on screen either way.
       setState(() {
         _selected = index;
         _showResults = false;
+        _subpage = subpage;
         _landing = anchor;
         _landingEpoch++;
       });
     } else {
       // The results stay behind the pushed pane, so Back returns to them.
-      final (category, title, _, _) = _categories[index];
       Navigator.of(context).push(
         MaterialPageRoute<void>(
           builder: (_) => CategorySettingsScreen(
             container: widget.container,
             title: title,
             category: category,
-            landingAnchor: anchor,
+            landingAnchor: subpage == null ? anchor : null,
           ),
         ),
       );
+      if (subpage != null) {
+        // The subpage rides on top of its category page, so Back unwinds to
+        // the pane the entry row lives on, then to the results.
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => SubpageSettingsScreen(
+              container: widget.container,
+              category: category,
+              subpage: subpage,
+              landingAnchor: anchor,
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -480,112 +532,176 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final railWidth = (width * 0.4).clamp(320.0, 430.0);
     final (category, title, icon, _) = _categories[_selected];
-    return Scaffold(
-      body: SafeArea(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              width: railWidth,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(28, 20, 12, 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Settings',
-                            style: theme.textTheme.headlineMedium?.copyWith(
-                              fontFamily: Ks.displayFont,
-                              fontWeight: FontWeight.w600,
+    return PopScope(
+      // An open second-level page is what Back closes first; only once the
+      // right pane is back on the category does Back leave Settings.
+      canPop: _subpage == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _subpage = null);
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: railWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 20, 12, 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Settings',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontFamily: Ks.displayFont,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          tooltip: 'Close',
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _searchField(
-                    context,
-                    padding: const EdgeInsets.fromLTRB(24, 0, 16, 10),
-                  ),
-                  Expanded(
-                    child: EdgeFade(
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
-                        children: [
-                          for (final (index, (_, title, icon, subtitle))
-                              in _categories.indexed)
-                            _railTile(context, index, title, icon, subtitle),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            tooltip: 'Close',
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: _showResults
-                  ? _resultsPane(context, wide: true)
-                  : SearchLandingScope(
-                      target: _landing,
-                      epoch: _landingEpoch,
+                    _searchField(
+                      context,
+                      padding: const EdgeInsets.fromLTRB(24, 0, 16, 10),
+                    ),
+                    Expanded(
                       child: EdgeFade(
                         child: ListView(
-                          key: PageStorageKey('settings-pane-$category'),
-                          padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
+                          padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(4, 0, 0, 18),
-                              child: Row(
-                                children: [
-                                  // The rail's icon again — bare glyph, no
-                                  // disc: the title row is a label, not a
-                                  // button.
-                                  if (icon is IconData)
-                                    Icon(icon, size: 26)
-                                  else
-                                    SvgPicture.asset(
-                                      icon as String,
-                                      width: 24,
-                                      height: 24,
-                                      colorFilter: ColorFilter.mode(
-                                        theme.colorScheme.onSurface,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    title,
-                                    style: theme.textTheme.headlineSmall
-                                        ?.copyWith(
-                                          fontFamily: Ks.displayFont,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            _CategoryContent(
-                              key: ValueKey(category),
-                              container: widget.container,
-                              category: category,
-                            ),
+                            for (final (index, (_, title, icon, subtitle))
+                                in _categories.indexed)
+                              _railTile(context, index, title, icon, subtitle),
                           ],
                         ),
                       ),
                     ),
-            ),
-          ],
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _showResults
+                    ? _resultsPane(context, wide: true)
+                    : SearchLandingScope(
+                        target: _landing,
+                        epoch: _landingEpoch,
+                        // Opening a subpage must not push over the rail: the
+                        // right pane is the level that changes, exactly as it
+                        // does when the rail picks a different category.
+                        child: _SubpageNav(
+                          open: _openSubpage,
+                          child: _subpage == null
+                              ? _widePane(
+                                  context,
+                                  storageKey: 'settings-pane-$category',
+                                  title: title,
+                                  icon: icon,
+                                  child: _CategoryContent(
+                                    key: ValueKey(category),
+                                    container: widget.container,
+                                    category: category,
+                                  ),
+                                )
+                              : _widePane(
+                                  context,
+                                  storageKey:
+                                      'settings-sub-$category-$_subpage',
+                                  title: _subpage!,
+                                  onBack: () => setState(() => _subpage = null),
+                                  child: _CategoryContent(
+                                    key: ValueKey('$category/$_subpage'),
+                                    container: widget.container,
+                                    category: category,
+                                    subpage: _subpage!,
+                                  ),
+                                ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// The right pane's scaffolding: the title row, then the content. A
+  /// [onBack] makes it a second level — the title takes the back arrow the
+  /// pushed pages get from their AppBar, since this pane has no bar.
+  Widget _widePane(
+    BuildContext context, {
+    required String storageKey,
+    required String title,
+    required Widget child,
+    Object? icon,
+    VoidCallback? onBack,
+  }) {
+    final theme = Theme.of(context);
+    return EdgeFade(
+      child: ListView(
+        key: PageStorageKey(storageKey),
+        padding: const EdgeInsets.fromLTRB(8, 24, 28, 24),
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(onBack == null ? 4 : 0, 0, 0, 18),
+            child: Row(
+              children: [
+                if (onBack != null) ...[
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    tooltip: 'Back',
+                    onPressed: onBack,
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                // The rail's icon again — bare glyph, no disc: the title row
+                // is a label, not a button.
+                if (icon is IconData)
+                  Icon(icon, size: 26)
+                else if (icon is String)
+                  SvgPicture.asset(
+                    icon,
+                    width: 24,
+                    height: 24,
+                    colorFilter: ColorFilter.mode(
+                      theme.colorScheme.onSurface,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                if (icon != null) const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontFamily: Ks.displayFont,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          child,
+        ],
+      ),
+    );
+  }
+
+  void _openSubpage(String category, String subpage) {
+    setState(() {
+      _subpage = subpage;
+      _landing = null;
+    });
   }
 
   /// One rail row, One UI style: icon disc, semibold title, muted one-line
@@ -608,11 +724,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(Ks.radiusCard),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          // Picking a category leaves the results and disarms the last
-          // landing — a stale target must not flash on a later visit.
+          // Picking a category leaves the results, closes any open
+          // second-level page and disarms the last landing — a stale target
+          // must not flash on a later visit.
           onTap: () => setState(() {
             _selected = index;
             _showResults = false;
+            _subpage = null;
             _landing = null;
           }),
           child: Padding(
@@ -782,6 +900,125 @@ class CategorySettingsScreen extends StatelessWidget {
   }
 }
 
+/// How a subpage entry row opens its page where there is no route to push:
+/// the wide split view swaps its right pane instead, so the rail stays put.
+/// Absent (the narrow pushed pages), the entry row pushes a route.
+class _SubpageNav extends InheritedWidget {
+  const _SubpageNav({required this.open, required super.child});
+
+  final void Function(String category, String subpage) open;
+
+  static _SubpageNav? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_SubpageNav>();
+
+  @override
+  bool updateShouldNotify(_SubpageNav oldWidget) => false;
+}
+
+/// A page entry on a card of its own, for the pages a screen places by hand
+/// because the definitions do not describe their rows (live entity controls,
+/// live hardware). [_sectionedCards] builds the same row for the pages it
+/// collapses out of the definitions itself.
+Widget _subpageEntryCard(
+  AppContainer container,
+  String category,
+  String subpage,
+) => SettingsCard(
+  children: [
+    _SubpageEntryTile(
+      container: container,
+      category: category,
+      subpage: subpage,
+    ),
+  ],
+);
+
+/// The One UI second-level entry: one row standing in for every setting that
+/// declares this subpage, with a hint listing what moved inside. Tapping
+/// opens the page; Back (arrow or gesture) returns to this row.
+class _SubpageEntryTile extends StatelessWidget {
+  const _SubpageEntryTile({
+    required this.container,
+    required this.category,
+    required this.subpage,
+  });
+
+  final AppContainer container;
+  final String category;
+  final String subpage;
+
+  @override
+  Widget build(BuildContext context) {
+    final hint = subpageHints[subpage];
+    final nav = _SubpageNav.maybeOf(context);
+    return SearchLandingTarget(
+      id: 'sub:$subpage',
+      child: ListTile(
+        title: Text(subpage),
+        subtitle: hint == null ? null : Text(hint),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => nav == null
+            ? Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => SubpageSettingsScreen(
+                    container: container,
+                    category: category,
+                    subpage: subpage,
+                  ),
+                ),
+              )
+            : nav.open(category, subpage),
+      ),
+    );
+  }
+}
+
+/// A second-level settings page as a pushed route (narrow screens only —
+/// wide screens show the same content in the split view's right pane). The
+/// bar carries the entry row's title and the implicit back arrow; the system
+/// back gesture pops the same route.
+class SubpageSettingsScreen extends StatelessWidget {
+  const SubpageSettingsScreen({
+    super.key,
+    required this.container,
+    required this.category,
+    required this.subpage,
+    this.landingAnchor,
+  });
+
+  final AppContainer container;
+  final String category;
+  final String subpage;
+
+  /// The row a search result lands on, like [CategorySettingsScreen]'s.
+  final String? landingAnchor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(subpage)),
+      body: constrainedColumn(
+        SearchLandingScope(
+          target: landingAnchor,
+          epoch: 1,
+          child: EdgeFade(
+            child: ListView(
+              padding: Ks.pagePadding,
+              children: [
+                _CategoryContent(
+                  container: container,
+                  category: category,
+                  subpage: subpage,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// One category's settings content — the cards only, no scaffolding — shared
 /// by the split view's right pane and the narrow-screen category page.
 ///
@@ -793,10 +1030,16 @@ class _CategoryContent extends StatefulWidget {
     super.key,
     required this.container,
     required this.category,
+    this.subpage,
   });
 
   final AppContainer container;
   final String category;
+
+  /// Set to render one of the category's second-level pages instead of the
+  /// category page itself. The same widget either way, so a subpage keeps
+  /// the hand-built cards and live state its category's page owns.
+  final String? subpage;
 
   @override
   State<_CategoryContent> createState() => _CategoryContentState();
@@ -823,56 +1066,20 @@ class _CategoryContentState extends State<_CategoryContent> {
     ];
   }
 
-  List<Widget> _withBtProxyPermissions(List<Widget> cards) {
-    if (widget.category != 'ESPHome') return cards;
-    const permissions = <Widget>[
-      SectionHeading('Required system permissions'),
-      SearchLandingTarget(
-        id: 'x:btproxy_permissions',
-        child: SettingsCard(children: [_BtProxyPermissionsTile()]),
-      ),
-    ];
-    // A dead server right where its switch is: without this the page
-    // renders identically whether the server runs or not (issue #240).
-    final startError = <Widget>[
-      if (_espStartError != null &&
-          widget.container.settings.get(esphomeEnabled))
-        WarnRow('The ESPHome server failed to start: $_espStartError'),
-    ];
-    // Everything from the "Bluetooth Proxy" section heading down is the
-    // Bluetooth side of the page; before it sits the general ESPHome card.
-    final split = cards.indexWhere(
-      (w) => w is SectionHeading && w.text == 'Bluetooth Proxy',
-    );
-    if (split < 0) {
-      // No Bluetooth section (ESPHome or the proxy disabled): only the
-      // general rows render, but a failed start still says so.
-      return cards.isEmpty
-          ? cards
-          : [cards.first, ...startError, ...cards.skip(1)];
+  /// A dead server right where its switch is: without this the page renders
+  /// identically whether the server runs or not (issue #240). The Bluetooth
+  /// half of this category lives on a page of its own, taking its permissions
+  /// group and its adapter notice with it (see [_subpageCards]).
+  List<Widget> _withEsphomeStartError(List<Widget> cards) {
+    if (widget.category != 'ESPHome' || cards.isEmpty) return cards;
+    if (_espStartError == null ||
+        !widget.container.settings.get(esphomeEnabled)) {
+      return cards;
     }
-    final general = <Widget>[...cards.sublist(0, split), ...startError];
-    // The permissions group lands under the Bluetooth Proxy section's card:
-    // heading, card, grant, then the Nearby devices section.
-    final nearby = cards.indexWhere(
-      (w) => w is SectionHeading && w.text == 'Nearby devices',
-      split,
-    );
-    final bluetooth = <Widget>[
-      ...cards.sublist(split, nearby < 0 ? cards.length : nearby),
-      ...permissions,
-      if (nearby >= 0) ...cards.sublist(nearby),
-    ];
-    if (_btAdapterOn != false) return [...general, ...bluetooth];
-    // The adapter is off: the Bluetooth half of the page can do nothing,
-    // so say so above it and render it inert. The poll in initState lifts
-    // this the moment Bluetooth comes back.
     return [
-      ...general,
-      const WarnRow('Bluetooth is off. Turn it on to use the proxy.'),
-      AbsorbPointer(
-        child: Opacity(opacity: 0.45, child: Column(children: bluetooth)),
-      ),
+      cards.first,
+      WarnRow('The ESPHome server failed to start: $_espStartError'),
+      ...cards.skip(1),
     ];
   }
 
@@ -1456,6 +1663,13 @@ class _CategoryContentState extends State<_CategoryContent> {
   @override
   Widget build(BuildContext context) {
     final container = widget.container;
+    final subpage = widget.subpage;
+    if (subpage != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: _subpageCards(container, subpage),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1533,39 +1747,13 @@ class _CategoryContentState extends State<_CategoryContent> {
               ),
             ],
           ),
-          // Capture tuning. Its own group because none of it is a
-          // preference: it is there for devices whose audio stack
-          // misbehaves, and every default is what the app has always done.
-          const SectionHeading('Microphone settings'),
-          const GroupNote(_micGroupNote),
-          SettingsCard(
-            children: [
-              for (final def in _defsFor('Screen & Audio'))
-                if (def.section == 'Microphone settings' &&
-                    container.settings.visible(def))
-                  SettingTile(
-                    container: container,
-                    def: def,
-                    onChanged: () => setState(() {}),
-                  ),
-              // The capture channel of a multichannel microphone. Hand-built
-              // (its options run to the selected mic's channel count) and
-              // only with detection on, like the mic picker above.
-              if (container.settings.get(wakeWordEnabled))
-                SearchLandingTarget(
-                  id: micChannel.key,
-                  child: MicChannelTile(container: container),
-                ),
-              // Live capture level under the gain it verifies. Only with
-              // detection on: it reads the engine's telemetry, and with
-              // detection off this app never opens the microphone.
-              if (container.settings.get(wakeWordEnabled))
-                MicLevelTile(container: container),
-            ],
-          ),
+          // Capture tuning is a page of its own: none of it is a preference,
+          // it is there for devices whose audio stack misbehaves, and every
+          // default is what the app has always done.
+          _subpageEntryCard(container, 'Screen & Audio', 'Microphone settings'),
         ] else
           ..._withMqttDeprecation(
-            _withBtProxyPermissions(
+            _withEsphomeStartError(
               _sectionedCards(
                 container,
                 // With the Camera master switch off (or no camera on the
@@ -1579,166 +1767,22 @@ class _CategoryContentState extends State<_CategoryContent> {
                     ? const [cameraEnabled]
                     : _defsFor(widget.category),
                 () => setState(() {}),
-                replace: {
-                  if (widget.category == 'Screensaver' &&
-                      !container.deviceCamera.effectiveEnabled)
-                    screensaverDismissOnMotion.key: SearchLandingTarget(
-                      id: screensaverDismissOnMotion.key,
-                      child: const SwitchListTile(
-                        title: Text('Dismiss on motion'),
-                        subtitle: Text(
-                          'Requires the camera. Turn it on in the Camera '
-                          'settings first.',
-                        ),
-                        value: false,
-                        onChanged: null,
-                      ),
-                    ),
-                  if (widget.category == 'Camera' &&
-                      container.deviceCamera.cameraKnownAbsent)
-                    cameraEnabled.key: SearchLandingTarget(
-                      id: cameraEnabled.key,
-                      child: SwitchListTile(
-                        title: Text(cameraEnabled.title),
-                        subtitle: Text(cameraEnabled.description),
-                        value: false,
-                        onChanged: null,
-                      ),
-                    ),
-                  // One camera means no front/back choice to offer (the
-                  // capture falls back to the camera present regardless of
-                  // the stored value).
-                  if (widget.category == 'Camera' &&
-                      container.deviceCamera.knownFacings?.length == 1)
-                    cameraDevice.key: SearchLandingTarget(
-                      id: cameraDevice.key,
-                      child: ListTile(
-                        title: Text(cameraDevice.title),
-                        subtitle: const Text(
-                          'The only camera this device has.',
-                        ),
-                        trailing: Text(
-                          cameraDevice.optionLabels?[container
-                                  .deviceCamera
-                                  .knownFacings!
-                                  .single] ??
-                              container.deviceCamera.knownFacings!.single,
-                        ),
-                      ),
-                    ),
-                },
-                after: {
-                  if (widget.category == 'Browser' &&
-                      container.settings.get(autoReloadOnError))
-                    autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
-                  if (widget.category == 'Camera')
-                    cameraEnabled.key: Column(
-                      children: [
-                        _NoCameraRow(container: container),
-                        if (container.deviceCamera.effectiveEnabled)
-                          _CameraGrantRow(key: UniqueKey()),
-                      ],
-                    ),
-                  // Where the tuning rows used to be: camera pick, frame rate
-                  // and sensitivity are Camera-settings decisions now.
-                  if (widget.category == 'Screensaver')
-                    screensaverPostponeOnMotion.key: const HintRow(
-                      'Motion detection is tuned in the Camera settings.',
-                    ),
-                  // The screen-off timer fails quietly without device admin;
-                  // this row is what says so, right where the slider is.
-                  if (widget.category == 'Screensaver')
-                    screensaverScreenOffMinutes.key: _ScreenOffAdminRow(
-                      key: UniqueKey(),
-                      container: container,
-                    ),
-                  // Dim is the one mode the pause-dashboard optimization cannot
-                  // help: there is no overlay, the page IS the display. Lives in
-                  // the Dim group, whose rows only render while Dim is selected.
-                  if (widget.category == 'Screensaver' &&
-                      container.settings.get(screensaverMode) == 'dim')
-                    screensaverDimLevel.key: const WarnRow(_dimModeNote),
-                  if (widget.category == 'Screensaver') ...{
-                    // Rendered only while their anchor rows are (mode: immich).
-                    screensaverImmichApiKey.key: _ImmichValidateRow(
-                      container: container,
-                      onChanged: () => setState(() {}),
-                    ),
-                    screensaverImmichCacheMax.key: _ImmichCacheStatsRow(
-                      container: container,
-                    ),
-                  },
-                  // Under the last credential field, where the Home Assistant
-                  // and Immich cards put theirs.
-                  if (widget.category == 'MQTT')
-                    mqttPassword.key: _MqttValidateRow(container: container),
-                  if (widget.category == 'Sendspin')
-                    sendspinMaToken.key: Column(
-                      children: [
-                        _MaValidateRow(container: container),
-                        // The remote-player pick (issue #265), right under
-                        // the credentials that make its list possible.
-                        SearchLandingTarget(
-                          id: 'x:ma_player',
-                          child: _MaPlayerRow(
-                            container: container,
-                            onChanged: () => setState(() {}),
-                          ),
-                        ),
-                        // Say what the pick just did to this device: its
-                        // own player is gone from the server, and the
-                        // rows about it are gone from this page.
-                        if (container.settings
-                            .get(sendspinMaPlayer)
-                            .trim()
-                            .isNotEmpty)
-                          const WarnRow(
-                            "This device's own player is disconnected from "
-                            'Music Assistant while another player is '
-                            'controlled.',
-                          ),
-                      ],
-                    ),
-                  // The live list right under the sort picker that orders it.
-                  // Rides the section's dependsOn: with the proxy off there is
-                  // nothing to list and none of these rows render.
-                  // Both entity surfaces on at once means every kiosk entity
-                  // exists twice in Home Assistant; say so where the choice is
-                  // made instead of letting the duplicates say it.
-                  if (widget.category == 'ESPHome' &&
-                      container.settings.get(esphomeEntities) &&
-                      container.settings.get(mqttEnabled))
-                    esphomeEntities.key: const WarnRow(
-                      'MQTT is also enabled: these entities will exist twice '
-                      'in Home Assistant, once per integration.',
-                    ),
-                  // What the real-MAC switch actually did, right under it: with
-                  // the address unreadable the flip is otherwise a silent no-op
-                  // that renders identically to a working one.
-                  if (widget.category == 'ESPHome' &&
-                      container.settings.get(esphomeRealMac))
-                    esphomeRealMac.key: _RealMacStatusRow(
-                      key: UniqueKey(),
-                      container: container,
-                    ),
-                  // The connection budget, right under the toggle that spends
-                  // it: a hard Android-stack limit per proxy, and the thing a
-                  // user must know before wondering why a fifth device will
-                  // not connect.
-                  if (widget.category == 'ESPHome')
-                    btproxyConnections.key: _BtSlotsHintRow(
-                      key: UniqueKey(),
-                      container: container,
-                    ),
-                  if (widget.category == 'ESPHome')
-                    btproxyNearbySort.key: SearchLandingTarget(
-                      id: 'x:btproxy_nearby',
-                      child: _BtNearbyDevicesRow(container: container),
-                    ),
-                },
+                replace: _rowReplacements(container),
+                after: _rowExtras(container),
               ),
             ),
           ),
+        // The Bluetooth grants, on the page above the proxy they gate: the
+        // OS's to give, not ours to set. Shown while the proxy's own row is,
+        // which is to say while ESPHome is enabled.
+        if (widget.category == 'ESPHome' &&
+            container.settings.visible(btproxyEnabled)) ...[
+          const SectionHeading('Required system permissions'),
+          const SearchLandingTarget(
+            id: 'x:btproxy_permissions',
+            child: SettingsCard(children: [_BtProxyPermissionsTile()]),
+          ),
+        ],
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
         // has no page on the device, so its grants live here too.
@@ -1751,28 +1795,7 @@ class _CategoryContentState extends State<_CategoryContent> {
             ),
           ),
         ],
-        if (widget.category == 'Device' &&
-            container.settings.get(remoteEnabled))
-          _AdminAddressCard(container: container),
         if (widget.category == 'Device') ...[
-          // Every OS grant in one place (issue #156). The per-feature groups
-          // elsewhere answer "what does this feature need" where it is
-          // configured; this one answers "what does the app use, and where
-          // do I stand" — which is how a grant nobody's current features
-          // ask for, like the battery exemption on a device without voice,
-          // becomes findable at all.
-          const SectionHeading('Permissions Manager'),
-          SearchLandingTarget(
-            id: 'x:device_permissions',
-            child: SettingsCard(
-              children: [
-                // The explanation is the group's first row rather than
-                // floating text under the heading.
-                const HintRow(_permissionsGroupNote),
-                _DevicePermissionsTile(container: container),
-              ],
-            ),
-          ),
           const SectionHeading('Configuration'),
           SettingsCard(
             children: [
@@ -1800,6 +1823,26 @@ class _CategoryContentState extends State<_CategoryContent> {
                 ),
               ),
             ],
+          ),
+        ],
+        if (widget.category == 'Device') ...[
+          // Every OS grant in one place (issue #156). The per-feature groups
+          // elsewhere answer "what does this feature need" where it is
+          // configured; this one answers "what does the app use, and where
+          // do I stand" — which is how a grant nobody's current features
+          // ask for, like the battery exemption on a device without voice,
+          // becomes findable at all.
+          const SectionHeading('Permissions Manager'),
+          SearchLandingTarget(
+            id: 'x:device_permissions',
+            child: SettingsCard(
+              children: [
+                // The explanation is the group's first row rather than
+                // floating text under the heading.
+                const HintRow(_permissionsGroupNote),
+                _DevicePermissionsTile(container: container),
+              ],
+            ),
           ),
         ],
         if (widget.category == 'Home Assistant')
@@ -1977,7 +2020,8 @@ class _CategoryContentState extends State<_CategoryContent> {
   }
 
   /// Everything a proven connection unlocks: the dashboard picker, then the
-  /// regular Home Assistant settings, Voice Satellite and its permissions.
+  /// regular Home Assistant settings — most of which now live one level down,
+  /// so what is left here is the row that opens each of those pages.
   List<Widget> _haConfiguredCards(AppContainer container) {
     return [
       const SectionHeading('Dashboard'),
@@ -1990,72 +2034,335 @@ class _CategoryContentState extends State<_CategoryContent> {
           if (def.key != haUrl.key &&
               def.key != haToken.key &&
               // In the connection card above, with the token it borrows.
-              def.key != haAutoLogin.key &&
-              // Redundant while the theme mirror is on: the schedule
-              // already targets the app theme then (issue #92).
-              (def.key != themeAutoApp.key ||
-                  !container.settings.get(themeMatchApp)) &&
-              // The rotation group is hand-built below: its dashboard list
-              // needs the live dashboards from HA, which the generic
-              // renderer cannot supply.
-              def.key != haRotationEnabled.key &&
-              def.key != haRotationSeconds.key &&
-              def.key != haRotationPauseSeconds.key &&
-              // Rendered below the rotation group, which its switch is
-              // gated on.
-              def.key != haReturnHomeEnabled.key &&
-              def.key != haReturnHomeSeconds.key &&
-              // Hold mode sits between the return-home group and the
-              // Optimizations, in idle-behavior company (issue #266).
-              def.key != haHoldMode.key &&
-              def.key != haHoldReleaseMinutes.key &&
-              def.key != haHoldMenu.key &&
-              // Optimizations are hand-built last so the filter can show live
-              // telemetry beneath its toggle.
-              def.key != disableSuspend.key &&
-              def.key != wsFilter.key)
+              def.key != haAutoLogin.key)
             def,
       ], () => setState(() {})),
-      const SectionHeading('Dashboard View Rotation'),
-      _RotationCard(container: container, onChanged: () => setState(() {})),
-      // Return to the dashboard (issue #83): mutually exclusive with
-      // rotation, which owns navigation on an idle kiosk — the manager
-      // forces the switch off when rotation turns on, and it renders
-      // disabled with the reason here.
-      ..._sectionedCards(
-        container,
-        [haReturnHomeEnabled, haReturnHomeSeconds],
-        () => setState(() {}),
-        replace: {
-          if (container.settings.get(haRotationEnabled))
-            haReturnHomeEnabled.key: SearchLandingTarget(
-              id: haReturnHomeEnabled.key,
-              child: const SwitchListTile(
-                title: Text('Return to home dashboard view'),
-                subtitle: Text(
-                  'Turned off while Dashboard view rotation is on.',
-                ),
-                value: false,
-                onChanged: null,
-              ),
-            ),
-        },
-        after: {
-          if (!container.settings.get(haRotationEnabled))
-            haReturnHomeEnabled.key: HintRow(_returnHomeTargetHint(container)),
-        },
-      ),
-      // Hold mode (issue #266): the toggle is the live state, so this
-      // card doubles as the on-device release for a hold engaged from
-      // anywhere else.
-      ..._sectionedCards(container, [
-        haHoldMode,
-        haHoldReleaseMinutes,
-        haHoldMenu,
-      ], () => setState(() {})),
-      const SectionHeading('Optimizations'),
-      _OptimizationsCard(container: container),
     ];
+  }
+
+  /// The app's own wake word detection settings: the ones that declare the
+  /// Wake Word page, plus the cache row, which is not a setting but belongs
+  /// behind the same line as the rest.
+  Widget _vsDetectionCard(AppContainer container) => SettingsCard(
+    children: [
+      for (final def in _defsFor('Voice Satellite'))
+        if (def.subpage == 'Wake Word' && container.settings.visible(def))
+          SettingTile(
+            container: container,
+            def: def,
+            onChanged: () => setState(() {}),
+          ),
+      // Gone with the rest when detection is off: with nothing running in
+      // the kiosk there is no cache to clear.
+      if (container.settings.get(wakeWordEnabled))
+        ClearModelCacheTile(container: container),
+    ],
+  );
+
+  /// Rows a category draws itself instead of the generic tile: a switch
+  /// shown disabled with the reason it cannot be used. Keyed by setting
+  /// key and handed to every render of the category, the pages below it
+  /// included, so a replacement follows its row onto its page.
+  Map<String, Widget> _rowReplacements(AppContainer container) => {
+    if (widget.category == 'Screensaver' &&
+        !container.deviceCamera.effectiveEnabled)
+      screensaverDismissOnMotion.key: SearchLandingTarget(
+        id: screensaverDismissOnMotion.key,
+        child: const SwitchListTile(
+          title: Text('Dismiss on motion'),
+          subtitle: Text(
+            'Requires the camera. Turn it on in the Camera '
+            'settings first.',
+          ),
+          value: false,
+          onChanged: null,
+        ),
+      ),
+    if (widget.category == 'Camera' && container.deviceCamera.cameraKnownAbsent)
+      cameraEnabled.key: SearchLandingTarget(
+        id: cameraEnabled.key,
+        child: SwitchListTile(
+          title: Text(cameraEnabled.title),
+          subtitle: Text(cameraEnabled.description),
+          value: false,
+          onChanged: null,
+        ),
+      ),
+    // One camera means no front/back choice to offer (the
+    // capture falls back to the camera present regardless of
+    // the stored value).
+    if (widget.category == 'Camera' &&
+        container.deviceCamera.knownFacings?.length == 1)
+      cameraDevice.key: SearchLandingTarget(
+        id: cameraDevice.key,
+        child: ListTile(
+          title: Text(cameraDevice.title),
+          subtitle: const Text('The only camera this device has.'),
+          trailing: Text(
+            cameraDevice.optionLabels?[container
+                    .deviceCamera
+                    .knownFacings!
+                    .single] ??
+                container.deviceCamera.knownFacings!.single,
+          ),
+        ),
+      ),
+  };
+
+  /// Extra widgets rendered directly under a setting: notices, validate
+  /// rows, live telemetry. Keyed and forwarded the same way.
+  Map<String, Widget> _rowExtras(AppContainer container) => {
+    if (widget.category == 'Browser' &&
+        container.settings.get(autoReloadOnError))
+      autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
+    if (widget.category == 'Camera')
+      cameraEnabled.key: Column(
+        children: [
+          _NoCameraRow(container: container),
+          if (container.deviceCamera.effectiveEnabled)
+            _CameraGrantRow(key: UniqueKey()),
+        ],
+      ),
+    // Where the tuning rows used to be: camera pick, frame rate
+    // and sensitivity are Camera-settings decisions now.
+    if (widget.category == 'Screensaver')
+      screensaverPostponeOnMotion.key: const HintRow(
+        'Motion detection is tuned in the Camera settings.',
+      ),
+    // The screen-off timer fails quietly without device admin;
+    // this row is what says so, right where the slider is.
+    if (widget.category == 'Screensaver')
+      screensaverScreenOffMinutes.key: _ScreenOffAdminRow(
+        key: UniqueKey(),
+        container: container,
+      ),
+    // Dim is the one mode the pause-dashboard optimization cannot
+    // help: there is no overlay, the page IS the display. Lives in
+    // the Dim group, whose rows only render while Dim is selected.
+    if (widget.category == 'Screensaver' &&
+        container.settings.get(screensaverMode) == 'dim')
+      screensaverDimLevel.key: const WarnRow(_dimModeNote),
+    if (widget.category == 'Screensaver') ...{
+      // Rendered only while their anchor rows are (mode: immich).
+      screensaverImmichApiKey.key: _ImmichValidateRow(
+        container: container,
+        onChanged: () => setState(() {}),
+      ),
+      screensaverImmichCacheMax.key: _ImmichCacheStatsRow(container: container),
+    },
+    // Under the last credential field, where the Home Assistant
+    // and Immich cards put theirs.
+    if (widget.category == 'MQTT')
+      mqttPassword.key: _MqttValidateRow(container: container),
+    if (widget.category == 'Sendspin')
+      sendspinMaToken.key: Column(
+        children: [
+          _MaValidateRow(container: container),
+          // The remote-player pick (issue #265), right under
+          // the credentials that make its list possible.
+          SearchLandingTarget(
+            id: 'x:ma_player',
+            child: _MaPlayerRow(
+              container: container,
+              onChanged: () => setState(() {}),
+            ),
+          ),
+          // Say what the pick just did to this device: its
+          // own player is gone from the server, and the
+          // rows about it are gone from this page.
+          if (container.settings.get(sendspinMaPlayer).trim().isNotEmpty)
+            const WarnRow(
+              "This device's own player is disconnected from "
+              'Music Assistant while another player is '
+              'controlled.',
+            ),
+        ],
+      ),
+    // The live list right under the sort picker that orders it.
+    // Rides the section's dependsOn: with the proxy off there is
+    // nothing to list and none of these rows render.
+    // Both entity surfaces on at once means every kiosk entity
+    // exists twice in Home Assistant; say so where the choice is
+    // made instead of letting the duplicates say it.
+    if (widget.category == 'ESPHome' &&
+        container.settings.get(esphomeEntities) &&
+        container.settings.get(mqttEnabled))
+      esphomeEntities.key: const WarnRow(
+        'MQTT is also enabled: these entities will exist twice '
+        'in Home Assistant, once per integration.',
+      ),
+    // What the real-MAC switch actually did, right under it: with
+    // the address unreadable the flip is otherwise a silent no-op
+    // that renders identically to a working one.
+    if (widget.category == 'ESPHome' && container.settings.get(esphomeRealMac))
+      esphomeRealMac.key: _RealMacStatusRow(
+        key: UniqueKey(),
+        container: container,
+      ),
+    // The connection budget, right under the toggle that spends
+    // it: a hard Android-stack limit per proxy, and the thing a
+    // user must know before wondering why a fifth device will
+    // not connect.
+    if (widget.category == 'ESPHome')
+      btproxyConnections.key: _BtSlotsHintRow(
+        key: UniqueKey(),
+        container: container,
+      ),
+    if (widget.category == 'ESPHome')
+      btproxyNearbySort.key: SearchLandingTarget(
+        id: 'x:btproxy_nearby',
+        child: _BtNearbyDevicesRow(container: container),
+      ),
+  };
+
+  /// One second-level page's cards. Most pages are the plain sectioned
+  /// render of the settings that declare the subpage; the Home Assistant
+  /// ones below are hand-built for the same reasons they always were (a live
+  /// dashboard list, a cross-group disabled state, telemetry under a toggle)
+  /// and simply moved with their group.
+  List<Widget> _subpageCards(AppContainer container, String subpage) {
+    void changed() => setState(() {});
+    // The category's own replacements and extras come along: a validate row
+    // or a notice belongs under the setting it explains, on whichever page
+    // that setting ended up on.
+    List<Widget> sectioned(
+      List<SettingDef<Object>> defs, {
+      Map<String, Widget>? replace,
+      Map<String, Widget>? after,
+    }) => _sectionedCards(
+      container,
+      defs,
+      changed,
+      replace: replace ?? _rowReplacements(container),
+      after: after ?? _rowExtras(container),
+      subpage: subpage,
+    );
+
+    if (widget.category == 'ESPHome' && subpage == 'Bluetooth Proxy') {
+      // The grants stay on the ESPHome page (see build): they are the OS's
+      // to give, and they read as the page's own footnote rather than a
+      // setting of the proxy.
+      final cards = sectioned([
+        for (final def in _defsFor(widget.category))
+          if (def.subpage == subpage) def,
+      ]);
+      if (_btAdapterOn != false) return cards;
+      // The adapter is off: nothing on this page can do anything, so say so
+      // and render it inert. The poll in initState lifts this the moment
+      // Bluetooth comes back.
+      return [
+        const WarnRow('Bluetooth is off. Turn it on to use the proxy.'),
+        AbsorbPointer(
+          child: Opacity(opacity: 0.45, child: Column(children: cards)),
+        ),
+      ];
+    }
+
+    if (widget.category == 'Device' && subpage == 'Remote Administration') {
+      return [
+        ...sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage) def,
+        ]),
+        // Where to reach it, under the settings that decide whether it can
+        // be reached at all.
+        if (container.settings.get(remoteEnabled))
+          _AdminAddressCard(container: container),
+      ];
+    }
+
+    if (widget.category == 'Screen & Audio') {
+      return [
+        const GroupNote(_micGroupNote),
+        SettingsCard(
+          children: [
+            for (final def in _defsFor(widget.category))
+              if (def.subpage == subpage && container.settings.visible(def))
+                SettingTile(container: container, def: def, onChanged: changed),
+            // The capture channel of a multichannel microphone. Hand-built
+            // (its options run to the selected mic's channel count) and only
+            // with detection on, like the mic picker on the page above.
+            if (container.settings.get(wakeWordEnabled))
+              SearchLandingTarget(
+                id: micChannel.key,
+                child: MicChannelTile(container: container),
+              ),
+            // Live capture level under the gain it verifies. Only with
+            // detection on: it reads the engine's telemetry, and with
+            // detection off this app never opens the microphone.
+            if (container.settings.get(wakeWordEnabled))
+              MicLevelTile(container: container),
+          ],
+        ),
+      ];
+    }
+
+    // Voice Satellite's two pages are almost entirely live rows from the
+    // integration, so they render through the same section that draws them
+    // on the page above rather than from the definitions.
+    if (widget.category == 'Voice Satellite') {
+      return [
+        VsControlsSection(
+          container: container,
+          subpage: subpage,
+          detectionCard: subpage == 'Wake Word'
+              ? _vsDetectionCard(container)
+              : null,
+        ),
+      ];
+    }
+
+    switch (subpage) {
+      case 'Dashboard View Rotation':
+        // Hand-built: the view checkboxes need the live dashboards from Home
+        // Assistant, which the generic renderer cannot supply.
+        return [_RotationCard(container: container, onChanged: changed)];
+      case 'Return to home dashboard view':
+        // Mutually exclusive with rotation (issue #83), which owns navigation
+        // on an idle kiosk: the manager forces the switch off when rotation
+        // turns on, and it renders disabled with the reason here.
+        return sectioned(
+          [haReturnHomeEnabled, haReturnHomeSeconds],
+          replace: {
+            if (container.settings.get(haRotationEnabled))
+              haReturnHomeEnabled.key: SearchLandingTarget(
+                id: haReturnHomeEnabled.key,
+                child: const SwitchListTile(
+                  title: Text('Return to home dashboard view'),
+                  subtitle: Text(
+                    'Turned off while Dashboard view rotation is on.',
+                  ),
+                  value: false,
+                  onChanged: null,
+                ),
+              ),
+          },
+          after: {
+            if (!container.settings.get(haRotationEnabled))
+              haReturnHomeEnabled.key: HintRow(
+                _returnHomeTargetHint(container),
+              ),
+          },
+        );
+      case 'Optimizations':
+        // Hand-built so the update filter can show live telemetry under it.
+        return [_OptimizationsCard(container: container)];
+      case 'Theme':
+        return sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage &&
+                // Redundant while the theme mirror is on: the schedule
+                // already targets the app theme then (issue #92).
+                (def.key != themeAutoApp.key ||
+                    !container.settings.get(themeMatchApp)))
+              def,
+        ]);
+      default:
+        return sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage) def,
+        ]);
+    }
   }
 
   /// Where the return-home timeout lands, so nobody has to guess which
@@ -2221,25 +2528,6 @@ class _CategoryContentState extends State<_CategoryContent> {
                         onChanged: () => setState(() {}),
                       )
                     : null,
-                detectionCard: SettingsCard(
-                  children: [
-                    for (final def in _defsFor('Voice Satellite'))
-                      if (def.section == null &&
-                          def.key != wakeWordBackground.key &&
-                          container.settings.visible(def))
-                        SettingTile(
-                          container: container,
-                          def: def,
-                          onChanged: () => setState(() {}),
-                        ),
-                    // Not a setting, but a row on the same card, so it sits
-                    // behind the same line as the rest. Gone with the rest
-                    // when detection is off: with nothing running in the
-                    // kiosk there is no cache to clear.
-                    if (container.settings.get(wakeWordEnabled))
-                      ClearModelCacheTile(container: container),
-                  ],
-                ),
               ),
               // The tester: a live look at what the engine hears and scores,
               // for diagnosing "the wake word isn't triggering".
@@ -6608,15 +6896,23 @@ class VsControlsSection extends StatefulWidget {
   const VsControlsSection({
     super.key,
     required this.container,
-    required this.detectionCard,
+    this.subpage,
+    this.detectionCard,
     this.backgroundTile,
   });
 
   final AppContainer container;
 
-  /// The app's own wake word detection card, rendered under the Wake Word
-  /// heading so the whole topic reads as one group.
-  final Widget detectionCard;
+  /// Which of this section's groups to render. Null is the Voice Satellite
+  /// page itself: the General card, then a row opening each of the two
+  /// second-level pages. 'Wake Word' and 'Appearance' render those pages.
+  /// One widget for all three so they share the entity snapshot's shape and
+  /// its refresh rules.
+  final String? subpage;
+
+  /// The app's own wake word detection card, shown under the live wake word
+  /// rows on the Wake Word page. Only that page passes one.
+  final Widget? detectionCard;
 
   /// The "Keep listening in the background" setting tile, shown in the
   /// General card below Auto start; null while its dependency hides it.
@@ -6644,7 +6940,13 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     _wakeSub = widget.container.bus.on<WakeWordStateChanged>().listen(
       (_) => _load(),
     );
-    _refresh = Timer.periodic(const Duration(seconds: 10), (_) => _load());
+    _refresh = Timer.periodic(const Duration(seconds: 10), (_) {
+      // vsControls is an expensive round-trip, and a pushed second-level
+      // page leaves the page beneath it mounted with its own copy of this
+      // section. Only the one on screen polls.
+      if (!mounted || ModalRoute.of(context)?.isCurrent == false) return;
+      _load();
+    });
   }
 
   @override
@@ -6910,8 +7212,10 @@ class _VsControlsSectionState extends State<VsControlsSection> {
               ),
             ],
           ),
-          const SectionHeading('Wake Word'),
-          widget.detectionCard,
+          // The app's own detection settings are not the integration's to
+          // report, so they are on screen while its controls load.
+          if (widget.detectionCard != null) widget.detectionCard!,
+          if (widget.subpage == null) ..._vsPageEntries(),
         ],
       );
     }
@@ -7093,6 +7397,32 @@ class _VsControlsSectionState extends State<VsControlsSection> {
       ],
     ];
 
+    // No headings on the second-level pages: the bar already carries the
+    // name, and repeating it says it twice.
+    if (widget.subpage == 'Wake Word') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SearchLandingTarget(
+            id: 'x:vs_wake',
+            child: SettingsCard(
+              children: wake.isEmpty
+                  ? const [
+                      HintRow('Assign a satellite to control these settings.'),
+                    ]
+                  : wake,
+            ),
+          ),
+          if (widget.detectionCard != null) widget.detectionCard!,
+        ],
+      );
+    }
+    if (widget.subpage == 'Appearance') {
+      return SearchLandingTarget(
+        id: 'x:vs_appearance',
+        child: SettingsCard(children: appearance),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -7101,26 +7431,17 @@ class _VsControlsSectionState extends State<VsControlsSection> {
           id: 'x:assigned_satellite',
           child: SettingsCard(children: general),
         ),
-        const SectionHeading('Wake Word'),
-        SearchLandingTarget(
-          id: 'x:vs_wake',
-          child: SettingsCard(
-            children: wake.isEmpty
-                ? const [
-                    HintRow('Assign a satellite to control these settings.'),
-                  ]
-                : wake,
-          ),
-        ),
-        widget.detectionCard,
-        const SectionHeading('Appearance'),
-        SearchLandingTarget(
-          id: 'x:vs_appearance',
-          child: SettingsCard(children: appearance),
-        ),
+        ..._vsPageEntries(),
       ],
     );
   }
+
+  /// The rows opening this page's two second-level pages, each on a card of
+  /// its own, where the two groups used to sit.
+  List<Widget> _vsPageEntries() => [
+    for (final page in const ['Wake Word', 'Appearance'])
+      _subpageEntryCard(widget.container, 'Voice Satellite', page),
+  ];
 }
 
 /// A hand-built slider row for the Voice Satellite appearance card, where

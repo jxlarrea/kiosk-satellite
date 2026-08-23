@@ -370,6 +370,10 @@ class SettingsManager extends Manager {
         'description': def.description,
         'category': def.category,
         if (def.section != null) 'section': def.section,
+        // The remote admin folds these into the same second-level page the
+        // device shows; their hints come from subpageHints, served beside
+        // the definitions (a page can have no settings of its own).
+        if (def.subpage != null) 'subpage': def.subpage,
         // The remote admin renders these too, and must hide what the
         // device hides.
         if (def.dependsOn != null) 'dependsOn': def.dependsOn,
