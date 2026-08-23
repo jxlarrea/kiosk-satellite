@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.76 - 2026-08-23
 
 ### Added
 - Voice Satellite is controllable from Home Assistant, through two new switches in the ESPHome integration. **Voice Satellite** starts and stops the engine in the page, exactly as the Start and Stop buttons on the kiosk's own Voice Satellite settings do, and **Voice Satellite auto start** decides whether it comes up by itself with the dashboard. Between them an automation can hold the voice half back on a device that needs its first seconds for the dashboard, bringing it up once the kiosk has settled, or leave voice off altogether on a panel where the overhead is not wanted. Both switches appear on a kiosk that has a satellite assigned to it, and both follow the engine wherever it is started or stopped from, the kiosk's settings and the Voice Satellite panel included.
