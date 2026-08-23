@@ -251,11 +251,12 @@ kiosk itself is linked to right now, with their names as attributes, so a
 dashboard can answer "is the room's speaker still on the panel" without
 walking over to it. It counts every link the adapter holds, including any
 the proxy has open for Home Assistant, which is what a connection count
-means from the device's side; the **Bluetooth connections** sensor next to
-it is the proxy's slot budget instead, an entirely different number. Both
-follow the links as they happen rather than on a poll, so a device Home
-Assistant connects to for a few seconds (a lock taking a command through
-the proxy) shows up for as long as the link lasts. Both
+means from the device's side. Beside it, **Bluetooth max connections**
+reports the proxy's own budget, the ceiling that count runs into, so a
+dashboard can put the two numbers next to each other. Both follow the
+links as they happen rather than on a poll, so a device Home Assistant
+connects to for a few seconds (a lock taking a command through the proxy)
+shows up for as long as the link lasts. Both
 sensors come and go with the Bluetooth Proxy switch, and both are
 published by the MQTT integration too. Devices whose Android will not
 report their Bluetooth links at all (no adapter, or the Nearby devices

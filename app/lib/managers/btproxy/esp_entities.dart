@@ -466,15 +466,18 @@ class EspEntitySurface {
         ),
       if (_settings.get(defs.btproxyEnabled) &&
           _settings.get(defs.btproxyConnections))
-        // "1 of 3" where the user will look before filing "my fifth
-        // device won't connect": the budget is a hard Android-stack
-        // limit per proxy, and Home Assistant spreads extra devices
-        // across other proxies only if there are other proxies.
+        // The ceiling the connected-devices count runs into, where the
+        // user will look before filing "my fifth device won't connect":
+        // the budget is a hard Android-stack limit per proxy, two on
+        // Android 11 and below and three above it, and Home Assistant
+        // spreads extra devices across other proxies only if there are
+        // other proxies. A number rather than the "1 of 3" this used to
+        // read, so a dashboard can compare it against the live count.
         diagnostic(
-          'bt_connections',
-          'Bluetooth connections',
-          icon: 'mdi:bluetooth-connect',
-          type: 'text_sensor',
+          'bt_max_connections',
+          'Bluetooth max connections',
+          icon: 'mdi:bluetooth-settings',
+          stateClass: 1,
         ),
       if (btConnectionsReadable)
         // The kiosk's own Bluetooth links: the speaker, keyboard or headset
@@ -967,9 +970,10 @@ class EspEntitySurface {
     await _send('motion', false);
   }
 
-  /// The kiosk's own Bluetooth links, and the proxy's slot usage with them:
-  /// both move at the same moments, and both are cheap enough to answer on
-  /// a link event rather than only on the poll.
+  /// The kiosk's own Bluetooth links, and the proxy's connection budget
+  /// with them: the budget only moves when the proxy restarts, but it
+  /// rides the same read, and a link event is the moment someone is
+  /// looking at both numbers.
   Future<void> _sendBluetooth() async {
     if (!_settings.get(defs.btproxyEnabled)) return;
     final bt = await commands.execute('getBluetoothConnections', const {});
@@ -984,11 +988,8 @@ class EspEntitySurface {
     final data = status.ok && status.data is Map
         ? status.data as Map
         : const {};
-    final used = (data['connections'] as List?)?.length;
     final slots = (data['connectionSlots'] as num?)?.toInt() ?? 0;
-    if (used != null && slots > 0) {
-      await _send('bt_connections', '$used of $slots');
-    }
+    if (slots > 0) await _send('bt_max_connections', slots);
   }
 
   Future<void> _sendScreen() async {

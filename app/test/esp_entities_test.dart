@@ -226,7 +226,7 @@ void main() {
       ]),
     );
     expect(ids, contains('connectivity'));
-    expect(ids, contains('bt_connections'));
+    expect(ids, contains('bt_max_connections'));
     expect(ids, contains('bt_devices_connected'));
     expect(ids, contains('last_seen'));
     final byId = {for (final d in catalog) d['objectId']: d};
@@ -279,8 +279,8 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 900));
     final byId = {for (final (id, value) in pushed) id: value};
     expect(byId['bt_devices_connected'], 3);
-    // The proxy's slot count moves at the same moment, so it rides along.
-    expect(byId['bt_connections'], '1 of 3');
+    // The budget rides the same read.
+    expect(byId['bt_max_connections'], 3);
   });
 
   test('a camera-less device gets the screenshot camera instead', () async {
@@ -327,7 +327,9 @@ void main() {
     expect(DateTime.parse('${byId['last_seen']}'), isA<DateTime>());
     expect(byId['foreground_app'], 'me.jxl.kiosk_satellite');
     expect(byId['btproxy_nearby'], 13);
-    expect(byId['bt_connections'], '1 of 3');
+    // The budget, not the usage: the connected-devices sensor is the
+    // number that moves.
+    expect(byId['bt_max_connections'], 3);
     expect(byId['bt_devices_connected'], 2);
     expect(byId['volume'], 55);
     expect(byId['screen'], {'on': true, 'brightness': 0.4});
