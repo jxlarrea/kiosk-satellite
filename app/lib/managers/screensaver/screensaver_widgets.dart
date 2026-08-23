@@ -25,6 +25,11 @@
 ///      humidity, wind, visibility. The temperature always shows; every
 ///      line needs its toggle on AND the entity to actually carry the
 ///      reading.
+///    - battery: the device's own battery, as an icon with an optional
+///      percentage. Config keys: color ("r,g,b" icon and text color),
+///      percent (the number beside the icon), low (only show once the
+///      charge is low, for a widget that stays out of the way until it
+///      matters).
 /// - config: the type's own settings; missing keys read as the type's
 ///   defaults, so entries survive new keys being added.
 ///
@@ -52,11 +57,12 @@ class ScreensaverWidget {
 }
 
 /// Every widget type, in the order the pickers offer them.
-const screensaverWidgetTypes = ['clock', 'weather'];
+const screensaverWidgetTypes = ['clock', 'weather', 'battery'];
 
 String describeScreensaverWidgetType(String type) => switch (type) {
   'clock' => 'Small clock',
   'weather' => 'Weather',
+  'battery' => 'Battery',
   _ => type,
 };
 
@@ -74,6 +80,7 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'wind': true,
     'visibility': true,
   },
+  'battery' => {'color': '250,250,250', 'percent': true, 'low': false},
   _ => const {},
 };
 

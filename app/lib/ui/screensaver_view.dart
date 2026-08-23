@@ -203,6 +203,10 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                                     container: container,
                                     spec: spec,
                                   ),
+                                  'battery' => BatteryWidgetOverlay(
+                                    container: container,
+                                    spec: spec,
+                                  ),
                                   _ => const SizedBox.shrink(),
                                 },
                         ],
@@ -826,6 +830,188 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
       ),
     );
   }
+}
+
+/// The battery widget (discussion #267): the device's own charge in a
+/// corner, so a wall tablet says how it is doing without a dashboard card
+/// or the Home Assistant app. An icon that follows the level, an optional
+/// percentage beside it, and a bolt while it is on external power.
+class BatteryWidgetOverlay extends StatefulWidget {
+  const BatteryWidgetOverlay({
+    super.key,
+    required this.container,
+    required this.spec,
+  });
+
+  final AppContainer container;
+  final ScreensaverWidget spec;
+
+  @override
+  State<BatteryWidgetOverlay> createState() => _BatteryWidgetOverlayState();
+}
+
+class _BatteryWidgetOverlayState extends State<BatteryWidgetOverlay> {
+  Timer? _poll;
+  Timer? _shift;
+  StreamSubscription<PowerChanged>? _power;
+  Offset _offset = Offset.zero;
+
+  int? _level;
+  bool _charging = false;
+  bool _read = false;
+
+  /// A charge moves by single points over tens of minutes, so a minute is
+  /// as often as this is worth reading; the cable is the only thing that
+  /// changes in an instant, and that arrives as an event.
+  static const _interval = Duration(minutes: 1);
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+    _poll = Timer.periodic(_interval, (_) => unawaited(_refresh()));
+    _power = widget.container.bus.on<PowerChanged>().listen((_) {
+      unawaited(_refresh());
+    });
+    // The same slow OLED-protecting nudge the other corner overlays do.
+    _shift = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!widget.container.settings.get(defs.screensaverPixelShift)) return;
+      final r = Random();
+      const max = 10.0;
+      setState(() {
+        _offset = Offset(
+          (r.nextDouble() * 2 - 1) * max,
+          (r.nextDouble() * 2 - 1) * max,
+        );
+      });
+    });
+  }
+
+  Future<void> _refresh() async {
+    final status = await widget.container.device.batteryStatus();
+    if (!mounted) return;
+    setState(() {
+      _level = status.level;
+      _charging = status.charging;
+      _read = true;
+    });
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    _shift?.cancel();
+    unawaited(_power?.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Nothing until the first reading: an empty corner beats a widget that
+    // flashes 0% on the way in.
+    if (!_read) return const SizedBox.shrink();
+    final level = _level;
+    if (!batteryWidgetVisible(
+      lowOnly: widget.spec.config['low'] == true,
+      level: level,
+      charging: _charging,
+    )) {
+      return const SizedBox.shrink();
+    }
+    final corner = _cornerAlignment(widget.spec.position);
+    final color = _widgetRgb(widget.spec.config['color']);
+    final size = MediaQuery.of(context).size;
+    // Two thirds of the small clock: readable across a room, without a
+    // corner of the photo given over to a battery.
+    final scale =
+        widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
+        100;
+    final textSize = max(min(size.width, size.height) * 0.042, 30.0) * scale;
+    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final glyph = Icon(
+      _batteryIcon(level, charging: _charging),
+      size: textSize * 1.15,
+      color: color,
+      shadows: shadows,
+    );
+    final text = widget.spec.config['percent'] != false && level != null
+        ? Text(
+            '$level%',
+            style: TextStyle(
+              fontFamily: 'Rubik',
+              color: color,
+              fontSize: textSize,
+              fontWeight: FontWeight.w400,
+              height: 1.0,
+              shadows: shadows,
+            ),
+          )
+        : null;
+    // The icon leads on a left corner and trails on a right one, the same
+    // rule the weather and metadata rows follow.
+    final right = corner.x > 0;
+    final gap = SizedBox(width: 8 * scale);
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _cornerVignette(corner, radius: 0.5),
+          Align(
+            alignment: corner,
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Transform.translate(
+                offset: _offset,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (text != null && right) ...[text, gap],
+                    glyph,
+                    if (text != null && !right) ...[gap, text],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// At or below this the charge counts as low: the "only when low" widget
+/// appears, matching the level Android itself starts warning at.
+const lowBatteryLevel = 20;
+
+/// Whether the battery widget draws at all. "Only when low" keeps the
+/// corner clear until the charge is worth walking over for: a device on
+/// the cable is already being dealt with, and a host that cannot report a
+/// level has no "low" to speak of, so neither shows.
+bool batteryWidgetVisible({
+  required bool lowOnly,
+  required int? level,
+  required bool charging,
+}) {
+  if (!lowOnly) return true;
+  return !charging && level != null && level <= lowBatteryLevel;
+}
+
+/// The battery glyph for a level: the bolt while it is on external power,
+/// the alert below [_lowBattery], and the bar icons in between. An unknown
+/// level shows the outline rather than an empty battery, which would read
+/// as a flat one.
+IconData _batteryIcon(int? level, {required bool charging}) {
+  if (charging) return Icons.battery_charging_full;
+  if (level == null) return Icons.battery_unknown;
+  if (level <= 10) return Icons.battery_alert;
+  if (level >= 95) return Icons.battery_full;
+  if (level >= 80) return Icons.battery_6_bar;
+  if (level >= 65) return Icons.battery_5_bar;
+  if (level >= 50) return Icons.battery_4_bar;
+  if (level >= 35) return Icons.battery_3_bar;
+  if (level >= lowBatteryLevel) return Icons.battery_2_bar;
+  return Icons.battery_1_bar;
 }
 
 /// A widget's "r,g,b" color, falling back to the overlays' near-white.

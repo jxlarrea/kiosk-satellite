@@ -2850,6 +2850,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
   IconData _icon(String type) => switch (type) {
     'clock' => Icons.access_time,
     'weather' => Icons.cloud_outlined,
+    'battery' => Icons.battery_full,
     _ => Icons.widgets_outlined,
   };
 
@@ -2858,6 +2859,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
   String? _modeNote(String type) => switch (type) {
     'clock' => 'Hidden in Digital Clock and WebRTC screensaver modes.',
     'weather' => 'Hidden in the WebRTC screensaver mode.',
+    'battery' => 'Hidden in the WebRTC screensaver mode.',
     _ => null,
   };
 
@@ -3087,6 +3089,11 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                       toggle('Humidity', 'humidity'),
                       toggle('Wind speed', 'wind'),
                       toggle('Visibility', 'visibility'),
+                    ],
+                    if (type == 'battery') ...[
+                      colorRow(),
+                      toggle('Show percentage', 'percent'),
+                      toggle('Only when low', 'low'),
                     ],
                   ],
                 ),

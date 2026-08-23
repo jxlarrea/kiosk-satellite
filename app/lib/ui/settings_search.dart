@@ -243,6 +243,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     defKey: 'screensaver.widgets',
   ),
   SettingsSearchEntry(
+    category: 'Screensaver',
+    title: 'Battery',
+    description:
+        'A battery widget in a corner of the screensaver: this device\'s '
+        'own charge.',
+    defKey: 'screensaver.widgets',
+  ),
+  SettingsSearchEntry(
     category: 'Device',
     title: 'Permissions Manager',
     description:

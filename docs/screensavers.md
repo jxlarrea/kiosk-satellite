@@ -209,6 +209,23 @@ Italian reads "Nebbia" where an English one reads "Fog". Nothing to
 configure, and nothing changes on an English server. The translations
 are fetched from the server once per app start.
 
+### Battery
+
+The device's own battery in a corner, over any mode except WebRTC Camera:
+an icon that follows the charge, a bolt while the device is on external
+power, and the percentage beside it.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Corner | first free corner | |
+| Color | white | Icon and text alike. |
+| Show percentage | on | Off leaves the icon alone. |
+| Only when low | off | Keeps the corner clear until the charge drops to 20 percent, and stays hidden whenever the device is charging. |
+
+The reading is the device's own, not a Home Assistant entity, so it needs
+nothing configured and keeps working while Home Assistant is away. It is
+read once a minute, and a cable being plugged or pulled shows up at once.
+
 ## Brightness
 
 **Screensaver brightness** gives the screensaver its own panel

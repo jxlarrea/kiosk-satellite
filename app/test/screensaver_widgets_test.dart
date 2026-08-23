@@ -6,6 +6,7 @@ import 'package:kiosk_satellite/managers/screensaver/screensaver_widgets.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
+import 'package:kiosk_satellite/ui/screensaver_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -120,6 +121,63 @@ void main() {
       expect(widgets.last.type, 'weather');
       expect(widgets.last.config['entity'], 'weather.home');
       expect(widgets.last.config['humidity'], isFalse);
+    });
+  });
+
+  group('battery widget type', () {
+    test('is offered, labeled, and defaulted', () {
+      expect(screensaverWidgetTypes, contains('battery'));
+      expect(describeScreensaverWidgetType('battery'), 'Battery');
+      final defaults = screensaverWidgetDefaults('battery');
+      expect(defaults['color'], '250,250,250');
+      // The percentage reads by default; hiding until the charge is low is
+      // the opt-in, since a widget nobody sees is a widget nobody adds.
+      expect(defaults['percent'], isTrue);
+      expect(defaults['low'], isFalse);
+    });
+
+    test('rides every mode but the camera grid', () {
+      expect(screensaverWidgetAllowedOnMode('battery', 'clock'), isTrue);
+      expect(screensaverWidgetAllowedOnMode('battery', 'immich'), isTrue);
+      expect(screensaverWidgetAllowedOnMode('battery', 'camera'), isFalse);
+    });
+
+    test('only when low: hidden until the charge is low and off the cable',
+        () {
+      // Off by default: the widget is there to be read.
+      expect(
+        batteryWidgetVisible(lowOnly: false, level: 90, charging: false),
+        isTrue,
+      );
+      expect(
+        batteryWidgetVisible(lowOnly: true, level: 90, charging: false),
+        isFalse,
+      );
+      expect(
+        batteryWidgetVisible(lowOnly: true, level: lowBatteryLevel,
+            charging: false),
+        isTrue,
+      );
+      // On the cable it is already being dealt with, and a host that
+      // cannot report a level has no "low" to speak of.
+      expect(
+        batteryWidgetVisible(lowOnly: true, level: 5, charging: true),
+        isFalse,
+      );
+      expect(
+        batteryWidgetVisible(lowOnly: true, level: null, charging: false),
+        isFalse,
+      );
+    });
+
+    test('decodes with its own config', () {
+      final widgets = decodeScreensaverWidgets(
+        '[{"position":"bottom_left","type":"battery",'
+        '"config":{"color":"250,250,250","percent":false,"low":true}}]',
+      );
+      expect(widgets.single.type, 'battery');
+      expect(widgets.single.config['percent'], isFalse);
+      expect(widgets.single.config['low'], isTrue);
     });
   });
 

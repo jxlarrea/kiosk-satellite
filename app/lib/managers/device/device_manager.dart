@@ -429,6 +429,22 @@ class DeviceManager extends Manager {
   /// carry the diagnosis (issue #138) without an adb session.
   bool _thermalLogged = false;
 
+  /// The battery as the corner widget shows it: the charge percent (null
+  /// when the host cannot say) and whether the device is on external
+  /// power. Its own read rather than [stats], which also samples the CPU
+  /// for the admin header and would make a widget tick cost more than the
+  /// reading it needs.
+  Future<({int? level, bool charging})> batteryStatus() async {
+    int? level;
+    try {
+      level = await _battery.batteryLevel;
+    } catch (_) {
+      // Desktops and emulators without a battery: the widget shows the
+      // charging state alone rather than a made-up number.
+    }
+    return (level: level, charging: await _chargingNow());
+  }
+
   /// The three live numbers the admin header shows. Its own read because the
   /// remote admin polls this every few seconds: [info] walks every network
   /// interface (twice) and queries the package on each call, all to produce
