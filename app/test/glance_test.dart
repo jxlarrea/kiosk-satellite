@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -8,6 +11,7 @@ import 'package:kiosk_satellite/managers/home_assistant/home_assistant_manager.d
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/ui/glance_row.dart';
+import 'package:kiosk_satellite/ui/mdi_icon.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -232,18 +236,55 @@ void main() {
   });
 
   group('icons', () {
-    test("an icon set in Home Assistant wins", () {
-      expect(
-        glanceIcon(entity('light.x', icon: 'mdi:garage-open', state: 'on')),
-        Icons.garage,
-      );
+    setUpAll(() {
+      // Same file-backed read the icon tests use; the asset channel
+      // cannot be awaited outside a pumping widget test.
+      MdiIcons.readShard = (key) => File(key).readAsString();
     });
 
-    test('an unknown mdi name falls back instead of showing nothing', () {
-      expect(
-        glanceIcon(entity('lock.x', icon: 'mdi:not-a-real-icon', state: 'locked')),
-        Icons.lock,
+    testWidgets('an icon set in Home Assistant is drawn, not approximated', (
+      tester,
+    ) async {
+      // Reading the icon is real I/O, which a pumping test's clock does
+      // not drive; resolve it first, as a long-lived row would have.
+      await tester.runAsync(() => MdiIcons.path('mdi:garage-open'));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlanceIcon(
+              entity: entity('light.x', icon: 'mdi:garage-open', state: 'on'),
+              size: 34,
+              color: Colors.white,
+            ),
+          ),
+        ),
       );
+      await tester.pump();
+      // The real icon, not the Material lookalike the table used to pick.
+      expect(find.byIcon(Icons.lightbulb), findsNothing);
+      expect(find.byType(SvgPicture), findsOneWidget);
+    });
+
+    testWidgets('an unknown name keeps the domain default', (tester) async {
+      await tester.runAsync(() => MdiIcons.path('mdi:not-a-real-icon'));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: GlanceIcon(
+              entity: entity(
+                'lock.x',
+                icon: 'mdi:not-a-real-icon',
+                state: 'locked',
+              ),
+              size: 34,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byIcon(Icons.lock), findsOneWidget);
+      expect(find.byType(SvgPicture), findsNothing);
     });
 
     test('state picks the icon apart, so open and shut differ', () {

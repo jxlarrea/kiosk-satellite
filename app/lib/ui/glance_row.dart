@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../app_container.dart';
 import '../managers/glance/glance_manager.dart';
+import 'mdi_icon.dart';
 
 /// The screensaver's At a Glance row: a few entity states, icon over name
 /// over value, in one muted tone (issue #37).
@@ -135,11 +136,7 @@ class _GlanceItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          glanceIcon(entity),
-          size: 34 * scale,
-          color: label,
-        ),
+        GlanceIcon(entity: entity, size: 34 * scale, color: label),
         SizedBox(width: 12 * scale),
         Flexible(
           child: Column(
@@ -217,24 +214,42 @@ String _pretty(String value) => value
         word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
     .join(' ');
 
+/// The icon an entity draws with: the one it carries, when someone set one
+/// in Home Assistant, and the domain default otherwise.
+///
+/// An icon set by hand is a Material Design Icon name, which the app now
+/// draws for real from the bundled set (see ui/mdi_icon.dart). The default
+/// stays a Material one: Home Assistant computes those in its frontend and
+/// never sends them, so it is this app's own guess at what the entity is,
+/// and it has to be on screen in the first frame, before any icon file has
+/// been read.
+class GlanceIcon extends StatelessWidget {
+  const GlanceIcon({
+    super.key,
+    required this.entity,
+    required this.size,
+    required this.color,
+  });
 
-/// The entity's icon.
-///
-/// Home Assistant computes icons in its frontend, so a state carries one only
-/// when somebody set it by hand. Those are Material Design Icon names, and
-/// this maps the ones people actually pin to a status row onto their Material
-/// equivalents; everything else falls through to a per-domain default that
-/// mirrors what Home Assistant itself would draw. A row of identical dots
-/// would defeat the point of glancing at it.
-///
-/// Deliberately not the Material Design Icons package: its IconData subclass
-/// does not compile against this Flutter version.
-IconData glanceIcon(GlanceEntity entity) {
-  final explicit = entity.icon;
-  if (explicit != null && explicit.startsWith('mdi:')) {
-    final mapped = _mdiAliases[explicit.substring(4)];
-    if (mapped != null) return mapped;
+  final GlanceEntity entity;
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final own = entity.icon;
+    final fallback = glanceIcon(entity);
+    if (own == null || !MdiIcons.looksLikeIcon(own)) {
+      return Icon(fallback, size: size, color: color);
+    }
+    return MdiIcon(name: own, size: size, color: color, fallback: fallback);
   }
+}
+
+/// The domain default: what this app draws when Home Assistant sends no
+/// icon of its own, which is most of the time. A row of identical dots
+/// would defeat the point of glancing at it.
+IconData glanceIcon(GlanceEntity entity) {
   final domain = entity.entityId.split('.').first;
   final deviceClass = entity.deviceClass;
   final state = entity.state;
@@ -267,8 +282,8 @@ IconData glanceIcon(GlanceEntity entity) {
     'water_heater' => Icons.water_damage,
     'alarm_control_panel' =>
       state == 'disarmed' ? Icons.shield_outlined : Icons.shield,
-    'person' || 'device_tracker' =>
-      state == 'home' ? Icons.home : Icons.directions_walk,
+    'person' ||
+    'device_tracker' => state == 'home' ? Icons.home : Icons.directions_walk,
     'vacuum' => Icons.cleaning_services,
     'media_player' => Icons.speaker,
     'camera' => Icons.videocam,
@@ -290,90 +305,3 @@ IconData glanceIcon(GlanceEntity entity) {
     _ => Icons.sensors,
   };
 }
-
-/// Material Design Icon names commonly set on the kinds of entity that end up
-/// on a status row, mapped to their closest Material equivalent. A name that
-/// is not here falls through to the domain default, which is nearly always
-/// the same icon anyway.
-const _mdiAliases = <String, IconData>{
-  'garage': Icons.garage,
-  'garage-open': Icons.garage,
-  'garage-variant': Icons.garage,
-  'garage-open-variant': Icons.garage,
-  'door': Icons.sensor_door,
-  'door-open': Icons.sensor_door,
-  'door-closed': Icons.sensor_door,
-  'door-closed-lock': Icons.lock,
-  'gate': Icons.fence,
-  'gate-open': Icons.fence,
-  'fence': Icons.fence,
-  'lock': Icons.lock,
-  'lock-open': Icons.lock_open,
-  'lock-open-variant': Icons.lock_open,
-  'lock-outline': Icons.lock_outline,
-  'window-closed': Icons.sensor_window,
-  'window-open': Icons.sensor_window,
-  'window-closed-variant': Icons.sensor_window,
-  'window-open-variant': Icons.sensor_window,
-  'window-shutter': Icons.blinds,
-  'window-shutter-open': Icons.blinds,
-  'blinds': Icons.blinds,
-  'blinds-open': Icons.blinds,
-  'motion-sensor': Icons.directions_run,
-  'motion-sensor-off': Icons.sensors_off,
-  'run': Icons.directions_run,
-  'walk': Icons.directions_walk,
-  'lightbulb': Icons.lightbulb,
-  'lightbulb-on': Icons.lightbulb,
-  'lightbulb-outline': Icons.lightbulb_outline,
-  'ceiling-light': Icons.light,
-  'lamp': Icons.light,
-  'power-plug': Icons.power,
-  'power-plug-off': Icons.power_off,
-  'toggle-switch': Icons.toggle_on,
-  'toggle-switch-off': Icons.toggle_off,
-  'fan': Icons.mode_fan_off,
-  'air-conditioner': Icons.ac_unit,
-  'thermometer': Icons.thermostat,
-  'thermostat': Icons.thermostat,
-  'water': Icons.water_drop,
-  'water-percent': Icons.water_drop,
-  'water-off': Icons.water_damage,
-  'flash': Icons.bolt,
-  'lightning-bolt': Icons.bolt,
-  'battery': Icons.battery_full,
-  'battery-alert': Icons.battery_alert,
-  'shield': Icons.shield,
-  'shield-home': Icons.shield,
-  'shield-lock': Icons.shield,
-  'shield-off': Icons.shield_outlined,
-  'home': Icons.home,
-  'home-outline': Icons.home_outlined,
-  'account': Icons.person,
-  'account-outline': Icons.person_outline,
-  'cctv': Icons.videocam,
-  'cctv-off': Icons.videocam_off,
-  'speaker': Icons.speaker,
-  'robot-vacuum': Icons.cleaning_services,
-  'weather-sunny': Icons.wb_sunny,
-  'weather-night': Icons.nights_stay,
-  'weather-partly-cloudy': Icons.cloud,
-  'weather-cloudy': Icons.cloud,
-  'weather-rainy': Icons.water_drop,
-  'washing-machine': Icons.local_laundry_service,
-  'fridge': Icons.kitchen,
-  'car': Icons.directions_car,
-  'wifi': Icons.wifi,
-  'wifi-off': Icons.wifi_off,
-  'gauge': Icons.speed,
-  'clock-outline': Icons.schedule,
-  'calendar': Icons.calendar_today,
-  'bell': Icons.notifications,
-  'bell-off': Icons.notifications_off,
-  'eye': Icons.visibility,
-  'eye-off': Icons.visibility_off,
-  'check-circle': Icons.check_circle,
-  'alert': Icons.warning_amber,
-  'smoke-detector': Icons.sensors,
-  'fire': Icons.local_fire_department,
-};
