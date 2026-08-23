@@ -59,6 +59,14 @@ class EspEntitySurface {
   bool _deviceCameraIsTheCamera = false;
   bool _screensaverActive = false;
 
+  /// Whether the Voice Satellite entities are in this run's catalog, so a
+  /// push never names an entity Home Assistant was never told about.
+  bool _voiceSatellite = false;
+
+  /// Coalesces the burst of wake-word state changes one voice turn makes
+  /// into a single read of the page's engine state.
+  Timer? _vsNudge;
+
   /// Uptime anchors last pushed, so a poll only republishes when the
   /// start moment genuinely moved (same 5-second tolerance as MQTT:
   /// second-to-second jitter in "now minus uptime" is not a restart).
@@ -176,6 +184,12 @@ class EspEntitySurface {
         (bt.data as Map)['connected'] != null;
     final cameraWanted = cameraPresent && _settings.get(defs.cameraEnabled);
     _deviceCameraIsTheCamera = cameraWanted;
+    // The Voice Satellite controls exist where a satellite is bound: the
+    // setup wizard and the settings page both record the binding here, and
+    // a kiosk with none has no engine to start (issue #288). Reading the
+    // page instead would make the catalog depend on what was on screen the
+    // moment the server started.
+    _voiceSatellite = _settings.get(defs.haSatelliteEntity).trim().isNotEmpty;
     await _refreshCameraViews();
     await _refreshDashboardViews();
 
@@ -235,6 +249,13 @@ class EspEntitySurface {
         'unit': '%',
         'mode': 2,
       },
+      if (_voiceSatellite)
+        {
+          'type': 'switch',
+          'objectId': 'voice_satellite',
+          'name': 'Voice Satellite',
+          'icon': 'mdi:account-voice',
+        },
       button(
         'postpone_screensaver',
         'Postpone screensaver',
@@ -390,6 +411,14 @@ class EspEntitySurface {
             'icon': e.value.$2,
             'category': 1,
           },
+      if (_voiceSatellite)
+        {
+          'type': 'switch',
+          'objectId': 'voice_satellite_auto_start',
+          'name': 'Voice Satellite auto start',
+          'icon': 'mdi:play-circle-outline',
+          'category': 1,
+        },
       for (final e in _settingSelects.entries)
         {
           'type': 'select',
@@ -692,6 +721,20 @@ class EspEntitySurface {
       }),
     );
     _subs.add(bus.on<WakeWordDetected>().listen((_) => _interaction.mark()));
+    // Voice Satellite starting or stopping moves the wake-word handoff, so
+    // this is the moment the engine switch is wrong; a voice turn moves it
+    // several times, hence the coalescing.
+    if (_voiceSatellite) {
+      _subs.add(
+        bus.on<WakeWordStateChanged>().listen((_) {
+          _vsNudge?.cancel();
+          _vsNudge = Timer(
+            const Duration(milliseconds: 700),
+            () => unawaited(_sendVoiceSatellite()),
+          );
+        }),
+      );
+    }
     _subs.add(
       bus.on<VoiceInteractionChanged>().listen((e) {
         if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
@@ -715,6 +758,8 @@ class EspEntitySurface {
     _motionOff = null;
     _btNudge?.cancel();
     _btNudge = null;
+    _vsNudge?.cancel();
+    _vsNudge = null;
     _interaction.dispose();
   }
 
@@ -775,6 +820,20 @@ class EspEntitySurface {
         await commands.execute('setVolume', {
           'percent': ((value as num?) ?? 0),
         });
+      case 'voice_satellite':
+        await commands.execute('vsEngine', {
+          'action': value == true ? 'start' : 'stop',
+        });
+        // Starting is a next-frame affair in the page, and a start with no
+        // session behind it silently does nothing: re-read rather than
+        // echo the request (issue #288).
+        await Future<void>.delayed(const Duration(milliseconds: 1200));
+        await _sendVoiceSatellite();
+      case 'voice_satellite_auto_start':
+        await commands.execute('vsSetBrowserSettings', {
+          'settings': {'auto_start': value == true},
+        });
+        await _sendVoiceSatellite();
       case 'postpone_screensaver':
         await commands.execute('postponeScreensaver', const {});
       case 'reload':
@@ -992,6 +1051,25 @@ class EspEntitySurface {
     if (slots > 0) await _send('bt_max_connections', slots);
   }
 
+  /// The Voice Satellite engine switch and its auto-start twin, read from
+  /// the page hook the settings screen uses. Nothing is pushed when the
+  /// hook does not answer: the page may be mid-load or showing something
+  /// other than the dashboard, and last known beats a wrong answer.
+  Future<void> _sendVoiceSatellite() async {
+    if (!_voiceSatellite) return;
+    final result = await commands.execute('vsEngineState', const {});
+    final data = result.data;
+    if (!result.ok || data is! Map) return;
+    final engine = data['engine'];
+    if (engine is Map) {
+      await _send('voice_satellite', engine['running'] == true);
+    }
+    final config = data['config'];
+    if (config is Map && config['auto_start'] != null) {
+      await _send('voice_satellite_auto_start', config['auto_start'] == true);
+    }
+  }
+
   Future<void> _sendScreen() async {
     final on = await commands.execute('isScreenOn', const {});
     final brightness = await commands.execute('getBrightness', const {});
@@ -1193,6 +1271,7 @@ class EspEntitySurface {
           : null;
       if (count is num) await _send('btproxy_nearby', count.toInt());
     }
+    await _sendVoiceSatellite();
     // Every completed poll IS a sighting, like the MQTT twin.
     await _send('last_seen', DateTime.now().toUtc().toIso8601String());
   }

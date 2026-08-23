@@ -22,9 +22,15 @@ void main() {
   late List<(String, Map<String, Object?>)> executed;
   var cameraPresent = true;
   var bluetooth = <String, Object?>{};
+  var vsState = <String, Object?>{};
 
   setUp(() async {
     cameraPresent = true;
+    vsState = {
+      'config': {'auto_start': true},
+      'satellite': 'assist_satellite.office_tablet',
+      'engine': {'running': true, 'canStart': true},
+    };
     bluetooth = {
       'connected': 2,
       'devices': ['Kitchen Speaker', 'Keyboard'],
@@ -109,6 +115,18 @@ void main() {
         handler: (_) async => CommandResult.ok(bluetooth),
       ),
     );
+    commands.register(
+      Command(
+        name: 'vsEngineState',
+        description: 'stub',
+        handler: (_) async {
+          executed.add(('vsEngineState', const {}));
+          return vsState.isEmpty
+              ? const CommandResult.fail('no hook')
+              : CommandResult.ok(vsState);
+        },
+      ),
+    );
     stub('btProxyNearby', {'count': 13});
     stub('btProxyStatus', {
       'connections': ['AA:BB:CC:DD:EE:FF'],
@@ -147,6 +165,8 @@ void main() {
       'haNavigate',
       'installUpdate',
       'takeCameraSnapshot',
+      'vsEngine',
+      'vsSetBrowserSettings',
     ]) {
       stub(name, null);
     }
@@ -452,5 +472,77 @@ void main() {
     await attach();
     final byId = {for (final (id, value) in pushed) id: value};
     expect(byId['last_interaction'], '2026-08-18T20:00:00.000Z');
+  });
+
+  group('the Voice Satellite switches (issue #288)', () {
+    setUp(() async {
+      await settings.set(
+        defs.haSatelliteEntity,
+        'assist_satellite.office_tablet',
+      );
+    });
+
+    test('exist only while a satellite is bound', () async {
+      var ids = [for (final d in await surface.build()) '${d['objectId']}'];
+      expect(ids, contains('voice_satellite'));
+      expect(ids, contains('voice_satellite_auto_start'));
+
+      // Nothing to start without a binding, so neither switch is published.
+      await settings.set(defs.haSatelliteEntity, '');
+      ids = [for (final d in await surface.build()) '${d['objectId']}'];
+      expect(ids, isNot(contains('voice_satellite')));
+      expect(ids, isNot(contains('voice_satellite_auto_start')));
+    });
+
+    test('report what the page says, not what was asked for', () async {
+      await surface.build();
+      await attach();
+      var byId = {for (final (id, value) in pushed) id: value};
+      expect(byId['voice_satellite'], true);
+      expect(byId['voice_satellite_auto_start'], true);
+
+      // A start the page refuses (no session behind it) must not leave the
+      // switch reading on.
+      vsState = {
+        'config': {'auto_start': false},
+        'engine': {'running': false, 'canStart': false},
+      };
+      pushed.clear();
+      executed.clear();
+      await surface.handleCommand('voice_satellite', true);
+      byId = {for (final (id, value) in pushed) id: value};
+      expect(executed.first.$1, 'vsEngine');
+      expect(executed.first.$2['action'], 'start');
+      expect(byId['voice_satellite'], false);
+    });
+
+    test(
+      'stop rides the same page path, auto start the settings hook',
+      () async {
+        await surface.build();
+        await attach();
+        executed.clear();
+        await surface.handleCommand('voice_satellite', false);
+        expect(executed.first.$1, 'vsEngine');
+        expect(executed.first.$2['action'], 'stop');
+
+        executed.clear();
+        await surface.handleCommand('voice_satellite_auto_start', false);
+        expect(executed.first.$1, 'vsSetBrowserSettings');
+        expect(executed.first.$2['settings'], {'auto_start': false});
+      },
+    );
+
+    test('a page with no Voice Satellite keeps the last known state', () async {
+      await surface.build();
+      await attach();
+      pushed.clear();
+      // Showing a website, or mid-load: the hook cannot answer, and a
+      // guess would be worse than the value Home Assistant already has.
+      vsState = {};
+      bus.publish(const WakeWordStateChanged(active: false, listening: false));
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      expect(pushed.any((p) => p.$1 == 'voice_satellite'), isFalse);
+    });
   });
 }

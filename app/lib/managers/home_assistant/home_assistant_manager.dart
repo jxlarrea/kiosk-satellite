@@ -471,6 +471,39 @@ class HomeAssistantManager extends Manager {
       )
       ..register(
         Command(
+          name: 'vsEngineState',
+          description:
+              'What the page reports about Voice Satellite right now: '
+              'whether the engine is running, whether it could start, the '
+              'satellite it is bound to and the browser-local settings. '
+              'One evaluation in the page, where vsControls also walks the '
+              'Home Assistant registry.',
+          handler: (_) async {
+            final result = await commands.execute('evalJs', {
+              'code':
+                  'JSON.stringify(window.__vsExternalSettings '
+                  '? window.__vsExternalSettings.get() : null)',
+            });
+            final data = result.ok ? result.data : null;
+            if (data is String && data.isNotEmpty && data != 'null') {
+              final decoded = jsonDecode(data);
+              if (decoded is Map) {
+                // The skin catalog is for pickers; callers of this command
+                // want the state, and it is the bulky half of the answer.
+                decoded.remove('skins');
+                return CommandResult.ok(decoded);
+              }
+            }
+            return const CommandResult.fail(
+              'the page has no Voice Satellite settings hook — the kiosk '
+              'must be showing Home Assistant with a current Voice '
+              'Satellite version',
+            );
+          },
+        ),
+      )
+      ..register(
+        Command(
           name: 'vsEngine',
           description:
               'Start or stop the Voice Satellite engine in the page, '
@@ -2075,7 +2108,9 @@ class HomeAssistantManager extends Manager {
     if (!configured) return 'en';
     try {
       final config = await _wsCommand({'type': 'get_config'});
-      final language = config is Map ? '${config['language'] ?? ''}'.trim() : '';
+      final language = config is Map
+          ? '${config['language'] ?? ''}'.trim()
+          : '';
       if (language.isEmpty) return 'en';
       return _language = language;
     } catch (e) {

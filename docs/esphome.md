@@ -88,6 +88,19 @@ the ESPHome ones at your own pace, then turn MQTT off. The toggle is off by defa
 enabling ESPHome just for the Bluetooth proxy never creates duplicates
 next to an existing MQTT setup; flip it when you are ready to migrate.
 
+Two switches join the set on a kiosk with a Voice Satellite assigned to
+it: **Voice Satellite** starts and stops the engine in the page, the same
+thing the Start and Stop buttons on the kiosk's own Voice Satellite
+settings do, and **Voice Satellite auto start** decides whether it comes
+up by itself with the dashboard. Together they let Home Assistant hold
+the voice half back on a device that needs its first seconds for the
+dashboard: leave auto start off and have an automation turn the engine on
+a minute after the kiosk boots, or turn voice off entirely on a panel
+where it is not wanted. Both appear once the kiosk is bound to a
+satellite, which the setup wizard and the Voice Satellite settings page
+both record; binding or unbinding one re-lists the entities the next time
+the server starts.
+
 One deliberate difference from the MQTT catalog: the ESPHome camera
 protocol allows exactly one camera per device, so the kiosk serves its
 device camera when present and enabled, else the screenshot camera.

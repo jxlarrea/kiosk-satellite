@@ -87,6 +87,8 @@ class BtProxyManager extends Manager {
       // The Show Music Assistant button exists only while a server address
       // is configured.
       'sendspin.ma_url',
+      // The Voice Satellite switches exist only with a satellite bound.
+      'ha.satellite_entity',
     };
     _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('btproxy.') &&
