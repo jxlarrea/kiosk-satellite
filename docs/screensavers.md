@@ -21,6 +21,7 @@ Settings, then **Screensaver** (the same tab exists in the remote admin):
 | Idle timeout (seconds) | 300 | Inactivity period before the screensaver starts. |
 | Screensaver brightness | off | A separate brightness while the screensaver shows. See below. |
 | Brightness level | 20% | Applies to every mode except Dim and Black. |
+| Brighten for notifications | on | Lift the dimming while a notification is on screen. See below. |
 | Turn screen off after | 0 (never) | Truly power the panel off once the screensaver has run this long. See below. |
 | Pixel shift | off | Nudge the image every minute to protect OLED panels. Not for Black, whose pixels are already off. |
 | Screensaver mode | Black | What the screensaver shows. Only the selected mode's settings appear below the picker. |
@@ -236,6 +237,17 @@ is active. Moving the slider while the screensaver shows applies
 immediately, so it can be tuned by eye. The pre-screensaver brightness
 is saved persistently, so even an app restart mid-screensaver cannot
 make the night level the new normal.
+
+**Brighten for notifications** (on) lifts all of that while a
+[notification](esphome.md#notifications) is on screen. A kiosk running
+its screensaver at a few percent is dark enough that a message arriving
+on it cannot be read, so the session borrows back the brightness it
+saved when it started, and gives it back when the last card is gone.
+Only the backlight moves: the clock, the photo or the black overlay
+stays exactly where it was, with the card lit on top of it. Dim and
+Black lift too, and so does a schedule entry's own brightness. Turn it
+off for a bedroom, where a notification lighting the room at 3am is
+worse than missing it until morning.
 
 ## Turning the screen off
 

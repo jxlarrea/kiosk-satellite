@@ -517,6 +517,18 @@ class SendspinShowPlayerRequested extends AppEvent {
   const SendspinShowPlayerRequested();
 }
 
+// ── Notifications ──────────────────────────────────────────────────────
+
+/// How many notifications are on screen (see NotificationManager). The
+/// screensaver watches it: something worth reading has arrived over a
+/// dimmed panel, so the dimming lifts until the last card is gone.
+class NotificationsChanged extends AppEvent {
+  const NotificationsChanged({required this.count});
+  final int count;
+
+  bool get showing => count > 0;
+}
+
 // ── Settings ───────────────────────────────────────────────────────────
 
 class SettingChanged extends AppEvent {

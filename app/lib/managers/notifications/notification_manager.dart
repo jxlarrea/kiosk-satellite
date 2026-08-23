@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../core/command_registry.dart';
+import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../ui/mdi_icon.dart';
 
@@ -97,6 +98,12 @@ class NotificationManager extends Manager {
 
   @override
   Future<void> init() async {
+    // One announcement per change, however the stack changed: a new card,
+    // a countdown ending, a tap, the cap pushing the oldest out. The
+    // screensaver lifts its dimming while anything is up.
+    current.addListener(
+      () => bus.publish(NotificationsChanged(count: current.value.length)),
+    );
     commands
       ..register(
         Command(

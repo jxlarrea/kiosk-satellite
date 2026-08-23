@@ -2088,6 +2088,21 @@ const screensaverBrightnessLevel = SettingDef<num>(
   unit: '%',
 );
 
+/// A dimmed panel is unreadable at arm's length, which is exactly the
+/// moment a notification arrives and asks to be read. On by default: the
+/// dimming exists so a screensaver does not glow all night, not so that
+/// messages sent to this kiosk go unseen. Off suits a bedroom, where a
+/// notification lighting the room at 3am is worse than missing it.
+const screensaverNotificationBrightness = SettingDef<bool>(
+  key: 'screensaver.notification_brightness',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Brighten for notifications',
+  description:
+      'Lift the screensaver dimming while a notification is on screen.',
+  category: 'Screensaver',
+);
+
 // The screensaver deliberately holds the panel awake (see the manager's
 // start()), so the OS idle timeout can never fire under it; this timer is
 // the one sanctioned way a session ends in a truly dark panel. Wake paths
@@ -4136,6 +4151,7 @@ const List<SettingDef<Object>> allSettings = [
   // the general controls rather than a per-mode panel.
   screensaverBrightnessEnabled,
   screensaverBrightnessLevel,
+  screensaverNotificationBrightness,
   screensaverScreenOffMinutes,
   // Pixel shift sits with the general controls: it applies to every mode.
   screensaverPixelShift,

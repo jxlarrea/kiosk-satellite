@@ -166,6 +166,13 @@ done. A fifth pushes the oldest out, so a stuck automation cannot paper
 over the screen. The same message twice is two notifications: a second
 call means it happened again.
 
+A notification arriving over a running screensaver brings the panel back
+to its ordinary brightness for as long as a card is up, so a kiosk
+sitting at five percent overnight is readable the moment something
+happens, and dims again when the last card goes. The screensaver itself
+is not disturbed, and the behavior has a switch of its own (**Brighten
+for notifications**, see [screensavers.md](screensavers.md#brightness)).
+
 A tap anywhere on a card dismisses that card and leaves the rest. To take
 one down from Home Assistant, call the kiosk's `dismissNotification`
 command over the [remote API](remote-api.md), with the id

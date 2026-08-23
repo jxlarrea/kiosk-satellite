@@ -155,6 +155,11 @@ class ScreensaverManager extends Manager {
   bool _cameraViewActive = false;
   double? _savedBrightness;
 
+  /// Whether a notification is on screen. A dimmed screensaver lifts back
+  /// to the brightness it saved while one is up: a message nobody can read
+  /// is not a message (issue #278).
+  bool _notificationShowing = false;
+
   /// The visual overlay the UI should render, or null for none.
   ///
   /// One of 'black' | 'clock' | 'media' | 'website'. The 'dim' mode sets no
@@ -257,6 +262,9 @@ class ScreensaverManager extends Manager {
         return;
       }
       _armScreenOffTimer();
+    });
+    bus.on<NotificationsChanged>().listen((e) {
+      unawaited(_onNotificationsChanged(e.showing));
     });
     bus.on<SendspinNowPlayingChanged>().listen((e) {
       _sendspinNowPlaying = e.active;
@@ -635,6 +643,25 @@ class ScreensaverManager extends Manager {
     }
   }
 
+  /// A notification came up over the screensaver, or the last one went.
+  /// Only the brightness moves: the mode keeps its overlay, so the clock
+  /// or the photo stays exactly where it was, lit enough to read the card
+  /// on top of it.
+  Future<void> _onNotificationsChanged(bool showing) async {
+    if (_notificationShowing == showing) return;
+    _notificationShowing = showing;
+    // Nothing to lift unless a session is running and it dimmed something
+    // (_savedBrightness is the level it will go back to).
+    if (!_active || _savedBrightness == null) return;
+    if (!_settings.get(defs.screensaverNotificationBrightness)) return;
+    if (showing) {
+      await commands.execute('setBrightness', {'level': _savedBrightness});
+    } else {
+      // Back to whatever this mode, schedule entry or takeover asks for.
+      await _applyVisuals();
+    }
+  }
+
   /// Set the overlay and tell the bus: the browser manager freezes the
   /// dashboard's rendering only while an overlay actually covers it, and
   /// coverage can flip mid-session (a schedule boundary swapping Dim for a
@@ -670,6 +697,13 @@ class ScreensaverManager extends Manager {
       }
       return;
     }
+    // A notification on screen outranks every mode's darkness, including a
+    // schedule entry's: the overlay below is still the mode's own, only the
+    // backlight is borrowed back until the last card goes.
+    final liftForNotification =
+        _notificationShowing &&
+        _savedBrightness != null &&
+        _settings.get(defs.screensaverNotificationBrightness);
     switch (mode) {
       case 'dim':
         // Backlight only — no overlay. stop() restores the saved level.
@@ -678,7 +712,12 @@ class ScreensaverManager extends Manager {
         final dim =
             _scheduleBrightness ??
             _settings.get(defs.screensaverDimLevel).toDouble();
-        await commands.execute('setBrightness', {'level': dim});
+        await commands.execute('setBrightness', {
+          'level': liftForNotification ? _savedBrightness : dim,
+        });
+      case 'black' when liftForNotification:
+        _setView('black');
+        await commands.execute('setBrightness', {'level': _savedBrightness});
       case 'black':
         // Backlight to zero behind a black overlay — deliberately NOT the
         // screenOff command, which truly powers the panel off (device-admin
@@ -697,7 +736,9 @@ class ScreensaverManager extends Manager {
           final level =
               _scheduleBrightness ??
               _settings.get(defs.screensaverBrightnessLevel).toDouble();
-          await commands.execute('setBrightness', {'level': level});
+          await commands.execute('setBrightness', {
+            'level': liftForNotification ? _savedBrightness : level,
+          });
         } else if (_savedBrightness != null) {
           // A mid-session switch out of a dimmed mode (schedule boundary,
           // music starting) must lift the old mode's darkness with it.
