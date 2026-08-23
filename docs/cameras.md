@@ -145,6 +145,26 @@ camera also has to publish an audio track Kiosk Satellite can play: AAC and
 Opus are the safe choices, while a camera that streams no audio, or a codec
 the device cannot decode, simply plays silently.
 
+## Zoom
+
+**Pinch to zoom a single camera** (Settings, then Camera Streams, then
+Playback) is on by default. Where one camera fills the display, two fingers
+scale the picture up to five times, one finger moves around it while it is
+zoomed, and a double tap puts it back. This is only which part of the frame
+is on screen; nothing is asked of the camera, so it works whatever the
+camera is and whichever transport it streams over. Made for wide-angle
+cameras, where the thing worth looking at sits in a corner of the frame.
+
+Zooming applies to a view holding one camera and to the camera focused with
+a tap in a larger view, and never to a grid, where a pinch would land on
+whichever tiles the fingers happened to cover. Leaving focus, or closing the
+view, puts the zoom back. While a picture is zoomed the back swipe is given
+over to moving around it, so a double tap is what leaves: the first one
+takes the zoom off, the second closes the view or returns to the grid. The
+picture cannot be dragged past its own edges, and the [camera
+screensaver](#camera-screensaver) is untouched, as it is scenery rather than
+something to handle.
+
 ## Auto-dismiss
 
 **Auto-dismiss after** (Settings, then Camera Streams, then Playback) closes

@@ -3287,6 +3287,22 @@ const cameraSingleAudio = SettingDef<bool>(
   category: 'Cameras',
 );
 
+// Wide-angle cameras put the thing worth looking at in a corner of the
+// frame, and a kiosk has no other way to get closer to it (issue #286).
+// Same rule as the sound above: only where one camera fills the view, since
+// pinching a grid tile would zoom whatever the fingers happened to land on.
+// On by default; turning it off leaves the view's taps and swipes alone.
+const cameraPinchZoom = SettingDef<bool>(
+  key: 'camera.pinch_zoom',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Pinch to zoom a single camera',
+  description:
+      'Zoom into the picture with two fingers when only one camera is on '
+      'screen. Drag to move around, double-tap to reset.',
+  category: 'Cameras',
+);
+
 // A glance at the cameras from a clap or a corner tap should not stay up
 // forever on a wall panel. Applies to the camera view overlay however it was
 // opened (gesture, MQTT, the drawer); the screensaver's camera mode is its
@@ -4297,6 +4313,7 @@ const List<SettingDef<Object>> allSettings = [
   cameraPreferMse,
   cameraPreferHls,
   cameraSingleAudio,
+  cameraPinchZoom,
   cameraAutoDismissSeconds,
   cameraConfig,
   // Music Assistant leads the page it names: the server is what the kiosk

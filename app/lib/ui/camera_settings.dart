@@ -271,6 +271,21 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
               ),
             ),
             SearchLandingTarget(
+              id: defs.cameraPinchZoom.key,
+              child: SwitchListTile(
+                title: Text(defs.cameraPinchZoom.title),
+                subtitle: Text(defs.cameraPinchZoom.description),
+                value: widget.container.settings.get(defs.cameraPinchZoom),
+                onChanged: (value) async {
+                  await widget.container.settings.setFromJson(
+                    defs.cameraPinchZoom.key,
+                    value,
+                  );
+                  if (mounted) setState(() {});
+                },
+              ),
+            ),
+            SearchLandingTarget(
               id: defs.cameraAutoDismissSeconds.key,
               child: _autoDismissRow(context),
             ),

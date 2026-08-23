@@ -18,6 +18,12 @@
   .tile.focused { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
   video, img.mjpeg { width: 100%; height: 100%; object-fit: contain;
     background: #000; display: block; }
+  /* Pinch to zoom (issue #286). The tile carries the transform rather than
+     the media element, which a reconnect replaces: a stream that drops and
+     comes back keeps the zoom the fingers set. */
+  .tile.zoomed video, .tile.zoomed img.mjpeg {
+    transform: translate(var(--zoom-x, 0px), var(--zoom-y, 0px))
+      scale(var(--zoom-scale, 1)); }
   /* Belt for WebViews that predate disableRemotePlayback: never draw the
      media-controls overlay cast button on a camera tile. */
   video::-internal-media-controls-overlay-cast-button { display: none !important; }
@@ -222,6 +228,7 @@ function applyLayout() {
     tile.classList.toggle('hidden', !active);
     tile.classList.toggle('focused', !!focusId && active);
   }
+  applyZoom();
 }
 
 function setStatus(cameraId, text) {
@@ -997,6 +1004,7 @@ function syncPeers() {
 
 function setFocus(cameraId, notify) {
   focusId = cameraId || null;
+  resetZoom();
   applyLayout();
   syncPeers();
   if (notify) bridge('cameraFocus', { cameraId: focusId || '' });
@@ -1023,6 +1031,87 @@ for (let slot = 0; slot < SLOTS; slot++) {
   grid.appendChild(tile);
 }
 
+// ── Pinch to zoom (issue #286) ─────────────────────────────────────────
+// A wide-angle camera puts the thing worth looking at in a corner of the
+// frame, and a kiosk has no other way of getting closer to it. Two fingers
+// scale the picture inside its tile and one finger moves around it; nothing
+// is asked of the camera, this is only which part of the frame is on screen.
+// The same rule the sound follows: one camera filling the view (a one-camera
+// view, or the focused tile), never a grid, and never the screensaver, whose
+// grid is scenery rather than a control surface.
+const PINCH_ZOOM = CFG.pinchZoom !== false && CFG.interactive !== false;
+const ZOOM_MAX = 5;
+// How far a gesture travels before the click that ends it counts as a pan
+// rather than a tap on the tile.
+const ZOOM_SLOP = 8;
+const zoom = { scale: 1, x: 0, y: 0 };
+const points = new Map();
+let pinch = null;
+let gestureTravel = 0;
+
+// The tile zooming applies to, or null while several share the screen.
+function zoomTile() {
+  if (!PINCH_ZOOM) return null;
+  const camera = CFG.cameras.length === 1 ? CFG.cameras[0] : null;
+  const id = focusId || (camera && camera.id);
+  return id
+    ? document.querySelector(`.tile[data-id="${CSS.escape(id)}"]`)
+    : null;
+}
+
+// Keep the picture's own edges inside the tile. object-fit letterboxes a
+// stream whose shape differs from the tile's, and panning out over those
+// bars is panning into nothing, so the limits follow the picture rather
+// than the element.
+function clampZoom(tile) {
+  const width = tile.clientWidth;
+  const height = tile.clientHeight;
+  const media = tile.querySelector('video, img.mjpeg');
+  const mediaWidth = media ? media.videoWidth || media.naturalWidth || 0 : 0;
+  const mediaHeight = media ? media.videoHeight || media.naturalHeight || 0 : 0;
+  let shownWidth = width;
+  let shownHeight = height;
+  if (mediaWidth && mediaHeight) {
+    const fit = Math.min(width / mediaWidth, height / mediaHeight);
+    shownWidth = mediaWidth * fit;
+    shownHeight = mediaHeight * fit;
+  }
+  const maxX = Math.max(0, (shownWidth * zoom.scale - width) / 2);
+  const maxY = Math.max(0, (shownHeight * zoom.scale - height) / 2);
+  zoom.x = Math.min(maxX, Math.max(-maxX, zoom.x));
+  zoom.y = Math.min(maxY, Math.max(-maxY, zoom.y));
+}
+
+function applyZoom() {
+  const tile = zoomTile();
+  for (const other of grid.children) {
+    if (other !== tile) other.classList.remove('zoomed');
+  }
+  if (!tile) return;
+  clampZoom(tile);
+  tile.style.setProperty('--zoom-scale', zoom.scale);
+  tile.style.setProperty('--zoom-x', `${zoom.x}px`);
+  tile.style.setProperty('--zoom-y', `${zoom.y}px`);
+  tile.classList.toggle('zoomed', zoom.scale > 1);
+}
+
+function resetZoom() {
+  zoom.scale = 1;
+  zoom.x = 0;
+  zoom.y = 0;
+  applyZoom();
+}
+
+// The two live fingers: how far apart they are, and the point between them.
+function pinchPoints() {
+  const [first, second] = [...points.values()];
+  return {
+    distance: Math.max(1, Math.hypot(first.x - second.x, first.y - second.y)),
+    x: (first.x + second.x) / 2,
+    y: (first.y + second.y) / 2,
+  };
+}
+
 grid.addEventListener('click', (event) => {
   // As a screensaver the grid is scenery, not a control surface: focus and
   // the close gestures belong to the view someone opened deliberately, and
@@ -1031,6 +1120,12 @@ grid.addEventListener('click', (event) => {
     bridge('cameraDismiss');
     return;
   }
+  // The click that ends a pinch or a pan is not a tap on the tile. Reading
+  // it clears it: a click the page never sees (a gesture the WebView took
+  // for itself) must not go on swallowing the taps that follow.
+  const travelled = gestureTravel;
+  gestureTravel = 0;
+  if (travelled > ZOOM_SLOP) return;
   const tile = event.target.closest('.tile');
   if (!tile) return;
 
@@ -1040,7 +1135,11 @@ grid.addEventListener('click', (event) => {
       lastTap.cameraId === cameraId &&
       now - lastTap.at <= DOUBLE_TAP_MS) {
     clearPendingTap();
-    if (focusId) {
+    // A zoomed picture is what the double tap is most likely aiming at;
+    // it takes the zoom off first, and the next one leaves the view.
+    if (zoom.scale > 1) {
+      resetZoom();
+    } else if (focusId) {
       setFocus(null, true);
     } else {
       closeView();
@@ -1061,9 +1160,57 @@ grid.addEventListener('click', (event) => {
 });
 document.addEventListener('pointerdown', (event) => {
   if (CFG.interactive === false) return;
-  swipeStart = event.clientX <= 36 ? { x: event.clientX, y: event.clientY } : null;
+  if (points.size === 0) gestureTravel = 0;
+  points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (points.size === 2 && zoomTile()) {
+    const start = pinchPoints();
+    pinch = {
+      distance: start.distance, x: start.x, y: start.y,
+      scale: zoom.scale, offsetX: zoom.x, offsetY: zoom.y,
+    };
+    clearPendingTap();
+  }
+  // A finger that lands to pinch or to pan is not the start of an edge
+  // swipe: dragging a zoomed picture rightwards must not close the view.
+  swipeStart = points.size === 1 && zoom.scale === 1 && event.clientX <= 36
+    ? { x: event.clientX, y: event.clientY }
+    : null;
+}, true);
+document.addEventListener('pointermove', (event) => {
+  const point = points.get(event.pointerId);
+  if (!point) return;
+  const dx = event.clientX - point.x;
+  const dy = event.clientY - point.y;
+  point.x = event.clientX;
+  point.y = event.clientY;
+  const tile = zoomTile();
+  if (!tile) return;
+  if (pinch && points.size >= 2) {
+    const now = pinchPoints();
+    const rect = tile.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const scale = Math.min(ZOOM_MAX,
+      Math.max(1, pinch.scale * (now.distance / pinch.distance)));
+    // Hold whatever lies between the fingers still while the scale
+    // changes, so the zoom goes where the fingers are rather than to the
+    // middle of the tile, and the pair dragging moves the picture with it.
+    const ratio = scale / pinch.scale;
+    zoom.scale = scale;
+    zoom.x = now.x - centerX - (pinch.x - centerX - pinch.offsetX) * ratio;
+    zoom.y = now.y - centerY - (pinch.y - centerY - pinch.offsetY) * ratio;
+  } else if (points.size === 1 && zoom.scale > 1) {
+    zoom.x += dx;
+    zoom.y += dy;
+  } else {
+    return;
+  }
+  gestureTravel += Math.abs(dx) + Math.abs(dy);
+  applyZoom();
 }, true);
 document.addEventListener('pointerup', (event) => {
+  points.delete(event.pointerId);
+  if (points.size < 2) pinch = null;
   if (!swipeStart) return;
   const dx = event.clientX - swipeStart.x;
   const dy = Math.abs(event.clientY - swipeStart.y);
@@ -1076,7 +1223,9 @@ document.addEventListener('pointerup', (event) => {
     closeView();
   }
 }, true);
-document.addEventListener('pointercancel', () => {
+document.addEventListener('pointercancel', (event) => {
+  points.delete(event.pointerId);
+  if (points.size < 2) pinch = null;
   swipeStart = null;
 }, true);
 addEventListener('resize', applyLayout);
@@ -1087,6 +1236,10 @@ addEventListener('pagehide', shutdown);
 document.addEventListener('visibilitychange', () => {
   if (closing) return;
   if (document.visibilityState === 'hidden') {
+    // Fingers the page will never see lifted: forget them, or the next
+    // single touch arrives as the second half of a pinch.
+    points.clear();
+    pinch = null;
     clearTimeout(hiddenTimer);
     hiddenTimer = setTimeout(() => {
       hiddenTimer = null;
