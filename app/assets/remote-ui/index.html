@@ -8117,7 +8117,21 @@ function settingRow(s) {
   if (s.type === 'boolean') {
     const lbl = document.createElement('label'); lbl.className = 'switch';
     const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!s.value;
-    cb.addEventListener('change', () => save(cb.checked));
+    cb.addEventListener('change', async () => {
+      // The one switch here that takes away the thing you are using. Nothing
+      // on this page can undo it, because this page is what it serves.
+      if (s.key === 'remote.enabled' && !cb.checked) {
+        const pick = await messageBox({
+          title: 'Turn off remote management?',
+          message: 'WARNING: You will no longer be able to access this page. '
+            + 'To switch it back on, use the device or the Remote management '
+            + 'switch in Home Assistant.',
+          buttons: ['Cancel', 'Turn it off'],
+        });
+        if (pick !== 'Turn it off') { cb.checked = true; return; }
+      }
+      save(cb.checked);
+    });
     const sl = document.createElement('span'); sl.className = 'slider';
     lbl.append(cb, sl); row.appendChild(lbl);
   } else if (s.type === 'select') {

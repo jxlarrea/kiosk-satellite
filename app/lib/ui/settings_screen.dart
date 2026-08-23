@@ -915,6 +915,23 @@ class _SubpageNav extends InheritedWidget {
   bool updateShouldNotify(_SubpageNav oldWidget) => false;
 }
 
+/// Why the remote admin server is not listening, under the switch that says
+/// it should be. Silent while it is serving, or while it is off on purpose.
+class _RemoteStatusRow extends StatelessWidget {
+  const _RemoteStatusRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String?>(
+      valueListenable: container.remote.stoppedReason,
+      builder: (context, reason, _) =>
+          reason == null ? const SizedBox.shrink() : WarnRow(reason),
+    );
+  }
+}
+
 /// A page entry on a card of its own, for the pages a screen places by hand
 /// because the definitions do not describe their rows (live entity controls,
 /// live hardware). [_sectionedCards] builds the same row for the pages it
@@ -2150,6 +2167,12 @@ class _CategoryContentState extends State<_CategoryContent> {
       ),
       screensaverImmichCacheMax.key: _ImmichCacheStatsRow(container: container),
     },
+    // What the switch above actually did. Turning it on is not enough on
+    // its own — the server also needs an admin password and a free port —
+    // and until this row existed a switch reading "on" with nothing serving
+    // looked identical to a working setup.
+    if (widget.category == 'Device')
+      remoteEnabled.key: _RemoteStatusRow(container: container),
     // Under the last credential field, where the Home Assistant
     // and Immich cards put theirs.
     if (widget.category == 'MQTT')

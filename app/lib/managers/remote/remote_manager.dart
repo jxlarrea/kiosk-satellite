@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' show Random;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
@@ -31,6 +32,17 @@ class RemoteManager extends Manager {
   String get name => 'remote';
 
   HttpServer? _server;
+
+  /// Why the server is not listening, or null when it is (or when it is off
+  /// on purpose). "Remote management" being on is not the same as the server
+  /// running — it also needs an admin password and a free port — and the
+  /// difference used to be invisible: the switch read on, nothing served,
+  /// and on a restart not even a log line said so.
+  final ValueNotifier<String?> stoppedReason = ValueNotifier(null);
+
+  /// The last bind failure, kept so [stoppedReason] can name it.
+  String? _startError;
+
   String _currentUrl = '';
   final _wsClients = <WebSocketChannel>{};
   String? _indexHtml;
@@ -118,6 +130,14 @@ class RemoteManager extends Manager {
     });
 
     bus.on<SettingChanged>().listen((e) {
+      // Losing remote access is the one settings change nobody can diagnose
+      // afterwards from here, because the log this writes to is served by
+      // the very server it just switched off. At warn so it also reaches
+      // the platform log, where `adb logcat` can still find it.
+      if (e.key == defs.remoteEnabled.key &&
+          !_settings.get(defs.remoteEnabled)) {
+        log.warn(name, 'remote management switched off');
+      }
       if (e.key == defs.remoteEnabled.key ||
           e.key == defs.remotePort.key ||
           e.key == defs.remotePassword.key ||
@@ -159,25 +179,28 @@ class RemoteManager extends Manager {
   bool get _setupMode => _settings.get(defs.startUrl).isEmpty;
 
   Future<void> _sync() async {
-    final wantRunning =
-        _setupMode ||
-        (_settings.get(defs.remoteEnabled) &&
-            _settings.get(defs.remotePassword).isNotEmpty);
+    final enabled = _settings.get(defs.remoteEnabled);
+    final hasPassword = _settings.get(defs.remotePassword).isNotEmpty;
+    final wantRunning = _setupMode || (enabled && hasPassword);
     if (wantRunning && _server == null) {
       await _start();
     } else if (!wantRunning && _server != null) {
       await _stop();
-      if (_settings.get(defs.remoteEnabled)) {
-        log.warn(
-          name,
-          'remote enabled but no admin password set; not starting',
-        );
-      }
     } else if (wantRunning && _server != null) {
       // Port may have changed; restart.
       await _stop();
       await _start();
     }
+    // Said every time, not only on the transition that switched it off: the
+    // silent case was the one that mattered — enabled, no password, nothing
+    // running, and a restart that logged nothing at all.
+    stoppedReason.value = _server != null || !enabled
+        ? null
+        : !hasPassword
+        ? 'Set an admin password below to start the server.'
+        : _startError ?? 'The server is not running.';
+    final reason = stoppedReason.value;
+    if (reason != null) log.warn(name, 'not serving: $reason');
   }
 
   Future<void> _start() async {
@@ -188,8 +211,10 @@ class RemoteManager extends Manager {
         InternetAddress.anyIPv4,
         port,
       );
+      _startError = null;
       log.info(name, 'listening on :$port');
     } catch (e) {
+      _startError = 'Could not listen on port $port: $e';
       log.error(name, 'failed to start on :$port: $e');
     }
   }
@@ -201,8 +226,15 @@ class RemoteManager extends Manager {
       unawaited(client.sink.close());
     }
     _wsClients.clear();
-    await _server?.close();
+    // Released before the close, and forced: turning remote management off
+    // from the remote admin closes the very connection serving that request,
+    // and a graceful close waits for it forever. That left _server non-null,
+    // so every later sync took the "restart" branch, awaited the same stuck
+    // close, and never started anything again — the switch read on and
+    // nothing served until the app was restarted.
+    final server = _server;
     _server = null;
+    await server?.close(force: true);
     log.info(name, 'stopped');
   }
 

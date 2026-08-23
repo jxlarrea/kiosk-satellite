@@ -14,11 +14,11 @@ class LogEntry {
   final String message;
 
   Map<String, Object?> toJson() => {
-        'time': time.toIso8601String(),
-        'level': level.name,
-        'tag': tag,
-        'message': message,
-      };
+    'time': time.toIso8601String(),
+    'level': level.name,
+    'tag': tag,
+    'message': message,
+  };
 }
 
 /// Ring-buffer logger. The remote UI tails [stream] over its WebSocket and
@@ -42,7 +42,12 @@ class Logger {
     if (_buffer.length >= _capacity) _buffer.removeFirst();
     _buffer.addLast(entry);
     if (!_controller.isClosed) _controller.add(entry);
-    if (kDebugMode) {
+    // Warnings and errors also go to the platform log, in release too: when
+    // something breaks the remote admin itself, this ring buffer is only
+    // readable through the very server that is down, and `adb logcat` is all
+    // that is left. Debug and info stay out of it — they are the noisy ones,
+    // and the remote UI tails them live.
+    if (kDebugMode || level == LogLevel.warn || level == LogLevel.error) {
       debugPrint('[${level.name}] $tag: $message');
     }
   }
