@@ -129,7 +129,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
     url_path: app://com.android.deskclock
   ```
   
-&bull; **WebRTC cameras**: import streams from Go2RTC or add WHEP cameras
+&bull; **Camera Streams**: import streams from Go2RTC or add WebRTC, MSE, HLS or MJPEG cameras
   manually, then arrange up to four cameras into responsive
   [camera views](docs/cameras.md) that can be opened from the tablet,
   Remote Admin or Home Assistant.
