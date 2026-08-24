@@ -47,19 +47,13 @@ void main() {
         'on the toggle', () {
       expect(defs.allSettings, contains(defs.lockdownAllowScreensaver));
       expect(defs.lockdownAllowScreensaver.defaultValue, false);
-      expect(
-        defs.lockdownAllowScreensaver.dependsOn,
-        defs.lockdownEnabled.key,
-      );
+      expect(defs.lockdownAllowScreensaver.dependsOn, defs.lockdownEnabled.key);
     });
 
     test('lockdown.exit_gesture mirrors the kiosk options and gates on '
         'the toggle', () {
       expect(defs.allSettings, contains(defs.lockdownExitGesture));
-      expect(
-        defs.lockdownExitGesture.options,
-        defs.kioskExitGesture.options,
-      );
+      expect(defs.lockdownExitGesture.options, defs.kioskExitGesture.options);
       expect(defs.lockdownExitGesture.dependsOn, defs.lockdownEnabled.key);
     });
   });
@@ -70,6 +64,7 @@ void main() {
     late SettingsManager settings;
     late KioskManager kiosk;
     late int reclaims;
+    late bool screenOn;
 
     Future<void> build(Map<String, Object> initial) async {
       SharedPreferences.setMockInitialValues(initial);
@@ -81,6 +76,7 @@ void main() {
       kiosk = KioskManager(bus, commands, log, settings);
       await kiosk.init();
       reclaims = 0;
+      screenOn = true;
       commands.register(
         Command(
           name: 'bringToFront',
@@ -91,16 +87,25 @@ void main() {
           },
         ),
       );
+      commands.register(
+        Command(
+          name: 'isScreenOn',
+          description: 'test stub',
+          handler: (_) async => CommandResult.ok(screenOn),
+        ),
+      );
       // The watchdog rechecks the binding's lifecycle before acting; make
       // it agree the app is genuinely backgrounded.
-      WidgetsBinding.instance
-          .handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      WidgetsBinding.instance.handleAppLifecycleStateChanged(
+        AppLifecycleState.paused,
+      );
     }
 
     tearDown(() async {
       await kiosk.dispose();
-      WidgetsBinding.instance
-          .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      WidgetsBinding.instance.handleAppLifecycleStateChanged(
+        AppLifecycleState.resumed,
+      );
     });
 
     test('a pause while lockdown holds pulls the app back', () async {
@@ -143,6 +148,34 @@ void main() {
       await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
       bus.publish(const AppLaunched(package: 'com.example.app'));
       await pumpEventQueue();
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 0);
+    });
+
+    test('a dark panel holds the reclaim fire (issue #291)', () async {
+      await build({'ks.lockdown.enabled': true});
+      screenOn = false;
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 0);
+    });
+
+    test('the relit screen resumes the watch', () async {
+      await build({'ks.lockdown.enabled': true});
+      screenOn = false;
+      kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 0);
+      screenOn = true;
+      bus.publish(const ScreenStateChanged(on: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(reclaims, 1);
+    });
+
+    test('a screen-off under plain kiosk mode is not an escape', () async {
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+      screenOn = false;
       kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
       await Future<void>.delayed(const Duration(milliseconds: 1300));
       expect(reclaims, 0);

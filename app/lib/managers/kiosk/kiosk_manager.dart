@@ -68,8 +68,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   /// Kiosk mode wants Home dead. When the pin holds, it already is; the
   /// reclaim covers the gap where pinning was declined or lost.
   bool get _kioskHomeGuard =>
-      _settings.get(defs.kioskEnabled) &&
-      _settings.get(defs.kioskDisableHome);
+      _settings.get(defs.kioskEnabled) && _settings.get(defs.kioskDisableHome);
 
   static const _channel = MethodChannel('kiosk_satellite/kiosk_lock');
 
@@ -95,10 +94,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   /// kiosk each pick their own variant, but only one is armed at a time —
   /// the lockdown gesture replaces the kiosk one while the mode holds.
   static int gestureTapCount(String gesture) => switch (gesture) {
-        'taps5' || 'taps5hold' => 5,
-        'taps7' || 'taps7hold' => 7,
-        _ => 0,
-      };
+    'taps5' || 'taps5hold' => 5,
+    'taps7' || 'taps7hold' => 7,
+    _ => 0,
+  };
 
   /// Whether [pin] matches the configured PIN. An empty setting means no
   /// PIN is asked at all.
@@ -130,7 +129,9 @@ class KioskManager extends Manager with WidgetsBindingObserver {
             'button holds; the kiosk re-pins when it returns (issue #250). '
             'Fails when the package is not installed or has nothing '
             'launchable.',
-        params: const {'package': 'Android package, e.g. com.android.deskclock'},
+        params: const {
+          'package': 'Android package, e.g. com.android.deskclock',
+        },
         handler: (p) async {
           final package = '${p['package'] ?? ''}'.trim();
           if (package.isEmpty) {
@@ -142,8 +143,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           // didChangeAppLifecycleState arms the pin again on the way back.
           final wasPinned = await _invoke<bool>('unpin') ?? false;
           try {
-            final launched = await _backgroundChannel
-                .invokeMethod<bool>('launchApp', {'package': package});
+            final launched = await _backgroundChannel.invokeMethod<bool>(
+              'launchApp',
+              {'package': package},
+            );
             if (launched != true) {
               // Nothing came up, so no pause and no resume re-pin: put the
               // pin back now rather than leave the kiosk unprotected.
@@ -177,8 +180,10 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           final uri = '${p['uri'] ?? ''}'.trim();
           if (uri.isEmpty) return const CommandResult.fail('uri required');
           try {
-            final opened = await _backgroundChannel
-                .invokeMethod<bool>('openUri', {'uri': uri});
+            final opened = await _backgroundChannel.invokeMethod<bool>(
+              'openUri',
+              {'uri': uri},
+            );
             if (opened != true) {
               return CommandResult.fail('nothing on the device opens $uri');
             }
@@ -243,8 +248,9 @@ class KioskManager extends Manager with WidgetsBindingObserver {
         description: 'Open the Android Settings app over the kiosk.',
         handler: (_) async {
           try {
-            final opened = await _backgroundChannel
-                .invokeMethod<bool>('openSystemSettings');
+            final opened = await _backgroundChannel.invokeMethod<bool>(
+              'openSystemSettings',
+            );
             if (opened != true) {
               return const CommandResult.fail('could not open settings');
             }
@@ -253,9 +259,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           } on PlatformException catch (e) {
             return CommandResult.fail('could not open settings: $e');
           } on MissingPluginException {
-            return const CommandResult.fail(
-              'Android settings is Android-only',
-            );
+            return const CommandResult.fail('Android settings is Android-only');
           }
         },
       ),
@@ -306,17 +310,22 @@ class KioskManager extends Manager with WidgetsBindingObserver {
               ? ((device.data as Map)['sdkInt'] as num?)?.toInt()
               : null;
           if (sdk != null && sdk >= 29) {
-            final canReturn = await _backgroundChannel
-                    .invokeMethod<bool>('canBringToFront') ??
+            final canReturn =
+                await _backgroundChannel.invokeMethod<bool>(
+                  'canBringToFront',
+                ) ??
                 false;
             if (!canReturn) {
-              unawaited(commands.execute('requestOsPermissions', {
-                'which': ['overlay'],
-              }));
+              unawaited(
+                commands.execute('requestOsPermissions', {
+                  'which': ['overlay'],
+                }),
+              );
               return const CommandResult.fail(
-                  'Restarting needs the "Display over other apps" permission '
-                  'or the app cannot bring itself back. The grant screen is '
-                  'opening on the device; allow it there and retry.');
+                'Restarting needs the "Display over other apps" permission '
+                'or the app cannot bring itself back. The grant screen is '
+                'opening on the device; allow it there and retry.',
+              );
             }
           }
           log.info(name, 'restarting application');
@@ -393,8 +402,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
             try {
               results[name] =
                   name == 'bluetoothScan' || name == 'bluetoothConnect'
-                      ? await SystemPermissions.requestBluetooth()
-                      : (await known[name]!.request()).isGranted;
+                  ? await SystemPermissions.requestBluetooth()
+                  : (await known[name]!.request()).isGranted;
             } catch (_) {
               results[name] = false;
             }
@@ -425,8 +434,9 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           final askAllFiles = which is List && which.contains('allFiles');
           if (askAllFiles) {
             try {
-              if (await _backgroundChannel
-                      .invokeMethod<bool>('hasAllFilesAccess') ==
+              if (await _backgroundChannel.invokeMethod<bool>(
+                    'hasAllFilesAccess',
+                  ) ==
                   true) {
                 results['allFiles'] = true;
               } else if (await legacyStorage()) {
@@ -447,7 +457,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           if (askUsage) {
             try {
               if (await _backgroundChannel.invokeMethod<bool>(
-                      'hasUsageAccess') ==
+                    'hasUsageAccess',
+                  ) ==
                   true) {
                 results['usageAccess'] = true;
               } else {
@@ -473,9 +484,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
               results['deviceAdmin'] = true;
             } catch (_) {
               try {
-                await _backgroundChannel.invokeMethod(
-                  'requestScreenOffAdmin',
-                );
+                await _backgroundChannel.invokeMethod('requestScreenOffAdmin');
                 results['deviceAdmin'] = true;
               } catch (_) {
                 results['deviceAdmin'] = false;
@@ -524,6 +533,19 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     );
 
     bus.on<AppLaunched>().listen((_) => _appLaunchedAt = DateTime.now());
+
+    // The reclaim stands down while the panel is dark (issue #291); a
+    // screen coming back on with the app still paused is where the watch
+    // picks back up, and is the only signal of it: a kiosk that lost the
+    // foreground while the screen was off gets no lifecycle event when
+    // the panel relights.
+    bus.on<ScreenStateChanged>().listen((e) {
+      if (!e.on) return;
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        return;
+      }
+      _armReclaim();
+    });
 
     if (!Platform.isAndroid) return;
 
@@ -583,18 +605,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
-      // The pause that follows pauseKioskForInstall is Android's install
-      // confirmation coming up — the one screen the reclaim must leave
-      // alone, under lockdown included (issue #170).
-      if (_installPause) return;
-      if (!lockdownActive) {
-        final launched = _appLaunchedAt;
-        final sanctioned = launched != null &&
-            DateTime.now().difference(launched) <= _launchGrace;
-        if (!_kioskHomeGuard || sanctioned || menuBusy) return;
-      }
-      _reclaimTimer?.cancel();
-      _reclaimTimer = Timer(const Duration(seconds: 1), _reclaimForeground);
+      _armReclaim();
     } else if (state == AppLifecycleState.resumed) {
       _reclaimTimer?.cancel();
       _reclaimTimer = null;
@@ -620,6 +631,24 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     unawaited(_apply());
   }
 
+  /// Arm the reclaim if the protections want it: from a pause, and from a
+  /// screen-on that finds the app still paused.
+  void _armReclaim() {
+    // The pause that follows pauseKioskForInstall is Android's install
+    // confirmation coming up, the one screen the reclaim must leave
+    // alone, under lockdown included (issue #170).
+    if (_installPause) return;
+    if (!lockdownActive) {
+      final launched = _appLaunchedAt;
+      final sanctioned =
+          launched != null &&
+          DateTime.now().difference(launched) <= _launchGrace;
+      if (!_kioskHomeGuard || sanctioned || menuBusy) return;
+    }
+    _reclaimTimer?.cancel();
+    _reclaimTimer = Timer(const Duration(seconds: 1), _reclaimForeground);
+  }
+
   Future<void> _reclaimForeground() async {
     // Armed before the install pause began (the timer rechecks): stand
     // down rather than cover the install confirmation.
@@ -632,6 +661,15 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       // Pinned means Home is already dead system-wide: whatever paused
       // the app, it was not an escape this guard needs to answer.
       if (await _invoke<bool>('isPinned') ?? false) return;
+    }
+    // A dark panel pauses the Activity exactly like an escape does, but
+    // bringToFront begins by waking the screen, so reclaiming here relights
+    // a display that was deliberately turned off (issue #291). Screen off
+    // is not an escape: stand down and let the screen-on listener re-arm
+    // the watch, so an app raised over the dark kiosk is still answered
+    // once the panel is lit.
+    if ((await commands.execute('isScreenOn', const {})).data == false) {
+      return;
     }
     log.info(name, 'reclaiming the foreground');
     final result = await commands.execute('bringToFront', const {});
@@ -682,12 +720,14 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     // remotely with nobody cooperative in front of the device, so it takes
     // the shield only if the grant is already there and never fires the
     // grant screen for whoever is being locked out to approve.
-    final shieldGranted = lockdown &&
+    final shieldGranted =
+        lockdown &&
         !_settings.get(defs.kioskDisableStatusBar) &&
         (await _invoke<bool>('hasOverlayPermission') ?? false);
     // The pin the owner asked for themselves, consent dialog and all;
     // distinct from the pin lockdown would add on top.
-    final kioskHome = force &&
+    final kioskHome =
+        force &&
         _settings.get(defs.kioskEnabled) &&
         _settings.get(defs.kioskDisableHome);
     await _invoke<void>('apply', {
@@ -698,8 +738,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       'bars': on,
       'volume': lockdown || (on && _settings.get(defs.kioskDisableVolume)),
       'power': lockdown || (on && _settings.get(defs.kioskDisablePower)),
-      'statusBar': shieldGranted ||
-          (on && _settings.get(defs.kioskDisableStatusBar)),
+      'statusBar':
+          shieldGranted || (on && _settings.get(defs.kioskDisableStatusBar)),
       'home': lockdown || kioskHome,
       // Without device ownership, pinning pops a consent dialog with a
       // "No thanks" button and printed unpin instructions — every time,
@@ -735,9 +775,8 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       // opt-out; the force=false bundle (app exit) disarms them like
       // everything else. Lockdown disarms them all: the exit gesture is
       // the only thing a locked screen listens for.
-      'gestures': !force ||
-              lockdown ||
-              (on && _settings.get(defs.kioskDisableGestures))
+      'gestures':
+          !force || lockdown || (on && _settings.get(defs.kioskDisableGestures))
           ? const <Map<String, Object?>>[]
           : nativeGestureTriggers(
               decodeGestureMappings(_settings.get(defs.gestureMappings)),
