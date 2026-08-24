@@ -3998,7 +3998,7 @@ String? normalizeMacAddress(String raw) {
 String? validateMacAddress(Object? value) {
   if (value is! String || value.trim().isEmpty) return null;
   if (normalizeMacAddress(value) == null) {
-    return 'Enter a hardware address like AA:BB:CC:DD:EE:FF.';
+    return 'Enter a valid MAC address.';
   }
   return null;
 }

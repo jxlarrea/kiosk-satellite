@@ -88,7 +88,7 @@ void main() {
         isFalse,
       );
       expect(settings.get(defs.esphomeMacOverride), isEmpty);
-      expect(defs.validateMacAddress('kitchen'), contains('AA:BB:CC:DD:EE:FF'));
+      expect(defs.validateMacAddress('kitchen'), 'Enter a valid MAC address.');
     });
   });
 
@@ -150,7 +150,7 @@ void main() {
       expect(out['rejected'], [defs.esphomeMacOverride.key]);
       expect(
         (out['errors'] as Map)[defs.esphomeMacOverride.key],
-        contains('AA:BB:CC:DD:EE:FF'),
+        'Enter a valid MAC address.',
       );
       expect(settings.get(defs.esphomeMacOverride), isEmpty);
     });
