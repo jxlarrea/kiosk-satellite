@@ -101,7 +101,6 @@ class GlanceEntity {
   }
 }
 
-
 /// An attribute value as display text. Attributes are free-form JSON: a
 /// whole number sheds the ".0" a double parse gives it, everything else
 /// shows as it is. Deliberately no unit or precision — those belong to the
@@ -237,8 +236,9 @@ class GlanceManager extends Manager {
   bool get _rowConfigured {
     if (_settings.get(defs.screensaverGlanceEnabled)) return true;
     if (!_settings.get(defs.screensaverScheduleEnabled)) return false;
-    return parseScreensaverSchedule(_settings.get(defs.screensaverSchedule))
-        .any((e) => e['glance'] == true);
+    return parseScreensaverSchedule(
+      _settings.get(defs.screensaverSchedule),
+    ).any((e) => e['glance'] == true);
   }
 
   /// The configured entities, keeping any live state already collected for
@@ -263,11 +263,13 @@ class GlanceManager extends Manager {
           // edit that changed the displayed attribute or the name must not
           // keep showing the old choice until the next update.
           final kept = previous[entity.entityId];
-          next.add(kept != null &&
-                  kept.attribute == entity.attribute &&
-                  kept.customName == entity.customName
-              ? kept
-              : entity);
+          next.add(
+            kept != null &&
+                    kept.attribute == entity.attribute &&
+                    kept.customName == entity.customName
+                ? kept
+                : entity,
+          );
         }
       }
     } catch (error) {
@@ -276,18 +278,15 @@ class GlanceManager extends Manager {
     entities.value = next;
   }
 
-  /// The row only renders on these, so nothing else has any reason to hold
-  /// a subscription open.
-  static const _rowModes = {'black', 'clock'};
-
-  /// Whether the configured screensaver mode draws the row. Black with
-  /// "Hide all extras" never does (issue #151), so holding entity state
-  /// live for it would be pure cost.
+  /// Whether the configured screensaver mode draws the row: every mode but
+  /// the camera grid, where a status row would sit over a live feed, the
+  /// same line the corner widgets draw. Black with "Hide all extras" never
+  /// does (issue #151), so holding entity state live for it would be pure
+  /// cost.
   bool get _modeWantsRow {
     final mode = _settings.get(defs.screensaverMode);
-    if (!_rowModes.contains(mode)) return false;
-    return mode != 'black' ||
-        !_settings.get(defs.screensaverBlackHideExtras);
+    if (mode == 'camera') return false;
+    return mode != 'black' || !_settings.get(defs.screensaverBlackHideExtras);
   }
 
   /// Whether the full-screen Now Playing view is standing in for the
@@ -362,8 +361,9 @@ class GlanceManager extends Manager {
   /// One entity's state from the subscription. Attributes arrive only when
   /// they change, so a name or icon already known is kept rather than lost.
   void _applyState(String entityId, Map<String, Object?> state) {
-    final index =
-        entities.value.indexWhere((entity) => entity.entityId == entityId);
+    final index = entities.value.indexWhere(
+      (entity) => entity.entityId == entityId,
+    );
     if (index < 0) return;
     final attributes = (state['attributes'] as Map?) ?? const {};
     final entity = entities.value[index];
@@ -376,8 +376,8 @@ class GlanceManager extends Manager {
       // Only when this update actually carries the watched attribute: the
       // subscription diffs attributes, so an update about something else
       // must not erase the value already known.
-      attributeValue: entity.attribute != null &&
-              attributes.containsKey(entity.attribute)
+      attributeValue:
+          entity.attribute != null && attributes.containsKey(entity.attribute)
           ? glanceAttributeText(attributes[entity.attribute])
           : null,
     );

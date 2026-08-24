@@ -22,14 +22,16 @@ void main() {
   }
 
   group('Immich metadata lines', () {
-    test('every line is on out of the box: the overlay reads as it did',
-        () async {
-      final settings = await build({'ks.screensaver.immich_metadata': true});
-      expect(immichMetadataVisible(settings), isTrue);
-      for (final field in immichMetadataFields.keys) {
-        expect(immichMetadataFieldOn(settings, field), isTrue, reason: field);
-      }
-    });
+    test(
+      'every line is on out of the box: the overlay reads as it did',
+      () async {
+        final settings = await build({'ks.screensaver.immich_metadata': true});
+        expect(immichMetadataVisible(settings), isTrue);
+        for (final field in immichMetadataFields.keys) {
+          expect(immichMetadataFieldOn(settings, field), isTrue, reason: field);
+        }
+      },
+    );
 
     test('a line turned off leaves the others alone', () async {
       final settings = await build({
@@ -68,6 +70,50 @@ void main() {
       final settings = await build(const {});
       expect(immichMetadataVisible(settings), isFalse);
       expect(immichMetadataFieldOn(settings, 'date'), isFalse);
+    });
+  });
+
+  group('immichMetadataCorner', () {
+    test('the configured corner, out of the box the bottom left', () async {
+      final settings = await build({'ks.screensaver.immich_metadata': true});
+      expect(immichMetadataCorner(settings), 'bottom_left');
+    });
+
+    test(
+      'a widget in the corner pushes the panel to the next free one',
+      () async {
+        final settings = await build({
+          'ks.screensaver.immich_metadata': true,
+          'ks.screensaver.widgets':
+              '[{"position":"bottom_left","type":"battery","config":{}}]',
+        });
+        expect(immichMetadataCorner(settings), 'top_left');
+      },
+    );
+
+    test('nothing to say means no corner: the row need not narrow', () async {
+      final settings = await build(const {});
+      expect(immichMetadataCorner(settings), isNull);
+      final linesOff = await build({
+        'ks.screensaver.immich_metadata': true,
+        'ks.screensaver.immich_metadata_album': false,
+        'ks.screensaver.immich_metadata_date': false,
+        'ks.screensaver.immich_metadata_camera': false,
+        'ks.screensaver.immich_metadata_location': false,
+      });
+      expect(immichMetadataCorner(linesOff), isNull);
+    });
+
+    test('a fully claimed screen stands the panel down', () async {
+      final settings = await build({
+        'ks.screensaver.immich_metadata': true,
+        'ks.screensaver.widgets':
+            '[{"position":"top_left","type":"clock","config":{}},'
+            '{"position":"top_right","type":"weather","config":{}},'
+            '{"position":"bottom_left","type":"battery","config":{}},'
+            '{"position":"bottom_right","type":"clock","config":{}}]',
+      });
+      expect(immichMetadataCorner(settings), isNull);
     });
   });
 

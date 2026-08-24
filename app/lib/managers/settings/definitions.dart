@@ -2145,19 +2145,19 @@ const screensaverSavedBrightness = SettingDef<num>(
 
 // Motion detection exists only to wake the screensaver for now, so this one
 // switch is its whole on/off — no separate "motion detection" toggle. Off by
-// ── At a Glance (modes: black, clock) ──
-// A row of entity states under the clock, for the things people check in
-// passing: is the garage still open, is the door locked (issue #37). Only the
-// two plain modes carry it — the photo and camera modes have their own
-// imagery, and a status row over a photo is neither subtle nor readable.
+// ── At a Glance (every mode but the camera grid) ──
+// A row of entity states on the screensaver, for the things people check in
+// passing: is the garage still open, is the door locked (issue #37). Every
+// mode carries it except the camera grid, where a status row would sit over
+// a live feed, the same line the corner widgets draw. The default card
+// style brings its own backdrop, which is what lets the row ride the photo
+// modes at all: bare text over a bright photo is unreadable.
 const screensaverGlanceEnabled = SettingDef<bool>(
   key: 'screensaver.glance_enabled',
   type: SettingType.boolean,
   defaultValue: false,
   title: 'At a glance',
-  description:
-      'Show a row of Home Assistant entity states on the Black and Clock '
-      'screensavers.',
+  description: 'Show a row of Home Assistant entity states on the screensaver.',
   category: 'Screensaver',
   section: 'At a Glance',
   subpage: 'At a Glance',
@@ -2177,6 +2177,62 @@ const screensaverGlanceEntities = SettingDef<String>(
       'name.',
   category: 'Screensaver',
   section: 'At a Glance',
+  subpage: 'At a Glance',
+  dependsOn: 'screensaver.glance_enabled',
+);
+
+// The Appearance group: how the row draws, as opposed to what it shows.
+// Its rows sit at the end of the At a Glance subpage under their own
+// heading, the User Interface / Haptics precedent.
+//
+// One knob for the whole row, the Widget scaling precedent: the chips all
+// sit on the same panel, so they want the same correction. Applied inside
+// GlanceRow, on top of each surface's own computed scale, so the clock,
+// black, photo and Now Playing placements all follow it alike.
+const screensaverGlanceScale = SettingDef<num>(
+  key: 'screensaver.glance_scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Row scaling',
+  description: 'Scale the row to better fit your screen size.',
+  category: 'Screensaver',
+  section: 'Appearance',
+  subpage: 'At a Glance',
+  min: 50,
+  max: 150,
+  step: 5,
+  unit: '%',
+  dependsOn: 'screensaver.glance_enabled',
+);
+
+// The chip circles follow the entity's state color by default (a lit light
+// glows amber); this keeps them in the neutral grey for a quieter row.
+const screensaverGlanceBwIcons = SettingDef<bool>(
+  key: 'screensaver.glance_bw_icons',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Monochromatic icons',
+  description:
+      'Keep every icon in the neutral grey instead of its state '
+      'color.',
+  category: 'Screensaver',
+  section: 'Appearance',
+  subpage: 'At a Glance',
+  dependsOn: 'screensaver.glance_enabled',
+);
+
+// The original floating-text look, kept for the people who chose the row
+// when it was the only look. The cards became the default when the row
+// started riding the photo modes, whose imagery no single text color can
+// stay readable over.
+const screensaverGlanceTextOnly = SettingDef<bool>(
+  key: 'screensaver.glance_text_only',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Floating text style',
+  description: 'Show the entities as floating text instead of chips.',
+  category: 'Screensaver',
+  section: 'Appearance',
   subpage: 'At a Glance',
   dependsOn: 'screensaver.glance_enabled',
 );
@@ -4246,9 +4302,14 @@ const List<SettingDef<Object>> allSettings = [
   // so it sits between them and the other overlay group, At a Glance.
   screensaverWidgets,
   screensaverWidgetScale,
+  // The behavior rows first, then the Appearance group under its own
+  // heading at the end of the subpage.
   screensaverGlanceEnabled,
   screensaverGlanceEntities,
   screensaverGlanceNowPlaying,
+  screensaverGlanceScale,
+  screensaverGlanceBwIcons,
+  screensaverGlanceTextOnly,
   screensaverDismissOnMotion,
   screensaverPostponeOnMotion,
   motionCamera,

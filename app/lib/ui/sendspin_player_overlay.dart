@@ -322,8 +322,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               left: 0,
               right: 0,
               bottom: screen.height * 0.06,
-              // The default grey-on-black palette reads over the black
-              // backdrop and the scrimmed art alike, so no tint.
+              // The default cards carry their own backdrop, and the
+              // text-only style's grey-on-black palette reads over the
+              // black backdrop and the scrimmed art alike, so no tint.
               child: GlanceRow(
                 container: c,
                 scale: min(1.0, screen.height / 480).clamp(0.75, 1.0),

@@ -12,6 +12,7 @@ import '../../core/locale_dates.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'screensaver_widgets.dart';
 
 /// One entry of the Immich screensaver playlist.
 class ImmichAsset {
@@ -52,6 +53,28 @@ bool immichMetadataFieldOn(SettingsManager settings, String field) =>
 bool immichMetadataVisible(SettingsManager settings) =>
     settings.get(defs.screensaverImmichMetadata) &&
     immichMetadataFields.values.any((def) => settings.get(def));
+
+/// The corner the single-photo metadata panel settles in: its configured
+/// corner, or the first free one when a corner widget owns that (the panel
+/// steps aside rather than stacking). Null when the overlay is off, or on
+/// the (unlikely) fully claimed screen where the panel stands down.
+///
+/// Shared by the panel itself and the At a Glance row, which narrows and
+/// wraps when this lands in a bottom corner so the two never overlap.
+String? immichMetadataCorner(SettingsManager settings) {
+  if (!immichMetadataVisible(settings)) return null;
+  final claimed = {
+    for (final w in decodeScreensaverWidgets(
+      settings.get(defs.screensaverWidgets),
+    ))
+      if (screensaverWidgetAllowedOnMode(w.type, 'immich')) w.position,
+  };
+  final preferred = settings.get(defs.screensaverImmichMetadataPosition);
+  return [
+    preferred,
+    ...defs.cornerOptions,
+  ].where((corner) => !claimed.contains(corner)).firstOrNull;
+}
 
 /// An aspect ratio (width over height) counts as portrait below this. Not
 /// 1.0: a square photo pairs badly, reading as two small pictures rather

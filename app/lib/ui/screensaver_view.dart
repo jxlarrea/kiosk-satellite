@@ -24,6 +24,7 @@ import '../managers/screensaver/immich_manager.dart'
     show
         ImmichAsset,
         arrangeImmichPairs,
+        immichMetadataCorner,
         immichMetadataFieldOn,
         immichMetadataFields,
         immichMetadataVisible,
@@ -67,11 +68,17 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     // The scaling slider rides along and doubles as a live preview.
     // The Immich metadata lines ride along for the same reason: their
     // toggles are read at build, so turning one off has to reach the
-    // panel already on screen.
+    // panel already on screen. So do the At a Glance switch and style,
+    // read at build by the overlay row the photo and web modes carry.
     final live = {
       defs.screensaverWidgets.key,
       defs.screensaverWidgetScale.key,
       defs.screensaverImmichMetadata.key,
+      defs.screensaverImmichMetadataPosition.key,
+      defs.screensaverGlanceEnabled.key,
+      defs.screensaverGlanceTextOnly.key,
+      defs.screensaverGlanceBwIcons.key,
+      defs.screensaverGlanceScale.key,
       for (final def in immichMetadataFields.values) def.key,
     };
     _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
@@ -94,7 +101,8 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
         // A Black screensaver asked to look off (issue #151): one switch
         // blanks the overlays instead of asking people to unconfigure the
         // small clock and At a Glance row for the night.
-        final blackBare = view == 'black' &&
+        final blackBare =
+            view == 'black' &&
             container.settings.get(defs.screensaverBlackHideExtras);
         return ValueListenableBuilder<Map<String, Object?>?>(
           valueListenable: container.sendspin.nowPlaying,
@@ -163,6 +171,49 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                     ),
                   ),
                 },
+                // The At a Glance row rides over the photo and web modes
+                // too, pinned to the bottom the way the Clock screensaver
+                // pins it. Black and Clock place their own row (centred,
+                // under the clock), and the camera grid stays clear, the
+                // same line the corner widgets draw. IgnorePointer keeps
+                // taps falling through to the mode underneath: dismissal
+                // for the native modes, the page for the web ones.
+                if (!blackBare &&
+                    view != 'black' &&
+                    view != 'clock' &&
+                    view != 'camera')
+                  ValueListenableBuilder<bool?>(
+                    valueListenable: container.screensaver.scheduleGlance,
+                    builder: (context, scheduled, _) {
+                      if (!(scheduled ??
+                          container.settings.get(
+                            defs.screensaverGlanceEnabled,
+                          ))) {
+                        return const SizedBox.shrink();
+                      }
+                      return ValueListenableBuilder<Set<String>>(
+                        valueListenable: container.screensaver.claimedCorners,
+                        builder: (context, claimed, _) {
+                          // Immich metadata in a bottom corner, whether
+                          // the pair's two panels (which claim theirs
+                          // live) or the single-photo panel's settled
+                          // spot, and the row narrows to portrait's two
+                          // columns so it wraps clear of the panels
+                          // instead of spreading into them.
+                          final metadata = view == 'immich'
+                              ? immichMetadataCorner(container.settings)
+                              : null;
+                          return _GlanceOverlay(
+                            container: container,
+                            narrow:
+                                claimed.any((c) => c.startsWith('bottom_')) ||
+                                metadata == 'bottom_left' ||
+                                metadata == 'bottom_right',
+                          );
+                        },
+                      );
+                    },
+                  ),
                 // The corner widgets ride over every mode their type
                 // allows (the small clock stays off Clock, which is one
                 // already, and the camera grid, where it sits over a live
@@ -181,37 +232,39 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                     // what claimed it.
                     builder: (context, scheduled, _) =>
                         ValueListenableBuilder<Set<String>>(
-                      valueListenable: container.screensaver.claimedCorners,
-                      builder: (context, claimed, _) => Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (scheduled ?? true)
-                            for (final spec in decodeScreensaverWidgets(
-                              container.settings.get(defs.screensaverWidgets),
-                            ))
-                              if (screensaverWidgetAllowedOnMode(
-                                    spec.type,
-                                    view,
-                                  ) &&
-                                  !claimed.contains(spec.position))
-                                switch (spec.type) {
-                                  'clock' => ClockWidgetOverlay(
-                                    container: container,
-                                    spec: spec,
+                          valueListenable: container.screensaver.claimedCorners,
+                          builder: (context, claimed, _) => Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (scheduled ?? true)
+                                for (final spec in decodeScreensaverWidgets(
+                                  container.settings.get(
+                                    defs.screensaverWidgets,
                                   ),
-                                  'weather' => WeatherWidgetOverlay(
-                                    container: container,
-                                    spec: spec,
-                                  ),
-                                  'battery' => BatteryWidgetOverlay(
-                                    container: container,
-                                    spec: spec,
-                                  ),
-                                  _ => const SizedBox.shrink(),
-                                },
-                        ],
-                      ),
-                    ),
+                                ))
+                                  if (screensaverWidgetAllowedOnMode(
+                                        spec.type,
+                                        view,
+                                      ) &&
+                                      !claimed.contains(spec.position))
+                                    switch (spec.type) {
+                                      'clock' => ClockWidgetOverlay(
+                                        container: container,
+                                        spec: spec,
+                                      ),
+                                      'weather' => WeatherWidgetOverlay(
+                                        container: container,
+                                        spec: spec,
+                                      ),
+                                      'battery' => BatteryWidgetOverlay(
+                                        container: container,
+                                        spec: spec,
+                                      ),
+                                      _ => const SizedBox.shrink(),
+                                    },
+                            ],
+                          ),
+                        ),
                   ),
               ],
             ),
@@ -315,13 +368,12 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     // the flip animations) for identical output; the roller runs its own
     // per-frame ticker and ignores this timer entirely.
     final s = widget.container.settings;
-    final secs = s.get(defs.screensaverClockStyle) == 'digital' &&
+    final secs =
+        s.get(defs.screensaverClockStyle) == 'digital' &&
         s.get(defs.screensaverClockSeconds);
     final delay = secs
         ? Duration(milliseconds: 1000 - now.millisecond)
-        : Duration(
-            milliseconds: 60000 - now.second * 1000 - now.millisecond,
-          );
+        : Duration(milliseconds: 60000 - now.second * 1000 - now.millisecond);
     _tick = Timer(delay, () {
       if (!mounted) return;
       setState(() => _now = DateTime.now());
@@ -442,8 +494,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     final photo = _bgAspect;
     // An unreadable aspect (odd format) falls back to the cover fit the
     // clock always used.
-    final covers =
-        photo == null || max(photo / screen, screen / photo) <= 1.45;
+    final covers = photo == null || max(photo / screen, screen / photo) <= 1.45;
     final picture = Image(
       image: image,
       fit: covers ? BoxFit.cover : BoxFit.contain,
@@ -498,16 +549,20 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
       return FlipClockFace(
         now: _now,
         use24h: widget.container.settings.get(defs.screensaverClock24h),
-        digitColor:
-            _rgb(defs.screensaverFlipDigitColor, const Color(0xFF212121)),
+        digitColor: _rgb(
+          defs.screensaverFlipDigitColor,
+          const Color(0xFF212121),
+        ),
         cardColor: _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
         scale: scale,
       );
     }
     return RollerClockFace(
       use24h: widget.container.settings.get(defs.screensaverClock24h),
-      digitColor:
-          _rgb(defs.screensaverRollerDigitColor, const Color(0xFFFAFAFA)),
+      digitColor: _rgb(
+        defs.screensaverRollerDigitColor,
+        const Color(0xFFFAFAFA),
+      ),
       scale: scale,
     );
   }
@@ -536,7 +591,8 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         'roller' => _rgb(defs.screensaverRollerBgColor, Colors.black),
         // The flip backdrop follows the card color (see flipBackdrop).
         'flip' => flipBackdrop(
-            _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5))),
+          _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
+        ),
         _ => _rgb(defs.screensaverClockBgColor, Colors.black),
       },
       // Expand: both children are pinned to the display, so the stack must
@@ -570,9 +626,13 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                 // a white backdrop under grey-on-black glance rows).
                 tint: switch (style) {
                   'flip' => _rgb(
-                      defs.screensaverFlipDigitColor, const Color(0xFF212121)),
-                  'roller' => _rgb(defs.screensaverRollerDigitColor,
-                      const Color(0xFFFAFAFA)),
+                    defs.screensaverFlipDigitColor,
+                    const Color(0xFF212121),
+                  ),
+                  'roller' => _rgb(
+                    defs.screensaverRollerDigitColor,
+                    const Color(0xFFFAFAFA),
+                  ),
                   _ => _color(),
                 },
               ),
@@ -584,40 +644,72 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
               child: style != 'digital'
                   ? _styledFace(style, scale * clockShrink)
                   : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-              Text(
-                _time(),
-                style: TextStyle(
-                  fontFamily: _clockFontFamily,
-                  fontFamilyFallback: _clockFontFallback,
-                  color: color,
-                  fontSize: clockSize,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: clockSize * 0.02,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  height: 1.0,
-                ),
-              ),
-              if (s.get(defs.screensaverClockDate)) ...[
-                SizedBox(height: clockSize * 0.1),
-                Text(
-                  _date(),
-                  style: TextStyle(
-                    fontFamily: _clockFontFamily,
-                    fontFamilyFallback: _clockFontFallback,
-                    // The date sits back a little, as in VS (~65% of the clock).
-                    color: color.withValues(alpha: 0.65),
-                    fontSize: dateSize,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-                ],
-              ),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _time(),
+                          style: TextStyle(
+                            fontFamily: _clockFontFamily,
+                            fontFamilyFallback: _clockFontFallback,
+                            color: color,
+                            fontSize: clockSize,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: clockSize * 0.02,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                            height: 1.0,
+                          ),
+                        ),
+                        if (s.get(defs.screensaverClockDate)) ...[
+                          SizedBox(height: clockSize * 0.1),
+                          Text(
+                            _date(),
+                            style: TextStyle(
+                              fontFamily: _clockFontFamily,
+                              fontFamilyFallback: _clockFontFallback,
+                              // The date sits back a little, as in VS (~65% of the clock).
+                              color: color.withValues(alpha: 0.65),
+                              fontSize: dateSize,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The At a Glance row over the photo and web modes: bottom-pinned at the
+/// Clock screensaver's inset, sized by its rule, and never in the way of a
+/// touch. Its own widget so the overlay's build stays a list of layers.
+class _GlanceOverlay extends StatelessWidget {
+  const _GlanceOverlay({required this.container, required this.narrow});
+
+  final AppContainer container;
+
+  /// Whether the mode's bottom corners are spoken for (the Immich
+  /// metadata panels), so the row should wrap narrow instead of spreading
+  /// into them.
+  final bool narrow;
+
+  @override
+  Widget build(BuildContext context) {
+    final height = MediaQuery.sizeOf(context).height;
+    return IgnorePointer(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: height * 0.06),
+          child: GlanceRow(
+            container: container,
+            scale: min(1.0, height / 480).clamp(0.75, 1.0),
+            narrow: narrow,
+          ),
+        ),
       ),
     );
   }
@@ -662,26 +754,21 @@ Alignment _cornerAlignment(String corner) => switch (corner) {
 /// overlay so its text survives a bright photo. Radial rather than a boxed
 /// gradient: it fades out in every direction, so there is no rectangle edge
 /// to catch the eye.
-Widget _cornerVignette(Alignment corner, {double radius = 0.7}) =>
-    DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: corner,
-          radius: radius,
-          // Front-loaded: still ~60% black well past a third of the way
-          // out, so the text area is solidly backed before the long fade
-          // begins. 80% at the corner itself: anything lighter left the
-          // widgets washing out on bright daylight photos.
-          colors: const [
-            Color(0xCC000000),
-            Color(0x99000000),
-            Color(0x00000000),
-          ],
-          stops: [0, 0.4, 1],
-        ),
-      ),
-      child: const SizedBox.expand(),
-    );
+Widget _cornerVignette(Alignment corner, {double radius = 0.7}) => DecoratedBox(
+  decoration: BoxDecoration(
+    gradient: RadialGradient(
+      center: corner,
+      radius: radius,
+      // Front-loaded: still ~60% black well past a third of the way
+      // out, so the text area is solidly backed before the long fade
+      // begins. 80% at the corner itself: anything lighter left the
+      // widgets washing out on bright daylight photos.
+      colors: const [Color(0xCC000000), Color(0x99000000), Color(0x00000000)],
+      stops: [0, 0.4, 1],
+    ),
+  ),
+  child: const SizedBox.expand(),
+);
 
 /// The small clock widget, shown over every screensaver mode except Clock.
 /// Minute-aligned ticks (it shows no seconds), a soft shadow so it reads on
@@ -1105,10 +1192,10 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
   Future<void> _open() async {
     final entity = '${widget.spec.config['entity'] ?? ''}';
     if (entity.isEmpty) return;
-    final live = await widget.container.homeAssistant.subscribeEntities(
-      [entity, ?_companion(entity)],
-      _onState,
-    );
+    final live = await widget.container.homeAssistant.subscribeEntities([
+      entity,
+      ?_companion(entity),
+    ], _onState);
     if (!mounted) {
       unawaited(live?.close());
       return;
@@ -1193,9 +1280,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
   Widget build(BuildContext context) {
     // Nothing sensible to draw before the first snapshot, or while the
     // entity itself is gone.
-    if (!_haveData ||
-        _condition == 'unavailable' ||
-        _condition == 'unknown') {
+    if (!_haveData || _condition == 'unavailable' || _condition == 'unknown') {
       return const SizedBox.shrink();
     }
     final corner = _cornerAlignment(widget.spec.position);
@@ -1208,8 +1293,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     final scale =
         widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
         100;
-    final tempSize =
-        max(min(size.width, size.height) * 0.063, 44.0) * scale;
+    final tempSize = max(min(size.width, size.height) * 0.063, 44.0) * scale;
     const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
 
     TextStyle line({
@@ -1283,13 +1367,17 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       if (_on('wind') && wind != null)
         detail(reading(wind, 'wind_speed_unit'), Icons.air),
       if (_on('visibility') && visibility != null)
-        detail(reading(visibility, 'visibility_unit'),
-            Icons.visibility_outlined),
+        detail(
+          reading(visibility, 'visibility_unit'),
+          Icons.visibility_outlined,
+        ),
     ];
     final lines = <Widget>[
       if (_on('location') && location.isNotEmpty)
-        Text(location, style: line(size: 18, weight: FontWeight.w600,
-            alpha: 1)),
+        Text(
+          location,
+          style: line(size: 18, weight: FontWeight.w600, alpha: 1),
+        ),
       if (temperature != null)
         Text(
           '${temperature.round()}${_attributes['temperature_unit'] ?? '°'}',
@@ -2105,8 +2193,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
                             image: _image!,
                             fit: BoxFit.cover,
                             gaplessPlayback: true,
-                            errorBuilder: (_, _, _) =>
-                                const SizedBox.expand(),
+                            errorBuilder: (_, _, _) => const SizedBox.expand(),
                           ),
                         ),
                         const ColoredBox(color: Color(0x99000000)),
@@ -2247,10 +2334,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       final size = MediaQuery.of(context).size;
       final arranged =
           c.settings.get(defs.screensaverImmichPairPortrait) && size.height > 0
-          ? arrangeImmichPairs(
-              assets,
-              screenAspect: size.width / size.height,
-            )
+          ? arrangeImmichPairs(assets, screenAspect: size.width / size.height)
           : assets;
       setState(() => _assets = arranged);
       _show(0);
@@ -2380,9 +2464,8 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
       // only ever paints half the width, so it decodes to half.
       ImageProvider sized(Uint8List data) => ResizeImage(
         MemoryImage(data),
-        width:
-            (mq.size.width * mq.devicePixelRatio / (pair == null ? 1 : 2))
-                .round(),
+        width: (mq.size.width * mq.devicePixelRatio / (pair == null ? 1 : 2))
+            .round(),
       );
       final image = sized(bytes);
       final pairImage = pair == null ? null : sized(pair.bytes);
@@ -2435,7 +2518,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   ) async {
     if (!c.settings.get(defs.screensaverImmichPairPortrait)) return null;
     if (_assets.length < 2) return null;
-    final screenAspect = screen.height == 0 ? 0.0 : screen.width / screen.height;
+    final screenAspect = screen.height == 0
+        ? 0.0
+        : screen.width / screen.height;
     if (!immichPairableScreen(screenAspect) || !immichPortraitPhoto(aspect)) {
       return null;
     }
@@ -2816,19 +2901,10 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
     if (forced != null) return _panel(_cornerAlignment(forced));
     // Widgets own their corners: rather than stacking two panels into
     // one corner, the metadata steps to the first free one, and stands
-    // down entirely on the (unlikely) fully claimed screen.
-    final claimed = {
-      for (final w in decodeScreensaverWidgets(
-        container.settings.get(defs.screensaverWidgets),
-      ))
-        if (screensaverWidgetAllowedOnMode(w.type, 'immich')) w.position,
-    };
-    final preferred = container.settings.get(
-      defs.screensaverImmichMetadataPosition,
-    );
-    final spot = [preferred, ...defs.cornerOptions]
-        .where((c) => !claimed.contains(c))
-        .firstOrNull;
+    // down entirely on the (unlikely) fully claimed screen. The helper
+    // is shared with the At a Glance row, which narrows when this
+    // settles in a bottom corner.
+    final spot = immichMetadataCorner(container.settings);
     if (spot == null) return const SizedBox.shrink();
     return _panel(_cornerAlignment(spot));
   }
@@ -2865,8 +2941,9 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
       const gap = SizedBox(width: 9);
       final text = Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment:
-            right ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: right
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: texts,
       );
       return Row(
@@ -2874,6 +2951,7 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
         children: right ? [text, gap, glyph] : [glyph, gap, text],
       );
     }
+
     // Only the lines the user kept (issue #268) and the asset actually
     // carries. An empty list takes the vignette with it: a corner darkened
     // for nothing reads as a smudge on the photo.
@@ -2891,8 +2969,7 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
         row('album', [
           Text(album, style: style(size: 18, weight: FontWeight.w600)),
         ]),
-      if (date != null)
-        row('calendar', [Text(date, style: style(alpha: 0.9))]),
+      if (date != null) row('calendar', [Text(date, style: style(alpha: 0.9))]),
       // The camera and its exposure read as two facts, so they get a line
       // and an icon each: the camera body, then the aperture glyph over
       // the exposure it was shot at.

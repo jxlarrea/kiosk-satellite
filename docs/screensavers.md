@@ -390,9 +390,9 @@ screensaver is enabled, so the two never fight.
 ## At a Glance
 
 **At a glance** puts a row of up to four Home Assistant entity states on
-the Black and Clock screensavers, kept live over its own Home Assistant
-subscription while the screensaver is up. It has its own page:
-[At a Glance](at-a-glance.md).
+the screensaver, every mode but the WebRTC Camera grid, kept live over
+its own Home Assistant subscription while the screensaver is up. It has
+its own page: [At a Glance](at-a-glance.md).
 
 ## Home Assistant
 

@@ -2,8 +2,8 @@
 
 A row of Home Assistant entity states on the screensaver, for the things
 people check in passing: is the garage still open, is the front door locked,
-is the gate shut. It keeps the plain screensaver plain, so the answer is there
-without waking the tablet and finding a dashboard.
+is the gate shut. The answer is there without waking the tablet and finding a
+dashboard.
 
 ## Setup
 
@@ -13,6 +13,15 @@ Settings, then **Screensaver**, then **At a Glance**:
 | --- | --- |
 | At a glance | Turns the row on. |
 | Entities | Up to four entities, in the order they appear. |
+| Show on Now Playing | Adds the row to the full-screen Now Playing view. |
+
+Under **Appearance**:
+
+| Setting | Notes |
+| --- | --- |
+| Row scaling | Scales the whole row, like the widgets' Widget scaling. |
+| Monochromatic icons | Keeps every icon in the neutral grey instead of its state color. |
+| Floating text style | Floating text instead of chips, the row's original look. |
 
 **Entities** opens a picker that searches Home Assistant by name or entity id,
 so nothing has to be typed from memory. The chosen entities sit at the top and
@@ -23,15 +32,21 @@ Configuration).
 
 ## Where it appears
 
-Only the **Black** and **Clock** screensaver modes:
+Every screensaver mode except the WebRTC Camera grid, where a status row
+would sit over a live feed:
 
 - **Black**: the row is centred, and is the whole display.
 - **Clock**: the row sits under the date, and the clock shrinks a little to
   make room for it.
+- The photo and web modes (Home Assistant Media, Local Media, Photo Gallery,
+  Immich, Website): the row is pinned near the bottom of the screen, over
+  whatever the mode is showing.
 
-The photo modes (Home Assistant Media, Local Media, Photo Gallery, Immich) and
-the WebRTC Camera mode do not carry it. They already have something to look
-at, and a status row over a photo is neither subtle nor readable.
+On the Immich screensaver, when the [metadata
+overlay](screensavers.md#immich-media) occupies a bottom corner (its own
+panel, or the two panels under a portrait pair), the row narrows to two
+columns and wraps, staying clear of the corners instead of spreading into
+them.
 
 A landscape screen shows the entities in one row. A portrait one takes two
 side by side and wraps the rest onto further rows, since three across a narrow
@@ -46,11 +61,26 @@ one set on the entity in Home Assistant; entities without one get the icon
 Home Assistant itself would draw for that kind of entity, so a lock looks like
 a lock and an open garage looks open.
 
-Everything is drawn in one muted tone. State is never color coded: the row is
-meant to be read across a dark room without competing with the clock. On the
-Clock screensaver the tone is the face's own digit color (Clock color for
-Digital, the digit colors for Flip and Roller), so the row stays readable on
-whatever backdrop the clock was given.
+By default each entity is a chip: a rounded pill in one translucent dark
+tone, sized to its content, with the icon in its own circle on the left and
+the name over the state beside it. The pill carries its own contrast, which
+is what lets the row sit over photos: no photo is bright or dark enough to
+take the text with it.
+
+The icon's circle follows the entity's state, the way Home Assistant lights
+up an active tile: a lit light glows amber, an unlocked lock warns red, an
+open cover shows purple, and anything idle (and every plain sensor) stays
+grey, so a colored circle always means something is going on.
+**Monochromatic icons** keeps every circle in the neutral grey instead. The
+text never takes a color in any case: the state is read from the words, the
+color is only a hint.
+
+**Floating text style** switches back to the row's original look: floating
+text in one muted tone, no chip and no state color. On the Clock screensaver that tone
+is the face's own digit color (Clock color for Digital, the digit colors for
+Flip and Roller), so the text stays readable on whatever backdrop the clock
+was given. Over photos the text-only style is at the photo's mercy, which is
+exactly why the chips are the default.
 
 States are shown the way they read in Home Assistant, capitalised (`Open`,
 `Locked`, `Closed`), with the unit appended for numeric sensors.
