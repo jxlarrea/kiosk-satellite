@@ -227,9 +227,9 @@ hardware address, because Android hides the real one from apps. That
 keeps the ESPHome device separate from the entries router and network
 integrations (UniFi, OPNsense, DHCP tracking) register for the same
 hardware, which all carry the real Wi-Fi MAC. Turn on **Use real Wi-Fi
-MAC address** and, where the address can be read at all, the kiosk
-reports it instead and Home Assistant merges those entries into one
-device.
+MAC address** (under **Advanced settings** on the ESPHome page) and,
+where the address can be read at all, the kiosk reports it instead and
+Home Assistant merges those entries into one device.
 
 The address is readable on Android 9 and older, and on any version when
 the app is the device owner. Elsewhere the switch says so right below
@@ -246,8 +246,8 @@ device follows the same switch, so both integrations land on the same
 merged device.
 
 Where Android will not reveal the address, the switch's status row says
-so and offers a **Wi-Fi MAC address** field right under it: type the
-address in yourself and the kiosk reports that one instead. Android
+so and offers a **Spoof Wi-Fi MAC address** field right under it: type
+the address in yourself and the kiosk reports that one instead. Android
 shows it under About > Status in its settings, and your router's client
 list has it too. The field accepts the usual spellings (colons, dashes,
 or twelve bare hex digits) and refuses anything that could not be an

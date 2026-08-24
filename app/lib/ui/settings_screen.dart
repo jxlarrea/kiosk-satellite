@@ -5893,8 +5893,7 @@ class _RealMacStatusRowState extends State<_RealMacStatusRow> {
       WifiMacSource.none => Column(
         children: [
           const WarnRow(
-            'Android will not reveal this device\'s hardware address, so '
-            'the generated one stays in use.',
+            'Android will not reveal this device\'s hardware address.',
           ),
           field,
         ],

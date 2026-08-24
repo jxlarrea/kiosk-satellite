@@ -1813,8 +1813,7 @@ export async function refreshRealMacNote() {
       '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
       '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
   note.querySelector('span').textContent = !mac
-    ? 'Android will not reveal this device\'s hardware address, so ' +
-      'the generated one stays in use.'
+    ? 'Android will not reveal this device\'s hardware address.'
     : source === 'manual'
       ? `Reporting ${mac}, entered below.`
       : `Reporting ${mac}.`;

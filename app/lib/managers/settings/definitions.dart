@@ -155,6 +155,7 @@ const Map<String, String> subpageHints = {
       'Switch to a different screensaver at set times of day.',
   // ESPHome.
   'Bluetooth Proxy': 'Relay nearby Bluetooth devices to Home Assistant',
+  'Advanced settings': 'Real or spoofed Wi-Fi MAC address',
   // Kiosk.
   'Allowed Actions': 'Which quick actions the kiosk menu offers',
   // Device. Read-only reports the remote admin shows about the tablet;
@@ -3947,6 +3948,7 @@ const esphomeRealMac = SettingDef<bool>(
       'integrations already track. Changing this creates a new ESPHome '
       'device in Home Assistant.',
   category: 'ESPHome',
+  subpage: 'Advanced settings',
   dependsOn: 'esphome.enabled',
 );
 
@@ -3960,12 +3962,13 @@ const esphomeMacOverride = SettingDef<String>(
   key: 'esphome.mac_override',
   type: SettingType.string,
   defaultValue: '',
-  title: 'Wi-Fi MAC address',
+  title: 'Spoof Wi-Fi MAC address',
   description:
-      'Found under About > Status in Android settings, or in your '
-      "router's client list. Changing it creates a new ESPHome device "
-      'in Home Assistant.',
+      'Since the MAC address cannot be resolved, you can use this field '
+      'to enter your own. Changing this creates a new ESPHome device in '
+      'Home Assistant.',
   category: 'ESPHome',
+  subpage: 'Advanced settings',
   placeholder: 'AA:BB:CC:DD:EE:FF',
   dependsOn: 'esphome.real_mac',
   hidden: true,
@@ -4468,13 +4471,14 @@ const List<SettingDef<Object>> allSettings = [
   btproxyKey,
   btproxyPort,
   esphomeNodeName,
-  esphomeRealMac,
-  esphomeMacOverride,
   btproxyEnabled,
   btproxyConnections,
   btproxyMinConnectRssi,
   btproxyMacLookup,
   btproxyNearbySort,
+  // The Advanced settings page closes the ESPHome page.
+  esphomeRealMac,
+  esphomeMacOverride,
   deviceName,
   uiTheme,
   disableImpeller,
