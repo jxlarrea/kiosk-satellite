@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.78 - 2026-08-24
 
 ### Fixed
 - Motion detection dying silently behind a powered-off screen is now noticed and reported. Some vendors suspend an app's camera seconds after the panel powers off no matter what exemptions the app holds, Samsung's One UI on Android 11 among them (the Galaxy Tab A 10.1 generation), and they do it without any error, so the motion camera simply stopped seeing frames while every setting looked healthy and a dark panel could never be woken by motion. The app now watches for frames stalling behind a dark panel, logs a plain warning in the Console when the OS has suspended the camera, and restarts the camera cleanly at the next screen-on instead of trusting a session the OS quietly emptied. On such devices motion cannot wake a truly powered-off screen, that is the vendor's policy; the Black screensaver keeps motion wake working there, and the docs now say so. A camera stack that takes forever to initialize is also no longer waited on indefinitely: motion now gives up after twenty seconds, reports the error and retries, instead of sitting dead until an app restart.
