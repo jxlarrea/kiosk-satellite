@@ -149,6 +149,20 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   bool get _cameraEntitiesWanted =>
       _settings.get(defs.cameraEnabled) && _cameraPresent;
 
+  /// The lens facings the camera hardware offers (read at connect).
+  /// Optimistic like [_cameraPresent]: assume both until a probe answers
+  /// with a real list, so a probe hiccup (no Activity yet) never retracts
+  /// the facing select on hardware that has the choice.
+  List<String> _cameraFacings = const ['front', 'back'];
+
+  /// The facing select only exists where there is a choice to make: a
+  /// single-camera device (Echo Show 5: front only) gets no dropdown,
+  /// matching the settings surfaces (issue #296).
+  bool get _cameraFacingWanted =>
+      _cameraPresent &&
+      _cameraFacings.contains('front') &&
+      _cameraFacings.contains('back');
+
   /// Whether this device can read a CPU temperature at all; probed at
   /// bring-up, revived by any later successful reading (issue #138).
   bool _cpuTempPresent = true;
@@ -625,6 +639,15 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           'Clock style',
           'mdi:clock-digital',
         ),
+        // Front/back camera pick (issue #296): rides the hardware like the
+        // camera switches, not the enable toggle, so an automation can set
+        // the facing first and switch the camera on after. Discovery is
+        // gated on the device actually having both facings.
+        'camera_device': (
+          defs.cameraDevice,
+          'Camera facing',
+          'mdi:camera-flip-outline',
+        ),
       };
 
   bool _isSelectSettingKey(String key) =>
@@ -1064,6 +1087,15 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // Same rule for the camera: no hardware, no entities.
     final cam = await commands.execute('hasDeviceCamera', const {});
     _cameraPresent = !(cam.ok && cam.data == false);
+    // And the lens facings, for the facing select: only a real, non-empty
+    // answer is adopted — an empty list means the probe could not look
+    // (no Activity), not that the hardware has one camera.
+    final facings = await commands.execute('getCameraFacings', const {});
+    if (facings.ok &&
+        facings.data is List &&
+        (facings.data as List).isNotEmpty) {
+      _cameraFacings = [for (final f in facings.data as List) '$f'];
+    }
     // And for CPU temperature: some OEM SELinux policies deny apps the
     // thermal sysfs outright (issue #138, Lenovo), and an entity that can
     // never report is worse than none. One-way in the other direction: a
@@ -2467,10 +2499,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
             ),
       },
       for (final entry in _settingSelects.entries)
-        '$_prefix/select/ks_$_deviceId/${entry.key}/config': settingSelect(
-          entry.key,
-          entry.value,
-        ),
+        if (entry.key != 'camera_device' || _cameraFacingWanted)
+          '$_prefix/select/ks_$_deviceId/${entry.key}/config': settingSelect(
+            entry.key,
+            entry.value,
+          ),
     };
     for (final topic in _legacyDiscoveryTopics()) {
       _publish(topic, '');
@@ -2507,6 +2540,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     if (!_cameraPresent) {
       _publish('$_prefix/switch/ks_$_deviceId/camera_enabled/config', '');
       _publish('$_prefix/switch/ks_$_deviceId/screensaver_motion/config', '');
+    }
+    // Same self-correction for the facing select on single-camera hardware:
+    // a config from an optimistic pass (or a restored backup) is retracted
+    // once the facings probe has said there is no choice to offer.
+    if (!_cameraFacingWanted) {
+      _publish('$_prefix/select/ks_$_deviceId/camera_device/config', '');
     }
     final currentIds = {for (final view in _cameraViews) '${view['id']}'};
     for (final staleId in _publishedCameraViewIds.difference(currentIds)) {

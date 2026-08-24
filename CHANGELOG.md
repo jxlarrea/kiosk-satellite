@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- The camera's Front or Back pick is controllable from Home Assistant. A new **Camera facing** select in the MQTT and ESPHome integrations mirrors the Camera setting on the device, so an automation can point a phone at the room with its back camera for the night, as a baby monitor, and flip it back in the morning. Switching it publishes a fresh frame from the newly picked camera to the Camera entity a moment later, and every camera feature follows the pick at once: snapshots, motion detection and the motion sensor. Like the camera switches it works while the camera is off, so the facing can be set before an automation enables the camera, and it only appears on devices that actually have both a front and a back camera.
+
 ## v2026.8.77 - 2026-08-24
 
 ### Changed

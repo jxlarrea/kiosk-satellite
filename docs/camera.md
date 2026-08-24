@@ -145,10 +145,12 @@ Satellite device:
 | Motion | binary_sensor | Only with **Motion sensor** on. Reads motion for the configured **Clear after** window; the clearing is done by Home Assistant's `off_delay`, so a reconnect never replays stale motion. |
 | Camera enabled | switch | The master toggle, remotely. Exists whenever the hardware does, even with the camera off, so an automation can arm the camera only when a room-wide sensor says someone is home. |
 | Screensaver motion detection | switch | The Dismiss on motion toggle, remotely. Pairs with Camera enabled for staged wake-ups. |
+| Camera facing | select | The **Camera** pick, remotely: Front or Back, for every camera feature at once. Switching it publishes a fresh frame from the newly picked camera a moment later, so an automation can flip a phone to its back camera as a baby monitor and back again. Like the switches it works with the camera off. Only on devices with both cameras. |
 
 Disabling the camera retracts the camera and motion entities and blanks
-the retained frame; the two switches remain, since they are how you turn
-it back on. On camera-less hardware none of these entities exist.
+the retained frame; the switches and the facing select remain, since
+they are how you turn it back on and point it the right way first. On
+camera-less hardware none of these entities exist.
 
 ## Sharing the camera
 

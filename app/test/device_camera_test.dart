@@ -19,12 +19,12 @@ void main() {
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('flutter.baseflow.com/permissions/methods'),
-      (call) async => switch (call.method) {
-        'checkPermissionStatus' => 0,
-        _ => null,
-      },
-    );
+          const MethodChannel('flutter.baseflow.com/permissions/methods'),
+          (call) async => switch (call.method) {
+            'checkPermissionStatus' => 0,
+            _ => null,
+          },
+        );
   });
 
   late EventBus bus;
@@ -44,15 +44,17 @@ void main() {
   DeviceCameraManager camera() =>
       DeviceCameraManager(bus, commands, log, settings);
 
-  test('camera defaults: off, front, 480p, no snapshots, 60s interval',
-      () async {
-    await build({});
-    expect(settings.get(defs.cameraEnabled), isFalse);
-    expect(settings.get(defs.cameraDevice), 'front');
-    expect(settings.get(defs.cameraSnapshotResolution), '480');
-    expect(settings.get(defs.cameraSnapshots), isFalse);
-    expect(settings.get(defs.cameraSnapshotInterval), 60);
-  });
+  test(
+    'camera defaults: off, front, 480p, no snapshots, 60s interval',
+    () async {
+      await build({});
+      expect(settings.get(defs.cameraEnabled), isFalse);
+      expect(settings.get(defs.cameraDevice), 'front');
+      expect(settings.get(defs.cameraSnapshotResolution), '480');
+      expect(settings.get(defs.cameraSnapshots), isFalse);
+      expect(settings.get(defs.cameraSnapshotInterval), 60);
+    },
+  );
 
   test('each resolution tier maps to its 4:3 capture target', () {
     expect(snapshotResolution('480'), (640, 480));
@@ -64,8 +66,7 @@ void main() {
     expect(snapshotResolution('nonsense'), (640, 480));
   });
 
-  test('migration: a device using motion detection keeps it working',
-      () async {
+  test('migration: a device using motion detection keeps it working', () async {
     await build({
       'ks.screensaver.dismiss_on_motion': true,
       'ks.motion.camera': 'back',
@@ -77,8 +78,7 @@ void main() {
     expect(settings.get(defs.cameraDevice), 'back');
   });
 
-  test('migration runs once: later user choices are not overridden',
-      () async {
+  test('migration runs once: later user choices are not overridden', () async {
     await build({
       'ks.screensaver.dismiss_on_motion': true,
       'ks.motion.camera': 'back',
@@ -117,8 +117,7 @@ void main() {
     expect(motion.enabled, isFalse);
   });
 
-  test('importing a pre-Camera backup enables the camera for motion',
-      () async {
+  test('importing a pre-Camera backup enables the camera for motion', () async {
     // A configured device (start URL set) restoring an old backup that
     // carries motion detection but predates the camera master switch.
     await build({'ks.browser.start_url': 'http://ha.local:8123'});
@@ -154,6 +153,32 @@ void main() {
         .where((e) => e.message.contains('motion snapshot failed'))
         .length;
     expect(attempts, 1);
+  });
+
+  test('a facing change refreshes the frame once the rebind settles', () async {
+    await build({'ks.camera.enabled': true});
+    await camera().init();
+    await settings.set(defs.cameraDevice, 'back');
+    // Past the capture's deliberate 1s delay; the denied permission then
+    // fails the attempt with one warn, which is the countable trace.
+    await Future<void>.delayed(const Duration(milliseconds: 1400));
+    final attempts = log.recent
+        .where((e) => e.message.contains('facing-change snapshot failed'))
+        .length;
+    expect(attempts, 1);
+  });
+
+  test('a facing change with the camera off captures nothing', () async {
+    await build({});
+    await camera().init();
+    await settings.set(defs.cameraDevice, 'back');
+    await Future<void>.delayed(const Duration(milliseconds: 1400));
+    expect(
+      log.recent.any(
+        (e) => e.message.contains('facing-change snapshot failed'),
+      ),
+      isFalse,
+    );
   });
 
   test('importing a new backup leaves its camera choice alone', () async {

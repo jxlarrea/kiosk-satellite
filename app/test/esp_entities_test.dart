@@ -21,11 +21,13 @@ void main() {
   late List<List<int>> images;
   late List<(String, Map<String, Object?>)> executed;
   var cameraPresent = true;
+  var cameraFacings = <String>['front', 'back'];
   var bluetooth = <String, Object?>{};
   var vsState = <String, Object?>{};
 
   setUp(() async {
     cameraPresent = true;
+    cameraFacings = ['front', 'back'];
     vsState = {
       'config': {'auto_start': true},
       'satellite': 'assist_satellite.office_tablet',
@@ -70,6 +72,13 @@ void main() {
         name: 'hasDeviceCamera',
         description: 'stub',
         handler: (_) async => CommandResult.ok(cameraPresent),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'getCameraFacings',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(cameraFacings),
       ),
     );
     stub('getStats', {
@@ -311,6 +320,39 @@ void main() {
     expect(ids, isNot(contains('device_camera')));
     expect(ids, isNot(contains('take_snapshot')));
     expect(ids, isNot(contains('motion'))); // rides the camera
+  });
+
+  test('the camera facing select needs both facings', () async {
+    var ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, contains('camera_device'));
+
+    // Single-camera hardware (Echo Show 5): no choice, no dropdown.
+    cameraFacings = ['front'];
+    ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, isNot(contains('camera_device')));
+
+    // An empty answer means the probe could not look, not one camera:
+    // stay optimistic like hasDeviceCamera.
+    cameraFacings = [];
+    ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, contains('camera_device'));
+
+    // But no camera at all beats any facing answer.
+    cameraPresent = false;
+    ids = [for (final d in await surface.build()) '${d['objectId']}'];
+    expect(ids, isNot(contains('camera_device')));
+  });
+
+  test('the camera facing select speaks in labels, stores the value', () async {
+    final catalog = await surface.build();
+    final select = catalog.firstWhere((d) => d['objectId'] == 'camera_device');
+    expect(select['options'], ['Front', 'Back']);
+
+    await surface.handleCommand('camera_device', 'Back');
+    expect(settings.get(defs.cameraDevice), 'back');
+    // The raw stored vocabulary is accepted too.
+    await surface.handleCommand('camera_device', 'front');
+    expect(settings.get(defs.cameraDevice), 'front');
   });
 
   test('the Music Assistant button follows the server address', () async {

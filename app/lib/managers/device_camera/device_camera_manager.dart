@@ -36,6 +36,7 @@ class DeviceCameraManager extends Manager {
 
   Timer? _timer;
   bool _capturing = false;
+
   /// The last motion tick (any tick, not just ones that shot): the gap
   /// since it is what defines a new motion session.
   DateTime? _lastMotionTick;
@@ -100,6 +101,14 @@ class DeviceCameraManager extends Manager {
       if (e.key == defs.cameraEnabled.key && e.value == true) {
         unawaited(_ensurePermission());
       }
+      // The facing flipped (settings UI, remote admin, the HA select):
+      // refresh the retained frame so the camera entity shows what the
+      // new camera sees, not the last frame from the old one (issue
+      // #296). Settled, not immediate: motion detection restarts on this
+      // same change, and a capture fired into that rebind loses the race.
+      if (e.key == defs.cameraDevice.key && enabled) {
+        unawaited(_settledSnapshot('facing-change'));
+      }
       _syncTimer();
     });
 
@@ -117,12 +126,10 @@ class DeviceCameraManager extends Manager {
       final last = _lastMotionTick;
       _lastMotionTick = now;
       final clear = Duration(
-          seconds: _settings.get(defs.motionSensorOffDelay).toInt().clamp(
-                1,
-                300,
-              ));
+        seconds: _settings.get(defs.motionSensorOffDelay).toInt().clamp(1, 300),
+      );
       if (last != null && now.difference(last) < clear) return;
-      unawaited(_motionSnapshot());
+      unawaited(_settledSnapshot('motion'));
     });
 
     commands.register(
@@ -169,8 +176,11 @@ class DeviceCameraManager extends Manager {
       if (legacy != _settings.get(defs.cameraDevice)) {
         await _settings.set(defs.cameraDevice, legacy);
       }
-      log.info(name, 'migrated motion detection to the Camera section '
-          '(camera on, $legacy)');
+      log.info(
+        name,
+        'migrated motion detection to the Camera section '
+        '(camera on, $legacy)',
+      );
     }
     await _settings.setInternal('camera.migrated', '1');
   }
@@ -179,8 +189,10 @@ class DeviceCameraManager extends Manager {
     _timer?.cancel();
     _timer = null;
     if (!enabled || !_settings.get(defs.cameraSnapshots)) return;
-    final seconds =
-        _settings.get(defs.cameraSnapshotInterval).toInt().clamp(5, 300);
+    final seconds = _settings
+        .get(defs.cameraSnapshotInterval)
+        .toInt()
+        .clamp(5, 300);
     log.info(name, 'continuous snapshots every ${seconds}s');
     _timer = Timer.periodic(
       Duration(seconds: seconds),
@@ -190,22 +202,26 @@ class DeviceCameraManager extends Manager {
     unawaited(_snapshot());
   }
 
-  /// The same motion tick that triggers this also dismisses the
-  /// screensaver, which tears the motion camera session down within
-  /// milliseconds — a capture fired immediately always loses that race
-  /// ("Camera is closed"). So wait the teardown out and take one clean
-  /// frame on the idle open-capture-close path; whoever tripped the motion
-  /// is still in front of the kiosk a second later.
-  Future<void> _motionSnapshot() async {
+  /// One capture after a second's grace, for triggers that race a camera
+  /// session teardown. The motion tick that triggers a snapshot also
+  /// dismisses the screensaver, which tears the motion camera session down
+  /// within milliseconds — a capture fired immediately always loses that
+  /// race ("Camera is closed"). So wait the teardown out and take one
+  /// clean frame on the idle open-capture-close path; whoever tripped the
+  /// motion is still in front of the kiosk a second later. A facing change
+  /// rides the same grace: motion detection rebinds onto the new camera at
+  /// the same moment.
+  Future<void> _settledSnapshot(String why) async {
     await Future<void>.delayed(const Duration(seconds: 1));
     final result = await _snapshot();
-    if (!result.ok) log.warn(name, 'motion snapshot failed: ${result.error}');
+    if (!result.ok) log.warn(name, '$why snapshot failed: ${result.error}');
   }
 
   Future<CommandResult> _snapshot() async {
     if (!enabled) {
       return const CommandResult.fail(
-          'The camera is disabled in the Camera settings.');
+        'The camera is disabled in the Camera settings.',
+      );
     }
     // Timer ticks and MQTT button presses can overlap a capture still in
     // flight; the native side would refuse anyway, this keeps it quiet.
@@ -218,8 +234,9 @@ class DeviceCameraManager extends Manager {
     }
     _capturing = true;
     try {
-      final (width, height) =
-          snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
+      final (width, height) = snapshotResolution(
+        _settings.get(defs.cameraSnapshotResolution),
+      );
       // The native side carries its own watchdog; this one backstops it so
       // a wedged platform call can never pin _capturing until app restart.
       final jpeg = await NativeCamera.snapshot(
@@ -243,7 +260,8 @@ class DeviceCameraManager extends Manager {
       // camera to open (and no screen anybody is pointing it at).
       log.warn(name, 'snapshot unavailable: no Activity attached');
       return const CommandResult.fail(
-          'The camera is unavailable while the app is in the background.');
+        'The camera is unavailable while the app is in the background.',
+      );
     } finally {
       _capturing = false;
     }

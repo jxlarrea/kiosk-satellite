@@ -132,6 +132,14 @@ class EspEntitySurface {
           'mdi:clock-digital',
           defs.screensaverClockStyle,
         ),
+        // Front/back camera pick (issue #296): catalog-gated below on the
+        // device actually having both facings, like the camera switches
+        // are gated on the hardware existing at all.
+        'camera_device': (
+          'Camera facing',
+          'mdi:camera-flip-outline',
+          defs.cameraDevice,
+        ),
       };
 
   /// Settings-backed numbers shown as 0-100 percent sliders:
@@ -167,6 +175,16 @@ class EspEntitySurface {
         light.ok && light.data is Map && (light.data as Map)['present'] == true;
     final cam = await commands.execute('hasDeviceCamera', const {});
     final cameraPresent = !(cam.ok && cam.data == false);
+    // The facing select only exists where there is a choice: single-camera
+    // hardware (Echo Show 5) gets none. An empty answer means the probe
+    // could not look yet, and optimism matches hasDeviceCamera above.
+    final facings = await commands.execute('getCameraFacings', const {});
+    final facingList = facings.ok && facings.data is List
+        ? [for (final f in facings.data as List) '$f']
+        : const <String>[];
+    final bothFacings =
+        facingList.isEmpty ||
+        (facingList.contains('front') && facingList.contains('back'));
     final stats = await commands.execute('getStats', const {});
     final cpuTempPresent =
         stats.ok && stats.data is Map && (stats.data as Map)['temp'] != null;
@@ -420,17 +438,18 @@ class EspEntitySurface {
           'category': 1,
         },
       for (final e in _settingSelects.entries)
-        {
-          'type': 'select',
-          'objectId': e.key,
-          'name': e.value.$1,
-          'icon': e.value.$2,
-          'options': [
-            for (final option in e.value.$3.options ?? const <String>[])
-              e.value.$3.optionLabels?[option] ?? option,
-          ],
-          'category': 1,
-        },
+        if (e.key != 'camera_device' || (cameraPresent && bothFacings))
+          {
+            'type': 'select',
+            'objectId': e.key,
+            'name': e.value.$1,
+            'icon': e.value.$2,
+            'options': [
+              for (final option in e.value.$3.options ?? const <String>[])
+                e.value.$3.optionLabels?[option] ?? option,
+            ],
+            'category': 1,
+          },
       // ── Diagnostics ──────────────────────────────────────────────────
       diagnostic(
         'battery',
