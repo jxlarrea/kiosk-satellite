@@ -38,12 +38,17 @@ import 'native_motion.dart';
 /// survives screen-off because the background listening service carries the
 /// camera foreground type (WakeWordService), the exemption newer Android
 /// gates on — without it the OS revokes within seconds of the panel going
-/// dark (measured on Android 16; Android 11 never revokes). What no version
-/// allows is *opening* the camera under a dark panel, so binds are the
-/// fragile edge, not open sessions: a revocation is reported as a stream
-/// error and [_onCameraLost] rebinds on the next screen-on, and a bind that
-/// happened while the panel was off is treated as suspect and restarted on
-/// wake (see [_boundBlind]). The cost warning lives on its setting too.
+/// dark (measured on Android 16). Not every vendor honors the exemption:
+/// One UI 11 (issue #271) suspends the session seconds after screen-off
+/// regardless, and silently, so the native side runs a frame watchdog that
+/// reports the suspension as a stream error. On such hardware motion
+/// through a truly dark panel simply cannot work, and the Black screensaver
+/// is the answer. What no version allows is *opening* the camera under a
+/// dark panel, so binds are the fragile edge, not open sessions: a
+/// revocation is reported as a stream error and [_onCameraLost] rebinds on
+/// the next screen-on, and a bind that happened while the panel was off is
+/// treated as suspect and restarted on wake (see [_boundBlind]). The cost
+/// warning lives on its setting too.
 class MotionManager extends Manager {
   MotionManager(
     super.bus,

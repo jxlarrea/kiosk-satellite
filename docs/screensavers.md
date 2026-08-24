@@ -265,7 +265,10 @@ The screensaver session stays active behind the dark panel, which is
 what makes waking symmetrical: every dismiss source powers the panel
 back on. That covers motion (with
 [background listening](microphone.md) on, the camera keeps watching
-through a real screen-off; see [Camera](camera.md)), the wake word, the
+through a real screen-off on most devices; some vendors suspend it
+anyway, One UI on Android 11 among them, and there the Black
+screensaver is the way to keep motion wake, see [Camera](camera.md)),
+the wake word, the
 MQTT **Dismiss screensaver** button, and a Home Assistant automation
 calling `stopScreensaver`. All of them land on the dashboard,
 not on the screensaver. The power button and double-tap-to-wake count as

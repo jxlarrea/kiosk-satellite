@@ -97,10 +97,13 @@ class WakeWordService : Service() {
         // The camera bit is what lets motion detection keep the camera when
         // the panel powers off: without it, modern Android soft-denies the
         // camera app-op the moment the app leaves TOP (Tab S8 / Android 16
-        // revokes ~5s after screen-off; Android 11 never does). It must be
-        // conditional: from Android 14, startForeground with a camera type
-        // throws unless the CAMERA permission is actually granted, and the
-        // camera is optional for this app.
+        // revokes ~5s after screen-off). It is not absolute: One UI 11
+        // (Galaxy Tab A 10.1, issue #271) suspends the capture session
+        // seconds after screen-off despite this type, and silently - no
+        // CameraState error - which CameraMotion's frame watchdog is what
+        // notices. It must be conditional: from Android 14, startForeground
+        // with a camera type throws unless the CAMERA permission is
+        // actually granted, and the camera is optional for this app.
         var type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
         } else {

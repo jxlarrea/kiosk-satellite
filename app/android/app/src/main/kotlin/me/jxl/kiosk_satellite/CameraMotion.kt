@@ -6,6 +6,8 @@ import android.hardware.camera2.CaptureRequest
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -151,6 +153,25 @@ class CameraMotion(
         private const val WARMUP_FRAMES = 3
 
         private const val EMIT_INTERVAL_NS = 1_000_000_000L // rate-limit: 1/s
+
+        // Backstop for a CameraX init that never resolves (a wedged camera
+        // service; a Galaxy Tab A took 20s+ in issue #271): the Dart side
+        // must hear an error and own the retry, not wait forever on a
+        // listener that will never run. Mirrors DeviceCamera's backstop.
+        private const val PROVIDER_TIMEOUT_MS = 20_000L
+
+        // The screen-off suspension watchdog (issue #271). One UI 11
+        // (Galaxy Tab A 10.1) closes the capture session seconds after the
+        // panel powers off - the camera foreground service type
+        // notwithstanding - and surfaces no CameraState error, so the
+        // observer in start() never hears: the analyzer just stops
+        // receiving frames, and motion can never wake the dark panel.
+        // Frames are the ground truth for session health (a live camera
+        // delivers them regardless of scene or lighting), so a dark-panel
+        // session this long without one is suspended. The threshold is 5x
+        // the slowest analysis interval (0.5 fps = 2s between frames).
+        private const val SUSPEND_CHECK_MS = 5_000L
+        private const val SUSPEND_AFTER_MS = 10_000L
     }
 
     private val eventChannel = EventChannel(messenger, CHANNEL)
@@ -221,6 +242,11 @@ class CameraMotion(
     private var activeFacing: CameraSelector? = null
     private var activeSink: EventChannel.EventSink? = null
 
+    /** When the analyzer last received a frame (delivery, not the fps
+     *  gate), for the screen-off suspension watchdog. Written on
+     *  [analysisExecutor], read on the main thread. */
+    @Volatile private var lastFrameAtMs = 0L
+
     init {
         eventChannel.setStreamHandler(this)
     }
@@ -281,8 +307,24 @@ class CameraMotion(
             return
         }
         val future = ProcessCameraProvider.getInstance(context)
+        // Both the timeout and the listener run on the main thread, so the
+        // flag needs no synchronization; it keeps a provider that resolves
+        // after the deadline from binding a camera nothing will release.
+        var timedOut = false
+        val initTimeout = Runnable {
+            timedOut = true
+            if (session != mySession) return@Runnable
+            Log.w(TAG, "provider timed out")
+            sink.error(
+                "camera",
+                "camera provider unavailable: initialization timed out",
+                null,
+            )
+        }
+        mainHandler.postDelayed(initTimeout, PROVIDER_TIMEOUT_MS)
         future.addListener({
-            if (session != mySession) return@addListener
+            mainHandler.removeCallbacks(initTimeout)
+            if (timedOut || session != mySession) return@addListener
             val cameraProvider = try {
                 future.get()
             } catch (e: Exception) {
@@ -366,6 +408,7 @@ class CameraMotion(
                     )
                 }
                 Log.i(TAG, "camera bound (fps slot=${frameIntervalNs / 1_000_000}ms, minCells=$minChangedCells)")
+                armSuspendWatchdog(mySession, sink)
             } catch (e: Exception) {
                 // Nothing bound: drop the owner so the eventual cancel has
                 // nothing to tear down (its registry never left INITIALIZED).
@@ -377,12 +420,53 @@ class CameraMotion(
         }, ContextCompat.getMainExecutor(context))
     }
 
+    /**
+     * The screen-off suspension watchdog (see [SUSPEND_AFTER_MS]): while a
+     * session is bound, check every [SUSPEND_CHECK_MS] whether frames are
+     * still arriving. A dark panel with no frames for the threshold means
+     * the OS suspended the camera without an error; report it as a stream
+     * error so the Dart side logs the plain-language warning and rebinds on
+     * the next screen-on, exactly like a loud revocation. A session bind
+     * under an already-dark panel is covered too: the seed stamp below
+     * starts the clock, so a bind that parks in PENDING_OPEN and never
+     * produces (the One UI policy reject) trips the same report instead of
+     * staying silent. The check dies with its session: every rebind and
+     * cancel bumps [session], and a stale runnable returns without
+     * rescheduling.
+     */
+    private fun armSuspendWatchdog(mySession: Int, sink: EventChannel.EventSink) {
+        lastFrameAtMs = SystemClock.elapsedRealtime()
+        val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        lateinit var check: Runnable
+        check = Runnable {
+            if (session != mySession) return@Runnable
+            val quiet = SystemClock.elapsedRealtime() - lastFrameAtMs
+            if (!power.isInteractive && quiet >= SUSPEND_AFTER_MS) {
+                Log.w(
+                    TAG,
+                    "no frames for ${quiet / 1000}s with the screen off; " +
+                        "the OS has suspended the camera",
+                )
+                sink.error(
+                    "camera",
+                    "the OS suspends this device's camera while the screen " +
+                        "is off; motion cannot wake it",
+                    null,
+                )
+                return@Runnable
+            }
+            mainHandler.postDelayed(check, SUSPEND_CHECK_MS)
+        }
+        mainHandler.postDelayed(check, SUSPEND_CHECK_MS)
+    }
+
     private fun analyze(
         image: ImageProxy,
         sink: EventChannel.EventSink,
         boundSession: Int,
     ) {
         try {
+            lastFrameAtMs = SystemClock.elapsedRealtime()
             val now = System.nanoTime()
             // Drop frames that arrive before the next slot is due.
             if (lastProcessedNs != 0L && now - lastProcessedNs < frameIntervalNs) return

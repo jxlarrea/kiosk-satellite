@@ -86,11 +86,16 @@ not on a visible screen, unless the app holds a camera-type foreground
 service. Kiosk Satellite attaches that type to the [background
 listening](microphone.md) service whenever the camera permission is granted,
 so with background listening enabled all three motion features keep
-watching through a real screen-off. Without background listening, and
-on vendors that suspend apps wholesale once the panel is off, the
-revocation still happens; the camera then rebinds on its own the moment
-the screen comes back on. The screen that *looks* off but keeps every
-camera feature working everywhere is the **Black screensaver**
+watching through a real screen-off. Not every vendor honors that
+exemption: Samsung's One UI on Android 11 (the Galaxy Tab A 10.1
+generation) suspends the camera seconds after the panel powers off even
+with background listening on, and does it silently. The app notices the
+stalled frames, logs a warning in the Console, and brings the camera
+back the moment the screen comes on, but motion cannot wake a truly
+dark panel on such devices. Without background listening the revocation
+happens everywhere; the camera likewise rebinds on its own at
+screen-on. The screen that *looks* off but keeps every camera feature
+working everywhere is the **Black screensaver**
 (backlight at zero under a black overlay); use it, or a scheduled Black
 entry, where Fully Kiosk users would reach for "fake screen off".
 
