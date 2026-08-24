@@ -4,8 +4,9 @@ import 'dart:io';
 import 'dart:math' show Random;
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' show md5;
 import 'package:flutter/foundation.dart' show ValueNotifier;
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
@@ -47,6 +48,11 @@ class RemoteManager extends Manager {
   final _wsClients = <WebSocketChannel>{};
   String? _indexHtml;
 
+  /// The SPA's stylesheet and ES modules, keyed by file name under
+  /// `assets/remote-ui/static/`, discovered from the asset manifest so a
+  /// new module only needs to exist to be served.
+  final _staticFiles = <String, Uint8List>{};
+
   /// The newest device-camera frame, for the admin's snapshot preview.
   /// Mirrored off the bus rather than fetched on request: serving a cached
   /// frame is free, and the admin page refreshing must not drive captures.
@@ -64,9 +70,41 @@ class RemoteManager extends Manager {
     });
     _auth = AuthStore(secret);
 
-    // The admin SPA is a single self-contained asset.
+    // The admin SPA: index.html plus the ES modules and stylesheet under
+    // static/. Everything is loaded into memory up front (a few hundred KB)
+    // and the page's __KSV__ token is replaced with a content hash, so the
+    // static files can be cached forever while the page itself never is.
     try {
-      _indexHtml = await rootBundle.loadString('assets/remote-ui/index.html');
+      var index = await rootBundle.loadString('assets/remote-ui/index.html');
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      const prefix = 'assets/remote-ui/static/';
+      final names =
+          manifest.listAssets().where((k) => k.startsWith(prefix)).toList()
+            ..sort();
+      final hashed = BytesBuilder(copy: false)..add(utf8.encode(index));
+      for (final key in names) {
+        final bytes = (await rootBundle.load(key)).buffer.asUint8List();
+        _staticFiles[key.substring(prefix.length)] = bytes;
+        hashed.add(bytes);
+      }
+      final version = md5.convert(hashed.takeBytes()).toString().substring(
+        0,
+        12,
+      );
+      // The page pins main.js by hash, but the imports inside the modules
+      // would fetch bare './x.js' URLs that the immutable cache header
+      // then keeps forever. Stamp the hash into every import specifier so
+      // one changed file re-fetches the whole graph.
+      final import$ = RegExp(r"(from\s+'\./[A-Za-z0-9._-]+\.js)(')");
+      for (final entry in _staticFiles.entries.toList()) {
+        if (!entry.key.endsWith('.js')) continue;
+        _staticFiles[entry.key] = utf8.encode(
+          utf8
+              .decode(entry.value)
+              .replaceAllMapped(import$, (m) => "${m[1]}?v=$version${m[2]}"),
+        );
+      }
+      _indexHtml = index.replaceAll('__KSV__', version);
     } catch (e) {
       log.warn(name, 'remote-ui asset missing: $e');
     }
@@ -244,6 +282,9 @@ class RemoteManager extends Manager {
     final path = request.url.path;
 
     if (path.isEmpty || path == 'index.html') return _index();
+    if (path.startsWith('static/')) {
+      return _staticFile(path.substring('static/'.length));
+    }
     if (path == 'api/login') return _login(request);
     if (path == 'api/ws') return _ws(request);
 
@@ -630,8 +671,36 @@ class RemoteManager extends Manager {
 
   Response _index() => Response.ok(
     _indexHtml ?? _placeholderHtml,
-    headers: {'content-type': 'text/html; charset=utf-8'},
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      // The page pins its static files by content hash (?v=), so it must
+      // never be cached itself: a stale page would pin stale modules.
+      'cache-control': 'no-store',
+    },
   );
+
+  /// Static files are public like the page itself (the login gate lives in
+  /// the page, not around it) and content-addressed via the ?v= hash, so
+  /// far-future caching is safe: any change serves under a new URL.
+  Response _staticFile(String name) {
+    final bytes = _staticFiles[name];
+    if (bytes == null) return Response.notFound('not found');
+    const types = {
+      'js': 'text/javascript; charset=utf-8',
+      'css': 'text/css; charset=utf-8',
+      'svg': 'image/svg+xml',
+      'png': 'image/png',
+      'woff2': 'font/woff2',
+    };
+    final ext = name.split('.').last;
+    return Response.ok(
+      bytes,
+      headers: {
+        'content-type': types[ext] ?? 'application/octet-stream',
+        'cache-control': 'public, max-age=31536000, immutable',
+      },
+    );
+  }
 
   static String? _bearerToken(Request request) {
     final header = request.headers['authorization'];

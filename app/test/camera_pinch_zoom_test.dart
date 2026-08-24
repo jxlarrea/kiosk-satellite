@@ -48,7 +48,7 @@ void main() {
   });
 
   test('the remote admin shows the row with the other playback settings', () {
-    final remote = File('assets/remote-ui/index.html').readAsStringSync();
+    final remote = File('assets/remote-ui/static/cameras.js').readAsStringSync();
     final keys = RegExp(
       r'const playbackKeys = \[(.*?)\];',
       dotAll: true,

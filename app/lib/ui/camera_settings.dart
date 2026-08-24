@@ -375,7 +375,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
   }
 
   /// The stream formats this camera can play with, for its list row.
-  /// Mirrored in remote-ui/index.html.
+  /// Mirrored in remote-ui/static/cameras.js.
   String _cameraFormats(CameraSource camera) {
     switch (camera.kind) {
       case 'go2rtc':

@@ -195,8 +195,8 @@ void main() {
     test('describeState carries every field the web admin renders', () async {
       await commands.execute('setWakeWordConfig', vsConfig);
       final state = wakeWord.describeState();
-      // Each of these backs a row in assets/remote-ui/index.html
-      // (loadWakeWord). Renaming one without touching the other silently
+      // Each of these backs a row in assets/remote-ui/static/device.js
+      // (loadDeviceInfo). Renaming one without touching the other silently
       // empties that row, which is exactly the drift this guards.
       for (final key in [
         'status',

@@ -86,6 +86,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/remote-ui/index.html
+    - assets/remote-ui/static/
     - assets/screensaver/index.html
     - assets/camera-view/index.html
     - assets/camera-view/hls.light.min.js

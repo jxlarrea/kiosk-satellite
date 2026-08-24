@@ -150,11 +150,20 @@ JSON messages, `{type, ...}`:
 
 ## Remote UI
 
-The admin UI is a single self-contained page (inline CSS + vanilla JS, no
-build step) at [app/assets/remote-ui/index.html](../app/assets/remote-ui/index.html),
-bundled as a Flutter asset and served at `/`. Tabs: Dashboard (live
-screenshot + quick controls + brightness), Settings (rendered from the
-declarative setting definitions), Console (live JS console over WS), Logs.
-It talks only to the REST/WS API above (no privileged path), so it doubles
-as the API's reference client. It can be replaced by a build-based SPA later
-without touching the server.
+The admin UI is a vanilla-JS single-page app with no build step: the page
+at [app/assets/remote-ui/index.html](../app/assets/remote-ui/index.html)
+holds the markup, and the stylesheet plus ES modules live under
+[app/assets/remote-ui/static/](../app/assets/remote-ui/static/), bundled as
+Flutter assets. The server serves the page at `/` and the files at
+`/static/<name>`, discovered from the asset manifest, so adding a module is
+just adding the file. Tabs: Dashboard (live screenshot + quick controls +
+brightness), Settings (rendered from the declarative setting definitions),
+Console (live JS console over WS), Logs. It talks only to the REST/WS API
+above (no privileged path), so it doubles as the API's reference client.
+
+Caching: at startup the server hashes the page and every static file into
+one 12-hex version, stamps it into the page's `?v=` references and into
+every `from './x.js'` import specifier it serves, and answers static files
+with `Cache-Control: immutable` and the page itself with `no-store`. Any
+change to any file changes the hash, so browsers cache aggressively yet can
+never run a stale mix of modules.

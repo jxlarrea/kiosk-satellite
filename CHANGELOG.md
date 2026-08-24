@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- The remote admin UI's code is reorganized from one ten-thousand-line page into an entry page plus a stylesheet and twenty-one ES modules, one per area of the UI, served individually by the app with far-future caching keyed to a content hash. The page itself is never cached and pins every file, imports included, to that hash, so after an update the browser fetches exactly the files that changed and can never run a stale mix of old and new admin code, which also retires the need to hard-refresh the admin page after updating. Nothing about the admin UI's behavior changes.
+
 ### Added
 - The camera's Front or Back pick is controllable from Home Assistant. A new **Camera facing** select in the MQTT and ESPHome integrations mirrors the Camera setting on the device, so an automation can point a phone at the room with its back camera for the night, as a baby monitor, and flip it back in the morning. Switching it publishes a fresh frame from the newly picked camera to the Camera entity a moment later, and every camera feature follows the pick at once: snapshots, motion detection and the motion sensor. Like the camera switches it works while the camera is off, so the facing can be set before an automation enables the camera, and it only appears on devices that actually have both a front and a back camera.
 
