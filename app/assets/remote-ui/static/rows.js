@@ -10,7 +10,7 @@ import {
 import { api, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { openLauncherAppsPicker, openMediaBrowser } from './pickers.js';
-import { loadSettings } from './settings.js';
+import { loadSettings, refreshRealMacNote } from './settings.js';
 import { messageBox } from './widgets.js';
 
 // Bring the rows gated on `key` (dependsOn, transitively) in or out of the
@@ -64,6 +64,20 @@ export function syncGatedRows(key, anchorRow) {
   return true;
 }
 
+// The validator's message under a row, in place of nothing: rows.js is
+// where every generic control saves, so the one spot to say a value was
+// refused.
+function showRowError(row, message) {
+  let el = row.querySelector('.row-error');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'row-error';
+    row.appendChild(el);
+  }
+  el.textContent = message;
+}
+function clearRowError(row) { row.querySelector('.row-error')?.remove(); }
+
 export function settingRow(s) {
   const row = document.createElement('div'); row.className = 'row';
   // Lets a saved row find another row without a re-render (see save()).
@@ -74,8 +88,20 @@ export function settingRow(s) {
   info.querySelector('.desc').textContent = s.description;
   row.appendChild(info);
   const save = async (value) => {
-    await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
+    const res = await api('/api/settings', { method: 'PATCH', body: JSON.stringify({ [s.key]: value }) });
+    const out = await res.json().catch(() => ({}));
     const cached = (state.settings || []).find((o) => o.key === s.key);
+    // A value the definition's validator turned down: say why, under the
+    // row, and put the control back on the value the device kept. Before
+    // this the page just looked saved while the device held the old value.
+    if (out.rejected?.includes(s.key)) {
+      showRowError(row, out.errors?.[s.key] || 'Not saved.');
+      const control = row.querySelector('input, select, textarea');
+      if (control?.type === 'checkbox') control.checked = !!cached?.value;
+      else if (control) control.value = cached?.value ?? '';
+      return;
+    }
+    clearRowError(row);
     if (cached) cached.value = value;
     // AGC hides the gain slider next to it without gating it (the row is
     // always rendered, so there is nothing for syncGatedRows to place).
@@ -101,6 +127,13 @@ export function settingRow(s) {
     // whole page reloading under the switch just flipped.
     if ((state.settings || []).some((o) => o.dependsOn === s.key)) {
       if (!syncGatedRows(s.key, row)) await loadSettings();
+    }
+    // The real-MAC status row and its field answer for the switch and the
+    // typed address as they are now (issues #252, #300). After the gated
+    // sync: the field is a hidden definition gated on the switch, which
+    // the sync would take out of the card again if it ran second.
+    if (s.key === 'esphome.real_mac' || s.key === 'esphome.mac_override') {
+      await refreshRealMacNote();
     }
   };
 

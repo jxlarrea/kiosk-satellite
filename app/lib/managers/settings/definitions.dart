@@ -3950,6 +3950,61 @@ const esphomeRealMac = SettingDef<bool>(
   dependsOn: 'esphome.enabled',
 );
 
+/// The address typed in by hand (issue #300), for the devices where Android
+/// will not reveal it: only read once the hardware read has come back
+/// empty, so a working hardware read always wins (see wifiMacIdentity).
+/// Hidden from the generic render: both UIs draw it under the real-MAC
+/// switch's status row, and only while that row reports the hardware read
+/// failed, since anywhere else it would invite overriding a good address.
+const esphomeMacOverride = SettingDef<String>(
+  key: 'esphome.mac_override',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Wi-Fi MAC address',
+  description:
+      'Found under About > Status in Android settings, or in your '
+      "router's client list. Changing it creates a new ESPHome device "
+      'in Home Assistant.',
+  category: 'ESPHome',
+  placeholder: 'AA:BB:CC:DD:EE:FF',
+  dependsOn: 'esphome.real_mac',
+  hidden: true,
+  validator: validateMacAddress,
+  normalizer: normalizeMacAddressSetting,
+);
+
+/// Canonical uppercase colon form of a hardware address typed any of the
+/// usual ways (colons, dashes, dots, or twelve bare hex digits), or null
+/// for anything that is not a usable interface address: wrong shape, all
+/// zeros, Android's 02:00:00:00:00:00 privacy stub, multicast bit set.
+/// Locally-administered addresses pass on purpose, the same rule the
+/// native resolver applies: a randomized per-network MAC is locally
+/// administered and is precisely the address the router sees.
+String? normalizeMacAddress(String raw) {
+  final hex = raw.trim().toUpperCase().replaceAll(RegExp(r'[:\-.\s]'), '');
+  if (!RegExp(r'^[0-9A-F]{12}$').hasMatch(hex)) return null;
+  final mac = [
+    for (var i = 0; i < 12; i += 2) hex.substring(i, i + 2),
+  ].join(':');
+  if (mac == '00:00:00:00:00:00' || mac == '02:00:00:00:00:00') return null;
+  if (int.parse(mac.substring(0, 2), radix: 16) & 0x01 != 0) return null;
+  return mac;
+}
+
+/// Empty clears the address; anything else must normalize.
+String? validateMacAddress(Object? value) {
+  if (value is! String || value.trim().isEmpty) return null;
+  if (normalizeMacAddress(value) == null) {
+    return 'Enter a hardware address like AA:BB:CC:DD:EE:FF.';
+  }
+  return null;
+}
+
+/// [SettingDef.normalizer] adapter for [normalizeMacAddress]; an empty
+/// value stays empty.
+Object normalizeMacAddressSetting(Object value) =>
+    value is String ? (normalizeMacAddress(value) ?? value.trim()) : value;
+
 const btproxyEnabled = SettingDef<bool>(
   key: 'btproxy.enabled',
   type: SettingType.boolean,
@@ -4414,6 +4469,7 @@ const List<SettingDef<Object>> allSettings = [
   btproxyPort,
   esphomeNodeName,
   esphomeRealMac,
+  esphomeMacOverride,
   btproxyEnabled,
   btproxyConnections,
   btproxyMinConnectRssi,

@@ -373,44 +373,9 @@ export async function loadSettings() {
 
   // ── Real-MAC identity outcome ────────────────────────────────────────
   // What the switch actually did, right under it, mirroring the device
-  // page: with the address unreadable the flip is otherwise a silent
-  // no-op that renders identically to a working one.
-  if (byKey['esphome.real_mac']?.value === true &&
-      depSatisfied(byKey['esphome.real_mac'])) {
-    api('/api/commands/btProxyStatus', { method: 'POST', body: '{}' })
-      .then((r) => r.json())
-      .then((res) => {
-        const row = document.querySelector('[data-key="esphome.real_mac"]');
-        if (!row || row.nextElementSibling?.classList
-            ?.contains('real-mac-note')) return;
-        const mac = res.data?.realMac || null;
-        const note = document.createElement('div');
-        note.className = 'real-mac-note';
-        note.style.cssText = 'display:flex; gap:8px; ' +
-          'align-items:flex-start; margin:6px 0 10px; ' +
-          `font-size:12.5px; color:var(--${mac ? 'muted' : 'warn'}); ` +
-          'line-height:1.5';
-        note.innerHTML = mac
-          ? '<svg width="15" height="15" viewBox="0 0 24 24" ' +
-            'fill="none" stroke="currentColor" stroke-width="2" ' +
-            'stroke-linecap="round" style="flex:none; margin-top:2px">' +
-            '<circle cx="12" cy="12" r="9"/>' +
-            '<path d="M12 8h.01M12 11.5V16"/></svg><span></span>'
-          : '<svg width="15" height="15" viewBox="0 0 24 24" ' +
-            'fill="none" stroke="currentColor" stroke-width="2" ' +
-            'stroke-linecap="round" stroke-linejoin="round" ' +
-            'style="flex:none; margin-top:2px">' +
-            '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 ' +
-            '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
-            '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
-        note.querySelector('span').textContent = mac
-          ? `Reporting ${mac}.`
-          : 'Android will not reveal this device\'s hardware address, so ' +
-            'the generated one stays in use.';
-        row.insertAdjacentElement('afterend', note);
-      })
-      .catch(() => {});
-  }
+  // page; refreshed in place when the switch or the typed address changes
+  // (see save() in rows.js), so the answer never waits for a reload.
+  refreshRealMacNote();
 
   // ── Bluetooth Proxy nearby devices ───────────────────────────────────
   // The live list the device shows under the lookup toggle, same data:
@@ -1796,4 +1761,71 @@ export async function loadSettings() {
   // person was. One extra frame so late async renders have laid out.
   scroller.scrollTop = keepScroll;
   requestAnimationFrame(() => { scroller.scrollTop = keepScroll; });
+}
+
+// The real-MAC switch's status row and, where the hardware read failed, the
+// field for typing the address in (issues #252, #300): with the address
+// unreadable the flip is otherwise a silent no-op that renders identically
+// to a working one. Drawn fresh on every call, from the device's answer,
+// so save() can call it right after a flip and after each edit of the
+// field. The field is a hidden definition, never in the generic render:
+// offered only here, only while the hardware read failed, since anywhere
+// else it would invite overriding a good address.
+export async function refreshRealMacNote() {
+  const row = document.querySelector('[data-key="esphome.real_mac"]');
+  if (!row) return;
+  for (const cls of ['real-mac-note', 'real-mac-field']) {
+    row.parentNode.querySelector(`.${cls}`)?.remove();
+  }
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  const depSatisfied = (s) => {
+    if (!s.dependsOn) return true;
+    const dep = byKey[s.dependsOn];
+    if (!dep) return true;
+    return dep.value === (s.dependsOnValue ?? true) && depSatisfied(dep);
+  };
+  const on = byKey['esphome.real_mac'];
+  if (on?.value !== true || !depSatisfied(on)) return;
+  let res;
+  try { res = await cmd('btProxyStatus'); } catch { return; }
+  // Stale by the time the device answered: the row was re-rendered or
+  // a later call already drew the current answer.
+  if (!row.isConnected || row.parentNode.querySelector('.real-mac-note')) return;
+  const mac = res.data?.realMac || null;
+  const source = res.data?.realMacSource || (mac ? 'hardware' : 'none');
+  const note = document.createElement('div');
+  note.className = 'real-mac-note';
+  note.style.cssText = 'display:flex; gap:8px; ' +
+    'align-items:flex-start; margin:6px 0 10px; ' +
+    `font-size:12.5px; color:var(--${mac ? 'muted' : 'warn'}); ` +
+    'line-height:1.5';
+  note.innerHTML = mac
+    ? '<svg width="15" height="15" viewBox="0 0 24 24" ' +
+      'fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" style="flex:none; margin-top:2px">' +
+      '<circle cx="12" cy="12" r="9"/>' +
+      '<path d="M12 8h.01M12 11.5V16"/></svg><span></span>'
+    : '<svg width="15" height="15" viewBox="0 0 24 24" ' +
+      'fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" ' +
+      'style="flex:none; margin-top:2px">' +
+      '<path d="M10.3 3.9 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 ' +
+      '1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>' +
+      '<path d="M12 9v4M12 17h.01"/></svg><span></span>';
+  note.querySelector('span').textContent = !mac
+    ? 'Android will not reveal this device\'s hardware address, so ' +
+      'the generated one stays in use.'
+    : source === 'manual'
+      ? `Reporting ${mac}, entered below.`
+      : `Reporting ${mac}.`;
+  row.insertAdjacentElement('afterend', note);
+  const field = byKey['esphome.mac_override'];
+  if (source !== 'hardware' && field) {
+    // The device stores the canonical spelling; the field shows that, not
+    // the dashes or bare digits that were typed.
+    if (source === 'manual' && mac) field.value = mac;
+    const fieldRow = settingRow(field);
+    fieldRow.classList.add('real-mac-field');
+    note.insertAdjacentElement('afterend', fieldRow);
+  }
 }

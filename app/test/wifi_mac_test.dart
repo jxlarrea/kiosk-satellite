@@ -39,5 +39,51 @@ void main() {
     final settings = await settingsWith({'ks.esphome.real_mac': true});
     expect(await adoptedWifiMac(settings), isNull);
     expect(settings.internal('esphome_adopted_mac'), isEmpty);
+    expect((await wifiMacIdentity(settings)).source, WifiMacSource.none);
+  });
+
+  // The hand-typed address (issue #300): the fallback once the platform
+  // has come back empty, never adopted, never ahead of a hardware read.
+  test('a typed address stands in when the platform reveals nothing',
+      () async {
+    final settings = await settingsWith({
+      'ks.esphome.real_mac': true,
+      'ks.esphome.mac_override': '80:30:49:CD:D6:5F',
+    });
+    final identity = await wifiMacIdentity(settings);
+    expect(identity.mac, '80:30:49:CD:D6:5F');
+    expect(identity.source, WifiMacSource.manual);
+    expect(await adoptedWifiMac(settings), '80:30:49:CD:D6:5F');
+    // Read live, not adopted: editing the field is how a typo gets fixed.
+    expect(settings.internal('esphome_adopted_mac'), isEmpty);
+  });
+
+  test('a typed address is ignored while the setting is off', () async {
+    final settings = await settingsWith({
+      'ks.esphome.mac_override': '80:30:49:CD:D6:5F',
+    });
+    expect(await adoptedWifiMac(settings), isNull);
+  });
+
+  test('a stored hardware adoption beats a typed address', () async {
+    final settings = await settingsWith({
+      'ks.esphome.real_mac': true,
+      'ks.internal.esphome_adopted_mac': '1C:4D:66:4C:7E:A1',
+      'ks.esphome.mac_override': '80:30:49:CD:D6:5F',
+    });
+    final identity = await wifiMacIdentity(settings);
+    expect(identity.mac, '1C:4D:66:4C:7E:A1');
+    expect(identity.source, WifiMacSource.hardware);
+  });
+
+  test('a typed address that is not a usable one is ignored', () async {
+    // Written past the validator (an old export, a hand-edited prefs
+    // file): the identity must not trust it.
+    final settings = await settingsWith({
+      'ks.esphome.real_mac': true,
+      'ks.esphome.mac_override': '01:00:5E:00:00:01',
+    });
+    expect(await adoptedWifiMac(settings), isNull);
+    expect((await wifiMacIdentity(settings)).source, WifiMacSource.none);
   });
 }

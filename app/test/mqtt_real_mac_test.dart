@@ -108,6 +108,19 @@ void main() {
     ]);
   });
 
+  test('a typed address lands in the device block when nothing was read',
+      () async {
+    // No adoption stored and no platform channel in tests: the typed
+    // address (issue #300) is what the device block carries.
+    await build(extraPrefs: {
+      'ks.esphome.real_mac': true,
+      'ks.esphome.mac_override': '80:30:49:CD:D6:5F',
+    });
+    expect(deviceBlock()['connections'], [
+      ['mac', '80:30:49:cd:d6:5f'],
+    ]);
+  });
+
   test('with the setting off the device block has no connections', () async {
     await build(extraPrefs: {
       'ks.internal.esphome_adopted_mac': '80:30:49:CD:D6:5F',

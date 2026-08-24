@@ -129,17 +129,20 @@ class BtProxyManager extends Manager {
         description:
             'Bluetooth proxy state: running, scanning, counters, recent log',
         handler: (_) async {
-          // The adopted real-MAC identity, for the settings pages: with the
-          // setting on, null here means the platform would not reveal the
-          // address and the generated identity stayed in use — a silent
-          // no-op unless the page says so (issue #252).
-          final realMac = await adoptedWifiMac(_settings);
+          // The real-MAC identity, for the settings pages: with the
+          // setting on, no address here means the platform would not
+          // reveal one and the generated identity stayed in use — a silent
+          // no-op unless the page says so (issue #252). The source says
+          // whether it was read or typed in (issue #300); the pages offer
+          // the field only while the hardware read failed.
+          final identity = await wifiMacIdentity(_settings);
           try {
             final status = await _channel.invokeMethod<Map>('status');
             return CommandResult.ok({
               ...Map<String, Object?>.from(status ?? const {}),
               if (_startError != null) 'startError': _startError,
-              'realMac': ?realMac,
+              'realMac': ?identity.mac,
+              'realMacSource': identity.source.name,
             });
           } catch (e) {
             if (_startError != null) {

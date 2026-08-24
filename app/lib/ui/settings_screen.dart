@@ -20,7 +20,8 @@ import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
 import '../managers/screensaver/screensaver_manager.dart'
     show upsertScheduleEntry;
 import '../managers/screensaver/screensaver_widgets.dart';
-import '../managers/device/wifi_mac.dart' show adoptedWifiMac;
+import '../managers/device/wifi_mac.dart'
+    show WifiMacIdentity, WifiMacSource, wifiMacIdentity;
 import '../managers/settings/definitions.dart';
 import '../managers/settings/export_filename.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -2225,6 +2226,7 @@ class _CategoryContentState extends State<_CategoryContent> {
       esphomeRealMac.key: _RealMacStatusRow(
         key: UniqueKey(),
         container: container,
+        onChanged: () => setState(() {}),
       ),
     // The connection budget, right under the toggle that spends
     // it: a hard Android-stack limit per proxy, and the thing a
@@ -5844,41 +5846,60 @@ class _BtSlotsHintRowState extends State<_BtSlotsHintRow> {
 
 /// The outcome of the real-MAC switch (issue #252): the adopted address, or
 /// the fact that Android would not reveal one — in which case the switch
-/// changed nothing and only this row says so.
+/// changed nothing and only this row says so. Where the hardware read
+/// failed, the field for typing the address in follows (issue #300), and
+/// stays while a typed address is in use so it can be corrected or cleared.
+/// Rebuilt under a fresh key on every page change, so the row answers for
+/// the switch and the field as they are now.
 class _RealMacStatusRow extends StatefulWidget {
-  const _RealMacStatusRow({super.key, required this.container});
+  const _RealMacStatusRow({
+    super.key,
+    required this.container,
+    required this.onChanged,
+  });
 
   final AppContainer container;
+  final VoidCallback onChanged;
 
   @override
   State<_RealMacStatusRow> createState() => _RealMacStatusRowState();
 }
 
 class _RealMacStatusRowState extends State<_RealMacStatusRow> {
-  String? _mac;
-  bool _resolved = false;
+  WifiMacIdentity? _identity;
 
   @override
   void initState() {
     super.initState();
-    adoptedWifiMac(widget.container.settings).then((mac) {
-      if (mounted) {
-        setState(() {
-          _mac = mac;
-          _resolved = true;
-        });
-      }
+    wifiMacIdentity(widget.container.settings).then((identity) {
+      if (mounted) setState(() => _identity = identity);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_resolved) return const SizedBox.shrink();
-    if (_mac != null) return HintRow('Reporting $_mac.');
-    return const WarnRow(
-      'Android will not reveal this device\'s hardware address, so the '
-      'generated one stays in use.',
+    final identity = _identity;
+    if (identity == null) return const SizedBox.shrink();
+    final field = SettingTile(
+      container: widget.container,
+      def: esphomeMacOverride,
+      onChanged: widget.onChanged,
     );
+    return switch (identity.source) {
+      WifiMacSource.hardware => HintRow('Reporting ${identity.mac}.'),
+      WifiMacSource.manual => Column(
+        children: [HintRow('Reporting ${identity.mac}, entered below.'), field],
+      ),
+      WifiMacSource.none => Column(
+        children: [
+          const WarnRow(
+            'Android will not reveal this device\'s hardware address, so '
+            'the generated one stays in use.',
+          ),
+          field,
+        ],
+      ),
+    };
   }
 }
 
@@ -6881,48 +6902,65 @@ class SettingTile extends StatelessWidget {
           ? ''
           : (current is num ? _formatNum(current) : '$current'),
     );
+    Object? parse(String text) =>
+        def.type == SettingType.number ? num.tryParse(text) : text;
+    // A definition's validator answers in the dialog, under the field,
+    // and keeps it open: a rejected value used to close the dialog and
+    // keep the old value without a word.
+    String? error;
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(def.title),
-        content: SizedBox(
-          width: def.multiline ? 560 : 420,
-          child: TextField(
-            controller: controller,
-            obscureText: def.secret,
-            autofocus: true,
-            minLines: def.multiline ? 6 : 1,
-            maxLines: def.multiline ? 14 : 1,
-            keyboardType: def.type == SettingType.number
-                ? TextInputType.number
-                : def.multiline
-                ? TextInputType.multiline
-                : TextInputType.text,
-            style: def.multiline
-                ? const TextStyle(fontFamily: 'monospace', fontSize: 13)
-                : null,
-            decoration: InputDecoration(
-              hintText: def.placeholder ?? def.description,
-              hintMaxLines: def.multiline ? 4 : null,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(def.title),
+          content: SizedBox(
+            width: def.multiline ? 560 : 420,
+            child: TextField(
+              controller: controller,
+              obscureText: def.secret,
+              autofocus: true,
+              minLines: def.multiline ? 6 : 1,
+              maxLines: def.multiline ? 14 : 1,
+              keyboardType: def.type == SettingType.number
+                  ? TextInputType.number
+                  : def.multiline
+                  ? TextInputType.multiline
+                  : TextInputType.text,
+              style: def.multiline
+                  ? const TextStyle(fontFamily: 'monospace', fontSize: 13)
+                  : null,
+              onChanged: (_) {
+                if (error != null) setDialogState(() => error = null);
+              },
+              decoration: InputDecoration(
+                hintText: def.placeholder ?? def.description,
+                hintMaxLines: def.multiline ? 4 : null,
+                errorText: error,
+              ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final message = def.validator?.call(parse(controller.text));
+                if (message != null) {
+                  setDialogState(() => error = message);
+                  return;
+                }
+                Navigator.pop(context, controller.text);
+              },
+              child: const Text('Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
     if (result == null) return;
-    final value = def.type == SettingType.number
-        ? num.tryParse(result)
-        : result;
+    final value = parse(result);
     if (value != null) {
       await c.settings.setFromJson(def.key, value);
       onChanged();

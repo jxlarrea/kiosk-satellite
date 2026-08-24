@@ -757,9 +757,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       if (_connected) unawaited(_publishDiscovery());
       return;
     }
-    if (e.key == defs.esphomeRealMac.key) {
+    if (e.key == defs.esphomeRealMac.key ||
+        e.key == defs.esphomeMacOverride.key) {
       // The discovery device block's connections entry follows the real-MAC
-      // identity setting (issue #252).
+      // identity setting (issue #252) and the hand-typed address behind it
+      // (issue #300).
       if (_connected) unawaited(_publishDiscovery());
       return;
     }

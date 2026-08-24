@@ -523,12 +523,25 @@ class RemoteManager extends Manager {
     final body = await _body(request);
     if (body == null) return _json(400, {'error': 'invalid JSON'});
     final rejected = <String>[];
+    // The validator's own words per rejected key, where a definition has
+    // one, so the page can say what was wrong with the value instead of
+    // silently keeping the old one.
+    final errors = <String, String>{};
     for (final entry in body.entries) {
       if (!await _settings.setFromJson(entry.key, entry.value)) {
         rejected.add(entry.key);
+        final message = _settings
+            .defByKey(entry.key)
+            ?.validator
+            ?.call(entry.value);
+        if (message != null) errors[entry.key] = message;
       }
     }
-    return _json(200, {'ok': rejected.isEmpty, 'rejected': rejected});
+    return _json(200, {
+      'ok': rejected.isEmpty,
+      'rejected': rejected,
+      'errors': errors,
+    });
   }
 
   Future<Response> _import(Request request) async {

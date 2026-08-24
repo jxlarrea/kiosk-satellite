@@ -245,6 +245,19 @@ old device comes back as it was. The MQTT integration's
 device follows the same switch, so both integrations land on the same
 merged device.
 
+Where Android will not reveal the address, the switch's status row says
+so and offers a **Wi-Fi MAC address** field right under it: type the
+address in yourself and the kiosk reports that one instead. Android
+shows it under About > Status in its settings, and your router's client
+list has it too. The field accepts the usual spellings (colons, dashes,
+or twelve bare hex digits) and refuses anything that could not be an
+interface address. The field only appears while the hardware read has
+failed; a working read always wins, so on a device that later lets the
+app read the address (an app made device owner, say) the read address
+takes over, which changes nothing when the typed one was right. The same
+re-add caveat applies: a typed address, and any later change to it, is a
+new identity to Home Assistant.
+
 ## Nearby devices
 
 The Bluetooth Proxy settings page lists what the kiosk currently hears,

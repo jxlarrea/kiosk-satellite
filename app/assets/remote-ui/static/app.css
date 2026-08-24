@@ -324,6 +324,10 @@
   :root[data-theme="dark"] .row input[type=time]::-webkit-calendar-picker-indicator {
     filter: invert(1); }
   .row input:focus, .row select:focus { outline: none; border-color: var(--accent); }
+  /* A refused value's reason, on its own line under the control. */
+  .row:has(.row-error) { flex-wrap: wrap; }
+  .row .row-error { flex-basis: 100%; color: var(--error); font-size: 12.5px;
+    margin-top: -4px; }
   .switch { position: relative; width: 46px; height: 26px; flex: none; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .slider { position: absolute; inset: 0; background: var(--surface-2);
