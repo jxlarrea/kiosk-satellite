@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../core/command_registry.dart';
@@ -88,10 +89,12 @@ class JsApiManager extends Manager {
               "'start_conversation', 'timer', 'media' (optional)",
         },
         handler: (p) async {
-          bus.publish(VoiceInteractionChanged(
-            active: p['active'] == true,
-            reason: p['reason'] is String ? p['reason'] as String : '',
-          ));
+          bus.publish(
+            VoiceInteractionChanged(
+              active: p['active'] == true,
+              reason: p['reason'] is String ? p['reason'] as String : '',
+            ),
+          );
           return const CommandResult.ok();
         },
       ),
@@ -106,18 +109,22 @@ class JsApiManager extends Manager {
     // Native pipeline transport events, explicit for the same reason:
     // streaming intent-progress deltas and ~15/s mic levels have no
     // business on the remote admin WebSocket.
-    bus.on<PipelineEvent>().listen((e) => _dispatchToPage('pipeline', e.toJson()));
-    bus.on<PipelineClosed>()
-        .listen((e) => _dispatchToPage('pipeline-closed', e.toJson()));
-    bus.on<PipelineMicLevel>()
-        .listen((e) => _dispatchToPage('pipeline-level', e.toJson()));
+    bus.on<PipelineEvent>().listen(
+      (e) => _dispatchToPage('pipeline', e.toJson()),
+    );
+    bus.on<PipelineClosed>().listen(
+      (e) => _dispatchToPage('pipeline-closed', e.toJson()),
+    );
+    bus.on<PipelineMicLevel>().listen(
+      (e) => _dispatchToPage('pipeline-level', e.toJson()),
+    );
   }
 
   /// The script the UI layer injects at document start.
   UserScript buildUserScript(String os) => UserScript(
-        source: buildKioskSatelliteScript(version: appVersion, os: os),
-        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-      );
+    source: buildKioskSatelliteScript(version: appVersion, os: os),
+    injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+  );
 
   /// Called by the UI layer from onWebViewCreated.
   void attach(InAppWebViewController controller) {
@@ -127,6 +134,11 @@ class JsApiManager extends Manager {
       callback: (args) => _onCall(args),
     );
   }
+
+  /// The ksApi handler body, reachable for tests (attach needs a live
+  /// WebView controller).
+  @visibleForTesting
+  Future<Object?> handleCall(List<dynamic> args) => _onCall(args);
 
   Future<Object?> _onCall(List<dynamic> args) async {
     if (args.isEmpty || args.first is! String) return null;
@@ -140,6 +152,17 @@ class JsApiManager extends Manager {
       log.warn(name, 'page called unknown method $method');
       return null;
     }
+    // Assistant loudness belongs to this app, not the page (issue #294):
+    // Voice Satellite scales every sound it delegates by its own HA
+    // media_player entity volume, a slider nothing on the device surfaces,
+    // and stacked under the Assistant volume fader it turned "everything
+    // at 100%" into near-silence. Sounds the page hands over play at the
+    // Assistant volume alone; its volume opinion is dropped here at the
+    // bridge, so the command log records what actually plays. The remote
+    // API keeps the explicit volume parameter for testing.
+    if (method == 'playSound' || method == 'setSoundVolume') {
+      params.remove('volume');
+    }
     final result = await commands.execute(commandName, params);
     // Queries resolve to their data; commands resolve to true/false. Never
     // reject — matching the defensive style of the VS kiosk wrapper.
@@ -150,7 +173,8 @@ class JsApiManager extends Manager {
   void _dispatchToPage(String wireName, Map<String, Object?> detail) {
     final controller = _controller;
     if (controller == null) return;
-    final js = 'window.dispatchEvent(new CustomEvent('
+    final js =
+        'window.dispatchEvent(new CustomEvent('
         '${jsonEncode('kiosksatellite:$wireName')}, '
         '{detail: ${jsonEncode(detail)}}));';
     controller.evaluateJavascript(source: js).catchError((Object e) {
