@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The ambient light sensor is now found on devices that expose it only through Android's dynamic sensor API. Android keeps two registries of sensors, and Kiosk Satellite only asked the static one, so a device whose light sensor registers dynamically (the Lenovo Smart Clock is one) reported no ambient light sensor despite having a working one. The static sensor is still preferred when both exist; otherwise the dynamic one takes its place, and a dynamic sensor that disconnects and returns while the kiosk is running is picked up again on the spot. The illuminance entity and everything built on it, adaptive brightness automations included, now work on these devices.
+
 ## v2026.8.76 - 2026-08-23
 
 ### Added

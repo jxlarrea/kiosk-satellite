@@ -27,16 +27,24 @@ import kotlin.math.abs
  * TYPE_LIGHT needs no permission on any Android version. Devices without the
  * sensor (several Fire tablets) answer hasSensor=false and never get a
  * stream, so the entity is simply absent rather than dead.
+ *
+ * Some devices (the Lenovo Smart Clock, issue #290) expose their light
+ * sensor only through the dynamic sensor API: getDefaultSensor returns null
+ * while getDynamicSensorList carries a working TYPE_LIGHT sensor. The
+ * default sensor is preferred; a dynamic one is the fallback, and a
+ * DynamicSensorCallback re-attaches the stream when a dynamic sensor comes
+ * or goes while it is live.
  */
 class LightSensor(context: Context, messenger: BinaryMessenger) {
     private val sensorManager =
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val sensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
     private val methods = MethodChannel(messenger, "kiosk_satellite/light_sensor")
     private val events = EventChannel(messenger, "kiosk_satellite/light_sensor_stream")
 
+    private var sensor: Sensor? = null
     private var listener: SensorEventListener? = null
+    private var sink: EventChannel.EventSink? = null
     private var lastSent = -1f
     private var lastSentAt = 0L
     private val handler = Handler(Looper.getMainLooper())
@@ -44,74 +52,119 @@ class LightSensor(context: Context, messenger: BinaryMessenger) {
     /** Set by the first delivered sample; the register nudge stops on it. */
     @Volatile private var receivedAny = false
 
+    /** The default TYPE_LIGHT sensor, else the first dynamic one. */
+    private fun findSensor(): Sensor? =
+        sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+            ?: sensorManager.getDynamicSensorList(Sensor.TYPE_LIGHT).firstOrNull()
+
+    // Delivered on [handler] (the main looper), same thread as the channel
+    // callbacks, so sensor/listener/sink need no locking.
+    private val dynamicCallback = object : SensorManager.DynamicSensorCallback() {
+        override fun onDynamicSensorConnected(connected: Sensor) {
+            if (connected.type != Sensor.TYPE_LIGHT) return
+            if (sensor != null) return
+            reattach()
+        }
+
+        override fun onDynamicSensorDisconnected(disconnected: Sensor) {
+            if (disconnected !== sensor) return
+            listener?.let { sensorManager.unregisterListener(it) }
+            listener = null
+            sensor = null
+            reattach()
+        }
+    }
+
+    /** Point a live stream at whatever light sensor exists now, if any. */
+    private fun reattach() {
+        val target = sink ?: return
+        val s = findSensor() ?: return
+        attach(s, target)
+    }
+
+    private fun attach(s: Sensor, sink: EventChannel.EventSink) {
+        listener?.let { sensorManager.unregisterListener(it) }
+        sensor = s
+        lastSent = -1f
+        receivedAny = false
+        val l = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                val lux = event.values.firstOrNull() ?: return
+                receivedAny = true
+                val now = SystemClock.elapsedRealtime()
+                if (lastSent >= 0) {
+                    val delta = abs(lux - lastSent)
+                    if (now - lastSentAt < 2000 ||
+                        delta < 5f || delta < lastSent * 0.1f) {
+                        return
+                    }
+                }
+                lastSent = lux
+                lastSentAt = now
+                sink.success(lux.toDouble())
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+        listener = l
+        sensorManager.registerListener(
+            l, s, SensorManager.SENSOR_DELAY_NORMAL)
+        // On-change sensors owe one sample at registration, but some
+        // drivers (the Echo Show's amazon-oss one) lose it when the
+        // register races boot. In a room where the light then never
+        // changes, that silence lasts until morning and the entity
+        // sits on "unknown". Re-registering coerces the initial
+        // sample; give the driver a few chances, then leave it to
+        // the first genuine change.
+        fun nudge(remaining: Int) {
+            handler.postDelayed({
+                if (receivedAny || listener !== l) return@postDelayed
+                sensorManager.unregisterListener(l)
+                sensorManager.registerListener(
+                    l, s, SensorManager.SENSOR_DELAY_NORMAL)
+                if (remaining > 1) nudge(remaining - 1)
+            }, 4_000)
+        }
+        nudge(3)
+    }
+
     init {
+        sensorManager.registerDynamicSensorCallback(dynamicCallback, handler)
         methods.setMethodCallHandler { call, result ->
             when (call.method) {
-                "hasSensor" -> result.success(sensor != null)
+                "hasSensor" -> result.success(findSensor() != null)
                 else -> result.notImplemented()
             }
         }
         events.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(args: Any?, sink: EventChannel.EventSink) {
-                val s = sensor
+                this@LightSensor.sink = sink
+                val s = findSensor()
                 if (s == null) {
-                    sink.endOfStream()
+                    // A dynamic sensor answered hasSensor and has since
+                    // gone away. Keep the stream open rather than ending
+                    // it; dynamicCallback attaches when one returns.
+                    sensor = null
                     return
                 }
-                lastSent = -1f
-                receivedAny = false
-                val l = object : SensorEventListener {
-                    override fun onSensorChanged(event: SensorEvent) {
-                        val lux = event.values.firstOrNull() ?: return
-                        receivedAny = true
-                        val now = SystemClock.elapsedRealtime()
-                        if (lastSent >= 0) {
-                            val delta = abs(lux - lastSent)
-                            if (now - lastSentAt < 2000 ||
-                                delta < 5f || delta < lastSent * 0.1f) {
-                                return
-                            }
-                        }
-                        lastSent = lux
-                        lastSentAt = now
-                        sink.success(lux.toDouble())
-                    }
-
-                    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-                }
-                listener = l
-                sensorManager.registerListener(
-                    l, s, SensorManager.SENSOR_DELAY_NORMAL)
-                // On-change sensors owe one sample at registration, but some
-                // drivers (the Echo Show's amazon-oss one) lose it when the
-                // register races boot. In a room where the light then never
-                // changes, that silence lasts until morning and the entity
-                // sits on "unknown". Re-registering coerces the initial
-                // sample; give the driver a few chances, then leave it to
-                // the first genuine change.
-                fun nudge(remaining: Int) {
-                    handler.postDelayed({
-                        if (receivedAny || listener !== l) return@postDelayed
-                        sensorManager.unregisterListener(l)
-                        sensorManager.registerListener(
-                            l, s, SensorManager.SENSOR_DELAY_NORMAL)
-                        if (remaining > 1) nudge(remaining - 1)
-                    }, 4_000)
-                }
-                nudge(3)
+                attach(s, sink)
             }
 
             override fun onCancel(args: Any?) {
                 listener?.let { sensorManager.unregisterListener(it) }
                 listener = null
+                sensor = null
+                sink = null
                 lastSent = -1f
             }
         })
     }
 
     fun dispose() {
+        sink = null
         listener?.let { sensorManager.unregisterListener(it) }
         listener = null
+        sensorManager.unregisterDynamicSensorCallback(dynamicCallback)
         methods.setMethodCallHandler(null)
         events.setStreamHandler(null)
     }
