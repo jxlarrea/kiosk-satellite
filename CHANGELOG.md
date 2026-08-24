@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.77 - 2026-08-24
 
 ### Changed
 - Assistant sounds now play at the Assistant volume alone. Voice responses and chimes that Voice Satellite hands to the app for playback used to arrive pre-scaled by the satellite's own Home Assistant media player entity volume, a slider nothing on the device surfaces, and the two multiplied: with that entity sitting at 17%, a device whose every visible slider read 100% played its chimes at three percent and looked broken. The app now owns assistant loudness outright, exactly as the mixer intends: sounds the dashboard hands over play at the Assistant volume under the master, and the entity slider no longer attenuates them, on any Voice Satellite version. The app log also stops recording the misleading requested volume, so what the log shows is what plays. Adjust assistant loudness with the Assistant volume slider under Screen & Audio, or its number entity in the ESPHome and MQTT integrations; the remote API's playSound command keeps its explicit volume parameter for testing.
