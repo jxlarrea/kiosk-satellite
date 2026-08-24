@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The remote admin dashboard's quick controls now follow the device. The screen, screensaver and camera view controls used to be a fixed row of buttons, two of them for the screen and none to start the screensaver from there; each is now one tile that reads by what the device is doing: **Screen off** while the panel is lit and **Screen on** once it is dark, **Start screensaver** or **Dismiss screensaver**, and **Show camera view** or **Dismiss camera view**. The tiles are seeded from the device's state when the page connects and flip live as the device reports changes, whether the change came from this page, a person at the panel, motion, an automation or the idle timer, so a tile never offers an action that no longer applies, and the dashboard screenshot refreshes a second after each such change so the picture keeps up with the tiles. **Show camera view** shows the only configured view outright, offers a pick when there are several, and says where to add cameras when no view has any. The remote API gains the matching reads, `isScreensaverActive` and `getCameraViewState`, and the state snapshot (`GET /api/info` and the WebSocket `state` message) now carries `screenOn`, `screensaverActive` and `cameraView`.
+
 ## v2026.8.78 - 2026-08-24
 
 ### Fixed

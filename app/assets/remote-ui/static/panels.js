@@ -1,6 +1,8 @@
 import { $, api, cmd, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { loadSettings } from './settings.js';
+import { radioRow } from './views.js';
+import { messageBox, modalShell } from './widgets.js';
 
 /* Overlay grant notice: mirror of the device's row directly under
    "Auto-reload on error", shown only while that switch is on and the
@@ -356,6 +358,132 @@ $('#viewJump').addEventListener('change', async (e) => {
   e.target.value = '';
 });
 $('#refreshShot').addEventListener('click', loadScreenshot);
+/* ---- Quick controls ----
+   The screen, screensaver and camera view tiles are one tile each that
+   reads by what the device is doing, so the dashboard offers the action
+   that applies instead of a pair where one is always a no-op. The truth
+   is the device's: the state snapshot at connect (and /api/info at boot)
+   seeds it, the event feed moves it, and a command this page sent is not
+   assumed to have worked; the tile flips when the device says so. */
+export const quick = { screenOn: null, screensaverActive: null, cameraView: null };
+
+const STROKE = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+// The off/dismiss face of each pair is the on face with a slash, the
+// language the Screen off tile already spoke.
+const QUICK_ICONS = {
+  screenOn: `<svg ${STROKE}><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4"/></svg>`,
+  screenOff: `<svg ${STROKE}><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M4 20 20 4"/></svg>`,
+  saverStart: `<svg ${STROKE}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  saverStop: `<svg ${STROKE}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/><path d="M4 20 20 4"/></svg>`,
+  cameraShow: `<svg ${STROKE}><rect x="3" y="6.5" width="12.5" height="11" rx="2.5"/><path d="m15.5 10.5 5.5-3v9l-5.5-3"/></svg>`,
+  cameraHide: `<svg ${STROKE}><rect x="3" y="6.5" width="12.5" height="11" rx="2.5"/><path d="m15.5 10.5 5.5-3v9l-5.5-3"/><path d="M4 20 20 4"/></svg>`,
+};
+
+function setTile(id, { icon, label, command }) {
+  const tile = document.getElementById(id);
+  if (!tile) return;
+  tile.querySelector('.disc').innerHTML = QUICK_ICONS[icon];
+  tile.querySelector('.disc + span').textContent = label;
+  // No command means the tile's own handler takes the click (the camera
+  // picker); the generic .action handler skips a tile without one.
+  if (command) tile.dataset.cmd = command; else delete tile.dataset.cmd;
+}
+
+export function renderQuickControls() {
+  // Unknown (a device too old to report, or a command that failed) keeps
+  // the quiet-state face rather than a tile claiming something it was
+  // never told: the quiet state is where a kiosk spends nearly all its
+  // time, and each command is harmless when it does not apply.
+  setTile('tileScreen', quick.screenOn === false
+    ? { icon: 'screenOn', label: 'Screen on', command: 'screenOn' }
+    : { icon: 'screenOff', label: 'Screen off', command: 'screenOff' });
+  setTile('tileScreensaver', quick.screensaverActive === true
+    ? { icon: 'saverStop', label: 'Dismiss screensaver', command: 'stopScreensaver' }
+    : { icon: 'saverStart', label: 'Start screensaver', command: 'startScreensaver' });
+  setTile('tileCameraView', quick.cameraView?.active
+    ? { icon: 'cameraHide', label: 'Dismiss camera view', command: 'hideCameraView' }
+    : { icon: 'cameraShow', label: 'Show camera view', command: null });
+}
+
+// The snapshot: /api/info at boot and every WS `state` message. Fields a
+// device does not report are left as they were, and so are the states
+// named in `keep` (ws.js passes the ones an event on the same socket
+// already moved past this snapshot).
+export function applyQuickState(device, keep = {}) {
+  if (!device) return;
+  if ('screenOn' in device && !keep.screenOn) quick.screenOn = device.screenOn;
+  if ('screensaverActive' in device && !keep.screensaverActive) {
+    quick.screensaverActive = device.screensaverActive;
+  }
+  if ('cameraView' in device && !keep.cameraView) quick.cameraView = device.cameraView;
+  renderQuickControls();
+}
+
+// Which quick-control state an event moves, for that bookkeeping.
+export function quickStateOf(event) {
+  if (event === 'screenon' || event === 'screenoff') return 'screenOn';
+  if (event === 'screensaverstart' || event === 'screensaverstop') return 'screensaverActive';
+  if (event === 'cameraview') return 'cameraView';
+  return null;
+}
+
+// The diffs: the same bus events the JS API and MQTT hear.
+export function applyQuickEvent(event, data) {
+  if (event === 'screenon') quick.screenOn = true;
+  else if (event === 'screenoff') quick.screenOn = false;
+  else if (event === 'screensaverstart') quick.screensaverActive = true;
+  else if (event === 'screensaverstop') quick.screensaverActive = false;
+  else if (event === 'cameraview') quick.cameraView = data || { active: false };
+  else return;
+  renderQuickControls();
+}
+
+// "Show camera view" has a question the other tiles do not: which one.
+// One usable view shows straight away; several ask; none says where to
+// make one. The Cameras tab has the same Show buttons per view, this is
+// the shortcut from the dashboard.
+async function showCameraViewFromTile() {
+  const config = (await cmd('cameraGetConfig').catch(() => null))?.data;
+  const views = (config?.views || []).filter((v) => (v.cameraIds || []).length);
+  if (!views.length) {
+    await messageBox({
+      title: 'Show camera view',
+      message: 'No camera view has any cameras yet. Add cameras to a view under Cameras first.',
+    });
+    return;
+  }
+  let viewId = views[0].id;
+  if (views.length > 1) {
+    viewId = await new Promise((resolve) => {
+      const { back, body, foot } = modalShell({
+        title: 'Show camera view',
+        onDismiss: () => { back.remove(); resolve(null); },
+      });
+      const names = Object.fromEntries((config.cameras || []).map((c) => [c.id, c.name]));
+      for (const v of views) {
+        const desc = v.cameraIds.map((id) => names[id] || id).join(', ');
+        body.appendChild(radioRow(v.name, desc, false, () => { back.remove(); resolve(v.id); }));
+      }
+      const cancel = document.createElement('button');
+      cancel.className = 'btn-ghost';
+      cancel.textContent = 'Cancel';
+      cancel.addEventListener('click', () => { back.remove(); resolve(null); });
+      foot.appendChild(cancel);
+    });
+    if (!viewId) return;
+  }
+  const shown = await cmd('showCameraView', { viewId }).catch(() => null);
+  if (shown && shown.ok === false && shown.error) {
+    await messageBox({ title: 'Could not show view', message: shown.error });
+  }
+}
+document.getElementById('tileCameraView')?.addEventListener('click', () => {
+  // With a view up the tile carries hideCameraView and the generic
+  // handler has the click.
+  if (quick.cameraView?.active) return;
+  showCameraViewFromTile();
+});
+
 export async function loadScreenshot() {
   try {
     const res = await api('/api/screenshot');

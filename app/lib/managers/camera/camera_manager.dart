@@ -217,15 +217,18 @@ class CameraManager extends Manager {
       ..register(
         Command(
           name: 'showCameraView',
-          description: 'Show a configured camera view over the dashboard. '
+          description:
+              'Show a configured camera view over the dashboard. '
               'With toggle, a view that is already showing closes instead — '
               'gestures pass it so the same gesture opens and closes a view.',
           params: const {
             'viewId': 'Camera view id',
             'toggle': 'true to close the view when it is already showing',
           },
-          handler: (params) => showView('${params['viewId'] ?? ''}',
-              toggle: params['toggle'] == true),
+          handler: (params) => showView(
+            '${params['viewId'] ?? ''}',
+            toggle: params['toggle'] == true,
+          ),
         ),
       )
       ..register(
@@ -236,6 +239,16 @@ class CameraManager extends Manager {
             hideView();
             return const CommandResult.ok();
           },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'getCameraViewState',
+          description:
+              'The camera view showing right now, if any: '
+              '{active, viewId, viewName, focusedCameraId}.',
+          quiet: true,
+          handler: (_) async => CommandResult.ok(_stateJson()),
         ),
       )
       ..register(
@@ -897,7 +910,8 @@ class CameraManager extends Manager {
     if (camera.kind != 'go2rtc') {
       return {
         'ok': false,
-        'error': 'MSE streaming needs a Go2RTC camera (this one is '
+        'error':
+            'MSE streaming needs a Go2RTC camera (this one is '
             '${camera.kind})',
       };
     }

@@ -77,12 +77,14 @@ are canonicalized against their root, so `..` cannot escape it.
 
 Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 `loadDashboard {dashboard}`, `loadStartUrl` (back to the configured
-Start URL), `reload`, `screenOn` / `screenOff`,
-`setBrightness {level}`, `startScreensaver` / `stopScreensaver`,
+Start URL), `reload`, `screenOn` / `screenOff` / `isScreenOn`,
+`setBrightness {level}`, `startScreensaver` / `stopScreensaver` /
+`isScreensaverActive`,
 `postponeScreensaver` (reset the idle timer, dismissing a showing
 screensaver first),
 `setWakeWordActive {active}`, `showCameraView {viewId}`,
-`hideCameraView`, `cameraGetConfig`, `restartApp`, `tts {text}`,
+`hideCameraView`, `getCameraViewState` (`{active, viewId, viewName,
+focusedCameraId}`), `cameraGetConfig`, `restartApp`, `tts {text}`,
 `launchApp {package}` (open another Android app over the kiosk),
 `bringToFront` (come back in front of it), `installedApps` (every
 launchable app as `[{package, label}]`), `showAppLauncher` /
@@ -140,8 +142,13 @@ connected, the return half needs no REST at all: the device discovers a
 
 JSON messages, `{type, ...}`:
 
-- Server → client: `state` (full snapshot on connect, then diffs), `event`
-  (bus events: motion, wake word, screen, navigation), `log` (app log lines),
+- Server → client: `state` (full snapshot on connect: device identity,
+  battery, brightness, plus `screenOn`, `screensaverActive` and
+  `cameraView {active, viewId, viewName}`, the same shape `GET /api/info`
+  returns), `event` (bus events: motion, wake word, screen, screensaver,
+  camera view, navigation; `screenon` / `screenoff`, `screensaverstart` /
+  `screensaverstop` and `cameraview` are the diffs to the snapshot's three
+  states), `log` (app log lines),
   `console` (`{type: 'console', level, message, time}`, the WebView's
   JavaScript console, streamed live so you can watch a wall-mounted tablet's
   page logs remotely; fetch history first from `GET /api/console`).
@@ -157,7 +164,11 @@ holds the markup, and the stylesheet plus ES modules live under
 Flutter assets. The server serves the page at `/` and the files at
 `/static/<name>`, discovered from the asset manifest, so adding a module is
 just adding the file. Tabs: Dashboard (live screenshot + quick controls +
-brightness), Settings (rendered from the declarative setting definitions),
+brightness; the screen, screensaver and camera view controls are one tile
+each, relabelled by the device's state, **Screen off** while the panel is
+lit and **Screen on** once it is dark, **Start screensaver** or **Dismiss
+screensaver**, **Show camera view**, which picks a view, or **Dismiss camera
+view**), Settings (rendered from the declarative setting definitions),
 Console (live JS console over WS), Logs. It talks only to the REST/WS API
 above (no privileged path), so it doubles as the API's reference client.
 

@@ -1,7 +1,7 @@
 import { renderMicLevel } from './audio.js';
 import { $, state } from './core.js';
 import { appendLine, logView, updateConsoleMeta } from './logs.js';
-import { loadScreenshot } from './panels.js';
+import { applyQuickEvent, applyQuickState, loadScreenshot, quickStateOf } from './panels.js';
 import { loadVsPermissions, renderVsControls } from './vs.js';
 
 /* ---- Live state (WebSocket) ---- */
@@ -9,6 +9,13 @@ export function connectWs() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${proto}://${location.host}/api/ws?token=${state.token}`);
   state.ws = ws;
+  // The connect-time `state` snapshot is read across several awaits on the
+  // device while the event feed already flows to this socket, so a change
+  // landing inside that window arrives as its event first and then as a
+  // snapshot that predates it. Per connection: a quick-control state an
+  // event moved before the snapshot landed keeps the event's value.
+  let snapshotSeen = false;
+  const movedFirst = {};
   ws.onopen = () => {
     setConn('on');
     ws.send(JSON.stringify({ type: 'subscribe', topics: ['state', 'events', 'console', 'logs'] }));
@@ -16,14 +23,25 @@ export function connectWs() {
   ws.onclose = () => { setConn('off'); if (state.token) setTimeout(connectWs, 3000); };
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
-    if (msg.type === 'state') applyInfo(msg.device, msg.currentUrl);
+    if (msg.type === 'state') {
+      applyInfo(msg.device, msg.currentUrl, snapshotSeen ? {} : movedFirst);
+      snapshotSeen = true;
+    }
     else if (msg.type === 'stats') renderStats(msg);
     else if (msg.type === 'console') { appendLine($('#consoleOut'), msg.level, msg.message, msg.time); updateConsoleMeta(); }
     else if (msg.type === 'log') {
       // Live pushes belong to the app log; don't interleave them into logcat.
       if (logView === 'app') appendLine($('#logsOut'), msg.entry.level, `${msg.entry.tag}: ${msg.entry.message}`, Date.parse(msg.entry.time));
     }
-    else if (msg.type === 'event' && msg.event === 'screenon') loadScreenshot();
+    else if (msg.type === 'event') {
+      // Screen, screensaver and camera view changes relabel the
+      // dashboard's quick-control tiles, and what the screen shows has
+      // changed with them, so the screenshot follows a moment later.
+      const moved = quickStateOf(msg.event);
+      if (moved && !snapshotSeen) movedFirst[moved] = true;
+      applyQuickEvent(msg.event, msg.data);
+      if (moved) queueScreenshotRefresh();
+    }
     // The device's own settings screen updates live off the same event; this
     // panel has to as well, or the two disagree about the same device.
     else if (msg.type === 'wakeword-state') {
@@ -34,6 +52,22 @@ export function connectWs() {
     else if (msg.type === 'micLevel') renderMicLevel(msg.rms);
   };
 }
+/* The screenshot after a screen, screensaver or camera view change: one
+   capture a second after the last event (a dismiss lights the panel,
+   stops the screensaver and redraws the page as three events in a row),
+   giving the panel time to settle into what it will actually show. Not
+   from a hidden tab: nobody is looking, and each capture makes the
+   tablet read back and encode its screen. */
+let screenshotTimer = null;
+export function queueScreenshotRefresh() {
+  if (document.hidden) return;
+  clearTimeout(screenshotTimer);
+  screenshotTimer = setTimeout(() => {
+    screenshotTimer = null;
+    loadScreenshot();
+  }, 1000);
+}
+
 /* Wake-word state pushes arrive at the START and END of every voice turn
    (detection suspends while the tablet's own speaker answers). Refreshing
    the Voice Satellite panel per push made this page an accomplice in a
@@ -67,7 +101,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 export function setConn(s) { $('#connDot').className = `dot ${s}`; }
-export function applyInfo(device, currentUrl) {
+export function applyInfo(device, currentUrl, keepQuick = {}) {
   if (!device) return;
   const name = device.name || device.model || '';
   $('#deviceName').textContent = name;
@@ -78,6 +112,7 @@ export function applyInfo(device, currentUrl) {
   renderStats(device);
   if (currentUrl) $('#currentUrl').textContent = currentUrl;
   if (device.brightness != null) showBrightness(device.brightness);
+  applyQuickState(device, keepQuick);
   state.device = device;
 }
 

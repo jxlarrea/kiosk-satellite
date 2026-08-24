@@ -93,8 +93,13 @@ export function messageBox({ title, message, buttons = ['OK'] }) {
   });
 }
 
-document.querySelectorAll('.action[data-cmd]').forEach((b) =>
+// Bound to every tile, including the quick-control ones whose command
+// changes with the device's state (the camera tile drops its command
+// altogether while its own picker owns the click), so the command is read
+// at click time, never captured here.
+document.querySelectorAll('.action.tile, .action[data-cmd]').forEach((b) =>
   b.addEventListener('click', async () => {
+    if (!b.dataset.cmd) return;
     // Surface refusals, with a retry loop: the common case is "Screen off"
     // pending its one-tap device-admin grant on the tablet — approve there,
     // press Retry here.

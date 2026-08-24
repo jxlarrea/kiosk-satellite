@@ -457,6 +457,14 @@ class ScreensaverManager extends Manager {
       )
       ..register(
         Command(
+          name: 'isScreensaverActive',
+          description: 'Whether the screensaver is showing right now',
+          quiet: true,
+          handler: (_) async => CommandResult.ok(_active),
+        ),
+      )
+      ..register(
+        Command(
           name: 'getScreensaverSuppressed',
           description:
               'Whether the page should stand down its own screensaver. '

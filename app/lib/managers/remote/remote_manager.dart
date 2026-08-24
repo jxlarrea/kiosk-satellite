@@ -87,10 +87,10 @@ class RemoteManager extends Manager {
         _staticFiles[key.substring(prefix.length)] = bytes;
         hashed.add(bytes);
       }
-      final version = md5.convert(hashed.takeBytes()).toString().substring(
-        0,
-        12,
-      );
+      final version = md5
+          .convert(hashed.takeBytes())
+          .toString()
+          .substring(0, 12);
       // The page pins main.js by hash, but the imports inside the modules
       // would fetch bare './x.js' URLs that the immutable cache header
       // then keeps forever. Stamp the hash into every import specifier so
@@ -495,12 +495,26 @@ class RemoteManager extends Manager {
   /// is about identity and battery. It belongs here because the admin shows a
   /// brightness control: a slider with nothing behind it is not a control, it
   /// is a decoration that happens to send.
+  ///
+  /// The screen, screensaver and camera view states are here for the same
+  /// reason: the dashboard's quick controls are one tile each that reads
+  /// "Screen off" or "Screen on" by what the panel is doing, and a tile
+  /// born saying one of them before anyone asked would be guessing. Live
+  /// changes reach the client through the event feed (screenon/screenoff,
+  /// screensaverstart/screensaverstop, cameraview); this is the snapshot
+  /// they diff against.
   Future<Map<String, Object?>> _deviceState() async {
     final device = await commands.execute('getDeviceInfo', const {});
     final brightness = await commands.execute('getBrightness', const {});
+    final screenOn = await commands.execute('isScreenOn', const {});
+    final screensaver = await commands.execute('isScreensaverActive', const {});
+    final cameraView = await commands.execute('getCameraViewState', const {});
     return {
       ...?(device.data as Map<String, Object?>?),
       'brightness': (brightness.data as num?)?.toDouble(),
+      'screenOn': screenOn.ok ? screenOn.data as bool? : null,
+      'screensaverActive': screensaver.ok ? screensaver.data as bool? : null,
+      'cameraView': cameraView.ok ? cameraView.data : null,
       'currentUrl': _currentUrl,
     };
   }
