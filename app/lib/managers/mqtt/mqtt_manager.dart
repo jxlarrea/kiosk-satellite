@@ -12,6 +12,7 @@ import 'package:flutter/widgets.dart'
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../device/ip_addresses.dart';
 import '../device/wifi_mac.dart';
 import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
@@ -1639,31 +1640,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     Object? raw, {
     required bool preferGlobal,
   }) {
-    final byInterface = <String, List<String>>{
-      if (raw is Map)
-        for (final entry in raw.entries)
-          if (entry.value is List)
-            '${entry.key}': [
-              // Dart reports IPv6 addresses with their scope id suffix
-              // ("fd42::1%9", "fe80::1%wlan0"); the interface is already
-              // named by the key, so the suffix is only noise in HA.
-              for (final a in entry.value as List) '$a'.split('%').first,
-            ],
-    };
-    final all = [for (final addresses in byInterface.values) ...addresses];
-    // IPv6 interfaces list the link-local fe80:: address before the global
-    // one; the routable address is the interesting one, so it wins the
-    // state slot and link-local only leads when it is all there is.
-    var main = all.isEmpty ? '' : all.first;
-    if (preferGlobal) {
-      main = all.firstWhere((a) => !a.startsWith('fe80'), orElse: () => main);
-    }
+    // Summarized in ip_addresses.dart, shared with the ESPHome surface so
+    // both integrations lead with the same address.
+    final family = summarizeIpFamily(raw, preferGlobal: preferGlobal);
+    final main = family.primary;
     final attrs = jsonEncode({
-      'other_addresses': [
-        for (final address in all)
-          if (address != main) address,
-      ],
-      'interfaces': byInterface,
+      'other_addresses': family.others,
+      'interfaces': family.byInterface,
     });
     if (_lastIpPayload[objectId] == '$main $attrs') return;
     _lastIpPayload[objectId] = '$main $attrs';

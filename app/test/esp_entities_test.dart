@@ -24,6 +24,7 @@ void main() {
   var cameraFacings = <String>['front', 'back'];
   var bluetooth = <String, Object?>{};
   var vsState = <String, Object?>{};
+  var ips = <String, Object?>{};
 
   setUp(() async {
     cameraPresent = true;
@@ -32,6 +33,14 @@ void main() {
       'config': {'auto_start': true},
       'satellite': 'assist_satellite.office_tablet',
       'engine': {'running': true, 'canStart': true},
+    };
+    ips = {
+      'ipv4': {
+        'wlan0': ['192.168.1.5'],
+      },
+      'ipv6': {
+        'wlan0': ['fe80::1'],
+      },
     };
     bluetooth = {
       'connected': 2,
@@ -106,16 +115,16 @@ void main() {
     ]);
     stub('getDeviceDetails', {
       'ram': {'free': 512 * 1024 * 1024, 'total': 4096 * 1024 * 1024},
+      'androidBuild': 'TP1A.220624.014',
     });
     stub('getUptime', {'app': 4200, 'network': 100});
-    stub('getIpAddresses', {
-      'ipv4': {
-        'wlan0': ['192.168.1.5'],
-      },
-      'ipv6': {
-        'wlan0': ['fe80::1'],
-      },
-    });
+    commands.register(
+      Command(
+        name: 'getIpAddresses',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(ips),
+      ),
+    );
     stub('foregroundApp', {'package': 'me.jxl.kiosk_satellite'});
     commands.register(
       Command(
@@ -151,7 +160,11 @@ void main() {
       'releaseUrl': 'https://example/r',
     });
     stub('getNextAlarm', {'at': '2026-08-19T07:00:00+00:00'});
-    stub('getDeviceInfo', {'model': 'samsung SM-X700', 'ip': '192.168.1.5'});
+    stub('getDeviceInfo', {
+      'model': 'samsung SM-X700',
+      'osVersion': 'Android 13',
+      'ip': '192.168.1.5',
+    });
     stub('evalJs', '"https://ha.local/lovelace/home"');
     stub('screenshot', base64Encode([1, 2, 3]));
     for (final name in [
@@ -255,6 +268,19 @@ void main() {
         'admin_url',
       ]),
     );
+    // The MQTT catalog's attributes have nowhere to live in the ESPHome
+    // protocol, so the Device and IP detail is its own entity here.
+    for (final id in [
+      'android_version',
+      'android_build',
+      'ipv4_interfaces',
+      'ipv6_interfaces',
+    ]) {
+      expect(ids, contains(id), reason: id);
+      final def = catalog.firstWhere((d) => d['objectId'] == id);
+      expect(def['category'], 2, reason: id);
+      expect(def['type'], 'text_sensor', reason: id);
+    }
     expect(ids, contains('connectivity'));
     expect(ids, contains('bt_max_connections'));
     expect(ids, contains('bt_devices_connected'));
@@ -370,6 +396,25 @@ void main() {
     expect(executed.map((e) => e.$1).toList(), ['showMusicAssistant']);
   });
 
+  test('IPv6 leads with the routable address, without its scope id', () async {
+    ips = {
+      'ipv4': {
+        'wlan0': ['192.168.1.50'],
+        'eth0': ['10.0.3.2'],
+      },
+      'ipv6': {
+        'wlan0': ['fe80::1234%wlan0', '2001:db8::50'],
+      },
+    };
+    await surface.build();
+    await attach();
+    final byId = {for (final (id, value) in pushed) id: value};
+    expect(byId['ipv4_address'], '192.168.1.50');
+    expect(byId['ipv4_interfaces'], 'wlan0: 192.168.1.50; eth0: 10.0.3.2');
+    expect(byId['ipv6_address'], '2001:db8::50');
+    expect(byId['ipv6_interfaces'], 'wlan0: fe80::1234, 2001:db8::50');
+  });
+
   test('attach pushes an initial snapshot from the live sources', () async {
     await surface.build();
     await attach();
@@ -400,6 +445,10 @@ void main() {
     expect(byId['next_alarm'], '2026-08-19T07:00:00+00:00');
     expect(byId['admin_url'], 'disabled'); // remote.enabled defaults false
     expect(byId['device_info'], 'samsung SM-X700');
+    expect(byId['android_version'], 'Android 13');
+    expect(byId['android_build'], 'TP1A.220624.014');
+    expect(byId['ipv4_interfaces'], 'wlan0: 192.168.1.5');
+    expect(byId['ipv6_interfaces'], 'wlan0: fe80::1');
     expect(byId['kiosk'], false);
     expect(byId['camera_enabled'], true);
     expect(byId['screensaver_brightness_level'], 40);

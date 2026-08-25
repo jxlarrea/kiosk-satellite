@@ -111,6 +111,20 @@ the entity reads "on" while the kiosk is reachable and "unavailable"
 (rather than "off") when it is not, since a lost connection takes every
 entity with it.
 
+The ESPHome protocol has no attributes: an entity is its state and
+nothing else. The hardware detail the MQTT sensors hang off a sensor as
+attributes is therefore an entity of its own here. **Android version**
+and **Android build** stand next to **Device**, which carries the model,
+and **IPv4 addresses by interface** and **IPv6 addresses by interface**
+stand next to the address sensors, each reading
+`wlan0: 192.168.1.5; eth0: 10.0.3.2`, so an automation can tell whether
+the kiosk is on its wired or its wireless NIC. Like their MQTT twins, the
+address sensors lead with a routable IPv6 address over the link-local
+`fe80::` one and re-check moments after any network change. The lists
+that ride as attributes on the Bluetooth, Foreground app, Next alarm and
+Camera view sensors have no ESPHome equivalent yet, and those sensors
+carry their state alone.
+
 ## Notifications
 
 Home Assistant can push a message at the kiosk and have it appear over
@@ -269,13 +283,14 @@ device, and only Home Assistant's Private BLE Device integration (with
 the device's IRK) can give those a lasting identity.
 
 The same list reaches Home Assistant as a diagnostic sensor per kiosk,
-**Bluetooth devices nearby** (the count as its state, the identified list
-as attributes), so a dashboard can show what each room hears.
+**Bluetooth devices nearby** (the count as its state, and over the MQTT
+integration the identified list as attributes), so a dashboard can show
+what each room hears.
 
 Alongside it, **Bluetooth devices connected** counts the devices this
-kiosk itself is linked to right now, with their names as attributes, so a
-dashboard can answer "is the room's speaker still on the panel" without
-walking over to it. It counts every link the adapter holds, including any
+kiosk itself is linked to right now, with their names as attributes over
+the MQTT integration, so a dashboard can answer "is the room's speaker
+still on the panel" without walking over to it. It counts every link the adapter holds, including any
 the proxy has open for Home Assistant, which is what a connection count
 means from the device's side. Beside it, **Bluetooth max connections**
 reports the proxy's own budget, the ceiling that count runs into, so a

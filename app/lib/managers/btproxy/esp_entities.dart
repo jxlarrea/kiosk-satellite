@@ -7,6 +7,7 @@ import '../../core/command_registry.dart';
 import '../../core/event_bus.dart';
 import '../../core/events.dart';
 import '../../core/logging.dart';
+import '../device/ip_addresses.dart';
 import '../mqtt/dashboard_views.dart';
 import '../mqtt/interaction_stamp.dart';
 import '../sendspin/music_assistant_api.dart';
@@ -546,10 +547,26 @@ class EspEntitySurface {
           icon: 'mdi:bluetooth-connect',
           stateClass: 1,
         ),
+      // The MQTT twins of the four that follow carry their detail as
+      // attributes on the Device and IP sensors; the ESPHome protocol has
+      // no attributes to hang anything off, so each is its own text sensor
+      // here and both integrations answer the same questions (issue #213).
       diagnostic(
         'device_info',
         'Device',
         icon: 'mdi:information-outline',
+        type: 'text_sensor',
+      ),
+      diagnostic(
+        'android_version',
+        'Android version',
+        icon: 'mdi:android',
+        type: 'text_sensor',
+      ),
+      diagnostic(
+        'android_build',
+        'Android build',
+        icon: 'mdi:cellphone-cog',
         type: 'text_sensor',
       ),
       diagnostic(
@@ -559,9 +576,21 @@ class EspEntitySurface {
         type: 'text_sensor',
       ),
       diagnostic(
+        'ipv4_interfaces',
+        'IPv4 addresses by interface',
+        icon: 'mdi:lan',
+        type: 'text_sensor',
+      ),
+      diagnostic(
         'ipv6_address',
         'IPv6 address',
         icon: 'mdi:ip-network-outline',
+        type: 'text_sensor',
+      ),
+      diagnostic(
+        'ipv6_interfaces',
+        'IPv6 addresses by interface',
+        icon: 'mdi:lan-connect',
         type: 'text_sensor',
       ),
       // Timestamps like their MQTT twins: the recorder logs the moments
@@ -674,6 +703,14 @@ class EspEntitySurface {
       }),
     );
     _subs.add(bus.on<ScreenStateChanged>().listen((_) => _sendScreen()));
+    // Addresses change exactly at these transitions, and the minute poll
+    // would leave the IP sensors stale until it comes round. Deferred a
+    // moment so DHCP has settled by the time we look, like the MQTT twin.
+    _subs.add(
+      bus.on<NetworkStateChanged>().listen((_) {
+        Timer(const Duration(seconds: 3), _sendIpAddresses);
+      }),
+    );
     // A link coming up or going down, rather than the minute poll: a lock
     // Home Assistant holds for half a minute would otherwise never show
     // (issue #281). Coalesced, since one connection fires several
@@ -1153,12 +1190,43 @@ class EspEntitySurface {
     );
   }
 
+  /// The address sensors, summarized exactly as the MQTT ones summarize
+  /// them, down to the routable address leading the IPv6 one and the scope
+  /// suffix coming off. The per-interface line is what stands in for the
+  /// attributes this protocol cannot carry (issue #213).
+  Future<void> _sendIpAddresses() async {
+    final ips = await commands.execute('getIpAddresses', const {});
+    if (!ips.ok || ips.data is! Map) return;
+    for (final (family, objectId, preferGlobal) in [
+      ('ipv4', 'ipv4_address', false),
+      ('ipv6', 'ipv6_address', true),
+    ]) {
+      final summary = summarizeIpFamily(
+        (ips.data as Map)[family],
+        preferGlobal: preferGlobal,
+      );
+      if (summary.primary.isEmpty) continue;
+      await _send(objectId, summary.primary);
+      await _send('${family}_interfaces', summary.oneLine);
+    }
+  }
+
+  /// The device's identity, sent once per bring-up: none of it changes
+  /// while the process lives. The MQTT twin carries the version and the
+  /// build as attributes on one sensor; here they are entities of their
+  /// own (issue #213).
   Future<void> _sendDeviceInfo() async {
     final info = await commands.execute('getDeviceInfo', const {});
-    final model = info.ok && info.data is Map
-        ? '${(info.data as Map)['model'] ?? ''}'
-        : '';
+    final data = info.ok && info.data is Map ? info.data as Map : const {};
+    final model = '${data['model'] ?? ''}';
     if (model.isNotEmpty) await _send('device_info', model);
+    final version = '${data['osVersion'] ?? ''}';
+    if (version.isNotEmpty) await _send('android_version', version);
+    final details = await commands.execute('getDeviceDetails', const {});
+    final build = details.ok && details.data is Map
+        ? '${(details.data as Map)['androidBuild'] ?? ''}'
+        : '';
+    if (build.isNotEmpty) await _send('android_build', build);
   }
 
   Future<void> _refreshCameraViews() async {
@@ -1266,24 +1334,7 @@ class EspEntitySurface {
     // last-known-value semantics broker retention gives the MQTT twin.
     lux ??= int.tryParse(_settings.internal('esphome_last_lux'));
     if (lux != null) await _send('illuminance', lux.round());
-    final ips = await commands.execute('getIpAddresses', const {});
-    if (ips.ok && ips.data is Map) {
-      for (final (family, objectId) in [
-        ('ipv4', 'ipv4_address'),
-        ('ipv6', 'ipv6_address'),
-      ]) {
-        final byInterface = (ips.data as Map)[family];
-        if (byInterface is Map) {
-          final all = byInterface.values
-              .whereType<List>()
-              .expand((addresses) => addresses)
-              .map((a) => '$a')
-              .where((a) => a.isNotEmpty)
-              .toList();
-          if (all.isNotEmpty) await _send(objectId, all.first);
-        }
-      }
-    }
+    await _sendIpAddresses();
     final foreground = await commands.execute('foregroundApp', const {});
     if (foreground.ok && foreground.data is Map) {
       final pkg = (foreground.data as Map)['package'] as String?;
