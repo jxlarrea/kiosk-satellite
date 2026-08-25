@@ -76,6 +76,9 @@ them, a video, or a `camera.*` entity, which streams over WebRTC with an
 MJPEG fallback. **Media source** opens the browser to pick one; a folder
 gets the usual playlist controls (**Seconds per image**, **Shuffle**,
 **Include subfolders**, **Transition**), and videos play in full.
+**Fill the screen** treats photos the way the other photo modes do (see
+[Slideshow behavior](#slideshow-behavior)); videos and camera streams
+keep their frame.
 
 ### Local Media
 
@@ -131,8 +134,8 @@ so nothing sits over the video.
 
 ## Slideshow behavior
 
-The photo modes (Local Media, Photo Gallery, Immich Media) share one
-machinery:
+The photo modes (Home Assistant Media, Local Media, Photo Gallery, Immich
+Media) share one machinery:
 
 - **Transitions**: None, Crossfade, Slide, Zoom, Ken Burns, or Random.
   Ken Burns applies to stills only (videos crossfade), and Random rolls

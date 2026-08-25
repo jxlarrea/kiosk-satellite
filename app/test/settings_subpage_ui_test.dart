@@ -275,6 +275,7 @@ void main() {
       expect(entry('Clock screensaver'), findsOneWidget);
       expect(entry('Photo Gallery screensaver'), findsNothing);
       expect(entry('Immich Media screensaver'), findsNothing);
+      expect(entry('Home Assistant Media screensaver'), findsNothing);
       // Its rows are on the page, not here.
       expect(find.text(screensaverClockStyle.title), findsNothing);
 
@@ -289,15 +290,35 @@ void main() {
       );
     });
 
-    testWidgets('the modes the user left inline stay inline', (tester) async {
+    testWidgets('the Home Assistant Media page carries its picker and fill', (
+      tester,
+    ) async {
       await openScreensaver(tester, mode: 'media');
-      // Home Assistant Media keeps its group on the page.
+      expect(entry('Home Assistant Media screensaver'), findsOneWidget);
+      expect(find.text(screensaverMediaId.title), findsNothing);
+
+      await tester.tap(entry('Home Assistant Media screensaver'));
+      await settle(tester);
       expect(
-        find.widgetWithText(SectionHeading, 'Home Assistant Media screensaver'),
+        find.widgetWithText(AppBar, 'Home Assistant Media screensaver'),
         findsOneWidget,
       );
-      expect(entry('Home Assistant Media screensaver'), findsNothing);
+      // The Browse row is a replacement rendered for the media key; it has
+      // to follow the row onto its page.
       expect(find.text(screensaverMediaId.title), findsOneWidget);
+      expect(find.text('Browse'), findsOneWidget);
+      expect(find.text(screensaverMediaFill.title), findsOneWidget);
+    });
+
+    testWidgets('the modes the user left inline stay inline', (tester) async {
+      await openScreensaver(tester, mode: 'website');
+      // Website keeps its group on the page.
+      expect(
+        find.widgetWithText(SectionHeading, 'Website screensaver'),
+        findsOneWidget,
+      );
+      expect(entry('Website screensaver'), findsNothing);
+      expect(find.text(screensaverWebsiteUrl.title), findsOneWidget);
     });
 
     testWidgets('a page keeps the extras that belong to its rows', (

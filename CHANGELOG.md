@@ -5,7 +5,11 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Fill the screen** for the Home Assistant Media screensaver, the last photo mode without it. Photos served from Home Assistant's media browser get the same treatment as Local Media, Photo Gallery and Immich Media: a photo shaped close enough to the panel is enlarged edge to edge, and portrait and square photos keep their full frame over an enlarged, blurred and dimmed copy of themselves instead of black bars. On by default, like the other three; videos and camera streams keep their frame. The blurred backdrop is drawn once per photo at a fraction of the panel's size, so a Ken Burns drift over it costs the weak tablets kiosks run on nothing extra. A photo is now also handed off once it has loaded, so the transition runs over a picture rather than a blank that pops in.
 - The Permissions docs gain a section on keeping Wi-Fi awake through screen off on Android 14 and newer. The app has always held Android's high-performance Wi-Fi lock while anything that must stay reachable is running, but Android 14 silently downgrades that lock to one that is only in effect while the screen is on, so on some devices the radio starts napping minutes into a dark spell, flapping the kiosk's entities unavailable and dropping adb over Wi-Fi. A one-time `adb shell device_config put wifi high_perf_lock_deprecated false` restores the old behavior; the new section covers the command, how to verify it took, and the caveat that a Google Play services flag sync can flip it back.
+
+### Changed
+- The Home Assistant Media screensaver's settings moved to their own page, like every other photo mode's. The **Home Assistant Media screensaver** row under the mode picker opens it, on the device and in the remote admin alike.
 
 ## v2026.8.79 - 2026-08-24
 

@@ -1577,6 +1577,7 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       'mediaShuffle': s.get(defs.screensaverMediaShuffle),
       'mediaRecursive': s.get(defs.screensaverMediaRecursive),
       'mediaTransition': s.get(defs.screensaverMediaTransition),
+      'mediaFill': s.get(defs.screensaverMediaFill),
       'pixelShift': s.get(defs.screensaverPixelShift),
     });
   }

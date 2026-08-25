@@ -142,9 +142,10 @@ const Map<String, String> subpageHints = {
   'Appearance': 'Overlay skin, theme, activity bar, text size',
   // Screen & Audio.
   'Microphone settings': 'Capture mode, channel, gain, live level',
-  // Screensaver. The four mode pages only exist while that mode is the
+  // Screensaver. The five mode pages only exist while that mode is the
   // one selected, since every setting on them gates on it.
   'Clock screensaver': 'Style, size, colors, background photo',
+  'Home Assistant Media screensaver': 'Media source, timing, shuffle, fill',
   'Local Media screensaver': 'Folder, timing, shuffle, transition',
   'Photo Gallery screensaver': 'Photos, timing, shuffle, transition',
   'Immich Media screensaver': 'Server, album, timing, caching, metadata',
@@ -1457,6 +1458,7 @@ const screensaverMediaId = SettingDef<String>(
       'pick one.',
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
 );
@@ -1472,6 +1474,7 @@ const screensaverMediaIsFolder = SettingDef<bool>(
   description: '',
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
   hidden: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
@@ -1486,6 +1489,7 @@ const screensaverMediaInterval = SettingDef<num>(
       'How long each image shows before the next. Videos play in full.',
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -1497,6 +1501,7 @@ const screensaverMediaShuffle = SettingDef<bool>(
   description: 'Play a folder in random order.',
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -1508,6 +1513,7 @@ const screensaverMediaRecursive = SettingDef<bool>(
   description: 'Descend into subfolders when a folder is chosen.',
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
   dependsOn: 'screensaver.media_is_folder',
 );
 
@@ -1543,9 +1549,28 @@ const screensaverMediaTransition = SettingDef<String>(
   description: 'How one item hands off to the next.',
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
   dependsOn: 'screensaver.media_is_folder',
+);
+
+// Gates on the mode, not on the folder flag: a single image wants filling
+// as much as a folder of them does. Videos and camera streams keep their
+// frame, as in every other mode.
+const screensaverMediaFill = SettingDef<bool>(
+  key: 'screensaver.media_fill',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Fill the screen',
+  description:
+      'Enlarge photos that match the screen shape to cover it fully. '
+      'Others keep their full frame.',
+  category: 'Screensaver',
+  section: 'Home Assistant Media screensaver',
+  subpage: 'Home Assistant Media screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'media',
 );
 
 // ── Website (mode: website) ──
@@ -4412,6 +4437,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverMediaShuffle,
   screensaverMediaRecursive,
   screensaverMediaTransition,
+  screensaverMediaFill,
   screensaverLocalFolder,
   screensaverLocalInterval,
   screensaverLocalShuffle,

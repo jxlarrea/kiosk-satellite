@@ -13,11 +13,20 @@
     transition: transform 2s ease; }
   .media { position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     object-fit: contain; background: #000; opacity: 0; }
+  /* A still is a wrapper: the photo, over an optional blurred backdrop that
+     is drawn once (Fill the screen). Video and camera elements stand alone. */
+  .media > .photo, .media > .backdrop { position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%; object-fit: contain; }
+  .media > .backdrop { object-fit: cover; }
+  .media.cover > .photo { object-fit: cover; }
   .media.cut { opacity: 1; }
   .t-fade { transition: opacity 600ms ease; }
   .t-fade.in { opacity: 1; }
   .t-kenburns { transition: opacity 800ms ease; }
-  .t-kenburns.in { opacity: 1;
+  .t-kenburns.in { opacity: 1; }
+  /* The drift moves only the photo: the backdrop beneath stays put, so a
+     blurred one is never re-rasterized per frame. */
+  .t-kenburns.in > .photo {
     animation: kskb var(--kb-dur, 12s) linear forwards; }
   @keyframes kskb { to { transform: scale(1.1); } }
   /* 105%, not 100%: subpixel layout must never leave a seam mid-push. */
@@ -162,7 +171,7 @@ function showElement(el, opts) {
     // The drift outlives the hold by the fade, so it never freezes on
     // screen; each slide anchors a different corner.
     el.style.setProperty('--kb-dur', (((opts && opts.holdMs) || 10000) + 2000) + 'ms');
-    el.style.transformOrigin =
+    (el.querySelector('.photo') || el).style.transformOrigin =
       ['20% 20%', '80% 80%', '80% 20%', '20% 80%'][kbAnchor++ % 4];
   }
   content.appendChild(el);
@@ -182,6 +191,66 @@ function showElement(el, opts) {
     }, TDUR[t]);
   });
   return el;
+}
+
+/* ── Fill the screen ──────────────────────────────────────────────────────
+   The same recipe as the app's other photo modes: a photo shaped close
+   enough to the panel (crop capped at a 1.45x ratio mismatch) is
+   cover-fitted edge to edge, and one that keeps its full frame gets
+   itself, blurred and dimmed, as the backdrop instead of black bars. */
+function fillFor(img) {
+  if (!CFG.mediaFill) return null;
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const sw = window.innerWidth, sh = window.innerHeight;
+  if (!w || !h || !sw || !sh) return null;
+  const photo = w / h, screen = sw / sh;
+  return Math.max(photo / screen, screen / photo) <= 1.45 ? 'cover' : 'backdrop';
+}
+
+/* The backdrop is a canvas, not a CSS filter: the blur is baked once at a
+   fraction of the panel's size and the upscale finishes it, so nothing is
+   filtered per frame while the photo drifts over it. A live filter on a
+   full-screen layer is a standing GPU tax on the weak tablets kiosks run
+   on. Cross-origin pixels taint the canvas, which only matters for reading
+   it back, and nothing does. */
+function backdropFor(img) {
+  const c = document.createElement('canvas');
+  c.className = 'backdrop';
+  const ctx = c.getContext('2d');
+  const hasFilter = typeof ctx.filter === 'string';
+  // Without canvas filters the downscale itself is the blur; go smaller.
+  const shrink = hasFilter ? 8 : 24;
+  const W = Math.max(1, Math.round(window.innerWidth / shrink));
+  const H = Math.max(1, Math.round(window.innerHeight / shrink));
+  c.width = W; c.height = H;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  // Cover the canvas with a margin: a blur fades to nothing at its edges,
+  // and overdrawing keeps that fringe off screen.
+  const s = Math.max(W / iw, H / ih) * 1.15;
+  const dw = iw * s, dh = ih * s;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  if (hasFilter) ctx.filter = 'blur(' + Math.round(40 / shrink) + 'px)';
+  ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  if (hasFilter) ctx.filter = 'none';
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, W, H);
+  return c;
+}
+
+/* A still's stage: the photo, cover-fitted or framed over its backdrop.
+   Built once the photo has pixels, since the decision needs its shape. */
+function stillFor(img) {
+  const wrap = document.createElement('div');
+  const fill = fillFor(img);
+  if (fill === 'cover') wrap.classList.add('cover');
+  else if (fill === 'backdrop') {
+    try { wrap.appendChild(backdropFor(img)); }
+    catch (e) { log('media: backdrop failed ' + e); }
+  }
+  img.classList.add('photo');
+  wrap.appendChild(img);
+  return wrap;
 }
 
 /* ── Camera WebRTC ────────────────────────────────────────────────────────
@@ -362,10 +431,17 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
     }
     const img = document.createElement('img');
     img.onerror = advance;
-    // The hold starts when there are pixels, not when the fetch starts.
-    if (playlist.length > 1) img.onload = () => setTimeout(advance, intervalMs);
+    // Shown once there are pixels: the fill decision needs the photo's
+    // shape, the hand-off then runs over a picture instead of a blank,
+    // and the hold starts here too, not when the fetch starts.
+    img.onload = () => {
+      const show = () => {
+        showElement(stillFor(img), { still: true, holdMs: intervalMs });
+        if (playlist.length > 1) setTimeout(advance, intervalMs);
+      };
+      if (img.decode) img.decode().then(show, show); else show();
+    };
     img.src = url;
-    showElement(img, { still: true, holdMs: intervalMs });
   }
 }
 

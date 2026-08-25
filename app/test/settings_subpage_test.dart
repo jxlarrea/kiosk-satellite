@@ -101,7 +101,7 @@ void main() {
     // refuses (its sameCard compares the subpage) and the caller re-renders
     // instead, which is correct but heavier — so the only cross-page shape
     // allowed is the deliberate one: a switch on the category page opening a
-    // page of its own, as the screensaver mode does for its four modes.
+    // page of its own, as the screensaver mode does for its five modes.
     // A hidden gate is exempt either way: it draws no row, so nothing ever
     // flips it from a page.
     final byKey = {for (final d in defs.allSettings) d.key: d};
@@ -113,11 +113,14 @@ void main() {
   });
 
   test('the screensaver mode pages exist only while that mode is picked', () {
-    // Every setting on the four mode pages gates on the mode select, so the
-    // row that opens the page comes and goes with the mode — the group's own
+    // Every setting on the mode pages gates on the mode select, so the row
+    // that opens the page comes and goes with the mode — the group's own
     // behaviour before it moved. The other modes keep their group inline.
+    // Home Assistant Media's playlist rows gate on the hidden folder flag,
+    // which itself gates on the mode; the walk below follows that chain.
     for (final page in [
       'Clock screensaver',
+      'Home Assistant Media screensaver',
       'Local Media screensaver',
       'Photo Gallery screensaver',
     ]) {
