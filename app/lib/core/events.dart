@@ -69,8 +69,15 @@ class ScreensaverStateChanged extends AppEvent {
 /// and on every schedule boundary, cleared on stop. Internal: the motion
 /// manager starts and stops the camera off it.
 class ScreensaverMotionPolicyChanged extends AppEvent {
-  const ScreensaverMotionPolicyChanged({required this.dismissOnMotion});
+  const ScreensaverMotionPolicyChanged({
+    required this.dismissOnMotion,
+    required this.dismissOnFace,
+  });
   final bool? dismissOnMotion;
+
+  /// The same override for "Dismiss on face" (issue #304), so a day entry
+  /// can wake on faces while a night entry falls back to motion.
+  final bool? dismissOnFace;
 }
 
 /// The overlay the screensaver shows changed: a mode's view came up, a
@@ -255,6 +262,17 @@ class MotionDetected extends AppEvent {
 
   @override
   String get wireName => 'motion';
+}
+
+/// Someone is looking at the kiosk (issue #304): the motion camera's face
+/// detector found a camera-facing face at least as large as the Face
+/// sensitivity asks for. Rate-limited to one per second natively, like
+/// motion; the screensaver consumes it to wake under "Dismiss on face".
+class FaceDetected extends AppEvent {
+  const FaceDetected();
+
+  @override
+  String get wireName => 'face';
 }
 
 // ── Device camera ──────────────────────────────────────────────────────

@@ -2096,6 +2096,20 @@ class _CategoryContentState extends State<_CategoryContent> {
           onChanged: null,
         ),
       ),
+    if (widget.category == 'Screensaver' &&
+        !container.deviceCamera.effectiveEnabled)
+      screensaverDismissOnFace.key: SearchLandingTarget(
+        id: screensaverDismissOnFace.key,
+        child: const SwitchListTile(
+          title: Text('Dismiss on face'),
+          subtitle: Text(
+            'Requires the camera. Turn it on in the Camera '
+            'settings first.',
+          ),
+          value: false,
+          onChanged: null,
+        ),
+      ),
     if (widget.category == 'Camera' && container.deviceCamera.cameraKnownAbsent)
       cameraEnabled.key: SearchLandingTarget(
         id: cameraEnabled.key,
@@ -2147,6 +2161,14 @@ class _CategoryContentState extends State<_CategoryContent> {
       screensaverPostponeOnMotion.key: const HintRow(
         'Motion detection is tuned in the Camera settings.',
       ),
+    // Dismiss on motion owns the wake-up while it is on (issue #304): the
+    // face leg is idle, and the row says so instead of looking armed.
+    if (widget.category == 'Screensaver' &&
+        container.deviceCamera.effectiveEnabled &&
+        container.settings.get(screensaverDismissOnMotion))
+      screensaverDismissOnFace.key: const WarnRow(_faceMotionNote),
+    if (widget.category == 'Screensaver')
+      faceSensitivity.key: const HintRow(_faceTuningNote),
     // The screen-off timer fails quietly without device admin;
     // this row is what says so, right where the slider is.
     if (widget.category == 'Screensaver')
@@ -2925,6 +2947,9 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
     if (entry['motion'] is bool) {
       parts.add('Motion ${entry['motion'] == true ? 'on' : 'off'}');
     }
+    if (entry['face'] is bool) {
+      parts.add('Face ${entry['face'] == true ? 'on' : 'off'}');
+    }
     if (entry['widgets'] is bool) {
       parts.add('Widgets ${entry['widgets'] == true ? 'on' : 'off'}');
     }
@@ -2948,6 +2973,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
           (existing?['brightness'] as num?)?.toDouble() ??
           s.get(screensaverBrightnessLevel).toDouble(),
       if (existing?['motion'] is bool) 'motion': existing!['motion'],
+      if (existing?['face'] is bool) 'face': existing!['face'],
       if (existing?['widgets'] is bool) 'widgets': existing!['widgets'],
       if (existing?['glance'] is bool) 'glance': existing!['glance'],
     };
@@ -3066,6 +3092,17 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                     override(
                       'Dismiss on motion',
                       'motion',
+                      enabled: cameraOn,
+                      helper: cameraOn
+                          ? null
+                          : 'Requires the camera. Turn it on in the Camera '
+                                'settings first.',
+                    ),
+                    // Motion keeps precedence inside an entry too: On here
+                    // with motion On above still wakes on motion.
+                    override(
+                      'Dismiss on face',
+                      'face',
                       enabled: cameraOn,
                       helper: cameraOn
                           ? null
@@ -3495,6 +3532,18 @@ const _dimModeNote =
     'WARNING: Dim keeps the dashboard visible, so the "Pause dashboard '
     'during screensaver" optimization will not be applied and the dashboard '
     'keeps using CPU, GPU and battery.';
+
+/// Under "Dismiss on face" while Dismiss on motion is on (issue #304).
+/// Shared wording with the remote admin, which carries its own copy.
+const _faceMotionNote =
+    'Dismiss on motion is on and takes precedence, so face detection stays '
+    'idle until it is turned off.';
+
+/// Under the face sensitivity slider: the rest of the tuning is the
+/// motion camera's, shared with it.
+const _faceTuningNote =
+    'Frame rate, camera pick and startup delay are tuned in the Camera '
+    'settings.';
 
 /// A warning line under a setting's row, for a choice that carries a cost
 /// the row itself does not show. Same shape as [HintRow], in the theme's

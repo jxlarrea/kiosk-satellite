@@ -110,6 +110,40 @@ class MotionManager extends Manager {
   bool get _sensorEnabled =>
       _settings.get(defs.motionSensor) && _settings.get(defs.cameraEnabled);
 
+  /// The face leg (issue #304): "Dismiss on face" rides the same session
+  /// under the same gates as Dismiss on motion (screensaver showing, camera
+  /// on, the schedule's per-entry override standing in for the switch),
+  /// plus one of its own: Dismiss on motion takes precedence. With motion
+  /// effectively on, the face leg is idle, which the settings pages say
+  /// under the switch.
+  bool get faceEnabled =>
+      !enabled &&
+      (_faceSchedulePolicy ?? _settings.get(defs.screensaverDismissOnFace)) &&
+      _settings.get(defs.cameraEnabled);
+
+  /// The postpone counterpart, with Postpone on motion's rules: rides on
+  /// Dismiss on face (never a second way in), runs between screensavers
+  /// with the screen lit, raw switches rather than the session-scoped
+  /// schedule overrides, and the same precedence: Dismiss on motion on
+  /// means the face legs are idle, this one included.
+  bool get _postponeFaceEnabled =>
+      _settings.get(defs.screensaverPostponeOnFace) &&
+      _settings.get(defs.screensaverDismissOnFace) &&
+      !_settings.get(defs.screensaverDismissOnMotion) &&
+      _settings.get(defs.screensaverEnabled) &&
+      _settings.get(defs.cameraEnabled);
+
+  /// What the running native stream was asked to emit, so a change in
+  /// either (the screensaver starting under a face-only setup while the
+  /// sensor leg already holds the camera, a schedule boundary flipping the
+  /// motion override) restarts the stream with fresh arguments.
+  bool _streamMotion = true;
+  bool _streamFaces = false;
+
+  bool get _wantMotion => enabled || _postponeEnabled || _sensorEnabled;
+  bool get _wantFaces =>
+      _screensaverActive ? faceEnabled : _postponeFaceEnabled;
+
   StreamSubscription<void>? _camera;
   bool _screensaverActive = false;
   bool _screenOn = true;
@@ -143,6 +177,9 @@ class MotionManager extends Manager {
   /// The screensaver schedule's motion override, null when none holds.
   bool? _schedulePolicy;
 
+  /// The same for the face override (issue #304).
+  bool? _faceSchedulePolicy;
+
   @override
   Future<void> init() async {
     // Every branch below is the app relighting the room with its own
@@ -165,6 +202,7 @@ class MotionManager extends Manager {
     // camera starts or stops to match within a tick.
     bus.on<ScreensaverMotionPolicyChanged>().listen((e) {
       _schedulePolicy = e.dismissOnMotion;
+      _faceSchedulePolicy = e.dismissOnFace;
       _sync();
     });
     // The postpone leg follows the panel: a screen someone turned off has
@@ -186,6 +224,8 @@ class MotionManager extends Manager {
     bus.on<SettingChanged>().listen((e) {
       final isGate = e.key == defs.screensaverDismissOnMotion.key ||
           e.key == defs.screensaverPostponeOnMotion.key ||
+          e.key == defs.screensaverDismissOnFace.key ||
+          e.key == defs.screensaverPostponeOnFace.key ||
           e.key == defs.motionSensor.key ||
           e.key == defs.screensaverEnabled.key ||
           e.key == defs.cameraEnabled.key;
@@ -194,13 +234,19 @@ class MotionManager extends Manager {
       if (e.key == defs.motionSensorOffDelay.key) return;
       if (!isGate &&
           !e.key.startsWith('motion.') &&
+          !e.key.startsWith('face.') &&
           e.key != defs.cameraDevice.key &&
           // The pre-bound snapshot capture is sized at bind time; a new
           // resolution needs a rebind to take effect mid-screensaver.
           e.key != defs.cameraSnapshotResolution.key) {
         return;
       }
-      if (isGate && (enabled || _postponeEnabled || _sensorEnabled)) {
+      if (isGate &&
+          (enabled ||
+              _postponeEnabled ||
+              _sensorEnabled ||
+              faceEnabled ||
+              _postponeFaceEnabled)) {
         unawaited(_ensurePermission());
       }
       _stop();
@@ -212,8 +258,19 @@ class MotionManager extends Manager {
       description: 'Whether camera motion detection is enabled',
       handler: (_) async => CommandResult.ok(enabled),
     ));
+    commands.register(Command(
+      name: 'getFaceEnabled',
+      description:
+          'Whether camera face detection is enabled (off while Dismiss on '
+          'motion takes precedence)',
+      handler: (_) async => CommandResult.ok(faceEnabled),
+    ));
 
-    if (enabled || _postponeEnabled || _sensorEnabled) {
+    if (enabled ||
+        _postponeEnabled ||
+        _sensorEnabled ||
+        faceEnabled ||
+        _postponeFaceEnabled) {
       unawaited(_ensurePermission());
     }
 
@@ -226,19 +283,31 @@ class MotionManager extends Manager {
     _sync();
   }
 
-  /// Whether the camera should be running right now: dismiss-on-motion
-  /// wants it during a screensaver session, postpone-on-motion between
-  /// them (screen on), and the sensor leg always.
+  /// Whether the camera should be running right now: dismiss-on-motion or
+  /// dismiss-on-face wants it during a screensaver session, either
+  /// postpone leg between them (screen on), and the sensor leg always.
   bool get _shouldRun =>
       _sensorEnabled ||
-      (_screensaverActive ? enabled : _postponeEnabled && _screenOn);
+      (_screensaverActive
+          ? enabled || faceEnabled
+          : (_postponeEnabled || _postponeFaceEnabled) && _screenOn);
 
   void _sync() {
-    if (_shouldRun) {
-      unawaited(_start());
-    } else {
+    if (!_shouldRun) {
+      _stop();
+      return;
+    }
+    // A session already up but asked for the wrong things restarts: the
+    // native side takes its emission flags at bind time.
+    if (_camera != null &&
+        (_streamMotion != _wantMotion || _streamFaces != _wantFaces)) {
+      log.info(
+        name,
+        'camera restarting (motion=$_wantMotion faces=$_wantFaces)',
+      );
       _stop();
     }
+    unawaited(_start());
   }
 
   Future<void> _start() async {
@@ -259,11 +328,20 @@ class MotionManager extends Manager {
           snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
       final startDelay =
           _settings.get(defs.motionStartDelay).toInt().clamp(0, 15);
+      final motion = _wantMotion;
+      final faces = _wantFaces;
+      final faceMinWidth = faceMinWidthFor(
+        _settings.get(defs.faceSensitivity).toInt(),
+      );
+      _streamMotion = motion;
+      _streamFaces = faces;
       _boundBlind = !_screenOn;
       log.info(
         name,
         'camera on (fps=$fps sensitivity=$sensitivity cam=$camera'
         '${startDelay > 0 ? ' delay=${startDelay}s' : ''}'
+        '${faces ? ' faces>=${(faceMinWidth * 100).round()}%' : ''}'
+        '${motion ? '' : ' motion off'}'
         '${_boundBlind ? ', panel off: restart on wake unless frames flow' : ''})',
       );
       _camera = NativeMotion.stream(
@@ -273,12 +351,25 @@ class MotionManager extends Manager {
         snapshotWidth: snapW,
         snapshotHeight: snapH,
         startDelayMs: startDelay * 1000,
+        motion: motion,
+        faces: faces,
+        faceMinWidth: faceMinWidth,
       ).listen(
-        (_) {
+        (tick) {
           // Frames flowing again: the session is healthy, forget any
           // accumulated rebind backoff and any blind-bind suspicion.
           _retryDelay = _retryFloor;
           _boundBlind = false;
+          // A face is not a lighting change, so the self-light quiet
+          // window below does not apply to it.
+          if (tick.isFace) {
+            log.debug(
+              name,
+              'face (${(tick.faceWidth! * 100).round()}% of the frame)',
+            );
+            bus.publish(const FaceDetected());
+            return;
+          }
           if (DateTime.now().isBefore(_quietUntil)) {
             log.debug(name, 'motion suppressed (own light change)');
             return;

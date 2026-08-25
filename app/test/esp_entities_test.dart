@@ -235,6 +235,7 @@ void main() {
         'hold_mode',
         'camera_enabled',
         'screensaver_motion',
+        'screensaver_face',
         'screensaver_mode',
         'screensaver_clock_style',
         'battery',

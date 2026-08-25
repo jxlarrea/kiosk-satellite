@@ -25,6 +25,12 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    // The face detection model (FaceDetector.kt) is memory-mapped straight
+    // out of the APK, which only works on an asset stored uncompressed.
+    androidResources {
+        noCompress.add("tflite")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -114,6 +120,14 @@ dependencies {
     implementation("androidx.camera:camera-core:$cameraxVersion")
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+
+    // LiteRT for the screensaver's face detection (FaceDetector.kt). The
+    // runtime is already in the APK through tflite_flutter (0.12.1 pins
+    // this exact version), but that plugin declares it as an implementation
+    // dependency, so the app's own Kotlin cannot see it without naming it
+    // here. Keep the version in lockstep with the plugin's, or the build
+    // ships two copies.
+    implementation("com.google.ai.edge.litert:litert:1.4.0")
 
     // Media3 ExoPlayer for streamed Voice Satellite sounds (TTS): its whole
     // pipeline runs in-process, so the output is an app-owned AudioTrack

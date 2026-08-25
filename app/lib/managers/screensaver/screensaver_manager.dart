@@ -44,6 +44,9 @@ List<Map<String, Object?>> parseScreensaverSchedule(String json) {
         // Tri-state motion override (issue #89): absent follows the
         // "Dismiss on motion" switch.
         if (e['motion'] is bool) 'motion': e['motion'],
+        // The same for "Dismiss on face" (issue #304): a day entry can
+        // wake on faces while a night entry falls back to motion.
+        if (e['face'] is bool) 'face': e['face'],
         // Tri-state widgets override: absent shows whatever the Widgets
         // group configures, false hides the corner widgets for this
         // entry's hours.
@@ -306,6 +309,40 @@ class ScreensaverManager extends Manager {
         return;
       }
       notifyActivity('motion');
+    });
+    bus.on<FaceDetected>().listen((_) {
+      // Same lockdown rule as motion.
+      if (_settings.get(defs.lockdownEnabled)) return;
+      if (!_active) {
+        // Between screensavers a face can only postpone the next one,
+        // under Postpone on motion's rules: the postpone switch extends
+        // Dismiss on face and never acts on its own, and Dismiss on
+        // motion keeps precedence over both face legs.
+        if (_settings.get(defs.screensaverPostponeOnFace) &&
+            _settings.get(defs.screensaverDismissOnFace) &&
+            !_settings.get(defs.screensaverDismissOnMotion)) {
+          _resetIdleTimer();
+        }
+        return;
+      }
+      // Dismiss on motion (or its schedule override) takes precedence:
+      // the native side does not look for faces while motion is on, and
+      // this double-gate keeps a stale tick from acting either way.
+      if (_motionPolicy ?? _settings.get(defs.screensaverDismissOnMotion)) {
+        return;
+      }
+      if (!(_facePolicy ?? _settings.get(defs.screensaverDismissOnFace))) {
+        return;
+      }
+      // Now Playing keeps its own policy; a face counts like motion there.
+      final showingNowPlaying =
+          activeView.value != null &&
+          _sendspinNowPlaying &&
+          _settings.get(defs.sendspinFullscreen);
+      if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
+        return;
+      }
+      notifyActivity('face');
     });
     bus.on<SettingChanged>().listen((e) {
       if (e.key.startsWith('screensaver.')) _resetIdleTimer();
@@ -570,12 +607,21 @@ class ScreensaverManager extends Manager {
   /// publish actual changes. Applied during a session, null between them.
   bool? _motionPolicy;
 
-  /// Announce the active entry's motion override (issue #89), [policy]
-  /// itself being null between sessions and for entries without one.
-  void _publishMotionPolicy(bool? policy) {
-    if (policy == _motionPolicy) return;
-    _motionPolicy = policy;
-    bus.publish(ScreensaverMotionPolicyChanged(dismissOnMotion: policy));
+  /// The face override (issue #304), kept the same way.
+  bool? _facePolicy;
+
+  /// Announce the active entry's motion and face overrides (issues #89 and
+  /// #304), each null between sessions and for entries without one.
+  void _publishMotionPolicy(bool? motion, bool? face) {
+    if (motion == _motionPolicy && face == _facePolicy) return;
+    _motionPolicy = motion;
+    _facePolicy = face;
+    bus.publish(
+      ScreensaverMotionPolicyChanged(
+        dismissOnMotion: motion,
+        dismissOnFace: face,
+      ),
+    );
   }
 
   void _scheduleTick() {
@@ -689,7 +735,7 @@ class ScreensaverManager extends Manager {
     final mode = _effectiveMode;
     final entry = _scheduleEntry;
     _appliedScheduleAt = entry?['at'] as String?;
-    _publishMotionPolicy(entry?['motion'] as bool?);
+    _publishMotionPolicy(entry?['motion'] as bool?, entry?['face'] as bool?);
     scheduleWidgets.value = entry?['widgets'] as bool?;
     scheduleGlance.value = entry?['glance'] as bool?;
     // Modes that change brightness save their restore point first.
@@ -804,7 +850,7 @@ class ScreensaverManager extends Manager {
       _savedBrightness = null;
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }
-    _publishMotionPolicy(null);
+    _publishMotionPolicy(null, null);
     scheduleWidgets.value = null;
     scheduleGlance.value = null;
     claimedCorners.value = const {};

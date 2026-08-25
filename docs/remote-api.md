@@ -147,8 +147,8 @@ JSON messages, `{type, ...}`:
 - Server → client: `state` (full snapshot on connect: device identity,
   battery, brightness, plus `screenOn`, `screensaverActive` and
   `cameraView {active, viewId, viewName}`, the same shape `GET /api/info`
-  returns), `event` (bus events: motion, wake word, screen, screensaver,
-  camera view, navigation; `screenon` / `screenoff`, `screensaverstart` /
+  returns), `event` (bus events: motion, face, wake word, screen,
+  screensaver, camera view, navigation; `screenon` / `screenoff`, `screensaverstart` /
   `screensaverstop` and `cameraview` are the diffs to the snapshot's three
   states), `log` (app log lines),
   `console` (`{type: 'console', level, message, time}`, the WebView's

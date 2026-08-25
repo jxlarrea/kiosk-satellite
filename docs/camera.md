@@ -60,14 +60,16 @@ is blanked when the camera is disabled.
 
 ## Motion detection
 
-The same detector serves three features, and they differ in when the
-camera actually runs:
+The same camera session serves five features, and they differ in when
+the camera actually runs:
 
 | Feature | Where | Camera runs |
 | --- | --- | --- |
 | Dismiss on motion | Screensaver settings | Only while the screensaver is showing. |
 | Postpone screensaver on motion | Screensaver settings | Permanently while the screen is on. |
 | Motion sensor | Camera settings | Permanently while the screen is on, Black screensaver included. |
+| Dismiss on face | Screensaver settings | Only while the screensaver is showing. |
+| Postpone screensaver on face | Screensaver settings | Permanently while the screen is on. |
 
 **Dismiss on motion** wakes the screen when someone approaches the
 sleeping kiosk. **Postpone screensaver on motion** extends it: movement in
@@ -76,7 +78,16 @@ the room is actually empty; it requires Dismiss on motion. **Motion
 sensor** exposes motion as a Home Assistant `binary_sensor` with no
 screensaver gate at all. A screensaver [schedule](screensavers.md) entry
 can override Dismiss on motion per time window, so an overnight Black
-entry can keep the camera off entirely.
+entry can keep the camera off entirely. **Dismiss on face** (the
+screensaver's [Face detection](screensavers.md#face-detection)) rides
+the same camera session: a small on-device face detector runs on the
+frames the motion analyzer already samples, so the frame rate, camera
+pick and startup delay below tune it too. The model runs only while the
+grid saw something change, a face was recently in view, or the camera
+just opened, at most twice a second on one core and paced by the
+measured cost of a run so it never takes more than about a fifth of a
+core, so an empty room costs no inference. Dismiss on motion takes
+precedence while both are on.
 
 What a true screen-off does to the camera depends on the Android
 version. Older versions leave it alone. Newer ones (observed on Android
@@ -150,6 +161,7 @@ Satellite device:
 | Motion | binary_sensor | Only with **Motion sensor** on. Reads motion for the configured **Clear after** window; the clearing is done by Home Assistant's `off_delay`, so a reconnect never replays stale motion. |
 | Camera enabled | switch | The master toggle, remotely. Exists whenever the hardware does, even with the camera off, so an automation can arm the camera only when a room-wide sensor says someone is home. |
 | Screensaver motion detection | switch | The Dismiss on motion toggle, remotely. Pairs with Camera enabled for staged wake-ups. |
+| Screensaver face detection | switch | The Dismiss on face toggle, remotely. Motion keeps precedence on the device, so an automation that wants faces by day and motion by night flips the motion switch. |
 | Camera facing | select | The **Camera** pick, remotely: Front or Back, for every camera feature at once. Switching it publishes a fresh frame from the newly picked camera a moment later, so an automation can flip a phone to its back camera as a baby monitor and back again. Like the switches it works with the camera off. Only on devices with both cameras. |
 
 Disabling the camera retracts the camera and motion entities and blanks

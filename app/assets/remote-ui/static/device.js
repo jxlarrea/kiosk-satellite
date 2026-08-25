@@ -26,12 +26,13 @@ export async function loadDeviceInfo() {
     catch { return null; }
   };
 
-  const [info, settings, wake, screenOn, motion, ua, det] = await Promise.all([
+  const [info, settings, wake, screenOn, motion, face, ua, det] = await Promise.all([
     api('/api/info').then((r) => r.json()).catch(() => null),
     api('/api/settings').then((r) => r.json()).catch(() => null),
     get('getWakeWordState'),
     get('isScreenOn'),
     get('getMotionEnabled'),
+    get('getFaceEnabled'),
     // The page's own view of itself: the one thing only the WebView knows.
     get('evalJs', { code: 'navigator.userAgent' }),
     get('getDeviceDetails'),
@@ -123,6 +124,7 @@ export async function loadDeviceInfo() {
     ['Stop word', or(wake?.stopWord)],
     ['Background listening', yn(S['wake_word.background'])],
     ['Motion detection', yn(motion)],
+    ['Face detection', yn(face)],
   ]);
 
   // Permissions used to be summarised here, read-only. The Permissions group

@@ -255,6 +255,49 @@ export function updateMotionCameraRows() {
   }
 }
 
+/* The face detection rows (issue #304), mirroring the device: with the
+   camera master switch off, "Dismiss on face" renders disabled with the
+   reason; with Dismiss on motion on, a warning under it says motion takes
+   precedence and the face leg is idle; and a hint under the sensitivity
+   slider marks where the shared tuning lives. Idempotent, so the toggle
+   save path can re-run it when Dismiss on motion flips. */
+export function updateFaceRows() {
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  const camOn = byKey['camera.enabled']?.value === true
+    && state.cameraPresent !== false;
+  const tab = document.getElementById('tab-screensaver');
+  if (!tab) return;
+  for (const stale of tab.querySelectorAll('.face-note')) stale.remove();
+  const face = tab.querySelector('[data-key="screensaver.dismiss_on_face"]');
+  if (!face) return;
+  const note = (text, warn) => {
+    const div = document.createElement('div');
+    div.className = 'row face-note';
+    div.style.cssText = 'font-size:12.5px; color:var(--'
+      + (warn ? 'warn' : 'muted') + ');';
+    div.textContent = text;
+    return div;
+  };
+  if (!camOn) {
+    const input = face.querySelector('.switch input');
+    if (input) { input.checked = false; input.disabled = true; }
+    face.insertAdjacentElement('afterend',
+      note('Requires the camera. Turn it on in the Camera settings first.'));
+    return;
+  }
+  if (byKey['screensaver.dismiss_on_motion']?.value === true) {
+    face.insertAdjacentElement('afterend', note(
+      'Dismiss on motion is on and takes precedence, so face detection '
+      + 'stays idle until it is turned off.', true));
+  }
+  const sensitivity = tab.querySelector('[data-key="face.sensitivity"]');
+  if (sensitivity) {
+    sensitivity.insertAdjacentElement('afterend', note(
+      'Frame rate, camera pick and startup delay are tuned in the Camera '
+      + 'settings.'));
+  }
+}
+
 /* The Dim screensaver warning, mirroring the device: Dim is the one mode
    the pause-dashboard optimization cannot help - there is no overlay, the
    page IS the display. Kept identical to the device's copy in

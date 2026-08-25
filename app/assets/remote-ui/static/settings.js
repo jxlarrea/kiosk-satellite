@@ -14,6 +14,7 @@ import {
   updateCameraGrantNotice,
   updateCameraSnapshotPanel,
   updateDimModeNotice,
+  updateFaceRows,
   updateMotionCameraRows,
   updateNoCameraNotice,
   updateScreenOffAdminNotice,
@@ -784,6 +785,7 @@ export async function loadSettings() {
   updateCameraGrantNotice();
   updateCameraSnapshotPanel();
   updateMotionCameraRows();
+  updateFaceRows();
   updateDimModeNotice();
   updateScreenOffAdminNotice();
   updateAutoReloadOverlayNotice();

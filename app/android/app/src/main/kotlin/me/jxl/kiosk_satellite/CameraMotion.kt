@@ -154,6 +154,28 @@ class CameraMotion(
 
         private const val EMIT_INTERVAL_NS = 1_000_000_000L // rate-limit: 1/s
 
+        // The face inference gate (issue #304). The model is the one
+        // expensive thing in this class, and most kiosks are low-powered
+        // devices already running a wake word engine, so it must not run
+        // per frame in an empty room. The motion grid is the trigger: it
+        // costs a few hundred byte reads and already knows whether anything
+        // in the frame changed. The detector runs only while (a) the grid
+        // saw a real, non-lighting change within the window, (b) it found a
+        // face within the window (a viewer sitting still keeps it alive, so
+        // Postpone on face works for someone reading the dashboard), or (c)
+        // the camera opened within the window, for whoever is already
+        // standing there. Between those, an idle room costs no inference at
+        // all. On top, runs are capped at FACE_MIN_INTERVAL_NS apart no
+        // matter the configured frame rate, and paced further by the
+        // measured cost of a run so the detector never takes more than
+        // about 1/FACE_DUTY of one core while the gate is open: 0.5 s on a
+        // Tab S8 (a few ms per run), about 0.9 s on an Echo Show 8 (180 ms
+        // per run on its armv7 cores). A fifth of a core is the balance
+        // between cost and a wake-up that still feels immediate.
+        private const val FACE_ACTIVITY_WINDOW_NS = 3_000_000_000L
+        private const val FACE_MIN_INTERVAL_NS = 500_000_000L
+        private const val FACE_DUTY = 5L
+
         // Backstop for a CameraX init that never resolves (a wedged camera
         // service; a Galaxy Tab A took 20s+ in issue #271): the Dart side
         // must hear an error and own the retry, not wait forever on a
@@ -247,6 +269,34 @@ class CameraMotion(
      *  [analysisExecutor], read on the main thread. */
     @Volatile private var lastFrameAtMs = 0L
 
+    /** Face detection (issue #304): built on the first analyzed frame that
+     *  asks for it and kept for the handler's lifetime (the model is a
+     *  megabyte; reloading it per screensaver session buys nothing).
+     *  Touched only on [analysisExecutor]. */
+    private var faceDetector: FaceDetector? = null
+
+    /** What this listen wants emitted: motion ticks, face sightings, or
+     *  both. Set in onListen before the bind, read on [analysisExecutor].
+     *  The frame analysis itself always runs (its exposure-hunt watchdog
+     *  guards the CPU either way); only the emissions are gated. */
+    @Volatile private var motionWanted = true
+    @Volatile private var facesWanted = false
+
+    /** Smallest face worth reporting, relative to the frame's longer side
+     *  (the Dart side maps the sensitivity slider to it). */
+    @Volatile private var faceMinWidth = 0.1f
+
+    /** Face sightings get their own 1/s rate limit, independent of motion's. */
+    private var lastFaceEmitNs = 0L
+
+    /** The face inference gate (see [FACE_ACTIVITY_WINDOW_NS]): when the
+     *  grid last saw a real change, when the detector last ran, when it
+     *  last found a face, and when analysis began. Analyzer state. */
+    private var lastActivityNs = 0L
+    private var lastFaceRunNs = 0L
+    private var lastFaceSeenNs = 0L
+    private var firstAnalyzedNs = 0L
+
     init {
         eventChannel.setStreamHandler(this)
     }
@@ -265,6 +315,15 @@ class CameraMotion(
         val snapH = (args?.get("snapshotHeight") as? Number)?.toInt()
         val startDelayMs =
             (args?.get("startDelayMs") as? Number)?.toLong()?.coerceIn(0L, 15_000L) ?: 0L
+        motionWanted = args?.get("motion") != false
+        facesWanted = args?.get("faces") == true
+        faceMinWidth =
+            ((args?.get("faceMinWidth") as? Number)?.toFloat() ?: 0.1f).coerceIn(0.01f, 1f)
+        lastFaceEmitNs = 0L
+        lastActivityNs = 0L
+        lastFaceRunNs = 0L
+        lastFaceSeenNs = 0L
+        firstAnalyzedNs = 0L
 
         frameIntervalNs = (1_000_000_000.0 / fps).toLong()
         // Sensitivity → how many of the grid's cells must change. High
@@ -407,7 +466,14 @@ class CameraMotion(
                         null,
                     )
                 }
-                Log.i(TAG, "camera bound (fps slot=${frameIntervalNs / 1_000_000}ms, minCells=$minChangedCells)")
+                Log.i(
+                    TAG,
+                    "camera bound (fps slot=${frameIntervalNs / 1_000_000}ms, " +
+                        "minCells=$minChangedCells, motion=$motionWanted, " +
+                        "faces=$facesWanted" +
+                        (if (facesWanted) " minWidth=${"%.2f".format(faceMinWidth)}" else "") +
+                        ")",
+                )
                 armSuspendWatchdog(mySession, sink)
             } catch (e: Exception) {
                 // Nothing bound: drop the owner so the eventual cancel has
@@ -543,6 +609,23 @@ class CameraMotion(
                     "veto=$illumination")
             }
 
+            // The face leg, gated on the grid (see FACE_ACTIVITY_WINDOW_NS).
+            if (facesWanted) {
+                val detector = faceDetector ?: FaceDetector(context).also { faceDetector = it }
+                if (firstAnalyzedNs == 0L) firstAnalyzedNs = now
+                if (changed > 0 && !illumination) lastActivityNs = now
+                val window = FACE_ACTIVITY_WINDOW_NS
+                val paced = (detector.costMs * 1_000_000L * FACE_DUTY).toLong()
+                val due = now - lastFaceRunNs >= max(FACE_MIN_INTERVAL_NS, paced)
+                val worthIt = now - lastActivityNs <= window ||
+                    now - lastFaceSeenNs <= window ||
+                    now - firstAnalyzedNs <= window
+                if (due && worthIt) {
+                    lastFaceRunNs = now
+                    if (detectFace(detector, image, now, sink)) lastFaceSeenNs = now
+                }
+            }
+
             // The exposure-hunt fallback (see HUNT_FRAMES): a vetoed frame
             // with next to no mean-relative structure is AE moving the whole
             // grid; enough of them in an unbroken run is a 3A loop that will
@@ -557,7 +640,7 @@ class CameraMotion(
                 huntStreak = 0
             }
 
-            if (!illumination && changed >= minChangedCells &&
+            if (motionWanted && !illumination && changed >= minChangedCells &&
                 now - lastEmitNs >= EMIT_INTERVAL_NS
             ) {
                 lastEmitNs = now
@@ -566,6 +649,35 @@ class CameraMotion(
         } finally {
             image.close()
         }
+    }
+
+    /**
+     * The face leg (issue #304): run the detector on this analyzed frame
+     * and report the largest camera-facing face when it is at least the
+     * requested size. A sighting is its own event kind ({"face": width})
+     * so the Dart side can tell it from a motion tick, and it has its own
+     * 1/s rate limit so a face and a movement in the same second both get
+     * through. Runs on [analysisExecutor] on the same throttled frame; the
+     * detector rotates the frame upright itself. Returns whether any face
+     * was found, size aside, which is what keeps the inference gate open.
+     */
+    private fun detectFace(
+        detector: FaceDetector,
+        image: ImageProxy,
+        now: Long,
+        sink: EventChannel.EventSink,
+    ): Boolean {
+        val face = detector.detect(image, image.imageInfo.rotationDegrees) ?: return false
+        Log.d(
+            TAG,
+            "face: width=${"%.2f".format(face.width)} score=${"%.2f".format(face.score)} " +
+                "turn=${"%.2f".format(face.turn)}",
+        )
+        if (face.width < faceMinWidth) return true
+        if (now - lastFaceEmitNs < EMIT_INTERVAL_NS) return true
+        lastFaceEmitNs = now
+        mainHandler.post { sink.success(mapOf("face" to face.width.toDouble())) }
+        return true
     }
 
     /**
@@ -609,6 +721,10 @@ class CameraMotion(
         analyzeFromNs = 0L
         huntStreak = 0
         slowAeApplied = false
+        lastActivityNs = 0L
+        lastFaceRunNs = 0L
+        lastFaceSeenNs = 0L
+        firstAnalyzedNs = 0L
         start(facing, sink)
     }
 
@@ -761,6 +877,11 @@ class CameraMotion(
     fun dispose() {
         eventChannel.setStreamHandler(null)
         onCancel(null)
+        // On the analyzer's own thread, after any frame still in flight.
+        analysisExecutor.execute {
+            faceDetector?.close()
+            faceDetector = null
+        }
         analysisExecutor.shutdown()
     }
 

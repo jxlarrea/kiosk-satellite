@@ -608,6 +608,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       () => _settings.get(defs.screensaverDismissOnMotion),
       (on) => _settings.set(defs.screensaverDismissOnMotion, on),
     ),
+    // Dismiss on face (issue #304), the same way. Motion keeps precedence
+    // on the device, so an automation that wants faces by day and motion
+    // by night flips the motion switch, not this one.
+    'screensaver_face': (
+      () => _settings.get(defs.screensaverDismissOnFace),
+      (on) => _settings.set(defs.screensaverDismissOnFace, on),
+    ),
   };
 
   static const _switchSettingKeys = [
@@ -621,6 +628,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     'ha.hold_mode',
     'camera.enabled',
     'screensaver.dismiss_on_motion',
+    'screensaver.dismiss_on_face',
   ];
 
   /// The setting-backed dropdowns: object id → (definition, entity name,
@@ -2499,6 +2507,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
               'Screensaver motion detection',
               'mdi:motion-sensor',
             ),
+        '$_prefix/switch/ks_$_deviceId/screensaver_face/config': settingSwitch(
+          'screensaver_face',
+          'Screensaver face detection',
+          'mdi:face-recognition',
+        ),
       },
       for (final entry in _settingSelects.entries)
         if (entry.key != 'camera_device' || _cameraFacingWanted)
@@ -2542,6 +2555,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     if (!_cameraPresent) {
       _publish('$_prefix/switch/ks_$_deviceId/camera_enabled/config', '');
       _publish('$_prefix/switch/ks_$_deviceId/screensaver_motion/config', '');
+      _publish('$_prefix/switch/ks_$_deviceId/screensaver_face/config', '');
     }
     // Same self-correction for the facing select on single-camera hardware:
     // a config from an optimistic pass (or a restored backup) is retracted

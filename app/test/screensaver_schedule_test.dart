@@ -40,6 +40,20 @@ void main() {
       expect(entries[3].containsKey('motion'), isFalse);
     });
 
+    test('the face override passes through only as a bool (issue #304)', () {
+      final entries = parseScreensaverSchedule(
+          '[{"at":"08:00","mode":"clock","face":true},'
+          '{"at":"20:00","mode":"black","face":false,"motion":true},'
+          '{"at":"22:00","mode":"black","face":1},'
+          '{"at":"23:00","mode":"black"}]');
+      expect(entries[0]['face'], isTrue);
+      expect(entries[0].containsKey('motion'), isFalse);
+      expect(entries[1]['face'], isFalse);
+      expect(entries[1]['motion'], isTrue);
+      expect(entries[2].containsKey('face'), isFalse);
+      expect(entries[3].containsKey('face'), isFalse);
+    });
+
     test('the widgets override passes through only as a bool', () {
       final entries = parseScreensaverSchedule(
           '[{"at":"08:00","mode":"clock","widgets":true},'

@@ -290,7 +290,7 @@ dashboard straight back.
 
 **Scheduled screensavers** switches to a different screensaver at set
 times of day. Each entry under **Times** carries a time, a mode, a
-brightness and three overrides — motion, widgets and At a glance —
+brightness and four overrides — motion, face, widgets and At a glance —
 edited by tapping the entry; it applies from its time until the next
 entry, and the last entry of the day carries over past midnight.
 There is no day-of-week dimension, deliberately: the schedule describes
@@ -300,7 +300,12 @@ The typical shape is two entries: photos at a comfortable brightness
 from the morning, Black (or Clock, dimmed) from the evening. The motion
 override sets **Dismiss on motion** per entry, in either direction, so
 an overnight entry can keep the camera off entirely, or a daytime entry
-can enable approach wake even though the global switch is off. The
+can enable approach wake even though the global switch is off. The face
+override does the same for **Dismiss on face**, and the two together
+are how a kiosk wakes on faces by day and on motion by night: face
+detection needs a lit face, so a daytime entry sets Face on, and the
+evening entry sets Motion on, which takes precedence and carries the
+dark hours. The
 widgets and At a glance overrides do the same for the
 [widgets](#widgets) and the [At a Glance](#at-a-glance) row: leave them
 on Default to follow their own settings, or set them to Off on the
@@ -331,6 +336,58 @@ camera pick are tuned in the Camera settings; the details are in the
 neither dismisses nor postpones, even when the screensaver itself is
 allowed to run.
 
+## Face detection
+
+**Dismiss on face**, under Face Detection, wakes the screen only when
+someone looks at the kiosk: a person walking through the room leaves
+the screensaver up, and the dashboard appears when they turn to the
+screen. This is the feature Fully Kiosk calls face detection. It is
+detection, not recognition: the app notices that a face is looking at
+the camera and nothing more, with nothing identified, stored or sent
+anywhere. The camera runs only during the screensaver, exactly like
+Dismiss on motion, and every face is looked for on the device.
+
+**Face sensitivity** sets how close a face has to be. It reads as a
+distance: 1 wakes only on a face right at the screen, 100 on any face
+the camera can make out, which is about two meters through a typical
+front camera. The default of 50 lands around arm's length and a step
+back. Frame rate, the camera pick and the startup delay are shared with
+motion detection and tuned in the Camera settings.
+
+Two rules to know:
+
+- **Dismiss on motion takes precedence.** With both switches on, motion
+  wakes the screen and face detection stays idle; the settings pages say
+  so under the switch. Turn Dismiss on motion off to wake on faces.
+- **Faces need light.** Motion detection works in the dark; a face
+  detector does not, since a face it cannot see is not there. A dim room
+  lit by the screensaver itself usually shows a nearby face, but a dark
+  room does not. The [schedule](#schedule) is the answer: a daytime entry
+  with Face on and an evening entry with Motion on wakes on faces while
+  there is light and falls back to motion at night.
+
+**Postpone screensaver on face** extends it the way Postpone screensaver
+on motion extends Dismiss on motion: the camera also watches between
+screensavers, and someone looking at the kiosk keeps resetting the idle
+timer, so the screensaver waits until nobody is reading the dashboard.
+It keeps the camera running permanently with face detection on top, it
+requires Dismiss on face, and Dismiss on motion keeps precedence over it
+too.
+
+The cost is kept in check by running the face model only when there is
+something to look at. The motion analyzer's grid, a few hundred byte
+reads per frame, decides: the model runs while something in the frame
+moved in the last few seconds, while a face was seen in the last few
+seconds (so a viewer sitting still keeps it alive), and for the first
+seconds after the camera opens, at most twice a second on a single CPU
+core, and slower still where a run costs more, so the detector never
+takes more than about a fifth of a core on any hardware. An empty room costs no inference at all, which is what makes
+face detection, and Postpone on face in particular, affordable on the
+low-powered devices most kiosks are.
+
+Under [Lockdown Mode](kiosk.md) a face neither dismisses nor postpones,
+like motion.
+
 ## Starting and dismissing
 
 The idle timeout is the normal path in. On demand, the screensaver can
@@ -346,6 +403,7 @@ Any touch dismisses it and resets the timer. Beyond touch:
   holds for the whole voice interaction, so the screen cannot go dark
   between question and answer.
 - **Motion**, with Dismiss on motion (above).
+- **A face looking at the kiosk**, with Dismiss on face (above).
 - **Opening a camera view** dismisses it, and the idle timer stays off
   while the view is open.
 - **Navigation from Home Assistant** (the Dashboard view select, or
@@ -405,5 +463,6 @@ remote-controllable: the **Screensaver** master switch, the
 screensaver** button for automations that keep the display awake from an
 external sensor, the **Screensaver mode** and **Clock style** selects,
 the **Clock background** text entity, the **Screensaver brightness**
-switch and level, and the **Screensaver motion detection** switch. The
-full list, with topics, is in the [MQTT doc](mqtt.md).
+switch and level, and the **Screensaver motion detection** and
+**Screensaver face detection** switches. The full list, with topics, is
+in the [MQTT doc](mqtt.md).

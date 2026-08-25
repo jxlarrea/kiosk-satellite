@@ -115,6 +115,11 @@ class EspEntitySurface {
           'mdi:motion-sensor',
           defs.screensaverDismissOnMotion,
         ),
+        'screensaver_face': (
+          'Screensaver face detection',
+          'mdi:face-recognition',
+          defs.screensaverDismissOnFace,
+        ),
       };
 
   /// Settings-backed selects: objectId -> (name, icon, definition). The
@@ -421,7 +426,9 @@ class EspEntitySurface {
       },
       for (final e in _settingSwitches.entries)
         if (cameraPresent ||
-            (e.key != 'camera_enabled' && e.key != 'screensaver_motion'))
+            (e.key != 'camera_enabled' &&
+                e.key != 'screensaver_motion' &&
+                e.key != 'screensaver_face'))
           {
             'type': 'switch',
             'objectId': e.key,

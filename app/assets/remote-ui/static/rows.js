@@ -9,6 +9,7 @@ import {
 } from './cameras.js';
 import { api, state } from './core.js';
 import { readOnlyRow } from './device.js';
+import { updateFaceRows } from './notices.js';
 import { openLauncherAppsPicker, openMediaBrowser } from './pickers.js';
 import { loadSettings, refreshRealMacNote } from './settings.js';
 import { messageBox } from './widgets.js';
@@ -127,6 +128,13 @@ export function settingRow(s) {
     // whole page reloading under the switch just flipped.
     if ((state.settings || []).some((o) => o.dependsOn === s.key)) {
       if (!syncGatedRows(s.key, row)) await loadSettings();
+    }
+    // The face detection notes answer for Dismiss on motion as it is now
+    // (issue #304): motion takes precedence, and the warning under
+    // Dismiss on face comes and goes with the motion switch.
+    if (s.key === 'screensaver.dismiss_on_motion'
+      || s.key === 'screensaver.dismiss_on_face') {
+      updateFaceRows();
     }
     // The real-MAC status row and its field answer for the switch and the
     // typed address as they are now (issues #252, #300). After the gated
@@ -389,10 +397,18 @@ export function settingRow(s) {
         motion.select.title =
           'Requires the camera. Turn it on in the Camera settings first.';
       }
+      // Motion keeps precedence inside an entry too: On here with motion
+      // On above still wakes on motion.
+      const face = overrideField('Dismiss on face', start.face);
+      face.select.disabled = !camOn;
+      if (!camOn) {
+        face.select.title =
+          'Requires the camera. Turn it on in the Camera settings first.';
+      }
       const widgets = overrideField('Widgets', start.widgets);
       const glance = overrideField('At a glance', start.glance);
 
-      body.append(timeWrap, modeSel.wrap, brightWrap, motion.wrap,
+      body.append(timeWrap, modeSel.wrap, brightWrap, motion.wrap, face.wrap,
         widgets.wrap, glance.wrap);
 
       return cameraEditor({
@@ -406,7 +422,7 @@ export function settingRow(s) {
             mode: modeSel.select.value,
             brightness: (+rng.value) / 100,
           };
-          for (const [key, field] of [['motion', motion],
+          for (const [key, field] of [['motion', motion], ['face', face],
             ['widgets', widgets], ['glance', glance]]) {
             if (field.select.value) entry[key] = field.select.value === 'on';
           }
@@ -427,6 +443,9 @@ export function settingRow(s) {
       }
       if (typeof e.motion === 'boolean') {
         parts.push('Motion ' + (e.motion ? 'on' : 'off'));
+      }
+      if (typeof e.face === 'boolean') {
+        parts.push('Face ' + (e.face ? 'on' : 'off'));
       }
       if (typeof e.widgets === 'boolean') {
         parts.push('Widgets ' + (e.widgets ? 'on' : 'off'));

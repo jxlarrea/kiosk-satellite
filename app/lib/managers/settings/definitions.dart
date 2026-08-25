@@ -151,6 +151,7 @@ const Map<String, String> subpageHints = {
   'Widgets': 'Corner overlays and their scale',
   'At a Glance': 'Entities shown over the screensaver',
   'Motion Detection': 'Dismiss or postpone the screensaver on motion',
+  'Face Detection': 'Dismiss the screensaver when someone looks at it',
   'Scheduled Screensavers':
       'Switch to a different screensaver at set times of day.',
   // ESPHome.
@@ -2311,6 +2312,73 @@ const motionCamera = SettingDef<String>(
   hidden: true,
 );
 
+// ── Screensaver: Face Detection ────────────────────────────────────────
+// Fully Kiosk's "face detection" (issue #304): wake only when someone is
+// looking at the kiosk, so a room full of movement leaves the screensaver
+// up. Detection, not recognition: nothing is identified or stored. The
+// detector rides the motion camera session (same camera, frame rate and
+// startup delay, all tuned in the Camera settings) and runs only during
+// the screensaver, like Dismiss on motion. Dismiss on motion takes
+// precedence: with both on, the motion switch owns the wake-up and the
+// face leg stays idle, which both settings UIs say under this switch. The
+// schedule's per-entry override exists so a daytime entry can wake on
+// faces while a night entry falls back to motion: faces need light,
+// motion does not.
+const screensaverDismissOnFace = SettingDef<bool>(
+  key: 'screensaver.dismiss_on_face',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Dismiss on face',
+  description:
+      'Wake the screen when someone looks at the kiosk, not on movement '
+      'alone. The camera runs only during the screensaver. WARNING: Needs '
+      'a lit face; in the dark, schedule motion detection instead.',
+  category: 'Screensaver',
+  section: 'Face Detection',
+  subpage: 'Face Detection',
+);
+
+// The face counterpart of Postpone screensaver on motion, with the same
+// rules: an extension of Dismiss on face (hidden and inert without it),
+// the camera runs the whole time the screensaver is NOT showing, and the
+// face detector runs on top of it. The detector is gated on the motion
+// grid natively (an empty room costs no inference), which is what makes
+// this affordable at all on the low-powered devices most kiosks are.
+const screensaverPostponeOnFace = SettingDef<bool>(
+  key: 'screensaver.postpone_on_face',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Postpone screensaver on face',
+  description:
+      'Delay activating the screensaver while someone is looking at the '
+      'kiosk. WARNING: Keeps the camera running permanently, with face '
+      'detection and its CPU cost on top.',
+  category: 'Screensaver',
+  section: 'Face Detection',
+  subpage: 'Face Detection',
+  dependsOn: 'screensaver.dismiss_on_face',
+);
+
+// Mapped to a minimum face size by faceMinWidthFor (native_motion.dart):
+// a face fills more of the frame the closer it is, so the slider is
+// really a maximum distance.
+const faceSensitivity = SettingDef<num>(
+  key: 'face.sensitivity',
+  type: SettingType.number,
+  defaultValue: 50,
+  title: 'Face sensitivity',
+  description:
+      'Higher wakes on smaller, more distant faces. 1 needs a face close '
+      'to the screen; 100 reacts to any face the camera can make out.',
+  category: 'Screensaver',
+  section: 'Face Detection',
+  subpage: 'Face Detection',
+  dependsOn: 'screensaver.dismiss_on_face',
+  min: 1,
+  max: 100,
+  step: 1,
+);
+
 // ── Camera ─────────────────────────────────────────────────────────────
 // The device's own camera as a Home Assistant feature (discussion #72):
 // snapshots published over MQTT, and the sensor the screensaver's motion
@@ -4371,6 +4439,9 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDismissOnMotion,
   screensaverPostponeOnMotion,
   motionCamera,
+  screensaverDismissOnFace,
+  screensaverPostponeOnFace,
+  faceSensitivity,
   cameraEnabled,
   cameraDevice,
   cameraSnapshotResolution,
