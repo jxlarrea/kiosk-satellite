@@ -117,6 +117,51 @@ void main() {
       expect(calls, isEmpty);
     });
 
+    test('a thaw edge reveals even when the freeze never took by our books',
+        () async {
+      // The native side answered "no dashboard found" to the freeze, so
+      // the Dart side never marked itself frozen. The native view can still
+      // be hidden (it fell out of step through a rebuild or a navigation
+      // while hidden), and with the flag false every path used to return
+      // early, leaving a dashboard that never came back. The edge from
+      // wanted to not wanted now asks the native side to reveal
+      // regardless; on a visible view that is a no-op.
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return call.arguments['hidden'] == true ? 0 : 1;
+      });
+      await build({'ks.browser.freeze_on_screensaver': true});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      bus.publish(const ScreensaverViewChanged(view: 'clock'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls.last.arguments['hidden'], isTrue);
+      bus.publish(const ScreensaverStateChanged(active: false));
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls.last.arguments['hidden'], isFalse);
+      expect(calls.last.arguments['urlPrefix'], 'http://ha.local:8123');
+    });
+
+    test('a thaw with no dashboard origin to match still reveals every page',
+        () async {
+      await build({'ks.browser.freeze_on_screensaver': true});
+      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      bus.publish(const ScreensaverViewChanged(view: 'clock'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isTrue);
+      // The page navigated somewhere with no origin while hidden.
+      browser.onPageLoaded('about:blank');
+      bus.publish(const ScreensaverStateChanged(active: false));
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+      expect(calls.last.arguments['hidden'], isFalse);
+      expect(calls.last.arguments['urlPrefix'], 'http');
+    });
+
     test('a covering mode freezes after the paint delay; a mid-session '
         'flip to dim thaws immediately', () async {
       await build({'ks.browser.freeze_on_screensaver': true});

@@ -49,7 +49,10 @@ relaunches it immediately. Two situations are deliberately left alone: apps
 opened through the App Launcher (their auto-return owns the way back), and
 the Android permission screens the settings pages open.
 
-The recovery paths need the **display over other apps** permission; the
+Both relaunches, and the one after a crash, come from the
+[Kiosk Satellite Service](permissions.md#the-kiosk-satellite-service), the
+foreground service the app always runs. The recovery paths need the
+**display over other apps** permission; the
 [permissions group](#required-system-permissions) at the end of the page
 says when it is missing.
 

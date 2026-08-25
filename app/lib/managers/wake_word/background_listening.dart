@@ -1,36 +1,25 @@
 import 'package:flutter/services.dart';
 
-/// Keeping the wake word alive while the app is not on screen, and coming back
-/// to the front when it hears one.
+/// Coming back to the front when the wake word is heard behind another app,
+/// and the OS grants around it.
 ///
 /// Android freezes cached processes whole. Put the app behind another one and
 /// the microphone goes silent, the WebView running Voice Satellite stops, its
 /// websocket to Home Assistant stops, and the remote admin's own HTTP server
-/// stops answering — all at once, with the process still alive. Nothing is
-/// selectively disabled and nothing can opt in on its own.
+/// stops answering — all at once, with the process still alive. The Kiosk
+/// Satellite Service (ServiceManager) is the exemption, on every install;
+/// background listening only adds the microphone to what it declares, so the
+/// card's session is still live when a wake word fires and can stream from
+/// the pre-roll captured while we were behind another app.
 ///
-/// A foreground service is the exemption, and because the freeze is
-/// process-wide, that one exemption thaws all of it together: the card's
-/// session is still live when a wake word fires, so it can stream from the
-/// pre-roll captured while we were behind another app, and no speech is lost.
+/// Two OS grants, each separately refusable:
 ///
-/// Three OS grants, each separately refusable:
-///
-///  - the service itself, which needs nothing but shows a permanent
-///    notification that cannot be dismissed;
 ///  - "Display over other apps", without which we hear the wake word and cannot
 ///    come forward — worse than not listening at all;
 ///  - a battery-optimisation exemption, or Samsung stops the service after a few
 ///    hours whatever the foreground-service rules say.
 class BackgroundListening {
   static const _channel = MethodChannel('kiosk_satellite/background');
-
-  /// Keep the process running (and the microphone real) while off screen.
-  static Future<bool> start() async =>
-      await _channel.invokeMethod<bool>('start') ?? false;
-
-  static Future<bool> stop() async =>
-      await _channel.invokeMethod<bool>('stop') ?? false;
 
   /// Whether we may start our own Activity from behind another app.
   static Future<bool> canBringToFront() async =>

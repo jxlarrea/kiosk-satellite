@@ -26,6 +26,7 @@ import 'managers/screen/screen_manager.dart';
 import 'managers/screensaver/immich_manager.dart';
 import 'managers/screensaver/screensaver_manager.dart';
 import 'managers/sendspin/sendspin_manager.dart';
+import 'managers/service/service_manager.dart';
 import 'managers/sound/sound_manager.dart';
 import 'managers/settings/provisioning.dart';
 import 'managers/settings/settings_manager.dart';
@@ -40,6 +41,7 @@ class AppContainer {
     settings = SettingsManager(bus, commands, log);
     device = DeviceManager(bus, commands, log, settings);
     screen = ScreenManager(bus, commands, log, settings);
+    service = ServiceManager(bus, commands, log, settings);
     proxy = ProxyManager(bus, commands, log, settings);
     browser = BrowserManager(bus, commands, log, settings);
     // Constructed before camera, which streams Home Assistant camera
@@ -104,6 +106,7 @@ class AppContainer {
   late final SettingsManager settings;
   late final DeviceManager device;
   late final ScreenManager screen;
+  late final ServiceManager service;
   late final ProxyManager proxy;
   late final BrowserManager browser;
   late final CameraManager camera;
@@ -136,6 +139,7 @@ class AppContainer {
     settings,
     device,
     screen,
+    service,
     proxy,
     browser,
     camera,

@@ -2,22 +2,15 @@ package me.jxl.kiosk_satellite.btproxy
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 
 /**
  * Owns the three moving parts of the Bluetooth proxy (API server, BLE scan
  * engine, mDNS announcer) and their glue. Process-wide singleton, started
- * and stopped by the bridge; [BluetoothProxyService] separately holds the
+ * and stopped by the bridge; [KioskSatelliteService] separately holds the
  * foreground-service exemption that keeps all of this scheduled while the
- * app is not on screen.
- *
- * A non-expiring partial wake lock is held for the whole run. The timeout-
- * plus-renewal pattern other proxies use has a hole: the renewal timer is
- * itself frozen by the sleep it is supposed to prevent, producing periodic
- * multi-minute blackouts. Kiosks are wall-powered; holding the lock
- * outright is the honest version.
+ * app is not on screen, and the CPU wake lock through screen-off.
  */
 internal object BluetoothProxyRuntime {
     private const val TAG = "KsEsphome"
@@ -69,7 +62,6 @@ internal object BluetoothProxyRuntime {
     private var gattEngine: GattEngine? = null
     private var entityHub: EntityHub? = null
     private var announcer: MdnsAnnouncer? = null
-    private var wakeLock: PowerManager.WakeLock? = null
     private val logRing = ArrayDeque<String>()
     private val nearby = NearbyDeviceTracker()
 
@@ -140,12 +132,6 @@ internal object BluetoothProxyRuntime {
         val mdns = MdnsAnnouncer(appContext, identity, apiServer.boundPort, onLog = ::log)
         mdns.start()
 
-        runCatching {
-            wakeLock = (appContext.getSystemService(Context.POWER_SERVICE) as PowerManager)
-                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ks:btproxy")
-                .also { it.setReferenceCounted(false); it.acquire() }
-        }
-
         server = apiServer
         liveNodeName = identity.name
         engine = scanEngine
@@ -184,8 +170,6 @@ internal object BluetoothProxyRuntime {
         gattEngine = null
         entityHub = null
         nearby.clear()
-        wakeLock?.let { runCatching { if (it.isHeld) it.release() } }
-        wakeLock = null
         log("ESPHome server stopped")
     }
 

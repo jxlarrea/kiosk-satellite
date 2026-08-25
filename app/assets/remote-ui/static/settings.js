@@ -8,6 +8,7 @@ import {
 import { MIC_GROUP_NOTE, exportFileName } from './cameras.js';
 import { $, api, cmd, state } from './core.js';
 import { readOnlyRow } from './device.js';
+import { renderServicePage } from './service.js';
 import { CATEGORY_TABS } from './gestures.js';
 import {
   updateCameraFacingsRow,
@@ -810,6 +811,15 @@ export async function loadSettings() {
       'Open this address in a browser on your computer.',
       `http://${location.host}`));
     root.append(heading, card);
+  }
+
+  // ── Kiosk Satellite Service page ──────────────────────────────────────
+  // Mirror of the device's page: the service's live status and what it is
+  // running for above its one setting, the grants it needs below.
+  {
+    const panel = document.querySelector(
+      '#tab-device > .subpage[data-subpage="Kiosk Satellite Service"]');
+    if (panel) renderServicePage(panel);
   }
 
   // ── Permissions (issue #156) ──────────────────────────────────────────

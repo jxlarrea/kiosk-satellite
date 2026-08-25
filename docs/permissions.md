@@ -15,9 +15,9 @@ root required.
 
 These come with the APK and never ask: internet and network state, Wi-Fi
 multicast (SendSpin server discovery), wake lock, audio settings, boot
-completed (Start on boot), the foreground service pair behind background
-listening, and the install permissions behind in-app updates. Nothing to
-do.
+completed (Start on boot), the foreground service types behind the
+[Kiosk Satellite Service](#the-kiosk-satellite-service), and the install
+permissions behind in-app updates. Nothing to do.
 
 ## The grants that need a human
 
@@ -25,7 +25,7 @@ do.
 | --- | --- |
 | Microphone | Wake word detection and speech to text, plus any dashboard page that asks for the microphone. |
 | Camera | Motion detection, camera snapshots, and pages that ask for the camera. |
-| Notifications | The ongoing notification that keeps background listening alive. Only a runtime prompt on Android 13+; older versions allow it by default. |
+| Notifications | The Kiosk Satellite Service's ongoing notification. Only a runtime prompt on Android 13+; older versions allow it by default. The service runs without it; its notification just is not shown. |
 | Unrestricted battery | Keeps the Home Assistant and MQTT connections alive with the screen off. Matters on every install, voice or not. |
 | Display over other apps | Lets the app bring itself back to the front after a crash, an update, or a wake word heard behind another app, lets the lockdown shield cover the whole screen, and is what **Screen on** falls back on where the panel ignores the app's wake lock. |
 | Modify system settings | Writing the panel's real brightness instead of dimming the app window. |
@@ -99,6 +99,45 @@ adb shell settings put secure accessibility_enabled 1
 
 After the block runs, open **Settings, Device, Permissions Manager** (or
 the same page in the remote admin): every row should read Granted.
+
+## The Kiosk Satellite Service
+
+Android freezes a cached process whole, and the battery managers some
+manufacturers add kill a backgrounded app outright. Either way the Home
+Assistant session, MQTT, the ESPHome server, the wake word engine and the
+remote admin all stop together the moment the screen has been off for a
+while or another app is in front. A running foreground service is the
+exemption from both, so the app runs one, the **Kiosk Satellite Service**,
+from its first start and on every install, whatever features are on. Its
+notification in the shade is the price Android asks for that, and its text
+says what the service is doing.
+
+The features only add to what it declares. On its own it keeps the Home
+Assistant connection; background listening adds the microphone, an enabled
+camera adds the camera, the Bluetooth proxy adds Bluetooth scanning, and
+MQTT, the ESPHome server, remote administration and the kiosk protections
+are listed so the page below says why the process is being held up. The
+service is also what relaunches the kiosk after a crash or a close from
+the recents screen.
+
+It holds two locks through screen-off: the high-performance Wi-Fi lock
+(see the Android 14 note below) for as long as it runs, and a CPU wake
+lock while the panel is dark, so the timers behind the keepalives fire on
+time instead of waiting for the next interrupt. The wake lock is the
+service's one setting, **Keep the CPU awake while the screen is off**, on
+by default; turn it off on a tablet that runs on battery.
+
+**Settings, Device, Kiosk Satellite Service** shows the service on the
+device and in the remote admin alike: whether it is running and holds its
+foreground exemption, the foreground service types it declares, the two
+locks, the notification, what it is keeping the process alive for, and
+the grants that matter for that: **Unrestricted battery** always,
+**Display over other apps** for the relaunch after a crash,
+**Notifications** for the notification itself, and the microphone, camera
+or Nearby devices grant while the feature that needs it is on. A kiosk
+that still gets killed with every row granted is being killed by a
+manufacturer's own battery manager, which no app can read or request;
+that is the next place to look.
 
 ## Keeping Wi-Fi awake through screen off on Android 14+
 

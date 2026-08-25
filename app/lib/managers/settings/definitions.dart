@@ -160,9 +160,12 @@ const Map<String, String> subpageHints = {
   'Advanced settings': 'Real or spoofed Wi-Fi MAC address',
   // Kiosk.
   'Allowed Actions': 'Which quick actions the kiosk menu offers',
-  // Device. Read-only reports the remote admin shows about the tablet;
-  // the device's own settings page has no equivalent.
+  // Device.
+  'Kiosk Satellite Service':
+      'Status, what keeps it running, required permissions',
   'Remote Administration': 'Manage this kiosk from a browser on your network',
+  // Read-only reports the remote admin shows about the tablet; the
+  // device's own settings page has no equivalent.
   'Hardware': 'Model, Android version, addresses, memory, uptime',
   'Home Assistant': 'Connection, version and what the kiosk shows',
   'WebView': 'Engine version, renderer and user agent',
@@ -4224,6 +4227,26 @@ const btproxyMinConnectRssi = SettingDef<String>(
   dependsOn: 'btproxy.connections',
 );
 
+// ── Kiosk Satellite Service ────────────────────────────────────────────
+
+// The one input the keep-alive service takes from the user. The service
+// itself is not optional (ServiceManager, KioskSatelliteService.kt): it is
+// what keeps the Home Assistant, MQTT and ESPHome sessions alive with the
+// screen off on every install. The wake lock is a setting because it costs
+// battery on an unplugged tablet, the one place a kiosk pays for it.
+const serviceCpuAwake = SettingDef<bool>(
+  key: 'service.cpu_awake',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Keep the CPU awake while the screen is off',
+  description:
+      'Holds a wake lock through dark spells so connections and timers '
+      'keep running on time. Costs battery on an unplugged tablet.',
+  category: 'Device',
+  section: 'Options',
+  subpage: 'Kiosk Satellite Service',
+);
+
 // ── Remote management ──────────────────────────────────────────────────
 
 const remoteEnabled = SettingDef<bool>(
@@ -4602,7 +4625,8 @@ const List<SettingDef<Object>> allSettings = [
   uiTheme,
   disableImpeller,
   legacyWebView,
-  // The Remote Administration group closes the Device page.
+  // The two pages, service first, close the Device page.
+  serviceCpuAwake,
   remoteEnabled,
   remotePort,
   remotePassword,

@@ -43,21 +43,22 @@ class BackgroundBridge(
 ) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/background")
 
-    /** Whether the MQTT side currently holds its Wi-Fi ref (see
-     *  "setWifiLockHeld"); tracked so repeated asks stay one ref. */
-    private var wifiLockHeld = false
-
     init {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "start" -> {
-                    WakeWordService.start(context)
-                    result.success(true)
+                // The keep-alive service's inputs (see KioskSatelliteService):
+                // which features it is holding the process up for, and
+                // whether to hold the CPU through screen-off. The service
+                // runs regardless; these only change what it declares and
+                // what its notification says.
+                "setServiceReasons" -> {
+                    val reasons =
+                        (call.argument<List<String>>("reasons") ?: emptyList()).toSet()
+                    KioskSatelliteService.apply(
+                        context, reasons, call.argument<Boolean>("cpuAwake") ?: true)
+                    result.success(null)
                 }
-                "stop" -> {
-                    WakeWordService.stop(context)
-                    result.success(true)
-                }
+                "serviceStatus" -> result.success(KioskSatelliteService.status(context))
                 // A real quit, not SystemNavigator.pop (which only finishes the
                 // Activity and leaves the foreground service holding the process
                 // alive in the background). Stop the service so START_STICKY will
@@ -299,20 +300,6 @@ class BackgroundBridge(
                 // Android 10 forbids it, and "Display over other apps" is the
                 // exemption that gets it back. Without it the wake word is heard
                 // and nothing happens, which is worse than not listening.
-                // The MQTT client's Wi-Fi hold (issue #184): held while it is
-                // connected, so a device without background listening still
-                // keeps the radio awake through dark spells while its Home
-                // Assistant entities depend on the session. Idempotent: only
-                // an actual edge touches the shared holder's refcount.
-                "setWifiLockHeld" -> {
-                    val want = call.argument<Boolean>("held") == true
-                    if (want != wifiLockHeld) {
-                        wifiLockHeld = want
-                        if (want) WifiLockHolder.acquire(context)
-                        else WifiLockHolder.release()
-                    }
-                    result.success(null)
-                }
                 // The crash journal (issue #21): fatal traces persisted
                 // across the restart that follows them, surfaced into the
                 // app log at boot so reporters can paste them at leisure.
@@ -662,51 +649,31 @@ class BackgroundBridge(
         } catch (_: Exception) {
         }
         val handler = android.os.Handler(android.os.Looper.getMainLooper())
-        // A real quit also stands down the crash recovery hooks, or the
-        // heartbeat alarm would count the kill as a crash worth undoing.
+        // A real quit also stands down the crash recovery heartbeat, or the
+        // alarm would count the kill as a crash worth undoing.
         CrashSelfHeal.disarm(context)
-        // The Bluetooth proxy's foreground service is START_STICKY like the
-        // others: left started, Android revives it after the kill below and
-        // its null-intent restart reads as a crash, relaunching the app the
-        // user just closed. Stop it (and the ESPHome server it shields)
-        // before the process goes.
-        val btProxyWasRunning = BluetoothProxyService.isRunning
-        if (btProxyWasRunning) {
-            BluetoothProxyService.exiting = true
-            me.jxl.kiosk_satellite.btproxy.BluetoothProxyRuntime.stop()
-            BluetoothProxyService.stop(context)
-        }
-        if (WakeWordService.isRunning) {
-            // The keep-alive foreground service is what fights a clean exit: kill
-            // the process on a timer while it is still started and START_STICKY
-            // revives everything. So stop it and let its onDestroy end the
-            // process, by which point it has left its started state for good.
-            // The guard service was stopped first (disarm above), so by the
-            // time this onDestroy runs, both have left their started state.
-            WakeWordService.exiting = true
-            WakeWordService.stop(context)
-            // Safety net only: if onDestroy never lands, still leave. Long enough
-            // that the clean path always wins the race.
-            handler.postDelayed({
-                android.os.Process.killProcess(android.os.Process.myPid())
-            }, 2000)
-        } else if (CrashGuardService.isRunning) {
-            // Same dance when only the crash guard holds a started state:
-            // its onDestroy ends the process once the stop has landed.
-            CrashGuardService.exiting = true
-            CrashGuardService.stop(context)
+        // The ESPHome server has no Activity to notice the exit; close its
+        // sockets before the process goes.
+        me.jxl.kiosk_satellite.btproxy.BluetoothProxyRuntime.stop()
+        if (KioskSatelliteService.isRunning) {
+            // The keep-alive foreground service is what fights a clean exit:
+            // kill the process on a timer while it is still started and
+            // START_STICKY revives everything. So stop it and let its
+            // onDestroy end the process, by which point it has left its
+            // started state for good.
+            KioskSatelliteService.exiting = true
+            KioskSatelliteService.stop(context)
+            // Safety net only: if onDestroy never lands, still leave. Long
+            // enough that the clean path always wins the race.
             handler.postDelayed({
                 android.os.Process.killProcess(android.os.Process.myPid())
             }, 2000)
         } else {
-            // Nothing else keeping the process alive; end it once the
-            // task-removal above has drained off the main looper. If the
-            // proxy service was the one started state, give its stop the
-            // same grace the other services get, so it has left the
-            // started state for good before the kill.
+            // Nothing keeping the process alive; end it once the
+            // task-removal above has drained off the main looper.
             handler.postDelayed({
                 android.os.Process.killProcess(android.os.Process.myPid())
-            }, if (btProxyWasRunning) 2000 else 200)
+            }, 200)
         }
     }
 

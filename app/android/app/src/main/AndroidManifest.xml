@@ -49,19 +49,25 @@
         android:maxSdkVersion="30"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30"/>
-    <!-- Background listening. Android freezes cached processes whole, so without
-         a foreground service the mic, the WebView and our own Dart all stop the
-         moment another app is in front. -->
+    <!-- The Kiosk Satellite Service (KioskSatelliteService). Android freezes
+         cached processes whole, so without a foreground service the Home
+         Assistant session, MQTT, the ESPHome server, the mic, the WebView
+         and our own Dart all stop the moment the screen is off for long or
+         another app is in front. specialUse is its base type: the
+         connections the kiosk holds open regardless of features. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <!-- Attached while background listening is on: the type that makes the
+         microphone real rather than silent off screen. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
     <!-- Keeps motion detection's camera alive when the panel powers off.
          Newer Android revokes camera access from apps that are not visible
          unless a camera-type foreground service is running; the type is only
-         attached when the CAMERA permission is granted (WakeWordService). -->
+         attached when the camera is enabled and its permission granted. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA"/>
     <!-- Keeps BLE scan callbacks flowing while the app is not on screen:
          Android 14+ requires the connectedDevice type for that, and the type
-         requires this permission (BluetoothProxyService). -->
+         requires this permission; attached while the Bluetooth proxy is on. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
     <!-- The service's notification. Denied, the service still runs; it just says
          nothing, which is worse for the person in the room than for us. -->
@@ -135,23 +141,21 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+        <!-- The one keep-alive foreground service, always running: the
+             process's exemption from freezing and OEM kills, the Wi-Fi and
+             CPU holds through screen-off, and the sticky restart that
+             relaunches the kiosk after a native crash (issue #94; the
+             heartbeat alarm below is its backstop on OEMs that restart
+             sticky services lazily, see CrashSelfHeal). The types beyond
+             specialUse are attached per feature at runtime. -->
         <service
-            android:name=".WakeWordService"
+            android:name=".KioskSatelliteService"
             android:exported="false"
-            android:foregroundServiceType="microphone|camera"/>
-        <!-- The Bluetooth proxy's unfreeze exemption; the proxy itself lives
-             in btproxy/BluetoothProxyRuntime. See BluetoothProxyService. -->
-        <service
-            android:name=".BluetoothProxyService"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice"/>
-        <!-- Crash recovery (issue #94): the sticky restart of this empty
-             service is what relaunches the kiosk after a native crash, and
-             the heartbeat alarm below is its backstop on OEMs that restart
-             sticky background services lazily. See CrashSelfHeal. -->
-        <service
-            android:name=".CrashGuardService"
-            android:exported="false"/>
+            android:foregroundServiceType="specialUse|microphone|camera|connectedDevice">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the kiosk's Home Assistant, MQTT and ESPHome connections alive while the screen is off or another app is in front."/>
+        </service>
         <!-- The System UI guard: closes the notification shade and recents
              the moment they open while kiosk or lockdown protections hold.
              Enabled by the owner, once, in Android's Accessibility settings;

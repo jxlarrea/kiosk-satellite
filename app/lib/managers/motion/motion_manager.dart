@@ -35,10 +35,10 @@ import 'native_motion.dart';
 /// motion as its own MQTT binary_sensor, independent of the screensaver
 /// features. It ignores even the screen-on gate above, and a truly
 /// powered-off panel is its headline use: an already-open session now
-/// survives screen-off because the background listening service carries the
-/// camera foreground type (WakeWordService), the exemption newer Android
-/// gates on — without it the OS revokes within seconds of the panel going
-/// dark (measured on Android 16). Not every vendor honors the exemption:
+/// survives screen-off because the Kiosk Satellite Service carries the
+/// camera foreground type while the camera is enabled, the exemption newer
+/// Android gates on — without it the OS revokes within seconds of the panel
+/// going dark (measured on Android 16). Not every vendor honors the exemption:
 /// One UI 11 (issue #271) suspends the session seconds after screen-off
 /// regardless, and silently, so the native side runs a frame watchdog that
 /// reports the suspension as a stream error. On such hardware motion

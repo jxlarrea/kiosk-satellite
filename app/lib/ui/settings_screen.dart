@@ -2309,6 +2309,34 @@ class _CategoryContentState extends State<_CategoryContent> {
       ];
     }
 
+    if (widget.category == 'Device' && subpage == 'Kiosk Satellite Service') {
+      // The keep-alive service's page: what it is doing and why, its one
+      // setting, and the grants it needs for what it is doing. Live rows,
+      // mirrored on the remote (renderServicePage in service.js).
+      return [
+        const SectionHeading('Status'),
+        SearchLandingTarget(
+          id: 'x:service_status',
+          child: SettingsCard(
+            children: [_ServiceStatusTile(container: container)],
+          ),
+        ),
+        const SectionHeading('Keeping it running'),
+        SettingsCard(children: [_ServiceReasonsTile(container: container)]),
+        ...sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage) def,
+        ]),
+        const SectionHeading('Required system permissions'),
+        SearchLandingTarget(
+          id: 'x:service_permissions',
+          child: SettingsCard(
+            children: [_ServicePermissionsTile(container: container)],
+          ),
+        ),
+      ];
+    }
+
     if (widget.category == 'Device' && subpage == 'Remote Administration') {
       return [
         ...sectioned([
@@ -5378,6 +5406,337 @@ class _MicChannelTileState extends State<MicChannelTile> {
 /// Read on build and again on resume: these are Android dialogs and settings
 /// screens that report nothing back, so returning to the app is the only
 /// reliable moment to re-read them.
+/// The Kiosk Satellite Service's live status: whether it runs and holds its
+/// foreground exemption, the types it declares, and its locks. Polled while
+/// the page is up; the rows come from native state, so they say what the
+/// service is doing rather than what the app last asked of it.
+class _ServiceStatusTile extends StatefulWidget {
+  const _ServiceStatusTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_ServiceStatusTile> createState() => _ServiceStatusTileState();
+}
+
+class _ServiceStatusTileState extends State<_ServiceStatusTile> {
+  Map<String, Object?>? _status;
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    // After the first frame: the route check in _refresh reads an
+    // inherited widget, which initState may not.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+    _poll = Timer.periodic(const Duration(seconds: 3), (_) => _refresh());
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    if (!mounted) return;
+    // A pushed page leaves this one mounted underneath; nothing to show.
+    if (ModalRoute.of(context)?.isCurrent == false) return;
+    Map<String, Object?>? status;
+    try {
+      status = await widget.container.service.status();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _status = status);
+  }
+
+  static String _uptime(Object? ms) {
+    if (ms is! num) return '';
+    var s = ms ~/ 1000;
+    final d = s ~/ 86400;
+    final h = (s % 86400) ~/ 3600;
+    final m = (s % 3600) ~/ 60;
+    s = s % 60;
+    if (d > 0) return '${d}d ${h}h';
+    if (h > 0) return '${h}h ${m}m';
+    if (m > 0) return '${m}m';
+    return '${s}s';
+  }
+
+  Widget _row(String title, String subtitle, {IconData? icon, bool? ok}) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: icon == null
+          ? null
+          : Icon(icon, color: ok == false ? theme.colorScheme.error : null),
+      title: Text(title),
+      subtitle: Text(subtitle),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final st = _status;
+    if (st == null) {
+      return const ListTile(title: Text('Service'), subtitle: Text('Reading…'));
+    }
+    final running = st['running'] == true;
+    final foreground = st['foreground'] == true;
+    final error = st['error'] as String?;
+    final types = (st['types'] as List?)?.cast<String>() ?? const <String>[];
+    final ok = running && foreground;
+    final up = _uptime(st['uptimeMs']);
+    return Column(
+      children: separatedRows([
+        _row(
+          'Service',
+          !running
+              ? (error == null ? 'Stopped.' : 'Stopped: $error')
+              : foreground
+              ? (up.isEmpty ? 'Running.' : 'Running for $up.')
+              : 'Running without the foreground exemption.',
+          icon: ok ? Icons.check_circle_outline : Icons.error_outline,
+          ok: ok,
+        ),
+        _row(
+          'Foreground service types',
+          types.isEmpty ? 'None declared.' : types.join(', '),
+        ),
+        _row(
+          'CPU wake lock',
+          st['cpuAwake'] == false
+              ? 'Off: the setting below is off.'
+              : st['cpuLockHeld'] == true
+              ? 'Held: the screen is off.'
+              : st['screenInteractive'] != false
+              ? 'Released while the screen is on.'
+              : 'Not held.',
+        ),
+        _row(
+          'Wi-Fi lock',
+          st['wifiLockHeld'] == true
+              ? 'Held: the radio stays out of power saving.'
+              : 'Not held.',
+        ),
+        _row(
+          'Notification',
+          st['notificationsEnabled'] == false
+              ? 'Hidden: notifications are turned off for the app. The '
+                    'service runs regardless.'
+              : 'Shown in the notification shade while the service runs.',
+        ),
+      ]),
+    );
+  }
+}
+
+/// What the service is being kept alive for: one row per reason, read from
+/// the manager, which recomputes them on every relevant settings change.
+class _ServiceReasonsTile extends StatelessWidget {
+  const _ServiceReasonsTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: separatedRows([
+        for (final reason in container.service.reasons)
+          ListTile(title: Text(reason.title), subtitle: Text(reason.detail)),
+      ]),
+    );
+  }
+}
+
+/// The grants the service needs for what it is doing right now, in the
+/// Permissions Manager's three states. The three it needs whatever runs are
+/// always listed; a feature's grant appears only while that feature is one
+/// of the reasons.
+class _ServicePermissionsTile extends StatefulWidget {
+  const _ServicePermissionsTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_ServicePermissionsTile> createState() =>
+      _ServicePermissionsTileState();
+}
+
+class _ServicePermissionsTileState extends State<_ServicePermissionsTile>
+    with WidgetsBindingObserver {
+  SystemPermissions? _perms;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    SystemPermissions? perms;
+    try {
+      perms = await SystemPermissions.read();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _perms = perms);
+  }
+
+  Widget _row({
+    required bool? granted,
+    required bool needed,
+    required IconData missingIcon,
+    required String title,
+    required String held,
+    required String missing,
+    required String idle,
+    required Future<void> Function() onGrant,
+    String action = 'Grant',
+  }) {
+    final theme = Theme.of(context);
+    final ok = granted == true;
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return ListTile(
+      leading: Icon(
+        ok ? Icons.check_circle_outline : missingIcon,
+        color: ok
+            ? null
+            : needed
+            ? theme.colorScheme.error
+            : muted,
+      ),
+      title: Text(title),
+      subtitle: Text(
+        ok
+            ? held
+            : needed
+            ? missing
+            : idle,
+        style: ok || needed ? null : TextStyle(color: muted),
+      ),
+      trailing: ok
+          ? null
+          : TextButton(
+              onPressed: () async {
+                await onGrant();
+                await _refresh();
+              },
+              child: Text(action),
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = widget.container.service;
+    final needed = service.neededGrants();
+    final reasons = {for (final r in service.reasons) r.id};
+    final perms = _perms;
+    final micBlocked = perms?.microphoneBlocked == true;
+    return Column(
+      children: separatedRows([
+        _row(
+          granted: perms?.batteryUnrestricted,
+          needed: needed['batteryUnrestricted'] == true,
+          missingIcon: Icons.battery_alert_outlined,
+          title: 'Unrestricted battery',
+          held:
+              'Allows the process to run in the background without being paused or killed.',
+          missing:
+              'Android may pause the app when the screen is off, dropping '
+              'the Home Assistant connection and the MQTT entities with it.',
+          idle: '',
+          onGrant: BackgroundListening.requestBatteryUnrestricted,
+        ),
+        _row(
+          granted: perms?.displayOverOtherApps,
+          needed: needed['displayOverOtherApps'] == true,
+          missingIcon: Icons.open_in_new_off_outlined,
+          title: 'Display over other apps',
+          held: 'Kiosk Satellite can bring itself back in the foreground.',
+          missing:
+              'Without this the service cannot relaunch the kiosk after a '
+              'crash or a close from recents.',
+          idle: 'Needed to relaunch the kiosk after a crash.',
+          onGrant: () => requestOsPermission(Permission.systemAlertWindow),
+        ),
+        _row(
+          granted: perms?.notification,
+          needed: needed['notification'] == true,
+          missingIcon: Icons.notifications_off_outlined,
+          title: 'Notifications',
+          held: "The service's notification is shown.",
+          missing: "The service's notification is not shown.",
+          idle:
+              'Without it the service still runs; its notification is not '
+              'shown.',
+          onGrant: () => ensureOsPermission(Permission.notification),
+        ),
+        if (reasons.contains('listening'))
+          _row(
+            granted: perms?.microphone,
+            needed: needed['microphone'] == true,
+            missingIcon: Icons.mic_off_outlined,
+            title: 'Microphone',
+            held:
+                'Allows microphone usage for wake word detection and speech to text.',
+            missing: micBlocked
+                ? 'Blocked. Android will not ask again, so allow it in the '
+                      'app settings.'
+                : 'Background listening is on and nothing is listening.',
+            idle: 'Needed by background listening.',
+            action: micBlocked ? 'App settings' : 'Grant',
+            onGrant: () async {
+              if (micBlocked) {
+                await openOsAppSettings();
+              } else {
+                await ensureOsPermission(Permission.microphone);
+              }
+            },
+          ),
+        if (reasons.contains('camera'))
+          _row(
+            granted: perms?.camera,
+            needed: needed['camera'] == true,
+            missingIcon: Icons.videocam_off_outlined,
+            title: 'Camera',
+            held: 'Motion detection and snapshots can use the camera.',
+            missing: 'The camera is switched on and cannot be opened.',
+            idle: 'Needed by motion detection.',
+            onGrant: () => ensureOsPermission(Permission.camera),
+          ),
+        if (reasons.contains('bluetooth'))
+          _row(
+            granted: perms?.bluetooth,
+            needed: needed['bluetooth'] == true,
+            missingIcon: Icons.bluetooth_disabled_outlined,
+            title: 'Nearby devices',
+            held: 'The Bluetooth proxy can scan for nearby devices.',
+            missing: perms?.bluetoothPair == false
+                ? 'The Bluetooth proxy is switched on and cannot scan.'
+                : perms?.location == false
+                ? 'Bluetooth scanning needs the Location permission.'
+                : 'Location is off in the device settings, so Bluetooth '
+                      'scanning finds nothing.',
+            idle: 'Needed by the Bluetooth proxy to scan for devices.',
+            onGrant: SystemPermissions.requestBluetooth,
+          ),
+      ]),
+    );
+  }
+}
+
 class _DevicePermissionsTile extends StatefulWidget {
   const _DevicePermissionsTile({required this.container});
 

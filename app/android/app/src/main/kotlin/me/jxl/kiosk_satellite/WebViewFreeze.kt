@@ -84,22 +84,23 @@ class WebViewFreeze(
         return matched
     }
 
-    /** Returns how many WebViews were switched — 0 means the dashboard was
-     *  not found (mid-rebuild, or not loaded yet) and the caller may retry. */
+    /** Returns how many WebViews matched — 0 means the dashboard was not
+     *  found (mid-rebuild, or not loaded yet) and the caller may retry. A
+     *  view already in the asked-for state counts: the Dart side keeps its
+     *  own idea of the state, and reporting only changes let a view that
+     *  had fallen out of step with it read as "not found" forever, never
+     *  to be revealed again. */
     private fun setHidden(hidden: Boolean, prefix: String): Int {
         val target = if (hidden) View.INVISIBLE else View.VISIBLE
-        var changed = 0
-        forEachWebView(prefix) { view ->
+        return forEachWebView(prefix) { view ->
             if (view.visibility != target) {
                 if (target == View.VISIBLE) {
                     revealWithoutScrollbarFlash(view)
                 } else {
                     view.visibility = target
                 }
-                changed++
             }
         }
-        return changed
     }
 
     /**

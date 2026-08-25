@@ -17,12 +17,10 @@ import android.provider.Settings
  * arranged with the OS in advance, and two arrangements are made whenever the
  * kiosk Activity is on screen:
  *
- *  - [CrashGuardService], a do-nothing START_STICKY service. Android restarts
- *    a sticky service after its process dies, and that restart is the hook
- *    that relaunches the Activity. Historically this ride came only with
- *    [WakeWordService], so kiosks that never enabled background listening
- *    (the default) had no self-heal at all; the guard service is that same
- *    hook without the microphone, the notification, or the settings.
+ *  - [KioskSatelliteService], the START_STICKY foreground service that
+ *    keeps the app alive on every install. Android restarts a sticky
+ *    service after its process dies, and that restart is the hook that
+ *    relaunches the Activity.
  *
  *  - a heartbeat alarm, because sticky restarts are a promise some OEMs keep
  *    loosely and Fire OS is one of them. Alarms are held by the system, so
@@ -51,30 +49,34 @@ object CrashSelfHeal {
     private const val HEARTBEAT_MS = 3 * 60_000L
 
     /**
-     * Arm both recovery hooks, or stand them down where auto-reload is off.
-     * Called from the Activity's onResume: the flag it persists there
-     * (ks.crash.was_foreground) is what separates "died on screen" from
-     * "user left", so arming is only meaningful from the same place.
+     * Make sure the service is up and arm the heartbeat, or stand the
+     * heartbeat down where auto-reload is off. Called from the Activity's
+     * onResume: the flag it persists there (ks.crash.was_foreground) is
+     * what separates "died on screen" from "user left", so arming is only
+     * meaningful from the same place. The service runs either way; its
+     * relaunch gates below are what the toggle switches off.
      */
     fun arm(context: Context) {
+        KioskSatelliteService.ensureRunning(context)
         if (!autoReloadEnabled(context)) {
             disarm(context)
             return
         }
-        CrashGuardService.start(context)
         scheduleHeartbeat(context)
     }
 
-    /** A deliberate exit: nothing should bring the kiosk back. */
+    /**
+     * A deliberate exit: nothing should bring the kiosk back. The service
+     * itself is stopped by the exit path, which needs its onDestroy to end
+     * the process.
+     */
     fun disarm(context: Context) {
         cancelHeartbeat(context)
-        CrashGuardService.stop(context)
     }
 
     /**
      * Relaunch the kiosk if, and only if, it died while it was the thing on
-     * screen. Shared by every recovery hook; see the class comment on
-     * [WakeWordService] for the original rationale of each gate:
+     * screen. Shared by every recovery hook. The gates:
      *  - the auto-reload toggle is on (it already covers renderer crashes;
      *    a whole-process crash is the same promise kept one level deeper),
      *  - the app was on screen when it died (never yank whatever app the

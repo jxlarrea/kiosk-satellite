@@ -303,7 +303,8 @@ class BrowserManager extends Manager {
             );
             if (url == null) {
               return const CommandResult.fail(
-                  'no Music Assistant server address configured');
+                'no Music Assistant server address configured',
+              );
             }
             // Same wake-up a camera view gets: pressed from Home Assistant
             // the device may be dark, backgrounded, or on the screensaver,
@@ -572,7 +573,8 @@ class BrowserManager extends Manager {
               // for a while pays nothing.
               final onAt = _screenOnAt;
               if (onAt != null) {
-                final settle = const Duration(milliseconds: 1500) -
+                final settle =
+                    const Duration(milliseconds: 1500) -
                     DateTime.now().difference(onAt);
                 if (settle > Duration.zero) {
                   await Future<void>.delayed(settle);
@@ -654,9 +656,7 @@ class BrowserManager extends Manager {
   /// dashboard's origin do not report themselves as covering it.
   bool _screensaverIsOwnOrigin(String? view) {
     if (view != 'website') return false;
-    final url = Uri.tryParse(
-      _settings.get(defs.screensaverWebsiteUrl).trim(),
-    );
+    final url = Uri.tryParse(_settings.get(defs.screensaverWebsiteUrl).trim());
     return url != null && url.hasScheme && isDashboardOrigin(url);
   }
 
@@ -669,6 +669,10 @@ class BrowserManager extends Manager {
   bool _screenIsOn = true;
   final _coveredBy = <String>{};
   bool _frozen = false;
+
+  /// What the last sync wanted, so the next one can tell a thaw edge from
+  /// a steady "not frozen" (see _syncFreeze).
+  bool _wantedFrozen = false;
   Timer? _freezeDelay;
 
   /// Whether the dashboard should be hidden right now: covered by a
@@ -749,9 +753,33 @@ class BrowserManager extends Manager {
   /// overlays alone.
   Future<void> _syncFreeze() async {
     final want = _wantFrozen;
-    if (want == _frozen) return;
+    final wasWanted = _wantedFrozen;
+    _wantedFrozen = want;
     final prefix = _origin(_currentUrl);
+    if (want == _frozen) {
+      // Nothing to do by our own books, but the edge from wanted to not
+      // wanted still reveals: a freeze that was asked for and (by these
+      // books) never took can still have left the native view hidden (it
+      // falls out of step through a rebuild or a navigation while hidden),
+      // and with this flag false every path here used to return early,
+      // leaving a dashboard that never came back (a dead WebView after a
+      // screensaver dismissal, seen on a Tab S8). Revealing a visible view
+      // is a no-op, so the edge costs nothing.
+      if (!want && wasWanted) {
+        unawaited(
+          WebViewFreeze.setHidden(hidden: false, urlPrefix: prefix ?? 'http'),
+        );
+      }
+      return;
+    }
     if (prefix == null) {
+      // No dashboard origin to match on; a thaw still reveals whatever is
+      // hidden (every page is meant to be visible now), a freeze waits for
+      // the URL.
+      if (_frozen) {
+        await WebViewFreeze.setHidden(hidden: false, urlPrefix: 'http');
+        await runJs(maskVisibilityJs(false));
+      }
       _frozen = false;
       return;
     }
@@ -1240,8 +1268,7 @@ class BrowserManager extends Manager {
     // the frontend's re-subscribe runs on them.
     if (await ensureHaConnected(
       timeout:
-          healthRepairTimeout ??
-          Duration(seconds: renderingFrozen ? 20 : 10),
+          healthRepairTimeout ?? Duration(seconds: renderingFrozen ? 20 : 10),
     )) {
       log.info(name, 'dashboard connection recovered');
       _deadChecks = 0;
@@ -1362,8 +1389,7 @@ class BrowserManager extends Manager {
           // Nudges the frontend's reconnect and polls; a page mid-boot
           // (connection object present, socket still opening) passes here
           // without a disruptive reload.
-          if (!await ensureHaConnected(
-              timeout: const Duration(seconds: 8))) {
+          if (!await ensureHaConnected(timeout: const Duration(seconds: 8))) {
             await _renavigate();
           }
         case 'shell':

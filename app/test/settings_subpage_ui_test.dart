@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart';
@@ -408,6 +409,96 @@ void main() {
       );
       // Nothing from the page above.
       expect(find.text(deviceName.title), findsNothing);
+    });
+
+    testWidgets('the Kiosk Satellite Service page shows status, reasons, '
+        'its setting and its grants', (tester) async {
+      await boot();
+      // The native service, answering as a running one.
+      const channel = MethodChannel('kiosk_satellite/background');
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'serviceStatus') {
+              return <String, Object?>{
+                'running': true,
+                'foreground': true,
+                'types': ['specialUse'],
+                'cpuLockHeld': false,
+                'wifiLockHeld': true,
+                'screenInteractive': true,
+                'uptimeMs': 125000,
+                'notificationsEnabled': true,
+              };
+            }
+            return null;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+      tester.view.physicalSize = const Size(500, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(home: SettingsScreen(container: container)),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Device').first);
+      await settle(tester);
+
+      // Its entry row leads the page's rows, ahead of Remote Administration.
+      final service = tester.getTopLeft(
+        find.widgetWithText(ListTile, 'Kiosk Satellite Service'),
+      );
+      final remote = tester.getTopLeft(
+        find.widgetWithText(ListTile, 'Remote Administration'),
+      );
+      expect(service.dy, lessThan(remote.dy));
+      expect(find.text(serviceCpuAwake.title), findsNothing);
+
+      await tester.tap(
+        find.widgetWithText(ListTile, 'Kiosk Satellite Service'),
+      );
+      await settle(tester);
+
+      expect(
+        find.widgetWithText(AppBar, 'Kiosk Satellite Service'),
+        findsOneWidget,
+      );
+      // Top to bottom: status, reasons, the setting, the grants.
+      final status = tester.getTopLeft(
+        find.widgetWithText(SectionHeading, 'Status'),
+      );
+      final reasons = tester.getTopLeft(
+        find.widgetWithText(SectionHeading, 'Keeping it running'),
+      );
+      final options = tester.getTopLeft(
+        find.widgetWithText(SectionHeading, 'Options'),
+      );
+      final grants = tester.getTopLeft(
+        find.widgetWithText(SectionHeading, 'Required system permissions'),
+      );
+      expect(status.dy, lessThan(reasons.dy));
+      expect(reasons.dy, lessThan(options.dy));
+      expect(options.dy, lessThan(grants.dy));
+      // The mocked service's own report, uptime included.
+      expect(find.text('Running for 2m.'), findsOneWidget);
+      expect(find.text('specialUse'), findsOneWidget);
+      // The base reason is always listed.
+      expect(find.text('Home Assistant connection'), findsOneWidget);
+      expect(find.text(serviceCpuAwake.title), findsOneWidget);
+      // The three grants the service needs whatever runs; no feature
+      // reason is on, so no feature grant.
+      expect(find.text('Unrestricted battery'), findsOneWidget);
+      expect(find.text('Display over other apps'), findsOneWidget);
+      expect(find.text('Notifications'), findsOneWidget);
+      expect(find.text('Microphone'), findsNothing);
+      // Nothing from the page above.
+      expect(find.text(deviceName.title), findsNothing);
+
+      // Back off the page so its status poll stops with it.
+      await tester.pageBack();
+      await settle(tester);
     });
   });
 

@@ -5,7 +5,6 @@ import 'dart:math' show Random;
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter/widgets.dart'
     show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 
@@ -199,9 +198,6 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   String get _base => 'kiosksatellite/$_deviceId';
   String get _availabilityTopic => '$_base/availability';
 
-  /// The native side's Wi-Fi hold, shared with the keep-alive service (see
-  /// WifiLockHolder in the Android sources).
-  static const _background = MethodChannel('kiosk_satellite/background');
   String get _prefix {
     final p = _settings.get(defs.mqttDiscoveryPrefix).trim();
     return p.isEmpty ? 'homeassistant' : p;
@@ -971,18 +967,6 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     }
     _retryDelay = const Duration(seconds: 5);
 
-    // Hold the Wi-Fi radio awake for the connection's lifetime (issue
-    // #184): with the screen off, radio power saving delays or drops
-    // traffic and the keepalive dance flaps the entities. Held across
-    // auto-reconnects on purpose — the radio matters most exactly while
-    // the session struggles. Best-effort: off Android there is nothing
-    // to hold.
-    unawaited(
-      _background
-          .invokeMethod('setWifiLockHeld', {'held': true})
-          .catchError((_) {}),
-    );
-
     _updatesSub = link.messages.listen((m) => _onMessage([m]));
     for (final topic in [
       '$_base/screen/set',
@@ -1186,13 +1170,6 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       link.publishString(_availabilityTopic, 'offline', retain: true);
     }
     link.disconnect();
-    // The feature is off (or the manager is going down): let the radio
-    // sleep again unless another holder still needs it.
-    unawaited(
-      _background
-          .invokeMethod('setWifiLockHeld', {'held': false})
-          .catchError((_) {}),
-    );
   }
 
   // ── Incoming commands ───────────────────────────────────────────────

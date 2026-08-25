@@ -261,36 +261,6 @@ class WakeWordManager extends Manager implements NativeAudioSource {
   /// back is the OS settings screen. Both UIs offer that when this is true.
   bool get needsAppSettings => failure == EngineFailure.micBlocked;
 
-  /// Whether the foreground service is up, so we only cross the platform
-  /// channel when the answer actually changes — and never at all where the
-  /// setting is off, which is every kiosk that stays in front.
-  bool _serviceRunning = false;
-
-  /// Run the keep-alive service exactly while there is something to keep alive.
-  ///
-  /// Without it Android freezes the whole process the moment another app covers
-  /// us: mic, WebView, Voice Satellite's websocket and our own Dart, together.
-  /// See [BackgroundListening].
-  Future<void> _syncBackgroundService() async {
-    final want = _settings.get(defs.wakeWordBackground) && _engine.running;
-    if (want == _serviceRunning) return;
-    try {
-      if (want) {
-        await BackgroundListening.start();
-      } else {
-        await BackgroundListening.stop();
-      }
-      _serviceRunning = want;
-      log.info(
-          name, want ? 'background listening on' : 'background listening off');
-    } catch (e) {
-      // A platform with no such service (tests, desktop). Nothing to keep
-      // alive, so nothing is broken by not keeping it alive.
-      log.warn(name, 'background service unavailable: $e');
-      _serviceRunning = false;
-    }
-  }
-
   /// Crashes seen in the current window, and when that window opened. A
   /// detector that dies once is worth restarting silently; one that dies
   /// over and over is a device this build cannot listen on, and pretending
@@ -1045,7 +1015,6 @@ class WakeWordManager extends Manager implements NativeAudioSource {
         await _engine.pauseDetection();
       }
     }
-    await _syncBackgroundService();
     bus.publish(WakeWordStateChanged(
         active: _active, listening: listening, muted: _muted));
   }

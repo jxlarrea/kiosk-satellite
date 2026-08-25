@@ -16,9 +16,11 @@ import me.jxl.kiosk_satellite.btproxy.EspService
  *
  * Methods:
  *  - start {friendlyName, psk (base64, 32 bytes), port, projectVersion,
- *    nodeName, ...}: boots the runtime and its foreground service, and
- *    answers with the node name it came up under. Idempotent.
- *  - stop: tears both down. Idempotent.
+ *    nodeName, ...}: boots the runtime and answers with the node name it
+ *    came up under. Idempotent. The process is kept alive for it by
+ *    KioskSatelliteService, which the Dart side tells about the server
+ *    through its reasons.
+ *  - stop: tears it down. Idempotent.
  *  - status: runtime counters and recent log lines for diagnostics.
  *
  * The Dart manager owns policy (the enable setting, PSK generation, restart
@@ -78,7 +80,6 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                 },
                             ),
                         )
-                        BluetoothProxyService.start(context)
                         // The name it came up under: the Dart side writes
                         // it back into settings, so the node name a user
                         // sees is the one on the wire.
@@ -89,7 +90,6 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                 }
                 "stop" -> {
                     BluetoothProxyRuntime.stop()
-                    BluetoothProxyService.stop(context)
                     result.success(null)
                 }
                 "status" -> result.success(BluetoothProxyRuntime.status())
@@ -120,6 +120,5 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
     fun dispose() {
         channel.setMethodCallHandler(null)
         BluetoothProxyRuntime.stop()
-        BluetoothProxyService.stop(context)
     }
 }

@@ -221,7 +221,7 @@ from the default HACS repository.
 - [Gestures](docs/gestures.md): touch gestures mapped to configurable actions.
 - [Microphone](docs/microphone.md): capture mode, gain and AGC, for devices whose microphone reads too quiet.
 - [Optimizations](docs/optimizations.md): the connection and performance switches, what each one does and when to use it.
-- [Permissions](docs/permissions.md): every Android grant the app uses, what each is for, and adb commands to grant them all at once.
+- [Permissions](docs/permissions.md): every Android grant the app uses, what each is for, adb commands to grant them all at once, and the Kiosk Satellite Service that keeps the app alive with the screen off.
 
 ## License
 

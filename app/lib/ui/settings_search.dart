@@ -306,6 +306,22 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     anchorId: 'x:btproxy_permissions',
   ),
   SettingsSearchEntry(
+    category: 'Device',
+    title: 'Service status',
+    description:
+        'Whether the Kiosk Satellite Service is running and what it is '
+        'keeping alive.',
+    anchorId: 'x:service_status',
+    subpage: 'Kiosk Satellite Service',
+  ),
+  SettingsSearchEntry(
+    category: 'Device',
+    title: 'Required system permissions',
+    description: 'The grants the Kiosk Satellite Service needs.',
+    anchorId: 'x:service_permissions',
+    subpage: 'Kiosk Satellite Service',
+  ),
+  SettingsSearchEntry(
     category: 'Sendspin',
     title: 'Player to control',
     description:

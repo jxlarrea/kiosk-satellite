@@ -41,6 +41,10 @@ object WifiLockHolder {
     private var lock: WifiManager.WifiLock? = null
     private var refs = 0
 
+    /** Whether the radio is currently being held, for the status page. */
+    val isHeld: Boolean
+        get() = synchronized(this) { lock?.isHeld == true }
+
     @Synchronized
     fun acquire(context: Context) {
         refs++
