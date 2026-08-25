@@ -7,9 +7,10 @@ moment someone touches it, says the wake word, or walks up to it.
 One design decision runs through everything here: the screensaver never
 turns the display off. Even the Black mode is the backlight at zero
 behind a black overlay, with the app alive underneath, so motion wake,
-wake word detection, MQTT and the remote admin (including its live view)
-all keep working through the night. Real display power is a separate
-thing, the Screen light entity in the [MQTT integration](mqtt.md).
+wake word detection, the ESPHome server and the remote admin (including
+its live view) all keep working through the night. Real display power is
+a separate thing, the Screen light entity in the
+[ESPHome integration](esphome.md).
 
 ## Setup
 
@@ -63,7 +64,7 @@ follow the device language.
 | Background photo | A photo behind the clock instead of the solid color, any face. |
 
 The **Background photo** is picked on the device (the picker copies it
-into app storage), or set remotely: the remote admin and the MQTT
+into app storage), or set remotely: the remote admin and the ESPHome
 **Clock background** text entity write a device file path into the same
 setting, applied live even while the clock is on screen, and an empty
 value clears it. The photo gets the same fill treatment as
@@ -282,16 +283,16 @@ through a real screen-off on most devices; some vendors suspend it
 anyway, One UI on Android 11 among them, and there the Black
 screensaver is the way to keep motion wake, see [Camera](camera.md)),
 the wake word, the
-MQTT **Dismiss screensaver** button, and a Home Assistant automation
-calling `stopScreensaver`. All of them land on the dashboard,
+ESPHome **Screensaver active** switch turned off, and a Home Assistant
+automation calling `stopScreensaver`. All of them land on the dashboard,
 not on the screensaver. The power button and double-tap-to-wake count as
 activity like a touch, so they land on the dashboard too (under
 Lockdown Mode the screensaver stays, as it does for motion).
 The one wake that keeps the screensaver is the app switching its own
-panel on, the MQTT **Screen** switch: an automation turning a photo
+panel on, the ESPHome **Screen** light: an automation turning a photo
 frame on in the morning gets its photos back, with a fresh screen-off
-countdown, and can call the dismiss button when it wants the dashboard
-instead.
+countdown, and can turn **Screensaver active** off when it wants the
+dashboard instead.
 
 A day-to-day example: photos during the day, Black in the evening via
 the [schedule](#schedule), and Turn screen off after set to 10 minutes.
@@ -406,7 +407,7 @@ like motion.
 The idle timeout is the normal path in. On demand, the screensaver can
 be started by the kiosk menu's **Start Screensaver** entry (its presence
 in restricted kiosk mode is an Allowed Action), a
-[gesture](gestures.md) bound to **Start the screensaver**, the MQTT
+[gesture](gestures.md) bound to **Start the screensaver**, the ESPHome
 **Screensaver active** switch, or the `startScreensaver` command on the
 [remote](remote-api.md) and [JavaScript](js-api.md) APIs.
 
@@ -427,7 +428,7 @@ Any touch dismisses it and resets the timer. Beyond touch:
   **"Now Playing" instead of the screensaver** mode is on, in which case
   the screensaver becomes a full-screen now-playing view while music
   plays (see [Sendspin](sendspin.md)).
-- The MQTT **Screensaver** switch (the master enable) takes a showing
+- The ESPHome **Screensaver** switch (the master enable) takes a showing
   screensaver down when turned off; **Screensaver active** turned off
   and the **Postpone screensaver** button dismiss one and re-arm the
   timeout.
@@ -470,12 +471,12 @@ its own page: [At a Glance](at-a-glance.md).
 
 ## Home Assistant
 
-With [MQTT publishing](mqtt.md) enabled, the screensaver is fully
-remote-controllable: the **Screensaver** master switch, the
+With [ESPHome](esphome.md) **Expose kiosk entities** on, the screensaver
+is fully remote-controllable: the **Screensaver** master switch, the
 **Screensaver active** switch (start and dismiss), the **Postpone
 screensaver** button for automations that keep the display awake from an
 external sensor, the **Screensaver mode** and **Clock style** selects,
 the **Clock background** text entity, the **Screensaver brightness**
 switch and level, and the **Screensaver motion detection** and
-**Screensaver face detection** switches. The full list, with topics, is
-in the [MQTT doc](mqtt.md).
+**Screensaver face detection** switches, all on the same ESPHome device
+as the rest of the kiosk's entities.

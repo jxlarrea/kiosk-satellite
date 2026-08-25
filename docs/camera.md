@@ -33,7 +33,7 @@ page existed had the camera enabled automatically on upgrade, once.
 | Enable camera | off | The master switch. Everything below depends on it. |
 | Camera | Front | Front or Back. One pick for every camera feature. On single-camera devices the picker becomes a plain label. |
 | Snapshot resolution | 480p | 480p, 720p or 1080p on the 4:3 ladder, mapped to the nearest size the hardware offers. A 480p frame is about 30 KB. |
-| Continuous snapshots | off | Publish a fresh snapshot to Home Assistant over MQTT at a fixed interval. |
+| Continuous snapshots | off | Capture a fresh snapshot for Home Assistant at a fixed interval. |
 | Snapshot interval | 60 | Seconds between snapshots, 5 to 300. The first frame fires immediately when the timer starts. |
 
 ## Snapshots
@@ -45,8 +45,8 @@ A frame is captured and published to the Camera entity:
 - On the interval, with **Continuous snapshots** on.
 - Once per motion session, when motion detection spots someone: one frame
   when they arrive, not a stream of frames while they stand there.
-- Once on every broker connect, so the entity is never blank after a Home
-  Assistant restart.
+- Whenever Home Assistant asks the camera entity for a picture, so a
+  dashboard card or a restart never finds it blank.
 
 One capture runs at a time; an overlapping request reports that a
 snapshot is already in progress. The camera is opened for the capture and
@@ -55,8 +55,9 @@ themselves, not a permanently running camera. Snapshots need the app in
 the foreground; a capture attempted while another app covers the kiosk
 reports that the camera is unavailable in the background.
 
-The latest frame is retained on the MQTT broker until it is replaced, and
-is blanked when the camera is disabled.
+Home Assistant fetches the latest frame from the camera entity whenever it
+needs one, and a fetch captures a fresh frame; the entity goes away while
+the camera is disabled.
 
 ## Motion detection
 
@@ -114,7 +115,7 @@ The tuning lives under Camera, **Motion Detection**:
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Motion sensor | off | The MQTT `binary_sensor`. |
+| Motion sensor | off | The **Motion** `binary_sensor` on the ESPHome device. |
 | Clear after | 5 | Seconds without motion before the sensor reads clear, 1 to 300. |
 | Motion frame rate | 2 | Frames per second the camera checks. Lower is lighter on the CPU; 2 is plenty to notice someone approaching. |
 | Motion sensitivity | 70 | 1 to 100. Higher trips on smaller movements. |
@@ -150,22 +151,23 @@ motion with its own **Dismiss "Now Playing" on motion** setting on.
 
 ## Home Assistant
 
-With [MQTT publishing](mqtt.md) enabled, the camera adds to the Kiosk
-Satellite device:
+With [ESPHome](esphome.md) **Expose kiosk entities** on, the camera adds
+to the Kiosk Satellite device:
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Camera | camera | The latest snapshot. Nothing streams, so its own state stays `idle`. |
-| Take camera snapshot | button | Capture and publish a fresh frame. |
+| Camera | camera | The latest snapshot. Nothing streams, so its own state stays `idle`. It takes the device's single ESPHome camera slot, so the Screenshot camera steps aside while it exists. |
+| Take camera snapshot | button | Capture a fresh frame and hand it to Home Assistant. |
 | Last camera snapshot | sensor | When the current frame was captured, as a timestamp. This is what lets an automation react to a fresh frame arriving. |
-| Motion | binary_sensor | Only with **Motion sensor** on. Reads motion for the configured **Clear after** window; the clearing is done by Home Assistant's `off_delay`, so a reconnect never replays stale motion. |
+| Motion | binary_sensor | Only with **Motion sensor** on. Reads motion for the configured **Clear after** window, then clears itself. |
 | Camera enabled | switch | The master toggle, remotely. Exists whenever the hardware does, even with the camera off, so an automation can arm the camera only when a room-wide sensor says someone is home. |
 | Screensaver motion detection | switch | The Dismiss on motion toggle, remotely. Pairs with Camera enabled for staged wake-ups. |
 | Screensaver face detection | switch | The Dismiss on face toggle, remotely. Motion keeps precedence on the device, so an automation that wants faces by day and motion by night flips the motion switch. |
-| Camera facing | select | The **Camera** pick, remotely: Front or Back, for every camera feature at once. Switching it publishes a fresh frame from the newly picked camera a moment later, so an automation can flip a phone to its back camera as a baby monitor and back again. Like the switches it works with the camera off. Only on devices with both cameras. |
+| Camera facing | select | The **Camera** pick, remotely: Front or Back, for every camera feature at once. Switching it captures a fresh frame from the newly picked camera a moment later, so an automation can flip a phone to its back camera as a baby monitor and back again. Like the switches it works with the camera off. Only on devices with both cameras. |
 
-Disabling the camera retracts the camera and motion entities and blanks
-the retained frame; the switches and the facing select remain, since
+Disabling the camera retracts the camera and motion entities, and the
+Screenshot camera takes the camera slot back; the switches and the facing
+select remain, since
 they are how you turn it back on and point it the right way first. On
 camera-less hardware none of these entities exist.
 
@@ -205,9 +207,9 @@ at `GET /api/camera/snapshot` for anything else that wants it (see the
 
 - Motion analysis happens entirely on the device, and motion frames are
   never stored or transmitted; only the fact of motion leaves the app.
-- The only picture that leaves the device is the snapshot JPEG published
-  to your own MQTT broker, where it is retained until replaced or until
-  the camera is disabled.
+- The only picture that leaves the device is the snapshot JPEG handed to
+  your own Home Assistant over the ESPHome connection, one frame per
+  request.
 - The **Enable webcam access** setting under Web Content is unrelated: it
   governs whether the dashboard web page may use the camera, not this
   feature.

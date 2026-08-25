@@ -26,14 +26,14 @@ permissions behind in-app updates. Nothing to do.
 | Microphone | Wake word detection and speech to text, plus any dashboard page that asks for the microphone. |
 | Camera | Motion detection, camera snapshots, and pages that ask for the camera. |
 | Notifications | The Kiosk Satellite Service's ongoing notification. Only a runtime prompt on Android 13+; older versions allow it by default. The service runs without it; its notification just is not shown. |
-| Unrestricted battery | Keeps the Home Assistant and MQTT connections alive with the screen off. Matters on every install, voice or not. |
+| Unrestricted battery | Keeps the Home Assistant and ESPHome connections alive with the screen off. Matters on every install, voice or not. |
 | Display over other apps | Lets the app bring itself back to the front after a crash, an update, or a wake word heard behind another app, lets the lockdown shield cover the whole screen, lets the App Launcher's **Return automatically** see touches in the other app so it only returns from an idle one, and is what **Screen on** falls back on where the panel ignores the app's wake lock. |
 | Modify system settings | Writing the panel's real brightness instead of dimming the app window. |
 | All files access | The File Manager's shared storage root. Without it the manager still works on the app's own folder. Android 11+; on older versions the storage permission below is the whole grant. |
-| Usage access | Lets the MQTT **Foreground app** sensor name whichever app is on screen. Without it the sensor still reports Kiosk Satellite while the kiosk is frontmost, just never another app. |
+| Usage access | Lets the ESPHome **Foreground app** sensor name whichever app is on screen. Without it the sensor still reports Kiosk Satellite while the kiosk is frontmost, just never another app. |
 | Device admin | The real **Screen off**: powers the panel down instead of only blacking it out. |
 | Location | Only used by dashboard pages that ask for the device location. Nothing native uses it, except BLE scanning on Android 11 and older, where the OS requires it (see Nearby devices). |
-| Nearby devices | The Bluetooth scan and connect pair behind the [Bluetooth proxy](bluetooth-proxy.md). A runtime prompt on Android 12+; granted at install before that, where Android instead requires Location plus location services on for scan results. |
+| Nearby devices | The Bluetooth scan and connect pair behind the [Bluetooth proxy](esphome.md). A runtime prompt on Android 12+; granted at install before that, where Android instead requires Location plus location services on for scan results. |
 | System UI guard | An accessibility service that closes the notification shade and recents while kiosk protections hold. See [Kiosk and Lockdown](kiosk.md#required-system-permissions). |
 | Media library | Reading the folder the Local Media screensaver was pointed at. |
 
@@ -104,7 +104,7 @@ the same page in the remote admin): every row should read Granted.
 
 Android freezes a cached process whole, and the battery managers some
 manufacturers add kill a backgrounded app outright. Either way the Home
-Assistant session, MQTT, the ESPHome server, the wake word engine and the
+Assistant session, the ESPHome server, the wake word engine and the
 remote admin all stop together the moment the screen has been off for a
 while or another app is in front. A running foreground service is the
 exemption from both, so the app runs one, the **Kiosk Satellite Service**,
@@ -115,8 +115,8 @@ says what the service is doing.
 The features only add to what it declares. On its own it keeps the Home
 Assistant connection; background listening adds the microphone, an enabled
 camera adds the camera, the Bluetooth proxy adds Bluetooth scanning, and
-MQTT, the ESPHome server, remote administration and the kiosk protections
-are listed so the page below says why the process is being held up. The
+the ESPHome server, remote administration and the kiosk protections are
+listed so the page below says why the process is being held up. The
 service is also what relaunches the kiosk after a crash or a close from
 the recents screen.
 
@@ -142,7 +142,7 @@ that is the next place to look.
 ## Keeping Wi-Fi awake through screen off on Android 14+
 
 Whenever anything that must stay reachable is running (background
-listening, the ESPHome server, MQTT), the app holds Android's
+listening, the ESPHome server), the app holds Android's
 high-performance Wi-Fi lock, which keeps the radio out of power saving
 while the screen is off. From Android 14 the OS silently downgrades that
 lock to a "low latency" type that is only in effect while the screen is

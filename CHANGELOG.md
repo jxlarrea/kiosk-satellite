@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- The docs now describe every Home Assistant entity and control on the ESPHome integration, ahead of the MQTT integration's removal. The MQTT doc is the one place MQTT is still covered.
+
 ### Fixed
 - The screensaver dimmed the screen under other apps. Its idle clock kept counting while the kiosk was behind an app opened from the App Launcher, a gesture or Home Assistant, and when it ran out the screensaver started anyway: nobody saw it, but the brightness it sets is the device's, so the app in front went dim, and with Turn screen off after set the panel could even power off under someone using it. The clock now stops the moment the kiosk goes behind another app, a screensaver already up ends so the app gets the brightness back, and the clock starts over when the kiosk returns. A dark panel is told apart from another app, so the screen going off still leaves a running screensaver in place as before.
 

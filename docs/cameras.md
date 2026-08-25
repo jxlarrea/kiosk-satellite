@@ -119,13 +119,13 @@ fight over the display.
 
 ## Home Assistant
 
-When MQTT publishing is enabled, every camera view creates a button on the
-Kiosk Satellite device:
+With [ESPHome](esphome.md) **Expose kiosk entities** on, every camera view
+creates a button on the Kiosk Satellite device:
 
 - **Show &lt;view name&gt;**
 - **Close camera view**
-- **Active camera view**, a sensor with the current view name and stable view
-  ID attributes
+- **Active camera view**, a sensor with the current view name
+- **Camera view**, a select that opens any view by name, or **Closed**
 
 Use the normal `button.press` action in a Home Assistant automation to show a
 specific view. View buttons use stable internal IDs, so renaming a view does
@@ -176,7 +176,7 @@ streaming until someone touches the screen.
 
 The countdown restarts when a camera is focused, since a tap on the view is
 someone using it, and it applies however the view was opened: a gesture, the
-menu, MQTT, or the remote admin. The [camera screensaver](#camera-screensaver)
+menu, Home Assistant, or the remote admin. The [camera screensaver](#camera-screensaver)
 is unaffected, since it is the screensaver showing cameras rather than a view
 over the dashboard.
 

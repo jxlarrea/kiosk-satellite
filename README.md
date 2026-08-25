@@ -107,8 +107,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   The device carries the full entity catalog: a screen light, volume
   sliders, screensaver and settings switches, action buttons, camera view
   and dashboard selects, an update entity, a live camera, and the whole
-  diagnostics set. (Entities over [MQTT](docs/mqtt.md) still work, with
-  ESPHome now the preferred path.)
+  diagnostics set.
 
 &bull; **Bluetooth proxy**: the same ESPHome connection relays BLE
   advertisements and carries active device connections, exactly like an
@@ -209,7 +208,7 @@ from the default HACS repository.
 - [JavaScript API](docs/js-api.md): `window.kioskSatellite`, wake-word handoff protocol
 - [Remote API](docs/remote-api.md): REST + WebSocket surface
 - [ESPHome](docs/esphome.md): native Home Assistant entities and a Bluetooth proxy over the ESPHome API.
-- [MQTT](docs/mqtt.md): Home Assistant entities via MQTT discovery, topics, troubleshooting
+- [MQTT](docs/mqtt.md): the MQTT integration, on its way out in favor of ESPHome and kept for existing setups until it is removed
 - [Camera streams](docs/cameras.md): Go2RTC import, camera views, and Home Assistant controls
 - [Screensavers](docs/screensavers.md): the modes, schedule, brightness, motion wake, and what starts and dismisses them.
 - [Device camera](docs/camera.md): the tablet's own camera as a Home Assistant still camera and motion detector.

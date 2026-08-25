@@ -2,10 +2,9 @@
 
 Serves the kiosk to Home Assistant as a native ESPHome device: its
 sensors and controls appear as entities on the device Home Assistant
-discovers automatically, with no MQTT broker and no custom integration
-anywhere. This is the integration path going forward; the MQTT
-integration keeps working but will be sunset, so new setups should start
-here and existing ones migrate at their own pace.
+discovers automatically, with no broker and no custom integration
+anywhere. This is the one integration path: every Home Assistant entity
+the kiosk offers lives here.
 
 The same connection optionally carries a full **Bluetooth proxy**: BLE
 advertisements from nearby devices (BTHome sensors, Xiaomi and Govee
@@ -74,19 +73,14 @@ are always allowed through, so pairing flows keep working.
 ## Kiosk entities
 
 Turn on **Expose kiosk entities** and the kiosk's sensors and controls
-come with the integration, the full catalog the MQTT
-integration publishes, under the device Home Assistant
-already discovered: the Screen light with brightness, screensaver and
-settings switches, volume sliders, the action buttons, the Camera view
-and Dashboard view selects, the Update entity with install-from-HA, a
-camera streaming real frames, and the complete diagnostics set. Entity
-names mirror the MQTT ones, so a migrating automation only swaps the
-device half of the entity id. While the MQTT integration is enabled
-alongside, entities exist twice, once per integration, and Home
-Assistant suffixes whichever registered second; migrate automations to
-the ESPHome ones at your own pace, then turn MQTT off. The toggle is off by default so that
-enabling ESPHome just for the Bluetooth proxy never creates duplicates
-next to an existing MQTT setup; flip it when you are ready to migrate.
+come with the integration, under the device Home Assistant already
+discovered: the Screen light with brightness, screensaver and settings
+switches, volume sliders, the action buttons, the Camera view and
+Dashboard view selects, the Update entity with install-from-HA, a camera
+streaming real frames, and the complete diagnostics set. The toggle is
+off by default so that enabling ESPHome just for the Bluetooth proxy adds
+nothing to Home Assistant but the proxy; flip it when the kiosk should be
+seen and controlled from Home Assistant.
 
 Two switches join the set on a kiosk with a Voice Satellite assigned to
 it: **Voice Satellite** starts and stops the engine in the page, the same
@@ -101,9 +95,9 @@ satellite, which the setup wizard and the Voice Satellite settings page
 both record; binding or unbinding one re-lists the entities the next time
 the server starts.
 
-One deliberate difference from the MQTT catalog: the ESPHome camera
-protocol allows exactly one camera per device, so the kiosk serves its
-device camera when present and enabled, else the screenshot camera.
+The ESPHome camera protocol allows exactly one camera per device, so the
+kiosk serves its device camera when present and enabled, else the
+screenshot camera.
 The Camera view and Dashboard view option lists are learned when the
 server starts; after adding views, toggle ESPHome off and on (or
 restart the app) to refresh them. A note on Connectivity: with ESPHome
@@ -112,18 +106,17 @@ the entity reads "on" while the kiosk is reachable and "unavailable"
 entity with it.
 
 The ESPHome protocol has no attributes: an entity is its state and
-nothing else. The hardware detail the MQTT sensors hang off a sensor as
-attributes is therefore an entity of its own here. **Android version**
+nothing else. Hardware detail that would otherwise ride on a sensor as
+attributes is therefore an entity of its own. **Android version**
 and **Android build** stand next to **Device**, which carries the model,
 and **IPv4 addresses by interface** and **IPv6 addresses by interface**
 stand next to the address sensors, each reading
 `wlan0: 192.168.1.5; eth0: 10.0.3.2`, so an automation can tell whether
-the kiosk is on its wired or its wireless NIC. Like their MQTT twins, the
-address sensors lead with a routable IPv6 address over the link-local
-`fe80::` one and re-check moments after any network change. The lists
-that ride as attributes on the Bluetooth, Foreground app, Next alarm and
-Camera view sensors have no ESPHome equivalent yet, and those sensors
-carry their state alone.
+the kiosk is on its wired or its wireless NIC. The address sensors lead
+with a routable IPv6 address over the link-local `fe80::` one and
+re-check moments after any network change. The Bluetooth, Foreground
+app, Next alarm and Camera view sensors likewise carry their state
+alone.
 
 ## Notifications
 
@@ -255,9 +248,7 @@ refuses the connection ("Unexpected device found") until you delete the
 entry and let discovery re-add the kiosk. Turning the switch back off
 restores the old identity, but Home Assistant stops retrying after the
 mismatch: reload the kiosk's entry (or restart Home Assistant) and the
-old device comes back as it was. The MQTT integration's
-device follows the same switch, so both integrations land on the same
-merged device.
+old device comes back as it was.
 
 Where Android will not reveal the address, the switch's status row says
 so and offers a **Spoof Wi-Fi MAC address** field right under it: type
@@ -283,14 +274,12 @@ device, and only Home Assistant's Private BLE Device integration (with
 the device's IRK) can give those a lasting identity.
 
 The same list reaches Home Assistant as a diagnostic sensor per kiosk,
-**Bluetooth devices nearby** (the count as its state, and over the MQTT
-integration the identified list as attributes), so a dashboard can show
-what each room hears.
+**Bluetooth devices nearby**, with the count as its state, so a dashboard
+can show how much each room hears.
 
 Alongside it, **Bluetooth devices connected** counts the devices this
-kiosk itself is linked to right now, with their names as attributes over
-the MQTT integration, so a dashboard can answer "is the room's speaker
-still on the panel" without walking over to it. It counts every link the adapter holds, including any
+kiosk itself is linked to right now, so a dashboard can tell whether the
+room's speaker is still on the panel without walking over to it. It counts every link the adapter holds, including any
 the proxy has open for Home Assistant, which is what a connection count
 means from the device's side. Beside it, **Bluetooth max connections**
 reports the proxy's own budget, the ceiling that count runs into, so a
@@ -298,8 +287,7 @@ dashboard can put the two numbers next to each other. Both follow the
 links as they happen rather than on a poll, so a device Home Assistant
 connects to for a few seconds (a lock taking a command through the proxy)
 shows up for as long as the link lasts. Both
-sensors come and go with the Bluetooth Proxy switch, and both are
-published by the MQTT integration too. Devices whose Android will not
+sensors come and go with the Bluetooth Proxy switch. Devices whose Android will not
 report their Bluetooth links at all (no adapter, or the Nearby devices
 permission not granted on Android 12 and newer) get no sensor rather than
 one stuck on unknown.

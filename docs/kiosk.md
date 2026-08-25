@@ -83,7 +83,7 @@ that were configured before.
 Its setup lives only in the Remote Administration UI, on the **Lockdown
 Mode** page; there is no page for it in the on-device settings. The mode
 itself toggles from three places: that page, the **Lockdown mode** switch
-every device gets in Home Assistant [over MQTT](mqtt.md), and the exit
+every device gets in Home Assistant [over ESPHome](esphome.md), and the exit
 gesture on the glass.
 
 | Setting | What it does |
@@ -166,7 +166,7 @@ as something for permanently installed panels, not a daily driver.
 ## Notes
 
 - The **Kiosk mode** and **Lockdown mode** switches are both available in
-  Home Assistant [over MQTT](mqtt.md), so an automation can lock the house
+  Home Assistant [over ESPHome](esphome.md), so an automation can lock the house
   panel at bedtime and lift it in the morning.
 - Lockdown arms the kiosk protections but never writes them: flipping it on
   and off leaves the Kiosk Mode settings untouched.

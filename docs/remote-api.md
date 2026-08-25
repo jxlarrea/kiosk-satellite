@@ -46,7 +46,7 @@ adb shell am start -n me.jxl.kiosk_satellite/.MainActivity \
 ## REST surface
 
 The API is a thin adapter over the internal `CommandRegistry`, the same
-commands the JS API and MQTT topics use. Everything administrable in the app
+commands the JS API and the ESPHome entities use. Everything administrable in the app
 is administrable here by construction.
 
 | Endpoint | Method | Description |
@@ -57,9 +57,9 @@ is administrable here by construction.
 | `/api/settings` | GET | All setting definitions + current values |
 | `/api/settings` | PATCH | `{key: value, ...}` partial update |
 | `/api/settings/export` | GET | Full config as JSON (for provisioning) |
-| `/api/settings/import` | POST | Apply exported config. Query param: `adoptIdentity` (default on) keeps the dump's device name, MQTT device id and Sendspin player id, for restoring the same device; pass `0` when provisioning a second device from another's dump, so it keeps its own identity (and its own Voice Satellite selection) instead of the two fighting over one MQTT device and one Sendspin player |
+| `/api/settings/import` | POST | Apply exported config. Query param: `adoptIdentity` (default on) keeps the dump's device name, ESPHome node name and Sendspin player id, for restoring the same device; pass `0` when provisioning a second device from another's dump, so it keeps its own identity (and its own Voice Satellite selection) instead of the two fighting over one ESPHome device and one Sendspin player |
 | `/api/config/export` | GET | Full backup: every setting (secrets included) plus the page's localStorage. Also carries `deviceName` and `exportedAt`, which name the downloaded file (`ks-backup_<device>_<YYYYMMDD>_<HHmmss>.json`) and keep it identifiable afterwards |
-| `/api/config/import` | POST | Apply a full backup. Query params: `adoptIdentity` (default on) takes over the backup's device name and MQTT device id, for replacing the original device — pass `0` when cloning a second device so it keeps its own identity; `importLocalStorage` (default on) applies the page's saved data including the Voice Satellite selection — pass `0` so the device answers as its own satellite |
+| `/api/config/import` | POST | Apply a full backup. Query params: `adoptIdentity` (default on) takes over the backup's device name and ESPHome node name, for replacing the original device — pass `0` when cloning a second device so it keeps its own identity; `importLocalStorage` (default on) applies the page's saved data including the Voice Satellite selection — pass `0` so the device answers as its own satellite |
 | `/api/commands` | GET | List registered commands + param schemas |
 | `/api/commands/<name>` | POST | Execute a command with JSON params |
 | `/api/screenshot` | GET | PNG of the current screen |
@@ -136,9 +136,9 @@ rest_command:
 An automation then calls `rest_command.tablet_open_doorbell` when the
 doorbell rings and `rest_command.tablet_back_to_dashboard` when done.
 `launchApp` leaves the kiosk running behind the other app, so coming back
-lands on the live dashboard, not a reload. With the MQTT integration
-connected, the return half needs no REST at all: the device discovers a
-**Bring to front** button entity (see [mqtt.md](mqtt.md)).
+lands on the live dashboard, not a reload. With [ESPHome](esphome.md)
+kiosk entities exposed, the return half needs no REST at all: the device
+carries a **Bring to front** button entity.
 
 ## WebSocket
 
