@@ -77,7 +77,9 @@ are canonicalized against their root, so `..` cannot escape it.
 
 Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 `loadDashboard {dashboard}`, `loadStartUrl` (back to the configured
-Start URL), `reload`, `screenOn` / `screenOff` / `isScreenOn`,
+Start URL), `reload`, `screenOn` / `screenOff` / `isScreenOn` (`screenOn {path: "activity"}`
+skips the wake lock and wakes through the Activity route only, to tell
+which of the two works on a panel that stays dark),
 `setBrightness {level}`, `startScreensaver` / `stopScreensaver` /
 `isScreensaverActive`,
 `postponeScreensaver` (reset the idle timer, dismissing a showing

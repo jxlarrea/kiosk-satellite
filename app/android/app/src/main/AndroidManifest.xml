@@ -125,6 +125,16 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- The screen-on fallback: launching this lights the panel where
+             the app's wake lock does not. See WakeActivity. -->
+        <activity
+            android:name=".WakeActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
         <service
             android:name=".WakeWordService"
             android:exported="false"

@@ -22,9 +22,21 @@ import '../wake_word/background_listening.dart';
 /// black screensaver keeps its own brightness-zero overlay (it must keep the
 /// app alive for motion and wake word), independent of these commands.
 class ScreenManager extends Manager with WidgetsBindingObserver {
-  ScreenManager(super.bus, super.commands, super.log, this._settings);
+  ScreenManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this._settings, {
+    this._wakeSettle = const Duration(milliseconds: 700),
+    this._activitySettle = const Duration(milliseconds: 1500),
+  });
 
   final SettingsManager _settings;
+
+  /// How long a wake lock, then a wake Activity, get to light the panel
+  /// before [_confirmWake] looks; injectable so tests need not wait.
+  final Duration _wakeSettle;
+  final Duration _activitySettle;
 
   @override
   String get name => 'screen';
@@ -198,8 +210,14 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         Command(
           name: 'screenOn',
           description: 'Wake the display (works on a sleeping panel)',
-          handler: (_) async {
-            await screenOn();
+          params: const {
+            'path':
+                "'activity' to skip the wake lock and wake through the "
+                'activity route only, to tell which route works on a '
+                'panel that stays dark',
+          },
+          handler: (p) async {
+            await screenOn(activityOnly: p['path'] == 'activity');
             return const CommandResult.ok();
           },
         ),
@@ -395,6 +413,9 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       ok = await _background.invokeMethod('screenOff') == true;
     } catch (_) {}
     if (ok) {
+      // A wake confirmation still in flight would otherwise judge this
+      // deliberate dark panel as a failed wake.
+      _wakeGeneration++;
       _setScreenOn(false, source: 'app');
       unawaited(_probeAmbientDisplay());
     }
@@ -462,17 +483,88 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     await _setAmbientDisplay(lit);
   }
 
-  Future<void> screenOn() async {
-    // The wake poke runs before the logical-state guard, and must: the power
-    // button (or screenOff above) puts the display to sleep without this
-    // manager necessarily hearing about it, so _screenOn can still read true
-    // in exactly the situation the admin's "Screen on" exists for. It is a
-    // no-op on an already-lit panel and needs no permission.
-    try {
-      await _background.invokeMethod('wakeScreen');
-    } catch (_) {}
-    // The ACTION_SCREEN_ON broadcast reports this too; whichever arrives
-    // first moves the flag and the other becomes a no-op.
+  /// Light a sleeping panel.
+  ///
+  /// Two routes. The wake lock first: a poke that needs no permission and
+  /// is a no-op on a lit panel. It runs before the logical-state guard, and
+  /// must: the power button (or screenOff above) puts the display to sleep
+  /// without this manager necessarily hearing about it, so _screenOn can
+  /// still read true in exactly the situation the admin's "Screen on"
+  /// exists for. Then, a beat later, a look at the panel: some devices
+  /// accept the lock and leave the display dark (issue #305, a Galaxy Tab
+  /// S7+), and the only trace was a "screen on" log line over a black
+  /// panel while every mirror of the state said lit. A panel still asleep
+  /// then goes through the second route, an Activity the system lights the
+  /// panel for (WakeActivity), and both outcomes are logged so a device
+  /// where neither works says so.
+  ///
+  /// [activityOnly] skips the wake lock: the command's diagnostic, to tell
+  /// on a device which of the two routes works.
+  Future<void> screenOn({bool activityOnly = false}) async {
+    if (!activityOnly) {
+      try {
+        await _background.invokeMethod('wakeScreen');
+      } catch (_) {}
+    }
+    // Optimistic, as the ACTION_SCREEN_ON broadcast reports a wake too and
+    // whichever arrives first moves the flag; the confirmation takes it
+    // back if the panel turns out to have stayed dark.
     _setScreenOn(true, source: 'app');
+    unawaited(_confirmWake(activityOnly: activityOnly));
+  }
+
+  /// Bumped by every wake and every screenOff, so a confirmation that a
+  /// newer request has overtaken stops instead of judging a panel it did
+  /// not move.
+  int _wakeGeneration = 0;
+
+  Future<void> _confirmWake({required bool activityOnly}) async {
+    final generation = ++_wakeGeneration;
+    if (!activityOnly) {
+      await Future<void>.delayed(_wakeSettle);
+      if (generation != _wakeGeneration) return;
+      // Lit, or unanswerable (no bridge): nothing more to do.
+      if (await _isInteractive() ?? true) return;
+      log.warn(
+        name,
+        'the wake lock did not light the panel; trying the activity route',
+      );
+    }
+    String? outcome;
+    try {
+      outcome = await _background.invokeMethod<String>('wakeScreenViaActivity');
+    } catch (_) {}
+    if (outcome != 'started') {
+      log.warn(
+        name,
+        outcome == 'no_overlay_grant'
+            ? 'the activity route needs the Display over other apps '
+                  'permission; the panel stays dark'
+            : 'the activity route could not start; the panel stays dark',
+      );
+      _setScreenOn(false, source: 'probe');
+      return;
+    }
+    await Future<void>.delayed(_activitySettle);
+    if (generation != _wakeGeneration) return;
+    final lit = await _isInteractive();
+    if (lit == null) return;
+    if (lit) {
+      log.info(name, 'the activity route lit the panel');
+      _setScreenOn(true, source: 'app');
+    } else {
+      log.warn(name, 'the panel stayed dark after both wake routes');
+      _setScreenOn(false, source: 'probe');
+    }
+  }
+
+  /// Whether the display is awake right now, null when the bridge cannot
+  /// say (no platform, a detached engine).
+  Future<bool?> _isInteractive() async {
+    try {
+      return await _background.invokeMethod<bool>('isScreenInteractive');
+    } catch (_) {
+      return null;
+    }
   }
 }

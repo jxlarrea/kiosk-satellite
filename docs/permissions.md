@@ -27,7 +27,7 @@ do.
 | Camera | Motion detection, camera snapshots, and pages that ask for the camera. |
 | Notifications | The ongoing notification that keeps background listening alive. Only a runtime prompt on Android 13+; older versions allow it by default. |
 | Unrestricted battery | Keeps the Home Assistant and MQTT connections alive with the screen off. Matters on every install, voice or not. |
-| Display over other apps | Lets the app bring itself back to the front after a crash, an update, or a wake word heard behind another app, and lets the lockdown shield cover the whole screen. |
+| Display over other apps | Lets the app bring itself back to the front after a crash, an update, or a wake word heard behind another app, lets the lockdown shield cover the whole screen, and is what **Screen on** falls back on where the panel ignores the app's wake lock. |
 | Modify system settings | Writing the panel's real brightness instead of dimming the app window. |
 | All files access | The File Manager's shared storage root. Without it the manager still works on the app's own folder. Android 11+; on older versions the storage permission below is the whole grant. |
 | Usage access | Lets the MQTT **Foreground app** sensor name whichever app is on screen. Without it the sensor still reports Kiosk Satellite while the kiosk is frontmost, just never another app. |

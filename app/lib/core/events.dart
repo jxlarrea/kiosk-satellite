@@ -32,7 +32,9 @@ class ScreenStateChanged extends AppEvent {
 
   /// 'app' when this app moved the panel itself (screenOn/screenOff, from
   /// a dismiss, the wake word or the MQTT Screen switch); 'system' for the
-  /// power button, double-tap-to-wake and everything else the OS reports.
+  /// power button, double-tap-to-wake and everything else the OS reports;
+  /// 'probe' when a wake this app asked for turned out not to have lit the
+  /// panel, and the flag is being taken back to match it.
   /// The distinction is what lets a person waking the panel land on the
   /// dashboard while an automation switching it on keeps its screensaver.
   final String source;

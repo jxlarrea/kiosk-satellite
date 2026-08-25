@@ -335,6 +335,9 @@ class BackgroundBridge(
                 // "Screen on" from the admin or the screensaver: light a
                 // genuinely sleeping panel. Brightness restore alone cannot.
                 "wakeScreen" -> result.success(wakeScreen())
+                // The second screen-on route, for a panel the wake lock
+                // left dark: "started", "no_overlay_grant" or "failed".
+                "wakeScreenViaActivity" -> result.success(wakeScreenViaActivity())
                 // True panel off. Android only grants this to an active
                 // device admin (lockNow); plain apps have no API for it.
                 "screenOff" -> result.success(screenOff())
@@ -961,22 +964,55 @@ class BackgroundBridge(
         -1
     }
 
+    /**
+     * The first screen-on route: a wake lock flagged to wake the device.
+     * True when the lock was acquired against a sleeping display, false
+     * when the display was already interactive (nothing to do) or the lock
+     * could not be had. Whether the panel actually lit is a separate
+     * question the Dart side asks a moment later (issue #305).
+     */
     private fun wakeScreen(): Boolean {
         return try {
             val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-            if (!pm.isInteractive) {
-                @Suppress("DEPRECATION")
-                pm.newWakeLock(
-                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK
-                            or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                    "ks:screenWake",
-                ).acquire(5000)
-                true
-            } else {
-                false
-            }
+            if (pm.isInteractive) return false
+            // The deprecated full-wake-lock combination is still the only
+            // wake an app can ask for outright; the modern replacement is
+            // the Activity route in wakeScreenViaActivity, kept as the
+            // fallback because it costs a launch. ON_AFTER_RELEASE counts
+            // the release as user activity, so the OS idle timer restarts
+            // from a moment it definitely saw.
+            @Suppress("DEPRECATION")
+            pm.newWakeLock(
+                PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                        or PowerManager.ACQUIRE_CAUSES_WAKEUP
+                        or PowerManager.ON_AFTER_RELEASE,
+                "ks:screenWake",
+            ).acquire(5000)
+            true
         } catch (_: Exception) {
             false
+        }
+    }
+
+    /**
+     * The second screen-on route: launch [WakeActivity], which the system
+     * lights the panel for. Android 10+ lets a backgrounded app start an
+     * Activity only with the overlay grant, and a refused start fails
+     * silently, so a missing grant is named here rather than discovered
+     * as a panel that stayed dark.
+     */
+    private fun wakeScreenViaActivity(): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !canDrawOverlays()) {
+            return "no_overlay_grant"
+        }
+        return try {
+            context.startActivity(
+                Intent(context, WakeActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            "started"
+        } catch (_: Exception) {
+            "failed"
         }
     }
 
