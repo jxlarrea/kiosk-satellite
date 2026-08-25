@@ -26,6 +26,16 @@ import android.net.wifi.WifiManager
  * screen-off spell. Deprecated on paper, still the mode that holds the radio
  * through screen-off power saving in practice. Wall-powered kiosks pay
  * nothing that matters for it.
+ *
+ * From Android 14, WifiLockManager silently converts this acquisition to a
+ * low-latency lock (gated on the DeviceConfig flag
+ * wifi/high_perf_lock_deprecated, default true), which by the rule above is
+ * inert for the entire dark spell: dumpsys wifi shows the lock as type=4
+ * instead of type=3 and "Current operation mode: 0" once the screen is off.
+ * Nothing an app can do restores it; the shell command
+ * `device_config put wifi high_perf_lock_deprecated false` does (documented
+ * in docs/permissions.md), and a 30-minute dark soak on a Galaxy Tab S8
+ * showed the radio napping at minute 12 without it and staying up with it.
  */
 object WifiLockHolder {
     private var lock: WifiManager.WifiLock? = null

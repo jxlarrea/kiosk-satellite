@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- The Permissions docs gain a section on keeping Wi-Fi awake through screen off on Android 14 and newer. The app has always held Android's high-performance Wi-Fi lock while anything that must stay reachable is running, but Android 14 silently downgrades that lock to one that is only in effect while the screen is on, so on some devices the radio starts napping minutes into a dark spell, flapping the kiosk's entities unavailable and dropping adb over Wi-Fi. A one-time `adb shell device_config put wifi high_perf_lock_deprecated false` restores the old behavior; the new section covers the command, how to verify it took, and the caveat that a Google Play services flag sync can flip it back.
+
 ## v2026.8.79 - 2026-08-24
 
 ### Added

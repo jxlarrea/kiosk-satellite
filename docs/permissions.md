@@ -100,6 +100,34 @@ adb shell settings put secure accessibility_enabled 1
 After the block runs, open **Settings, Device, Permissions Manager** (or
 the same page in the remote admin): every row should read Granted.
 
+## Keeping Wi-Fi awake through screen off on Android 14+
+
+Whenever anything that must stay reachable is running (background
+listening, the ESPHome server, MQTT), the app holds Android's
+high-performance Wi-Fi lock, which keeps the radio out of power saving
+while the screen is off. From Android 14 the OS silently downgrades that
+lock to a "low latency" type that is only in effect while the screen is
+**on**, so on some devices the Wi-Fi radio starts napping minutes into a
+dark spell: entities flap unavailable for a moment, adb over Wi-Fi drops,
+and a wall of missed traffic greets the next wake. A one-time shell
+command restores the old behavior:
+
+```
+adb shell device_config put wifi high_perf_lock_deprecated false
+```
+
+Restart the app afterwards so the lock is re-acquired under the restored
+rules. To verify, turn the screen off and run
+`adb shell dumpsys wifi | grep "ks:screen-off"`: the lock should show
+`type=3` (high performance) rather than `type=4`.
+
+One caveat: on devices with Google Play services this flag is one of the
+remotely synced ones, so a background sync can quietly flip it back. If
+the kiosk is a dedicated panel, `adb shell device_config
+set_sync_disabled_for_tests persistent` pins every flag on the device,
+this one included; that is a blunt instrument, so weigh it against simply
+re-running the command if the symptom returns.
+
 ## Going further
 
 `dpm set-active-admin` above gives exactly one thing, the device admin
