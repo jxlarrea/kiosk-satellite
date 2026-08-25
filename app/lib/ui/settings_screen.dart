@@ -1790,17 +1790,6 @@ class _CategoryContentState extends State<_CategoryContent> {
               ),
             ),
           ),
-        // The Bluetooth grants, on the page above the proxy they gate: the
-        // OS's to give, not ours to set. Shown while the proxy's own row is,
-        // which is to say while ESPHome is enabled.
-        if (widget.category == 'ESPHome' &&
-            container.settings.visible(btproxyEnabled)) ...[
-          const SectionHeading('Required system permissions'),
-          const SearchLandingTarget(
-            id: 'x:btproxy_permissions',
-            child: SettingsCard(children: [_BtProxyPermissionsTile()]),
-          ),
-        ],
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
         // has no page on the device, so its grants live here too.
@@ -2290,13 +2279,28 @@ class _CategoryContentState extends State<_CategoryContent> {
     );
 
     if (widget.category == 'ESPHome' && subpage == 'Bluetooth Proxy') {
-      // The grants stay on the ESPHome page (see build): they are the OS's
-      // to give, and they read as the page's own footnote rather than a
-      // setting of the proxy.
-      final cards = sectioned([
+      // The proxy's own settings, then the grants scanning needs, then the
+      // Nearby devices group: the grants sit right above the list that
+      // stays empty without them.
+      final defs = [
         for (final def in _defsFor(widget.category))
           if (def.subpage == subpage) def,
-      ]);
+      ];
+      final cards = [
+        ...sectioned([
+          for (final def in defs)
+            if (def.section != 'Nearby devices') def,
+        ]),
+        const SectionHeading('Required system permissions'),
+        const SearchLandingTarget(
+          id: 'x:btproxy_permissions',
+          child: SettingsCard(children: [_BtProxyPermissionsTile()]),
+        ),
+        ...sectioned([
+          for (final def in defs)
+            if (def.section == 'Nearby devices') def,
+        ]),
+      ];
       if (_btAdapterOn != false) return cards;
       // The adapter is off: nothing on this page can do anything, so say so
       // and render it inert. The poll in initState lifts this the moment
@@ -5676,11 +5680,12 @@ class _ServicePermissionsTileState extends State<_ServicePermissionsTile>
           needed: needed['notification'] == true,
           missingIcon: Icons.notifications_off_outlined,
           title: 'Notifications',
-          held: "The service's notification is shown.",
-          missing: "The service's notification is not shown.",
-          idle:
-              'Without it the service still runs; its notification is not '
-              'shown.',
+          held:
+              "Allows the Kiosk Satellite Service's ongoing notification, "
+              'which says what it is keeping alive.',
+          missing:
+              "Needed to show the Kiosk Satellite Service's ongoing notification.",
+          idle: '',
           onGrant: () => ensureOsPermission(Permission.notification),
         ),
         if (reasons.contains('listening'))
@@ -5920,12 +5925,16 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
         ),
         _row(
           granted: perms?.notification,
-          needed: background,
+          // The service's notification is part of every install's deal.
+          needed: true,
           missingIcon: Icons.notifications_off_outlined,
           title: 'Notifications',
-          held: 'The ongoing notification that keeps listening alive.',
-          missing: 'Background listening needs it to run reliably.',
-          idle: 'Needed by background wake word listening.',
+          held:
+              "Allows the Kiosk Satellite Service's ongoing notification, "
+              'which says what it is keeping alive.',
+          missing:
+              "Needed to show the Kiosk Satellite Service's ongoing notification.",
+          idle: '',
           onGrant: () => ensureOsPermission(Permission.notification),
         ),
         _row(

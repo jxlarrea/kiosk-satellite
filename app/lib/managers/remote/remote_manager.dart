@@ -219,13 +219,19 @@ class RemoteManager extends Manager {
   Future<void> _sync() async {
     final enabled = _settings.get(defs.remoteEnabled);
     final hasPassword = _settings.get(defs.remotePassword).isNotEmpty;
+    final port = _settings.get(defs.remotePort).toInt();
     final wantRunning = _setupMode || (enabled && hasPassword);
     if (wantRunning && _server == null) {
       await _start();
     } else if (!wantRunning && _server != null) {
       await _stop();
-    } else if (wantRunning && _server != null) {
-      // Port may have changed; restart.
+    } else if (wantRunning && _server != null && _server!.port != port) {
+      // The port changed; only that warrants a restart. A password set or
+      // changed while serving (the onboarding wizard's first step sets
+      // one, from this very server) used to restart it too, which cut the
+      // reply to the request that set it: the browser saw a failed fetch,
+      // stayed on the password step, and the next press was refused as
+      // "setup already done".
       await _stop();
       await _start();
     }
@@ -304,7 +310,13 @@ class RemoteManager extends Manager {
       });
     }
     if (path == 'api/setup/password' && request.method == 'POST') {
-      if (!_setupMode || _settings.get(defs.remotePassword).isNotEmpty) {
+      if (!_setupMode) return _json(403, {'error': 'setup already done'});
+      // Setting one is public (there is nothing to authenticate with yet);
+      // changing one, from the wizard's Welcome step after a Back, needs
+      // the session that password minted, or anyone on the network could
+      // take an unconfigured tablet's admin over.
+      if (_settings.get(defs.remotePassword).isNotEmpty &&
+          !_auth.validate(_bearerToken(request))) {
         return _json(403, {'error': 'setup already done'});
       }
       final body = await _body(request);

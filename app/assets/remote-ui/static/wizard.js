@@ -121,6 +121,15 @@ export function wizardRender() {
   s.body(body);
 }
 
+// A group heading above a wizard card, the settings pages' card-title.
+export function wizardHeading(body, text) {
+  const h = document.createElement('h2');
+  h.className = 'card-title';
+  h.textContent = text;
+  body.appendChild(h);
+  return h;
+}
+
 export function wizardCard(body, rows = false) {
   const card = document.createElement('div');
   card.className = rows ? 'card rows' : 'card';
@@ -136,6 +145,131 @@ export function wizardField(body, id, type, placeholder) {
   return f;
 }
 
+// The settings pages' own switch control, not a checkbox glyph.
+export function wizardToggleRow(label, desc, on, locked, onClick) {
+  const row = readOnlyRow(label, desc, '');
+  row.querySelector('span').remove();
+  const lbl = document.createElement('label');
+  lbl.className = 'switch';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = on;
+  input.disabled = !!locked;
+  if (!locked) input.addEventListener('change', onClick);
+  const slider = document.createElement('span');
+  slider.className = 'slider';
+  lbl.append(input, slider);
+  row.appendChild(lbl);
+  return row;
+}
+
+// The service grants the setup cannot go on without, by row title: the
+// ones the service reports as needed right now that the device does not
+// hold. Empty when the device cannot be asked, so a hiccup never strands
+// the wizard.
+async function missingServiceGrants() {
+  const post = (name) => api('/api/commands/' + name,
+    { method: 'POST', body: '{}' }).then((r) => r.json()).catch(() => null);
+  const [st, pm] = await Promise.all([post('getServiceStatus'), post('getSystemPermissions')]);
+  if (!st?.ok || !pm?.ok) return [];
+  const needed = st.data.grants || {}, p = pm.data || {};
+  const out = [];
+  if (needed.batteryUnrestricted && !p.batteryUnrestricted) out.push('Unrestricted battery');
+  if (needed.displayOverOtherApps && !p.displayOverOtherApps) out.push('Display over other apps');
+  if (needed.notification && !p.notification) out.push('Notifications');
+  return out;
+}
+
+// The Kiosk Satellite Service under the restore card, mirroring the device
+// wizard: what it is, and the three grants it needs on every install under
+// a row that asks for them outright, each with a button that opens the
+// dialog on the tablet and polls until the grant lands.
+export function wizardServiceCard(b) {
+  const card = wizardCard(b, true);
+  const intro = readOnlyRow('Kiosk Satellite Service',
+    'Keeps the app alive while the screen is off or another app is in '
+      + 'front, so the Home Assistant connection and other features like '
+      + 'motion detection and the Bluetooth proxy stay alive.', '');
+  intro.querySelector('span').remove();
+  card.appendChild(intro);
+  const post = (name, body) => api('/api/commands/' + name,
+    { method: 'POST', body: JSON.stringify(body || {}) })
+    .then((r) => r.json()).catch(() => null);
+
+  const grantRow = (key, name, held, missing, idle, ask) => {
+    const row = readOnlyRow(name, 'Checking\u2026', '');
+    const span = row.querySelector('span');
+    row._render = (granted, needed) => {
+      const ok = granted === true;
+      row.querySelector('.desc').textContent =
+        granted == null ? 'Status unavailable.' : ok ? held : needed ? missing : idle;
+      span.textContent = granted == null ? '' : ok ? 'Granted' : needed ? 'Missing' : 'Not granted';
+      span.style.cssText = 'white-space:nowrap; color:'
+        + (ok ? 'var(--ok)' : needed ? 'var(--error)' : 'var(--muted)');
+      row.querySelector('button')?.remove();
+      if (ok || granted == null) return;
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost';
+      btn.textContent = 'Grant on device';
+      btn.style.cssText = 'flex-shrink:0;';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        await post('requestOsPermissions', { which: ask });
+        let tries = 30;
+        const tick = setInterval(async () => {
+          const all = await refreshGrants();
+          if (all === true || --tries <= 0) clearInterval(tick);
+        }, 2000);
+      });
+      row.appendChild(btn);
+    };
+    card.appendChild(row);
+    return [key, row];
+  };
+  const rows = [
+    grantRow('batteryUnrestricted', 'Unrestricted battery',
+      'Allows the process to run in the background without being paused or killed.',
+      'Android may pause the app when the screen is off, dropping the Home Assistant connection with it.',
+      '', ['batteryOptimizations']),
+    grantRow('displayOverOtherApps', 'Display over other apps',
+      'Kiosk Satellite can bring itself back in the foreground.',
+      'Without this the service cannot relaunch the kiosk after a crash.',
+      'Needed to relaunch the kiosk after a crash.', ['overlay']),
+    grantRow('notification', 'Notifications',
+      "Allows the Kiosk Satellite Service's ongoing notification, which says what it is keeping alive.",
+      "Needed to show the Kiosk Satellite Service's ongoing notification.",
+      '', ['notifications']),
+  ];
+  let grants = {};
+  const refreshGrants = async () => {
+    const res = await post('getSystemPermissions');
+    const p = res && res.ok ? res.data : null;
+    let all = true;
+    for (const [key, row] of rows) {
+      const granted = p ? p[key] === true : null;
+      row._render(granted, grants[key] === true);
+      if (!granted) all = false;
+    }
+    return p ? all : null;
+  };
+  const refresh = async () => {
+    // Which grants a missing one breaks something for, from the service.
+    const res = await post('getServiceStatus');
+    const st = res && res.ok ? res.data : null;
+    if (st) grants = st.grants || {};
+    await refreshGrants();
+  };
+  // Only while the card is actually on screen: a step change drops it,
+  // and a fall back to the login view leaves the wizard body in the DOM
+  // but hidden, where every poll would just be a 401.
+  const visible = () => card.isConnected && card.offsetParent !== null;
+  if (visible()) refresh();
+  const timer = setInterval(() => {
+    if (!card.isConnected) { clearInterval(timer); return; }
+    if (visible()) refresh();
+  }, 5000);
+}
+
 // The restore path on the wizard's first screen: pick an exported backup
 // and skip the setup entirely. The backup's remote.password and
 // remote.enabled are dropped before upload — importing them could lock out
@@ -143,18 +277,13 @@ export function wizardField(body, id, type, placeholder) {
 // the very server this page is talking to. The password chosen on THIS
 // device stays in charge; everything else comes from the file.
 export function wizardRestoreCard(b) {
-  const card = wizardCard(b);
-  const row = document.createElement('div');
-  row.style.cssText = 'display:flex; align-items:center; gap:14px; padding:14px 16px;';
-  const cell = document.createElement('div');
-  cell.style.flex = '1';
-  const t = document.createElement('div');
-  t.textContent = 'Restore from configuration file';
-  t.style.fontWeight = '600';
-  const d = document.createElement('div');
-  d.textContent = 'Import a configuration exported from Kiosk Satellite and skip the rest of this wizard.';
-  d.style.cssText = 'font-size:12.5px; color:var(--muted); margin-top:2px;';
-  cell.append(t, d);
+  // A rows card with a settings-style row, like the cards around it: a
+  // plain card with a padded row of its own read as a taller, looser
+  // group than its neighbours.
+  const card = wizardCard(b, true);
+  const row = readOnlyRow('Restore from configuration file',
+    'Import a configuration exported from Kiosk Satellite and skip the rest of this wizard.', '');
+  row.querySelector('span').remove();
   const file = document.createElement('input');
   file.type = 'file';
   file.accept = '.json,application/json';
@@ -165,7 +294,7 @@ export function wizardRestoreCard(b) {
   btn.style.cssText = 'flex-shrink:0;';
   btn.addEventListener('click', () => file.click());
   file.addEventListener('change', () => wizardRestore(file, btn));
-  row.append(cell, btn, file);
+  row.append(btn, file);
   card.appendChild(row);
 }
 
@@ -235,20 +364,59 @@ export async function wizardRestore(file, btn) {
 
 export function wizardSteps() {
   const steps = [];
-  if (wizard.needPassword) steps.push({
-    railTitle: 'Welcome', railSub: 'Admin password',
+  // The same first page as the device wizard, always: the admin password
+  // where one is still needed, the restore path, and the service the whole
+  // kiosk rides on, introduced where the kiosk is born rather than
+  // discovered later as a notification. The Connect step is then only the
+  // Home Assistant connection, on both surfaces.
+  steps.push({
+    railTitle: 'Welcome', railSub: 'Remote administration',
     title: 'Welcome to Kiosk Satellite',
-    lead: 'This tablet is waiting to be set up. First, protect this remote admin with a password.',
+    lead: wizard.needPassword
+      ? 'This tablet is waiting to be set up. First, protect this remote admin with a password.'
+      : 'This tablet is waiting to be set up. The remote admin password is already set; type a new one here to change it.',
     body: (b) => {
-      wizardField(wizardCard(b), 'wzPassword', 'password', 'Admin password (min 4 characters)');
+      wizardHeading(b, 'Remote administration');
+      // Always a field: with a password already set (on the tablet, or by
+      // an earlier pass through this step) it changes it, and an empty
+      // field keeps it.
+      wizardField(wizardCard(b), 'wzPassword', 'password', wizard.needPassword
+        ? 'Admin password (min 4 characters)'
+        : 'New admin password (leave empty to keep the current one)');
+      wizardHeading(b, 'Restore backup');
       wizardRestoreCard(b);
+      wizardHeading(b, 'Required Service Permissions');
+      wizardServiceCard(b);
     },
     next: async () => {
+      // The service's required grants first: the whole kiosk rides on
+      // them, and the page just asked for them by name.
+      const missing = await missingServiceGrants();
+      if (missing.length) {
+        throw wizFail('Grant the required service permissions',
+          missing.join(' and ') + ' must be granted before setup can '
+            + 'continue. Tap Grant on device on each row above.');
+      }
       const password = $('#wzPassword').value;
+      if (!wizard.needPassword && !password) return;
       if (password.length < 4) throw wizFail('Password too short', 'Use at least 4 characters.');
-      const res = await fetch('api/setup/password', { method: 'POST', body: JSON.stringify({ password }) });
+      // A change rides the session the current password minted; a first
+      // password has no session yet and goes bare.
+      const res = wizard.needPassword
+        ? await fetch('api/setup/password', { method: 'POST', body: JSON.stringify({ password }) })
+        : await api('/api/setup/password', { method: 'POST', body: JSON.stringify({ password }) });
       const out = await res.json();
-      if (!res.ok) throw wizFail('Could not set the password', out.error || '');
+      if (!res.ok) {
+        // A password already exists: set on the tablet's own wizard, or by
+        // an earlier press of this button whose reply was lost. The login
+        // view is where that password is useful, so go there.
+        if (res.status === 403) {
+          setTimeout(() => location.reload(), 2500);
+          throw wizFail('A password is already set',
+            'Log in with the password set on the tablet to continue here. Reloading\u2026');
+        }
+        throw wizFail('Could not set the password', out.error || '');
+      }
       state.token = out.token; localStorage.setItem('ks_token', state.token);
     },
   });
@@ -261,9 +429,6 @@ export function wizardSteps() {
       const card = wizardCard(b);
       wizardField(card, 'wzUrl', 'url', 'https://homeassistant.local:8123');
       wizardField(card, 'wzToken', 'password', 'Long-lived access token');
-      // When a password already exists (set on the device), this is the
-      // wizard's first screen — the restore path belongs here instead.
-      if (!wizard.needPassword) wizardRestoreCard(b);
     },
     next: async () => {
       const url = $('#wzUrl').value.trim(), token = $('#wzToken').value.trim();
@@ -390,23 +555,7 @@ export function wizardSteps() {
         hint.appendChild(hintText);
         b.appendChild(hint);
       }
-      // The settings pages' own switch control, not a checkbox glyph.
-      const toggleRow = (label, desc, on, locked, onClick) => {
-        const row = readOnlyRow(label, desc, '');
-        row.querySelector('span').remove();
-        const lbl = document.createElement('label');
-        lbl.className = 'switch';
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = on;
-        input.disabled = !!locked;
-        if (!locked) input.addEventListener('change', onClick);
-        const slider = document.createElement('span');
-        slider.className = 'slider';
-        lbl.append(input, slider);
-        row.appendChild(lbl);
-        return row;
-      };
+      const toggleRow = wizardToggleRow;
       const master = wizardCard(b, true);
       const all = WIZ_OPTIONAL.every(([k]) => wizard.rec[k]);
       master.appendChild(toggleRow('Apply all recommended settings',
@@ -447,15 +596,14 @@ export function wizardSteps() {
       };
       addRow('microphone', 'Microphone',
         'Voice Satellite requires microphone access');
-      if (background) {
-        addRow('notification', 'Notifications',
-          'Allows Kiosk Satellite to continue listening to the wake word in the background');
-      }
-      // Always asked, voice or not: the app holds the Home Assistant and
-      // MQTT connections open while the screen is off, and Doze is what
-      // stops them (issue #156).
+      // The Kiosk Satellite Service's two, on every install: its
+      // notification, and the exemption that keeps it running.
+      addRow('notification', 'Notifications',
+        background
+          ? "Allows the Kiosk Satellite Service's ongoing notification, which says what it is keeping alive and when the kiosk is listening."
+          : "Allows the Kiosk Satellite Service's ongoing notification, which says what it is keeping alive.");
       addRow('batteryUnrestricted', 'Unrestricted battery',
-        'Allows the process to run in the background without being paused or killed.');
+        'Allows the Kiosk Satellite Service to run in the background without being paused or killed.');
       addRow('displayOverOtherApps', 'Display over other apps',
         bootStart
           ? 'Lets Kiosk Satellite come back after a crash and start when your device boots.'
@@ -492,7 +640,7 @@ export function wizardSteps() {
           body: JSON.stringify({ which: [
             'microphone',
             'batteryOptimizations',
-            ...(background ? ['notifications'] : []),
+            'notifications',
             // Auto-reload on error (default on) needs the overlay grant to
             // bring the app back after a crash; boot start rides the same one.
             'overlay',

@@ -304,6 +304,7 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     title: 'Required system permissions',
     description: 'The Nearby devices grant the Bluetooth proxy needs to scan.',
     anchorId: 'x:btproxy_permissions',
+    subpage: 'Bluetooth Proxy',
   ),
   SettingsSearchEntry(
     category: 'Device',

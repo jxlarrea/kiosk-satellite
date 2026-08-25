@@ -571,10 +571,10 @@ void main() {
       expect(find.text(btproxyMacLookup.title), findsNothing);
       expect(find.text(esphomeEntities.title), findsOneWidget);
       expect(find.text(btproxyPort.title), findsOneWidget);
-      // The Bluetooth grants stay here, below the row that opens the proxy.
+      // The Bluetooth grants went with the proxy they gate.
       expect(
         find.widgetWithText(SectionHeading, 'Required system permissions'),
-        findsOneWidget,
+        findsNothing,
       );
 
       await tester.tap(find.widgetWithText(ListTile, 'Bluetooth Proxy'));
@@ -592,12 +592,17 @@ void main() {
         find.widgetWithText(SectionHeading, 'Bluetooth Proxy'),
         findsNothing,
       );
-      // The grants stayed on the page above: they are the OS's to give, not
-      // a setting of the proxy.
-      expect(
+      // The grants sit right above the Nearby devices group, whose list
+      // stays empty without them.
+      final grants = tester.getTopLeft(
         find.widgetWithText(SectionHeading, 'Required system permissions'),
-        findsNothing,
       );
+      final nearby = tester.getTopLeft(
+        find.widgetWithText(SectionHeading, 'Nearby devices'),
+      );
+      expect(grants.dy, lessThan(nearby.dy));
+      final proxy = tester.getTopLeft(find.text(btproxyEnabled.title));
+      expect(grants.dy, greaterThan(proxy.dy));
       // And nothing else from the page above.
       expect(find.text(esphomeEntities.title), findsNothing);
 

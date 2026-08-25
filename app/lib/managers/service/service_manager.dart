@@ -177,8 +177,10 @@ class ServiceManager extends Manager {
       // Doze is what stops the connections the service exists for; nothing
       // has to be switched on for this one to matter.
       'batteryUnrestricted': true,
-      // The service runs without it; only its notification goes unseen.
-      'notification': false,
+      // The service runs without it, but a kiosk that may be listening to
+      // a room has to be able to say so: the notification is part of the
+      // deal, so its grant is required like the exemption itself.
+      'notification': true,
       'displayOverOtherApps':
           ids.contains('kiosk') || _settings.get(defs.autoReloadOnError),
       'microphone': ids.contains('listening'),

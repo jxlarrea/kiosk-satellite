@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -132,5 +133,61 @@ void main() {
     await settle();
     expect(await listening(), isTrue);
     expect(remote.stoppedReason.value, isNull);
+  });
+
+  test('setting the onboarding password answers, and keeps serving', () async {
+    // Setup mode: no start URL, no password, the server up for the wizard.
+    await settings.set(defs.remoteEnabled, false);
+    await settle();
+    SharedPreferences.setMockInitialValues({'ks.remote.port': port});
+    final bus = EventBus();
+    final log = Logger();
+    final commands = CommandRegistry(log);
+    settings = SettingsManager(bus, commands, log);
+    await settings.init();
+    remote = RemoteManager(bus, commands, log, settings);
+    await remote.init();
+    await settle();
+    expect(await listening(), isTrue);
+
+    // The wizard's first step, over the wire. Setting the password used to
+    // restart the server under this very request, so the reply was lost
+    // and the next press was refused as "setup already done".
+    final client = HttpClient();
+    final req = await client.postUrl(
+      Uri.parse('http://127.0.0.1:$port/api/setup/password'),
+    );
+    req.headers.contentType = ContentType.json;
+    req.write('{"password":"letmein"}');
+    final res = await req.close();
+    final body = await res.transform(utf8.decoder).join();
+    client.close();
+    expect(res.statusCode, 200);
+    expect(body, contains('token'));
+    expect(settings.get(defs.remotePassword), 'letmein');
+    await settle();
+    expect(await listening(), isTrue);
+
+    // Changing it from the wizard's Welcome step after a Back: refused
+    // without the session, done with it.
+    final token = (jsonDecode(body) as Map)['token'] as String;
+    Future<int> change(String? bearer) async {
+      final c = HttpClient();
+      final r = await c.postUrl(
+        Uri.parse('http://127.0.0.1:$port/api/setup/password'),
+      );
+      r.headers.contentType = ContentType.json;
+      if (bearer != null) r.headers.set('Authorization', 'Bearer $bearer');
+      r.write('{"password":"changed1"}');
+      final out = await r.close();
+      await out.drain<void>();
+      c.close();
+      return out.statusCode;
+    }
+
+    expect(await change(null), 403);
+    expect(settings.get(defs.remotePassword), 'letmein');
+    expect(await change(token), 200);
+    expect(settings.get(defs.remotePassword), 'changed1');
   });
 }

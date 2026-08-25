@@ -99,11 +99,11 @@ void main() {
   test('the grants follow the reasons', () async {
     await build();
     // Auto-reload is on by default, so the relaunch after a crash already
-    // needs the overlay grant; the battery exemption is needed regardless
-    // and the notification never is.
+    // needs the overlay grant; the battery exemption and the notification
+    // are needed regardless.
     var grants = service.neededGrants();
     expect(grants['batteryUnrestricted'], isTrue);
-    expect(grants['notification'], isFalse);
+    expect(grants['notification'], isTrue);
     expect(grants['displayOverOtherApps'], isTrue);
     expect(grants['microphone'], isFalse);
     expect(grants['camera'], isFalse);

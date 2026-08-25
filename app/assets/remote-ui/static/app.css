@@ -511,6 +511,11 @@
   .wizard-pane .lead { color: var(--muted); font-size: 14px;
     line-height: 1.5; margin: 0 8px 20px 4px; }
   #wizardBody { flex: 1; overflow-y: auto; }
+  /* Group titles inside the wizard: the settings pages' card-title, not
+     the pane's page-title h2 rule that would otherwise outrank it. */
+  #wizardBody h2.card-title { font-family: inherit; font-size: 13.5px;
+    font-weight: 600; line-height: 1.4; color: var(--primary);
+    margin: 2px 20px 10px; }
   #wizardBody .card { padding: 16px 20px; }
   #wizardBody .card.rows { padding: 4px 20px; }
   #wizardBody .field { width: 100%; margin-bottom: 12px; }

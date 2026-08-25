@@ -24,7 +24,7 @@ export const DEFLESS_SUBPAGES = [['voicesatellite', 'Appearance'],
 export const SEARCH_EXTRAS = [
   { tab: 'esphome', title: 'Nearby devices', sub: 'Bluetooth Proxy',
     desc: 'The Bluetooth devices this kiosk hears, with names where known.' },
-  { tab: 'esphome', title: 'Required system permissions',
+  { tab: 'esphome', title: 'Required system permissions', sub: 'Bluetooth Proxy',
     desc: 'The Nearby devices grant the Bluetooth proxy needs to scan.',
     heading: 'Required system permissions' },
   { tab: 'device', title: 'Service status', sub: 'Kiosk Satellite Service',

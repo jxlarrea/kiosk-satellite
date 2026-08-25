@@ -379,6 +379,49 @@ export async function loadSettings() {
   // (see save() in rows.js), so the answer never waits for a reload.
   refreshRealMacNote();
 
+  // ── ESPHome encryption key: a Copy button ─────────────────────────────
+  // Double-clicking the key selects only part of it: a double-click stops
+  // at the +, / and = a base64 key is full of, and a partial key pasted
+  // into Home Assistant fails with a generic "unable to connect". The
+  // clipboard API needs a secure context, which the admin's plain-http
+  // address is not, so the copy falls back to a selection.
+  {
+    const row = document.querySelector('[data-key="btproxy.key"]');
+    const input = row?.querySelector('input');
+    if (input && !row.querySelector('.copy-key')) {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex; gap:8px; align-items:center; min-width:0';
+      input.replaceWith(wrap);
+      wrap.appendChild(input);
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost copy-key';
+      btn.textContent = 'Copy';
+      btn.style.cssText = 'flex-shrink:0;';
+      btn.addEventListener('click', async () => {
+        const key = input.value;
+        if (!key) return;
+        let ok = false;
+        try {
+          if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(key);
+            ok = true;
+          }
+        } catch (_) { /* not a secure context, or refused */ }
+        if (!ok) {
+          input.focus();
+          input.select();
+          input.setSelectionRange(0, key.length);
+          try { ok = document.execCommand('copy'); } catch (_) { /* unsupported */ }
+          window.getSelection()?.removeAllRanges();
+          input.blur();
+        }
+        btn.textContent = ok ? 'Copied' : 'Select all and copy';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1800);
+      });
+      wrap.appendChild(btn);
+    }
+  }
+
   // ── Bluetooth Proxy nearby devices ───────────────────────────────────
   // The live list the device shows under the lookup toggle, same data:
   // the btProxyNearby command's identified inventory. Only with the proxy
@@ -577,9 +620,18 @@ export async function loadSettings() {
       };
       const pairRow = makeRow('Nearby devices');
       const locRow = makeRow('Location');
-      // Last on the ESPHome page, below the row that opens the proxy these
-      // grants gate, and the same place the device page puts it.
-      root.append(h, permCard);
+      // On the Bluetooth Proxy page, right above the Nearby devices group
+      // whose list stays empty without them, the same place the device
+      // page puts it. The page above is the fallback while the panel is
+      // not there (the proxy row hidden).
+      const nearbyHead = btPanel && [...btPanel.querySelectorAll('h2.card-title')]
+        .find((x) => x.textContent === 'Nearby devices');
+      if (nearbyHead) {
+        btPanel.insertBefore(h, nearbyHead);
+        btPanel.insertBefore(permCard, nearbyHead);
+      } else {
+        (btPanel || root).append(h, permCard);
+      }
       const readPerm = () => api('/api/commands/getSystemPermissions',
         { method: 'POST', body: '{}' }).then((r) => r.json())
         .then((res) => res.data || null).catch(() => null);
@@ -873,10 +925,11 @@ export async function loadSettings() {
             : 'Location is off in the device settings, so Bluetooth scanning finds nothing.',
         idle: 'Needed by the Bluetooth proxy to scan for devices.' },
       { key: 'notification', name: 'Notifications', ask: 'notifications',
-        needed: background,
-        held: 'The ongoing notification that keeps listening alive.',
-        missing: 'Background listening needs it to run reliably.',
-        idle: 'Needed by background wake word listening.' },
+        // The service's notification is part of every install's deal.
+        needed: true,
+        held: "Allows the Kiosk Satellite Service's ongoing notification, which says what it is keeping alive.",
+        missing: "Needed to show the Kiosk Satellite Service's ongoing notification.",
+        idle: '' },
       { key: 'displayOverOtherApps', name: 'Display over other apps', ask: 'overlay',
         needed: background || on('browser.auto_reload_on_error')
           || on('kiosk.start_on_boot') || on('kiosk.disable_status_bar'),

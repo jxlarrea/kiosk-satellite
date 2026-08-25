@@ -10,8 +10,11 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/permissions.dart';
 import '../managers/settings/definitions.dart' as defs;
+import '../managers/wake_word/background_listening.dart';
+import '../managers/wake_word/system_permissions.dart';
 import 'import_options_dialog.dart';
 import 'kiosk_screen.dart';
+import 'kit.dart' show SectionHeading;
 import 'theme.dart';
 import 'toast.dart';
 import 'token_qr_scanner.dart';
@@ -91,8 +94,9 @@ class _SetupScreenState extends State<SetupScreen> {
     }
   }
 
-  // Step 1 — remote admin.
-  bool _remoteWanted = false;
+  // Step 1 — remote admin. On by default: the remote admin is where the
+  // token gets pasted and where the kiosk is managed afterwards.
+  bool _remoteWanted = true;
   final _remotePassword = TextEditingController();
   String? _deviceIp;
 
@@ -177,6 +181,10 @@ class _SetupScreenState extends State<SetupScreen> {
   @override
   void initState() {
     super.initState();
+    // A password already set (the remote wizard's first step, or an
+    // earlier pass through this page) is the field's starting value, so
+    // Next keeps it rather than refusing an empty box.
+    _remotePassword.text = c.settings.get(defs.remotePassword);
     c.device.ipAddress().then((ip) {
       if (mounted) setState(() => _deviceIp = ip);
     });
@@ -294,6 +302,18 @@ class _SetupScreenState extends State<SetupScreen> {
     });
     switch (_step) {
       case 0:
+        // The service's required grants first: the whole kiosk rides on
+        // them, and the page just asked for them by name.
+        final missing = await _missingServiceGrants();
+        if (!mounted) return;
+        if (missing.isNotEmpty) {
+          _fail(
+            'Grant the required service permissions',
+            '${missing.join(' and ')} must be granted before setup can '
+                'continue. Tap Grant on each row above.',
+          );
+          return;
+        }
         if (_remoteWanted) {
           final password = _remotePassword.text;
           if (password.length < 4) {
@@ -419,8 +439,10 @@ class _SetupScreenState extends State<SetupScreen> {
             // ride background listening, so a setup without Voice
             // Satellite was never asked and had no way to find it later.
             'batteryOptimizations',
-            if (_vsStepActive && _recommended['wake_word.background']!)
-              'notifications',
+            // The service's notification is the one Android shows for
+            // the exemption; without the grant the service still runs,
+            // it just cannot say so.
+            'notifications',
             // Auto-reload on error (default on) needs it to bring the app
             // back after a crash; start-on-boot needs it for the boot launch.
             if (c.settings.get(defs.autoReloadOnError) ||
@@ -444,6 +466,29 @@ class _SetupScreenState extends State<SetupScreen> {
         );
         _enterKiosk();
     }
+  }
+
+  /// The service grants the setup cannot go on without, by row title:
+  /// the ones the service reports as needed right now (the battery
+  /// exemption always, the overlay grant while auto-reload is on) that
+  /// this device does not hold.
+  Future<List<String>> _missingServiceGrants() async {
+    SystemPermissions perms;
+    try {
+      perms = await SystemPermissions.read();
+    } catch (_) {
+      // No platform to ask (tests, desktop): nothing to gate on.
+      return const [];
+    }
+    final needed = c.service.neededGrants();
+    return [
+      if (needed['batteryUnrestricted'] == true && !perms.batteryUnrestricted)
+        'Unrestricted battery',
+      if (needed['displayOverOtherApps'] == true && !perms.displayOverOtherApps)
+        'Display over other apps',
+      if (needed['notification'] == true && !perms.notification)
+        'Notifications',
+    ];
   }
 
   void _back() => setState(() {
@@ -758,6 +803,7 @@ class _SetupScreenState extends State<SetupScreen> {
             'Turn this tablet into a Home Assistant kiosk. Setup takes a '
             'couple of minutes and this wizard walks you through it.',
           ),
+          const SectionHeading('Remote administration'),
           _Card([
             SwitchListTile(
               title: const Text('Enable remote administration'),
@@ -802,6 +848,7 @@ class _SetupScreenState extends State<SetupScreen> {
               ),
             ),
           ]),
+          const SectionHeading('Restore backup'),
           _Card([
             ListTile(
               leading: const Icon(Icons.settings_backup_restore_outlined),
@@ -817,6 +864,10 @@ class _SetupScreenState extends State<SetupScreen> {
               ),
             ),
           ]),
+          // The service the whole kiosk rides on, introduced where the
+          // kiosk is born rather than discovered later as a notification.
+          const SectionHeading('Required Service Permissions'),
+          _ServiceSetupCard(container: c),
         ]);
       case 1:
         return withError([
@@ -992,24 +1043,29 @@ class _SetupScreenState extends State<SetupScreen> {
               title: Text('Microphone'),
               subtitle: Text('Voice Satellite requires microphone access'),
             ),
-            if (background) ...[
-              const ListTile(
-                leading: Icon(Icons.notifications_none),
-                title: Text('Notifications'),
-                subtitle: Text(
-                  'Allows Kiosk Satellite to continue listening to the '
-                  'wake word in the background',
-                ),
+            // The Kiosk Satellite Service's two, on every install: its
+            // notification, and the exemption that keeps it running.
+            ListTile(
+              leading: const Icon(Icons.notifications_none),
+              title: const Text('Notifications'),
+              subtitle: Text(
+                background
+                    ? "Allows the Kiosk Satellite Service's ongoing "
+                          'notification, which says what it is keeping '
+                          'alive and when the kiosk is listening.'
+                    : "Allows the Kiosk Satellite Service's ongoing "
+                          'notification, which says what it is keeping '
+                          'alive.',
               ),
-              const ListTile(
-                leading: Icon(Icons.battery_saver),
-                title: Text('Ignore battery optimizations'),
-                subtitle: Text(
-                  'Allows Kiosk Satellite to run in the background '
-                  'permanently',
-                ),
+            ),
+            const ListTile(
+              leading: Icon(Icons.battery_saver),
+              title: Text('Unrestricted battery'),
+              subtitle: Text(
+                'Allows the Kiosk Satellite Service to run in the '
+                'background without being paused or killed.',
               ),
-            ],
+            ),
             if (bootStart || c.settings.get(defs.autoReloadOnError))
               ListTile(
                 leading: const Icon(Icons.layers_outlined),
@@ -1175,6 +1231,153 @@ class _StepDisc extends StatelessWidget {
               ),
             ),
     );
+  }
+}
+
+/// The Kiosk Satellite Service on the Welcome page: what it is, and the
+/// three grants it needs on every install, each with its Grant button
+/// under a row that asks for them outright. The Permissions page at the
+/// end asks for the same grants again, which is harmless once given.
+class _ServiceSetupCard extends StatefulWidget {
+  const _ServiceSetupCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_ServiceSetupCard> createState() => _ServiceSetupCardState();
+}
+
+class _ServiceSetupCardState extends State<_ServiceSetupCard>
+    with WidgetsBindingObserver {
+  SystemPermissions? _perms;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The grants are given on OS screens that report nothing back.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    SystemPermissions? perms;
+    try {
+      perms = await SystemPermissions.read();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _perms = perms);
+  }
+
+  /// A grant in the Permissions Manager's three states.
+  Widget _row({
+    required bool? granted,
+    required bool needed,
+    required IconData missingIcon,
+    required String title,
+    required String held,
+    required String missing,
+    required String idle,
+    required Future<void> Function() onGrant,
+  }) {
+    final theme = Theme.of(context);
+    final ok = granted == true;
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return ListTile(
+      leading: Icon(
+        ok ? Icons.check_circle_outline : missingIcon,
+        color: ok
+            ? null
+            : needed
+            ? theme.colorScheme.error
+            : muted,
+      ),
+      title: Text(title),
+      subtitle: Text(
+        ok
+            ? held
+            : needed
+            ? missing
+            : idle,
+        style: ok || needed ? null : TextStyle(color: muted),
+      ),
+      trailing: ok
+          ? null
+          : TextButton(
+              onPressed: () async {
+                await onGrant();
+                await _refresh();
+              },
+              child: const Text('Grant'),
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.container;
+    final perms = _perms;
+    final needed = c.service.neededGrants();
+    return _Card([
+      const ListTile(
+        leading: Icon(Icons.security_outlined),
+        title: Text('Kiosk Satellite Service'),
+        subtitle: Text(
+          'Keeps the app alive while the screen is off or another app is '
+          'in front, so the Home Assistant connection and other features '
+          'like motion detection and the Bluetooth proxy stay alive.',
+        ),
+      ),
+      _row(
+        granted: perms?.batteryUnrestricted,
+        needed: needed['batteryUnrestricted'] == true,
+        missingIcon: Icons.battery_alert_outlined,
+        title: 'Unrestricted battery',
+        held:
+            'Allows the process to run in the background without being '
+            'paused or killed.',
+        missing:
+            'Android may pause the app when the screen is off, dropping '
+            'the Home Assistant connection with it.',
+        idle: '',
+        onGrant: BackgroundListening.requestBatteryUnrestricted,
+      ),
+      _row(
+        granted: perms?.displayOverOtherApps,
+        needed: needed['displayOverOtherApps'] == true,
+        missingIcon: Icons.open_in_new_off_outlined,
+        title: 'Display over other apps',
+        held: 'Kiosk Satellite can bring itself back in the foreground.',
+        missing:
+            'Without this the service cannot relaunch the kiosk after a '
+            'crash.',
+        idle: 'Needed to relaunch the kiosk after a crash.',
+        onGrant: () => requestOsPermission(Permission.systemAlertWindow),
+      ),
+      _row(
+        granted: perms?.notification,
+        needed: needed['notification'] == true,
+        missingIcon: Icons.notifications_off_outlined,
+        title: 'Notifications',
+        held:
+            "Allows the Kiosk Satellite Service's ongoing notification, "
+            'which says what it is keeping alive.',
+        missing:
+            "Needed to show the Kiosk Satellite Service's ongoing notification.",
+        idle: '',
+        onGrant: () => ensureOsPermission(Permission.notification),
+      ),
+    ]);
   }
 }
 
