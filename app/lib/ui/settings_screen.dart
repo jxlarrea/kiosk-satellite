@@ -1164,6 +1164,16 @@ class _CategoryContentState extends State<_CategoryContent> {
         if (e.key == btproxyKey.key && mounted) setState(() {});
       });
     }
+    // The launcher's permissions group follows Return automatically; a
+    // flip from the remote admin must show or hide it here too.
+    if (widget.category == 'Launcher') {
+      _keyEcho = widget.container.bus.on<SettingChanged>().listen((e) {
+        if ((e.key == launcherAutoReturn.key || e.key == launcherEnabled.key) &&
+            mounted) {
+          setState(() {});
+        }
+      });
+    }
   }
 
   StreamSubscription<SettingChanged>? _keyEcho;
@@ -1799,6 +1809,19 @@ class _CategoryContentState extends State<_CategoryContent> {
             id: 'x:kiosk_permissions',
             child: SettingsCard(
               children: [_KioskPermissionsTile(container: container)],
+            ),
+          ),
+        ],
+        // Return automatically's grants (issue #317), only while it is on:
+        // the launcher without it needs nothing from the OS.
+        if (widget.category == 'Launcher' &&
+            container.settings.get(launcherEnabled) &&
+            container.settings.get(launcherAutoReturn)) ...[
+          const SectionHeading('Required system permissions'),
+          SearchLandingTarget(
+            id: 'x:launcher_permissions',
+            child: SettingsCard(
+              children: [_LauncherPermissionsTile(container: container)],
             ),
           ),
         ],
@@ -2786,6 +2809,111 @@ class _KioskPermissionsTileState extends State<_KioskPermissionsTile>
           onGrant: () async {
             await widget.container.kiosk.openUiGuardSettings();
           },
+        ),
+      ]),
+    );
+  }
+}
+
+/// The App Launcher's Required system permissions group (issue #317):
+/// what Return automatically leans on, in the Kiosk group's shape.
+class _LauncherPermissionsTile extends StatefulWidget {
+  const _LauncherPermissionsTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_LauncherPermissionsTile> createState() =>
+      _LauncherPermissionsTileState();
+}
+
+class _LauncherPermissionsTileState extends State<_LauncherPermissionsTile>
+    with WidgetsBindingObserver {
+  SystemPermissions? _perms;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Both grants are given on OS screens that report nothing back.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    SystemPermissions? perms;
+    try {
+      perms = await SystemPermissions.read();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _perms = perms);
+  }
+
+  Widget _row({
+    required bool? granted,
+    required IconData missingIcon,
+    required String title,
+    required String held,
+    required String missing,
+    required Future<void> Function() onGrant,
+  }) {
+    final theme = Theme.of(context);
+    return ListTile(
+      leading: Icon(
+        granted == true ? Icons.check_circle_outline : missingIcon,
+        color: granted == true ? null : theme.colorScheme.error,
+      ),
+      title: Text(title),
+      subtitle: Text(granted == true ? held : missing),
+      trailing: granted == true
+          ? null
+          : TextButton(
+              onPressed: () async {
+                await onGrant();
+                await _refresh();
+              },
+              child: const Text('Grant'),
+            ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: separatedRows([
+        _row(
+          granted: _perms?.displayOverOtherApps,
+          missingIcon: Icons.open_in_new_off_outlined,
+          title: 'Display over other apps',
+          held:
+              'Kiosk Satellite can bring itself back in the foreground and '
+              'notice touches in the other app.',
+          missing:
+              'Without this the kiosk cannot come back on its own, and '
+              'touches in the other app go unseen.',
+          onGrant: () => requestOsPermission(Permission.systemAlertWindow),
+        ),
+        _row(
+          granted: _perms?.batteryUnrestricted,
+          missingIcon: Icons.battery_alert_outlined,
+          title: 'Unrestricted battery',
+          held:
+              'Allows the process to run in the background without being '
+              'paused or killed.',
+          missing:
+              'Android may pause the app behind the other one, and a paused '
+              'clock never brings the kiosk back.',
+          onGrant: BackgroundListening.requestBatteryUnrestricted,
         ),
       ]),
     );

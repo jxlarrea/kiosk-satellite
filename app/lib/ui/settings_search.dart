@@ -246,6 +246,12 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     anchorId: 'x:kiosk_permissions',
   ),
   SettingsSearchEntry(
+    category: 'Launcher',
+    title: 'Required system permissions',
+    description: 'The grants Return automatically leans on.',
+    anchorId: 'x:launcher_permissions',
+  ),
+  SettingsSearchEntry(
     category: 'Screen & Audio',
     title: 'Master volume',
     description:

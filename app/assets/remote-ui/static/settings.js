@@ -222,6 +222,13 @@ export async function loadSettings() {
       .then((res) => res.data === true).catch(() => null);
     const pollOverlay = () => check('hasOverlayPermission');
     const pollGuard = () => check('hasUiGuard');
+    const pollBattery = () => api('/api/commands/getSystemPermissions',
+      { method: 'POST', body: '{}' }).then((r) => r.json())
+      .then((res) => res.data ? res.data.batteryUnrestricted === true : null)
+      .catch(() => null);
+    const grantBattery = () => api('/api/commands/requestOsPermissions',
+      { method: 'POST',
+        body: JSON.stringify({ which: ['batteryOptimizations'] }) });
     const grantOverlay = () => api('/api/commands/requestOsPermissions',
       { method: 'POST', body: JSON.stringify({ which: ['overlay'] }) });
     const openGuard = () => api('/api/commands/openUiGuardSettings',
@@ -277,6 +284,7 @@ export async function loadSettings() {
       card.className = 'card';
       rows.forEach((r) => card.appendChild(r));
       tab.append(h, card);
+      return [h, card];
     };
     group('tab-kiosk', [
       permRow('Display over other apps',
@@ -304,6 +312,47 @@ export async function loadSettings() {
           + 'Enable Kiosk Satellite under Accessibility on the tablet.',
         'Open settings on device', openGuard, pollGuard),
     ]);
+    // The App Launcher's group answers for Return automatically alone
+    // (issue #317), so it shows only while that switch is on, following
+    // the toggles in place rather than through a re-render, the same as
+    // the device page.
+    {
+      const launcherGroup = group('tab-launcher', [
+        permRow('Display over other apps',
+          'Kiosk Satellite can bring itself back in the foreground and '
+            + 'notice touches in the other app.',
+          'Without this the kiosk cannot come back on its own, and touches '
+            + 'in the other app go unseen. The grant screen appears on the '
+            + 'tablet.',
+          'Grant on device', grantOverlay, pollOverlay),
+        permRow('Unrestricted battery',
+          'Allows the process to run in the background without being '
+            + 'paused or killed.',
+          'Android may pause the app behind the other one, and a paused '
+            + 'clock never brings the kiosk back. The grant dialog appears '
+            + 'on the tablet.',
+          'Grant on device', grantBattery, pollBattery),
+      ]);
+      const tab = document.getElementById('tab-launcher');
+      const on = (key) => {
+        const cb = tab.querySelector(
+          `[data-key="${key}"] input[type="checkbox"]`);
+        return !!cb && cb.checked;
+      };
+      const sync = () => {
+        const show = on('launcher.enabled') && on('launcher.auto_return');
+        launcherGroup.forEach((el) => el.classList.toggle('hidden', !show));
+      };
+      // Delegated: the auto-return row comes and goes with the master
+      // switch (dependsOn), so a listener on the row itself would be lost.
+      tab.addEventListener('change', (e) => {
+        const key = e.target.closest?.('[data-key]')?.dataset.key;
+        if (key === 'launcher.enabled' || key === 'launcher.auto_return') {
+          setTimeout(sync, 50);
+        }
+      });
+      sync();
+    }
   }
 
   // ── Freshly generated encryption key ─────────────────────────────────

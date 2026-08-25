@@ -954,15 +954,20 @@ const launcherShowIcons = SettingDef<bool>(
 
 // The way back without a gesture or a hand: after an app opened through
 // launchApp (the launcher, a gesture, MQTT), an idle clock brings the
-// kiosk to the front again. Uses the same bringToFront as the wake word,
-// so on Android 10+ it needs the draw-over-apps grant; enabling this
-// fires the grant screen when it is missing (see AppLauncherManager).
+// kiosk to the front again. Idle, not elapsed (issue #317): a touch
+// watch window restarts the clock on every touch in the other app, so
+// someone using it is not pulled out mid-task. Uses the same bringToFront
+// as the wake word, so on Android 10+ it needs the draw-over-apps grant,
+// which the touch watch rides too; enabling this fires the grant screen
+// when it is missing (see AppLauncherManager).
 const launcherAutoReturn = SettingDef<bool>(
   key: 'launcher.auto_return',
   type: SettingType.boolean,
   defaultValue: false,
   title: 'Return automatically',
-  description: 'Come back to the kiosk after time spent in another app.',
+  description:
+      'Come back to the kiosk once the other app has gone untouched for '
+      'a while.',
   category: 'Launcher',
   dependsOn: 'launcher.enabled',
 );
@@ -973,7 +978,8 @@ const launcherAutoReturnSeconds = SettingDef<num>(
   defaultValue: 300,
   min: 10,
   title: 'Return after (seconds)',
-  description: 'Time in the other app before the kiosk comes back.',
+  description:
+      'Time without a touch in the other app before the kiosk comes back.',
   category: 'Launcher',
   dependsOn: 'launcher.auto_return',
 );

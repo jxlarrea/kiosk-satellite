@@ -1,3 +1,4 @@
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_test/flutter_test.dart';
@@ -34,14 +35,16 @@ void main() {
     await settings.init();
     executed = [];
     for (final name in ['screenOn', 'bringToFront', 'stopScreensaver']) {
-      commands.register(Command(
-        name: name,
-        description: 'stub',
-        handler: (_) async {
-          executed.add(name);
-          return const CommandResult.ok();
-        },
-      ));
+      commands.register(
+        Command(
+          name: name,
+          description: 'stub',
+          handler: (_) async {
+            executed.add(name);
+            return const CommandResult.ok();
+          },
+        ),
+      );
     }
     launcher = AppLauncherManager(bus, commands, log, settings);
     await launcher.init();
@@ -75,8 +78,10 @@ void main() {
   group('showAppLauncher', () {
     test('refuses while the launcher is disabled, whitelist or not', () async {
       await build({'ks.launcher.apps': twoApps});
-      final result =
-          await launcher.commands.execute('showAppLauncher', const {});
+      final result = await launcher.commands.execute(
+        'showAppLauncher',
+        const {},
+      );
       expect(result.ok, isFalse);
       expect(result.error, contains('disabled'));
       expect(launcher.visible.value, isFalse);
@@ -85,8 +90,10 @@ void main() {
 
     test('refuses with an empty whitelist', () async {
       await build({'ks.launcher.enabled': true});
-      final result =
-          await launcher.commands.execute('showAppLauncher', const {});
+      final result = await launcher.commands.execute(
+        'showAppLauncher',
+        const {},
+      );
       expect(result.ok, isFalse);
       expect(launcher.visible.value, isFalse);
       expect(executed, isEmpty);
@@ -94,8 +101,10 @@ void main() {
 
     test('wakes, fronts, stops the screensaver, then shows', () async {
       await build({'ks.launcher.enabled': true, 'ks.launcher.apps': twoApps});
-      final result =
-          await launcher.commands.execute('showAppLauncher', const {});
+      final result = await launcher.commands.execute(
+        'showAppLauncher',
+        const {},
+      );
       expect(result.ok, isTrue);
       expect(launcher.visible.value, isTrue);
       expect(executed, ['screenOn', 'bringToFront', 'stopScreensaver']);
@@ -142,51 +151,184 @@ void main() {
     expect(launcher.apps, hasLength(2));
   });
 
+  group('auto-return (issue #317)', () {
+    const channel = MethodChannel('kiosk_satellite/background');
+    late List<Map<String, Object?>> watchCalls;
+
+    setUp(() {
+      watchCalls = [];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            if (call.method == 'watchTouches') {
+              watchCalls.add((call.arguments as Map).cast<String, Object?>());
+              return true;
+            }
+            return null;
+          });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    Future<void> armed() => build({
+      'ks.launcher.enabled': true,
+      'ks.launcher.apps': twoApps,
+      'ks.launcher.auto_return': true,
+      'ks.launcher.auto_return_seconds': 30,
+    });
+
+    test('returns after the idle time, watching touches meanwhile', () async {
+      await armed();
+      fakeAsync((async) {
+        bus.publish(const AppLaunched(package: 'com.a'));
+        async.flushMicrotasks();
+        launcher.didChangeAppLifecycleState(AppLifecycleState.paused);
+        async.flushMicrotasks();
+        expect(watchCalls, [
+          {'on': true},
+        ]);
+        expect(launcher.watchingTouches, isTrue);
+        async.elapse(const Duration(seconds: 29));
+        expect(executed, isEmpty);
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(executed, ['bringToFront']);
+        // The watch comes down with the clock.
+        expect(watchCalls.last, {'on': false});
+        expect(launcher.watchingTouches, isFalse);
+      });
+    });
+
+    test('a touch in the other app starts the clock over', () async {
+      await armed();
+      fakeAsync((async) {
+        bus.publish(const AppLaunched(package: 'com.a'));
+        async.flushMicrotasks();
+        launcher.didChangeAppLifecycleState(AppLifecycleState.paused);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 25));
+        launcher.touchSeen();
+        async.elapse(const Duration(seconds: 25));
+        // 50s in, but only 25s since the last touch: still away.
+        expect(executed, isEmpty);
+        launcher.touchSeen();
+        async.elapse(const Duration(seconds: 29));
+        expect(executed, isEmpty);
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(executed, ['bringToFront']);
+      });
+    });
+
+    test('coming back on its own disarms the clock and the watch', () async {
+      await armed();
+      fakeAsync((async) {
+        bus.publish(const AppLaunched(package: 'com.a'));
+        async.flushMicrotasks();
+        launcher.didChangeAppLifecycleState(AppLifecycleState.paused);
+        async.flushMicrotasks();
+        async.elapse(const Duration(seconds: 10));
+        launcher.didChangeAppLifecycleState(AppLifecycleState.resumed);
+        async.flushMicrotasks();
+        expect(watchCalls.last, {'on': false});
+        async.elapse(const Duration(seconds: 60));
+        expect(executed, isEmpty);
+        // A touch report after disarm is noise, not a re-arm.
+        launcher.touchSeen();
+        async.elapse(const Duration(seconds: 60));
+        expect(executed, isEmpty);
+      });
+    });
+
+    test('a pause with no launch behind it arms nothing', () async {
+      await armed();
+      fakeAsync((async) {
+        launcher.didChangeAppLifecycleState(AppLifecycleState.paused);
+        async.flushMicrotasks();
+        expect(watchCalls, isEmpty);
+        async.elapse(const Duration(seconds: 60));
+        expect(executed, isEmpty);
+      });
+    });
+
+    test('runs the plain clock when the watch cannot go up', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async => false);
+      await armed();
+      fakeAsync((async) {
+        bus.publish(const AppLaunched(package: 'com.a'));
+        async.flushMicrotasks();
+        launcher.didChangeAppLifecycleState(AppLifecycleState.paused);
+        async.flushMicrotasks();
+        expect(launcher.watchingTouches, isFalse);
+        async.elapse(const Duration(seconds: 31));
+        async.flushMicrotasks();
+        expect(executed, ['bringToFront']);
+      });
+    });
+  });
+
   group('foregroundApp', () {
     final binding = TestWidgetsFlutterBinding.instance;
     const channel = MethodChannel('kiosk_satellite/background');
 
     void mockNative(Map<Object?, Object?>? answer) {
-      binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
-          (call) async => call.method == 'foregroundApp' ? answer : null);
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        (call) async => call.method == 'foregroundApp' ? answer : null,
+      );
       addTearDown(
-          () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
-              channel, null));
+        () => binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          null,
+        ),
+      );
     }
 
     test('relays the native answer when usage access names one', () async {
       await build({});
       mockNative(const {'package': 'com.wall', 'label': 'WallPanel'});
-      final result =
-          await launcher.commands.execute('foregroundApp', const {});
+      final result = await launcher.commands.execute('foregroundApp', const {});
       expect(result.ok, isTrue);
       expect((result.data as Map)['package'], 'com.wall');
       expect((result.data as Map)['label'], 'WallPanel');
     });
 
-    test('vouches for this app while resumed when native knows nothing',
-        () async {
-      await build({});
-      mockNative(null);
-      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      final result =
-          await launcher.commands.execute('foregroundApp', const {});
-      expect((result.data as Map)['package'], 'me.jxl.kiosk_satellite');
-      expect((result.data as Map)['label'], 'Kiosk Satellite');
-    });
+    test(
+      'vouches for this app while resumed when native knows nothing',
+      () async {
+        await build({});
+        mockNative(null);
+        binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        final result = await launcher.commands.execute(
+          'foregroundApp',
+          const {},
+        );
+        expect((result.data as Map)['package'], 'me.jxl.kiosk_satellite');
+        expect((result.data as Map)['label'], 'Kiosk Satellite');
+      },
+    );
 
-    test('answers an honest null while another app is up without the grant',
-        () async {
-      await build({});
-      mockNative(null);
-      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      // Leave the binding as other tests expect it.
-      addTearDown(() => binding
-          .handleAppLifecycleStateChanged(AppLifecycleState.resumed));
-      final result =
-          await launcher.commands.execute('foregroundApp', const {});
-      expect(result.ok, isTrue);
-      expect((result.data as Map)['package'], isNull);
-    });
+    test(
+      'answers an honest null while another app is up without the grant',
+      () async {
+        await build({});
+        mockNative(null);
+        binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        // Leave the binding as other tests expect it.
+        addTearDown(
+          () =>
+              binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed),
+        );
+        final result = await launcher.commands.execute(
+          'foregroundApp',
+          const {},
+        );
+        expect(result.ok, isTrue);
+        expect((result.data as Map)['package'], isNull);
+      },
+    );
   });
 }

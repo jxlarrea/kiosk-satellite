@@ -49,6 +49,19 @@ relaunches it immediately. Two situations are deliberately left alone: apps
 opened through the App Launcher (their auto-return owns the way back), and
 the Android permission screens the settings pages open.
 
+The App Launcher's **Return automatically** is an idle clock, not a
+countdown: **Return after** counts the time the other app goes untouched,
+and every touch in it starts the count over, so someone in the middle of
+something is never pulled back to the kiosk. The touches are seen through
+a one-pixel, invisible, untouchable window the app keeps over the other
+app while the clock runs, which needs the same **display over other apps**
+permission the return itself does; a **Required system permissions** group
+appears under the switch, on the device and in the remote admin alike,
+with that grant and **Unrestricted battery** (a paused app has no clock).
+An app that hides overlay windows, as some banking apps do, keeps its
+touches to itself, and there the clock runs plain and the kiosk comes back
+after the time regardless.
+
 Both relaunches, and the one after a crash, come from the
 [Kiosk Satellite Service](permissions.md#the-kiosk-satellite-service), the
 foreground service the app always runs. The recovery paths need the

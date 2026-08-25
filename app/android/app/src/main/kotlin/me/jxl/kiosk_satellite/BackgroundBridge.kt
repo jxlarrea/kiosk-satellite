@@ -17,6 +17,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.Display
 import androidx.core.content.ContextCompat
@@ -42,6 +43,7 @@ class BackgroundBridge(
     messenger: BinaryMessenger,
 ) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/background")
+    private var lastTouchSeen = 0L
 
     init {
         channel.setMethodCallHandler { call, result ->
@@ -309,6 +311,28 @@ class BackgroundBridge(
                     result.success(null)
                 }
                 "canBringToFront" -> result.success(canDrawOverlays())
+                // The App Launcher's idle clock (issue #317): while armed,
+                // every touch in the other app comes back as "touchSeen",
+                // throttled to one a second, so the return timer can
+                // restart. Answers whether the watch is actually up.
+                "watchTouches" -> {
+                    val on = call.argument<Boolean>("on") ?: false
+                    TouchWatchOverlay.post {
+                        val watching = if (on) {
+                            TouchWatchOverlay.start(context) {
+                                val now = SystemClock.uptimeMillis()
+                                if (now - lastTouchSeen >= 1000) {
+                                    lastTouchSeen = now
+                                    channel.invokeMethod("touchSeen", null)
+                                }
+                            }
+                        } else {
+                            TouchWatchOverlay.stop(context)
+                            false
+                        }
+                        result.success(watching)
+                    }
+                }
                 "requestBringToFront" -> {
                     context.startActivity(
                         Intent(

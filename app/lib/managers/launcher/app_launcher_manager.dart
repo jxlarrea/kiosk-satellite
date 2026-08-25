@@ -10,6 +10,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import '../wake_word/background_listening.dart';
 
 /// One entry in the launcher whitelist: the package to open and the label
 /// cached at pick time, so both UIs can name it without asking the device.
@@ -48,7 +49,12 @@ List<LauncherApp> decodeLauncherApps(String json) {
 /// this manager owns its visibility, the installed-apps enumeration the
 /// pickers read, the icon cache, and auto-return: after any launchApp
 /// (this launcher, a gesture, MQTT), an armed timer calls bringToFront
-/// once the configured time has passed with the app still backgrounded.
+/// once the configured time has passed with the app still backgrounded
+/// and untouched. The "untouched" comes from a native touch watch window
+/// (TouchWatchOverlay, issue #317) that reports every touch in the other
+/// app; each one restarts the clock, so the return only ever interrupts
+/// an app nobody is using. Where the watch cannot be put up the clock
+/// runs plain, which is what it always did.
 class AppLauncherManager extends Manager with WidgetsBindingObserver {
   AppLauncherManager(super.bus, super.commands, super.log, this._settings);
 
@@ -73,6 +79,10 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
   /// background trip minutes later (the drawer, a permission screen).
   DateTime? _launchedAt;
   static const _armWindow = Duration(seconds: 15);
+
+  /// Whether the native touch watch is up for the current arm; false also
+  /// while nothing is armed. Read by the tests and the logs.
+  bool watchingTouches = false;
 
   @override
   String get name => 'launcher';
@@ -118,9 +128,9 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
             'this app while it is frontmost and {package: null} otherwise.',
         handler: (_) async {
           try {
-            final raw =
-                await _channel.invokeMethod<Map<Object?, Object?>>(
-                    'foregroundApp');
+            final raw = await _channel.invokeMethod<Map<Object?, Object?>>(
+              'foregroundApp',
+            );
             if (raw != null) {
               return CommandResult.ok({
                 'package': '${raw['package']}',
@@ -134,7 +144,8 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
           }
           // No grant (or no usage event yet): the one app we can still
           // vouch for is ourselves, while resumed.
-          final resumed = WidgetsBinding.instance.lifecycleState ==
+          final resumed =
+              WidgetsBinding.instance.lifecycleState ==
               AppLifecycleState.resumed;
           return CommandResult.ok({
             'package': resumed ? 'me.jxl.kiosk_satellite' : null,
@@ -208,9 +219,11 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
         final can =
             await _channel.invokeMethod<bool>('canBringToFront') ?? false;
         if (!can) {
-          unawaited(commands.execute('requestOsPermissions', {
-            'which': ['overlay'],
-          }));
+          unawaited(
+            commands.execute('requestOsPermissions', {
+              'which': ['overlay'],
+            }),
+          );
         }
       } on MissingPluginException {
         // Not Android; nothing to grant.
@@ -220,6 +233,7 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
     });
 
     if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
+    BackgroundListening.onTouchSeen = touchSeen;
   }
 
   @override
@@ -235,25 +249,74 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
         return;
       }
       final seconds = _settings.get(defs.launcherAutoReturnSeconds).toInt();
-      log.info(name, 'auto-return armed: ${seconds}s');
-      _returnTimer?.cancel();
-      _returnTimer = Timer(Duration(seconds: seconds), () async {
-        // The state may have moved since the timer was set; only pull the
-        // kiosk forward if it is genuinely still behind the other app.
-        if (WidgetsBinding.instance.lifecycleState ==
-            AppLifecycleState.resumed) {
-          return;
-        }
-        log.info(name, 'auto-return: bringing the kiosk back');
-        final result = await commands.execute('bringToFront', const {});
-        if (result.data == false) {
-          log.warn(name, 'auto-return needs the draw-over-apps grant');
-        }
-      });
+      log.info(name, 'auto-return armed: ${seconds}s idle');
+      _startClock(seconds);
+      unawaited(_watchTouches(true));
     } else if (state == AppLifecycleState.resumed) {
-      _returnTimer?.cancel();
-      _returnTimer = null;
+      _disarm();
       _launchedAt = null;
+    }
+  }
+
+  /// (Re)start the idle clock. Armed once on pause, and again on every
+  /// touch the watch reports, so the return only fires after [seconds]
+  /// with nobody touching the other app.
+  void _startClock(int seconds) {
+    _returnTimer?.cancel();
+    _returnTimer = Timer(Duration(seconds: seconds), () async {
+      _returnTimer = null;
+      unawaited(_watchTouches(false));
+      // The state may have moved since the timer was set; only pull the
+      // kiosk forward if it is genuinely still behind the other app.
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        return;
+      }
+      log.info(name, 'auto-return: bringing the kiosk back');
+      final result = await commands.execute('bringToFront', const {});
+      if (result.data == false) {
+        log.warn(name, 'auto-return needs the draw-over-apps grant');
+      }
+    });
+  }
+
+  void _disarm() {
+    if (_returnTimer == null && !watchingTouches) return;
+    _returnTimer?.cancel();
+    _returnTimer = null;
+    unawaited(_watchTouches(false));
+  }
+
+  /// The native touch watch's report (issue #317): someone is using the
+  /// other app, so the idle clock starts over. Public because it is the
+  /// channel callback; ignored while nothing is armed.
+  void touchSeen() {
+    if (_returnTimer == null) return;
+    final seconds = _settings.get(defs.launcherAutoReturnSeconds).toInt();
+    log.debug(name, 'auto-return: touch in the other app, ${seconds}s again');
+    _startClock(seconds);
+  }
+
+  Future<void> _watchTouches(bool on) async {
+    try {
+      final up =
+          await _channel.invokeMethod<bool>('watchTouches', {'on': on}) ??
+          false;
+      watchingTouches = on && up;
+      if (on && !up) {
+        // No grant, or an app that hides overlays: the clock runs plain,
+        // as it did before the watch existed.
+        log.warn(
+          name,
+          'auto-return: touches in the other app cannot be seen '
+          '(draw-over-apps grant missing?), returning after the time '
+          'regardless',
+        );
+      }
+    } on MissingPluginException {
+      watchingTouches = false;
+    } on PlatformException catch (e) {
+      watchingTouches = false;
+      log.warn(name, 'touch watch failed: $e');
     }
   }
 
@@ -279,6 +342,8 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
   @override
   Future<void> dispose() async {
     if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
+    BackgroundListening.onTouchSeen = null;
+    _disarm();
     await _launchSub?.cancel();
     await _settingSub?.cancel();
     await _saverSub?.cancel();

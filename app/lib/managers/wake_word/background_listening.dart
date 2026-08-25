@@ -64,8 +64,7 @@ class BackgroundListening {
         'filename': filename,
         'userAgent': userAgent,
         'mimeType': mimeType,
-      }))
-          ?.toInt() ??
+      }))?.toInt() ??
       -1;
 
   /// Launch a finished download (the snackbar's "Open" action): an APK goes
@@ -78,7 +77,7 @@ class BackgroundListening {
   /// completion through the channel instead and this hands it to the UI.
   /// Setting a handler replaces the previous one.
   static void Function(int id, bool success, String? filename)?
-      _onDownloadComplete;
+  _onDownloadComplete;
 
   /// Media volume changed on the device (rocker, another app), pushed from
   /// the platform's volume receiver. The MQTT manager republishes off it.
@@ -101,8 +100,13 @@ class BackgroundListening {
   /// which is not a transition and must not trigger recovery work.
   static void Function(bool up, bool initial)? _onNetworkChanged;
 
+  /// A touch landed in another app while the App Launcher's touch watch
+  /// was up (issue #317); native throttles it to one a second.
+  static void Function()? _onTouchSeen;
+
   static set onDownloadComplete(
-      void Function(int id, bool success, String? filename)? handler) {
+    void Function(int id, bool success, String? filename)? handler,
+  ) {
     _onDownloadComplete = handler;
     _installHandler();
   }
@@ -118,7 +122,8 @@ class BackgroundListening {
   }
 
   static set onNextAlarmChanged(
-      void Function(Map<String, Object?>? alarm)? handler) {
+    void Function(Map<String, Object?>? alarm)? handler,
+  ) {
     _onNextAlarmChanged = handler;
     _installHandler();
   }
@@ -133,6 +138,11 @@ class BackgroundListening {
     _installHandler();
   }
 
+  static set onTouchSeen(void Function()? handler) {
+    _onTouchSeen = handler;
+    _installHandler();
+  }
+
   /// One channel, one handler: every native push shares it, so it is
   /// (re)installed whenever any callback changes and removed only when they
   /// are all gone. Setting a handler directly on the channel from elsewhere
@@ -143,7 +153,8 @@ class BackgroundListening {
         _onScreenStateChanged == null &&
         _onNextAlarmChanged == null &&
         _onAmbientDisplayChanged == null &&
-        _onNetworkChanged == null) {
+        _onNetworkChanged == null &&
+        _onTouchSeen == null) {
       _channel.setMethodCallHandler(null);
       return;
     }
@@ -157,6 +168,7 @@ class BackgroundListening {
         );
       }
       if (call.method == 'volumeChanged') _onVolumeChanged?.call();
+      if (call.method == 'touchSeen') _onTouchSeen?.call();
       if (call.method == 'screenStateChanged') {
         final args = (call.arguments as Map?) ?? const {};
         _onScreenStateChanged?.call(args['on'] == true);
