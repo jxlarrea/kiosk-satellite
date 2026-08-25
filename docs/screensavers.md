@@ -255,6 +255,16 @@ worse than missing it until morning.
 
 ## Turning the screen off
 
+The screensaver stands down while another app is in front of the kiosk:
+the idle clock stops counting the moment the app goes behind (an app
+opened from the App Launcher, a gesture or Home Assistant, or Home pressed
+on a tablet without kiosk mode), a screensaver already up ends so the
+other app gets the brightness back, and the clock starts over from the
+moment the kiosk returns. Brightness is a device-wide setting, so a
+screensaver dimming it under someone using another app would dim that app.
+A dark panel is not another app: the screen going off pauses the kiosk the
+same way, and there the session carries on exactly as before.
+
 The screensaver holds the panel awake while it shows, so the OS idle
 timeout never fires under it. **Turn screen off after** is the
 sanctioned way out: once the screensaver has been up that long, the

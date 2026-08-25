@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
@@ -119,13 +120,14 @@ Map<String, Object?>? activeScheduleEntry(
 /// dark panel, so motion, the MQTT dismiss and the wake word can all light
 /// it back up. The session stays active across the power-off, which is what
 /// routes every dismiss source through [stop] and its screenOn.
-class ScreensaverManager extends Manager {
+class ScreensaverManager extends Manager with WidgetsBindingObserver {
   ScreensaverManager(
     super.bus,
     super.commands,
     super.log,
     this._settings, {
     this._screenOffUnit = const Duration(minutes: 1),
+    this._pauseProbeDelay = const Duration(seconds: 1),
   });
 
   final SettingsManager _settings;
@@ -146,6 +148,22 @@ class ScreensaverManager extends Manager {
 
   /// One real minute, injectable for tests only.
   final Duration _screenOffUnit;
+
+  /// Another app is in front of the kiosk (an app from the launcher, a
+  /// gesture or Home Assistant, Home pressed without kiosk mode). The
+  /// screensaver stands down entirely: brightness is the device's, so a
+  /// dim under someone using Chrome dims Chrome, and Turn screen off
+  /// after would power the panel off under them. Set by the pause probe,
+  /// cleared on resume.
+  bool _behindAnotherApp = false;
+  bool _lifecyclePaused = false;
+
+  /// A dark panel pauses the Activity exactly like an escape does, and
+  /// the screen-off broadcast may land after the pause; the probe waits
+  /// this long and then asks isScreenOn, the same trick the kiosk
+  /// manager's reclaim uses (issue #291). Injectable for tests only.
+  Timer? _pauseProbe;
+  final Duration _pauseProbeDelay;
 
   /// The `at` of the schedule entry the current visuals were applied under,
   /// so the periodic tick only reapplies on an actual boundary crossing.
@@ -204,6 +222,7 @@ class ScreensaverManager extends Manager {
   Future<void> init() async {
     await _migrateMiniClock24h();
     await _migrateMiniClockWidget();
+    if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
     // Stand down while a page interaction runs (voice turn, ringing timer
     // alert, media playback), whichever API the page signalled it through:
@@ -542,9 +561,43 @@ class ScreensaverManager extends Manager {
     _resetIdleTimer();
   }
 
+  /// The kiosk going behind another app, and coming back. Only a pause
+  /// that finds the screen still lit counts: a dark panel is handled by
+  /// the ScreenStateChanged listener and keeps its session.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _lifecyclePaused = true;
+      _pauseProbe?.cancel();
+      _pauseProbe = Timer(_pauseProbeDelay, () async {
+        _pauseProbe = null;
+        if (!_lifecyclePaused) return;
+        final on = (await commands.execute('isScreenOn', const {})).data;
+        if (on == false || !_lifecyclePaused) return;
+        _behindAnotherApp = true;
+        _idleTimer?.cancel();
+        if (_active) {
+          log.info(name, 'another app is in front; standing down');
+          await stop();
+        } else {
+          log.debug(name, 'another app is in front; idle clock on hold');
+        }
+      });
+    } else if (state == AppLifecycleState.resumed) {
+      _lifecyclePaused = false;
+      _pauseProbe?.cancel();
+      _pauseProbe = null;
+      if (_behindAnotherApp) {
+        _behindAnotherApp = false;
+        log.debug(name, 'kiosk back in front; idle clock restarted');
+        _resetIdleTimer();
+      }
+    }
+  }
+
   void _resetIdleTimer() {
     _idleTimer?.cancel();
-    if (_cameraViewActive) return;
+    if (_cameraViewActive || _behindAnotherApp) return;
     if (!_settings.get(defs.screensaverEnabled) || _paused || _voiceTurn) {
       return;
     }
@@ -634,6 +687,12 @@ class ScreensaverManager extends Manager {
 
   Future<void> start() async {
     if (_active || _paused || _cameraViewActive) return;
+    // Another app owns the screen; a dim now would dim it (the brightness
+    // is the device's), and the idle clock is on hold for the same reason.
+    if (_behindAnotherApp) {
+      log.debug(name, 'start refused: another app is in front');
+      return;
+    }
     // Hold mode refuses every start, commanded ones included: "keep this
     // view on screen" beats a startScreensaver arriving over MQTT or a
     // gesture (issue #266).
@@ -904,6 +963,8 @@ class ScreensaverManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    if (Platform.isAndroid) WidgetsBinding.instance.removeObserver(this);
+    _pauseProbe?.cancel();
     _idleTimer?.cancel();
     _scheduleTimer?.cancel();
     _screenOffTimer?.cancel();
