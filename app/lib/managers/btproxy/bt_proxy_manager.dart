@@ -58,7 +58,7 @@ class BtProxyManager extends Manager {
   Timer? _ouiTimer;
 
   @override
-  String get name => 'btproxy';
+  String get name => 'esphome';
 
   @override
   Future<void> init() async {

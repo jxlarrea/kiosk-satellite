@@ -20,7 +20,7 @@ import android.util.Log
  * outright is the honest version.
  */
 internal object BluetoothProxyRuntime {
-    private const val TAG = "KsBtProxy"
+    private const val TAG = "KsEsphome"
 
     class Config(
         val friendlyName: String,
@@ -186,7 +186,7 @@ internal object BluetoothProxyRuntime {
         nearby.clear()
         wakeLock?.let { runCatching { if (it.isHeld) it.release() } }
         wakeLock = null
-        log("Bluetooth proxy stopped")
+        log("ESPHome server stopped")
     }
 
     fun status(): Map<String, Any> {

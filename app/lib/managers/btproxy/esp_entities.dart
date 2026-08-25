@@ -952,7 +952,7 @@ class EspEntitySurface {
       case 'take_screenshot':
         await _takeScreenshot();
       default:
-        log.warn('btproxy', 'entity command for unknown id $objectId');
+        log.warn('esphome', 'entity command for unknown id $objectId');
     }
   }
 
@@ -967,7 +967,7 @@ class EspEntitySurface {
       if (!_deviceCameraIsTheCamera) _sendImage(base64Decode(jpeg));
       await _send('last_screenshot', DateTime.now().toUtc().toIso8601String());
     } else {
-      log.warn('btproxy', 'screenshot failed: ${result.error}');
+      log.warn('esphome', 'screenshot failed: ${result.error}');
     }
   }
 

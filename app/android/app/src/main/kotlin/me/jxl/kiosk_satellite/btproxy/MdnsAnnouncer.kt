@@ -39,7 +39,7 @@ internal class MdnsAnnouncer(
     private val onLog: (String) -> Unit = {},
 ) {
     private companion object {
-        const val TAG = "KsBtProxy"
+        const val TAG = "KsEsphome"
         const val ANNOUNCE_INTERVAL_MS = 30_000L
         val GROUP: InetAddress = InetAddress.getByName("224.0.0.251")
         const val MDNS_PORT = 5353
