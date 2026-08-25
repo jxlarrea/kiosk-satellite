@@ -410,6 +410,11 @@ class _KioskScreenState extends State<KioskScreen>
   void initState() {
     super.initState();
 
+    // Nothing else says a device fell back to the texture path, and a
+    // report from one starts with its log (issue #302).
+    if (c.settings.get(defs.legacyWebView)) {
+      c.log.info('kiosk', 'legacy WebView renderer: drawing through a texture');
+    }
     unawaited(_waitForActivityAttach());
     // The watchdog's step before a process restart: a fresh widget retries
     // the platform-view creation, which heals a create that raced the
@@ -1211,8 +1216,12 @@ class _KioskScreenState extends State<KioskScreen>
       // on the page and stuttering the whole UI. The kiosk *is* the
       // WebView — its scrolling wins. Flutter animates over the live view
       // only for the brief drawer slide; settings is an opaque route, so
-      // the view is not even composited while it is open.
-      useHybridComposition: true,
+      // the view is not even composited while it is open. The exception is
+      // hardware that cannot do it: some old GPUs hand Flutter's overlay
+      // buffers back in the wrong pixel format and abort the process the
+      // moment the dashboard appears (issue #302), and those devices draw
+      // through the texture instead.
+      useHybridComposition: !c.settings.get(defs.legacyWebView),
       // Required for shouldOverrideUrlLoading to be called at all: without
       // it the callback is simply never invoked, and app:// navigations
       // would fall through to Chromium as an unknown scheme.
@@ -1950,7 +1959,9 @@ class _OverlayWebViewState extends State<_OverlayWebView> {
         initialUrlRequest: URLRequest(url: WebUri(widget.url)),
         initialUserScripts: _seedScripts,
         initialSettings: InAppWebViewSettings(
-          useHybridComposition: true,
+          useHybridComposition: !widget.container.settings.get(
+            defs.legacyWebView,
+          ),
           transparentBackground: false,
           supportZoom: false,
         ),

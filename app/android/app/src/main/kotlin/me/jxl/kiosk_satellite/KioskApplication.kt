@@ -90,7 +90,11 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         AppIdentity.configure(applicationContext)
 
         // Renderer choice before the engine exists: old GPUs whose drivers
-        // crash under Impeller get Skia instead (issue #127, RendererGuard).
+        // crash under Impeller get Skia instead (issue #127, RendererGuard),
+        // and old GPUs that cannot hand Flutter's overlay frames back draw
+        // the dashboard through a texture (issue #302). Both settle before
+        // Dart reads the settings they write.
+        WebViewCompositingGuard.check(this)
         val engine = FlutterEngine(this, RendererGuard.engineArgs(this))
         // Plugins before the entrypoint: Dart main() starts the admin server and
         // reads shared_preferences immediately, so shared_preferences,

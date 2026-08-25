@@ -4279,6 +4279,28 @@ const disableImpeller = SettingDef<bool>(
   category: 'Device',
 );
 
+// The second half of the same escape hatch (issue #302). Hybrid composition
+// draws the dashboard into the Android view hierarchy and hands Flutter its
+// own frames back through an ImageReader; on Android 9 and older that reader
+// asks for RGBA_8888 with no say in what the GPU produces, and a driver that
+// answers in BGRA (the Mali T628 in the 2014 Galaxy Note 10.1) takes the
+// process down the instant the dashboard appears. On means the WebView is
+// drawn into a texture instead, which costs a copy per frame, so this stays
+// off everywhere the native path works. Read natively as well
+// (WebViewCompositingGuard.kt), which turns it on by itself where the GPU
+// fails the probe.
+const legacyWebView = SettingDef<bool>(
+  key: 'render.legacy_webview',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Legacy WebView renderer',
+  description:
+      'Draw the dashboard into a texture, for old GPUs that crash when it '
+      'appears. Turns itself on where the device needs it; takes effect on '
+      'the next app start.',
+  category: 'Device',
+);
+
 /// All settings, in display order.
 const List<SettingDef<Object>> allSettings = [
   startUrl,
@@ -4553,6 +4575,7 @@ const List<SettingDef<Object>> allSettings = [
   deviceName,
   uiTheme,
   disableImpeller,
+  legacyWebView,
   // The Remote Administration group closes the Device page.
   remoteEnabled,
   remotePort,
