@@ -36,6 +36,7 @@ export const GESTURE_ACTION_GROUPS = [
     ['url', 'Open a web page', 'globe'],
     ['camera_view', 'Show a camera view', 'video'],
     ['sendspin_player', 'Show the Sendspin player', 'speaker'],
+    ['app_launcher', 'Open the app launcher', 'apps'],
     ['screensaver', 'Start the screensaver', 'moon'],
     ['screensaver_stop', 'Stop the screensaver', 'sun'],
     ['hold_mode', 'Toggle hold mode', 'pauseCircle'],
@@ -86,6 +87,7 @@ export function describeGestureAction(a) {
       if (a.mode === 'hide') return 'Close the camera view';
       return a.viewName ? `Toggle camera view ${a.viewName}` : 'Toggle the camera view';
     case 'sendspin_player': return 'Show the Sendspin player';
+    case 'app_launcher': return 'Open the app launcher';
     case 'screensaver': return 'Start the screensaver';
     case 'screensaver_stop': return 'Stop the screensaver';
     case 'hold_mode': return 'Toggle hold mode';
@@ -416,8 +418,8 @@ export async function pickGestureAction(current) {
   if (!type) return null;
   const carried = current?.type === type ? current : null;
   switch (type) {
-    case 'android_settings': case 'sendspin_player': case 'screensaver':
-    case 'screensaver_stop': case 'hold_mode':
+    case 'android_settings': case 'sendspin_player': case 'app_launcher':
+    case 'screensaver': case 'screensaver_stop': case 'hold_mode':
       return { type };
     case 'navigate': return configureGestureNavigate(carried);
     case 'url': return configureGestureText(carried, {

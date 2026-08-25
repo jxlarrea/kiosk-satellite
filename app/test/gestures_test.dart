@@ -141,6 +141,10 @@ void main() {
         describeGestureAction({'type': 'screensaver'}),
         'Start the screensaver',
       );
+      expect(
+        describeGestureAction({'type': 'app_launcher'}),
+        'Open the app launcher',
+      );
     });
   });
 
@@ -167,6 +171,7 @@ void main() {
         'screenOff',
         'showCameraView',
         'hideCameraView',
+        'showAppLauncher',
         'launchApp',
         'openUri',
         'openSystemSettings',
@@ -318,6 +323,17 @@ void main() {
       );
       await fire('g1');
       expect(executed.single.$1, 'stopScreensaver');
+    });
+
+    test('app_launcher opens the launcher overlay (issue #318)', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"br",'
+        '"taps":3},"action":{"type":"app_launcher"}}]',
+      );
+      await fire('g1');
+      // Open only, through the launcher's own command so its gates (master
+      // switch, whitelist) apply; the drawer's Allowed Action does not.
+      expect(executed.single.$1, 'showAppLauncher');
     });
 
     test('hold_mode toggles the setting each time (issue #266)', () async {

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Open the app launcher** as a gesture action (issue #318). The launcher overlay could only be reached from the kiosk menu, its Home Assistant button or the remote API; a gesture now opens it directly, on the device and in the remote admin alike, under the Kiosk Satellite group of the action chooser. It runs through the launcher's own command, so the App Launcher has to be enabled with at least one app picked, and it does not consult the menu's Apps allowed action: switch that entry off under Kiosk Mode and the launcher stays reachable through a gesture only you know, hidden from casual users. Its close button or a tap outside closes it, as before.
+
 ## v2026.8.80 - 2026-08-25
 
 ### Added

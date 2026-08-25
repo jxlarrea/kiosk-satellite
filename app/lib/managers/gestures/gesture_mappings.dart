@@ -29,6 +29,7 @@
 ///  - camera_view:      mode (show|hide), viewId (empty = default view);
 ///                      show toggles: the same gesture again closes the view
 ///  - sendspin_player:  show the floating player card (a fling hides it)
+///  - app_launcher:     open the app launcher overlay (issue #318)
 ///  - screensaver:      start the screensaver
 ///  - screensaver_stop: stop it (redundant for touch, made for claps)
 ///  - hold_mode:        toggle hold mode (pin the current view, issue #266)
@@ -180,6 +181,8 @@ String describeGestureAction(Map<String, Object?> action) {
           : 'Toggle camera view $name';
     case 'sendspin_player':
       return 'Show the Sendspin player';
+    case 'app_launcher':
+      return 'Open the app launcher';
     case 'screensaver':
       return 'Start the screensaver';
     case 'screensaver_stop':

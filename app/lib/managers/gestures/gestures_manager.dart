@@ -260,6 +260,14 @@ class GesturesManager extends Manager {
         // reveals the card while sendspin.show_player is off (the card
         // override), so the setting itself stays untouched.
         bus.publish(const SendspinShowPlayerRequested());
+      case 'app_launcher':
+        // Open only: the overlay's close button and its scrim already close
+        // it. The command carries the launcher's own gates (master switch
+        // off or no apps picked refuse with a reason), so a mapping left
+        // behind after the launcher is turned off logs instead of showing
+        // an empty grid; the drawer entry's Allowed Action is deliberately
+        // NOT consulted, which is what makes a secret gesture possible.
+        await _run('showAppLauncher', const {});
       case 'screensaver':
         await _run('startScreensaver', const {});
       case 'screensaver_stop':

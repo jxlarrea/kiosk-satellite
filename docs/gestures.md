@@ -62,6 +62,7 @@ The chooser groups them: Kiosk Satellite, Android, Home Assistant.
 | Open a web page | An external URL, in the same overlay a dashboard link opens, with its close button. |
 | Show a camera view | Any configured camera view. The show action toggles: the same gesture performed again closes the view it opened. A separate close action exists for closing whatever view is up. |
 | Show the Sendspin player | The floating player card; a fling on the card is how it hides. |
+| Open the app launcher | The overlay with the apps picked under App Launcher; its close button or a tap outside closes it. Needs the App Launcher enabled with at least one app picked, and works whether or not the Apps entry is allowed in the kiosk menu, so the menu entry can be switched off under Kiosk Mode, Allowed Actions, and the launcher kept reachable through a gesture only you know. |
 | Start the screensaver | Whatever mode is configured. |
 | Stop the screensaver | Redundant for touch (any tap dismisses), made for claps: the screen comes back from across the room. |
 | Toggle hold mode | Pins the current view (screensaver, dashboard rotation and the return to home timer pause); the same gesture again releases it. Works well as a clap mapping while cooking from a recipe. |
