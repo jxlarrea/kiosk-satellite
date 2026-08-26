@@ -114,6 +114,11 @@ class BrightnessBridge(
 
     private fun canWrite(): Boolean = Settings.System.canWrite(context)
 
+    /** The last raw value asked for, so a late verification knows whether a
+     *  newer write has since superseded it. */
+    private var lastTarget = -1
+    private val main = Handler(Looper.getMainLooper())
+
     private fun write(level: Double): Boolean {
         if (!canWrite()) return false
         return try {
@@ -142,10 +147,58 @@ class BrightnessBridge(
                     "brightnessClamped", mapOf("asked" to target, "kept" to stored),
                 )
             }
+            lastTarget = target
+            main.removeCallbacks(verify)
+            main.postDelayed(verify, VERIFY_MS)
             true
         } catch (_: Exception) {
             false
         }
+    }
+
+    /**
+     * The write took at the time, but the framework's brightness
+     * synchronizer answers a settings write asynchronously and, once its
+     * preferred value is one the panel cannot show (a value under the
+     * real floor, from an older build of this app or anyone else), it
+     * reverts every later write to the floor and stays that way until
+     * adaptive brightness is toggled. Look again once it has had its say;
+     * a reverted write gets that toggle and one more try.
+     */
+    private val verify = Runnable {
+        val target = lastTarget
+        if (target < 0) return@Runnable
+        val stored = try {
+            Settings.System.getInt(
+                context.contentResolver, Settings.System.SCREEN_BRIGHTNESS,
+            )
+        } catch (_: Exception) {
+            return@Runnable
+        }
+        if (abs(stored - target) <= 1 || !canWrite()) return@Runnable
+        try {
+            Settings.System.putInt(
+                context.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS_MODE,
+                Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
+            )
+            Settings.System.putInt(
+                context.contentResolver,
+                Settings.System.SCREEN_BRIGHTNESS_MODE,
+                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
+            )
+            Settings.System.putInt(
+                context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, target,
+            )
+            channel.invokeMethod(
+                "brightnessRecovered", mapOf("asked" to target, "reverted" to stored),
+            )
+        } catch (_: Exception) {
+        }
+    }
+
+    private companion object {
+        const val VERIFY_MS = 600L
     }
 
     fun dispose() {

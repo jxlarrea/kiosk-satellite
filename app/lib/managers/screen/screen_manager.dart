@@ -127,6 +127,15 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       if (call.method == 'brightnessRange') {
         _logBrightnessScale(call.arguments as Map?);
       }
+      if (call.method == 'brightnessRecovered') {
+        final args = (call.arguments as Map?) ?? const {};
+        log.warn(
+          name,
+          'brightness write reverted by the system (asked '
+          '${args['asked']}, reverted to ${args['reverted']}); toggled '
+          'adaptive brightness and wrote it again',
+        );
+      }
       if (call.method == 'brightnessClamped') {
         final args = (call.arguments as Map?) ?? const {};
         log.warn(

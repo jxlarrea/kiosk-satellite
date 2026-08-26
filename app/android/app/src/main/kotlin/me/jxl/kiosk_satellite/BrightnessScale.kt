@@ -20,11 +20,16 @@ internal data class BrightnessScale(val min: Int, val max: Int) {
         ((raw - min).toDouble() / (max - min)).coerceIn(0.0, 1.0)
     }
 
-    // Zero stays zero rather than climbing to the panel's minimum: the black
-    // screensaver asks for a dark panel and means it.
+    // Never below the panel's own floor, zero included. A write under it
+    // gains nothing (the display clamps to the floor anyway) and on Android
+    // 14+ it leaves the framework's brightness synchronizer with a preferred
+    // value the panel can never show, after which it treats every later
+    // write as a conflict and reverts it to the floor: the restore after a
+    // screensaver dimmed to 0% never landed, and the tablet stayed dark
+    // until adaptive brightness was toggled. The black screensaver's dark
+    // panel is the floor on such a panel, which is as dark as it goes.
     fun toRaw(level: Double): Int {
         val clamped = level.coerceIn(0.0, 1.0)
-        if (clamped <= 0.0) return 0
         return (min + clamped * (max - min)).roundToInt().coerceIn(min, max)
     }
 

@@ -42,7 +42,7 @@ class BrightnessScaleTest {
     fun clampsOutOfRangeValues() {
         val scale = BrightnessScale(10, 1023)
         assertEquals(1023, scale.toRaw(2.0))
-        assertEquals(0, scale.toRaw(-1.0))
+        assertEquals(10, scale.toRaw(-1.0))
         // Below the panel's own minimum, including the zero the black
         // screensaver writes: dark, not a level.
         assertEquals(0.0, scale.toLevel(0))
@@ -50,8 +50,10 @@ class BrightnessScaleTest {
     }
 
     @Test
-    fun zeroStaysZeroRatherThanTheMinimum() {
-        assertEquals(0, BrightnessScale(20, 255).toRaw(0.0))
+    fun zeroStopsAtThePanelFloor() {
+        // Never under the floor: the panel cannot show it and the framework
+        // wedges on the attempt.
+        assertEquals(20, BrightnessScale(20, 255).toRaw(0.0))
     }
 
     @Test
