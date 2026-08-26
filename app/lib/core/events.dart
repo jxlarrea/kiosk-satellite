@@ -535,6 +535,21 @@ class GestureDetected extends AppEvent {
   final String id;
 }
 
+/// A gesture's Home Assistant action (a service call, script, automation
+/// trigger or event) came back. Those actions leave nothing on screen by
+/// themselves, so the kiosk screen turns the outcome into a toast: what
+/// ran, or why it did not. [action] is the mapping's action object.
+class GestureActionCompleted extends AppEvent {
+  const GestureActionCompleted({
+    required this.action,
+    required this.ok,
+    this.error,
+  });
+  final Map<String, Object?> action;
+  final bool ok;
+  final String? error;
+}
+
 // ── Sendspin ───────────────────────────────────────────────────────────
 
 /// The Sendspin now-playing display state: true while a track is loaded

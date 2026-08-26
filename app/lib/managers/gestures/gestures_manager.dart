@@ -328,26 +328,26 @@ class GesturesManager extends Manager {
       case 'android_settings':
         await _run('openSystemSettings', const {});
       case 'ha_script':
-        await _run('haCallService', {
+        await _runHa(a, 'haCallService', {
           'domain': 'script',
           'service': 'turn_on',
           'entity_id': a['entityId'],
         });
       case 'ha_automation':
-        await _run('haCallService', {
+        await _runHa(a, 'haCallService', {
           'domain': 'automation',
           'service': 'trigger',
           'entity_id': a['entityId'],
         });
       case 'ha_service':
-        await _run('haCallService', {
+        await _runHa(a, 'haCallService', {
           'domain': a['domain'],
           'service': a['service'],
           if ('${a['entityId'] ?? ''}'.isNotEmpty) 'entity_id': a['entityId'],
           if (a['data'] is Map) 'data': a['data'],
         });
       case 'ha_event':
-        await _run('haFireEvent', {
+        await _runHa(a, 'haFireEvent', {
           'event': a['event'],
           if (a['data'] is Map) 'data': a['data'],
         });
@@ -359,5 +359,24 @@ class GesturesManager extends Manager {
   Future<void> _run(String command, Map<String, Object?> params) async {
     final result = await commands.execute(command, params);
     if (!result.ok) log.warn(name, '$command failed: ${result.error}');
+  }
+
+  /// [_run] for the Home Assistant actions, which show nothing on screen
+  /// by themselves: the outcome goes out on the bus for the kiosk screen
+  /// to confirm with a toast, or to say why the call failed.
+  Future<void> _runHa(
+    Map<String, Object?> action,
+    String command,
+    Map<String, Object?> params,
+  ) async {
+    final result = await commands.execute(command, params);
+    if (!result.ok) log.warn(name, '$command failed: ${result.error}');
+    bus.publish(
+      GestureActionCompleted(
+        action: action,
+        ok: result.ok,
+        error: result.error,
+      ),
+    );
   }
 }

@@ -180,8 +180,10 @@ void main() {
     late SettingsManager settings;
     late GesturesManager gestures;
     late List<(String, Map<String, Object?>)> executed;
+    late List<GestureActionCompleted> outcomes;
 
-    Future<void> build(String mappingsJson) async {
+    /// [haFailure] makes the Home Assistant stubs fail with that error.
+    Future<void> build(String mappingsJson, {String? haFailure}) async {
       SharedPreferences.setMockInitialValues({
         'ks.${defs.gestureMappings.key}': mappingsJson,
       });
@@ -189,6 +191,8 @@ void main() {
       final log = Logger();
       commands = CommandRegistry(log);
       executed = [];
+      outcomes = [];
+      bus.on<GestureActionCompleted>().listen(outcomes.add);
       for (final name in [
         'haNavigate',
         'showLinkPage',
@@ -210,6 +214,8 @@ void main() {
             description: 'test stub',
             handler: (p) async {
               executed.add((name, p));
+              final ha = name == 'haCallService' || name == 'haFireEvent';
+              if (ha && haFailure != null) return CommandResult.fail(haFailure);
               return const CommandResult.ok();
             },
           ),
@@ -286,6 +292,86 @@ void main() {
         'data': {'brightness_pct': 60},
       });
       expect(executed[1].$2, {'domain': 'scene', 'service': 'turn_on'});
+    });
+
+    test('a Home Assistant action reports its outcome for a toast', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tr",'
+        '"taps":2},"action":{"type":"ha_service","domain":"light",'
+        '"service":"turn_on","entityId":"light.kitchen"}},'
+        '{"id":"g2","trigger":{"type":"corner_taps","corner":"bl",'
+        '"taps":2},"action":{"type":"ha_event","event":"ks_gesture"}}]',
+      );
+      await fire('g1');
+      await fire('g2');
+      expect(outcomes, hasLength(2));
+      expect(outcomes[0].ok, isTrue);
+      expect(outcomes[0].error, isNull);
+      expect(outcomes[0].action['type'], 'ha_service');
+      expect(
+        gestureActionKindTitle(outcomes[0].action),
+        'Home Assistant Service',
+      );
+      expect(
+        describeGestureActionOutcome(outcomes[0].action, ok: true),
+        'Called light.turn_on',
+      );
+      expect(
+        gestureActionKindTitle(outcomes[1].action),
+        'Home Assistant Event',
+      );
+      expect(
+        describeGestureActionOutcome(outcomes[1].action, ok: true),
+        'Fired event ks_gesture',
+      );
+    });
+
+    test('a failed Home Assistant action carries the error', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"finger_taps","fingers":3,"taps":1},'
+        '"action":{"type":"ha_script","entityId":"script.morning"}},'
+        '{"id":"g2","trigger":{"type":"corner_hold","corner":"bl",'
+        '"holdMs":1500},"action":{"type":"ha_automation",'
+        '"entityId":"automation.lights_off"}}]',
+        haFailure: 'script.turn_on failed: Home Assistant not connected',
+      );
+      await fire('g1');
+      await fire('g2');
+      expect(outcomes, hasLength(2));
+      expect(outcomes[0].ok, isFalse);
+      expect(
+        outcomes[0].error,
+        'script.turn_on failed: Home Assistant not connected',
+      );
+      expect(
+        gestureActionKindTitle(outcomes[0].action),
+        'Home Assistant Script',
+      );
+      expect(
+        describeGestureActionOutcome(outcomes[0].action, ok: false),
+        'Could not run script.morning',
+      );
+      expect(
+        gestureActionKindTitle(outcomes[1].action),
+        'Home Assistant Automation',
+      );
+      expect(
+        describeGestureActionOutcome(outcomes[1].action, ok: false),
+        'Could not trigger automation.lights_off',
+      );
+    });
+
+    test('actions that show something themselves report nothing', () async {
+      await build(
+        '[{"id":"g1","trigger":{"type":"corner_taps","corner":"tl",'
+        '"taps":3},"action":{"type":"navigate","path":"lovelace/0"}},'
+        '{"id":"g2","trigger":{"type":"corner_taps","corner":"br",'
+        '"taps":3},"action":{"type":"screensaver"}}]',
+      );
+      await fire('g1');
+      await fire('g2');
+      expect(executed, hasLength(2));
+      expect(outcomes, isEmpty);
     });
 
     test('screensaver action starts the screensaver', () async {

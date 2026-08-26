@@ -28,6 +28,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/proxy/media_rewrite_script.dart';
 import '../managers/sendspin/music_assistant_api.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
+import '../managers/gestures/gesture_mappings.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'app_launcher_overlay.dart';
 import 'lockdown_shield.dart';
@@ -67,6 +68,7 @@ class _KioskScreenState extends State<KioskScreen>
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
   StreamSubscription<KioskExitGesture>? _gestureSub;
+  StreamSubscription<GestureActionCompleted>? _gestureResultSub;
   StreamSubscription<WebConsoleRequested>? _consoleReqSub;
   StreamSubscription<KioskBackPressed>? _backSub;
   StreamSubscription<WakeWordDetected>? _wakeSub;
@@ -424,6 +426,24 @@ class _KioskScreenState extends State<KioskScreen>
     });
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
+    // A service call, script, automation or event fired from a gesture
+    // changes nothing on this screen, so the toast is the only sign the
+    // gesture landed, or the only word on why it did not.
+    _gestureResultSub = c.bus.on<GestureActionCompleted>().listen((e) {
+      if (!mounted) return;
+      // The command's error already names the call the outcome names.
+      final error = e.error?.replaceFirst(RegExp(r'^.*? failed: '), '');
+      final outcome = describeGestureActionOutcome(e.action, ok: e.ok);
+      showToast(
+        context,
+        title: gestureActionKindTitle(e.action),
+        message: e.ok || error == null || error.isEmpty
+            ? outcome
+            : '$outcome: $error',
+        kind: e.ok ? ToastKind.info : ToastKind.error,
+        duration: Duration(seconds: e.ok ? 4 : 6),
+      );
+    });
     // A restart mid-lockdown (crash self-heal included) must come back with
     // the blackout cover already reported, not wait for a setting to move.
     _syncLockdownCover();
@@ -963,6 +983,7 @@ class _KioskScreenState extends State<KioskScreen>
     _drawer.dispose();
     _settingsSub?.cancel();
     _gestureSub?.cancel();
+    _gestureResultSub?.cancel();
     _consoleReqSub?.cancel();
     _rebuildSub?.cancel();
     _backSub?.cancel();

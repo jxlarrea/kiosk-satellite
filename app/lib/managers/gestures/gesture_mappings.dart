@@ -217,3 +217,36 @@ String describeGestureAction(Map<String, Object?> action) {
   }
   return 'Action';
 }
+
+/// The toast title for a Home Assistant action: the kind of thing it is.
+String gestureActionKindTitle(Map<String, Object?> action) =>
+    switch ('${action['type']}') {
+      'ha_service' => 'Home Assistant Service',
+      'ha_script' => 'Home Assistant Script',
+      'ha_automation' => 'Home Assistant Automation',
+      'ha_event' => 'Home Assistant Event',
+      _ => 'Home Assistant',
+    };
+
+/// The toast message for a Home Assistant action's outcome: what ran, in
+/// the past tense, or what could not.
+String describeGestureActionOutcome(
+  Map<String, Object?> action, {
+  required bool ok,
+}) {
+  switch ('${action['type']}') {
+    case 'ha_service':
+      final s = '${action['domain']}.${action['service']}';
+      return ok ? 'Called $s' : 'Could not call $s';
+    case 'ha_script':
+      final e = '${action['entityId']}';
+      return ok ? 'Ran $e' : 'Could not run $e';
+    case 'ha_automation':
+      final e = '${action['entityId']}';
+      return ok ? 'Triggered $e' : 'Could not trigger $e';
+    case 'ha_event':
+      final e = '${action['event']}';
+      return ok ? 'Fired event $e' : 'Could not fire event $e';
+  }
+  return ok ? 'Done' : 'Failed';
+}

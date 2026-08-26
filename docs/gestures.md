@@ -78,6 +78,14 @@ The chooser groups them: Kiosk Satellite, Android, Home Assistant.
 | Trigger an automation | An `automation.*` entity, run through `automation.trigger`. |
 | Fire an event | An event type and optional data for automations to listen to. |
 
+The four Home Assistant actions change nothing on the screen by themselves,
+so each shows a toast when it completes, titled for what it is (Home
+Assistant Service, Script, Automation or Event) with what ran underneath
+(Called light.turn_on, Ran script.morning, Triggered automation.lights_off,
+Fired event kiosk_gesture) or, in red, why it could not (Home Assistant not
+configured, the connection down, the call rejected). The other actions are
+their own confirmation.
+
 ## Claps
 
 A clap is detected as what it is acoustically: a sharp, broadband burst
