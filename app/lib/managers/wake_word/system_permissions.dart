@@ -32,6 +32,8 @@ class SystemPermissions {
     required this.writeSettings,
     required this.allFiles,
     required this.usageAccess,
+    this.overlayRequestable = true,
+    this.batteryRequestable = true,
   });
 
   /// Nothing listens without this one, foreground or not.
@@ -97,15 +99,20 @@ class SystemPermissions {
   /// when Kiosk Satellite itself is frontmost, just never who else is.
   final bool usageAccess;
 
-  static const _brightnessChannel =
-      MethodChannel('kiosk_satellite/brightness');
-  static const _backgroundChannel =
-      MethodChannel('kiosk_satellite/background');
+  /// Whether the device has a settings screen for the overlay grant and
+  /// the battery exemption at all. Some ROMs ship without one (a LineageOS
+  /// build on an Echo Show was reported with no "Display over other apps"
+  /// anywhere); such a grant is shown with the adb command that gives it
+  /// instead of a button, and never blocks the setup wizard.
+  final bool overlayRequestable;
+  final bool batteryRequestable;
+
+  static const _brightnessChannel = MethodChannel('kiosk_satellite/brightness');
+  static const _backgroundChannel = MethodChannel('kiosk_satellite/background');
 
   static Future<bool> _hasAllFilesAccess() async {
     try {
-      return await _backgroundChannel
-              .invokeMethod<bool>('hasAllFilesAccess') ??
+      return await _backgroundChannel.invokeMethod<bool>('hasAllFilesAccess') ??
           false;
     } catch (_) {
       return false;
@@ -178,24 +185,26 @@ class SystemPermissions {
   }
 
   static Future<SystemPermissions> read() async => SystemPermissions(
-        microphone: await Permission.microphone.isGranted,
-        microphoneBlocked: await Permission.microphone.isPermanentlyDenied,
-        displayOverOtherApps: await BackgroundListening.canBringToFront(),
-        notification: await Permission.notification.isGranted,
-        batteryUnrestricted: await BackgroundListening.isBatteryUnrestricted(),
-        camera: await Permission.camera.isGranted,
-        location: await Permission.locationWhenInUse.isGranted,
-        bluetooth:
-            await _bluetoothPairSatisfied() && await _locationGateSatisfied(),
-        bluetoothPair: await _bluetoothPairSatisfied(),
-        bluetoothNeedsLocation: true,
-        locationServicesOn:
-            (await Permission.location.serviceStatus).isEnabled,
-        deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
-        writeSettings: await _canWriteSettings(),
-        allFiles: await _hasAllFilesAccess(),
-        usageAccess: await _hasUsageAccess(),
-      );
+    microphone: await Permission.microphone.isGranted,
+    microphoneBlocked: await Permission.microphone.isPermanentlyDenied,
+    displayOverOtherApps: await BackgroundListening.canBringToFront(),
+    notification: await Permission.notification.isGranted,
+    batteryUnrestricted: await BackgroundListening.isBatteryUnrestricted(),
+    camera: await Permission.camera.isGranted,
+    location: await Permission.locationWhenInUse.isGranted,
+    bluetooth:
+        await _bluetoothPairSatisfied() && await _locationGateSatisfied(),
+    bluetoothPair: await _bluetoothPairSatisfied(),
+    bluetoothNeedsLocation: true,
+    locationServicesOn: (await Permission.location.serviceStatus).isEnabled,
+    deviceAdmin: await BackgroundListening.isScreenOffAvailable(),
+    writeSettings: await _canWriteSettings(),
+    allFiles: await _hasAllFilesAccess(),
+    usageAccess: await _hasUsageAccess(),
+    overlayRequestable: await BackgroundListening.canRequestBringToFront(),
+    batteryRequestable:
+        await BackgroundListening.canRequestBatteryUnrestricted(),
+  );
 
   /// Nothing we could not read. A platform without these channels answers
   /// everything false, which would draw as a wall of red rather than an honest
@@ -219,20 +228,22 @@ class SystemPermissions {
   );
 
   Map<String, Object?> toJson() => {
-        'microphone': microphone,
-        'microphoneBlocked': microphoneBlocked,
-        'displayOverOtherApps': displayOverOtherApps,
-        'notification': notification,
-        'batteryUnrestricted': batteryUnrestricted,
-        'camera': camera,
-        'location': location,
-        'bluetooth': bluetooth,
-        'bluetoothPair': bluetoothPair,
-        'bluetoothNeedsLocation': bluetoothNeedsLocation,
-        'locationServicesOn': locationServicesOn,
-        'deviceAdmin': deviceAdmin,
-        'writeSettings': writeSettings,
-        'allFiles': allFiles,
-        'usageAccess': usageAccess,
-      };
+    'microphone': microphone,
+    'microphoneBlocked': microphoneBlocked,
+    'displayOverOtherApps': displayOverOtherApps,
+    'notification': notification,
+    'batteryUnrestricted': batteryUnrestricted,
+    'camera': camera,
+    'location': location,
+    'bluetooth': bluetooth,
+    'bluetoothPair': bluetoothPair,
+    'bluetoothNeedsLocation': bluetoothNeedsLocation,
+    'locationServicesOn': locationServicesOn,
+    'deviceAdmin': deviceAdmin,
+    'writeSettings': writeSettings,
+    'allFiles': allFiles,
+    'usageAccess': usageAccess,
+    'overlayRequestable': overlayRequestable,
+    'batteryRequestable': batteryRequestable,
+  };
 }

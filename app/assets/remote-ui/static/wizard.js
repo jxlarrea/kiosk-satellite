@@ -163,23 +163,6 @@ export function wizardToggleRow(label, desc, on, locked, onClick) {
   return row;
 }
 
-// The service grants the setup cannot go on without, by row title: the
-// ones the service reports as needed right now that the device does not
-// hold. Empty when the device cannot be asked, so a hiccup never strands
-// the wizard.
-async function missingServiceGrants() {
-  const post = (name) => api('/api/commands/' + name,
-    { method: 'POST', body: '{}' }).then((r) => r.json()).catch(() => null);
-  const [st, pm] = await Promise.all([post('getServiceStatus'), post('getSystemPermissions')]);
-  if (!st?.ok || !pm?.ok) return [];
-  const needed = st.data.grants || {}, p = pm.data || {};
-  const out = [];
-  if (needed.batteryUnrestricted && !p.batteryUnrestricted) out.push('Unrestricted battery');
-  if (needed.displayOverOtherApps && !p.displayOverOtherApps) out.push('Display over other apps');
-  if (needed.notification && !p.notification) out.push('Notifications');
-  return out;
-}
-
 // The Kiosk Satellite Service under the restore card, mirroring the device
 // wizard: what it is, and the three grants it needs on every install under
 // a row that asks for them outright, each with a button that opens the
@@ -189,35 +172,56 @@ export function wizardServiceCard(b) {
   const intro = readOnlyRow('Kiosk Satellite Service',
     'Keeps the app alive while the screen is off or another app is in '
       + 'front, so the Home Assistant connection and other features like '
-      + 'motion detection and the Bluetooth proxy stay alive.', '');
+      + 'motion detection and the Bluetooth proxy stay alive. The permissions '
+      + 'below are optional but recommended: each one helps it survive the '
+      + 'screen being off.', '');
   intro.querySelector('span').remove();
   card.appendChild(intro);
+  // Before a password exists there is no token, and an api() call would
+  // 401 into logout, which restarts this very wizard: a blink loop. The
+  // server answers two setup-only endpoints in that window instead.
+  const passwordless = () => wizard.needPassword && !state.token;
   const post = (name, body) => api('/api/commands/' + name,
     { method: 'POST', body: JSON.stringify(body || {}) })
     .then((r) => r.json()).catch(() => null);
+  const readAll = async () => {
+    if (passwordless()) {
+      const res = await fetch('api/setup/grants').then((r) => r.ok ? r.json() : null).catch(() => null);
+      return res ? { perms: res.permissions, grants: res.grants || {} } : { perms: null, grants: {} };
+    }
+    const [st, pm] = await Promise.all([post('getServiceStatus'), post('getSystemPermissions')]);
+    return { perms: pm && pm.ok ? pm.data : null, grants: st && st.ok ? (st.data.grants || {}) : {} };
+  };
+  const requestGrant = (ask) => passwordless()
+    ? fetch('api/setup/grant', { method: 'POST', body: JSON.stringify({ which: ask }) }).catch(() => null)
+    : post('requestOsPermissions', { which: ask });
 
   const grantRow = (key, name, held, missing, idle, ask) => {
     const row = readOnlyRow(name, 'Checking\u2026', '');
     const span = row.querySelector('span');
-    row._render = (granted, needed) => {
+    row._render = (granted, needed, adbHint) => {
       const ok = granted === true;
+      // The device has no screen for the grant: the adb command stands in
+      // for the button, and the row is not an error nobody can fix.
+      const urgent = needed && !adbHint;
       row.querySelector('.desc').textContent =
-        granted == null ? 'Status unavailable.' : ok ? held : needed ? missing : idle;
-      span.textContent = granted == null ? '' : ok ? 'Granted' : needed ? 'Missing' : 'Not granted';
+        granted == null ? 'Status unavailable.' : ok ? held : adbHint || (needed ? missing : idle);
+      span.textContent = granted == null ? '' : ok ? 'Granted'
+        : adbHint ? 'Not offered' : needed ? 'Missing' : 'Not granted';
       span.style.cssText = 'white-space:nowrap; color:'
-        + (ok ? 'var(--ok)' : needed ? 'var(--error)' : 'var(--muted)');
+        + (ok ? 'var(--ok)' : urgent ? 'var(--error)' : 'var(--muted)');
       row.querySelector('button')?.remove();
-      if (ok || granted == null) return;
+      if (ok || granted == null || adbHint) return;
       const btn = document.createElement('button');
       btn.className = 'btn-ghost';
       btn.textContent = 'Grant on device';
       btn.style.cssText = 'flex-shrink:0;';
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        await post('requestOsPermissions', { which: ask });
+        await requestGrant(ask);
         let tries = 30;
         const tick = setInterval(async () => {
-          const all = await refreshGrants();
+          const all = await refresh();
           if (all === true || --tries <= 0) clearInterval(tick);
         }, 2000);
       });
@@ -241,23 +245,24 @@ export function wizardServiceCard(b) {
       '', ['notifications']),
   ];
   let grants = {};
-  const refreshGrants = async () => {
-    const res = await post('getSystemPermissions');
-    const p = res && res.ok ? res.data : null;
+  const refreshGrants = async (p) => {
     let all = true;
+    const ADB = {
+      batteryUnrestricted: ['batteryRequestable', "This device has no settings screen for it. Grant it over adb: adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite"],
+      displayOverOtherApps: ['overlayRequestable', "This device has no settings screen for it. Grant it over adb: adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow"],
+    };
     for (const [key, row] of rows) {
       const granted = p ? p[key] === true : null;
-      row._render(granted, grants[key] === true);
+      const adb = p && !granted && ADB[key] && p[ADB[key][0]] === false ? ADB[key][1] : null;
+      row._render(granted, grants[key] === true, adb);
       if (!granted) all = false;
     }
     return p ? all : null;
   };
   const refresh = async () => {
-    // Which grants a missing one breaks something for, from the service.
-    const res = await post('getServiceStatus');
-    const st = res && res.ok ? res.data : null;
-    if (st) grants = st.grants || {};
-    await refreshGrants();
+    const { perms, grants: g } = await readAll();
+    grants = g || {};
+    return refreshGrants(perms);
   };
   // Only while the card is actually on screen: a step change drops it,
   // and a fall back to the login view leaves the wizard body in the DOM
@@ -385,18 +390,12 @@ export function wizardSteps() {
         : 'New admin password (leave empty to keep the current one)');
       wizardHeading(b, 'Restore backup');
       wizardRestoreCard(b);
-      wizardHeading(b, 'Required Service Permissions');
+      wizardHeading(b, 'Recommended Service Permissions');
       wizardServiceCard(b);
     },
     next: async () => {
       // The service's required grants first: the whole kiosk rides on
       // them, and the page just asked for them by name.
-      const missing = await missingServiceGrants();
-      if (missing.length) {
-        throw wizFail('Grant the required service permissions',
-          missing.join(' and ') + ' must be granted before setup can '
-            + 'continue. Tap Grant on device on each row above.');
-      }
       const password = $('#wzPassword').value;
       if (!wizard.needPassword && !password) return;
       if (password.length < 4) throw wizFail('Password too short', 'Use at least 4 characters.');
@@ -685,6 +684,8 @@ export function wizardSteps() {
 
 export async function startWizard({ needPassword }) {
   wizard.needPassword = needPassword;
+  // Read by logout(): a 401 must not rebuild a wizard that is already up.
+  $('#wizard').dataset.needPassword = needPassword ? '1' : '0';
   wizard.i = 0;
   wizard.steps = wizardSteps();
   wizardShow();

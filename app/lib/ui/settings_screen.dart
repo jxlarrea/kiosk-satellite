@@ -24,6 +24,8 @@ import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/device/wifi_mac.dart'
     show WifiMacIdentity, WifiMacSource, wifiMacIdentity;
 import '../managers/settings/definitions.dart';
+import '../managers/service/service_manager.dart'
+    show batteryAdbHint, overlayAdbHint;
 import '../managers/settings/export_filename.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -5907,29 +5909,30 @@ class _ServicePermissionsTileState extends State<_ServicePermissionsTile>
     required String idle,
     required Future<void> Function() onGrant,
     String action = 'Grant',
+    // The device has no screen for the grant: the hint (an adb command)
+    // stands in for the button, and the row is not painted as an error
+    // nobody at the tablet can fix.
+    String? adbHint,
   }) {
     final theme = Theme.of(context);
     final ok = granted == true;
     final muted = theme.colorScheme.onSurfaceVariant;
+    final urgent = needed && adbHint == null;
     return ListTile(
       leading: Icon(
         ok ? Icons.check_circle_outline : missingIcon,
         color: ok
             ? null
-            : needed
+            : urgent
             ? theme.colorScheme.error
             : muted,
       ),
       title: Text(title),
       subtitle: Text(
-        ok
-            ? held
-            : needed
-            ? missing
-            : idle,
-        style: ok || needed ? null : TextStyle(color: muted),
+        ok ? held : adbHint ?? (needed ? missing : idle),
+        style: ok || urgent ? null : TextStyle(color: muted),
       ),
-      trailing: ok
+      trailing: ok || adbHint != null
           ? null
           : TextButton(
               onPressed: () async {
@@ -5962,6 +5965,7 @@ class _ServicePermissionsTileState extends State<_ServicePermissionsTile>
               'the Home Assistant connection and the MQTT entities with it.',
           idle: '',
           onGrant: BackgroundListening.requestBatteryUnrestricted,
+          adbHint: perms?.batteryRequestable == false ? batteryAdbHint : null,
         ),
         _row(
           granted: perms?.displayOverOtherApps,
@@ -5974,6 +5978,7 @@ class _ServicePermissionsTileState extends State<_ServicePermissionsTile>
               'crash or a close from recents.',
           idle: 'Needed to relaunch the kiosk after a crash.',
           onGrant: () => requestOsPermission(Permission.systemAlertWindow),
+          adbHint: perms?.overlayRequestable == false ? overlayAdbHint : null,
         ),
         _row(
           granted: perms?.notification,
@@ -6102,29 +6107,30 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
     required String idle,
     required Future<void> Function() onGrant,
     String action = 'Grant',
+    // The device has no screen for the grant: the hint (an adb command)
+    // stands in for the button, and the row is not painted as an error
+    // nobody at the tablet can fix.
+    String? adbHint,
   }) {
     final theme = Theme.of(context);
     final ok = granted == true;
     final muted = theme.colorScheme.onSurfaceVariant;
+    final urgent = needed && adbHint == null;
     return ListTile(
       leading: Icon(
         ok ? Icons.check_circle_outline : missingIcon,
         color: ok
             ? null
-            : needed
+            : urgent
             ? theme.colorScheme.error
             : muted,
       ),
       title: Text(title),
       subtitle: Text(
-        ok
-            ? held
-            : needed
-            ? missing
-            : idle,
-        style: ok || needed ? null : TextStyle(color: muted),
+        ok ? held : adbHint ?? (needed ? missing : idle),
+        style: ok || urgent ? null : TextStyle(color: muted),
       ),
-      trailing: ok
+      trailing: ok || adbHint != null
           ? null
           : TextButton(
               onPressed: () async {
@@ -6189,6 +6195,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               'the Home Assistant connection and the MQTT entities with it.',
           idle: '',
           onGrant: BackgroundListening.requestBatteryUnrestricted,
+          adbHint: perms?.batteryRequestable == false ? batteryAdbHint : null,
         ),
         _row(
           granted: perms?.camera,
@@ -6254,6 +6261,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
               'Lets the app bring itself back to the front, and the '
               'lockdown shield cover the whole screen.',
           onGrant: () => requestOsPermission(Permission.systemAlertWindow),
+          adbHint: perms?.overlayRequestable == false ? overlayAdbHint : null,
         ),
         _row(
           granted: perms?.writeSettings,

@@ -150,6 +150,20 @@ void main() {
     await settle();
     expect(await listening(), isTrue);
 
+    // The first page shows the service's grants before any password
+    // exists: the two setup-only endpoints answer, without a token.
+    Future<int> get(String path, {String? bearer}) async {
+      final c = HttpClient();
+      final r = await c.getUrl(Uri.parse('http://127.0.0.1:$port/$path'));
+      if (bearer != null) r.headers.set('Authorization', 'Bearer $bearer');
+      final out = await r.close();
+      await out.drain<void>();
+      c.close();
+      return out.statusCode;
+    }
+
+    expect(await get('api/setup/grants'), 200);
+
     // The wizard's first step, over the wire. Setting the password used to
     // restart the server under this very request, so the reply was lost
     // and the next press was refused as "setup already done".
@@ -187,6 +201,9 @@ void main() {
 
     expect(await change(null), 403);
     expect(settings.get(defs.remotePassword), 'letmein');
+    // With a password in place the window is closed: the page logs in and
+    // uses the gated commands like everything else.
+    expect(await get('api/setup/grants'), 403);
     expect(await change(token), 200);
     expect(settings.get(defs.remotePassword), 'changed1');
   });

@@ -91,6 +91,9 @@ export function logout() {
   // wizard instead of stranding the user at login.
   fetch('api/setup/status').then((r) => r.json()).then((setup) => {
     if (setup && setup.setupNeeded && setup.passwordNeeded) {
+      // Already on that wizard: put it back rather than rebuilding it, or
+      // any stray 401 from the page it is showing restarts it in a loop.
+      if ($('#wizard').dataset.needPassword === '1') { showView('wizard'); return; }
       startWizard({ needPassword: true });
     }
   }).catch(() => { /* no answer: the login screen is the safe place to wait */ });

@@ -334,14 +334,16 @@ class BackgroundBridge(
                     }
                 }
                 "requestBringToFront" -> {
-                    context.startActivity(
-                        Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:${context.packageName}"),
-                        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                    )
-                    result.success(null)
+                    result.success(startSettings(overlayIntent()))
                 }
+                // Whether the device has a screen for the grant at all. Some
+                // ROMs ship without one (a LineageOS build on an Echo Show
+                // was reported with no "Display over other apps" anywhere),
+                // and a grant nobody can give must not be asked for, let
+                // alone block the setup wizard. adb can still grant it.
+                "canRequestBringToFront" -> result.success(resolves(overlayIntent()))
+                "canRequestBatteryUnrestricted" ->
+                    result.success(resolves(batteryIntent()))
                 "bringToFront" -> result.success(bringToFront())
                 // "Screen on" from the admin or the screensaver: light a
                 // genuinely sleeping panel. Brightness restore alone cannot.
@@ -377,8 +379,7 @@ class BackgroundBridge(
                 // say. This is the only reliable way to be left alone.
                 "isBatteryUnrestricted" -> result.success(isBatteryUnrestricted())
                 "requestBatteryUnrestricted" -> {
-                    requestBatteryUnrestricted()
-                    result.success(null)
+                    result.success(requestBatteryUnrestricted())
                 }
                 else -> result.notImplemented()
             }
@@ -1044,14 +1045,35 @@ class BackgroundBridge(
     }
 
     @Suppress("BatteryLife") // The point of the app is to listen continuously.
-    private fun requestBatteryUnrestricted() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
-        context.startActivity(
-            Intent(
-                Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                Uri.parse("package:${context.packageName}"),
-            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-        )
+    private fun requestBatteryUnrestricted(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+        return startSettings(batteryIntent())
+    }
+
+    private fun overlayIntent() = Intent(
+        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+        Uri.parse("package:${context.packageName}"),
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    @Suppress("BatteryLife")
+    private fun batteryIntent() = Intent(
+        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+        Uri.parse("package:${context.packageName}"),
+    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    private fun resolves(intent: Intent): Boolean = try {
+        intent.resolveActivity(context.packageManager) != null
+    } catch (_: Exception) {
+        false
+    }
+
+    /** Open a settings screen; false when the device has none for it. */
+    private fun startSettings(intent: Intent): Boolean = try {
+        context.startActivity(intent)
+        true
+    } catch (e: Exception) {
+        android.util.Log.w("kiosk_satellite", "no settings screen for $intent: $e")
+        false
     }
 
     fun dispose() {

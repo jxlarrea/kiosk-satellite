@@ -33,6 +33,29 @@ class BackgroundListening {
   static Future<void> requestBringToFront() =>
       _channel.invokeMethod<void>('requestBringToFront');
 
+  /// Whether this device has that screen at all. Some ROMs ship without
+  /// one, and a grant nobody can give is not asked for.
+  static Future<bool> canRequestBringToFront() async {
+    try {
+      return await _channel.invokeMethod<bool>('canRequestBringToFront') ??
+          true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Same for the battery optimization exemption's dialog.
+  static Future<bool> canRequestBatteryUnrestricted() async {
+    try {
+      return await _channel.invokeMethod<bool>(
+            'canRequestBatteryUnrestricted',
+          ) ??
+          true;
+    } catch (_) {
+      return true;
+    }
+  }
+
   /// Come to the front. False when the grant is missing, which is the caller's
   /// cue to say so rather than fail silently.
   static Future<bool> bringToFront() async =>

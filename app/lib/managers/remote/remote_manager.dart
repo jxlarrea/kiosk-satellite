@@ -309,6 +309,32 @@ class RemoteManager extends Manager {
         'importPending': _settings.importFinishing,
       });
     }
+    // The wizard's first page shows the service's grants before any
+    // password exists, so it cannot carry a token yet. These two answer
+    // only in that window (unconfigured device, no password), the same
+    // window in which anyone may set the password anyway; the moment one
+    // exists the page logs in and uses the gated commands like the rest.
+    final passwordless =
+        _setupMode && _settings.get(defs.remotePassword).isEmpty;
+    if (path == 'api/setup/grants' && request.method == 'GET') {
+      if (!passwordless) return _json(403, {'error': 'setup already done'});
+      final perms = await commands.execute('getSystemPermissions', const {});
+      final service = await commands.execute('getServiceStatus', const {});
+      return _json(200, {
+        'permissions': perms.ok ? perms.data : null,
+        'grants': service.ok ? (service.data as Map)['grants'] : null,
+      });
+    }
+    if (path == 'api/setup/grant' && request.method == 'POST') {
+      if (!passwordless) return _json(403, {'error': 'setup already done'});
+      final body = await _body(request);
+      final which = body?['which'];
+      if (which is! List) return _json(400, {'error': 'which required'});
+      final out = await commands.execute('requestOsPermissions', {
+        'which': which,
+      });
+      return _json(out.ok ? 200 : 400, out.toJson());
+    }
     if (path == 'api/setup/password' && request.method == 'POST') {
       if (!_setupMode) return _json(403, {'error': 'setup already done'});
       // Setting one is public (there is nothing to authenticate with yet);

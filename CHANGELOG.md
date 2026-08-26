@@ -2,6 +2,13 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The setup wizard no longer stops at its first page over a permission the device cannot give. The previous release made Unrestricted battery, Display over other apps and Notifications required before Next, and a person with a tablet whose Android offers no screen for one of them (a LineageOS build on an Echo Show 8 was reported with no "Display over other apps" anywhere) was stranded on the Welcome page with no way into the app. The Kiosk Satellite Service needs none of these to run; they only decide how well it survives the screen being off, so the check is gone: the group is now titled Recommended Service Permissions, its intro says they are optional, and Next always continues. A grant the device has no settings screen for is detected as such, shown with the adb command that gives it instead of a Grant button, and never counted as missing; the same rows in the settings pages and the remote admin follow suit.
+
+- The remote admin blinked between the login form and the wizard's first page on a freshly wiped device. The service permissions card on that page read its rows through the token-gated commands, and with no password set yet there was no token: the 401 logged the page out, the logout routed back into the wizard, the wizard rendered the card again, and round it went. While no password exists the device now answers two setup-only endpoints for exactly that card (its grant states, and the Grant buttons), and a stray 401 puts an already-running wizard back instead of rebuilding it.
+
 ## v2026.8.81 - 2026-08-26
 
 ### Changed

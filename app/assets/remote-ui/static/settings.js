@@ -1082,7 +1082,7 @@ export async function loadSettings() {
       // connections open while the screen is off, and Doze is what stops
       // them. Nothing has to be switched on for this one to matter.
       { key: 'batteryUnrestricted', name: 'Unrestricted battery', ask: 'batteryOptimizations',
-        needed: true,
+        needed: true, requestable: 'batteryRequestable', adb: "This device has no settings screen for it. Grant it over adb: adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite",
         held: 'Allows the process to run in the background without being paused or killed.',
         missing: 'Android may pause the app when the screen is off, dropping the Home Assistant connection and the MQTT entities with it.',
         idle: '' },
@@ -1112,6 +1112,7 @@ export async function loadSettings() {
         missing: "Needed to show the Kiosk Satellite Service's ongoing notification.",
         idle: '' },
       { key: 'displayOverOtherApps', name: 'Display over other apps', ask: 'overlay',
+        requestable: 'overlayRequestable', adb: "This device has no settings screen for it. Grant it over adb: adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow",
         needed: background || on('browser.auto_reload_on_error')
           || on('kiosk.start_on_boot') || on('kiosk.disable_status_bar'),
         held: 'Kiosk Satellite can bring itself back in the foreground.',
@@ -1202,15 +1203,20 @@ export async function loadSettings() {
         // A spec text may be a function of the full payload (the Bluetooth
         // row words its "missing" by what actually blocks it).
         const text = (t) => typeof t === 'function' ? t(all) : t;
+        // The device has no screen for the grant: the adb command stands
+        // in for the button, and the row is not an error nobody can fix.
+        const noScreen = !ok && spec.requestable && all[spec.requestable] === false;
         info.querySelector('.desc').textContent = unknownState
           ? 'Status unavailable.'
+          : noScreen ? spec.adb
           : text(ok ? spec.held : (spec.needed ? spec.missing : spec.idle));
         state.textContent = unknownState ? ''
-          : ok ? 'Granted' : (spec.needed ? 'Missing' : 'Not granted');
+          : ok ? 'Granted' : noScreen ? 'Not offered'
+          : (spec.needed ? 'Missing' : 'Not granted');
         state.style.color = ok ? 'var(--ok)'
-          : spec.needed ? 'var(--error)' : 'var(--muted)';
+          : spec.needed && !noScreen ? 'var(--error)' : 'var(--muted)';
         row.querySelector('button')?.remove();
-        if (ok || unknownState) continue;
+        if (ok || unknownState || noScreen) continue;
         const btn = document.createElement('button');
         btn.className = 'btn-ghost';
         btn.textContent = spec.guard ? 'Open settings on device' : 'Grant on device';

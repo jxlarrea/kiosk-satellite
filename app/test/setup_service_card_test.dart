@@ -18,6 +18,7 @@ void main() {
   /// Welcome page's Next reads these.
   var batteryUnrestricted = true;
   var overlay = true;
+  var overlayRequestable = true;
 
   Future<void> boot() async {
     SharedPreferences.setMockInitialValues({});
@@ -39,6 +40,10 @@ void main() {
               return batteryUnrestricted;
             case 'canBringToFront':
               return overlay;
+            case 'canRequestBringToFront':
+              return overlayRequestable;
+            case 'canRequestBatteryUnrestricted':
+              return true;
             case 'hasAllFilesAccess':
             case 'hasUsageAccess':
               return true;
@@ -97,7 +102,7 @@ void main() {
     // The three groups, titled.
     expect(find.text('Remote administration'), findsWidgets);
     expect(find.text('Restore backup'), findsOneWidget);
-    expect(find.text('Required Service Permissions'), findsOneWidget);
+    expect(find.text('Recommended Service Permissions'), findsOneWidget);
     // Below the restore card, the last thing on the page.
     final restore = tester.getTopLeft(
       find.text('Restore from configuration file'),
@@ -128,9 +133,7 @@ void main() {
     expect(find.text('Kiosk Satellite Service'), findsNothing);
   });
 
-  testWidgets('the first page cannot be left with a required grant missing', (
-    tester,
-  ) async {
+  testWidgets('a missing grant never blocks the first page', (tester) async {
     batteryUnrestricted = false;
     addTearDown(() => batteryUnrestricted = true);
     await boot();
@@ -143,15 +146,36 @@ void main() {
     await settle(tester);
     await tester.tap(find.byType(SwitchListTile));
     await settle(tester);
-
+    // The row says so; the wizard goes on regardless. The service needs
+    // none of these to run, they only help it survive the screen off.
     await tester.tap(find.text('Next'));
     await settle(tester);
-    // Still on Welcome, told which grant is in the way.
-    expect(find.text('Connect to Home Assistant'), findsNothing);
-    expect(find.text('Grant the required service permissions'), findsOneWidget);
-    expect(
-      find.textContaining('Unrestricted battery must be granted'),
-      findsOneWidget,
+    expect(find.text('Connect to Home Assistant'), findsOneWidget);
+  });
+
+  testWidgets('a grant the device has no screen for never blocks', (
+    tester,
+  ) async {
+    overlay = false;
+    overlayRequestable = false;
+    addTearDown(() {
+      overlay = true;
+      overlayRequestable = true;
+    });
+    await boot();
+    tester.view.physicalSize = const Size(900, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(home: SetupScreen(container: container)),
     );
+    await settle(tester);
+    // The row says how to grant it over adb, and offers no button.
+    expect(find.textContaining('SYSTEM_ALERT_WINDOW allow'), findsOneWidget);
+    await tester.tap(find.byType(SwitchListTile));
+    await settle(tester);
+    await tester.tap(find.text('Next'));
+    await settle(tester);
+    expect(find.text('Connect to Home Assistant'), findsOneWidget);
   });
 }

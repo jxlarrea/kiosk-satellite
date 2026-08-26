@@ -9,6 +9,8 @@ import 'package:permission_handler/permission_handler.dart';
 import '../app_container.dart';
 import '../core/events.dart';
 import '../core/permissions.dart';
+import '../managers/service/service_manager.dart'
+    show batteryAdbHint, overlayAdbHint;
 import '../managers/settings/definitions.dart' as defs;
 import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
@@ -302,18 +304,6 @@ class _SetupScreenState extends State<SetupScreen> {
     });
     switch (_step) {
       case 0:
-        // The service's required grants first: the whole kiosk rides on
-        // them, and the page just asked for them by name.
-        final missing = await _missingServiceGrants();
-        if (!mounted) return;
-        if (missing.isNotEmpty) {
-          _fail(
-            'Grant the required service permissions',
-            '${missing.join(' and ')} must be granted before setup can '
-                'continue. Tap Grant on each row above.',
-          );
-          return;
-        }
         if (_remoteWanted) {
           final password = _remotePassword.text;
           if (password.length < 4) {
@@ -466,29 +456,6 @@ class _SetupScreenState extends State<SetupScreen> {
         );
         _enterKiosk();
     }
-  }
-
-  /// The service grants the setup cannot go on without, by row title:
-  /// the ones the service reports as needed right now (the battery
-  /// exemption always, the overlay grant while auto-reload is on) that
-  /// this device does not hold.
-  Future<List<String>> _missingServiceGrants() async {
-    SystemPermissions perms;
-    try {
-      perms = await SystemPermissions.read();
-    } catch (_) {
-      // No platform to ask (tests, desktop): nothing to gate on.
-      return const [];
-    }
-    final needed = c.service.neededGrants();
-    return [
-      if (needed['batteryUnrestricted'] == true && !perms.batteryUnrestricted)
-        'Unrestricted battery',
-      if (needed['displayOverOtherApps'] == true && !perms.displayOverOtherApps)
-        'Display over other apps',
-      if (needed['notification'] == true && !perms.notification)
-        'Notifications',
-    ];
   }
 
   void _back() => setState(() {
@@ -866,7 +833,7 @@ class _SetupScreenState extends State<SetupScreen> {
           ]),
           // The service the whole kiosk rides on, introduced where the
           // kiosk is born rather than discovered later as a notification.
-          const SectionHeading('Required Service Permissions'),
+          const SectionHeading('Recommended Service Permissions'),
           _ServiceSetupCard(container: c),
         ]);
       case 1:
@@ -1235,9 +1202,10 @@ class _StepDisc extends StatelessWidget {
 }
 
 /// The Kiosk Satellite Service on the Welcome page: what it is, and the
-/// three grants it needs on every install, each with its Grant button
-/// under a row that asks for them outright. The Permissions page at the
-/// end asks for the same grants again, which is harmless once given.
+/// three grants that let it survive the screen being off, each with its
+/// Grant button. None is required for the service to run, so none blocks
+/// the wizard; the Permissions page at the end asks for them again, which
+/// is harmless once given.
 class _ServiceSetupCard extends StatefulWidget {
   const _ServiceSetupCard({required this.container});
 
@@ -1279,7 +1247,9 @@ class _ServiceSetupCardState extends State<_ServiceSetupCard>
     setState(() => _perms = perms);
   }
 
-  /// A grant in the Permissions Manager's three states.
+  /// A grant in the Permissions Manager's three states. [adbHint] is the
+  /// fourth: the device has no screen for it, so the hint (an adb command)
+  /// stands in for the button.
   Widget _row({
     required bool? granted,
     required bool needed,
@@ -1289,6 +1259,7 @@ class _ServiceSetupCardState extends State<_ServiceSetupCard>
     required String missing,
     required String idle,
     required Future<void> Function() onGrant,
+    String? adbHint,
   }) {
     final theme = Theme.of(context);
     final ok = granted == true;
@@ -1298,20 +1269,18 @@ class _ServiceSetupCardState extends State<_ServiceSetupCard>
         ok ? Icons.check_circle_outline : missingIcon,
         color: ok
             ? null
-            : needed
+            : needed && adbHint == null
             ? theme.colorScheme.error
             : muted,
       ),
       title: Text(title),
       subtitle: Text(
-        ok
-            ? held
-            : needed
-            ? missing
-            : idle,
-        style: ok || needed ? null : TextStyle(color: muted),
+        ok ? held : adbHint ?? (needed ? missing : idle),
+        style: ok || (needed && adbHint == null)
+            ? null
+            : TextStyle(color: muted),
       ),
-      trailing: ok
+      trailing: ok || adbHint != null
           ? null
           : TextButton(
               onPressed: () async {
@@ -1335,7 +1304,9 @@ class _ServiceSetupCardState extends State<_ServiceSetupCard>
         subtitle: Text(
           'Keeps the app alive while the screen is off or another app is '
           'in front, so the Home Assistant connection and other features '
-          'like motion detection and the Bluetooth proxy stay alive.',
+          'like motion detection and the Bluetooth proxy stay alive. The '
+          'permissions below are optional but recommended: each one helps '
+          'it survive the screen being off.',
         ),
       ),
       _row(
@@ -1351,10 +1322,12 @@ class _ServiceSetupCardState extends State<_ServiceSetupCard>
             'the Home Assistant connection with it.',
         idle: '',
         onGrant: BackgroundListening.requestBatteryUnrestricted,
+        adbHint: perms?.batteryRequestable == false ? batteryAdbHint : null,
       ),
       _row(
         granted: perms?.displayOverOtherApps,
         needed: needed['displayOverOtherApps'] == true,
+        adbHint: perms?.overlayRequestable == false ? overlayAdbHint : null,
         missingIcon: Icons.open_in_new_off_outlined,
         title: 'Display over other apps',
         held: 'Kiosk Satellite can bring itself back in the foreground.',

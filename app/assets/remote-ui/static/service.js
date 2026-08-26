@@ -105,16 +105,20 @@ export function renderServicePage(panel) {
     const state = document.createElement('span');
     state.style.whiteSpace = 'nowrap';
     row.appendChild(state);
-    row._render = (granted, needed) => {
+    row._render = (granted, needed, adbHint) => {
       const ok = granted === true;
+      // The device has no screen for the grant: the adb command stands in
+      // for the button, and the row is not an error nobody can fix.
+      const urgent = needed && !adbHint;
       info.querySelector('.desc').textContent =
-        granted == null ? 'Status unavailable.' : ok ? held : needed ? missing : idle;
+        granted == null ? 'Status unavailable.' : ok ? held : adbHint || (needed ? missing : idle);
       info.querySelector('.desc').style.color =
-        ok || needed || granted == null ? '' : 'var(--muted)';
-      state.textContent = granted == null ? '' : ok ? 'Granted' : needed ? 'Missing' : 'Not granted';
-      state.style.color = ok ? 'var(--ok)' : needed ? 'var(--error)' : 'var(--muted)';
+        ok || urgent || granted == null ? '' : 'var(--muted)';
+      state.textContent = granted == null ? '' : ok ? 'Granted'
+        : adbHint ? 'Not offered' : needed ? 'Missing' : 'Not granted';
+      state.style.color = ok ? 'var(--ok)' : urgent ? 'var(--error)' : 'var(--muted)';
       row.querySelector('button')?.remove();
-      if (ok || granted == null) return;
+      if (ok || granted == null || adbHint) return;
       const btn = document.createElement('button');
       btn.className = 'btn-ghost';
       btn.textContent = 'Grant on device';
@@ -170,6 +174,12 @@ export function renderServicePage(panel) {
   // Always: the three the service needs whatever runs. The feature rows
   // only appear while their feature is one of the reasons.
   const ALWAYS = ['batteryUnrestricted', 'displayOverOtherApps', 'notification'];
+  // Grants a device may have no settings screen for: the payload flag that
+  // says so, and the adb command shown instead of the button.
+  const ADB = {
+    batteryUnrestricted: ['batteryRequestable', "This device has no settings screen for it. Grant it over adb: adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite"],
+    displayOverOtherApps: ['overlayRequestable', "This device has no settings screen for it. Grant it over adb: adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow"],
+  };
   const FEATURE = { microphone: 'listening', camera: 'camera', bluetooth: 'bluetooth' };
 
   let grants = {};
@@ -193,7 +203,7 @@ export function renderServicePage(panel) {
     for (const [k, row] of Object.entries(ROWS)) {
       if (!row.isConnected) continue;
       const granted = p[k] === true;
-      row._render(granted, grants[k] === true);
+      row._render(granted, grants[k] === true, !granted && ADB[k] && p[ADB[k][0]] === false ? ADB[k][1] : null);
       if (!granted) all = false;
     }
     return all;

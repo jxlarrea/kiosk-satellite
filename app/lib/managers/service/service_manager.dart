@@ -23,6 +23,15 @@ class ServiceReason {
   Map<String, Object?> toJson() => {'id': id, 'title': title, 'detail': detail};
 }
 
+/// The adb command that gives a grant on a device whose Android offers no
+/// screen for it, shown in place of the Grant button.
+const overlayAdbHint =
+    'This device has no settings screen for it. Grant it over adb: '
+    'adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow';
+const batteryAdbHint =
+    'This device has no settings screen for it. Grant it over adb: '
+    'adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite';
+
 /// The Dart side of the Kiosk Satellite Service (KioskSatelliteService.kt),
 /// the one foreground service that keeps the app alive.
 ///
