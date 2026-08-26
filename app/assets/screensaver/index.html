@@ -391,8 +391,13 @@ function shuffle(a) {
 let cleanup = null;      // teardown for the current camera stream, if any
 const failedWebrtc = new Set();
 
+/// The showing photo's hold timer, cleared when a step arrives before it
+/// fires; a video or a camera has no hold, its end (or nothing) is the cue.
+let hold = null;
+
 async function playItem(hass, id, playlist, advance, intervalMs) {
   if (cleanup) { cleanup(); cleanup = null; }
+  if (hold) { clearTimeout(hold); hold = null; }
   const cam = cameraOf(id);
   if (cam) {
     log('camera: ' + cam);
@@ -437,7 +442,7 @@ async function playItem(hass, id, playlist, advance, intervalMs) {
     img.onload = () => {
       const show = () => {
         showElement(stillFor(img), { still: true, holdMs: intervalMs });
-        if (playlist.length > 1) setTimeout(advance, intervalMs);
+        if (playlist.length > 1) hold = setTimeout(advance, intervalMs);
       };
       if (img.decode) img.decode().then(show, show); else show();
     };
@@ -463,12 +468,17 @@ async function runMedia() {
 
   const intervalMs = Math.max(2, Number(CFG.mediaIntervalSeconds) || 10) * 1000;
   let i = 0, advancing = false;
-  const advance = () => {
+  const step = (by) => {
     if (advancing) return;       // ended + timeout can race
     advancing = true;
-    i = (i + 1) % playlist.length;
+    i = (i + by + playlist.length) % playlist.length;
     setTimeout(() => { advancing = false; playItem(hass, playlist[i], playlist, advance, intervalMs); }, 50);
   };
+  const advance = () => step(1);
+  // The app's hand on the deck (the next and previous slide buttons in
+  // Home Assistant). A slide's own hold is dropped so the new one gets a
+  // full turn instead of the remainder of the old.
+  window.__ksSlide = (dir) => { if (hold) { clearTimeout(hold); hold = null; } step(dir < 0 ? -1 : 1); };
   playItem(hass, playlist[i], playlist, advance, intervalMs);
 }
 

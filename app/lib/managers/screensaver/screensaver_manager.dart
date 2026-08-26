@@ -11,6 +11,11 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'screensaver_widgets.dart';
 
+/// A slideshow's hand on its own deck: a positive [direction] shows the
+/// next slide, a negative one the slide before, either way restarting the
+/// hold from the new slide.
+typedef SlideNavigator = Future<void> Function(int direction);
+
 /// "HH:MM" as minutes since midnight, or null when malformed.
 int? scheduleMinutes(String hhmm) {
   final parts = hhmm.split(':');
@@ -496,6 +501,27 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       )
       ..register(
         Command(
+          name: 'nextScreensaverSlide',
+          description:
+              'Show the next slide of a running slideshow screensaver '
+              '(Home Assistant Media, Local Media, Photo Gallery, Immich '
+              'Media); a no-op for every other mode. Returns whether a '
+              'slideshow was there to step',
+          handler: (_) async => CommandResult.ok(await stepSlide(1)),
+        ),
+      )
+      ..register(
+        Command(
+          name: 'previousScreensaverSlide',
+          description:
+              'Show the previous slide of a running slideshow screensaver; '
+              'a no-op for every other mode. Returns whether a slideshow '
+              'was there to step',
+          handler: (_) async => CommandResult.ok(await stepSlide(-1)),
+        ),
+      )
+      ..register(
+        Command(
           name: 'pauseScreensaver',
           description: 'Suppress (paused=true) or release the screensaver',
           params: const {'paused': 'true to suppress, false to release'},
@@ -651,6 +677,28 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// a clock or weather widget there would land on top of it. Empty the
   /// rest of the time, so widgets behave exactly as before.
   final ValueNotifier<Set<String>> claimedCorners = ValueNotifier(const {});
+
+  /// The slideshow on screen, when the running mode is one. Home Assistant
+  /// Media, Local Media, Photo Gallery and Immich Media register on mount
+  /// and stand down on unmount; the next and previous slide buttons ride
+  /// this and do nothing for every other mode, or between screensavers.
+  SlideNavigator? _slides;
+
+  void attachSlides(SlideNavigator navigator) => _slides = navigator;
+
+  void detachSlides(SlideNavigator navigator) {
+    if (identical(_slides, navigator)) _slides = null;
+  }
+
+  /// Steps the showing slideshow by [direction] (1 next, -1 previous).
+  /// False when no slideshow is up to step: not an error, the buttons are
+  /// meant to be pressable at any time.
+  Future<bool> stepSlide(int direction) async {
+    final navigator = _slides;
+    if (navigator == null || !_active || direction == 0) return false;
+    await navigator(direction);
+    return true;
+  }
 
   /// The same for the At a glance row, which is its own setting and so its
   /// own override: a night entry can drop the widgets, the row, or both.
@@ -913,6 +961,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     scheduleWidgets.value = null;
     scheduleGlance.value = null;
     claimedCorners.value = const {};
+    _slides = null;
     bus.publish(const ScreensaverStateChanged(active: false));
   }
 

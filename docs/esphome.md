@@ -118,6 +118,14 @@ re-check moments after any network change. The Bluetooth, Foreground
 app, Next alarm and Camera view sensors likewise carry their state
 alone.
 
+Two buttons are only ever meaningful with a photo mode on screen:
+**Screensaver next slide** and **Screensaver previous slide** step a
+showing Home Assistant Media, Local Media, Photo Gallery or Immich Media
+slideshow by one, forward or back, and the new slide holds for its full
+interval. With any other mode up, or no screensaver at all, a press does
+nothing, so an automation or a dashboard button can send them at any
+time.
+
 ## Notifications
 
 Home Assistant can push a message at the kiosk and have it appear over

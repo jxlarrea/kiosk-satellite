@@ -83,7 +83,9 @@ which of the two works on a panel that stays dark),
 `setBrightness {level}`, `startScreensaver` / `stopScreensaver` /
 `isScreensaverActive`,
 `postponeScreensaver` (reset the idle timer, dismissing a showing
-screensaver first),
+screensaver first), `nextScreensaverSlide` / `previousScreensaverSlide`
+(step a showing photo-mode slideshow; a no-op for other modes, the
+result says whether anything stepped),
 `setWakeWordActive {active}`, `showCameraView {viewId}`,
 `hideCameraView`, `getCameraViewState` (`{active, viewId, viewName,
 focusedCameraId}`), `cameraGetConfig`, `restartApp`, `tts {text}`,

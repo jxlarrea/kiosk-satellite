@@ -175,6 +175,8 @@ void main() {
       'startScreensaver',
       'stopScreensaver',
       'postponeScreensaver',
+      'nextScreensaverSlide',
+      'previousScreensaverSlide',
       'reload',
       'loadStartUrl',
       'clearWebCache',
@@ -214,6 +216,8 @@ void main() {
         'screensaver_active',
         'volume',
         'postpone_screensaver',
+        'screensaver_next_slide',
+        'screensaver_previous_slide',
         'reload',
         'load_start_url',
         'clear_cache',
@@ -380,6 +384,16 @@ void main() {
     // The raw stored vocabulary is accepted too.
     await surface.handleCommand('camera_device', 'front');
     expect(settings.get(defs.cameraDevice), 'front');
+  });
+
+  test('the slide buttons step the showing slideshow', () async {
+    executed.clear();
+    await surface.handleCommand('screensaver_next_slide', null);
+    await surface.handleCommand('screensaver_previous_slide', null);
+    expect(executed.map((e) => e.$1).toList(), [
+      'nextScreensaverSlide',
+      'previousScreensaverSlide',
+    ]);
   });
 
   test('the Music Assistant button follows the server address', () async {

@@ -20,7 +20,10 @@ void main() {
   late ScreensaverManager saver;
   late List<String?> views;
 
-  Future<void> build(String mode, {Map<String, Object> extra = const {}}) async {
+  Future<void> build(
+    String mode, {
+    Map<String, Object> extra = const {},
+  }) async {
     SharedPreferences.setMockInitialValues({
       'ks.screensaver.mode': mode,
       ...extra,
@@ -81,6 +84,78 @@ void main() {
   // reports twice — the kiosk screen's raw pointer Listener and the
   // WebView's JS bridge both land in notifyActivity — and the two paths
   // must share one count.
+  group('slide navigation', () {
+    test('no slideshow up: the buttons are a no-op', () async {
+      await build('clock');
+      await saver.start();
+      await pumpEventQueue();
+      expect(await saver.stepSlide(1), isFalse);
+      expect(await saver.stepSlide(-1), isFalse);
+    });
+
+    test('a mounted slideshow is stepped, forward and back', () async {
+      await build('local');
+      await saver.start();
+      await pumpEventQueue();
+      final steps = <int>[];
+      Future<void> navigator(int direction) async => steps.add(direction);
+      saver.attachSlides(navigator);
+      expect(await saver.stepSlide(1), isTrue);
+      expect(await saver.stepSlide(-1), isTrue);
+      expect(await saver.stepSlide(0), isFalse);
+      expect(steps, [1, -1]);
+    });
+
+    test('the registry commands answer whether anything stepped', () async {
+      await build('local');
+      // The commands register in init(), which the other cases skip.
+      await saver.init();
+      await saver.start();
+      await pumpEventQueue();
+      final commands = saver.commands;
+      expect(
+        (await commands.execute('nextScreensaverSlide', const {})).data,
+        isFalse,
+      );
+      final steps = <int>[];
+      saver.attachSlides((d) async => steps.add(d));
+      expect(
+        (await commands.execute('nextScreensaverSlide', const {})).data,
+        isTrue,
+      );
+      expect(
+        (await commands.execute('previousScreensaverSlide', const {})).data,
+        isTrue,
+      );
+      expect(steps, [1, -1]);
+    });
+
+    test('an unmounted slideshow stands down, and stop clears it', () async {
+      await build('local');
+      await saver.start();
+      await pumpEventQueue();
+      final steps = <int>[];
+      Future<void> mine(int direction) async => steps.add(direction);
+      Future<void> other(int direction) async => steps.add(direction * 10);
+      saver.attachSlides(mine);
+      // Detaching someone else's navigator leaves the live one in place.
+      saver.detachSlides(other);
+      expect(await saver.stepSlide(1), isTrue);
+      saver.detachSlides(mine);
+      expect(await saver.stepSlide(1), isFalse);
+      expect(steps, [1]);
+
+      saver.attachSlides(mine);
+      await saver.stop();
+      await pumpEventQueue();
+      expect(await saver.stepSlide(1), isFalse);
+      // Between screensavers nothing steps even with a stale navigator.
+      saver.attachSlides(mine);
+      expect(await saver.stepSlide(1), isFalse);
+      expect(steps, [1]);
+    });
+  });
+
   group('double tap to dismiss', () {
     var now = DateTime(2026, 8, 19, 12);
 
@@ -171,10 +246,7 @@ void main() {
     });
 
     test('other modes keep single-tap dismissal', () async {
-      await build(
-        'black',
-        extra: {'ks.screensaver.website_double_tap': true},
-      );
+      await build('black', extra: {'ks.screensaver.website_double_tap': true});
       await saver.start();
       await pumpEventQueue();
       saver.notifyActivity('touch');

@@ -1539,6 +1539,9 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
   @override
   void initState() {
     super.initState();
+    if (widget.mode == 'media') {
+      widget.container.screensaver.attachSlides(_step);
+    }
     _kioskSub = widget.container.bus.on<SettingChanged>().listen((e) {
       if (e.key != defs.haKioskMode.key &&
           e.key != defs.haKioskHideHeader.key &&
@@ -1552,9 +1555,23 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
 
   @override
   void dispose() {
+    widget.container.screensaver.detachSlides(_step);
     _retry?.cancel();
     _kioskSub?.cancel();
     super.dispose();
+  }
+
+  /// The Home Assistant Media deck lives in the page; the bundled script
+  /// exposes one hook for stepping it. Nothing to do until the page is up
+  /// or when it has no playlist yet, and the hook itself says so.
+  Future<void> _step(int direction) async {
+    final controller = _webView;
+    if (controller == null) return;
+    await controller.evaluateJavascript(
+      source:
+          'typeof window.__ksSlide === "function" && '
+          'window.__ksSlide(${direction.sign})',
+    );
   }
 
   void _scheduleRetry(InAppWebViewController controller, String why) {
@@ -1850,10 +1867,26 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
   @override
   void initState() {
     super.initState();
+    c.screensaver.attachSlides(_step);
     _load();
   }
 
   bool get _gallery => widget.mode == 'gallery';
+
+  /// The hand-off a step is waiting on, so a second press mid-transition
+  /// is dropped rather than racing two slides onto the screen.
+  Future<void>? _stepping;
+
+  /// The next or previous slide on request (the Home Assistant buttons),
+  /// which restarts the hold from the new slide like any other hand-off.
+  Future<void> _step(int direction) {
+    if (_stepping != null || !mounted || _files.isEmpty) {
+      return Future<void>.value();
+    }
+    final pending = _show(_index + direction.sign);
+    _stepping = pending;
+    return pending.whenComplete(() => _stepping = null);
+  }
 
   Future<void> _load() async {
     if (_gallery) {
@@ -1959,9 +1992,11 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
               v.position >= v.duration &&
               v.duration > Duration.zero) {
             // Once only: the controller keeps notifying while it retires,
-            // and a second _advance would skip a slide.
+            // and a second _advance would skip a slide. A video stepped
+            // past by a button keeps playing out its hand-off; its end is
+            // no longer the slideshow's cue.
             ended = true;
-            _advance();
+            if (identical(_video, video)) _advance();
           }
         });
         if (!mounted) {
@@ -2070,6 +2105,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
 
   @override
   void dispose() {
+    c.screensaver.detachSlides(_step);
     _timer?.cancel();
     for (final t in _retireTimers) {
       t.cancel();
@@ -2310,7 +2346,23 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   @override
   void initState() {
     super.initState();
+    c.screensaver.attachSlides(_step);
     _load();
+  }
+
+  /// See the Local Media state's [_stepping].
+  Future<void>? _stepping;
+
+  /// The next or previous slide on request. Forward steps over both halves
+  /// of a showing pair, as the hold does; back goes to the photo before the
+  /// pair's first, which may bring the first back as its partner.
+  Future<void> _step(int direction) {
+    if (_stepping != null || !mounted || _assets.isEmpty) {
+      return Future<void>.value();
+    }
+    final pending = _show(direction > 0 ? _index + _span : _index - 1);
+    _stepping = pending;
+    return pending.whenComplete(() => _stepping = null);
   }
 
   Future<void> _load() async {
@@ -2386,9 +2438,11 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
               v.position >= v.duration &&
               v.duration > Duration.zero) {
             // Once only: the controller keeps notifying while it retires,
-            // and a second _advance would skip a slide.
+            // and a second _advance would skip a slide. A video stepped
+            // past by a button keeps playing out its hand-off; its end is
+            // no longer the slideshow's cue.
             ended = true;
-            _advance();
+            if (identical(_video, video)) _advance();
           }
         });
         if (!mounted) {
@@ -2604,6 +2658,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
 
   @override
   void dispose() {
+    c.screensaver.detachSlides(_step);
     _timer?.cancel();
     for (final t in _retireTimers) {
       t.cancel();

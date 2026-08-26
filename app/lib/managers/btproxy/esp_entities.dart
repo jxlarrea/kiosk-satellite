@@ -285,6 +285,16 @@ class EspEntitySurface {
         'Postpone screensaver',
         'mdi:timer-refresh-outline',
       ),
+      button(
+        'screensaver_next_slide',
+        'Screensaver next slide',
+        'mdi:skip-next',
+      ),
+      button(
+        'screensaver_previous_slide',
+        'Screensaver previous slide',
+        'mdi:skip-previous',
+      ),
       button('reload', 'Reload page', 'mdi:refresh'),
       button('load_start_url', 'Go to dashboard', 'mdi:view-dashboard'),
       button('clear_cache', 'Clear cache', 'mdi:broom'),
@@ -899,6 +909,12 @@ class EspEntitySurface {
         await _sendVoiceSatellite();
       case 'postpone_screensaver':
         await commands.execute('postponeScreensaver', const {});
+      // A slideshow mode steps its deck; every other mode, and no
+      // screensaver at all, makes these a no-op by design.
+      case 'screensaver_next_slide':
+        await commands.execute('nextScreensaverSlide', const {});
+      case 'screensaver_previous_slide':
+        await commands.execute('previousScreensaverSlide', const {});
       case 'reload':
         await commands.execute('reload', const {});
       case 'load_start_url':

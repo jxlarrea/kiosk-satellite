@@ -151,6 +151,11 @@ Media) share one machinery:
   next time the screensaver starts, not mid-session.
 - Photos are decoded at panel resolution and shown slides are released,
   so a folder of huge originals does not exhaust a low-RAM tablet.
+- **Stepping from Home Assistant**: the **Screensaver next slide** and
+  **Screensaver previous slide** buttons on the [ESPHome](esphome.md)
+  device move the showing slideshow by one, and the new slide gets a
+  full interval of its own. Pressed while any other mode is up, or no
+  screensaver at all, they do nothing.
 
 ## Widgets
 
@@ -478,5 +483,7 @@ screensaver** button for automations that keep the display awake from an
 external sensor, the **Screensaver mode** and **Clock style** selects,
 the **Clock background** text entity, the **Screensaver brightness**
 switch and level, and the **Screensaver motion detection** and
-**Screensaver face detection** switches, all on the same ESPHome device
-as the rest of the kiosk's entities.
+**Screensaver face detection** switches, and the **Screensaver next
+slide** and **Screensaver previous slide** buttons that step a showing
+photo mode, all on the same ESPHome device as the rest of the kiosk's
+entities.
