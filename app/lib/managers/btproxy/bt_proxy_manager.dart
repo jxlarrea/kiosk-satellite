@@ -133,9 +133,13 @@ class BtProxyManager extends Manager {
     });
     commands.register(
       Command(
-        name: 'btProxyStatus',
+        name: 'esphomeStatus',
         description:
-            'Bluetooth proxy state: running, scanning, counters, recent log',
+            'ESPHome server state: running, start error, and the Bluetooth '
+            'proxy underneath it (scanning, counters, connections, recent log)',
+        // Polled by the ESPHome settings pages: a log line per read is a
+        // metronome, not information (#272).
+        quiet: true,
         handler: (_) async {
           // The real-MAC identity, for the settings pages: with the
           // setting on, no address here means the platform would not
@@ -181,8 +185,9 @@ class BtProxyManager extends Manager {
     );
     commands.register(
       Command(
-        name: 'btProxyAdapterOn',
+        name: 'bluetoothAdapterOn',
         description: "Whether the device's Bluetooth adapter is turned on",
+        quiet: true,
         handler: (_) async {
           try {
             final on = await _channel.invokeMethod<bool>('adapterOn');

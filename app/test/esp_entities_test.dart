@@ -146,7 +146,7 @@ void main() {
       ),
     );
     stub('btProxyNearby', {'count': 13});
-    stub('btProxyStatus', {
+    stub('esphomeStatus', {
       'connections': ['AA:BB:CC:DD:EE:FF'],
       'connectionSlots': 3,
     });

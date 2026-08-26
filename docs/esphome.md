@@ -440,8 +440,9 @@ notice and recover on its own:
 
 The state is visible end to end: Home Assistant shows the scanner as
 failed when the kiosk genuinely cannot scan, and the remote admin's
-`btProxyStatus` command reports whether the proxy is running, whether a
-scan is active, advertisement counters, and the recent proxy log.
+`esphomeStatus` command reports whether the server is running and why
+not if it is down, whether a scan is active, advertisement counters,
+active connections, and the recent proxy log.
 
 ## Hardware notes
 

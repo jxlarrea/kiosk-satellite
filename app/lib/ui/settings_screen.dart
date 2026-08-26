@@ -1116,11 +1116,11 @@ class _CategoryContentState extends State<_CategoryContent> {
 
   Future<void> _pollBtAdapter() async {
     final result = await widget.container.commands.execute(
-      'btProxyAdapterOn',
+      'bluetoothAdapterOn',
       const {},
     );
     final status = await widget.container.commands.execute(
-      'btProxyStatus',
+      'esphomeStatus',
       const {},
     );
     String? error;
@@ -6542,7 +6542,7 @@ class _BtSlotsHintRowState extends State<_BtSlotsHintRow> {
     // the first read can race the bounce.
     for (var attempt = 0; attempt < 2; attempt++) {
       final result = await widget.container.commands.execute(
-        'btProxyStatus',
+        'esphomeStatus',
         const {},
       );
       final slots = result.ok && result.data is Map

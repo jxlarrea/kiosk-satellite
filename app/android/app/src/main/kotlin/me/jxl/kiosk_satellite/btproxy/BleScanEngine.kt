@@ -109,7 +109,7 @@ internal class BleScanEngine(
         get() = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
 
     // A failure worth showing the user, not just logcat: these lines reach
-    // the runtime's ring log and with it btProxyStatus and the remote
+    // the runtime's ring log and with it esphomeStatus and the remote
     // admin, where "scanning but hearing nothing" is otherwise invisible
     // (issue #240: a SecurityException-killed scan looked exactly like a
     // healthy one from every surface the reporter could reach).

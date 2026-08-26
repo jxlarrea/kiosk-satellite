@@ -740,7 +740,7 @@ export async function loadSettings() {
     // The connection budget under the toggle that spends it, mirroring
     // the device page: a hard Android-stack limit per proxy.
     if (byKey['btproxy.connections']?.value === true) {
-      api('/api/commands/btProxyStatus', { method: 'POST', body: '{}' })
+      api('/api/commands/esphomeStatus', { method: 'POST', body: '{}' })
         .then((r) => r.json())
         .then((res) => {
           const slots = res.data?.connectionSlots || 0;
@@ -915,13 +915,13 @@ export async function loadSettings() {
       if (firstCard) firstCard.insertAdjacentElement('afterend', row);
       else root.appendChild(row);
     };
-    const pollError = () => api('/api/commands/btProxyStatus',
+    const pollError = () => api('/api/commands/esphomeStatus',
       { method: 'POST', body: '{}' }).then((r) => r.json())
       .then((res) => paintError(res.data?.startError || null))
       .catch(() => {});
     pollError();
 
-    const poll = () => api('/api/commands/btProxyAdapterOn',
+    const poll = () => api('/api/commands/bluetoothAdapterOn',
       { method: 'POST', body: '{}' }).then((r) => r.json())
       .then((res) => {
         if (res && res.data && typeof res.data.on === 'boolean') {
@@ -2039,7 +2039,7 @@ export async function refreshRealMacNote() {
   const on = byKey['esphome.real_mac'];
   if (on?.value !== true || !depSatisfied(on)) return;
   let res;
-  try { res = await cmd('btProxyStatus'); } catch { return; }
+  try { res = await cmd('esphomeStatus'); } catch { return; }
   // Stale by the time the device answered: the row was re-rendered or
   // a later call already drew the current answer.
   if (!row.isConnected || row.parentNode.querySelector('.real-mac-note')) return;

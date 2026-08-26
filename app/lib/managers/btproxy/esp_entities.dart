@@ -1164,7 +1164,7 @@ class EspEntitySurface {
       await _send('bt_devices_connected', connected.toInt());
     }
     if (!_settings.get(defs.btproxyConnections)) return;
-    final status = await commands.execute('btProxyStatus', const {});
+    final status = await commands.execute('esphomeStatus', const {});
     final data = status.ok && status.data is Map
         ? status.data as Map
         : const {};

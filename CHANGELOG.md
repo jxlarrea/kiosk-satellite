@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The ESPHome status commands are named for what they do. `btProxyStatus` is now `esphomeStatus`, since it reports the ESPHome server (running, why it failed to start, the real Wi-Fi MAC in use) with the Bluetooth proxy's scanning, counters, connections and log underneath, and `btProxyAdapterOn` is now `bluetoothAdapterOn`, since it only reads whether the device's Bluetooth adapter is on. Both are polled by the ESPHome settings pages every few seconds and no longer print a log line per read, which had the app log ticking with Bluetooth proxy command names on a kiosk with the proxy off.
+
 ## v2026.8.82 - 2026-08-26
 
 ### Fixed
