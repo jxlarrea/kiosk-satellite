@@ -31,6 +31,8 @@ import '../managers/screensaver/immich_manager.dart'
         immichPairableScreen,
         immichPairsPortrait,
         immichPortraitPhoto;
+import '../managers/camera/models.dart'
+    show CameraViewConfig, decodeCameraViewIds;
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
@@ -3187,42 +3189,235 @@ class _KenBurnsDriftState extends State<_KenBurnsDrift> {
   );
 }
 
-/// The WebRTC camera grid as a screensaver: the configured camera view,
-/// non-interactive, dismissed by a touch anywhere like every other mode.
+/// The camera grid as a screensaver: the configured camera views, one at a
+/// time in their order, each for its dwell, non-interactive, dismissed by a
+/// touch anywhere like every other mode. One view never rotates.
 ///
 /// This is deliberately its own player rather than the camera manager's
 /// active view. A view someone opened is an interaction and holds the
 /// screensaver off; the screensaver showing cameras is the opposite, and
 /// letting the two share state would have each cancel the other.
-class CameraScreensaver extends StatelessWidget {
+class CameraScreensaver extends StatefulWidget {
   const CameraScreensaver({super.key, required this.container});
 
   final AppContainer container;
 
   @override
-  Widget build(BuildContext context) {
-    final viewId = container.settings.get(defs.screensaverCameraView);
-    final view = container.camera.config.views
-        .where((item) => item.id == viewId)
-        .firstOrNull;
-    // No view chosen, one that has since been deleted, or one left empty:
-    // black, the same safe cover an unknown mode gets.
-    if (view == null || view.cameraIds.isEmpty) {
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => container.screensaver.notifyActivity('touch'),
-        child: const ColoredBox(color: Colors.black),
-      );
+  State<CameraScreensaver> createState() => _CameraScreensaverState();
+}
+
+class _CameraScreensaverState extends State<CameraScreensaver>
+    with WidgetsBindingObserver {
+  /// The rotation: the configured ids that still name a view with cameras,
+  /// in order. Resolved when the screensaver comes up and again when the
+  /// list is edited while it shows (from the remote admin, typically, with
+  /// the black "nothing selected" cover on the panel), so the edit shows
+  /// without a dismiss and restart.
+  late List<CameraViewConfig> _views = _configuredViews();
+  int _index = 0;
+  StreamSubscription<SettingChanged>? _settingsSub;
+
+  /// The view on screen, or null while one is being taken down between
+  /// two views (and when there is nothing to show).
+  CameraViewConfig? _view;
+  Timer? _dwell;
+  Timer? _handoff;
+  bool _paused = false;
+
+  /// Whether the view on screen has shown video yet. The dwell counts from
+  /// that moment, not from the mount: negotiating the streams takes a few
+  /// seconds the person should not lose from every view. A view whose
+  /// cameras never come up still moves on, after the dwell plus a grace.
+  bool _playing = false;
+
+  /// Which way the hand-off in flight moves: forward on the timer, either
+  /// way from the buttons.
+  int _direction = 1;
+
+  static const _connectGrace = Duration(seconds: 20);
+
+  AppContainer get c => widget.container;
+
+  List<CameraViewConfig> _configuredViews() {
+    final ids = decodeCameraViewIds(
+      c.settings.get(defs.screensaverCameraViews),
+    );
+    // The single view of the pre-rotation setting: the screensaver manager
+    // folds it into the list at startup, this is the belt to its braces.
+    if (ids.isEmpty) {
+      final legacy = c.settings.get(defs.screensaverCameraView);
+      if (legacy.isNotEmpty) ids.add(legacy);
     }
-    // Through the closing wrapper like the camera view overlay, so the
-    // streams are shut down from a mounted widget rather than on the way
-    // out (see ClosingCameraPlayer).
-    return ClosingCameraPlayer(
-      key: ValueKey('screensaver-${view.id}'),
-      container: container,
-      view: view,
-      interactive: false,
-      onDismiss: () => container.screensaver.notifyActivity('touch'),
+    final byId = {for (final view in c.camera.config.views) view.id: view};
+    return [
+      for (final id in ids)
+        // Deleted since, or left empty: skipped, there is nothing to show.
+        if (byId[id] != null && byId[id]!.cameraIds.isNotEmpty) byId[id]!,
+    ];
+  }
+
+  Duration get _dwellFor => Duration(
+    seconds: max(
+      defs.screensaverCameraViewSecondsMin,
+      c.settings.get(defs.screensaverCameraViewSeconds).round(),
+    ),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // The next and previous slide buttons step the rotation like a
+    // slideshow, through the same hand-off as the timer.
+    c.screensaver.attachSlides(_step);
+    _view = _views.firstOrNull;
+    _armDwell();
+    _settingsSub = c.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.screensaverCameraViews.key) {
+        _reload();
+      } else if (e.key == defs.screensaverCameraViewSeconds.key) {
+        // A new dwell applies from now, like the slideshow intervals.
+        _armDwell();
+      }
+    });
+  }
+
+  /// The list changed under a showing screensaver: start over from its
+  /// first view. A grid on screen leaves through the usual hand-off first;
+  /// the black cover (nothing was selected) just gets the view directly.
+  void _reload() {
+    if (!mounted) return;
+    final views = _configuredViews();
+    setState(() {
+      _views = views;
+      _index = 0;
+    });
+    if (_view != null) {
+      _direction = 0;
+      _advance();
+    } else if (_handoff != null) {
+      // Mid hand-off: it lands on the new first view.
+      _direction = 0;
+    } else if (views.isNotEmpty) {
+      _playing = false;
+      setState(() => _view = views.first);
+      _armDwell();
+    }
+  }
+
+  /// A step from the buttons: the same hand-off as the timer, in the asked
+  /// direction, and the view it lands on holds for its full dwell. Nothing
+  /// to step with one view; a press mid hand-off just redirects it.
+  Future<void> _step(int direction) async {
+    if (!mounted || _views.length < 2) return;
+    if (_view == null) {
+      if (_handoff != null) _direction = direction;
+      return;
+    }
+    _direction = direction;
+    _advance();
+  }
+
+  /// The full dwell once the view plays; until then the dwell plus the
+  /// connect grace, so a dead camera cannot stall the rotation on itself.
+  void _armDwell() {
+    _dwell?.cancel();
+    if (_views.length < 2 || _paused) return;
+    _dwell = Timer(_playing ? _dwellFor : _dwellFor + _connectGrace, _advance);
+  }
+
+  void _onPlaying() {
+    if (_playing || _view == null) return;
+    _playing = true;
+    _armDwell();
+  }
+
+  /// Two steps, never one. The grid on screen is taken down first, which
+  /// runs [ClosingCameraPlayer]'s exit: the page stops its streams from a
+  /// mounted widget and is dropped after the shutdown grace. Only then is
+  /// the next view mounted, so two grids never run at once (a second set
+  /// of peer connections and decoders on top of one still winding down is
+  /// exactly what a low-RAM tablet cannot take) and no player is disposed
+  /// mid-teardown with its streams still alive, which is the leak the
+  /// wrapper exists to prevent. The moment of black between the two is the
+  /// price, and the next grid takes longer than that to negotiate anyway.
+  void _advance() {
+    if (!mounted || _view == null) return;
+    setState(() => _view = null);
+    _playing = false;
+    _dwell?.cancel();
+    _handoff?.cancel();
+    _handoff = Timer(
+      ClosingCameraPlayer.shutdownGrace + const Duration(milliseconds: 100),
+      () {
+        _handoff = null;
+        if (!mounted) return;
+        if (_views.isEmpty) {
+          _direction = 1;
+          return;
+        }
+        _index = (_index + _direction) % _views.length;
+        _direction = 1;
+        c.log.debug(
+          'screensaver',
+          'camera view ${_index + 1}/${_views.length}: '
+              '${_views[_index].name}',
+        );
+        setState(() => _view = _views[_index]);
+        _armDwell();
+      },
     );
   }
+
+  /// A grid nobody sees is not worth cycling: while the app is behind
+  /// another app or a dark panel the dwell stops where it is, and a fresh
+  /// one starts on return. A rotation mid hand-off still completes it, so
+  /// the screen is never left black.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final paused =
+        state != AppLifecycleState.resumed &&
+        state != AppLifecycleState.inactive;
+    if (paused == _paused) return;
+    _paused = paused;
+    if (paused) {
+      _dwell?.cancel();
+    } else {
+      _armDwell();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    c.screensaver.detachSlides(_step);
+    _settingsSub?.cancel();
+    _dwell?.cancel();
+    _handoff?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: () => c.screensaver.notifyActivity('touch'),
+    // Black under it all: no view chosen, every chosen one deleted or
+    // emptied since (the same safe cover an unknown mode gets), and the
+    // hand-off between two views.
+    child: ColoredBox(
+      color: Colors.black,
+      child: _views.isEmpty && _handoff == null
+          ? const SizedBox.expand()
+          // One wrapper for the whole rotation, never keyed by view: a
+          // view change has to go through its exit (see _advance), and a
+          // new wrapper per view would drop the old player on the spot.
+          : ClosingCameraPlayer(
+              container: c,
+              view: _view,
+              interactive: false,
+              onDismiss: () => c.screensaver.notifyActivity('touch'),
+              onPlaying: _onPlaying,
+            ),
+    ),
+  );
 }

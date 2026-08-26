@@ -469,6 +469,7 @@ async function start(cameraId, fullscreen) {
             : ', no audio received from the camera';
         log(`${cameraId}: playing ${codec} `
           + `${inbound.frameWidth}x${inbound.frameHeight}${sound}`);
+        bridge('cameraPlaying', cameraId);
         return;
       }
       if (waited < DECODE_GRACE_MS || !inbound.packetsReceived) return;
@@ -593,6 +594,7 @@ async function start(cameraId, fullscreen) {
         setStatus(cameraId, '');
         log(`${cameraId}: playing over MJPEG `
           + `(${img.naturalWidth}x${img.naturalHeight})`);
+        bridge('cameraPlaying', cameraId);
       } else if (performance.now() - startedAt > MSE_STALL_MS) {
         clearInterval(session.decode);
         session.decode = null;
@@ -724,6 +726,7 @@ async function start(cameraId, fullscreen) {
         session.modeFailures = 0;
         setStatus(cameraId, '');
         log(`${cameraId}: playing over MSE (${mime})`);
+        bridge('cameraPlaying', cameraId);
       }
       pump();
     };
@@ -826,6 +829,7 @@ async function start(cameraId, fullscreen) {
       const level = hls.levels && hls.levels[hls.currentLevel];
       log(`${cameraId}: playing over HLS`
         + (level && level.codecs ? ` (${level.codecs})` : ''));
+      bridge('cameraPlaying', cameraId);
     });
     hls.on(Hls.Events.ERROR, (event, data) => {
       if (stale() || !data || !data.fatal) return;

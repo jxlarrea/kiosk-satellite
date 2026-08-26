@@ -101,7 +101,7 @@ void main() {
     // refuses (its sameCard compares the subpage) and the caller re-renders
     // instead, which is correct but heavier — so the only cross-page shape
     // allowed is the deliberate one: a switch on the category page opening a
-    // page of its own, as the screensaver mode does for its five modes.
+    // page of its own, as the screensaver mode does for its six modes.
     // A hidden gate is exempt either way: it draws no row, so nothing ever
     // flips it from a page.
     final byKey = {for (final d in defs.allSettings) d.key: d};
@@ -123,6 +123,8 @@ void main() {
       'Home Assistant Media screensaver',
       'Local Media screensaver',
       'Photo Gallery screensaver',
+      'Immich Media screensaver',
+      'Camera Streams screensaver',
     ]) {
       final rows = [
         for (final d in defs.allSettings)

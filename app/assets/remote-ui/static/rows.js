@@ -552,8 +552,8 @@ export function settingRow(s) {
       const note = document.createElement('span');
       note.className = 'desc';
       const noteFor = (t) => t === 'clock'
-        ? 'Hidden in Digital Clock and WebRTC screensaver modes.'
-        : 'Hidden in the WebRTC screensaver mode.';
+        ? 'Hidden in Digital Clock and Camera Streams screensaver modes.'
+        : 'Hidden in the Camera Streams screensaver mode.';
       const cornerSel = cameraSelectField('Corner',
         free.map(([value, label]) => ({ value, label })),
         existing?.position || free[0][0]);
@@ -811,50 +811,99 @@ export function settingRow(s) {
     return frag;
   }
 
-  // The camera screensaver's view comes from the ones configured under
-  // Camera Streams, mirroring the device's picker. Views without cameras
-  // are left out: there would be nothing to show.
-  if (s.key === 'screensaver.camera_view') {
-    const sel = document.createElement('select');
-    const rebuild = (views) => {
-      sel.innerHTML = '';
-      if (!views.length) {
-        const none = document.createElement('option');
-        none.value = '';
-        none.textContent = 'No camera views with cameras';
-        sel.appendChild(none);
-        sel.disabled = true;
-        return;
-      }
-      sel.disabled = false;
-      const unset = document.createElement('option');
-      unset.value = ''; unset.textContent = 'Not set';
-      unset.selected = !s.value;
-      sel.appendChild(unset);
-      for (const view of views) {
-        const opt = document.createElement('option');
-        opt.value = view.id;
-        opt.textContent = view.name;
-        opt.selected = view.id === s.value;
-        sel.appendChild(opt);
-      }
+  // The camera screensaver's views come from the ones configured under
+  // Camera Streams, mirroring the device's picker: the chosen ones as rows
+  // under the setting in rotation order, each with move and remove buttons,
+  // the rest with an Add. Views without cameras are left out: there would
+  // be nothing to show. Saved in place on every change, like the widgets.
+  if (s.key === 'screensaver.camera_views') {
+    let chosen = [];
+    try { chosen = JSON.parse(s.value || '[]'); } catch (_) { chosen = []; }
+    if (!Array.isArray(chosen)) chosen = [];
+    chosen = chosen.filter((id, i) => typeof id === 'string' && chosen.indexOf(id) === i);
+    let views = null;
+    const save = () => api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+      'screensaver.camera_views': JSON.stringify(chosen),
+    }) });
+
+    // Real siblings, not a wrapper: the card's dividers are drawn between
+    // adjacent .row elements, and a wrapping element would break the chain.
+    const frag = document.createDocumentFragment();
+    frag.appendChild(row);
+    let listRows = [];
+    const cameras = (view) => {
+      const n = (view.cameraIds || []).length;
+      return `${n} camera${n === 1 ? '' : 's'}`;
     };
-    rebuild([]);
+    const build = () => {
+      if (!views) return [];
+      if (!views.length) {
+        return [readOnlyRow('No camera view has cameras yet',
+          'Add one under Camera Streams.', '')];
+      }
+      const byId = Object.fromEntries(views.map((v) => [v.id, v]));
+      const rows = [];
+      chosen.forEach((id, index) => {
+        const view = byId[id];
+        // Reordering one step at a time, saved as it goes.
+        const move = (delta) => {
+          const to = index + delta;
+          if (to < 0 || to >= chosen.length) return;
+          chosen.splice(to, 0, chosen.splice(index, 1)[0]);
+          repaint();
+          save();
+        };
+        rows.push(cameraListRow(view.name,
+          `Position ${index + 1} · ${cameras(view)}`, [
+            cameraAction('Move up', () => move(-1), false, 'up', index === 0),
+            cameraAction('Move down', () => move(1), false, 'down',
+              index === chosen.length - 1),
+            cameraAction('Remove', () => {
+              chosen = chosen.filter((x) => x !== id);
+              repaint();
+              save();
+            }, false, 'delete'),
+          ]));
+      });
+      for (const view of views) {
+        if (chosen.includes(view.id)) continue;
+        rows.push(cameraListRow(view.name, cameras(view), [
+          cameraAction('Add', () => {
+            chosen = chosen.concat(view.id);
+            repaint();
+            save();
+          }, false, 'add'),
+        ]));
+      }
+      return rows;
+    };
+    const repaint = () => {
+      const parent = row.parentNode;
+      const fresh = build();
+      if (!parent) {
+        listRows.forEach((el) => el.remove());
+        fresh.forEach((el) => frag.appendChild(el));
+      } else {
+        listRows.forEach((el) => el.remove());
+        let after = row;
+        fresh.forEach((el) => {
+          after.insertAdjacentElement('afterend', el);
+          after = el;
+        });
+      }
+      listRows = fresh;
+    };
     (async () => {
       try {
         const res = await (await api('/api/commands/cameraGetConfig', { method: 'POST', body: '{}' })).json();
-        rebuild((res.data?.views || []).filter((v) => (v.cameraIds || []).length));
-      } catch (_) {}
+        views = (res.data?.views || []).filter((v) => (v.cameraIds || []).length);
+      } catch (_) { views = []; }
+      // A view deleted or emptied since it was chosen has nothing to show;
+      // it leaves the list on the next save.
+      chosen = chosen.filter((id) => views.some((v) => v.id === id));
+      repaint();
     })();
-    sel.addEventListener('change', async () => {
-      const name = sel.value ? sel.options[sel.selectedIndex].textContent : '';
-      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
-        'screensaver.camera_view': sel.value,
-        'screensaver.camera_view_name': name,
-      }) });
-    });
-    row.appendChild(sel);
-    return row;
+    return frag;
   }
 
   // The cache cap carries its live usage under the description, the same

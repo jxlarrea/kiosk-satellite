@@ -323,3 +323,25 @@ class CameraConfiguration {
     );
   }
 }
+
+/// The view ids the Camera Streams screensaver cycles through, from the
+/// JSON array stored in `screensaver.camera_views`: strings only, in order,
+/// each once. Anything unreadable is an empty rotation rather than a crash
+/// in the screensaver.
+List<String> decodeCameraViewIds(String json) {
+  try {
+    final decoded = jsonDecode(json);
+    if (decoded is! List) return [];
+    final ids = <String>[];
+    for (final item in decoded) {
+      if (item is String && item.isNotEmpty && !ids.contains(item)) {
+        ids.add(item);
+      }
+    }
+    return ids;
+  } catch (_) {
+    return [];
+  }
+}
+
+String encodeCameraViewIds(List<String> ids) => jsonEncode(ids);

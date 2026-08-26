@@ -126,12 +126,25 @@ second microphone and answer as the same satellite the dashboard behind
 it is already answering as. The dashboard stays the satellite, and the
 screensaver is just a display.
 
-### WebRTC Camera
+### Camera Streams
 
-A configured [camera view](cameras.md) as the screensaver, picked with
-**Camera view**. The grid is scenery: any touch dismisses the
-screensaver rather than focusing a camera, and the small clock stays off
-so nothing sits over the video.
+One or more configured [camera views](cameras.md) as the screensaver.
+Its page lists the views the screensaver cycles through under **Camera
+views**, in the order they show, and **Seconds per camera view** sets
+how long each one stays up before the next, counted from the moment
+the view shows video; with a single view selected nothing rotates. Every
+change takes the grid on screen down and starts the next view's streams
+from scratch, so the dwell has a floor of 5 seconds and there is a
+moment of black between two views. A view whose cameras never come up
+moves on after its time plus a 20 second grace. The **Screensaver next
+slide** and **Screensaver previous slide** buttons on the
+[ESPHome](esphome.md) device step the rotation by one view either way,
+and the view they land on holds for its full time. **Mute all views**, on
+by default, keeps every view silent even where **Play sound for a single
+camera** under [Cameras](cameras.md) would let a one-camera view play
+its sound; turn it off to hear that camera from the screensaver too. The grid is
+scenery: any touch dismisses the screensaver rather than focusing a
+camera, and the small clock stays off so nothing sits over the video.
 
 ## Slideshow behavior
 
@@ -154,8 +167,9 @@ Media) share one machinery:
 - **Stepping from Home Assistant**: the **Screensaver next slide** and
   **Screensaver previous slide** buttons on the [ESPHome](esphome.md)
   device move the showing slideshow by one, and the new slide gets a
-  full interval of its own. Pressed while any other mode is up, or no
-  screensaver at all, they do nothing.
+  full interval of its own. They step a Camera Streams rotation the
+  same way. Pressed while any other mode is up, or no screensaver at
+  all, they do nothing.
 
 ## Widgets
 
@@ -193,7 +207,7 @@ settings.
 ### Weather
 
 Live weather from a Home Assistant `weather` entity, over any mode
-except WebRTC Camera — a clock face with a weather corner is exactly
+except Camera Streams, a clock face with a weather corner is exactly
 what the Clock mode wants. The block reads, top to bottom: the
 location name, the temperature in a large font with its unit (always
 shown, "28°C"), the forecast text with a matching icon, then humidity,
@@ -221,7 +235,7 @@ are fetched from the server once per app start.
 
 ### Battery
 
-The device's own battery in a corner, over any mode except WebRTC Camera:
+The device's own battery in a corner, over any mode except Camera Streams:
 an icon that follows the charge, a bolt while the device is on external
 power, and the percentage beside it.
 
@@ -470,7 +484,7 @@ screensaver is enabled, so the two never fight.
 ## At a Glance
 
 **At a glance** puts a row of up to four Home Assistant entity states on
-the screensaver, every mode but the WebRTC Camera grid, kept live over
+the screensaver, every mode but the Camera Streams grid, kept live over
 its own Home Assistant subscription while the screensaver is up. It has
 its own page: [At a Glance](at-a-glance.md).
 
@@ -485,5 +499,5 @@ the **Clock background** text entity, the **Screensaver brightness**
 switch and level, and the **Screensaver motion detection** and
 **Screensaver face detection** switches, and the **Screensaver next
 slide** and **Screensaver previous slide** buttons that step a showing
-photo mode, all on the same ESPHome device as the rest of the kiosk's
+photo mode or Camera Streams rotation, all on the same ESPHome device as the rest of the kiosk's
 entities.

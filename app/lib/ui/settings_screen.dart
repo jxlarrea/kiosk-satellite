@@ -15,7 +15,8 @@ import '../app_container.dart';
 import '../core/events.dart';
 import '../core/logging.dart';
 import '../managers/btproxy/ble_identity.dart' show rssiTier, sortNearbyJson;
-import '../managers/camera/models.dart' show CameraViewConfig;
+import '../managers/camera/models.dart'
+    show decodeCameraViewIds, encodeCameraViewIds;
 import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
 import '../managers/notifications/notification_sounds.dart';
 import '../managers/screensaver/screensaver_manager.dart'
@@ -36,6 +37,7 @@ import 'color_picker.dart';
 import 'gesture_settings.dart';
 import 'glance_entity_picker.dart';
 import 'camera_settings.dart';
+import 'camera_views_picker.dart';
 import 'import_options_dialog.dart';
 import 'kit.dart';
 import 'media_picker.dart';
@@ -3392,9 +3394,9 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
   /// The per-type hint under the dialog's title: where the widget
   /// deliberately stays off, so nobody hunts for a hidden clock.
   String? _modeNote(String type) => switch (type) {
-    'clock' => 'Hidden in Digital Clock and WebRTC screensaver modes.',
-    'weather' => 'Hidden in the WebRTC screensaver mode.',
-    'battery' => 'Hidden in the WebRTC screensaver mode.',
+    'clock' => 'Hidden in Digital Clock and Camera Streams screensaver modes.',
+    'weather' => 'Hidden in the Camera Streams screensaver mode.',
+    'battery' => 'Hidden in the Camera Streams screensaver mode.',
     _ => null,
   };
 
@@ -7386,28 +7388,30 @@ class SettingTile extends StatelessWidget {
             onTap: () => _pickLauncherApps(context),
           );
         }
-        // The camera screensaver's view is picked from the ones configured
-        // under Cameras, never typed — the value is an opaque view id.
-        if (def.key == screensaverCameraView.key) {
+        // The camera screensaver's views are picked from the ones configured
+        // under Camera Streams, never typed — the value is a JSON list of
+        // opaque view ids in rotation order.
+        if (def.key == screensaverCameraViews.key) {
           final views = c.camera.config.views
               .where((view) => view.cameraIds.isNotEmpty)
               .toList();
-          final current = views
-              .where((view) => view.id == value as String)
-              .firstOrNull;
+          final chosen = [
+            for (final id in decodeCameraViewIds(value as String))
+              for (final view in views)
+                if (view.id == id) view,
+          ];
           return ListTile(
             title: Text(def.title),
             subtitle: Text(
               views.isEmpty
-                  ? 'No camera view has cameras yet. Add one under Cameras.'
-                  : def.description,
+                  ? 'No camera view has cameras yet. Add one under Camera '
+                        'Streams.'
+                  : chosen.isEmpty
+                  ? 'None yet. Pick the views the screensaver cycles through.'
+                  : chosen.map((view) => view.name).join(', '),
             ),
-            trailing: TextButton(
-              onPressed: views.isEmpty
-                  ? null
-                  : () => _pickCameraView(context, views),
-              child: Text(current?.name ?? 'Not set'),
-            ),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: views.isEmpty ? null : () => _pickCameraViews(context),
           );
         }
         // The screensaver schedule: times with a mode and brightness each,
@@ -7473,29 +7477,17 @@ class SettingTile extends StatelessWidget {
     onChanged();
   }
 
-  Future<void> _pickCameraView(
-    BuildContext context,
-    List<CameraViewConfig> views,
-  ) async {
-    final current = c.settings.get(screensaverCameraView);
-    final picked = await showRadioPicker<CameraViewConfig>(
+  Future<void> _pickCameraViews(BuildContext context) async {
+    final saved = await showCameraViewsPicker(
       context,
-      title: 'Camera view',
-      selected: views.where((v) => v.id == current).firstOrNull,
-      options: [
-        for (final view in views)
-          PickerOption(
-            view,
-            view.name,
-            detail:
-                '${view.cameraIds.length} camera'
-                '${view.cameraIds.length == 1 ? '' : 's'}',
-          ),
-      ],
+      container: c,
+      initial: decodeCameraViewIds(c.settings.get(screensaverCameraViews)),
     );
-    if (picked == null) return;
-    await c.settings.setFromJson(screensaverCameraView.key, picked.id);
-    await c.settings.setFromJson(screensaverCameraViewName.key, picked.name);
+    if (saved == null) return;
+    await c.settings.setFromJson(
+      screensaverCameraViews.key,
+      encodeCameraViewIds(saved),
+    );
     onChanged();
   }
 

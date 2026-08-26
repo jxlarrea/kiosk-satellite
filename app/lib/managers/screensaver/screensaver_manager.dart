@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
+import '../camera/models.dart' show encodeCameraViewIds;
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'screensaver_widgets.dart';
@@ -227,6 +228,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   Future<void> init() async {
     await _migrateMiniClock24h();
     await _migrateMiniClockWidget();
+    await _migrateCameraView();
     if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
     bus.on<ActivityDetected>().listen((e) => notifyActivity(e.source));
     // Stand down while a page interaction runs (voice turn, ringing timer
@@ -381,6 +383,16 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           ),
         );
       }
+      // Likewise the single camera view of a backup taken before the
+      // Camera Streams mode rotated: folded into the view list once the
+      // batch has settled.
+      if (e.key == defs.screensaverCameraView.key &&
+          e.value is String &&
+          (e.value as String).isNotEmpty) {
+        unawaited(
+          Future<void>.delayed(const Duration(seconds: 2), _migrateCameraView),
+        );
+      }
       // Disabling the master toggle takes a running screensaver down with
       // it. On the device this never shows (opening settings already
       // dismisses it), but over MQTT or the remote admin nothing else
@@ -505,8 +517,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           description:
               'Show the next slide of a running slideshow screensaver '
               '(Home Assistant Media, Local Media, Photo Gallery, Immich '
-              'Media); a no-op for every other mode. Returns whether a '
-              'slideshow was there to step',
+              'Media), or the next view of a Camera Streams rotation; a '
+              'no-op for every other mode. Returns whether there was '
+              'anything to step',
           handler: (_) async => CommandResult.ok(await stepSlide(1)),
         ),
       )
@@ -514,9 +527,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         Command(
           name: 'previousScreensaverSlide',
           description:
-              'Show the previous slide of a running slideshow screensaver; '
-              'a no-op for every other mode. Returns whether a slideshow '
-              'was there to step',
+              'Show the previous slide of a running slideshow screensaver, '
+              'or the previous view of a Camera Streams rotation; a no-op '
+              'for every other mode. Returns whether there was anything '
+              'to step',
           handler: (_) async => CommandResult.ok(await stepSlide(-1)),
         ),
       )
@@ -680,8 +694,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   /// The slideshow on screen, when the running mode is one. Home Assistant
   /// Media, Local Media, Photo Gallery and Immich Media register on mount
-  /// and stand down on unmount; the next and previous slide buttons ride
-  /// this and do nothing for every other mode, or between screensavers.
+  /// and stand down on unmount, and so does the Camera Streams rotation,
+  /// whose views step the same way; the next and previous slide buttons
+  /// ride this and do nothing for every other mode, or between
+  /// screensavers.
   SlideNavigator? _slides;
 
   void attachSlides(SlideNavigator navigator) => _slides = navigator;
@@ -1008,6 +1024,24 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     );
     await _settings.set(defs.screensaverMiniClock, false);
     log.info(name, 'small clock migrated to a $position widget');
+  }
+
+  /// Fold the single view of the pre-rotation Camera Streams setting into
+  /// the view list. Value-driven like the small clock: migrating clears the
+  /// old key, so it runs once, and runs again when an old backup import
+  /// fills it. The old key was the one view the screensaver showed, so it
+  /// becomes the whole rotation rather than joining whatever was listed:
+  /// an old backup restores the screensaver it describes.
+  Future<void> _migrateCameraView() async {
+    final legacy = _settings.get(defs.screensaverCameraView);
+    if (legacy.isEmpty) return;
+    await _settings.set(
+      defs.screensaverCameraViews,
+      encodeCameraViewIds([legacy]),
+    );
+    await _settings.set(defs.screensaverCameraView, '');
+    await _settings.set(defs.screensaverCameraViewName, '');
+    log.info(name, 'camera screensaver view $legacy migrated to the view list');
   }
 
   @override

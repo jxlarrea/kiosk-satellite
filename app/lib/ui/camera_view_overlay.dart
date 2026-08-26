@@ -51,12 +51,23 @@ class ClosingCameraPlayer extends StatefulWidget {
     required this.view,
     this.interactive = true,
     this.onDismiss,
+    this.onPlaying,
   });
 
   final AppContainer container;
   final CameraViewConfig? view;
   final bool interactive;
   final VoidCallback? onDismiss;
+
+  /// Called each time a camera in the mounted view starts decoding; see
+  /// [CameraPlayer.onPlaying].
+  final VoidCallback? onPlaying;
+
+  /// How long a closing player stays mounted offstage for its streams to
+  /// stop before it is dropped. Public for the camera screensaver, which
+  /// waits it out between two views so the next grid never overlaps the
+  /// last one's teardown.
+  static const shutdownGrace = Duration(milliseconds: 600);
 
   @override
   State<ClosingCameraPlayer> createState() => _ClosingCameraPlayerState();
@@ -74,8 +85,6 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
   /// with its teardown latched) can only be replaced, and the key is what
   /// replaces it.
   int _generation = 0;
-
-  static const _shutdownGrace = Duration(milliseconds: 600);
 
   /// The opened camera view rises from the bottom edge and leaves the same
   /// way, like every other page brought up over the dashboard.
@@ -181,7 +190,7 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
 
   void _startDropTimer() {
     _drop?.cancel();
-    _drop = Timer(_shutdownGrace, () {
+    _drop = Timer(ClosingCameraPlayer.shutdownGrace, () {
       if (mounted) setState(() => _mounted = null);
     });
   }
@@ -211,6 +220,7 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
             view: view,
             interactive: widget.interactive,
             onDismiss: widget.onDismiss,
+            onPlaying: widget.onPlaying,
             closing: _closing,
           ),
         ),
@@ -232,6 +242,7 @@ class CameraPlayer extends StatefulWidget {
     required this.view,
     this.interactive = true,
     this.onDismiss,
+    this.onPlaying,
     this.closing = false,
   });
 
@@ -241,6 +252,12 @@ class CameraPlayer extends StatefulWidget {
 
   /// Called for a touch while [interactive] is false.
   final VoidCallback? onDismiss;
+
+  /// Called each time a camera in the view starts decoding, whichever
+  /// transport carried it: the page's "playing" report, which is the only
+  /// point at which the grid is known to show video rather than a black
+  /// tile. The camera screensaver times its dwell from the first one.
+  final VoidCallback? onPlaying;
 
   /// The view is on its way out: stop the streams now, while this widget is
   /// still mounted and its channel still delivers. See [ClosingCameraPlayer].
@@ -376,7 +393,12 @@ class _CameraPlayerState extends State<CameraPlayer> {
       'showCameraNames': widget.view.showCameraNames,
       'grid': widget.view.effectiveGrid,
       'allowH265': widget.container.settings.get(defs.cameraAllowH265),
-      'singleAudio': widget.container.settings.get(defs.cameraSingleAudio),
+      // The screensaver's grid is scenery and has its own mute over the
+      // single-camera sound switch; an opened view keeps the switch as is.
+      'singleAudio':
+          widget.container.settings.get(defs.cameraSingleAudio) &&
+          (widget.interactive ||
+              !widget.container.settings.get(defs.screensaverCameraMute)),
       'pinchZoom': widget.container.settings.get(defs.cameraPinchZoom),
       'interactive': widget.interactive,
       'focusedCameraId': widget.interactive
@@ -575,6 +597,13 @@ class _CameraPlayerState extends State<CameraPlayer> {
           handlerName: 'cameraDismiss',
           callback: (_) {
             widget.onDismiss?.call();
+            return null;
+          },
+        );
+        controller.addJavaScriptHandler(
+          handlerName: 'cameraPlaying',
+          callback: (args) {
+            widget.onPlaying?.call();
             return null;
           },
         );

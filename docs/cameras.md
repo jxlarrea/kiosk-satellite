@@ -106,15 +106,23 @@ so the cameras are one swipe and one tap away without any automation.
 
 ## Camera screensaver
 
-Set the screensaver mode to **WebRTC Camera** to have the screensaver show a
-camera view after the idle timeout, then pick which view under it. Touching
-the screen wakes the kiosk as it does for every other mode: the grid is
-scenery here, so it has no focus or close gestures of its own. The
-screensaver's small corner clock stays off in this mode, so nothing sits
-over the cameras.
+Set the screensaver mode to **Camera Streams** to have the screensaver show
+camera views after the idle timeout, then open its page to pick which. **Camera
+views** lists the views in the order the screensaver cycles through them, and
+**Seconds per camera view** is how long each stays on screen before the next,
+counted from the moment the view shows video; with one view selected nothing
+rotates. The grid on screen is shut down before
+the next view's streams are started, so two views never play at once and a
+change costs a moment of black. Touching the screen wakes the kiosk as it does
+for every other mode: the grid is scenery here, so it has no focus or close
+gestures of its own. The screensaver's small corner clock stays off in this
+mode, so nothing sits over the cameras. Its **Mute all views** toggle, on by
+default, keeps the screensaver silent even where **Play sound for a single
+camera** would let a one-camera view play its sound; the switch below still
+applies to a view you open yourself.
 
 A camera view you opened yourself still holds the screensaver off, and the
-screensaver only ever shows the view configured for it, so the two never
+screensaver only ever shows the views configured for it, so the two never
 fight over the display.
 
 ## Home Assistant

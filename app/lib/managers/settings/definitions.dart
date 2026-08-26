@@ -142,13 +142,14 @@ const Map<String, String> subpageHints = {
   'Appearance': 'Overlay skin, theme, activity bar, text size',
   // Screen & Audio.
   'Microphone settings': 'Capture mode, channel, gain, live level',
-  // Screensaver. The five mode pages only exist while that mode is the
+  // Screensaver. The six mode pages only exist while that mode is the
   // one selected, since every setting on them gates on it.
   'Clock screensaver': 'Style, size, colors, background photo',
   'Home Assistant Media screensaver': 'Media source, timing, shuffle, fill',
   'Local Media screensaver': 'Folder, timing, shuffle, transition',
   'Photo Gallery screensaver': 'Photos, timing, shuffle, transition',
   'Immich Media screensaver': 'Server, album, timing, caching, metadata',
+  'Camera Streams screensaver': 'Views to show, seconds per view, sound',
   'Widgets': 'Corner overlays and their scale',
   'At a Glance': 'Entities shown over the screensaver',
   'Motion Detection': 'Dismiss or postpone the screensaver on motion',
@@ -1159,7 +1160,7 @@ const screensaverMiniClock = SettingDef<bool>(
   title: 'Small clock',
   description:
       'Show a small clock in a corner of the screensaver. Not for the '
-      'Clock and WebRTC Camera modes.',
+      'Clock and Camera Streams modes.',
   category: 'Screensaver',
   hidden: true,
 );
@@ -1240,7 +1241,7 @@ const screensaverMode = SettingDef<String>(
     'gallery': 'Photo Gallery',
     'immich': 'Immich Media',
     'website': 'Website',
-    'camera': 'WebRTC Camera',
+    'camera': 'Camera Streams',
   },
 );
 
@@ -2058,9 +2059,72 @@ const screensaverPixelShift = SettingDef<bool>(
   category: 'Screensaver',
 );
 
-// ── WebRTC Camera (mode: camera) ──
-// The chosen view id, and its name alongside so both UIs can label the row
-// without waiting on the camera configuration to load.
+// ── Camera Streams (mode: camera) ──
+// The views the screensaver cycles through, as a JSON array of view ids in
+// rotation order. Picked from the views configured under Camera Streams in
+// both UIs (see decodeCameraViewIds in camera/models.dart), never typed.
+const screensaverCameraViews = SettingDef<String>(
+  key: 'screensaver.camera_views',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Camera views',
+  description: 'The camera views the screensaver shows, in this order.',
+  category: 'Screensaver',
+  section: 'Camera Streams screensaver',
+  subpage: 'Camera Streams screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'camera',
+);
+
+// The dwell per view. Every change tears one grid's streams down and
+// negotiates the next view's from scratch, so the floor keeps a rotation
+// from turning into a permanent reconnect; it means nothing with one view.
+const screensaverCameraViewSeconds = SettingDef<num>(
+  key: 'screensaver.camera_view_seconds',
+  type: SettingType.number,
+  defaultValue: 30,
+  title: 'Seconds per camera view',
+  description:
+      'How long each view stays on screen before the next one. With a '
+      'single view selected nothing rotates.',
+  category: 'Screensaver',
+  section: 'Camera Streams screensaver',
+  subpage: 'Camera Streams screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'camera',
+  validator: validateCameraViewSeconds,
+);
+
+// The screensaver is scenery, and a single-camera view left on overnight
+// with "Play sound for a single camera" on (issue #235) would talk to an
+// empty room; the mute is the screensaver's own say over that switch. On
+// by default, and it also drops the audio track from the streams it fetches.
+const screensaverCameraMute = SettingDef<bool>(
+  key: 'screensaver.camera_mute',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Mute all views',
+  description: 'Keeps every view silent, even a single camera.',
+  category: 'Screensaver',
+  section: 'Camera Streams screensaver',
+  subpage: 'Camera Streams screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'camera',
+);
+
+/// The shortest dwell a rotation may run at (see [screensaverCameraViewSeconds]).
+const screensaverCameraViewSecondsMin = 5;
+
+String? validateCameraViewSeconds(Object? value) {
+  if (value is! num || value < screensaverCameraViewSecondsMin) {
+    return 'Enter at least $screensaverCameraViewSecondsMin seconds.';
+  }
+  return null;
+}
+
+// The single view the mode showed before it rotated. Hidden: kept so old
+// backups still import, and the screensaver manager folds a value here
+// into the list above on startup and after an import, then clears it.
 const screensaverCameraView = SettingDef<String>(
   key: 'screensaver.camera_view',
   type: SettingType.string,
@@ -2068,9 +2132,7 @@ const screensaverCameraView = SettingDef<String>(
   title: 'Camera view',
   description: 'Which camera view the screensaver shows.',
   category: 'Screensaver',
-  section: 'WebRTC Camera screensaver',
-  dependsOn: 'screensaver.mode',
-  dependsOnValue: 'camera',
+  hidden: true,
 );
 
 const screensaverCameraViewName = SettingDef<String>(
@@ -4585,6 +4647,9 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichMetadataPosition,
   screensaverWebsiteUrl,
   screensaverWebsiteDoubleTap,
+  screensaverCameraViews,
+  screensaverCameraViewSeconds,
+  screensaverCameraMute,
   screensaverCameraView,
   screensaverCameraViewName,
   // The Widgets group: corner overlays riding over the mode panels above,

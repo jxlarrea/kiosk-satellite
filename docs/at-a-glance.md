@@ -32,7 +32,7 @@ Configuration).
 
 ## Where it appears
 
-Every screensaver mode except the WebRTC Camera grid, where a status row
+Every screensaver mode except the Camera Streams grid, where a status row
 would sit over a live feed:
 
 - **Black**: the row is centred, and is the whole display.
