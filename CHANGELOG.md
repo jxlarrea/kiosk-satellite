@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.81 - 2026-08-26
 
 ### Changed
 - The docs now describe every Home Assistant entity and control on the ESPHome integration, ahead of the MQTT integration's removal. The MQTT doc is the one place MQTT is still covered.
