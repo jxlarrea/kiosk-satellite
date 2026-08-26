@@ -168,11 +168,8 @@ The camera side:
   mouth) can read as a count for a look and fire; speed was chosen over
   a second confirming look. The count then has to change (or the hand
   go) before the same mapping fires again, so switching from two
-  fingers to an open hand fires both in turn.
-  A one-hand mapping fires with one hand or more up, so the other hand
-  resting in view does not block it; a both-hands mapping needs exactly
-  two, timed from when the second came up, and if a one-hand mapping
-  exists alongside it the one-hand action fires as well.
+  fingers to an open hand fires both in turn. A second hand resting in
+  view does not block it.
 - Once fired, the count must change (or the hand go) before the same
   mapping fires again. Keeping the hand up does not repeat the action.
 - Lockdown Mode and kiosk mode's Disable Gestures silence the hand

@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.84 - 2026-08-26
 
 ### Added
 - A gesture that calls a service, runs a script, triggers an automation or fires an event now shows a toast with the outcome, since those actions change nothing on the screen by themselves: titled for what it is (Home Assistant Service, Script, Automation or Event), with what ran underneath (Called light.turn_on, Ran script.morning, Triggered automation.lights_off, Fired event kiosk_gesture), or, in red, why the call could not be made (Home Assistant not configured, the connection down, the call rejected). The other actions are their own confirmation and stay as they were.
