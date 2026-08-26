@@ -130,8 +130,7 @@ The microphone side:
 ## Show fingers
 
 A hand showing one to four fingers, or an open hand, each its own
-trigger, so five actions can live on one hand. The camera watches with
-MediaPipe's hand landmarker, which finds a hand, tracks it from frame
+trigger, so five actions can live on one hand. The camera watches, finds a hand, tracks it from frame
 to frame and reads its 21 joints on the device, from which the raised
 fingers are counted: a finger is up when its tip
 is farther from the wrist than its middle knuckle. The thumb is not
