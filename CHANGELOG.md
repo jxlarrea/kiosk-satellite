@@ -2,11 +2,6 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
-
-### Changed
-- Motion detection, face detection and the Show fingers gesture pause for a voice interaction: from the moment the wake word is heard until Voice Satellite is listening for it again, the camera stays open but the analyzer emits nothing and runs no model, so someone talking at the satellite neither wakes nor postpones the screensaver, does not trip the motion sensor and cannot fire a hand gesture, and the voice turn has the cores the detectors would have taken. A hand that was up when the turn started counts as gone and has to come up again afterwards, the same rule claps have followed all along. A turn that never ends on the page side releases the camera after three minutes.
-
 ## v2026.8.84 - 2026-08-26
 
 ### Added
@@ -15,6 +10,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - The camera runs for the gesture whenever the screen is on, screensaver or not, the way Postpone screensaver on motion does, and needs the camera enabled under Camera settings; its exposure is steered by the frames themselves, a stop more when they come out dark (a front camera meters the whole room and leaves the person in front of it dark) and back down when they come out bright. Reach is a few steps, and the hand has to be in the picture (a front camera set at chest height sees a hand at shoulder height or above, not one shown at the waist): the tracker is shown a square of the frame around wherever the picture just changed, the hand coming up. Lockdown Mode and kiosk mode's Disable Gestures silence it like every other gesture, and the camera is not bound for it then.
 
 ### Changed
+- Motion detection, face detection and the Show fingers gesture pause for a voice interaction: from the moment the wake word is heard until Voice Satellite is listening for it again, the camera stays open but the analyzer emits nothing and runs no model, so someone talking at the satellite neither wakes nor postpones the screensaver, does not trip the motion sensor and cannot fire a hand gesture, and the voice turn has the cores the detectors would have taken. A hand that was up when the turn started counts as gone and has to come up again afterwards, the same rule claps have followed all along. A turn that never ends on the page side releases the camera after three minutes.
 - The remote admin page is set in Google Sans throughout, body text and titles alike, from a copy bundled inside the app: the page makes no request to Google or anywhere else off the device, and it looks the same in every browser.
 - Every piece of app text is set in Rubik, the typeface the clock and page titles already used: list rows, hints, buttons, dialogs, toasts, lyrics and the flip and roller clock faces included. It ships inside the app, so the screens look the same on every device rather than borrowing whichever sans the system has, and the clock no longer asks for Google Sans first on devices that carry it.
 - Toasts are a fifth larger: the card, its icon, the title and the message text, so a confirmation is readable from where a gesture is made rather than only up close.
