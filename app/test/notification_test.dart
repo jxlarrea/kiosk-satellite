@@ -236,8 +236,10 @@ void main() {
     'the ESPHome action declares every argument the command reads',
     () async {
       final surface = EspEntitySurface(bus, commands, Logger(), settings);
-      final service = surface.buildServices().single;
-      expect(service['name'], 'notification');
+      final services = surface.buildServices();
+      final service = services.singleWhere((s) => s['name'] == 'notification');
+      // It answers: the card's id rides back as the action's response.
+      expect(service['supportsResponse'], isTrue);
       expect(
         [for (final arg in service['args']! as List) (arg as Map)['name']],
         // Order is API: the wire carries values positionally.
@@ -253,8 +255,17 @@ void main() {
           'volume',
         ],
       );
+      // And the way back down (issue #321): by the id it answered, or all.
+      final dismiss = services.singleWhere(
+        (s) => s['name'] == 'notification_dismiss',
+      );
+      expect(
+        [for (final arg in dismiss['args']! as List) (arg as Map)['name']],
+        ['id'],
+      );
+      expect(dismiss['supportsResponse'], isNot(isTrue));
 
-      await surface.handleService('notification', {
+      final response = await surface.handleService('notification', {
         'message': 'Dinner is ready',
         'title': '',
         'duration': 0,
@@ -269,6 +280,49 @@ void main() {
       expect(shown.message, 'Dinner is ready');
       expect(shown.title, isNull);
       expect(shown.level, NotificationLevel.success);
+      expect(response, {'id': shown.id});
+      // The dismiss action by the answered id: another id is a no-op,
+      // this one takes the card down.
+      await surface.handleService('notification_dismiss', {
+        'id': shown.id + 100,
+      });
+      expect(notifications.current.value, hasLength(1));
+      await surface.handleService('notification_dismiss', {'id': shown.id});
+      expect(notifications.current.value, isEmpty);
+      await surface.handleService('notification', {
+        'message': 'One',
+        'title': '',
+        'duration': 0,
+        'type': '',
+        'chime': false,
+        'scale': 0,
+        'icon': '',
+        'chime_file': '',
+        'volume': 0,
+      });
+      // 0 is the action's "all of them".
+      await surface.handleService('notification_dismiss', {'id': 0});
+      expect(notifications.current.value, isEmpty);
+      // The button entity is the same blanket clear.
+      await surface.handleService('notification', {
+        'message': 'Two',
+        'title': '',
+        'duration': 0,
+        'type': '',
+        'chime': false,
+        'scale': 0,
+        'icon': '',
+        'chime_file': '',
+        'volume': 0,
+      });
+      expect(
+        (await surface.build()).any(
+          (d) => d['objectId'] == 'notifications_dismiss_all',
+        ),
+        isTrue,
+      );
+      await surface.handleCommand('notifications_dismiss_all', null);
+      expect(notifications.current.value, isEmpty);
       // The action's "as you were" values land on the Settings defaults.
       final chime = executed.single.$2;
       expect(chime['source'], '');

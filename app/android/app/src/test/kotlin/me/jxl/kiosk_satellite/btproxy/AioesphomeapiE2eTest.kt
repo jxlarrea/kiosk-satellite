@@ -24,7 +24,7 @@ import org.junit.Assume.assumeTrue
  */
 class AioesphomeapiE2eTest {
     private val script = """
-        import asyncio, sys
+        import asyncio, json, sys
 
         async def main():
             from aioesphomeapi import APIClient
@@ -199,6 +199,9 @@ class AioesphomeapiE2eTest {
             assert [(a.name, int(a.type)) for a in action.args] == [
                 ("message", 3), ("title", 3), ("duration", 1),
                 ("type", 3), ("chime", 0)], action.args
+            # It answers (issue #321): OPTIONAL, so Home Assistant offers
+            # response_variable and waits for the reply on every call.
+            assert int(action.supports_response) == 1, action.supports_response
             print("SERVICES_OK", flush=True)
 
             loop = asyncio.get_running_loop()
@@ -249,6 +252,20 @@ class AioesphomeapiE2eTest {
                 await result
             await asyncio.sleep(0.5)
             print("ACTION_OK", flush=True)
+
+            # The same call asking for its answer: the device replies with
+            # the JSON the Dart side hands back, matched by call id.
+            reply = await asyncio.wait_for(cli.execute_service(action, {
+                "message": "Answer me",
+                "title": "",
+                "duration": 0,
+                "type": "info",
+                "chime": False,
+            }, return_response=True), 5)
+            assert reply is not None and reply.success, reply
+            import json
+            assert json.loads(bytes(reply.response_data)) == {"id": 7}, reply
+            print("RESPONSE_OK", flush=True)
             await cli.disconnect()
 
         asyncio.run(main())
@@ -296,14 +313,22 @@ class AioesphomeapiE2eTest {
                 server.publishCameraImage(jpeg)
             }
         }, services = listOf(
-            EspService("notification", listOf(
-                EspService.Arg("message", EspService.STRING),
-                EspService.Arg("title", EspService.STRING),
-                EspService.Arg("duration", EspService.INT),
-                EspService.Arg("type", EspService.STRING),
-                EspService.Arg("chime", EspService.BOOL),
-            )),
-        ), onServiceCall = { name, args -> actions.add(name to args) })
+            EspService(
+                "notification",
+                listOf(
+                    EspService.Arg("message", EspService.STRING),
+                    EspService.Arg("title", EspService.STRING),
+                    EspService.Arg("duration", EspService.INT),
+                    EspService.Arg("type", EspService.STRING),
+                    EspService.Arg("chime", EspService.BOOL),
+                ),
+                supportsResponse = EspService.RESPONSE_OPTIONAL,
+            ),
+        ), onServiceCall = { name, args, reply ->
+            actions.add(name to args)
+            // What the Dart side does: answer with the card's id.
+            reply(true, null, "{\"id\": 7}")
+        })
         hub.updateState("screen", mapOf("on" to true, "brightness" to 0.75))
         hub.updateState("clock_background", "kitchen.jpg")
         hub.updateState("update", mapOf(

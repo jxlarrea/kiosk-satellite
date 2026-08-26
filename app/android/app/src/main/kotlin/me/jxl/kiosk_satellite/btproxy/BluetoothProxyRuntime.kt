@@ -46,8 +46,10 @@ internal object BluetoothProxyRuntime {
         val macOverride: String? = null,
         /** Where entity commands from Home Assistant land (objectId, value). */
         val onEntityCommand: (String, Any?) -> Unit = { _, _ -> },
-        /** Where action calls land (action name, arguments by name). */
-        val onServiceCall: (String, Map<String, Any?>) -> Unit = { _, _ -> },
+        /** Where action calls land (action name, arguments by name, and
+         *  the reply to make once run; see EntityHub). */
+        val onServiceCall: (String, Map<String, Any?>, ServiceReply) -> Unit =
+            { _, _, _ -> },
     )
 
     @Volatile var isRunning = false

@@ -71,11 +71,25 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                                 "value" to value))
                                     }
                                 },
-                                onServiceCall = { name, args ->
+                                onServiceCall = { name, args, reply ->
                                     mainHandler.post {
+                                        // Dart answers with the action's
+                                        // response data as a JSON string,
+                                        // or null for none.
                                         channel.invokeMethod("serviceCall",
                                             mapOf("name" to name,
-                                                "args" to args))
+                                                "args" to args),
+                                            object : MethodChannel.Result {
+                                                override fun success(result: Any?) =
+                                                    reply(true, null, result as? String)
+                                                override fun error(
+                                                    code: String,
+                                                    message: String?,
+                                                    details: Any?,
+                                                ) = reply(false, message ?: code, null)
+                                                override fun notImplemented() =
+                                                    reply(false, "not implemented", null)
+                                            })
                                     }
                                 },
                             ),

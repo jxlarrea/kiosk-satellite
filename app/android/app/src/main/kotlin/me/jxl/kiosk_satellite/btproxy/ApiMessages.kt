@@ -47,6 +47,9 @@ internal object Msg {
     const val SWITCH_COMMAND_REQUEST = 33
     const val LIST_ENTITIES_SERVICES_RESPONSE = 41
     const val EXECUTE_SERVICE_REQUEST = 42
+    /** The answer to an action call that asked for one (ESPHome's
+     *  user-defined action responses); see ServiceCodec.response. */
+    const val EXECUTE_SERVICE_RESPONSE = 131
     const val LIST_ENTITIES_CAMERA_RESPONSE = 43
     const val CAMERA_IMAGE_RESPONSE = 44
     const val CAMERA_IMAGE_REQUEST = 45

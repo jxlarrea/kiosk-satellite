@@ -70,7 +70,7 @@ class ApiServerEntitiesTest {
         }
         val hub = EntityHub(catalog, onCommand = { objectId, value ->
             commands.add(objectId to value)
-        }, services = services, onServiceCall = { name, args ->
+        }, services = services, onServiceCall = { name, args, _ ->
             actions.add(name to args)
         })
         val s = ApiServer(identity, "02:AA:BB:CC:DD:EE", 0, null, backend,

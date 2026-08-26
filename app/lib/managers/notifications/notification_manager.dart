@@ -26,6 +26,9 @@ class KioskNotification {
 
   /// Rising per notification; the auto-dismiss timer carries the id it was
   /// started for, so a late timer never takes down another notification.
+  /// It is also what a caller gets back (the command's result, the ESPHome
+  /// action's response) and hands to dismissNotification later (issue
+  /// #321).
   final int id;
   final String message;
   final String? title;
@@ -212,12 +215,17 @@ class NotificationManager extends Manager {
           description:
               'Take a notification off the screen, or all of them when no '
               'id is given',
-          params: const {'id': 'the id showNotification returned'},
+          params: const {
+            'id':
+                'the id showNotification returned; omitted, empty or 0 '
+                'clears the screen',
+          },
           handler: (p) async {
-            final id = p['id'] is num
-                ? (p['id']! as num).toInt()
-                : int.tryParse('${p['id']}');
-            dismiss(id: id);
+            final value = p['id'];
+            final id = value is num ? value.toInt() : int.tryParse('$value');
+            // Ids start at 1; 0 is what the ESPHome action, which cannot
+            // leave an argument out, sends for "all of them".
+            dismiss(id: id != null && id > 0 ? id : null);
             return const CommandResult.ok();
           },
         ),

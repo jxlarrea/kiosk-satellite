@@ -802,7 +802,11 @@ internal class ApiServer(
                             ?.let { entities?.dispatchCommand(it) }
                     Msg.EXECUTE_SERVICE_REQUEST ->
                         entities?.dispatchService(
-                            ServiceCodec.parseExecute(frame.payload))
+                            ServiceCodec.parseExecute(frame.payload)) { payload ->
+                            // The answer goes back on the session that
+                            // asked, whenever the Dart side is done.
+                            enqueue(Msg.EXECUTE_SERVICE_RESPONSE, payload)
+                        }
                     Msg.CAMERA_IMAGE_REQUEST -> {
                         // The request carries no key: ESPHome devices have
                         // at most one camera. Remember who asked; the frame

@@ -295,6 +295,13 @@ class EspEntitySurface {
         'Screensaver previous slide',
         'mdi:skip-previous',
       ),
+      // The blanket form of the notification_dismiss action (issue
+      // #321): a leak acknowledged on one display clears the rest.
+      button(
+        'notifications_dismiss_all',
+        'Notifications dismiss all',
+        'mdi:bell-off-outline',
+      ),
       button('reload', 'Reload page', 'mdi:refresh'),
       button('load_start_url', 'Go to dashboard', 'mdi:view-dashboard'),
       button('clear_cache', 'Clear cache', 'mdi:broom'),
@@ -663,6 +670,10 @@ class EspEntitySurface {
   List<Map<String, Object?>> buildServices() => const [
     {
       'name': 'notification',
+      // Answers with the kiosk's id for the card ({"id": 7}), which an
+      // automation reads through response_variable and can hand to
+      // notification_dismiss (issue #321).
+      'supportsResponse': true,
       'args': [
         {'name': 'message', 'type': 'string'},
         {'name': 'title', 'type': 'string'},
@@ -675,13 +686,28 @@ class EspEntitySurface {
         {'name': 'volume', 'type': 'float'},
       ],
     },
+    // Takes down the card with the id the notification action answered
+    // with, or clears the screen when the id is 0 (issue #321), which is
+    // the value an action, unable to leave an argument out, sends for
+    // "all of them".
+    {
+      'name': 'notification_dismiss',
+      'args': [
+        {'name': 'id', 'type': 'int'},
+      ],
+    },
   ];
 
-  /// An action call from Home Assistant landed (via the native hub).
-  Future<void> handleService(String name, Map<String, Object?> args) async {
+  /// An action call from Home Assistant landed (via the native hub). The
+  /// map returned is the action's response data (an action declared with
+  /// supportsResponse), null for none.
+  Future<Map<String, Object?>?> handleService(
+    String name,
+    Map<String, Object?> args,
+  ) async {
     switch (name) {
       case 'notification':
-        await commands.execute('showNotification', {
+        final result = await commands.execute('showNotification', {
           'message': '${args['message'] ?? ''}',
           'title': '${args['title'] ?? ''}',
           // The action cannot leave a number out, so its own "unset" is
@@ -701,8 +727,15 @@ class EspEntitySurface {
           'chime_file': '${args['chime_file'] ?? ''}',
           'volume': args['volume'] ?? 0,
         });
+        if (!result.ok) throw StateError(result.error ?? 'refused');
+        // {"id": n}: what the automation reads through response_variable.
+        return (result.data as Map?)?.cast<String, Object?>();
+      case 'notification_dismiss':
+        await commands.execute('dismissNotification', {'id': args['id'] ?? 0});
+        return null;
       default:
         log.warn('esphome', 'unknown action $name');
+        return null;
     }
   }
 
@@ -922,6 +955,8 @@ class EspEntitySurface {
         await commands.execute('nextScreensaverSlide', const {});
       case 'screensaver_previous_slide':
         await commands.execute('previousScreensaverSlide', const {});
+      case 'notifications_dismiss_all':
+        await commands.execute('dismissNotification', const {});
       case 'reload':
         await commands.execute('reload', const {});
       case 'load_start_url':

@@ -126,6 +126,11 @@ interval. With any other mode up, or no screensaver at all, a press does
 nothing, so an automation or a dashboard button can send them at any
 time.
 
+**Notifications dismiss all** clears every notification card off the
+screen, the button form of the `notification_dismiss` action described
+under Notifications: a leak acknowledged on one display can take the
+alert down on the rest.
+
 ## Notifications
 
 Home Assistant can push a message at the kiosk and have it appear over
@@ -193,6 +198,36 @@ ones, so each has a value that means "as you were":
 | `chime_file` | A sound of this notification's own, in place of the one picked in the kiosk's settings: a URL (`http://homeassistant.local:8123/local/sounds/leak.mp3`, anything the kiosk can reach), or the path of a file on the device. A URL is fetched the first time and kept, so the next notification with it plays at once and a server that is down later does not silence it. Empty plays the sound from the settings, and so does a URL that does not answer or a file that is not there, with a line in the app's log saying which |
 | `volume` | How loud the sound plays, `0` to `1`, apart from the media and assistant volumes: a notification is neither, and this level does not move when those sliders do (the device's own master volume still applies, as it does to every sound). `0` or a negative number uses the **Notification volume** setting. A silent notification is `chime: false` |
 
+The action answers with the kiosk's id for the card, `{"id": 7}`, which
+an automation reads through `response_variable` and hands to
+`notification_dismiss` to take that card down again:
+
+```yaml
+- action: esphome.kitchen_tablet_notification
+  data:
+    message: Front door left open
+    title: ""
+    duration: 0
+    type: warning
+    chime: true
+    scale: 1
+    icon: mdi:door-open
+    chime_file: ""
+    volume: 0
+  response_variable: card
+- wait_for_trigger:
+    - trigger: state
+      entity_id: binary_sensor.front_door
+      to: "off"
+- action: esphome.kitchen_tablet_notification_dismiss
+  data:
+    id: "{{ card.id }}"
+```
+
+That rides ESPHome's action responses, which Home Assistant has
+supported since its 2026.1 release; an older Home Assistant still runs
+the action and simply gets no answer.
+
 Notifications stack, newest on top, up to four at a time: two things
 happening at once is ordinary, and the second one arriving is no reason
 to forget the first. Each keeps its own countdown and goes when it is
@@ -235,12 +270,27 @@ kinds of notification (a leak, a delivery, the laundry) gives each its
 own `chime_file` in the automation and keeps the settings as the default
 for the rest.
 
-A tap anywhere on a card dismisses that card and leaves the rest. To take
-one down from Home Assistant, call the kiosk's `dismissNotification`
-command over the [remote API](remote-api.md), with the id
-`showNotification` returned for a single card or nothing at all to clear
-the screen; `showNotification` is that same command the action calls, for
-setups driving the kiosk over REST instead.
+A tap anywhere on a card dismisses that card and leaves the rest. Home
+Assistant can take cards down too, with a second action,
+`esphome.<node name>_notification_dismiss`: its one argument, `id`, is
+the id the notification action answered with, and that card goes; `0`
+clears the screen. That is the "resolved" side of an alert: a door-open
+card comes down the moment the door closes without touching another
+door's card, and a leak alert can be cleared everywhere once the
+condition clears. Each kiosk answers with an id of its own, so an
+automation fanning one alert out to several kiosks keeps one id per
+kiosk. The **Notifications dismiss all** button is the same clear as a
+dashboard tile.
+
+```yaml
+action: esphome.kitchen_tablet_notification_dismiss
+data:
+  id: 7
+```
+
+Over the [remote API](remote-api.md) the same two are `showNotification`,
+which answers with the same `id`, and `dismissNotification`, which takes
+it, or nothing at all to clear the screen.
 
 ## Node name
 

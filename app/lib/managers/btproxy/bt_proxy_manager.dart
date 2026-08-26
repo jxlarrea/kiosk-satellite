@@ -47,8 +47,12 @@ class BtProxyManager extends Manager {
   /// The node name the running server came up under, so writing it back
   /// into settings does not bounce the server (as with [_liveKey]).
   String _liveNodeName = '';
-  late final EspEntitySurface _entities =
-      EspEntitySurface(bus, commands, log, _settings);
+  late final EspEntitySurface _entities = EspEntitySurface(
+    bus,
+    commands,
+    log,
+    _settings,
+  );
 
   // The OUI vendor cache: prefix "AA:BB:CC" to vendor name, '' for a
   // registry miss. Persisted so each prefix is looked up once per install,
@@ -70,10 +74,14 @@ class BtProxyManager extends Manager {
       }
       if (call.method == 'serviceCall' && call.arguments is Map) {
         final payload = call.arguments as Map;
-        await _entities.handleService(
+        // The action's answer, as JSON, rides back as this call's result:
+        // the native side sends it to Home Assistant as the response data
+        // an automation reads through response_variable.
+        final response = await _entities.handleService(
           '${payload['name']}',
           (payload['args'] as Map?)?.cast<String, Object?>() ?? const {},
         );
+        return response == null ? null : jsonEncode(response);
       }
       return null;
     });
@@ -146,8 +154,10 @@ class BtProxyManager extends Manager {
             });
           } catch (e) {
             if (_startError != null) {
-              return CommandResult.ok(
-                  {'running': false, 'startError': _startError});
+              return CommandResult.ok({
+                'running': false,
+                'startError': _startError,
+              });
             }
             return CommandResult.fail('$e');
           }
@@ -185,8 +195,7 @@ class BtProxyManager extends Manager {
     );
     _ouiCache = _loadOuiCache();
     final version = await commands.execute('getDeviceInfo', const {});
-    _appVersion =
-        ((version.data as Map?)?['appVersion'] as String?) ?? '0';
+    _appVersion = ((version.data as Map?)?['appVersion'] as String?) ?? '0';
     if (_settings.get(defs.esphomeEnabled)) {
       _transition = _transition.then((_) => _start());
     }
@@ -324,8 +333,7 @@ class BtProxyManager extends Manager {
     _liveKey = key;
     final friendly = _settings.get(defs.deviceName).trim();
     final node = _nodeName(firstEver: firstEver);
-    final port =
-        int.tryParse(_settings.get(defs.btproxyPort).trim()) ?? 6053;
+    final port = int.tryParse(_settings.get(defs.btproxyPort).trim()) ?? 6053;
     // Null while the setting is off or the platform hides the address; the
     // native side then keeps its synthetic identity (issue #252).
     final realMac = await adoptedWifiMac(_settings);
@@ -337,9 +345,8 @@ class BtProxyManager extends Manager {
         'projectVersion': _appVersion,
         'bluetoothProxy': _settings.get(defs.btproxyEnabled),
         'connections': _settings.get(defs.btproxyConnections),
-        'minConnectRssi': int.tryParse(
-                _settings.get(defs.btproxyMinConnectRssi)) ??
-            0,
+        'minConnectRssi':
+            int.tryParse(_settings.get(defs.btproxyMinConnectRssi)) ?? 0,
         'entities': _settings.get(defs.esphomeEntities)
             ? await _entities.build()
             : const <Map<String, Object?>>[],
@@ -366,8 +373,10 @@ class BtProxyManager extends Manager {
       }
       if (_settings.get(defs.esphomeEntities)) {
         _entities.attach(
-          (objectId, value) => _channel.invokeMethod(
-              'entityState', {'objectId': objectId, 'value': value}),
+          (objectId, value) => _channel.invokeMethod('entityState', {
+            'objectId': objectId,
+            'value': value,
+          }),
           (jpeg) => _channel.invokeMethod('cameraImage', {'jpeg': jpeg}),
         );
       }

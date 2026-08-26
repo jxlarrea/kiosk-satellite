@@ -191,6 +191,7 @@ void main() {
       'takeCameraSnapshot',
       'vsEngine',
       'vsSetBrowserSettings',
+      'dismissNotification',
     ]) {
       stub(name, null);
     }
@@ -218,6 +219,7 @@ void main() {
         'postpone_screensaver',
         'screensaver_next_slide',
         'screensaver_previous_slide',
+        'notifications_dismiss_all',
         'reload',
         'load_start_url',
         'clear_cache',

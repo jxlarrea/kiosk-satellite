@@ -466,8 +466,16 @@ internal class EntityHub(
     private val onCommand: (objectId: String, value: Any?) -> Unit,
     /** User-defined actions served alongside the entities (see EspServices). */
     val services: List<EspService> = emptyList(),
-    private val onServiceCall: (name: String, args: Map<String, Any?>) -> Unit =
-        { _, _ -> },
+    /**
+     * Where an action call lands: its name, its arguments by name, and the
+     * reply to make once it has run (success, error message, JSON response
+     * data). The reply is a no-op for calls that expect none.
+     */
+    private val onServiceCall: (
+        name: String,
+        args: Map<String, Any?>,
+        reply: ServiceReply,
+    ) -> Unit = { _, _, _ -> },
 ) {
     private val lock = Any()
     private val byKey = LinkedHashMap<Int, EspEntity>()
@@ -526,7 +534,13 @@ internal class EntityHub(
      * client left at its protobuf default arrives as nothing at all; the
      * declared type says what that default was.
      */
-    fun dispatchService(call: ServiceCodec.Call) {
+    /**
+     * Runs an action call. [respond] sends an ExecuteServiceResponse
+     * payload back over the session it came in on; it is only ever used
+     * when the call carried a call id, since a client that sent none is
+     * not listening for one.
+     */
+    fun dispatchService(call: ServiceCodec.Call, respond: (ByteArray) -> Unit) {
         val service = services.firstOrNull { it.key == call.key } ?: return
         val args = LinkedHashMap<String, Any?>(service.args.size)
         service.args.forEachIndexed { index, arg ->
@@ -538,6 +552,30 @@ internal class EntityHub(
             }
             args[arg.name] = value
         }
-        onServiceCall(service.name, args)
+        onServiceCall(service.name, args, replyFor(call, respond))
+    }
+
+    /** The reply for [call]: a no-op for a client that sent no call id. */
+    private fun replyFor(
+        call: ServiceCodec.Call,
+        respond: (ByteArray) -> Unit,
+    ): ServiceReply {
+        if (call.callId == 0) return { _, _, _ -> }
+        // Once: the Dart side answers exactly once, but a reply sent twice
+        // would confuse the client's call-id matching.
+        val answered = java.util.concurrent.atomic.AtomicBoolean(false)
+        return { success, error, json ->
+            if (answered.compareAndSet(false, true)) {
+                respond(
+                    ServiceCodec.response(
+                        call.callId, success, error,
+                        if (call.returnResponse) json else null,
+                    ),
+                )
+            }
+        }
     }
 }
+
+/** (success, error message, JSON response data); see EntityHub. */
+internal typealias ServiceReply = (Boolean, String?, String?) -> Unit
