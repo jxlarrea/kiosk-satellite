@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../managers/notifications/notification_manager.dart';
 import 'mdi_icon.dart';
@@ -73,6 +74,19 @@ class _NotificationOverlayState extends State<NotificationOverlay> {
     });
   }
 
+  /// A tap on a card. Ordinarily the manager drops it and the card slides
+  /// out; a card the manager has already forgotten (its countdown ended
+  /// and, for whatever reason, it is still here) would make that a no-op,
+  /// so it comes straight down instead: a card that answers a tap with
+  /// nothing is the one thing the overlay must never show.
+  void _dismiss(int id) {
+    if (_leaving.contains(id)) {
+      _gone(id);
+      return;
+    }
+    widget.notifications.dismiss(id: id);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_drawn.isEmpty) return const SizedBox.shrink();
@@ -97,8 +111,7 @@ class _NotificationOverlayState extends State<NotificationOverlay> {
                       key: ValueKey(note.id),
                       note: note,
                       leaving: _leaving.contains(note.id),
-                      onDismiss: () =>
-                          widget.notifications.dismiss(id: note.id),
+                      onDismiss: () => _dismiss(note.id),
                       onGone: () => _gone(note.id),
                     ),
                 ],
@@ -135,7 +148,26 @@ class _NotificationCardState extends State<_NotificationCard>
     vsync: this,
     duration: const Duration(milliseconds: 260),
     reverseDuration: const Duration(milliseconds: 200),
-  )..forward();
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.leaving) {
+      // Gone before it was ever drawn: it arrived and its countdown ran
+      // out with no frame in between, which is what a screen that is off
+      // does to a Flutter app (issue #322). didUpdateWidget below never
+      // sees the change, so without this the card would come up on the
+      // first frame after the wake and stay, with nothing left in the
+      // manager to answer a tap. Nobody saw it, so there is nothing to
+      // slide out: it leaves as soon as this build is over.
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onGone();
+      });
+      return;
+    }
+    _controller.forward();
+  }
 
   @override
   void didUpdateWidget(_NotificationCard old) {

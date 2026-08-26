@@ -488,4 +488,44 @@ void main() {
     expect(find.text('Washing machine finished'), findsOneWidget);
     expect(onScreen(), ['Washing machine finished']);
   });
+
+  testWidgets(
+    'a notification whose countdown ran out before its first frame goes away',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.dark),
+          home: Scaffold(
+            body: Stack(
+              children: [
+                const SizedBox.expand(),
+                NotificationOverlay(notifications: notifications),
+              ],
+            ),
+          ),
+        ),
+      );
+      // Screen off: the card arrives and its countdown ends with no frame
+      // drawn in between (issue #322). Nobody saw it, so nothing may be
+      // left of it when the screen comes back.
+      await show({'message': 'Pushed at 3 AM', 'duration': 0});
+      notifications.dismiss(id: 1);
+      expect(onScreen(), isEmpty);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Pushed at 3 AM'), findsNothing);
+
+      // And a card the manager forgot while the overlay was mid-animation
+      // still answers a tap rather than sitting there for good.
+      await show({'message': 'Front door opened', 'duration': 0});
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      notifications.dismiss(id: 2);
+      await tester.pump();
+      await tester.tap(find.text('Front door opened'), warnIfMissed: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('Front door opened'), findsNothing);
+    },
+  );
 }

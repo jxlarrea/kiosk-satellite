@@ -12,6 +12,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - Toasts are a fifth larger: the card, its icon, the title and the message text, so a confirmation is readable from where a gesture is made rather than only up close.
 
+### Fixed
+- A notification pushed while the screen was off, whose duration then ran out before the screen came back, no longer stays on screen for good. Nothing is drawn while the screen is off, so the card arrived and expired without ever being shown, and the frame that finally drew it at the wake had it already dismissed on the notification side: it slid in with nothing behind it, so a tap on it, its X or the `notification_dismiss` action had nothing to take down and only restarting the app cleared it. A card that is already gone when it is first drawn is now taken down there and then, and a tap on a card the notification side has already forgotten removes it directly.
+
 ## v2026.8.83 - 2026-08-26
 
 ### Added
