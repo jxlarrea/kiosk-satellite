@@ -126,8 +126,10 @@ trigger, so five actions can live on one hand. The camera watches with
 two small on-device models, MediaPipe's BlazePalm to find a hand and its
 hand landmark model to confirm there is one and read its 21 joints,
 from which the extended fingers are counted; a finger counts as
-extended when it is nearly straight at its middle joint, the thumb when
-it points away from the palm rather than across it. Both run the way the
+extended when it is nearly straight at its middle joint and its tip
+leads that joint away from the wrist, the thumb when it points clearly
+away from the palm rather than across it, and only on a hand the model
+is sure of, held with the fingers pointing up. Both run the way the
 screensaver's face detector does: on the frames the motion analyzer
 already samples, only while something in the frame changed, a hand was
 recently in view or the camera just opened, and paced by the measured
@@ -154,10 +156,13 @@ The camera side:
   fingers and matches nothing. A fist held up counts too: the
   detector finds palms in any pose, and the hold is what makes the
   gesture deliberate.
-- One look fires it: a hand is looked at within a quarter second of
-  the picture changing with it coming up, and the first sighting that
-  reads the configured count fires the action, about half a second
-  after the hand is up on a slow tablet. The count then has to change
+- A hand is looked at within a quarter second of the picture changing
+  with it coming up, and the action fires as soon as two of the last
+  three looks agree on the configured count, about half a second after
+  the hand is up on a slow tablet plus one more look (a fifth of a
+  second there). The agreement is what keeps a hand busy with something
+  else (a vape or a cup at the mouth) from firing: its count wanders and
+  lands on any number for a single look. The count then has to change
   (or the hand go) before the same mapping fires again, so switching
   from two fingers to an open hand fires both in turn.
   A one-hand mapping fires with one hand or more up, so the other hand

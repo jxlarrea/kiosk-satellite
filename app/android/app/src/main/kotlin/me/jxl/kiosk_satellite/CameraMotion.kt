@@ -231,6 +231,10 @@ class CameraMotion(
         // look (mid-rise, blurred) gets its second within a second.
         private const val PALM_ENTRY_NS = 2_500_000_000L
 
+        // A shown count has its fingers up: the hand's wrist-to-knuckle line
+        // within this many degrees of vertical in the frame.
+        private const val HAND_UPRIGHT_MAX_DEG = 45f
+
 
         // A raised-hand count that differs from the one being timed is
         // accepted after this many consecutive runs. One run's flicker
@@ -981,10 +985,16 @@ class CameraMotion(
                 )
                 raised = 0
             } else {
-                fingers = hand.fingers
+                // A count is shown with the fingers up; a hand at the mouth
+                // (a vape, a cup) or on a desk lies sideways or flat and
+                // its wrapped fingers read as straight, so it shows nothing.
+                fingers = if (kotlin.math.abs(hand.tilt) <= HAND_UPRIGHT_MAX_DEG &&
+                    hand.presence >= HandLandmarker.COUNT_PRESENCE
+                ) hand.fingers else 0
                 Log.d(
                     TAG,
                     "hand: presence=${"%.2f".format(hand.presence)} fingers=$fingers " +
+                        "tilt=${"%.0f".format(hand.tilt)} " +
                         "angles=${hand.angles.joinToString(",") { "%.0f".format(it) }} " +
                         "thumb=${"%.2f".format(hand.thumb)}" +
                         (if (trackedHand != null) " (tracked)" else ""),

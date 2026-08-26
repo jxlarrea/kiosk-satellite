@@ -29,7 +29,9 @@ import kotlin.math.sqrt
  *
  * A finger counts as extended when its tip is clearly farther from the
  * wrist than its middle joint (a curled finger's tip comes back toward
- * the wrist) and the angle at that joint is not sharply bent; the
+ * the wrist) and the angle at that joint is nearly straight (fingers
+ * wrapped around a vape or a cup read 120 to 145 degrees, shown ones
+ * 165 and up); the
  * angle alone hovered around the threshold on a hand a few steps from
  * an Echo Show 8 (a curled pinky read 129 to 155 degrees one look to
  * the next) and flickered the count. The thumb has no such joint to
@@ -65,8 +67,13 @@ class HandLandmarker(private val context: Context) {
          *  over the middle joint in wrist distance, as a fraction of the
          *  palm's size, and the bend a finger may still have. */
         private const val TIP_LEAD = 0.25f
-        private const val MIN_ANGLE_DEG = 120f
-        private const val THUMB_MARGIN = 0.05f
+        private const val MIN_ANGLE_DEG = 150f
+
+        /** Presence below which the joints are too unsure to count: a hand
+         *  at the mouth read 0.58 to 0.65 with its count wandering, a shown
+         *  count 0.96 and up. */
+        const val COUNT_PRESENCE = 0.8f
+        private const val THUMB_MARGIN = 0.12f
 
         const val THREADS = 1
         private const val TRACE_EVERY = 100
@@ -83,11 +90,13 @@ class HandLandmarker(private val context: Context) {
     }
 
     /** One judged crop: whether a hand is there, how many fingers it
-     *  shows, and the four finger angles plus the thumb margin for the
-     *  log. */
+     *  shows, its tilt in the frame (degrees off fingers-up, from the
+     *  wrist-to-middle-knuckle line), and the four finger angles plus
+     *  the thumb margin for the log. */
     class Hand(
         val presence: Float,
         val fingers: Int,
+        val tilt: Float,
         val angles: FloatArray,
         val thumb: Float,
     )
@@ -188,7 +197,7 @@ class HandLandmarker(private val context: Context) {
             val p = presence.asFloatBuffer().get(0)
             landmarks.rewind()
             landmarks.asFloatBuffer().get(pts)
-            val hand = count(p)
+            val hand = count(p, rot)
             if (p >= MIN_PRESENCE) retrack(cx, cy, side, rot) else tracking = false
             trace((SystemClock.elapsedRealtimeNanos() - startNs) / 1_000_000f)
             hand
@@ -252,7 +261,16 @@ class HandLandmarker(private val context: Context) {
         return Math.toDegrees(acos(cosang.toDouble())).toFloat()
     }
 
-    private fun count(presence: Float): Hand {
+    private fun count(presence: Float, rot: Float): Hand {
+        // The hand's tilt in the frame: the crop was turned by rot to
+        // stand the palm's estimate up; the landmarks say how far the
+        // real wrist-to-knuckle line is from vertical in the crop.
+        val dx = px(MIDDLE_MCP) - px(WRIST)
+        val dy = py(MIDDLE_MCP) - py(WRIST)
+        val inCrop = Math.toDegrees(atan2(dx.toDouble(), -dy.toDouble())).toFloat()
+        var tilt = Math.toDegrees(rot.toDouble()).toFloat() + inCrop
+        while (tilt > 180f) tilt -= 360f
+        while (tilt < -180f) tilt += 360f
         val angles = FloatArray(4)
         var n = 0
         val palm = max(dist(WRIST, MIDDLE_MCP), 1e-3f)
@@ -263,7 +281,7 @@ class HandLandmarker(private val context: Context) {
         }
         val thumb = (dist(THUMB_TIP, PINKY_MCP) - dist(THUMB_IP, PINKY_MCP)) / max(palm, 1e-3f)
         if (thumb > THUMB_MARGIN) n++
-        return Hand(presence, n, angles, thumb)
+        return Hand(presence, n, tilt, angles, thumb)
     }
 
     private fun trace(ms: Float) {
