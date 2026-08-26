@@ -6,6 +6,8 @@ import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../ui/mdi_icon.dart';
+import '../settings/settings_manager.dart';
+import 'notification_sounds.dart';
 
 /// What a notification is about: picks its icon and the color behind it.
 enum NotificationLevel { info, success, warning, error }
@@ -64,7 +66,21 @@ class KioskNotification {
 /// The manager owns the text and the countdowns,
 /// ui/notification_overlay.dart draws them.
 class NotificationManager extends Manager {
-  NotificationManager(super.bus, super.commands, super.log);
+  NotificationManager(
+    super.bus,
+    super.commands,
+    super.log,
+    this.settings, {
+    Future<String?> Function(String name)? resolveSound,
+  }) : _resolveSound = resolveSound ?? NotificationSounds.resolve;
+
+  /// For the chime's defaults: the sound picked in Settings and its volume,
+  /// which a call falls back to when it names neither (issue #320).
+  final SettingsManager settings;
+
+  /// A sound's name to its file, or null when there is no such file. The
+  /// sounds folder in production; the tests hand in a map.
+  final Future<String?> Function(String name) _resolveSound;
 
   /// How long a notification stays when the caller names no duration.
   /// Long by kiosk-toast standards on purpose: nobody is watching the
@@ -126,6 +142,14 @@ class NotificationManager extends Manager {
                 'a Material Design Icon to draw instead of the one the '
                 'type picks, named as Home Assistant names it '
                 '(mdi:washing-machine); empty for the type icon',
+            'chime_file':
+                'the name of a file in the sounds folder to play instead of '
+                'the one picked in Settings (bell.mp3); empty or not there '
+                'plays the Settings one',
+            'volume':
+                'how loud the sound plays, 0 to 1, apart from the media '
+                'and assistant volumes; 0, negative or omitted uses the '
+                'Notification volume setting',
           },
           handler: (p) async {
             final message = '${p['message'] ?? ''}'.trim();
@@ -158,20 +182,28 @@ class NotificationManager extends Manager {
             if (_flag(p['chime'], orElse: true)) {
               // Not awaited: a missing or busy audio path must never hold
               // up the thing the user actually sees.
-              unawaited(commands.execute('playChime', const {}));
+              unawaited(_chime(p));
             }
             log.info(
               name,
               'notification #$id ${note.scale == 1 ? '' : 'x${note.scale} '}'
-              '${duration == Duration.zero
-                  ? '(until dismissed)'
-                  : '(${duration.inSeconds}s)'}'
-              '${current.value.length > 1
-                  ? ', ${current.value.length} on screen'
-                  : ''}',
+              '${duration == Duration.zero ? '(until dismissed)' : '(${duration.inSeconds}s)'}'
+              '${current.value.length > 1 ? ', ${current.value.length} on screen' : ''}',
             );
             return CommandResult.ok({'id': id});
           },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'listNotificationSounds',
+          description:
+              'The sound files in the sounds folder, by name, and where '
+              'that folder is; what the Notification sound dropdown offers',
+          handler: (p) async => CommandResult.ok({
+            'directory': (await NotificationSounds.directory())?.path,
+            'sounds': await NotificationSounds.list(),
+          }),
         ),
       )
       ..register(
@@ -221,6 +253,54 @@ class NotificationManager extends Manager {
     }
     _timers.clear();
     current.dispose();
+  }
+
+  Future<void> _chime(Map<String, Object?> p) async {
+    await commands.execute('playChime', await chimeParams(p));
+  }
+
+  /// What the chime plays and how loud, from the call first and the
+  /// Notification settings second. Both name a file in the sounds folder;
+  /// the call's goes first and the Settings pick is its fallback, so a
+  /// name that is not there still chimes with the sound the user chose
+  /// rather than in silence, and SoundManager adds the bundled chime as
+  /// the last resort. A name with no file behind it is logged: a caller
+  /// who named a sound and heard the default deserves to know why.
+  Future<Map<String, Object?>> chimeParams(Map<String, Object?> p) async {
+    final asked = '${p['chime_file'] ?? ''}'.trim();
+    final picked = settings.get(notificationsChimeFile).trim();
+    final askedPath = asked.isEmpty ? null : await _resolveSound(asked);
+    if (asked.isNotEmpty && askedPath == null) {
+      log.warn(
+        name,
+        'sound "$asked" is not in ${NotificationSounds.displayPath}, '
+        'falling back',
+      );
+    }
+    final pickedPath = picked.isEmpty ? null : await _resolveSound(picked);
+    if (picked.isNotEmpty && pickedPath == null) {
+      log.warn(
+        name,
+        'the Notification sound "$picked" is not in '
+        '${NotificationSounds.displayPath}, playing the built-in chime',
+      );
+    }
+    return {
+      'source': askedPath ?? pickedPath ?? '',
+      if (askedPath != null && pickedPath != null) 'fallback': pickedPath,
+      'volume': _volume(p['volume']),
+    };
+  }
+
+  /// The chime's volume, 0..1. As with the scale, the ESPHome action
+  /// cannot leave a number out, so 0 and anything under it mean "the
+  /// setting"; a silent chime is what `chime: false` is for.
+  double _volume(Object? value) {
+    final asked = value is num ? value.toDouble() : double.tryParse('$value');
+    if (asked == null || asked <= 0) {
+      return settings.get(notificationsVolume).toDouble().clamp(0, 1);
+    }
+    return asked.clamp(0, 1).toDouble();
   }
 
   /// The icon name to draw, or null for the level's own. A name that is

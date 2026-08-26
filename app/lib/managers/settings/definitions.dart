@@ -156,6 +156,7 @@ const Map<String, String> subpageHints = {
   'Scheduled Screensavers':
       'Switch to a different screensaver at set times of day.',
   // ESPHome.
+  'Notifications': 'Notification sound, volume, test notification',
   'Bluetooth Proxy': 'Relay nearby Bluetooth devices to Home Assistant',
   'Advanced settings': 'Real or spoofed Wi-Fi MAC address',
   // Kiosk.
@@ -4110,6 +4111,91 @@ String? validateMacAddress(Object? value) {
 Object normalizeMacAddressSetting(Object value) =>
     value is String ? (normalizeMacAddress(value) ?? value.trim()) : value;
 
+// ── Notifications ──────────────────────────────────────────────────────
+// What a notification pushed from Home Assistant sounds like (issue #320).
+// Both are the device's defaults: the `notification` action can name a
+// sound and a volume per call, and falls back to these when it does not.
+
+/// The name of a file in the sounds folder (see NotificationSounds), or
+/// empty for the bundled chime. A name rather than a path so a backup
+/// restored onto another kiosk still means the same file; both UIs draw
+/// it as a dropdown over the folder's contents. A name whose file has
+/// since gone plays the bundled chime, so a stale value costs nothing.
+const notificationsChimeFile = SettingDef<String>(
+  key: 'notifications.chime_file',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'Notification sound',
+  description:
+      'Sound files are read from Android/data/me.jxl.kiosk_satellite/'
+      'files/sounds on the device, also reachable from the File Manager.',
+  category: 'ESPHome',
+  section: 'Notifications',
+  subpage: 'Notifications',
+  dependsOn: 'esphome.enabled',
+  validator: validateNotificationSound,
+);
+
+/// What a notification sound may be: audio containers every Android the
+/// app runs on (7.0 and up) decodes natively, so a pick that plays on the
+/// tablet it was chosen on plays on every other kiosk it is restored to.
+/// Deliberately no video containers (an .mp4 with an audio track would
+/// play, and invites picking a movie) and no Opus, whose Ogg support was
+/// patchy on the older releases.
+const notificationSoundExtensions = [
+  'mp3',
+  'ogg',
+  'oga',
+  'wav',
+  'flac',
+  'm4a',
+  'aac',
+];
+
+/// The extension of [path] in lower case, without the dot, or empty.
+String fileExtension(String path) {
+  final name = path.split('/').last;
+  final dot = name.lastIndexOf('.');
+  return dot <= 0 ? '' : name.substring(dot + 1).toLowerCase();
+}
+
+/// Empty clears the sound; anything else has to be a bare file name (no
+/// folders: the sounds folder is the only place looked in) with one of
+/// [notificationSoundExtensions]. Also what the device picker, the remote
+/// upload, the action's `chime_file` and a settings import are held to,
+/// so a file of the wrong kind cannot reach the chime by any door.
+String? validateNotificationSound(Object? value) {
+  if (value is! String || value.trim().isEmpty) return null;
+  final name = value.trim();
+  if (name.contains('/') || name.contains('\\') || name.startsWith('.')) {
+    return 'Enter a file name, not a path.';
+  }
+  if (notificationSoundExtensions.contains(fileExtension(name))) return null;
+  return 'Pick an MP3, OGG, WAV, FLAC, M4A or AAC file.';
+}
+
+/// Independent of the mixer's faders on purpose: a notification is not
+/// assistant speech and not media, and its loudness should not move when
+/// either of those sliders does. Only the device's own master volume
+/// still scales it, as it scales every sound the tablet makes.
+const notificationsVolume = SettingDef<num>(
+  key: 'notifications.volume',
+  type: SettingType.number,
+  defaultValue: 0.7,
+  title: 'Notification volume',
+  description:
+      'How loud the notification sound plays, apart from the media and '
+      'assistant volumes.',
+  category: 'ESPHome',
+  section: 'Notifications',
+  subpage: 'Notifications',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+  dependsOn: 'esphome.enabled',
+);
+
 const btproxyEnabled = SettingDef<bool>(
   key: 'btproxy.enabled',
   type: SettingType.boolean,
@@ -4619,6 +4705,9 @@ const List<SettingDef<Object>> allSettings = [
   btproxyKey,
   btproxyPort,
   esphomeNodeName,
+  // The Notifications page sits above the Bluetooth Proxy one.
+  notificationsChimeFile,
+  notificationsVolume,
   btproxyEnabled,
   btproxyConnections,
   btproxyMinConnectRssi,

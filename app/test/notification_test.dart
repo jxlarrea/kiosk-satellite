@@ -22,14 +22,29 @@ void main() {
 
   late EventBus bus;
   late CommandRegistry commands;
+  late SettingsManager settings;
   late NotificationManager notifications;
   late List<(String, Map<String, Object?>)> executed;
 
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     bus = EventBus();
     final log = Logger();
     commands = CommandRegistry(log);
-    notifications = NotificationManager(bus, commands, log);
+    settings = SettingsManager(bus, commands, log);
+    await settings.init();
+    // The sounds folder, as a map: what is "there" and where it resolves.
+    notifications = NotificationManager(
+      bus,
+      commands,
+      log,
+      settings,
+      resolveSound: (name) async => switch (name) {
+        'bell.mp3' => '/sounds/bell.mp3',
+        'alarm.wav' => '/sounds/alarm.wav',
+        _ => null,
+      },
+    );
     await notifications.init();
     executed = [];
     // The chime is a command away, and there is no audio in a unit test.
@@ -49,11 +64,18 @@ void main() {
 
   Future<int> show(Map<String, Object?> params) async {
     final result = await commands.execute('showNotification', params);
+    // The chime is not awaited by the command (audio must never hold up
+    // the card); let its name lookups land before looking at it. Microtask
+    // turns, not a timer: the widget tests below run under a fake clock.
+    for (var i = 0; i < 10; i++) {
+      await Future<void>.value();
+    }
     return ((result.data! as Map)['id'] as num).toInt();
   }
 
-  List<String> onScreen() =>
-      [for (final note in notifications.current.value) note.message];
+  List<String> onScreen() => [
+    for (final note in notifications.current.value) note.message,
+  ];
 
   test('a notification shows and chimes', () async {
     await show({
@@ -118,53 +140,54 @@ void main() {
       'duration': 0,
       'type': 'error',
     });
-    expect(
-      notifications.current.value.single.level,
-      NotificationLevel.error,
-    );
+    expect(notifications.current.value.single.level, NotificationLevel.error);
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(notifications.current.value, hasLength(1));
     await commands.execute('dismissNotification', const {});
     expect(notifications.current.value, isEmpty);
   });
 
-  test('the action sentinels: empty title, negative duration, no chime',
-      () async {
-    await show({
-      'message': 'Front door opened',
-      'title': '',
-      'duration': -1,
-      'type': '',
-      'chime': false,
-    });
-    final shown = notifications.current.value.single;
-    expect(shown.title, isNull);
-    expect(shown.level, NotificationLevel.info);
-    expect(executed, isEmpty);
-    // A negative duration means "the default", not "gone at once".
-    await Future<void>.delayed(const Duration(milliseconds: 30));
-    expect(notifications.current.value, hasLength(1));
-  });
+  test(
+    'the action sentinels: empty title, negative duration, no chime',
+    () async {
+      await show({
+        'message': 'Front door opened',
+        'title': '',
+        'duration': -1,
+        'type': '',
+        'chime': false,
+      });
+      final shown = notifications.current.value.single;
+      expect(shown.title, isNull);
+      expect(shown.level, NotificationLevel.info);
+      expect(executed, isEmpty);
+      // A negative duration means "the default", not "gone at once".
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(notifications.current.value, hasLength(1));
+    },
+  );
 
-  test('scale takes decimals, clamps, and reads 0 as the ordinary size',
-      () async {
-    await show({'message': 'Half again as big', 'scale': 1.5, 'duration': 0});
-    expect(notifications.current.value.first.scale, 1.5);
-    // The action cannot leave a number out, so 0 means "as usual".
-    await show({'message': 'Ordinary', 'scale': 0, 'duration': 0});
-    expect(notifications.current.value.first.scale, 1);
-    await show({'message': 'Too big', 'scale': 12, 'duration': 0});
-    expect(
-      notifications.current.value.first.scale,
-      NotificationManager.maxScale,
-    );
-    // Under one would be smaller than the design, not larger.
-    await show({'message': 'Too small', 'scale': 0.2, 'duration': 0});
-    expect(notifications.current.value.first.scale, 1);
-    // REST and JS callers send strings.
-    await show({'message': 'From REST', 'scale': '2.5', 'duration': 0});
-    expect(notifications.current.value.first.scale, 2.5);
-  });
+  test(
+    'scale takes decimals, clamps, and reads 0 as the ordinary size',
+    () async {
+      await show({'message': 'Half again as big', 'scale': 1.5, 'duration': 0});
+      expect(notifications.current.value.first.scale, 1.5);
+      // The action cannot leave a number out, so 0 means "as usual".
+      await show({'message': 'Ordinary', 'scale': 0, 'duration': 0});
+      expect(notifications.current.value.first.scale, 1);
+      await show({'message': 'Too big', 'scale': 12, 'duration': 0});
+      expect(
+        notifications.current.value.first.scale,
+        NotificationManager.maxScale,
+      );
+      // Under one would be smaller than the design, not larger.
+      await show({'message': 'Too small', 'scale': 0.2, 'duration': 0});
+      expect(notifications.current.value.first.scale, 1);
+      // REST and JS callers send strings.
+      await show({'message': 'From REST', 'scale': '2.5', 'duration': 0});
+      expect(notifications.current.value.first.scale, 2.5);
+    },
+  );
 
   test('an icon name is kept, prefix and case and all', () async {
     await show({
@@ -190,52 +213,152 @@ void main() {
     expect(notifications.current.value, isEmpty);
   });
 
-  test('string arguments from the REST and JS callers are understood',
-      () async {
-    await show({
-      'message': 'Alarm armed',
-      'duration': '0',
-      'type': 'SUCCESS',
-      'chime': 'false',
-    });
+  test(
+    'string arguments from the REST and JS callers are understood',
+    () async {
+      await show({
+        'message': 'Alarm armed',
+        'duration': '0',
+        'type': 'SUCCESS',
+        'chime': 'false',
+      });
+      expect(
+        notifications.current.value.single.level,
+        NotificationLevel.success,
+      );
+      expect(executed, isEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(notifications.current.value, hasLength(1));
+    },
+  );
+
+  test(
+    'the ESPHome action declares every argument the command reads',
+    () async {
+      final surface = EspEntitySurface(bus, commands, Logger(), settings);
+      final service = surface.buildServices().single;
+      expect(service['name'], 'notification');
+      expect(
+        [for (final arg in service['args']! as List) (arg as Map)['name']],
+        // Order is API: the wire carries values positionally.
+        [
+          'message',
+          'title',
+          'duration',
+          'type',
+          'chime',
+          'scale',
+          'icon',
+          'chime_file',
+          'volume',
+        ],
+      );
+
+      await surface.handleService('notification', {
+        'message': 'Dinner is ready',
+        'title': '',
+        'duration': 0,
+        'type': 'success',
+        'chime': true,
+        'scale': 0,
+        'icon': '',
+        'chime_file': '',
+        'volume': 0,
+      });
+      final shown = notifications.current.value.single;
+      expect(shown.message, 'Dinner is ready');
+      expect(shown.title, isNull);
+      expect(shown.level, NotificationLevel.success);
+      // The action's "as you were" values land on the Settings defaults.
+      final chime = executed.single.$2;
+      expect(chime['source'], '');
+      expect(chime['fallback'], isNull);
+      expect(chime['volume'], closeTo(0.7, 1e-9));
+    },
+  );
+
+  test('the sound setting takes the name of an audio file only', () async {
+    expect(validateNotificationSound(''), isNull);
+    expect(validateNotificationSound('bell.mp3'), isNull);
+    // Case and the odd Ogg spelling are fine; a movie is not, nor a path:
+    // the sounds folder is the only place looked in.
+    expect(validateNotificationSound('BELL.OGG'), isNull);
+    expect(validateNotificationSound('bell.oga'), isNull);
+    expect(validateNotificationSound('clip.mp4'), isNotNull);
+    expect(validateNotificationSound('bell.opus'), isNotNull);
+    expect(validateNotificationSound('noext'), isNotNull);
+    expect(validateNotificationSound('/sdcard/Music/bell.mp3'), isNotNull);
+    expect(validateNotificationSound('../bell.mp3'), isNotNull);
+    // And the store enforces it: a wrong name is refused, not kept, which
+    // is what holds the remote upload and a settings import to the list.
     expect(
-      notifications.current.value.single.level,
-      NotificationLevel.success,
+      await settings.setFromJson(notificationsChimeFile.key, 'clip.mp4'),
+      isFalse,
     );
-    expect(executed, isEmpty);
-    await Future<void>.delayed(const Duration(milliseconds: 30));
-    expect(notifications.current.value, hasLength(1));
+    expect(settings.get(notificationsChimeFile), '');
+    expect(
+      await settings.setFromJson(notificationsChimeFile.key, 'bell.flac'),
+      isTrue,
+    );
   });
 
-  test('the ESPHome action declares every argument the command reads',
-      () async {
-    SharedPreferences.setMockInitialValues({});
-    final log = Logger();
-    final settings = SettingsManager(bus, commands, log);
-    await settings.init();
-    final surface = EspEntitySurface(bus, commands, log, settings);
-    final service = surface.buildServices().single;
-    expect(service['name'], 'notification');
-    expect(
-      [for (final arg in service['args']! as List) (arg as Map)['name']],
-      // Order is API: the wire carries values positionally.
-      ['message', 'title', 'duration', 'type', 'chime', 'scale', 'icon'],
-    );
-
-    await surface.handleService('notification', {
-      'message': 'Dinner is ready',
-      'title': '',
-      'duration': 0,
-      'type': 'success',
-      'chime': true,
-      'scale': 0,
-      'icon': '',
-    });
-    final shown = notifications.current.value.single;
-    expect(shown.message, 'Dinner is ready');
-    expect(shown.title, isNull);
-    expect(shown.level, NotificationLevel.success);
+  test('the chime plays the Settings sound at the Settings volume', () async {
+    await settings.set(notificationsChimeFile, 'bell.mp3');
+    await settings.set(notificationsVolume, 0.4);
+    await show({'message': 'Laundry', 'duration': 0});
+    final chime = executed.single.$2;
+    // The name became the file's path in the sounds folder.
+    expect(chime['source'], '/sounds/bell.mp3');
+    // Nothing of the caller's to fall back from.
+    expect(chime['fallback'], isNull);
+    expect(chime['volume'], closeTo(0.4, 1e-9));
   });
+
+  test(
+    'a name with no file behind it falls through to the next sound',
+    () async {
+      await settings.set(notificationsChimeFile, 'bell.mp3');
+      // The call's sound is gone: the Settings one plays, alone.
+      await show({'message': 'Leak', 'duration': 0, 'chime_file': 'gone.mp3'});
+      var chime = executed.removeLast().$2;
+      expect(chime['source'], '/sounds/bell.mp3');
+      expect(chime['fallback'], isNull);
+      // Both gone: nothing named, and SoundManager plays the bundled chime.
+      await settings.set(notificationsChimeFile, 'also-gone.mp3');
+      await show({'message': 'Leak', 'duration': 0, 'chime_file': 'gone.mp3'});
+      chime = executed.removeLast().$2;
+      expect(chime['source'], '');
+      expect(chime['fallback'], isNull);
+    },
+  );
+
+  test(
+    'a call names its own sound and volume, the Settings ones behind it',
+    () async {
+      await settings.set(notificationsChimeFile, 'bell.mp3');
+      await show({
+        'message': 'Leak',
+        'duration': 0,
+        'chime_file': 'alarm.wav',
+        'volume': 1,
+      });
+      var chime = executed.removeLast().$2;
+      expect(chime['source'], '/sounds/alarm.wav');
+      expect(chime['fallback'], '/sounds/bell.mp3');
+      expect(chime['volume'], 1.0);
+      // Out of range is clamped, not refused; REST callers send strings.
+      await show({'message': 'Loud', 'duration': 0, 'volume': '3'});
+      chime = executed.removeLast().$2;
+      expect(chime['volume'], 1.0);
+      // 0 and below mean the setting (the action cannot leave it out); a
+      // silent notification is what chime:false is for.
+      await show({'message': 'Quiet', 'duration': 0, 'volume': -1});
+      chime = executed.removeLast().$2;
+      expect(chime['volume'], closeTo(0.7, 1e-9));
+      await show({'message': 'Silent', 'duration': 0, 'chime': false});
+      expect(executed, isEmpty);
+    },
+  );
 
   testWidgets('the overlay stacks at the top and dismisses card by card', (
     tester,
@@ -297,9 +420,7 @@ void main() {
     expect(big.style!.fontSize, 24 * 2.5);
     expect(
       tester.getSize(find.text('Read me from the kitchen')).height,
-      greaterThan(
-        tester.getSize(find.text('Washing machine finished')).height,
-      ),
+      greaterThan(tester.getSize(find.text('Washing machine finished')).height),
     );
     await tester.tap(find.text('Read me from the kitchen'));
     await tester.pump();

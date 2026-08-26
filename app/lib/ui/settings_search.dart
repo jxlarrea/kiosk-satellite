@@ -299,6 +299,15 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'ESPHome',
+    title: 'Test notification',
+    description:
+        'The Home Assistant action that sends notifications, and a button '
+        'to show one.',
+    anchorId: 'x:notification_test',
+    subpage: 'Notifications',
+  ),
+  SettingsSearchEntry(
+    category: 'ESPHome',
     title: 'Nearby devices',
     description:
         'The Bluetooth devices this kiosk hears, with names where known.',

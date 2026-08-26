@@ -64,10 +64,9 @@ class SoundManager extends Manager {
         case 'started':
           bus.publish(SoundStarted(id: id));
         case 'level':
-          bus.publish(SoundLevel(
-            id: id,
-            level: (args['level'] as num?)?.toDouble() ?? 0,
-          ));
+          bus.publish(
+            SoundLevel(id: id, level: (args['level'] as num?)?.toDouble() ?? 0),
+          );
         case 'ended':
           final error = args['error'] as String?;
           if (error != null) log.warn(name, 'sound $id failed: $error');
@@ -85,124 +84,158 @@ class SoundManager extends Manager {
     });
 
     commands
-      ..register(Command(
-        name: 'playSound',
-        description:
-            'Play a sound natively (honors the speaker selection, no '
-            'autoplay gate). Resolves {id}; sound-started fires when audio '
-            'begins and sound-ended exactly once when it finishes.',
-        params: const {
-          'url': 'absolute URL of the audio file',
-          'volume': '0..1, relative to the assistant volume (default 1)',
-          'cache': 'keep the download for instant replays (default false)',
-          'stream':
-              'play while downloading, for sources still being generated '
-              '(TTS); cache is ignored (default false)',
-        },
-        handler: (p) async {
-          final url = p['url'] as String?;
-          if (url == null || url.isEmpty) {
-            return const CommandResult.fail('url required');
-          }
-          final id = 'snd${++_nextId}';
-          final String source;
-          if (p['stream'] == true) {
-            try {
-              source = await _relayUrlFor(id, url);
-            } catch (e) {
-              return CommandResult.fail('sound relay failed: $e');
+      ..register(
+        Command(
+          name: 'playSound',
+          description:
+              'Play a sound natively (honors the speaker selection, no '
+              'autoplay gate). Resolves {id}; sound-started fires when audio '
+              'begins and sound-ended exactly once when it finishes.',
+          params: const {
+            'url': 'absolute URL of the audio file',
+            'volume': '0..1, relative to the assistant volume (default 1)',
+            'cache': 'keep the download for instant replays (default false)',
+            'stream':
+                'play while downloading, for sources still being generated '
+                '(TTS); cache is ignored (default false)',
+          },
+          handler: (p) async {
+            final url = p['url'] as String?;
+            if (url == null || url.isEmpty) {
+              return const CommandResult.fail('url required');
             }
-          } else {
-            final cache = p['cache'] == true;
+            final id = 'snd${++_nextId}';
+            final String source;
+            if (p['stream'] == true) {
+              try {
+                source = await _relayUrlFor(id, url);
+              } catch (e) {
+                return CommandResult.fail('sound relay failed: $e');
+              }
+            } else {
+              final cache = p['cache'] == true;
+              try {
+                source = await _fetch(url, cache: cache);
+              } catch (e) {
+                return CommandResult.fail('sound fetch failed: $e');
+              }
+              if (!cache) _ephemeral[id] = source;
+            }
+            final ok = await _channel.invokeMethod<bool>('play', {
+              'id': id,
+              'source': source,
+              'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
+            });
+            if (ok != true) {
+              _ephemeral.remove(id);
+              final token = _streamTokens.remove(id);
+              if (token != null) _relayTargets.remove(token);
+              return const CommandResult.fail('native playback failed');
+            }
+            return CommandResult.ok({'id': id});
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'prefetchSound',
+          description:
+              'Warm the sound cache for a URL so the first playSound of it '
+              'starts instantly',
+          params: const {'url': 'absolute URL of the audio file'},
+          handler: (p) async {
+            final url = p['url'] as String?;
+            if (url == null || url.isEmpty) {
+              return const CommandResult.fail('url required');
+            }
             try {
-              source = await _fetch(url, cache: cache);
+              await _fetch(url, cache: true);
+              return const CommandResult.ok();
             } catch (e) {
               return CommandResult.fail('sound fetch failed: $e');
             }
-            if (!cache) _ephemeral[id] = source;
-          }
-          final ok = await _channel.invokeMethod<bool>('play', {
-            'id': id,
-            'source': source,
-            'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
-          });
-          if (ok != true) {
-            _ephemeral.remove(id);
-            final token = _streamTokens.remove(id);
-            if (token != null) _relayTargets.remove(token);
-            return const CommandResult.fail('native playback failed');
-          }
-          return CommandResult.ok({'id': id});
-        },
-      ))
-      ..register(Command(
-        name: 'prefetchSound',
-        description:
-            'Warm the sound cache for a URL so the first playSound of it '
-            'starts instantly',
-        params: const {'url': 'absolute URL of the audio file'},
-        handler: (p) async {
-          final url = p['url'] as String?;
-          if (url == null || url.isEmpty) {
-            return const CommandResult.fail('url required');
-          }
-          try {
-            await _fetch(url, cache: true);
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'playChime',
+          description:
+              'Play the notification chime natively (honors the speaker '
+              'selection). Its volume stands apart from the assistant and '
+              'media faders: a notification is neither.',
+          params: const {
+            'source':
+                'the path of a sound file on the device to play instead of '
+                'the bundled chime; empty or missing falls through',
+            'fallback': 'a second such path, tried when the first is missing',
+            'volume': '0..1, absolute (default 1)',
+          },
+          handler: (p) async {
+            final String source;
+            try {
+              source = await _chimeSource([p['source'], p['fallback']]);
+            } catch (e) {
+              return CommandResult.fail('chime unavailable: $e');
+            }
+            final ok = await _channel.invokeMethod<bool>('play', {
+              'id': 'chime${++_nextId}',
+              'source': source,
+              'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
+              'absolute': true,
+            });
+            return ok == true
+                ? const CommandResult.ok()
+                : const CommandResult.fail('native playback failed');
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'stopSound',
+          description: 'Stop a playing sound by its playSound id',
+          params: const {'id': 'id returned by playSound'},
+          handler: (p) async {
+            await _channel.invokeMethod<void>('stop', {'id': '${p['id']}'});
             return const CommandResult.ok();
-          } catch (e) {
-            return CommandResult.fail('sound fetch failed: $e');
-          }
-        },
-      ))
-      ..register(Command(
-        name: 'playChime',
-        description:
-            "Play the app's own notification chime natively (honors the "
-            'speaker selection)',
-        params: const {'volume': '0..1 (default 1)'},
-        handler: (p) async {
-          final String source;
-          try {
-            source = await _bundled(_notificationChime);
-          } catch (e) {
-            return CommandResult.fail('chime unavailable: $e');
-          }
-          final ok = await _channel.invokeMethod<bool>('play', {
-            'id': 'chime${++_nextId}',
-            'source': source,
-            'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
-          });
-          return ok == true
-              ? const CommandResult.ok()
-              : const CommandResult.fail('native playback failed');
-        },
-      ))
-      ..register(Command(
-        name: 'stopSound',
-        description: 'Stop a playing sound by its playSound id',
-        params: const {'id': 'id returned by playSound'},
-        handler: (p) async {
-          await _channel.invokeMethod<void>('stop', {'id': '${p['id']}'});
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'setSoundVolume',
-        description:
-            'Change the volume of a playing sound (the page applies live '
-            'volume changes mid-utterance, matching browser audio)',
-        params: const {
-          'id': 'id returned by playSound',
-          'volume': '0..1, relative to media volume',
-        },
-        handler: (p) async {
-          await _channel.invokeMethod<void>('setVolume', {
-            'id': '${p['id']}',
-            'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
-          });
-          return const CommandResult.ok();
-        },
-      ));
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'setSoundVolume',
+          description:
+              'Change the volume of a playing sound (the page applies live '
+              'volume changes mid-utterance, matching browser audio)',
+          params: const {
+            'id': 'id returned by playSound',
+            'volume': '0..1, relative to media volume',
+          },
+          handler: (p) async {
+            await _channel.invokeMethod<void>('setVolume', {
+              'id': '${p['id']}',
+              'volume': (p['volume'] as num?)?.toDouble() ?? 1.0,
+            });
+            return const CommandResult.ok();
+          },
+        ),
+      );
+  }
+
+  /// The first of [candidates] that exists on disk, the bundled chime when
+  /// none does. Files only, and local ones: the notification sounds live
+  /// in a folder on the device (NotificationSounds), and the native clip
+  /// cache keyed on path and mtime makes every play after the first
+  /// instant. A miss is logged so a name that resolved a moment ago and
+  /// vanished since still leaves a trace.
+  Future<String> _chimeSource(List<Object?> candidates) async {
+    for (final candidate in candidates) {
+      final source = '${candidate ?? ''}'.trim();
+      if (source.isEmpty) continue;
+      if (File(source).existsSync()) return source;
+      log.warn(name, 'chime file $source is missing, falling back');
+    }
+    return _bundled(_notificationChime);
   }
 
   /// Copies a bundled sound out of the APK once and returns its path. The
@@ -250,17 +283,21 @@ class SoundManager extends Manager {
 
   Future<HttpServer> _startRelay() async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    server.listen(_handleRelay, onError: (Object e) {
-      log.warn(name, 'sound relay error: $e');
-    });
+    server.listen(
+      _handleRelay,
+      onError: (Object e) {
+        log.warn(name, 'sound relay error: $e');
+      },
+    );
     log.info(name, 'sound relay on 127.0.0.1:${server.port}');
     return server;
   }
 
   Future<void> _handleRelay(HttpRequest req) async {
     final segments = req.uri.pathSegments;
-    final target =
-        segments.length == 2 && segments[0] == 's' ? _relayTargets[segments[1]] : null;
+    final target = segments.length == 2 && segments[0] == 's'
+        ? _relayTargets[segments[1]]
+        : null;
     if (target == null) {
       req.response.statusCode = HttpStatus.notFound;
       await req.response.close();

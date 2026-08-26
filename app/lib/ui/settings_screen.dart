@@ -17,6 +17,7 @@ import '../core/logging.dart';
 import '../managers/btproxy/ble_identity.dart' show rssiTier, sortNearbyJson;
 import '../managers/camera/models.dart' show CameraViewConfig;
 import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
+import '../managers/notifications/notification_sounds.dart';
 import '../managers/screensaver/screensaver_manager.dart'
     show upsertScheduleEntry;
 import '../managers/screensaver/screensaver_widgets.dart';
@@ -2336,6 +2337,24 @@ class _CategoryContentState extends State<_CategoryContent> {
       ];
     }
 
+    if (widget.category == 'ESPHome' && subpage == 'Notifications') {
+      // Where notifications come from and a way to hear one, above the
+      // sound and volume they arrive with. Mirrored on the remote
+      // (settings.js, the Notifications page block).
+      return [
+        SearchLandingTarget(
+          id: 'x:notification_test',
+          child: SettingsCard(
+            children: [_NotificationTestRow(container: container)],
+          ),
+        ),
+        ...sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage) def,
+        ]),
+      ];
+    }
+
     if (widget.category == 'Device' && subpage == 'Kiosk Satellite Service') {
       // The keep-alive service's page: what it is doing and why, its one
       // setting, and the grants it needs for what it is doing. Live rows,
@@ -3873,6 +3892,159 @@ class _ImmichValidateRowState extends State<_ImmichValidateRow> {
                   : Icons.cloud_off_outlined,
             ),
       onTap: _validating ? null : _validate,
+    );
+  }
+}
+
+/// The Notification sound dropdown over the sounds folder, plus the row
+/// that copies a file of this device's into that folder. The list is read
+/// once per build of the page and again after a pick; the File Manager,
+/// USB and the remote admin can add files too, and a reopen of the page
+/// sees them. Mirrored on the remote (settings.js, the Notifications page
+/// block, over the listNotificationSounds command).
+class _NotificationSoundTile extends StatefulWidget {
+  const _NotificationSoundTile({
+    super.key,
+    required this.container,
+    required this.def,
+    required this.onChanged,
+  });
+
+  final AppContainer container;
+  final SettingDef<Object> def;
+  final VoidCallback onChanged;
+
+  @override
+  State<_NotificationSoundTile> createState() => _NotificationSoundTileState();
+}
+
+class _NotificationSoundTileState extends State<_NotificationSoundTile> {
+  List<String> _sounds = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+  }
+
+  Future<void> _refresh() async {
+    final sounds = await NotificationSounds.list();
+    if (mounted) setState(() => _sounds = sounds);
+  }
+
+  Future<void> _browse() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: notificationSoundExtensions,
+    );
+    final file = picked?.files.single.path;
+    if (file == null) return;
+    final String name;
+    try {
+      // The picker's filter is advisory on some OEM pickers ("All files"
+      // gets past it); the copy checks the name again.
+      name = await NotificationSounds.import(file);
+    } on ArgumentError catch (e) {
+      if (mounted) {
+        showToast(
+          context,
+          title: 'Not a supported sound',
+          message: '${e.message}',
+          kind: ToastKind.error,
+        );
+      }
+      return;
+    } catch (e) {
+      if (mounted) {
+        showToast(
+          context,
+          title: 'Could not copy the file',
+          message: '$e',
+          kind: ToastKind.error,
+        );
+      }
+      return;
+    }
+    await widget.container.settings.setFromJson(widget.def.key, name);
+    await _refresh();
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final def = widget.def;
+    final current = (widget.container.settings.get(def) as String).trim();
+    // A stored name whose file has gone stays visible, marked, rather than
+    // silently reading as the built-in chime the row would fall back to.
+    final options = [
+      ('', 'Built-in chime'),
+      for (final sound in _sounds) (sound, sound),
+      if (current.isNotEmpty && !_sounds.contains(current))
+        (current, '$current (missing)'),
+    ];
+    return Column(
+      children: [
+        DropdownRow<String>(
+          title: def.title,
+          description: def.description,
+          value: current,
+          options: options,
+          onChanged: (v) async {
+            if (v == null) return;
+            await widget.container.settings.setFromJson(def.key, v);
+            widget.onChanged();
+          },
+        ),
+        ListTile(
+          title: const Text('Add a sound'),
+          subtitle: const Text(
+            'Copy a sound file from this device into the sounds folder.',
+          ),
+          trailing: TextButton(onPressed: _browse, child: const Text('Browse')),
+        ),
+      ],
+    );
+  }
+}
+
+/// How a notification reaches this kiosk, with the action's exact name
+/// (Home Assistant builds it from the node name), and a button that sends
+/// one. Settings sits over the kiosk screen the card draws on, so the test
+/// first steps back to it: a chime with nothing to see would read as the
+/// card being broken.
+class _NotificationTestRow extends StatelessWidget {
+  const _NotificationTestRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  Widget build(BuildContext context) {
+    final node = container.settings.get(esphomeNodeName).trim();
+    final action = node.isEmpty
+        ? 'esphome.<node name>_notification'
+        : 'esphome.${node.replaceAll('-', '_')}_notification';
+    return ListTile(
+      title: const Text('Test notification'),
+      subtitle: Text(
+        'Notifications are sent from Home Assistant with the $action '
+        'action. Test shows one over the dashboard.',
+      ),
+      trailing: FilledButton.tonal(
+        onPressed: () {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          unawaited(
+            container.commands.execute('showNotification', const {
+              'title': 'Test notification',
+              'message':
+                  'This is what a notification from Home Assistant '
+                  'looks and sounds like.',
+              'type': 'info',
+              'icon': 'mdi:bell-ring',
+            }),
+          );
+        },
+        child: const Text('Test'),
+      ),
     );
   }
 }
@@ -7078,6 +7250,16 @@ class SettingTile extends StatelessWidget {
                 ),
               ],
             ),
+          );
+        }
+        // The notification sound (issue #320): a dropdown over the sounds
+        // folder, and a row to put a file of this device's into it.
+        if (def.key == notificationsChimeFile.key) {
+          return _NotificationSoundTile(
+            key: const ValueKey('notification-sound'),
+            container: c,
+            def: def,
+            onChanged: onChanged,
           );
         }
         // Photo Gallery: picked with the system gallery picker, in

@@ -110,6 +110,20 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
      */
     private val baseVolumes = mutableMapOf<String, Float>()
 
+    /**
+     * Sounds whose volume is the caller's alone, outside the assistant
+     * fader: the notification chime (issue #320), which is neither
+     * assistant speech nor media and has a slider of its own.
+     */
+    private val absoluteVolumes = mutableSetOf<String>()
+
+    /** [baseVolumes] through the assistant fader, unless [id] stands apart. */
+    private fun effectiveVolume(id: String): Float {
+        val base = baseVolumes[id] ?: 1f
+        val gain = if (id in absoluteVolumes) 1f else VolumeController.assistGain
+        return (base * gain).coerceIn(0f, 1f)
+    }
+
     /** Per-sound level taps, feeding the page's reactive bar. */
     private val visualizers = mutableMapOf<String, Visualizer>()
 
@@ -142,6 +156,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                         call.argument<String>("id") ?: "",
                         call.argument<String>("source") ?: "",
                         call.argument<Double>("volume") ?: 1.0,
+                        call.argument<Boolean>("absolute") ?: false,
                     ),
                 )
                 "stop" -> {
@@ -155,18 +170,18 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                     val id = call.argument<String>("id") ?: ""
                     val v = (call.argument<Double>("volume") ?: 1.0)
                         .toFloat().coerceIn(0f, 1f)
-                    val e = v * VolumeController.assistGain
                     players[id]?.let {
                         baseVolumes[id] = v
+                        val e = effectiveVolume(id)
                         try { it.setVolume(e, e) } catch (_: IllegalStateException) {}
                     }
                     exoPlayers[id]?.let {
                         baseVolumes[id] = v
-                        it.volume = e.coerceIn(0f, 1f)
+                        it.volume = effectiveVolume(id)
                     }
                     synchronized(tracks) { tracks[id] }?.let {
                         baseVolumes[id] = v
-                        try { it.setVolume(e.coerceIn(0f, 1f)) } catch (_: Exception) {}
+                        try { it.setVolume(effectiveVolume(id)) } catch (_: Exception) {}
                     }
                     result.success(true)
                 }
@@ -178,22 +193,25 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         // playing.
         VolumeController.addListener {
             for ((id, mp) in players) {
-                val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
+                val e = effectiveVolume(id)
                 try { mp.setVolume(e, e) } catch (_: IllegalStateException) {}
             }
             for ((id, exo) in exoPlayers) {
-                val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
-                exo.volume = e.coerceIn(0f, 1f)
+                exo.volume = effectiveVolume(id)
             }
             val live = synchronized(tracks) { tracks.toMap() }
             for ((id, track) in live) {
-                val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
-                try { track.setVolume(e.coerceIn(0f, 1f)) } catch (_: Exception) {}
+                try { track.setVolume(effectiveVolume(id)) } catch (_: Exception) {}
             }
         }
     }
 
-    private fun play(id: String, source: String, volume: Double): Boolean {
+    private fun play(
+        id: String,
+        source: String,
+        volume: Double,
+        absolute: Boolean = false,
+    ): Boolean {
         if (id.isEmpty() || source.isEmpty()) return false
         // Same id twice = replace: the page re-firing a chime wants the new
         // one, not two overlapped copies.
@@ -205,6 +223,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             target != null && target.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
         val v = volume.toFloat().coerceIn(0f, 1f)
         baseVolumes[id] = v
+        if (absolute) absoluteVolumes.add(id) else absoluteVolumes.remove(id)
         // The call route stays on MediaPlayer, where the SCO handling
         // already lives. A short local file plays from decoded PCM: no
         // codec spin-up, no teardown, and none of it on this thread.
@@ -251,7 +270,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             )
             if (callRoute) ensureScoLink(id, target!!)
             mp.setDataSource(source)
-            val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
+            val e = effectiveVolume(id)
             mp.setVolume(e, e)
             mp.setOnPreparedListener { player ->
                 if (players[id] !== player) return@setOnPreparedListener
@@ -325,8 +344,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         }
         try {
             track.write(clip.pcm, 0, clip.pcm.size)
-            val v = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
-            track.setVolume(v.coerceIn(0f, 1f))
+            track.setVolume(effectiveVolume(id))
             if (Build.VERSION.SDK_INT >= 28) {
                 target?.let {
                     track.preferredDevice = it
@@ -405,8 +423,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
                 /* handleAudioFocus = */ false,
             )
             target?.let { player.setPreferredAudioDevice(it) }
-            val e = (baseVolumes[id] ?: 1f) * VolumeController.assistGain
-            player.volume = e.coerceIn(0f, 1f)
+            player.volume = effectiveVolume(id)
             player.addListener(object : Player.Listener {
                 private var reported = false
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -646,6 +663,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
         if (!stopTrack(id)) return
         baseVolumes.remove(id)
         mainHandler.post {
+            absoluteVolumes.remove(id)
             routingReasserts.remove(id)
             channel.invokeMethod("ended", mapOf("id" to id, "error" to error))
         }
@@ -786,6 +804,7 @@ class SoundPlayer(context: Context, messenger: BinaryMessenger) {
             am.clearCommunicationDevice()
         }
         baseVolumes.remove(id)
+        absoluteVolumes.remove(id)
         routingReasserts.remove(id)
         val mp = players.remove(id)
         val exo = exoPlayers.remove(id)

@@ -153,6 +153,8 @@ data:
   chime: true
   scale: 1
   icon: mdi:washing-machine
+  chime_file: ""
+  volume: 0
 ```
 
 An ESPHome device can call it directly, with no automation in between:
@@ -172,6 +174,8 @@ binary_sensor:
             chime: "true"
             scale: "2"
             icon: mdi:door-open
+            chime_file: ""
+            volume: "0"
 ```
 
 Every argument is required, because the ESPHome protocol has no optional
@@ -186,6 +190,8 @@ ones, so each has a value that means "as you were":
 | `chime` | Whether to play the notification chime. It plays through the selected speaker like every other app sound |
 | `icon` | A Material Design Icon to draw instead of the one the type picks, named as Home Assistant names it (`mdi:washing-machine`). The full set is bundled, so anything valid in a dashboard works here, and the color still comes from the type. Empty for the type's own icon |
 | `scale` | How large to draw it, `1` (the ordinary card) to `4`, decimals allowed. Everything grows together: type, icon, padding and width, so a `3` on a wall panel reads from the far side of a room without taking the screen over. `0` means the ordinary size |
+| `chime_file` | A sound of this notification's own, in place of the one picked in the kiosk's settings: a URL (`http://homeassistant.local:8123/local/sounds/leak.mp3`, anything the kiosk can reach), or the path of a file on the device. A URL is fetched the first time and kept, so the next notification with it plays at once and a server that is down later does not silence it. Empty plays the sound from the settings, and so does a URL that does not answer or a file that is not there, with a line in the app's log saying which |
+| `volume` | How loud the sound plays, `0` to `1`, apart from the media and assistant volumes: a notification is neither, and this level does not move when those sliders do (the device's own master volume still applies, as it does to every sound). `0` or a negative number uses the **Notification volume** setting. A silent notification is `chime: false` |
 
 Notifications stack, newest on top, up to four at a time: two things
 happening at once is ordinary, and the second one arriving is no reason
@@ -200,6 +206,34 @@ sitting at five percent overnight is readable the moment something
 happens, and dims again when the last card goes. The screensaver itself
 is not disturbed, and the behavior has a switch of its own (**Brighten
 for notifications**, see [screensavers.md](screensavers.md#brightness)).
+
+Every sound comes from one folder on the kiosk:
+`Android/data/me.jxl.kiosk_satellite/files/sounds`, which is the app
+folder the File Manager shows. Put files there any way that suits:
+**Add a sound** on the Notifications settings page (**Browse** on the
+device copies a file from the tablet in, **Upload** in the remote admin
+sends one from the computer the page is open on), the File Manager's
+upload, USB or adb. MP3, OGG (Vorbis), WAV, FLAC, M4A and AAC files are
+accepted, the formats every supported Android decodes on its own, and
+nothing else: not a video file with a soundtrack, and not Opus, which
+older releases handle unevenly. The folder needs no permission and
+survives restarts and updates; like the rest of the app's data it goes
+with an uninstall. A short clip plays through the same decoded-clip path
+as the built-in chime, so it costs the dashboard no stall.
+
+The sound and volume a notification arrives with by default live on the
+**Notifications** page of the ESPHome settings, on the device and in the
+remote admin alike. **Notification sound** is a dropdown over that
+folder, **Built-in chime** first; it stores the file's name, so a backup
+restored onto another kiosk keeps meaning the same file, and a name whose
+file has gone shows as missing and plays the built-in chime until it is
+back. **Notification volume** sets how loud it plays, 70% by default, and
+stands apart from the media and assistant faders. The page names the
+exact action for this kiosk, and **Test** sends a notification through it
+so the sound and the volume can be judged in place. A house with several
+kinds of notification (a leak, a delivery, the laundry) gives each its
+own `chime_file` in the automation and keeps the settings as the default
+for the rest.
 
 A tap anywhere on a card dismisses that card and leaves the rest. To take
 one down from Home Assistant, call the kiosk's `dismissNotification`

@@ -174,6 +174,26 @@ void main() {
     expect(defs.audioMicDevice.subpage, isNull);
   });
 
+  test('the ESPHome Notifications page holds the chime and its volume', () {
+    final moved = [
+      for (final d in defs.allSettings)
+        if (d.subpage == 'Notifications') d.key,
+    ];
+    expect(moved, [
+      defs.notificationsChimeFile.key,
+      defs.notificationsVolume.key,
+    ]);
+    expect(defs.notificationsVolume.section, 'Notifications');
+    // Its entry row sits above the Bluetooth Proxy one: entry order
+    // follows allSettings.
+    final keys = defs.allSettings.map((d) => d.key).toList();
+    expect(
+      keys.indexOf(defs.notificationsChimeFile.key),
+      lessThan(keys.indexOf(defs.btproxyEnabled.key)),
+    );
+    expect(defs.subpageHints, contains('Notifications'));
+  });
+
   test('the ESPHome Bluetooth half is one page', () {
     final moved = [
       for (final d in defs.allSettings)

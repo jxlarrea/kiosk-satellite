@@ -549,6 +549,64 @@ void main() {
   });
 
   group('ESPHome', () {
+    testWidgets('the Notifications page sits above Bluetooth Proxy', (
+      tester,
+    ) async {
+      await boot();
+      await container.settings.set(esphomeEnabled, true);
+      await container.settings.set(esphomeNodeName, 'kitchen-tablet');
+      tester.view.physicalSize = const Size(500, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(home: SettingsScreen(container: container)),
+      );
+      await settle(tester);
+      await tester.tap(find.text('ESPHome').first);
+      await settle(tester);
+
+      // One entry row each, Notifications first.
+      final notifications = find.widgetWithText(ListTile, 'Notifications');
+      final proxy = find.widgetWithText(ListTile, 'Bluetooth Proxy');
+      expect(notifications, findsOneWidget);
+      expect(proxy, findsOneWidget);
+      expect(
+        tester.getTopLeft(notifications).dy,
+        lessThan(tester.getTopLeft(proxy).dy),
+      );
+      // Its rows are on the page, not here.
+      expect(find.text(notificationsChimeFile.title), findsNothing);
+      expect(find.text(notificationsVolume.title), findsNothing);
+
+      await tester.tap(notifications);
+      await settle(tester);
+
+      expect(find.widgetWithText(AppBar, 'Notifications'), findsOneWidget);
+      // The intro row names this kiosk's action, with the test button,
+      // above the sound and volume rows.
+      expect(
+        find.textContaining('esphome.kitchen_tablet_notification'),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(FilledButton, 'Test'), findsOneWidget);
+      expect(find.text(notificationsChimeFile.title), findsOneWidget);
+      expect(find.text('Built-in chime'), findsOneWidget);
+      expect(find.text(notificationsVolume.title), findsOneWidget);
+      expect(find.text('70%'), findsOneWidget);
+      final intro = tester.getTopLeft(
+        find.widgetWithText(FilledButton, 'Test'),
+      );
+      final sound = tester.getTopLeft(find.text(notificationsChimeFile.title));
+      expect(intro.dy, lessThan(sound.dy));
+      // The page's own name would only repeat the title bar.
+      expect(
+        find.widgetWithText(SectionHeading, 'Notifications'),
+        findsNothing,
+      );
+
+      await drain(tester);
+    });
+
     testWidgets('the Bluetooth half moved, the entity server stayed', (
       tester,
     ) async {

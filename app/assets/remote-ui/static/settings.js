@@ -471,6 +471,138 @@ export async function loadSettings() {
     }
   }
 
+  // ── Notifications page (issue #320) ──────────────────────────────────
+  // Mirror of the device's page: where notifications come from and a
+  // button that sends one, above the sound and volume rows. The sound row
+  // is a dropdown over the device's sounds folder, and the row under it
+  // uploads a file from this computer into that folder the way the Files
+  // tab uploads. Only while the page exists, which is the ESPHome master's
+  // call (every row on it gates on it).
+  {
+    const root = document.getElementById('tab-esphome');
+    const panel = root?.querySelector('.subpage[data-subpage="Notifications"]');
+    if (panel) {
+      const node = `${byKey['esphome.node_name']?.value || ''}`.trim();
+      const action = node
+        ? `esphome.${node.replace(/-/g, '_')}_notification`
+        : 'esphome.<node name>_notification';
+      const row = readOnlyRow('Test notification',
+        `Notifications are sent from Home Assistant with the ${action} `
+        + 'action. Test shows one over the dashboard.', '');
+      const test = document.createElement('button');
+      test.className = 'btn-ghost';
+      test.textContent = 'Test';
+      test.style.cssText = 'flex-shrink:0;';
+      test.addEventListener('click', async () => {
+        test.disabled = true;
+        try {
+          await cmd('showNotification', {
+            title: 'Test notification',
+            message: 'This is what a notification from Home Assistant looks and sounds like.',
+            type: 'info',
+            icon: 'mdi:bell-ring',
+          });
+          test.textContent = 'Sent';
+        } catch (_) { test.textContent = 'Failed'; }
+        setTimeout(() => { test.textContent = 'Test'; test.disabled = false; }, 2000);
+      });
+      row.appendChild(test);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.appendChild(row);
+      panel.prepend(card);
+
+      const fileRow = panel.querySelector('[data-key="notifications.chime_file"]');
+      const setting = byKey['notifications.chime_file'];
+      if (fileRow && setting) {
+        // The dropdown over the sounds folder, filled from the device's own
+        // listing so this page and the tablet always offer the same files.
+        fileRow.querySelector('input')?.remove();
+        const sel = document.createElement('select');
+        const fill = (sounds) => {
+          sel.innerHTML = '';
+          const current = `${setting.value || ''}`;
+          const names = [...sounds];
+          // A stored name whose file has gone stays visible, marked, rather
+          // than silently reading as the built-in chime.
+          if (current && !names.includes(current)) names.push(current);
+          [['', 'Built-in chime'], ...names.map((n) => [n, n === current && !sounds.includes(n) ? `${n} (missing)` : n])]
+            .forEach(([value, label]) => {
+              const opt = document.createElement('option');
+              opt.value = value; opt.textContent = label;
+              opt.selected = value === current;
+              sel.appendChild(opt);
+            });
+        };
+        const refresh = async () => {
+          let sounds = [];
+          try { sounds = ((await cmd('listNotificationSounds')).data || {}).sounds || []; }
+          catch (_) {}
+          fill(sounds);
+        };
+        const write = async (name) => {
+          const res = await api('/api/settings', {
+            method: 'PATCH', body: JSON.stringify({ 'notifications.chime_file': name }),
+          });
+          const out = await res.json().catch(() => ({}));
+          if (!res.ok || out.rejected?.includes('notifications.chime_file')) {
+            throw new Error(out.errors?.['notifications.chime_file'] || `HTTP ${res.status}`);
+          }
+          setting.value = name;
+        };
+        sel.addEventListener('change', async () => {
+          try { await write(sel.value); }
+          catch (e) { alert('Not saved: ' + (e.message || e)); await refresh(); }
+        });
+        fill([]);
+        fileRow.appendChild(sel);
+        refresh();
+
+        // The row under it puts a file from this computer into the folder,
+        // the remote's twin of the device's Browse. Same allowlist as
+        // notificationSoundExtensions in definitions.dart: what every
+        // supported Android decodes natively, no video containers. The
+        // accept list steers the chooser; the check here and the device's
+        // validator are what actually hold.
+        const SOUND_EXTENSIONS = ['mp3', 'ogg', 'oga', 'wav', 'flac', 'm4a', 'aac'];
+        const addRow = readOnlyRow('Add a sound',
+          'Upload a sound file from this computer into the sounds folder.', '');
+        const upload = document.createElement('button');
+        upload.className = 'btn-ghost';
+        upload.textContent = 'Upload';
+        upload.style.cssText = 'flex-shrink:0;';
+        const picker = document.createElement('input');
+        picker.type = 'file'; picker.hidden = true;
+        picker.accept = SOUND_EXTENSIONS.map((e) => `.${e}`).join(',');
+        picker.addEventListener('change', async () => {
+          const file = picker.files && picker.files[0];
+          if (!file) return;
+          const ext = (file.name.match(/\.([^.]+)$/) || [, ''])[1].toLowerCase();
+          if (!SOUND_EXTENSIONS.includes(ext)) {
+            picker.value = '';
+            alert('Not a supported sound: pick an MP3, OGG, WAV, FLAC, M4A or AAC file.');
+            return;
+          }
+          upload.disabled = true; upload.textContent = 'Uploading…';
+          try {
+            const q = `root=app&path=${encodeURIComponent(`sounds/${file.name}`)}`;
+            const res = await api(`/api/files/upload?${q}`, { method: 'POST', body: file });
+            const out = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(out.error || `HTTP ${res.status}`);
+            // The upload becomes the pick, as it does on the device.
+            await write(file.name);
+            await refresh();
+          } catch (e) { alert('Upload failed: ' + (e.message || e)); }
+          picker.value = '';
+          upload.disabled = false; upload.textContent = 'Upload';
+        });
+        upload.addEventListener('click', () => picker.click());
+        addRow.append(upload, picker);
+        fileRow.insertAdjacentElement('afterend', addRow);
+      }
+    }
+  }
+
   // ── Bluetooth Proxy nearby devices ───────────────────────────────────
   // The live list the device shows under the lookup toggle, same data:
   // the btProxyNearby command's identified inventory. Only with the proxy

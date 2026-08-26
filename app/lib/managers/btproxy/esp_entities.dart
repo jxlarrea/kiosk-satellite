@@ -671,6 +671,8 @@ class EspEntitySurface {
         {'name': 'chime', 'type': 'bool'},
         {'name': 'scale', 'type': 'float'},
         {'name': 'icon', 'type': 'string'},
+        {'name': 'chime_file', 'type': 'string'},
+        {'name': 'volume', 'type': 'float'},
       ],
     },
   ];
@@ -693,6 +695,11 @@ class EspEntitySurface {
           // Empty is how the action says "no icon of my own", the same
           // way an empty title says "no title".
           'icon': '${args['icon'] ?? ''}',
+          // A file name in the sounds folder; empty means the sound picked
+          // in Settings, and 0 its volume: the two the action cannot leave
+          // out (issue #320).
+          'chime_file': '${args['chime_file'] ?? ''}',
+          'volume': args['volume'] ?? 0,
         });
       default:
         log.warn('esphome', 'unknown action $name');

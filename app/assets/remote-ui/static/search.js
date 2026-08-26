@@ -22,6 +22,8 @@ export const SEARCH_CATEGORY_TABS = {
 export const DEFLESS_SUBPAGES = [['voicesatellite', 'Appearance'],
   ['device', 'Hardware'], ['device', 'Home Assistant'], ['device', 'WebView']];
 export const SEARCH_EXTRAS = [
+  { tab: 'esphome', title: 'Test notification', sub: 'Notifications',
+    desc: 'The Home Assistant action that sends notifications, and a button to show one.' },
   { tab: 'esphome', title: 'Nearby devices', sub: 'Bluetooth Proxy',
     desc: 'The Bluetooth devices this kiosk hears, with names where known.' },
   { tab: 'esphome', title: 'Required system permissions', sub: 'Bluetooth Proxy',
