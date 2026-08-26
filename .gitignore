@@ -24,5 +24,6 @@ app/android/app/upload-keystore.jks
 .codex/
 .remember/
 .playwright-mcp/
+.internal/
 
 AGENTS.md
