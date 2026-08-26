@@ -505,8 +505,8 @@ export async function editGesture(existing) {
     String(Math.min(Math.max(Number(t.fingers) || 5, 1), 5)));
   const palmNote = document.createElement('span');
   palmNote.className = 'desc';
-  palmNote.textContent = 'Hands are seen through the camera within a few '
-    + 'steps; needs the camera enabled under Camera.';
+  palmNote.textContent =
+    'Requires the camera enabled and a well lit environment.';
 
   const holdWrap = document.createElement('label');
   holdWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';

@@ -350,8 +350,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                         ),
                       if (type == 'fingers')
                         Text(
-                          'Hands are seen through the camera within a few '
-                          'steps; needs the camera enabled under Camera.',
+                          'Requires the camera enabled and a well lit environment.',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       if (type == 'claps') ...[
