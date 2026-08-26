@@ -59,12 +59,8 @@ class GesturesManager extends Manager {
   StreamSubscription<PalmDetected>? _palmSub;
   StreamSubscription<Uint8List>? _micSub;
 
-  /// Finger mappings that fired for the count being shown, and the
-  /// count the previous report showed: a count fires once two looks in
-  /// a row agree on it, since a hand busy with something (a vape at the
-  /// mouth) reads a wandering count and lands on any number for a look.
+  /// Finger mappings that fired for the count being shown.
   final _palmFired = <String>{};
-  final _recentFingers = <int?>[];
   late final ClapDetector _detector = ClapDetector(
     onClaps: _onClaps,
     onDiscard: _onClapsDiscarded,
@@ -147,20 +143,13 @@ class GesturesManager extends Manager {
       !(_settings.get(defs.kioskEnabled) &&
           _settings.get(defs.kioskDisableGestures));
 
-  /// A hand report. Each fingers mapping fires the first time two looks
-  /// in a row show its count, and re-arms when the count changes or the
-  /// hand goes.
+  /// A hand report. Each fingers mapping fires the first time its count
+  /// is read, and re-arms when the count changes or the hand goes.
   void _onPalms(PalmDetected e) {
     if (!_armed) return;
-    // Two of the last three looks: a stray reading (a thumb half out for
-    // a look reads 3) must not block a shown 2, and a wandering count
-    // must not fire on a single look that happens to land.
-    if (e.hands == 0) _recentFingers.clear();
-    _recentFingers.add(e.hands > 0 ? e.fingers : null);
-    if (_recentFingers.length > 3) _recentFingers.removeAt(0);
-    bool steady(int count) =>
-        e.fingers == count &&
-        _recentFingers.where((f) => f == count).length >= 2;
+    // One look: the count shown fires its mapping the first time it is
+    // read (the user's call, over agreement between looks).
+    bool steady(int count) => e.fingers == count;
     final mappings = decodeGestureMappings(_settings.get(defs.gestureMappings));
     for (final m in mappings) {
       if (m.triggerType != 'fingers') continue;

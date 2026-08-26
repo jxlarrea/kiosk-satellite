@@ -123,17 +123,14 @@ The microphone side:
 
 A hand showing one to four fingers, or an open hand, each its own
 trigger, so five actions can live on one hand. The camera watches with
-two small on-device models, MediaPipe's BlazePalm to find a hand and its
-hand landmark model to confirm there is one and read its 21 joints,
-from which the extended fingers are counted; a finger counts as
-extended when it is nearly straight at its middle joint and its tip
-leads that joint away from the wrist, the thumb when it points clearly
-away from the palm rather than across it, and only on a hand the model
-is sure of, held with the fingers pointing up. Both run the way the
-screensaver's face detector does: on the frames the motion analyzer
-already samples, only while something in the frame changed, a hand was
-recently in view or the camera just opened, and paced by the measured
-cost of a run. Detection is not recognition: nothing is identified,
+MediaPipe's hand landmarker, which finds a hand, tracks it from frame
+to frame and reads its 21 joints on the device, from which the raised
+fingers are counted: a finger is up when its tip
+is farther from the wrist than its middle knuckle. The thumb is not
+counted, so the counts are the four fingers and an open hand is all
+four; a thumb resting out beside two raised fingers changes nothing. It runs on the frames the motion analyzer already
+samples, only while something in the frame changed or a hand is in
+view. Detection is not recognition: nothing is identified,
 stored or compared, and no frame leaves the device.
 
 The camera side:
@@ -144,11 +141,12 @@ The camera side:
   whenever the screen is on, screensaver or not, so it costs what
   [Postpone screensaver on motion](camera.md#motion-detection) costs; a
   panel that is off releases it.
-- The reach is a few steps: the detector looks at a square of the frame
-  around wherever the picture just changed (the hand coming up) and then
-  around the hand itself, which is what lets it see a hand that spans a
-  fifteenth of a wide-angle frame, about two meters from a tablet
-  camera. Across the room it does not reach; claps are the
+- The reach is a few steps, and the hand has to be in the picture: a
+  front camera set at chest height sees a hand at shoulder height or
+  above, not one shown at the waist. The detector looks at a square of
+  the frame around wherever the picture just changed (the hand coming
+  up), which is what lets it see a hand that spans a fifteenth of a
+  wide-angle frame. Across the room it does not reach; claps are the
   across-the-room gesture.
 - The hand is read in any orientation and is confirmed by the landmark
   model, which turns a wall, a lamp or a hand-shaped shadow down; the
@@ -157,14 +155,13 @@ The camera side:
   detector finds palms in any pose, and the hold is what makes the
   gesture deliberate.
 - A hand is looked at within a quarter second of the picture changing
-  with it coming up, and the action fires as soon as two of the last
-  three looks agree on the configured count, about half a second after
-  the hand is up on a slow tablet plus one more look (a fifth of a
-  second there). The agreement is what keeps a hand busy with something
-  else (a vape or a cup at the mouth) from firing: its count wanders and
-  lands on any number for a single look. The count then has to change
-  (or the hand go) before the same mapping fires again, so switching
-  from two fingers to an open hand fires both in turn.
+  with it coming up, and the first look that reads the configured count
+  fires the action, about half a second after the hand is up on a slow
+  tablet. A hand busy with something else (a vape or a cup at the
+  mouth) can read as a count for a look and fire; speed was chosen over
+  a second confirming look. The count then has to change (or the hand
+  go) before the same mapping fires again, so switching from two
+  fingers to an open hand fires both in turn.
   A one-hand mapping fires with one hand or more up, so the other hand
   resting in view does not block it; a both-hands mapping needs exactly
   two, timed from when the second came up, and if a one-hand mapping

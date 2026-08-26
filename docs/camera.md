@@ -90,9 +90,8 @@ just opened, at most twice a second on one core and paced by the
 measured cost of a run so it never takes more than about a fifth of a
 core, so an empty room costs no inference. Dismiss on motion takes
 precedence while both are on. The [Show fingers](gestures.md#show-fingers)
-gesture rides the same session with a palm detector of the same family
-and a hand landmark model behind it, under the same gate, whenever the
-screen is on and a hand mapping exists.
+gesture rides the same session with MediaPipe's hand landmarker, under
+the same gate, whenever the screen is on and a hand mapping exists.
 
 What a true screen-off does to the camera depends on the Android
 version. Older versions leave it alone. Newer ones (observed on Android

@@ -29,6 +29,7 @@ android {
     // out of the APK, which only works on an asset stored uncompressed.
     androidResources {
         noCompress.add("tflite")
+        noCompress.add("task")
     }
 
     compileOptions {
@@ -128,6 +129,10 @@ dependencies {
     // here. Keep the version in lockstep with the plugin's, or the build
     // ships two copies.
     implementation("com.google.ai.edge.litert:litert:1.4.0")
+    // MediaPipe Tasks: the hand landmarker (palm detection, tracking,
+    // smoothing and the full landmark model in one graph) behind the Show
+    // fingers gesture.
+    implementation("com.google.mediapipe:tasks-vision:0.10.29")
 
     // Media3 ExoPlayer for streamed Voice Satellite sounds (TTS): its whole
     // pipeline runs in-process, so the output is an app-owned AudioTrack

@@ -362,8 +362,8 @@ void main() {
       expect(executed.single.$1, 'showAppLauncher');
     });
 
-    test('a finger count fires its mapping once two looks agree and re-arms '
-        'when the count changes or the hand goes', () async {
+    test('a finger count fires its mapping on one look and re-arms when the '
+        'count changes or the hand goes', () async {
       await build(
         '[{"id":"two","trigger":{"type":"fingers","fingers":2},'
         '"action":{"type":"screensaver"}},'
@@ -377,8 +377,6 @@ void main() {
       }
 
       await show(1, 2);
-      expect(executed, isEmpty, reason: 'one look is not enough');
-      await show(1, 2);
       expect(executed.map((e) => e.$1), ['startScreensaver']);
       await show(1, 2);
       await show(1, 2);
@@ -388,25 +386,15 @@ void main() {
         reason: 'holding two fingers up does not repeat',
       );
       await show(1, 5);
-      await show(1, 5);
       expect(executed.map((e) => e.$1).last, 'stopScreensaver');
       // Back to two: the two-finger mapping re-armed when the count changed.
       await show(1, 2);
-      await show(1, 2);
       expect(executed, hasLength(3));
-      // A stray reading between two agreeing ones does not block: 2, 3, 2
-      // fires (two of the last three).
+      // The hand goes and comes back: fires again.
       await show(0, null);
-      await show(1, 2);
-      await show(1, 3);
+      await show(1, null);
       expect(executed, hasLength(3));
       await show(1, 2);
-      expect(executed, hasLength(4));
-      // A single stray 2 in a wandering count does not fire: 0, 1, 2, 3.
-      await show(0, null);
-      await show(1, 1);
-      await show(1, 2);
-      await show(1, 3);
       expect(executed, hasLength(4));
     });
 
@@ -423,16 +411,13 @@ void main() {
 
       await settings.set(defs.lockdownEnabled, true);
       await show();
-      await show();
       expect(executed, isEmpty);
       await settings.set(defs.lockdownEnabled, false);
       await settings.set(defs.kioskEnabled, true);
       await settings.set(defs.kioskDisableGestures, true);
       await show();
-      await show();
       expect(executed, isEmpty);
       await settings.set(defs.kioskDisableGestures, false);
-      await show();
       await show();
       expect(executed, hasLength(1));
     });

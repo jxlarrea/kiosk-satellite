@@ -235,6 +235,10 @@ class CameraMotion(
         // within this many degrees of vertical in the frame.
         private const val HAND_UPRIGHT_MAX_DEG = 45f
 
+        // How often frames are offered to the hand tracker (see analyze).
+        private const val HAND_FEED_TRACKED_NS = 250_000_000L
+        private const val HAND_FEED_IDLE_NS = 250_000_000L
+
 
         // A raised-hand count that differs from the one being timed is
         // accepted after this many consecutive runs. One run's flicker
@@ -243,7 +247,6 @@ class CameraMotion(
         private const val PALM_COUNT_RUNS = 2
 
         // How long after the last sighting the detector keeps its
-        // tracking aids (see PalmDetector.detect).
         private const val PALM_TRACK_LINGER_NS = 5_000_000_000L
 
         // A hand the palm detector misses for a few runs is still there:
@@ -357,8 +360,7 @@ class CameraMotion(
      *  reloading them per screensaver session buys nothing). Touched
      *  only on [analysisExecutor]. */
     private var faceDetector: FaceDetector? = null
-    private var palmDetector: PalmDetector? = null
-    private var handLandmarker: HandLandmarker? = null
+    private var handTracker: HandTracker? = null
 
     /** What this listen wants emitted: motion ticks, face sightings,
      *  raised hands, any mix. Set in onListen before the bind, read on
@@ -603,6 +605,19 @@ class CameraMotion(
                     cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
                 }
                 boundCamera = camera
+                if (fingersWanted) {
+                    analysisExecutor.execute {
+                        try {
+                            val tracker = handTracker ?: HandTracker(context) { hands, fingers, tilt, detail, atNs ->
+                                analysisExecutor.execute { onHandResult(hands, fingers, tilt, detail, atNs) }
+                            }.also { handTracker = it }
+                            Log.i(TAG, "hand tracker ready: ${tracker.warmUp()}")
+                        } catch (e: Throwable) {
+                            Log.e(TAG, "hand tracker failed to load: $e", e)
+                            handTrackerFailed = true
+                        }
+                    }
+                }
                 exposureIndex = 0
                 lastExposureCheckNs = 0L
                 deviceCamera?.motionSessionActive = true
@@ -793,18 +808,13 @@ class CameraMotion(
                 val face = if (facesWanted) {
                     faceDetector ?: FaceDetector(context).also { faceDetector = it }
                 } else null
-                val palm = if (palmsWanted) {
-                    palmDetector ?: PalmDetector(context).also { palmDetector = it }
-                } else null
                 if (firstAnalyzedNs == 0L) firstAnalyzedNs = now
                 if (changed > 0 && !illumination) lastActivityNs = now
                 val window = VISION_ACTIVITY_WINDOW_NS
                 // CPU time, not wall time: a look on several threads costs
                 // the cores that many times its duration, and the duty is a
                 // budget of one core.
-                val costMs = (face?.costMs ?: 0f) +
-                    (palm?.costMs ?: 0f) * PalmDetector.THREADS +
-                    (if (fingersWanted) (handLandmarker?.costMs ?: 0f) * HandLandmarker.THREADS else 0f)
+                val costMs = face?.costMs ?: 0f
                 // A hand coming up changed 11 to 18 cells at a magnitude of
                 // 20 or more in every measured raise; at a pinned frame rate
                 // the noise model settles so low that pixel jitter of 1 or 2
@@ -849,11 +859,25 @@ class CameraMotion(
                         now - lastSightingNs <= window ||
                         now - firstAnalyzedNs <= window
                 }
-                if ((due || burst) && worthIt) {
+                if (fingersWanted && worthIt) {
+                    // The tracker's graph runs on several cores per frame
+                    // (145% of one core when offered every frame), so
+                    // frames are offered at a pace: four a second while a
+                    // hand is tracked, two a second on mere activity.
+                    // Four frames a second whenever anything moved: the
+                    // first result after a hand comes up is what the
+                    // gesture's latency is made of, and the user chose that
+                    // over the cores it costs while someone is in view.
+                    val feedEvery = if (palmCount > 0 || entering) HAND_FEED_TRACKED_NS else HAND_FEED_IDLE_NS
+                    if (now - lastHandFeedNs >= feedEvery) {
+                        lastHandFeedNs = now
+                        if (feedHands(image, now)) lastSightingNs = now
+                    }
+                }
+                if (face != null && (due || burst) && worthIt) {
                     burstCredit = !burst
                     lastVisionRunNs = now
-                    if (face != null && detectFace(face, image, now, sink)) lastSightingNs = now
-                    if (palm != null && detectPalms(palm, image, now, sink)) lastSightingNs = now
+                    if (detectFace(face, image, now, sink)) lastSightingNs = now
                 }
             }
 
@@ -912,106 +936,73 @@ class CameraMotion(
     }
 
     /**
-     * The hand leg (the Raise a hand gesture): count the raised hands in
-     * this analyzed frame and report the presence being timed. Every run
-     * that sees hands reports {"palms": n, "heldMs": p, "countHeldMs": c},
-     * p being how long at least one hand has been up without a break and
-     * c how long exactly n have; a run that sees none after the grace
-     * without one reports {"palms": 0} once, so the Dart side re-arms.
-     * The hold itself lives there, per mapping: this side only measures.
-     * Runs are already spaced by the gate, so no rate limit of its own.
-     * Returns whether any hand was found, raised or not, which is what
-     * keeps the inference gate open.
+     * The hand leg (the Show fingers gesture): offer this analyzed frame
+     * to the hand tracker (MediaPipe's hand landmarker, live-stream
+     * mode); its results come back on [onHandResult]. Returns whether a
+     * hand is being tracked, which is what keeps the inference gate open.
      */
-    private fun detectPalms(
-        detector: PalmDetector,
-        image: ImageProxy,
-        now: Long,
-        sink: EventChannel.EventSink,
-    ): Boolean {
-        // Tracking (the lower bar for the last box) lingers a few seconds past a
-        // presence, so a hand lost to a couple of weak frames is found
-        // again where it was rather than from scratch.
-        // With a landmark stage to judge the hand, the palm stage is only
-        // a proposer: any pose, a low bar, and the judgement decides. And
-        // once a hand is confirmed, the next looks skip the palm stage
-        // and run the landmark model on the hand's own square.
-        detector.upright = false
-        detector.startScore = if (fingersWanted) PalmDetector.PROPOSER_SCORE else 0.5f
-        val judge = if (fingersWanted) {
-            handLandmarker ?: HandLandmarker(context).also { handLandmarker = it }
-        } else null
-        var hands: PalmDetector.Hands? = null
-        var trackedHand: HandLandmarker.Hand? = null
-        if (judge != null && judge.tracking) {
-            trackedHand = judge.judgeTracked(image, image.imageInfo.rotationDegrees)
-            if (trackedHand != null && trackedHand.presence >= HandLandmarker.MIN_PRESENCE) {
-                val w = judge.trackWidth
-                val u = judge.trackU
-                val v = judge.trackV
-                hands = PalmDetector.Hands(
-                    1, 1, w, 0f, 1f, 1f, u, v, u - w / 2f, v - w / 2f, u + w / 2f, v + w / 2f,
-                    0f, 0f, 0f, 0f, -1f,
-                )
-            } else {
-                trackedHand = null
-                judge.dropTrack()
+    private fun feedHands(image: ImageProxy, now: Long): Boolean {
+        try {
+            val tracker = handTracker ?: HandTracker(context) { hands, fingers, tilt, detail, atNs ->
+                analysisExecutor.execute { onHandResult(hands, fingers, tilt, detail, atNs) }
+            }.also {
+                handTracker = it
+                Log.i(TAG, "hand tracker created")
             }
+            // The look: a square around where the picture last changed
+            // (the hand coming up), held still while a hand is tracked so
+            // the tracker's own frame-to-frame tracking is not disturbed;
+            // the whole frame when nothing changed recently.
+            if (palmCount == 0) {
+                if (lastBigChangeNs != 0L && now - lastBigChangeNs <= PALM_ENTRY_NS) {
+                    handCropU = activityU
+                    handCropV = activityV
+                    handCropSide = (activitySize * 1.5f).coerceIn(0.5f, 1f)
+                } else {
+                    handCropSide = 0f
+                }
+            }
+            tracker.feed(image, image.imageInfo.rotationDegrees, now, handCropU, handCropV, handCropSide)
+        } catch (e: Throwable) {
+            // Nothing in here may take the analyzer down (a missing native
+            // library on some ABI would surface here as an Error).
+            if (handTracker != null || !handTrackerFailed) {
+                Log.w(TAG, "hand tracker failed: $e")
+            }
+            handTrackerFailed = true
         }
-        if (hands == null) {
-            hands = detector.detect(
-                image,
-                image.imageInfo.rotationDegrees,
-                tracking = lastPalmSeenNs != 0L && now - lastPalmSeenNs <= PALM_TRACK_LINGER_NS,
-                hint = if (lastBigChangeNs != 0L && now - lastBigChangeNs <= PALM_ENTRY_NS) {
-                    PalmDetector.Hint(activityU, activityV, activitySize)
-                } else null,
-            )
-        }
-        var raised = hands?.raised ?: 0
+        return palmCount > 0
+    }
+
+    private var handTrackerFailed = false
+    private var lastHandFeedNs = 0L
+    private var handCropU = 0.5f
+    private var handCropV = 0.5f
+    private var handCropSide = 0f
+
+    /**
+     * One result off the hand tracker, on the analyzer thread: [hands]
+     * seen (0 when none), the largest one showing [fingersRaw] fingers
+     * at [tilt] degrees off fingers-up. A count is read only from a hand
+     * held with the fingers up; a hand at the mouth (a vape, a cup) or on
+     * a desk lies sideways or flat and shows nothing. Reports
+     * {"palms": n, "fingers": f} per result and {"palms": 0} once when the
+     * hand has gone, so the Dart side re-arms.
+     */
+    private fun onHandResult(hands: Int, fingersRaw: Int, tilt: Float, detail: String, atNs: Long) {
+        val sink = activeSink ?: return
+        val now = System.nanoTime()
         var fingers = -1
-        if (judge != null && hands != null && raised > 0) {
-            val hand = trackedHand ?: judge.judge(
-                image, image.imageInfo.rotationDegrees, hands,
-                detector.frameW, detector.frameH,
-            )
-            if (hand == null || hand.presence < HandLandmarker.MIN_PRESENCE) {
-                Log.d(
-                    TAG,
-                    "hand: rejected by landmarks (presence=${"%.2f".format(hand?.presence ?: -1f)}) " +
-                        "palm score=${"%.2f".format(hands.score)} width=${"%.2f".format(hands.width)} " +
-                        "at (${"%.2f".format(hands.cx)},${"%.2f".format(hands.cy)}) crop=${"%.2f".format(hands.crop)}" +
-                        (if (trackedHand != null) " (tracked)" else ""),
-                )
-                raised = 0
-            } else {
-                // A count is shown with the fingers up; a hand at the mouth
-                // (a vape, a cup) or on a desk lies sideways or flat and
-                // its wrapped fingers read as straight, so it shows nothing.
-                fingers = if (kotlin.math.abs(hand.tilt) <= HAND_UPRIGHT_MAX_DEG &&
-                    hand.presence >= HandLandmarker.COUNT_PRESENCE
-                ) hand.fingers else 0
-                Log.d(
-                    TAG,
-                    "hand: presence=${"%.2f".format(hand.presence)} fingers=$fingers " +
-                        "tilt=${"%.0f".format(hand.tilt)} " +
-                        "angles=${hand.angles.joinToString(",") { "%.0f".format(it) }} " +
-                        "thumb=${"%.2f".format(hand.thumb)}" +
-                        (if (trackedHand != null) " (tracked)" else ""),
-                )
-            }
+        if (hands > 0) {
+            fingers = fingersRaw
+            Log.d(TAG, "hand: fingers=$fingers tilt=${"%.0f".format(tilt)} $detail")
         }
+        val raised = hands
         if (raised > 0) {
             if (palmCount == 0) {
-                // A presence starts on the spot (only changes of count
-                // within one are debounced), dated from the grid change
-                // that brought the hand up when that was moments ago.
                 palmCount = raised
-                val since = if (entryStartNs != 0L && now - entryStartNs <= PALM_BACKDATE_NS) {
-                    entryStartNs
-                } else now
-                palmSinceNs = since
-                presenceSinceNs = since
+                palmSinceNs = now
+                presenceSinceNs = now
                 pendingCount = 0
                 presenceId++
             } else if (raised != palmCount) {
@@ -1034,13 +1025,9 @@ class CameraMotion(
             val count = palmCount
             val fingerCount = fingers
             mainHandler.post {
-                sink.success(
-                    mapOf("palms" to count, "fingers" to fingerCount),
-                )
+                sink.success(mapOf("palms" to count, "fingers" to fingerCount))
             }
-        } else if (palmCount > 0 &&
-            now - lastPalmSeenNs > max(PALM_GRACE_NS, PALM_GRACE_RUNS * visionIntervalNs)
-        ) {
+        } else if (palmCount > 0 && now - lastPalmSeenNs > PALM_GRACE_NS) {
             palmCount = 0
             pendingCount = 0
             presenceId++
@@ -1048,7 +1035,6 @@ class CameraMotion(
                 sink.success(mapOf("palms" to 0, "fingers" to -1))
             }
         }
-        return hands != null && hands.seen > 0
     }
 
     /**
@@ -1352,10 +1338,8 @@ class CameraMotion(
         analysisExecutor.execute {
             faceDetector?.close()
             faceDetector = null
-            palmDetector?.close()
-            palmDetector = null
-            handLandmarker?.close()
-            handLandmarker = null
+            handTracker?.close()
+            handTracker = null
         }
         analysisExecutor.shutdown()
     }
