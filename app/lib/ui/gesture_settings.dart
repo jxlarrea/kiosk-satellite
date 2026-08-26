@@ -66,6 +66,7 @@ const _triggerTypes = <(String, String)>[
   ('finger_hold', 'Multi-finger hold'),
   ('corner_sequence', 'Corner sequence'),
   ('claps', 'Claps'),
+  ('fingers', 'Show fingers'),
 ];
 
 class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
@@ -117,12 +118,13 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
               ),
             for (final mapping in mappings)
               ListTile(
-                // Claps are heard, not touched; the row icon says which.
-                leading: Icon(
-                  mapping.triggerType == 'claps'
-                      ? Icons.sign_language_outlined
-                      : Icons.gesture,
-                ),
+                // Claps are heard and hands are seen, not touched; the
+                // row icon says which.
+                leading: Icon(switch (mapping.triggerType) {
+                  'claps' => Icons.sign_language_outlined,
+                  'fingers' => Icons.waving_hand_outlined,
+                  _ => Icons.gesture,
+                }),
                 title: Text(describeGestureTrigger(mapping.trigger)),
                 subtitle: Text(describeGestureAction(mapping.action)),
                 onTap: () => _edit(mapping),
@@ -195,6 +197,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
         : 1;
     var holdMs = (existing?.trigger['holdMs'] as num?)?.toInt() ?? 1500;
     var claps = (existing?.trigger['claps'] as num?)?.toInt() ?? 2;
+    var fingerCount = (existing?.trigger['fingers'] as num?)?.toInt() ?? 5;
     final sequence = [
       for (final s in (existing?.trigger['sequence'] as List?) ?? const [])
         '$s',
@@ -279,8 +282,9 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                               child: Text('3 fingers'),
                             ),
                           ],
-                          onChanged: (value) =>
-                              setDialogState(() => fingers = value ?? fingers),
+                          onChanged: (value) => setDialogState(
+                            () => fingerCount = value ?? fingerCount,
+                          ),
                         ),
                       if (type == 'finger_taps')
                         DropdownButtonFormField<int>(
@@ -315,6 +319,41 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                           ),
                         ),
                       ],
+                      if (type == 'fingers')
+                        DropdownButtonFormField<int>(
+                          initialValue: fingerCount.clamp(1, 5),
+                          decoration: const InputDecoration(
+                            labelText: 'Fingers',
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 1, child: Text('1 finger')),
+                            DropdownMenuItem(
+                              value: 2,
+                              child: Text('2 fingers'),
+                            ),
+                            DropdownMenuItem(
+                              value: 3,
+                              child: Text('3 fingers'),
+                            ),
+                            DropdownMenuItem(
+                              value: 4,
+                              child: Text('4 fingers'),
+                            ),
+                            DropdownMenuItem(
+                              value: 5,
+                              child: Text('Open hand (5)'),
+                            ),
+                          ],
+                          onChanged: (value) => setDialogState(
+                            () => fingerCount = value ?? fingerCount,
+                          ),
+                        ),
+                      if (type == 'fingers')
+                        Text(
+                          'Hands are seen through the camera within a few '
+                          'steps; needs the camera enabled under Camera.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       if (type == 'claps') ...[
                         DropdownButtonFormField<int>(
                           initialValue: claps.clamp(2, 4),
@@ -417,6 +456,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
       if (type == 'corner_hold' || type == 'finger_hold') 'holdMs': holdMs,
       if (type == 'corner_sequence') 'sequence': sequence,
       if (type == 'claps') 'claps': claps,
+      if (type == 'fingers') 'fingers': fingerCount,
     };
     final mapping = GestureMapping(
       id: existing?.id ?? 'g${DateTime.now().millisecondsSinceEpoch}',

@@ -29,6 +29,7 @@ export const GESTURE_TRIGGERS = [
   ['finger_hold', 'Multi-finger hold'],
   ['corner_sequence', 'Corner sequence'],
   ['claps', 'Claps'],
+  ['fingers', 'Show fingers'],
 ];
 export const GESTURE_ACTION_GROUPS = [
   ['Kiosk Satellite', [
@@ -58,8 +59,8 @@ export const GESTURE_ACTION_GROUPS = [
 // gesture_mappings.dart: both UIs must name the same row identically.
 export function describeGestureTrigger(t) {
   const corner = GESTURE_CORNERS[t.corner] || '';
-  const seconds = (ms) => {
-    const s = (Number(ms) || 1500) / 1000;
+  const seconds = (ms, fallback = 1500) => {
+    const s = (Number(ms) || fallback) / 1000;
     return Number.isInteger(s) ? String(s) : s.toFixed(1);
   };
   switch (t.type) {
@@ -75,6 +76,10 @@ export function describeGestureTrigger(t) {
       return 'Corner sequence: '
         + (t.sequence || []).map((c) => String(c).toUpperCase()).join(' > ');
     case 'claps': return `${t.claps} claps`;
+    case 'fingers': {
+      const n = Number(t.fingers) || 5;
+      return n === 5 ? 'Show an open hand' : `Show ${n} finger${n === 1 ? '' : 's'}`;
+    }
   }
   return 'Gesture';
 }
@@ -493,6 +498,15 @@ export async function editGesture(existing) {
   clapsNote.className = 'desc';
   clapsNote.textContent = 'Claps are heard through the microphone, with or '
     + 'without wake word detection.';
+  const fingerCountSel = cameraSelectField('Fingers',
+    [{ value: '1', label: '1 finger' }, { value: '2', label: '2 fingers' },
+      { value: '3', label: '3 fingers' }, { value: '4', label: '4 fingers' },
+      { value: '5', label: 'Open hand (5)' }],
+    String(Math.min(Math.max(Number(t.fingers) || 5, 1), 5)));
+  const palmNote = document.createElement('span');
+  palmNote.className = 'desc';
+  palmNote.textContent = 'Hands are seen through the camera within a few '
+    + 'steps; needs the camera enabled under Camera.';
 
   const holdWrap = document.createElement('label');
   holdWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
@@ -557,7 +571,8 @@ export async function editGesture(existing) {
   }));
 
   body.append(typeSel.wrap, cornerSel.wrap, tapsSel.wrap, fingersSel.wrap,
-    fingerTapsSel.wrap, clapsSel.wrap, clapsNote, holdWrap, seqWrap, actionRow);
+    fingerTapsSel.wrap, clapsSel.wrap, clapsNote, fingerCountSel.wrap,
+    holdWrap, palmNote, seqWrap, actionRow);
   const update = () => {
     const type = typeSel.select.value;
     cornerSel.wrap.style.display =
@@ -568,6 +583,8 @@ export async function editGesture(existing) {
     fingerTapsSel.wrap.style.display = type === 'finger_taps' ? '' : 'none';
     clapsSel.wrap.style.display = type === 'claps' ? '' : 'none';
     clapsNote.style.display = type === 'claps' ? '' : 'none';
+    fingerCountSel.wrap.style.display = type === 'fingers' ? '' : 'none';
+    palmNote.style.display = type === 'fingers' ? '' : 'none';
     holdWrap.style.display =
       type === 'corner_hold' || type === 'finger_hold' ? '' : 'none';
     seqWrap.style.display = type === 'corner_sequence' ? '' : 'none';
@@ -590,7 +607,7 @@ export async function editGesture(existing) {
       }
       if (type === 'corner_taps') trigger.taps = Number(tapsSel.select.value);
       if (type === 'finger_taps' || type === 'finger_hold') {
-        trigger.fingers = Number(fingersSel.select.value);
+        trigger.fingers = Number(fingerCountSel.select.value);
       }
       if (type === 'finger_taps') trigger.taps = Number(fingerTapsSel.select.value);
       if (type === 'corner_hold' || type === 'finger_hold') {
@@ -598,6 +615,7 @@ export async function editGesture(existing) {
       }
       if (type === 'corner_sequence') trigger.sequence = [...sequence];
       if (type === 'claps') trigger.claps = Number(clapsSel.select.value);
+      if (type === 'fingers') trigger.fingers = Number(fingerCountSel.select.value);
       const mappings = readGestureMappings();
       const mapping = {
         id: existing?.id || `g${Date.now()}`, trigger, action,
@@ -669,7 +687,7 @@ export async function loadGestures() {
         }, false, 'delete'),
       ],
       {
-        icon: mapping.trigger?.type === 'claps' ? 'clap' : 'gesture',
+        icon: { claps: 'clap', fingers: 'hand' }[mapping.trigger?.type] || 'gesture',
         onClick: async () => {
           if (await editGesture(mapping)) refresh();
         },

@@ -275,6 +275,17 @@ class FaceDetected extends AppEvent {
   String get wireName => 'face';
 }
 
+/// A hand in front of the camera (the Show fingers gesture): the motion
+/// camera's palm detector proposed it and the hand landmark model
+/// confirmed it and counted [fingers] extended fingers on the largest
+/// one; [hands] is 0 once the hand has gone. Internal only: the gestures
+/// manager turns it into a [GestureDetected].
+class PalmDetected extends AppEvent {
+  const PalmDetected({required this.hands, this.fingers});
+  final int hands;
+  final int? fingers;
+}
+
 // ── Device camera ──────────────────────────────────────────────────────
 
 /// A fresh still from the device's own camera (JPEG bytes). Internal-only

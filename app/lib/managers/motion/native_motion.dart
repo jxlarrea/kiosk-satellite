@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 /// Dart side of the native camera motion detector (`CameraMotion.kt`).
 ///
 /// Listening starts the camera and binds the analyzer; each event is a motion
-/// tick or a face sighting (the native side does the frame-diffing and the
-/// face inference, and rate-limits each to 1/s). Cancelling the subscription
-/// unbinds the camera and frees it. Tuning changes re-listen with fresh
-/// arguments.
+/// tick, a face sighting or a raised-hand report (the native side does the
+/// frame-diffing and the inference, and rate-limits the first two to 1/s).
+/// Cancelling the subscription unbinds the camera and frees it. Tuning
+/// changes re-listen with fresh arguments.
 class NativeMotion {
   static const _channel = EventChannel('kiosk_satellite/motion');
 
@@ -20,6 +20,7 @@ class NativeMotion {
     bool motion = true,
     bool faces = false,
     double faceMinWidth = 0.1,
+    bool fingers = false,
   }) {
     return _channel
         .receiveBroadcastStream(<String, Object?>{
@@ -43,28 +44,50 @@ class NativeMotion {
           // Smallest face worth reporting, as a fraction of the frame's
           // longer side; see [faceMinWidthFor].
           'faceMinWidth': faceMinWidth,
+          // Hands (the Show fingers gesture): found, confirmed and counted
+          // natively, reported as a hand count and a finger count.
+          'fingers': fingers,
         })
         .map(NativeMotionTick.fromNative);
   }
 }
 
-/// One event off the native stream: a motion tick, or a face sighting
-/// carrying the face's width as a fraction of the frame's longer side.
+/// One event off the native stream: a motion tick, a face sighting
+/// carrying the face's width as a fraction of the frame's longer side, or
+/// a hand report carrying the hand count (0 when the hand has gone) and
+/// the fingers shown.
 class NativeMotionTick {
-  const NativeMotionTick._(this.faceWidth);
+  const NativeMotionTick._(this.faceWidth, this.palms, this.fingers);
+
+  /// Extended fingers on the largest hand, when the landmark stage judged
+  /// it (null otherwise).
+  final int? fingers;
 
   final double? faceWidth;
+  final int? palms;
 
   bool get isFace => faceWidth != null;
+  bool get isPalms => palms != null;
 
-  /// Anything that is not a face sighting is a motion tick, which keeps the
-  /// wire compatible with the original null events.
+  /// Anything that is not a face sighting or a hand report is a motion
+  /// tick, which keeps the wire compatible with the original null events.
   static NativeMotionTick fromNative(Object? raw) {
     if (raw is Map) {
       final face = raw['face'];
-      if (face is num) return NativeMotionTick._(face.toDouble());
+      if (face is num) {
+        return NativeMotionTick._(face.toDouble(), null, null);
+      }
+      final palms = raw['palms'];
+      if (palms is num) {
+        final fingers = raw['fingers'];
+        return NativeMotionTick._(
+          null,
+          palms.toInt(),
+          fingers is num && fingers >= 0 ? fingers.toInt() : null,
+        );
+      }
     }
-    return const NativeMotionTick._(null);
+    return const NativeMotionTick._(null, null, null);
   }
 }
 

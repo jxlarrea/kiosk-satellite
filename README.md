@@ -64,8 +64,9 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   lock-task support on device-owner provisioned tablets.
 
 &bull; **Gestures**: map corner taps, corner holds, multi-finger taps and
-  holds, a knock-code corner sequence, or 2 to 4 claps (the Clapper,
-  heard through the microphone, no Voice Satellite required) to
+  holds, a knock-code corner sequence, 2 to 4 claps (the Clapper,
+  heard through the microphone, no Voice Satellite required) or a hand
+  showing fingers to the camera to
   [configurable actions](docs/gestures.md): jump to a dashboard view,
   call a Home Assistant service or script, open another app and more,
   all invisible to guests.

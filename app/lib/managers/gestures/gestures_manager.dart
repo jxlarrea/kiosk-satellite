@@ -32,6 +32,13 @@ import 'gesture_mappings.dart';
 /// muted, in Lockdown Mode, and under kiosk mode's Disable Gestures — the
 /// same rules the touch triggers follow, plus the mute one that only a
 /// microphone feature needs.
+///
+/// The one visual trigger, a hand showing fingers, is found and judged
+/// elsewhere (the motion camera's palm detector and hand landmark model,
+/// run by [MotionManager] while a fingers mapping exists): every report
+/// says how many fingers the hand shows, and a mapping fires the first
+/// time its count is seen, then re-arms when the count changes or the
+/// hand goes.
 class GesturesManager extends Manager {
   GesturesManager(
     super.bus,
@@ -49,7 +56,11 @@ class GesturesManager extends Manager {
   final Future<PermissionOutcome> Function() _micPermission;
 
   StreamSubscription<GestureDetected>? _sub;
+  StreamSubscription<PalmDetected>? _palmSub;
   StreamSubscription<Uint8List>? _micSub;
+
+  /// Finger mappings that fired for the count being shown.
+  final _palmFired = <String>{};
   late final ClapDetector _detector = ClapDetector(
     onClaps: _onClaps,
     onDiscard: _onClapsDiscarded,
@@ -89,6 +100,7 @@ class GesturesManager extends Manager {
   @override
   Future<void> init() async {
     _sub = bus.on<GestureDetected>().listen(_onGesture);
+    _palmSub = bus.on<PalmDetected>().listen(_onPalms);
 
     bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.gestureMappings.key ||
@@ -120,7 +132,35 @@ class GesturesManager extends Manager {
   Future<void> dispose() async {
     _micRetry?.cancel();
     await _micSub?.cancel();
+    await _palmSub?.cancel();
     await _sub?.cancel();
+  }
+
+  /// Whether the non-touch triggers are armed at all: Lockdown Mode and
+  /// kiosk mode's Disable Gestures silence them like the touch ones.
+  bool get _armed =>
+      !_settings.get(defs.lockdownEnabled) &&
+      !(_settings.get(defs.kioskEnabled) &&
+          _settings.get(defs.kioskDisableGestures));
+
+  /// A hand report. Each fingers mapping fires the first time the shown
+  /// count is its own (one look) and re-arms when the count changes or
+  /// the hand goes.
+  void _onPalms(PalmDetected e) {
+    if (!_armed) return;
+    final mappings = decodeGestureMappings(_settings.get(defs.gestureMappings));
+    for (final m in mappings) {
+      if (m.triggerType != 'fingers') continue;
+      final wanted = (m.trigger['fingers'] as num?)?.toInt() ?? 5;
+      if (e.hands > 0 && e.fingers == wanted) {
+        if (_palmFired.add(m.id)) {
+          log.info(name, 'detected a hand showing $wanted finger(s)');
+          bus.publish(GestureDetected(id: m.id));
+        }
+      } else {
+        _palmFired.remove(m.id);
+      }
+    }
   }
 
   /// Whether clap detection should be listening right now.

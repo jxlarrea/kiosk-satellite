@@ -23,6 +23,10 @@
 /// the shared microphone stream, never sent to GestureEngine):
 ///  - claps:           claps (2..4)
 ///
+/// One is visual (the motion camera's palm detector, PalmDetector.kt,
+/// proposes hands; HandLandmarker.kt judges them and counts fingers):
+///  - fingers:         fingers (1..5): a hand showing that many
+///
 /// Action types (run in GesturesManager):
 ///  - navigate:         path (a dashboard view, via haNavigate)
 ///  - url:              url (opened in the external link overlay)
@@ -94,12 +98,12 @@ List<GestureMapping> decodeGestureMappings(String json) {
 }
 
 /// The flat trigger list KioskLock pushes to GestureEngine.configure.
-/// Claps are not touch: they never reach the native engine.
+/// Claps and hands are not touch: they never reach the native engine.
 List<Map<String, Object?>> nativeGestureTriggers(
   List<GestureMapping> mappings,
 ) => [
   for (final m in mappings)
-    if (m.triggerType != 'claps')
+    if (m.triggerType != 'claps' && m.triggerType != 'fingers')
       {
         'id': m.id,
         'type': m.triggerType,
@@ -125,26 +129,23 @@ const cornerNames = {
 /// "3 taps in the top-left corner": the row title in both UIs.
 String describeGestureTrigger(Map<String, Object?> trigger) {
   final corner = cornerNames['${trigger['corner']}'] ?? '';
+  String seconds(num fallback) {
+    final s = ((trigger['holdMs'] as num? ?? fallback) / 1000);
+    return s == s.roundToDouble() ? '${s.round()}' : s.toStringAsFixed(1);
+  }
+
   switch ('${trigger['type']}') {
     case 'corner_taps':
       return '${trigger['taps']} taps in the $corner corner';
     case 'corner_hold':
-      final s = ((trigger['holdMs'] as num? ?? 1500) / 1000);
-      final label = s == s.roundToDouble()
-          ? '${s.round()}'
-          : s.toStringAsFixed(1);
-      return 'Hold the $corner corner for ${label}s';
+      return 'Hold the $corner corner for ${seconds(1500)}s';
     case 'finger_taps':
       final taps = (trigger['taps'] as num? ?? 1).toInt();
       return taps == 2
           ? '${trigger['fingers']}-finger double tap'
           : '${trigger['fingers']}-finger tap';
     case 'finger_hold':
-      final s = ((trigger['holdMs'] as num? ?? 1500) / 1000);
-      final label = s == s.roundToDouble()
-          ? '${s.round()}'
-          : s.toStringAsFixed(1);
-      return '${trigger['fingers']}-finger hold for ${label}s';
+      return '${trigger['fingers']}-finger hold for ${seconds(1500)}s';
     case 'corner_sequence':
       final seq = trigger['sequence'];
       if (seq is List) {
@@ -154,6 +155,11 @@ String describeGestureTrigger(Map<String, Object?> trigger) {
       return 'Corner sequence';
     case 'claps':
       return '${trigger['claps']} claps';
+    case 'fingers':
+      final n = (trigger['fingers'] as num? ?? 5).toInt();
+      return n == 5
+          ? 'Show an open hand'
+          : 'Show $n finger${n == 1 ? '' : 's'}';
   }
   return 'Gesture';
 }
@@ -165,6 +171,11 @@ Set<int> clapTargets(List<GestureMapping> mappings) => {
     if (m.triggerType == 'claps' && m.trigger['claps'] is num)
       (m.trigger['claps'] as num).toInt(),
 };
+
+/// Whether any mapping wants a hand showing fingers: what puts the
+/// camera's hand detectors to work (no camera use without one).
+bool hasFingersTrigger(List<GestureMapping> mappings) =>
+    mappings.any((m) => m.triggerType == 'fingers');
 
 /// "Open camera view Front door": the row subtitle in both UIs.
 String describeGestureAction(Map<String, Object?> action) {

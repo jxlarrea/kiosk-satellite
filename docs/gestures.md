@@ -1,6 +1,6 @@
 # Gestures
 
-Touch and clap gestures that trigger actions, for the kiosk that should stay clean.
+Touch, clap and hand gestures that trigger actions, for the kiosk that should stay clean.
 The dashboard shows nothing extra, guests see nothing to press, and the
 person who set the tablet up can still jump to an admin view, run a script
 or trigger an automation with a touch shape nobody performs by accident.
@@ -9,10 +9,13 @@ Gestures generalize the kiosk exit gesture: where that one is fixed (fast
 taps anywhere, then the PIN, then the menu), these are configurable on both
 ends. The exit gesture itself is unchanged and keeps working alongside them.
 
-One gesture is not touch at all: **Claps**. Two, three or four claps heard
-through the microphone trigger an action from across the room, the way the
-classic Clapper turned on a lamp. Clap detection works with or without
-Voice Satellite; see [its section](#claps) below.
+Two gestures are not touch at all. **Claps**: two, three or four claps
+heard through the microphone trigger an action from across the room, the
+way the classic Clapper turned on a lamp. Clap detection works with or
+without Voice Satellite; see [its section](#claps) below. **Show
+fingers**: a hand showing a number of fingers to the camera, the gesture
+for hands that are wet, floury or otherwise not touching a screen; see
+[its section](#show-fingers).
 
 ## Setup
 
@@ -41,6 +44,7 @@ entity against the connected instance before anything is saved.
 | Multi-finger hold | 2 or 3 fingers held down, anywhere. |
 | Corner sequence | An ordered sequence of corner taps, like a knock code. |
 | Claps | 2 to 4 claps, heard through the microphone. |
+| Show fingers | A hand showing 1 to 4 fingers, or an open hand, to the camera. |
 
 The corners are boxes about a centimeter and a half on a side. Two mappings
 can share a corner with different tap counts; the shorter one waits a beat
@@ -114,6 +118,66 @@ The microphone side:
   louder claps, and prefer 3 or 4 claps over 2.
 - On Android 12 and later the system microphone indicator shows while clap
   detection is listening, as it does for wake word detection.
+
+## Show fingers
+
+A hand showing one to four fingers, or an open hand, each its own
+trigger, so five actions can live on one hand. The camera watches with
+two small on-device models, MediaPipe's BlazePalm to find a hand and its
+hand landmark model to confirm there is one and read its 21 joints,
+from which the extended fingers are counted; a finger counts as
+extended when it is nearly straight at its middle joint, the thumb when
+it points away from the palm rather than across it. Both run the way the
+screensaver's face detector does: on the frames the motion analyzer
+already samples, only while something in the frame changed, a hand was
+recently in view or the camera just opened, and paced by the measured
+cost of a run. Detection is not recognition: nothing is identified,
+stored or compared, and no frame leaves the device.
+
+The camera side:
+
+- The gesture needs the camera enabled under Camera settings; the first
+  hand mapping prompts for the Camera permission if it was never
+  granted. While at least one hand mapping exists the camera runs
+  whenever the screen is on, screensaver or not, so it costs what
+  [Postpone screensaver on motion](camera.md#motion-detection) costs; a
+  panel that is off releases it.
+- The reach is a few steps: the detector looks at a square of the frame
+  around wherever the picture just changed (the hand coming up) and then
+  around the hand itself, which is what lets it see a hand that spans a
+  fifteenth of a wide-angle frame, about two meters from a tablet
+  camera. Across the room it does not reach; claps are the
+  across-the-room gesture.
+- The hand is read in any orientation and is confirmed by the landmark
+  model, which turns a wall, a lamp or a hand-shaped shadow down; the
+  count is what fires, so a hand at rest on a keyboard shows zero
+  fingers and matches nothing. A fist held up counts too: the
+  detector finds palms in any pose, and the hold is what makes the
+  gesture deliberate.
+- One look fires it: a hand is looked at within a quarter second of
+  the picture changing with it coming up, and the first sighting that
+  reads the configured count fires the action, about half a second
+  after the hand is up on a slow tablet. The count then has to change
+  (or the hand go) before the same mapping fires again, so switching
+  from two fingers to an open hand fires both in turn.
+  A one-hand mapping fires with one hand or more up, so the other hand
+  resting in view does not block it; a both-hands mapping needs exactly
+  two, timed from when the second came up, and if a one-hand mapping
+  exists alongside it the one-hand action fires as well.
+- Once fired, the count must change (or the hand go) before the same
+  mapping fires again. Keeping the hand up does not repeat the action.
+- Lockdown Mode and kiosk mode's Disable Gestures silence the hand
+  gesture exactly as they silence touch gestures, and the camera is not
+  even bound for it then.
+- While a hand mapping exists the camera's exposure is steered by the
+  frames themselves: a front camera meters the whole room and leaves a
+  person in front of it dark, so a dark frame asks the camera for a
+  stop more, a bright one gives it back, a step every couple of
+  seconds; the motion analyzer and any snapshot taken meanwhile see the
+  same frames. Hands need some light even so, though less than faces: a
+  palm held up under a night light is still seen, at the price of a beat
+  more hesitation than in daylight. In the dark the gestures do not
+  work.
 
 ## Timing
 

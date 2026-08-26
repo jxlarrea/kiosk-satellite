@@ -60,9 +60,14 @@ void main() {
           '{"id":"g2","trigger":{"type":"finger_hold","fingers":2,'
           '"holdMs":1500},"action":{"type":"menu"}},'
           '{"id":"g3","trigger":{"type":"corner_sequence",'
-          '"sequence":["tl","tr","bl"]},"action":{"type":"menu"}}]',
+          '"sequence":["tl","tr","bl"]},"action":{"type":"menu"}},'
+          '{"id":"g4","trigger":{"type":"claps","claps":2},'
+          '"action":{"type":"menu"}},'
+          '{"id":"g5","trigger":{"type":"fingers","fingers":2},'
+          '"action":{"type":"menu"}}]',
         ),
       );
+      // Claps and hands are not touch: the native engine never sees them.
       expect(triggers, [
         {'id': 'g1', 'type': 'corner_taps', 'corner': 'tl', 'taps': 3},
         {'id': 'g2', 'type': 'finger_hold', 'fingers': 2, 'holdMs': 1500},
@@ -108,6 +113,27 @@ void main() {
         }),
         'Corner sequence: TL > TR',
       );
+      expect(
+        describeGestureTrigger({'type': 'fingers', 'fingers': 2}),
+        'Show 2 fingers',
+      );
+      expect(
+        describeGestureTrigger({'type': 'fingers', 'fingers': 1}),
+        'Show 1 finger',
+      );
+      expect(
+        describeGestureTrigger({'type': 'fingers', 'fingers': 5}),
+        'Show an open hand',
+      );
+    });
+
+    test('hasFingersTrigger', () {
+      final fingers = decodeGestureMappings(
+        '[{"id":"f","trigger":{"type":"fingers","fingers":2},'
+        '"action":{"type":"screensaver"}}]',
+      );
+      expect(hasFingersTrigger(fingers), isTrue);
+      expect(nativeGestureTriggers(fingers), isEmpty, reason: 'not a touch');
     });
 
     test('action labels', () {
@@ -334,6 +360,66 @@ void main() {
       // Open only, through the launcher's own command so its gates (master
       // switch, whitelist) apply; the drawer's Allowed Action does not.
       expect(executed.single.$1, 'showAppLauncher');
+    });
+
+    test('a finger count fires its mapping on one look and re-arms when the '
+        'count changes or the hand goes', () async {
+      await build(
+        '[{"id":"two","trigger":{"type":"fingers","fingers":2},'
+        '"action":{"type":"screensaver"}},'
+        '{"id":"open","trigger":{"type":"fingers","fingers":5},'
+        '"action":{"type":"screensaver_stop"}}]',
+      );
+      Future<void> show(int hands, int? fingers) async {
+        bus.publish(PalmDetected(hands: hands, fingers: fingers));
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await show(1, 2);
+      expect(executed.map((e) => e.$1), ['startScreensaver']);
+      await show(1, 2);
+      await show(1, 2);
+      expect(
+        executed,
+        hasLength(1),
+        reason: 'holding two fingers up does not repeat',
+      );
+      await show(1, 5);
+      expect(executed.map((e) => e.$1).last, 'stopScreensaver');
+      // Back to two: the two-finger mapping re-armed when the count changed.
+      await show(1, 2);
+      expect(executed, hasLength(3));
+      // A hand without a judged count fires nothing.
+      await show(0, null);
+      await show(1, null);
+      expect(executed, hasLength(3));
+      await show(1, 2);
+      expect(executed, hasLength(4));
+    });
+
+    test('lockdown and kiosk Disable Gestures silence hands too', () async {
+      await build(
+        '[{"id":"two","trigger":{"type":"fingers","fingers":2},'
+        '"action":{"type":"screensaver"}}]',
+      );
+      Future<void> show() async {
+        bus.publish(const PalmDetected(hands: 1, fingers: 2));
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await settings.set(defs.lockdownEnabled, true);
+      await show();
+      expect(executed, isEmpty);
+      await settings.set(defs.lockdownEnabled, false);
+      await settings.set(defs.kioskEnabled, true);
+      await settings.set(defs.kioskDisableGestures, true);
+      await show();
+      expect(executed, isEmpty);
+      await settings.set(defs.kioskDisableGestures, false);
+      await show();
+      expect(executed, hasLength(1));
     });
 
     test('hold_mode toggles the setting each time (issue #266)', () async {

@@ -83,6 +83,11 @@ export const CAMERA_ICONS = {
     + '<rect x="13.7" y="9.5" width="4.2" height="10.5" rx="2.1"'
     + ' transform="rotate(16 15.8 14.75)"/>'
     + '<path d="M12 6.5V3.5M8.4 7.4 6.4 5.2M15.6 7.4l2-2.2"/>',
+  // An open hand held up: the raised-hand trigger.
+  hand: '<path d="M7.5 12V6a1.5 1.5 0 0 1 3 0v5M10.5 11V4a1.5 1.5 0 0 1 3 0v7'
+    + 'M13.5 11V5a1.5 1.5 0 0 1 3 0v7"/>'
+    + '<path d="M16.5 12V8.5a1.5 1.5 0 0 1 3 0V14c0 4-3 7-7.5 7-3 0-4.6-1.2'
+    + '-6-3.3L3.3 13.6a1.5 1.5 0 0 1 2.5-1.6L7.5 14"/>',
   apps: '<path d="M5 5h.01M12 5h.01M19 5h.01M5 12h.01M12 12h.01M19 12h.01'
     + 'M5 19h.01M12 19h.01M19 19h.01"/>',
   link: '<path d="M10 13a4 4 0 0 0 5.7.3l2-2a4 4 0 0 0-5.7-5.6l-1.1 1.1"/>'

@@ -7,6 +7,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../core/permissions.dart';
 import '../device_camera/native_camera.dart' show snapshotResolution;
+import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'native_motion.dart';
@@ -49,6 +50,14 @@ import 'native_motion.dart';
 /// the next screen-on, and a bind that happened while the panel was off is
 /// treated as suspect and restarted on wake (see [_boundBlind]). The cost
 /// warning lives on its setting too.
+///
+/// The "Raise a hand" gesture is the fourth leg, and the one that is not
+/// about the screensaver at all: while any gesture mapping wants a raised
+/// hand, the camera runs whenever the screen is on, screensaver or not,
+/// and the native palm detector reports hands held up; the gestures
+/// manager turns those into the mapped action. It follows the gates the
+/// other gestures follow (Lockdown Mode, kiosk mode's Disable Gestures),
+/// so a locked screen does not even bind the camera for it.
 class MotionManager extends Manager {
   MotionManager(
     super.bus,
@@ -89,8 +98,7 @@ class MotionManager extends Manager {
   /// switch while it holds — a Black entry overnight can keep the camera off
   /// entirely.
   bool get enabled =>
-      (_schedulePolicy ??
-          _settings.get(defs.screensaverDismissOnMotion)) &&
+      (_schedulePolicy ?? _settings.get(defs.screensaverDismissOnMotion)) &&
       _settings.get(defs.cameraEnabled);
 
   /// Whether the postpone leg wants the camera: between screensavers, with
@@ -133,16 +141,32 @@ class MotionManager extends Manager {
       _settings.get(defs.screensaverEnabled) &&
       _settings.get(defs.cameraEnabled);
 
+  /// The hand leg: a gesture mapping wants a raised hand, the camera is
+  /// on, and gestures are not suppressed (Lockdown Mode, kiosk mode's
+  /// Disable Gestures). Screen-on is applied where the leg is consulted,
+  /// like the postpone legs: nobody raises a hand at a dark panel.
+  bool get palmEnabled =>
+      hasFingersTrigger(
+        decodeGestureMappings(_settings.get(defs.gestureMappings)),
+      ) &&
+      _settings.get(defs.cameraEnabled) &&
+      !_settings.get(defs.lockdownEnabled) &&
+      !(_settings.get(defs.kioskEnabled) &&
+          _settings.get(defs.kioskDisableGestures));
+
   /// What the running native stream was asked to emit, so a change in
-  /// either (the screensaver starting under a face-only setup while the
+  /// any (the screensaver starting under a face-only setup while the
   /// sensor leg already holds the camera, a schedule boundary flipping the
-  /// motion override) restarts the stream with fresh arguments.
+  /// motion override, a hand mapping added) restarts the stream with
+  /// fresh arguments.
   bool _streamMotion = true;
   bool _streamFaces = false;
+  bool _streamPalms = false;
 
   bool get _wantMotion => enabled || _postponeEnabled || _sensorEnabled;
   bool get _wantFaces =>
       _screensaverActive ? faceEnabled : _postponeFaceEnabled;
+  bool get _wantPalms => palmEnabled && _screenOn;
 
   StreamSubscription<void>? _camera;
   bool _screensaverActive = false;
@@ -222,13 +246,20 @@ class MotionManager extends Manager {
     // turning the feature on prompts for the camera up front so the first dim
     // can start it without a pause.
     bus.on<SettingChanged>().listen((e) {
-      final isGate = e.key == defs.screensaverDismissOnMotion.key ||
+      final isGate =
+          e.key == defs.screensaverDismissOnMotion.key ||
           e.key == defs.screensaverPostponeOnMotion.key ||
           e.key == defs.screensaverDismissOnFace.key ||
           e.key == defs.screensaverPostponeOnFace.key ||
           e.key == defs.motionSensor.key ||
           e.key == defs.screensaverEnabled.key ||
-          e.key == defs.cameraEnabled.key;
+          e.key == defs.cameraEnabled.key ||
+          // The hand leg's gates: the mappings themselves and the
+          // gesture suppressions.
+          e.key == defs.gestureMappings.key ||
+          e.key == defs.lockdownEnabled.key ||
+          e.key == defs.kioskEnabled.key ||
+          e.key == defs.kioskDisableGestures.key;
       // MQTT-side only (it lives in the HA discovery config): no reason to
       // restart the camera over it.
       if (e.key == defs.motionSensorOffDelay.key) return;
@@ -246,31 +277,37 @@ class MotionManager extends Manager {
               _postponeEnabled ||
               _sensorEnabled ||
               faceEnabled ||
-              _postponeFaceEnabled)) {
+              _postponeFaceEnabled ||
+              palmEnabled)) {
         unawaited(_ensurePermission());
       }
       _stop();
       _sync();
     });
 
-    commands.register(Command(
-      name: 'getMotionEnabled',
-      description: 'Whether camera motion detection is enabled',
-      handler: (_) async => CommandResult.ok(enabled),
-    ));
-    commands.register(Command(
-      name: 'getFaceEnabled',
-      description:
-          'Whether camera face detection is enabled (off while Dismiss on '
-          'motion takes precedence)',
-      handler: (_) async => CommandResult.ok(faceEnabled),
-    ));
+    commands.register(
+      Command(
+        name: 'getMotionEnabled',
+        description: 'Whether camera motion detection is enabled',
+        handler: (_) async => CommandResult.ok(enabled),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'getFaceEnabled',
+        description:
+            'Whether camera face detection is enabled (off while Dismiss on '
+            'motion takes precedence)',
+        handler: (_) async => CommandResult.ok(faceEnabled),
+      ),
+    );
 
     if (enabled ||
         _postponeEnabled ||
         _sensorEnabled ||
         faceEnabled ||
-        _postponeFaceEnabled) {
+        _postponeFaceEnabled ||
+        palmEnabled) {
       unawaited(_ensurePermission());
     }
 
@@ -285,9 +322,11 @@ class MotionManager extends Manager {
 
   /// Whether the camera should be running right now: dismiss-on-motion or
   /// dismiss-on-face wants it during a screensaver session, either
-  /// postpone leg between them (screen on), and the sensor leg always.
+  /// postpone leg between them (screen on), the hand leg whenever the
+  /// screen is on, and the sensor leg always.
   bool get _shouldRun =>
       _sensorEnabled ||
+      _wantPalms ||
       (_screensaverActive
           ? enabled || faceEnabled
           : (_postponeEnabled || _postponeFaceEnabled) && _screenOn);
@@ -300,10 +339,13 @@ class MotionManager extends Manager {
     // A session already up but asked for the wrong things restarts: the
     // native side takes its emission flags at bind time.
     if (_camera != null &&
-        (_streamMotion != _wantMotion || _streamFaces != _wantFaces)) {
+        (_streamMotion != _wantMotion ||
+            _streamFaces != _wantFaces ||
+            _streamPalms != _wantPalms)) {
       log.info(
         name,
-        'camera restarting (motion=$_wantMotion faces=$_wantFaces)',
+        'camera restarting (motion=$_wantMotion faces=$_wantFaces '
+        'palms=$_wantPalms)',
       );
       _stop();
     }
@@ -321,67 +363,92 @@ class MotionManager extends Manager {
       // State may have flipped while awaiting the permission check.
       if (!_shouldRun || _camera != null) return;
       final fps = _settings.get(defs.motionFps).toDouble().clamp(0.5, 30.0);
-      final sensitivity =
-          _settings.get(defs.motionSensitivity).toInt().clamp(1, 100);
+      final sensitivity = _settings
+          .get(defs.motionSensitivity)
+          .toInt()
+          .clamp(1, 100);
       final camera = _settings.get(defs.cameraDevice);
-      final (snapW, snapH) =
-          snapshotResolution(_settings.get(defs.cameraSnapshotResolution));
-      final startDelay =
-          _settings.get(defs.motionStartDelay).toInt().clamp(0, 15);
+      final (snapW, snapH) = snapshotResolution(
+        _settings.get(defs.cameraSnapshotResolution),
+      );
+      final startDelay = _settings
+          .get(defs.motionStartDelay)
+          .toInt()
+          .clamp(0, 15);
       final motion = _wantMotion;
       final faces = _wantFaces;
+      final palms = _wantPalms;
       final faceMinWidth = faceMinWidthFor(
         _settings.get(defs.faceSensitivity).toInt(),
       );
       _streamMotion = motion;
       _streamFaces = faces;
+      _streamPalms = palms;
       _boundBlind = !_screenOn;
       log.info(
         name,
         'camera on (fps=$fps sensitivity=$sensitivity cam=$camera'
         '${startDelay > 0 ? ' delay=${startDelay}s' : ''}'
         '${faces ? ' faces>=${(faceMinWidth * 100).round()}%' : ''}'
+        '${palms ? ' hands' : ''}'
         '${motion ? '' : ' motion off'}'
         '${_boundBlind ? ', panel off: restart on wake unless frames flow' : ''})',
       );
-      _camera = NativeMotion.stream(
-        fps: fps,
-        sensitivity: sensitivity,
-        camera: camera,
-        snapshotWidth: snapW,
-        snapshotHeight: snapH,
-        startDelayMs: startDelay * 1000,
-        motion: motion,
-        faces: faces,
-        faceMinWidth: faceMinWidth,
-      ).listen(
-        (tick) {
-          // Frames flowing again: the session is healthy, forget any
-          // accumulated rebind backoff and any blind-bind suspicion.
-          _retryDelay = _retryFloor;
-          _boundBlind = false;
-          // A face is not a lighting change, so the self-light quiet
-          // window below does not apply to it.
-          if (tick.isFace) {
-            log.debug(
-              name,
-              'face (${(tick.faceWidth! * 100).round()}% of the frame)',
-            );
-            bus.publish(const FaceDetected());
-            return;
-          }
-          if (DateTime.now().isBefore(_quietUntil)) {
-            log.debug(name, 'motion suppressed (own light change)');
-            return;
-          }
-          log.debug(name, 'motion');
-          bus.publish(const MotionDetected());
-        },
-        onError: (Object e) {
-          log.warn(name, 'camera error: $e');
-          _onCameraLost();
-        },
-      );
+      _camera =
+          NativeMotion.stream(
+            fps: fps,
+            sensitivity: sensitivity,
+            camera: camera,
+            snapshotWidth: snapW,
+            snapshotHeight: snapH,
+            startDelayMs: startDelay * 1000,
+            motion: motion,
+            faces: faces,
+            faceMinWidth: faceMinWidth,
+            fingers: palms,
+          ).listen(
+            (tick) {
+              // Frames flowing again: the session is healthy, forget any
+              // accumulated rebind backoff and any blind-bind suspicion.
+              _retryDelay = _retryFloor;
+              _boundBlind = false;
+              // A face is not a lighting change, so the self-light quiet
+              // window below does not apply to it.
+              if (tick.isFace) {
+                log.debug(
+                  name,
+                  'face (${(tick.faceWidth! * 100).round()}% of the frame)',
+                );
+                bus.publish(const FaceDetected());
+                return;
+              }
+              // Hands are not a lighting change either. A count of 0 is the
+              // hand gone, which the gestures manager needs to re-arm.
+              if (tick.isPalms) {
+                if (tick.palms! > 0) {
+                  log.debug(
+                    name,
+                    '${tick.palms} hand${tick.palms == 1 ? '' : 's'}, '
+                    '${tick.fingers ?? '?'} finger(s)',
+                  );
+                }
+                bus.publish(
+                  PalmDetected(hands: tick.palms!, fingers: tick.fingers),
+                );
+                return;
+              }
+              if (DateTime.now().isBefore(_quietUntil)) {
+                log.debug(name, 'motion suppressed (own light change)');
+                return;
+              }
+              log.debug(name, 'motion');
+              bus.publish(const MotionDetected());
+            },
+            onError: (Object e) {
+              log.warn(name, 'camera error: $e');
+              _onCameraLost();
+            },
+          );
     } finally {
       _starting = false;
     }

@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Show fingers** as a gesture: a hand showing one to four fingers, or an open hand, to the camera, each its own trigger, so five actions can live on one hand. MediaPipe's palm detector proposes the hand and its hand landmark model confirms it and reads the 21 joints from which the extended fingers are counted (a finger counts when nearly straight at its middle joint, the thumb when it points away from the palm rather than across it); the first sighting that reads the configured count fires the action, and the count has to change, or the hand go, before the same mapping fires again. Both models are small, on-device, and run only when the picture changed or a hand was just seen; nothing is identified, stored or compared.
+- The camera runs for the gesture whenever the screen is on, screensaver or not, the way Postpone screensaver on motion does, and needs the camera enabled under Camera settings; its exposure is steered by the frames themselves, a stop more when they come out dark (a front camera meters the whole room and leaves the person in front of it dark) and back down when they come out bright. Reach is a few steps: the detector looks at a square of the frame around wherever the picture just changed (the hand coming up) and then around the hand itself, and once a hand is confirmed the next looks run the landmark model alone on it. Lockdown Mode and kiosk mode's Disable Gestures silence it like every other gesture, and the camera is not bound for it then.
+
 ## v2026.8.83 - 2026-08-26
 
 ### Added

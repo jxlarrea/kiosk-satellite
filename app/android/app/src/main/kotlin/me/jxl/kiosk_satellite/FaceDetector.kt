@@ -12,7 +12,6 @@ import android.os.SystemClock
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.ln
-import kotlin.math.max
 
 /**
  * On-device face detection for the screensaver's "Dismiss on face" (issue
@@ -98,18 +97,13 @@ class FaceDetector(private val context: Context) {
     private var scoreIndex = 1
     private var failed = false
 
-    // Reused across frames: a 192x192 RGB float tensor and the two outputs.
-    private val input: ByteBuffer =
-        ByteBuffer.allocateDirect(INPUT * INPUT * 3 * 4).order(ByteOrder.nativeOrder())
+    // Reused across frames: the 192x192 RGB float input (the whole frame
+    // letterboxed, mid-gray bars, -1..1) and the two outputs.
+    private val input = VisionInput(INPUT, -1f, 1f)
     private val regressors: ByteBuffer =
         ByteBuffer.allocateDirect(ANCHORS * COORDS * 4).order(ByteOrder.nativeOrder())
     private val scores: ByteBuffer =
         ByteBuffer.allocateDirect(ANCHORS * 4).order(ByteOrder.nativeOrder())
-
-    /** The letterbox geometry the input buffer's bars were last zeroed
-     *  for (packed ow/oh/ox/oy); the bars are rewritten only when it
-     *  changes, since the frame region overwrites everything else. */
-    private var barsFor = -1
 
     // Cost trace (see TRACE_EVERY).
     private var runs = 0
@@ -117,9 +111,8 @@ class FaceDetector(private val context: Context) {
 
     /**
      * Find the largest face looking at the camera in [image] (YUV_420_888),
-     * or null. [rotation] is the frame's rotationDegrees: the model is not
-     * rotation invariant, and an analysis frame arrives in sensor
-     * orientation, so it is turned upright first. Null also when the model
+     * or null. [rotation] is the frame's rotationDegrees (see
+     * [VisionInput.fill]). Null also when the model
      * could not be loaded (logged once); the caller then simply never sees
      * a face.
      */
@@ -130,12 +123,11 @@ class FaceDetector(private val context: Context) {
         // crash. A failing frame is a missed face, logged and moved past.
         return try {
             val startNs = SystemClock.elapsedRealtimeNanos()
-            fill(image, rotation)
-            input.rewind()
+            input.fill(image, rotation)
             regressors.rewind()
             scores.rewind()
             engine.runForMultipleInputsOutputs(
-                arrayOf<Any>(input),
+                arrayOf<Any>(input.buffer),
                 mapOf<Int, Any>(regIndex to regressors, scoreIndex to scores),
             )
             val face = decode()
@@ -212,78 +204,6 @@ class FaceDetector(private val context: Context) {
             Log.i(TAG, "face inference avg ${"%.1f".format(avgMs)} ms (steady state)")
         } else if (runs % TRACE_EVERY == 0) {
             Log.d(TAG, "face inference avg ${"%.1f".format(avgMs)} ms over $runs runs")
-        }
-    }
-
-    /**
-     * Convert the frame to the model's input: rotated upright, scaled to
-     * fit the 192 square on its longer side, centered with black bars, RGB
-     * in -1..1. Nearest-neighbor sampling from the YUV planes straight
-     * into the float tensor: at the analyzer's 320x240 that is 27k pixels,
-     * no bitmap and no intermediate buffer.
-     */
-    private fun fill(image: ImageProxy, rotation: Int) {
-        val yPlane = image.planes[0]
-        val uPlane = image.planes[1]
-        val vPlane = image.planes[2]
-        val yBuf = yPlane.buffer
-        val uBuf = uPlane.buffer
-        val vBuf = vPlane.buffer
-        val w = image.width
-        val h = image.height
-        val turned = rotation == 90 || rotation == 270
-        val rw = if (turned) h else w
-        val rh = if (turned) w else h
-        val scale = max(rw, rh).toFloat() / INPUT
-        val ow = (rw / scale).toInt().coerceIn(1, INPUT)
-        val oh = (rh / scale).toInt().coerceIn(1, INPUT)
-        val ox = (INPUT - ow) / 2
-        val oy = (INPUT - oh) / 2
-
-        input.rewind()
-        val out = input.asFloatBuffer()
-        // Letterbox bars: zero is mid-gray in the model's input space. The
-        // frame region below overwrites the rest every time, so the bars
-        // only need writing when the geometry changes.
-        val geometry = (ow shl 24) or (oh shl 16) or (ox shl 8) or oy
-        if (geometry != barsFor) {
-            for (i in 0 until INPUT * INPUT * 3) out.put(i, 0f)
-            barsFor = geometry
-        }
-
-        val yLimit = yBuf.limit()
-        val uLimit = uBuf.limit()
-        val vLimit = vBuf.limit()
-        for (iy in 0 until oh) {
-            val sy = ((iy + 0.5f) * scale).toInt().coerceIn(0, rh - 1)
-            for (ix in 0 until ow) {
-                val sx = ((ix + 0.5f) * scale).toInt().coerceIn(0, rw - 1)
-                // (sx, sy) is a pixel of the upright frame; map it back to
-                // the sensor frame the buffers hold.
-                val px: Int
-                val py: Int
-                when (rotation) {
-                    90 -> { px = sy; py = h - 1 - sx }
-                    180 -> { px = w - 1 - sx; py = h - 1 - sy }
-                    270 -> { px = w - 1 - sy; py = sx }
-                    else -> { px = sx; py = sy }
-                }
-                val yIdx = py * yPlane.rowStride + px * yPlane.pixelStride
-                val uIdx = (py / 2) * uPlane.rowStride + (px / 2) * uPlane.pixelStride
-                val vIdx = (py / 2) * vPlane.rowStride + (px / 2) * vPlane.pixelStride
-                if (yIdx >= yLimit || uIdx >= uLimit || vIdx >= vLimit) continue
-                val yv = (yBuf.get(yIdx).toInt() and 0xFF) - 16
-                val uv = (uBuf.get(uIdx).toInt() and 0xFF) - 128
-                val vv = (vBuf.get(vIdx).toInt() and 0xFF) - 128
-                val yl = 1.164f * yv
-                val r = (yl + 1.596f * vv).coerceIn(0f, 255f)
-                val g = (yl - 0.813f * vv - 0.391f * uv).coerceIn(0f, 255f)
-                val b = (yl + 2.018f * uv).coerceIn(0f, 255f)
-                val o = ((oy + iy) * INPUT + (ox + ix)) * 3
-                out.put(o, r / 127.5f - 1f)
-                out.put(o + 1, g / 127.5f - 1f)
-                out.put(o + 2, b / 127.5f - 1f)
-            }
         }
     }
 
