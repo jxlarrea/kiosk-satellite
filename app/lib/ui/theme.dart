@@ -41,9 +41,9 @@ abstract final class Ks {
   /// Text fields and other input controls.
   static const double radiusControl = 12;
 
-  /// Display face for page titles, dialog titles and the app header. The
-  /// body stays on the default sans; Rubik ties the chrome to the clock
-  /// faces without carrying running text.
+  /// The one typeface for every piece of app text: page titles, dialog
+  /// titles, list rows, buttons, body copy and the clock faces alike. Bundled
+  /// in the APK, so it renders the same on every device.
   static const String displayFont = 'Rubik';
 
   /// Height of the fade-out an [EdgeFade] paints over a scroll edge that
@@ -127,13 +127,21 @@ ThemeData buildTheme(Brightness brightness) {
     borderRadius: BorderRadius.circular(100),
   );
   const buttonPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 12);
-  const buttonText = TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600);
+  const buttonText = TextStyle(
+    fontFamily: Ks.displayFont,
+    fontSize: 14.5,
+    fontWeight: FontWeight.w600,
+  );
   // A shared floor keeps dialog action pairs balanced: "Save" never renders
   // visibly narrower than the "Cancel" beside it.
   const buttonMinSize = Size(96, 44);
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
+    // Every text theme style inherits Rubik. Theme-level TextStyles below
+    // that replace the text theme rather than merge with it (list rows,
+    // buttons) name the family explicitly so nothing falls back to Roboto.
+    fontFamily: Ks.displayFont,
     scaffoldBackgroundColor: scheme.surface,
     // Flat: nothing floats, nothing tints on scroll. Depth comes from surface
     // tone and hairline outlines, not shadows.
@@ -183,12 +191,14 @@ ThemeData buildTheme(Brightness brightness) {
         vertical: 4,
       ),
       titleTextStyle: TextStyle(
+        fontFamily: Ks.displayFont,
         fontSize: 17,
         fontWeight: FontWeight.w500,
         height: 1.3,
         color: scheme.onSurface,
       ),
       subtitleTextStyle: TextStyle(
+        fontFamily: Ks.displayFont,
         fontSize: 13,
         height: 1.35,
         color: scheme.onSurfaceVariant,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_container.dart';
 import '../managers/sendspin/lyrics.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'theme.dart';
 
 /// The playing track's lyrics, the current line lit and the rest receding,
 /// scrolling itself so the current line stays put (issue #43).
@@ -89,8 +90,9 @@ class _LyricsViewState extends State<LyricsView> {
     // The user's nudge. Positive runs the lyrics ahead of the music, which
     // is what a reader wants: the line has to be read before it is sung,
     // and LRC timestamps mark where a line STARTS being sung.
-    final offset =
-        widget.container.settings.get(defs.sendspinLyricsOffset).toDouble();
+    final offset = widget.container.settings
+        .get(defs.sendspinLyricsOffset)
+        .toDouble();
     ms += (offset * 1000).round();
     return Duration(milliseconds: ms < 0 ? 0 : ms);
   }
@@ -121,9 +123,7 @@ class _LyricsViewState extends State<LyricsView> {
       Scrollable.ensureVisible(
         context,
         alignment: 0.5,
-        duration: animate
-            ? const Duration(milliseconds: 450)
-            : Duration.zero,
+        duration: animate ? const Duration(milliseconds: 450) : Duration.zero,
         curve: Curves.easeOutCubic,
       );
     });
@@ -180,9 +180,8 @@ class _LyricsViewState extends State<LyricsView> {
                     child: AnimatedDefaultTextStyle(
                       duration: const Duration(milliseconds: 250),
                       style: TextStyle(
-                        color: index == _index
-                            ? Colors.white
-                            : Colors.white38,
+                        fontFamily: Ks.displayFont,
+                        color: index == _index ? Colors.white : Colors.white38,
                         fontSize: index == _index
                             ? widget.fontSize
                             : widget.fontSize * 0.88,
@@ -193,8 +192,9 @@ class _LyricsViewState extends State<LyricsView> {
                       ),
                       child: Text(
                         line.text,
-                        textAlign:
-                            widget.centred ? TextAlign.center : TextAlign.left,
+                        textAlign: widget.centred
+                            ? TextAlign.center
+                            : TextAlign.left,
                       ),
                     ),
                   ),

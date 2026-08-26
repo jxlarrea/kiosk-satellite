@@ -10,6 +10,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - The camera runs for the gesture whenever the screen is on, screensaver or not, the way Postpone screensaver on motion does, and needs the camera enabled under Camera settings; its exposure is steered by the frames themselves, a stop more when they come out dark (a front camera meters the whole room and leaves the person in front of it dark) and back down when they come out bright. Reach is a few steps, and the hand has to be in the picture (a front camera set at chest height sees a hand at shoulder height or above, not one shown at the waist): the tracker is shown a square of the frame around wherever the picture just changed, the hand coming up. Lockdown Mode and kiosk mode's Disable Gestures silence it like every other gesture, and the camera is not bound for it then.
 
 ### Changed
+- Every piece of app text is set in Rubik, the typeface the clock and page titles already used: list rows, hints, buttons, dialogs, toasts, lyrics and the flip and roller clock faces included. It ships inside the app, so the screens look the same on every device rather than borrowing whichever sans the system has, and the clock no longer asks for Google Sans first on devices that carry it.
 - Toasts are a fifth larger: the card, its icon, the title and the message text, so a confirmation is readable from where a gesture is made rather than only up close.
 
 ### Fixed

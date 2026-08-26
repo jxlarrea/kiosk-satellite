@@ -294,19 +294,10 @@ class _Dismissable extends StatelessWidget {
 }
 
 /// A full-screen digital clock over black, mirroring Voice Satellite's clock.
-/// The clock's font, preferring the system Google Sans where it exists.
-///
-/// On Pixel/GMS devices Google Sans is a registered system family, so we ask
-/// for it first (under the couple of names it ships as). Everywhere it is
-/// absent — the Samsung tablets, the LineageOS Echo — the request falls
-/// through to the bundled [Rubik], which gives the same geometric feel. Rubik
-/// stays last so any real Google Sans wins.
-const _clockFontFamily = 'Google Sans';
-const _clockFontFallback = <String>[
-  'Google Sans Text',
-  'Product Sans',
-  'Rubik',
-];
+/// The clock's font: the bundled Rubik, the same face every other piece of
+/// app text uses, so the screensaver never looks like a different app from
+/// the settings behind it.
+const _clockFontFamily = 'Rubik';
 
 class ClockScreensaver extends StatefulWidget {
   const ClockScreensaver({super.key, required this.container});
@@ -652,7 +643,6 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                           _time(),
                           style: TextStyle(
                             fontFamily: _clockFontFamily,
-                            fontFamilyFallback: _clockFontFallback,
                             color: color,
                             fontSize: clockSize,
                             fontWeight: FontWeight.w300,
@@ -667,7 +657,6 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                             _date(),
                             style: TextStyle(
                               fontFamily: _clockFontFamily,
-                              fontFamilyFallback: _clockFontFallback,
                               // The date sits back a little, as in VS (~65% of the clock).
                               color: color.withValues(alpha: 0.65),
                               fontSize: dateSize,

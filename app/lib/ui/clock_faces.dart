@@ -8,11 +8,9 @@ import 'package:flutter/material.dart';
 /// face — [ClockScreensaver] passes the current time in and each face
 /// animates only the digits that changed.
 ///
-/// The font chain matches the digital face: system Google Sans where it
-/// exists, the bundled Rubik (a variable font, so real heavy weights)
-/// everywhere else.
-const _fontFamily = 'Google Sans';
-const _fontFallback = <String>['Google Sans Text', 'Product Sans', 'Rubik'];
+/// The bundled Rubik, same as the digital face: a variable font, so the
+/// heavy weights these faces lean on are real rather than synthesized.
+const _fontFamily = 'Rubik';
 
 /// The screen behind the flip cards, derived from the card color rather
 /// than picked: the reference face is three colors — digits, cards, and a
@@ -59,8 +57,10 @@ class FlipClockFace extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     // Noticeably taller than wide, as the reference cards are.
-    final cardH =
-        (min(size.height * 0.72, size.width * 0.46) * scale).clamp(60.0, 2000.0);
+    final cardH = (min(size.height * 0.72, size.width * 0.46) * scale).clamp(
+      60.0,
+      2000.0,
+    );
     final cardW = cardH * 0.84;
     final gap = cardH * 0.08;
     return Row(
@@ -141,7 +141,6 @@ class _FlipCardState extends State<_FlipCard>
         value,
         style: TextStyle(
           fontFamily: _fontFamily,
-          fontFamilyFallback: _fontFallback,
           color: widget.digitColor,
           fontSize: widget.height * 0.66,
           fontWeight: FontWeight.w400,
@@ -316,7 +315,8 @@ class _RollerClockFaceState extends State<RollerClockFace>
   }
 
   Widget _build(BuildContext context, Size size, DateTime now) {
-    final digits = _displayHour(now.hour, widget.use24h) +
+    final digits =
+        _displayHour(now.hour, widget.use24h) +
         now.minute.toString().padLeft(2, '0');
     final progress = rollerProgress(now, widget.use24h);
     final digitColor = widget.digitColor;
@@ -431,7 +431,6 @@ class _RollingDigitState extends State<_RollingDigit>
           d,
           style: TextStyle(
             fontFamily: _fontFamily,
-            fontFamilyFallback: _fontFallback,
             color: widget.color,
             fontSize: widget.fontSize,
             fontWeight: FontWeight.w800,
