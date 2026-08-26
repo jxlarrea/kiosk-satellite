@@ -93,6 +93,17 @@ precedence while both are on. The [Show fingers](gestures.md#show-fingers)
 gesture rides the same session with MediaPipe's hand landmarker, under
 the same gate, whenever the screen is on and a hand mapping exists.
 
+All six pause for a voice interaction. From the moment the wake word is
+heard until Voice Satellite returns to listening for it, the camera
+stays open but the analyzer emits nothing and runs no model: no motion
+tick, no face sighting, no hand report, so someone talking at the
+satellite neither wakes nor postpones the screensaver, does not trip
+the motion sensor, and cannot fire a hand gesture, and the voice turn
+has the cores the detectors would have taken. A hand tracked when the
+turn started counts as gone, so it has to come up again afterwards; a
+turn that never ends on the page side releases the camera after three
+minutes.
+
 What a true screen-off does to the camera depends on the Android
 version. Older versions leave it alone. Newer ones (observed on Android
 16, and rolling in since Android 11's while-in-use rules) revoke camera

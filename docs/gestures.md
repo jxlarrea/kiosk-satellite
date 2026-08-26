@@ -148,6 +148,10 @@ The camera side:
   whenever the screen is on, screensaver or not, so it costs what
   [Postpone screensaver on motion](camera.md#motion-detection) costs; a
   panel that is off releases it.
+- Like claps, a hand shown during a voice interaction fires nothing: the
+  camera's analysis is idled from the wake word until Voice Satellite is
+  listening for it again, and a hand that was up when the turn started
+  has to come up again afterwards.
 - The reach is a few steps, and the hand has to be in the picture: a
   front camera set at chest height sees a hand at shoulder height or
   above, not one shown at the waist. The detector looks at a square of

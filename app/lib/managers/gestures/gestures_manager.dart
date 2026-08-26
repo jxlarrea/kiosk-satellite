@@ -38,7 +38,9 @@ import 'gesture_mappings.dart';
 /// run by [MotionManager] while a fingers mapping exists): every report
 /// says how many fingers the hand shows, and a mapping fires the first
 /// time its count is seen, then re-arms when the count changes or the
-/// hand goes.
+/// hand goes. Like claps, a hand seen during a voice interaction fires
+/// nothing: the camera is idled for the turn's span on the motion side,
+/// and a report still crossing at its start is ignored here.
 class GesturesManager extends Manager {
   GesturesManager(
     super.bus,
@@ -144,7 +146,9 @@ class GesturesManager extends Manager {
           _settings.get(defs.kioskDisableGestures));
 
   /// A hand report. Each fingers mapping fires the first time its count
-  /// is read, and re-arms when the count changes or the hand goes.
+  /// is read, and re-arms when the count changes or the hand goes. A
+  /// hand seen during a voice interaction fires nothing, and the report
+  /// still re-arms (the motion side reports the hand gone at the pause).
   void _onPalms(PalmDetected e) {
     if (!_armed) return;
     // One look: the count shown fires its mapping the first time it is
@@ -155,6 +159,7 @@ class GesturesManager extends Manager {
       if (m.triggerType != 'fingers') continue;
       final wanted = (m.trigger['fingers'] as num?)?.toInt() ?? 5;
       if (e.hands > 0 && steady(wanted)) {
+        if (_voiceTurn) continue;
         if (_palmFired.add(m.id)) {
           log.info(name, 'detected a hand showing $wanted finger(s)');
           bus.publish(GestureDetected(id: m.id));

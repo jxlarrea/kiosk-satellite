@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- Motion detection, face detection and the Show fingers gesture pause for a voice interaction: from the moment the wake word is heard until Voice Satellite is listening for it again, the camera stays open but the analyzer emits nothing and runs no model, so someone talking at the satellite neither wakes nor postpones the screensaver, does not trip the motion sensor and cannot fire a hand gesture, and the voice turn has the cores the detectors would have taken. A hand that was up when the turn started counts as gone and has to come up again afterwards, the same rule claps have followed all along. A turn that never ends on the page side releases the camera after three minutes.
+
 ## v2026.8.84 - 2026-08-26
 
 ### Added

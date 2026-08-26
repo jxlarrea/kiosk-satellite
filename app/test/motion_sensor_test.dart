@@ -24,23 +24,23 @@ void main() {
     // Camera permission granted, so _start reaches the stream.
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
-      const MethodChannel('flutter.baseflow.com/permissions/methods'),
-      (call) async => switch (call.method) {
-        'checkPermissionStatus' => 1,
-        _ => null,
-      },
-    );
+          const MethodChannel('flutter.baseflow.com/permissions/methods'),
+          (call) async => switch (call.method) {
+            'checkPermissionStatus' => 1,
+            _ => null,
+          },
+        );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockStreamHandler(
-      const EventChannel('kiosk_satellite/motion'),
-      MockStreamHandler.inline(
-        onListen: (arguments, events) {
-          listens++;
-          sink = events;
-        },
-        onCancel: (arguments) => sink = null,
-      ),
-    );
+          const EventChannel('kiosk_satellite/motion'),
+          MockStreamHandler.inline(
+            onListen: (arguments, events) {
+              listens++;
+              sink = events;
+            },
+            onCancel: (arguments) => sink = null,
+          ),
+        );
   });
 
   late EventBus bus;
@@ -60,8 +60,14 @@ void main() {
     final commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
     await settings.init();
-    motion = MotionManager(bus, commands, log, settings,
-        selfLightQuiet: selfLightQuiet, retryFloor: retryFloor);
+    motion = MotionManager(
+      bus,
+      commands,
+      log,
+      settings,
+      selfLightQuiet: selfLightQuiet,
+      retryFloor: retryFloor,
+    );
     await motion.init();
   }
 
@@ -101,6 +107,39 @@ void main() {
     expect(detected, 1);
   });
 
+  test('a voice interaction drops motion ticks and face sightings still '
+      'crossing, and nothing else', () async {
+    await build({
+      'ks.camera.enabled': true,
+      'ks.motion.sensor': true,
+    }, selfLightQuiet: Duration.zero);
+    await pump();
+    var detected = 0;
+    var faces = 0;
+    bus.on<MotionDetected>().listen((_) => detected++);
+    bus.on<FaceDetected>().listen((_) => faces++);
+
+    bus.publish(const WakeWordStateChanged(active: false, listening: false));
+    await pump();
+    expect(sink, isNotNull, reason: 'the camera is idled, not released');
+    sink!.success(null);
+    sink!.success({'face': 0.3});
+    await pump();
+    expect(detected, 0);
+    expect(faces, 0);
+
+    bus.publish(const WakeWordStateChanged(active: true, listening: true));
+    // The resume relights the room from the camera's point of view (the
+    // turn's overlay leaving); the zero quiet window above makes the
+    // next tick count at once.
+    await pump();
+    sink!.success(null);
+    sink!.success({'face': 0.3});
+    await pump();
+    expect(detected, 1);
+    expect(faces, 1);
+  });
+
   test('without the toggle (or the camera master) nothing runs', () async {
     await build({'ks.camera.enabled': true});
     await pump();
@@ -108,52 +147,54 @@ void main() {
 
     await build({'ks.motion.sensor': true});
     await pump();
-    expect(listens, 0,
-        reason: 'a disabled camera means no camera feature runs');
-  });
-
-  test('own light changes (screensaver transitions) suppress motion ticks',
-      () async {
-    await build(
-      {'ks.camera.enabled': true, 'ks.motion.sensor': true},
-      selfLightQuiet: const Duration(milliseconds: 200),
+    expect(
+      listens,
+      0,
+      reason: 'a disabled camera means no camera feature runs',
     );
-    await pump();
-    expect(listens, 1);
-    var detected = 0;
-    bus.on<MotionDetected>().listen((_) => detected++);
-
-    // The screensaver starting relights the room with the app's own
-    // display; the tick the camera then produces is that light bouncing
-    // back (plus the AE resettle), not a body. Unsuppressed, it dismisses
-    // the screensaver the instant it starts, forever.
-    bus.publish(const ScreensaverStateChanged(active: true));
-    await pump();
-    sink!.success(null);
-    await pump();
-    expect(detected, 0, reason: 'the transition must not read as motion');
-
-    // Past the quiet window the same tick is a body again.
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    sink!.success(null);
-    await pump();
-    expect(detected, 1);
-
-    // A slideshow swapping photos mid-session relights the room the same
-    // way (a dark-to-bright Immich slide) and gates the same way.
-    bus.publish(const ScreensaverSlideChanged());
-    await pump();
-    sink!.success(null);
-    await pump();
-    expect(detected, 1, reason: 'the slide swap must not read as motion');
   });
+
+  test(
+    'own light changes (screensaver transitions) suppress motion ticks',
+    () async {
+      await build({
+        'ks.camera.enabled': true,
+        'ks.motion.sensor': true,
+      }, selfLightQuiet: const Duration(milliseconds: 200));
+      await pump();
+      expect(listens, 1);
+      var detected = 0;
+      bus.on<MotionDetected>().listen((_) => detected++);
+
+      // The screensaver starting relights the room with the app's own
+      // display; the tick the camera then produces is that light bouncing
+      // back (plus the AE resettle), not a body. Unsuppressed, it dismisses
+      // the screensaver the instant it starts, forever.
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pump();
+      sink!.success(null);
+      await pump();
+      expect(detected, 0, reason: 'the transition must not read as motion');
+
+      // Past the quiet window the same tick is a body again.
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      sink!.success(null);
+      await pump();
+      expect(detected, 1);
+
+      // A slideshow swapping photos mid-session relights the room the same
+      // way (a dark-to-bright Immich slide) and gates the same way.
+      bus.publish(const ScreensaverSlideChanged());
+      await pump();
+      sink!.success(null);
+      await pump();
+      expect(detected, 1, reason: 'the slide swap must not read as motion');
+    },
+  );
 
   test('a camera revoked mid-session (stream error) is rebound after the '
       'backoff', () async {
-    await build({
-      'ks.camera.enabled': true,
-      'ks.motion.sensor': true,
-    });
+    await build({'ks.camera.enabled': true, 'ks.motion.sensor': true});
     await pump();
     expect(listens, 1);
 
@@ -162,39 +203,46 @@ void main() {
     sink!.error(code: 'camera', message: 'camera revoked by the OS (error 6)');
     await pump();
     expect(sink, isNull, reason: 'the dead session must be torn down');
-    expect(listens, 1, reason: 'no immediate rebind: the revoker may still '
-        'hold the camera');
+    expect(
+      listens,
+      1,
+      reason:
+          'no immediate rebind: the revoker may still '
+          'hold the camera',
+    );
 
     await Future<void>.delayed(const Duration(milliseconds: 150));
     await pump();
     expect(listens, 2, reason: 'the backoff timer must rebind');
   });
 
-  test('revoked with the screen off, the rebind waits for the screen',
-      () async {
-    await build({
-      'ks.camera.enabled': true,
-      'ks.motion.sensor': true,
-    });
-    await pump();
-    expect(listens, 1);
+  test(
+    'revoked with the screen off, the rebind waits for the screen',
+    () async {
+      await build({'ks.camera.enabled': true, 'ks.motion.sensor': true});
+      await pump();
+      expect(listens, 1);
 
-    // The panel powers off; five seconds later the OS revokes the camera
-    // (measured on Android 16). Rebinding under a dark panel would be
-    // refused the same way, so nothing should be scheduled.
-    bus.publish(const ScreenStateChanged(on: false));
-    await pump();
-    sink!.error(code: 'camera', message: 'camera revoked by the OS (error 6)');
-    await pump();
-    await Future<void>.delayed(const Duration(milliseconds: 200));
-    await pump();
-    expect(listens, 1, reason: 'no rebind attempts against a dark panel');
+      // The panel powers off; five seconds later the OS revokes the camera
+      // (measured on Android 16). Rebinding under a dark panel would be
+      // refused the same way, so nothing should be scheduled.
+      bus.publish(const ScreenStateChanged(on: false));
+      await pump();
+      sink!.error(
+        code: 'camera',
+        message: 'camera revoked by the OS (error 6)',
+      );
+      await pump();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await pump();
+      expect(listens, 1, reason: 'no rebind attempts against a dark panel');
 
-    // The screen coming back is the moment a rebind can work.
-    bus.publish(const ScreenStateChanged(on: true));
-    await pump();
-    expect(listens, 2, reason: 'screen on must rebind the sensor camera');
-  });
+      // The screen coming back is the moment a rebind can work.
+      bus.publish(const ScreenStateChanged(on: true));
+      await pump();
+      expect(listens, 2, reason: 'screen on must rebind the sensor camera');
+    },
+  );
 
   test('a camera bound under a dark panel is restarted on wake', () async {
     await build({'ks.camera.enabled': true});
@@ -240,18 +288,19 @@ void main() {
 
   test('the off_delay is MQTT-side only: changing it never restarts the '
       'camera', () async {
-    await build({
-      'ks.camera.enabled': true,
-      'ks.motion.sensor': true,
-    });
+    await build({'ks.camera.enabled': true, 'ks.motion.sensor': true});
     await pump();
     expect(listens, 1);
 
     await settings.set(defs.motionSensorOffDelay, 120);
     await pump();
-    expect(listens, 1,
-        reason: 'off_delay lives in the HA discovery config, not the '
-            'camera session');
+    expect(
+      listens,
+      1,
+      reason:
+          'off_delay lives in the HA discovery config, not the '
+          'camera session',
+    );
 
     // A real tuning change by contrast does restart the stream.
     await settings.set(defs.motionFps, 5);

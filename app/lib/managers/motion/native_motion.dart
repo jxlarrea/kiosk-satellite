@@ -9,6 +9,16 @@ import 'package:flutter/services.dart';
 /// changes re-listen with fresh arguments.
 class NativeMotion {
   static const _channel = EventChannel('kiosk_satellite/motion');
+  static const _control = MethodChannel('kiosk_satellite/motion/control');
+
+  /// Idle (or wake) the analysis of a running session without a rebind:
+  /// the camera stays open and the motion grid keeps its baseline, but
+  /// no tick, sighting or hand report is emitted and no model runs.
+  /// Used for the span of a voice interaction. Throws where the plugin
+  /// is missing (tests without a mock); callers treat that as best
+  /// effort.
+  static Future<void> setPaused(bool paused) =>
+      _control.invokeMethod<void>('setPaused', {'paused': paused});
 
   static Stream<NativeMotionTick> stream({
     required double fps,
@@ -21,6 +31,7 @@ class NativeMotion {
     bool faces = false,
     double faceMinWidth = 0.1,
     bool fingers = false,
+    bool paused = false,
   }) {
     return _channel
         .receiveBroadcastStream(<String, Object?>{
@@ -47,6 +58,11 @@ class NativeMotion {
           // Hands (the Show fingers gesture): found, confirmed and counted
           // natively, reported as a hand count and a finger count.
           'fingers': fingers,
+          // Whether a voice interaction is running as the session starts
+          // (see [setPaused]): the flag rides the bind too, so a session
+          // rebound mid-turn, on a native side recreated with the
+          // Activity, starts idle like the one it replaces.
+          'paused': paused,
         })
         .map(NativeMotionTick.fromNative);
   }

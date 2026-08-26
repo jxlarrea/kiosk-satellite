@@ -387,8 +387,13 @@ front camera. The default of 50 lands around arm's length and a step
 back. Frame rate, the camera pick and the startup delay are shared with
 motion detection and tuned in the Camera settings.
 
-Two rules to know:
+Three rules to know:
 
+- **A voice interaction pauses it.** From the wake word until Voice
+  Satellite is listening for it again, no face is looked for (nor any
+  motion), so someone talking at the satellite does not dismiss the
+  screensaver by turning to it, and the turn has the cores the detector
+  would take.
 - **Dismiss on motion takes precedence.** With both switches on, motion
   wakes the screen and face detection stays idle; the settings pages say
   so under the switch. Turn Dismiss on motion off to wake on faces.

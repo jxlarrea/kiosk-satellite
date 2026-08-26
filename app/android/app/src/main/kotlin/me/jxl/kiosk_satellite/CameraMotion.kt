@@ -22,6 +22,8 @@ import androidx.core.content.ContextCompat
 import android.util.Size
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -81,6 +83,7 @@ class CameraMotion(
 ) : EventChannel.StreamHandler {
     companion object {
         const val CHANNEL = "kiosk_satellite/motion"
+        const val CONTROL_CHANNEL = "kiosk_satellite/motion/control"
         private const val TAG = "CameraMotion"
 
         // The analysis grid. Coarse on purpose: presence is a whole-body change
@@ -282,7 +285,22 @@ class CameraMotion(
     }
 
     private val eventChannel = EventChannel(messenger, CHANNEL)
+
+    /** The pause control (see [paused]): a method channel beside the
+     *  event stream, so a running session can be idled and woken without
+     *  a rebind. */
+    private val controlChannel = MethodChannel(messenger, CONTROL_CHANNEL)
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    /** A voice interaction is running (the wake word was heard, until
+     *  the page resumes wake detection): the camera stays bound, the
+     *  grid keeps its baseline, but nothing is emitted and no model
+     *  runs. Someone talking at the satellite is neither the motion the
+     *  screensaver wakes for, nor a face to dismiss it, nor a hand
+     *  showing fingers, and the turn itself needs the cores. Set from
+     *  the main thread (the control channel and onListen), read on
+     *  [analysisExecutor]. */
+    @Volatile private var paused = false
 
     private var provider: ProcessCameraProvider? = null
     private var analysis: ImageAnalysis? = null
@@ -440,6 +458,49 @@ class CameraMotion(
 
     init {
         eventChannel.setStreamHandler(this)
+        controlChannel.setMethodCallHandler(::onControlCall)
+    }
+
+    private fun onControlCall(call: MethodCall, result: MethodChannel.Result) {
+        when (call.method) {
+            "setPaused" -> {
+                setPaused((call.arguments as? Map<*, *>)?.get("paused") == true)
+                result.success(null)
+            }
+            else -> result.notImplemented()
+        }
+    }
+
+    /**
+     * Idle or wake the analysis (see [paused]). Pausing also forgets any
+     * hand being tracked, on the analyzer thread after the frame in
+     * flight: the Dart side reports the hand gone itself, and a hand
+     * still up when the turn ends is a new presence, not one that has
+     * been "held" through the whole conversation. The activity gate is
+     * cleared with it, so the resume does not ride a change seen before
+     * the pause into a burst of looks.
+     */
+    private fun setPaused(on: Boolean) {
+        if (paused == on) return
+        paused = on
+        Log.i(TAG, if (on) "paused (voice interaction)" else "resumed")
+        if (on) analysisExecutor.execute { clearPresence() }
+    }
+
+    /** Forget the tracked hand and the recent-activity gate. Analyzer thread. */
+    private fun clearPresence() {
+        palmCount = 0
+        presenceId++
+        palmSinceNs = 0L
+        presenceSinceNs = 0L
+        lastPalmSeenNs = 0L
+        pendingCount = 0
+        pendingRuns = 0
+        pendingSinceNs = 0L
+        lastActivityNs = 0L
+        lastSightingNs = 0L
+        lastBigChangeNs = 0L
+        entryStartNs = 0L
     }
 
     override fun onListen(arguments: Any?, sink: EventChannel.EventSink?) {
@@ -460,6 +521,7 @@ class CameraMotion(
         facesWanted = args?.get("faces") == true
         fingersWanted = args?.get("fingers") == true
         palmsWanted = fingersWanted
+        paused = args?.get("paused") == true
         faceMinWidth =
             ((args?.get("faceMinWidth") as? Number)?.toFloat() ?: 0.1f).coerceIn(0.01f, 1f)
         lastFaceEmitNs = 0L
@@ -804,7 +866,10 @@ class CameraMotion(
             // VISION_ACTIVITY_WINDOW_NS). Both detectors run in the same
             // slot on the same frame, and the slot is paced by their
             // combined cost.
-            if (facesWanted || palmsWanted) {
+            // ... and not at all while a voice interaction runs (see
+            // [paused]): the turn needs the cores, and nothing the
+            // detectors could find matters until it ends.
+            if ((facesWanted || palmsWanted) && !paused) {
                 val face = if (facesWanted) {
                     faceDetector ?: FaceDetector(context).also { faceDetector = it }
                 } else null
@@ -895,7 +960,7 @@ class CameraMotion(
                 huntStreak = 0
             }
 
-            if (motionWanted && !illumination && changed >= minChangedCells &&
+            if (motionWanted && !paused && !illumination && changed >= minChangedCells &&
                 now - lastEmitNs >= EMIT_INTERVAL_NS
             ) {
                 lastEmitNs = now
@@ -991,6 +1056,9 @@ class CameraMotion(
      */
     private fun onHandResult(hands: Int, fingersRaw: Int, tilt: Float, detail: String, atNs: Long) {
         val sink = activeSink ?: return
+        // A result the tracker still had in flight at the pause would
+        // resurrect the presence clearPresence just forgot.
+        if (paused) return
         val now = System.nanoTime()
         var fingers = -1
         if (hands > 0) {
@@ -1333,6 +1401,7 @@ class CameraMotion(
 
     fun dispose() {
         eventChannel.setStreamHandler(null)
+        controlChannel.setMethodCallHandler(null)
         onCancel(null)
         // On the analyzer's own thread, after any frame still in flight.
         analysisExecutor.execute {

@@ -23,8 +23,19 @@ void main() {
   var listens = 0;
   Map<Object?, Object?>? lastArgs;
   MockStreamHandlerEventSink? sink;
+  final pauses = <bool>[];
 
   setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('kiosk_satellite/motion/control'),
+          (call) async {
+            if (call.method == 'setPaused') {
+              pauses.add((call.arguments as Map)['paused'] as bool);
+            }
+            return null;
+          },
+        );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('flutter.baseflow.com/permissions/methods'),
@@ -55,6 +66,7 @@ void main() {
     listens = 0;
     lastArgs = null;
     sink = null;
+    pauses.clear();
     SharedPreferences.setMockInitialValues(initial);
     bus = EventBus();
     final log = Logger();
@@ -198,6 +210,95 @@ void main() {
     expect(lastArgs?['fingers'], isTrue);
     expect(lastArgs?['motion'], isTrue, reason: 'the sensor still wants ticks');
   });
+
+  test('a voice interaction idles the native side and drops what crosses; '
+      'the tracked hand is reported gone', () async {
+    await build(handOnly);
+    await pump();
+    expect(lastArgs?['paused'], isFalse);
+    final palms = <PalmDetected>[];
+    bus.on<PalmDetected>().listen(palms.add);
+
+    // A hand is up when the wake word is heard: the gestures manager
+    // must see it go, so the hand has to come up again after the turn.
+    sink!.success({'palms': 1, 'fingers': 2});
+    await pump();
+    expect(palms, hasLength(1));
+
+    bus.publish(const WakeWordDetected(model: 'm', phrase: 'hey'));
+    await pump();
+    expect(pauses, [true]);
+    expect(listens, 1, reason: 'the camera stays bound, it is only idled');
+    expect(palms, hasLength(2));
+    expect(palms.last.hands, 0);
+
+    // The page suspends wake detection a beat later: same turn, no
+    // second pause.
+    bus.publish(const WakeWordStateChanged(active: false, listening: false));
+    await pump();
+    expect(pauses, [true]);
+
+    // A report the native side still had on its way across is dropped.
+    sink!.success({'palms': 1, 'fingers': 2});
+    await pump();
+    expect(palms, hasLength(2));
+
+    bus.publish(const WakeWordStateChanged(active: true, listening: true));
+    await pump();
+    expect(pauses, [true, false]);
+    sink!.success({'palms': 1, 'fingers': 2});
+    await pump();
+    expect(palms, hasLength(3));
+    expect(palms.last.hands, 1);
+  });
+
+  test('a session bound mid-turn starts idle', () async {
+    await build({
+      'ks.gestures.mappings': palmMapping,
+      'ks.camera.enabled': false,
+    });
+    await pump();
+    expect(listens, 0);
+    bus.publish(const WakeWordDetected(model: 'm', phrase: 'hey'));
+    await pump();
+    expect(pauses, isEmpty, reason: 'nothing to idle without a session');
+
+    await settings.set(defs.cameraEnabled, true);
+    await pump();
+    expect(listens, 1);
+    expect(lastArgs?['paused'], isTrue);
+
+    bus.publish(const WakeWordStateChanged(active: true, listening: true));
+    await pump();
+    expect(pauses, [false]);
+  });
+
+  test(
+    'a turn the page never ends releases the camera at the ceiling',
+    () async {
+      await build(handOnly);
+      await pump();
+      motion.dispose();
+      final log = Logger();
+      final commands = CommandRegistry(log);
+      motion = MotionManager(
+        bus,
+        commands,
+        log,
+        settings,
+        selfLightQuiet: Duration.zero,
+        pauseCeiling: const Duration(milliseconds: 50),
+      );
+      await motion.init();
+      await pump();
+      bus.publish(const WakeWordDetected(model: 'm', phrase: 'hey'));
+      await pump();
+      expect(pauses, [true]);
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      await pump();
+      expect(pauses, [true, false]);
+    },
+  );
 
   test('the wire parses hands and fingers', () {
     expect(NativeMotionTick.fromNative({'palms': 2, 'fingers': 5}).palms, 2);

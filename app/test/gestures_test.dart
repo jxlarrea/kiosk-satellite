@@ -484,6 +484,32 @@ void main() {
       expect(executed, hasLength(4));
     });
 
+    test('a hand shown during a voice interaction fires nothing; the hand '
+        'gone still re-arms', () async {
+      await build(
+        '[{"id":"two","trigger":{"type":"fingers","fingers":2},'
+        '"action":{"type":"screensaver"}}]',
+      );
+      Future<void> show(int hands, int? fingers) async {
+        bus.publish(PalmDetected(hands: hands, fingers: fingers));
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+      }
+
+      await show(1, 2);
+      expect(executed, hasLength(1));
+      bus.publish(const WakeWordStateChanged(active: false, listening: false));
+      await Future<void>.delayed(Duration.zero);
+      // The motion side reports the tracked hand gone at the pause.
+      await show(0, null);
+      await show(1, 2);
+      expect(executed, hasLength(1), reason: 'that hand was mid-conversation');
+      bus.publish(const WakeWordStateChanged(active: true, listening: true));
+      await Future<void>.delayed(Duration.zero);
+      await show(1, 2);
+      expect(executed, hasLength(2));
+    });
+
     test('lockdown and kiosk Disable Gestures silence hands too', () async {
       await build(
         '[{"id":"two","trigger":{"type":"fingers","fingers":2},'

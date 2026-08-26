@@ -58,6 +58,15 @@ import 'native_motion.dart';
 /// manager turns those into the mapped action. It follows the gates the
 /// other gestures follow (Lockdown Mode, kiosk mode's Disable Gestures),
 /// so a locked screen does not even bind the camera for it.
+///
+/// All of it pauses for a voice interaction: from the wake word until
+/// Voice Satellite resumes wake detection, the camera stays bound but
+/// the native side emits nothing and runs no model, and anything still
+/// in flight is dropped here. Someone talking at the satellite is not
+/// the motion a screensaver wakes for, a face it should dismiss for, or
+/// a hand showing fingers, and the turn wants the cores the detectors
+/// would take. The pause is bounded (see [_pauseCeiling]) so a page that
+/// never resumes wake detection cannot leave the camera blind.
 class MotionManager extends Manager {
   MotionManager(
     super.bus,
@@ -66,6 +75,7 @@ class MotionManager extends Manager {
     this._settings, {
     this._selfLightQuiet = const Duration(milliseconds: 2500),
     this._retryFloor = const Duration(seconds: 5),
+    this._pauseCeiling = const Duration(minutes: 3),
   });
 
   final SettingsManager _settings;
@@ -198,6 +208,19 @@ class MotionManager extends Manager {
   final Duration _retryFloor;
   static const _retryCeiling = Duration(seconds: 60);
 
+  /// A voice interaction is running (see the class comment). Mirrors the
+  /// wake-word manager's suspended state, entered a beat earlier on the
+  /// detection itself.
+  bool _voiceTurn = false;
+  Timer? _pauseTimer;
+
+  /// The longest a turn may hold the camera idle. The wake-word manager
+  /// self-heals a page that never resumes it, but only for turns it
+  /// started; a page-suspended one that dies mid-turn would otherwise
+  /// leave motion, faces and hands off until the next config push.
+  /// Injectable for tests only.
+  final Duration _pauseCeiling;
+
   /// The screensaver schedule's motion override, null when none holds.
   bool? _schedulePolicy;
 
@@ -229,6 +252,11 @@ class MotionManager extends Manager {
       _faceSchedulePolicy = e.dismissOnFace;
       _sync();
     });
+    // A voice interaction: idle the camera's analysis for its span. The
+    // detection comes first (the page suspends wake detection a bridge
+    // round trip later), the page's resume ends it.
+    bus.on<WakeWordDetected>().listen((_) => _setVoiceTurn(true));
+    bus.on<WakeWordStateChanged>().listen((e) => _setVoiceTurn(!e.active));
     // The postpone leg follows the panel: a screen someone turned off has
     // no screensaver worth holding back, so the camera goes with it.
     bus.on<ScreenStateChanged>().listen((e) {
@@ -320,6 +348,45 @@ class MotionManager extends Manager {
     _sync();
   }
 
+  /// Enter or leave the voice-interaction pause (see the class comment).
+  /// The camera is not unbound: a rebind costs seconds and the turn is
+  /// short, so the native side is told to idle instead. A tracked hand
+  /// is reported gone so the gestures manager re-arms, and the hand has
+  /// to come up again after the turn to count. Resuming counts as the
+  /// app relighting the room: the turn's overlay leaving is a screen
+  /// change the camera sees.
+  void _setVoiceTurn(bool on) {
+    if (on == _voiceTurn) return;
+    _voiceTurn = on;
+    _pauseTimer?.cancel();
+    _pauseTimer = null;
+    if (on) {
+      _pauseTimer = Timer(_pauseCeiling, () {
+        _pauseTimer = null;
+        if (!_voiceTurn) return;
+        log.warn(
+          name,
+          'voice interaction never ended after ${_pauseCeiling.inMinutes} '
+          'minutes; resuming the camera',
+        );
+        _setVoiceTurn(false);
+      });
+    } else {
+      _selfLit();
+    }
+    if (_camera != null) {
+      log.info(name, on ? 'paused for a voice interaction' : 'resumed');
+      unawaited(
+        NativeMotion.setPaused(on).catchError((Object e) {
+          log.debug(name, 'setPaused($on) failed: $e');
+        }),
+      );
+      if (on && _streamPalms) {
+        bus.publish(const PalmDetected(hands: 0, fingers: null));
+      }
+    }
+  }
+
   /// Whether the camera should be running right now: dismiss-on-motion or
   /// dismiss-on-face wants it during a screensaver session, either
   /// postpone leg between them (screen on), the hand leg whenever the
@@ -406,12 +473,19 @@ class MotionManager extends Manager {
             faces: faces,
             faceMinWidth: faceMinWidth,
             fingers: palms,
+            paused: _voiceTurn,
           ).listen(
             (tick) {
               // Frames flowing again: the session is healthy, forget any
               // accumulated rebind backoff and any blind-bind suspicion.
               _retryDelay = _retryFloor;
               _boundBlind = false;
+              // The native side emits nothing during a voice interaction;
+              // this catches what was already on its way across.
+              if (_voiceTurn) {
+                log.debug(name, 'dropped (voice interaction)');
+                return;
+              }
               // A face is not a lighting change, so the self-light quiet
               // window below does not apply to it.
               if (tick.isFace) {
@@ -500,6 +574,7 @@ class MotionManager extends Manager {
 
   @override
   Future<void> dispose() async {
+    _pauseTimer?.cancel();
     _stop();
   }
 }
