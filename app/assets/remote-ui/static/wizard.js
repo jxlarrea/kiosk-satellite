@@ -60,8 +60,8 @@ export function wizConnectFail(error) {
 export function wizardShowError(e) {
   const box = $('#wizardError');
   box.innerHTML =
-    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" style="flex:none; margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>' +
-    '<span><b style="display:block; font-size:14.5px; margin-bottom:2px"></b><span class="hint"></span></span>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/></svg>' +
+    '<span><b></b><span class="hint"></span></span>';
   box.querySelector('b').textContent = e.message || String(e);
   box.querySelector('.hint').textContent = e.hint || '';
 }

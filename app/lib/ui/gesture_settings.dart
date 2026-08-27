@@ -223,7 +223,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: 12,
+                    spacing: 16,
                     children: [
                       DropdownButtonFormField<String>(
                         initialValue: type,
@@ -752,7 +752,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 12,
+                spacing: 16,
                 children: [
                   TextField(
                     controller: entity,
@@ -962,7 +962,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 12,
+                    spacing: 16,
                     children: [
                       TextField(
                         controller: domain,
@@ -1089,7 +1089,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
               width: 480,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                spacing: 12,
+                spacing: 16,
                 children: [
                   TextField(
                     controller: event,

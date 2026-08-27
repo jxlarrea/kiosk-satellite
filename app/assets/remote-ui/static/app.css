@@ -434,8 +434,30 @@
      stay live, mirroring the device page. A marker class over per-control
      disabled attributes so the gated-row machinery's own disabled state
      survives the adapter coming back. */
-  .bt-off-banner { font-size: 13px; color: var(--warn);
-    line-height: 1.5; margin: 0 0 14px; }
+  /* One banner shape (the device's Banner): a tinted container above the
+     rows it affects, 20 radius, 16 18 padding, a 20 icon and 13.5 text in
+     the container's ink. Error for a failure that blocks the page, warn
+     for a state that makes a section inert. The only tinted surfaces on
+     a page. */
+  .banner { display: flex; gap: 12px; align-items: flex-start;
+    padding: 16px 18px; border-radius: 20px; font-size: 13.5px;
+    line-height: 1.45; margin: 0 0 16px; }
+  .banner.warn { background: var(--tertiary-container);
+    color: var(--on-tertiary-container); }
+  .banner.error { background: var(--error-container);
+    color: var(--on-error-container); }
+  .banner svg { width: 20px; height: 20px; flex: none; margin-top: 1px; }
+  .banner b { display: block; font-size: 14.5px; font-weight: 600;
+    margin-bottom: 2px; }
+  /* A hint row inside a card, under the row it explains (the device's
+     HintRow and WarnRow): an 18 icon and 13 text on the row inset, 8
+     above and 12 below. No hairline around it. */
+  .hint-row { display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 0 12px; font-size: 13px; line-height: 1.4;
+    color: var(--muted); }
+  .hint-row.warn { color: var(--warn); }
+  .hint-row svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+  .row:has(+ .hint-row) { border-bottom: none; }
   #tab-esphome .bt-inert { pointer-events: none; opacity: 0.45; }
   /* In a row a field carries no label, the name is the label. Text caps
      at 220 on the wide pane; numbers are 90 wide, right aligned, tabular. */
@@ -630,7 +652,8 @@
     .row input[type=number] { max-width: 90px; }
   }
 
-  .modal-form { display: flex; flex-direction: column; gap: 18px; }
+  /* Labeled fields in an editor stack 16 apart, like the device's dialogs. */
+  .modal-form { display: flex; flex-direction: column; gap: 16px; }
   .modal-form .field { margin-bottom: 0; }
 
   /* The one modal scaffold (modalShell): backdrop, card, fixed title,
@@ -764,11 +787,6 @@
   .wizard-nav { display: flex; align-items: center;
     justify-content: flex-end; gap: 12px; padding-top: 18px; }
   #wizardBack, #wizardNext { padding: 0 32px; width: auto; flex: none; }
-  #wizardError { display: flex; gap: 12px; align-items: flex-start;
-    background: color-mix(in srgb, var(--error) 16%, var(--bg));
-    color: var(--text); border-radius: 20px; padding: 16px 18px;
-    font-size: 13.5px; line-height: 1.4; margin-bottom: 16px; }
-  #wizardError .hint { opacity: .85; }
   #wizardError:empty { display: none; }
   .wizard-foot { margin-top: auto; padding: 10px 16px 4px; }
   .made-by { text-align: center; color: var(--muted); font-size: 14px;

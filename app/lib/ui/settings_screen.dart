@@ -2384,7 +2384,9 @@ class _CategoryContentState extends State<_CategoryContent> {
       // and render it inert. The poll in initState lifts this the moment
       // Bluetooth comes back.
       return [
-        const WarnRow('Bluetooth is off. Turn it on to use the proxy.'),
+        const NoticeBanner(
+          text: 'Bluetooth is off. Turn it on to use the proxy.',
+        ),
         AbsorbPointer(
           child: Opacity(opacity: 0.45, child: Column(children: cards)),
         ),
@@ -3250,7 +3252,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 12,
+                  spacing: 16,
                   children: [
                     // Inside an editor the time is a labeled field, full
                     // width, opening the same picker as the time rows.
@@ -3586,7 +3588,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: 12,
+                  spacing: 16,
                   children: [
                     if (note != null)
                       Text(

@@ -154,6 +154,83 @@ class WarnRow extends StatelessWidget {
   }
 }
 
+/// What a banner says: a failure that blocks the page, or a state that
+/// makes a section inert.
+enum NoticeKind { error, warning }
+
+/// A tinted container above the rows it affects: 20 radius, 16 by 18
+/// padding, a 20 icon and the text in the container's ink. Error container
+/// for a failure that blocks the page (the setup wizard's connection
+/// errors), tertiary container for a state that makes a section inert
+/// (Bluetooth off). Banners are the only tinted surfaces on a page. The
+/// remote admin's .banner is the same shape.
+class NoticeBanner extends StatelessWidget {
+  const NoticeBanner({
+    super.key,
+    required this.text,
+    this.kind = NoticeKind.warning,
+    this.title,
+  });
+
+  final String text;
+  final NoticeKind kind;
+
+  /// An optional bold first line, for a failure that has a name and an
+  /// explanation.
+  final String? title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final error = kind == NoticeKind.error;
+    final bg = error ? scheme.errorContainer : scheme.tertiaryContainer;
+    final fg = error ? scheme.onErrorContainer : scheme.onTertiaryContainer;
+    final body = theme.textTheme.bodySmall?.copyWith(
+      fontSize: 13.5,
+      height: 1.45,
+      color: fg,
+    );
+    return Container(
+      margin: const EdgeInsets.only(bottom: Ks.cardGap),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            error ? Icons.error_outline : Icons.warning_amber_rounded,
+            size: 20,
+            color: fg,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: title == null
+                ? Text(text, style: body)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title!,
+                        style: body?.copyWith(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(text, style: body),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Fades overflowing content out at the edge it disappears under. Wraps a
 /// vertical scrollable (the widget with the viewport, never the content
 /// inside it) and paints a [Ks.fadeEdge]-tall gradient of the backing

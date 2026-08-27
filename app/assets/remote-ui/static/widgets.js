@@ -76,12 +76,14 @@ export function modalShell({ title, width, onDismiss }) {
 
 // Styled stand-in for alert()/confirm(), on the modal scaffold. Resolves to
 // the label of the pressed button; no backdrop dismiss, an alert is answered.
+// For the result of a command the user just issued, showToast is the first
+// choice; this box is for answers that need a button.
 export function messageBox({ title, message, buttons = ['OK'] }) {
   return new Promise((resolve) => {
     const { back, body, foot } = modalShell({ title });
     const p = document.createElement('p');
     p.textContent = message;
-    p.style.cssText = 'margin:0; color:var(--muted); font-size:14px; line-height:1.55; white-space:pre-line;';
+    p.style.cssText = 'margin:0; color:var(--muted); font-size:15px; line-height:1.5; white-space:pre-line;';
     body.appendChild(p);
     buttons.forEach((label, i) => {
       const btn = document.createElement('button');
@@ -103,17 +105,51 @@ document.querySelectorAll('.action.tile, .action[data-cmd]').forEach((b) =>
     // Surface refusals, with a retry loop: the common case is "Screen off"
     // pending its one-tap device-admin grant on the tablet — approve there,
     // press Retry here.
+    const label = b.textContent.trim();
     let res = await cmd(b.dataset.cmd).catch(() => null);
     while (res && res.ok === false && res.error) {
       const choice = await messageBox({
-        title: b.textContent.trim(),
+        title: label,
         message: res.error,
         buttons: ['Cancel', 'Retry'],
       });
-      if (choice !== 'Retry') break;
+      if (choice !== 'Retry') return;
       res = await cmd(b.dataset.cmd).catch(() => null);
     }
+    // The device shows the result; here a toast says the command landed.
+    if (res && res.ok !== false) showToast({ title: label, kind: 'success' });
+    else if (!res) showToast({ title: label, message: 'The device did not answer.', kind: 'error' });
   }));
+
+// A hint row inside a card, under the row it explains: the device's HintRow
+// (and WarnRow with `warn`). One sentence; the caveat the description could
+// not hold.
+const HINT_ICONS = {
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/>',
+  warn: '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4m0 3h.01"/>',
+};
+export function hintRow(text, { warn = false, className = '' } = {}) {
+  const div = document.createElement('div');
+  div.className = 'hint-row' + (warn ? ' warn' : '') + (className ? ' ' + className : '');
+  div.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + (warn ? HINT_ICONS.warn : HINT_ICONS.info) + '</svg><span></span>';
+  div.querySelector('span').textContent = text;
+  return div;
+}
+
+// A banner above the rows it affects: the device's Banner. `error` for a
+// failure that blocks the page, otherwise the warning tint for a state
+// that makes a section inert.
+export function banner(text, { error = false, className = '' } = {}) {
+  const div = document.createElement('div');
+  div.className = 'banner ' + (error ? 'error' : 'warn') + (className ? ' ' + className : '');
+  div.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + (error ? TOAST_ICONS.error : HINT_ICONS.warn) + '</svg><span></span>';
+  div.querySelector('span').textContent = text;
+  return div;
+}
 /* Camera grant notice: mirror of the device's row directly under "Enable
    camera", shown only while that switch is on and the camera permission is
    missing. Toggling the switch re-renders the tab (its dependants force a

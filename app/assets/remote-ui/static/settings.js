@@ -41,7 +41,7 @@ import {
   viewPath,
 } from './views.js';
 import { loadVsPermissions, renderVsControls } from './vs.js';
-import { copyBox, messageBox } from './widgets.js';
+import { banner, copyBox, messageBox, showToast } from './widgets.js';
 
 export async function loadSettings() {
   // A re-render rebuilds every row; without restoring scroll, flipping a
@@ -848,21 +848,19 @@ export async function loadSettings() {
     const paint = (on) => {
       root.querySelectorAll('.bt-inert')
         .forEach((el) => el.classList.remove('bt-inert'));
-      const banner = root.querySelector('.bt-off-banner');
-      if (on !== false) { banner?.remove(); return; }
+      const existing = root.querySelector('.bt-off-banner');
+      if (on !== false) { existing?.remove(); return; }
       // Everything on the Bluetooth Proxy page; the ESPHome rows on the page
       // above stay live (the entity server does not need the radio).
       const panel = root.querySelector('.subpage[data-subpage="Bluetooth Proxy"]');
-      if (!panel) { banner?.remove(); return; }
+      if (!panel) { existing?.remove(); return; }
       panel.querySelectorAll(':scope > *').forEach((el) => {
         if (!el.classList.contains('bt-off-banner')) el.classList.add('bt-inert');
       });
-      if (banner) return;
-      const div = document.createElement('div');
-      div.className = 'bt-off-banner';
-      div.textContent =
-        'Bluetooth is off on the device. Turn it on to use the proxy.';
-      panel.prepend(div);
+      if (existing) return;
+      panel.prepend(banner(
+        'Bluetooth is off. Turn it on to use the proxy.',
+        { className: 'bt-off-banner' }));
     };
     // A dead server right where its switch is, mirroring the device
     // page: without this the tab renders identically whether the server

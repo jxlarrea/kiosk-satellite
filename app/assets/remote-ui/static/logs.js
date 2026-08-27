@@ -1,3 +1,4 @@
+import { showToast } from './widgets.js';
 import { $, api, cmd } from './core.js';
 
 /* ---- Console + Logs ---- */
@@ -41,9 +42,12 @@ export async function copyPane(el, btn) {
     try { ok = document.execCommand('copy'); } catch (_) {}
     ta.remove();
   }
-  const old = btn.textContent;
-  btn.textContent = ok ? 'Copied' : 'Copy failed';
-  setTimeout(() => { btn.textContent = old; }, 1500);
+  showToast({
+    title: ok ? 'Copied' : 'Could not copy',
+    message: ok ? 'The log is on the clipboard.' : '',
+    kind: ok ? 'success' : 'error',
+    duration: 2000,
+  });
 }
 $('#copyConsole').addEventListener('click', (e) => copyPane($('#consoleOut'), e.target));
 $('#copyLogs').addEventListener('click', (e) => copyPane($('#logsOut'), e.target));

@@ -1,3 +1,4 @@
+import { hintRow } from './widgets.js';
 import { api, state } from './core.js';
 import { readOnlyRow } from './device.js';
 
@@ -241,13 +242,7 @@ export function updateMotionCameraRows() {
   const tab = document.getElementById('tab-screensaver');
   const dismiss = tab.querySelector('[data-key="screensaver.dismiss_on_motion"]');
   if (!dismiss) return;
-  const note = (text) => {
-    const div = document.createElement('div');
-    div.className = 'row';
-    div.style.cssText = 'font-size:12.5px; color:var(--muted);';
-    div.textContent = text;
-    return div;
-  };
+  const note = (text) => hintRow(text);
   if (!camOn) {
     const input = dismiss.querySelector('.switch input');
     if (input) { input.checked = false; input.disabled = true; }
@@ -277,14 +272,7 @@ export function updateFaceRows() {
   for (const stale of tab.querySelectorAll('.face-note')) stale.remove();
   const face = tab.querySelector('[data-key="screensaver.dismiss_on_face"]');
   if (!face) return;
-  const note = (text, warn) => {
-    const div = document.createElement('div');
-    div.className = 'row face-note';
-    div.style.cssText = 'font-size:12.5px; color:var(--'
-      + (warn ? 'warn' : 'muted') + ');';
-    div.textContent = text;
-    return div;
-  };
+  const note = (text, warn) => hintRow(text, { warn, className: 'face-note' });
   if (!camOn) {
     const input = face.querySelector('.switch input');
     if (input) { input.checked = false; input.disabled = true; }

@@ -16,7 +16,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import 'import_options_dialog.dart';
 import 'kiosk_screen.dart';
-import 'kit.dart' show SectionHeading;
+import 'kit.dart' show NoticeBanner, NoticeKind, SectionHeading;
 import 'theme.dart';
 import 'toast.dart';
 import 'token_qr_scanner.dart';
@@ -1113,49 +1113,9 @@ class _ErrorCard extends StatelessWidget {
   final String? hint;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(Ks.radiusCard),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.error_outline, color: scheme.onErrorContainer),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: text.titleSmall?.copyWith(
-                    color: scheme.onErrorContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (hint != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    hint!,
-                    style: text.bodyMedium?.copyWith(
-                      height: 1.4,
-                      color: scheme.onErrorContainer.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => hint == null
+      ? NoticeBanner(text: title, kind: NoticeKind.error)
+      : NoticeBanner(title: title, text: hint!, kind: NoticeKind.error);
 }
 
 /// The step's numbered badge: a filled disc with the number, a check once

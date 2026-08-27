@@ -467,7 +467,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  spacing: 12,
+                  spacing: 16,
                   children: [
                     TextField(
                       controller: name,
@@ -573,7 +573,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                 padding: const EdgeInsets.only(top: 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  spacing: 12,
+                  spacing: 16,
                   children: [
                     TextField(
                       controller: name,
