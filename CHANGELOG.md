@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The remote admin's settings pages read at their previous 880 width again, and a radio or checkbox leading a row (the dashboard and view pickers, the app picker) sits 20 from its text instead of 12.
+
 ## v2026.8.90 - 2026-08-27
 
 ### Changed

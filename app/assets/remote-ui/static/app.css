@@ -114,6 +114,10 @@
     opacity: .45; cursor: default; }
   input[type=checkbox]:focus-visible, input[type=radio]:focus-visible {
     outline: 2px solid var(--primary); outline-offset: 3px; }
+  /* A radio or checkbox leading a row sits 20 from the text, the room the
+     device's RadioListTile leaves around its dot. */
+  .row > input[type=radio]:first-child,
+  .row > input[type=checkbox]:first-child { margin-right: 8px; }
   /* The slider: a 4 track, the active run in primary fill (a gradient
      sized by --pct, painted by widgets.js paintRange), a 20 thumb. */
   input[type=range] { appearance: none; -webkit-appearance: none;
@@ -383,7 +387,7 @@
   /* The content pane: the device's page padding (20 16 20 24) and its
      760 reading column, so a page reads the same width on both. */
   main { flex: 1; min-width: 0; padding: 16px 20px 24px; }
-  main > * { max-width: 760px; }
+  main > * { max-width: 880px; }
   /* The type ramp is the device's: page title 22/600, row title 17/500,
      description 13, section heading 14/600, dialog title 20/600. */
   #pageTitle { font-size: 22px; font-weight: 600; line-height: 1.2;
