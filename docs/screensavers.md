@@ -426,6 +426,36 @@ low-powered devices most kiosks are.
 Under [Lockdown Mode](kiosk.md) a face neither dismisses nor postpones,
 like motion.
 
+## Proximity detection
+
+Motion Detection's two switches, on the device's proximity sensor
+instead of the camera, under Proximity Detection:
+
+- **Dismiss on proximity**: watch the sensor while the screensaver is up
+  and wake the screen when something comes close to it.
+- **Postpone screensaver on proximity**: also watch between screensavers,
+  so something close to the sensor keeps resetting the idle timer. It
+  requires Dismiss on proximity. Unlike the camera legs there is no cost
+  to speak of: the sensor is a single interrupt line.
+
+No camera, no permission and it works in the dark. The catch is the
+sensor itself. Kiosk-class tablets (the Galaxy Tab line, Fire tablets,
+the Echo Show) mostly have none, and on those the switch is disabled with
+the reason. Modern phones usually have one, but many expose a virtual
+sensor made for calls, typically named "palm proximity", that only
+reacts to a hand on the screen and never to someone walking up. Because
+the name is the only way to tell, a row under the switch shows what
+Android reports as the proximity sensor: an infrared or time-of-flight
+part named after its chip (STK3310, VCNL4040, TMD2755) detects hover at
+a few centimeters, a "palm" or "touch" sensor does not.
+
+Something already resting on the sensor when it starts watching is not
+an approach, so a case or a stand that covers it cannot wake the
+screensaver every time it begins. While something stays close, the
+detection repeats every few seconds, which is what lets the postpone
+leg hold the screensaver off. Under [Lockdown Mode](kiosk.md) proximity
+neither dismisses nor postpones, like motion.
+
 ## Starting and dismissing
 
 The idle timeout is the normal path in. On demand, the screensaver can
@@ -442,6 +472,8 @@ Any touch dismisses it and resets the timer. Beyond touch:
   between question and answer.
 - **Motion**, with Dismiss on motion (above).
 - **A face looking at the kiosk**, with Dismiss on face (above).
+- **Something close to the proximity sensor**, with Dismiss on proximity
+  (above).
 - **Opening a camera view** dismisses it, and the idle timer stays off
   while the view is open.
 - **Navigation from Home Assistant** (the Dashboard view select, or
@@ -501,8 +533,9 @@ is fully remote-controllable: the **Screensaver** master switch, the
 screensaver** button for automations that keep the display awake from an
 external sensor, the **Screensaver mode** and **Clock style** selects,
 the **Clock background** text entity, the **Screensaver brightness**
-switch and level, and the **Screensaver motion detection** and
-**Screensaver face detection** switches, and the **Screensaver next
+switch and level, the **Screensaver motion detection** and
+**Screensaver face detection** switches, the **Screensaver proximity
+detection** switch on devices with the sensor, and the **Screensaver next
 slide** and **Screensaver previous slide** buttons that step a showing
 photo mode or Camera Streams rotation, all on the same ESPHome device as the rest of the kiosk's
 entities.

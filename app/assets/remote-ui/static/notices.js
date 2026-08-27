@@ -300,6 +300,46 @@ export function updateFaceRows() {
   }
 }
 
+/* The proximity detection rows, mirroring the device. The switch
+   renders off and disabled with the reason on a device without a
+   proximity sensor; where there is one, a read-only row under the switch
+   names it, because the name is what tells a hover sensor from a phone's
+   call-only palm sensor. The answer is asked once per page load. */
+export async function updateProximityRows() {
+  if (state.proximitySupport === undefined) {
+    try {
+      const res = await (await api('/api/commands/getProximitySupport',
+        { method: 'POST', body: '{}' })).json();
+      state.proximitySupport = res.data && typeof res.data === 'object' ? res.data : null;
+    } catch (_) { state.proximitySupport = null; }
+  }
+  const tab = document.getElementById('tab-screensaver');
+  if (!tab) return;
+  for (const stale of tab.querySelectorAll('.proximity-note')) stale.remove();
+  const row = tab.querySelector('[data-key="screensaver.dismiss_on_proximity"]');
+  if (!row) return;
+  const support = state.proximitySupport;
+  if (support && support.supported === false) {
+    const input = row.querySelector('.switch input');
+    if (input) { input.checked = false; input.disabled = true; }
+    row.insertAdjacentElement('afterend', hintRow(
+      support.hint || 'Not available on this device.',
+      { className: 'proximity-note' }));
+    return;
+  }
+  if (!support || !support.name) return;
+  const sensor = readOnlyRow('Sensor', PROXIMITY_SENSOR_NOTE, support.name);
+  sensor.classList.add('proximity-note');
+  const value = sensor.lastElementChild;
+  value.style.whiteSpace = 'normal';
+  value.style.textAlign = 'right';
+  row.insertAdjacentElement('afterend', sensor);
+}
+
+const PROXIMITY_SENSOR_NOTE =
+  'What the device reports as the proximity sensor. A sensor made for calls '
+  + 'named "palm" or "touch" will not work.';
+
 /* The Dim screensaver warning, mirroring the device: Dim is the one mode
    the pause-dashboard optimization cannot help - there is no overlay, the
    page IS the display. Kept identical to the device's copy in

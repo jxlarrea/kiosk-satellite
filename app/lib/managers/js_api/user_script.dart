@@ -58,6 +58,8 @@ String buildKioskSatelliteScript({required String version, required String os}) 
     bringToFront: function () { return call('bringToFront'); },
 
     getMotionEnabled: function () { return call('getMotionEnabled'); },
+    getFaceEnabled: function () { return call('getFaceEnabled'); },
+    getProximityEnabled: function () { return call('getProximityEnabled'); },
 
     setWakeWordConfig: function (config) { return call('setWakeWordConfig', config); },
     setWakeWordActive: function (active) { return call('setWakeWordActive', { active: !!active }); },

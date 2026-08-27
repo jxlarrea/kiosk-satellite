@@ -121,6 +121,11 @@ class EspEntitySurface {
           'mdi:face-recognition',
           defs.screensaverDismissOnFace,
         ),
+        'screensaver_proximity': (
+          'Screensaver proximity detection',
+          'mdi:radar',
+          defs.screensaverDismissOnProximity,
+        ),
       };
 
   /// Settings-backed selects: objectId -> (name, icon, definition). The
@@ -181,6 +186,11 @@ class EspEntitySurface {
         light.ok && light.data is Map && (light.data as Map)['present'] == true;
     final cam = await commands.execute('hasDeviceCamera', const {});
     final cameraPresent = !(cam.ok && cam.data == false);
+    // The proximity switch is the one pessimistic entity: rare hardware,
+    // so it exists only once the probe has said there is a sensor.
+    final prox = await commands.execute('getProximitySupport', const {});
+    final proximityPresent =
+        prox.ok && prox.data is Map && (prox.data as Map)['supported'] != false;
     // The facing select only exists where there is a choice: single-camera
     // hardware (Echo Show 5) gets none. An empty answer means the probe
     // could not look yet, and optimism matches hasDeviceCamera above.
@@ -443,10 +453,11 @@ class EspEntitySurface {
         'category': 1,
       },
       for (final e in _settingSwitches.entries)
-        if (cameraPresent ||
-            (e.key != 'camera_enabled' &&
-                e.key != 'screensaver_motion' &&
-                e.key != 'screensaver_face'))
+        if ((cameraPresent ||
+                (e.key != 'camera_enabled' &&
+                    e.key != 'screensaver_motion' &&
+                    e.key != 'screensaver_face')) &&
+            (proximityPresent || e.key != 'screensaver_proximity'))
           {
             'type': 'switch',
             'objectId': e.key,

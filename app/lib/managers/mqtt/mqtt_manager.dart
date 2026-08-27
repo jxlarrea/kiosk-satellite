@@ -149,6 +149,11 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   bool get _cameraEntitiesWanted =>
       _settings.get(defs.cameraEnabled) && _cameraPresent;
 
+  /// Whether this device has a proximity sensor (read at connect). Unlike
+  /// the camera, pessimistic: the switch is rare hardware, and it only
+  /// appears once the probe has said there is a sensor.
+  bool _proximityPresent = false;
+
   /// The lens facings the camera hardware offers (read at connect).
   /// Optimistic like [_cameraPresent]: assume both until a probe answers
   /// with a real list, so a probe hiccup (no Activity yet) never retracts
@@ -614,6 +619,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       () => _settings.get(defs.screensaverDismissOnFace),
       (on) => _settings.set(defs.screensaverDismissOnFace, on, source: 'mqtt'),
     ),
+    // Dismiss on proximity, the sensor-based sibling. Only exists on
+    // devices with a proximity sensor (probed at connect).
+    'screensaver_proximity': (
+      () => _settings.get(defs.screensaverDismissOnProximity),
+      (on) =>
+          _settings.set(defs.screensaverDismissOnProximity, on, source: 'mqtt'),
+    ),
   };
 
   static const _switchSettingKeys = [
@@ -628,6 +640,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     'camera.enabled',
     'screensaver.dismiss_on_motion',
     'screensaver.dismiss_on_face',
+    'screensaver.dismiss_on_proximity',
   ];
 
   /// The setting-backed dropdowns: object id → (definition, entity name,
@@ -1084,6 +1097,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // Same rule for the camera: no hardware, no entities.
     final cam = await commands.execute('hasDeviceCamera', const {});
     _cameraPresent = !(cam.ok && cam.data == false);
+    // And the proximity sensor, for its screensaver switch.
+    final prox = await commands.execute('getProximitySupport', const {});
+    _proximityPresent =
+        prox.ok && prox.data is Map && (prox.data as Map)['supported'] != false;
     // And the lens facings, for the facing select: only a real, non-empty
     // answer is adopted — an empty list means the probe could not look
     // (no Activity), not that the hardware has one camera.
@@ -2488,6 +2505,14 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           'mdi:face-recognition',
         ),
       },
+      // The sensor-based sibling follows its own hardware.
+      if (_proximityPresent)
+        '$_prefix/switch/ks_$_deviceId/screensaver_proximity/config':
+            settingSwitch(
+              'screensaver_proximity',
+              'Screensaver proximity detection',
+              'mdi:radar',
+            ),
       for (final entry in _settingSelects.entries)
         if (entry.key != 'camera_device' || _cameraFacingWanted)
           '$_prefix/select/ks_$_deviceId/${entry.key}/config': settingSelect(
@@ -2531,6 +2556,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       _publish('$_prefix/switch/ks_$_deviceId/camera_enabled/config', '');
       _publish('$_prefix/switch/ks_$_deviceId/screensaver_motion/config', '');
       _publish('$_prefix/switch/ks_$_deviceId/screensaver_face/config', '');
+    }
+    // Same for the proximity switch on hardware without the sensor.
+    if (!_proximityPresent) {
+      _publish(
+        '$_prefix/switch/ks_$_deviceId/screensaver_proximity/config',
+        '',
+      );
     }
     // Same self-correction for the facing select on single-camera hardware:
     // a config from an optimistic pass (or a restored backup) is retracted

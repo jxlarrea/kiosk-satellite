@@ -1171,6 +1171,11 @@ class _CategoryContentState extends State<_CategoryContent> {
       widget.container.deviceCamera.visionSupport().then((_) {
         if (mounted) setState(() {});
       });
+      // And the proximity rows read the sensor's answer: the switch is
+      // disabled without one, and the row under it names the one there is.
+      widget.container.proximity.proximitySupport().then((_) {
+        if (mounted) setState(() {});
+      });
     }
     // The proxy page reflects the adapter live: grayed with a notice while
     // Bluetooth is off, back to normal when it returns, no reopen needed.
@@ -2188,6 +2193,22 @@ class _CategoryContentState extends State<_CategoryContent> {
           onChanged: null,
         ),
       ),
+    // No proximity sensor on this device: the switch says so instead of
+    // offering a leg that can never fire.
+    if (widget.category == 'Screensaver' &&
+        container.proximity.proximityKnownUnsupported)
+      screensaverDismissOnProximity.key: SearchLandingTarget(
+        id: screensaverDismissOnProximity.key,
+        child: SwitchListTile(
+          title: Text(screensaverDismissOnProximity.title),
+          subtitle: Text(
+            container.proximity.proximityHint ??
+                'Not available on this device.',
+          ),
+          value: false,
+          onChanged: null,
+        ),
+      ),
     if (widget.category == 'Camera' && container.deviceCamera.cameraKnownAbsent)
       cameraEnabled.key: SearchLandingTarget(
         id: cameraEnabled.key,
@@ -2247,6 +2268,20 @@ class _CategoryContentState extends State<_CategoryContent> {
       screensaverDismissOnFace.key: const WarnRow(_faceMotionNote),
     if (widget.category == 'Screensaver')
       faceSensitivity.key: const HintRow(_faceTuningNote),
+    // The sensor's name under the switch, where there is one: the name is
+    // what tells a hover sensor from a phone's call-only palm sensor.
+    // Mirrored on the remote (notices.js, updateProximityRows).
+    if (widget.category == 'Screensaver' &&
+        !container.proximity.proximityKnownUnsupported &&
+        container.proximity.sensorName != null)
+      screensaverDismissOnProximity.key: SettingsRow(
+        title: const Text('Sensor'),
+        subtitle: const Text(_proximitySensorNote),
+        trailing: Text(
+          container.proximity.sensorName!,
+          textAlign: TextAlign.end,
+        ),
+      ),
     // The screen-off timer fails quietly without device admin;
     // this row is what says so, right where the slider is.
     if (widget.category == 'Screensaver')
@@ -3793,6 +3828,12 @@ const _dimModeNote =
 const _faceMotionNote =
     'Dismiss on motion is on and takes precedence, so face detection stays '
     'idle until it is turned off.';
+
+/// Under the proximity sensor's name row. Shared wording with the remote
+/// admin, which carries its own copy.
+const _proximitySensorNote =
+    'What the device reports as the proximity sensor. A sensor made for '
+    'calls named "palm" or "touch" will not work.';
 
 /// Under the face sensitivity slider: the rest of the tuning is the
 /// motion camera's, shared with it.

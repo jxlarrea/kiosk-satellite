@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- Proximity Detection, a new group on the Screensaver page beside Motion Detection with the same two switches on the device's proximity sensor instead of the camera: Dismiss on proximity wakes the screen when something comes close to the sensor while the screensaver is up, and Postpone screensaver on proximity keeps the screensaver from starting while something stays close. No camera, no permission and no CPU cost, and it works in the dark. The switch is disabled with the reason on devices without a proximity sensor (most kiosk tablets), and where there is one a row under the switch shows the sensor's name, because a phone's call-only "palm proximity" sensor never notices anyone approaching and the name is the only way to tell it from a real hover sensor. Home Assistant gets a Screensaver proximity detection switch over MQTT and ESPHome on devices with the sensor, and pages get `getProximityEnabled()` and the `kiosksatellite:proximity` event.
+
 ### Changed
 - The remote admin's row descriptions sit 3 further under their titles, which read too tight against them.
 - The remote admin's settings pages read at their previous 880 width again, and a radio or checkbox leading a row (the dashboard and view pickers, the app picker) sits 20 from its text instead of 12.

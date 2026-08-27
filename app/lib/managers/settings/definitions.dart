@@ -154,6 +154,8 @@ const Map<String, String> subpageHints = {
   'At a Glance': 'Entities shown over the screensaver',
   'Motion Detection': 'Dismiss or postpone the screensaver on motion',
   'Face Detection': 'Dismiss the screensaver when someone looks at it',
+  'Proximity Detection':
+      'Dismiss or postpone the screensaver on the proximity sensor',
   'Scheduled Screensavers':
       'Switch to a different screensaver at set times of day.',
   // ESPHome.
@@ -2476,6 +2478,50 @@ const faceSensitivity = SettingDef<num>(
   step: 1,
 );
 
+// ── Screensaver: Proximity Detection ───────────────────────────────────
+// Motion Detection's shape on the device's proximity sensor instead of
+// the camera: dismiss while the screensaver shows, postpone between
+// screensavers. No camera, no permission and next to no CPU, but only as
+// good as the sensor. Kiosk-class tablets mostly have none, and modern
+// phones tend to expose a virtual "palm" sensor that only reacts to a
+// hand on the screen during a call and never to someone walking up.
+// The switch is disabled where there is no sensor, and where there is
+// one, a row under it names the sensor so a person can tell which kind
+// they have (ProximityManager answers both).
+
+const screensaverDismissOnProximity = SettingDef<bool>(
+  key: 'screensaver.dismiss_on_proximity',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Dismiss on proximity',
+  description:
+      'Watch the proximity sensor while the screensaver is up and wake the '
+      'screen when something comes close to the device. A device with only '
+      'sensors made for calls ("palm", "touch") will not work.',
+  category: 'Screensaver',
+  section: 'Proximity Detection',
+  subpage: 'Proximity Detection',
+);
+
+// An extension of Dismiss on proximity, like Postpone on motion is of
+// Dismiss on motion: shown and acting only with that switch on, so
+// proximity detection has exactly one master toggle. Cheap where the
+// camera leg is not: the sensor runs between screensavers at no
+// noticeable cost.
+const screensaverPostponeOnProximity = SettingDef<bool>(
+  key: 'screensaver.postpone_on_proximity',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Postpone screensaver on proximity',
+  description:
+      'Delay activating the screensaver while something is close to the '
+      'sensor.',
+  category: 'Screensaver',
+  section: 'Proximity Detection',
+  subpage: 'Proximity Detection',
+  dependsOn: 'screensaver.dismiss_on_proximity',
+);
+
 // ── Camera ─────────────────────────────────────────────────────────────
 // The device's own camera as a Home Assistant feature (discussion #72):
 // snapshots published over MQTT, and the sensor the screensaver's motion
@@ -4670,6 +4716,8 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDismissOnFace,
   screensaverPostponeOnFace,
   faceSensitivity,
+  screensaverDismissOnProximity,
+  screensaverPostponeOnProximity,
   cameraEnabled,
   cameraDevice,
   cameraSnapshotResolution,

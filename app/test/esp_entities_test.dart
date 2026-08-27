@@ -77,6 +77,10 @@ void main() {
       ),
     );
     stub('getLightLevel', {'present': true, 'lux': 42.0});
+    stub('getProximitySupport', {
+      'supported': true,
+      'name': 'STK3310 Proximity',
+    });
     commands.register(
       Command(
         name: 'hasDeviceCamera',
@@ -256,6 +260,7 @@ void main() {
         'camera_enabled',
         'screensaver_motion',
         'screensaver_face',
+        'screensaver_proximity',
         'screensaver_mode',
         'screensaver_clock_style',
         'battery',

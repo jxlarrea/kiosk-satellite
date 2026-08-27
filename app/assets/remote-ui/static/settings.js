@@ -18,6 +18,7 @@ import {
   updateFaceRows,
   updateMotionCameraRows,
   updateNoCameraNotice,
+  updateProximityRows,
   updateScreenOffAdminNotice,
 } from './notices.js';
 import {
@@ -1020,6 +1021,7 @@ export async function loadSettings() {
   updateCameraSnapshotPanel();
   updateMotionCameraRows();
   updateFaceRows();
+  updateProximityRows();
   updateDimModeNotice();
   updateScreenOffAdminNotice();
   updateAutoReloadOverlayNotice();

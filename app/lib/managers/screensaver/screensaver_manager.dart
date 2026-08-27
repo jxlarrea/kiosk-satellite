@@ -370,6 +370,31 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       }
       notifyActivity('face');
     });
+    bus.on<ProximityDetected>().listen((_) {
+      // Same lockdown rule as motion.
+      if (_settings.get(defs.lockdownEnabled)) return;
+      if (!_active) {
+        // Between screensavers, proximity can only postpone the next one,
+        // under Postpone on motion's rules: the postpone switch extends
+        // Dismiss on proximity and never acts on its own.
+        if (_settings.get(defs.screensaverPostponeOnProximity) &&
+            _settings.get(defs.screensaverDismissOnProximity)) {
+          _resetIdleTimer();
+        }
+        return;
+      }
+      if (!_settings.get(defs.screensaverDismissOnProximity)) return;
+      // Now Playing keeps its own policy; something coming close counts
+      // like motion there.
+      final showingNowPlaying =
+          activeView.value != null &&
+          _sendspinNowPlaying &&
+          _settings.get(defs.sendspinFullscreen);
+      if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
+        return;
+      }
+      notifyActivity('proximity');
+    });
     bus.on<SettingChanged>().listen((e) {
       if (e.key.startsWith('screensaver.')) _resetIdleTimer();
       // An old backup import re-arms the legacy small clock switch; its

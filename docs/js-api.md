@@ -63,9 +63,12 @@ defensive style of Voice Satellite's kiosk wrapper.
 |---|---|---|
 | `getMotionEnabled()` | `boolean` | Whether camera motion detection is on |
 | `getFaceEnabled()` | `boolean` | Whether camera face detection is on (false while Dismiss on motion takes precedence) |
+| `getProximityEnabled()` | `boolean` | Whether proximity sensor detection is on (false on devices without the sensor) |
 
-Motion is reported via the `kiosksatellite:motion` event (below). Enabling or
-configuring detection is an app/remote-admin setting, not a page decision.
+Motion is reported via the `kiosksatellite:motion` event (below), faces via
+`kiosksatellite:face` and the proximity sensor via `kiosksatellite:proximity`.
+Enabling or configuring detection is an app/remote-admin setting, not a page
+decision.
 
 ### Wake word
 
@@ -175,6 +178,7 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:wakeword` | `{model, phrase}` | Native engine detected the wake word. Native mic capture is **already stopped** when this fires, so the page may open `getUserMedia` immediately. |
 | `kiosksatellite:motion` | `{}` | Camera motion detected (rate-limited to 1/s) |
 | `kiosksatellite:face` | `{}` | Someone is looking at the kiosk: a camera-facing face at least as large as the Face sensitivity asks for, while Dismiss on face has the camera watching (rate-limited to 1/s) |
+| `kiosksatellite:proximity` | `{}` | Something came close to the proximity sensor while Dismiss on proximity had it watching; repeats every 5 s while it stays close |
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | Screen power changed |
 | `kiosksatellite:screensaverstart` / `:screensaverstop` | `{}` | Screensaver state changed |
 | `kiosksatellite:sound-started` | `{id}` | A `playSound` sound actually began playing (audio is leaving the speaker). Time stop-word arming and speaking UI off this, not off the `playSound` resolve. |

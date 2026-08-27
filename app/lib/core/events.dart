@@ -275,6 +275,18 @@ class FaceDetected extends AppEvent {
   String get wireName => 'face';
 }
 
+/// Something came close to the panel: the device's proximity sensor
+/// flipped from far to near while the screensaver's "Dismiss on
+/// proximity" had it watching (or its postpone leg did, between
+/// screensavers). Republished every few seconds while it stays near, so
+/// the postpone leg keeps holding the screensaver off.
+class ProximityDetected extends AppEvent {
+  const ProximityDetected();
+
+  @override
+  String get wireName => 'proximity';
+}
+
 /// A hand in front of the camera (the Show fingers gesture): the motion
 /// camera's palm detector proposed it and the hand landmark model
 /// confirmed it and counted [fingers] extended fingers on the largest
