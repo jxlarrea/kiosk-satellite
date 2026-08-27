@@ -332,8 +332,12 @@
   /* The pill never wraps and its segments never shrink: when it does not
      fit, it scrolls sideways under the 28 edge fade (edge-fade-x). Four
      or more choices are a dropdown, not a pill. */
-  .seg-scroll { flex: 0 1 auto; max-width: 100%; overflow-x: auto;
-    scrollbar-width: none; padding: 3px 0; margin: -3px 0; }
+  .seg-scroll { flex: 0 1 auto; min-width: 0; max-width: 100%;
+    overflow-x: auto; scrollbar-width: none; padding: 3px 0; margin: -3px 0; }
+  /* The pill's own toolbar never wraps or spills: the wrapper shrinks
+     (min-width 0, a flex item otherwise holds its content's width) and
+     the pill scrolls inside it. */
+  .toolbar:has(> .seg-scroll) { min-width: 0; max-width: 100%; }
   .seg-scroll::-webkit-scrollbar { display: none; }
   .seg button:hover:not(.active):not(:disabled) { color: var(--text); }
   .seg button.active { background: var(--primary-soft);
