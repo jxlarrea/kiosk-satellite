@@ -10,14 +10,14 @@ class CommandResult {
   final String? error;
 
   Map<String, Object?> toJson() => {
-        'ok': ok,
-        if (data != null) 'data': data,
-        if (error != null) 'error': error,
-      };
+    'ok': ok,
+    if (data != null) 'data': data,
+    if (error != null) 'error': error,
+  };
 }
 
-typedef CommandHandler = Future<CommandResult> Function(
-    Map<String, Object?> params);
+typedef CommandHandler =
+    Future<CommandResult> Function(Map<String, Object?> params);
 
 /// A named, remotely-invocable capability.
 class Command {
@@ -50,26 +50,49 @@ class Command {
 /// the remote REST/WS API, and (later) MQTT command topics are thin protocol
 /// adapters over this registry.
 class CommandRegistry {
-  CommandRegistry(this._log);
+  CommandRegistry(this._log) : _commands = {}, source = null;
+
+  CommandRegistry._as(this._log, this._commands, this.source);
 
   final Logger _log;
-  final _commands = <String, Command>{};
+  final Map<String, Command> _commands;
+
+  /// Who a command executed through this handle is logged as coming from:
+  /// the manager it runs in, the device UI, or null for the root registry.
+  final String? source;
+
+  /// The same registry (one command table, shared) seen through a handle
+  /// that logs every execute with `[source]` at its end. Every manager holds one
+  /// under its own name, so the log says whether a command came from the
+  /// remote admin page, an ESPHome entity, MQTT, the page's JS API or the
+  /// device's own UI, which is the whole question when a setting keeps
+  /// flipping and nobody on the device touched it.
+  CommandRegistry as(String source) =>
+      CommandRegistry._as(_log, _commands, source);
 
   void register(Command command) {
-    assert(!_commands.containsKey(command.name),
-        'duplicate command ${command.name}');
+    assert(
+      !_commands.containsKey(command.name),
+      'duplicate command ${command.name}',
+    );
     _commands[command.name] = command;
   }
 
   List<Command> get all => _commands.values.toList(growable: false);
 
   Future<CommandResult> execute(
-      String name, Map<String, Object?> params) async {
+    String name,
+    Map<String, Object?> params,
+  ) async {
     final command = _commands[name];
     if (command == null) return CommandResult.fail('unknown command: $name');
     try {
       if (!command.quiet) {
-        _log.info('command', '$name ${params.isEmpty ? '' : params}');
+        _log.info(
+          'command',
+          '$name${params.isEmpty ? '' : ' $params'}'
+              '${source == null ? '' : ' [$source]'}',
+        );
       }
       return await command.handler(params);
     } catch (e) {

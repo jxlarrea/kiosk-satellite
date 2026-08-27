@@ -65,7 +65,7 @@ void main() {
     final lines = log.recent.map((e) => e.message).toList();
     // The device's own writes stay as they were.
     expect(lines, contains('set web.camera = false'));
-    expect(lines, contains('set web.camera = true via remote admin'));
+    expect(lines, contains('set web.camera = true [remote admin]'));
   });
 
   group('ha.url normalization', () {

@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- Every `command:` line in the log now ends in its caller, in brackets: `[remote admin]`, `[esphome]` (the kiosk's ESPHome entities in Home Assistant), `[mqtt]`, `[js_api]` (the page, Voice Satellite included), `[ui]` (the device's own screens), or the manager that ran it on its own (`[screensaver]`, `[camera]`, `[browser]`). A command that was only ever guessed at from the lines around it, a screen read every few seconds or a screenshot nobody asked for, now says whether the remote admin page, an automation or the app itself made it.
+
+### Changed
+- The settings line names its caller in brackets the same way, `set screensaver.enabled = false [esphome]`, in place of the `via esphome` form of the last release, and the remote admin page is `[remote admin]` on both lines.
+
 ## v2026.8.85 - 2026-08-27
 
 ### Added

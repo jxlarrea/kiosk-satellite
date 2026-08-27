@@ -32,6 +32,9 @@ class RemoteManager extends Manager {
   @override
   String get name => 'remote';
 
+  @override
+  String get commandSource => 'remote admin';
+
   HttpServer? _server;
 
   /// Why the server is not listening, or null when it is (or when it is off

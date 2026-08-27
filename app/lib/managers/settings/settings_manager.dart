@@ -296,7 +296,7 @@ class SettingsManager extends Manager {
     log.info(
       name,
       'set ${def.key}${def.secret ? '' : ' = $value'}'
-      '${source == null ? '' : ' via $source'}',
+      '${source == null ? '' : ' [$source]'}',
     );
     bus.publish(SettingChanged(key: def.key, value: value, previous: previous));
   }

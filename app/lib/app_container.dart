@@ -101,7 +101,9 @@ class AppContainer {
 
   final bus = EventBus();
   final log = Logger();
-  late final commands = CommandRegistry(log);
+  // The device's own UI executes through this handle; every manager
+  // re-scopes it under its own name.
+  late final commands = CommandRegistry(log).as('ui');
 
   late final SettingsManager settings;
   late final DeviceManager device;

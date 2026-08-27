@@ -27,11 +27,13 @@ void main() {
   group('CommandRegistry', () {
     test('executes registered commands and fails unknown ones', () async {
       final registry = CommandRegistry(Logger());
-      registry.register(Command(
-        name: 'echo',
-        description: 'returns its input',
-        handler: (p) async => CommandResult.ok(p['value']),
-      ));
+      registry.register(
+        Command(
+          name: 'echo',
+          description: 'returns its input',
+          handler: (p) async => CommandResult.ok(p['value']),
+        ),
+      );
 
       final ok = await registry.execute('echo', {'value': 42});
       expect(ok.ok, isTrue);
@@ -42,13 +44,37 @@ void main() {
       expect(unknown.error, contains('unknown command'));
     });
 
+    test('a scoped handle names its source in the log', () async {
+      final log = Logger();
+      final registry = CommandRegistry(log);
+      registry.register(
+        Command(
+          name: 'ping',
+          description: '',
+          handler: (_) async => const CommandResult.ok(),
+        ),
+      );
+      // One command table: what is registered on the root runs through
+      // every handle, and vice versa.
+      final mqtt = registry.as('mqtt');
+      expect((await mqtt.execute('ping', const {})).ok, isTrue);
+      expect((await registry.execute('ping', {'n': 1})).ok, isTrue);
+      final lines = log.recent
+          .where((e) => e.tag == 'command')
+          .map((e) => e.message)
+          .toList();
+      expect(lines, ['ping [mqtt]', 'ping {n: 1}']);
+    });
+
     test('converts thrown errors into failed results', () async {
       final registry = CommandRegistry(Logger());
-      registry.register(Command(
-        name: 'boom',
-        description: 'always throws',
-        handler: (_) async => throw StateError('bang'),
-      ));
+      registry.register(
+        Command(
+          name: 'boom',
+          description: 'always throws',
+          handler: (_) async => throw StateError('bang'),
+        ),
+      );
       final result = await registry.execute('boom', const {});
       expect(result.ok, isFalse);
       expect(result.error, contains('bang'));

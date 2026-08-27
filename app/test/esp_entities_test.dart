@@ -399,7 +399,7 @@ void main() {
     expect(lines, contains('esphome: command screensaver = false'));
     expect(
       lines,
-      contains('settings: set screensaver.enabled = false via esphome'),
+      contains('settings: set screensaver.enabled = false [esphome]'),
     );
   });
 
