@@ -223,9 +223,17 @@ class FaceDetector(private val context: Context) {
             interpreter = engine
             Log.i(TAG, "face model loaded")
             engine
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            // Throwable, not Exception: the runtime's native library
+            // failing to link is an UnsatisfiedLinkError, an Error, and
+            // this runs on the camera analyzer's thread, where anything
+            // uncaught takes the whole process down. That was issue #331:
+            // LiteRT imports strtod_l, which bionic only grew at API 26,
+            // so on Android 7 the first face run killed the kiosk.
+            // [VisionRuntime] keeps the feature off on such devices before
+            // it gets here; this is the net under it.
             failed = true
-            Log.w(TAG, "face model unavailable: ${e.message}")
+            Log.e(TAG, "face model unavailable: $e")
             null
         }
     }

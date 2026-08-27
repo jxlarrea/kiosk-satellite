@@ -8,6 +8,13 @@ import { readOnlyRow } from './device.js';
 
    camera panels, which read state.cameraPresent to stand down. */
 export async function updateNoCameraNotice() {
+  // The vision runtimes' answer rides the same probe pass (issue #331:
+  // Android 7 cannot load them): the face rows, the schedule editor and
+  // the Show fingers trigger read state.visionSupport to stand down.
+  try {
+    const res = await (await api('/api/commands/getVisionSupport', { method: 'POST', body: '{}' })).json();
+    state.visionSupport = res.data && typeof res.data === 'object' ? res.data : null;
+  } catch (_) { state.visionSupport = null; }
   try {
     const res = await (await api('/api/commands/hasDeviceCamera', { method: 'POST', body: '{}' })).json();
     state.cameraPresent = res.data !== false;
@@ -283,6 +290,13 @@ export function updateFaceRows() {
     if (input) { input.checked = false; input.disabled = true; }
     face.insertAdjacentElement('afterend',
       note('Requires the camera. Turn it on in the Camera settings first.'));
+    return;
+  }
+  if (state.visionSupport && state.visionSupport.faces === false) {
+    const input = face.querySelector('.switch input');
+    if (input) { input.checked = false; input.disabled = true; }
+    face.insertAdjacentElement('afterend',
+      note(state.visionSupport.hint || 'Not available on this device.'));
     return;
   }
   if (byKey['screensaver.dismiss_on_motion']?.value === true) {

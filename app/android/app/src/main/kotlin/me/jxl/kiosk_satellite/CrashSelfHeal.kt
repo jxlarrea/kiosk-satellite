@@ -87,7 +87,11 @@ object CrashSelfHeal {
      *    enough to crash at startup cannot relaunch-loop forever.
      */
     fun maybeRelaunch(context: Context) {
-        if (ActivityState.resumed) return
+        // Paused is not gone: with the was_foreground flag surviving a
+        // screen-off (MainActivity.onPause), the heartbeat now beats over
+        // a dark panel whose Activity is alive and merely paused, and
+        // must not start it again.
+        if (ActivityState.resumed || ActivityState.attached) return
         val prefs = context.getSharedPreferences(
             "FlutterSharedPreferences", Context.MODE_PRIVATE)
         if (!prefs.getBoolean("flutter.ks.browser.auto_reload_on_error", true)) return

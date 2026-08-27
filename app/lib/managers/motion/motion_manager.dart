@@ -11,6 +11,7 @@ import '../gestures/gesture_mappings.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'native_motion.dart';
+import 'vision_support.dart';
 
 /// Camera-based motion detection.
 ///
@@ -135,6 +136,7 @@ class MotionManager extends Manager {
   /// effectively on, the face leg is idle, which the settings pages say
   /// under the switch.
   bool get faceEnabled =>
+      _vision.faces &&
       !enabled &&
       (_faceSchedulePolicy ?? _settings.get(defs.screensaverDismissOnFace)) &&
       _settings.get(defs.cameraEnabled);
@@ -145,6 +147,7 @@ class MotionManager extends Manager {
   /// schedule overrides, and the same precedence: Dismiss on motion on
   /// means the face legs are idle, this one included.
   bool get _postponeFaceEnabled =>
+      _vision.faces &&
       _settings.get(defs.screensaverPostponeOnFace) &&
       _settings.get(defs.screensaverDismissOnFace) &&
       !_settings.get(defs.screensaverDismissOnMotion) &&
@@ -156,6 +159,7 @@ class MotionManager extends Manager {
   /// Disable Gestures). Screen-on is applied where the leg is consulted,
   /// like the postpone legs: nobody raises a hand at a dark panel.
   bool get palmEnabled =>
+      _vision.hands &&
       hasFingersTrigger(
         decodeGestureMappings(_settings.get(defs.gestureMappings)),
       ) &&
@@ -227,8 +231,69 @@ class MotionManager extends Manager {
   /// The same for the face override (issue #304).
   bool? _faceSchedulePolicy;
 
+  /// Whether the face and hand runtimes can load here at all (issue
+  /// #331: not on Android 7). Unknown reads as supported; the answer
+  /// folds into [faceEnabled], [_postponeFaceEnabled] and [palmEnabled],
+  /// so a device without a runtime never binds the camera for a leg
+  /// that cannot see, and never prompts for the camera over it either.
+  VisionSupport _vision = VisionSupport.unknown;
+  bool _warnedFaces = false;
+  bool _warnedHands = false;
+
+  /// One log line per leg, the first time a setting asks for a leg the
+  /// device cannot run: the switch is disabled on both settings
+  /// surfaces, but a value written from Home Assistant or an import
+  /// lands here with no UI to say so.
+  void _warnUnsupported() {
+    final hint = (_vision.hint ?? 'not available on this device').replaceFirst(
+      RegExp(r'\.$'),
+      '',
+    );
+    final reason = hint.isEmpty
+        ? hint
+        : hint[0].toLowerCase() + hint.substring(1);
+    final cameraOn = _settings.get(defs.cameraEnabled);
+    if (!_vision.faces &&
+        !_warnedFaces &&
+        cameraOn &&
+        _settings.get(defs.screensaverDismissOnFace)) {
+      _warnedFaces = true;
+      log.warn(
+        name,
+        'face detection is unavailable on this device ($reason); '
+        'Dismiss on face stays idle',
+      );
+    }
+    if (!_vision.hands &&
+        !_warnedHands &&
+        cameraOn &&
+        hasFingersTrigger(
+          decodeGestureMappings(_settings.get(defs.gestureMappings)),
+        )) {
+      _warnedHands = true;
+      log.warn(
+        name,
+        'hand detection is unavailable on this device ($reason); '
+        'Show fingers gestures stay idle',
+      );
+    }
+  }
+
   @override
   Future<void> init() async {
+    // Asked once, at init: the bridge answers within the same tick, long
+    // before the first bind. A bind that raced it restarts with fresh
+    // flags below; the native detectors survive the runtime failing to
+    // load in that window (FaceDetector.kt), so the race is a log line,
+    // not a crash.
+    unawaited(
+      VisionSupport.probe().then((v) {
+        final changed = v.faces != _vision.faces || v.hands != _vision.hands;
+        _vision = v;
+        _warnUnsupported();
+        if (changed) _sync();
+      }),
+    );
     // Every branch below is the app relighting the room with its own
     // display: the change the camera is about to see is self-inflicted
     // (see _selfLightQuiet), the loop being a screensaver whose own dark
@@ -399,6 +464,7 @@ class MotionManager extends Manager {
           : (_postponeEnabled || _postponeFaceEnabled) && _screenOn);
 
   void _sync() {
+    _warnUnsupported();
     if (!_shouldRun) {
       _stop();
       return;

@@ -108,6 +108,19 @@ flutter {
     source = "../.."
 }
 
+// See the LiteRT note in dependencies: tflite_flutter pins 1.4.0, the one
+// release whose native library cannot load on Android 7.
+val litertVersion = "1.4.2"
+
+configurations.all {
+    resolutionStrategy {
+        force(
+            "com.google.ai.edge.litert:litert:$litertVersion",
+            "com.google.ai.edge.litert:litert-gpu:$litertVersion",
+        )
+    }
+}
+
 dependencies {
     // CameraX for low-cost motion detection (YUV luminance analysis only).
     // Ceiling: 1.5.x is the last line whose Camera2Config is the legacy
@@ -122,17 +135,27 @@ dependencies {
     implementation("androidx.camera:camera-camera2:$cameraxVersion")
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
 
-    // LiteRT for the screensaver's face detection (FaceDetector.kt). The
-    // runtime is already in the APK through tflite_flutter (0.12.1 pins
-    // this exact version), but that plugin declares it as an implementation
-    // dependency, so the app's own Kotlin cannot see it without naming it
-    // here. Keep the version in lockstep with the plugin's, or the build
-    // ships two copies.
-    implementation("com.google.ai.edge.litert:litert:1.4.0")
+    // LiteRT for the screensaver's face detection (FaceDetector.kt) and,
+    // through tflite_flutter, the wake word engine. The plugin (0.12.1)
+    // pins 1.4.0 as an implementation dependency, so the app's own Kotlin
+    // cannot see it without naming it here, and the force below keeps the
+    // build on one copy.
+    //
+    // The version is constrained by Android 7 (issue #331): the native
+    // library of 1.4.0 alone imports strtod_l, a libc call bionic only
+    // grew at API 26, so on API 24/25 it cannot be loaded at all (1.3.0,
+    // 1.4.1 and 1.4.2 are clean). Before bumping, check the new AAR:
+    //   readelf --dyn-syms -W jni/arm64-v8a/libtensorflowlite_jni.so \
+    //     | grep strtod_l
+    // must print nothing, on every ABI. VisionRuntime.kt probes the load
+    // on Android 7 and both settings surfaces say so when it fails.
+    implementation("com.google.ai.edge.litert:litert:$litertVersion")
     // MediaPipe Tasks: the hand landmarker (palm detection, tracking,
     // smoothing and the full landmark model in one graph) behind the Show
-    // fingers gesture.
-    implementation("com.google.mediapipe:tasks-vision:0.10.29")
+    // fingers gesture. Same constraint as LiteRT above: 0.10.28 and later
+    // import strtod_l (libmediapipe_tasks_vision_jni.so) and fail to load
+    // on Android 7; 0.10.26.1 is the newest clean release.
+    implementation("com.google.mediapipe:tasks-vision:0.10.26.1")
 
     // Media3 ExoPlayer for streamed Voice Satellite sounds (TTS): its whole
     // pipeline runs in-process, so the output is an app-owned AudioTrack

@@ -1152,6 +1152,13 @@ class _CategoryContentState extends State<_CategoryContent> {
         if (mounted) setState(() {});
       });
     }
+    // The face rows read the vision runtime's answer the same way
+    // (issue #331: Android 7 cannot load it).
+    if (widget.category == 'Screensaver') {
+      widget.container.deviceCamera.visionSupport().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
     // The proxy page reflects the adapter live: grayed with a notice while
     // Bluetooth is off, back to normal when it returns, no reopen needed.
     if (widget.category == 'ESPHome') {
@@ -2122,6 +2129,23 @@ class _CategoryContentState extends State<_CategoryContent> {
           subtitle: Text(
             'Requires the camera. Turn it on in the Camera '
             'settings first.',
+          ),
+          value: false,
+          onChanged: null,
+        ),
+      ),
+    // The face runtime cannot load on this Android version (issue #331):
+    // the switch says so instead of offering a leg that never sees.
+    if (widget.category == 'Screensaver' &&
+        container.deviceCamera.effectiveEnabled &&
+        container.deviceCamera.facesKnownUnsupported)
+      screensaverDismissOnFace.key: SearchLandingTarget(
+        id: screensaverDismissOnFace.key,
+        child: SwitchListTile(
+          title: const Text('Dismiss on face'),
+          subtitle: Text(
+            container.deviceCamera.visionHint ??
+                'Not available on this device.',
           ),
           value: false,
           onChanged: null,

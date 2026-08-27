@@ -229,8 +229,18 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                         initialValue: type,
                         decoration: const InputDecoration(labelText: 'Gesture'),
                         items: [
+                          // Show fingers needs a hand runtime this
+                          // Android version cannot load (issue #331):
+                          // not offered, though an existing mapping
+                          // still opens for editing.
                           for (final (value, label) in _triggerTypes)
-                            DropdownMenuItem(value: value, child: Text(label)),
+                            if (value != 'fingers' ||
+                                type == 'fingers' ||
+                                !c.deviceCamera.handsKnownUnsupported)
+                              DropdownMenuItem(
+                                value: value,
+                                child: Text(label),
+                              ),
                         ],
                         onChanged: (value) =>
                             setDialogState(() => type = value ?? type),
@@ -350,7 +360,11 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                         ),
                       if (type == 'fingers')
                         Text(
-                          'Requires the camera enabled and a well lit environment.',
+                          c.deviceCamera.handsKnownUnsupported
+                              ? (c.deviceCamera.visionHint ??
+                                    'Not available on this device.')
+                              : 'Requires the camera enabled and a well '
+                                    'lit environment.',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       if (type == 'claps') ...[

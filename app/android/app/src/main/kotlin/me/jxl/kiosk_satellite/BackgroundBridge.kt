@@ -311,6 +311,9 @@ class BackgroundBridge(
                     result.success(null)
                 }
                 "canBringToFront" -> result.success(canDrawOverlays())
+                // Whether the on-device vision runtimes (face detection,
+                // hand gestures) can load here at all (issue #331).
+                "visionSupport" -> result.success(VisionRuntime.describe())
                 // The App Launcher's idle clock (issue #317): while armed,
                 // every touch in the other app comes back as "touchSeen",
                 // throttled to one a second, so the return timer can

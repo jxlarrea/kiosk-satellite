@@ -400,10 +400,15 @@ export function settingRow(s) {
       // Motion keeps precedence inside an entry too: On here with motion
       // On above still wakes on motion.
       const face = overrideField('Dismiss on face', start.face);
-      face.select.disabled = !camOn;
+      const faceOk = camOn
+        && !(state.visionSupport && state.visionSupport.faces === false);
+      face.select.disabled = !faceOk;
       if (!camOn) {
         face.select.title =
           'Requires the camera. Turn it on in the Camera settings first.';
+      } else if (!faceOk) {
+        face.select.title =
+          state.visionSupport.hint || 'Not available on this device.';
       }
       const widgets = overrideField('Widgets', start.widgets);
       const glance = overrideField('At a glance', start.glance);

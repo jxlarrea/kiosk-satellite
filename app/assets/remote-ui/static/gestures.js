@@ -473,8 +473,13 @@ export async function editGesture(existing) {
   const sequence = Array.isArray(t.sequence) ? t.sequence.map(String) : [];
 
   const body = document.createElement('div');
+  // Show fingers needs a hand runtime this Android version cannot load
+  // (issue #331): not offered, though an existing mapping still opens.
+  const handsOk = !(state.visionSupport && state.visionSupport.hands === false);
   const typeSel = cameraSelectField('Gesture',
-    GESTURE_TRIGGERS.map(([value, label]) => ({ value, label })),
+    GESTURE_TRIGGERS
+      .filter(([value]) => handsOk || value !== 'fingers' || t.type === 'fingers')
+      .map(([value, label]) => ({ value, label })),
     t.type || 'corner_taps');
   const cornerSel = cameraSelectField('Corner',
     Object.entries(GESTURE_CORNERS).map(([value, label]) => ({
@@ -505,8 +510,9 @@ export async function editGesture(existing) {
     String(Math.min(Math.max(Number(t.fingers) || 5, 1), 5)));
   const palmNote = document.createElement('span');
   palmNote.className = 'desc';
-  palmNote.textContent =
-    'Requires the camera enabled and a well lit environment.';
+  palmNote.textContent = handsOk
+    ? 'Requires the camera enabled and a well lit environment.'
+    : (state.visionSupport.hint || 'Not available on this device.');
 
   const holdWrap = document.createElement('label');
   holdWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.view.KeyEvent
 import android.view.MotionEvent
 import io.flutter.embedding.android.FlutterActivity
@@ -88,7 +89,15 @@ class MainActivity : FlutterActivity() {
     override fun onPause() {
         super.onPause()
         ActivityState.resumed = false
-        setWasForeground(false)
+        // The panel going dark pauses the Activity too, and that is not
+        // the user leaving: the kiosk is still what is on screen, just a
+        // screen that is off. A crash while it is off (issue #331: a
+        // camera feature kept running through it) must bring the kiosk
+        // back like any other, or the next screen-on finds the launcher
+        // while the service keeps the device "online" in Home Assistant.
+        // A Home press or an app switch happens on a lit screen.
+        val power = getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (power.isInteractive) setWasForeground(false)
     }
 
     private fun setWasForeground(value: Boolean) {

@@ -8,6 +8,7 @@ import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../core/permissions.dart';
 import '../settings/definitions.dart' as defs;
+import '../motion/vision_support.dart';
 import '../settings/settings_manager.dart';
 import 'native_camera.dart';
 
@@ -84,6 +85,22 @@ class DeviceCameraManager extends Manager {
   /// counts as off everywhere.
   bool get effectiveEnabled => enabled && _present != false;
 
+  /// Whether the vision runtimes behind face detection and the Show
+  /// fingers gesture can load on this device (issue #331: not on Android
+  /// 7). Null until the bridge has answered; the sync getters below are
+  /// for UI code and read false until then, so a row is never disabled
+  /// on a guess.
+  VisionSupport? _vision;
+
+  Future<VisionSupport> visionSupport() async =>
+      _vision ??= await VisionSupport.probe();
+
+  bool get facesKnownUnsupported => _vision?.faces == false;
+  bool get handsKnownUnsupported => _vision?.hands == false;
+
+  /// The reason to show under a disabled face or hand row.
+  String? get visionHint => _vision?.hint;
+
   @override
   Future<void> init() async {
     await _migrateLegacyMotionCamera();
@@ -93,6 +110,7 @@ class DeviceCameraManager extends Manager {
     // probe simply resolves later, on the first ask that finds one.
     unawaited(cameraPresent());
     unawaited(cameraFacings());
+    unawaited(visionSupport());
 
     bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('camera.')) return;
@@ -148,6 +166,18 @@ class DeviceCameraManager extends Manager {
             'single-camera hardware. The remote admin hides the '
             'front/back picker when there is no choice to make.',
         handler: (_) async => CommandResult.ok(await cameraFacings()),
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'getVisionSupport',
+        description:
+            'Whether face detection and hand gestures can run on this '
+            'device ({faces, hands, hint}); the remote admin disables '
+            'their rows with the hint where they cannot.',
+        handler: (_) async =>
+            CommandResult.ok((await visionSupport()).toJson()),
       ),
     );
 
