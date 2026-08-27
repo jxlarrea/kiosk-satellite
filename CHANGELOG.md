@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- Kiosk Satellite has a new icon: a white house holding four colored sound bars on the teal gradient, the same mark on the launcher (including the adaptive and themed monochrome variants), in the drawer and setup screen, and in the remote admin's header and browser tab.
+
 ## v2026.8.89 - 2026-08-27
 
 ### Changed

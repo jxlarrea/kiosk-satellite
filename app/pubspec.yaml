@@ -74,12 +74,15 @@ dev_dependencies:
 # layers are the designed ones, not derived — Android composes them.
 flutter_launcher_icons:
   android: true
-  image_path_android: ../assets/icons/rounded/icon_1024.png
-  adaptive_icon_background: ../assets/icons/google/adaptive/ic_launcher_background.png
-  adaptive_icon_foreground: ../assets/icons/google/adaptive/ic_launcher_foreground_scaled.png
-  adaptive_icon_monochrome: ../assets/icons/google/adaptive/ic_launcher_monochrome_scaled.png
+  image_path_android: ../assets/icons/png-rounded/icon-1024.png
+  adaptive_icon_background: ../assets/icons/adaptive/ic_launcher_background.png
+  adaptive_icon_foreground: ../assets/icons/adaptive/ic_launcher_foreground.png
+  adaptive_icon_monochrome: ../assets/icons/adaptive/ic_launcher_monochrome.png
+  # The adaptive layers ship on the 108dp canvas. A 12% inset keeps the
+  # house clear of the launcher mask; at 0% it runs to the edge of a circle.
+  adaptive_icon_foreground_inset: 12
   ios: true
-  image_path_ios: ../assets/icons/apple/appstore_1024.png
+  image_path_ios: ../assets/icons/png-square/icon-1024.png
   remove_alpha_ios: true
 
 flutter:
