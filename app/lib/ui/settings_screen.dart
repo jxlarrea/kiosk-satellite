@@ -406,9 +406,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             horizontal: 18,
             vertical: 12,
           ),
+          // The pill, on every state: the theme's enabled and focused
+          // borders (the 12 control radius with a hairline) would win over
+          // a lone `border`, which is what squared the field off. No ring
+          // at rest, the primary ring on focus, the remote's search pill.
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(100),
             borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(100),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(100),
+            borderSide: BorderSide(color: scheme.primary),
           ),
         ),
       ),
