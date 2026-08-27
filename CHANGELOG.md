@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.85 - 2026-08-27
 
 ### Added
 - The log names who changed a setting when it was not the device itself: a line such as `set screensaver.enabled = false via esphome` says the write came from the kiosk's ESPHome entity in Home Assistant, and likewise `via mqtt`, `via remote admin` and `via import`, so a setting that keeps flipping during a voice interaction can be traced to the automation behind it rather than guessed from the lines around it. An entity command arriving over ESPHome is logged as such too (`command screensaver = false`), the way MQTT commands always were.
