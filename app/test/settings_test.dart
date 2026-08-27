@@ -10,11 +10,12 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late SettingsManager settings;
+  late Logger log;
 
   Future<void> build(Map<String, Object> initial) async {
     SharedPreferences.setMockInitialValues(initial);
     final bus = EventBus();
-    final log = Logger();
+    log = Logger();
     settings = SettingsManager(bus, CommandRegistry(log), log);
     await settings.init();
   }
@@ -51,6 +52,20 @@ void main() {
     final reopened = SettingsManager(bus, CommandRegistry(log), log);
     await reopened.init();
     expect(reopened.get(defs.webCamera), isTrue);
+  });
+
+  test('the set log line names the caller when one is given', () async {
+    await build({});
+    await settings.set(defs.webCamera, false);
+    await settings.setFromJson(
+      defs.webCamera.key,
+      true,
+      source: 'remote admin',
+    );
+    final lines = log.recent.map((e) => e.message).toList();
+    // The device's own writes stay as they were.
+    expect(lines, contains('set web.camera = false'));
+    expect(lines, contains('set web.camera = true via remote admin'));
   });
 
   group('ha.url normalization', () {

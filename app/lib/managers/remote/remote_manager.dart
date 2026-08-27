@@ -566,7 +566,11 @@ class RemoteManager extends Manager {
     // silently keeping the old one.
     final errors = <String, String>{};
     for (final entry in body.entries) {
-      if (!await _settings.setFromJson(entry.key, entry.value)) {
+      if (!await _settings.setFromJson(
+        entry.key,
+        entry.value,
+        source: 'remote admin',
+      )) {
         rejected.add(entry.key);
         final message = _settings
             .defByKey(entry.key)

@@ -880,9 +880,13 @@ class EspEntitySurface {
   /// echoes ride the ordinary change events the acted-on managers publish,
   /// so HA sees the real outcome, not an optimistic assumption.
   Future<void> handleCommand(String objectId, Object? value) async {
+    // Mirrors the MQTT command line, so a setting flipped from Home
+    // Assistant reads as such in the log instead of looking like the app's
+    // own doing.
+    log.info('esphome', 'command $objectId = $value');
     final settingSwitch = _settingSwitches[objectId];
     if (settingSwitch != null) {
-      await _settings.set(settingSwitch.$3, value == true);
+      await _settings.set(settingSwitch.$3, value == true, source: 'esphome');
       return;
     }
     final settingSelect = _settingSelects[objectId];
@@ -898,7 +902,7 @@ class EspEntitySurface {
           break;
         }
       }
-      if (stored != null) await _settings.set(def, stored);
+      if (stored != null) await _settings.set(def, stored, source: 'esphome');
       return;
     }
     final settingNumber = _settingNumbers[objectId];
@@ -907,6 +911,7 @@ class EspEntitySurface {
       await _settings.set(
         settingNumber.$3,
         settingNumber.$4 ? percent / 100.0 : percent,
+        source: 'esphome',
       );
       return;
     }
@@ -998,7 +1003,11 @@ class EspEntitySurface {
           await commands.execute('installUpdate', const {});
         }
       case 'clock_background':
-        await _settings.set(defs.screensaverClockBackground, '$value'.trim());
+        await _settings.set(
+          defs.screensaverClockBackground,
+          '$value'.trim(),
+          source: 'esphome',
+        );
         _send('clock_background', '$value'.trim());
       case 'device_camera':
         // A frame request from Home Assistant; the capture event pushes

@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- The log names who changed a setting when it was not the device itself: a line such as `set screensaver.enabled = false via esphome` says the write came from the kiosk's ESPHome entity in Home Assistant, and likewise `via mqtt`, `via remote admin` and `via import`, so a setting that keeps flipping during a voice interaction can be traced to the automation behind it rather than guessed from the lines around it. An entity command arriving over ESPHome is logged as such too (`command screensaver = false`), the way MQTT commands always were.
 - The kiosk's ESPHome device page in Home Assistant carries a **Visit** link to the remote admin page while remote management is on with a password set, the way it does for an ESPHome node with its web server on. The kiosk reports the remote admin port as the device's web server port, which Home Assistant turns into the link on the address it reaches the kiosk at; switching remote management on or off, or changing its port, reconnects so the link follows, while a password change on its own does not.
 
 ### Changed

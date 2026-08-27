@@ -17,6 +17,7 @@ void main() {
   late CommandRegistry commands;
   late SettingsManager settings;
   late EspEntitySurface surface;
+  late Logger log;
   late List<(String, Object?)> pushed;
   late List<List<int>> images;
   late List<(String, Map<String, Object?>)> executed;
@@ -56,7 +57,7 @@ void main() {
       'ks.screensaver.brightness_level': 0.4,
     });
     bus = EventBus();
-    final log = Logger();
+    log = Logger();
     commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
     await settings.init();
@@ -386,6 +387,20 @@ void main() {
     // The raw stored vocabulary is accepted too.
     await surface.handleCommand('camera_device', 'front');
     expect(settings.get(defs.cameraDevice), 'front');
+  });
+
+  test('a setting flipped from Home Assistant names its caller', () async {
+    // A switch written by an automation and one written on the device look
+    // the same in the settings line without this, and the difference is
+    // the whole diagnosis when a screensaver keeps turning itself off.
+    await surface.handleCommand('screensaver', false);
+    expect(settings.get(defs.screensaverEnabled), isFalse);
+    final lines = log.recent.map((e) => '${e.tag}: ${e.message}').toList();
+    expect(lines, contains('esphome: command screensaver = false'));
+    expect(
+      lines,
+      contains('settings: set screensaver.enabled = false via esphome'),
+    );
   });
 
   test('the slide buttons step the showing slideshow', () async {

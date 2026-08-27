@@ -269,7 +269,11 @@ class SettingsManager extends Manager {
     return def.defaultValue;
   }
 
-  Future<void> set<T>(SettingDef<T> def, T value) async {
+  /// [source] names who asked for the write when it was not the device's
+  /// own UI (the ESPHome or MQTT entity in Home Assistant, the remote admin
+  /// page, a settings import), so the log says which caller flipped a
+  /// setting rather than leaving it to be guessed from the lines around it.
+  Future<void> set<T>(SettingDef<T> def, T value, {String? source}) async {
     final normalizer = def.normalizer;
     if (normalizer != null) value = normalizer(value as Object) as T;
     final previous = get(def);
@@ -289,7 +293,11 @@ class SettingsManager extends Manager {
       default:
         throw ArgumentError('unsupported setting type: $value');
     }
-    log.info(name, 'set ${def.key}${def.secret ? '' : ' = $value'}');
+    log.info(
+      name,
+      'set ${def.key}${def.secret ? '' : ' = $value'}'
+      '${source == null ? '' : ' via $source'}',
+    );
     bus.publish(SettingChanged(key: def.key, value: value, previous: previous));
   }
 
@@ -324,20 +332,20 @@ class SettingsManager extends Manager {
   }
 
   /// Set from an untyped (JSON) value — used by the remote API and import.
-  Future<bool> setFromJson(String key, Object? value) async {
+  Future<bool> setFromJson(String key, Object? value, {String? source}) async {
     final def = defByKey(key);
     if (def == null) return false;
     if (def.validator?.call(value) != null) return false;
     switch (def.type) {
       case SettingType.boolean when value is bool:
-        await set(def, value);
+        await set(def, value, source: source);
       case SettingType.number when value is num:
-        await set(def, value);
+        await set(def, value, source: source);
       case SettingType.string || SettingType.password when value is String:
-        await set(def, value);
+        await set(def, value, source: source);
       case SettingType.select
           when value is String && (def.options?.contains(value) ?? false):
-        await set(def, value);
+        await set(def, value, source: source);
       default:
         return false;
     }
@@ -454,7 +462,9 @@ class SettingsManager extends Manager {
     try {
       var applied = 0;
       for (final entry in config.entries) {
-        if (await setFromJson(entry.key, entry.value)) applied++;
+        if (await setFromJson(entry.key, entry.value, source: 'import')) {
+          applied++;
+        }
       }
       return applied;
     } finally {

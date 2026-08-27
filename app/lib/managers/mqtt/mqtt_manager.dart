@@ -552,27 +552,28 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   get _settingSwitches => {
     'kiosk': (
       () => _settings.get(defs.kioskEnabled),
-      (on) => _settings.set(defs.kioskEnabled, on),
+      (on) => _settings.set(defs.kioskEnabled, on, source: 'mqtt'),
     ),
     'lockdown': (
       () => _settings.get(defs.lockdownEnabled),
-      (on) => _settings.set(defs.lockdownEnabled, on),
+      (on) => _settings.set(defs.lockdownEnabled, on, source: 'mqtt'),
     ),
     'ha_kiosk': (
       () => _settings.get(defs.haKioskMode),
-      (on) => _settings.set(defs.haKioskMode, on),
+      (on) => _settings.set(defs.haKioskMode, on, source: 'mqtt'),
     ),
     'keep_screen_on': (
       () => _settings.get(defs.keepScreenOn),
-      (on) => _settings.set(defs.keepScreenOn, on),
+      (on) => _settings.set(defs.keepScreenOn, on, source: 'mqtt'),
     ),
     'remote': (
       () => _settings.get(defs.remoteEnabled),
-      (on) => _settings.set(defs.remoteEnabled, on),
+      (on) => _settings.set(defs.remoteEnabled, on, source: 'mqtt'),
     ),
     'screensaver_brightness': (
       () => _settings.get(defs.screensaverBrightnessEnabled),
-      (on) => _settings.set(defs.screensaverBrightnessEnabled, on),
+      (on) =>
+          _settings.set(defs.screensaverBrightnessEnabled, on, source: 'mqtt'),
     ),
     // The master enable/disable, same as the Screensaver toggle in
     // the settings UI (issue #152). Kept under the object id the
@@ -581,14 +582,14 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // way that entity always claimed to.
     'screensaver': (
       () => _settings.get(defs.screensaverEnabled),
-      (on) => _settings.set(defs.screensaverEnabled, on),
+      (on) => _settings.set(defs.screensaverEnabled, on, source: 'mqtt'),
     ),
     // Hold mode (issue #266): pin the current view. The switch IS
     // the setting, so an automation can say "hold for media
     // playback" and see the state either way.
     'hold_mode': (
       () => _settings.get(defs.haHoldMode),
-      (on) => _settings.set(defs.haHoldMode, on),
+      (on) => _settings.set(defs.haHoldMode, on, source: 'mqtt'),
     ),
     // The camera master toggle (discussion #155): an automation
     // with a wider motion sensor can keep the camera, and its 10%
@@ -596,21 +597,22 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // detection for the final approach.
     'camera_enabled': (
       () => _settings.get(defs.cameraEnabled),
-      (on) => _settings.set(defs.cameraEnabled, on),
+      (on) => _settings.set(defs.cameraEnabled, on, source: 'mqtt'),
     ),
     // Dismiss on motion, under the name the feature goes by. Rides
     // the same automations as the camera switch above: arm the
     // approach detection only while somebody could be approaching.
     'screensaver_motion': (
       () => _settings.get(defs.screensaverDismissOnMotion),
-      (on) => _settings.set(defs.screensaverDismissOnMotion, on),
+      (on) =>
+          _settings.set(defs.screensaverDismissOnMotion, on, source: 'mqtt'),
     ),
     // Dismiss on face (issue #304), the same way. Motion keeps precedence
     // on the device, so an automation that wants faces by day and motion
     // by night flips the motion switch, not this one.
     'screensaver_face': (
       () => _settings.get(defs.screensaverDismissOnFace),
-      (on) => _settings.set(defs.screensaverDismissOnFace, on),
+      (on) => _settings.set(defs.screensaverDismissOnFace, on, source: 'mqtt'),
     ),
   };
 
@@ -1300,6 +1302,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         await _settings.set(
           defs.screensaverBrightnessLevel,
           percent.clamp(0, 100) / 100,
+          source: 'mqtt',
         );
       } else if (topic == '$_base/clock_background/set') {
         // A device-local file path, overwriting the photo picked on the
@@ -1308,17 +1311,29 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         // path published before the file lands should start showing the
         // moment it does.
         log.info(name, 'command $topic = $text');
-        await _settings.set(defs.screensaverClockBackground, text.trim());
+        await _settings.set(
+          defs.screensaverClockBackground,
+          text.trim(),
+          source: 'mqtt',
+        );
       } else if (topic == '$_base/assistant_volume/set') {
         log.info(name, 'command $topic = $text');
         final percent = num.tryParse(text);
         if (percent == null) continue;
-        await _settings.set(defs.assistantVolume, percent.clamp(0, 100));
+        await _settings.set(
+          defs.assistantVolume,
+          percent.clamp(0, 100),
+          source: 'mqtt',
+        );
       } else if (topic == '$_base/media_volume/set') {
         log.info(name, 'command $topic = $text');
         final percent = num.tryParse(text);
         if (percent == null) continue;
-        await _settings.set(defs.mediaVolume, percent.clamp(0, 100));
+        await _settings.set(
+          defs.mediaVolume,
+          percent.clamp(0, 100),
+          source: 'mqtt',
+        );
       } else if (topic == '$_base/update/set') {
         log.info(name, 'command $topic');
         final result = await commands.execute('installUpdate', const {});
@@ -1444,7 +1459,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
             log.warn(name, 'unknown option "$text" for ${def.key}');
             _publishSettingSelectStates();
           } else {
-            await _settings.set(def, value);
+            await _settings.set(def, value, source: 'mqtt');
           }
           break;
         }
