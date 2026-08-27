@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.87 - 2026-08-27
 
 ### Fixed
 - On Android 7, turning on Dismiss on face crashed the app the first time the screensaver's face detector ran, and the Show fingers gesture silently never worked: the exact releases of the two on-device vision runtimes the app shipped (LiteRT 1.4.0 behind face detection, MediaPipe Tasks 0.10.29 behind the hand landmarker) import a libc call Android only gained in version 8, so neither native library could be loaded there, and the face detector let that failure escape as a process crash. The app now ships releases without that dependency (LiteRT 1.4.2, MediaPipe Tasks 0.10.26.1), so face detection and Show fingers run on Android 7 like everywhere else. Should a runtime ever fail to load again, the failure is caught instead of crashing, and the features say so: the Dismiss on face switch and the schedule's face override render disabled with "Needs Android 8 or newer.", the Show fingers trigger is not offered when adding a gesture, the camera never starts for either leg, and the log carries the reason once.
