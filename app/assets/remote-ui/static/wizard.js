@@ -501,7 +501,7 @@ export function wizardSteps() {
             wizard.dashboardView = route;
             wizardRender();
           });
-          row.insertBefore(btn, row.querySelector('input'));
+          row.appendChild(btn);
         }
         list.appendChild(row);
       });

@@ -1485,7 +1485,7 @@ export async function loadSettings() {
               if (route == null) return;
               await applyStart(route ? `${rawBase}/${d.url_path}/${route}` : `${rawBase}/${d.url_path}`);
             });
-            row.insertBefore(btn, row.querySelector('input'));
+            row.appendChild(btn);
           }
           dcard.appendChild(row);
         }
