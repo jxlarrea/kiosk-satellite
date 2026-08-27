@@ -210,10 +210,12 @@ the player cooperates:
   itself, so sync timing and the volume setting are untouched.
 - The stop word stays armed during interruptible states, timers
   included: saying "stop" silences the alert or the music.
-- While audio plays, the kiosk holds off its screensaver and dashboard
-  view rotation the same way it does for any other media interaction
-  (unless the "Now Playing" screensaver mode is on, where the
-  screensaver is the music display).
+- While audio plays, the kiosk holds off its screensaver the same way
+  it does for any other media interaction (unless the "Now Playing"
+  screensaver mode is on, where the screensaver is the music display).
+  Dashboard view rotation and the return to home timer keep running:
+  music plays behind whatever view is up. Use Hold mode to pin a view
+  for the duration of playback.
 
 ## How it works
 

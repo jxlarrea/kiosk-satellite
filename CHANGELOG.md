@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- Playing music on the device (the Sendspin player, or a media player in the page) paused dashboard view rotation and the return to home timer for exactly 3 minutes, then let them run again mid-song: the app treated playback like a voice turn, and the safety ceiling that releases a lost voice turn released it too. Every play after a pause started another 3 minute stall. Media playback no longer touches rotation or the return to home timer; the screensaver still stands down while audio is audible, and Hold mode remains the way to pin a view for the length of the music.
+
 ### Changed
 - Show fingers is not available on x86 devices (ChromeOS, FydeOS and BlissOS containers) for now: the MediaPipe release that runs on Android 7 ships no x86 build, and the releases that do are the ones that cannot load on Android 7. The trigger is not offered when adding a gesture there and says so. Face detection is unaffected.
 - Where face detection or Show fingers cannot run, the disabled switch and the log line now give the actual reason ("Not available on this Android version." or "Not available on x86 devices.") in place of the "Needs Android 8 or newer." wording of 2026.8.87, which stopped being true once both features ran on Android 7.

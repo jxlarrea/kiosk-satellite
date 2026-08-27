@@ -47,7 +47,7 @@ defensive style of Voice Satellite's kiosk wrapper.
 
 | Method | Returns | Description |
 |---|---|---|
-| `setInteractionActive(active, reason?)` | `boolean` | Bracket a page interaction: `true` on the way in, `false` on the way out. While one is active, every ambient app feature stands down (the screensaver, dashboard view rotation, and anything added later). `reason` is an optional string describing the kind: `voice`, `announcement`, `ask_question`, `start_conversation`, `timer`, `media` — used for logging today, per-kind behavior later. Prefer this over `pauseScreensaver` for interaction bracketing |
+| `setInteractionActive(active, reason?)` | `boolean` | Bracket a page interaction: `true` on the way in, `false` on the way out. While one is active, every ambient app feature stands down (the screensaver, dashboard view rotation, the return to home timer, and anything added later). `reason` is an optional string describing the kind: `voice`, `announcement`, `ask_question`, `start_conversation`, `timer`, `media`. A `media` interaction holds only the screensaver: dashboard view rotation and the return to home timer run on through playback. Prefer this over `pauseScreensaver` for interaction bracketing |
 
 ### Screensaver
 

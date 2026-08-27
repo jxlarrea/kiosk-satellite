@@ -685,7 +685,13 @@ class HomeAssistantManager extends Manager {
     bus.on<UrlChanged>().listen((_) => _configureReturnHome());
     // A voice interaction pauses rotation for its whole duration: Voice
     // Satellite drives VoiceInteractionChanged on both edges of the turn.
+    // Media playback is not one: music from Sendspin or the page plays
+    // behind whatever is on screen, so rotation and the return to home
+    // clock run on through it. (Holding them here never worked past the
+    // safety ceiling below anyway: a song outlives 3 minutes, a turn does
+    // not.) The screensaver keeps its own hold for audible media.
     bus.on<VoiceInteractionChanged>().listen((e) {
+      if (e.reason == 'media') return;
       _voiceInteracting = e.active;
       _voiceSafetyTimer?.cancel();
       if (e.active) {
