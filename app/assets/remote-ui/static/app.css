@@ -5,24 +5,40 @@
      solid-fill tone, one and the same in dark. */
   :root {
     color-scheme: light;
-    --bg: #f5f4f2; --surface: #ffffff; --surface-2: #edeae5;
-    --border: #e2dfd9; --divider: #eae7e1;
-    --text: #212327; --muted: #6c7076;
+    --bg: #f5f4f2; --surface: #ffffff; --surface-2: #e8e6e1;
+    --surface-high: #efede9;
+    --border: #e3e0da; --divider: #e3e0da; --outline: #b4b1ab;
+    --text: #212327; --muted: #5d6066;
     --primary: #56814f; --primary-fill: #749c6f; --primary-ink: #ffffff;
     --primary-soft: #e3eae1;
     --accent: #44686c;
-    --ok: #56814f; --warn: #9c742a; --error: #a9501f; --debug: #9a9da3;
+    --ok: #56814f; --warn: #9c742a; --error: #a9501f; --error-ink: #ffffff;
+    --debug: #9a9da3;
+    /* The tinted containers, the device's *Container scheme colors: the
+       toast discs and the banners. */
+    --primary-container: #dce7d8; --on-primary-container: #243b20;
+    --secondary-container: #d4e3e4; --on-secondary-container: #1b3437;
+    --tertiary-container: #f1e0bb; --on-tertiary-container: #3d2d06;
+    --error-container: #f6dbcb; --on-error-container: #54250a;
+    --shadow: rgba(0, 0, 0, .12);
     --radius: 24px; --radius-sm: 12px;
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
     --bg: #202124; --surface: #2a2b2f; --surface-2: #37383d;
-    --border: #3c3e43; --divider: #3c3e43;
-    --text: #e8eaed; --muted: #9aa0a6;
+    --surface-high: #303136;
+    --border: #3c3e43; --divider: #3c3e43; --outline: #5f6368;
+    --text: #e8eaed; --muted: #b6babf;
     --primary: #749c6f; --primary-fill: #749c6f; --primary-ink: #ffffff;
     --primary-soft: #333f31;
     --accent: #7aa6aa;
-    --ok: #749c6f; --warn: #ce9c3e; --error: #d97e4c; --debug: #7d8188;
+    --ok: #749c6f; --warn: #ce9c3e; --error: #d97e4c; --error-ink: #2e1204;
+    --debug: #7d8188;
+    --primary-container: #3a4a37; --on-primary-container: #d9e6d5;
+    --secondary-container: #2f4649; --on-secondary-container: #d0e3e5;
+    --tertiary-container: #4a3a12; --on-tertiary-container: #efdfb5;
+    --error-container: #5a2a0e; --on-error-container: #f4d7c5;
+    --shadow: rgba(0, 0, 0, .4);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -252,10 +268,14 @@
   .nav-backdrop { display: none; position: fixed; inset: 0;
     background: rgba(0, 0, 0, .5); z-index: 19; }
 
-  main { flex: 1; min-width: 0; padding: 20px 28px 28px; }
-  main > * { max-width: 880px; }
-  #pageTitle { font-size: 26px; font-weight: 700; margin: 4px 0 18px 4px;
-    display: flex; align-items: center; gap: 12px; }
+  /* The content pane: the device's page padding (20 16 20 24) and its
+     760 reading column, so a page reads the same width on both. */
+  main { flex: 1; min-width: 0; padding: 16px 20px 24px; }
+  main > * { max-width: 760px; }
+  /* The type ramp is the device's: page title 22/600, row title 17/500,
+     description 13, section heading 14/600, dialog title 20/600. */
+  #pageTitle { font-size: 22px; font-weight: 600; line-height: 1.2;
+    margin: 4px 0 18px 4px; display: flex; align-items: center; gap: 12px; }
   #pageTitle svg { width: 24px; height: 24px; flex: none; }
 
   .tab { display: none; }
@@ -281,10 +301,10 @@
 
   /* Cards: One UI section masks, mirroring the device, borderless, large
      radius, headed from outside by a small primary-tinted title. */
-  .card-title { font-size: 13.5px; font-weight: 600; color: var(--primary);
-    margin: 2px 20px 10px; }
+  .card-title { font-size: 14px; font-weight: 600; line-height: 1.3;
+    color: var(--primary); margin: 6px 20px 10px; }
   .card { background: var(--surface); border-radius: var(--radius);
-    padding: 7px 20px; margin-bottom: 18px; }
+    padding: 7px 20px; margin-bottom: 16px; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 10px; padding: 10px 0; }
@@ -313,8 +333,8 @@
     border-bottom: 1px solid var(--divider); }
   .row:last-child { border-bottom: none; }
   .row .info { flex: 1; min-width: 0; }
-  .row .info .name { font-size: 16px; font-weight: 500; }
-  .row .info .desc { color: var(--muted); font-size: 13.5px; }
+  .row .info .name { font-size: 17px; font-weight: 500; line-height: 1.3; }
+  .row .info .desc { color: var(--muted); font-size: 13px; line-height: 1.35; }
   /* A quiet note under a card, the device's GroupNote: side effects and
      caveats the rows themselves cannot state. Horizontal margin lines it
      up with the row text inside the card above it. */
@@ -411,7 +431,7 @@
       overflow-y: auto; padding: 0 12px 12px; }
     .nav-backdrop.show { display: block; }
     main { padding: 14px 16px 20px; }
-    #pageTitle { font-size: 22px; margin-bottom: 12px; }
+    #pageTitle { margin-bottom: 12px; }
   }
 
   /* On phones, reflow each row so the name and its controls share the top
@@ -445,8 +465,8 @@
     max-height: min(88vh, 760px);
     display: flex; flex-direction: column; margin: 0;
     padding: 24px 24px 18px; }
-  .modal-card .modal-title { margin: 0 0 14px; font-size: 18px;
-    flex: none; }
+  .modal-card .modal-title { margin: 0 0 14px; font-size: 20px;
+    line-height: 1.3; flex: none; }
   .modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto;
     overscroll-behavior: contain;
     /* Reserve the scrollbar's track up front so row controls (radios,
@@ -527,9 +547,9 @@
   #wizardBody { flex: 1; overflow-y: auto; }
   /* Group titles inside the wizard: the settings pages' card-title, not
      the pane's page-title h2 rule that would otherwise outrank it. */
-  #wizardBody h2.card-title { font-family: inherit; font-size: 13.5px;
-    font-weight: 600; line-height: 1.4; color: var(--primary);
-    margin: 2px 20px 10px; }
+  #wizardBody h2.card-title { font-family: inherit; font-size: 14px;
+    font-weight: 600; line-height: 1.3; color: var(--primary);
+    margin: 6px 20px 10px; }
   #wizardBody .card { padding: 16px 20px; }
   #wizardBody .card.rows { padding: 4px 20px; }
   #wizardBody .field { width: 100%; margin-bottom: 12px; }

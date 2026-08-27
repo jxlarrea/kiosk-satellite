@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- The remote admin page moves onto the device's visual system, sheet by sheet: its muted text, control fill and hairline colors are now the device's exact values, and its type sizes are the device's ramp (page titles 22 semibold, row titles 17 medium over a 13 description, section headings 14, dialog titles 20). Cards sit 16 apart, the page is padded the way the device's settings are, and the reading column caps at the same 760 width.
+
 ### Fixed
 - On a device whose Android build has no Bluetooth LE support (a Facebook Portal on Android 9, issue #326; LineageOS ports that leave the feature declaration out), the Bluetooth proxy could be switched on but every scan failed the instant it started, forever, with "code=3 internal error" in the log: Android never starts its GATT service on such a build, and no scan setting, retry or permission changes that. Enable Bluetooth proxy now stays off there and the switch says why, on the device and in the remote admin page, and Home Assistant sees the kiosk's entities but no Bluetooth scanner. Everything else under ESPHome works as before.
 
