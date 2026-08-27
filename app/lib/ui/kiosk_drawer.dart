@@ -651,13 +651,13 @@ class KioskDrawer extends StatelessWidget {
                 // Boxed to the glyph size so every label in the menu starts
                 // on the same line, whatever the mark's own proportions.
                 SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: 22,
+                  height: 22,
                   child: Center(
                     child: SvgPicture.asset(
                       icon,
-                      width: 22,
-                      height: 22,
+                      width: 20,
+                      height: 20,
                       colorFilter: ColorFilter.mode(
                         theme.colorScheme.onSurfaceVariant,
                         BlendMode.srcIn,
@@ -668,6 +668,7 @@ class KioskDrawer extends StatelessWidget {
               else
                 Icon(
                   icon as IconData,
+                  size: 22,
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               const SizedBox(width: 16),
