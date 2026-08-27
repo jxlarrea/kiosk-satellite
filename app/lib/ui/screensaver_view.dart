@@ -18,6 +18,8 @@ import '../core/locale_dates.dart';
 import '../managers/browser/ha_session_script.dart';
 import '../managers/browser/vs_suppress_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
+import '../managers/glance/glance_manager.dart'
+    show GlanceEntity, glanceAttributeText;
 import '../managers/home_assistant/home_assistant_manager.dart'
     show GlanceSubscription;
 import '../managers/screensaver/immich_manager.dart'
@@ -259,6 +261,10 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                                         spec: spec,
                                       ),
                                       'battery' => BatteryWidgetOverlay(
+                                        container: container,
+                                        spec: spec,
+                                      ),
+                                      'entity' => EntityWidgetOverlay(
                                         container: container,
                                         spec: spec,
                                       ),
@@ -1099,6 +1105,280 @@ Color _widgetRgb(Object? raw) {
     return Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!);
   }
   return const Color(0xFFFAFAFA);
+}
+
+/// The entity widget (issue #336): one Home Assistant entity's reading in
+/// a corner, the At a Glance row's chip in the widget family's look: the
+/// entity's icon and its value on one line, the name under them, all in
+/// the widget's color over the corner vignette. Fed by its own
+/// subscribe_entities socket while the screensaver shows (the weather
+/// widget's pattern) and read through the same formatting the row uses
+/// (icon, precision, unit, attribute), so the corner and the row never
+/// disagree about a sensor.
+class EntityWidgetOverlay extends StatefulWidget {
+  const EntityWidgetOverlay({
+    super.key,
+    required this.container,
+    required this.spec,
+  });
+
+  final AppContainer container;
+  final ScreensaverWidget spec;
+
+  @override
+  State<EntityWidgetOverlay> createState() => _EntityWidgetOverlayState();
+}
+
+class _EntityWidgetOverlayState extends State<EntityWidgetOverlay> {
+  GlanceSubscription? _live;
+  Timer? _retry;
+  Timer? _shift;
+  Offset _offset = Offset.zero;
+
+  /// The configured entity with whatever live state has arrived, the row's
+  /// own model so its icon and text helpers apply unchanged.
+  late GlanceEntity _entity = entityWidgetEntity(widget.spec.config);
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_open());
+    // The same slow OLED-protecting nudge the other corner overlays do.
+    _shift = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (!widget.container.settings.get(defs.screensaverPixelShift)) return;
+      final r = Random();
+      const max = 10.0;
+      setState(() {
+        _offset = Offset(
+          (r.nextDouble() * 2 - 1) * max,
+          (r.nextDouble() * 2 - 1) * max,
+        );
+      });
+    });
+  }
+
+  Future<void> _open() async {
+    final id = _entity.entityId;
+    if (id.isEmpty) return;
+    final live = await widget.container.homeAssistant.subscribeEntities(
+      [id],
+      _onState,
+      onPrecision: _onPrecision,
+    );
+    if (!mounted) {
+      unawaited(live?.close());
+      return;
+    }
+    if (live == null) {
+      // Home Assistant unreachable, mid-restart, whatever: keep showing
+      // what we last knew and try again shortly (the At a Glance cadence).
+      _retry?.cancel();
+      _retry = Timer(const Duration(seconds: 20), () {
+        if (mounted) unawaited(_open());
+      });
+      return;
+    }
+    // A socket that dies after establishing reopens after a beat; the
+    // delay keeps a flapping server from turning this into a tight loop.
+    live.onClosed = () {
+      if (!mounted || _live != live) return;
+      _retry?.cancel();
+      _retry = Timer(const Duration(seconds: 5), () {
+        if (mounted) unawaited(_open());
+      });
+    };
+    _live = live;
+  }
+
+  void _onPrecision(Map<String, int> precisions) {
+    if (!mounted) return;
+    final precision = precisions[_entity.entityId];
+    if (precision == null) return;
+    setState(() => _entity = _entity.merge(precision: precision));
+  }
+
+  /// One update from the subscription, merged the way the row merges:
+  /// attributes arrive only when they change, so a name or icon already
+  /// known is kept rather than lost.
+  void _onState(String entityId, Map<String, Object?> state) {
+    if (!mounted || entityId != _entity.entityId) return;
+    final attributes = (state['attributes'] as Map?) ?? const {};
+    final attribute = _entity.attribute;
+    setState(() {
+      _entity = _entity.merge(
+        state: state['state'] as String?,
+        name: attributes['friendly_name'] as String?,
+        icon: attributes['icon'] as String?,
+        deviceClass: attributes['device_class'] as String?,
+        unit: attributes['unit_of_measurement'] as String?,
+        attributeValue: attribute != null && attributes.containsKey(attribute)
+            ? glanceAttributeText(attributes[attribute])
+            : null,
+      );
+    });
+  }
+
+  void _closeLive() {
+    _retry?.cancel();
+    final live = _live;
+    _live = null;
+    if (live != null) unawaited(live.close());
+  }
+
+  // A live edit can repoint the widget at another entity, or change what
+  // it shows of the same one; the element is reused in place, so the
+  // subscription and the model have to follow by hand.
+  @override
+  void didUpdateWidget(EntityWidgetOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final next = entityWidgetEntity(widget.spec.config);
+    if (next.entityId != _entity.entityId) {
+      _closeLive();
+      _entity = next;
+      unawaited(_open());
+      return;
+    }
+    if (next.customName != _entity.customName ||
+        next.attribute != _entity.attribute) {
+      // Same entity, so the live state carries over; the attribute value
+      // only when the attribute itself did not change.
+      _entity = GlanceEntity(
+        entityId: next.entityId,
+        name: _entity.name,
+        customName: next.customName,
+        attribute: next.attribute,
+        state: _entity.state,
+        attributeValue: next.attribute == _entity.attribute
+            ? _entity.attributeValue
+            : null,
+        icon: _entity.icon,
+        deviceClass: _entity.deviceClass,
+        unit: _entity.unit,
+        precision: _entity.precision,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _shift?.cancel();
+    _closeLive();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Nothing until the first reading: an empty corner beats a widget that
+    // says "…" on the way in.
+    if (_entity.state == null) return const SizedBox.shrink();
+    final corner = _cornerAlignment(widget.spec.position);
+    final color = _widgetRgb(widget.spec.config['color']);
+    final size = MediaQuery.of(context).size;
+    // The value is the battery widget's size, the name the weather
+    // widget's detail line, so the corner overlays all read as one
+    // family. The Widget scaling slider then corrects everything for the
+    // screen.
+    final scale =
+        widget.container.settings.get(defs.screensaverWidgetScale).toDouble() /
+        100;
+    final textSize = max(min(size.width, size.height) * 0.042, 30.0) * scale;
+    const shadows = [Shadow(color: Colors.black54, blurRadius: 8)];
+    final glyph = GlanceIcon(
+      entity: _entity,
+      size: textSize * 1.15,
+      color: color,
+    );
+    final value = Text(
+      glanceStateText(_entity),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontFamily: 'Rubik',
+        color: color,
+        fontSize: textSize,
+        fontWeight: FontWeight.w400,
+        height: 1.0,
+        shadows: shadows,
+      ),
+    );
+    final label = Text(
+      _entity.displayName,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontFamily: 'Rubik',
+        color: color.withValues(alpha: 0.9),
+        fontSize: 16 * scale,
+        fontWeight: FontWeight.w400,
+        height: 1.35,
+        shadows: shadows,
+      ),
+    );
+    // The icon leads on a left corner and trails on a right one, the same
+    // rule the battery and weather widgets follow.
+    final right = corner.x > 0;
+    final gap = SizedBox(width: 10 * scale);
+    // Show name off: the value and its icon alone, for a corner that
+    // explains itself.
+    final showName = widget.spec.config['show_name'] != false;
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _cornerVignette(corner, radius: 0.5),
+          Align(
+            alignment: corner,
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Transform.translate(
+                offset: _offset,
+                child: ConstrainedBox(
+                  // Capped so one long name or value cannot run across the
+                  // screen; the text inside truncates instead.
+                  constraints: BoxConstraints(maxWidth: size.width * 0.4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: 4,
+                    crossAxisAlignment: right
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (right) ...[Flexible(child: value), gap],
+                          glyph,
+                          if (!right) ...[gap, Flexible(child: value)],
+                        ],
+                      ),
+                      if (showName) label,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The entity widget's configuration as the row's own model: the id, the
+/// cached friendly name, a hand-chosen name (the "label" key, the Home
+/// Assistant name when empty) and the attribute shown instead of the state
+/// (the state when empty). No live fields yet: those arrive over the
+/// subscription.
+GlanceEntity entityWidgetEntity(Map<String, Object?> config) {
+  final label = '${config['label'] ?? ''}'.trim();
+  final attribute = '${config['attribute'] ?? ''}'.trim();
+  return GlanceEntity(
+    entityId: '${config['entity'] ?? ''}'.trim(),
+    name: '${config['name'] ?? ''}',
+    customName: label.isEmpty ? null : label,
+    attribute: attribute.isEmpty ? null : attribute,
+  );
 }
 
 /// The weather widget: one Home Assistant weather entity in a corner —

@@ -181,6 +181,75 @@ void main() {
     });
   });
 
+  group('entity widget type', () {
+    test('is offered, labeled, and defaulted', () {
+      expect(screensaverWidgetTypes, contains('entity'));
+      expect(describeScreensaverWidgetType('entity'), 'Entity');
+      final defaults = screensaverWidgetDefaults('entity');
+      expect(defaults['entity'], '');
+      expect(defaults['name'], '');
+      expect(defaults['label'], '');
+      // The state by default; an attribute is the opt-in, as on the row.
+      expect(defaults['attribute'], '');
+      // The name under the value reads by default; a corner that explains
+      // itself can turn it off.
+      expect(defaults['show_name'], isTrue);
+      expect(defaults['color'], '250,250,250');
+    });
+
+    test('rides every mode but the camera grid', () {
+      expect(screensaverWidgetAllowedOnMode('entity', 'clock'), isTrue);
+      expect(screensaverWidgetAllowedOnMode('entity', 'immich'), isTrue);
+      expect(screensaverWidgetAllowedOnMode('entity', 'black'), isTrue);
+      expect(screensaverWidgetAllowedOnMode('entity', 'camera'), isFalse);
+    });
+
+    test('decodes with its own config', () {
+      final widgets = decodeScreensaverWidgets(
+        '[{"position":"top_right","type":"entity",'
+        '"config":{"entity":"sensor.bedroom_temperature",'
+        '"name":"Bedroom Temperature","label":"Bedroom",'
+        '"attribute":"","color":"250,250,250"}}]',
+      );
+      expect(widgets.single.type, 'entity');
+      expect(widgets.single.config['entity'], 'sensor.bedroom_temperature');
+      expect(widgets.single.config['label'], 'Bedroom');
+    });
+
+    test('its config reads as the row model', () {
+      final entity = entityWidgetEntity({
+        'entity': 'sensor.bedroom_temperature',
+        'name': 'Bedroom Temperature',
+        'label': 'Bedroom',
+        'attribute': 'humidity',
+      });
+      expect(entity.entityId, 'sensor.bedroom_temperature');
+      expect(entity.name, 'Bedroom Temperature');
+      expect(entity.customName, 'Bedroom');
+      expect(entity.displayName, 'Bedroom');
+      expect(entity.attribute, 'humidity');
+      // Nothing live yet: the widget draws nothing until a reading lands.
+      expect(entity.state, isNull);
+    });
+
+    test(
+      'an empty label and attribute mean the Home Assistant name and '
+      'the state',
+      () {
+        final entity = entityWidgetEntity({
+          'entity': ' sensor.outside ',
+          'name': 'Outside',
+          'label': '  ',
+          'attribute': '',
+        });
+        expect(entity.entityId, 'sensor.outside');
+        expect(entity.customName, isNull);
+        expect(entity.displayName, 'Outside');
+        expect(entity.attribute, isNull);
+      },
+    );
+  });
+
   group('legacy small clock migration', () {
     Future<SettingsManager> boot(Map<String, Object> prefs) async {
       SharedPreferences.setMockInitialValues(prefs);

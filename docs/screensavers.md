@@ -250,6 +250,33 @@ The reading is the device's own, not a Home Assistant entity, so it needs
 nothing configured and keeps working while Home Assistant is away. It is
 read once a minute, and a cable being plugged or pulled shows up at once.
 
+### Entity
+
+One Home Assistant entity in a corner, over any mode except Camera
+Streams: the At a Glance row's reading in the widget family's look. The
+entity's icon and its value share one line (the icon on the corner's
+outer edge, like the battery widget) and the name sits under them, all
+in the widget's color. A room's temperature sensor in the corner of the
+Immich photos, where the At a Glance row cannot go, is what it is for.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Entity | none | Searched for by name or entity id, the At a Glance picker with room for one. The widget shows nothing until one is set. |
+| Name | empty | The name under the value. Left empty, the Home Assistant name shows. |
+| Displayed value | State | The state, or one of the entity's attributes, offered with their current values. |
+| Corner | first free corner | |
+| Color | white | Icon and text alike. |
+| Show name | on | Off leaves the icon and value alone. |
+
+The value reads exactly as the At a Glance row would read it: the
+entity's own icon when one is set in Home Assistant (a Material Design
+Icon, drawn from the bundled set) and a domain default otherwise, a
+numeric state rounded to the entity's display precision with its unit,
+and slugs written out ("Above horizon"). It arrives over a live Home
+Assistant subscription while the screensaver shows, so it stays current
+without polling, and the last known value survives a short Home
+Assistant outage.
+
 ## Brightness
 
 **Screensaver brightness** gives the screensaver its own panel

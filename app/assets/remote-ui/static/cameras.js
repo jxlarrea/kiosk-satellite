@@ -27,6 +27,7 @@ export const CAMERA_ICONS = {
     + 'A4.25 4.25 0 0117.5 19z"/>',
   battery: '<rect x="2" y="7" width="17" height="10" rx="2.5"/>'
     + '<path d="M21.5 10.5v3"/><path d="M5 10v4"/><path d="M8.5 10v4"/>',
+  entity: '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1'
     + ' -2 2H5a2 2 0 0 1-2-2z"/>',
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/>',
@@ -506,6 +507,103 @@ export async function glanceEntityPicker(initial) {
     save: async () => ({ ok: true }),
   });
   return saved ? chosen : null;
+}
+
+/* One Home Assistant entity, picked by search: the At a Glance picker's
+   search without the chosen list, for the places that want a single entity
+   (the entity widget). Mirrors the device's dialog. Resolves to
+   {entity_id, name} when a result is clicked, null when dismissed. */
+export function entitySearchPicker(title = 'Entity') {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (value) => {
+      if (done) return;
+      done = true;
+      resolve(value);
+    };
+    const shell = modalShell({ title, width: 620, onDismiss: () => finish(null) });
+    const body = document.createElement('div');
+    body.classList.add('modal-form');
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.placeholder = 'Search by name or entity id';
+    search.className = 'field';
+    search.style.margin = '0';
+    const results = document.createElement('div');
+    results.className = 'edge-fade';
+    results.style.cssText = 'max-height:320px; overflow:auto; margin-top:8px;';
+    const hint = (text) => {
+      results.innerHTML = '';
+      const el = document.createElement('div');
+      el.className = 'desc';
+      el.style.padding = '14px 2px';
+      el.textContent = text;
+      results.appendChild(el);
+    };
+    const renderResults = (entities) => {
+      if (!entities.length) {
+        hint(search.value.trim() ? 'Nothing matched.' : 'Type to search entities.');
+        return;
+      }
+      results.innerHTML = '';
+      for (const entity of entities) {
+        const item = document.createElement('div');
+        item.className = 'row camera-row-clickable';
+        item.tabIndex = 0;
+        item.setAttribute('role', 'button');
+        const info = document.createElement('div');
+        info.className = 'info';
+        const name = document.createElement('div');
+        name.className = 'name';
+        name.textContent = entity.name || entity.entity_id;
+        const desc = document.createElement('div');
+        desc.className = 'desc';
+        desc.textContent = `${entity.entity_id} \u00b7 ${entity.state}`;
+        info.append(name, desc);
+        item.appendChild(info);
+        const pick = () => {
+          shell.close();
+          finish({ entity_id: entity.entity_id, name: entity.name || entity.entity_id });
+        };
+        item.addEventListener('click', pick);
+        item.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            pick();
+          }
+        });
+        results.appendChild(item);
+      }
+    };
+    let debounce;
+    search.addEventListener('input', () => {
+      clearTimeout(debounce);
+      const query = search.value.trim();
+      if (!query) { renderResults([]); return; }
+      debounce = setTimeout(async () => {
+        hint('Searching\u2026');
+        try {
+          const res = await (await api('/api/commands/haSearchEntities', {
+            method: 'POST', body: JSON.stringify({ query }) })).json();
+          if (search.value.trim() !== query) return; // a newer search won
+          if (!res.ok) { hint('Could not reach Home Assistant.'); return; }
+          renderResults(res.data || []);
+        } catch (_) {
+          hint('The device did not answer.');
+        }
+      }, 350);
+    });
+    renderResults([]);
+    body.append(search, results);
+    shell.body.appendChild(body);
+    const cancel = cameraAction('Cancel', () => {
+      shell.close();
+      finish(null);
+    });
+    cancel.className = 'btn-text';
+    shell.foot.append(cancel);
+    setTimeout(() => search.focus(), 0);
+  });
 }
 
 export async function editCameraServer(server) {

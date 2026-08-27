@@ -5,6 +5,7 @@ import {
   cameraListRow,
   cameraSelectField,
   cameraToggle,
+  entitySearchPicker,
   glanceEntityPicker,
 } from './cameras.js';
 import { api, state } from './core.js';
@@ -496,13 +497,15 @@ export function settingRow(s) {
     const CORNERS = [['top_left', 'Top left'], ['top_right', 'Top right'],
       ['bottom_left', 'Bottom left'], ['bottom_right', 'Bottom right']];
     const TYPES = [['clock', 'Small clock'], ['weather', 'Weather'],
-      ['battery', 'Battery']];
+      ['battery', 'Battery'], ['entity', 'Entity']];
     const DEFAULTS = {
       clock: { color: '250,250,250', h24: false, date: false },
       weather: { entity: '', name: '', label: '', color: '250,250,250',
         location: true, forecast: true, humidity: true, wind: true,
         visibility: true },
       battery: { color: '250,250,250', percent: true, low: false },
+      entity: { entity: '', name: '', label: '', attribute: '',
+        show_name: true, color: '250,250,250' },
     };
     const order = CORNERS.map(([v]) => v);
     const cornerLabel = (v) => (CORNERS.find(([c]) => c === v) || [, v])[1];
@@ -591,6 +594,98 @@ export function settingRow(s) {
           typeBlock.append(refs.color.wrap, refs.percent.wrap, refs.low.wrap);
           return;
         }
+        if (type === 'entity') {
+          // The entity everything is read from, picked by search the way
+          // the At a Glance row's are; the friendly name is cached in the
+          // config so both editors can show it without a round trip.
+          const entityRow = document.createElement('div');
+          entityRow.className = 'row';
+          const info = document.createElement('div');
+          info.className = 'info';
+          const name = document.createElement('div');
+          name.className = 'name';
+          name.textContent = 'Entity';
+          const desc = document.createElement('div');
+          desc.className = 'desc';
+          desc.textContent = config.name || config.entity || 'Not set';
+          info.append(name, desc);
+          refs.attribute = cameraSelectField('Displayed value',
+            [{ value: '', label: 'State' },
+              ...(config.attribute
+                ? [{ value: config.attribute, label: config.attribute }] : [])],
+            config.attribute || '');
+          // What the widget displays: the state (the default) or one of
+          // the entity's attributes, offered from its live attributes with
+          // their current values (the At a Glance dialog's choice).
+          const hidden = ['friendly_name', 'icon', 'entity_picture',
+            'supported_features', 'attribution'];
+          const loadAttributes = async () => {
+            refs.attribute.select.disabled = !config.entity;
+            if (!config.entity) return;
+            try {
+              const res = await (await api('/api/commands/haEntityAttributes', {
+                method: 'POST',
+                body: JSON.stringify({ entity_id: config.entity }) })).json();
+              if (!res.ok) return;
+              const attributes = res.data || {};
+              const names = Object.keys(attributes).filter((k) =>
+                !hidden.includes(k)
+                && (attributes[k] === null || typeof attributes[k] !== 'object'))
+                .sort();
+              const current = refs.attribute.select.value;
+              refs.attribute.select.innerHTML = '';
+              const state = document.createElement('option');
+              state.value = '';
+              state.textContent = 'State';
+              refs.attribute.select.appendChild(state);
+              for (const n of names) {
+                const o = document.createElement('option');
+                o.value = n;
+                o.textContent = `${n} \u00b7 ${attributes[n]}`;
+                o.selected = n === current;
+                refs.attribute.select.appendChild(o);
+              }
+            } catch (_) {}
+          };
+          const choose = cameraAction('Choose\u2026', async () => {
+            const picked = await entitySearchPicker();
+            if (!picked) return;
+            // Another entity has other attributes: back to its state.
+            if (picked.entity_id !== config.entity) {
+              config.attribute = '';
+              refs.attribute.select.value = '';
+            }
+            config.entity = picked.entity_id;
+            config.name = picked.name;
+            desc.textContent = config.name;
+            refs.label.input.placeholder = config.name;
+            loadAttributes();
+          });
+          entityRow.append(info, choose);
+          refs.entity = { wrap: entityRow };
+          refs.label = (() => {
+            const wrap = document.createElement('label');
+            wrap.className = 'form-field';
+            const title = document.createElement('span');
+            title.className = 'desc';
+            title.textContent = 'Name';
+            const input = document.createElement('input');
+            input.className = 'field';
+            input.type = 'text';
+            input.placeholder = config.name
+              || 'Leave empty to use the Home Assistant name';
+            input.value = config.label || '';
+            input.style.maxWidth = 'none';
+            wrap.append(title, input);
+            return { wrap, input };
+          })();
+          refs.showName = cameraToggle('Show name',
+            config.show_name !== false, 'The name under the value.');
+          typeBlock.append(refs.entity.wrap, refs.label.wrap,
+            refs.attribute.wrap, refs.color.wrap, refs.showName.wrap);
+          loadAttributes();
+          return;
+        }
         // Weather: the entity everything is read from, then the line
         // toggles. The temperature always shows; each other line also
         // needs the entity to actually carry the reading.
@@ -677,6 +772,13 @@ export function settingRow(s) {
             entryConfig = { color,
               percent: refs.percent.input.checked,
               low: refs.low.input.checked };
+          } else if (type === 'entity') {
+            if (!config.entity) return { ok: false, error: 'Pick an entity.' };
+            entryConfig = { entity: config.entity,
+              name: config.name || config.entity,
+              label: refs.label.input.value.trim(),
+              attribute: refs.attribute.select.value,
+              show_name: refs.showName.input.checked, color };
           } else {
             const entity = refs.entity.select.value;
             if (!entity) return { ok: false, error: 'Pick a weather entity.' };
@@ -709,8 +811,8 @@ export function settingRow(s) {
         }, false, 'delete'),
       ],
       {
-        icon: e.type === 'weather' ? 'weather'
-          : (e.type === 'battery' ? 'battery' : 'clock'),
+        icon: ['weather', 'battery', 'entity'].includes(e.type)
+          ? e.type : 'clock',
         onClick: () => editWidget(e),
       },
     );
@@ -719,7 +821,7 @@ export function settingRow(s) {
     // mirrored on the device. Every corner taken means nothing left to
     // add: the row stays, disabled, rather than disappearing.
     const addRow = () => cameraListRow('Add widget',
-      'A small clock, the weather or the battery in a corner.', [],
+      'A small clock, the weather, the battery or an entity in a corner.', [],
       { icon: 'add', onClick: () => editWidget(null),
         disabled: entries.length >= CORNERS.length });
 

@@ -35,6 +35,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import 'color_picker.dart';
 import 'gesture_settings.dart';
+import 'entity_picker.dart';
 import 'glance_entity_picker.dart';
 import 'camera_settings.dart';
 import 'camera_views_picker.dart';
@@ -3487,6 +3488,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     'clock' => Icons.access_time,
     'weather' => Icons.cloud_outlined,
     'battery' => Icons.battery_full,
+    'entity' => Icons.sensors,
     _ => Icons.widgets_outlined,
   };
 
@@ -3496,6 +3498,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     'clock' => 'Hidden in Digital Clock and Camera Streams screensaver modes.',
     'weather' => 'Hidden in the Camera Streams screensaver mode.',
     'battery' => 'Hidden in the Camera Streams screensaver mode.',
+    'entity' => 'Hidden in the Camera Streams screensaver mode.',
     _ => null,
   };
 
@@ -3545,6 +3548,58 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     );
   }
 
+  /// Attributes that are presentation metadata rather than values anyone
+  /// would put in a corner; the At a Glance picker's list.
+  static const _hiddenAttributes = {
+    'friendly_name',
+    'icon',
+    'entity_picture',
+    'supported_features',
+    'attribution',
+  };
+
+  /// What the entity widget displays: the state (the default) or one of
+  /// the entity's attributes, offered from its live attributes with their
+  /// current values (the At a Glance dialog's choice). Returns the
+  /// attribute name, '' for the state, or null when dismissed.
+  Future<String?> _pickEntityAttribute(
+    BuildContext context,
+    String entityId,
+    String current,
+  ) async {
+    final result = await widget.container.commands.execute(
+      'haEntityAttributes',
+      {'entity_id': entityId},
+    );
+    if (!context.mounted) return null;
+    if (!result.ok) {
+      showToast(
+        context,
+        title: 'Could not reach Home Assistant',
+        kind: ToastKind.error,
+      );
+      return null;
+    }
+    final attributes = (result.data as Map?) ?? const {};
+    final names = [
+      for (final entry in attributes.entries)
+        if (entry.value is! Map &&
+            entry.value is! List &&
+            !_hiddenAttributes.contains(entry.key))
+          '${entry.key}',
+    ]..sort();
+    return showRadioPicker<String>(
+      context,
+      title: 'Displayed value',
+      options: [
+        const PickerOption('', 'State'),
+        for (final name in names)
+          PickerOption(name, name, detail: '${attributes[name]}'),
+      ],
+      selected: current.isEmpty || names.contains(current) ? current : '',
+    );
+  }
+
   Future<void> _edit(BuildContext context, ScreensaverWidget? existing) async {
     final others = [
       for (final w in _widgets())
@@ -3563,8 +3618,8 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
       ...screensaverWidgetDefaults(type),
       ...?existing?.config,
     };
-    // The weather location override; a controller so edits survive the
-    // dialog's rebuilds.
+    // The weather location override, or the entity widget's custom name;
+    // a controller so edits survive the dialog's rebuilds.
     final labelCtrl = TextEditingController(text: '${config['label'] ?? ''}');
 
     final submitted = await showDialog<bool>(
@@ -3619,6 +3674,8 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
             value: config[key] == true,
             onChanged: (v) => setDialogState(() => config[key] = v),
           );
+          // The weather and entity widgets both read one entity, cached
+          // with its friendly name under the same keys.
           final weatherEntity = '${config['entity'] ?? ''}';
           final weatherName = '${config['name'] ?? ''}';
           return AlertDialog(
@@ -3740,6 +3797,85 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                       toggle('Show percentage', 'percent'),
                       toggle('Only when low', 'low'),
                     ],
+                    if (type == 'entity') ...[
+                      // The entity everything is read from, picked by
+                      // search the way the At a Glance row's are; the
+                      // friendly name is cached in the config so both
+                      // editors can show it without a round trip.
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Entity'),
+                        subtitle: Text(
+                          weatherName.isNotEmpty
+                              ? weatherName
+                              : (weatherEntity.isNotEmpty
+                                    ? weatherEntity
+                                    : 'Not set'),
+                        ),
+                        trailing: TextButton(
+                          onPressed: () async {
+                            final picked = await pickHomeAssistantEntity(
+                              context,
+                              widget.container,
+                            );
+                            if (picked != null) {
+                              setDialogState(() {
+                                // Another entity has other attributes:
+                                // back to its state.
+                                if (picked.$1 != config['entity']) {
+                                  config['attribute'] = '';
+                                }
+                                config['entity'] = picked.$1;
+                                config['name'] = picked.$2;
+                              });
+                            }
+                          },
+                          child: const Text('Choose'),
+                        ),
+                      ),
+                      LabeledField(
+                        label: 'Name',
+                        child: TextField(
+                          controller: labelCtrl,
+                          decoration: InputDecoration(
+                            hintText: weatherName.isNotEmpty
+                                ? weatherName
+                                : null,
+                            helperText:
+                                'Leave empty to use the Home Assistant name.',
+                          ),
+                          onChanged: (v) => config['label'] = v.trim(),
+                        ),
+                      ),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Displayed value'),
+                        subtitle: Text(
+                          '${config['attribute'] ?? ''}'.isEmpty
+                              ? 'State'
+                              : '${config['attribute']}',
+                        ),
+                        trailing: TextButton(
+                          onPressed: weatherEntity.isEmpty
+                              ? null
+                              : () async {
+                                  final picked = await _pickEntityAttribute(
+                                    context,
+                                    weatherEntity,
+                                    '${config['attribute'] ?? ''}',
+                                  );
+                                  if (picked != null) {
+                                    setDialogState(
+                                      () => config['attribute'] = picked,
+                                    );
+                                  }
+                                },
+                          child: const Text('Choose'),
+                        ),
+                      ),
+                      colorRow(),
+                      toggle('Show name', 'show_name'),
+                    ],
                   ],
                 ),
               ),
@@ -3750,8 +3886,11 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                // A weather widget without its entity has nothing to show.
-                onPressed: type == 'weather' && weatherEntity.isEmpty
+                // A weather or entity widget without its entity has
+                // nothing to show.
+                onPressed:
+                    (type == 'weather' || type == 'entity') &&
+                        weatherEntity.isEmpty
                     ? null
                     : () => Navigator.pop(context, true),
                 child: Text(existing == null ? 'Add' : 'Save'),
@@ -3804,7 +3943,8 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
           leading: const Icon(Icons.add),
           title: const Text('Add widget'),
           subtitle: const Text(
-            'A small clock, the weather or the battery in a corner.',
+            'A small clock, the weather, the battery or an entity in a '
+            'corner.',
           ),
           enabled: widgets.length < cornerOptions.length,
           onTap: () => _edit(context, null),

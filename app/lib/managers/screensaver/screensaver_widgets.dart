@@ -30,6 +30,14 @@
 ///      percent (the number beside the icon), low (only show once the
 ///      charge is low, for a widget that stays out of the way until it
 ///      matters).
+///    - entity: one Home Assistant entity, the At a Glance row's reading
+///      as a corner widget (issue #336): its icon and value on one line,
+///      the name under them. Config keys: entity (the entity id), name
+///      (its friendly name, cached for the editors), label (a name chosen
+///      by hand; the Home Assistant name when empty), attribute (the
+///      attribute shown instead of the state; the state when empty),
+///      show_name (the name line under the value) and color ("r,g,b" icon
+///      and text color).
 /// - config: the type's own settings; missing keys read as the type's
 ///   defaults, so entries survive new keys being added.
 ///
@@ -57,12 +65,13 @@ class ScreensaverWidget {
 }
 
 /// Every widget type, in the order the pickers offer them.
-const screensaverWidgetTypes = ['clock', 'weather', 'battery'];
+const screensaverWidgetTypes = ['clock', 'weather', 'battery', 'entity'];
 
 String describeScreensaverWidgetType(String type) => switch (type) {
   'clock' => 'Small clock',
   'weather' => 'Weather',
   'battery' => 'Battery',
+  'entity' => 'Entity',
   _ => type,
 };
 
@@ -81,6 +90,14 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'visibility': true,
   },
   'battery' => {'color': '250,250,250', 'percent': true, 'low': false},
+  'entity' => {
+    'entity': '',
+    'name': '',
+    'label': '',
+    'attribute': '',
+    'show_name': true,
+    'color': '250,250,250',
+  },
   _ => const {},
 };
 
