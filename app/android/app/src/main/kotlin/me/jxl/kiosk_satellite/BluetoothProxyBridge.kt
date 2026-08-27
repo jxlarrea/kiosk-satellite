@@ -2,6 +2,7 @@ package me.jxl.kiosk_satellite
 
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Base64
@@ -128,9 +129,34 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                 "adapterOn" -> result.success(
                     (context.getSystemService(Context.BLUETOOTH_SERVICE)
                         as? BluetoothManager)?.adapter?.isEnabled == true)
+                "bleSupport" -> result.success(bleSupport())
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /**
+     * Whether this device can scan for Bluetooth LE at all, and why not
+     * when it cannot. Android binds its GATT service only on builds that
+     * declare the Bluetooth LE feature; without it every scan fails the
+     * instant it starts with SCAN_FAILED_INTERNAL_ERROR, whatever the scan
+     * settings, permissions or retries (issue #326, a Facebook Portal on
+     * Android 9; the same missing declaration on a LineageOS Echo Show).
+     * Nothing an app does changes that, so the Dart side keeps the proxy
+     * switched off and the settings rows say why. The answer cannot change
+     * without a reboot.
+     */
+    private fun bleSupport(): Map<String, Any?> {
+        val adapter = (context.getSystemService(Context.BLUETOOTH_SERVICE)
+            as? BluetoothManager)?.adapter
+        val hint = when {
+            adapter == null -> "Not available on this device: it has no Bluetooth."
+            !context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) ->
+                "Not available on this device: its Android build has no " +
+                    "Bluetooth LE support."
+            else -> null
+        }
+        return mapOf("supported" to (hint == null), "hint" to hint)
     }
 
     fun dispose() {

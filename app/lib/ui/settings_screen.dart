@@ -1162,6 +1162,11 @@ class _CategoryContentState extends State<_CategoryContent> {
     // The proxy page reflects the adapter live: grayed with a notice while
     // Bluetooth is off, back to normal when it returns, no reopen needed.
     if (widget.category == 'ESPHome') {
+      // The proxy switch reads the platform's Bluetooth LE answer the same
+      // way the face rows read the vision runtime's (issue #326).
+      widget.container.btProxy.bleSupport().then((_) {
+        if (mounted) setState(() {});
+      });
       _pollBtAdapter();
       _btAdapterTimer = Timer.periodic(
         const Duration(seconds: 5),
@@ -2106,6 +2111,21 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// key and handed to every render of the category, the pages below it
   /// included, so a replacement follows its row onto its page.
   Map<String, Widget> _rowReplacements(AppContainer container) => {
+    // Scanning cannot work on this build (issue #326: Android starts no
+    // GATT service without the Bluetooth LE feature declared): the switch
+    // says so instead of offering a proxy that fails every scan.
+    if (widget.category == 'ESPHome' && container.btProxy.bleKnownUnsupported)
+      btproxyEnabled.key: SearchLandingTarget(
+        id: btproxyEnabled.key,
+        child: SwitchListTile(
+          title: Text(btproxyEnabled.title),
+          subtitle: Text(
+            container.btProxy.bleHint ?? 'Not available on this device.',
+          ),
+          value: false,
+          onChanged: null,
+        ),
+      ),
     if (widget.category == 'Screensaver' &&
         !container.deviceCamera.effectiveEnabled)
       screensaverDismissOnMotion.key: SearchLandingTarget(
@@ -2353,7 +2373,12 @@ class _CategoryContentState extends State<_CategoryContent> {
             if (def.section == 'Nearby devices') def,
         ]),
       ];
-      if (_btAdapterOn != false) return cards;
+      // A build that cannot scan at all has its say on the switch itself;
+      // the adapter's state would change nothing there.
+      if (_btAdapterOn != false ||
+          widget.container.btProxy.bleKnownUnsupported) {
+        return cards;
+      }
       // The adapter is off: nothing on this page can do anything, so say so
       // and render it inert. The poll in initState lifts this the moment
       // Bluetooth comes back.

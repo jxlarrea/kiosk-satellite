@@ -465,6 +465,17 @@ active connections, and the recent proxy log.
   the Bluetooth service can crash-loop before the radio ever powers on;
   no app can scan on such a device. The proxy detects this, reports the
   scanner as failed to Home Assistant, and waits instead of retry-looping.
+- Some Android builds declare no Bluetooth LE support at all: a Facebook
+  Portal on Android 9, and LineageOS ports that leave the
+  `android.hardware.bluetooth_le` feature out. Android never starts its
+  GATT service on such a build, so every scan fails the instant it starts
+  ("code=3 internal error" in the log), whatever the settings, permissions
+  or retries. The app checks for this and keeps **Enable Bluetooth proxy**
+  off on such a device: the switch renders disabled with the reason on
+  both settings pages, and Home Assistant sees the kiosk's entities but no
+  Bluetooth scanner. On a ROM you build yourself, adding the feature
+  declaration (`/vendor/etc/permissions/android.hardware.bluetooth_le.xml`)
+  and rebooting lifts the gate.
 - The encryption key is generated once and kept: Home Assistant stores it
   in its config entry, so clearing it forces a re-setup on the Home
   Assistant side.

@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- On a device whose Android build has no Bluetooth LE support (a Facebook Portal on Android 9, issue #326; LineageOS ports that leave the feature declaration out), the Bluetooth proxy could be switched on but every scan failed the instant it started, forever, with "code=3 internal error" in the log: Android never starts its GATT service on such a build, and no scan setting, retry or permission changes that. Enable Bluetooth proxy now stays off there and the switch says why, on the device and in the remote admin page, and Home Assistant sees the kiosk's entities but no Bluetooth scanner. Everything else under ESPHome works as before.
+
 ## v2026.8.88 - 2026-08-27
 
 ### Fixed

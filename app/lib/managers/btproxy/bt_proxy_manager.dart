@@ -24,6 +24,32 @@ import 'node_name.dart';
 /// reinstalls via export/import: Home Assistant keeps it in its config
 /// entry, and a key that silently changed would take the proxy offline
 /// until the user re-entered it.
+/// Whether the platform can scan for Bluetooth LE at all. Android binds
+/// its GATT service only on builds that declare the Bluetooth LE feature;
+/// without it every scan fails the instant it starts, whatever the scan
+/// settings, permissions or retries (issue #326, a Facebook Portal on
+/// Android 9; the same missing declaration on a LineageOS Echo Show). The
+/// manager keeps the proxy switch off on such a build, and both settings
+/// surfaces render it disabled with [hint].
+///
+/// Unknown counts as supported: a missing answer (no bridge, as in tests)
+/// must never switch the proxy off on a device that can scan.
+class BleSupport {
+  const BleSupport({required this.supported, this.hint});
+
+  static const unknown = BleSupport(supported: true);
+
+  final bool supported;
+
+  /// Why [supported] is false, in a sentence fit for a settings row.
+  final String? hint;
+
+  Map<String, Object?> toJson() => {
+    'supported': supported,
+    if (hint != null) 'hint': hint,
+  };
+}
+
 class BtProxyManager extends Manager {
   BtProxyManager(super.bus, super.commands, super.log, this._settings);
 
@@ -43,6 +69,16 @@ class BtProxyManager extends Manager {
   /// exactly like a working one there otherwise (issue #240, a bind
   /// conflict on one of two identical tablets).
   String? _startError;
+
+  /// The platform's answer on Bluetooth LE, asked once per process. Null
+  /// until the bridge has answered; the sync getters below are for UI code
+  /// and read false until then, so a row is never disabled on a guess.
+  BleSupport? _bleSupport;
+
+  bool get bleKnownUnsupported => _bleSupport?.supported == false;
+
+  /// The reason to show under the disabled proxy switch.
+  String? get bleHint => _bleSupport?.hint;
 
   /// The node name the running server came up under, so writing it back
   /// into settings does not bounce the server (as with [_liveKey]).
@@ -107,6 +143,15 @@ class BtProxyManager extends Manager {
     // reported to Home Assistant (the device page's Visit link).
     const remoteKeys = {'remote.enabled', 'remote.port', 'remote.password'};
     _settingsSub = bus.on<SettingChanged>().listen((e) {
+      // The switch turned on where scanning cannot work (the settings
+      // page never offers it, but the remote API and a settings import
+      // can): back off, and the write lands here again as false.
+      if (e.key == defs.btproxyEnabled.key &&
+          bleKnownUnsupported &&
+          _settings.get(defs.btproxyEnabled)) {
+        unawaited(_guardBleSupport());
+        return;
+      }
       if (!e.key.startsWith('btproxy.') &&
           !e.key.startsWith('esphome.') &&
           !catalogKeys.contains(e.key) &&
@@ -214,6 +259,19 @@ class BtProxyManager extends Manager {
         },
       ),
     );
+    commands.register(
+      Command(
+        name: 'getBleSupport',
+        description:
+            'Whether this device can scan for Bluetooth LE at all, and why '
+            'not when it cannot',
+        quiet: true,
+        handler: (_) async => CommandResult.ok((await bleSupport()).toJson()),
+      ),
+    );
+    // Before the first start, so a build that cannot scan tells Home
+    // Assistant of no proxy from the first connection on.
+    await _guardBleSupport();
     _ouiCache = _loadOuiCache();
     final version = await commands.execute('getDeviceInfo', const {});
     _appVersion = ((version.data as Map?)?['appVersion'] as String?) ?? '0';
@@ -327,6 +385,41 @@ class BtProxyManager extends Manager {
   Future<void> _restart() async {
     await _stop();
     if (_settings.get(defs.esphomeEnabled)) await _start();
+  }
+
+  /// The native answer on Bluetooth LE, asked once. A failed or missing
+  /// ask is not cached, so a bridge that was not ready gets asked again.
+  Future<BleSupport> bleSupport() async {
+    if (_bleSupport case final known?) return known;
+    try {
+      final raw = await _channel.invokeMethod<Map<Object?, Object?>>(
+        'bleSupport',
+      );
+      if (raw == null) return BleSupport.unknown;
+      return _bleSupport = BleSupport(
+        supported: raw['supported'] != false,
+        hint: raw['hint'] as String?,
+      );
+    } catch (_) {
+      return BleSupport.unknown;
+    }
+  }
+
+  /// Keeps the proxy switch off where scanning cannot work: at boot, and
+  /// whenever something turns it on. Off in the setting rather than only
+  /// in effect, so every reader of the switch (the entity catalogs, the
+  /// MQTT sensors, the service reasons, the permission rows) agrees
+  /// without a second flag, and the server starts with no proxy for Home
+  /// Assistant to see.
+  Future<void> _guardBleSupport() async {
+    final support = await bleSupport();
+    if (support.supported || !_settings.get(defs.btproxyEnabled)) return;
+    await _settings.set(defs.btproxyEnabled, false);
+    final why = support.hint ?? 'Not available on this device.';
+    log.warn(
+      name,
+      'Bluetooth proxy kept off: ${why[0].toLowerCase()}${why.substring(1)}',
+    );
   }
 
   /// The port Home Assistant is told the kiosk's web page is on, which it

@@ -929,9 +929,38 @@ export async function loadSettings() {
         }
       })
       .catch(() => {});
-    if (window.__btAdapterTimer) clearInterval(window.__btAdapterTimer);
-    window.__btAdapterTimer = setInterval(() => { poll(); pollError(); }, 5000);
-    poll();
+    const startAdapterPoll = () => {
+      if (window.__btAdapterTimer) clearInterval(window.__btAdapterTimer);
+      window.__btAdapterTimer = setInterval(() => { poll(); pollError(); }, 5000);
+      poll();
+    };
+    // Scanning cannot work at all on this build (a Facebook Portal on
+    // Android 9: no Bluetooth LE feature declared, so Android never starts
+    // its GATT service): the master switch renders off and disabled with
+    // the reason, mirroring the device page, and the adapter banner stays
+    // away since no adapter state would change anything. The start-error
+    // poll keeps running: the entity server is unaffected.
+    api('/api/commands/getBleSupport', { method: 'POST', body: '{}' })
+      .then((r) => r.json())
+      .then((res) => {
+        if (!(res && res.data && res.data.supported === false)) {
+          startAdapterPoll();
+          return;
+        }
+        const row = root.querySelector('[data-key="btproxy.enabled"]');
+        const input = row?.querySelector('.switch input');
+        if (input) { input.checked = false; input.disabled = true; }
+        if (row && !root.querySelector('.ble-unsupported-note')) {
+          const div = document.createElement('div');
+          div.className = 'row ble-unsupported-note';
+          div.style.cssText = 'font-size:12.5px; color:var(--muted);';
+          div.textContent = res.data.hint || 'Not available on this device.';
+          row.insertAdjacentElement('afterend', div);
+        }
+        if (window.__btAdapterTimer) clearInterval(window.__btAdapterTimer);
+        window.__btAdapterTimer = setInterval(pollError, 5000);
+      })
+      .catch(startAdapterPoll);
   }
 
   // ── Lockdown Mode note ────────────────────────────────────────────────
