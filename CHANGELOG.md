@@ -2,13 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.88 - 2026-08-27
 
 ### Fixed
 - Playing music on the device (the Sendspin player, or a media player in the page) paused dashboard view rotation and the return to home timer for exactly 3 minutes, then let them run again mid-song: the app treated playback like a voice turn, and the safety ceiling that releases a lost voice turn released it too. Every play after a pause started another 3 minute stall. Media playback no longer touches rotation or the return to home timer; the screensaver still stands down while audio is audible, and Hold mode remains the way to pin a view for the length of the music.
 
 ### Changed
-- Show fingers is not available on x86 devices (ChromeOS, FydeOS and BlissOS containers) for now: the MediaPipe release that runs on Android 7 ships no x86 build, and the releases that do are the ones that cannot load on Android 7. The trigger is not offered when adding a gesture there and says so. Face detection is unaffected.
 - Where face detection or Show fingers cannot run, the disabled switch and the log line now give the actual reason ("Not available on this Android version." or "Not available on x86 devices.") in place of the "Needs Android 8 or newer." wording of 2026.8.87, which stopped being true once both features ran on Android 7.
 
 ## v2026.8.87 - 2026-08-27
@@ -18,6 +17,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - A crash while the screen was off left the kiosk at the launcher, with the service keeping the device online in Home Assistant but no dashboard up: the crash self-heal counted the screen going dark as the user leaving. It now brings the kiosk back after a crash on a dark panel too, like one on a lit screen.
 
 ### Changed
+- Show fingers is not available on x86 devices (ChromeOS, FydeOS and BlissOS containers) for now: the MediaPipe release that runs on Android 7 ships no x86 build, and the releases that do are the ones that cannot load on Android 7. The trigger is not offered when adding a gesture there and says so. Face detection is unaffected.
 - The Gestures entry in the settings menu reads "Touch, palm and clap gestures", on the device and in the remote admin page, now that a raised hand is a trigger alongside touch and claps.
 
 ## v2026.8.86 - 2026-08-27
