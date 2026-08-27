@@ -566,8 +566,10 @@
   .slider { position: absolute; inset: 0; background: var(--surface-2);
     border: 2px solid var(--outline); border-radius: 16px; cursor: pointer;
     transition: background .2s, border-color .2s; }
+  /* Offsets are from inside the 2px ring: 6 in puts the 16 thumb dead
+     center of the 32 track, 2 in does the same for the 24 thumb. */
   .slider::before { content: ""; position: absolute; width: 16px; height: 16px;
-    left: 4px; top: 4px; background: var(--muted); border-radius: 50%;
+    left: 6px; top: 6px; background: var(--muted); border-radius: 50%;
     transition: left .2s, top .2s, width .2s, height .2s, background .2s; }
   .switch input:checked + .slider { background: var(--primary-fill);
     border-color: var(--primary-fill); }
