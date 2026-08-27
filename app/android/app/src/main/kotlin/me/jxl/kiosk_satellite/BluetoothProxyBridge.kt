@@ -62,6 +62,8 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                                 services = services,
                                 macOverride = call.argument<String>("macOverride"),
                                 nodeName = call.argument<String>("nodeName") ?: "",
+                                webserverPort =
+                                    call.argument<Int>("webserverPort") ?: 0,
                                 // Session reader threads land here; the Dart
                                 // side of the channel only exists on main.
                                 onEntityCommand = { objectId, value ->

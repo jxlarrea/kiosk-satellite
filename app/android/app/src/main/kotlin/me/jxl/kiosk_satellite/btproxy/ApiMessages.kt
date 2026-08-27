@@ -169,6 +169,12 @@ internal class ProxyIdentity(
     /** Marks the origin without pretending to be an esphome-built firmware. */
     val projectName: String,
     val projectVersion: String,
+    /**
+     * The port of the kiosk's own web page, reported as ESPHome's
+     * webserver_port: Home Assistant turns a non-zero value into the
+     * Visit link on the device page. 0 = no page, no link.
+     */
+    val webserverPort: Int = 0,
 )
 
 internal object ApiCodec {
@@ -218,6 +224,12 @@ internal object ApiCodec {
             string(6, identity.model)
             string(8, identity.projectName)
             string(9, identity.projectVersion)
+            // webserver_port: Home Assistant builds the device page's Visit
+            // link from it, http://<host it connects to>:<port>, exactly as
+            // for an ESPHome node with web_server on. The kiosk's remote
+            // admin page rides it; proto3 zero-omission keeps the field
+            // out, and the link off, while there is no page to visit.
+            if (identity.webserverPort > 0) varint(10, identity.webserverPort)
             // legacy_bluetooth_proxy_version: the pre-flags capability number;
             // 5 is the last value the legacy field ever carried, and HA still
             // reads it before trusting the flags field. A device with no

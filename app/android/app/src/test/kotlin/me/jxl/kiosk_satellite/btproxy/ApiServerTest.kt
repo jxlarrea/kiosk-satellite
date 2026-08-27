@@ -158,6 +158,51 @@ class ApiServerTest {
     }
 
     @Test
+    fun deviceInfoReportsWebserverPortOnlyWhenThereIsAPage() {
+        fun webserverPort(withPort: Int): Int? {
+            val s = ApiServer(
+                ProxyIdentity(
+                    name = identity.name,
+                    friendlyName = identity.friendlyName,
+                    macAddress = identity.macAddress,
+                    esphomeVersion = identity.esphomeVersion,
+                    model = identity.model,
+                    manufacturer = identity.manufacturer,
+                    projectName = identity.projectName,
+                    projectVersion = identity.projectVersion,
+                    webserverPort = withPort,
+                ),
+                "02:AA:BB:CC:DD:EE", 0, null, RecordingBackend(), log = {},
+            )
+            s.start()
+            try {
+                val c = PlainClient(s.boundPort)
+                try {
+                    c.send(Msg.HELLO_REQUEST); c.read()
+                    c.send(Msg.CONNECT_REQUEST); c.read()
+                    c.send(Msg.DEVICE_INFO_REQUEST)
+                    val info = c.read()
+                    assertEquals(Msg.DEVICE_INFO_RESPONSE, info.type)
+                    var port: Int? = null
+                    ProtoReader(info.payload).let { r ->
+                        while (r.next()) if (r.field == 10) port = r.asInt()
+                    }
+                    return port
+                } finally {
+                    c.close()
+                }
+            } finally {
+                s.stop()
+            }
+        }
+        // The remote admin page's port becomes Home Assistant's Visit link.
+        assertEquals(2324, webserverPort(2324))
+        // No page: the field is left out entirely (proto3 zero-omission),
+        // so Home Assistant offers no link rather than one to port 0.
+        assertEquals(null, webserverPort(0))
+    }
+
+    @Test
     fun subscribeForwardsAdvertisementsAndDedupsRssiOnly() {
         val backend = RecordingBackend()
         val s = startServer(backend)

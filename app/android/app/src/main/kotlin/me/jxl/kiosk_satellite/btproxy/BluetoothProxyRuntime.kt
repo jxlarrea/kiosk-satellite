@@ -44,6 +44,10 @@ internal object BluetoothProxyRuntime {
          *  The Dart manager owns the policy (setting, one-time adoption);
          *  this is only ever the already-adopted value. */
         val macOverride: String? = null,
+        /** The remote admin page's port, reported so Home Assistant offers
+         *  a Visit link on the device page; 0 while that server is off.
+         *  The Dart manager decides when there is a page to link to. */
+        val webserverPort: Int = 0,
         /** Where entity commands from Home Assistant land (objectId, value). */
         val onEntityCommand: (String, Any?) -> Unit = { _, _ -> },
         /** Where action calls land (action name, arguments by name, and
@@ -214,6 +218,7 @@ internal object BluetoothProxyRuntime {
             manufacturer = android.os.Build.MANUFACTURER,
             projectName = "kiosk_satellite.bluetooth_proxy",
             projectVersion = config.projectVersion,
+            webserverPort = config.webserverPort,
         )
     }
 

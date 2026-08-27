@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- The kiosk's ESPHome device page in Home Assistant carries a **Visit** link to the remote admin page while remote management is on with a password set, the way it does for an ESPHome node with its web server on. The kiosk reports the remote admin port as the device's web server port, which Home Assistant turns into the link on the address it reaches the kiosk at; switching remote management on or off, or changing its port, reconnects so the link follows, while a password change on its own does not.
+
 ### Changed
 - The drawer menu's entries are set a point smaller, their icons a step smaller with them, and a faint rule runs between them, so the list scans as rows rather than as one block of text. The rule sits over every entry but the first of its group; the full divider before Log out stays as it was.
 

@@ -47,6 +47,11 @@ class BtProxyManager extends Manager {
   /// The node name the running server came up under, so writing it back
   /// into settings does not bounce the server (as with [_liveKey]).
   String _liveNodeName = '';
+
+  /// The web page port the running server reports (see [_webserverPort]),
+  /// so a remote admin settings change that leaves it as it is does not
+  /// restart the server.
+  int _liveWebserverPort = 0;
   late final EspEntitySurface _entities = EspEntitySurface(
     bus,
     commands,
@@ -98,11 +103,22 @@ class BtProxyManager extends Manager {
       // The Voice Satellite switches exist only with a satellite bound.
       'ha.satellite_entity',
     };
+    // The remote admin server's settings, which decide the web page port
+    // reported to Home Assistant (the device page's Visit link).
+    const remoteKeys = {'remote.enabled', 'remote.port', 'remote.password'};
     _settingsSub = bus.on<SettingChanged>().listen((e) {
       if (!e.key.startsWith('btproxy.') &&
           !e.key.startsWith('esphome.') &&
           !catalogKeys.contains(e.key) &&
+          !remoteKeys.contains(e.key) &&
           e.key != defs.deviceName.key) {
+        return;
+      }
+      // Only the reported port matters here, and Home Assistant reads it
+      // at connect, so a change to it is worth the reconnect; a password
+      // changed while the page stays served is not.
+      if (remoteKeys.contains(e.key) &&
+          _webserverPort() == _liveWebserverPort) {
         return;
       }
       // UI-only keys: the sort order and the OUI lookup live entirely on
@@ -313,6 +329,19 @@ class BtProxyManager extends Manager {
     if (_settings.get(defs.esphomeEnabled)) await _start();
   }
 
+  /// The port Home Assistant is told the kiosk's web page is on, which it
+  /// turns into the Visit link on the ESPHome device page: the remote admin
+  /// page's port while that server is meant to serve (switched on with a
+  /// password set, the same rule the remote manager runs on), else 0 for
+  /// no link at all.
+  int _webserverPort() {
+    if (!_settings.get(defs.remoteEnabled) ||
+        _settings.get(defs.remotePassword).isEmpty) {
+      return 0;
+    }
+    return _settings.get(defs.remotePort).toInt();
+  }
+
   Future<void> _start() async {
     var key = _settings.get(defs.btproxyKey).trim();
     // Read before the key is generated below: an empty key is what says
@@ -342,6 +371,7 @@ class BtProxyManager extends Manager {
     // Null while the setting is off or the platform hides the address; the
     // native side then keeps its synthetic identity (issue #252).
     final realMac = await adoptedWifiMac(_settings);
+    final webserverPort = _webserverPort();
     try {
       final resolved = await _channel.invokeMethod<String>('start', {
         'friendlyName': friendly.isEmpty ? 'Kiosk Satellite' : friendly,
@@ -364,9 +394,13 @@ class BtProxyManager extends Manager {
         // Empty leaves the generated kiosk-satellite-<id> identity in
         // place; the native side answers with whichever it used.
         'nodeName': node,
+        // The remote admin page's port, for the Visit link on the device
+        // page in Home Assistant; 0 keeps the field, and the link, off.
+        'webserverPort': webserverPort,
       });
       _running = true;
       _startError = null;
+      _liveWebserverPort = webserverPort;
       // Whatever name the server came up under is written back, so the
       // settings row shows the real one instead of a placeholder and the
       // next start reads it from there. Identical writes are ignored by

@@ -34,6 +34,7 @@ class AioesphomeapiE2eTest {
             info = await cli.device_info()
             assert info.name == "kiosk-satellite-test", info.name
             assert info.bluetooth_proxy_feature_flags == 0x61, hex(info.bluetooth_proxy_feature_flags)
+            assert info.webserver_port == 2324, info.webserver_port
             print("DEVICEINFO_OK", info.esphome_version, flush=True)
 
             loop = asyncio.get_running_loop()
@@ -520,6 +521,7 @@ class AioesphomeapiE2eTest {
             manufacturer = "KS",
             projectName = "kiosk_satellite.bluetooth_proxy",
             projectVersion = "1.0",
+            webserverPort = 2324,
         )
         val backend = object : ScannerBackend {
             override fun onScanDemand(mode: ScannerMode) {}

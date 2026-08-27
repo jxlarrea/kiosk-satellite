@@ -42,6 +42,15 @@ If discovery does not surface the device, add it by hand: **Add
 integration, ESPHome**, host is the kiosk's IP, port 6053 (or the value of
 the **API port** setting).
 
+With **Remote management** switched on (under **Settings, Device, Remote
+Administration**, with an admin password set), the kiosk's device page in
+Home Assistant carries a **Visit** link that opens the remote admin page,
+the way it does for an ESPHome node with its web server on. The link
+uses the address Home Assistant connects to the kiosk on and the remote
+admin **Server port**; switching remote management off, or changing the
+port, updates the link at the next connection, which the kiosk makes on
+its own by reconnecting.
+
 ## What it relays
 
 Advertisements always: broadcast sensors and presence tracking work the
