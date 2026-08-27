@@ -350,12 +350,23 @@
     border-radius: var(--radius) var(--radius) 0 0;
     border-bottom: 1px solid var(--border); }
   .log-head .log-meta { color: var(--muted); font-size: 13px; }
+  .log-head .log-title { flex: 1; min-width: 0; font-size: 15px;
+    font-weight: 500; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; }
   .log-head .spacer { flex: 1; }
   #tab-logs .console { border-top-left-radius: 0; border-top-right-radius: 0; }
   /* Fill the viewport below the nav and header; the console pane keeps
      room for its input row. */
   #logsOut { height: calc(100vh - 250px); min-height: 320px; }
   #consoleOut { height: calc(100vh - 308px); min-height: 300px; }
+  /* The File Manager's listing pane: the same fixed box as the log box,
+     the rows scrolling inside it, so opening a folder never reflows the
+     page. It gives up the grant card's height while that card shows. */
+  .file-list { background: var(--surface); padding: 4px 20px;
+    border-radius: 0 0 var(--radius) var(--radius);
+    height: calc(100vh - 250px); min-height: 320px; overflow-y: auto;
+    overscroll-behavior: contain; }
+  .file-list.with-grant { height: calc(100vh - 346px); }
 
   /* Phone top bar; hidden on wide screens where the rail is always there. */
   .mobilebar { display: none; }
