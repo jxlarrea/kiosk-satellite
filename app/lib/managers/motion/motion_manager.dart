@@ -245,13 +245,7 @@ class MotionManager extends Manager {
   /// surfaces, but a value written from Home Assistant or an import
   /// lands here with no UI to say so.
   void _warnUnsupported() {
-    final hint = (_vision.hint ?? 'not available on this device').replaceFirst(
-      RegExp(r'\.$'),
-      '',
-    );
-    final reason = hint.isEmpty
-        ? hint
-        : hint[0].toLowerCase() + hint.substring(1);
+    final hint = _vision.hint ?? 'Not available on this device.';
     final cameraOn = _settings.get(defs.cameraEnabled);
     if (!_vision.faces &&
         !_warnedFaces &&
@@ -260,8 +254,8 @@ class MotionManager extends Manager {
       _warnedFaces = true;
       log.warn(
         name,
-        'face detection is unavailable on this device ($reason); '
-        'Dismiss on face stays idle',
+        'face detection cannot run here ($hint) so Dismiss on face '
+        'stays idle',
       );
     }
     if (!_vision.hands &&
@@ -273,8 +267,8 @@ class MotionManager extends Manager {
       _warnedHands = true;
       log.warn(
         name,
-        'hand detection is unavailable on this device ($reason); '
-        'Show fingers gestures stay idle',
+        'hand detection cannot run here ($hint) so Show fingers '
+        'gestures stay idle',
       );
     }
   }

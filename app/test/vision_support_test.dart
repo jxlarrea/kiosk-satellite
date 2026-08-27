@@ -97,7 +97,7 @@ void main() {
   const android7 = {
     'faces': false,
     'hands': false,
-    'hint': 'Needs Android 8 or newer.',
+    'hint': 'Not available on this Android version.',
   };
 
   const faceOnly = {
@@ -119,8 +119,8 @@ void main() {
     expect(
       warnings(),
       contains(
-        'face detection is unavailable on this device (needs Android 8 '
-        'or newer); Dismiss on face stays idle',
+        'face detection cannot run here (Not available on this Android '
+        'version.) so Dismiss on face stays idle',
       ),
     );
 
@@ -147,8 +147,8 @@ void main() {
     expect(
       warnings(),
       contains(
-        'hand detection is unavailable on this device (needs Android 8 '
-        'or newer); Show fingers gestures stay idle',
+        'hand detection cannot run here (Not available on this Android '
+        'version.) so Show fingers gestures stay idle',
       ),
     );
 
@@ -194,13 +194,13 @@ void main() {
     await pump();
     expect(camera.facesKnownUnsupported, isTrue);
     expect(camera.handsKnownUnsupported, isTrue);
-    expect(camera.visionHint, 'Needs Android 8 or newer.');
+    expect(camera.visionHint, 'Not available on this Android version.');
     final answer = await commands.execute('getVisionSupport', const {});
     expect(answer.ok, isTrue);
     expect(answer.data, {
       'faces': false,
       'hands': false,
-      'hint': 'Needs Android 8 or newer.',
+      'hint': 'Not available on this Android version.',
     });
   });
 

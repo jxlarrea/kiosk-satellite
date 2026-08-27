@@ -148,6 +148,9 @@ The camera side:
   whenever the screen is on, screensaver or not, so it costs what
   [Postpone screensaver on motion](camera.md#motion-detection) costs; a
   panel that is off releases it.
+- Not available on x86 devices (ChromeOS, FydeOS and BlissOS containers):
+  the hand landmarker ships for arm processors only, and the trigger is
+  not offered there.
 - Like claps, a hand shown during a voice interaction fires nothing: the
   camera's analysis is idled from the wake word until Voice Satellite is
   listening for it again, and a hand that was up when the turn started

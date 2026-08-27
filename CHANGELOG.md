@@ -2,6 +2,12 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- Show fingers is not available on x86 devices (ChromeOS, FydeOS and BlissOS containers) for now: the MediaPipe release that runs on Android 7 ships no x86 build, and the releases that do are the ones that cannot load on Android 7. The trigger is not offered when adding a gesture there and says so. Face detection is unaffected.
+- Where face detection or Show fingers cannot run, the disabled switch and the log line now give the actual reason ("Not available on this Android version." or "Not available on x86 devices.") in place of the "Needs Android 8 or newer." wording of 2026.8.87, which stopped being true once both features ran on Android 7.
+
 ## v2026.8.87 - 2026-08-27
 
 ### Fixed
