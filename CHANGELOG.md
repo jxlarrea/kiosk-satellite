@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.91 - 2026-08-27
 
 ### Added
 - An Entity widget, the fourth screensaver widget type beside the small clock, the weather and the battery: one Home Assistant entity in a corner, the At a Glance row's reading in the widget family's look. The entity's icon and value share a line with the name under them (a Show name toggle hides it), in the widget's color over the corner vignette, so a room's temperature sensor can sit in a corner of the Immich photos where the At a Glance row cannot go. The entity is searched for by name or id like the row's are, the name can be overridden, and the value can be the state or one of the entity's attributes, offered with their current readings. It reads exactly as the row does (the entity's own icon, display precision, unit) and follows a live Home Assistant subscription while the screensaver shows, on the device and in the remote admin alike.
