@@ -97,7 +97,7 @@
 
   /* Login */
   #login { min-height: 100%; display: grid; place-items: center; padding: 24px; }
-  .login-card .btn-primary { width: 100%; padding: 13px; }
+  .login-card .btn-primary { width: 100%; }
   .login-card {
     width: 100%; max-width: 360px; background: var(--surface);
     border-radius: var(--radius); padding: 32px; text-align: center;
@@ -109,12 +109,45 @@
     background: var(--surface-2); border: 1px solid var(--border);
     border-radius: var(--radius-sm); color: var(--text); }
   .field:focus { outline: none; border-color: var(--primary); }
-  .btn-primary { padding: 10px 20px; background: var(--primary-fill);
-    color: var(--primary-ink); border: none; border-radius: 999px;
-    font-size: 14px; font-weight: 600;
-    font-weight: 600; }
+  /* Buttons: the device's compact pills, one height, one weight. Filled
+     carries the one affirmative action, outlined (btn-ghost) the quiet
+     sibling beside it in rows and toolbars, text the dialog Cancel and
+     the add actions inside dialogs. All share the device's metrics (44
+     high, 96 minimum wide, 20 side padding, 14.5 semibold) so a Cancel
+     and Save pair lines up, and Save never reads narrower than Cancel. */
+  .btn-primary, .btn-ghost, .btn-text {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; box-sizing: border-box; min-width: 96px; height: 44px;
+    padding: 0 20px; border-radius: 999px; font-size: 14.5px;
+    font-weight: 600; line-height: 1; white-space: nowrap; }
+  .btn-primary { background: var(--primary-fill); color: var(--primary-ink);
+    border: none; }
   .btn-primary:hover { filter: brightness(1.06); }
-  .btn-primary:active { transform: translateY(1px); }
+  .btn-ghost { background: transparent; border: 1px solid var(--outline);
+    color: var(--text); }
+  .btn-text { background: transparent; border: none; color: var(--primary); }
+  .btn-ghost:hover, .btn-text:hover { background: var(--surface-2); }
+  /* The device's ink ripple, as a 1px press. */
+  .btn-primary:active, .btn-ghost:active, .btn-text:active,
+  .icon-btn:active { transform: translateY(1px); }
+  /* Disabled dims to 45% and stays put: a disabled action is never
+     hidden, the row says why in a hint instead. */
+  .btn-primary:disabled, .btn-ghost:disabled, .btn-text:disabled,
+  .icon-btn:disabled { opacity: .45; cursor: default; filter: none;
+    transform: none; }
+  .btn-ghost:disabled:hover, .btn-text:disabled:hover,
+  .icon-btn:disabled:hover { background: transparent; color: inherit; }
+  button:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: 3px; }
+  /* Icon buttons: the device's IconButton, a 40 borderless disc with a
+     22 icon in muted. The disc is the hit target and paints surface 2 on
+     hover. Grouped actions sit 2 apart at the end of a row. */
+  .icon-btn { display: inline-flex; align-items: center;
+    justify-content: center; flex: none; width: 40px; height: 40px;
+    padding: 0; border: none; border-radius: 50%; background: transparent;
+    color: var(--muted); }
+  .icon-btn svg { width: 22px; height: 22px; display: block; }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); }
   .msg-error { color: var(--error); font-size: 14px; margin-top: 12px; min-height: 18px; }
 
   /* App shell: a One UI split, mirroring the device's settings, the nav is
@@ -220,13 +253,9 @@
   .foot-stats { display: flex; gap: 12px; padding: 0 8px 10px; min-height: 29px; }
   .stat { color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
   .device { color: var(--muted); font-size: 13px; }
-  .foot-actions { display: flex; gap: 8px; }
+  .foot-actions { display: flex; align-items: center; gap: 8px; }
   .foot-actions #logoutBtn { flex: 1; }
 
-  .btn-ghost { background: transparent; border: 1px solid var(--border);
-    color: var(--text); border-radius: 999px; padding: 9px 18px;
-    font-size: 14px; font-weight: 600; }
-  .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
   /* Tabs: one segmented pill, echoing the app's segmented buttons. The
      active segment is tinted; inactive segments are quiet text. Used by
      the Logs source picker and the File Manager location. */
@@ -252,9 +281,6 @@
      room for its input row. */
   #logsOut { height: calc(100vh - 250px); min-height: 320px; }
   #consoleOut { height: calc(100vh - 308px); min-height: 300px; }
-  #themeBtn, #wizardThemeBtn { display: inline-flex; align-items: center;
-    justify-content: center; padding: 7px 9px; }
-  #themeBtn svg, #wizardThemeBtn svg { display: block; }
 
   /* Phone top bar; hidden on wide screens where the rail is always there. */
   .mobilebar { display: none; }
@@ -444,11 +470,18 @@
   @media (max-width: 640px) {
     .row { flex-wrap: wrap; row-gap: 3px; }
     .row .info { display: contents; }
-    .row .info .name { flex: 1 1 auto; min-width: 0; }
+    /* The name keeps at least 40% of the row and wraps its text first: a
+       control never squeezes it into a sliver. Short controls (switches,
+       numbers, swatches, time boxes, status words, a single button) stay
+       on the name line. */
+    .row .info .name { flex: 1 1 auto; min-width: 40%; }
     .row .info .desc { flex-basis: 100%; order: 1; }
-    /* Keep controls from crowding the name off its line. Numbers hold short
-       values, so they get a tight cap; text/selects a little more. */
-    .row input[type=text], .row input[type=password], .row select { max-width: 48vw; }
+    /* A control wider than that stacks: it takes the next line and
+       stretches across the row, on the name's left edge, the way dropdown
+       rows stack on the device. Never right aligned on its own line. */
+    .row input[type=text], .row input[type=password], .row input[type=url],
+    .row select, .row textarea { flex: 1 1 100%; width: 100%;
+      max-width: none; }
     .row input[type=number] { max-width: 90px; }
   }
 
@@ -500,11 +533,8 @@
   .camera-row-icon { width: 24px; height: 24px; flex: none;
     display: grid; place-items: center; color: var(--muted); }
   .camera-row-icon svg { width: 22px; height: 22px; display: block; }
-  .camera-row-actions { display: flex; align-items: center; gap: 4px;
+  .camera-row-actions { display: flex; align-items: center; gap: 2px;
     flex: none; }
-  .camera-icon-action { width: 38px !important; height: 38px;
-    padding: 8px !important; display: grid; place-items: center; line-height: 0; }
-  .camera-icon-action svg { width: 20px; height: 20px; display: block; }
   .camera-row-clickable { cursor: pointer; }
   .camera-row-clickable:focus-visible { outline: 2px solid var(--primary);
     outline-offset: -2px; }
@@ -512,7 +542,6 @@
 
   @media (max-width: 640px) {
     .row.camera-list-row, .camera-row-main { gap: 10px; }
-    .camera-row-actions { gap: 2px; }
   }
 
   /* ---- Onboarding wizard: the settings split layout, the step list on
@@ -556,10 +585,7 @@
   #wizardBody .field:last-child { margin-bottom: 4px; }
   .wizard-nav { display: flex; align-items: center;
     justify-content: flex-end; gap: 12px; padding-top: 18px; }
-  #wizardBack { border: 1px solid var(--border); border-radius: 999px;
-    padding: 12px 32px; font-size: 14px; font-weight: 600;
-    background: transparent; color: var(--text); cursor: pointer; }
-  #wizardNext { padding: 13px 32px; width: auto; flex: none; }
+  #wizardBack, #wizardNext { padding: 0 32px; width: auto; flex: none; }
   #wizardError { display: flex; gap: 12px; align-items: flex-start;
     background: color-mix(in srgb, var(--error) 16%, var(--bg));
     color: var(--text); border-radius: 20px; padding: 16px 18px;

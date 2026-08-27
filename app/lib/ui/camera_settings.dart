@@ -81,7 +81,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         SettingsCard(
           children: [
             for (final server in config.servers)
-              ListTile(
+              SettingsRow(
                 leading: const Icon(Icons.dns_outlined),
                 title: Text(server.name),
                 subtitle: Text(server.baseUrl),
@@ -155,7 +155,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
         SettingsCard(
           children: [
             for (final view in config.views)
-              ListTile(
+              SettingsRow(
                 leading: Icon(
                   view.isDefault
                       ? Icons.star_outline

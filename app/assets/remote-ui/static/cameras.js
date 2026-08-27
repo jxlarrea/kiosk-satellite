@@ -154,7 +154,8 @@ export function cameraAction(label, action, primary = false, icon = '', disabled
   button.style.width = 'auto';
   button.disabled = !!disabled;
   if (icon) {
-    button.classList.add('camera-icon-action');
+    // The device's IconButton: a 40 borderless disc, the icon its label.
+    button.className = 'icon-btn';
     button.innerHTML = cameraIcon(icon);
     button.title = label;
     button.setAttribute('aria-label', label);
@@ -268,6 +269,7 @@ export function cameraEditor({ title, body, save, width = 620, tall = false }) {
       shell.close();
       resolve(false);
     });
+    cancel.className = 'btn-text';
     const submit = cameraAction('Save', async () => {
       submit.disabled = true;
       error.textContent = '';

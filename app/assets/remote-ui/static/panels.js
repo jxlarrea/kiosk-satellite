@@ -465,7 +465,7 @@ async function showCameraViewFromTile() {
         body.appendChild(radioRow(v.name, desc, false, () => { back.remove(); resolve(v.id); }));
       }
       const cancel = document.createElement('button');
-      cancel.className = 'btn-ghost';
+      cancel.className = 'btn-text';
       cancel.textContent = 'Cancel';
       cancel.addEventListener('click', () => { back.remove(); resolve(null); });
       foot.appendChild(cancel);

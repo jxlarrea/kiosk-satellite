@@ -336,7 +336,7 @@ export async function loadAboutInfo() {
         'flex:none; margin:14px 0 0; font-size:12.5px; color:var(--muted);';
       shell.card.insertBefore(hint, shell.foot);
       const cancel = document.createElement('button');
-      cancel.className = 'btn-ghost';
+      cancel.className = 'btn-text';
       cancel.textContent = 'Cancel';
       cancel.addEventListener('click', () => back.remove());
       const ok = document.createElement('button');

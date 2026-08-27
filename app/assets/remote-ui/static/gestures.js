@@ -154,7 +154,7 @@ export function gestureListModal(title, items) {
       body.appendChild(row);
     });
     const cancel = document.createElement('button');
-    cancel.className = 'btn-ghost';
+    cancel.className = 'btn-text';
     cancel.textContent = 'Cancel';
     cancel.addEventListener('click', () => { back.remove(); resolve(null); });
     foot.appendChild(cancel);

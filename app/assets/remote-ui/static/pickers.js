@@ -43,7 +43,7 @@ export function askImportOptions(backupName) {
       localTouched = true;
     });
     const cancel = document.createElement('button');
-    cancel.className = 'btn-ghost';
+    cancel.className = 'btn-text';
     cancel.textContent = 'Cancel';
     cancel.addEventListener('click', () => close(null));
     const go = document.createElement('button');
@@ -108,7 +108,7 @@ export function openMediaBrowser() {
 
       foot.innerHTML = '';
       const cancel = document.createElement('button');
-      cancel.className = 'btn-ghost'; cancel.textContent = 'Cancel';
+      cancel.className = 'btn-text'; cancel.textContent = 'Cancel';
       cancel.addEventListener('click', () => close(null));
       const spacer = document.createElement('span'); spacer.className = 'spacer';
       foot.append(cancel, spacer);
@@ -141,7 +141,7 @@ export function openLauncherAppsPicker(current) {
     list.innerHTML = '<div class="desc" style="color:var(--muted)">Loading…</div>';
 
     const cancel = document.createElement('button');
-    cancel.className = 'btn-ghost'; cancel.textContent = 'Cancel';
+    cancel.className = 'btn-text'; cancel.textContent = 'Cancel';
     cancel.addEventListener('click', () => close(null));
     const okBtn = document.createElement('button');
     okBtn.className = 'btn-primary'; okBtn.textContent = 'Save'; okBtn.disabled = true;

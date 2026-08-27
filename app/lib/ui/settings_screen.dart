@@ -2837,7 +2837,7 @@ class _KioskPermissionsTileState extends State<_KioskPermissionsTile>
     String action = 'Grant',
   }) {
     final theme = Theme.of(context);
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         granted == true ? Icons.check_circle_outline : missingIcon,
         color: granted == true ? null : theme.colorScheme.error,
@@ -2940,7 +2940,7 @@ class _LauncherPermissionsTileState extends State<_LauncherPermissionsTile>
     required Future<void> Function() onGrant,
   }) {
     final theme = Theme.of(context);
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         granted == true ? Icons.check_circle_outline : missingIcon,
         color: granted == true ? null : theme.colorScheme.error,
@@ -3018,7 +3018,7 @@ class _OverlayGrantRowState extends State<_OverlayGrantRow> {
   Widget build(BuildContext context) {
     if (_granted != false) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    return ListTile(
+    return SettingsRow(
       leading: Icon(Icons.layers_outlined, color: theme.colorScheme.error),
       title: const Text('Display over other apps'),
       subtitle: const Text(
@@ -3083,7 +3083,7 @@ class _ScreenOffAdminRowState extends State<_ScreenOffAdminRow>
   Widget build(BuildContext context) {
     if (_granted != false) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         Icons.admin_panel_settings_outlined,
         color: theme.colorScheme.error,
@@ -3840,7 +3840,7 @@ class _CameraGrantRowState extends State<_CameraGrantRow> {
   Widget build(BuildContext context) {
     if (_granted != false) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         Icons.no_photography_outlined,
         color: theme.colorScheme.error,
@@ -5969,7 +5969,7 @@ class _ServicePermissionsTileState extends State<_ServicePermissionsTile>
     final ok = granted == true;
     final muted = theme.colorScheme.onSurfaceVariant;
     final urgent = needed && adbHint == null;
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         ok ? Icons.check_circle_outline : missingIcon,
         color: ok
@@ -6167,7 +6167,7 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
     final ok = granted == true;
     final muted = theme.colorScheme.onSurfaceVariant;
     final urgent = needed && adbHint == null;
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         ok ? Icons.check_circle_outline : missingIcon,
         color: ok
@@ -6486,7 +6486,7 @@ class _SystemPermissionsTileState extends State<SystemPermissionsTile>
     String action = 'Grant',
   }) {
     final theme = Theme.of(context);
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         granted == true ? Icons.check_circle_outline : missingIcon,
         color: granted == true ? null : theme.colorScheme.error,
@@ -6731,7 +6731,7 @@ class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
     required String subtitle,
   }) {
     final theme = Theme.of(context);
-    return ListTile(
+    return SettingsRow(
       leading: Icon(
         granted == true ? Icons.check_circle_outline : missingIcon,
         color: granted == true ? null : theme.colorScheme.error,
@@ -7268,7 +7268,8 @@ class SettingTile extends StatelessWidget {
         // the copy.
         if (def.key == screensaverClockBackground.key) {
           final path = value as String;
-          return ListTile(
+          return SettingsRow(
+            stack: true,
             title: Text(def.title),
             subtitle: Text(
               path.isEmpty ? 'No photo selected' : path.split('/').last,
@@ -7876,7 +7877,8 @@ class _VsControlsSectionState extends State<VsControlsSection> {
     // satellite actually assigned - without one there is nothing to start.
     final canStart =
         engine['canStart'] == true && '${_data?['satellite'] ?? ''}'.isNotEmpty;
-    return ListTile(
+    final scheme = Theme.of(context).colorScheme;
+    return SettingsRow(
       title: const Text('Engine'),
       subtitle: const Text('Start or Stop the Voice Satellite engine.'),
       trailing: Row(
@@ -7884,20 +7886,18 @@ class _VsControlsSectionState extends State<VsControlsSection> {
         children: [
           Text(
             running ? 'Running' : 'Stopped',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: running
-                  ? Colors.green
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: running ? scheme.primary : scheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(width: 12),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: running
-                  ? Colors.red.shade600
-                  : Colors.green.shade600,
-              foregroundColor: Colors.white,
-            ),
+            style: running
+                ? FilledButton.styleFrom(
+                    backgroundColor: scheme.error,
+                    foregroundColor: scheme.onError,
+                  )
+                : null,
             onPressed: _engineBusy || (!running && !canStart)
                 ? null
                 : () => _engine(running ? 'stop' : 'start'),

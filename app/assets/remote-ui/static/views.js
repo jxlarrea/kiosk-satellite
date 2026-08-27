@@ -33,7 +33,7 @@ export function pickView(urlPath, views, currentRoute) {
         route === currentRoute, () => { back.remove(); resolve(route); }));
     });
     const cancel = document.createElement('button');
-    cancel.className = 'btn-ghost';
+    cancel.className = 'btn-text';
     cancel.textContent = 'Cancel';
     cancel.addEventListener('click', () => { back.remove(); resolve(null); });
     foot.appendChild(cancel);
@@ -72,17 +72,17 @@ export async function showWatchedEntities() {
   foot.appendChild(done);
 }
 
-// A pick-one row (dashboard, satellite): a real radio control instead of a
-// text glyph. The whole row is the click target; the input is the visual,
-// kept in sync by each re-render.
+// A pick-one row (dashboard, satellite): a real radio control leading the
+// row, like the device's RadioListTile. The whole row is the click target;
+// the input is the visual, kept in sync by each re-render.
 export function radioRow(name, desc, selected, onPick) {
   const row = readOnlyRow(name, desc, '');
   row.querySelector('span').remove();
   const r = document.createElement('input');
   r.type = 'radio';
   r.checked = selected;
-  r.style.cssText = 'width:19px; height:19px; margin:0; flex-shrink:0; pointer-events:none;';
-  row.appendChild(r);
+  r.style.pointerEvents = 'none';
+  row.prepend(r);
   row.style.cursor = 'pointer';
   row.addEventListener('click', onPick);
   return row;

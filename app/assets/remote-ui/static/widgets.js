@@ -86,7 +86,7 @@ export function messageBox({ title, message, buttons = ['OK'] }) {
     buttons.forEach((label, i) => {
       const btn = document.createElement('button');
       btn.textContent = label;
-      btn.className = i === buttons.length - 1 ? 'btn-primary' : 'btn-ghost';
+      btn.className = i === buttons.length - 1 ? 'btn-primary' : 'btn-text';
       btn.addEventListener('click', () => { back.remove(); resolve(label); });
       foot.appendChild(btn);
     });

@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Changed
+- Buttons match on both surfaces: the remote admin's pills are the device's 44 high, 96 minimum wide, 14.5 semibold buttons, every dialog's Cancel is a borderless text button like the device's, outlined buttons take the outline tone so they read on a card, and the icon actions on list rows (play, import, delete, move) are 40 borderless discs on the remote the way they are on the device. On a phone width, both surfaces reflow a settings row the same way: a short control (a switch, a number, a status word, one button) shares the first line with the name, which keeps at least 40% of the row, a wide control stacks under the name across the row, and the description goes beneath on the name's left edge. The device's permission rows and list rows follow this rule now instead of squeezing their text beside the control, the remote's radio rows lead with the radio like the device's, and the Voice Satellite engine row's status and buttons use the app's palette.
 - The remote admin page moves onto the device's visual system, sheet by sheet: its muted text, control fill and hairline colors are now the device's exact values, and its type sizes are the device's ramp (page titles 22 semibold, row titles 17 medium over a 13 description, section headings 14, dialog titles 20). Cards sit 16 apart, the page is padded the way the device's settings are, and the reading column caps at the same 760 width.
 
 ### Fixed

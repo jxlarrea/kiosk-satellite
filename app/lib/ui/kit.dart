@@ -320,6 +320,147 @@ class KsDropdown<T> extends StatelessWidget {
   }
 }
 
+/// Whether the pane a row lives in is too narrow for a name, a description
+/// and a wide control side by side. The settings split view keeps a rail
+/// on screens 720 and up (same constants as the settings screen); below
+/// that the page is full width. Under 640 rows reflow: a short control
+/// shares the first line with the name, a wide one stacks under it, the
+/// description goes beneath. LayoutBuilder cannot answer this inside a
+/// ListTile (it measures intrinsics), so the pane width is derived from
+/// the screen instead. The remote admin reflows at the same 640.
+bool tightPane(BuildContext context) {
+  final screen = MediaQuery.sizeOf(context).width;
+  final pane = screen >= 720
+      ? screen - (screen * 0.4).clamp(320.0, 430.0)
+      : screen;
+  return pane < 640;
+}
+
+/// A settings row that reflows on a tight pane instead of squeezing its
+/// text beside the control. On a roomy pane it is a plain [ListTile], so
+/// it matches every other row to the pixel. Under 640 (see [tightPane])
+/// the name and a short [trailing] share the first line, the name keeping
+/// at least 40% of the row and wrapping first, and the [subtitle] spans
+/// the full width beneath. A control too wide for the name line passes
+/// [stack]: it takes the next line and stretches across the row. With a
+/// [leading] icon the stacked control and the subtitle indent to the
+/// name, never under the icon.
+class SettingsRow extends StatelessWidget {
+  const SettingsRow({
+    super.key,
+    this.leading,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.enabled = true,
+    this.stack = false,
+  });
+
+  final Widget? leading;
+  final Widget title;
+  final Widget? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  /// The control is wider than a switch, a number or a single text button:
+  /// stack it under the name on a tight pane.
+  final bool stack;
+
+  /// The leading icon's width plus the gap to the name: what the stacked
+  /// control and the subtitle indent by so they line up with the name.
+  static const double _indent = 24 + 12;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!tightPane(context)) {
+      return ListTile(
+        leading: leading,
+        title: title,
+        subtitle: subtitle,
+        trailing: trailing,
+        onTap: onTap,
+        enabled: enabled,
+      );
+    }
+    final theme = Theme.of(context);
+    final tiles = theme.listTileTheme;
+    final scheme = theme.colorScheme;
+    final titleStyle = (tiles.titleTextStyle ?? theme.textTheme.bodyLarge!)
+        .copyWith(
+          color: enabled ? null : scheme.onSurface.withValues(alpha: 0.38),
+        );
+    final subtitleStyle =
+        (tiles.subtitleTextStyle ?? theme.textTheme.bodyMedium!).copyWith(
+          color: enabled
+              ? null
+              : scheme.onSurfaceVariant.withValues(alpha: 0.38),
+        );
+    final indent = leading == null ? 0.0 : _indent;
+    final control = trailing;
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(Ks.inset, 13, Ks.inset, 13),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (leading != null) ...[
+                  IconTheme.merge(
+                    data: IconThemeData(
+                      color: tiles.iconColor ?? scheme.onSurfaceVariant,
+                      size: 24,
+                    ),
+                    child: leading!,
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: DefaultTextStyle.merge(
+                    style: titleStyle,
+                    child: title,
+                  ),
+                ),
+                if (control != null && !stack) ...[
+                  const SizedBox(width: 12),
+                  ConstrainedBox(
+                    // The name keeps at least 40% of the row and wraps
+                    // first: a control never squeezes it into a sliver.
+                    constraints: BoxConstraints(
+                      maxWidth:
+                          (MediaQuery.sizeOf(context).width -
+                              2 * Ks.inset -
+                              indent) *
+                          0.6,
+                    ),
+                    child: control,
+                  ),
+                ],
+              ],
+            ),
+            if (control != null && stack)
+              Padding(
+                padding: EdgeInsets.only(left: indent, top: 6),
+                child: SizedBox(width: double.infinity, child: control),
+              ),
+            if (subtitle != null)
+              Padding(
+                padding: EdgeInsets.only(left: indent, top: 4),
+                child: DefaultTextStyle.merge(
+                  style: subtitleStyle,
+                  child: subtitle!,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// A settings row with a dropdown control that never starves the text. A
 /// dropdown in ListTile.trailing demands the width of its widest option,
 /// which on a phone squeezes the title and description into a
@@ -348,15 +489,7 @@ class DropdownRow<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The pane the row actually lives in: the settings split view keeps a
-    // rail on screens 720 and up (same constants as the settings screen);
-    // below that the page is full width. LayoutBuilder cannot be used here
-    // (ListTile measures intrinsics), so the pane width is derived instead.
-    final screen = MediaQuery.sizeOf(context).width;
-    final pane = screen >= 720
-        ? screen - (screen * 0.4).clamp(320.0, 430.0)
-        : screen;
-    final tight = pane < 640;
+    final tight = tightPane(context);
     final dropdown = KsDropdown<T>(
       value: value,
       expand: tight,
