@@ -1,5 +1,6 @@
 import { api, cmd, state } from './core.js';
 import { readOnlyRow } from './device.js';
+import { attachSlider } from './widgets.js';
 
 // ── Microphone level meter ────────────────────────────────────────────
 // Mirrors the device's segmented meter: 24 segments on a dB scale
@@ -127,21 +128,9 @@ export async function prependMasterVolumeRow() {
   info.querySelector('.desc').textContent =
     'The device volume. Media and assistant volume scale under it.';
   row.appendChild(info);
-  const controls = document.createElement('div');
-  controls.style.cssText = 'display:flex; align-items:center; gap:10px; min-width:0';
-  const inp = document.createElement('input');
-  inp.type = 'range'; inp.min = '0'; inp.max = '100'; inp.step = '5';
-  inp.value = String(Math.round(percent));
-  inp.style.width = '190px';
-  const val = document.createElement('span');
-  val.className = 'device';
-  val.style.cssText = 'min-width:3.5em; text-align:right; font-variant-numeric:tabular-nums';
-  val.textContent = `${Math.round(percent)}%`;
-  inp.addEventListener('input', () => (val.textContent = `${inp.value}%`));
-  inp.addEventListener('change', () =>
-    cmd('setVolume', { percent: Number(inp.value) }));
-  controls.append(inp, val);
-  row.appendChild(controls);
+  attachSlider(row, { min: 0, max: 100, step: 5, value: Math.round(percent),
+    label: (v) => `${v}%`,
+    onChange: (v) => cmd('setVolume', { percent: v }) });
   card.prepend(row);
 }
 

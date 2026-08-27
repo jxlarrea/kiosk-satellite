@@ -3,6 +3,7 @@ import { $, state } from './core.js';
 import { appendLine, logView, updateConsoleMeta } from './logs.js';
 import { applyQuickEvent, applyQuickState, loadScreenshot, quickStateOf } from './panels.js';
 import { loadVsPermissions, renderVsControls } from './vs.js';
+import { paintRange } from './widgets.js';
 
 /* ---- Live state (WebSocket) ---- */
 export function connectWs() {
@@ -155,5 +156,6 @@ export function renderStats(o) {
 export function showBrightness(level) {
   const pct = Math.round(level * 100);
   $('#brightness').value = pct;
+  paintRange($('#brightness'));
   $('#brightnessValue').textContent = `${pct}%`;
 }

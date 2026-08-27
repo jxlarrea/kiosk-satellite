@@ -173,7 +173,8 @@ export function openLauncherAppsPicker(current) {
           if (box.checked) selected.add(app.package);
           else selected.delete(app.package);
         });
-        r.append(info, box);
+        // The checkbox leads the row, the whole row toggles it.
+        r.append(box, info);
         list.appendChild(r);
       }
       if (!apps.length) {

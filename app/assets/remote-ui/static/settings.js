@@ -41,7 +41,7 @@ import {
   viewPath,
 } from './views.js';
 import { loadVsPermissions, renderVsControls } from './vs.js';
-import { messageBox } from './widgets.js';
+import { copyBox, messageBox } from './widgets.js';
 
 export async function loadSettings() {
   // A re-render rebuilds every row; without restoring scroll, flipping a
@@ -428,46 +428,19 @@ export async function loadSettings() {
   // (see save() in rows.js), so the answer never waits for a reload.
   refreshRealMacNote();
 
-  // ── ESPHome encryption key: a Copy button ─────────────────────────────
-  // Double-clicking the key selects only part of it: a double-click stops
-  // at the +, / and = a base64 key is full of, and a partial key pasted
-  // into Home Assistant fails with a generic "unable to connect". The
-  // clipboard API needs a secure context, which the admin's plain-http
-  // address is not, so the copy falls back to a selection.
+  // ── ESPHome encryption key: the copy box ──────────────────────────────
+  // The key is read back and pasted into Home Assistant, never typed: a
+  // read-only box that copies the whole key on tap, mirroring the device
+  // row. Double-clicking a bare key selected only part of it (a double
+  // click stops at the +, / and = a base64 key is full of) and a partial
+  // key pasted into Home Assistant fails with a generic "unable to
+  // connect".
   {
     const row = document.querySelector('[data-key="btproxy.key"]');
     const input = row?.querySelector('input');
-    if (input && !row.querySelector('.copy-key')) {
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'display:flex; gap:8px; align-items:center; min-width:0';
-      input.replaceWith(wrap);
-      wrap.appendChild(input);
-      const btn = document.createElement('button');
-      btn.className = 'btn-ghost copy-key';
-      btn.textContent = 'Copy';
-      btn.style.cssText = 'flex-shrink:0;';
-      btn.addEventListener('click', async () => {
-        const key = input.value;
-        if (!key) return;
-        let ok = false;
-        try {
-          if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(key);
-            ok = true;
-          }
-        } catch (_) { /* not a secure context, or refused */ }
-        if (!ok) {
-          input.focus();
-          input.select();
-          input.setSelectionRange(0, key.length);
-          try { ok = document.execCommand('copy'); } catch (_) { /* unsupported */ }
-          window.getSelection()?.removeAllRanges();
-          input.blur();
-        }
-        btn.textContent = ok ? 'Copied' : 'Select all and copy';
-        setTimeout(() => { btn.textContent = 'Copy'; }, 1800);
-      });
-      wrap.appendChild(btn);
+    if (input && !row.querySelector('.copy-box')) {
+      input.replaceWith(copyBox(input.value, {
+        placeholder: input.placeholder || 'Not set' }).el);
     }
   }
 

@@ -226,10 +226,10 @@
           <button class="action tile" data-cmd="restartApp"><span class="disc d2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.6a8 8 0 1 0 11.4 0"/></svg></span><span>Restart app</span></button>
           <button class="action tile" data-cmd="exitApp"><span class="disc d3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 21H6a2.5 2.5 0 0 1-2.5-2.5v-13A2.5 2.5 0 0 1 6 3h3.5"/><path d="m15.5 16.5 4.5-4.5-4.5-4.5M20 12H9.5"/></svg></span><span>Exit app</span></button>
         </div>
-        <div class="row" style="margin-top:6px">
+        <div class="row slider-row" style="margin-top:6px">
           <div class="info"><div class="name">Brightness</div></div>
-          <input type="range" id="brightness" min="0" max="100" value="100" style="flex:1">
-          <span class="device" id="brightnessValue" style="min-width:3.5em; text-align:right">-</span>
+          <span class="slider-value" id="brightnessValue">-</span>
+          <input type="range" class="range" id="brightness" min="0" max="100" value="100">
         </div>
         <!-- Shown only while the "Modify system settings" grant is missing:
              without it the slider dims the app window, not the panel's

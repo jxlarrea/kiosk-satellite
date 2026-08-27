@@ -118,3 +118,427 @@ document.querySelectorAll('.action.tile, .action[data-cmd]').forEach((b) =>
    camera", shown only while that switch is on and the camera permission is
    missing. Toggling the switch re-renders the tab (its dependants force a
    layout reload), so visibility follows the setting on its own. */
+
+/* ---- Toast ---- */
+// The device's toast (lib/ui/toast.dart), on the remote: a compact card
+// floated bottom center over whatever is on screen, a disc in the kind's
+// container tint, one at a time, 4 seconds or sticky until dismissed.
+// Command results and confirmations land here; the message box stays for
+// answers that need a button. A toast with no action ignores touches so
+// the page beneath keeps taking them.
+const TOAST_ICONS = {
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/>',
+  success: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  warning: '<path d="M12 4 2.5 20h19z"/><path d="M12 10v4m0 3h.01"/>',
+  error: '<circle cx="12" cy="12" r="9"/><path d="M12 8v4m0 4h.01"/>',
+};
+let toastEl = null;
+let toastTimer = 0;
+export function dismissToast() {
+  clearTimeout(toastTimer);
+  toastEl?.remove();
+  toastEl = null;
+}
+export function showToast({ title, message = '', kind = 'info',
+  actionLabel = '', onAction = null, duration = 4000, sticky = false }) {
+  dismissToast();
+  const el = document.createElement('div');
+  el.className = `toast toast-${kind}`;
+  el.setAttribute('role', 'status');
+  const disc = document.createElement('span');
+  disc.className = 'toast-disc';
+  disc.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + (TOAST_ICONS[kind] || TOAST_ICONS.info) + '</svg>';
+  const text = document.createElement('div');
+  text.className = 'toast-text';
+  const t = document.createElement('div');
+  t.className = 'toast-title';
+  t.textContent = title;
+  text.appendChild(t);
+  if (message) {
+    const m = document.createElement('div');
+    m.className = 'toast-msg';
+    m.textContent = message;
+    text.appendChild(m);
+  }
+  el.append(disc, text);
+  if (actionLabel) {
+    const btn = document.createElement('button');
+    btn.className = 'btn-text toast-action';
+    btn.textContent = actionLabel;
+    btn.addEventListener('click', () => { dismissToast(); onAction?.(); });
+    el.appendChild(btn);
+  } else {
+    el.classList.add('inert');
+  }
+  document.body.appendChild(el);
+  toastEl = el;
+  if (!sticky) toastTimer = setTimeout(dismissToast, duration);
+  return el;
+}
+
+/* ---- Sliders ---- */
+// The device's slider: a 4 track with the active run in primary fill and
+// a 20 thumb. The fill is a gradient sized by --pct, painted from the
+// value here: on every input event, and on the batched mutation pass for
+// ranges that arrive with a value already set.
+export function paintRange(inp) {
+  const min = Number(inp.min) || 0;
+  const max = inp.max === '' ? 100 : Number(inp.max);
+  const span = max - min;
+  const pct = span > 0 ? ((Number(inp.value) - min) / span) * 100 : 0;
+  const value = `${Math.max(0, Math.min(100, pct)).toFixed(2)}%`;
+  if (inp.style.getPropertyValue('--pct') !== value) {
+    inp.style.setProperty('--pct', value);
+  }
+}
+document.addEventListener('input', (e) => {
+  if (e.target instanceof HTMLInputElement && e.target.type === 'range') {
+    paintRange(e.target);
+  }
+}, true);
+new MutationObserver(() => requestAnimationFrame(() =>
+  document.querySelectorAll('input[type=range]').forEach(paintRange)))
+  .observe(document.body, { childList: true, subtree: true });
+
+// A slider row, the way the device stacks it: the name and description on
+// the first line with the value at the end in the row title's weight, the
+// slider running the full row width beneath. Attaches to a row that
+// already carries its .info. The label updates live while dragging; the
+// value saves once, on release (onChange).
+export function attachSlider(row, { min, max, step = 'any', value,
+  label = (v) => String(v), onChange = null }) {
+  row.classList.add('slider-row');
+  const val = document.createElement('span');
+  val.className = 'slider-value';
+  const inp = document.createElement('input');
+  inp.type = 'range';
+  inp.className = 'range';
+  inp.min = String(min);
+  inp.max = String(max);
+  inp.step = String(step);
+  inp.value = String(value);
+  const paint = () => {
+    val.textContent = label(Number(inp.value));
+    paintRange(inp);
+  };
+  paint();
+  inp.addEventListener('input', paint);
+  if (onChange) inp.addEventListener('change', () => onChange(Number(inp.value)));
+  row.append(val, inp);
+  return { input: inp, value: val, set: (v) => { inp.value = String(v); paint(); } };
+}
+
+/* ---- Time ---- */
+const CLOCK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+  + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+  + '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
+const CHEVRONS = {
+  up: '<path d="m6 15 6-6 6 6"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+};
+function chevronButton(dir, label, onClick) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'icon-btn';
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+    + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+    + CHEVRONS[dir] + '</svg>';
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+const pad2 = (n) => String(n).padStart(2, '0');
+
+// A time of day at rest: the control box showing the value with a clock
+// glyph, tap opens the picker. Empty reads Not set. `full` makes it the
+// labeled field of an editor.
+export function timeBox({ title, value, onPick, full = false }) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'time-box';
+  if (full) btn.classList.add('full');
+  const text = document.createElement('span');
+  btn.appendChild(text);
+  btn.insertAdjacentHTML('beforeend', CLOCK_ICON);
+  let current = value || '';
+  const set = (v) => {
+    current = v || '';
+    text.textContent = current || 'Not set';
+    btn.classList.toggle('empty', !current);
+  };
+  set(current);
+  btn.addEventListener('click', async () => {
+    const picked = await pickTime({ title, value: current });
+    if (picked == null) return;
+    set(picked);
+    onPick(picked);
+  });
+  return { el: btn, set, get value() { return current; } };
+}
+
+// The one time picker, on both surfaces (the device's showKsTimePicker):
+// two boxes, hour and minute, 24 hour. Tap a box to type; the chevrons
+// step it (hours by 1, minutes by 5) so a tablet with no keyboard can set
+// a time with taps. An entry out of range paints the box error and
+// disables Set. Resolves to "HH:mm", or null when cancelled.
+export function pickTime({ title, value }) {
+  return new Promise((resolve) => {
+    const [h0, m0] = String(value || '').split(':').map((n) => parseInt(n, 10));
+    const { back, body, foot } = modalShell({
+      title, width: 360, onDismiss: () => { back.remove(); resolve(null); },
+    });
+    const wrap = document.createElement('div');
+    wrap.className = 'time-pick';
+    const column = (label, initial, max, delta) => {
+      const col = document.createElement('div');
+      col.className = 'time-col';
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.inputMode = 'numeric';
+      inp.maxLength = 2;
+      inp.className = 'time-digits';
+      inp.value = pad2(initial);
+      const read = () => {
+        const v = /^\d{1,2}$/.test(inp.value.trim()) ? Number(inp.value) : NaN;
+        return v >= 0 && v <= max ? v : null;
+      };
+      const check = () => {
+        inp.classList.toggle('error', read() == null);
+        setBtn.disabled = !(hour.read() != null && minute.read() != null);
+      };
+      const step = (d) => {
+        const current = read() ?? 0;
+        const base = Math.abs(d) === 5 ? Math.floor(current / 5) * 5 : current;
+        inp.value = pad2((((base + d) % (max + 1)) + max + 1) % (max + 1));
+        check();
+      };
+      inp.addEventListener('input', check);
+      inp.addEventListener('focus', () => inp.select());
+      const lab = document.createElement('div');
+      lab.className = 'time-label';
+      lab.textContent = label;
+      col.append(chevronButton('up', 'Up', () => step(delta)), inp,
+        chevronButton('down', 'Down', () => step(-delta)), lab);
+      return { col, inp, read, check };
+    };
+    const colon = document.createElement('div');
+    colon.className = 'time-colon';
+    colon.textContent = ':';
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-text';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => { back.remove(); resolve(null); });
+    const setBtn = document.createElement('button');
+    setBtn.className = 'btn-primary';
+    setBtn.textContent = 'Set';
+    const hour = column('Hour', Number.isInteger(h0) ? Math.min(23, Math.max(0, h0)) : 0, 23, 1);
+    const minute = column('Minute', Number.isInteger(m0) ? Math.min(59, Math.max(0, m0)) : 0, 59, 5);
+    setBtn.addEventListener('click', () => {
+      const h = hour.read();
+      const m = minute.read();
+      if (h == null || m == null) return;
+      back.remove();
+      resolve(`${pad2(h)}:${pad2(m)}`);
+    });
+    wrap.append(hour.col, colon, minute.col);
+    body.appendChild(wrap);
+    foot.append(cancel, setBtn);
+    hour.check();
+    hour.inp.focus();
+  });
+}
+
+/* ---- Color ---- */
+// The clock and widget tints, as the device stores them: "r,g,b".
+const COLOR_PRESETS = [['White', '#FAFAFA'], ['Warm', '#FFE0B2'],
+  ['Amber', '#FFB300'], ['Red', '#EF5350'], ['Green', '#66BB6A'],
+  ['Blue', '#42A5F5'], ['Cyan', '#26C6DA'], ['Dim', '#616161']];
+export function parseRgb(rgb) {
+  const parts = String(rgb || '').split(',').map((n) => parseInt(n, 10));
+  return parts.length === 3 && parts.every((n) => Number.isInteger(n))
+    ? parts.map((n) => Math.min(255, Math.max(0, n))) : [250, 250, 250];
+}
+const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const cssRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
+// Relative luminance, the same reading as Flutter's computeLuminance.
+function luminance([r, g, b]) {
+  const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+// The row's color control: a 34 circle swatch with an outline ring. The
+// swatch is the value; tap opens the picker.
+export function swatch(rgb, title, onPick) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'swatch';
+  btn.title = title;
+  btn.setAttribute('aria-label', title);
+  let current = parseRgb(rgb).join(',');
+  const paint = () => { btn.style.background = cssRgb(parseRgb(current)); };
+  paint();
+  btn.addEventListener('click', async () => {
+    const picked = await pickColor({ title, rgb: current });
+    if (picked == null) return;
+    current = picked;
+    paint();
+    onPick(picked);
+  });
+  Object.defineProperty(btn, 'rgb', { get: () => current });
+  return btn;
+}
+
+// The color picker, the device's dialog drawn here: a live preview with
+// the RGB values on it, three channel sliders tinted R, G and B, then the
+// 8 presets as 34 swatches. Resolves to "r,g,b", or null when cancelled.
+export function pickColor({ title, rgb }) {
+  return new Promise((resolve) => {
+    const color = parseRgb(rgb);
+    const { back, body, foot } = modalShell({
+      title, width: 360, onDismiss: () => { back.remove(); resolve(null); },
+    });
+    const preview = document.createElement('div');
+    preview.className = 'color-preview';
+    const channels = document.createElement('div');
+    channels.className = 'color-channels';
+    const paint = () => {
+      preview.style.background = cssRgb(color);
+      preview.style.color = luminance(color) > 0.5 ? '#000000' : '#ffffff';
+      preview.textContent = color.join(', ');
+      inputs.forEach((inp, i) => {
+        if (Number(inp.value) !== color[i]) inp.value = String(color[i]);
+        paintRange(inp);
+        vals[i].textContent = String(color[i]);
+      });
+    };
+    const inputs = [];
+    const vals = [];
+    [['R', '#E53935'], ['G', '#43A047'], ['B', '#1E88E5']].forEach(([label, tint], i) => {
+      const line = document.createElement('div');
+      line.className = 'color-channel';
+      const name = document.createElement('span');
+      name.textContent = label;
+      name.style.color = tint;
+      const inp = document.createElement('input');
+      inp.type = 'range';
+      inp.className = 'range';
+      inp.min = '0';
+      inp.max = '255';
+      inp.step = '1';
+      inp.style.setProperty('--range-color', tint);
+      inp.addEventListener('input', () => { color[i] = Number(inp.value); paint(); });
+      const val = document.createElement('span');
+      val.className = 'color-val';
+      inputs.push(inp);
+      vals.push(val);
+      line.append(name, inp, val);
+      channels.appendChild(line);
+    });
+    const presets = document.createElement('div');
+    presets.className = 'color-presets';
+    for (const [name, hex] of COLOR_PRESETS) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'swatch';
+      b.title = name;
+      b.setAttribute('aria-label', name);
+      b.style.background = hex;
+      b.addEventListener('click', () => {
+        hexToRgb(hex).forEach((n, i) => { color[i] = n; });
+        paint();
+      });
+      presets.appendChild(b);
+    }
+    body.append(preview, channels, presets);
+    paint();
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-text';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => { back.remove(); resolve(null); });
+    const save = document.createElement('button');
+    save.className = 'btn-primary';
+    save.textContent = 'Save';
+    save.addEventListener('click', () => { back.remove(); resolve(color.join(',')); });
+    foot.append(cancel, save);
+  });
+}
+
+/* ---- Copyable value ---- */
+// navigator.clipboard exists only on secure origins and this admin page is
+// plain http, so the execCommand fallback is the path that actually runs
+// day to day.
+export async function copyText(text) {
+  let ok = false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    }
+  } catch (_) {}
+  if (!ok) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed; opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { ok = document.execCommand('copy'); } catch (_) {}
+    ta.remove();
+  }
+  return ok;
+}
+const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+  + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+  + '<rect x="9" y="9" width="11" height="11" rx="2"/>'
+  + '<path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+  + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+  + '<path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+// A value the user takes elsewhere (the ESPHome encryption key): the
+// control box, read only, the value in mono, with a 36 copy disc inside
+// its end. Tapping anywhere on the box copies; the disc turns to a check
+// for two seconds and a toast says Copied. Never a bare selectable
+// string: a double click stops at the + / = a base64 key is full of, and
+// a partial key pasted into Home Assistant fails with a generic error.
+export function copyBox(value, { placeholder = 'Not set' } = {}) {
+  const box = document.createElement('button');
+  box.type = 'button';
+  box.className = 'copy-box';
+  box.title = 'Copy';
+  const text = document.createElement('span');
+  text.className = 'copy-value';
+  const disc = document.createElement('span');
+  disc.className = 'icon-btn copy-disc';
+  disc.innerHTML = COPY_ICON;
+  box.append(text, disc);
+  let current = '';
+  let reset = 0;
+  const set = (v) => {
+    current = v || '';
+    text.textContent = current || placeholder;
+    box.classList.toggle('empty', !current);
+    box.disabled = !current;
+  };
+  set(value);
+  box.addEventListener('click', async () => {
+    if (!current) return;
+    const ok = await copyText(current);
+    disc.innerHTML = ok ? CHECK_ICON : COPY_ICON;
+    disc.classList.toggle('done', ok);
+    showToast({
+      title: ok ? 'Copied' : 'Could not copy',
+      message: ok ? '' : 'Select the key and copy it by hand.',
+      kind: ok ? 'success' : 'error',
+      duration: 2000,
+    });
+    clearTimeout(reset);
+    reset = setTimeout(() => {
+      disc.innerHTML = COPY_ICON;
+      disc.classList.remove('done');
+    }, 2000);
+  });
+  return { el: box, set };
+}

@@ -12,7 +12,12 @@ import { readOnlyRow } from './device.js';
 import { updateFaceRows } from './notices.js';
 import { openLauncherAppsPicker, openMediaBrowser } from './pickers.js';
 import { loadSettings, refreshRealMacNote } from './settings.js';
-import { messageBox } from './widgets.js';
+import {
+  attachSlider,
+  messageBox,
+  swatch,
+  timeBox,
+} from './widgets.js';
 
 // Bring the rows gated on `key` (dependsOn, transitively) in or out of the
 // card `anchorRow` sits in, reading the values already in state.settings —
@@ -164,22 +169,11 @@ export function settingRow(s) {
     return row;
   }
 
-  // A color is picked, not typed, the browser has a real picker for it.
-  // Every "r,g,b" setting ends in _color by convention; the device UI keys
-  // off the same suffix.
+  // A color is picked, not typed: the row swatch opens the same picker
+  // dialog the device draws. Every "r,g,b" setting ends in _color by
+  // convention; the device UI keys off the same suffix.
   if (s.key.endsWith('_color')) {
-    const [r, g, b] = String(s.value || '250,250,250').split(',').map((n) => +n || 0);
-    const hex = '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('');
-    const inp = document.createElement('input');
-    inp.type = 'color'; inp.value = hex;
-    inp.style.cssText = 'width:44px; height:32px; padding:2px; background:var(--surface-2);'
-      + 'border:1px solid var(--border); border-radius:var(--radius-sm); cursor:pointer';
-    inp.addEventListener('change', () => {
-      const h = inp.value; // #rrggbb
-      const rgb = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)).join(',');
-      save(rgb);
-    });
-    row.appendChild(inp);
+    row.appendChild(swatch(s.value || '250,250,250', s.title, (rgb) => save(rgb)));
     return row;
   }
 
@@ -340,18 +334,17 @@ export function settingRow(s) {
       };
       const body = document.createElement('div');
 
-      const timeWrap = document.createElement('label');
+      // Inside an editor the time is a labeled field, full width, opening
+      // the same picker as the time rows.
+      const timeWrap = document.createElement('div');
       timeWrap.style.cssText =
         'display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px;';
       const timeTitle = document.createElement('span');
       timeTitle.className = 'desc';
       timeTitle.textContent = 'Time';
-      const time = document.createElement('input');
-      time.className = 'field';
-      time.type = 'time';
-      time.value = start.at || '19:00';
-      time.style.maxWidth = 'none';
-      timeWrap.append(timeTitle, time);
+      const time = timeBox({ title: 'Time', value: start.at || '19:00',
+        full: true, onPick: () => {} });
+      timeWrap.append(timeTitle, time.el);
 
       const modeSel = cameraSelectField('Screensaver',
         modes.map((m) => ({ value: m, label: label(m) })),
@@ -368,7 +361,8 @@ export function settingRow(s) {
       const brightLine = document.createElement('div');
       brightLine.style.cssText = 'display:flex; align-items:center; gap:10px;';
       const rng = document.createElement('input');
-      rng.type = 'range'; rng.min = '0'; rng.max = '100'; rng.step = '5';
+      rng.type = 'range'; rng.className = 'range';
+      rng.min = '0'; rng.max = '100'; rng.step = '5';
       rng.value = String(Math.round(
         ((typeof start.brightness === 'number') ? start.brightness : 0.2) * 100));
       rng.style.cssText = 'flex:1;';
@@ -572,19 +566,16 @@ export function settingRow(s) {
 
       // Live references into the current type block, read on save.
       let refs = {};
+      // The tint as a labeled swatch, opening the same picker dialog as
+      // the color rows.
       const colorField = () => {
-        const wrap = document.createElement('label');
-        wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;'
+          + ' align-items:flex-start;';
         const title = document.createElement('span');
         title.className = 'desc';
         title.textContent = 'Color';
-        const [cr, cg, cb] = String(config.color || '250,250,250').split(',').map((n) => +n || 0);
-        const input = document.createElement('input');
-        input.type = 'color';
-        input.value = '#' + [cr, cg, cb].map((n) => n.toString(16).padStart(2, '0')).join('');
-        input.style.cssText = 'width:64px; height:36px; padding:2px;'
-          + ' background:var(--surface-2); border:1px solid var(--border);'
-          + ' border-radius:var(--radius-sm); cursor:pointer;';
+        const input = swatch(config.color || '250,250,250', 'Color', () => {});
         wrap.append(title, input);
         return { wrap, input };
       };
@@ -686,8 +677,7 @@ export function settingRow(s) {
         body,
         save: async () => {
           const position = cornerSel.select.value;
-          const hex = refs.color.input.value; // #rrggbb
-          const color = [1, 3, 5].map((x) => parseInt(hex.slice(x, x + 2), 16)).join(',');
+          const color = refs.color.input.rgb;
           let entryConfig;
           if (type === 'clock') {
             entryConfig = { color,
@@ -936,15 +926,11 @@ export function settingRow(s) {
     return row;
   }
 
-  // A time of day gets the browser's native time picker.
+  // A time of day is picked, not typed: the control box shows the value
+  // and opens the time picker dialog, the same one the device draws.
   if (s.key === 'ha.theme_dark_at' || s.key === 'ha.theme_light_at') {
-    const inp = document.createElement('input');
-    inp.type = 'time';
-    inp.value = s.value || '';
-    inp.style.cssText = 'background:var(--surface-2); border:1px solid var(--border);'
-      + 'border-radius:var(--radius-sm); color:var(--text); padding:6px 8px';
-    inp.addEventListener('change', () => save(inp.value));
-    row.appendChild(inp);
+    row.appendChild(timeBox({ title: s.title, value: s.value || '',
+      onPick: (v) => save(v) }).el);
     return row;
   }
 
@@ -965,20 +951,13 @@ export function settingRow(s) {
         ? `${Math.round(s.max <= 1 ? v * 100 : v)}%`
         : `${v}${s.unit || ''}`;
     };
-    const controls = document.createElement('div');
-    controls.style.cssText = 'display:flex; align-items:center; gap:10px; min-width:0';
-    const inp = document.createElement('input');
-    inp.type = 'range';
-    inp.min = s.min; inp.max = s.max; inp.step = s.step ?? 'any';
-    inp.value = typeof s.value === 'number' ? s.value : s.min;
-    inp.style.width = '190px';
-    const val = document.createElement('span');
-    val.className = 'device';
-    val.style.cssText = 'min-width:3.5em; text-align:right; font-variant-numeric:tabular-nums';
-    val.textContent = label(+inp.value);
-    inp.addEventListener('input', () => (val.textContent = label(+inp.value)));
-    inp.addEventListener('change', async () => {
-      const next = Number(inp.value);
+    const slider = attachSlider(row, {
+      min: s.min, max: s.max, step: s.step ?? 'any',
+      value: typeof s.value === 'number' ? s.value : s.min,
+      label,
+    });
+    slider.input.addEventListener('change', async () => {
+      const next = Number(slider.input.value);
       // Enabling real screen-off gets a warning first: what a dark panel
       // does to Wi-Fi, the camera and the app itself is the manufacturer's
       // call, and the Black screensaver avoids the whole regime.
@@ -998,16 +977,13 @@ export function settingRow(s) {
           buttons: ['Cancel', 'Turn screen off anyway'],
         });
         if (pick === 'Cancel') {
-          inp.value = 0;
-          val.textContent = label(0);
+          slider.set(0);
           return;
         }
       }
       s.value = next;
       save(next);
     });
-    controls.append(inp, val);
-    row.appendChild(controls);
     return row;
   }
 

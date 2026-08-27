@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'theme.dart';
+import 'toast.dart';
 
 /// The shared settings-surface building blocks. Every settings-like page
 /// (Settings, Camera, Gestures, Setup) composes these instead of carrying its
@@ -264,6 +268,186 @@ class _EdgeFadeState extends State<EdgeFade> {
             widget.child,
             _edge(surface, show: _top, top: true),
             _edge(surface, show: _bottom, top: false),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The one control box: what every picked value sits in at rest. 44 high,
+/// surface 2 fill, hairline border, control radius, 12 side padding. The
+/// dropdown, the time box and the copy box are this box with their content
+/// inside; the remote admin's row inputs follow the same shape.
+class ControlBox extends StatelessWidget {
+  const ControlBox({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12),
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(Ks.radiusControl);
+    final box = Container(
+      height: 44,
+      padding: padding,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: radius,
+      ),
+      child: child,
+    );
+    if (onTap == null) return box;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: radius,
+      child: InkWell(borderRadius: radius, onTap: onTap, child: box),
+    );
+  }
+}
+
+/// A time of day at rest: the control box showing the value with a 20
+/// clock glyph. Tapping opens the time picker (showKsTimePicker). Empty
+/// reads Not set in muted text. The remote's .time-box is the same.
+class TimeBox extends StatelessWidget {
+  const TimeBox({
+    super.key,
+    required this.value,
+    required this.onTap,
+    this.expand = false,
+  });
+
+  /// "HH:mm", or empty for not set.
+  final String value;
+  final VoidCallback onTap;
+
+  /// Fill the available width, for a labeled field inside an editor.
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final text = Text(
+      value.isEmpty ? 'Not set' : value,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: value.isEmpty ? scheme.onSurfaceVariant : scheme.onSurface,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+    return ControlBox(
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          if (expand) Expanded(child: text) else text,
+          const SizedBox(width: 10),
+          Icon(
+            Icons.schedule_outlined,
+            size: 20,
+            color: scheme.onSurfaceVariant,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A value the user takes elsewhere (the ESPHome encryption key): the
+/// control box, read only, the value in mono, with a 36 copy disc inside
+/// its end. Tapping anywhere on the box copies; the disc turns to a
+/// primary check for two seconds and a toast says Copied. Never a bare
+/// selectable string: a double tap stops at the + / = a base64 key is
+/// full of, and a partial key pasted into Home Assistant fails with a
+/// generic error. 260 wide at the end of a row; stacked under the name on
+/// a tight pane it fills the row. The remote's .copy-box is the same.
+class CopyBox extends StatefulWidget {
+  const CopyBox({super.key, required this.value, this.placeholder = 'Not set'});
+
+  final String value;
+
+  /// Shown in muted text while [value] is empty. Nothing to copy then.
+  final String placeholder;
+
+  @override
+  State<CopyBox> createState() => _CopyBoxState();
+}
+
+class _CopyBoxState extends State<CopyBox> {
+  bool _copied = false;
+  Timer? _reset;
+
+  @override
+  void dispose() {
+    _reset?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _copy() async {
+    if (widget.value.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: widget.value));
+    if (!mounted) return;
+    setState(() => _copied = true);
+    _reset?.cancel();
+    _reset = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+    showToast(
+      context,
+      title: 'Copied',
+      kind: ToastKind.success,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final empty = widget.value.isEmpty;
+    return SizedBox(
+      width: 260,
+      child: ControlBox(
+        onTap: empty ? null : _copy,
+        padding: const EdgeInsets.only(left: 12, right: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                empty ? widget.placeholder : widget.value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: empty
+                    ? theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      )
+                    : TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13.5,
+                        color: scheme.onSurface,
+                      ),
+              ),
+            ),
+            SizedBox(
+              width: 36,
+              height: 36,
+              child: IconButton(
+                tooltip: 'Copy',
+                padding: EdgeInsets.zero,
+                iconSize: 22,
+                color: _copied ? scheme.primary : scheme.onSurfaceVariant,
+                icon: Icon(_copied ? Icons.check : Icons.copy_outlined),
+                onPressed: empty ? null : _copy,
+              ),
+            ),
           ],
         ),
       ),

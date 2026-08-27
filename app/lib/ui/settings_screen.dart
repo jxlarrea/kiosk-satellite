@@ -40,6 +40,7 @@ import 'camera_settings.dart';
 import 'camera_views_picker.dart';
 import 'import_options_dialog.dart';
 import 'kit.dart';
+import 'time_picker.dart';
 import 'media_picker.dart';
 import 'theme.dart';
 import 'toast.dart';
@@ -3152,17 +3153,8 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
     widget.onChanged();
   }
 
-  Future<String?> _pickTime(String current) async {
-    final parts = current.split(':');
-    final initial = TimeOfDay(
-      hour: int.tryParse(parts.isNotEmpty ? parts[0] : '')?.clamp(0, 23) ?? 19,
-      minute: int.tryParse(parts.length > 1 ? parts[1] : '')?.clamp(0, 59) ?? 0,
-    );
-    final picked = await showTimePicker(context: context, initialTime: initial);
-    if (picked == null) return null;
-    return '${picked.hour.toString().padLeft(2, '0')}:'
-        '${picked.minute.toString().padLeft(2, '0')}';
-  }
+  Future<String?> _pickTime(String current) =>
+      showKsTimePicker(context, title: 'Time', initial: current);
 
   String _modeLabel(String mode) =>
       screensaverMode.optionLabels?[mode] ??
@@ -3260,19 +3252,32 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: 12,
                   children: [
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Time'),
-                      subtitle: Text('${entry['at']}'),
-                      trailing: TextButton(
-                        onPressed: () async {
-                          final at = await _pickTime('${entry['at']}');
-                          if (at != null) {
-                            setDialogState(() => entry['at'] = at);
-                          }
-                        },
-                        child: const Text('Choose'),
-                      ),
+                    // Inside an editor the time is a labeled field, full
+                    // width, opening the same picker as the time rows.
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Time',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        TimeBox(
+                          value: '${entry['at']}',
+                          expand: true,
+                          onTap: () async {
+                            final at = await _pickTime('${entry['at']}');
+                            if (at != null) {
+                              setDialogState(() => entry['at'] = at);
+                            }
+                          },
+                        ),
+                      ],
                     ),
                     DropdownButtonFormField<String>(
                       initialValue:
@@ -7474,15 +7479,31 @@ class SettingTile extends StatelessWidget {
         if (def.key == screensaverWidgets.key) {
           return _WidgetsEditor(container: c, onChanged: onChanged);
         }
-        // A time of day is picked from a clock, not typed.
+        // A time of day is picked, not typed: the control box shows the
+        // value and opens the time picker, on both surfaces.
         if (def.key == themeDarkAt.key || def.key == themeLightAt.key) {
           final current = value as String;
           return ListTile(
             title: Text(def.title),
             subtitle: Text(def.description),
-            trailing: TextButton(
-              onPressed: () => _pickTime(context, current),
-              child: Text(current.isEmpty ? 'Not set' : current),
+            trailing: TimeBox(
+              value: current,
+              onTap: () => _pickTime(context, current),
+            ),
+          );
+        }
+        // The ESPHome encryption key is read back and pasted into Home
+        // Assistant, never typed: a read-only copy box, mirrored on the
+        // remote. The tap copies the whole key, which a text selection
+        // never reliably did.
+        if (def.key == btproxyKey.key) {
+          return SettingsRow(
+            stack: true,
+            title: Text(def.title),
+            subtitle: Text(def.description),
+            trailing: CopyBox(
+              value: value as String,
+              placeholder: def.placeholder ?? 'Not set',
             ),
           );
         }
@@ -7657,17 +7678,13 @@ class SettingTile extends StatelessWidget {
   }
 
   Future<void> _pickTime(BuildContext context, String current) async {
-    final parts = current.split(':');
-    final initial = TimeOfDay(
-      hour: int.tryParse(parts.isNotEmpty ? parts[0] : '')?.clamp(0, 23) ?? 0,
-      minute: int.tryParse(parts.length > 1 ? parts[1] : '')?.clamp(0, 59) ?? 0,
+    final picked = await showKsTimePicker(
+      context,
+      title: def.title,
+      initial: current,
     );
-    final picked = await showTimePicker(context: context, initialTime: initial);
     if (picked == null) return;
-    final hhmm =
-        '${picked.hour.toString().padLeft(2, '0')}:'
-        '${picked.minute.toString().padLeft(2, '0')}';
-    await c.settings.setFromJson(def.key, hhmm);
+    await c.settings.setFromJson(def.key, picked);
     onChanged();
   }
 

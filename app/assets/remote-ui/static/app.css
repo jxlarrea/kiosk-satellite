@@ -91,8 +91,52 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
   ::-webkit-scrollbar-button { display: none; height: 0; width: 0; }
   ::-webkit-scrollbar-corner { background: transparent; }
-  input[type=range], input[type=checkbox], input[type=radio] {
-    accent-color: var(--primary-fill); }
+  /* Checkbox and radio at Material 3 metrics, the device's: 20, a 2px
+     outline ring, primary fill with a white check, a 10 primary dot. The
+     switch's own input stays the invisible one it is. */
+  input[type=checkbox]:not(.switch input), input[type=radio] {
+    appearance: none; -webkit-appearance: none; flex: none; width: 20px;
+    height: 20px; margin: 0; border: 2px solid var(--outline);
+    background: transparent; cursor: pointer; position: relative;
+    vertical-align: middle; }
+  input[type=checkbox]:not(.switch input) { border-radius: 4px; }
+  input[type=radio] { border-radius: 50%; }
+  input[type=checkbox]:not(.switch input):checked {
+    background: var(--primary-fill); border-color: var(--primary-fill); }
+  input[type=checkbox]:not(.switch input):checked::after { content: "";
+    position: absolute; left: 5px; top: 1px; width: 5px; height: 10px;
+    border: solid #fff; border-width: 0 2.5px 2.5px 0;
+    transform: rotate(45deg); }
+  input[type=radio]:checked { border-color: var(--primary); }
+  input[type=radio]:checked::after { content: ""; position: absolute;
+    inset: 3px; border-radius: 50%; background: var(--primary); }
+  input[type=checkbox]:disabled, input[type=radio]:disabled {
+    opacity: .45; cursor: default; }
+  input[type=checkbox]:focus-visible, input[type=radio]:focus-visible {
+    outline: 2px solid var(--primary); outline-offset: 3px; }
+  /* The slider: a 4 track, the active run in primary fill (a gradient
+     sized by --pct, painted by widgets.js paintRange), a 20 thumb. */
+  input[type=range] { appearance: none; -webkit-appearance: none;
+    width: 100%; height: 20px; margin: 0; padding: 0; background: transparent;
+    cursor: pointer; --pct: 0%; --range-color: var(--primary-fill); }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px;
+    border-radius: 2px; background: linear-gradient(to right,
+      var(--range-color) var(--pct), var(--surface-2) var(--pct)); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none;
+    width: 20px; height: 20px; margin-top: -8px; border-radius: 50%;
+    border: none; background: var(--range-color);
+    box-shadow: 0 1px 3px var(--shadow); }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 2px;
+    background: var(--surface-2); }
+  input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px;
+    background: var(--range-color); }
+  input[type=range]::-moz-range-thumb { width: 20px; height: 20px;
+    border-radius: 50%; border: none; background: var(--range-color);
+    box-shadow: 0 1px 3px var(--shadow); }
+  input[type=range]:disabled { opacity: .45; cursor: default; }
+  input[type=range]:focus-visible { outline: none; }
+  input[type=range]:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--primary); outline-offset: 3px; }
   .hidden { display: none !important; }
 
   /* Login */
@@ -105,10 +149,29 @@
   .logo { display: block; margin: 0 auto; }
   .login-card h1 { font-size: 20px; font-weight: 700; margin: 12px 0 4px; }
   .login-card p { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
-  .field { width: 100%; padding: 13px 15px; margin-bottom: 12px;
+  /* Fields: one box for anything typed or picked, the device's control
+     box. 44 high, surface 2 fill, 1px border, 12 radius, 12 side padding,
+     15 text. Focus is a 1.5 primary border. */
+  .field, .row input[type=text], .row input[type=password],
+  .row input[type=number], .row input[type=url], .row select {
+    box-sizing: border-box; height: 44px; padding: 0 12px;
     background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); color: var(--text); }
-  .field:focus { outline: none; border-color: var(--primary); }
+    border-radius: var(--radius-sm); color: var(--text); font-size: 15px; }
+  .field { width: 100%; margin-bottom: 12px; }
+  .field:focus, .row input:focus, .row select:focus, .row textarea:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 .5px var(--primary); }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  /* The dropdown: the same box with a 20 chevron, value and chevron on
+     the bordered surface. A bare caret beside a row title reads as
+     another title. */
+  select.field, .row select { appearance: none; -webkit-appearance: none;
+    padding-right: 40px; background-repeat: no-repeat;
+    background-position: right 12px center; background-size: 20px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235d6066' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+  :root[data-theme="dark"] select.field, :root[data-theme="dark"] .row select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b6babf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+  select:disabled { opacity: .45; cursor: default; }
   /* Buttons: the device's compact pills, one height, one weight. Filled
      carries the one affirmative action, outlined (btn-ghost) the quiet
      sibling beside it in rows and toolbars, text the dialog Cancel and
@@ -374,28 +437,110 @@
   .bt-off-banner { font-size: 13px; color: var(--warn);
     line-height: 1.5; margin: 0 0 14px; }
   #tab-esphome .bt-inert { pointer-events: none; opacity: 0.45; }
-  .row input[type=text], .row input[type=password], .row input[type=number],
-  .row input[type=time], .row select {
+  /* In a row a field carries no label, the name is the label. Text caps
+     at 220 on the wide pane; numbers are 90 wide, right aligned, tabular. */
+  .row input[type=text], .row input[type=password], .row input[type=url],
+  .row select { max-width: 220px; }
+  .row input[type=number] { width: 90px; text-align: right;
+    font-variant-numeric: tabular-nums; }
+  /* A time of day at rest: the control box with the value and a 20 clock
+     glyph. Tap opens the time picker (widgets.js pickTime). */
+  .time-box { display: inline-flex; align-items: center; gap: 10px;
+    flex: none; height: 44px; padding: 0 12px; border-radius: var(--radius-sm);
     background: var(--surface-2); border: 1px solid var(--border);
-    color: var(--text); border-radius: var(--radius-sm); padding: 8px 11px;
-    max-width: 220px; }
-  /* The time picker's clock glyph follows the theme instead of staying
-     black on a dark surface. */
-  :root[data-theme="dark"] .row input[type=time]::-webkit-calendar-picker-indicator {
-    filter: invert(1); }
-  .row input:focus, .row select:focus { outline: none; border-color: var(--accent); }
+    color: var(--text); font-size: 15px; font-variant-numeric: tabular-nums;
+    cursor: pointer; }
+  .time-box.full { width: 100%; justify-content: space-between; }
+  .time-box.empty { color: var(--muted); }
+  .time-box svg { width: 20px; height: 20px; color: var(--muted); flex: none; }
+  .time-box:hover { border-color: var(--outline); }
+  .time-box:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: 3px; }
+  /* The time picker: hour and minute boxes, 96 by 80, 44 digits, the
+     focused box on primary soft with the 1.5 primary border. */
+  .time-pick { display: flex; justify-content: center; align-items: center;
+    gap: 16px; padding: 4px 0; }
+  .time-col { display: flex; flex-direction: column; align-items: center;
+    gap: 4px; }
+  .time-digits { box-sizing: border-box; width: 96px; height: 80px;
+    padding: 0; border-radius: var(--radius-sm); background: var(--surface-2);
+    border: 1px solid var(--border); text-align: center; font-size: 44px;
+    line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
+  .time-digits:focus { outline: none; background: var(--primary-soft);
+    border-color: var(--primary); box-shadow: 0 0 0 .5px var(--primary); }
+  .time-digits.error, .time-digits.error:focus { border-color: var(--error);
+    box-shadow: 0 0 0 .5px var(--error); }
+  .time-label { font-size: 12.5px; color: var(--muted); }
+  .time-colon { font-size: 44px; line-height: 1; color: var(--text);
+    padding-bottom: 60px; }
+  /* A color at rest: a 34 circle swatch with an outline ring. The swatch
+     is the value; tap opens the color picker (widgets.js pickColor). */
+  .swatch { flex: none; width: 34px; height: 34px; padding: 0;
+    border-radius: 50%; border: 1px solid var(--outline); cursor: pointer; }
+  .swatch:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: 3px; }
+  .color-preview { height: 64px; border-radius: var(--radius-sm);
+    border: 1px solid var(--outline); display: grid; place-items: center;
+    font-size: 14px; font-variant-numeric: tabular-nums; }
+  .color-channels { display: flex; flex-direction: column; gap: 8px;
+    margin: 16px 0; }
+  .color-channel { display: flex; align-items: center; gap: 12px; }
+  .color-channel > span:first-child { flex: none; width: 18px;
+    font-size: 14px; }
+  .color-channel .range { flex: 1; min-width: 0; }
+  .color-channel .color-val { flex: none; width: 34px; text-align: right;
+    font-size: 14px; font-variant-numeric: tabular-nums; }
+  .color-presets { display: flex; flex-wrap: wrap; gap: 10px; }
+  /* A copyable value (the ESPHome encryption key): the control box, read
+     only, the value in mono, a 36 copy disc inside its end. Tapping
+     anywhere on the box copies. 260 at the end of a row; stacked under
+     the name on a phone it fills the row. */
+  .copy-box { display: inline-flex; align-items: center; gap: 10px;
+    flex: none; box-sizing: border-box; width: 260px; max-width: 100%;
+    height: 44px; padding: 0 4px 0 12px; border-radius: var(--radius-sm);
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); cursor: pointer; text-align: left; }
+  .copy-box .copy-value { flex: 1 1 0; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13.5px; }
+  .copy-box.empty .copy-value { font-family: inherit; font-size: 15px;
+    color: var(--muted); }
+  .copy-box:disabled { cursor: default; }
+  .copy-box .copy-disc { width: 36px; height: 36px; }
+  .copy-box .copy-disc.done { color: var(--primary); }
+  .copy-box:not(:disabled):hover .copy-disc { background: var(--surface);
+    color: var(--text); }
+  .copy-box:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: 3px; }
+  /* The slider row, the way the device stacks it: name and description on
+     the first line with the value at the end in the title's weight, the
+     slider across the full row beneath, inset 8. */
+  .row.slider-row { flex-wrap: wrap; row-gap: 0; padding-bottom: 6px; }
+  .row.slider-row .slider-value { flex: none; font-size: 17px;
+    font-weight: 500; font-variant-numeric: tabular-nums; }
+  .row.slider-row .range { flex: 1 1 100%; width: auto; margin: 10px 8px 2px; }
   /* A refused value's reason, on its own line under the control. */
   .row:has(.row-error) { flex-wrap: wrap; }
   .row .row-error { flex-basis: 100%; color: var(--error); font-size: 12.5px;
     margin-top: -4px; }
-  .switch { position: relative; width: 46px; height: 26px; flex: none; }
-  .switch input { opacity: 0; width: 0; height: 0; }
+  /* The switch at Material 3 metrics, the device's Switch: a 52 by 32
+     track. Off is surface 2 in a 2px outline ring with a 16 muted thumb,
+     on is primary fill with a 24 white thumb. */
+  .switch { position: relative; width: 52px; height: 32px; flex: none; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
   .slider { position: absolute; inset: 0; background: var(--surface-2);
-    border: 1px solid var(--border); border-radius: 26px; transition: .2s; }
-  .slider::before { content: ""; position: absolute; width: 18px; height: 18px;
-    left: 3px; top: 3px; background: var(--muted); border-radius: 50%; transition: .2s; }
-  .switch input:checked + .slider { background: var(--primary-fill); border-color: var(--primary-fill); }
-  .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+    border: 2px solid var(--outline); border-radius: 16px; cursor: pointer;
+    transition: background .2s, border-color .2s; }
+  .slider::before { content: ""; position: absolute; width: 16px; height: 16px;
+    left: 4px; top: 4px; background: var(--muted); border-radius: 50%;
+    transition: left .2s, top .2s, width .2s, height .2s, background .2s; }
+  .switch input:checked + .slider { background: var(--primary-fill);
+    border-color: var(--primary-fill); }
+  .switch input:checked + .slider::before { width: 24px; height: 24px;
+    left: 22px; top: 2px; background: #fff; }
+  .switch input:focus-visible + .slider { outline: 2px solid var(--primary);
+    outline-offset: 3px; }
   /* Locked-on: visibly in the on position, visibly not yours to flip;
      the same reading as the device's disabled Material switch. */
   .switch input:disabled + .slider { opacity: .45; cursor: default; }
@@ -480,8 +625,8 @@
        stretches across the row, on the name's left edge, the way dropdown
        rows stack on the device. Never right aligned on its own line. */
     .row input[type=text], .row input[type=password], .row input[type=url],
-    .row select, .row textarea { flex: 1 1 100%; width: 100%;
-      max-width: none; }
+    .row select, .row textarea, .row .copy-box { flex: 1 1 100%;
+      width: 100%; max-width: none; }
     .row input[type=number] { max-width: 90px; }
   }
 
@@ -526,6 +671,39 @@
       #000 calc(100% - var(--fade-bottom)), transparent 100%); }
   .modal-foot .spacer { flex: 1; min-width: 0; }
   .modal-foot:empty { display: none; }
+
+  /* The device's toast: a compact card floated bottom center over
+     whatever is on screen, surface high, 24 radius, a hairline and a soft
+     shadow, max 480 wide, 20 from the sides and 24 from the bottom. A 43
+     disc in the kind's container tint with a 24 icon. One at a time. */
+  .toast { position: fixed; left: 0; right: 0; bottom: 24px; margin: 0 auto;
+    width: fit-content; max-width: min(480px, calc(100% - 40px));
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 22px 14px 17px; border-radius: var(--radius);
+    background: var(--surface-high); border: 1px solid var(--border);
+    box-shadow: 0 2px 10px var(--shadow); z-index: 1100;
+    animation: toast-in .2s ease; }
+  .toast.inert { pointer-events: none; }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .toast-disc { flex: none; width: 43px; height: 43px; border-radius: 50%;
+    display: grid; place-items: center; }
+  .toast-disc svg { width: 24px; height: 24px; }
+  .toast-info .toast-disc { background: var(--secondary-container);
+    color: var(--on-secondary-container); }
+  .toast-success .toast-disc { background: var(--primary-container);
+    color: var(--on-primary-container); }
+  .toast-warning .toast-disc { background: var(--tertiary-container);
+    color: var(--on-tertiary-container); }
+  .toast-error .toast-disc { background: var(--error-container);
+    color: var(--on-error-container); }
+  .toast-text { flex: 1 1 auto; min-width: 0; display: flex;
+    flex-direction: column; gap: 3px; }
+  .toast-title { font-size: 17.5px; font-weight: 600; line-height: 1.3; }
+  .toast-msg { font-size: 15.5px; line-height: 1.35; color: var(--muted); }
+  .toast-action { min-width: 0; height: 43px; padding: 0 14px; }
   .row.camera-list-row { display: flex; align-items: center; gap: 14px; }
   .camera-row-main { display: flex; align-items: center; gap: 14px;
     flex: 1; min-width: 0; }

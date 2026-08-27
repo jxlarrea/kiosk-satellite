@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'theme.dart';
+
 /// Pick an RGB color: a live preview, three channel sliders, and a row of
 /// presets for the common clock colors. Returns "r,g,b" (matching how the
 /// setting is stored), or null if cancelled.
@@ -21,8 +23,12 @@ Future<String?> pickColor(
 Color _parse(String rgb) {
   final parts = rgb.split(',').map((p) => int.tryParse(p.trim())).toList();
   if (parts.length == 3 && parts.every((p) => p != null)) {
-    return Color.fromARGB(255, parts[0]!.clamp(0, 255), parts[1]!.clamp(0, 255),
-        parts[2]!.clamp(0, 255));
+    return Color.fromARGB(
+      255,
+      parts[0]!.clamp(0, 255),
+      parts[1]!.clamp(0, 255),
+      parts[2]!.clamp(0, 255),
+    );
   }
   return const Color(0xFFFAFAFA);
 }
@@ -70,7 +76,10 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
   Widget _channel(String label, int value, Color tint, ValueChanged<int> set) {
     return Row(
       children: [
-        SizedBox(width: 18, child: Text(label, style: TextStyle(color: tint))),
+        SizedBox(
+          width: 18,
+          child: Text(label, style: TextStyle(color: tint)),
+        ),
         Expanded(
           child: Slider(
             value: value.toDouble(),
@@ -80,16 +89,14 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
             onChanged: (v) => setState(() => set(v.round())),
           ),
         ),
-        SizedBox(
-          width: 34,
-          child: Text('$value', textAlign: TextAlign.end),
-        ),
+        SizedBox(width: 34, child: Text('$value', textAlign: TextAlign.end)),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return AlertDialog(
       title: Text(widget.title),
       content: SizedBox(
@@ -103,8 +110,8 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
               height: 64,
               decoration: BoxDecoration(
                 color: _color,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.black26),
+                borderRadius: BorderRadius.circular(Ks.radiusControl),
+                border: Border.all(color: scheme.outline),
               ),
               alignment: Alignment.center,
               child: Text(
@@ -122,9 +129,11 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
             _channel('G', _g, const Color(0xFF43A047), (v) => _g = v),
             _channel('B', _b, const Color(0xFF1E88E5), (v) => _b = v),
             const SizedBox(height: 8),
+            // The 8 presets as 34 swatches, the row swatch's size, the
+            // same set on the remote.
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 for (final (name, c) in _presets)
                   GestureDetector(
@@ -136,12 +145,12 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
                     child: Tooltip(
                       message: name,
                       child: Container(
-                        width: 28,
-                        height: 28,
+                        width: 34,
+                        height: 34,
                         decoration: BoxDecoration(
                           color: c,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.black26),
+                          border: Border.all(color: scheme.outline),
                         ),
                       ),
                     ),

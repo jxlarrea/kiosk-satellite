@@ -1,6 +1,7 @@
 import { toggleRow } from './audio.js';
 import { cmd, state } from './core.js';
 import { loadPermissions, readOnlyRow } from './device.js';
+import { attachSlider } from './widgets.js';
 
 /* ---- Voice Satellite controls (synced to Home Assistant) ---- */
 // The satellite binding and its sibling select entities (pipelines, wake
@@ -37,20 +38,8 @@ export function vsSelectRow(name, desc, options, current, onChange) {
 export function vsSliderRow(name, desc, min, max, step, unit, value, onChange) {
   const row = readOnlyRow(name, desc, '');
   row.querySelector('span').remove();
-  const controls = document.createElement('div');
-  controls.style.cssText = 'display:flex; align-items:center; gap:10px; min-width:0';
-  const inp = document.createElement('input');
-  inp.type = 'range'; inp.min = String(min); inp.max = String(max);
-  inp.step = String(step);
-  inp.value = String(Math.round(value));
-  inp.style.width = '190px';
-  const val = document.createElement('span');
-  val.style.cssText = 'min-width:4.5em; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap';
-  val.textContent = `${Math.round(value)}${unit}`;
-  inp.addEventListener('input', () => (val.textContent = `${inp.value}${unit}`));
-  inp.addEventListener('change', () => onChange(Number(inp.value)));
-  controls.append(inp, val);
-  row.appendChild(controls);
+  attachSlider(row, { min, max, step, value: Math.round(value),
+    label: (v) => `${v}${unit}`, onChange });
   return row;
 }
 
