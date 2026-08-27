@@ -83,7 +83,7 @@ Future<List<String>?> showCameraViewsPicker(
                         ),
                         children: [
                           for (final (index, id) in chosen.indexed)
-                            ListTile(
+                            SettingsRow(
                               key: ValueKey(id),
                               contentPadding: EdgeInsets.zero,
                               leading: ReorderableDragStartListener(
@@ -95,10 +95,24 @@ Future<List<String>?> showCameraViewsPicker(
                                 'Position ${index + 1} · '
                                 '${cameras(viewOf(id))}',
                               ),
-                              trailing: IconButton(
-                                tooltip: 'Remove',
-                                icon: const Icon(Icons.remove_circle_outline),
-                                onPressed: () => setDialogState(
+                              // A tablet has no drag: the same reordering,
+                              // one step at a time.
+                              trailing: OrderActions(
+                                first: index == 0,
+                                last: index == chosen.length - 1,
+                                onUp: () => setDialogState(
+                                  () => chosen.insert(
+                                    index - 1,
+                                    chosen.removeAt(index),
+                                  ),
+                                ),
+                                onDown: () => setDialogState(
+                                  () => chosen.insert(
+                                    index + 1,
+                                    chosen.removeAt(index),
+                                  ),
+                                ),
+                                onRemove: () => setDialogState(
                                   () => chosen.removeAt(index),
                                 ),
                               ),

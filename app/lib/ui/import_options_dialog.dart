@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'kit.dart';
+
 /// What a configuration import should do about the two things a backup
 /// carries that belong to one specific device (issue #25): its identity
 /// (device name + MQTT device id) and its page data (which includes the
@@ -20,8 +22,8 @@ Future<ImportOptions?> showImportOptionsDialog(
   var localTouched = false;
   final replaceLabel =
       (backupDeviceName == null || backupDeviceName.trim().isEmpty)
-          ? 'Replace the original device'
-          : 'Replace "${backupDeviceName.trim()}"';
+      ? 'Replace the original device'
+      : 'Replace "${backupDeviceName.trim()}"';
   return showDialog<ImportOptions>(
     context: context,
     builder: (context) => StatefulBuilder(
@@ -38,19 +40,21 @@ Future<ImportOptions?> showImportOptionsDialog(
                 'may reload.',
               ),
               const SizedBox(height: 16),
-              SegmentedButton<bool>(
-                segments: [
-                  const ButtonSegment(
-                    value: false,
-                    label: Text('Set up as new device'),
-                  ),
-                  ButtonSegment(value: true, label: Text(replaceLabel)),
-                ],
-                selected: {adopt},
-                onSelectionChanged: (selection) => setState(() {
-                  adopt = selection.first;
-                  if (!localTouched) local = adopt;
-                }),
+              ScrollingSegments(
+                child: SegmentedButton<bool>(
+                  segments: [
+                    const ButtonSegment(
+                      value: false,
+                      label: Text('Set up as new device'),
+                    ),
+                    ButtonSegment(value: true, label: Text(replaceLabel)),
+                  ],
+                  selected: {adopt},
+                  onSelectionChanged: (selection) => setState(() {
+                    adopt = selection.first;
+                    if (!localTouched) local = adopt;
+                  }),
+                ),
               ),
               const SizedBox(height: 4),
               Padding(
@@ -58,9 +62,9 @@ Future<ImportOptions?> showImportOptionsDialog(
                 child: Text(
                   adopt
                       ? 'Keeps the backup\'s name and MQTT identity; the '
-                          'original device must stay offline.'
+                            'original device must stay offline.'
                       : 'Assign its own name and MQTT identity, so both '
-                          'devices are unique.',
+                            'devices are unique.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -88,10 +92,10 @@ Future<ImportOptions?> showImportOptionsDialog(
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(
-              context,
-              (adoptIdentity: adopt, importLocalStorage: local),
-            ),
+            onPressed: () => Navigator.pop(context, (
+              adoptIdentity: adopt,
+              importLocalStorage: local,
+            )),
             child: const Text('Import'),
           ),
         ],

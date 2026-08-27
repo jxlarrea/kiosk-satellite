@@ -5,7 +5,7 @@ import {
   toggleRow,
   updateMicChannelRow,
 } from './audio.js';
-import { MIC_GROUP_NOTE, exportFileName } from './cameras.js';
+import { MIC_GROUP_NOTE, cameraAction, exportFileName } from './cameras.js';
 import { $, api, cmd, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { renderServicePage } from './service.js';
@@ -1710,12 +1710,10 @@ export async function loadSettings() {
               const row = readOnlyRow(u, '', '');
               row.querySelector('span').remove();
               row.style.paddingLeft = '14px';
-              const rm = document.createElement('button');
-              rm.className = 'btn-ghost'; rm.textContent = 'Remove';
-              rm.addEventListener('click', async () => {
+              const rm = cameraAction('Remove', async () => {
                 await saveUrls(urls.filter((x) => x !== u));
                 renderUrls();
-              });
+              }, false, 'delete');
               row.appendChild(rm);
               ulist.appendChild(row);
             });

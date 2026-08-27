@@ -258,7 +258,7 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
               }),
               children: [
                 for (final (index, entity) in _chosen.indexed)
-                  ListTile(
+                  SettingsRow(
                     key: ValueKey(entity['entity_id']),
                     leading: ReorderableDragStartListener(
                       index: index,
@@ -271,21 +271,22 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
                           : '${entity['entity_id']} · '
                                 '${entity['attribute']}',
                     ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          tooltip: 'Edit',
-                          icon: const Icon(Icons.edit_outlined),
-                          onPressed: () => _edit(index),
-                        ),
-                        IconButton(
-                          tooltip: 'Remove',
-                          icon: const Icon(Icons.remove_circle_outline),
-                          onPressed: () =>
-                              setState(() => _chosen.removeAt(index)),
-                        ),
-                      ],
+                    // Tapping the row edits it; the actions are for what
+                    // editing is not. A tablet has no drag: the same
+                    // reordering, one step at a time.
+                    onTap: () => _edit(index),
+                    trailing: OrderActions(
+                      first: index == 0,
+                      last: index == _chosen.length - 1,
+                      onUp: () => setState(
+                        () =>
+                            _chosen.insert(index - 1, _chosen.removeAt(index)),
+                      ),
+                      onDown: () => setState(
+                        () =>
+                            _chosen.insert(index + 1, _chosen.removeAt(index)),
+                      ),
+                      onRemove: () => setState(() => _chosen.removeAt(index)),
                     ),
                   ),
               ],

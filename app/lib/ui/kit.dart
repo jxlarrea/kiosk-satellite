@@ -249,9 +249,13 @@ class NoticeBanner extends StatelessWidget {
 /// scaffold behind a settings pane, the sheet behind a dialog body, the
 /// card behind a log box.
 class EdgeFade extends StatefulWidget {
-  const EdgeFade({super.key, required this.child});
+  const EdgeFade({super.key, required this.child, this.axis = Axis.vertical});
 
   final Widget child;
+
+  /// The scrollable's direction. Horizontal fades the left and right 28px
+  /// instead (a segmented pill that does not fit the pane).
+  final Axis axis;
 
   @override
   State<EdgeFade> createState() => _EdgeFadeState();
@@ -269,12 +273,14 @@ class _EdgeFadeState extends State<EdgeFade> {
   bool get debugBottom => _bottom;
 
   void _update(ScrollMetrics metrics) {
-    if (metrics.axis != Axis.vertical || !metrics.hasContentDimensions) {
+    if (metrics.axis != widget.axis || !metrics.hasContentDimensions) {
       return;
     }
     // A reversed list (the log boxes) grows upward: extentBefore is the
     // content hidden below the viewport, not above it.
-    final reversed = metrics.axisDirection == AxisDirection.up;
+    final reversed =
+        metrics.axisDirection == AxisDirection.up ||
+        metrics.axisDirection == AxisDirection.left;
     final top = (reversed ? metrics.extentAfter : metrics.extentBefore) > 1;
     final bottom = (reversed ? metrics.extentBefore : metrics.extentAfter) > 1;
     if (top != _top || bottom != _bottom) {
@@ -288,37 +294,46 @@ class _EdgeFadeState extends State<EdgeFade> {
   /// One edge's overlay: a surface-colored gradient strip whose alpha
   /// animates with the edge's state, gone from the tree entirely once the
   /// animation settles at off so an idle list paints nothing extra.
-  Widget _edge(Color surface, {required bool show, required bool top}) =>
-      Positioned(
-        left: 0,
-        right: 0,
-        top: top ? 0 : null,
-        bottom: top ? null : 0,
-        height: Ks.fadeEdge,
-        child: IgnorePointer(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(end: show ? 1.0 : 0.0),
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            builder: (context, t, _) => t == 0
-                ? const SizedBox.shrink()
-                : DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: top
-                            ? Alignment.topCenter
-                            : Alignment.bottomCenter,
-                        end: top ? Alignment.bottomCenter : Alignment.topCenter,
-                        colors: [
-                          surface.withValues(alpha: t),
-                          surface.withValues(alpha: 0),
-                        ],
-                      ),
+  Widget _edge(Color surface, {required bool show, required bool top}) {
+    final vertical = widget.axis == Axis.vertical;
+    return Positioned(
+      left: vertical || top ? 0 : null,
+      right: vertical || !top ? 0 : null,
+      top: vertical && !top ? null : 0,
+      bottom: vertical && top ? null : 0,
+      height: vertical ? Ks.fadeEdge : null,
+      width: vertical ? null : Ks.fadeEdge,
+      child: IgnorePointer(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(end: show ? 1.0 : 0.0),
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          builder: (context, t, _) => t == 0
+              ? const SizedBox.shrink()
+              : DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: vertical
+                          ? (top ? Alignment.topCenter : Alignment.bottomCenter)
+                          : (top
+                                ? Alignment.centerLeft
+                                : Alignment.centerRight),
+                      end: vertical
+                          ? (top ? Alignment.bottomCenter : Alignment.topCenter)
+                          : (top
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft),
+                      colors: [
+                        surface.withValues(alpha: t),
+                        surface.withValues(alpha: 0),
+                      ],
                     ),
                   ),
-          ),
+                ),
         ),
-      );
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -350,6 +365,69 @@ class _EdgeFadeState extends State<EdgeFade> {
       ),
     );
   }
+}
+
+/// A segmented pill that never wraps: when it does not fit the pane it
+/// scrolls sideways under the edge fade, the active segment in view. Four
+/// or more choices are a dropdown, not a pill. The remote's .seg-scroll is
+/// the same.
+class ScrollingSegments extends StatelessWidget {
+  const ScrollingSegments({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => EdgeFade(
+    axis: Axis.horizontal,
+    child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: child,
+    ),
+  );
+}
+
+/// The move up, move down and remove actions at the end of an orderable
+/// list row, 2 apart, so a tablet can reorder without a drag. The first
+/// row's up and the last row's down are disabled, not hidden. Remove is
+/// always last. The remote's rows carry the same three.
+class OrderActions extends StatelessWidget {
+  const OrderActions({
+    super.key,
+    required this.first,
+    required this.last,
+    required this.onUp,
+    required this.onDown,
+    required this.onRemove,
+  });
+
+  final bool first;
+  final bool last;
+  final VoidCallback onUp;
+  final VoidCallback onDown;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    spacing: 2,
+    children: [
+      IconButton(
+        tooltip: 'Move up',
+        icon: const Icon(Icons.arrow_upward),
+        onPressed: first ? null : onUp,
+      ),
+      IconButton(
+        tooltip: 'Move down',
+        icon: const Icon(Icons.arrow_downward),
+        onPressed: last ? null : onDown,
+      ),
+      IconButton(
+        tooltip: 'Remove',
+        icon: const Icon(Icons.delete_outline),
+        onPressed: onRemove,
+      ),
+    ],
+  );
 }
 
 /// The one control box: what every picked value sits in at rest. 44 high,
@@ -616,6 +694,7 @@ class SettingsRow extends StatelessWidget {
     this.onTap,
     this.enabled = true,
     this.stack = false,
+    this.contentPadding,
   });
 
   final Widget? leading;
@@ -624,6 +703,9 @@ class SettingsRow extends StatelessWidget {
   final Widget? trailing;
   final VoidCallback? onTap;
   final bool enabled;
+
+  /// Rows inside a dialog pass zero: the dialog's padding is the inset.
+  final EdgeInsetsGeometry? contentPadding;
 
   /// The control is wider than a switch, a number or a single text button:
   /// stack it under the name on a tight pane.
@@ -643,6 +725,7 @@ class SettingsRow extends StatelessWidget {
         trailing: trailing,
         onTap: onTap,
         enabled: enabled,
+        contentPadding: contentPadding,
       );
     }
     final theme = Theme.of(context);
@@ -660,10 +743,11 @@ class SettingsRow extends StatelessWidget {
         );
     final indent = leading == null ? 0.0 : _indent;
     final control = trailing;
+    final side = contentPadding?.horizontal ?? 2 * Ks.inset;
     return InkWell(
       onTap: enabled ? onTap : null,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(Ks.inset, 13, Ks.inset, 13),
+        padding: EdgeInsets.fromLTRB(side / 2, 13, side / 2, 13),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -692,9 +776,7 @@ class SettingsRow extends StatelessWidget {
                     // first: a control never squeezes it into a sliver.
                     constraints: BoxConstraints(
                       maxWidth:
-                          (MediaQuery.sizeOf(context).width -
-                              2 * Ks.inset -
-                              indent) *
+                          (MediaQuery.sizeOf(context).width - side - indent) *
                           0.6,
                     ),
                     child: control,

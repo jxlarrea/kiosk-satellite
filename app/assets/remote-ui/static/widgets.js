@@ -10,6 +10,13 @@ import { cmd } from './core.js';
 // scroll (a modal opening, rows re-rendering), batched to one pass per
 // frame since it reads layout.
 export function updateEdgeFade(el) {
+  if (el.classList.contains('edge-fade-x')) {
+    const span = el.scrollWidth - el.clientWidth;
+    setEdgeFadeVar(el, '--fade-left', Math.max(0, Math.min(28, el.scrollLeft)));
+    setEdgeFadeVar(el, '--fade-right',
+      Math.max(0, Math.min(28, span - el.scrollLeft)));
+    return;
+  }
   const max = el.scrollHeight - el.clientHeight;
   // Proportional through the last 28px of travel, saturated at 28 the
   // rest of the way: mid-list scrolling writes the same values, which
@@ -31,11 +38,12 @@ export function queueEdgeFades() {
   edgeFadeQueued = true;
   requestAnimationFrame(() => {
     edgeFadeQueued = false;
-    document.querySelectorAll('.edge-fade').forEach(updateEdgeFade);
+    document.querySelectorAll('.edge-fade, .edge-fade-x').forEach(updateEdgeFade);
   });
 }
 document.addEventListener('scroll', (e) => {
-  if (e.target instanceof Element && e.target.classList.contains('edge-fade')) {
+  if (e.target instanceof Element && (e.target.classList.contains('edge-fade')
+    || e.target.classList.contains('edge-fade-x'))) {
     updateEdgeFade(e.target);
   }
 }, true);

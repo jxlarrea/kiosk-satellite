@@ -292,8 +292,10 @@
      a large rounded highlight on the selected row. */
   nav#tabs { flex: 1; overflow-y: auto; padding: 4px 12px 12px;
     display: flex; flex-direction: column; gap: 4px; }
-  nav#tabs button { display: flex; align-items: center; gap: 14px;
-    padding: 11px 14px; border: none; border-radius: 18px;
+  /* The rail tile at the device's metrics: 14 16 padding, radius 24, a
+     16 semibold title over a 12.5 muted subtitle. */
+  nav#tabs button { display: flex; align-items: center; gap: 16px;
+    padding: 14px 16px; border: none; border-radius: 24px;
     background: transparent; color: var(--text); text-align: left; }
   nav#tabs button:hover { background: var(--surface); }
   nav#tabs button.active { background: var(--surface-2); }
@@ -305,7 +307,7 @@
   .d3 { background: var(--warn); }
   .d4 { background: var(--error); }
   .nav-text { min-width: 0; display: flex; flex-direction: column; }
-  .nav-title { font-size: 15.5px; font-weight: 600; }
+  .nav-title { font-size: 16px; font-weight: 600; line-height: 1.3; }
   .nav-sub { font-size: 12.5px; color: var(--muted);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Update-available marker on the About nav item. */
@@ -322,11 +324,17 @@
   /* Tabs: one segmented pill, echoing the app's segmented buttons. The
      active segment is tinted; inactive segments are quiet text. Used by
      the Logs source picker and the File Manager location. */
-  .seg { display: inline-flex; align-items: center; gap: 2px;
+  .seg { display: inline-flex; align-items: center; gap: 2px; flex: none;
     border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
   .seg button { border: none; background: transparent; color: var(--muted);
     border-radius: 999px; padding: 7px 16px; font-size: 13.5px;
-    font-weight: 600; min-width: 0; }
+    font-weight: 600; min-width: 0; flex: none; white-space: nowrap; }
+  /* The pill never wraps and its segments never shrink: when it does not
+     fit, it scrolls sideways under the 28 edge fade (edge-fade-x). Four
+     or more choices are a dropdown, not a pill. */
+  .seg-scroll { flex: 0 1 auto; max-width: 100%; overflow-x: auto;
+    scrollbar-width: none; padding: 3px 0; margin: -3px 0; }
+  .seg-scroll::-webkit-scrollbar { display: none; }
   .seg button:hover:not(.active):not(:disabled) { color: var(--text); }
   .seg button.active { background: var(--primary-soft);
     color: var(--primary); }
@@ -692,6 +700,14 @@
     mask-image: linear-gradient(to bottom,
       transparent 0, #000 var(--fade-top),
       #000 calc(100% - var(--fade-bottom)), transparent 100%); }
+  /* The sideways twin, for a segmented pill wider than its pane. */
+  .edge-fade-x { --fade-left: 0px; --fade-right: 0px;
+    -webkit-mask-image: linear-gradient(to right,
+      transparent 0, #000 var(--fade-left),
+      #000 calc(100% - var(--fade-right)), transparent 100%);
+    mask-image: linear-gradient(to right,
+      transparent 0, #000 var(--fade-left),
+      #000 calc(100% - var(--fade-right)), transparent 100%); }
   .modal-foot .spacer { flex: 1; min-width: 0; }
   .modal-foot:empty { display: none; }
 
@@ -756,7 +772,7 @@
   .wizard-brand .brand-mark { width: 40px; height: 40px; }
   .wizard-brand h1 { font-size: 20px; font-weight: 700; line-height: 1.2; }
   .wizard-step { display: flex; align-items: center; gap: 16px;
-    padding: 14px 16px; border-radius: 22px; }
+    padding: 14px 16px; border-radius: 24px; }
   .wizard-step.now { background: var(--surface-2); }
   .wizard-step .stepdisc { flex: none; width: 34px; height: 34px;
     border-radius: 50%; display: grid; place-items: center;

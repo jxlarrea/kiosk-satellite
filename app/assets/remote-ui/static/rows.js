@@ -296,12 +296,6 @@ export function settingRow(s) {
     const labels = (modeDef && modeDef.optionLabels) || {};
     const label = (m) => labels[m] || (m ? m[0].toUpperCase() + m.slice(1) : m);
 
-    const btn = document.createElement('button');
-    btn.className = 'btn-ghost';
-    btn.textContent = 'Add time';
-    btn.style.cssText = 'flex-shrink:0;';
-    row.appendChild(btn);
-
     // Real siblings, not a wrapper: the card's dividers are drawn between
     // adjacent .row elements (see the glance editor above).
     const frag = document.createDocumentFragment();
@@ -466,9 +460,15 @@ export function settingRow(s) {
       { icon: 'clock', onClick: () => editEntry(e) },
     );
 
+    // The add row is the last row of the card, the whole row the button,
+    // mirrored on the device.
+    const addRow = () => cameraListRow('Add time',
+      'A screensaver and brightness from that time on.', [],
+      { icon: 'add', onClick: () => editEntry(null) });
+
     const repaint = () => {
       const parent = row.parentNode;
-      const fresh = entries.map(entryRow);
+      const fresh = [...entries.map(entryRow), addRow()];
       if (!parent) {
         entryRows.forEach((el) => el.remove());
         fresh.forEach((el) => frag.appendChild(el));
@@ -483,8 +483,6 @@ export function settingRow(s) {
       entryRows = fresh;
     };
     repaint();
-
-    btn.addEventListener('click', () => editEntry(null));
     return frag;
   }
 
@@ -510,12 +508,6 @@ export function settingRow(s) {
     const order = CORNERS.map(([v]) => v);
     const cornerLabel = (v) => (CORNERS.find(([c]) => c === v) || [, v])[1];
     const typeLabel = (v) => (TYPES.find(([t]) => t === v) || [, v])[1];
-
-    const btn = document.createElement('button');
-    btn.className = 'btn-ghost';
-    btn.textContent = 'Add widget';
-    btn.style.cssText = 'flex-shrink:0;';
-    row.appendChild(btn);
 
     // Real siblings, not a wrapper: the card's dividers are drawn between
     // adjacent .row elements (see the schedule editor above).
@@ -724,11 +716,17 @@ export function settingRow(s) {
       },
     );
 
+    // The add row is the last row of the card, the whole row the button,
+    // mirrored on the device. Every corner taken means nothing left to
+    // add: the row stays, disabled, rather than disappearing.
+    const addRow = () => cameraListRow('Add widget',
+      'A small clock, the weather or the battery in a corner.', [],
+      { icon: 'add', onClick: () => editWidget(null),
+        disabled: entries.length >= CORNERS.length });
+
     const repaint = () => {
-      // Every corner taken means nothing left to add.
-      btn.disabled = entries.length >= CORNERS.length;
       const parent = row.parentNode;
-      const fresh = entries.map(entryRow);
+      const fresh = [...entries.map(entryRow), addRow()];
       if (!parent) {
         entryRows.forEach((el) => el.remove());
         fresh.forEach((el) => frag.appendChild(el));
@@ -743,8 +741,6 @@ export function settingRow(s) {
       entryRows = fresh;
     };
     repaint();
-
-    btn.addEventListener('click', () => editWidget(null));
     return frag;
   }
 

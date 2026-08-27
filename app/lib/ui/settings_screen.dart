@@ -1909,20 +1909,24 @@ class _CategoryContentState extends State<_CategoryContent> {
           // admin's Logs tab is the same three views.
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: SegmentedButton<String>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: 'app', label: Text('Kiosk Satellite')),
-                ButtonSegment(value: 'logcat', label: Text('Logcat')),
-                ButtonSegment(value: 'console', label: Text('Web Console')),
-              ],
-              selected: {_logSource},
-              onSelectionChanged: (selection) {
-                setState(() => _logSource = selection.first);
-                if (_logSource == 'logcat' && _logcatText == null) {
-                  _fetchLogcat(container);
-                }
-              },
+            // The pill never wraps: on a phone it scrolls sideways under
+            // the edge fade.
+            child: ScrollingSegments(
+              child: SegmentedButton<String>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: 'app', label: Text('Kiosk Satellite')),
+                  ButtonSegment(value: 'logcat', label: Text('Logcat')),
+                  ButtonSegment(value: 'console', label: Text('Web Console')),
+                ],
+                selected: {_logSource},
+                onSelectionChanged: (selection) {
+                  setState(() => _logSource = selection.first);
+                  if (_logSource == 'logcat' && _logcatText == null) {
+                    _fetchLogcat(container);
+                  }
+                },
+              ),
             ),
           ),
           if (_logSource == 'console')
@@ -3378,8 +3382,10 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // An empty list is a row, not a blank card.
         if (entries.isEmpty)
           ListTile(
+            leading: const Icon(Icons.schedule),
             title: const Text('No times yet'),
             subtitle: Text(screensaverSchedule.description),
           ),
@@ -3397,16 +3403,15 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
             ),
             onTap: () => _edit(context, i),
           ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8, bottom: 4),
-            child: TextButton.icon(
-              onPressed: () => _edit(context, null),
-              icon: const Icon(Icons.add),
-              label: const Text('Add time'),
-            ),
+        // The add row is the last row of the card, the whole row the
+        // button, mirrored on the remote.
+        ListTile(
+          leading: const Icon(Icons.add),
+          title: const Text('Add time'),
+          subtitle: const Text(
+            'A screensaver and brightness from that time on.',
           ),
+          onTap: () => _edit(context, null),
         ),
       ],
     );
@@ -3745,19 +3750,18 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
             ),
             onTap: () => _edit(context, w),
           ),
-        // Every corner taken means nothing left to add.
-        if (widgets.length < cornerOptions.length)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8, bottom: 4),
-              child: TextButton.icon(
-                onPressed: () => _edit(context, null),
-                icon: const Icon(Icons.add),
-                label: const Text('Add widget'),
-              ),
-            ),
+        // The add row is the last row of the card, the whole row the
+        // button, mirrored on the remote. Every corner taken means nothing
+        // left to add: the row stays, disabled, rather than disappearing.
+        ListTile(
+          leading: const Icon(Icons.add),
+          title: const Text('Add widget'),
+          subtitle: const Text(
+            'A small clock, the weather or the battery in a corner.',
           ),
+          enabled: widgets.length < cornerOptions.length,
+          onTap: () => _edit(context, null),
+        ),
       ],
     );
   }

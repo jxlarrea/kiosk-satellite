@@ -781,7 +781,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                             }),
                         children: [
                           for (final (index, id) in selected.indexed)
-                            ListTile(
+                            SettingsRow(
                               key: ValueKey(id),
                               contentPadding: EdgeInsets.zero,
                               leading: ReorderableDragStartListener(
@@ -790,10 +790,24 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
                               ),
                               title: Text(_cameraName(cameras, id)),
                               subtitle: Text('Position ${index + 1}'),
-                              trailing: IconButton(
-                                tooltip: 'Remove',
-                                icon: const Icon(Icons.remove_circle_outline),
-                                onPressed: () =>
+                              // A tablet has no drag: the same reordering,
+                              // one step at a time.
+                              trailing: OrderActions(
+                                first: index == 0,
+                                last: index == selected.length - 1,
+                                onUp: () => setDialogState(
+                                  () => selected.insert(
+                                    index - 1,
+                                    selected.removeAt(index),
+                                  ),
+                                ),
+                                onDown: () => setDialogState(
+                                  () => selected.insert(
+                                    index + 1,
+                                    selected.removeAt(index),
+                                  ),
+                                ),
+                                onRemove: () =>
                                     setDialogState(() => selected.remove(id)),
                               ),
                             ),

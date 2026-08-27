@@ -37,9 +37,11 @@ export async function loadFiles() {
   // still right-aligned thanks to the auto margin.
   const pick = document.createElement('div'); pick.className = 'toolbar';
   pick.style.cssText = 'flex-wrap:wrap;';
+  const segScroll = document.createElement('div');
+  segScroll.className = 'seg-scroll edge-fade-x';
   const rootSeg = document.createElement('div');
   rootSeg.className = 'seg';
-  rootSeg.style.cssText = 'flex-shrink:0;';
+  segScroll.appendChild(rootSeg);
   for (const r of roots) {
     const b = document.createElement('button');
     b.textContent = r.label;
@@ -50,7 +52,7 @@ export async function loadFiles() {
     });
     rootSeg.appendChild(b);
   }
-  pick.appendChild(rootSeg);
+  pick.appendChild(segScroll);
   const uploadBtn = document.createElement('button');
   uploadBtn.className = 'btn-ghost';
   uploadBtn.textContent = 'Upload file';
