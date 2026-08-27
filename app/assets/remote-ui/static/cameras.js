@@ -151,15 +151,17 @@ export function cameraIcon(name) {
 export function cameraAction(label, action, primary = false, icon = '', disabled = false) {
   const button = document.createElement('button');
   button.className = primary ? 'btn-primary' : 'btn-ghost';
-  button.style.width = 'auto';
   button.disabled = !!disabled;
   if (icon) {
     // The device's IconButton: a 40 borderless disc, the icon its label.
+    // No inline width here: it would override the disc's 40 and squash
+    // the hover ring into an oval.
     button.className = 'icon-btn';
     button.innerHTML = cameraIcon(icon);
     button.title = label;
     button.setAttribute('aria-label', label);
   } else {
+    button.style.width = 'auto';
     button.textContent = label;
   }
   button.addEventListener('click', action);
