@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The Gestures entry in the settings menu reads "Touch, palm and clap gestures", on the device and in the remote admin page, now that a raised hand is a trigger alongside touch and claps.
+
 ## v2026.8.86 - 2026-08-27
 
 ### Added

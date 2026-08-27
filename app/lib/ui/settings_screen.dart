@@ -200,7 +200,7 @@ const _categories = <(String, String, Object, String)>[
     Icons.apps_outlined,
     'Open other apps from the kiosk',
   ),
-  ('Gestures', 'Gestures', Icons.gesture, 'Touch and clap gestures'),
+  ('Gestures', 'Gestures', Icons.gesture, 'Touch, palm and clap gestures'),
   (
     'Device',
     'Device',
