@@ -16,7 +16,7 @@ import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import 'import_options_dialog.dart';
 import 'kiosk_screen.dart';
-import 'kit.dart' show NoticeBanner, NoticeKind, SectionHeading;
+import 'kit.dart' show LabeledField, NoticeBanner, NoticeKind, SectionHeading;
 import 'theme.dart';
 import 'toast.dart';
 import 'token_qr_scanner.dart';
@@ -785,11 +785,12 @@ class _SetupScreenState extends State<SetupScreen> {
             if (_remoteWanted)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-                child: TextField(
-                  controller: _remotePassword,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Remote admin password',
+                child: LabeledField(
+                  label: 'Remote admin password',
+                  child: TextField(
+                    controller: _remotePassword,
+                    obscureText: true,
+                    decoration: const InputDecoration(),
                   ),
                 ),
               ),
@@ -847,34 +848,38 @@ class _SetupScreenState extends State<SetupScreen> {
           _Card([
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-              child: TextField(
-                controller: _haUrl,
-                keyboardType: TextInputType.url,
-                autocorrect: false,
-                decoration: const InputDecoration(
-                  labelText: 'Home Assistant base URL',
-                  hintText: 'https://homeassistant.local:8123',
+              child: LabeledField(
+                label: 'Home Assistant base URL',
+                child: TextField(
+                  controller: _haUrl,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  decoration: const InputDecoration(
+                    hintText: 'https://homeassistant.local:8123',
+                  ),
                 ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: TextField(
-                controller: _haToken,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'Long-lived access token',
-                  // Home Assistant shows a QR code next to a freshly created
-                  // token; scanning it beats typing 180 characters on a wall
-                  // tablet. Device wizard only: the remote wizard runs in a
-                  // browser where pasting is the easy path.
-                  suffixIcon: !_hasCamera
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.qr_code_scanner),
-                          tooltip: 'Scan the QR code',
-                          onPressed: _busy ? null : _scanToken,
-                        ),
+              child: LabeledField(
+                label: 'Long-lived access token',
+                child: TextField(
+                  controller: _haToken,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    // Home Assistant shows a QR code next to a freshly created
+                    // token; scanning it beats typing 180 characters on a wall
+                    // tablet. Device wizard only: the remote wizard runs in a
+                    // browser where pasting is the easy path.
+                    suffixIcon: !_hasCamera
+                        ? null
+                        : IconButton(
+                            icon: const Icon(Icons.qr_code_scanner),
+                            tooltip: 'Scan the QR code',
+                            onPressed: _busy ? null : _scanToken,
+                          ),
+                  ),
                 ),
               ),
             ),

@@ -163,7 +163,7 @@ export function gestureListModal(title, items) {
 
 export function gestureTextarea(label, value = '', placeholder = '') {
   const wrap = document.createElement('label');
-  wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+  wrap.className = 'form-field';
   const title = document.createElement('span');
   title.className = 'desc';
   title.textContent = label;
@@ -515,7 +515,7 @@ export async function editGesture(existing) {
     : (state.visionSupport.hint || 'Not available on this device.');
 
   const holdWrap = document.createElement('label');
-  holdWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+  holdWrap.className = 'form-field';
   const holdLabel = document.createElement('span');
   holdLabel.className = 'desc';
   const holdInput = document.createElement('input');
@@ -532,7 +532,7 @@ export async function editGesture(existing) {
   holdWrap.append(holdLabel, holdInput);
 
   const seqWrap = document.createElement('div');
-  seqWrap.style.cssText = 'display:flex; flex-direction:column; gap:8px;';
+  seqWrap.className = 'form-field';
   const seqText = document.createElement('span');
   seqText.className = 'desc';
   const seqButtons = document.createElement('div');

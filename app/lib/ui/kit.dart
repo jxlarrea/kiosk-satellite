@@ -430,6 +430,45 @@ class OrderActions extends StatelessWidget {
   );
 }
 
+/// A labeled field inside an editor: the label above the control in 12.5
+/// muted, 6 apart, an optional helper line beneath in the same style. No
+/// floating label inside the field's border: the remote admin's forms put
+/// the label above, and this is the same shape. Fields stack 16 apart.
+class LabeledField extends StatelessWidget {
+  const LabeledField({
+    super.key,
+    required this.label,
+    required this.child,
+    this.helper,
+  });
+
+  final String label;
+  final Widget child;
+  final String? helper;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final note = theme.textTheme.bodySmall?.copyWith(
+      fontSize: 12.5,
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: note),
+        const SizedBox(height: 6),
+        child,
+        if (helper != null) ...[
+          const SizedBox(height: 6),
+          Text(helper!, style: note),
+        ],
+      ],
+    );
+  }
+}
+
 /// The one control box: what every picked value sits in at rest. 44 high,
 /// surface 2 fill, hairline border, control radius, 12 side padding. The
 /// dropdown, the time box and the copy box are this box with their content

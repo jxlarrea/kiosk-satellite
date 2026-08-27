@@ -148,13 +148,15 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(
-                      controller: controller,
-                      decoration: InputDecoration(
-                        labelText: 'Name',
-                        hintText: '${entity['name']}',
-                        helperText:
-                            'Leave empty to use the Home Assistant name.',
+                    LabeledField(
+                      label: 'Name',
+                      child: TextField(
+                        controller: controller,
+                        decoration: InputDecoration(
+                          hintText: '${entity['name']}',
+                          helperText:
+                              'Leave empty to use the Home Assistant name.',
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -299,7 +301,6 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
               controller: _query,
               onChanged: _onQueryChanged,
               decoration: InputDecoration(
-                labelText: 'Search entities',
                 hintText: 'Name or entity id',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searching

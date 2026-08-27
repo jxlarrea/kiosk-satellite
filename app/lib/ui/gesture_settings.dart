@@ -225,93 +225,104 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: 16,
                     children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: type,
-                        decoration: const InputDecoration(labelText: 'Gesture'),
-                        items: [
-                          // Show fingers needs a hand runtime this
-                          // Android version cannot load (issue #331):
-                          // not offered, though an existing mapping
-                          // still opens for editing.
-                          for (final (value, label) in _triggerTypes)
-                            if (value != 'fingers' ||
-                                type == 'fingers' ||
-                                !c.deviceCamera.handsKnownUnsupported)
-                              DropdownMenuItem(
-                                value: value,
-                                child: Text(label),
-                              ),
-                        ],
-                        onChanged: (value) =>
-                            setDialogState(() => type = value ?? type),
+                      LabeledField(
+                        label: 'Gesture',
+                        child: DropdownButtonFormField<String>(
+                          initialValue: type,
+                          decoration: const InputDecoration(),
+                          items: [
+                            // Show fingers needs a hand runtime this
+                            // Android version cannot load (issue #331):
+                            // not offered, though an existing mapping
+                            // still opens for editing.
+                            for (final (value, label) in _triggerTypes)
+                              if (value != 'fingers' ||
+                                  type == 'fingers' ||
+                                  !c.deviceCamera.handsKnownUnsupported)
+                                DropdownMenuItem(
+                                  value: value,
+                                  child: Text(label),
+                                ),
+                          ],
+                          onChanged: (value) =>
+                              setDialogState(() => type = value ?? type),
+                        ),
                       ),
                       if (type == 'corner_taps' || type == 'corner_hold')
-                        DropdownButtonFormField<String>(
-                          initialValue: corner,
-                          decoration: const InputDecoration(
-                            labelText: 'Corner',
-                          ),
-                          items: [
-                            for (final entry in cornerNames.entries)
-                              DropdownMenuItem(
-                                value: entry.key,
-                                child: Text(
-                                  '${entry.value[0].toUpperCase()}'
-                                  '${entry.value.substring(1)} corner',
+                        LabeledField(
+                          label: 'Corner',
+                          child: DropdownButtonFormField<String>(
+                            initialValue: corner,
+                            decoration: const InputDecoration(),
+                            items: [
+                              for (final entry in cornerNames.entries)
+                                DropdownMenuItem(
+                                  value: entry.key,
+                                  child: Text(
+                                    '${entry.value[0].toUpperCase()}'
+                                    '${entry.value.substring(1)} corner',
+                                  ),
                                 ),
-                              ),
-                          ],
-                          onChanged: (value) =>
-                              setDialogState(() => corner = value ?? corner),
+                            ],
+                            onChanged: (value) =>
+                                setDialogState(() => corner = value ?? corner),
+                          ),
                         ),
                       if (type == 'corner_taps')
-                        DropdownButtonFormField<int>(
-                          initialValue: taps.clamp(2, 4),
-                          decoration: const InputDecoration(labelText: 'Taps'),
-                          items: const [
-                            DropdownMenuItem(value: 2, child: Text('2 taps')),
-                            DropdownMenuItem(value: 3, child: Text('3 taps')),
-                            DropdownMenuItem(value: 4, child: Text('4 taps')),
-                          ],
-                          onChanged: (value) =>
-                              setDialogState(() => taps = value ?? taps),
+                        LabeledField(
+                          label: 'Taps',
+                          child: DropdownButtonFormField<int>(
+                            initialValue: taps.clamp(2, 4),
+                            decoration: const InputDecoration(),
+                            items: const [
+                              DropdownMenuItem(value: 2, child: Text('2 taps')),
+                              DropdownMenuItem(value: 3, child: Text('3 taps')),
+                              DropdownMenuItem(value: 4, child: Text('4 taps')),
+                            ],
+                            onChanged: (value) =>
+                                setDialogState(() => taps = value ?? taps),
+                          ),
                         ),
                       if (type == 'finger_taps' || type == 'finger_hold')
-                        DropdownButtonFormField<int>(
-                          initialValue: fingers.clamp(2, 3),
-                          decoration: const InputDecoration(
-                            labelText: 'Fingers',
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 2,
-                              child: Text('2 fingers'),
+                        LabeledField(
+                          label: 'Fingers',
+                          child: DropdownButtonFormField<int>(
+                            initialValue: fingers.clamp(2, 3),
+                            decoration: const InputDecoration(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 2,
+                                child: Text('2 fingers'),
+                              ),
+                              DropdownMenuItem(
+                                value: 3,
+                                child: Text('3 fingers'),
+                              ),
+                            ],
+                            onChanged: (value) => setDialogState(
+                              () => fingerCount = value ?? fingerCount,
                             ),
-                            DropdownMenuItem(
-                              value: 3,
-                              child: Text('3 fingers'),
-                            ),
-                          ],
-                          onChanged: (value) => setDialogState(
-                            () => fingerCount = value ?? fingerCount,
                           ),
                         ),
                       if (type == 'finger_taps')
-                        DropdownButtonFormField<int>(
-                          initialValue: fingerTaps.clamp(1, 2),
-                          decoration: const InputDecoration(labelText: 'Taps'),
-                          items: const [
-                            DropdownMenuItem(
-                              value: 1,
-                              child: Text('Single tap'),
+                        LabeledField(
+                          label: 'Taps',
+                          child: DropdownButtonFormField<int>(
+                            initialValue: fingerTaps.clamp(1, 2),
+                            decoration: const InputDecoration(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 1,
+                                child: Text('Single tap'),
+                              ),
+                              DropdownMenuItem(
+                                value: 2,
+                                child: Text('Double tap'),
+                              ),
+                            ],
+                            onChanged: (value) => setDialogState(
+                              () => fingerTaps = value ?? fingerTaps,
                             ),
-                            DropdownMenuItem(
-                              value: 2,
-                              child: Text('Double tap'),
-                            ),
-                          ],
-                          onChanged: (value) => setDialogState(
-                            () => fingerTaps = value ?? fingerTaps,
                           ),
                         ),
                       if (type == 'corner_hold' || type == 'finger_hold') ...[
@@ -330,32 +341,36 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                         ),
                       ],
                       if (type == 'fingers')
-                        DropdownButtonFormField<int>(
-                          initialValue: fingerCount.clamp(1, 5),
-                          decoration: const InputDecoration(
-                            labelText: 'Fingers',
-                          ),
-                          items: const [
-                            DropdownMenuItem(value: 1, child: Text('1 finger')),
-                            DropdownMenuItem(
-                              value: 2,
-                              child: Text('2 fingers'),
+                        LabeledField(
+                          label: 'Fingers',
+                          child: DropdownButtonFormField<int>(
+                            initialValue: fingerCount.clamp(1, 5),
+                            decoration: const InputDecoration(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 1,
+                                child: Text('1 finger'),
+                              ),
+                              DropdownMenuItem(
+                                value: 2,
+                                child: Text('2 fingers'),
+                              ),
+                              DropdownMenuItem(
+                                value: 3,
+                                child: Text('3 fingers'),
+                              ),
+                              DropdownMenuItem(
+                                value: 4,
+                                child: Text('4 fingers'),
+                              ),
+                              DropdownMenuItem(
+                                value: 5,
+                                child: Text('Open hand (5)'),
+                              ),
+                            ],
+                            onChanged: (value) => setDialogState(
+                              () => fingerCount = value ?? fingerCount,
                             ),
-                            DropdownMenuItem(
-                              value: 3,
-                              child: Text('3 fingers'),
-                            ),
-                            DropdownMenuItem(
-                              value: 4,
-                              child: Text('4 fingers'),
-                            ),
-                            DropdownMenuItem(
-                              value: 5,
-                              child: Text('Open hand (5)'),
-                            ),
-                          ],
-                          onChanged: (value) => setDialogState(
-                            () => fingerCount = value ?? fingerCount,
                           ),
                         ),
                       if (type == 'fingers')
@@ -368,16 +383,28 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       if (type == 'claps') ...[
-                        DropdownButtonFormField<int>(
-                          initialValue: claps.clamp(2, 4),
-                          decoration: const InputDecoration(labelText: 'Claps'),
-                          items: const [
-                            DropdownMenuItem(value: 2, child: Text('2 claps')),
-                            DropdownMenuItem(value: 3, child: Text('3 claps')),
-                            DropdownMenuItem(value: 4, child: Text('4 claps')),
-                          ],
-                          onChanged: (value) =>
-                              setDialogState(() => claps = value ?? claps),
+                        LabeledField(
+                          label: 'Claps',
+                          child: DropdownButtonFormField<int>(
+                            initialValue: claps.clamp(2, 4),
+                            decoration: const InputDecoration(),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 2,
+                                child: Text('2 claps'),
+                              ),
+                              DropdownMenuItem(
+                                value: 3,
+                                child: Text('3 claps'),
+                              ),
+                              DropdownMenuItem(
+                                value: 4,
+                                child: Text('4 claps'),
+                              ),
+                            ],
+                            onChanged: (value) =>
+                                setDialogState(() => claps = value ?? claps),
+                          ),
                         ),
                         Text(
                           'Claps are heard through the microphone, with or '
@@ -627,16 +654,15 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
             title: Text(title),
             content: SizedBox(
               width: 480,
-              child: TextField(
-                controller: controller,
-                autofocus: true,
-                keyboardType: keyboard,
-                decoration: InputDecoration(
-                  labelText: label,
-                  hintText: hint,
-                  errorText: error,
+              child: LabeledField(
+                label: label,
+                child: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  keyboardType: keyboard,
+                  decoration: InputDecoration(hintText: hint, errorText: error),
+                  onSubmitted: (_) => submit(),
                 ),
-                onSubmitted: (_) => submit(),
               ),
             ),
             actions: [
@@ -754,15 +780,17 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 16,
                 children: [
-                  TextField(
-                    controller: entity,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: label,
-                      hintText: hint,
-                      errorText: error,
+                  LabeledField(
+                    label: label,
+                    child: TextField(
+                      controller: entity,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: hint,
+                        errorText: error,
+                      ),
+                      onSubmitted: (_) => submit(),
                     ),
-                    onSubmitted: (_) => submit(),
                   ),
                   _validateRow(
                     context,
@@ -964,34 +992,40 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 16,
                     children: [
-                      TextField(
-                        controller: domain,
-                        decoration: const InputDecoration(
-                          labelText: 'Domain',
-                          hintText: 'light',
+                      LabeledField(
+                        label: 'Domain',
+                        child: TextField(
+                          controller: domain,
+                          decoration: const InputDecoration(hintText: 'light'),
                         ),
                       ),
-                      TextField(
-                        controller: service,
-                        decoration: const InputDecoration(
-                          labelText: 'Service',
-                          hintText: 'turn_on',
+                      LabeledField(
+                        label: 'Service',
+                        child: TextField(
+                          controller: service,
+                          decoration: const InputDecoration(
+                            hintText: 'turn_on',
+                          ),
                         ),
                       ),
-                      TextField(
-                        controller: entity,
-                        decoration: const InputDecoration(
-                          labelText: 'Entity (optional)',
-                          hintText: 'light.kitchen',
+                      LabeledField(
+                        label: 'Entity (optional)',
+                        child: TextField(
+                          controller: entity,
+                          decoration: const InputDecoration(
+                            hintText: 'light.kitchen',
+                          ),
                         ),
                       ),
-                      TextField(
-                        controller: data,
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          labelText: 'Service data (optional)',
-                          hintText: '{"brightness_pct": 60}',
-                          errorText: error,
+                      LabeledField(
+                        label: 'Service data (optional)',
+                        child: TextField(
+                          controller: data,
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            hintText: '{"brightness_pct": 60}',
+                            errorText: error,
+                          ),
                         ),
                       ),
                       _validateRow(
@@ -1091,20 +1125,24 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                 mainAxisSize: MainAxisSize.min,
                 spacing: 16,
                 children: [
-                  TextField(
-                    controller: event,
-                    decoration: InputDecoration(
-                      labelText: 'Event type',
-                      hintText: 'kiosk_satellite_gesture',
-                      errorText: error,
+                  LabeledField(
+                    label: 'Event type',
+                    child: TextField(
+                      controller: event,
+                      decoration: InputDecoration(
+                        hintText: 'kiosk_satellite_gesture',
+                        errorText: error,
+                      ),
                     ),
                   ),
-                  TextField(
-                    controller: data,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Event data (optional)',
-                      hintText: '{"room": "kitchen"}',
+                  LabeledField(
+                    label: 'Event data (optional)',
+                    child: TextField(
+                      controller: data,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: '{"room": "kitchen"}',
+                      ),
                     ),
                   ),
                 ],

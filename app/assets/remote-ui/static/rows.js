@@ -331,8 +331,7 @@ export function settingRow(s) {
       // Inside an editor the time is a labeled field, full width, opening
       // the same picker as the time rows.
       const timeWrap = document.createElement('div');
-      timeWrap.style.cssText =
-        'display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px;';
+      timeWrap.className = 'form-field';
       const timeTitle = document.createElement('span');
       timeTitle.className = 'desc';
       timeTitle.textContent = 'Time';
@@ -348,7 +347,7 @@ export function settingRow(s) {
       // none would silently inherit whatever the global slider says, which
       // is what a night entry is usually set to escape.
       const brightWrap = document.createElement('label');
-      brightWrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+      brightWrap.className = 'form-field';
       const brightTitle = document.createElement('span');
       brightTitle.className = 'desc';
       brightTitle.textContent = 'Brightness';
@@ -562,8 +561,8 @@ export function settingRow(s) {
       // the color rows.
       const colorField = () => {
         const wrap = document.createElement('div');
-        wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;'
-          + ' align-items:flex-start;';
+        wrap.className = 'form-field';
+        wrap.style.alignItems = 'flex-start';
         const title = document.createElement('span');
         title.className = 'desc';
         title.textContent = 'Color';
@@ -626,7 +625,7 @@ export function settingRow(s) {
         // over the temperature is named by hand.
         refs.label = (() => {
           const wrap = document.createElement('label');
-          wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+          wrap.className = 'form-field';
           const title = document.createElement('span');
           title.className = 'desc';
           title.textContent = 'Location name';

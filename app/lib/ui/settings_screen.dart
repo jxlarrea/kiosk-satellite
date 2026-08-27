@@ -3233,31 +3233,33 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
             String key, {
             bool enabled = true,
             String? helper,
-          }) => DropdownButtonFormField<String>(
-            initialValue: switch (entry[key]) {
-              true => 'on',
-              false => 'off',
-              _ => 'default',
-            },
-            decoration: InputDecoration(
-              labelText: title,
-              helperText: helper,
-              helperMaxLines: 3,
+          }) => LabeledField(
+            label: title,
+            child: DropdownButtonFormField<String>(
+              initialValue: switch (entry[key]) {
+                true => 'on',
+                false => 'off',
+                _ => 'default',
+              },
+              decoration: InputDecoration(
+                helperText: helper,
+                helperMaxLines: 3,
+              ),
+              items: const [
+                DropdownMenuItem(value: 'default', child: Text('Default')),
+                DropdownMenuItem(value: 'on', child: Text('On')),
+                DropdownMenuItem(value: 'off', child: Text('Off')),
+              ],
+              onChanged: !enabled
+                  ? null
+                  : (choice) => setDialogState(() {
+                      if (choice == null || choice == 'default') {
+                        entry.remove(key);
+                      } else {
+                        entry[key] = choice == 'on';
+                      }
+                    }),
             ),
-            items: const [
-              DropdownMenuItem(value: 'default', child: Text('Default')),
-              DropdownMenuItem(value: 'on', child: Text('On')),
-              DropdownMenuItem(value: 'off', child: Text('Off')),
-            ],
-            onChanged: !enabled
-                ? null
-                : (choice) => setDialogState(() {
-                    if (choice == null || choice == 'default') {
-                      entry.remove(key);
-                    } else {
-                      entry[key] = choice == 'on';
-                    }
-                  }),
           );
           final level = (entry['brightness'] as num).toDouble();
           return AlertDialog(
@@ -3272,48 +3274,37 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                   children: [
                     // Inside an editor the time is a labeled field, full
                     // width, opening the same picker as the time rows.
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Time',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                        TimeBox(
-                          value: '${entry['at']}',
-                          expand: true,
-                          onTap: () async {
-                            final at = await _pickTime('${entry['at']}');
-                            if (at != null) {
-                              setDialogState(() => entry['at'] = at);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    DropdownButtonFormField<String>(
-                      initialValue:
-                          screensaverMode.options!.contains(entry['mode'])
-                          ? entry['mode'] as String
-                          : screensaverMode.defaultValue,
-                      decoration: const InputDecoration(
-                        labelText: 'Screensaver',
+                    LabeledField(
+                      label: 'Time',
+                      child: TimeBox(
+                        value: '${entry['at']}',
+                        expand: true,
+                        onTap: () async {
+                          final at = await _pickTime('${entry['at']}');
+                          if (at != null) {
+                            setDialogState(() => entry['at'] = at);
+                          }
+                        },
                       ),
-                      items: [
-                        for (final mode in screensaverMode.options!)
-                          DropdownMenuItem(
-                            value: mode,
-                            child: Text(_modeLabel(mode)),
-                          ),
-                      ],
-                      onChanged: (mode) => setDialogState(
-                        () => entry['mode'] = mode ?? entry['mode'],
+                    ),
+                    LabeledField(
+                      label: 'Screensaver',
+                      child: DropdownButtonFormField<String>(
+                        initialValue:
+                            screensaverMode.options!.contains(entry['mode'])
+                            ? entry['mode'] as String
+                            : screensaverMode.defaultValue,
+                        decoration: const InputDecoration(),
+                        items: [
+                          for (final mode in screensaverMode.options!)
+                            DropdownMenuItem(
+                              value: mode,
+                              child: Text(_modeLabel(mode)),
+                            ),
+                        ],
+                        onChanged: (mode) => setDialogState(
+                          () => entry['mode'] = mode ?? entry['mode'],
+                        ),
                       ),
                     ),
                     // The brightness this entry runs at, always set: an
@@ -3614,37 +3605,43 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    DropdownButtonFormField<String>(
-                      initialValue: position,
-                      decoration: const InputDecoration(labelText: 'Corner'),
-                      items: [
-                        for (final corner in free)
-                          DropdownMenuItem(
-                            value: corner,
-                            child: Text(cornerLabels[corner] ?? corner),
-                          ),
-                      ],
-                      onChanged: (value) =>
-                          setDialogState(() => position = value ?? position),
+                    LabeledField(
+                      label: 'Corner',
+                      child: DropdownButtonFormField<String>(
+                        initialValue: position,
+                        decoration: const InputDecoration(),
+                        items: [
+                          for (final corner in free)
+                            DropdownMenuItem(
+                              value: corner,
+                              child: Text(cornerLabels[corner] ?? corner),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setDialogState(() => position = value ?? position),
+                      ),
                     ),
-                    DropdownButtonFormField<String>(
-                      initialValue: type,
-                      decoration: const InputDecoration(labelText: 'Widget'),
-                      items: [
-                        for (final t in screensaverWidgetTypes)
-                          DropdownMenuItem(
-                            value: t,
-                            child: Text(describeScreensaverWidgetType(t)),
-                          ),
-                      ],
-                      onChanged: (value) => setDialogState(() {
-                        if (value == null || value == type) return;
-                        type = value;
-                        // A different widget, different settings: start it
-                        // from its own defaults.
-                        config = {...screensaverWidgetDefaults(type)};
-                        labelCtrl.text = '${config['label'] ?? ''}';
-                      }),
+                    LabeledField(
+                      label: 'Widget',
+                      child: DropdownButtonFormField<String>(
+                        initialValue: type,
+                        decoration: const InputDecoration(),
+                        items: [
+                          for (final t in screensaverWidgetTypes)
+                            DropdownMenuItem(
+                              value: t,
+                              child: Text(describeScreensaverWidgetType(t)),
+                            ),
+                        ],
+                        onChanged: (value) => setDialogState(() {
+                          if (value == null || value == type) return;
+                          type = value;
+                          // A different widget, different settings: start it
+                          // from its own defaults.
+                          config = {...screensaverWidgetDefaults(type)};
+                          labelCtrl.text = '${config['label'] ?? ''}';
+                        }),
+                      ),
                     ),
                     if (type == 'clock') ...[
                       colorRow(),
@@ -3683,13 +3680,16 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                       ),
                       // Weather entities carry no city attribute, so the
                       // place shown over the temperature is named by hand.
-                      TextField(
-                        controller: labelCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Location name',
-                          helperText: 'Leave empty to hide the location line.',
+                      LabeledField(
+                        label: 'Location name',
+                        child: TextField(
+                          controller: labelCtrl,
+                          decoration: const InputDecoration(
+                            helperText:
+                                'Leave empty to hide the location line.',
+                          ),
+                          onChanged: (v) => config['label'] = v.trim(),
                         ),
-                        onChanged: (v) => config['label'] = v.trim(),
                       ),
                       colorRow(),
                       // The temperature always shows; each other line also

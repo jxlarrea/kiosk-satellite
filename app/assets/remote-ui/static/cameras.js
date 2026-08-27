@@ -5,7 +5,7 @@ import { messageBox, modalShell } from './widgets.js';
 
 export function cameraField(label, value = '', type = 'text') {
   const wrap = document.createElement('label');
-  wrap.style.cssText = 'display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px;';
+  wrap.className = 'form-field';
   const title = document.createElement('span');
   title.className = 'desc';
   title.textContent = label;
@@ -211,8 +211,7 @@ export function cameraListRow(title, description, actions, options = {}) {
 
 export function cameraSelectField(label, options, value) {
   const wrap = document.createElement('label');
-  wrap.style.cssText =
-    'display:flex; flex-direction:column; gap:6px; flex:1; min-width:180px;';
+  wrap.className = 'form-field';
   const title = document.createElement('span');
   title.className = 'desc';
   title.textContent = label;
@@ -678,8 +677,8 @@ export async function editCameraView(config, view) {
   // The Grid dropdown is custom-built: a native select cannot show the
   // layout icons the device dropdown has.
   const gridField = document.createElement('div');
-  gridField.style.cssText = 'display:flex; flex-direction:column; gap:6px;'
-    + ' margin-top:14px; position:relative;';
+  gridField.className = 'form-field';
+  gridField.style.cssText = 'margin-top:14px; position:relative;';
   const gridLabel = label('Grid');
   gridLabel.style.margin = '0 2px';
   const gridButton = document.createElement('button');

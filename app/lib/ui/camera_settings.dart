@@ -462,38 +462,42 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             width: 480,
             child: EdgeFade(
               child: SingleChildScrollView(
-                // Room for the first field's floating label, which otherwise
-                // clips against the dialog title.
-                padding: const EdgeInsets.only(top: 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   spacing: 16,
                   children: [
-                    TextField(
-                      controller: name,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                    ),
-                    TextField(
-                      controller: url,
-                      keyboardType: TextInputType.url,
-                      decoration: const InputDecoration(
-                        labelText: 'Base URL',
-                        hintText: 'http://192.168.1.10:1984',
+                    LabeledField(
+                      label: 'Name',
+                      child: TextField(
+                        controller: name,
+                        decoration: const InputDecoration(),
                       ),
                     ),
-                    TextField(
-                      controller: username,
-                      decoration: const InputDecoration(
-                        labelText: 'Username (optional)',
+                    LabeledField(
+                      label: 'Base URL',
+                      child: TextField(
+                        controller: url,
+                        keyboardType: TextInputType.url,
+                        decoration: const InputDecoration(
+                          hintText: 'http://192.168.1.10:1984',
+                        ),
                       ),
                     ),
-                    TextField(
-                      controller: password,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        labelText: server?.password.isNotEmpty == true
-                            ? 'New password (leave blank to keep)'
-                            : 'Password (optional)',
+                    LabeledField(
+                      label: 'Username (optional)',
+                      child: TextField(
+                        controller: username,
+                        decoration: const InputDecoration(),
+                      ),
+                    ),
+                    LabeledField(
+                      label: server?.password.isNotEmpty == true
+                          ? 'New password (leave blank to keep)'
+                          : 'Password (optional)',
+                      child: TextField(
+                        controller: password,
+                        obscureText: true,
+                        decoration: InputDecoration(),
                       ),
                     ),
                     SwitchListTile(
@@ -568,82 +572,93 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             width: 480,
             child: EdgeFade(
               child: SingleChildScrollView(
-                // Room for the first field's floating label, which otherwise
-                // clips against the dialog title.
-                padding: const EdgeInsets.only(top: 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   spacing: 16,
                   children: [
-                    TextField(
-                      controller: name,
-                      decoration: const InputDecoration(labelText: 'Name'),
+                    LabeledField(
+                      label: 'Name',
+                      child: TextField(
+                        controller: name,
+                        decoration: const InputDecoration(),
+                      ),
                     ),
-                    DropdownButtonFormField<String>(
-                      initialValue: kind,
-                      decoration: const InputDecoration(labelText: 'Type'),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'go2rtc',
-                          child: Text('Go2RTC stream'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'whep',
-                          child: Text('Direct WHEP URL'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'ha',
-                          child: Text('Home Assistant camera'),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setDialogState(() => kind = value ?? kind),
+                    LabeledField(
+                      label: 'Type',
+                      child: DropdownButtonFormField<String>(
+                        initialValue: kind,
+                        decoration: const InputDecoration(),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'go2rtc',
+                            child: Text('Go2RTC stream'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'whep',
+                            child: Text('Direct WHEP URL'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'ha',
+                            child: Text('Home Assistant camera'),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setDialogState(() => kind = value ?? kind),
+                      ),
                     ),
                     if (kind == 'ha')
-                      TextField(
-                        controller: entity,
-                        decoration: const InputDecoration(
-                          labelText: 'Camera entity',
-                          hintText: 'camera.front_door',
+                      LabeledField(
+                        label: 'Camera entity',
+                        child: TextField(
+                          controller: entity,
+                          decoration: const InputDecoration(
+                            hintText: 'camera.front_door',
+                          ),
                         ),
                       )
                     else if (kind == 'go2rtc') ...[
-                      DropdownButtonFormField<String>(
-                        initialValue:
-                            config.servers.any(
-                              (server) => server.id == serverId,
-                            )
-                            ? serverId
-                            : null,
-                        decoration: const InputDecoration(labelText: 'Server'),
-                        items: [
-                          for (final server in config.servers)
-                            DropdownMenuItem(
-                              value: server.id,
-                              child: Text(server.name),
-                            ),
-                        ],
-                        onChanged: (value) =>
-                            setDialogState(() => serverId = value ?? ''),
-                      ),
-                      TextField(
-                        controller: stream,
-                        decoration: const InputDecoration(
-                          labelText: 'Stream name',
+                      LabeledField(
+                        label: 'Server',
+                        child: DropdownButtonFormField<String>(
+                          initialValue:
+                              config.servers.any(
+                                (server) => server.id == serverId,
+                              )
+                              ? serverId
+                              : null,
+                          decoration: const InputDecoration(),
+                          items: [
+                            for (final server in config.servers)
+                              DropdownMenuItem(
+                                value: server.id,
+                                child: Text(server.name),
+                              ),
+                          ],
+                          onChanged: (value) =>
+                              setDialogState(() => serverId = value ?? ''),
                         ),
                       ),
-                      TextField(
-                        controller: fullscreen,
-                        decoration: const InputDecoration(
-                          labelText: 'Fullscreen stream (optional)',
+                      LabeledField(
+                        label: 'Stream name',
+                        child: TextField(
+                          controller: stream,
+                          decoration: const InputDecoration(),
+                        ),
+                      ),
+                      LabeledField(
+                        label: 'Fullscreen stream (optional)',
+                        child: TextField(
+                          controller: fullscreen,
+                          decoration: const InputDecoration(),
                         ),
                       ),
                     ] else
-                      TextField(
-                        controller: whep,
-                        keyboardType: TextInputType.url,
-                        decoration: const InputDecoration(
-                          labelText: 'WHEP URL',
+                      LabeledField(
+                        label: 'WHEP URL',
+                        child: TextField(
+                          controller: whep,
+                          keyboardType: TextInputType.url,
+                          decoration: const InputDecoration(),
                         ),
                       ),
                   ],
@@ -702,15 +717,15 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
             width: 640,
             child: EdgeFade(
               child: SingleChildScrollView(
-                // Room for the first field's floating label, which otherwise
-                // clips against the dialog title.
-                padding: const EdgeInsets.only(top: 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      controller: name,
-                      decoration: const InputDecoration(labelText: 'Name'),
+                    LabeledField(
+                      label: 'Name',
+                      child: TextField(
+                        controller: name,
+                        decoration: const InputDecoration(),
+                      ),
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
