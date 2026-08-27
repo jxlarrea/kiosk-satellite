@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Changed
+- The remote admin's row descriptions sit 3 further under their titles, which read too tight against them.
 - The remote admin's settings pages read at their previous 880 width again, and a radio or checkbox leading a row (the dashboard and view pickers, the app picker) sits 20 from its text instead of 12.
 
 ## v2026.8.90 - 2026-08-27
