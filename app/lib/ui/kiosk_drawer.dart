@@ -63,6 +63,18 @@ class KioskDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Rows carry a hairline above them, all but the first of their group.
+    // The rows are collection-ifs evaluated in order, so a flag consumed as
+    // each visible row is built knows which one leads. Only the Hold mode
+    // row can hide itself after this build; it takes the flag from the
+    // setting as it stands now.
+    var first = true;
+    bool sep() {
+      final divided = !first;
+      first = false;
+      return divided;
+    }
+
     final theme = Theme.of(context);
     return Material(
       color: theme.colorScheme.surface,
@@ -126,14 +138,20 @@ class KioskDrawer extends StatelessWidget {
                         color: theme.colorScheme.surfaceContainer,
                         borderRadius: BorderRadius.circular(Ks.radiusCard),
                         clipBehavior: Clip.antiAlias,
+                        // Sideways inset only: each row already carries 16
+                        // above and below its text, and the same 16 is
+                        // what the first and last rows get to the card's
+                        // edge, so the top and bottom rows sit like any
+                        // other.
                         child: Padding(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               if (!restricted ||
                                   c.settings.get(defs.kioskAllowDashboard))
                                 _item(
+                                  divided: sep(),
                                   context,
                                   Icons.dashboard_outlined,
                                   'Dashboard',
@@ -146,6 +164,7 @@ class KioskDrawer extends StatelessWidget {
                                 ),
                               if (!restricted)
                                 _item(
+                                  divided: sep(),
                                   context,
                                   Icons.settings_outlined,
                                   'Settings',
@@ -161,6 +180,7 @@ class KioskDrawer extends StatelessWidget {
                               // setting change and restyles the page.
                               if (!restricted)
                                 _item(
+                                  divided: sep(),
                                   context,
                                   c.settings.get(defs.haKioskMode)
                                       ? Icons.fullscreen_exit
@@ -183,6 +203,7 @@ class KioskDrawer extends StatelessWidget {
                                 if (c.camera.config.defaultView case final view?
                                     when view.cameraIds.isNotEmpty)
                                   _item(
+                                    divided: sep(),
                                     context,
                                     Icons.videocam_outlined,
                                     'Camera View',
@@ -203,6 +224,7 @@ class KioskDrawer extends StatelessWidget {
                                   c.settings.get(defs.kioskAllowMusic))
                                 if (_musicUrl case final url?)
                                   _item(
+                                    divided: sep(),
                                     context,
                                     'assets/svg/music-assistant.svg',
                                     'Music Assistant',
@@ -225,36 +247,11 @@ class KioskDrawer extends StatelessWidget {
                                   c.settings.get(defs.kioskAllowSendspinPlayer))
                                 if (c.settings.get(defs.sendspinPlayerActive) &&
                                     c.settings.get(defs.sendspinPlayerShortcut))
-                                  ListenableBuilder(
-                                    listenable: Listenable.merge([
-                                      c.sendspin.nowPlaying,
-                                      c.sendspin.cardOverride,
-                                    ]),
-                                    builder: (context, _) {
-                                      final shown = c.sendspin.cardShown;
-                                      return _item(
-                                        context,
-                                        Icons.play_circle_outlined,
-                                        shown
-                                            ? 'Hide Sendspin Player'
-                                            : 'Show Sendspin Player',
-                                        () {
-                                          onClose();
-                                          if (shown) {
-                                            c.sendspin.cardOverride.value =
-                                                false;
-                                          } else {
-                                            c.bus.publish(
-                                              const SendspinShowPlayerRequested(),
-                                            );
-                                          }
-                                        },
-                                      );
-                                    },
-                                  ),
+                                  _sendspinItem(context, divided: sep()),
                               if (!restricted ||
                                   c.settings.get(defs.kioskAllowScreensaver))
                                 _item(
+                                  divided: sep(),
                                   context,
                                   Icons.dark_mode_outlined,
                                   'Start Screensaver',
@@ -277,31 +274,11 @@ class KioskDrawer extends StatelessWidget {
                               // rebuilt (a remote-admin flip never shows).
                               if (!restricted ||
                                   c.settings.get(defs.kioskAllowHold))
-                                StreamBuilder<SettingChanged>(
-                                  stream: c.bus.on<SettingChanged>().where(
-                                    (e) =>
-                                        e.key == defs.haHoldMode.key ||
-                                        e.key == defs.haHoldMenu.key,
-                                  ),
-                                  builder: (context, _) {
-                                    if (!c.settings.get(defs.haHoldMenu)) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    final on = c.settings.get(defs.haHoldMode);
-                                    return _item(
-                                      context,
-                                      Icons.pause_circle_outline,
-                                      on
-                                          ? 'Turn Off Hold Mode'
-                                          : 'Turn On Hold Mode',
-                                      () {
-                                        onClose();
-                                        unawaited(
-                                          c.settings.set(defs.haHoldMode, !on),
-                                        );
-                                      },
-                                    );
-                                  },
+                                _holdItem(
+                                  context,
+                                  divided: c.settings.get(defs.haHoldMenu)
+                                      ? sep()
+                                      : !first,
                                 ),
                               // Only with the launcher enabled and apps
                               // actually whitelisted: an empty launcher is
@@ -313,6 +290,7 @@ class KioskDrawer extends StatelessWidget {
                                 if (c.settings.get(defs.launcherEnabled) &&
                                     c.launcher.apps.isNotEmpty)
                                   _item(
+                                    divided: sep(),
                                     context,
                                     Icons.apps_outlined,
                                     'Apps',
@@ -323,6 +301,7 @@ class KioskDrawer extends StatelessWidget {
                                   ),
                               if (!restricted)
                                 _item(
+                                  divided: sep(),
                                   context,
                                   Icons.cleaning_services_outlined,
                                   'Clear web cache',
@@ -334,16 +313,14 @@ class KioskDrawer extends StatelessWidget {
                                     );
                                   },
                                 ),
+                              // The group rule: the hairlines' geometry, a
+                              // shade stronger, so the rows either side of
+                              // it sit exactly like every other row.
                               if (!restricted)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  child: Divider(),
-                                ),
+                                const Divider(height: 1, thickness: 1),
                               if (!restricted)
                                 _item(
+                                  divided: false,
                                   context,
                                   Icons.logout_outlined,
                                   'Log out',
@@ -367,6 +344,7 @@ class KioskDrawer extends StatelessWidget {
                                 ),
                               if (!restricted)
                                 _item(
+                                  divided: sep(),
                                   context,
                                   Icons.power_settings_new_outlined,
                                   'Exit Application',
@@ -592,6 +570,62 @@ class KioskDrawer extends StatelessWidget {
   }
 
   /// One action row, same weight language as the settings rail.
+  /// The Sendspin player row: its label follows the player card, so it
+  /// rebuilds on its own; [divided] is decided where the row sits in the
+  /// list, like every other row's.
+  Widget _sendspinItem(BuildContext context, {required bool divided}) {
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        c.sendspin.nowPlaying,
+        c.sendspin.cardOverride,
+      ]),
+      builder: (context, _) {
+        final shown = c.sendspin.cardShown;
+        return _item(
+          divided: divided,
+          context,
+          Icons.play_circle_outlined,
+          shown ? 'Hide Sendspin Player' : 'Show Sendspin Player',
+          () {
+            onClose();
+            if (shown) {
+              c.sendspin.cardOverride.value = false;
+            } else {
+              c.bus.publish(const SendspinShowPlayerRequested());
+            }
+          },
+        );
+      },
+    );
+  }
+
+  /// The Hold mode row. The opt-in gate sits INSIDE the builder (see the
+  /// call site), so the row can hide itself after the list is built; its
+  /// [divided] is taken from the setting as it stands at that build.
+  Widget _holdItem(BuildContext context, {required bool divided}) {
+    return StreamBuilder<SettingChanged>(
+      stream: c.bus.on<SettingChanged>().where(
+        (e) => e.key == defs.haHoldMode.key || e.key == defs.haHoldMenu.key,
+      ),
+      builder: (context, _) {
+        if (!c.settings.get(defs.haHoldMenu)) {
+          return const SizedBox.shrink();
+        }
+        final on = c.settings.get(defs.haHoldMode);
+        return _item(
+          divided: divided,
+          context,
+          Icons.pause_circle_outline,
+          on ? 'Turn Off Hold Mode' : 'Turn On Hold Mode',
+          () {
+            onClose();
+            unawaited(c.settings.set(defs.haHoldMode, !on));
+          },
+        );
+      },
+    );
+  }
+
   /// One menu row. [icon] is a Material glyph, or the path of an SVG asset
   /// for the entries that answer to a product rather than a feature — the
   /// same rule the settings rail follows, drawn in the row's own color so a
@@ -600,10 +634,11 @@ class KioskDrawer extends StatelessWidget {
     BuildContext context,
     Object icon,
     String label,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    bool divided = true,
+  }) {
     final theme = Theme.of(context);
-    return Padding(
+    final row = Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(Ks.radiusRow),
@@ -642,6 +677,7 @@ class KioskDrawer extends StatelessWidget {
                 // not bodyLarge: both are 16px, but bodyLarge tracks looser
                 // (letter-spacing 0.5 vs 0.15) and the difference shows.
                 style: theme.textTheme.titleMedium?.copyWith(
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -649,6 +685,20 @@ class KioskDrawer extends StatelessWidget {
           ),
         ),
       ),
+    );
+    if (!divided) return row;
+    // A faint hairline over every row but the first of its group, the full
+    // width of the row.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Divider(
+          height: 1,
+          thickness: 1,
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+        ),
+        row,
+      ],
     );
   }
 

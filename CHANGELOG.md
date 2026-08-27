@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The drawer menu's entries are set a point smaller and a faint rule runs between them, so the list scans as rows rather than as one block of text. The rule sits over every entry but the first of its group; the full divider before Log out stays as it was.
+
 ## v2026.8.84 - 2026-08-26
 
 ### Added
