@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../app_container.dart';
 import '../managers/settings/definitions.dart';
+import 'entity_picker.dart';
 import 'kit.dart';
-import 'toast.dart';
 
 /// Chooses the entities the At a Glance row shows: the chosen ones on top in
 /// the order they will appear, a search below for adding more.
@@ -87,47 +87,14 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
   bool _isChosen(String entityId) =>
       _chosen.any((entity) => entity['entity_id'] == entityId);
 
-  /// Attributes that are presentation metadata rather than values anyone
-  /// would put on the row. Structured values (lists, maps) are skipped too:
-  /// a forecast array is not a glanceable reading.
-  static const _hiddenAttributes = {
-    'friendly_name',
-    'icon',
-    'entity_picture',
-    'supported_features',
-    'attribution',
-  };
-
   /// One chosen entity's editable pieces in a single dialog: the name the
   /// row shows (issue #206) — a custom one, or the Home Assistant name when
   /// the field is left empty — and what it displays, its state (the default)
-  /// or one of its attributes (issue #132). The attribute options come from
-  /// the entity's live attributes, each with its current value, so the
-  /// choice is made by looking at real readings instead of guessing at
-  /// names.
+  /// or one of its attributes (issue #132), picked from the entity's live
+  /// attributes in the shared picker. The same dialog shape as the entity
+  /// widget's, so the two read alike.
   Future<void> _edit(int index) async {
     final entity = _chosen[index];
-    final result = await widget.container.commands.execute(
-      'haEntityAttributes',
-      {'entity_id': entity['entity_id']},
-    );
-    if (!mounted) return;
-    if (!result.ok) {
-      showToast(
-        context,
-        title: 'Could not reach Home Assistant',
-        kind: ToastKind.error,
-      );
-      return;
-    }
-    final attributes = (result.data as Map?) ?? const {};
-    final names = [
-      for (final entry in attributes.entries)
-        if (entry.value is! Map &&
-            entry.value is! List &&
-            !_hiddenAttributes.contains(entry.key))
-          '${entry.key}',
-    ]..sort();
     final controller = TextEditingController(
       text: '${entity['custom_name'] ?? ''}',
     );
@@ -139,58 +106,41 @@ class _GlanceEntityPickerState extends State<GlanceEntityPicker> {
           title: Text('${entity['name']}'),
           content: SizedBox(
             width: 480,
-            child: EdgeFade(
-              child: SingleChildScrollView(
-                // Room for the name field's floating label, which otherwise
-                // clips against the dialog title.
-                padding: const EdgeInsets.only(top: 8),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    LabeledField(
-                      label: 'Name',
-                      child: TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          hintText: '${entity['name']}',
-                          helperText:
-                              'Leave empty to use the Home Assistant name.',
-                        ),
-                      ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 16,
+              children: [
+                LabeledField(
+                  label: 'Name',
+                  child: TextField(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      hintText: '${entity['name']}',
+                      helperText: 'Leave empty to use the Home Assistant name.',
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Displayed value',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    RadioGroup<String>(
-                      groupValue: attribute,
-                      onChanged: (value) =>
-                          setDialogState(() => attribute = value ?? ''),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const RadioListTile<String>(
-                            value: '',
-                            title: Text('State'),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          for (final name in names)
-                            RadioListTile<String>(
-                              value: name,
-                              title: Text(name),
-                              subtitle: Text('${attributes[name]}'),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Displayed value'),
+                  subtitle: Text(attribute.isEmpty ? 'State' : attribute),
+                  trailing: TextButton(
+                    onPressed: () async {
+                      final picked = await pickEntityAttribute(
+                        context,
+                        widget.container,
+                        entityId: '${entity['entity_id']}',
+                        current: attribute,
+                      );
+                      if (picked != null) {
+                        setDialogState(() => attribute = picked);
+                      }
+                    },
+                    child: const Text('Choose'),
+                  ),
+                ),
+              ],
             ),
           ),
           actions: [

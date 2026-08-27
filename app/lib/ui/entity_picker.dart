@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../app_container.dart';
 import 'kit.dart';
+import 'toast.dart';
 
 /// Picks one Home Assistant entity by searching for it: the At a Glance
 /// picker's search, without the chosen list, for the places that want a
@@ -22,6 +23,61 @@ Future<(String, String)?> pickHomeAssistantEntity(
   context: context,
   builder: (context) => _EntityPickerDialog(container: container, title: title),
 );
+
+/// Attributes that are presentation metadata rather than values anyone
+/// would put on the row or in a corner. Structured values (lists, maps)
+/// are skipped too: a forecast array is not a glanceable reading.
+const _hiddenAttributes = {
+  'friendly_name',
+  'icon',
+  'entity_picture',
+  'supported_features',
+  'attribution',
+};
+
+/// What an entity displays: its state (the default) or one of its
+/// attributes (issue #132), offered from the entity's live attributes
+/// with their current values, so the choice is made by looking at real
+/// readings instead of guessing at names. Shared by the At a Glance row's
+/// dialog and the entity widget's. Returns the attribute name, '' for the
+/// state, or null when dismissed or Home Assistant is unreachable.
+Future<String?> pickEntityAttribute(
+  BuildContext context,
+  AppContainer container, {
+  required String entityId,
+  required String current,
+}) async {
+  final result = await container.commands.execute('haEntityAttributes', {
+    'entity_id': entityId,
+  });
+  if (!context.mounted) return null;
+  if (!result.ok) {
+    showToast(
+      context,
+      title: 'Could not reach Home Assistant',
+      kind: ToastKind.error,
+    );
+    return null;
+  }
+  final attributes = (result.data as Map?) ?? const {};
+  final names = [
+    for (final entry in attributes.entries)
+      if (entry.value is! Map &&
+          entry.value is! List &&
+          !_hiddenAttributes.contains(entry.key))
+        '${entry.key}',
+  ]..sort();
+  return showRadioPicker<String>(
+    context,
+    title: 'Displayed value',
+    options: [
+      const PickerOption('', 'State'),
+      for (final name in names)
+        PickerOption(name, name, detail: '${attributes[name]}'),
+    ],
+    selected: current.isEmpty || names.contains(current) ? current : '',
+  );
+}
 
 class _EntityPickerDialog extends StatefulWidget {
   const _EntityPickerDialog({required this.container, required this.title});

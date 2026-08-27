@@ -1,6 +1,5 @@
 import { api, cmd, state } from './core.js';
 import { settingRow } from './rows.js';
-import { radioRow } from './views.js';
 import { messageBox, modalShell } from './widgets.js';
 
 export function cameraField(label, value = '', type = 'text') {
@@ -311,10 +310,10 @@ export const MIC_GROUP_NOTE =
    the device's dialog: the name the row shows (issue #206) — a custom one,
    or the Home Assistant name when the field is left empty — and which value
    it displays, the state (the default) or one of its attributes (issue
-   #132). The attribute options are the entity's live scalar attributes,
-   each shown with its current reading, so the choice is made by looking at
-   real values. Applies the edit to `entity` and resolves to true when
-   saved. */
+   #132), as a dropdown of the entity's live scalar attributes, each with
+   its current reading, so the choice is made by looking at real values
+   (the entity widget's editor, same shape). Applies the edit to `entity`
+   and resolves to true when saved. */
 export async function glanceEntityEditor(entity) {
   let attributes = null;
   try {
@@ -340,25 +339,13 @@ export async function glanceEntityEditor(entity) {
   note.className = 'desc';
   note.style.marginTop = '8px';
   note.textContent = 'Leave empty to use the Home Assistant name.';
-  const label = document.createElement('div');
-  label.className = 'desc';
-  label.style.cssText = 'margin-top:16px; font-weight:600;';
-  label.textContent = 'Displayed value';
-  let picked = entity.attribute || '';
-  const rows = document.createElement('div');
-  const paint = () => {
-    rows.innerHTML = '';
-    rows.appendChild(radioRow('State', '', picked === '', () => {
-      picked = '';
-      paint();
-    }));
-    for (const name of names) {
-      rows.appendChild(radioRow(name, String(attributes[name]),
-        picked === name, () => { picked = name; paint(); }));
-    }
-  };
-  paint();
-  body.append(field.wrap, note, label, rows);
+  const current = entity.attribute || '';
+  const value = cameraSelectField('Displayed value',
+    [{ value: '', label: 'State' },
+      ...names.map((n) => ({ value: n, label: `${n} \u00b7 ${attributes[n]}` }))],
+    names.includes(current) ? current : '');
+  value.wrap.style.marginTop = '16px';
+  body.append(field.wrap, note, value.wrap);
   const saved = await cameraEditor({
     title: entity.name || entity.entity_id, body, width: 460,
     save: async () => ({ ok: true }) });
@@ -366,6 +353,7 @@ export async function glanceEntityEditor(entity) {
   const name = field.input.value.trim();
   if (name) entity.custom_name = name;
   else delete entity.custom_name;
+  const picked = value.select.value;
   if (picked) entity.attribute = picked;
   else delete entity.attribute;
   return true;

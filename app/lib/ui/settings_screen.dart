@@ -3548,58 +3548,6 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
     );
   }
 
-  /// Attributes that are presentation metadata rather than values anyone
-  /// would put in a corner; the At a Glance picker's list.
-  static const _hiddenAttributes = {
-    'friendly_name',
-    'icon',
-    'entity_picture',
-    'supported_features',
-    'attribution',
-  };
-
-  /// What the entity widget displays: the state (the default) or one of
-  /// the entity's attributes, offered from its live attributes with their
-  /// current values (the At a Glance dialog's choice). Returns the
-  /// attribute name, '' for the state, or null when dismissed.
-  Future<String?> _pickEntityAttribute(
-    BuildContext context,
-    String entityId,
-    String current,
-  ) async {
-    final result = await widget.container.commands.execute(
-      'haEntityAttributes',
-      {'entity_id': entityId},
-    );
-    if (!context.mounted) return null;
-    if (!result.ok) {
-      showToast(
-        context,
-        title: 'Could not reach Home Assistant',
-        kind: ToastKind.error,
-      );
-      return null;
-    }
-    final attributes = (result.data as Map?) ?? const {};
-    final names = [
-      for (final entry in attributes.entries)
-        if (entry.value is! Map &&
-            entry.value is! List &&
-            !_hiddenAttributes.contains(entry.key))
-          '${entry.key}',
-    ]..sort();
-    return showRadioPicker<String>(
-      context,
-      title: 'Displayed value',
-      options: [
-        const PickerOption('', 'State'),
-        for (final name in names)
-          PickerOption(name, name, detail: '${attributes[name]}'),
-      ],
-      selected: current.isEmpty || names.contains(current) ? current : '',
-    );
-  }
-
   Future<void> _edit(BuildContext context, ScreensaverWidget? existing) async {
     final others = [
       for (final w in _widgets())
@@ -3859,10 +3807,11 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                           onPressed: weatherEntity.isEmpty
                               ? null
                               : () async {
-                                  final picked = await _pickEntityAttribute(
+                                  final picked = await pickEntityAttribute(
                                     context,
-                                    weatherEntity,
-                                    '${config['attribute'] ?? ''}',
+                                    widget.container,
+                                    entityId: weatherEntity,
+                                    current: '${config['attribute'] ?? ''}',
                                   );
                                   if (picked != null) {
                                     setDialogState(
