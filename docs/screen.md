@@ -56,9 +56,9 @@ reports around 50 lx with every light on, a tablet by a window reports
 thousands. That is why the reading is on the page and the levels are
 typed rather than slid. Watch the reading with the lights on and put
 Bright room a little under it; watch it at night and put Dark room a
-little over it. Dark room must stay below Bright room; a value that
-would cross the other end is refused with the other end's value in the
-message.
+little over it. Dark room must stay below Bright room, and Minimum
+brightness below Maximum brightness; a value that would cross the other
+end is refused with the other end's value in the message.
 
 While the switch is on, Default brightness stands down (the slider says
 so): a session starts at Maximum brightness dimmed for the room as it

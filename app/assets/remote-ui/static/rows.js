@@ -105,7 +105,12 @@ export function settingRow(s) {
       showRowError(row, out.errors?.[s.key] || 'Not saved.');
       const control = row.querySelector('input, select, textarea');
       if (control?.type === 'checkbox') control.checked = !!cached?.value;
-      else if (control) control.value = cached?.value ?? '';
+      else if (control) {
+        control.value = cached?.value ?? '';
+        // A slider paints its fill and label off its input events, so
+        // the snap-back has to look like one.
+        if (control.type === 'range') control.dispatchEvent(new Event('input'));
+      }
       return;
     }
     clearRowError(row);

@@ -7307,6 +7307,18 @@ class _SliderTileState extends State<_SliderTile> {
                   return;
                 }
               }
+              // A value the definition turns down (an end of a range
+              // crossing the other end) snaps back and says why, where a
+              // typed field would say it under itself.
+              final message = widget.container.settings.validate(def, parsed);
+              if (message != null) {
+                if (!mounted || !context.mounted) return;
+                setState(() {});
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(message)));
+                return;
+              }
               await widget.container.settings.setFromJson(def.key, parsed);
               widget.onChanged();
             },

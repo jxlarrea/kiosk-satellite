@@ -1092,6 +1092,7 @@ const adaptiveMinBrightness = SettingDef<num>(
   step: 0.05,
   unit: '%',
   dependsOn: 'screen.adaptive_brightness',
+  crossValidator: validateMinBelowMax,
 );
 
 const adaptiveMaxBrightness = SettingDef<num>(
@@ -1108,6 +1109,7 @@ const adaptiveMaxBrightness = SettingDef<num>(
   step: 0.05,
   unit: '%',
   dependsOn: 'screen.adaptive_brightness',
+  crossValidator: validateMaxAboveMin,
 );
 
 // Typed, not slid: light sensors disagree wildly about what a lit room
@@ -1172,6 +1174,24 @@ String? validateBrightAboveDark(
   final dark = _asNum(read(adaptiveDarkLux.key));
   if (dark == null || bright == null || bright > dark) return null;
   return 'Bright room must be above Dark room (${_formatLux(dark)} lx)';
+}
+
+/// The curve's brightness ends, the same way: Minimum below Maximum, or
+/// the room's light has nothing to move between.
+String? validateMinBelowMax(Object? value, Object? Function(String key) read) {
+  final min = _asNum(value);
+  final max = _asNum(read(adaptiveMaxBrightness.key));
+  if (min == null || max == null || min < max) return null;
+  return 'Minimum brightness must be below Maximum brightness '
+      '(${(max * 100).round()}%)';
+}
+
+String? validateMaxAboveMin(Object? value, Object? Function(String key) read) {
+  final max = _asNum(value);
+  final min = _asNum(read(adaptiveMinBrightness.key));
+  if (min == null || max == null || max > min) return null;
+  return 'Maximum brightness must be above Minimum brightness '
+      '(${(min * 100).round()}%)';
 }
 
 num? _asNum(Object? value) =>

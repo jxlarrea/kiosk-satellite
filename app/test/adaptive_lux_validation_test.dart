@@ -84,6 +84,42 @@ void main() {
     }
   });
 
+  test('Minimum and Maximum brightness keep the same order', () async {
+    SharedPreferences.setMockInitialValues({
+      'ks.screen.adaptive_min_brightness': 0.15,
+      'ks.screen.adaptive_max_brightness': 0.8,
+    });
+    final bus = EventBus();
+    final log = Logger();
+    settings = SettingsManager(bus, CommandRegistry(log), log);
+    await settings.init();
+    expect(
+      settings.validate(defs.adaptiveMinBrightness, 0.8),
+      'Minimum brightness must be below Maximum brightness (80%)',
+    );
+    expect(settings.validate(defs.adaptiveMinBrightness, 0.75), isNull);
+    expect(
+      settings.validate(defs.adaptiveMaxBrightness, 0.1),
+      'Maximum brightness must be above Minimum brightness (15%)',
+    );
+    expect(settings.validate(defs.adaptiveMaxBrightness, 0.2), isNull);
+    expect(
+      await settings.setFromJson(defs.adaptiveMaxBrightness.key, 0.15),
+      isFalse,
+    );
+    final batch = {
+      defs.adaptiveMinBrightness.key: 0.9,
+      defs.adaptiveMaxBrightness.key: 1.0,
+    };
+    for (final entry in batch.entries) {
+      expect(
+        await settings.setFromJson(entry.key, entry.value, batch: batch),
+        isTrue,
+        reason: entry.key,
+      );
+    }
+  });
+
   test('an import is a batch too', () async {
     expect(
       await settings.import({
