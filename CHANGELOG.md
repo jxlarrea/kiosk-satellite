@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.92 - 2026-08-27
 
 ### Changed
 - The Home Assistant Configuration settings page is now Home Assistant Setup, on the device and in the remote admin.
