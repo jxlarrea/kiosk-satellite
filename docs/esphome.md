@@ -175,6 +175,7 @@ data:
   icon: mdi:washing-machine
   chime_file: ""
   volume: 0
+  image: ""
 ```
 
 An ESPHome device can call it directly, with no automation in between:
@@ -196,6 +197,7 @@ binary_sensor:
             icon: mdi:door-open
             chime_file: ""
             volume: "0"
+            image: ""
 ```
 
 Every argument is required, because the ESPHome protocol has no optional
@@ -212,6 +214,7 @@ ones, so each has a value that means "as you were":
 | `scale` | How large to draw it, `1` (the ordinary card) to `4`, decimals allowed. Everything grows together: type, icon, padding and width, so a `3` on a wall panel reads from the far side of a room without taking the screen over. `0` means the ordinary size |
 | `chime_file` | A sound of this notification's own, in place of the one picked in the kiosk's settings: the name of a file in the kiosk's sounds folder (`leak.mp3`, see below), not a path and not a URL. Empty plays the sound from the settings, and so does a name with no file behind it, with a line in the app's log saying which |
 | `volume` | How loud the sound plays, `0` to `1`, apart from the media and assistant volumes: a notification is neither, and this level does not move when those sliders do (the device's own master volume still applies, as it does to every sound). `0` or a negative number uses the **Notification volume** setting. A silent notification is `chime: false` |
+| `image` | A picture under the text, for the doorbell's "who is there". Either an `http(s)` URL the kiosk can reach, or a path on the Home Assistant server: `/api/camera_proxy/camera.doorbell` fetches a fresh frame from that camera the moment the card goes up, `/local/doorbell.jpg` a file under `/config/www` (what `camera.snapshot` writes). Paths, and full URLs on the same Home Assistant server, are fetched with the kiosk's own Home Assistant token, so `camera_proxy` needs nothing more. The card shows its words at once and the picture joins when it arrives, within ten seconds and up to 8 MB; a picture that cannot be fetched is a line in the app's log and a card without one. Empty for no picture |
 
 The action answers with the kiosk's id for the card, `{"id": 7}`, which
 an automation reads through `response_variable` and hands to
@@ -229,6 +232,7 @@ an automation reads through `response_variable` and hands to
     icon: mdi:door-open
     chime_file: ""
     volume: 0
+    image: ""
   response_variable: card
 - wait_for_trigger:
     - trigger: state

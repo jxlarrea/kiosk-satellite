@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
@@ -5,6 +8,7 @@ import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/btproxy/esp_entities.dart';
 import 'package:kiosk_satellite/managers/notifications/notification_manager.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:kiosk_satellite/ui/notification_overlay.dart';
 import 'package:kiosk_satellite/ui/theme.dart';
@@ -25,9 +29,17 @@ void main() {
   late SettingsManager settings;
   late NotificationManager notifications;
   late List<(String, Map<String, Object?>)> executed;
+  late List<(Uri, Map<String, String>)> fetched;
+  // What the network "has": a URL to its bytes; anything else fails.
+  late Map<String, List<int>> pictures;
+  // Set to hold every fetch until the test completes it.
+  Completer<Uint8List>? pendingFetch;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    fetched = [];
+    pictures = {};
+    pendingFetch = null;
     bus = EventBus();
     final log = Logger();
     commands = CommandRegistry(log);
@@ -43,6 +55,13 @@ void main() {
         'bell.mp3' => '/sounds/bell.mp3',
         'alarm.wav' => '/sounds/alarm.wav',
         _ => null,
+      },
+      fetchImage: (url, headers) async {
+        fetched.add((url, headers));
+        if (pendingFetch case final held?) return held.future;
+        final bytes = pictures['$url'];
+        if (bytes == null) throw StateError('HTTP 404');
+        return Uint8List.fromList(bytes);
       },
     );
     await notifications.init();
@@ -253,6 +272,7 @@ void main() {
           'icon',
           'chime_file',
           'volume',
+          'image',
         ],
       );
       // And the way back down (issue #321): by the id it answered, or all.
@@ -275,6 +295,7 @@ void main() {
         'icon': '',
         'chime_file': '',
         'volume': 0,
+        'image': '',
       });
       final shown = notifications.current.value.single;
       expect(shown.message, 'Dinner is ready');
@@ -299,6 +320,7 @@ void main() {
         'icon': '',
         'chime_file': '',
         'volume': 0,
+        'image': '',
       });
       // 0 is the action's "all of them".
       await surface.handleService('notification_dismiss', {'id': 0});
@@ -314,6 +336,7 @@ void main() {
         'icon': '',
         'chime_file': '',
         'volume': 0,
+        'image': '',
       });
       expect(
         (await surface.build()).any(
@@ -330,6 +353,93 @@ void main() {
       expect(chime['volume'], closeTo(0.7, 1e-9));
     },
   );
+
+  test('an image URL is fetched and joins the card once it lands', () async {
+    pictures['https://cam.local/door.jpg'] = [1, 2, 3, 4];
+    final id = await show({
+      'message': 'Someone at the door',
+      'image': 'https://cam.local/door.jpg',
+    });
+    final shown = notifications.current.value.single;
+    expect(shown.id, id);
+    expect(shown.image, [1, 2, 3, 4]);
+    // Another host gets no token of the kiosk's.
+    expect(fetched.single.$2, isEmpty);
+  });
+
+  test('a picture that cannot be fetched leaves the card as it is', () async {
+    await show({'message': 'Gate opened', 'image': 'https://cam.local/x.jpg'});
+    final shown = notifications.current.value.single;
+    expect(shown.message, 'Gate opened');
+    expect(shown.image, isNull);
+    // And something that is not a URL at all is not even tried.
+    await show({'message': 'Bell', 'image': 'door.jpg'});
+    expect(fetched, hasLength(1));
+    expect(notifications.current.value, hasLength(2));
+  });
+
+  test(
+    'a path is on the Home Assistant server, with the kiosk token',
+    () async {
+      await settings.set(defs.haUrl, 'https://ha.local:8123/');
+      await settings.set(defs.haToken, 'secret');
+      pictures['https://ha.local:8123/api/camera_proxy/camera.door'] = [9];
+      await show({
+        'message': 'Doorbell',
+        'image': '/api/camera_proxy/camera.door',
+      });
+      expect(notifications.current.value.single.image, [9]);
+      expect(fetched.single.$2, {'Authorization': 'Bearer secret'});
+      // The same server named in full gets the token too; a different
+      // port on the same host is a different server.
+      pictures['https://ha.local:8123/local/door.jpg'] = [8];
+      await show({
+        'message': 'Snapshot',
+        'image': 'https://ha.local:8123/local/door.jpg',
+      });
+      expect(fetched.last.$2, {'Authorization': 'Bearer secret'});
+      await show({'message': 'Other', 'image': 'https://ha.local:9000/a.jpg'});
+      expect(fetched.last.$2, isEmpty);
+    },
+  );
+
+  test('a picture arriving for a card already gone is dropped', () async {
+    final done = pendingFetch = Completer<Uint8List>();
+    final id = await show({
+      'message': 'Late',
+      'duration': 0,
+      'image': 'https://cam.local/late.jpg',
+    });
+    notifications.dismiss(id: id);
+    done.complete(Uint8List.fromList([1]));
+    for (var i = 0; i < 10; i++) {
+      await Future<void>.value();
+    }
+    expect(notifications.current.value, isEmpty);
+  });
+
+  testWidgets('the overlay draws the picture under the words', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.dark),
+        home: Scaffold(body: NotificationOverlay(notifications: notifications)),
+      ),
+    );
+    pictures['https://cam.local/door.jpg'] = [1, 2, 3];
+    // Pinned cards: a countdown would be a timer left over under the
+    // widget test's fake clock.
+    await show({'message': 'Someone at the door', 'duration': 0});
+    await tester.pump();
+    expect(find.byType(Image), findsNothing);
+    await show({
+      'message': 'Someone at the door',
+      'duration': 0,
+      'image': 'https://cam.local/door.jpg',
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(Image), findsOneWidget);
+  });
 
   test('the sound setting takes the name of an audio file only', () async {
     expect(validateNotificationSound(''), isNull);

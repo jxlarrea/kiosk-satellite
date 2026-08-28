@@ -94,7 +94,7 @@ focusedCameraId}`), `cameraGetConfig`, `restartApp`, `tts {text}`,
 launchable app as `[{package, label}]`), `showAppLauncher` /
 `hideAppLauncher` (the app launcher overlay;
 `showAppLauncher` refuses while the App Launcher is disabled in
-settings), `showNotification {message, title, duration, type, chime, scale, icon, chime_file, volume}` and
+settings), `showNotification {message, title, duration, type, chime, scale, icon, chime_file, volume, image}` and
 `dismissNotification {id}` (a message over whatever is on screen, the
 screensaver included; `duration` is seconds, `0` stays until dismissed,
 omitted uses 30, `chime` defaults to on, and `scale` draws the card
@@ -104,7 +104,10 @@ name (`mdi:washing-machine`) in place of the one the type picks,
 [esphome.md](esphome.md#notifications)) to play in place of the one
 picked in the kiosk's settings, and `volume` sets how loud it plays, 0
 to 1, apart from the media and assistant volumes, with 0 or omitted
-meaning the Notification volume setting. `showNotification` answers
+meaning the Notification volume setting, and `image` puts a picture
+under the text, an http(s) URL or a path on the Home Assistant server
+such as `/api/camera_proxy/camera.doorbell`, fetched with the kiosk's
+own Home Assistant token. `showNotification` answers
 with the `id` to dismiss later, notifications stack newest on top up to
 four, and `dismissNotification` without an id clears them all. Home
 Assistant setups can push the same thing as an ESPHome action, see

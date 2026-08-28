@@ -2,7 +2,10 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.93 - 2026-08-28
+
+### Added
+- Notifications pushed from Home Assistant can carry a picture (#341). The `notification` ESPHome action and the `showNotification` remote command gain `image`: an http(s) URL, or a path on the Home Assistant server such as `/api/camera_proxy/camera.doorbell` for a fresh frame from that camera or `/local/doorbell.jpg` for a file `camera.snapshot` wrote, fetched with the kiosk's own Home Assistant token. The card shows its words at once and the picture joins under them when it arrives, sized to the card and decoded no larger than it is drawn, so a doorbell press can show who is there. Since every ESPHome action argument is required, existing calls to the notification action need `image: ""` added, as they did for `chime_file` and `volume`.
 
 ### Changed
 - The Kiosk Satellite mark, on the device's drawer header and setup screens and in the remote admin's login page, rail and browser tab icon, is now the white house with the teal keyline in place of the rounded app-icon tile. The remote admin's sidebar mark is 40px, down from 44px.

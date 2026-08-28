@@ -712,6 +712,9 @@ class EspEntitySurface {
         {'name': 'icon', 'type': 'string'},
         {'name': 'chime_file', 'type': 'string'},
         {'name': 'volume', 'type': 'float'},
+        // A picture under the text: a URL, or a path on the Home
+        // Assistant server; empty for none (issue #341).
+        {'name': 'image', 'type': 'string'},
       ],
     },
     // Takes down the card with the id the notification action answered
@@ -754,6 +757,7 @@ class EspEntitySurface {
           // out (issue #320).
           'chime_file': '${args['chime_file'] ?? ''}',
           'volume': args['volume'] ?? 0,
+          'image': '${args['image'] ?? ''}',
         });
         if (!result.ok) throw StateError(result.error ?? 'refused');
         // {"id": n}: what the automation reads through response_variable.

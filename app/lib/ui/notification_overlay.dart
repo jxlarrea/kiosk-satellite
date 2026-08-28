@@ -56,11 +56,16 @@ class _NotificationOverlayState extends State<NotificationOverlay> {
         if (!liveIds.contains(note.id)) _leaving.add(note.id);
       }
       // New arrivals go in front; everything already drawn keeps its
-      // place, gone or not, so nothing jumps as a card leaves.
+      // place, gone or not, so nothing jumps as a card leaves. A card
+      // already up takes the manager's newer version of itself, which is
+      // how its picture arrives.
       for (final note in live.reversed) {
-        if (_drawn.every((drawn) => drawn.id != note.id)) {
+        final at = _drawn.indexWhere((drawn) => drawn.id == note.id);
+        if (at < 0) {
           _drawn.insert(0, note);
           _leaving.remove(note.id);
+        } else if (!identical(_drawn[at], note)) {
+          _drawn[at] = note;
         }
       }
     });
@@ -217,6 +222,7 @@ class _NotificationCardState extends State<_NotificationCard>
     );
     final title = widget.note.title;
     final mdi = widget.note.icon;
+    final image = widget.note.image;
     // One multiplier over every measurement on the card, so a scaled
     // notification grows as a whole instead of turning into big text in
     // a small box.
@@ -328,6 +334,52 @@ class _NotificationCardState extends State<_NotificationCard>
                                         ? scheme.onSurface
                                         : scheme.onSurfaceVariant,
                                   ),
+                                ),
+                                // The picture joins after the words, so
+                                // the card grows to it rather than jumping.
+                                AnimatedSize(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOut,
+                                  alignment: Alignment.topCenter,
+                                  child: image == null
+                                      ? const SizedBox.shrink()
+                                      : Padding(
+                                          padding: EdgeInsets.only(top: px(12)),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              px(Ks.radiusControl),
+                                            ),
+                                            child: ConstrainedBox(
+                                              // As wide as the text, no
+                                              // taller than this: a
+                                              // portrait frame letterboxes
+                                              // rather than filling the
+                                              // screen.
+                                              constraints: BoxConstraints(
+                                                maxHeight: px(360),
+                                              ),
+                                              child: Image.memory(
+                                                image,
+                                                fit: BoxFit.contain,
+                                                width: double.infinity,
+                                                // Decoded no larger than
+                                                // it is drawn: a 4K
+                                                // snapshot must not cost a
+                                                // low-RAM tablet its
+                                                // dashboard.
+                                                cacheWidth:
+                                                    (px(680) *
+                                                            MediaQuery.devicePixelRatioOf(
+                                                              context,
+                                                            ))
+                                                        .round(),
+                                                gaplessPlayback: true,
+                                                errorBuilder: (_, _, _) =>
+                                                    const SizedBox.shrink(),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                 ),
                               ],
                             ),

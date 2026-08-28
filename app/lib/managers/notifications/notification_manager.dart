@@ -1,13 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/command_registry.dart';
 import '../../core/events.dart';
 import '../../core/manager.dart';
 import '../../ui/mdi_icon.dart';
+import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 import 'notification_sounds.dart';
+
+/// Fetches the bytes behind a notification's image URL, or throws with
+/// the reason. The manager's default goes over HTTP; tests hand in a map.
+typedef ImageFetcher =
+    Future<Uint8List> Function(Uri url, Map<String, String> headers);
 
 /// What a notification is about: picks its icon and the color behind it.
 enum NotificationLevel { info, success, warning, error }
@@ -22,6 +29,7 @@ class KioskNotification {
     this.level = NotificationLevel.info,
     this.scale = 1,
     this.icon,
+    this.image,
   });
 
   /// Rising per notification; the auto-dismiss timer carries the id it was
@@ -45,6 +53,22 @@ class KioskNotification {
   /// picks ("washing-machine"), already stripped of the `mdi:` prefix, or
   /// null for the level's own icon.
   final String? icon;
+
+  /// A picture under the text, already fetched: a doorbell snapshot, a
+  /// camera frame. Null while there is none, or none yet: the card goes
+  /// up with its words at once and the picture joins when it arrives.
+  final Uint8List? image;
+
+  /// The same notification with its picture.
+  KioskNotification withImage(Uint8List bytes) => KioskNotification(
+    id: id,
+    message: message,
+    title: title,
+    level: level,
+    scale: scale,
+    icon: icon,
+    image: bytes,
+  );
 }
 
 /// Notifications pushed at the kiosk from outside: the ESPHome
@@ -75,7 +99,9 @@ class NotificationManager extends Manager {
     super.log,
     this.settings, {
     Future<String?> Function(String name)? resolveSound,
-  }) : _resolveSound = resolveSound ?? NotificationSounds.resolve;
+    ImageFetcher? fetchImage,
+  }) : _resolveSound = resolveSound ?? NotificationSounds.resolve,
+       _fetchImage = fetchImage ?? _httpImage;
 
   /// For the chime's defaults: the sound picked in Settings and its volume,
   /// which a call falls back to when it names neither (issue #320).
@@ -84,6 +110,18 @@ class NotificationManager extends Manager {
   /// A sound's name to its file, or null when there is no such file. The
   /// sounds folder in production; the tests hand in a map.
   final Future<String?> Function(String name) _resolveSound;
+
+  /// The bytes behind an image URL.
+  final ImageFetcher _fetchImage;
+
+  /// How long an image fetch may take before the card stays as it is. The
+  /// words are already up; a picture that is this late is not coming.
+  static const imageTimeout = Duration(seconds: 10);
+
+  /// The largest picture the card will take. A doorbell snapshot is a few
+  /// hundred kilobytes; past this the bytes alone are a problem on the
+  /// low-RAM tablets the app runs on.
+  static const maxImageBytes = 8 * 1024 * 1024;
 
   /// How long a notification stays when the caller names no duration.
   /// Long by kiosk-toast standards on purpose: nobody is watching the
@@ -153,6 +191,11 @@ class NotificationManager extends Manager {
                 'how loud the sound plays, 0 to 1, apart from the media '
                 'and assistant volumes; 0, negative or omitted uses the '
                 'Notification volume setting',
+            'image':
+                'a picture to show under the text: an http(s) URL, or a '
+                'path on the Home Assistant server (/local/door.jpg, '
+                '/api/camera_proxy/camera.doorbell) fetched with the '
+                "kiosk's own Home Assistant token; empty for none",
           },
           handler: (p) async {
             final message = '${p['message'] ?? ''}'.trim();
@@ -187,6 +230,10 @@ class NotificationManager extends Manager {
               // up the thing the user actually sees.
               unawaited(_chime(p));
             }
+            final image = '${p['image'] ?? ''}'.trim();
+            // Same story: the card is up before the picture is fetched,
+            // and joins it when it lands (issue #341).
+            if (image.isNotEmpty) unawaited(_attachImage(id, image));
             log.info(
               name,
               'notification #$id ${note.scale == 1 ? '' : 'x${note.scale} '}'
@@ -265,6 +312,78 @@ class NotificationManager extends Manager {
 
   Future<void> _chime(Map<String, Object?> p) async {
     await commands.execute('playChime', await chimeParams(p));
+  }
+
+  /// Fetches a card's picture and puts it on the card, if the card is
+  /// still up by then. Anything that goes wrong is one line in the log
+  /// and a card without a picture: the words were the point.
+  Future<void> _attachImage(int id, String image) async {
+    final url = imageUrl(image);
+    if (url == null) {
+      log.warn(name, 'notification #$id image "$image" is not a URL');
+      return;
+    }
+    try {
+      final bytes = await _fetchImage(
+        url,
+        imageHeaders(url),
+      ).timeout(imageTimeout);
+      if (bytes.isEmpty) throw StateError('empty response');
+      if (bytes.length > maxImageBytes) {
+        throw StateError('${bytes.length} bytes, over the $maxImageBytes cap');
+      }
+      final shown = current.value;
+      final at = shown.indexWhere((note) => note.id == id);
+      if (at < 0) return; // gone already: dismissed or pushed out
+      final next = [...shown];
+      next[at] = shown[at].withImage(bytes);
+      current.value = List.unmodifiable(next);
+      log.info(name, 'notification #$id image ${bytes.length ~/ 1024} KB');
+    } catch (e) {
+      log.warn(name, 'notification #$id image $url: $e');
+    }
+  }
+
+  /// Where a notification's `image` points. A path (`/local/door.jpg`,
+  /// `/api/camera_proxy/camera.doorbell`) is on the Home Assistant server
+  /// the kiosk is set up against; anything else must be an http(s) URL.
+  /// Null for something that is neither.
+  Uri? imageUrl(String image) {
+    final asked = image.trim();
+    if (asked.startsWith('/')) {
+      final base = settings.get(defs.haUrl).trim();
+      if (base.isEmpty) return null;
+      final root = base.endsWith('/')
+          ? base.substring(0, base.length - 1)
+          : base;
+      return Uri.tryParse('$root$asked');
+    }
+    final url = Uri.tryParse(asked);
+    if (url == null || (url.scheme != 'http' && url.scheme != 'https')) {
+      return null;
+    }
+    return url;
+  }
+
+  /// The kiosk's Home Assistant token rides along to its own server, which
+  /// is what lets `/api/camera_proxy/...` answer; nowhere else.
+  Map<String, String> imageHeaders(Uri url) {
+    final ha = Uri.tryParse(settings.get(defs.haUrl).trim());
+    final token = settings.get(defs.haToken).trim();
+    if (ha == null || token.isEmpty) return const {};
+    if (url.host != ha.host || url.port != ha.port) return const {};
+    return {'Authorization': 'Bearer $token'};
+  }
+
+  static Future<Uint8List> _httpImage(
+    Uri url,
+    Map<String, String> headers,
+  ) async {
+    final response = await http.get(url, headers: headers);
+    if (response.statusCode != 200) {
+      throw StateError('HTTP ${response.statusCode}');
+    }
+    return response.bodyBytes;
   }
 
   /// What the chime plays and how loud, from the call first and the
