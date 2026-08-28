@@ -360,6 +360,18 @@ export async function updateAdaptiveBrightnessRows() {
   for (const stale of document.querySelectorAll('.adaptive-note')) stale.remove();
   const note = (text) => hintRow(text, { className: 'adaptive-note' });
   const row = document.querySelector('[data-key="screen.adaptive_brightness"]');
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  const adaptiveOn = byKey['screen.adaptive_brightness']?.value === true
+    && state.lightSensor === true;
+  // The Overview slider turns a setting, and which one depends on the
+  // switch: say so under it, the way the Screen light's docs do.
+  const modeRow = document.getElementById('brightnessModeRow');
+  if (modeRow) {
+    modeRow.style.display = '';
+    document.getElementById('brightnessMode').textContent = adaptiveOn
+      ? 'Sets Maximum brightness: adaptive brightness is on.'
+      : 'Sets Default brightness.';
+  }
   const defaultRow = document.querySelector('[data-key="screen.default_brightness"]');
   const defaultSlider = defaultRow?.querySelector('input[type="range"]');
   if (defaultSlider) defaultSlider.disabled = false;
@@ -377,8 +389,7 @@ export async function updateAdaptiveBrightnessRows() {
     reading.lastElementChild.classList.add('ambient-light-value');
     row.insertAdjacentElement('afterend', reading);
   }
-  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
-  if (byKey['screen.adaptive_brightness']?.value !== true || !state.lightSensor) return;
+  if (!adaptiveOn) return;
   if (defaultRow) {
     if (defaultSlider) defaultSlider.disabled = true;
     defaultRow.insertAdjacentElement('afterend', note(ADAPTIVE_OWNS_NOTE));

@@ -80,10 +80,12 @@ Representative commands (`POST /api/commands/<name>`): `loadUrl {url}`,
 Start URL), `reload`, `screenOn` / `screenOff` / `isScreenOn` (`screenOn {path: "activity"}`
 skips the wake lock and wakes through the Activity route only, to tell
 which of the two works on a panel that stays dark),
-`setBrightness {level}` (the panel itself; `ceiling: true` sets the
-bright-room level [adaptive brightness](screen.md#adaptive-brightness)
-dims from instead, which is what the screensaver does, and `getBrightness
-{ceiling: true}` reads it), `startScreensaver` / `stopScreensaver` /
+`setBrightness {level}` (turns Default brightness, or Maximum brightness
+with [adaptive brightness](screen.md#adaptive-brightness) on; `ceiling:
+true` sets the bright-room level for the session instead, which is what
+the screensaver does; `getBrightness` reads the same level, `{ceiling:
+true}` the session's, `{panel: true}` what the panel shows),
+`startScreensaver` / `stopScreensaver` /
 `isScreensaverActive`,
 `postponeScreensaver` (reset the idle timer, dismissing a showing
 screensaver first), `nextScreensaverSlide` / `previousScreensaverSlide`

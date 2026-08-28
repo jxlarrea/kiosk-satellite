@@ -248,6 +248,7 @@ void main() {
         'take_screenshot',
         'last_screenshot',
         'illuminance',
+        'panel_brightness',
         'motion',
         'next_alarm',
         'last_interaction',

@@ -47,13 +47,13 @@ class BrightnessChanged extends AppEvent {
   const BrightnessChanged({required this.level, double? panel})
     : panel = panel ?? level;
 
-  /// The level callers deal in, normalized 0..1: under adaptive brightness
-  /// the ceiling (the bright-room level), else the panel itself.
+  /// The level Home Assistant's Screen light and the remote admin's slider
+  /// control, normalized 0..1: the panel itself with adaptive brightness
+  /// off, the Maximum brightness setting with it on.
   final double level;
 
-  /// What the panel shows, normalized 0..1: [level] times the adaptive
-  /// factor. Equal to [level] with adaptive brightness off. Mirrors of the
-  /// screen (Home Assistant's light, the remote admin's slider) show this.
+  /// What the panel shows, normalized 0..1. Equal to [level] with adaptive
+  /// brightness off; the Panel brightness diagnostic sensor reports it.
   final double panel;
 
   @override

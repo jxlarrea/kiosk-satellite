@@ -231,6 +231,9 @@
           <span class="slider-value" id="brightnessValue">-</span>
           <input type="range" class="range" id="brightness" min="0" max="100" value="100">
         </div>
+        <!-- Which setting the slider turns: Default brightness, or Maximum
+             brightness while adaptive brightness is on (notices.js). -->
+        <div class="row" id="brightnessModeRow" style="display:none"><div class="info"><div class="desc" id="brightnessMode"></div></div></div>
         <!-- Shown only while the "Modify system settings" grant is missing:
              without it the slider dims the app window, not the panel's
              actual system brightness. -->

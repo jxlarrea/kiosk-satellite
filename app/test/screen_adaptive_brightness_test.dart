@@ -15,7 +15,8 @@ import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interfac
 /// Adaptive brightness (issue #343) in the screen manager: the ceiling is
 /// the bright-room level (Maximum brightness, or the screensaver's own
 /// slider), the panel gets it times the factor the room's light sets, the
-/// screensaver deals in ceilings and everything else in the panel.
+/// screensaver deals in ceilings, and everything else turns the knob:
+/// Default brightness, or Maximum brightness with the switch on.
 class _NoopWakelock extends WakelockPlusPlatformInterface {
   @override
   Future<void> toggle({required bool enable}) async {}
@@ -110,6 +111,9 @@ void main() {
       (await commands.execute('getBrightness', const {'ceiling': true})).data
           as double?;
   Future<double?> panelLevel() async =>
+      (await commands.execute('getBrightness', const {'panel': true})).data
+          as double?;
+  Future<double?> knob() async =>
       (await commands.execute('getBrightness', const {})).data as double?;
 
   /// Adaptive on with Minimum 20% and Maximum 80%: a floor of 0.25.
@@ -133,19 +137,22 @@ void main() {
     expect(writes, [closeTo(0.2, 0.001)]);
     expect(await ceiling(), 0.8);
     expect(await panelLevel(), closeTo(0.2, 0.001));
-    // The mirrors hear the panel; the event carries both.
+    // The Screen light reads Maximum brightness; the event carries the
+    // panel too, for the diagnostic sensor.
+    expect(await knob(), 0.8);
     expect(published.single.level, 0.8);
     expect(published.single.panel, closeTo(0.2, 0.001));
   });
 
   test('the room brightening lifts the panel toward Maximum, with no '
-      'setting moving, and the mirrors hear each step', () async {
+      'setting moving, and the panel sensor hears each step', () async {
     await build(on);
     published.clear();
     bus.publish(const LightLevelChanged(lux: 500));
     await settle();
     expect(writes.last, closeTo(0.8, 0.001));
     expect(published.single.panel, closeTo(0.8, 0.001));
+    expect(published.single.level, 0.8);
     expect(await ceiling(), 0.8);
   });
 
@@ -170,18 +177,65 @@ void main() {
     expect(await ceiling(), 0.2);
   });
 
-  test('a panel-level write (Home Assistant) lands as asked and the curve '
-      'scales it from there', () async {
+  test('a knob write (Home Assistant) with the switch on sets Maximum '
+      'brightness, and the panel follows through the curve', () async {
     await build(on);
-    await commands.execute('setBrightness', {'level': 0.3});
+    // ESPHome carries a float32: 0.4 arrives as 0.4000000059604645.
+    await commands.execute('setBrightness', {'level': 0.4000000059604645});
     await settle();
-    expect(writes.last, closeTo(0.3, 0.001));
-    expect(await panelLevel(), closeTo(0.3, 0.001));
-    // 0.3 at the floor is a ceiling of 1.0 (clamped), so a bright room
-    // lifts it all the way.
+    expect(settings.get(defs.adaptiveMaxBrightness), 0.4);
+    // Minimum 0.2 over Maximum 0.4 is a floor of 0.5 at 5 lx.
+    expect(writes.last, closeTo(0.2, 0.001));
+    expect(await knob(), 0.4);
+    expect(published.last.level, 0.4);
+    expect(published.last.panel, closeTo(0.2, 0.001));
     bus.publish(const LightLevelChanged(lux: 500));
     await settle();
-    expect(writes.last, closeTo(1.0, 0.001));
+    expect(writes.last, closeTo(0.4, 0.001));
+  });
+
+  test('a knob write below Minimum is refused and the mirrors go back to '
+      'the level that stands', () async {
+    await build(on);
+    published.clear();
+    final res = await commands.execute('setBrightness', {'level': 0.1});
+    await settle();
+    expect(res.ok, isFalse);
+    expect(res.error, contains('Maximum brightness must be above'));
+    expect(settings.get(defs.adaptiveMaxBrightness), 0.8);
+    expect(writes, hasLength(1));
+    expect(published.last.level, 0.8);
+  });
+
+  test('a knob write with the switch off sets Default brightness and the '
+      'panel, whether or not the launch gate is on', () async {
+    await build({});
+    await commands.execute('setBrightness', {'level': 0.3});
+    await settle();
+    expect(settings.get(defs.defaultBrightness), 0.3);
+    expect(writes.last, closeTo(0.3, 0.001));
+    expect(await knob(), closeTo(0.3, 0.001));
+  });
+
+  test('a knob turned under the screensaver waits for it to end', () async {
+    await build(on);
+    bus.publish(const ScreensaverStateChanged(active: true));
+    await settle();
+    await commands.execute('setBrightness', {'level': 0.2, 'ceiling': true});
+    await settle();
+    expect(writes.last, closeTo(0.05, 0.001));
+    await commands.execute('setBrightness', {'level': 0.4});
+    await settle();
+    expect(settings.get(defs.adaptiveMaxBrightness), 0.4);
+    expect(writes.last, closeTo(0.05, 0.001));
+    // The mirrors already read the new level.
+    expect(published.last.level, 0.4);
+    // The screensaver restores what it saved, then the knob lands.
+    await commands.execute('setBrightness', {'level': 0.8, 'ceiling': true});
+    bus.publish(const ScreensaverStateChanged(active: false));
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    expect(await ceiling(), 0.4);
+    expect(writes.last, closeTo(0.2, 0.001));
   });
 
   test('Maximum brightness moving re-anchors the ceiling at once', () async {

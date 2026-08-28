@@ -38,8 +38,8 @@ defensive style of Voice Satellite's kiosk wrapper.
 | Method | Returns | Description |
 |---|---|---|
 | `getDeviceInfo()` | `{uuid, name, model, os, osVersion, appVersion, battery, charging}` | Device identity + status |
-| `getBrightness()` | `number` 0..1 | Current hardware backlight, normalized |
-| `setBrightness(level)` | `boolean` | Set backlight, `level` 0..1 |
+| `getBrightness()` | `number` 0..1 | The level the Screen light controls: the panel, or the Maximum brightness setting while [adaptive brightness](screen.md#adaptive-brightness) is on |
+| `setBrightness(level)` | `boolean` | Set it, `level` 0..1: Default brightness, or Maximum brightness with adaptive brightness on |
 | `screenOn()` / `screenOff()` | `boolean` | Real display power: on wakes a sleeping panel; off needs the device admin permission (see remote API docs) |
 | `isScreenOn()` | `boolean` | Current screen power state |
 

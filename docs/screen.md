@@ -6,7 +6,7 @@ Settings → Screen & Audio → **Screen**.
 | --- | --- | --- |
 | Keep screen on | off | Stops the OS display timeout while the app is in front. |
 | Set brightness on launch | off | Applies the default brightness whenever the app starts. |
-| Default brightness | 80% | The brightness applied at start. Moving the slider applies it at once. Stands down while adaptive brightness is on. |
+| Default brightness | 80% | The brightness applied at start. Moving the slider applies it at once, and so does Home Assistant's Screen light or the remote admin's slider, which turn this setting. Stands down while adaptive brightness is on. |
 
 ## Default brightness
 
@@ -69,15 +69,25 @@ with the slider untouched. Its saved restore point is the bright-room
 level too, so the dashboard comes back where it belongs however dark it
 got in between.
 
-**Home Assistant's Screen light, the remote admin's slider and the JS
-API see the panel**, exactly what is on it, and a write from any of them
-lands as asked: a scene asking for 30% at night gets 30%. The room's
-light then scales it from there, so the morning lifts it with everything
-else. For a scene that wants the panel exactly where it puts it and kept
-there, turn the switch off first: it is an entity too (**Adaptive
-brightness**, on the [ESPHome](esphome.md) and [MQTT](mqtt.md) devices
-alike). A change made in Android's own quick settings counts the same
-way.
+**Home Assistant's Screen light, the remote admin's Overview slider and
+the JS API turn the setting that governs the level**: Default brightness
+with the switch off, Maximum brightness with it on. A write stores that
+setting and the panel follows, so a scene setting the screen to 60% at
+night keeps it at 60% by day and dims it by the curve at night, rather
+than lasting until the room's light next moves. A write below Minimum
+brightness is refused and the light snaps back. The light's brightness
+reads that setting too, so a write reads back as written; what the panel
+actually shows is the **Panel brightness** diagnostic sensor, in percent,
+which follows every step of the curve. With the switch off the two agree.
+For a scene that wants the panel held exactly where it puts it, turn the
+switch off first: it is an entity too (**Adaptive brightness**, on the
+[ESPHome](esphome.md) and [MQTT](mqtt.md) devices alike). A change made
+in Android's own quick settings moves the panel for the session without
+touching the setting.
+
+While the screensaver shows, a write from any of them changes the setting
+and leaves the screensaver's own level alone; the new level lands when
+the screensaver ends.
 
 Steps are small and spaced: the panel moves only when the curve moves it
 by a few percent and never more often than every couple of seconds, so a

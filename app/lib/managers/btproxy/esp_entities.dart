@@ -611,6 +611,16 @@ class EspEntitySurface {
         icon: 'mdi:information-outline',
         type: 'text_sensor',
       ),
+      // What the panel shows, as a share of full: with adaptive brightness
+      // on, the Screen light reads Maximum brightness rather than the
+      // dimmed panel, and this is where the dimmed panel is readable.
+      diagnostic(
+        'panel_brightness',
+        'Panel brightness',
+        icon: 'mdi:brightness-percent',
+        unit: '%',
+        stateClass: 1,
+      ),
       diagnostic(
         'android_version',
         'Android version',
@@ -815,7 +825,12 @@ class EspEntitySurface {
         );
       }),
     );
-    _subs.add(bus.on<BrightnessChanged>().listen((_) => _sendScreen()));
+    _subs.add(
+      bus.on<BrightnessChanged>().listen((e) {
+        _sendScreen();
+        _send('panel_brightness', (e.panel.clamp(0.0, 1.0) * 100).round());
+      }),
+    );
     _subs.add(bus.on<VolumeChanged>().listen((_) => _sendVolume()));
     _subs.add(
       bus.on<UrlChanged>().listen((e) {
@@ -1200,6 +1215,7 @@ class EspEntitySurface {
   Future<void> _sendInitial() async {
     await _refresh();
     await _sendScreen();
+    await _sendPanelBrightness();
     await _sendVolume();
     await _sendUpdateState();
     await _sendNextAlarm();
@@ -1307,6 +1323,15 @@ class EspEntitySurface {
     if (config is Map && config['auto_start'] != null) {
       await _send('voice_satellite_auto_start', config['auto_start'] == true);
     }
+  }
+
+  Future<void> _sendPanelBrightness() async {
+    final panel = await commands.execute('getBrightness', const {
+      'panel': true,
+    });
+    final level = (panel.data as num?)?.toDouble();
+    if (level == null) return;
+    await _send('panel_brightness', (level.clamp(0.0, 1.0) * 100).round());
   }
 
   Future<void> _sendScreen() async {

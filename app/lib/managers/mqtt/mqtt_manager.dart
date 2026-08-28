@@ -222,12 +222,16 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       ),
     );
     _subs.add(
-      bus.on<BrightnessChanged>().listen(
-        (e) => _publish(
+      bus.on<BrightnessChanged>().listen((e) {
+        _publish(
           '$_base/brightness/state',
-          (e.panel.clamp(0.0, 1.0) * 255).round().toString(),
-        ),
-      ),
+          (e.level.clamp(0.0, 1.0) * 255).round().toString(),
+        );
+        _publish(
+          '$_base/panel_brightness/state',
+          (e.panel.clamp(0.0, 1.0) * 100).round().toString(),
+        );
+      }),
     );
     _subs.add(
       bus.on<PageChanged>().listen((e) {
@@ -1596,6 +1600,16 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         (level.clamp(0.0, 1.0) * 255).round().toString(),
       );
     }
+    final panel = await commands.execute('getBrightness', const {
+      'panel': true,
+    });
+    final panelLevel = panel.data;
+    if (panel.ok && panelLevel is num) {
+      _publish(
+        '$_base/panel_brightness/state',
+        (panelLevel.clamp(0.0, 1.0) * 100).round().toString(),
+      );
+    }
     _publish(
       '$_base/screensaver_active/state',
       _screensaverActive ? 'ON' : 'OFF',
@@ -1826,6 +1840,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
 
   List<String> _discoveryTopics() => [
     '$_prefix/light/ks_$_deviceId/screen/config',
+    '$_prefix/sensor/ks_$_deviceId/panel_brightness/config',
     '$_prefix/sensor/ks_$_deviceId/battery/config',
     '$_prefix/binary_sensor/ks_$_deviceId/charging/config',
     '$_prefix/sensor/ks_$_deviceId/url/config',
@@ -2130,6 +2145,16 @@ class MqttManager extends Manager with WidgetsBindingObserver {
           'unit_of_measurement': 'lx',
           'state_class': 'measurement',
         },
+      // What the panel shows: with adaptive brightness on, the Screen
+      // light reads Maximum brightness rather than the dimmed panel.
+      '$_prefix/sensor/ks_$_deviceId/panel_brightness/config': {
+        ...common('panel_brightness', 'Panel brightness'),
+        'state_topic': '$_base/panel_brightness/state',
+        'unit_of_measurement': '%',
+        'state_class': 'measurement',
+        'icon': 'mdi:brightness-percent',
+        'entity_category': 'diagnostic',
+      },
       // The standalone motion sensor (Camera > Motion Detection). The app
       // only publishes ON ticks; off_delay makes HA clear the sensor after
       // quiet, so there is no OFF publishing or timer anywhere in the app.

@@ -30,10 +30,14 @@ import 'adaptive_brightness.dart';
 /// screensaver at 20% is 20% by day and a few percent at night with no
 /// setting moving. The screensaver deals in ceilings (`ceiling: true` on
 /// the commands), since the number it saves must survive the room changing
-/// under it; everything else (Home Assistant's Screen light, the remote
-/// admin, the JS API) deals in the panel: reads see what the panel shows
-/// and a write lands as asked, then the curve scales it from there. With
-/// adaptive brightness off the factor is 1 and the two are the same.
+/// under it. Everything else (Home Assistant's Screen light, the remote
+/// admin's slider, the JS API) is a knob on the setting that governs the
+/// level: Default brightness with adaptive brightness off, Maximum
+/// brightness with it on. A write stores the setting and the panel follows
+/// (after the screensaver, while one shows); a read is that setting's
+/// level, so a write reads back as written rather than as the room dimmed
+/// it. The panel itself is readable with `panel: true`, for the Panel
+/// brightness diagnostic sensor.
 class ScreenManager extends Manager with WidgetsBindingObserver {
   ScreenManager(
     super.bus,
@@ -182,6 +186,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     // the first write of a session already lands dimmed.
     await _probeLightSensor();
     bus.on<LightLevelChanged>().listen((e) => _onLux(e.lux));
+    bus.on<ScreensaverStateChanged>().listen((e) => _onScreensaver(e.active));
 
     if (_adaptiveOn) {
       // A session starts at Maximum brightness dimmed for the room as it
@@ -201,15 +206,17 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       if (e.key == defs.keepScreenOn.key || e.key == defs.haHoldMode.key) {
         await _applyWakelock();
       }
-      if (e.key == defs.defaultBrightness.key &&
-          _settings.get(defs.setBrightnessOnLaunch) &&
-          !_adaptiveOn) {
-        await setBrightness((e.value as num).toDouble());
+      // Default brightness is the level itself while adaptive brightness
+      // is off, from the slider, Home Assistant's light or the remote,
+      // whether or not the launch gate is on (the gate decides start-up,
+      // not whether a knob turns).
+      if (e.key == defs.defaultBrightness.key && !_adaptiveOn) {
+        await _applyKnob();
       }
       if (e.key == defs.setBrightnessOnLaunch.key &&
           e.value == true &&
           !_adaptiveOn) {
-        await setBrightness(_settings.get(defs.defaultBrightness).toDouble());
+        await _applyKnob();
       }
       if (e.key == defs.adaptiveBrightness.key) {
         await _onAdaptiveSwitch();
@@ -217,7 +224,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         // The floor is Minimum over Maximum, so the factor moves too.
         final lux = _lastLux;
         if (lux != null) _factor = _curve.factor(lux);
-        await setBrightness(_maxBrightness, ceiling: true);
+        await _applyKnob();
       } else if ((e.key == defs.adaptiveMinBrightness.key ||
               e.key == defs.adaptiveDarkLux.key ||
               e.key == defs.adaptiveBrightLux.key) &&
@@ -235,10 +242,18 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
           params: const {
             'ceiling':
                 'true for the bright-room level adaptive brightness dims '
-                'from, instead of what the panel shows',
+                'from (the screensaver deals in these)',
+            'panel':
+                'true for what the panel shows right now; without either '
+                'flag, the level the Screen light controls (Default '
+                'brightness, or Maximum brightness with adaptive '
+                'brightness on)',
           },
           handler: (p) async => CommandResult.ok(
-            await getBrightness(ceiling: p['ceiling'] == true),
+            await getBrightness(
+              ceiling: p['ceiling'] == true,
+              panel: p['panel'] == true,
+            ),
           ),
         ),
       )
@@ -266,14 +281,18 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
             'level': 'Brightness 0..1',
             'ceiling':
                 'true to set the bright-room level adaptive brightness dims '
-                'from (the screensaver does), instead of the panel itself',
+                'from for this session (the screensaver does); without it '
+                'the write sets Default brightness, or Maximum brightness '
+                'with adaptive brightness on',
           },
           handler: (p) async {
             final level = (p['level'] as num?)?.toDouble();
             if (level == null || level < 0 || level > 1) {
               return const CommandResult.fail('level must be 0..1');
             }
-            await setBrightness(level, ceiling: p['ceiling'] == true);
+            if (!await setBrightness(level, ceiling: p['ceiling'] == true)) {
+              return CommandResult.fail(_lastRefusal ?? 'brightness not set');
+            }
             return const CommandResult.ok();
           },
         ),
@@ -437,6 +456,58 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   bool get _adaptiveOn =>
       _lightSensor && _settings.get(defs.adaptiveBrightness);
 
+  /// The screensaver is showing: a knob turned now is stored and lands
+  /// when it ends, since the screensaver's own level owns the panel.
+  bool _screensaverActive = false;
+  bool _knobPending = false;
+
+  /// Why the last knob write was refused (the range validation), for the
+  /// command's answer.
+  String? _lastRefusal;
+
+  /// How long after the screensaver's own restore write the knob lands:
+  /// two writes within milliseconds of each other are what wedge the
+  /// framework's brightness synchronizer.
+  static const _afterScreensaver = Duration(milliseconds: 250);
+
+  /// The setting the Screen light and the remote slider turn right now.
+  defs.SettingDef<num> get _knobDef =>
+      _adaptiveOn ? defs.adaptiveMaxBrightness : defs.defaultBrightness;
+
+  double get _knobLevel => _settings.get(_knobDef).toDouble().clamp(0.0, 1.0);
+
+  /// The Screen light's level for a panel value: the panel itself with
+  /// adaptive brightness off, Maximum brightness with it on.
+  double _levelFor(double panel) => _adaptiveOn ? _maxBrightness : panel;
+
+  /// Put the knob's setting on the panel: Maximum brightness dimmed for
+  /// the room, or Default brightness as is. Under the screensaver it
+  /// waits, and the mirrors still hear the new level.
+  Future<void> _applyKnob() async {
+    if (_screensaverActive) {
+      _knobPending = true;
+      final panel = _lastWritten ?? await _readPanel() ?? _knobLevel;
+      bus.publish(BrightnessChanged(level: _knobLevel, panel: panel));
+      return;
+    }
+    await setBrightness(_knobLevel, ceiling: true);
+  }
+
+  Future<void> _onScreensaver(bool active) async {
+    _screensaverActive = active;
+    if (active) return;
+    // The screensaver restored the ceiling it saved when it started; a
+    // knob turned meanwhile, or Maximum brightness as the dashboard's
+    // level under adaptive brightness, lands now.
+    final pending = _knobPending;
+    _knobPending = false;
+    if (!pending && !_adaptiveOn) return;
+    if (!pending && _ceiling == _maxBrightness) return;
+    await Future<void>.delayed(_afterScreensaver);
+    if (_screensaverActive) return;
+    await _applyKnob();
+  }
+
   double get _maxBrightness =>
       _settings.get(defs.adaptiveMaxBrightness).toDouble().clamp(0.0, 1.0);
 
@@ -507,15 +578,15 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       final lux = _lastLux;
       _factor = lux == null ? 1.0 : _curve.factor(lux);
       _logAdaptiveOn(lux);
-      await setBrightness(_maxBrightness, ceiling: true);
+      await _applyKnob();
       return;
     }
     if (_factor == 1.0) return;
     _factor = 1.0;
     log.info(name, 'adaptive brightness off');
     if (_settings.get(defs.setBrightnessOnLaunch)) {
-      await setBrightness(_settings.get(defs.defaultBrightness).toDouble());
-    } else {
+      await _applyKnob();
+    } else if (!_screensaverActive) {
       final ceiling = _ceiling;
       if (ceiling != null) await setBrightness(ceiling, ceiling: true);
     }
@@ -565,8 +636,9 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         'factor ${_factor.toStringAsFixed(2)}, panel '
         '${(target * 100).round()}% of ${(ceiling * 100).round()}%',
       );
-      // The mirrors show the panel, so they hear every step.
-      bus.publish(BrightnessChanged(level: ceiling, panel: target));
+      // The Panel brightness sensor hears every step; the light's level
+      // is the setting and does not move.
+      bus.publish(BrightnessChanged(level: _levelFor(target), panel: target));
     }
   }
 
@@ -585,17 +657,24 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         ? (level / _factor).clamp(0.0, 1.0)
         : level;
     _ceiling = ceiling;
-    bus.publish(BrightnessChanged(level: ceiling, panel: level));
+    bus.publish(BrightnessChanged(level: _levelFor(level), panel: level));
   }
 
-  /// What the panel shows: the window override while one is up (the
-  /// no-grant fallback), else the system setting, never the plugin's stale
-  /// view, which stops tracking reality the moment anything else (quick
-  /// settings) moves the panel. With [ceiling], the bright-room level
-  /// adaptive brightness dims from instead (the same number with it off).
-  Future<double?> getBrightness({bool ceiling = false}) async {
-    if (ceiling && _adaptiveOn) return _seedCeiling();
-    return _readPanel();
+  /// The level the Screen light controls: the panel with adaptive
+  /// brightness off, Maximum brightness with it on. With [ceiling], the
+  /// bright-room level adaptive brightness dims from (what the screensaver
+  /// saves); with [panel], what the panel shows: the window override while
+  /// one is up (the no-grant fallback), else the system setting, never the
+  /// plugin's stale view, which stops tracking reality the moment anything
+  /// else (quick settings) moves the panel. All three are one number with
+  /// adaptive brightness off.
+  Future<double?> getBrightness({
+    bool ceiling = false,
+    bool panel = false,
+  }) async {
+    if (panel || !_adaptiveOn) return _readPanel();
+    if (ceiling) return _seedCeiling();
+    return _maxBrightness;
   }
 
   Future<double?> _readPanel() async {
@@ -615,24 +694,43 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     }
   }
 
-  /// Set the panel, or with [ceiling] the bright-room level the panel is
-  /// dimmed from. Under adaptive brightness a panel-level write lands as
-  /// asked and becomes the ceiling undone by the factor, so the room's
-  /// light scales it from there: Home Assistant asking for 30% at night
-  /// gets 30%, and the morning lifts it with everything else. With the
-  /// switch off both are the same write.
+  /// Turn the knob, or with [ceiling] set the bright-room level for this
+  /// session (the screensaver's own level, its restore point). A knob
+  /// write stores Default brightness, or Maximum brightness with adaptive
+  /// brightness on, and the setting's change handler puts it on the panel
+  /// (after the screensaver, while one shows), so a write from Home
+  /// Assistant sticks instead of lasting until the room's light next
+  /// moves. Refused, with the reason in the log and the command's answer,
+  /// when it would cross the other end of the adaptive range.
   Future<bool> setBrightness(double level, {bool ceiling = false}) async {
     final clamped = level.clamp(0.0, 1.0);
-    final double panel;
-    if (ceiling || !_adaptiveOn) {
-      _ceiling = clamped;
-      panel = (clamped * _factor).clamp(0.0, 1.0);
-    } else {
-      panel = clamped;
-      _ceiling = (_factor > 0 ? clamped / _factor : clamped).clamp(0.0, 1.0);
+    if (!ceiling) {
+      final def = _knobDef;
+      // Trim float noise (ESPHome carries a float32: 0.6 arrives as
+      // 0.6000000238) so a whole percent stores as one.
+      final rounded = num.parse(clamped.toStringAsFixed(4)).toDouble();
+      final message = _settings.validate(def, rounded);
+      if (message != null) {
+        _lastRefusal = message;
+        log.warn(name, 'brightness ${(rounded * 100).round()}%: $message');
+        // The mirrors go back to the level that stands.
+        final panel = _lastWritten ?? await _readPanel() ?? _knobLevel;
+        bus.publish(BrightnessChanged(level: _knobLevel, panel: panel));
+        return false;
+      }
+      _lastRefusal = null;
+      if (_settings.get(def) == rounded) {
+        // Nothing to store; the panel may still have drifted from it.
+        await _applyKnob();
+      } else {
+        await _settings.set(def, rounded);
+      }
+      return true;
     }
+    _ceiling = clamped;
+    final panel = (clamped * _factor).clamp(0.0, 1.0);
     if (!await _write(panel)) return false;
-    bus.publish(BrightnessChanged(level: _ceiling!, panel: panel));
+    bus.publish(BrightnessChanged(level: _levelFor(panel), panel: panel));
     return true;
   }
 
