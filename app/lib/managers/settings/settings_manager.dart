@@ -331,11 +331,37 @@ class SettingsManager extends Manager {
     return null;
   }
 
+  /// What is wrong with [value] for [def], or null when nothing is: the
+  /// definition's own validator, then its cross validator with the other
+  /// settings in view. [batch] is the rest of a multi-key write, which a
+  /// sibling is read from ahead of the stored value, so two ends of a
+  /// range can move together past each other's old positions.
+  String? validate(
+    SettingDef<Object> def,
+    Object? value, {
+    Map<String, Object?> batch = const {},
+  }) {
+    final own = def.validator?.call(value);
+    if (own != null) return own;
+    final cross = def.crossValidator;
+    if (cross == null) return null;
+    return cross(value, (key) {
+      if (batch.containsKey(key)) return batch[key];
+      final other = defByKey(key);
+      return other == null ? null : get(other);
+    });
+  }
+
   /// Set from an untyped (JSON) value — used by the remote API and import.
-  Future<bool> setFromJson(String key, Object? value, {String? source}) async {
+  Future<bool> setFromJson(
+    String key,
+    Object? value, {
+    String? source,
+    Map<String, Object?> batch = const {},
+  }) async {
     final def = defByKey(key);
     if (def == null) return false;
-    if (def.validator?.call(value) != null) return false;
+    if (validate(def, value, batch: batch) != null) return false;
     switch (def.type) {
       case SettingType.boolean when value is bool:
         await set(def, value, source: source);
@@ -462,7 +488,12 @@ class SettingsManager extends Manager {
     try {
       var applied = 0;
       for (final entry in config.entries) {
-        if (await setFromJson(entry.key, entry.value, source: 'import')) {
+        if (await setFromJson(
+          entry.key,
+          entry.value,
+          source: 'import',
+          batch: config,
+        )) {
           applied++;
         }
       }

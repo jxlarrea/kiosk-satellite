@@ -582,12 +582,13 @@ class RemoteManager extends Manager {
         entry.key,
         entry.value,
         source: 'remote admin',
+        batch: body,
       )) {
         rejected.add(entry.key);
-        final message = _settings
-            .defByKey(entry.key)
-            ?.validator
-            ?.call(entry.value);
+        final def = _settings.defByKey(entry.key);
+        final message = def == null
+            ? null
+            : _settings.validate(def, entry.value, batch: body);
         if (message != null) errors[entry.key] = message;
       }
     }

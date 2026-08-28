@@ -8002,7 +8002,10 @@ class SettingTile extends StatelessWidget {
             ),
             FilledButton(
               onPressed: () {
-                final message = def.validator?.call(parse(controller.text));
+                final message = c.settings.validate(
+                  def,
+                  parse(controller.text),
+                );
                 if (message != null) {
                   setDialogState(() => error = message);
                   return;

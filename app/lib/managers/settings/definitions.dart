@@ -28,6 +28,7 @@ class SettingDef<T> {
     this.unit,
     this.optionLabels,
     this.validator,
+    this.crossValidator,
     this.normalizer,
     this.multiline = false,
     this.placeholder,
@@ -110,6 +111,15 @@ class SettingDef<T> {
   /// import all funnel through setFromJson). Returns an error message, or
   /// null for a valid value.
   final String? Function(Object? value)? validator;
+
+  /// Like [validator], with the other settings in view, for a value whose
+  /// sense depends on a sibling (the two ends of a range). `read(key)` is
+  /// what that sibling will hold once this write lands: the value in the
+  /// same batch where the batch carries one, else the stored value, so a
+  /// batch moving both ends past each other's old positions passes. Runs
+  /// after [validator] and only when that accepted the value.
+  final String? Function(Object? value, Object? Function(String key) read)?
+  crossValidator;
 
   /// Optional canonicalization applied to every accepted write, after
   /// [validator]. The stored value is the normalized one, so consumers
@@ -1116,6 +1126,7 @@ const adaptiveDarkLux = SettingDef<num>(
   section: 'Adaptive brightness',
   dependsOn: 'screen.adaptive_brightness',
   validator: validateLux,
+  crossValidator: validateDarkBelowBright,
 );
 
 const adaptiveBrightLux = SettingDef<num>(
@@ -1130,6 +1141,7 @@ const adaptiveBrightLux = SettingDef<num>(
   section: 'Adaptive brightness',
   dependsOn: 'screen.adaptive_brightness',
   validator: validateLux,
+  crossValidator: validateBrightAboveDark,
 );
 
 /// A light level the curve can take a log of: a positive number.
@@ -1140,6 +1152,33 @@ String? validateLux(Object? value) {
   }
   return null;
 }
+
+/// The curve's ends must not cross or meet: Dark room below Bright room.
+String? validateDarkBelowBright(
+  Object? value,
+  Object? Function(String key) read,
+) {
+  final dark = _asNum(value);
+  final bright = _asNum(read(adaptiveBrightLux.key));
+  if (dark == null || bright == null || dark < bright) return null;
+  return 'Dark room must be below Bright room (${_formatLux(bright)} lx)';
+}
+
+String? validateBrightAboveDark(
+  Object? value,
+  Object? Function(String key) read,
+) {
+  final bright = _asNum(value);
+  final dark = _asNum(read(adaptiveDarkLux.key));
+  if (dark == null || bright == null || bright > dark) return null;
+  return 'Bright room must be above Dark room (${_formatLux(dark)} lx)';
+}
+
+num? _asNum(Object? value) =>
+    value is num ? value : num.tryParse('${value ?? ''}'.trim());
+
+String _formatLux(num lux) =>
+    lux == lux.roundToDouble() ? lux.toInt().toString() : lux.toString();
 
 // ── Audio ──────────────────────────────────────────────────────────────
 // The mixer model (issue #79): the master volume is the device's own (a
