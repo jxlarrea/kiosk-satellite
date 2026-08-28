@@ -44,13 +44,20 @@ class ScreenStateChanged extends AppEvent {
 }
 
 class BrightnessChanged extends AppEvent {
-  const BrightnessChanged({required this.level});
+  const BrightnessChanged({required this.level, double? panel})
+    : panel = panel ?? level;
 
-  /// Normalized 0..1.
+  /// The level callers deal in, normalized 0..1: under adaptive brightness
+  /// the ceiling (the bright-room level), else the panel itself.
   final double level;
 
+  /// What the panel shows, normalized 0..1: [level] times the adaptive
+  /// factor. Equal to [level] with adaptive brightness off. Mirrors of the
+  /// screen (Home Assistant's light, the remote admin's slider) show this.
+  final double panel;
+
   @override
-  Map<String, Object?> toJson() => {'level': level};
+  Map<String, Object?> toJson() => {'level': level, 'panel': panel};
 }
 
 // ── Screensaver ────────────────────────────────────────────────────────

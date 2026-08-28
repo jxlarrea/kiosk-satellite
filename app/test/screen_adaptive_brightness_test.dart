@@ -12,9 +12,10 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 // ignore: depend_on_referenced_packages
 import 'package:wakelock_plus_platform_interface/wakelock_plus_platform_interface.dart';
 
-/// Adaptive brightness (issue #343) in the screen manager: the level every
-/// caller deals in is the ceiling, the panel gets it times the factor the
-/// room's light sets, and every mirror hears the ceiling.
+/// Adaptive brightness (issue #343) in the screen manager: the ceiling is
+/// the bright-room level (Maximum brightness, or the screensaver's own
+/// slider), the panel gets it times the factor the room's light sets, the
+/// screensaver deals in ceilings and everything else in the panel.
 class _NoopWakelock extends WakelockPlusPlatformInterface {
   @override
   Future<void> toggle({required bool enable}) async {}
@@ -30,14 +31,17 @@ void main() {
   /// The fake panel and the fake light sensor.
   late double panel;
   late List<double> writes;
-  late List<double> published;
+  late List<BrightnessChanged> published;
   late bool present;
   late double? lux;
   late EventBus bus;
   late SettingsManager settings;
+  late CommandRegistry commands;
   late ScreenManager screen;
 
-  Future<void> settle() => Future<void>.delayed(Duration.zero);
+  /// Let a write's platform round trip and the bus delivery after it run.
+  Future<void> settle() =>
+      Future<void>.delayed(const Duration(milliseconds: 20));
 
   Future<void> build(
     Map<String, Object> initial, {
@@ -69,7 +73,7 @@ void main() {
         });
     bus = EventBus();
     final log = Logger();
-    final commands = CommandRegistry(log);
+    commands = CommandRegistry(log);
     // The device manager's probe, as the screen manager sees it.
     commands.register(
       Command(
@@ -81,7 +85,7 @@ void main() {
     );
     settings = SettingsManager(bus, commands, log);
     await settings.init();
-    bus.on<BrightnessChanged>().listen((e) => published.add(e.level));
+    bus.on<BrightnessChanged>().listen(published.add);
     screen = ScreenManager(bus, commands, log, settings, adaptiveWriteGap: gap);
     await screen.init();
     // The bus delivers on a microtask: let init's publishes land.
@@ -99,135 +103,163 @@ void main() {
           ),
           (_) {},
         );
+    await settle();
   }
 
+  Future<double?> ceiling() async =>
+      (await commands.execute('getBrightness', const {'ceiling': true})).data
+          as double?;
+  Future<double?> panelLevel() async =>
+      (await commands.execute('getBrightness', const {})).data as double?;
+
+  /// Adaptive on with Minimum 20% and Maximum 80%: a floor of 0.25.
   const on = {
     'ks.screen.adaptive_brightness': true,
-    'ks.screen.adaptive_dim_floor': 0.2,
+    'ks.screen.adaptive_min_brightness': 0.2,
+    'ks.screen.adaptive_max_brightness': 0.8,
     'ks.screen.adaptive_dark_lux': 5,
     'ks.screen.adaptive_bright_lux': 500,
   };
 
   tearDown(() => screen.dispose());
 
-  test('the default brightness of a session starting in the dark lands '
-      'dimmed, and every mirror hears the ceiling', () async {
+  test('a session starting in the dark lands at Maximum brightness dimmed '
+      'to Minimum, and Default brightness stands down', () async {
     await build({
       ...on,
       'ks.screen.set_brightness_on_launch': true,
-      'ks.screen.default_brightness': 0.8,
+      'ks.screen.default_brightness': 0.5,
     });
-    expect(writes, [closeTo(0.16, 0.001)]);
-    expect(published, [0.8]);
-    expect(await screen.getBrightness(), 0.8);
+    expect(writes, [closeTo(0.2, 0.001)]);
+    expect(await ceiling(), 0.8);
+    expect(await panelLevel(), closeTo(0.2, 0.001));
+    // The mirrors hear the panel; the event carries both.
+    expect(published.single.level, 0.8);
+    expect(published.single.panel, closeTo(0.2, 0.001));
   });
 
-  test('the room brightening lifts the panel toward the ceiling, with no '
-      'setting moving and nothing published', () async {
-    await build({
-      ...on,
-      'ks.screen.set_brightness_on_launch': true,
-      'ks.screen.default_brightness': 0.8,
-    });
+  test('the room brightening lifts the panel toward Maximum, with no '
+      'setting moving, and the mirrors hear each step', () async {
+    await build(on);
     published.clear();
     bus.publish(const LightLevelChanged(lux: 500));
     await settle();
     expect(writes.last, closeTo(0.8, 0.001));
-    expect(published, isEmpty);
-    expect(await screen.getBrightness(), 0.8);
+    expect(published.single.panel, closeTo(0.8, 0.001));
+    expect(await ceiling(), 0.8);
   });
 
   test('a step the eye cannot see is not written', () async {
-    await build({
-      ...on,
-      'ks.screen.set_brightness_on_launch': true,
-      'ks.screen.default_brightness': 0.8,
-    });
+    await build(on);
     // 5 -> 5.5 lx moves the factor by a hair.
     bus.publish(const LightLevelChanged(lux: 5.5));
     await settle();
     expect(writes, hasLength(1));
   });
 
-  test('the screensaver setting its level gets it scaled, and reads back '
-      'what it set', () async {
+  test('the screensaver sets a ceiling and reads back what it set, in any '
+      'light', () async {
     await build(on);
-    expect(await screen.setBrightness(0.2), isTrue);
+    await commands.execute('setBrightness', {'level': 0.2, 'ceiling': true});
     await settle();
-    expect(writes, [closeTo(0.04, 0.001)]);
-    expect(published, [0.2]);
-    expect(await screen.getBrightness(), 0.2);
+    expect(writes.last, closeTo(0.05, 0.001));
+    expect(await ceiling(), 0.2);
+    bus.publish(const LightLevelChanged(lux: 500));
+    await settle();
+    expect(writes.last, closeTo(0.2, 0.001));
+    expect(await ceiling(), 0.2);
   });
 
-  test(
-    'turning adaptive brightness off shows the ceiling as is again',
-    () async {
-      await build(on);
-      await screen.setBrightness(0.6);
-      await settings.set(defs.adaptiveBrightness, false);
-      await settle();
-      expect(writes.last, closeTo(0.6, 0.001));
-      expect(await screen.getBrightness(), 0.6);
-    },
-  );
+  test('a panel-level write (Home Assistant) lands as asked and the curve '
+      'scales it from there', () async {
+    await build(on);
+    await commands.execute('setBrightness', {'level': 0.3});
+    await settle();
+    expect(writes.last, closeTo(0.3, 0.001));
+    expect(await panelLevel(), closeTo(0.3, 0.001));
+    // 0.3 at the floor is a ceiling of 1.0 (clamped), so a bright room
+    // lifts it all the way.
+    bus.publish(const LightLevelChanged(lux: 500));
+    await settle();
+    expect(writes.last, closeTo(1.0, 0.001));
+  });
 
-  test(
-    'turning it on takes the panel as the ceiling and dims at once',
-    () async {
-      await build({}, startPanel: 0.7);
-      await settings.set(defs.adaptiveBrightness, true);
-      await settings.set(defs.adaptiveDimFloor, 0.2);
-      await settle();
-      expect(writes.last, closeTo(0.14, 0.001));
-      expect(await screen.getBrightness(), 0.7);
-    },
-  );
+  test('Maximum brightness moving re-anchors the ceiling at once', () async {
+    await build(on);
+    await settings.set(defs.adaptiveMaxBrightness, 0.4);
+    await settle();
+    expect(writes.last, closeTo(0.2, 0.001));
+    expect(await ceiling(), 0.4);
+  });
 
-  test('a session starting under a panel the last one dimmed undoes the '
-      'dimming to find the ceiling', () async {
-    // Last night's session left 0.14 on the panel (0.7 at the floor).
-    await build(on, startPanel: 0.14);
-    expect(await screen.getBrightness(), closeTo(0.7, 0.001));
+  test('turning the switch off goes back to Default brightness where it is '
+      'set, else to the ceiling undimmed', () async {
+    await build({
+      ...on,
+      'ks.screen.set_brightness_on_launch': true,
+      'ks.screen.default_brightness': 0.6,
+    });
+    await settings.set(defs.adaptiveBrightness, false);
+    await settle();
+    expect(writes.last, closeTo(0.6, 0.001));
+
+    await build(on);
+    await settings.set(defs.adaptiveBrightness, false);
+    await settle();
+    expect(writes.last, closeTo(0.8, 0.001));
+    expect(await panelLevel(), closeTo(0.8, 0.001));
+  });
+
+  test('turning it on writes Maximum brightness dimmed for the room', () async {
+    await build({
+      'ks.screen.adaptive_min_brightness': 0.2,
+      'ks.screen.adaptive_max_brightness': 0.8,
+    }, startPanel: 0.7);
+    await settings.set(defs.adaptiveBrightness, true);
+    await settle();
+    expect(writes.last, closeTo(0.2, 0.001));
+    expect(await ceiling(), 0.8);
   });
 
   test("the observer's echo of this app's own write is not a new ceiling; "
       'a change made elsewhere is', () async {
     await build(on, startLux: 500);
-    await screen.setBrightness(0.8);
-    await settle();
     published.clear();
     await observe(0.8);
-    await settle();
     expect(published, isEmpty);
     // Quick settings moved the panel to 50% with the factor at 1.
     await observe(0.5);
-    await settle();
-    expect(published, [0.5]);
-    expect(await screen.getBrightness(), 0.5);
+    expect(published.single.panel, 0.5);
+    expect(await ceiling(), 0.5);
     // At the floor now: the external value is undone by the factor.
     bus.publish(const LightLevelChanged(lux: 5));
     await settle();
-    expect(writes.last, closeTo(0.1, 0.001));
+    expect(writes.last, closeTo(0.125, 0.001));
     await observe(0.05);
-    expect(await screen.getBrightness(), closeTo(0.25, 0.001));
+    expect(await ceiling(), closeTo(0.2, 0.001));
   });
 
-  test('without adaptive brightness the observer reports the panel as '
-      'before', () async {
-    await build({});
+  test('without adaptive brightness ceiling and panel are one number, and '
+      'Default brightness works as before', () async {
+    await build({
+      'ks.screen.set_brightness_on_launch': true,
+      'ks.screen.default_brightness': 0.6,
+    });
+    expect(writes, [0.6]);
     await observe(0.3);
-    await settle();
-    expect(published, [0.3]);
-    expect(await screen.getBrightness(), 0.3);
+    expect(published.last.level, 0.3);
+    expect(published.last.panel, 0.3);
+    expect(await ceiling(), 0.3);
+    expect(await panelLevel(), 0.3);
   });
 
   test('without a light sensor the switch does nothing', () async {
     await build({
       ...on,
       'ks.screen.set_brightness_on_launch': true,
-      'ks.screen.default_brightness': 0.8,
+      'ks.screen.default_brightness': 0.6,
     }, sensor: false);
-    expect(writes, [0.8]);
+    expect(writes, [0.6]);
     bus.publish(const LightLevelChanged(lux: 500));
     await settle();
     expect(writes, hasLength(1));
@@ -237,12 +269,12 @@ void main() {
     'an adaptive step right after another write waits out the gap',
     () async {
       await build(on, gap: const Duration(milliseconds: 60));
-      await screen.setBrightness(0.8);
+      await commands.execute('setBrightness', {'level': 0.8, 'ceiling': true});
       bus.publish(const LightLevelChanged(lux: 500));
       await settle();
-      expect(writes, hasLength(1));
-      await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(writes, hasLength(2));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(writes, hasLength(3));
       expect(writes.last, closeTo(0.8, 0.001));
     },
   );

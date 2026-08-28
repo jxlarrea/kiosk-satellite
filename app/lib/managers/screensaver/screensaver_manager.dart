@@ -493,7 +493,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     final orphaned = _settings.get(defs.screensaverSavedBrightness).toDouble();
     if (orphaned >= 0) {
       log.info(name, 'restoring brightness after an interrupted screensaver');
-      await commands.execute('setBrightness', {'level': orphaned});
+      await commands.execute('setBrightness', {
+        'level': orphaned,
+        'ceiling': true,
+      });
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }
 
@@ -838,7 +841,12 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// never touches brightness and only later switches to one that does.
   Future<void> _ensureSavedBrightness() async {
     if (_savedBrightness != null) return;
-    final brightness = await commands.execute('getBrightness', const {});
+    // The ceiling, not the panel: under adaptive brightness the panel is
+    // the ceiling dimmed for the room as it is now, and restoring that
+    // number later, in another light, would land somewhere else.
+    final brightness = await commands.execute('getBrightness', const {
+      'ceiling': true,
+    });
     _savedBrightness = (brightness.data as num?)?.toDouble();
     if (_savedBrightness != null) {
       await _settings.set(defs.screensaverSavedBrightness, _savedBrightness!);
@@ -857,7 +865,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     if (!_active || _savedBrightness == null) return;
     if (!_settings.get(defs.screensaverNotificationBrightness)) return;
     if (showing) {
-      await commands.execute('setBrightness', {'level': _savedBrightness});
+      await commands.execute('setBrightness', {
+        'level': _savedBrightness,
+        'ceiling': true,
+      });
     } else {
       // Back to whatever this mode, schedule entry or takeover asks for.
       await _applyVisuals();
@@ -895,7 +906,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       // normally shows no overlay at all), at full brightness.
       _setView((mode == 'dim') ? 'black' : mode);
       if (_savedBrightness != null) {
-        await commands.execute('setBrightness', {'level': _savedBrightness});
+        await commands.execute('setBrightness', {
+          'level': _savedBrightness,
+          'ceiling': true,
+        });
       }
       return;
     }
@@ -916,10 +930,14 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
             _settings.get(defs.screensaverDimLevel).toDouble();
         await commands.execute('setBrightness', {
           'level': liftForNotification ? _savedBrightness : dim,
+          'ceiling': true,
         });
       case 'black' when liftForNotification:
         _setView('black');
-        await commands.execute('setBrightness', {'level': _savedBrightness});
+        await commands.execute('setBrightness', {
+          'level': _savedBrightness,
+          'ceiling': true,
+        });
       case 'black':
         // Backlight to zero behind a black overlay — deliberately NOT the
         // screenOff command, which truly powers the panel off (device-admin
@@ -927,7 +945,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         // must stay alive: motion wake, the wake word UI and the admin's
         // live view all keep running behind the dark glass.
         _setView('black');
-        await commands.execute('setBrightness', {'level': 0});
+        await commands.execute('setBrightness', {'level': 0, 'ceiling': true});
       default:
         // clock / media / website: a lit overlay showing content, at normal
         // brightness unless the separate screensaver brightness — or the
@@ -940,11 +958,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
               _settings.get(defs.screensaverBrightnessLevel).toDouble();
           await commands.execute('setBrightness', {
             'level': liftForNotification ? _savedBrightness : level,
+            'ceiling': true,
           });
         } else if (_savedBrightness != null) {
           // A mid-session switch out of a dimmed mode (schedule boundary,
           // music starting) must lift the old mode's darkness with it.
-          await commands.execute('setBrightness', {'level': _savedBrightness});
+          await commands.execute('setBrightness', {
+            'level': _savedBrightness,
+            'ceiling': true,
+          });
         }
     }
   }
@@ -971,9 +993,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         'level':
             _scheduleBrightness ??
             _settings.get(defs.screensaverBrightnessLevel).toDouble(),
+        'ceiling': true,
       });
     } else if (_savedBrightness != null) {
-      await commands.execute('setBrightness', {'level': _savedBrightness});
+      await commands.execute('setBrightness', {
+        'level': _savedBrightness,
+        'ceiling': true,
+      });
       _savedBrightness = null;
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }
@@ -994,7 +1020,10 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // Release the hold; the keep-awake setting (if any) still applies.
     await commands.execute('keepScreenAwake', {'enabled': false});
     if (_savedBrightness != null) {
-      await commands.execute('setBrightness', {'level': _savedBrightness});
+      await commands.execute('setBrightness', {
+        'level': _savedBrightness,
+        'ceiling': true,
+      });
       _savedBrightness = null;
       await _settings.set(defs.screensaverSavedBrightness, -1);
     }

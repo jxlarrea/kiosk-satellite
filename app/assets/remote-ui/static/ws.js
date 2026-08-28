@@ -1,6 +1,7 @@
 import { renderMicLevel } from './audio.js';
 import { $, state } from './core.js';
 import { appendLine, logView, updateConsoleMeta } from './logs.js';
+import { showLightLevel } from './notices.js';
 import { applyQuickEvent, applyQuickState, loadScreenshot, quickStateOf } from './panels.js';
 import { loadVsPermissions, renderVsControls } from './vs.js';
 import { paintRange } from './widgets.js';
@@ -50,6 +51,7 @@ export function connectWs() {
     }
     // The screensaver and the card both dim behind our back.
     else if (msg.type === 'brightness') showBrightness(msg.level);
+    else if (msg.type === 'lightlevel') showLightLevel(msg.lux);
     else if (msg.type === 'micLevel') renderMicLevel(msg.rms);
   };
 }

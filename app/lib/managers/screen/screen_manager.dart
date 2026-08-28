@@ -23,13 +23,17 @@ import 'adaptive_brightness.dart';
 /// black screensaver keeps its own brightness-zero overlay (it must keep the
 /// app alive for motion and wake word), independent of these commands.
 ///
-/// Brightness has two layers. The level every caller deals in (the sliders,
-/// the screensaver's dim and restore, Home Assistant's Screen light, the
-/// remote admin) is the ceiling: what the panel shows in a bright room.
-/// Adaptive brightness (issue #343) multiplies it by a factor the room's
-/// light sets before it reaches the panel, so a screensaver at 20% is 20%
-/// by day and a few percent at night with no setting moving. With adaptive
-/// brightness off the factor is 1 and the ceiling is the panel.
+/// Brightness has two layers. The ceiling is the level in a bright room:
+/// the Maximum brightness setting for the dashboard, the screensaver's own
+/// slider while it shows. Adaptive brightness (issue #343) multiplies it by
+/// a factor the room's light sets before it reaches the panel, so a
+/// screensaver at 20% is 20% by day and a few percent at night with no
+/// setting moving. The screensaver deals in ceilings (`ceiling: true` on
+/// the commands), since the number it saves must survive the room changing
+/// under it; everything else (Home Assistant's Screen light, the remote
+/// admin, the JS API) deals in the panel: reads see what the panel shows
+/// and a write lands as asked, then the curve scales it from there. With
+/// adaptive brightness off the factor is 1 and the two are the same.
 class ScreenManager extends Manager with WidgetsBindingObserver {
   ScreenManager(
     super.bus,
@@ -177,22 +181,19 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     // factor is known before the default brightness below is written, so
     // the first write of a session already lands dimmed.
     await _probeLightSensor();
-    if (_adaptiveOn) {
-      final lux = _lastLux;
-      if (lux != null) _factor = _curve.factor(lux);
-      log.info(
-        name,
-        'adaptive brightness on'
-        '${lux == null ? '' : ' (${_formatLux(lux)} lx, factor '
-                  '${_factor.toStringAsFixed(2)})'}',
-      );
-    }
     bus.on<LightLevelChanged>().listen((e) => _onLux(e.lux));
 
-    // The default brightness, applied at start when its gate is on. Also
-    // applied live as the slider moves (or the gate turns on) — brightness
-    // is the kind of setting whose feedback should be the panel itself.
-    if (_settings.get(defs.setBrightnessOnLaunch)) {
+    if (_adaptiveOn) {
+      // A session starts at Maximum brightness dimmed for the room as it
+      // is; Default brightness stands down while the switch is on.
+      final lux = _lastLux;
+      _factor = lux == null ? 1.0 : _curve.factor(lux);
+      _logAdaptiveOn(lux);
+      await setBrightness(_maxBrightness, ceiling: true);
+    } else if (_settings.get(defs.setBrightnessOnLaunch)) {
+      // The default brightness, applied at start when its gate is on. Also
+      // applied live as the slider moves (or the gate turns on): brightness
+      // is the kind of setting whose feedback should be the panel itself.
       await setBrightness(_settings.get(defs.defaultBrightness).toDouble());
     }
 
@@ -201,17 +202,28 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         await _applyWakelock();
       }
       if (e.key == defs.defaultBrightness.key &&
-          _settings.get(defs.setBrightnessOnLaunch)) {
+          _settings.get(defs.setBrightnessOnLaunch) &&
+          !_adaptiveOn) {
         await setBrightness((e.value as num).toDouble());
       }
-      if (e.key == defs.setBrightnessOnLaunch.key && e.value == true) {
+      if (e.key == defs.setBrightnessOnLaunch.key &&
+          e.value == true &&
+          !_adaptiveOn) {
         await setBrightness(_settings.get(defs.defaultBrightness).toDouble());
       }
-      if (e.key == defs.adaptiveBrightness.key ||
-          e.key == defs.adaptiveDimFloor.key ||
-          e.key == defs.adaptiveDarkLux.key ||
-          e.key == defs.adaptiveBrightLux.key) {
-        await _onAdaptiveSettingsChanged();
+      if (e.key == defs.adaptiveBrightness.key) {
+        await _onAdaptiveSwitch();
+      } else if (e.key == defs.adaptiveMaxBrightness.key && _adaptiveOn) {
+        // The floor is Minimum over Maximum, so the factor moves too.
+        final lux = _lastLux;
+        if (lux != null) _factor = _curve.factor(lux);
+        await setBrightness(_maxBrightness, ceiling: true);
+      } else if ((e.key == defs.adaptiveMinBrightness.key ||
+              e.key == defs.adaptiveDarkLux.key ||
+              e.key == defs.adaptiveBrightLux.key) &&
+          _adaptiveOn) {
+        final lux = _lastLux;
+        if (lux != null) await _moveFactor(_curve.factor(lux), force: true);
       }
     });
 
@@ -220,7 +232,14 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         Command(
           name: 'getBrightness',
           description: 'Current screen brightness (0..1)',
-          handler: (_) async => CommandResult.ok(await getBrightness()),
+          params: const {
+            'ceiling':
+                'true for the bright-room level adaptive brightness dims '
+                'from, instead of what the panel shows',
+          },
+          handler: (p) async => CommandResult.ok(
+            await getBrightness(ceiling: p['ceiling'] == true),
+          ),
         ),
       )
       ..register(
@@ -243,13 +262,18 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         Command(
           name: 'setBrightness',
           description: 'Set screen brightness',
-          params: const {'level': 'Brightness 0..1'},
+          params: const {
+            'level': 'Brightness 0..1',
+            'ceiling':
+                'true to set the bright-room level adaptive brightness dims '
+                'from (the screensaver does), instead of the panel itself',
+          },
           handler: (p) async {
             final level = (p['level'] as num?)?.toDouble();
             if (level == null || level < 0 || level > 1) {
               return const CommandResult.fail('level must be 0..1');
             }
-            await setBrightness(level);
+            await setBrightness(level, ceiling: p['ceiling'] == true);
             return const CommandResult.ok();
           },
         ),
@@ -381,9 +405,9 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
 
   // ── Adaptive brightness ────────────────────────────────────────────────
 
-  /// The level the last [setBrightness] asked for: the bright-room level
-  /// under adaptive brightness, the panel itself without it. Null until
-  /// something sets it or the panel is read for it.
+  /// The bright-room level: Maximum brightness for the dashboard, the
+  /// screensaver's slider while it shows, or a panel-level write undone by
+  /// the factor. Null until something sets it or the panel is read for it.
   double? _ceiling;
 
   /// What the ceiling is multiplied by on its way to the panel: 1 with
@@ -413,15 +437,37 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   bool get _adaptiveOn =>
       _lightSensor && _settings.get(defs.adaptiveBrightness);
 
-  AdaptiveCurve get _curve => AdaptiveCurve(
-    floor: _settings.get(defs.adaptiveDimFloor).toDouble(),
-    darkLux: _settings.get(defs.adaptiveDarkLux).toDouble(),
-    brightLux: _settings.get(defs.adaptiveBrightLux).toDouble(),
-  );
+  double get _maxBrightness =>
+      _settings.get(defs.adaptiveMaxBrightness).toDouble().clamp(0.0, 1.0);
+
+  /// The curve in factor terms: Minimum over Maximum is the floor, since
+  /// the same factor scales the screensaver's own level and it should
+  /// reach the same share of it in the dark.
+  AdaptiveCurve get _curve {
+    final max = _maxBrightness;
+    final min = _settings
+        .get(defs.adaptiveMinBrightness)
+        .toDouble()
+        .clamp(0.0, 1.0);
+    return AdaptiveCurve(
+      floor: max <= 0 ? 1.0 : (min / max).clamp(0.0, 1.0),
+      darkLux: _settings.get(defs.adaptiveDarkLux).toDouble(),
+      brightLux: _settings.get(defs.adaptiveBrightLux).toDouble(),
+    );
+  }
 
   static String _formatLux(double lux) => lux == lux.roundToDouble()
       ? lux.toInt().toString()
       : lux.toStringAsFixed(1);
+
+  void _logAdaptiveOn(double? lux) {
+    log.info(
+      name,
+      'adaptive brightness on'
+      '${lux == null ? '' : ' (${_formatLux(lux)} lx, factor '
+                '${_factor.toStringAsFixed(2)})'}',
+    );
+  }
 
   Future<void> _probeLightSensor() async {
     try {
@@ -450,32 +496,33 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     await _applyFactor(force: force);
   }
 
-  /// The switch or the curve moved: re-derive the factor from the last
-  /// reading and put the panel where it now belongs, at once. Off means
-  /// the ceiling shows as is again.
-  Future<void> _onAdaptiveSettingsChanged() async {
+  /// The switch flipped. On: Maximum brightness, dimmed for the room as it
+  /// is. Off: the factor goes, and the panel goes back to Default
+  /// brightness where that is set, else stays at the ceiling undimmed.
+  Future<void> _onAdaptiveSwitch() async {
     if (!_lightSensor) return;
-    final lux = _lastLux;
+    _adaptiveRetry?.cancel();
+    _adaptiveRetry = null;
     if (_adaptiveOn) {
-      final next = lux == null ? 1.0 : _curve.factor(lux);
-      log.info(
-        name,
-        'adaptive brightness on'
-        '${lux == null ? '' : ' (${_formatLux(lux)} lx, factor '
-                  '${next.toStringAsFixed(2)})'}',
-      );
-      await _moveFactor(next, force: true);
+      final lux = _lastLux;
+      _factor = lux == null ? 1.0 : _curve.factor(lux);
+      _logAdaptiveOn(lux);
+      await setBrightness(_maxBrightness, ceiling: true);
+      return;
+    }
+    if (_factor == 1.0) return;
+    _factor = 1.0;
+    log.info(name, 'adaptive brightness off');
+    if (_settings.get(defs.setBrightnessOnLaunch)) {
+      await setBrightness(_settings.get(defs.defaultBrightness).toDouble());
     } else {
-      if (_factor == 1.0) return;
-      log.info(name, 'adaptive brightness off');
-      await _moveFactor(1.0, force: true);
+      final ceiling = _ceiling;
+      if (ceiling != null) await setBrightness(ceiling, ceiling: true);
     }
   }
 
   /// The ceiling, read off the panel when nothing has set one yet: the
-  /// current panel level undone by the current factor, so a session that
-  /// starts at night under a panel the last session dimmed does not take
-  /// the dimmed level for the bright-room one.
+  /// current panel level undone by the current factor.
   Future<double?> _seedCeiling() async {
     final known = _ceiling;
     if (known != null) return known;
@@ -487,8 +534,8 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   }
 
   /// Write ceiling times factor, unless the panel is already within a
-  /// step of it. [force] writes regardless: the switch flipping or the
-  /// curve moving is a change the user is watching for.
+  /// step of it. [force] writes regardless: the curve moving is a change
+  /// the user is watching for.
   Future<void> _applyFactor({bool force = false}) async {
     _adaptiveRetry?.cancel();
     _adaptiveRetry = null;
@@ -518,13 +565,15 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
         'factor ${_factor.toStringAsFixed(2)}, panel '
         '${(target * 100).round()}% of ${(ceiling * 100).round()}%',
       );
+      // The mirrors show the panel, so they hear every step.
+      bus.publish(BrightnessChanged(level: ceiling, panel: target));
     }
   }
 
   /// The system value moved. This app's own write coming back through the
   /// observer is nothing new; anything else (quick settings, another app)
-  /// is the panel's new truth, and under adaptive brightness the new
-  /// ceiling is that value undone by the factor.
+  /// is the panel's new truth, and under adaptive brightness the ceiling
+  /// is that value undone by the factor.
   void _onPanelChanged(double level) {
     final written = _lastWritten;
     if (written != null && (level - written).abs() < _echoTolerance) {
@@ -532,24 +581,20 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       return;
     }
     _lastWritten = level;
-    if (_adaptiveOn) {
-      final ceiling = (_factor > 0 ? level / _factor : level).clamp(0.0, 1.0);
-      _ceiling = ceiling;
-      bus.publish(BrightnessChanged(level: ceiling));
-    } else {
-      _ceiling = level;
-      bus.publish(BrightnessChanged(level: level));
-    }
+    final ceiling = _adaptiveOn && _factor > 0
+        ? (level / _factor).clamp(0.0, 1.0)
+        : level;
+    _ceiling = ceiling;
+    bus.publish(BrightnessChanged(level: ceiling, panel: level));
   }
 
-  /// The brightness every caller deals in: under adaptive brightness the
-  /// ceiling (what the panel shows in a bright room), else the panel's
-  /// actual brightness, the window override while one is up (the no-grant
-  /// fallback) or the system setting — never the plugin's stale view,
-  /// which stops tracking reality the moment anything else (quick
-  /// settings) moves the panel.
-  Future<double?> getBrightness() async {
-    if (_adaptiveOn) return _seedCeiling();
+  /// What the panel shows: the window override while one is up (the
+  /// no-grant fallback), else the system setting, never the plugin's stale
+  /// view, which stops tracking reality the moment anything else (quick
+  /// settings) moves the panel. With [ceiling], the bright-room level
+  /// adaptive brightness dims from instead (the same number with it off).
+  Future<double?> getBrightness({bool ceiling = false}) async {
+    if (ceiling && _adaptiveOn) return _seedCeiling();
     return _readPanel();
   }
 
@@ -570,15 +615,24 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     }
   }
 
-  /// Set the ceiling. The panel gets it times the adaptive factor; every
-  /// mirror hears the ceiling, so Home Assistant's Screen light and the
-  /// remote admin's slider read 80% while the panel sits at 12% of a dark
-  /// room, and a write of 50% from either means 50% in a bright room.
-  Future<bool> setBrightness(double level) async {
+  /// Set the panel, or with [ceiling] the bright-room level the panel is
+  /// dimmed from. Under adaptive brightness a panel-level write lands as
+  /// asked and becomes the ceiling undone by the factor, so the room's
+  /// light scales it from there: Home Assistant asking for 30% at night
+  /// gets 30%, and the morning lifts it with everything else. With the
+  /// switch off both are the same write.
+  Future<bool> setBrightness(double level, {bool ceiling = false}) async {
     final clamped = level.clamp(0.0, 1.0);
-    _ceiling = clamped;
-    if (!await _write((clamped * _factor).clamp(0.0, 1.0))) return false;
-    bus.publish(BrightnessChanged(level: clamped));
+    final double panel;
+    if (ceiling || !_adaptiveOn) {
+      _ceiling = clamped;
+      panel = (clamped * _factor).clamp(0.0, 1.0);
+    } else {
+      panel = clamped;
+      _ceiling = (_factor > 0 ? clamped / _factor : clamped).clamp(0.0, 1.0);
+    }
+    if (!await _write(panel)) return false;
+    bus.publish(BrightnessChanged(level: _ceiling!, panel: panel));
     return true;
   }
 

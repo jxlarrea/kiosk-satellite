@@ -225,7 +225,7 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       bus.on<BrightnessChanged>().listen(
         (e) => _publish(
           '$_base/brightness/state',
-          (e.level.clamp(0.0, 1.0) * 255).round().toString(),
+          (e.panel.clamp(0.0, 1.0) * 255).round().toString(),
         ),
       ),
     );

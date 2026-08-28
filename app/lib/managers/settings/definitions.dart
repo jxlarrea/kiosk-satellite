@@ -142,6 +142,7 @@ const Map<String, String> subpageHints = {
   'Appearance': 'Overlay skin, theme, activity bar, text size',
   // Screen & Audio.
   'Microphone settings': 'Capture mode, channel, gain, live level',
+  'Adaptive brightness': 'Follow the room light with the ambient light sensor',
   // Screensaver. The six mode pages only exist while that mode is the
   // one selected, since every setting on them gates on it.
   'Clock screensaver': 'Style, size, colors, background photo',
@@ -1047,11 +1048,13 @@ const defaultBrightness = SettingDef<num>(
   dependsOn: 'screen.set_brightness_on_launch',
 );
 
-// Adaptive brightness (issue #343): the room's light scales every
-// brightness setting on the device itself, so the mapping keeps working
-// with Home Assistant unreachable. Each slider (default, screensaver, dim)
-// keeps its meaning as the level in a bright room; the curve below dims
-// them all by the same factor as the room darkens.
+// Adaptive brightness (issue #343): the room's light sets the screen
+// brightness on the device itself, so the mapping keeps working with Home
+// Assistant unreachable. Its own page: the switch, the live sensor reading,
+// the two brightness ends and the two light-level ends of the curve. The
+// screensaver and Dim sliders keep their meaning as the level in a bright
+// room and scale with the curve; Default brightness stands down while the
+// switch is on.
 const adaptiveBrightness = SettingDef<bool>(
   key: 'screen.adaptive_brightness',
   type: SettingType.boolean,
@@ -1061,19 +1064,19 @@ const adaptiveBrightness = SettingDef<bool>(
       'Dim the screen as the room gets darker, using the ambient light '
       'sensor.',
   category: 'Screen & Audio',
-  section: 'Screen',
+  subpage: 'Adaptive brightness',
+  section: 'Adaptive brightness',
 );
 
-const adaptiveDimFloor = SettingDef<num>(
-  key: 'screen.adaptive_dim_floor',
+const adaptiveMinBrightness = SettingDef<num>(
+  key: 'screen.adaptive_min_brightness',
   type: SettingType.number,
   defaultValue: 0.15,
-  title: 'Dark room level',
-  description:
-      'How far the screen dims in the dark, as a share of each brightness '
-      'setting.',
+  title: 'Minimum brightness',
+  description: 'Screen brightness in a dark room.',
   category: 'Screen & Audio',
-  section: 'Screen',
+  subpage: 'Adaptive brightness',
+  section: 'Adaptive brightness',
   min: 0,
   max: 1,
   step: 0.05,
@@ -1081,36 +1084,62 @@ const adaptiveDimFloor = SettingDef<num>(
   dependsOn: 'screen.adaptive_brightness',
 );
 
+const adaptiveMaxBrightness = SettingDef<num>(
+  key: 'screen.adaptive_max_brightness',
+  type: SettingType.number,
+  defaultValue: 0.8,
+  title: 'Maximum brightness',
+  description: 'Screen brightness in a bright room.',
+  category: 'Screen & Audio',
+  subpage: 'Adaptive brightness',
+  section: 'Adaptive brightness',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+  dependsOn: 'screen.adaptive_brightness',
+);
+
+// Typed, not slid: light sensors disagree wildly about what a lit room
+// reads (an Echo Show 8 reports about 50 lx with every light on, a tablet
+// by a window thousands), so the ends are set against the live reading
+// shown above them rather than against a fixed scale.
 const adaptiveDarkLux = SettingDef<num>(
   key: 'screen.adaptive_dark_lux',
   type: SettingType.number,
   defaultValue: 5,
-  title: 'Dark room',
-  description: 'Light level at or below which the screen is fully dimmed.',
+  title: 'Dark room (lx)',
+  description:
+      'Light level at or below which the screen sits at Minimum brightness.',
   category: 'Screen & Audio',
-  section: 'Screen',
-  min: 1,
-  max: 100,
-  step: 1,
-  unit: ' lx',
+  subpage: 'Adaptive brightness',
+  section: 'Adaptive brightness',
   dependsOn: 'screen.adaptive_brightness',
+  validator: validateLux,
 );
 
 const adaptiveBrightLux = SettingDef<num>(
   key: 'screen.adaptive_bright_lux',
   type: SettingType.number,
   defaultValue: 300,
-  title: 'Bright room',
+  title: 'Bright room (lx)',
   description:
-      'Light level at or above which the screen shows its full brightness.',
+      'Light level at or above which the screen sits at Maximum brightness.',
   category: 'Screen & Audio',
-  section: 'Screen',
-  min: 50,
-  max: 2000,
-  step: 50,
-  unit: ' lx',
+  subpage: 'Adaptive brightness',
+  section: 'Adaptive brightness',
   dependsOn: 'screen.adaptive_brightness',
+  validator: validateLux,
 );
+
+/// A light level the curve can take a log of: a positive number.
+String? validateLux(Object? value) {
+  final lux = value is num ? value : num.tryParse('${value ?? ''}'.trim());
+  if (lux == null || lux <= 0 || lux > 200000) {
+    return 'Enter a light level above 0 lx';
+  }
+  return null;
+}
 
 // ── Audio ──────────────────────────────────────────────────────────────
 // The mixer model (issue #79): the master volume is the device's own (a
@@ -4672,11 +4701,15 @@ const List<SettingDef<Object>> allSettings = [
   keepScreenOn,
   setBrightnessOnLaunch,
   defaultBrightness,
+  browserCutoutMode,
+  // After the whole Screen group: the remote places a page's entry row
+  // where its first definition sits, and the device puts the entry card
+  // under the Screen card.
   adaptiveBrightness,
-  adaptiveDimFloor,
+  adaptiveMinBrightness,
+  adaptiveMaxBrightness,
   adaptiveDarkLux,
   adaptiveBrightLux,
-  browserCutoutMode,
   mediaVolume,
   assistantVolume,
   audioMicDevice,

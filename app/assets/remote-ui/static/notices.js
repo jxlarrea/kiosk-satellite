@@ -336,25 +336,33 @@ export async function updateProximityRows() {
   row.insertAdjacentElement('afterend', sensor);
 }
 
-/* The adaptive brightness rows (issue #343), mirroring the device. The
-   switch renders off and disabled with the reason on a device without an
-   ambient light sensor. With the switch on, a hint under each brightness
-   slider (default, screensaver, dim) says the slider is the bright-room
-   level the room's light dims from, which is not what a slider called
-   "brightness" says on its own. Idempotent, so the save path re-runs it
-   when the switch flips. The sensor is asked about once per page load. */
+/* The adaptive brightness rows (issue #343), mirroring the device. On a
+   device without an ambient light sensor the switch renders off and
+   disabled with the reason. With one, a live reading sits under the
+   switch (the curve's two light levels are typed against it, and what a
+   sensor calls a lit room is anyone's guess until it is on screen; the
+   value updates off the WebSocket's lightlevel messages). With the switch
+   on, the Default brightness slider stands down with the reason, and a
+   hint under each screensaver brightness slider says the slider is the
+   bright-room level the room's light dims from. Idempotent, so the save
+   path re-runs it when the switch flips. The sensor is asked about once
+   per page load. */
 export async function updateAdaptiveBrightnessRows() {
   if (state.lightSensor === undefined) {
     try {
       const res = await (await api('/api/commands/getLightLevel',
         { method: 'POST', body: '{}' })).json();
-      state.lightSensor = res.data && typeof res.data === 'object'
-        ? res.data.present === true : null;
+      const data = res.data && typeof res.data === 'object' ? res.data : null;
+      state.lightSensor = data ? data.present === true : null;
+      if (data && typeof data.lux === 'number') state.lightLux = data.lux;
     } catch (_) { state.lightSensor = null; }
   }
   for (const stale of document.querySelectorAll('.adaptive-note')) stale.remove();
   const note = (text) => hintRow(text, { className: 'adaptive-note' });
   const row = document.querySelector('[data-key="screen.adaptive_brightness"]');
+  const defaultRow = document.querySelector('[data-key="screen.default_brightness"]');
+  const defaultSlider = defaultRow?.querySelector('input[type="range"]');
+  if (defaultSlider) defaultSlider.disabled = false;
   if (state.lightSensor === false) {
     if (!row) return;
     const input = row.querySelector('.switch input');
@@ -362,18 +370,42 @@ export async function updateAdaptiveBrightnessRows() {
     row.insertAdjacentElement('afterend', note(NO_LIGHT_SENSOR_NOTE));
     return;
   }
+  if (row && state.lightSensor) {
+    const reading = readOnlyRow('Ambient light', AMBIENT_LIGHT_NOTE,
+      formatLux(state.lightLux));
+    reading.classList.add('adaptive-note');
+    reading.lastElementChild.classList.add('ambient-light-value');
+    row.insertAdjacentElement('afterend', reading);
+  }
   const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
-  if (byKey['screen.adaptive_brightness']?.value !== true) return;
-  for (const key of ['screen.default_brightness', 'screensaver.brightness_level',
-    'screensaver.dim_level']) {
+  if (byKey['screen.adaptive_brightness']?.value !== true || !state.lightSensor) return;
+  if (defaultRow) {
+    if (defaultSlider) defaultSlider.disabled = true;
+    defaultRow.insertAdjacentElement('afterend', note(ADAPTIVE_OWNS_NOTE));
+  }
+  for (const key of ['screensaver.brightness_level', 'screensaver.dim_level']) {
     const slider = document.querySelector(`[data-key="${key}"]`);
     if (slider) slider.insertAdjacentElement('afterend', note(ADAPTIVE_NOTE));
   }
 }
 
+/* A fresh sensor reading from the WebSocket: the live row, if it is up. */
+export function showLightLevel(lux) {
+  state.lightLux = lux;
+  const el = document.querySelector('.ambient-light-value');
+  if (el) el.textContent = formatLux(lux);
+}
+
+function formatLux(lux) {
+  if (typeof lux !== 'number') return 'No reading yet';
+  return `${Number.isInteger(lux) ? lux : lux.toFixed(1)} lx`;
+}
+
 const ADAPTIVE_NOTE =
   'Level in a bright room. Adaptive brightness dims it from there.';
+const ADAPTIVE_OWNS_NOTE = 'Adaptive brightness is on.';
 const NO_LIGHT_SENSOR_NOTE = 'No ambient light sensor on this device.';
+const AMBIENT_LIGHT_NOTE = 'What the ambient light sensor reads right now.';
 
 const PROXIMITY_SENSOR_NOTE =
   'What the device reports as the proximity sensor. A sensor made for calls '

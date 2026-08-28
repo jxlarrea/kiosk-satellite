@@ -146,7 +146,16 @@ class RemoteManager extends Manager {
     // skips it and the dashboard's slider sat at whatever it was born with.
     bus.on<BrightnessChanged>().listen((e) {
       if (_wsClients.isEmpty) return;
-      _broadcast({'type': 'brightness', 'level': e.level});
+      _broadcast({'type': 'brightness', 'level': e.panel});
+    });
+
+    // The ambient light reading, for the live row on the Adaptive
+    // brightness page: the curve's ends are typed against it. No wireName
+    // (the page has no use for it), and damped at the sensor to a few a
+    // minute at most.
+    bus.on<LightLevelChanged>().listen((e) {
+      if (_wsClients.isEmpty) return;
+      _broadcast({'type': 'lightlevel', 'lux': e.lux});
     });
 
     // Mic level samples for the admin settings meter. No wireName (the page

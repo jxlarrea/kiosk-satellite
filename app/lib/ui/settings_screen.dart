@@ -1756,7 +1756,9 @@ class _CategoryContentState extends State<_CategoryContent> {
           SettingsCard(
             children: [
               for (final def in _defsFor('Screen & Audio'))
-                if (def.section == 'Screen' && container.settings.visible(def))
+                if (def.section == 'Screen' &&
+                    def.subpage == null &&
+                    container.settings.visible(def))
                   SettingTile(
                     container: container,
                     def: def,
@@ -1764,6 +1766,9 @@ class _CategoryContentState extends State<_CategoryContent> {
                   ),
             ],
           ),
+          // The room's light as a brightness source, a page of its own
+          // (issue #343): a switch, a live reading and four numbers.
+          _subpageEntryCard(container, 'Screen & Audio', 'Adaptive brightness'),
           _BrightnessGrantCard(container: container),
           _AmbientDisplayCard(container: container),
           // One card, mixer-style: the master fader (live device volume,
@@ -2210,9 +2215,23 @@ class _CategoryContentState extends State<_CategoryContent> {
           onChanged: null,
         ),
       ),
+    // Adaptive brightness owns the level while it is on: the slider says
+    // so instead of moving a panel that the curve moves right back.
+    // Mirrored on the remote (notices.js, updateAdaptiveBrightnessRows).
+    if (widget.category == 'Screen & Audio' && _adaptiveOn(container))
+      defaultBrightness.key: SearchLandingTarget(
+        id: defaultBrightness.key,
+        child: SettingsRow(
+          enabled: false,
+          title: Text(defaultBrightness.title),
+          subtitle: const Text(_adaptiveOwnsNote),
+          trailing: Text(
+            '${(container.settings.get(defaultBrightness) * 100).round()}%',
+          ),
+        ),
+      ),
     // No ambient light sensor: the switch says so instead of offering a
-    // curve with nothing to drive it. Mirrored on the remote (notices.js,
-    // updateAdaptiveBrightnessRows).
+    // curve with nothing to drive it. Mirrored on the remote too.
     if (widget.category == 'Screen & Audio' && !container.device.hasLightSensor)
       adaptiveBrightness.key: SearchLandingTarget(
         id: adaptiveBrightness.key,
@@ -2264,12 +2283,15 @@ class _CategoryContentState extends State<_CategoryContent> {
     if (widget.category == 'Browser' &&
         container.settings.get(autoReloadOnError))
       autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
-    // Under every brightness slider while adaptive brightness is on: the
-    // slider is the bright-room level the room's light dims from, which
-    // is not what a slider called "brightness" says on its own. Mirrored
-    // on the remote (notices.js, updateAdaptiveBrightnessRows).
-    if (widget.category == 'Screen & Audio' && _adaptiveOn(container))
-      defaultBrightness.key: const HintRow(_adaptiveNote),
+    // The sensor's reading, live, under the switch: the curve's two light
+    // levels are typed against it, and what a sensor calls a lit room is
+    // anyone's guess until it is on screen. Mirrored on the remote
+    // (notices.js, updateAdaptiveBrightnessRows).
+    if (widget.category == 'Screen & Audio' && container.device.hasLightSensor)
+      adaptiveBrightness.key: _AmbientLightRow(container: container),
+    // Under the screensaver's brightness sliders while adaptive brightness
+    // is on: the slider is the bright-room level the room's light dims
+    // from, which is not what a slider called "brightness" says on its own.
     if (widget.category == 'Screensaver' && _adaptiveOn(container))
       screensaverBrightnessLevel.key: const HintRow(_adaptiveNote),
     if (widget.category == 'Camera')
@@ -2534,6 +2556,14 @@ class _CategoryContentState extends State<_CategoryContent> {
         if (container.settings.get(remoteEnabled))
           _AdminAddressCard(container: container),
       ];
+    }
+
+    if (widget.category == 'Screen & Audio' &&
+        subpage == 'Adaptive brightness') {
+      return sectioned([
+        for (final def in _defsFor(widget.category))
+          if (def.subpage == subpage) def,
+      ]);
     }
 
     if (widget.category == 'Screen & Audio') {
@@ -3961,7 +3991,53 @@ const _proximitySensorNote =
 /// with the remote admin, which carries its own copy.
 const _adaptiveNote =
     'Level in a bright room. Adaptive brightness dims it from there.';
+const _adaptiveOwnsNote = 'Adaptive brightness is on.';
 const _noLightSensorNote = 'No ambient light sensor on this device.';
+const _ambientLightNote = 'What the ambient light sensor reads right now.';
+
+/// The ambient light sensor's reading, live off the sensor stream.
+class _AmbientLightRow extends StatefulWidget {
+  const _AmbientLightRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_AmbientLightRow> createState() => _AmbientLightRowState();
+}
+
+class _AmbientLightRowState extends State<_AmbientLightRow> {
+  StreamSubscription<LightLevelChanged>? _sub;
+  double? _lux;
+
+  @override
+  void initState() {
+    super.initState();
+    _lux = widget.container.device.lightLux;
+    _sub = widget.container.bus.on<LightLevelChanged>().listen((e) {
+      if (mounted) setState(() => _lux = e.lux);
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final lux = _lux;
+    return SettingsRow(
+      title: const Text('Ambient light'),
+      subtitle: const Text(_ambientLightNote),
+      trailing: Text(
+        lux == null
+            ? 'No reading yet'
+            : '${lux == lux.roundToDouble() ? lux.toInt() : lux.toStringAsFixed(1)} lx',
+      ),
+    );
+  }
+}
 
 /// Under the face sensitivity slider: the rest of the tuning is the
 /// motion camera's, shared with it.
