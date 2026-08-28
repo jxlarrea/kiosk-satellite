@@ -1087,7 +1087,8 @@ export function settingRow(s) {
           return;
         }
       }
-      s.value = next;
+      // save() records the value once the device has kept it; recording
+      // it here first made a refused value snap "back" to itself.
       save(next);
     });
     return row;
