@@ -98,7 +98,7 @@ flutter:
     - assets/svg/
     - assets/branding/mark_light.png
     - assets/branding/hacs.svg
-    - assets/branding/icon_rounded.svg
+    - assets/branding/mark.svg
     - assets/sounds/notification.ogg
     - assets/camera/camera_off.jpg
     - assets/mdi/

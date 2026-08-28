@@ -541,11 +541,10 @@ class _SetupScreenState extends State<SetupScreen> {
                 padding: const EdgeInsets.fromLTRB(28, 24, 20, 8),
                 child: Row(
                   children: [
-                    // The app-icon tile, as vectors, same as the drawer
-                    // header. It carries its own teal background, so one
-                    // asset serves both themes.
+                    // The mark, as vectors, same as the drawer header. Its
+                    // teal keyline is what keeps it readable on both themes.
                     SvgPicture.asset(
-                      'assets/branding/icon_rounded.svg',
+                      'assets/branding/mark.svg',
                       width: 40,
                       height: 40,
                     ),
@@ -601,7 +600,7 @@ class _SetupScreenState extends State<SetupScreen> {
           child: Column(
             children: [
               SvgPicture.asset(
-                'assets/branding/icon_rounded.svg',
+                'assets/branding/mark.svg',
                 width: 44,
                 height: 44,
               ),

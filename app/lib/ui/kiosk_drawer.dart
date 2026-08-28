@@ -92,10 +92,10 @@ class KioskDrawer extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
                 child: Row(
                   children: [
-                    // The app-icon tile, as vectors. It carries its own teal
-                    // background, so the same asset reads on both themes.
+                    // The mark, as vectors. Its teal keyline is what keeps
+                    // the white house readable on the light theme.
                     SvgPicture.asset(
-                      'assets/branding/icon_rounded.svg',
+                      'assets/branding/mark.svg',
                       width: 48,
                       height: 48,
                     ),
