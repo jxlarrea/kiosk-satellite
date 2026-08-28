@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The device's own settings now mirror what the remote admin already showed for adaptive brightness: Default brightness stands down with "Adaptive brightness is on." while the switch is on, the screensaver's Brightness level and Dim level sliders carry the bright-room hint, and both pages refresh when the switch is flipped on its own page or from the remote admin instead of waiting for their next tap. The Modify system settings grant is also listed as needed while adaptive brightness is on.
+
 ## v2026.8.95 - 2026-08-28
 
 ### Fixed

@@ -1200,6 +1200,16 @@ class _CategoryContentState extends State<_CategoryContent> {
         if (e.key == btproxyKey.key && mounted) setState(() {});
       });
     }
+    // Adaptive brightness (issue #343) is switched on its own page and on
+    // the remote admin, and the Default brightness row standing down and
+    // the screensaver's bright-room hints answer for it: this page must
+    // hear the flip, not wait for its next tap.
+    if (widget.category == 'Screen & Audio' ||
+        widget.category == 'Screensaver') {
+      _keyEcho = widget.container.bus.on<SettingChanged>().listen((e) {
+        if (e.key == adaptiveBrightness.key && mounted) setState(() {});
+      });
+    }
     // The launcher's permissions group follows Return automatically; a
     // flip from the remote admin must show or hide it here too.
     if (widget.category == 'Launcher') {
@@ -1752,19 +1762,19 @@ class _CategoryContentState extends State<_CategoryContent> {
         else if (widget.category == 'Gestures')
           GestureSettingsPanel(container: container)
         else if (widget.category == 'Screen & Audio') ...[
-          const SectionHeading('Screen'),
-          SettingsCard(
-            children: [
+          // Through the generic renderer, heading included, so the row
+          // replacements and extras reach this card like any other: the
+          // Default brightness row standing down under adaptive brightness
+          // lives in _rowReplacements, not here.
+          ..._sectionedCards(
+            container,
+            [
               for (final def in _defsFor('Screen & Audio'))
-                if (def.section == 'Screen' &&
-                    def.subpage == null &&
-                    container.settings.visible(def))
-                  SettingTile(
-                    container: container,
-                    def: def,
-                    onChanged: () => setState(() {}),
-                  ),
+                if (def.section == 'Screen' && def.subpage == null) def,
             ],
+            () => setState(() {}),
+            replace: _rowReplacements(container),
+            after: _rowExtras(container),
           ),
           // The room's light as a brightness source, a page of its own
           // (issue #343): a switch, a live reading and four numbers.
@@ -6594,7 +6604,8 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
           granted: perms?.writeSettings,
           needed:
               settings.get(setBrightnessOnLaunch) ||
-              settings.get(screensaverBrightnessEnabled),
+              settings.get(screensaverBrightnessEnabled) ||
+              settings.get(adaptiveBrightness),
           missingIcon: Icons.brightness_6_outlined,
           title: 'Modify system settings',
           held: "Brightness changes set the panel's real brightness.",
