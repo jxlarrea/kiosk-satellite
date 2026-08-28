@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.95 - 2026-08-28
 
 ### Fixed
 - The Ambient light sensor no longer sits on a stale reading after the lights change. The sensor stream forwarded at most one reading every two seconds and simply dropped the rest, and a light sensor is on-change and says nothing while the value holds, so lights going out (43, 29, 17, 8, 2 lx within a second) sent the 29 and lost the 2, and an Echo Show read 29 lx in a dark office until the sensor happened to twitch again. A reading held back by the rate limit is now sent when the window closes, unless a later one came back inside the deadband of what was sent. The same driver emits nothing at registration in a still room, so after a restart the app now starts from the previous session's last reading (shown as last known until the sensor speaks) instead of knowing nothing, which kept adaptive brightness from lighting the panel to Maximum in a dark room until the first flicker.
