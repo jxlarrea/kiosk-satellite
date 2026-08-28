@@ -100,6 +100,7 @@ flutter:
     - assets/branding/hacs.svg
     - assets/branding/icon_rounded.svg
     - assets/sounds/notification.ogg
+    - assets/camera/camera_off.jpg
     - assets/mdi/
   fonts:
     # Rubik (SIL Open Font License) — an open geometric sans that gives the

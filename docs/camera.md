@@ -57,7 +57,7 @@ reports that the camera is unavailable in the background.
 
 Home Assistant fetches the latest frame from the camera entity whenever it
 needs one, and a fetch captures a fresh frame; while the camera is
-disabled the entity stays but answers no frame.
+disabled the entity stays and answers a "Camera off" frame.
 
 ## Motion detection
 
@@ -170,7 +170,7 @@ to the Kiosk Satellite device:
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Camera | camera | The latest snapshot. Nothing streams, so its own state stays `idle`. It takes the device's single ESPHome camera slot, so the Screenshot camera steps aside while it exists. |
+| Camera | camera | The latest snapshot. Nothing streams, so its own state stays `idle` (an ESPHome camera cannot report off; read the **Camera enabled** switch for that). While the camera is off it shows a "Camera off" frame. It takes the device's single ESPHome camera slot, so the Screenshot camera steps aside while it exists. |
 | Take camera snapshot | button | Capture a fresh frame and hand it to Home Assistant. |
 | Last camera snapshot | sensor | When the current frame was captured, as a timestamp. This is what lets an automation react to a fresh frame arriving. |
 | Motion | binary_sensor | Reads motion for the configured **Clear after** window, then clears itself. Unknown while **Motion sensor** or the camera is off. |
@@ -180,8 +180,8 @@ to the Kiosk Satellite device:
 | Camera facing | select | The **Camera** pick, remotely: Front or Back, for every camera feature at once. Switching it captures a fresh frame from the newly picked camera a moment later, so an automation can flip a phone to its back camera as a baby monitor and back again. Like the switches it works with the camera off. Only on devices with both cameras. |
 
 Disabling the camera keeps every one of these entities in place: the
-camera answers no frame and Motion reads unknown until the camera is
-back on. The entity list only ever changes with the hardware, so an
+camera shows a "Camera off" frame and Motion reads unknown until the
+camera is back on. The entity list only ever changes with the hardware, so an
 automation that arms the camera when someone is home and disarms it
 when the house empties never makes the device re-register with Home
 Assistant. On camera-less hardware none of these entities exist and the

@@ -5,7 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
-- Turning the device camera on or off from Home Assistant no longer makes every ESPHome entity drop to unavailable for a moment. The Camera, Take camera snapshot, Last camera snapshot and Motion entities used to exist only while the camera was enabled, so an automation that disarms the camera when the screen goes off restarted the ESPHome server on every flip and took the whole device with it. They now follow the hardware instead: with the camera off the camera answers no frame and Motion reads unknown, and the Motion sensor setting behaves the same way (#339).
+- Turning the device camera on or off from Home Assistant no longer makes every ESPHome entity drop to unavailable for a moment. The Camera, Take camera snapshot, Last camera snapshot and Motion entities used to exist only while the camera was enabled, so an automation that disarms the camera when the screen goes off restarted the ESPHome server on every flip and took the whole device with it. They now follow the hardware instead: with the camera off the Camera entity shows a "Camera off" frame instead of a broken image, Motion reads unknown, and the Motion sensor setting behaves the same way (#339).
 
 ## v2026.8.92 - 2026-08-27
 

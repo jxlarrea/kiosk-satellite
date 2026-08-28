@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:flutter/services.dart' show rootBundle;
+
 import '../../core/command_registry.dart';
 import '../../core/event_bus.dart';
 import '../../core/events.dart';
@@ -45,6 +47,13 @@ class EspEntitySurface {
 
   /// Sends a camera frame to sessions with an outstanding request.
   Future<void> Function(Uint8List jpeg)? _pushImage;
+
+  /// The frame served while the device camera is off: a fetch that got
+  /// no answer left Home Assistant's card on a broken image after its
+  /// proxy timed out, and the camera's own state cannot say "off" (an
+  /// ESPHome camera reads idle while connected). Loaded once, on demand.
+  static const _cameraOffAsset = 'assets/camera/camera_off.jpg';
+  Uint8List? _cameraOffFrame;
 
   final List<StreamSubscription<Object?>> _subs = [];
   Timer? _poll;
@@ -1030,8 +1039,12 @@ class EspEntitySurface {
         _send('clock_background', '$value'.trim());
       case 'device_camera':
         // A frame request from Home Assistant; the capture event pushes
-        // the image.
-        await commands.execute('takeCameraSnapshot', const {});
+        // the image. Off, the "Camera off" frame answers instead.
+        if (_settings.get(defs.cameraEnabled)) {
+          await commands.execute('takeCameraSnapshot', const {});
+        } else {
+          await _sendCameraOff();
+        }
       case 'take_snapshot':
         await commands.execute('takeCameraSnapshot', const {});
       case 'screenshot':
@@ -1067,6 +1080,17 @@ class EspEntitySurface {
   Future<void> _sendMotionState() async {
     _motionOff?.cancel();
     await _send('motion', _motionActive ? false : null);
+  }
+
+  Future<void> _sendCameraOff() async {
+    try {
+      final frame = _cameraOffFrame ??= (await rootBundle.load(
+        _cameraOffAsset,
+      )).buffer.asUint8List();
+      await _sendImage(frame);
+    } catch (e) {
+      log.warn('esphome', 'camera off frame unavailable: $e');
+    }
   }
 
   void _onSettingChanged(SettingChanged e) {

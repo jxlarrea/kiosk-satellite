@@ -404,6 +404,29 @@ void main() {
     },
   );
 
+  test('the camera answers a "Camera off" frame while disabled', () async {
+    await settings.set(defs.cameraEnabled, false);
+    await surface.build();
+    await attach();
+    expect(images, isEmpty);
+
+    // A fetch from Home Assistant gets the frame, not a capture attempt.
+    await surface.handleCommand('device_camera', 'capture');
+    expect(images, hasLength(1));
+    final frame = images.single;
+    expect(frame.length, greaterThan(1000));
+    expect(frame.sublist(0, 2), [0xFF, 0xD8]); // a JPEG
+    expect(executed.any((e) => e.$1 == 'takeCameraSnapshot'), isFalse);
+    expect(pushed.any((p) => p.$1 == 'last_snapshot'), isFalse);
+
+    // On, a fetch captures again.
+    images.clear();
+    await settings.set(defs.cameraEnabled, true);
+    await surface.handleCommand('device_camera', 'capture');
+    expect(executed.any((e) => e.$1 == 'takeCameraSnapshot'), isTrue);
+    expect(images, isEmpty);
+  });
+
   test('the camera facing select needs both facings', () async {
     var ids = [for (final d in await surface.build()) '${d['objectId']}'];
     expect(ids, contains('camera_device'));
