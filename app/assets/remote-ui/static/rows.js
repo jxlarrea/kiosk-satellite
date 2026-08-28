@@ -10,7 +10,7 @@ import {
 } from './cameras.js';
 import { api, state } from './core.js';
 import { readOnlyRow } from './device.js';
-import { updateFaceRows } from './notices.js';
+import { updateAdaptiveBrightnessRows, updateFaceRows } from './notices.js';
 import { openLauncherAppsPicker, openMediaBrowser } from './pickers.js';
 import { loadSettings, refreshRealMacNote } from './settings.js';
 import {
@@ -142,6 +142,10 @@ export function settingRow(s) {
       || s.key === 'screensaver.dismiss_on_face') {
       updateFaceRows();
     }
+    // The hints under the brightness sliders come and go with the
+    // adaptive brightness switch (issue #343). After the gated sync, so
+    // the curve rows the switch reveals are in place first.
+    if (s.key === 'screen.adaptive_brightness') updateAdaptiveBrightnessRows();
     // The real-MAC status row and its field answer for the switch and the
     // typed address as they are now (issues #252, #300). After the gated
     // sync: the field is a hidden definition gated on the switch, which

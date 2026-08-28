@@ -113,6 +113,13 @@ class EspEntitySurface {
           'mdi:brightness-4',
           defs.screensaverBrightnessEnabled,
         ),
+        // Catalog-gated below on the light sensor, like the illuminance
+        // sensor it reads.
+        'adaptive_brightness': (
+          'Adaptive brightness',
+          'mdi:brightness-auto',
+          defs.adaptiveBrightness,
+        ),
         'screensaver': ('Screensaver', 'mdi:sleep', defs.screensaverEnabled),
         'hold_mode': ('Hold mode', 'mdi:pause-circle-outline', defs.haHoldMode),
         'camera_enabled': (
@@ -474,7 +481,8 @@ class EspEntitySurface {
                 (e.key != 'camera_enabled' &&
                     e.key != 'screensaver_motion' &&
                     e.key != 'screensaver_face')) &&
-            (proximityPresent || e.key != 'screensaver_proximity'))
+            (proximityPresent || e.key != 'screensaver_proximity') &&
+            (lightSensorPresent || e.key != 'adaptive_brightness'))
           {
             'type': 'switch',
             'objectId': e.key,

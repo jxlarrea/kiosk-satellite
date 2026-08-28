@@ -2210,6 +2210,19 @@ class _CategoryContentState extends State<_CategoryContent> {
           onChanged: null,
         ),
       ),
+    // No ambient light sensor: the switch says so instead of offering a
+    // curve with nothing to drive it. Mirrored on the remote (notices.js,
+    // updateAdaptiveBrightnessRows).
+    if (widget.category == 'Screen & Audio' && !container.device.hasLightSensor)
+      adaptiveBrightness.key: SearchLandingTarget(
+        id: adaptiveBrightness.key,
+        child: SwitchListTile(
+          title: Text(adaptiveBrightness.title),
+          subtitle: const Text(_noLightSensorNote),
+          value: false,
+          onChanged: null,
+        ),
+      ),
     if (widget.category == 'Camera' && container.deviceCamera.cameraKnownAbsent)
       cameraEnabled.key: SearchLandingTarget(
         id: cameraEnabled.key,
@@ -2241,12 +2254,24 @@ class _CategoryContentState extends State<_CategoryContent> {
       ),
   };
 
+  bool _adaptiveOn(AppContainer container) =>
+      container.device.hasLightSensor &&
+      container.settings.get(adaptiveBrightness);
+
   /// Extra widgets rendered directly under a setting: notices, validate
   /// rows, live telemetry. Keyed and forwarded the same way.
   Map<String, Widget> _rowExtras(AppContainer container) => {
     if (widget.category == 'Browser' &&
         container.settings.get(autoReloadOnError))
       autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
+    // Under every brightness slider while adaptive brightness is on: the
+    // slider is the bright-room level the room's light dims from, which
+    // is not what a slider called "brightness" says on its own. Mirrored
+    // on the remote (notices.js, updateAdaptiveBrightnessRows).
+    if (widget.category == 'Screen & Audio' && _adaptiveOn(container))
+      defaultBrightness.key: const HintRow(_adaptiveNote),
+    if (widget.category == 'Screensaver' && _adaptiveOn(container))
+      screensaverBrightnessLevel.key: const HintRow(_adaptiveNote),
     if (widget.category == 'Camera')
       cameraEnabled.key: Column(
         children: [
@@ -2294,8 +2319,15 @@ class _CategoryContentState extends State<_CategoryContent> {
     // help: there is no overlay, the page IS the display. Lives in
     // the Dim group, whose rows only render while Dim is selected.
     if (widget.category == 'Screensaver' &&
-        container.settings.get(screensaverMode) == 'dim')
-      screensaverDimLevel.key: const WarnRow(_dimModeNote),
+        (container.settings.get(screensaverMode) == 'dim' ||
+            _adaptiveOn(container)))
+      screensaverDimLevel.key: Column(
+        children: [
+          if (container.settings.get(screensaverMode) == 'dim')
+            const WarnRow(_dimModeNote),
+          if (_adaptiveOn(container)) const HintRow(_adaptiveNote),
+        ],
+      ),
     if (widget.category == 'Screensaver') ...{
       // Rendered only while their anchor rows are (mode: immich).
       // Keyed: the press writes its outcome into the row's own state, and
@@ -3923,6 +3955,13 @@ const _faceMotionNote =
 const _proximitySensorNote =
     'What the device reports as the proximity sensor. A sensor made for '
     'calls named "palm" or "touch" will not work.';
+
+/// Under each brightness slider while adaptive brightness is on, and the
+/// disabled switch's reason on a device without the sensor. Shared wording
+/// with the remote admin, which carries its own copy.
+const _adaptiveNote =
+    'Level in a bright room. Adaptive brightness dims it from there.';
+const _noLightSensorNote = 'No ambient light sensor on this device.';
 
 /// Under the face sensitivity slider: the rest of the tuning is the
 /// motion camera's, shared with it.

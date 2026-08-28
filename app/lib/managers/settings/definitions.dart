@@ -1047,6 +1047,71 @@ const defaultBrightness = SettingDef<num>(
   dependsOn: 'screen.set_brightness_on_launch',
 );
 
+// Adaptive brightness (issue #343): the room's light scales every
+// brightness setting on the device itself, so the mapping keeps working
+// with Home Assistant unreachable. Each slider (default, screensaver, dim)
+// keeps its meaning as the level in a bright room; the curve below dims
+// them all by the same factor as the room darkens.
+const adaptiveBrightness = SettingDef<bool>(
+  key: 'screen.adaptive_brightness',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Adaptive brightness',
+  description:
+      'Dim the screen as the room gets darker, using the ambient light '
+      'sensor.',
+  category: 'Screen & Audio',
+  section: 'Screen',
+);
+
+const adaptiveDimFloor = SettingDef<num>(
+  key: 'screen.adaptive_dim_floor',
+  type: SettingType.number,
+  defaultValue: 0.15,
+  title: 'Dark room level',
+  description:
+      'How far the screen dims in the dark, as a share of each brightness '
+      'setting.',
+  category: 'Screen & Audio',
+  section: 'Screen',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+  dependsOn: 'screen.adaptive_brightness',
+);
+
+const adaptiveDarkLux = SettingDef<num>(
+  key: 'screen.adaptive_dark_lux',
+  type: SettingType.number,
+  defaultValue: 5,
+  title: 'Dark room',
+  description: 'Light level at or below which the screen is fully dimmed.',
+  category: 'Screen & Audio',
+  section: 'Screen',
+  min: 1,
+  max: 100,
+  step: 1,
+  unit: ' lx',
+  dependsOn: 'screen.adaptive_brightness',
+);
+
+const adaptiveBrightLux = SettingDef<num>(
+  key: 'screen.adaptive_bright_lux',
+  type: SettingType.number,
+  defaultValue: 300,
+  title: 'Bright room',
+  description:
+      'Light level at or above which the screen shows its full brightness.',
+  category: 'Screen & Audio',
+  section: 'Screen',
+  min: 50,
+  max: 2000,
+  step: 50,
+  unit: ' lx',
+  dependsOn: 'screen.adaptive_brightness',
+);
+
 // ── Audio ──────────────────────────────────────────────────────────────
 // The mixer model (issue #79): the master volume is the device's own (a
 // live hardware level, not a setting - the Audio page hand-builds its
@@ -4607,6 +4672,10 @@ const List<SettingDef<Object>> allSettings = [
   keepScreenOn,
   setBrightnessOnLaunch,
   defaultBrightness,
+  adaptiveBrightness,
+  adaptiveDimFloor,
+  adaptiveDarkLux,
+  adaptiveBrightLux,
   browserCutoutMode,
   mediaVolume,
   assistantVolume,

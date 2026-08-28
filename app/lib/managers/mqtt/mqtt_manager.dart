@@ -580,6 +580,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
       (on) =>
           _settings.set(defs.screensaverBrightnessEnabled, on, source: 'mqtt'),
     ),
+    // Adaptive brightness (issue #343); discovered only with the light
+    // sensor it reads, like the illuminance sensor.
+    'adaptive_brightness': (
+      () => _settings.get(defs.adaptiveBrightness),
+      (on) => _settings.set(defs.adaptiveBrightness, on, source: 'mqtt'),
+    ),
     // The master enable/disable, same as the Screensaver toggle in
     // the settings UI (issue #152). Kept under the object id the
     // start/stop switch used to hold, so existing automations that
@@ -2513,6 +2519,13 @@ class MqttManager extends Manager with WidgetsBindingObserver {
               'Screensaver proximity detection',
               'mdi:radar',
             ),
+      if (_lightSensorPresent)
+        '$_prefix/switch/ks_$_deviceId/adaptive_brightness/config':
+            settingSwitch(
+              'adaptive_brightness',
+              'Adaptive brightness',
+              'mdi:brightness-auto',
+            ),
       for (final entry in _settingSelects.entries)
         if (entry.key != 'camera_device' || _cameraFacingWanted)
           '$_prefix/select/ks_$_deviceId/${entry.key}/config': settingSelect(
@@ -2563,6 +2576,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         '$_prefix/switch/ks_$_deviceId/screensaver_proximity/config',
         '',
       );
+    }
+    // And the adaptive brightness switch without a light sensor.
+    if (!_lightSensorPresent) {
+      _publish('$_prefix/switch/ks_$_deviceId/adaptive_brightness/config', '');
     }
     // Same self-correction for the facing select on single-camera hardware:
     // a config from an optimistic pass (or a restored backup) is retracted

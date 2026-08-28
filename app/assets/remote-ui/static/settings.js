@@ -11,6 +11,7 @@ import { readOnlyRow } from './device.js';
 import { renderServicePage } from './service.js';
 import { CATEGORY_TABS } from './gestures.js';
 import {
+  updateAdaptiveBrightnessRows,
   updateCameraFacingsRow,
   updateCameraGrantNotice,
   updateCameraSnapshotPanel,
@@ -1023,6 +1024,7 @@ export async function loadSettings() {
   updateFaceRows();
   updateProximityRows();
   updateDimModeNotice();
+  updateAdaptiveBrightnessRows();
   updateScreenOffAdminNotice();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();

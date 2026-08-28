@@ -288,6 +288,11 @@ immediately, so it can be tuned by eye. The pre-screensaver brightness
 is saved persistently, so even an app restart mid-screensaver cannot
 make the night level the new normal.
 
+With [Adaptive brightness](screen.md#adaptive-brightness) on, this level
+(and the Dim mode's, and a schedule entry's) is the brightness in a bright
+room: the room's light dims the screensaver from there, so a clock at 20%
+by day sits at a few percent at night with the slider untouched.
+
 **Brighten for notifications** (on, shown under the switch above) lifts
 all of that while a
 [notification](esphome.md#notifications) is on screen. A kiosk running

@@ -336,6 +336,45 @@ export async function updateProximityRows() {
   row.insertAdjacentElement('afterend', sensor);
 }
 
+/* The adaptive brightness rows (issue #343), mirroring the device. The
+   switch renders off and disabled with the reason on a device without an
+   ambient light sensor. With the switch on, a hint under each brightness
+   slider (default, screensaver, dim) says the slider is the bright-room
+   level the room's light dims from, which is not what a slider called
+   "brightness" says on its own. Idempotent, so the save path re-runs it
+   when the switch flips. The sensor is asked about once per page load. */
+export async function updateAdaptiveBrightnessRows() {
+  if (state.lightSensor === undefined) {
+    try {
+      const res = await (await api('/api/commands/getLightLevel',
+        { method: 'POST', body: '{}' })).json();
+      state.lightSensor = res.data && typeof res.data === 'object'
+        ? res.data.present === true : null;
+    } catch (_) { state.lightSensor = null; }
+  }
+  for (const stale of document.querySelectorAll('.adaptive-note')) stale.remove();
+  const note = (text) => hintRow(text, { className: 'adaptive-note' });
+  const row = document.querySelector('[data-key="screen.adaptive_brightness"]');
+  if (state.lightSensor === false) {
+    if (!row) return;
+    const input = row.querySelector('.switch input');
+    if (input) { input.checked = false; input.disabled = true; }
+    row.insertAdjacentElement('afterend', note(NO_LIGHT_SENSOR_NOTE));
+    return;
+  }
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  if (byKey['screen.adaptive_brightness']?.value !== true) return;
+  for (const key of ['screen.default_brightness', 'screensaver.brightness_level',
+    'screensaver.dim_level']) {
+    const slider = document.querySelector(`[data-key="${key}"]`);
+    if (slider) slider.insertAdjacentElement('afterend', note(ADAPTIVE_NOTE));
+  }
+}
+
+const ADAPTIVE_NOTE =
+  'Level in a bright room. Adaptive brightness dims it from there.';
+const NO_LIGHT_SENSOR_NOTE = 'No ambient light sensor on this device.';
+
 const PROXIMITY_SENSOR_NOTE =
   'What the device reports as the proximity sensor. A sensor made for calls '
   + 'named "palm" or "touch" will not work.';

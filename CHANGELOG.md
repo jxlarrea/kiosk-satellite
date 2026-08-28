@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- Adaptive brightness (#343): the kiosk dims its screen from its own ambient light sensor, on the device, so the mapping keeps working with Home Assistant or the network away. It is one dimming factor over every brightness setting rather than a brightness of its own: the default brightness, the screensaver brightness, the Dim level and a schedule entry's brightness each keep their meaning as the level in a bright room, and the room's light dims them all from there, down to the new Dark room level share. The factor follows the log of the light level between the Dark room and Bright room points, so an evening living room sits halfway rather than at the floor. Home Assistant's Screen light, the remote admin's slider and the screensaver's saved restore point all deal in the bright-room level, so a scene setting 50% means 50% in a bright room. The switch is offered only on devices with a light sensor, and where it exists it is also an Adaptive brightness switch entity on the ESPHome and MQTT devices. The light sensor stream now passes changes down to 1 lx (from 5 lx) so the dark end of the curve has something to work with.
+
 ## v2026.8.93 - 2026-08-28
 
 ### Added

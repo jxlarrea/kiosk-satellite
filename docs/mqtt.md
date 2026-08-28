@@ -62,6 +62,7 @@ tablet's remote admin (while remote administration is enabled).
 | Keep screen on | switch | The keep-awake setting. |
 | Remote management | switch | The embedded admin web server. Turning it off from Home Assistant closes the remote admin. |
 | Screensaver brightness, Screensaver brightness level | switch, number | The separate screensaver brightness: the switch enables it, the slider sets the level. Changes apply live while the screensaver is showing. |
+| Adaptive brightness | switch | The [Adaptive brightness](screen.md#adaptive-brightness) setting: the device dims every brightness setting from its own ambient light sensor. With it on, the Screen light's brightness is the bright-room level the room's light dims from, so setting it to 50% means 50% in a bright room. Turn it off ahead of a scene that wants the panel exactly where it puts it. Only exists on devices with a light sensor. |
 | Camera enabled | switch | The camera master toggle, the same Enable camera switch the Camera settings page has. Camera use costs roughly 10% CPU, so an automation with a room-wide motion sensor can keep it off until someone is around and only then arm the camera features. Turning it off also retracts the camera entities below and the motion sensor. Only exists on devices with a usable camera. |
 | Screensaver motion detection | switch | The screensaver's Dismiss on motion toggle: with it on, the camera watches during the screensaver and wakes the screen when someone approaches. Pairs with the Camera enabled switch for staged wake-ups: an external sensor turns the camera on and the approach detection takes over from there. Only exists on devices with a usable camera. |
 | Screensaver face detection | switch | The screensaver's Dismiss on face toggle: with it on, the camera watches during the screensaver and wakes the screen only when someone looks at the kiosk. Dismiss on motion keeps precedence on the device, so an automation that wants faces by day and motion by night flips the motion switch, not this one. Only exists on devices with a usable camera. |
@@ -116,7 +117,7 @@ kiosksatellite_<id>`. For automations outside Home Assistant:
 | `.../screen/state`, `.../screen/set` | out / in | `ON` / `OFF` |
 | `.../brightness/state`, `.../brightness/set` | out / in | `0`..`255` |
 | `.../screensaver_active/state`, `.../screensaver_active/set` | out / in | `ON` / `OFF` |
-| `.../screensaver/…`, `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…`, `.../screensaver_brightness/…`, `.../hold_mode/…`, `.../camera_enabled/…`, `.../screensaver_motion/…`, `.../screensaver_face/…`, `.../screensaver_proximity/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
+| `.../screensaver/…`, `.../kiosk/…`, `.../ha_kiosk/…`, `.../keep_screen_on/…`, `.../remote/…`, `.../screensaver_brightness/…`, `.../adaptive_brightness/…`, `.../hold_mode/…`, `.../camera_enabled/…`, `.../screensaver_motion/…`, `.../screensaver_face/…`, `.../screensaver_proximity/…` | out / in | `ON` / `OFF` (`state` and `set` each) |
 | `.../screensaver_brightness_level/state`, `.../screensaver_brightness_level/set` | out / in | `0`..`100` |
 | `.../assistant_volume/state`, `.../assistant_volume/set` | out / in | `0`..`100` |
 | `.../media_volume/state`, `.../media_volume/set` | out / in | `0`..`100` |

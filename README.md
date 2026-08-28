@@ -116,8 +116,8 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   buttons, with several kiosks forming a Bluetooth mesh on their own.
 
 &bull; **Kiosk conveniences**: pull-to-refresh, start on boot, keep screen
-  awake, default brightness, scheduled light/dark theme, custom
-  JavaScript injection, and self-signed certificate support.
+  awake, default and adaptive brightness, scheduled light/dark theme,
+  custom JavaScript injection, and self-signed certificate support.
 
 &bull; **Open other apps from the dashboard**: point any card's tap action at
   `app://<package>` and the tablet opens that app, with the kiosk still
@@ -211,6 +211,7 @@ from the default HACS repository.
 - [ESPHome](docs/esphome.md): native Home Assistant entities and a Bluetooth proxy over the ESPHome API.
 - [MQTT](docs/mqtt.md): the MQTT integration, on its way out in favor of ESPHome and kept for existing setups until it is removed
 - [Camera streams](docs/cameras.md): Go2RTC import, camera views, and Home Assistant controls
+- [Screen](docs/screen.md): keep-awake, default brightness, and adaptive brightness from the device's own light sensor.
 - [Screensavers](docs/screensavers.md): the modes, schedule, brightness, motion wake, and what starts and dismisses them.
 - [Device camera](docs/camera.md): the tablet's own camera as a Home Assistant still camera and motion detector.
 - [Sendspin](docs/sendspin.md): the built-in synchronized Music Assistant audio player
