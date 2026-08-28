@@ -105,8 +105,11 @@ both record; binding or unbinding one re-lists the entities the next time
 the server starts.
 
 The ESPHome camera protocol allows exactly one camera per device, so the
-kiosk serves its device camera when present and enabled, else the
-screenshot camera.
+kiosk serves its device camera when the hardware has one, else the
+screenshot camera. The camera entities follow the hardware, not the
+Camera enabled switch: with the camera off they stay listed, the camera
+answers no frame and the Motion sensor reads unknown, so an automation
+can flip the switch through the day without the device re-registering.
 The Camera view and Dashboard view option lists are learned when the
 server starts; after adding views, toggle ESPHome off and on (or
 restart the app) to refresh them. A note on Connectivity: with ESPHome

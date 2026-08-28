@@ -56,8 +56,8 @@ the foreground; a capture attempted while another app covers the kiosk
 reports that the camera is unavailable in the background.
 
 Home Assistant fetches the latest frame from the camera entity whenever it
-needs one, and a fetch captures a fresh frame; the entity goes away while
-the camera is disabled.
+needs one, and a fetch captures a fresh frame; while the camera is
+disabled the entity stays but answers no frame.
 
 ## Motion detection
 
@@ -173,17 +173,19 @@ to the Kiosk Satellite device:
 | Camera | camera | The latest snapshot. Nothing streams, so its own state stays `idle`. It takes the device's single ESPHome camera slot, so the Screenshot camera steps aside while it exists. |
 | Take camera snapshot | button | Capture a fresh frame and hand it to Home Assistant. |
 | Last camera snapshot | sensor | When the current frame was captured, as a timestamp. This is what lets an automation react to a fresh frame arriving. |
-| Motion | binary_sensor | Only with **Motion sensor** on. Reads motion for the configured **Clear after** window, then clears itself. |
+| Motion | binary_sensor | Reads motion for the configured **Clear after** window, then clears itself. Unknown while **Motion sensor** or the camera is off. |
 | Camera enabled | switch | The master toggle, remotely. Exists whenever the hardware does, even with the camera off, so an automation can arm the camera only when a room-wide sensor says someone is home. |
 | Screensaver motion detection | switch | The Dismiss on motion toggle, remotely. Pairs with Camera enabled for staged wake-ups. |
 | Screensaver face detection | switch | The Dismiss on face toggle, remotely. Motion keeps precedence on the device, so an automation that wants faces by day and motion by night flips the motion switch. |
 | Camera facing | select | The **Camera** pick, remotely: Front or Back, for every camera feature at once. Switching it captures a fresh frame from the newly picked camera a moment later, so an automation can flip a phone to its back camera as a baby monitor and back again. Like the switches it works with the camera off. Only on devices with both cameras. |
 
-Disabling the camera retracts the camera and motion entities, and the
-Screenshot camera takes the camera slot back; the switches and the facing
-select remain, since
-they are how you turn it back on and point it the right way first. On
-camera-less hardware none of these entities exist.
+Disabling the camera keeps every one of these entities in place: the
+camera answers no frame and Motion reads unknown until the camera is
+back on. The entity list only ever changes with the hardware, so an
+automation that arms the camera when someone is home and disarms it
+when the house empties never makes the device re-register with Home
+Assistant. On camera-less hardware none of these entities exist and the
+Screenshot camera takes the camera slot instead.
 
 ## Sharing the camera
 

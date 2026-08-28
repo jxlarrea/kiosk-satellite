@@ -216,8 +216,13 @@ class EspEntitySurface {
         bt.ok &&
         bt.data is Map &&
         (bt.data as Map)['connected'] != null;
-    final cameraWanted = cameraPresent && _settings.get(defs.cameraEnabled);
-    _deviceCameraIsTheCamera = cameraWanted;
+    // The camera entities follow the hardware, not the Camera enabled
+    // switch: an automation that arms the camera only while someone is
+    // home flips that switch all day, and a catalog that changed with it
+    // would restart the server (and drop every entity) on each flip
+    // (issue #339). Off, the camera answers no frame and the motion
+    // sensor reads unknown.
+    _deviceCameraIsTheCamera = cameraPresent;
     // The Voice Satellite controls exist where a satellite is bound: the
     // setup wizard and the settings page both record the binding here, and
     // a kiosk with none has no engine to start (issue #288). Reading the
@@ -375,12 +380,12 @@ class EspEntitySurface {
         'deviceClass': 'firmware',
       },
       // The one camera slot the protocol allows: the device camera when
-      // it exists and is enabled, else the screenshot camera.
-      if (cameraWanted)
+      // it exists, else the screenshot camera.
+      if (cameraPresent)
         {'type': 'camera', 'objectId': 'device_camera', 'name': 'Camera'}
       else
         {'type': 'camera', 'objectId': 'screenshot', 'name': 'Screenshot'},
-      if (cameraWanted) ...[
+      if (cameraPresent) ...[
         button('take_snapshot', 'Take camera snapshot', 'mdi:camera-iris'),
         {
           'type': 'text_sensor',
@@ -407,7 +412,10 @@ class EspEntitySurface {
           'unit': 'lx',
           'stateClass': 1,
         },
-      if (_settings.get(defs.motionSensor) && cameraWanted)
+      // Listed with the camera and unknown while the Motion sensor
+      // setting or the camera is off, so neither switch re-lists the
+      // catalog.
+      if (cameraPresent)
         {
           'type': 'binary_sensor',
           'objectId': 'motion',
@@ -827,7 +835,7 @@ class EspEntitySurface {
     );
     _subs.add(
       bus.on<MotionDetected>().listen((_) {
-        if (!_settings.get(defs.motionSensor)) return;
+        if (!_motionActive) return;
         _send('motion', true);
         _motionOff?.cancel();
         final delay = _settings.get(defs.motionSensorOffDelay).toInt();
@@ -1049,7 +1057,22 @@ class EspEntitySurface {
     }
   }
 
+  /// The Motion sensor reads a value only while both the camera and the
+  /// setting are on; otherwise it is listed but unknown.
+  bool get _motionActive =>
+      _settings.get(defs.cameraEnabled) && _settings.get(defs.motionSensor);
+
+  /// The sensor's resting value: clear while it can read, unknown when
+  /// it cannot. Any pulse in flight ends here.
+  Future<void> _sendMotionState() async {
+    _motionOff?.cancel();
+    await _send('motion', _motionActive ? false : null);
+  }
+
   void _onSettingChanged(SettingChanged e) {
+    if (e.key == defs.cameraEnabled.key || e.key == defs.motionSensor.key) {
+      _sendMotionState();
+    }
     for (final entry in _settingSwitches.entries) {
       if (entry.value.$3.key == e.key) {
         _send(entry.key, e.value == true);
@@ -1167,7 +1190,7 @@ class EspEntitySurface {
       final match = matchDashboardView(url, _dashboardViews);
       if (match != null) await _send('dashboard_view', match);
     }
-    await _send('motion', false);
+    await _sendMotionState();
   }
 
   /// The kiosk's own Bluetooth links, and the proxy's connection budget

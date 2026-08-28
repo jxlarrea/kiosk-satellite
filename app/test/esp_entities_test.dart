@@ -361,6 +361,49 @@ void main() {
     expect(ids, isNot(contains('motion'))); // rides the camera
   });
 
+  test(
+    'switching the camera off keeps its entities and blanks motion',
+    () async {
+      // The catalog follows the hardware: an automation that arms the
+      // camera through the day must not re-list the device on every flip
+      // (issue #339).
+      await settings.set(defs.cameraEnabled, false);
+      final ids = [for (final d in await surface.build()) '${d['objectId']}'];
+      expect(ids, contains('device_camera'));
+      expect(ids, contains('take_snapshot'));
+      expect(ids, contains('last_snapshot'));
+      expect(ids, contains('motion'));
+      expect(ids, isNot(contains('screenshot')));
+
+      // Off, the motion sensor is listed but reads unknown, and nothing a
+      // stale detector says gets through.
+      await attach();
+      expect(pushed, contains(('motion', null)));
+      expect(pushed, isNot(contains(('motion', false))));
+      pushed.clear();
+      bus.publish(const MotionDetected());
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(pushed.any((p) => p.$1 == 'motion'), isFalse);
+
+      // Back on, it clears and reads again.
+      await settings.set(defs.cameraEnabled, true);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(pushed, contains(('motion', false)));
+      pushed.clear();
+      bus.publish(const MotionDetected());
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(pushed, contains(('motion', true)));
+
+      // The Motion sensor setting alone does the same, without a re-list.
+      pushed.clear();
+      await settings.set(defs.motionSensor, false);
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(pushed, contains(('motion', null)));
+      final again = [for (final d in await surface.build()) '${d['objectId']}'];
+      expect(again, contains('motion'));
+    },
+  );
+
   test('the camera facing select needs both facings', () async {
     var ids = [for (final d in await surface.build()) '${d['objectId']}'];
     expect(ids, contains('camera_device'));

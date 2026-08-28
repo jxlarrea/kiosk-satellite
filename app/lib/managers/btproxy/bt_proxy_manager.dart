@@ -128,11 +128,13 @@ class BtProxyManager extends Manager {
     });
     // Settings that shape the entity CATALOG (not just a value): flipping
     // one changes which entities exist, and only a server restart re-lists
-    // them to Home Assistant.
+    // them to Home Assistant. Setup-time choices only: a switch an
+    // automation flips through the day (Camera enabled, the Motion
+    // sensor) must never be here, since the restart drops every entity
+    // for a couple of seconds (issue #339). The camera entities follow
+    // the hardware instead and read unknown while off.
     const catalogKeys = {
-      'camera.enabled',
       'launcher.enabled',
-      'motion.sensor',
       // The Show Music Assistant button exists only while a server address
       // is configured.
       'sendspin.ma_url',
