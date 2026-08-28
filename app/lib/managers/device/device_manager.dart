@@ -52,8 +52,20 @@ class DeviceManager extends Manager {
   bool hasLightSensor = false;
 
   /// Latest ambient light reading in lux, or null before the first event.
+  /// Until then, the last reading of the previous session where one was
+  /// persisted, with [lightLive] false: some drivers (the Echo Show's)
+  /// emit nothing at registration, so a restart in a still, dark room
+  /// would otherwise know nothing about the room until the light
+  /// physically changes, and adaptive brightness would start at Maximum.
   double? lightLux;
+
+  /// Whether [lightLux] came from the sensor this session.
+  bool lightLive = false;
   StreamSubscription<dynamic>? _lightSub;
+
+  /// Where the last reading is kept across restarts. The ESPHome entity
+  /// reads the same key for its own last-known fallback.
+  static const _lastLuxKey = 'esphome_last_lux';
 
   /// Whether the device has a default network right now.
   ///
@@ -233,8 +245,11 @@ class DeviceManager extends Manager {
         description:
             'The ambient light sensor: whether the device has one, and the '
             'latest reading in lux',
-        handler: (_) async =>
-            CommandResult.ok({'present': hasLightSensor, 'lux': lightLux}),
+        handler: (_) async => CommandResult.ok({
+          'present': hasLightSensor,
+          'lux': lightLux,
+          'live': lightLive,
+        }),
       ),
     );
 
@@ -564,19 +579,29 @@ class DeviceManager extends Manager {
         log.info(name, 'no ambient light sensor');
         return;
       }
+      final remembered = num.tryParse(_settings.internal(_lastLuxKey));
+      if (remembered != null) lightLux = remembered.toDouble();
       const stream = EventChannel('kiosk_satellite/light_sensor_stream');
       _lightSub = stream.receiveBroadcastStream().listen(
         (v) {
           final lux = (v as num?)?.toDouble();
           if (lux == null) return;
           lightLux = lux;
+          lightLive = true;
+          // Persisted so the next session starts from it (see lightLux).
+          unawaited(_settings.setInternal(_lastLuxKey, '${lux.round()}'));
           bus.publish(LightLevelChanged(lux: lux));
         },
         onError: (Object e) {
           log.warn(name, 'light sensor stream failed: $e');
         },
       );
-      log.info(name, 'ambient light sensor streaming');
+      log.info(
+        name,
+        'ambient light sensor streaming'
+        '${remembered == null ? '' : ' (last known ${remembered.round()} lx '
+                  'until the first reading)'}',
+      );
     } catch (e) {
       // A host without the channel (tests, older platform code): no sensor.
       log.warn(name, 'light sensor unavailable: $e');

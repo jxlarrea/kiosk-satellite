@@ -846,14 +846,13 @@ class EspEntitySurface {
       bus.on<PowerChanged>().listen((e) => _send('charging', e.charging)),
     );
     _subs.add(
+      // The device manager persists each reading (esphome_last_lux) and
+      // seeds getLightLevel from it after a restart, so a driver that
+      // emits nothing at registration (the Echo Show's) leaves the entity
+      // on the last known value rather than unknown; the MQTT twin gets
+      // the same from broker retention.
       bus.on<LightLevelChanged>().listen((e) {
         _send('illuminance', e.lux.round());
-        // The MQTT twin never shows "unknown" because the broker retains
-        // its last value across restarts; with no broker, this store plays
-        // that role. Some drivers (the Echo Show's) emit nothing at
-        // registration, so a restart in a stable dark room would otherwise
-        // read unknown until the light physically changes.
-        _settings.setInternal('esphome_last_lux', '${e.lux.round()}');
       }),
     );
     _subs.add(
@@ -1531,8 +1530,9 @@ class EspEntitySurface {
     var lux = light.ok && light.data is Map
         ? ((light.data as Map)['lux'] as num?)
         : null;
-    // No live reading yet: fall back to the persisted last one, the same
-    // last-known-value semantics broker retention gives the MQTT twin.
+    // No reading at all, not even a remembered one (first run): nothing
+    // to send. The device manager already answers with the last known
+    // value where there is one.
     lux ??= int.tryParse(_settings.internal('esphome_last_lux'));
     if (lux != null) await _send('illuminance', lux.round());
     await _sendIpAddresses();

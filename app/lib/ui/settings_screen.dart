@@ -4008,13 +4008,20 @@ class _AmbientLightRow extends StatefulWidget {
 class _AmbientLightRowState extends State<_AmbientLightRow> {
   StreamSubscription<LightLevelChanged>? _sub;
   double? _lux;
+  bool _live = false;
 
   @override
   void initState() {
     super.initState();
     _lux = widget.container.device.lightLux;
+    _live = widget.container.device.lightLive;
     _sub = widget.container.bus.on<LightLevelChanged>().listen((e) {
-      if (mounted) setState(() => _lux = e.lux);
+      if (mounted) {
+        setState(() {
+          _lux = e.lux;
+          _live = true;
+        });
+      }
     });
   }
 
@@ -4033,7 +4040,8 @@ class _AmbientLightRowState extends State<_AmbientLightRow> {
       trailing: Text(
         lux == null
             ? 'No reading yet'
-            : '${lux == lux.roundToDouble() ? lux.toInt() : lux.toStringAsFixed(1)} lx',
+            : '${lux == lux.roundToDouble() ? lux.toInt() : lux.toStringAsFixed(1)} lx'
+                  '${_live ? '' : ' (last known)'}',
       ),
     );
   }

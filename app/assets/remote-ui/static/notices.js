@@ -354,7 +354,10 @@ export async function updateAdaptiveBrightnessRows() {
         { method: 'POST', body: '{}' })).json();
       const data = res.data && typeof res.data === 'object' ? res.data : null;
       state.lightSensor = data ? data.present === true : null;
-      if (data && typeof data.lux === 'number') state.lightLux = data.lux;
+      if (data && typeof data.lux === 'number') {
+        state.lightLux = data.lux;
+        state.lightLive = data.live === true;
+      }
     } catch (_) { state.lightSensor = null; }
   }
   for (const stale of document.querySelectorAll('.adaptive-note')) stale.remove();
@@ -403,13 +406,17 @@ export async function updateAdaptiveBrightnessRows() {
 /* A fresh sensor reading from the WebSocket: the live row, if it is up. */
 export function showLightLevel(lux) {
   state.lightLux = lux;
+  state.lightLive = true;
   const el = document.querySelector('.ambient-light-value');
   if (el) el.textContent = formatLux(lux);
 }
 
+/* Until the sensor has spoken this session, the reading is the last
+   session's (some drivers emit nothing at registration), and says so. */
 function formatLux(lux) {
   if (typeof lux !== 'number') return 'No reading yet';
-  return `${Number.isInteger(lux) ? lux : lux.toFixed(1)} lx`;
+  return `${Number.isInteger(lux) ? lux : lux.toFixed(1)} lx`
+    + (state.lightLive ? '' : ' (last known)');
 }
 
 const ADAPTIVE_NOTE =

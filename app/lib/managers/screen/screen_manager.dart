@@ -436,6 +436,10 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   bool _lightSensor = false;
   double? _lastLux;
 
+  /// Whether [_lastLux] is this session's, or the last one's (the device
+  /// manager remembers it for drivers that emit nothing at registration).
+  bool _luxLive = false;
+
   /// The level this manager last wrote to the panel, whichever layer asked
   /// for it. Tells the observer's echo of this app's own write from a
   /// change made elsewhere, and is what an adaptive step compares against.
@@ -535,7 +539,8 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     log.info(
       name,
       'adaptive brightness on'
-      '${lux == null ? '' : ' (${_formatLux(lux)} lx, factor '
+      '${lux == null ? '' : ' (${_formatLux(lux)} lx'
+                '${_luxLive ? '' : ' last known'}, factor '
                 '${_factor.toStringAsFixed(2)})'}',
     );
   }
@@ -547,11 +552,13 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       final data = res.data as Map;
       _lightSensor = data['present'] == true;
       _lastLux = (data['lux'] as num?)?.toDouble();
+      _luxLive = data['live'] == true;
     } catch (_) {}
   }
 
   void _onLux(double lux) {
     _lastLux = lux;
+    _luxLive = true;
     if (!_adaptiveOn) return;
     unawaited(_moveFactor(_curve.factor(lux)));
   }
