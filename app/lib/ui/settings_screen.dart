@@ -132,7 +132,7 @@ List<Widget> _sectionedCards(
 const _categories = <(String, String, Object, String)>[
   (
     'Home Assistant',
-    'Home Assistant Configuration',
+    'Home Assistant Setup',
     'assets/svg/home-assistant.svg',
     'Connection, dashboard, kiosk mode',
   ),

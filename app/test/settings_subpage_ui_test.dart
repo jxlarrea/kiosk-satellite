@@ -57,7 +57,7 @@ void main() {
     await settle(tester);
     if (size.width < 720) {
       // Narrow: the hub lists the categories, and Home Assistant pushes.
-      await tester.tap(find.text('Home Assistant Configuration'));
+      await tester.tap(find.text('Home Assistant Setup'));
       await settle(tester);
     }
   }
@@ -889,7 +889,7 @@ void main() {
       // One level only: back on the category page, Settings still open.
       expect(entryRow(), findsOneWidget);
       expect(find.text(haHaptics.title), findsNothing);
-      expect(find.text('Home Assistant Configuration'), findsWidgets);
+      expect(find.text('Home Assistant Setup'), findsWidgets);
 
       await drain(tester);
     });

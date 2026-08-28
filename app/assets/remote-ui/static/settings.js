@@ -1253,7 +1253,7 @@ export async function loadSettings() {
   }
 
   // ── Voice Satellite ───────────────────────────────────────────────────
-  // Its own page under Home Assistant Configuration, gated the same way;
+  // Its own page under Home Assistant Setup, gated the same way;
   // loadVsPermissions() appends the permissions card.
   {
     const root = document.getElementById('tab-voicesatellite');
@@ -1266,7 +1266,7 @@ export async function loadSettings() {
       const card = document.createElement('div');
       card.className = 'card';
       card.appendChild(readOnlyRow('Home Assistant not connected',
-        'Validate the connection under Home Assistant Configuration first.', ''));
+        'Validate the connection under Home Assistant Setup first.', ''));
       root.appendChild(card);
     } else if (!(byCat['Voice Satellite'] || []).length || !(await (async () => {
       try {
@@ -1313,7 +1313,7 @@ export async function loadSettings() {
     }
   }
 
-  // ── Home Assistant Configuration ──────────────────────────────────────
+  // ── Home Assistant Setup ──────────────────────────────────────
   // The connection card is the gate: base URL, token, a Validate row.
   // Everything else (the dashboard picker, kiosk mode, theme, Voice
   // Satellite) appears only after this run's connection check passed,

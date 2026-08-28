@@ -6,7 +6,7 @@ import 'package:kiosk_satellite/ui/settings_search.dart';
 /// The pages the device settings screen registers, category → (title,
 /// subtitle), matching _categories in settings_screen.dart.
 const _pages = <(String, String, String)>[
-  ('Home Assistant', 'Home Assistant Configuration', 'Connection, dashboard'),
+  ('Home Assistant', 'Home Assistant Setup', 'Connection, dashboard'),
   ('Voice Satellite', 'Voice Satellite', 'Wake word'),
   ('Screen & Audio', 'Screen & Audio', 'Brightness, volume'),
   ('Browser', 'Web Browsing', 'Cache, SSL'),

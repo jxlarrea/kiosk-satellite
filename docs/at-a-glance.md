@@ -94,7 +94,7 @@ that connection carries these entities and nothing else, and it costs nothing
 while the kiosk is in normal use.
 
 It deliberately does not read the states off the dashboard the kiosk is
-showing. **Filter dashboard updates** (Settings, Home Assistant Configuration,
+showing. **Filter dashboard updates** (Settings, Home Assistant Setup,
 Optimizations) exists to stop weak tablets processing entities they do not
 display, and feeding the At a Glance entities back through the page would give
 back the work that setting saves: a rapidly changing entity, a power meter

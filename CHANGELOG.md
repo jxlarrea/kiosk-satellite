@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Changed
+- The Home Assistant Configuration settings page is now Home Assistant Setup, on the device and in the remote admin.
+
 ### Fixed
 - The Immich screensaver heals on its own after the server goes away. A device that dropped its network while the screen was off used to wake to "Could not reach the server. It will retry next time." and sit on that message until someone stopped and started the screensaver, whether the outage hit the album listing or the photo fetches. Both now retry the listing on a backoff, 15 seconds first and then up to a minute apart, and the slideshow resumes by itself the moment the server answers (#337).
 
