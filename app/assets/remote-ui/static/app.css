@@ -232,7 +232,7 @@
   /* The mark, as vectors (branding/mark.svg). Its teal keyline is what
      keeps the white house readable on the light theme, so one asset
      serves both. */
-  .brand-mark { flex: none; width: 44px; height: 44px;
+  .brand-mark { flex: none; width: 40px; height: 40px;
     background: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5MjQuNDQgOTU5LjU1Ij48cGF0aCBmaWxsPSIjZmZmIiBzdHJva2U9IiM1ZGEzYTYiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNTIuMTUiIGQ9Ik0zOTAuMTYsNTAuNzVjNDIuNDEtMzIuODksMTAxLjcxLTMyLjg5LDE0NC4xMiwwbDMxMi44OSwyMjQuNzFjMzEuOTQsMjEuODUsNTEuMDksNTguMDEsNTEuMiw5Ni43MXY0NDMuNzNjMCw2NC45My01Mi42NCwxMTcuNTctMTE3LjU3LDExNy41N0gxNDMuNjRjLTY0LjkzLDAtMTE3LjU3LTUyLjY0LTExNy41Ny0xMTcuNTd2LTQ0My43M2MuMTEtMzguNywxOS4yNi03NC44Nyw1MS4yLTk2LjcxTDM5MC4xNiw1MC43NVoiLz48cGF0aCBmaWxsPSIjMThiY2YyIiBkPSJNMjQyLjI1LDUxMS41NWMwLTIyLjUyLDE4LjI1LTQwLjc3LDQwLjc3LTQwLjc3czQwLjc3LDE4LjI1LDQwLjc3LDQwLjc3djE3MC42N2MwLDIyLjUyLTE4LjI1LDQwLjc3LTQwLjc3LDQwLjc3cy00MC43Ny0xOC4yNS00MC43Ny00MC43N3YtMTcwLjY3aDBaIi8+PHBhdGggZmlsbD0iI2YyYjcwNSIgZD0iTTM2MS43Miw1MzMuMzVjLjAyLTIyLjUyLDE4LjI4LTQwLjc2LDQwLjgtNDAuNzQsMjIuNS4wMiw0MC43MywxOC4yNSw0MC43NCw0MC43NHYxMjcuMDVjLS4wMiwyMi41Mi0xOC4yOCw0MC43Ni00MC44LDQwLjc0LTIyLjUtLjAxLTQwLjczLTE4LjI1LTQwLjc0LTQwLjc0di0xMjcuMDVaIi8+PHBhdGggZmlsbD0iIzNmYmY1ZiIgZD0iTTQ4MS4xOSw0MzUuNjljLjAyLTIyLjUyLDE4LjI4LTQwLjc2LDQwLjgtNDAuNzQsMjIuNS4wMiw0MC43MywxOC4yNSw0MC43NCw0MC43NHYzMjIuMzdjLS4wMiwyMi41Mi0xOC4yOCw0MC43Ni00MC44LDQwLjc0LTIyLjUtLjAxLTQwLjczLTE4LjI1LTQwLjc0LTQwLjc0di0zMjIuMzdaIi8+PHBhdGggZmlsbD0iI2U4NjA0YyIgZD0iTTYwMC42NSw1MzAuNTFjLjAyLTIyLjUyLDE4LjI4LTQwLjc2LDQwLjgtNDAuNzQsMjIuNS4wMiw0MC43MywxOC4yNSw0MC43NCw0MC43NHYxMzIuNzRjLS4wMiwyMi41Mi0xOC4yOCw0MC43Ni00MC44LDQwLjc0LTIyLjUtLjAxLTQwLjczLTE4LjI1LTQwLjc0LTQwLjc0di0xMzIuNzRaIi8+PC9zdmc+) center / contain no-repeat; }
   /* The mark doubles as the way back to Overview, in the rail and in the
      phone top bar: a button, so it is reachable by keyboard too. */
@@ -800,7 +800,6 @@
     border-right: 1px solid var(--divider); }
   .wizard-brand { display: flex; align-items: center; gap: 14px;
     padding: 8px 16px 22px; }
-  .wizard-brand .brand-mark { width: 40px; height: 40px; }
   .wizard-brand h1 { font-size: 20px; font-weight: 700; line-height: 1.2; }
   .wizard-step { display: flex; align-items: center; gap: 16px;
     padding: 14px 16px; border-radius: 24px; }
