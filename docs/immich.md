@@ -153,8 +153,10 @@ its spot, so both are always readable at once.
   server is down, or the tablet cannot route to it. This message is
   reserved for genuine transport failures (DNS, refused connections,
   timeouts); a server that answers with an error shows the HTTP status or
-  the missing permission instead. The screensaver tries again on its next
-  activation.
+  the missing permission instead. The screensaver keeps trying on its own,
+  first after 15 seconds and then at up to a minute apart, and the
+  slideshow resumes by itself once the server answers again, so a device
+  that drops its Wi-Fi overnight shows photos again without a restart.
 - **Diagnosing from the device**: every failing Immich call is logged
   with its endpoint and HTTP status in the app's log (the Logs tab of the
   remote admin, or `GET /api/logs`), so there is no need to instrument a

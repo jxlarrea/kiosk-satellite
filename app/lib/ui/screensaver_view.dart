@@ -2545,9 +2545,17 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
 /// crossfade begins, so a hand-off never waits on the network and never
 /// fades through black.
 class ImmichScreensaver extends StatefulWidget {
-  const ImmichScreensaver({super.key, required this.container});
+  const ImmichScreensaver({
+    super.key,
+    required this.container,
+    this.retryFloor = const Duration(seconds: 15),
+  });
 
   final AppContainer container;
+
+  /// The first wait before the listing is tried again after the server
+  /// went away; each later wait doubles up to a minute. Tests shorten it.
+  final Duration retryFloor;
 
   @override
   State<ImmichScreensaver> createState() => _ImmichScreensaverState();
@@ -2612,6 +2620,31 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// an unreachable server (issue #222).
   String? _lastFailure;
 
+  /// The pending reload after the server went away, and how long the next
+  /// one waits. A device that drops its network while the screen is off
+  /// used to show the failure until someone restarted the screensaver; now
+  /// the listing is tried again on a backoff from the widget's retryFloor
+  /// to [_retryCeiling], and the slideshow resumes on its own once the
+  /// server answers (issue #337).
+  Timer? _retry;
+  late Duration _retryDelay = widget.retryFloor;
+  static const _retryCeiling = Duration(seconds: 60);
+
+  /// Reload after [_retryDelay], doubling the wait for the time after up
+  /// to the ceiling. Idempotent while one is pending.
+  void _scheduleRetry() {
+    if (_retry?.isActive ?? false) return;
+    final delay = _retryDelay;
+    c.log.info('screensaver', 'immich retrying in ${delay.inSeconds}s');
+    _retry = Timer(delay, () {
+      if (!mounted) return;
+      _failures = 0;
+      _lastFailure = null;
+      unawaited(_load());
+    });
+    _retryDelay = delay * 2 > _retryCeiling ? _retryCeiling : delay * 2;
+  }
+
   AppContainer get c => widget.container;
 
   @override
@@ -2660,15 +2693,24 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
           c.settings.get(defs.screensaverImmichPairPortrait) && size.height > 0
           ? arrangeImmichPairs(assets, screenAspect: size.width / size.height)
           : assets;
-      setState(() => _assets = arranged);
+      // A reload after an outage: the server is back, so the message goes
+      // and the backoff starts over for the next one.
+      _failures = 0;
+      _lastFailure = null;
+      _retryDelay = widget.retryFloor;
+      setState(() {
+        _assets = arranged;
+        _problem = null;
+      });
       _show(0);
     } catch (e) {
       c.log.warn('screensaver', 'immich listing failed: $e');
       if (mounted) {
         setState(
-          () => _problem =
-              '${c.immich.readableError(e)} It will retry next time.',
+          () =>
+              _problem = '${c.immich.readableError(e)} Retrying automatically.',
         );
+        _scheduleRetry();
       }
     }
   }
@@ -2684,8 +2726,11 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     }
     if (_failures >= _assets.length || _failures >= 20) {
       setState(
-        () => _problem = _lastFailure ?? 'Could not reach the Immich server.',
+        () => _problem =
+            '${_lastFailure ?? 'Could not reach the Immich server.'} '
+            'Retrying automatically.',
       );
+      _scheduleRetry();
       await old?.dispose();
       return;
     }
@@ -2931,6 +2976,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   void dispose() {
     c.screensaver.detachSlides(_step);
     _timer?.cancel();
+    _retry?.cancel();
     for (final t in _retireTimers) {
       t.cancel();
     }

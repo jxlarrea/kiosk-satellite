@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The Immich screensaver heals on its own after the server goes away. A device that dropped its network while the screen was off used to wake to "Could not reach the server. It will retry next time." and sit on that message until someone stopped and started the screensaver, whether the outage hit the album listing or the photo fetches. Both now retry the listing on a backoff, 15 seconds first and then up to a minute apart, and the slideshow resumes by itself the moment the server answers (#337).
+
 ## v2026.8.91 - 2026-08-27
 
 ### Added
