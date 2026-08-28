@@ -683,6 +683,9 @@ class RemoteManager extends Manager {
     // Captures are JPEG; the screen-off placeholder is PNG. Label by the
     // magic bytes rather than promising one of them.
     final png = bytes.length > 1 && bytes[0] == 0x89 && bytes[1] == 0x50;
+    // A person asked to see the screen: the Home Assistant twins get the
+    // same frame and Last screenshot moves with it.
+    bus.publish(ScreenshotTaken(jpeg: bytes));
     return Response.ok(
       bytes,
       headers: {'content-type': png ? 'image/png' : 'image/jpeg'},

@@ -315,6 +315,17 @@ class CameraSnapshotTaken extends AppEvent {
   final Uint8List jpeg;
 }
 
+/// The display was captured for someone to look at: the remote admin's
+/// overview page fetched its preview. The Home Assistant twins (the
+/// Screenshot camera and Last screenshot over ESPHome and MQTT) follow it,
+/// so "last screenshot" means the last capture a person asked for,
+/// whichever door they came in by. Captures a client raises on its own
+/// (a camera fetch refreshing a preview) do not publish this.
+class ScreenshotTaken extends AppEvent {
+  const ScreenshotTaken({required this.jpeg});
+  final Uint8List jpeg;
+}
+
 // ── Wake word ──────────────────────────────────────────────────────────
 
 class WakeWordDetected extends AppEvent {

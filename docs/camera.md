@@ -170,7 +170,7 @@ to the Kiosk Satellite device:
 
 | Entity | Type | Notes |
 | --- | --- | --- |
-| Camera | camera | The latest snapshot. Nothing streams, so its own state stays `idle` (an ESPHome camera cannot report off; read the **Camera enabled** switch for that). While the camera is off it shows a "Camera off" frame. It takes the device's single ESPHome camera slot, so the Screenshot camera steps aside while it exists. |
+| Camera | camera | The latest snapshot. Nothing streams, so its own state stays `idle` (an ESPHome camera cannot report off; read the **Camera enabled** switch for that). While the camera is off it shows a "Camera off" frame. The Screenshot camera exists beside it on every device. |
 | Take camera snapshot | button | Capture a fresh frame and hand it to Home Assistant. |
 | Last camera snapshot | sensor | When the current frame was captured, as a timestamp. This is what lets an automation react to a fresh frame arriving. |
 | Motion | binary_sensor | Reads motion for the configured **Clear after** window, then clears itself. Unknown while **Motion sensor** or the camera is off. |
@@ -184,8 +184,8 @@ camera shows a "Camera off" frame and Motion reads unknown until the
 camera is back on. The entity list only ever changes with the hardware, so an
 automation that arms the camera when someone is home and disarms it
 when the house empties never makes the device re-register with Home
-Assistant. On camera-less hardware none of these entities exist and the
-Screenshot camera takes the camera slot instead.
+Assistant. On camera-less hardware none of these entities exist; the
+Screenshot camera is there either way.
 
 ## Sharing the camera
 

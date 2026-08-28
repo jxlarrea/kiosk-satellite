@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
@@ -19,7 +20,7 @@ void main() {
   late EspEntitySurface surface;
   late Logger log;
   late List<(String, Object?)> pushed;
-  late List<List<int>> images;
+  late List<(String, List<int>)> images;
   late List<(String, Map<String, Object?>)> executed;
   var cameraPresent = true;
   var cameraFacings = <String>['front', 'back'];
@@ -204,10 +205,15 @@ void main() {
 
   tearDown(() => surface.detach());
 
+  /// The frames sent so far as "id:bytes" strings, comparable by value.
+  List<String> frames() => [
+    for (final (id, jpeg) in images) '$id:${jpeg.join(',')}',
+  ];
+
   Future<void> attach() async {
     surface.attach(
       (objectId, value) async => pushed.add((objectId, value)),
-      (jpeg) async => images.add(jpeg),
+      (objectId, jpeg) async => images.add((objectId, jpeg)),
     );
     await Future<void>.delayed(const Duration(milliseconds: 80));
   }
@@ -307,9 +313,9 @@ void main() {
       'lovelace/home',
       'lovelace/cameras',
     ]);
-    // With a camera present and enabled it takes the one camera slot.
+    // Both cameras: the display on every device, the hardware where it is.
     expect(byId['device_camera']!['type'], 'camera');
-    expect(byId.containsKey('screenshot'), isFalse);
+    expect(byId['screenshot']!['type'], 'camera');
     expect(byId['screensaver_mode']!['options'], isNotEmpty);
   });
 
@@ -351,11 +357,13 @@ void main() {
     expect(byId['bt_max_connections'], 3);
   });
 
-  test('a camera-less device gets the screenshot camera instead', () async {
+  test('a camera-less device keeps the screenshot camera', () async {
     cameraPresent = false;
     final catalog = await surface.build();
     final ids = [for (final d in catalog) '${d['objectId']}'];
     expect(ids, contains('screenshot'));
+    expect(ids, contains('take_screenshot'));
+    expect(ids, contains('last_screenshot'));
     expect(ids, isNot(contains('device_camera')));
     expect(ids, isNot(contains('take_snapshot')));
     expect(ids, isNot(contains('motion'))); // rides the camera
@@ -373,7 +381,8 @@ void main() {
       expect(ids, contains('take_snapshot'));
       expect(ids, contains('last_snapshot'));
       expect(ids, contains('motion'));
-      expect(ids, isNot(contains('screenshot')));
+      // The screenshot camera never depended on the camera switch.
+      expect(ids, contains('screenshot'));
 
       // Off, the motion sensor is listed but reads unknown, and nothing a
       // stale detector says gets through.
@@ -413,7 +422,8 @@ void main() {
     // A fetch from Home Assistant gets the frame, not a capture attempt.
     await surface.handleCommand('device_camera', 'capture');
     expect(images, hasLength(1));
-    final frame = images.single;
+    expect(images.single.$1, 'device_camera');
+    final frame = images.single.$2;
     expect(frame.length, greaterThan(1000));
     expect(frame.sublist(0, 2), [0xFF, 0xD8]); // a JPEG
     expect(executed.any((e) => e.$1 == 'takeCameraSnapshot'), isFalse);
@@ -608,19 +618,76 @@ void main() {
     expect(pushed, contains(('screensaver_brightness_level', 30)));
   });
 
-  test(
-    'the screenshot capture feeds the camera on camera-less devices',
-    () async {
-      cameraPresent = false;
-      await surface.build();
-      await attach();
-      await surface.handleCommand('screenshot', 'capture');
-      expect(images, [
-        [1, 2, 3],
-      ]);
-      expect(pushed.any((p) => p.$1 == 'last_screenshot'), isTrue);
-    },
-  );
+  test('a fetch of the screenshot camera captures the display', () async {
+    cameraPresent = false;
+    await surface.build();
+    await attach();
+    await surface.handleCommand('screenshot', 'capture');
+    expect(frames(), ['screenshot:1,2,3']);
+    // A fetch feeds the entity and nothing else: Last screenshot belongs
+    // to the button alone.
+    expect(pushed.any((p) => p.$1 == 'last_screenshot'), isFalse);
+    expect(settings.internal('esphome_last_screenshot'), isEmpty);
+  });
+
+  test('the screenshot camera feeds beside the device camera', () async {
+    // Camera hardware present and on: the display still has its own
+    // camera entity, and the Take screenshot button feeds it too.
+    await surface.build();
+    await attach();
+    await surface.handleCommand('screenshot', 'capture');
+    await surface.handleCommand('take_screenshot', null);
+    expect(frames(), ['screenshot:1,2,3', 'screenshot:1,2,3']);
+    expect(executed.any((e) => e.$1 == 'takeCameraSnapshot'), isFalse);
+    // Only the button press stamped Last screenshot.
+    final stamps = [
+      for (final p in pushed)
+        if (p.$1 == 'last_screenshot') p.$2,
+    ];
+    expect(stamps, hasLength(1));
+    // Kept for the next attach, broker-retention style.
+    expect(settings.internal('esphome_last_screenshot'), '${stamps.single}');
+  });
+
+  test('a remote admin capture feeds the camera and stamps', () async {
+    await surface.build();
+    await attach();
+    bus.publish(ScreenshotTaken(jpeg: Uint8List.fromList([9, 8, 7])));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(frames(), ['screenshot:9,8,7']);
+    final stamps = [
+      for (final p in pushed)
+        if (p.$1 == 'last_screenshot') p.$2,
+    ];
+    expect(stamps, hasLength(1));
+    expect(settings.internal('esphome_last_screenshot'), '${stamps.single}');
+  });
+
+  test('the persisted capture stamps reseed at attach', () async {
+    await settings.setInternal(
+      'esphome_last_screenshot',
+      '2026-08-28T18:44:41.000Z',
+    );
+    await settings.setInternal(
+      'esphome_last_snapshot',
+      '2026-08-28T18:40:00.000Z',
+    );
+    await surface.build();
+    await attach();
+    final byId = {for (final (id, value) in pushed) id: value};
+    expect(byId['last_screenshot'], '2026-08-28T18:44:41.000Z');
+    expect(byId['last_snapshot'], '2026-08-28T18:40:00.000Z');
+
+    // Without camera hardware there is no snapshot sensor to seed.
+    pushed.clear();
+    surface.detach();
+    cameraPresent = false;
+    await surface.build();
+    await attach();
+    final again = {for (final (id, value) in pushed) id: value};
+    expect(again['last_screenshot'], '2026-08-28T18:44:41.000Z');
+    expect(again.containsKey('last_snapshot'), isFalse);
+  });
 
   test('motion pulses on and back off after the configured delay', () async {
     await surface.build();

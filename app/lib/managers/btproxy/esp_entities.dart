@@ -28,10 +28,12 @@ import '../settings/settings_manager.dart';
 /// automations, and both mirror the MQTT catalog so a migrating automation
 /// only swaps the device half of the id. Never rename one casually.
 ///
-/// The one deliberate absence: a second camera. The ESPHome camera
-/// protocol has no entity key in its image request, so one camera exists
-/// per device - the device camera when present and enabled, else the
-/// screenshot camera.
+/// Two cameras ride the ESPHome camera protocol: the Screenshot camera on
+/// every device (the display itself, the frame the remote admin shows) and
+/// the device camera where the hardware exists. The image request names
+/// no camera, so a fetch of either asks both and each answers on its own
+/// key; the frames are cheap enough that a screenshot fetch refreshing the
+/// camera preview alongside is no cost worth a second protocol.
 class EspEntitySurface {
   EspEntitySurface(this.bus, this.commands, this.log, this._settings);
 
@@ -45,8 +47,8 @@ class EspEntitySurface {
   /// Sends one entity's fresh value to the native hub; set while attached.
   Future<void> Function(String objectId, Object? value)? _push;
 
-  /// Sends a camera frame to sessions with an outstanding request.
-  Future<void> Function(Uint8List jpeg)? _pushImage;
+  /// Sends one camera's frame to sessions with an outstanding request.
+  Future<void> Function(String objectId, Uint8List jpeg)? _pushImage;
 
   /// The frame served while the device camera is off: a fetch that got
   /// no answer left Home Assistant's card on a broken image after its
@@ -66,7 +68,7 @@ class EspEntitySurface {
   // Learned at build time; commands and states need them afterwards.
   List<Map<String, Object?>> _cameraViews = const [];
   List<String> _dashboardViews = const [];
-  bool _deviceCameraIsTheCamera = false;
+  bool _deviceCameraPresent = false;
   bool _screensaverActive = false;
 
   /// Whether the Voice Satellite entities are in this run's catalog, so a
@@ -236,9 +238,9 @@ class EspEntitySurface {
     // switch: an automation that arms the camera only while someone is
     // home flips that switch all day, and a catalog that changed with it
     // would restart the server (and drop every entity) on each flip
-    // (issue #339). Off, the camera answers no frame and the motion
-    // sensor reads unknown.
-    _deviceCameraIsTheCamera = cameraPresent;
+    // (issue #339). Off, the camera answers a "Camera off" frame and the
+    // motion sensor reads unknown.
+    _deviceCameraPresent = cameraPresent;
     // The Voice Satellite controls exist where a satellite is bound: the
     // setup wizard and the settings page both record the binding here, and
     // a kiosk with none has no engine to start (issue #288). Reading the
@@ -395,13 +397,12 @@ class EspEntitySurface {
         'name': 'Update',
         'deviceClass': 'firmware',
       },
-      // The one camera slot the protocol allows: the device camera when
-      // it exists, else the screenshot camera.
-      if (cameraPresent)
-        {'type': 'camera', 'objectId': 'device_camera', 'name': 'Camera'}
-      else
-        {'type': 'camera', 'objectId': 'screenshot', 'name': 'Screenshot'},
+      // The display as a still camera, on every device: what the remote
+      // admin's preview shows, fed by the Take screenshot button and by a
+      // fetch from Home Assistant.
+      {'type': 'camera', 'objectId': 'screenshot', 'name': 'Screenshot'},
       if (cameraPresent) ...[
+        {'type': 'camera', 'objectId': 'device_camera', 'name': 'Camera'},
         button('take_snapshot', 'Take camera snapshot', 'mdi:camera-iris'),
         {
           'type': 'text_sensor',
@@ -782,7 +783,7 @@ class EspEntitySurface {
   /// Starts serving values: initial snapshot, change events, slow poll.
   void attach(
     Future<void> Function(String, Object?) push,
-    Future<void> Function(Uint8List) pushImage,
+    Future<void> Function(String, Uint8List) pushImage,
   ) {
     _push = push;
     _pushImage = pushImage;
@@ -848,10 +849,19 @@ class EspEntitySurface {
     );
     _subs.add(
       bus.on<CameraSnapshotTaken>().listen((e) {
-        if (_deviceCameraIsTheCamera) {
-          _sendImage(e.jpeg);
-          _send('last_snapshot', DateTime.now().toUtc().toIso8601String());
+        if (_deviceCameraPresent) {
+          _sendImage('device_camera', e.jpeg);
+          _stamp('last_snapshot');
         }
+      }),
+    );
+    // The remote admin's overview captured the screen: the same picture
+    // reaches the Screenshot camera and Last screenshot moves, as it does
+    // for the Take screenshot button.
+    _subs.add(
+      bus.on<ScreenshotTaken>().listen((e) {
+        _sendImage('screenshot', e.jpeg);
+        _stamp('last_screenshot');
       }),
     );
     _subs.add(
@@ -1060,14 +1070,23 @@ class EspEntitySurface {
       case 'take_snapshot':
         await commands.execute('takeCameraSnapshot', const {});
       case 'screenshot':
+        // A frame request from Home Assistant, which the keyless camera
+        // request also raises on every Camera fetch: the display is
+        // captured for the entity, and nothing else moves.
+        await _takeScreenshot(stamp: false);
       case 'take_screenshot':
-        await _takeScreenshot();
+        await _takeScreenshot(stamp: true);
       default:
         log.warn('esphome', 'entity command for unknown id $objectId');
     }
   }
 
-  Future<void> _takeScreenshot() async {
+  /// Captures the display for the Screenshot camera. Only the Take
+  /// screenshot button stamps Last screenshot: the stamp means "when the
+  /// button last captured", as it does over MQTT, and a camera fetch,
+  /// which Home Assistant issues on its own whenever a preview refreshes,
+  /// must not move it.
+  Future<void> _takeScreenshot({required bool stamp}) async {
     final size = PlatformDispatcher.instance.implicitView?.physicalSize;
     final portrait = size != null && size.height > size.width;
     final result = await commands.execute('screenshot', {
@@ -1075,8 +1094,8 @@ class EspEntitySurface {
     });
     final jpeg = result.data;
     if (result.ok && jpeg is String) {
-      if (!_deviceCameraIsTheCamera) _sendImage(base64Decode(jpeg));
-      await _send('last_screenshot', DateTime.now().toUtc().toIso8601String());
+      _sendImage('screenshot', base64Decode(jpeg));
+      if (stamp) await _stamp('last_screenshot');
     } else {
       log.warn('esphome', 'screenshot failed: ${result.error}');
     }
@@ -1099,10 +1118,21 @@ class EspEntitySurface {
       final frame = _cameraOffFrame ??= (await rootBundle.load(
         _cameraOffAsset,
       )).buffer.asUint8List();
-      await _sendImage(frame);
+      await _sendImage('device_camera', frame);
     } catch (e) {
       log.warn('esphome', 'camera off frame unavailable: $e');
     }
+  }
+
+  /// Stamps a capture timestamp now and keeps it: the MQTT twin never
+  /// reads unknown after a restart because the broker retains its last
+  /// value, and with no broker the settings store plays that role, so the
+  /// sensor reseeds at the next attach instead of sitting on unknown until
+  /// the next capture.
+  Future<void> _stamp(String objectId) async {
+    final iso = DateTime.now().toUtc().toIso8601String();
+    _settings.setInternal('esphome_$objectId', iso);
+    await _send(objectId, iso);
   }
 
   void _onSettingChanged(SettingChanged e) {
@@ -1161,9 +1191,9 @@ class EspEntitySurface {
     await _send(objectId, start.toIso8601String());
   }
 
-  Future<void> _sendImage(Uint8List jpeg) async {
+  Future<void> _sendImage(String objectId, Uint8List jpeg) async {
     try {
-      await _pushImage?.call(jpeg);
+      await _pushImage?.call(objectId, jpeg);
     } catch (_) {}
   }
 
@@ -1214,6 +1244,15 @@ class EspEntitySurface {
         _settings.internal('esphome_last_interaction');
     if (lastInteraction.isNotEmpty) {
       await _send('last_interaction', lastInteraction);
+    }
+    // The capture stamps from before the restart, the way the broker
+    // retains them for MQTT; unknown only until the first capture ever.
+    for (final stamp in [
+      'last_screenshot',
+      if (_deviceCameraPresent) 'last_snapshot',
+    ]) {
+      final kept = _settings.internal('esphome_$stamp');
+      if (kept.isNotEmpty) await _send(stamp, kept);
     }
     final href = await commands.execute('evalJs', {'code': 'location.href'});
     // WebView eval results come back JSON-encoded; a string wears quotes.

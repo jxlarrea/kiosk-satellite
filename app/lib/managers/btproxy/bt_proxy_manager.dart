@@ -511,7 +511,10 @@ class BtProxyManager extends Manager {
             'objectId': objectId,
             'value': value,
           }),
-          (jpeg) => _channel.invokeMethod('cameraImage', {'jpeg': jpeg}),
+          (objectId, jpeg) => _channel.invokeMethod('cameraImage', {
+            'objectId': objectId,
+            'jpeg': jpeg,
+          }),
         );
       }
       log.info(name, 'started (port $port)');

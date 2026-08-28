@@ -312,13 +312,13 @@ internal class ApiServer(
     }
 
     /**
-     * A fresh camera frame from the capture side: chunked to every session
+     * A fresh frame from the capture side for the camera [objectId]: chunked to every session
      * with an outstanding image request (16KB chunks stay far under the
      * Noise transport's 65535-byte frame ceiling), done flag on the last.
      */
-    fun publishCameraImage(jpeg: ByteArray) {
-        val cameraKey = entities?.camera?.key ?: return
-        val waiting = sessions.filter { it.wantsCameraFrame }
+    fun publishCameraImage(objectId: String, jpeg: ByteArray) {
+        val cameraKey = entities?.cameraFor(objectId)?.key ?: return
+        val waiting = sessions.filter { it.takeCameraRequest(cameraKey) }
         if (waiting.isEmpty()) return
         val chunks = ArrayList<Pair<ByteArray, Boolean>>()
         var offset = 0
@@ -329,7 +329,6 @@ internal class ApiServer(
         }
         if (chunks.isEmpty()) chunks.add(ByteArray(0) to true)
         for (session in waiting) {
-            session.wantsCameraFrame = false
             for ((data, done) in chunks) {
                 val w = ProtoWriter()
                 w.fixed32(1, cameraKey)
@@ -487,8 +486,20 @@ internal class ApiServer(
             private set
         @Volatile var wantsConnectionsFree = false
         @Volatile var wantsStates = false
-        /** A CameraImageRequest is outstanding; cleared when a frame ships. */
-        @Volatile var wantsCameraFrame = false
+        /**
+         * Camera keys with a CameraImageRequest outstanding. The request
+         * names no camera, so one request pends every listed camera; each
+         * key clears as its frame ships.
+         */
+        private val pendingCameraKeys = HashSet<Int>()
+
+        fun requestCameraFrames(keys: Collection<Int>) {
+            synchronized(pendingCameraKeys) { pendingCameraKeys.addAll(keys) }
+        }
+
+        /** True, once, while a frame for [key] is owed to this session. */
+        fun takeCameraRequest(key: Int): Boolean =
+            synchronized(pendingCameraKeys) { pendingCameraKeys.remove(key) }
         @Volatile var handshaken = false
         @Volatile var lastInboundAt = clock()
         @Volatile var lastPingSentAt = 0L
@@ -808,12 +819,13 @@ internal class ApiServer(
                             enqueue(Msg.EXECUTE_SERVICE_RESPONSE, payload)
                         }
                     Msg.CAMERA_IMAGE_REQUEST -> {
-                        // The request carries no key: ESPHome devices have
-                        // at most one camera. Remember who asked; the frame
-                        // arrives asynchronously from the capture side.
+                        // The request carries no key, so it asks every
+                        // camera. Remember who asked and which frames are
+                        // owed; they arrive asynchronously from the capture
+                        // side, one per camera.
                         val hub = entities
-                        if (hub?.camera != null) {
-                            wantsCameraFrame = true
+                        if (hub != null && hub.cameras.isNotEmpty()) {
+                            requestCameraFrames(hub.cameras.map { it.key })
                             hub.requestCameraImage()
                         }
                     }

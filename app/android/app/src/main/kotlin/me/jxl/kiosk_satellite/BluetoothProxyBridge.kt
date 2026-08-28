@@ -119,7 +119,8 @@ class BluetoothProxyBridge(private val context: Context, messenger: BinaryMessen
                 }
                 "cameraImage" -> {
                     call.argument<ByteArray>("jpeg")?.let {
-                        BluetoothProxyRuntime.publishCameraImage(it)
+                        BluetoothProxyRuntime.publishCameraImage(
+                            call.argument<String>("objectId") ?: "", it)
                     }
                     result.success(null)
                 }

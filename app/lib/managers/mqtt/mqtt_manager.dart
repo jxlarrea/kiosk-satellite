@@ -296,6 +296,18 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         );
       }),
     );
+    // The remote admin's overview captured the screen: same topics as the
+    // Take screenshot button, so Last screenshot means the last capture a
+    // person asked for by either door.
+    _subs.add(
+      bus.on<ScreenshotTaken>().listen((e) {
+        _publishBytes('$_base/screenshot/image', e.jpeg);
+        _publish(
+          '$_base/screenshot/at',
+          DateTime.now().toUtc().toIso8601String(),
+        );
+      }),
+    );
     _subs.add(
       bus.on<MotionDetected>().listen((_) {
         if (!_settings.get(defs.motionSensor)) return;

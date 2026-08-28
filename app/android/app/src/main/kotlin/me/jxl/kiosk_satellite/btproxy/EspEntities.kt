@@ -148,10 +148,13 @@ internal sealed class EspEntity {
     ) : EspEntity()
 
     /**
-     * A still camera. ESPHome allows exactly ONE per device (the image
-     * request carries no key), enforced at hub construction. Images flow
-     * through [EntityHub.onCameraRequest] and the server's chunked
-     * CameraImageResponse path, not through the state store.
+     * A still camera. Images flow through [EntityHub.requestCameraImage]
+     * and the server's chunked CameraImageResponse path, not through the
+     * state store. A device may carry several: the image request has no
+     * key (it asks every camera at once) but each response carries one,
+     * and aioesphomeapi assembles frames per key, so every listed camera
+     * must answer every request or the client entity that got nothing
+     * times out.
      */
     class Camera(
         override val objectId: String,
@@ -485,8 +488,8 @@ internal class EntityHub(
     @Volatile
     var onStateChanged: ((EspEntity, Any?) -> Unit)? = null
 
-    /** The single camera entity, if the catalog carries one. */
-    val camera: EspEntity.Camera?
+    /** The camera entities, in catalog order; empty when there are none. */
+    val cameras: List<EspEntity.Camera> = entities.filterIsInstance<EspEntity.Camera>()
 
     init {
         for (entity in entities) {
@@ -495,17 +498,18 @@ internal class EntityHub(
                 "entity key collision: ${clash?.objectId} / ${entity.objectId}"
             }
         }
-        val cameras = entities.filterIsInstance<EspEntity.Camera>()
-        require(cameras.size <= 1) {
-            "ESPHome allows one camera per device (the image request has no key)"
-        }
-        camera = cameras.firstOrNull()
     }
 
-    /** A client asked for a frame; the Dart side captures and pushes one. */
+    /** The camera with this object id, if the catalog carries one. */
+    fun cameraFor(objectId: String): EspEntity.Camera? =
+        cameras.firstOrNull { it.objectId == objectId }
+
+    /**
+     * A client asked for a frame. The request names no camera, so every
+     * one is asked; the Dart side captures and pushes a frame per camera.
+     */
     fun requestCameraImage() {
-        val target = camera ?: return
-        onCommand(target.objectId, "capture")
+        for (camera in cameras) onCommand(camera.objectId, "capture")
     }
 
     val all: List<EspEntity>

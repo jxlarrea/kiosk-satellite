@@ -183,7 +183,7 @@ class AioesphomeapiE2eTest {
             await cli.connect(login=True)
             entities, services = await cli.list_entities_services()
             by_obj = {e.object_id: e for e in entities}
-            expected = {"screen", "clock_background", "update", "snap"}
+            expected = {"screen", "clock_background", "update", "snap", "shot"}
             assert set(by_obj) == expected, sorted(by_obj)
             assert type(by_obj["screen"]).__name__ == "LightInfo", by_obj
             # Modern clients ignore legacy_supports_brightness (issue #242):
@@ -191,6 +191,7 @@ class AioesphomeapiE2eTest {
             modes = list(by_obj["screen"].supported_color_modes)
             assert [int(m) for m in modes] == [3], modes  # BRIGHTNESS
             assert type(by_obj["snap"]).__name__ == "CameraInfo", by_obj
+            assert type(by_obj["shot"]).__name__ == "CameraInfo", by_obj
             print("LIST_OK", flush=True)
 
             # The user-defined action (issue #269): what Home Assistant
@@ -207,12 +208,18 @@ class AioesphomeapiE2eTest {
 
             loop = asyncio.get_running_loop()
             states = {}
-            image = loop.create_future()
+            # One future per camera: a device may list several, and the
+            # client assembles frames per entity key.
+            images = {
+                by_obj["snap"].key: loop.create_future(),
+                by_obj["shot"].key: loop.create_future(),
+            }
 
             def on_state(st):
                 if type(st).__name__ == "CameraState":
-                    if not image.done():
-                        image.set_result(bytes(st.data))
+                    fut = images.get(st.key)
+                    if fut is not None and not fut.done():
+                        fut.set_result(bytes(st.data))
                     return
                 states[st.key] = st
 
@@ -235,9 +242,13 @@ class AioesphomeapiE2eTest {
             await asyncio.sleep(0.5)
             print("COMMANDS_OK", flush=True)
 
+            # The keyless request asks every camera; each answers on its
+            # own key, so both entities get their frame from one request.
             cli.request_single_image()
-            data = await asyncio.wait_for(image, 10)
+            data = await asyncio.wait_for(images[by_obj["snap"].key], 10)
             assert len(data) == 40_000 and data[0] == 0x7A, (len(data), data[:2])
+            shot = await asyncio.wait_for(images[by_obj["shot"].key], 10)
+            assert shot == b"\x53\x48\x4f\x54", shot
             print("CAMERA_OK", flush=True)
 
             # Arguments travel positionally and untyped-by-name; the ints
@@ -308,10 +319,14 @@ class AioesphomeapiE2eTest {
             EspEntity.Text("clock_background", "Clock background"),
             EspEntity.Update("update", "Update", deviceClass = "firmware"),
             EspEntity.Camera("snap", "Snapshot"),
+            EspEntity.Camera("shot", "Screenshot"),
         ), onCommand = { objectId, value ->
             commands.add(objectId to value)
             if (objectId == "snap" && value == "capture") {
-                server.publishCameraImage(jpeg)
+                server.publishCameraImage("snap", jpeg)
+            }
+            if (objectId == "shot" && value == "capture") {
+                server.publishCameraImage("shot", "SHOT".toByteArray())
             }
         }, services = listOf(
             EspService(

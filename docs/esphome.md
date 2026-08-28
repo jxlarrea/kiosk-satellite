@@ -104,13 +104,22 @@ satellite, which the setup wizard and the Voice Satellite settings page
 both record; binding or unbinding one re-lists the entities the next time
 the server starts.
 
-The ESPHome camera protocol allows exactly one camera per device, so the
-kiosk serves its device camera when the hardware has one, else the
-screenshot camera. The camera entities follow the hardware, not the
-Camera enabled switch: with the camera off they stay listed, the camera
-shows a "Camera off" frame and the Motion sensor reads unknown, so an
-automation
-can flip the switch through the day without the device re-registering.
+Every kiosk serves a Screenshot camera, the display itself as a still
+camera (the frame the remote admin's preview shows), fed by the Take
+screenshot button and by a fetch of the entity from Home Assistant. Last
+screenshot moves when the button captures and when the remote admin's
+overview page fetches its preview, never on a fetch of the camera entity
+from Home Assistant. A
+kiosk with camera hardware serves its device camera beside it. The
+ESPHome image request names no camera, so a fetch of either asks both and
+each answers on its own entity, which is why a screenshot fetch also
+refreshes the camera preview. The camera entities follow the hardware,
+not the Camera enabled switch: with the camera off they stay listed, the
+camera shows a "Camera off" frame and the Motion sensor reads unknown, so
+an automation can flip the switch through the day without the device
+re-registering. The Last screenshot and Last camera snapshot stamps are
+kept across restarts, so they read unknown only until the first capture
+ever.
 The Camera view and Dashboard view option lists are learned when the
 server starts; after adding views, toggle ESPHome off and on (or
 restart the app) to refresh them. A note on Connectivity: with ESPHome

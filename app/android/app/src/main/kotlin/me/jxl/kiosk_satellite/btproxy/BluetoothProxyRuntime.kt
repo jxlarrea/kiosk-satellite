@@ -157,9 +157,9 @@ internal object BluetoothProxyRuntime {
         entityHub?.updateState(objectId, value)
     }
 
-    /** A fresh camera frame for sessions with an outstanding request. */
-    fun publishCameraImage(jpeg: ByteArray) {
-        server?.publishCameraImage(jpeg)
+    /** A fresh frame for the camera [objectId], to sessions that asked. */
+    fun publishCameraImage(objectId: String, jpeg: ByteArray) {
+        server?.publishCameraImage(objectId, jpeg)
     }
 
     @Synchronized
