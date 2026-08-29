@@ -129,47 +129,24 @@ class DeviceCamera(
                 )
                 mainHandler.post { snapshot(facing, target, result) }
             }
-            // Whether any camera exists at all. False on hardware whose ROM
-            // ships no camera HAL (LineageOS ports on Echo Shows, e-ink
-            // tablets) - the settings surfaces warn instead of offering
-            // switches that can only fail. Camera2 answers first and is
-            // the whole answer when it enumerates nothing: CameraX must
-            // never initialize on such hardware, because its camera
-            // presence tracking (CameraX 1.5+) registers availability
-            // callbacks that make the platform retry the missing camera
-            // service every second, forever - a log line and a binder
-            // attempt per second that pegged a weak SoC at 100% CPU
-            // (issue #193). CameraX only confirms when cameras DO exist,
-            // with a provider timeout as the backstop: a wedged CameraX
-            // init must not leave the Dart probe waiting forever.
-            "hasCamera" -> {
-                mainHandler.post {
-                    if (cameraFacings(context).isEmpty()) {
-                        result.success(false)
-                        return@post
-                    }
-                    var answered = false
-                    val answer = { has: Boolean ->
-                        if (!answered) {
-                            answered = true
-                            result.success(has)
-                        }
-                    }
-                    mainHandler.postDelayed({
-                        Log.w(TAG, "hasCamera: provider timed out")
-                        answer(cameraFacings(context).isNotEmpty())
-                    }, PROVIDER_TIMEOUT_MS)
-                    val future = ProcessCameraProvider.getInstance(context)
-                    future.addListener({
-                        val has = try {
-                            future.get().availableCameraInfos.isNotEmpty()
-                        } catch (_: Exception) {
-                            false
-                        }
-                        answer(has)
-                    }, ContextCompat.getMainExecutor(context))
-                }
-            }
+            // Whether the device has a usable camera at all: hardware
+            // with no camera service (e-ink tablets) and a privacy shutter
+            // that unplugs the camera both get warnings in the settings
+            // instead of switches that can only fail. Camera2's plain
+            // enumeration is the whole answer. CameraX is never touched
+            // here: on cameraless hardware its camera presence tracking
+            // (CameraX 1.5+) registers availability callbacks that make
+            // the platform retry the missing camera service every second,
+            // forever - a log line and a binder attempt per second that
+            // pegged a weak SoC at 100% CPU (issue #193). And where a
+            // camera exists, asking CameraX to confirm gave an answer that
+            // depended on timing: a fast initialization failure said no
+            // while a slow one fell back to Camera2 and said yes, so a
+            // tablet with a phantom camera in its HAL showed its camera
+            // entities on some boots and not others. A camera Camera2
+            // lists but CameraX cannot open reports that plainly when it
+            // is used.
+            "hasCamera" -> result.success(cameraFacings(context).isNotEmpty())
             // The lens facings that exist, for pickers that should not
             // offer a camera the device does not have.
             "facings" -> result.success(cameraFacings(context))
@@ -353,6 +330,39 @@ internal fun cameraFacings(context: Context): List<String> = try {
 } catch (_: Exception) {
     emptyList()
 }
+
+/** The cameras whose lens facing CameraX can read, as the selector for
+ *  [KioskApplication]'s availableCamerasLimiter. Some HALs pad the camera
+ *  list with a phantom device carrying garbage static metadata (a Unisoc
+ *  wall tablet: one real front camera plus an id 1 whose LENS_FACING is
+ *  255), and CameraX's own lens-facing filter throws on the first facing
+ *  it cannot read instead of skipping it, which failed initialization
+ *  outright and took the real camera down with the phantom. Filtering per
+ *  camera drops only the ones that cannot be read. */
+internal fun readableCamerasSelector(): CameraSelector =
+    CameraSelector.Builder()
+        .addCameraFilter { infos ->
+            val readable = withReadableFacing(infos) { it.lensFacing }
+            if (readable.size != infos.size) {
+                Log.w(
+                    "DeviceCamera",
+                    "skipping ${infos.size - readable.size} camera(s) whose lens facing cannot be read",
+                )
+            }
+            readable
+        }
+        .build()
+
+/** The [items] whose [facing] reads without throwing, in order. */
+internal fun <T> withReadableFacing(items: List<T>, facing: (T) -> Int): List<T> =
+    items.filter { item ->
+        try {
+            facing(item)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 
 /** What a missing camera means in practice, said plainly: on devices with
  *  a hardware privacy shutter (Echo Show), the switch disconnects the

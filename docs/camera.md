@@ -207,8 +207,10 @@ camera makes captures fail until it lets go.
   camera completely and looks the same.
 - **Single camera**: the Front/Back picker becomes a label naming the one
   camera the device has. Devices whose ROM advertises cameras it does not
-  have are handled: failed captures report a real error instead of
-  hanging.
+  have are handled, and so is a camera HAL that pads its list with a
+  phantom camera whose lens facing cannot be read (some cheap Unisoc
+  tablets): the phantom is skipped and the real camera is used. Failed
+  captures report a real error instead of hanging.
 
 ## The remote admin
 
