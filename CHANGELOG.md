@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- A new [Updates](docs/updates.md) doc: how the app finds and installs new releases, why the Home Assistant Update entity can lag a release by up to 12 hours and how to check right away, what Android asks for on each version (the confirmation screen, the install unknown apps grant, the silent updates from the second in-app update on Android 12 and newer), the relaunch permission, and device ownership as the hands-free path on Android 11 and older and on ROMs that cannot give the install grant, with a plain warning that only a factory reset undoes it.
 - A Theme select on the ESPHome surface, Auto, Light or Dark, and the same row leads the Theme settings page on the device and the remote admin (#351). Light and Dark pin the dashboard theme and outrank the on-device schedule and the app theme sync, so an automation can turn every kiosk dark at sunset and light at sunrise wherever daylight swings through the year, and a person can override it by hand from Home Assistant. Auto hands control back to the on-device settings. With the theme sync on, the pin flips the app's own screens too.
 
 ## v2026.8.99 - 2026-08-29

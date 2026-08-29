@@ -160,8 +160,10 @@ ROMs):
 adb shell dpm set-device-owner me.jxl.kiosk_satellite/.KioskAdminReceiver
 ```
 
-This is deliberately hard to undo (that is the point of the tier); treat it
-as something for permanently installed panels, not a daily driver.
+The only way to undo it is a factory reset (that is the point of the
+tier); treat it as something for permanently installed panels, not a daily
+driver. Ownership also makes the app's own updates install silently on
+every Android version, covered in [Updates](updates.md).
 
 ## Notes
 

@@ -17,7 +17,9 @@ These come with the APK and never ask: internet and network state, Wi-Fi
 multicast (SendSpin server discovery), wake lock, audio settings, boot
 completed (Start on boot), the foreground service types behind the
 [Kiosk Satellite Service](#the-kiosk-satellite-service), and the install
-permissions behind in-app updates. Nothing to do.
+permissions behind in-app updates. Nothing to do. The one update-related
+grant that does need a human, **Install unknown apps**, is covered in
+[Updates](updates.md#the-install-unknown-apps-grant).
 
 ## The grants that need a human
 
