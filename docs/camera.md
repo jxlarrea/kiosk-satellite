@@ -118,7 +118,11 @@ generation) suspends the camera seconds after the panel powers off even
 with background listening on, and does it silently. The app notices the
 stalled frames, logs a warning in the Console, and brings the camera
 back the moment the screen comes on, but motion cannot wake a truly
-dark panel on such devices. Without background listening the revocation
+dark panel on such devices. The same watchdog covers a lit screen: a
+camera that opens but delivers no frames for ten seconds (the same
+generation can refuse the reopen at wake when it races the app's return
+to the foreground, again without an error) is logged and reopened after
+a short backoff instead of sitting dead. Without background listening the revocation
 happens everywhere; the camera likewise rebinds on its own at
 screen-on. The screen that *looks* off but keeps every camera feature
 working everywhere is the **Black screensaver**

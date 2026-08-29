@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - Waking the screen by hand, with the power button or a double-tap, now stamps the Last interaction sensor and restarts the screensaver's idle countdown (#348). Pressing the button to glance at the dashboard is using the kiosk, even with no touch to follow, so an idle automation no longer keeps counting from the last touch. Only wakes the device reports on its own count: the wake word, motion, a notification or an automation turning the Screen light on leave the sensor alone, as before.
 
+### Fixed
+- Motion detection silently dead after the screen came on (#349). When the app starts under a dark panel it binds the camera blind and restarts it on wake, since some devices refuse to open a camera while the screen is off. On Samsung's One UI 11 (the Galaxy Tab A generation) that wake-time reopen could be refused too, when it raced the app's own return to the foreground, and a refused open leaves the camera parked with no error and no frames, so the app had no way to tell a dead session from a quiet room and motion stayed dead until a camera switch was toggled. The frame watchdog that already catches the screen-off suspension on these devices now covers a lit screen as well: a camera that opens but delivers no frames for ten seconds is logged as an error and reopened on the usual backoff.
+
 ## v2026.8.97 - 2026-08-29
 
 ### Changed

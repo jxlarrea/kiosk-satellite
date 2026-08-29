@@ -270,16 +270,23 @@ class CameraMotion(
         // listener that will never run. Mirrors DeviceCamera's backstop.
         private const val PROVIDER_TIMEOUT_MS = 20_000L
 
-        // The screen-off suspension watchdog (issue #271). One UI 11
+        // The frame watchdog (issues #271 and #349). Frames are the ground
+        // truth for session health: a live camera delivers them regardless
+        // of scene or lighting, so a bound session this long without one
+        // is dead whatever the panel is doing. Dark panel: One UI 11
         // (Galaxy Tab A 10.1) closes the capture session seconds after the
         // panel powers off - the camera foreground service type
         // notwithstanding - and surfaces no CameraState error, so the
-        // observer in start() never hears: the analyzer just stops
-        // receiving frames, and motion can never wake the dark panel.
-        // Frames are the ground truth for session health (a live camera
-        // delivers them regardless of scene or lighting), so a dark-panel
-        // session this long without one is suspended. The threshold is 5x
-        // the slowest analysis interval (0.5 fps = 2s between frames).
+        // observer in start() never hears; motion can never wake the
+        // dark panel. Lit panel: the same generation refused the reopen
+        // the Dart side issues at wake (the blind-bind restart) when it
+        // raced the app's own return to the foreground, and a policy
+        // refusal parks CameraX in PENDING_OPEN with no error and no
+        // availability callback to ever follow, so the session sat
+        // silently dead for the rest of the day (#349). Either way the
+        // Dart side hears a stream error and owns the rebind. The
+        // threshold is 5x the slowest analysis interval (0.5 fps = 2s
+        // between frames).
         private const val SUSPEND_CHECK_MS = 5_000L
         private const val SUSPEND_AFTER_MS = 10_000L
     }
@@ -725,18 +732,21 @@ class CameraMotion(
     }
 
     /**
-     * The screen-off suspension watchdog (see [SUSPEND_AFTER_MS]): while a
-     * session is bound, check every [SUSPEND_CHECK_MS] whether frames are
-     * still arriving. A dark panel with no frames for the threshold means
-     * the OS suspended the camera without an error; report it as a stream
-     * error so the Dart side logs the plain-language warning and rebinds on
-     * the next screen-on, exactly like a loud revocation. A session bind
+     * The frame watchdog (see [SUSPEND_AFTER_MS]): while a session is
+     * bound, check every [SUSPEND_CHECK_MS] whether frames are still
+     * arriving. No frames for the threshold means the session is dead,
+     * and the panel state names the cause: dark, the OS suspended the
+     * camera without an error; lit, a bind that never produced (a policy
+     * refusal parks CameraX in PENDING_OPEN, silently) or a session that
+     * stopped without a CameraState error. Both are reported as a stream
+     * error so the Dart side logs the plain-language warning and rebinds
+     * the way it does after a loud revocation: on the next screen-on for
+     * a dark panel, on a short backoff for a lit one. A session bind
      * under an already-dark panel is covered too: the seed stamp below
      * starts the clock, so a bind that parks in PENDING_OPEN and never
-     * produces (the One UI policy reject) trips the same report instead of
-     * staying silent. The check dies with its session: every rebind and
-     * cancel bumps [session], and a stale runnable returns without
-     * rescheduling.
+     * produces trips the same report instead of staying silent. The
+     * check dies with its session: every rebind and cancel bumps
+     * [session], and a stale runnable returns without rescheduling.
      */
     private fun armSuspendWatchdog(mySession: Int, sink: EventChannel.EventSink) {
         lastFrameAtMs = SystemClock.elapsedRealtime()
@@ -745,18 +755,28 @@ class CameraMotion(
         check = Runnable {
             if (session != mySession) return@Runnable
             val quiet = SystemClock.elapsedRealtime() - lastFrameAtMs
-            if (!power.isInteractive && quiet >= SUSPEND_AFTER_MS) {
-                Log.w(
-                    TAG,
-                    "no frames for ${quiet / 1000}s with the screen off; " +
-                        "the OS has suspended the camera",
-                )
-                sink.error(
-                    "camera",
-                    "the OS suspends this device's camera while the screen " +
-                        "is off; motion cannot wake it",
-                    null,
-                )
+            if (quiet >= SUSPEND_AFTER_MS) {
+                if (power.isInteractive) {
+                    Log.w(TAG, "no frames for ${quiet / 1000}s with the screen on; reopening")
+                    sink.error(
+                        "camera",
+                        "the camera opened but delivered no frames for " +
+                            "${quiet / 1000}s",
+                        null,
+                    )
+                } else {
+                    Log.w(
+                        TAG,
+                        "no frames for ${quiet / 1000}s with the screen off; " +
+                            "the OS has suspended the camera",
+                    )
+                    sink.error(
+                        "camera",
+                        "the OS suspends this device's camera while the screen " +
+                            "is off; motion cannot wake it",
+                        null,
+                    )
+                }
                 return@Runnable
             }
             mainHandler.postDelayed(check, SUSPEND_CHECK_MS)

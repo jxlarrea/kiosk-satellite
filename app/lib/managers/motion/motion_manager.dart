@@ -195,7 +195,12 @@ class MotionManager extends Manager {
   /// follows a policy reject (measured on a Tab S8 / Android 16 when a
   /// relaunch raced a screen-off). Older Android opens fine. Either way
   /// the session is suspect until a frame proves otherwise, so the wake
-  /// listener restarts it and a motion tick clears the suspicion.
+  /// listener restarts it and a motion tick clears the suspicion. The
+  /// restart itself can be refused the same way when it races the app's
+  /// own return to the foreground (One UI 11, issue #349), and that
+  /// refusal is just as silent; the native frame watchdog catches it (no
+  /// frames for ten seconds under a lit panel) and reports a stream
+  /// error, which [_onCameraLost] answers with the backoff rebind.
   bool _boundBlind = false;
 
   /// Rebind backoff after the OS revokes the camera out from under a live
