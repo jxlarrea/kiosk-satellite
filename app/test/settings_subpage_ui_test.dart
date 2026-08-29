@@ -8,6 +8,8 @@ import 'package:kiosk_satellite/managers/settings/definitions.dart';
 import 'package:kiosk_satellite/ui/kit.dart';
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:kiosk_satellite/ui/settings_search.dart';
+import 'package:kiosk_satellite/ui/subpage_icons.dart';
+import 'package:kiosk_satellite/ui/theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The second-level settings page as the user meets it: an entry row where
@@ -92,6 +94,48 @@ void main() {
       expect(find.text(haKioskMode.title), findsNothing);
       // The connection rows the rest of the page waits behind stay put.
       expect(find.text(haUrl.title), findsOneWidget);
+
+      await drain(tester);
+    });
+
+    testWidgets('the page title sits right after the back arrow', (
+      tester,
+    ) async {
+      await boot();
+      // The app's own theme: the spacing is a theme rule, and a phone is
+      // where the default gap between the arrow and the glyph showed.
+      tester.view.physicalSize = const Size(500, 1400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.dark),
+          home: SettingsScreen(container: container),
+        ),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Home Assistant Setup'));
+      await settle(tester);
+      // The category page: its glyph follows the arrow's button closely.
+      final bar = find.byType(AppBar);
+      final arrow = tester.getRect(
+        find.descendant(of: bar, matching: find.byType(BackButton)),
+      );
+      final glyph = tester.getRect(
+        find.descendant(of: bar, matching: find.byType(Icon)).last,
+      );
+      expect(glyph.left - arrow.right, lessThanOrEqualTo(8));
+
+      await tester.tap(entryRow());
+      await settle(tester);
+      // And the second-level page's, the same way.
+      final subArrow = tester.getRect(
+        find.descendant(of: bar, matching: find.byType(BackButton)),
+      );
+      final subGlyph = tester.getRect(
+        find.descendant(of: bar, matching: find.byType(SubpageGlyph)),
+      );
+      expect(subGlyph.left - subArrow.right, lessThanOrEqualTo(8));
 
       await drain(tester);
     });

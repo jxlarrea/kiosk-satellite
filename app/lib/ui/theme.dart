@@ -150,6 +150,11 @@ ThemeData buildTheme(Brightness brightness) {
       foregroundColor: scheme.onSurface,
       elevation: 0,
       scrolledUnderElevation: 0,
+      // The title sits right after the back arrow, as it does in the wide
+      // settings pane, instead of Material's 16 further along: every bar
+      // here is a pushed page with a leading arrow, and on a phone the
+      // default gap read as a hole between the arrow and the page glyph.
+      titleSpacing: 0,
       // One UI-weight headers: bold titles carry the hierarchy.
       titleTextStyle: TextStyle(
         fontFamily: Ks.displayFont,
