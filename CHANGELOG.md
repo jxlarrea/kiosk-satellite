@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The camera fix from v2026.8.96 for tablets whose camera HAL lists a phantom camera now actually reaches CameraX. The QR scanner plugin configures CameraX itself the moment it attaches, with a plain configuration, and an explicitly configured instance takes precedence over the app's own camera configuration, which CameraX only consults when nothing configured it first. So the limiter that skips cameras whose lens facing cannot be read was never read, on that tablet and on the Echo Show ROMs the limiter was first written for, ever since the scanner arrived. The app now configures CameraX before any plugin loads; the scanner defers when it finds CameraX already configured.
+
 ## v2026.8.98 - 2026-08-29
 
 ### Changed

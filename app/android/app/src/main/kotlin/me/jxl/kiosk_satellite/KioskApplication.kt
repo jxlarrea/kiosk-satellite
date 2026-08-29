@@ -1,8 +1,10 @@
 package me.jxl.kiosk_satellite
 
 import android.app.Application
+import android.util.Log
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraXConfig
+import androidx.camera.lifecycle.ProcessCameraProvider
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.embedding.engine.dart.DartExecutor
@@ -85,6 +87,23 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         // the dashboard through a texture (issue #302). Both settle before
         // Dart reads the settings they write.
         WebViewCompositingGuard.check(this)
+
+        // CameraX before the plugins: the QR scanner (mobile_scanner)
+        // configures CameraX itself the moment it attaches, with a plain
+        // Camera2Config, and an explicitly configured instance wins over
+        // this Application's CameraXConfig.Provider, which CameraX consults
+        // only when nothing called configureInstance. That left the
+        // camera limiter below unread for as long as the scanner has been
+        // in the app. The plugin swallows the IllegalStateException it
+        // gets for configuring second, so the app claiming the slot first
+        // is the whole fix; the catch here is for a process that somehow
+        // configured earlier still.
+        try {
+            ProcessCameraProvider.configureInstance(getCameraXConfig())
+        } catch (e: IllegalStateException) {
+            Log.w("KioskApplication", "CameraX was configured before the app could", e)
+        }
+
         val engine = FlutterEngine(this, RendererGuard.engineArgs(this))
         // Plugins before the entrypoint: Dart main() starts the admin server and
         // reads shared_preferences immediately, so shared_preferences,
