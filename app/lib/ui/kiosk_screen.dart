@@ -20,6 +20,7 @@ import '../managers/device/haptics.dart';
 import '../managers/device/tap_sound.dart';
 import '../managers/browser/no_cache_script.dart';
 import '../managers/browser/pull_to_refresh_script.dart';
+import '../managers/browser/dashboards_watch_script.dart';
 import '../managers/browser/socket_watch_script.dart';
 import '../managers/browser/visibility_mask_script.dart';
 import '../managers/browser/ws_filter_script.dart';
@@ -726,6 +727,14 @@ class _KioskScreenState extends State<KioskScreen>
       source: haSocketWatchScript,
       injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
     ),
+    // Reports the moments the dashboard set can have moved (a dashboard
+    // created, deleted or edited, the connection back after an outage), so
+    // the dashboard view selects re-read their options then and never on
+    // a timer (see dashboards_watch_script).
+    UserScript(
+      source: haDashboardsWatchScript,
+      injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
+    ),
     // The dashboard carousel rides the same contract as the pull probe:
     // always injected, acted on only while its flag is on, so the toggle
     // needs no reload.
@@ -1361,6 +1370,13 @@ class _KioskScreenState extends State<KioskScreen>
       controller.addJavaScriptHandler(
         handlerName: 'ksHaSocketClosed',
         callback: (_) => c.browser.onHaSocketClosed(),
+      );
+      // The dashboard set may have moved (see dashboards_watch_script).
+      controller.addJavaScriptHandler(
+        handlerName: 'ksHaDashboardsChanged',
+        callback: (args) => c.browser.onHaDashboardsChanged(
+          args.isNotEmpty ? '${args.first}' : '',
+        ),
       );
       // The carousel reports its drag edges so the native scrollbars
       // stay asleep during the strip animation (see carousel_script).

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -27,9 +28,13 @@ void main() {
   var bluetooth = <String, Object?>{};
   var vsState = <String, Object?>{};
   var ips = <String, Object?>{};
+  var dashboardsUnreachable = false;
+  var catalogChanges = 0;
 
   setUp(() async {
     cameraPresent = true;
+    dashboardsUnreachable = false;
+    catalogChanges = 0;
     cameraFacings = ['front', 'back'];
     vsState = {
       'config': {'auto_start': true},
@@ -62,7 +67,13 @@ void main() {
     commands = CommandRegistry(log);
     settings = SettingsManager(bus, commands, log);
     await settings.init();
-    surface = EspEntitySurface(bus, commands, log, settings);
+    surface = EspEntitySurface(
+      bus,
+      commands,
+      log,
+      settings,
+      onCatalogChanged: () => catalogChanges++,
+    );
     pushed = [];
     images = [];
     executed = [];
@@ -112,9 +123,20 @@ void main() {
         {'id': 'v2', 'name': 'Empty view', 'cameraIds': []},
       ],
     });
-    stub('haListDashboards', [
-      {'url_path': 'lovelace'},
-    ]);
+    commands.register(
+      Command(
+        name: 'haListDashboards',
+        description: 'stub',
+        handler: (p) async {
+          executed.add(('haListDashboards', Map<String, Object?>.from(p)));
+          return dashboardsUnreachable
+              ? const CommandResult.fail('could not list dashboards')
+              : const CommandResult.ok([
+                  {'url_path': 'lovelace'},
+                ]);
+        },
+      ),
+    );
     stub('haListDashboardViews', [
       {'route': 'home'},
       {'route': 'cameras'},
@@ -761,6 +783,126 @@ void main() {
     ];
     expect(stamps, hasLength(1));
     expect(DateTime.parse('${stamps.single.$2}'), isA<DateTime>());
+  });
+
+  group('the dashboard view list (issue #362)', () {
+    int reads() => executed.where((e) => e.$1 == 'haListDashboards').length;
+
+    test('a read that fails at start leaves the select out, and a '
+        'persisted list keeps it in without asking', () async {
+      dashboardsUnreachable = true;
+      var ids = [for (final d in await surface.build()) '${d['objectId']}'];
+      expect(ids, isNot(contains('dashboard_view')));
+      expect(settings.internal('mqtt_dashboard_views'), isEmpty);
+
+      // The list the last successful read left behind (either surface's)
+      // serves the next start, so the select is there from the first
+      // connection even while Home Assistant is still down.
+      await settings.setInternal(
+        'mqtt_dashboard_views',
+        jsonEncode(['lovelace/home']),
+      );
+      executed.clear();
+      final catalog = await surface.build();
+      ids = [for (final d in catalog) '${d['objectId']}'];
+      expect(ids, contains('dashboard_view'));
+      final select = catalog.firstWhere(
+        (d) => d['objectId'] == 'dashboard_view',
+      );
+      expect(select['options'], ['lovelace/home']);
+      expect(reads(), 0);
+    });
+
+    test('a successful read at start is kept for the next one', () async {
+      await surface.build();
+      expect(jsonDecode(settings.internal('mqtt_dashboard_views')), [
+        'lovelace/home',
+        'lovelace/cameras',
+      ]);
+    });
+
+    test('a list learned while serving re-lists the catalog, once', () async {
+      dashboardsUnreachable = true;
+      await surface.build();
+      await attach();
+      expect(catalogChanges, 0);
+
+      // Still unreachable: nothing to re-list, nothing persisted.
+      await surface.relearnDashboardViews();
+      expect(catalogChanges, 0);
+      expect(settings.internal('mqtt_dashboard_views'), isEmpty);
+
+      dashboardsUnreachable = false;
+      await surface.relearnDashboardViews();
+      expect(catalogChanges, 1);
+      expect(jsonDecode(settings.internal('mqtt_dashboard_views')), [
+        'lovelace/home',
+        'lovelace/cameras',
+      ]);
+      // The restart that follows rebuilds with the list in place.
+      final catalog = await surface.build();
+      final select = catalog.firstWhere(
+        (d) => d['objectId'] == 'dashboard_view',
+      );
+      expect(select['options'], ['lovelace/home', 'lovelace/cameras']);
+
+      // The same list again, or a read that fails, never restarts the
+      // server: that makes every entity unavailable for a moment.
+      await surface.relearnDashboardViews();
+      dashboardsUnreachable = true;
+      await surface.relearnDashboardViews();
+      expect(catalogChanges, 1);
+      expect(jsonDecode(settings.internal('mqtt_dashboard_views')), [
+        'lovelace/home',
+        'lovelace/cameras',
+      ]);
+    });
+
+    test('the page reporting a dashboard change re-reads the list, '
+        'coalesced, from the page only', () {
+      dashboardsUnreachable = true;
+      fakeAsync((async) {
+        surface.build();
+        async.flushMicrotasks();
+        surface.attach(
+          (objectId, value) async => pushed.add((objectId, value)),
+          (objectId, jpeg) async => images.add((objectId, jpeg)),
+        );
+        async.elapse(const Duration(milliseconds: 100));
+        executed.clear();
+        dashboardsUnreachable = false;
+        // A create fires several reports in a row: one read.
+        bus.publish(const HaDashboardsChanged(reason: 'panels'));
+        bus.publish(const HaDashboardsChanged(reason: 'lovelace'));
+        async.elapse(const Duration(seconds: 2));
+        expect(reads(), 0);
+        async.elapse(const Duration(seconds: 2));
+        expect(reads(), 1);
+        expect(catalogChanges, 1);
+        final read = executed.firstWhere((e) => e.$1 == 'haListDashboards');
+        expect(read.$2, {'source': 'page'});
+        surface.detach();
+      });
+    });
+
+    test('the poll never re-reads the list', () {
+      dashboardsUnreachable = true;
+      fakeAsync((async) {
+        surface.build();
+        async.flushMicrotasks();
+        surface.attach(
+          (objectId, value) async => pushed.add((objectId, value)),
+          (objectId, jpeg) async => images.add((objectId, jpeg)),
+        );
+        async.elapse(const Duration(milliseconds: 100));
+        executed.clear();
+        dashboardsUnreachable = false;
+        async.elapse(const Duration(minutes: 30));
+        expect(reads(), 0);
+        expect(catalogChanges, 0);
+        surface.detach();
+      });
+    });
   });
 
   test('the persisted stamp reseeds Last interaction at attach', () async {

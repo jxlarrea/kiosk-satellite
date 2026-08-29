@@ -35,12 +35,24 @@ import '../settings/settings_manager.dart';
 /// key; the frames are cheap enough that a screenshot fetch refreshing the
 /// camera preview alongside is no cost worth a second protocol.
 class EspEntitySurface {
-  EspEntitySurface(this.bus, this.commands, this.log, this._settings);
+  EspEntitySurface(
+    this.bus,
+    this.commands,
+    this.log,
+    this._settings, {
+    this.onCatalogChanged,
+  });
 
   final EventBus bus;
   final CommandRegistry commands;
   final Logger log;
   final SettingsManager _settings;
+
+  /// Called when the served catalog no longer matches what a fresh
+  /// [build] would lay out (the dashboard view list moved). The ESPHome
+  /// protocol lists entities once per connection, so only the manager's
+  /// restart can tell Home Assistant; the surface never restarts itself.
+  final void Function()? onCatalogChanged;
 
   static const _pollInterval = Duration(seconds: 60);
 
@@ -68,6 +80,16 @@ class EspEntitySurface {
   // Learned at build time; commands and states need them afterwards.
   List<Map<String, Object?>> _cameraViews = const [];
   List<String> _dashboardViews = const [];
+
+  /// Coalesces the page's dashboard-change reports (a create fires
+  /// several, a reconnect one) into a single re-read, after the frontend
+  /// has refreshed its own registry.
+  Timer? _viewsNudge;
+  bool _refreshingDashboardViews = false;
+
+  /// The persisted dashboard view list, shared with the MQTT select so
+  /// either surface's read serves the other's next start.
+  static const _dashboardViewsKey = 'mqtt_dashboard_views';
   bool _deviceCameraPresent = false;
   bool _screensaverActive = false;
 
@@ -844,6 +866,18 @@ class EspEntitySurface {
       }),
     );
     _subs.add(bus.on<PageChanged>().listen((e) => _send('url', e.url)));
+    // The dashboard set may have moved, or the page's connection is back
+    // after an outage: the only moments the list is re-read. Never on a
+    // timer, since a changed list re-registers the device (issue #362).
+    _subs.add(
+      bus.on<HaDashboardsChanged>().listen((_) {
+        _viewsNudge?.cancel();
+        _viewsNudge = Timer(
+          const Duration(seconds: 3),
+          () => unawaited(relearnDashboardViews()),
+        );
+      }),
+    );
     _subs.add(bus.on<UpdateStateChanged>().listen((_) => _sendUpdateState()));
     _subs.add(bus.on<NextAlarmChanged>().listen((_) => _sendNextAlarm()));
     _subs.add(
@@ -948,6 +982,8 @@ class EspEntitySurface {
     _btNudge = null;
     _vsNudge?.cancel();
     _vsNudge = null;
+    _viewsNudge?.cancel();
+    _viewsNudge = null;
     _interaction.dispose();
   }
 
@@ -1454,48 +1490,94 @@ class EspEntitySurface {
     ];
   }
 
-  /// The dashboard/view option list, learned once per server run: first
-  /// from the crawl the MQTT select uses, else its persisted cache, so an
-  /// MQTT-less install still gets the select once HA has answered once.
+  /// The dashboard/view option list for this server run: the persisted
+  /// list from the last successful read when there is one, else a live
+  /// read. The persisted list first, on purpose: a server that starts
+  /// before the network is up cannot ask Home Assistant, and a select
+  /// left out of the catalog for that stayed out until the next restart,
+  /// which raced the same way (issue #362). A stale list is corrected by
+  /// the re-reads that follow, with a restart only when it moved.
   Future<void> _refreshDashboardViews() async {
-    final options = <String>[];
-    final dashboards = await commands.execute('haListDashboards', const {});
-    if (dashboards.ok && dashboards.data is List) {
-      for (final d in dashboards.data as List) {
-        if (d is! Map) continue;
-        final urlPath = '${d['url_path'] ?? ''}';
-        if (urlPath.isEmpty) continue;
-        final views = await commands.execute('haListDashboardViews', {
-          'url_path': urlPath,
-        });
-        if (!views.ok) {
-          options.clear();
-          break;
-        }
-        final viewData = views.data;
-        if (viewData is List && viewData.isNotEmpty) {
-          for (final v in viewData) {
-            if (v is Map) options.add('$urlPath/${v['route']}');
-          }
-        } else {
-          options.add(urlPath);
-        }
-      }
-    }
-    if (options.isNotEmpty) {
-      _dashboardViews = options;
-      return;
-    }
+    _dashboardViews = _rememberedDashboardViews();
+    if (_dashboardViews.isNotEmpty) return;
+    final learned = await _learnDashboardViews();
+    if (learned.isEmpty) return;
+    _dashboardViews = learned;
+    await _settings.setInternal(_dashboardViewsKey, jsonEncode(learned));
+  }
+
+  List<String> _rememberedDashboardViews() {
     try {
-      final cached = jsonDecode(_settings.internal('mqtt_dashboard_views'));
+      final cached = jsonDecode(_settings.internal(_dashboardViewsKey));
       if (cached is List) {
-        _dashboardViews = [
+        return [
           for (final v in cached)
             if (v is String && v.isNotEmpty) v,
         ];
       }
-    } catch (_) {
-      _dashboardViews = const [];
+    } catch (_) {}
+    return const [];
+  }
+
+  /// One read of the dashboard view list from Home Assistant, the crawl
+  /// the MQTT select uses. Empty when any part of it failed: a websocket
+  /// that is down says nothing about the dashboards, so the caller keeps
+  /// what it had rather than downgrading the select (issue #214).
+  ///
+  /// [pageOnly] takes the page's registry or nothing. The websocket list
+  /// orders and names the default differently, and a re-read that could
+  /// flip between the two sources would re-register the device for a
+  /// list that had not really changed.
+  Future<List<String>> _learnDashboardViews({bool pageOnly = false}) async {
+    final options = <String>[];
+    final dashboards = await commands.execute('haListDashboards', {
+      if (pageOnly) 'source': 'page',
+    });
+    if (!dashboards.ok || dashboards.data is! List) return const [];
+    for (final d in dashboards.data as List) {
+      if (d is! Map) continue;
+      final urlPath = '${d['url_path'] ?? ''}';
+      if (urlPath.isEmpty) continue;
+      final views = await commands.execute('haListDashboardViews', {
+        'url_path': urlPath,
+      });
+      if (!views.ok) return const [];
+      final viewData = views.data;
+      if (viewData is List && viewData.isNotEmpty) {
+        for (final v in viewData) {
+          if (v is Map) options.add('$urlPath/${v['route']}');
+        }
+      } else {
+        // A dashboard that genuinely holds no view list (auto-generated
+        // strategy dashboards) still navigates by its bare path.
+        options.add(urlPath);
+      }
+    }
+    return options;
+  }
+
+  /// Re-reads the list while serving, when the page reports the dashboard
+  /// set moved or its connection came back, and asks the manager for a
+  /// restart when it changed: the select that was missing because Home
+  /// Assistant was unreachable at start appears once it answers, and an
+  /// added or removed dashboard reaches the dropdown without a toggle. An
+  /// unchanged list never restarts anything, since the restart makes
+  /// every entity unavailable for a couple of seconds.
+  Future<void> relearnDashboardViews() async {
+    if (_push == null || _refreshingDashboardViews) return;
+    _refreshingDashboardViews = true;
+    try {
+      final learned = await _learnDashboardViews(pageOnly: true);
+      if (learned.isEmpty ||
+          jsonEncode(learned) == jsonEncode(_dashboardViews)) {
+        return;
+      }
+      _dashboardViews = learned;
+      await _settings.setInternal(_dashboardViewsKey, jsonEncode(learned));
+      log.info('esphome', 'dashboard view list changed; re-listing entities');
+      onCatalogChanged?.call();
+    } finally {
+      _refreshingDashboardViews = false;
     }
   }
 

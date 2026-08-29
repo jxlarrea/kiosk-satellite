@@ -93,6 +93,10 @@ class BtProxyManager extends Manager {
     commands,
     log,
     _settings,
+    // The dashboard view list moved after the catalog was served (learned
+    // late because Home Assistant was unreachable at start, or a dashboard
+    // added since): only a restart re-lists the entities (issue #362).
+    onCatalogChanged: _scheduleRestart,
   );
 
   // The OUI vendor cache: prefix "AA:BB:CC" to vendor name, '' for a
@@ -189,10 +193,7 @@ class BtProxyManager extends Manager {
               _liveNodeName) {
         return;
       }
-      _restartDebounce?.cancel();
-      _restartDebounce = Timer(const Duration(milliseconds: 500), () {
-        _transition = _transition.then((_) => _restart());
-      });
+      _scheduleRestart();
     });
     commands.register(
       Command(
@@ -382,6 +383,15 @@ class BtProxyManager extends Manager {
     final chosen = esphomeNodeSlug(_settings.get(defs.esphomeNodeName));
     if (chosen.isNotEmpty) return chosen;
     return firstEver ? esphomeNodeSlug(_settings.get(defs.deviceName)) : '';
+  }
+
+  /// One restart for a burst of changes, queued behind whatever
+  /// transition is under way.
+  void _scheduleRestart() {
+    _restartDebounce?.cancel();
+    _restartDebounce = Timer(const Duration(milliseconds: 500), () {
+      _transition = _transition.then((_) => _restart());
+    });
   }
 
   Future<void> _restart() async {

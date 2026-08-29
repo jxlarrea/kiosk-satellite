@@ -239,8 +239,15 @@ class HomeAssistantManager extends Manager {
         Command(
           name: 'haListDashboards',
           description: 'List Home Assistant dashboards',
-          handler: (_) async {
-            final dashboards = await listDashboards();
+          params: const {
+            'source':
+                "'page' to read only the page's own registry, failing "
+                'rather than falling back to the websocket list',
+          },
+          handler: (p) async {
+            final dashboards = await listDashboards(
+              pageOnly: p['source'] == 'page',
+            );
             return dashboards == null
                 ? const CommandResult.fail('could not list dashboards')
                 : CommandResult.ok(dashboards);
@@ -1755,7 +1762,14 @@ class HomeAssistantManager extends Manager {
 
   /// Dashboards via the websocket API (`lovelace/dashboards/list`), plus
   /// the default `lovelace` when the API does not include it.
-  Future<List<Map<String, Object?>>?> listDashboards() async {
+  ///
+  /// [pageOnly] skips the websocket fallback: the two sources order and
+  /// name the default differently (the page knows the real one), so a
+  /// reader that must not see the list flip between them asks for the
+  /// page's answer or none (issue #362).
+  Future<List<Map<String, Object?>>?> listDashboards({
+    bool pageOnly = false,
+  }) async {
     if (!configured) return null;
     // Source the list from the page's `hass.panels` — HA's own registry of
     // what the sidebar can navigate to. It is the only place that knows the
@@ -1766,7 +1780,7 @@ class HomeAssistantManager extends Manager {
     // offered that broken alias instead of the dashboard that actually
     // renders. Falls back to the WS list when the page has no hass yet.
     final page = await _dashboardsFromPage();
-    if (page != null) return page;
+    if (page != null || pageOnly) return page;
     try {
       final result = await _wsCommand({'type': 'lovelace/dashboards/list'});
       if (result is! List) return null;

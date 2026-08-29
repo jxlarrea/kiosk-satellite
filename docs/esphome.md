@@ -129,9 +129,15 @@ an automation can flip the switch through the day without the device
 re-registering. The Last screenshot and Last camera snapshot stamps are
 kept across restarts, so they read unknown only until the first capture
 ever.
-The Camera view and Dashboard view option lists are learned when the
-server starts; after adding views, toggle ESPHome off and on (or
-restart the app) to refresh them. A note on Connectivity: with ESPHome
+The Camera view option list is learned when the server starts; after
+adding camera views, toggle ESPHome off and on (or restart the app) to
+refresh it. The Dashboard view list is re-read when Home Assistant
+reports a dashboard created, deleted or edited and when the dashboard's
+connection comes back after an outage, never on a timer. When the list
+actually changed the server re-registers, which makes every entity
+unavailable for a couple of seconds. The last list read is kept across
+restarts, so the select is there from the first connection even when
+Home Assistant is still down. A note on Connectivity: with ESPHome
 the entity reads "on" while the kiosk is reachable and "unavailable"
 (rather than "off") when it is not, since a lost connection takes every
 entity with it.

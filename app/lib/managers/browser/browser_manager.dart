@@ -1323,6 +1323,12 @@ class BrowserManager extends Manager {
     });
   }
 
+  /// The page reported that the dashboard set may have moved (see
+  /// dashboards_watch_script): relayed as is, the listeners coalesce.
+  void onHaDashboardsChanged(String reason) {
+    bus.publish(HaDashboardsChanged(reason: reason));
+  }
+
   /// Serializes and rate-limits [onNetworkAvailable]: a flapping network
   /// must not stack probes or reload in a loop.
   bool _networkRepairBusy = false;

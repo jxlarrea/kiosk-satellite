@@ -153,6 +153,19 @@ class NetworkStateChanged extends AppEvent {
   final bool up;
 }
 
+/// The page's Home Assistant connection reported that the dashboard set
+/// may have moved: a dashboard created, deleted or edited (HA's own
+/// `panels_updated` and `lovelace_updated` events), or the connection
+/// coming up, on a load and on every reconnect after an outage. Internal:
+/// the dashboard view selects re-read their option lists off it instead
+/// of on a timer (issue #362).
+class HaDashboardsChanged extends AppEvent {
+  const HaDashboardsChanged({required this.reason});
+
+  /// `panels`, `lovelace` or `ready`, as the page reported it.
+  final String reason;
+}
+
 // ── Updates ────────────────────────────────────────────────────────────
 
 /// The updater's picture of the world moved: a newer release appeared or
