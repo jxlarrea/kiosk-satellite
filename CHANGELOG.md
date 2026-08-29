@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- Every row that opens a second-level settings page now carries an icon ahead of its name, and the page it opens wears the same icon in its title, on the device and in the remote admin alike. The icon says what the page is about at a glance (a palette for Theme, a bell for Notifications, a pin for Hold mode, a folder for the Local Media screensaver, the Immich logo for the Immich Media screensaver) and ties the row to the page it leads to.
+
 ## v2026.8.96 - 2026-08-28
 
 ### Added

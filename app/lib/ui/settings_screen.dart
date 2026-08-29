@@ -49,6 +49,7 @@ import 'theme.dart';
 import 'toast.dart';
 import 'mic_level_meter.dart';
 import 'settings_search.dart';
+import 'subpage_icons.dart';
 import 'wake_word_tester.dart';
 
 /// Render a category's settings as cards: consecutive settings sharing a
@@ -639,6 +640,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   storageKey:
                                       'settings-sub-$category-$_subpage',
                                   title: _subpage!,
+                                  icon: subpageIcon(_subpage!),
                                   onBack: () => setState(() => _subpage = null),
                                   child: _CategoryContent(
                                     key: ValueKey('$category/$_subpage'),
@@ -992,7 +994,12 @@ class _SubpageEntryTile extends StatelessWidget {
     final nav = _SubpageNav.maybeOf(context);
     return SearchLandingTarget(
       id: 'sub:$subpage',
+      // The page's glyph ahead of the name, the same one its title wears,
+      // so the row and the page it opens answer to each other. A ListTile
+      // rather than SettingsRow: the chevron is short, and the tile already
+      // hangs the hint under the name, past the glyph, on any pane.
       child: ListTile(
+        leading: SubpageGlyph(subpage),
         title: Text(subpage),
         subtitle: hint == null ? null : Text(hint),
         trailing: const Icon(Icons.chevron_right),
@@ -1035,7 +1042,18 @@ class SubpageSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(subpage)),
+      appBar: AppBar(
+        // The entry row's glyph again, bare, ahead of the name: the same
+        // shape the wide pane's title row takes.
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SubpageGlyph(subpage, size: 24),
+            const SizedBox(width: 12),
+            Flexible(child: Text(subpage, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+      ),
       body: constrainedColumn(
         SearchLandingScope(
           target: landingAnchor,

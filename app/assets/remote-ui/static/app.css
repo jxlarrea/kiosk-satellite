@@ -414,6 +414,12 @@
   .row.subpage-entry { cursor: pointer; }
   .row.subpage-entry .chev { color: var(--muted); display: flex; flex: none; }
   .row.subpage-entry .chev svg { width: 18px; height: 18px; }
+  /* The page's glyph ahead of the name, drawn like the device's ListTile
+     leading icon: 24px, the muted ink, 12 from the name. In the page
+     title it takes the tab glyph's 24px through #pageTitle svg. */
+  .page-icon { color: var(--muted); display: flex; flex: none; }
+  .page-icon svg { width: 24px; height: 24px; }
+  #pageTitle .page-icon { color: var(--text); }
 
   /* Cards: One UI section masks, mirroring the device, borderless, large
      radius, headed from outside by a small primary-tinted title. */
@@ -682,6 +688,14 @@
        on the name line. */
     .row .info .name { flex: 1 1 auto; min-width: 40%; }
     .row .info .desc { flex-basis: 100%; order: 1; }
+    /* Under a leading glyph the hint lines up with the name, not the
+       glyph: the device's SettingsRow indents it by the icon and gap. A
+       long name wraps its words rather than pushing the chevron onto a
+       line of its own: its basis is zero, not its unwrapped width, so the
+       glyph, name and chevron always share the first line. */
+    .row.subpage-entry .info .desc { margin-left: 36px;
+      flex-basis: calc(100% - 36px); }
+    .row.subpage-entry .info .name { flex-basis: 0; }
     /* A control wider than that stacks: it takes the next line and
        stretches across the row, on the name's left edge, the way dropdown
        rows stack on the device. Never right aligned on its own line. */

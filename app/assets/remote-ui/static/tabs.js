@@ -3,6 +3,7 @@ import { $, state } from './core.js';
 import { loadAboutInfo, loadDeviceInfo } from './device.js';
 import { loadFiles } from './files.js';
 import { loadGestures } from './gestures.js';
+import { subpageIcon } from './icons.js';
 import { loadLogs } from './logs.js';
 import {
   updateAmbientDisplayNotice,
@@ -43,6 +44,9 @@ export function subpageEntry(tab, sub) {
   const row = document.createElement('div');
   row.className = 'row subpage-entry';
   row.dataset.subpageEntry = sub;
+  // The page's glyph ahead of the name, the same one its title wears, so
+  // the row and the page it opens answer to each other.
+  const icon = subpageIcon(sub);
   const info = document.createElement('div');
   info.className = 'info';
   const name = document.createElement('div');
@@ -57,7 +61,7 @@ export function subpageEntry(tab, sub) {
   chev.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
     + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
     + '<path d="m9 18 6-6-6-6"/></svg>';
-  row.append(info, chev);
+  row.append(icon, info, chev);
   row.addEventListener('click', () => showTab(`${tab}/${sub}`));
   return row;
 }
@@ -152,7 +156,9 @@ export function showTab(name, { push = true } = {}) {
       + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
       + '<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>';
     back.addEventListener('click', () => showTab(tab));
-    titleEl.prepend(back);
+    // Then the entry row's glyph, bare, the way a tab's title wears the
+    // nav rail's.
+    titleEl.prepend(back, subpageIcon(sub));
   } else {
     // The nav rail's glyph, bare, same drawing, no disc.
     titleEl.textContent = TAB_TITLES[tab];
