@@ -338,7 +338,8 @@ the wake word, the
 ESPHome **Screensaver active** switch turned off, and a Home Assistant
 automation calling `stopScreensaver`. All of them land on the dashboard,
 not on the screensaver. The power button and double-tap-to-wake count as
-activity like a touch, so they land on the dashboard too (under
+activity like a touch, so they land on the dashboard too and restart the
+idle countdown, with or without a screensaver up (under
 Lockdown Mode the screensaver stays, as it does for motion).
 The one wake that keeps the screensaver is the app switching its own
 panel on, the ESPHome **Screen** light: an automation turning a photo

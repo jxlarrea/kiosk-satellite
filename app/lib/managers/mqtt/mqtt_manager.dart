@@ -385,6 +385,17 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
       }),
     );
+    // So does a person waking the panel with the power button or a
+    // double-tap (issue #348): glancing at the dashboard is using it, even
+    // with no touch to follow. Only the OS-reported wake counts; the app's
+    // own wakes (the wake word, motion, an automation flipping the Screen
+    // light) announce themselves as 'app' first and the broadcast behind
+    // them is deduplicated, so they never land here.
+    _subs.add(
+      bus.on<ScreenStateChanged>().listen((e) {
+        if (e.on && e.source == 'system') _interaction.mark();
+      }),
+    );
 
     await _refreshCameraViews();
     try {

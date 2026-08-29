@@ -725,6 +725,26 @@ void main() {
     );
   });
 
+  test('a power button wake stamps Last interaction, the app\'s own wakes '
+      'do not (issue #348)', () async {
+    await surface.build();
+    await attach();
+    pushed.clear();
+    bus.publish(const ScreenStateChanged(on: true, source: 'app'));
+    bus.publish(const ScreenStateChanged(on: false, source: 'system'));
+    bus.publish(const ScreenStateChanged(on: true, source: 'probe'));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(pushed.any((p) => p.$1 == 'last_interaction'), isFalse);
+    bus.publish(const ScreenStateChanged(on: true, source: 'system'));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    final stamps = [
+      for (final p in pushed)
+        if (p.$1 == 'last_interaction') p,
+    ];
+    expect(stamps, hasLength(1));
+    expect(DateTime.parse('${stamps.single.$2}'), isA<DateTime>());
+  });
+
   test('the persisted stamp reseeds Last interaction at attach', () async {
     await settings.setInternal(
       'esphome_last_interaction',

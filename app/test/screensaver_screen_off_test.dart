@@ -39,51 +39,66 @@ void main() {
     offCalls = off;
     onCalls = on;
     commands
-      ..register(Command(
-        name: 'screenOff',
-        description: 'recorder',
-        handler: (p) async {
-          off.add(p);
-          return const CommandResult.ok();
-        },
-      ))
-      ..register(Command(
-        name: 'screenOn',
-        description: 'recorder',
-        handler: (_) async {
-          on.add(true);
-          return const CommandResult.ok();
-        },
-      ));
-    saver = ScreensaverManager(bus, commands, log, settings,
-        screenOffUnit: const Duration(milliseconds: 10));
+      ..register(
+        Command(
+          name: 'screenOff',
+          description: 'recorder',
+          handler: (p) async {
+            off.add(p);
+            return const CommandResult.ok();
+          },
+        ),
+      )
+      ..register(
+        Command(
+          name: 'screenOn',
+          description: 'recorder',
+          handler: (_) async {
+            on.add(true);
+            return const CommandResult.ok();
+          },
+        ),
+      );
+    saver = ScreensaverManager(
+      bus,
+      commands,
+      log,
+      settings,
+      screenOffUnit: const Duration(milliseconds: 10),
+    );
     await saver.init();
   }
 
-  test('the timer powers the panel off quietly and the session survives',
-      () async {
-    await build({
-      'ks.screensaver.enabled': true,
-      'ks.screensaver.mode': 'black',
-      'ks.screensaver.screen_off_minutes': 5,
-    });
-    await saver.start();
-    expect(offCalls, isEmpty, reason: 'the countdown has not elapsed yet');
+  test(
+    'the timer powers the panel off quietly and the session survives',
+    () async {
+      await build({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.mode': 'black',
+        'ks.screensaver.screen_off_minutes': 5,
+      });
+      await saver.start();
+      expect(offCalls, isEmpty, reason: 'the countdown has not elapsed yet');
 
-    await Future<void>.delayed(const Duration(milliseconds: 100));
-    expect(offCalls, hasLength(1));
-    // A timer firing overnight must never raise the device admin grant
-    // screen; quiet mode is what asks for that.
-    expect(offCalls.single['prompt'], isFalse);
-    expect(saver.isActive, isTrue,
-        reason: 'the session must stay active behind the dark panel: that '
-            'is what routes every dismiss source through stop()');
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(offCalls, hasLength(1));
+      // A timer firing overnight must never raise the device admin grant
+      // screen; quiet mode is what asks for that.
+      expect(offCalls.single['prompt'], isFalse);
+      expect(
+        saver.isActive,
+        isTrue,
+        reason:
+            'the session must stay active behind the dark panel: that '
+            'is what routes every dismiss source through stop()',
+      );
 
-    // The dark panel is the resting state; nothing keeps counting down.
-    bus.publish(const ScreenStateChanged(on: false));
-    await Future<void>.delayed(const Duration(milliseconds: 100));
-    expect(offCalls, hasLength(1), reason: 'no second power-off while dark');
-  });
+      // The dark panel is the resting state; nothing keeps counting down.
+      bus.publish(const ScreenStateChanged(on: false));
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(offCalls, hasLength(1), reason: 'no second power-off while dark');
+    },
+  );
 
   test('at 0 (the default) the panel is never powered off', () async {
     await build({
@@ -112,18 +127,24 @@ void main() {
     saver.notifyActivity('motion');
     await pumpEventQueue();
     expect(saver.isActive, isFalse);
-    expect(onCalls.length, greaterThan(before),
-        reason: 'stop() must poke the panel back on');
+    expect(
+      onCalls.length,
+      greaterThan(before),
+      reason: 'stop() must poke the panel back on',
+    );
   });
 
-  test('the MQTT dismiss lights the panel even with no session up',
-      () async {
+  test('the MQTT dismiss lights the panel even with no session up', () async {
     await build({'ks.screensaver.enabled': true});
     final result = await commands.execute('stopScreensaver', const {});
     expect(result.ok, isTrue);
-    expect(onCalls.length, greaterThan(0),
-        reason: 'the dismiss button means "bring the dashboard back", and '
-            'half of that is the screen');
+    expect(
+      onCalls.length,
+      greaterThan(0),
+      reason:
+          'the dismiss button means "bring the dashboard back", and '
+          'half of that is the screen',
+    );
   });
 
   test('an app-sourced mid-session wake keeps the session, with a fresh '
@@ -149,24 +170,71 @@ void main() {
     expect(offCalls, hasLength(1));
   });
 
-  test('a system wake (power button, double-tap) dismisses to the dashboard',
-      () async {
+  test(
+    'a system wake (power button, double-tap) dismisses to the dashboard',
+    () async {
+      await build({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.mode': 'black',
+        'ks.screensaver.screen_off_minutes': 5,
+      });
+      await saver.start();
+      bus.publish(const ScreenStateChanged(on: false));
+      await pumpEventQueue();
+
+      // A person waking the panel is activity like a touch: the session ends
+      // and the dashboard is what they see.
+      final before = onCalls.length;
+      bus.publish(const ScreenStateChanged(on: true));
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+      expect(onCalls.length, greaterThan(before));
+    },
+  );
+
+  test('a system wake with no session up restarts the idle clock '
+      '(issue #348)', () async {
     await build({
       'ks.screensaver.enabled': true,
       'ks.screensaver.mode': 'black',
-      'ks.screensaver.screen_off_minutes': 5,
+      'ks.screensaver.timeout_seconds': 1,
     });
-    await saver.start();
+    // The OS timed the panel out and a person pressed the power button
+    // 600ms into the idle countdown. Without the reset the screensaver
+    // would start at the 1s mark, on the dashboard they just woke.
+    await Future<void>.delayed(const Duration(milliseconds: 600));
     bus.publish(const ScreenStateChanged(on: false));
-    await pumpEventQueue();
-
-    // A person waking the panel is activity like a touch: the session ends
-    // and the dashboard is what they see.
-    final before = onCalls.length;
     bus.publish(const ScreenStateChanged(on: true));
     await pumpEventQueue();
-    expect(saver.isActive, isFalse);
-    expect(onCalls.length, greaterThan(before));
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    expect(
+      saver.isActive,
+      isFalse,
+      reason: 'the wake restarted the idle clock',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    expect(
+      saver.isActive,
+      isTrue,
+      reason: 'a full idle period after the wake starts the screensaver',
+    );
+  });
+
+  test('an app wake with no session up leaves the idle clock alone', () async {
+    await build({
+      'ks.screensaver.enabled': true,
+      'ks.screensaver.mode': 'black',
+      'ks.screensaver.timeout_seconds': 1,
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    bus.publish(const ScreenStateChanged(on: true, source: 'app'));
+    await pumpEventQueue();
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    expect(
+      saver.isActive,
+      isTrue,
+      reason: 'an automation lighting the panel is not a person at it',
+    );
   });
 
   test('under lockdown a system wake leaves the screensaver up', () async {
@@ -189,17 +257,22 @@ void main() {
     expect(saver.isActive, isTrue);
   });
 
-  test('moving the slider under a running session re-arms the countdown',
-      () async {
-    await build({
-      'ks.screensaver.enabled': true,
-      'ks.screensaver.mode': 'black',
-      'ks.screensaver.screen_off_minutes': 60,
-    });
-    await saver.start();
-    await settings.set(defs.screensaverScreenOffMinutes, 5);
-    await Future<void>.delayed(const Duration(milliseconds: 100));
-    expect(offCalls, hasLength(1),
-        reason: 'the shorter value must take over the running countdown');
-  });
+  test(
+    'moving the slider under a running session re-arms the countdown',
+    () async {
+      await build({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.mode': 'black',
+        'ks.screensaver.screen_off_minutes': 60,
+      });
+      await saver.start();
+      await settings.set(defs.screensaverScreenOffMinutes, 5);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(
+        offCalls,
+        hasLength(1),
+        reason: 'the shorter value must take over the running countdown',
+      );
+    },
+  );
 }

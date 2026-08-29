@@ -280,13 +280,22 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // the screensaver (a photo frame's morning switch-on), so those keep
     // the session and just start a fresh screen-off countdown.
     bus.on<ScreenStateChanged>().listen((e) {
-      if (!_active) return;
+      final byHand =
+          e.on && e.source == 'system' && !_settings.get(defs.lockdownEnabled);
+      if (!_active) {
+        // No session up, so nothing to dismiss, but a person waking a
+        // panel the OS had timed out is using the dashboard: the idle
+        // clock starts over from the wake, not from their last touch
+        // (issue #348).
+        if (byHand) _resetIdleTimer();
+        return;
+      }
       if (!e.on) {
         _screenOffTimer?.cancel();
         _screenOffTimer = null;
         return;
       }
-      if (e.source == 'system' && !_settings.get(defs.lockdownEnabled)) {
+      if (byHand) {
         notifyActivity('screen on');
         return;
       }

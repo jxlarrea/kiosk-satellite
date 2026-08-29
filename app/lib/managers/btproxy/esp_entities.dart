@@ -917,6 +917,13 @@ class EspEntitySurface {
         if (InteractionStamp.countsAsVoice(e)) _interaction.mark();
       }),
     );
+    // A person waking the panel by hand counts too (issue #348); see the
+    // MQTT mirror for why only the OS-reported wake qualifies.
+    _subs.add(
+      bus.on<ScreenStateChanged>().listen((e) {
+        if (e.on && e.source == 'system') _interaction.mark();
+      }),
+    );
     _subs.add(bus.on<SettingChanged>().listen(_onSettingChanged));
     _poll = Timer.periodic(_pollInterval, (_) => _refresh());
     _sendInitial();
