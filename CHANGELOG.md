@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Changed
 - Every row that opens a second-level settings page now carries an icon ahead of its name, and the page it opens wears the same icon in its title, on the device and in the remote admin alike. The icon says what the page is about at a glance (a palette for Theme, a bell for Notifications, a pin for Hold mode, a folder for the Local Media screensaver, the Immich logo for the Immich Media screensaver) and ties the row to the page it leads to.
 
+### Fixed
+- On a tablet, going back from a second-level settings page (Theme under Home Assistant Setup, Wake Word under Voice Satellite and the rest) returns to where the parent page was scrolled instead of its top. The parent pane was rebuilt on the way back, and pages that fetch their rows (the dashboard list, the live Voice Satellite controls) painted short at first, so the remembered scroll was clamped to that and the rows then arrived under a pane already settled at the top. The parent pane now stays put underneath the open page, as it does behind a pushed page on a phone.
+
 ## v2026.8.96 - 2026-08-28
 
 ### Added

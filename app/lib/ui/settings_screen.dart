@@ -623,8 +623,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         // does when the rail picks a different category.
                         child: _SubpageNav(
                           open: _openSubpage,
-                          child: _subpage == null
-                              ? _widePane(
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // The category pane stays mounted under an
+                              // open second-level page, hidden with its
+                              // state kept, the way the pushed route leaves
+                              // it on a phone. Rebuilding it on the way
+                              // back lost the scroll: pages that fetch
+                              // their rows (the dashboard list, the live
+                              // Voice Satellite controls) paint short at
+                              // first, the restored offset is clamped to
+                              // that, and the rows arrive under a pane
+                              // that has already settled at the top.
+                              Visibility(
+                                visible: _subpage == null,
+                                maintainState: true,
+                                child: _widePane(
                                   context,
                                   storageKey: 'settings-pane-$category',
                                   title: title,
@@ -634,8 +649,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     container: widget.container,
                                     category: category,
                                   ),
-                                )
-                              : _widePane(
+                                ),
+                              ),
+                              if (_subpage != null)
+                                _widePane(
                                   context,
                                   storageKey:
                                       'settings-sub-$category-$_subpage',
@@ -649,6 +666,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     subpage: _subpage!,
                                   ),
                                 ),
+                            ],
+                          ),
                         ),
                       ),
               ),

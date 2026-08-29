@@ -894,6 +894,43 @@ void main() {
       await drain(tester);
     });
 
+    testWidgets('coming back from a subpage keeps the pane where it was', (
+      tester,
+    ) async {
+      await boot();
+      // Short enough that the category pane scrolls.
+      await openHa(tester, size: const Size(1200, 600));
+      // The right pane's scrollable, told apart from the rail's by a row
+      // that is on screen from the start.
+      final pane = find
+          .ancestor(
+            of: find.text('Home Assistant base URL'),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(entryRow(), 200, scrollable: pane);
+      await settle(tester);
+      final before = tester.state<ScrollableState>(pane);
+      final offset = before.position.pixels;
+      expect(offset, greaterThan(0));
+
+      await tester.tap(entryRow());
+      await settle(tester);
+      expect(find.text(haHaptics.title), findsOneWidget);
+      await tester.tap(find.byTooltip('Back'));
+      await settle(tester);
+
+      // The same pane, not a rebuilt one: a rebuilt pane restores its
+      // offset against rows that have not loaded yet and settles at the
+      // top once they do.
+      final after = tester.state<ScrollableState>(pane);
+      expect(identical(after, before), isTrue);
+      expect(after.position.pixels, offset);
+      expect(entryRow(), findsOneWidget);
+
+      await drain(tester);
+    });
+
     testWidgets('picking another category closes an open subpage', (
       tester,
     ) async {
