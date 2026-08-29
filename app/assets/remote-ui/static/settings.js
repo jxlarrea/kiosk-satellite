@@ -1538,9 +1538,12 @@ export async function loadSettings() {
                   body: JSON.stringify({ [s.key]: on }) });
                 renderThemeCard();
               });
-            // The mirror first, matching the device: with it on, the
-            // schedule targets the app theme and "Also switch the app
-            // theme" is redundant, so that row hides (issue #92).
+            // The pin from Home Assistant leads, matching the device:
+            // Light or Dark outranks everything under it.
+            if (byKey['ha.theme']) tcard.appendChild(settingRow(byKey['ha.theme']));
+            // The mirror next: with it on, the schedule targets the app
+            // theme and "Also switch the app theme" is redundant, so that
+            // row hides (issue #92).
             if (thMatch) tcard.appendChild(themeToggle(thMatch));
             tcard.appendChild(themeToggle(thAuto));
             if (thAuto.value === true) {

@@ -151,6 +151,10 @@ class EspEntitySurface {
   /// through them, matching the MQTT contract.
   static final _settingSelects =
       <String, (String, String, defs.SettingDef<String>)>{
+        // The dashboard's light/dark pin (discussion #351): Auto, Light or
+        // Dark, so a sun automation can drive every kiosk and a person can
+        // override it by hand.
+        'theme': ('Theme', 'mdi:theme-light-dark', defs.haTheme),
         'screensaver_mode': (
           'Screensaver mode',
           'mdi:monitor-shimmer',

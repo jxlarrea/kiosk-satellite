@@ -594,7 +594,8 @@ class HomeAssistantManager extends Manager {
     // once a minute to catch the scheduled switchover with no page load.
     bus.on<PageChanged>().listen((_) => _applyThemeSchedule(force: true));
     bus.on<SettingChanged>().listen((e) {
-      if (e.key == defs.themeAuto.key ||
+      if (e.key == defs.haTheme.key ||
+          e.key == defs.themeAuto.key ||
           e.key == defs.themeAutoApp.key ||
           e.key == defs.themeMatchApp.key ||
           e.key == defs.uiTheme.key ||
@@ -1118,6 +1119,27 @@ class HomeAssistantManager extends Manager {
   /// so it survives SPA navigation; we re-assert on full loads that reset it.
   Future<void> _applyThemeSchedule({bool force = false}) async {
     final matchApp = _settings.get(defs.themeMatchApp);
+    // A theme pinned from Home Assistant (the Theme select, discussion
+    // #351) outranks the schedule and the mirror: Light or Dark holds
+    // until the select goes back to Auto. It travels the same path the
+    // schedule does, so with the mirror on the app's own screens follow.
+    final pinned = switch (_settings.get(defs.haTheme)) {
+      'dark' => true,
+      'light' => false,
+      _ => null,
+    };
+    if (pinned != null) {
+      if (matchApp) {
+        final want = pinned ? 'dark' : 'light';
+        if (_settings.get(defs.uiTheme) != want) {
+          await _settings.setFromJson(defs.uiTheme.key, want);
+        }
+      }
+      if (!force && pinned == _lastDark) return;
+      _lastDark = pinned;
+      await commands.execute('evalJs', {'code': _themeJs(pinned)});
+      return;
+    }
     if (_settings.get(defs.themeAuto)) {
       final dark = _desiredDark(DateTime.now());
       // The app's own theme follows the schedule when asked to — via the

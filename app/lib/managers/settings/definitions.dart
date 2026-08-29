@@ -3405,6 +3405,26 @@ const haTapSoundVolume = SettingDef<num>(
   dependsOn: 'ha.tap_sound',
 );
 
+/// The theme pinned from Home Assistant: a select entity on the ESPHome
+/// surface (and the first row of the Theme page), so an automation can
+/// drive light and dark from a sun trigger and a person can override it by
+/// hand across every kiosk. Light and Dark outrank the schedule and the
+/// mirror below; Auto hands control back to them.
+const haTheme = SettingDef<String>(
+  key: 'ha.theme',
+  type: SettingType.select,
+  defaultValue: 'auto',
+  title: 'Theme',
+  description:
+      'Light or dark for the Home Assistant dashboard, also set from the '
+      'Theme entity in Home Assistant. Auto follows the settings below.',
+  category: 'Home Assistant',
+  section: 'Theme',
+  subpage: 'Theme',
+  options: ['auto', 'light', 'dark'],
+  optionLabels: {'auto': 'Auto', 'light': 'Light', 'dark': 'Dark'},
+);
+
 /// Mirror the app's effective theme onto the Home Assistant dashboard
 /// (issue #92): with the App theme on "System", Android flips dark mode on
 /// its own schedule (typically sunset/sunrise), and the dashboard follows.
@@ -5019,6 +5039,7 @@ const List<SettingDef<Object>> allSettings = [
   haHapticsStrength,
   haTapSound,
   haTapSoundVolume,
+  haTheme,
   themeMatchApp,
   themeAuto,
   themeDarkAt,

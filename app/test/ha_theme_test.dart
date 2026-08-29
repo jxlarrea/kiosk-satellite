@@ -31,23 +31,22 @@ void main() {
     settings = SettingsManager(bus, commands, log);
     await settings.init();
     evalCalls = [];
-    commands.register(Command(
-      name: 'evalJs',
-      description: 'stub',
-      handler: (p) async {
-        evalCalls.add('${p['code']}');
-        return const CommandResult.ok('');
-      },
-    ));
+    commands.register(
+      Command(
+        name: 'evalJs',
+        description: 'stub',
+        handler: (p) async {
+          evalCalls.add('${p['code']}');
+          return const CommandResult.ok('');
+        },
+      ),
+    );
     final ha = HomeAssistantManager(bus, commands, log, settings);
     await ha.init();
   }
 
   test('the mirror follows the App theme setting', () async {
-    await build({
-      'ks.ha.theme_match_app': true,
-      'ks.ui.theme': 'dark',
-    });
+    await build({'ks.ha.theme_match_app': true, 'ks.ui.theme': 'dark'});
     bus.publish(const PageChanged(url: 'http://ha.test:8123/lovelace/0'));
     await pumpEventQueue();
     expect(evalCalls.last, contains('dark: true'));
@@ -58,10 +57,7 @@ void main() {
   });
 
   test('system resolves through the platform brightness', () async {
-    await build({
-      'ks.ha.theme_match_app': true,
-      'ks.ui.theme': 'system',
-    });
+    await build({'ks.ha.theme_match_app': true, 'ks.ui.theme': 'system'});
     bus.publish(const PageChanged(url: 'http://ha.test:8123/lovelace/0'));
     await pumpEventQueue();
     // The test platform reports light.
@@ -97,6 +93,56 @@ void main() {
     await pumpEventQueue();
     expect(evalCalls.last, contains('dark: true'));
     expect(settings.get(defs.uiTheme), 'dark');
+  });
+
+  test('a theme pinned from Home Assistant outranks the schedule', () async {
+    await build({
+      'ks.ha.theme': 'light',
+      'ks.ha.theme_auto': true,
+      'ks.ha.theme_dark_at': '00:00',
+      'ks.ha.theme_light_at': '23:59',
+      'ks.ui.theme': 'light',
+    });
+    bus.publish(const PageChanged(url: 'http://ha.test:8123/lovelace/0'));
+    await pumpEventQueue();
+    expect(evalCalls.last, contains('dark: false'));
+
+    // The select moving applies at once, no minute tick needed.
+    await settings.setFromJson(defs.haTheme.key, 'dark');
+    await pumpEventQueue();
+    expect(evalCalls.last, contains('dark: true'));
+
+    // Auto hands control back to the schedule, which says dark too, so
+    // the page only hears about it again on the next forced apply.
+    await settings.setFromJson(defs.haTheme.key, 'auto');
+    await pumpEventQueue();
+    expect(evalCalls.last, contains('dark: true'));
+  });
+
+  test('the pin reaches the app theme through the mirror', () async {
+    await build({
+      'ks.ha.theme': 'dark',
+      'ks.ha.theme_match_app': true,
+      'ks.ui.theme': 'light',
+    });
+    bus.publish(const PageChanged(url: 'http://ha.test:8123/lovelace/0'));
+    await pumpEventQueue();
+    expect(settings.get(defs.uiTheme), 'dark');
+    expect(evalCalls.last, contains('dark: true'));
+
+    // Back to Auto: the mirror follows the app theme, which stays dark.
+    await settings.setFromJson(defs.haTheme.key, 'auto');
+    await settings.setFromJson(defs.uiTheme.key, 'light');
+    await pumpEventQueue();
+    expect(evalCalls.last, contains('dark: false'));
+  });
+
+  test('the pin without the mirror leaves the app theme alone', () async {
+    await build({'ks.ha.theme': 'dark', 'ks.ui.theme': 'light'});
+    bus.publish(const PageChanged(url: 'http://ha.test:8123/lovelace/0'));
+    await pumpEventQueue();
+    expect(evalCalls.last, contains('dark: true'));
+    expect(settings.get(defs.uiTheme), 'light');
   });
 
   test('everything off touches nothing', () async {

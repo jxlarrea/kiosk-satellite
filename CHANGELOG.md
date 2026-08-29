@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A Theme select on the ESPHome surface, Auto, Light or Dark, and the same row leads the Theme settings page on the device and the remote admin (#351). Light and Dark pin the dashboard theme and outrank the on-device schedule and the app theme sync, so an automation can turn every kiosk dark at sunset and light at sunrise wherever daylight swings through the year, and a person can override it by hand from Home Assistant. Auto hands control back to the on-device settings. With the theme sync on, the pin flips the app's own screens too.
+
 ## v2026.8.99 - 2026-08-29
 
 ### Fixed

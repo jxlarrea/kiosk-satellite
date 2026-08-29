@@ -268,6 +268,7 @@ void main() {
         'screensaver_motion',
         'screensaver_face',
         'screensaver_proximity',
+        'theme',
         'screensaver_mode',
         'screensaver_clock_style',
         'battery',
@@ -458,6 +459,23 @@ void main() {
     ids = [for (final d in await surface.build()) '${d['objectId']}'];
     expect(ids, isNot(contains('camera_device')));
   });
+
+  test(
+    'the theme select pins the dashboard theme from Home Assistant',
+    () async {
+      final catalog = await surface.build();
+      final select = catalog.firstWhere((d) => d['objectId'] == 'theme');
+      expect(select['type'], 'select');
+      expect(select['options'], ['Auto', 'Light', 'Dark']);
+
+      await surface.handleCommand('theme', 'Dark');
+      expect(settings.get(defs.haTheme), 'dark');
+      await surface.handleCommand('theme', 'light');
+      expect(settings.get(defs.haTheme), 'light');
+      await surface.handleCommand('theme', 'Auto');
+      expect(settings.get(defs.haTheme), 'auto');
+    },
+  );
 
   test('the camera facing select speaks in labels, stores the value', () async {
     final catalog = await surface.build();

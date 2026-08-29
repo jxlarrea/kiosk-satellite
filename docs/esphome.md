@@ -91,6 +91,15 @@ off by default so that enabling ESPHome just for the Bluetooth proxy adds
 nothing to Home Assistant but the proxy; flip it when the kiosk should be
 seen and controlled from Home Assistant.
 
+The **Theme** select pins the dashboard to Light or Dark, the same row
+that leads the kiosk's own Theme settings page. It outranks the on-device
+schedule and the app theme sync while it holds, so a sun automation can
+turn every kiosk dark at sunset and light at sunrise wherever the
+daylight swings through the year, and a person can override it by hand
+from Home Assistant. Setting it back to **Auto** hands control back to
+the schedule and sync settings on the device. With the theme sync on,
+the pin flips the app's own screens too, the way the schedule does.
+
 Two switches join the set on a kiosk with a Voice Satellite assigned to
 it: **Voice Satellite** starts and stops the engine in the page, the same
 thing the Start and Stop buttons on the kiosk's own Voice Satellite
