@@ -34,29 +34,81 @@ Each connection attempt pauses scanning for its handshake (they share the radio)
 
 ## Kiosk entities
 
-Turn on **Expose kiosk entities** and the kiosk's sensors and controls join the device: the Screen light with brightness, screensaver and settings switches, volume sliders, action buttons, the Camera view and Dashboard view selects, the Update entity with install from Home Assistant, cameras and the diagnostics set. Off by default, so enabling ESPHome for the proxy alone adds nothing else.
+Turn on **Expose kiosk entities** and every entity below joins the device. Off by default, so enabling ESPHome for the proxy alone adds nothing else. Rows marked with a requirement are listed only where it holds, so a kiosk without a camera has no camera rows at all rather than dead ones. The ESPHome protocol has no attributes, so hardware detail that would ride on a sensor as attributes is an entity of its own.
 
-| Entity | Notes |
-|---|---|
-| **Theme** select | Light or Dark pins the dashboard and outranks the on-device schedule and the app theme sync while it holds. Auto hands control back. With the theme sync on, the pin flips the app's own screens too |
-| **Voice Satellite**, **Voice Satellite auto start** | Only on a kiosk bound to a satellite (the setup wizard and the Voice Satellite settings page both record that). Binding or unbinding re-lists the entities at the next server start. The switch starts and stops the engine in the page, auto start decides whether it comes up with the dashboard, so an automation can hold voice back on a device that needs its first seconds for the dashboard |
-| **Screenshot** camera | The display as a still camera, on every kiosk: fed by the Take screenshot button and by a fetch of the entity. Last screenshot moves on the button and the remote admin's preview, never on a fetch from Home Assistant |
-| **Device camera** | Where the hardware exists. The ESPHome image request names no camera, so a fetch of either asks both and each answers on its own entity. The camera entities follow the hardware, not the Camera enabled switch: off, the camera shows a "Camera off" frame and Motion reads unknown. The device does not re-register. Last screenshot and Last camera snapshot are kept across restarts |
-| **Camera view** select | Option list learned when the server starts. After adding camera views, toggle ESPHome off and on or restart the app |
-| **Dashboard view** select | Option list re-read when Home Assistant reports a dashboard created, deleted or edited and when the dashboard's connection comes back after an outage, never on a timer. The last list read is kept across restarts, so the select is there from the first connection even with Home Assistant down |
-| **Connectivity** | Reads "on" while the kiosk is reachable and "unavailable" (not "off") when it is not, since a lost connection takes every entity with it |
-| **Screensaver next slide**, **Screensaver previous slide** | Step a Home Assistant Media, Local Media, Photo Gallery or Immich Media slideshow by one and hold the new slide for its full interval. With Camera Streams up they step camera views. With any other mode or no screensaver the press does nothing |
-| **Notifications dismiss all** | The button form of `notification_dismiss` below: a leak acknowledged on one display can clear the rest |
+### Controls
+
+| Entity | Type | Notes |
+|---|---|---|
+| **Screen** | light | Screen on or off, with the panel brightness |
+| **Screensaver active** | switch | Starts and stops the screensaver |
+| **Volume** | number | Media volume, percent |
+| **Voice Satellite** | switch | Starts and stops the engine in the page, the same as the Start and Stop buttons on the kiosk's Voice Satellite settings. Requires a satellite bound to the kiosk (the setup wizard and the Voice Satellite settings page both record that). Binding or unbinding re-lists the entities at the next server start |
+| **Postpone screensaver** | button | Restarts the idle countdown |
+| **Screensaver next slide**, **Screensaver previous slide** | button | Step a Home Assistant Media, Local Media, Photo Gallery or Immich Media slideshow by one and hold the new slide for its full interval. With Camera Streams up they step camera views. With any other mode or no screensaver the press does nothing |
+| **Notifications dismiss all** | button | The button form of `notification_dismiss` below: a leak acknowledged on one display can clear the rest |
+| **Reload page**, **Go to dashboard**, **Clear cache**, **Restart app**, **Bring to front** | button | The same actions the kiosk's drawer offers |
+| **Open app launcher** | button | Requires the App launcher setting on |
+| **Show Music Assistant** | button | Requires a Music Assistant server address set |
+| **Camera view** | select | Closed, then one option per camera view that has cameras. Requires camera views configured. The option list is learned when the server starts: after adding views, toggle ESPHome off and on or restart the app |
+| **Show <view>** (one per camera view), **Close camera view** | button | Open a named view or close whichever is up |
+| **Active camera view** | text sensor | The view on screen, `none` when closed |
+| **Dashboard view** | select | One option per dashboard view (`dashboard/view`). Re-read when Home Assistant reports a dashboard created, deleted or edited and when the dashboard's connection comes back after an outage, never on a timer. The last list read is kept across restarts, so the select is there from the first connection even with Home Assistant down |
+| **Update** | update | The latest release with its notes, installable from Home Assistant (see [updates.md](updates.md)) |
+| **Screenshot** | camera | The display as a still camera, on every kiosk: fed by the Take screenshot button and by a fetch of the entity |
+| **Take screenshot** | button | Captures the display |
+| **Last screenshot** | timestamp | Moves on the button and the remote admin's preview, never on a fetch of the camera entity. Kept across restarts |
+| **Camera** | camera | Requires camera hardware. The ESPHome image request names no camera, so a fetch of either camera asks both and each answers on its own entity. Follows the hardware, not the Camera enabled switch: off, it shows a "Camera off" frame and the device does not re-register |
+| **Take camera snapshot** | button | Requires camera hardware |
+| **Last camera snapshot** | timestamp | Requires camera hardware. Kept across restarts |
+| **Ambient light** | sensor | Lux. Requires a light sensor |
+| **Motion** | binary sensor | Requires camera hardware. Reads unknown while the camera is off |
+| **Next alarm** | timestamp | The next alarm set on the device |
+| **Last interaction** | timestamp | The last touch, spoken turn or hand-made wake. Kept across restarts |
 
 > [!NOTE]
 > A changed Dashboard view list re-registers the device, which makes every entity unavailable for a couple of seconds. It only happens for a list that actually moved.
 
-The ESPHome protocol has no attributes, so hardware detail that would ride on a sensor as attributes is an entity of its own:
+### Configuration
 
-| Entity | Reads |
-|---|---|
-| **Android version**, **Android build** | Next to **Device**, which carries the model |
-| **IPv4 addresses by interface**, **IPv6 addresses by interface** | `wlan0: 192.168.1.5; eth0: 10.0.3.2`, so an automation can tell wired from wireless. The address sensors lead with a routable IPv6 address over the link-local `fe80::` one and re-check moments after any network change |
+Each of these is a kiosk setting, readable and writable from Home Assistant, the same value the settings pages show.
+
+| Entity | Type | Notes |
+|---|---|---|
+| **Screensaver brightness level**, **Assistant volume**, **Media volume** | number | Percent |
+| **Clock background** | text | The Clock screensaver's background |
+| **Kiosk mode**, **Lockdown mode**, **HA kiosk mode**, **Keep screen on**, **Remote management**, **Screensaver brightness**, **Screensaver**, **Hold mode** | switch | |
+| **Adaptive brightness** | switch | Requires a light sensor |
+| **Camera enabled**, **Screensaver motion detection**, **Screensaver face detection** | switch | Require camera hardware. Camera enabled can be flipped through the day: the camera entities stay listed |
+| **Screensaver proximity detection** | switch | Requires a proximity sensor |
+| **Voice Satellite auto start** | switch | Whether the engine comes up with the dashboard, so an automation can hold voice back on a device that needs its first seconds for the dashboard. Requires a bound satellite |
+| **Theme** | select | Auto, Light or Dark. Light or Dark pins the dashboard and outranks the on-device schedule and the app theme sync while it holds. With the theme sync on, the pin flips the app's own screens too |
+| **Screensaver mode**, **Clock style** | select | The same options as the settings pages |
+| **Camera facing** | select | Requires a front and a back camera |
+
+### Diagnostics
+
+| Entity | Type | Notes |
+|---|---|---|
+| **Battery** | sensor | Percent |
+| **Charging** | binary sensor | |
+| **CPU usage** | sensor | Percent |
+| **CPU temperature** | sensor | Requires a device that reports one |
+| **RAM available**, **RAM total** | sensor | MB |
+| **Current page** | text sensor | The URL on screen, SPA navigations included |
+| **Foreground app** | text sensor | The package in front |
+| **Bluetooth devices nearby** | sensor | Requires the Bluetooth proxy on. See [Nearby devices](#nearby-devices) |
+| **Bluetooth max connections** | sensor | Requires the proxy on with device connections allowed |
+| **Bluetooth devices connected** | sensor | Requires the proxy on and an Android that reports links (an adapter, plus the Nearby devices grant on Android 12 and newer) |
+| **Device** | text sensor | The model |
+| **Panel brightness** | sensor | Percent, as the panel reads it |
+| **Android version**, **Android build** | text sensor | |
+| **IPv4 address**, **IPv6 address** | text sensor | The primary address. IPv6 leads with a routable address over the link-local `fe80::` one |
+| **IPv4 addresses by interface**, **IPv6 addresses by interface** | text sensor | `wlan0: 192.168.1.5; eth0: 10.0.3.2`, so an automation can tell wired from wireless. Re-checked moments after any network change |
+| **App uptime**, **Network uptime** | timestamp | When the app started and when the network last came up |
+| **Last seen** | timestamp | Every completed poll |
+| **Connectivity** | binary sensor | Reads "on" while the kiosk is reachable and "unavailable" (not "off") when it is not, since a lost connection takes every entity with it |
+| **Remote admin** | text sensor | The remote admin page's URL, `disabled` while remote management is off |
 
 ## Notifications
 
