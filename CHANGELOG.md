@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.98 - 2026-08-29
 
 ### Changed
 - Waking the screen by hand, with the power button or a double-tap, now stamps the Last interaction sensor and restarts the screensaver's idle countdown (#348). Pressing the button to glance at the dashboard is using the kiosk, even with no touch to follow, so an idle automation no longer keeps counting from the last touch. Only wakes the device reports on its own count: the wake word, motion, a notification or an automation turning the Screen light on leave the sensor alone, as before.
