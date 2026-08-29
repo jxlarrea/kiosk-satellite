@@ -1,7 +1,7 @@
 # Kiosk Satellite Immich Screensaver
 
 Kiosk Satellite can use an [Immich](https://immich.app/) server as its
-screensaver: point it at your library or a single album and the kiosk
+screensaver: point it at your library or the albums you pick and the kiosk
 becomes a photo frame, with slideshow transitions, full screen photos, an
 optional metadata overlay, and a local cache so images appear instantly.
 Videos in the selection play too, muted and in full.
@@ -10,7 +10,9 @@ Videos in the selection play too, muted and in full.
 
 1. In Immich, create an API key under **Account Settings → API Keys**. A
    full-access key works; a restricted key needs the `album.read`,
-   `asset.read` and `asset.view` permissions. Note that Immich separates
+   `asset.read` and `asset.view` permissions, plus `person.read` to use
+   the people filters and `tag.read` for the tag filter (see
+   [Filters](#filters)). Note that Immich separates
    viewing from downloading: `asset.view` covers the screen-sized previews
    the screensaver actually fetches, and `asset.download` (originals) is
    neither a substitute for it nor needed.
@@ -30,23 +32,71 @@ Videos in the selection play too, muted and in full.
 
 ## Settings
 
-| Setting | Default | Notes |
-| --- | --- | --- |
-| Media source | All media | The whole library, or a single album picked from a dropdown. Shared albums are listed too. |
-| Photos only | off | Skip videos in the slideshow. |
-| Seconds per image | 10 | Videos ignore this and play to their end. |
-| Shuffle | off | Random order instead of the server's newest-first order. |
-| Transition | Crossfade | The same set every slideshow mode offers: none, crossfade, slide, zoom, Ken Burns, or random. |
-| Fill the screen | on | See below. |
-| Pair portrait photos | on | See below. |
-| Cache media locally | on | See below. |
-| Cache size (items) | 500 | The oldest cached items are deleted once the cache is full. Live usage shows under the field. |
-| Show metadata | off | See below. |
-| Album name, Date taken, Camera details, Location | on | One toggle per metadata line. |
+The page is five groups: Server Connection (the address, key and
+Validate button above), then these.
+
+| Group | Setting | Default | Notes |
+| --- | --- | --- | --- |
+| Media | Media source | All media | The whole library, or any number of albums ticked off the server's list. Shared albums are listed too. A photo in several picked albums shows once. |
+| Media | Photos only | off | Skip videos in the slideshow. |
+| Media | Cache media locally | on | See below. |
+| Media | Cache size (items) | 500 | The oldest cached items are deleted once the cache is full. Live usage shows under the field. |
+| Slideshow | Seconds per image | 10 | Videos ignore this and play to their end. |
+| Slideshow | Shuffle | off | Random order instead of the server's newest-first order. |
+| Slideshow | Transition | Crossfade | The same set every slideshow mode offers: none, crossfade, slide, zoom, Ken Burns, or random. |
+| Slideshow | Fill the screen | on | See below. |
+| Slideshow | Pair portrait photos | on | See below. |
+| Metadata | Show metadata | off | See below. |
+| Metadata | Album name, Date taken, Camera details, Location | on | One toggle per metadata line. |
+| Metadata | Metadata position | Bottom left | Which corner the details sit in. |
+| Filters | People | Anyone | See [Filters](#filters). |
+| Filters | Exclude people | No one | See [Filters](#filters). |
+| Filters | Tags | Any | See [Filters](#filters). |
+| Filters | Favorites only | off | See [Filters](#filters). |
+| Filters | Taken within | Any time | See [Filters](#filters). |
 
 The playlist is fetched from the server each time the screensaver
 activates, so new uploads and album changes are picked up on the next
 activation, not in the middle of a running session.
+
+## Filters
+
+A phone backup holds more than family photos: receipts, recipes, screen
+grabs and the odd document. The **Filters** group narrows the chosen
+source (the whole library or the picked albums) to what a photo frame should show.
+Every filter that is set has to hold, and a photo is never shown twice.
+
+- **People**: only media with any of these people in it. Tap the row and
+  tick names off the list of people Immich has recognized and you have
+  named. Unnamed face clusters and people hidden in Immich are not
+  offered, so name the family in Immich first.
+- **Exclude people**: skip media with any of these people, whoever else
+  is in it. The same list, the opposite effect. Immich cannot answer this
+  question on its own, so the kiosk asks for every asset's people and
+  drops the matches itself, which costs a somewhat larger listing.
+- **Tags**: only media carrying any of these tags, picked from Immich's
+  tag list by full path (`Family/Kids`).
+- **Favorites only**: only media marked as favorite in Immich. The
+  quickest way to curate a frame is to heart the photos that belong on
+  it.
+- **Taken within**: skip media taken longer ago than the past month, 3
+  months, year, 2, 5 or 10 years. The window moves along with the
+  calendar, so a frame set to the past year keeps showing the past year.
+
+Picking several people (or tags) means any of them, not all of them at
+once: Immich itself reads a list of people as "everyone in the same
+photo", so the kiosk searches once per person and merges the answers.
+The chosen names are stored on the device, so both settings pages show
+them without asking the server, and every save rebuilds the list from
+the server, so a person renamed in Immich picks up the new name and one
+merged away drops out.
+
+The people lists need the `person.read` permission on the API key and
+the tag list needs `tag.read`; a key without them still validates and
+runs the screensaver, and the picker says which permission is missing
+when opened. With a filter set and nothing matching, the screensaver
+says so ("No media matches the source and filters.") rather than
+showing a black screen.
 
 ## Fill the screen
 
@@ -97,8 +147,8 @@ next single photo.
 (pick which one), each line with its own icon and only when the asset
 actually carries the information:
 
-- Album name: the selected album, or, in All media mode, the first album
-  the photo belongs to.
+- Album name: the one picked album, or, with several or none picked, an
+  album the photo belongs to (a picked one first).
 - Date taken.
 - Camera details: the camera the photo was taken with, and its focal
   length, aperture and ISO, from EXIF. A line each, one toggle.
@@ -144,6 +194,12 @@ its spot, so both are always readable at once.
 - **"The API key is missing the asset.view permission"**: the key can
   search assets but not fetch their previews. Add `asset.view` to the key
   in Immich; the change applies immediately, no new key needed.
+- **The People or Tags picker says a permission is missing**: the key
+  lacks `person.read` (people) or `tag.read` (tags). Add it to the key in
+  Immich; the rest of the screensaver does not need either.
+- **Nobody is listed under People**: the filters pick by name, and Immich
+  only has names for the people you have named under its People page.
+  Name them there, then open the picker again.
 - **Validation passes but the log says a preview probe was skipped**:
   that asset has no preview on the server yet (still being processed,
   generation failed, an external library not scanned, or the file is

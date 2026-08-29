@@ -189,3 +189,84 @@ export function openLauncherAppsPicker(current) {
     })();
   });
 }
+
+
+// The Immich album, people and tag pickers (issue #345): every name the
+// server lists with a checkbox, resolving to the chosen [{id, name}] or
+// null on cancel. Names only, no face thumbnails: the list is the same the
+// device's picker shows. Saving rebuilds the value from the server's list,
+// so renamed entries refresh and merged or deleted ones drop out.
+export function openImmichNamesPicker({ title, command, current, none }) {
+  return new Promise((resolve) => {
+    const selected = new Set((current || []).map((n) => n.id));
+
+    const shell = modalShell({
+      title,
+      width: 520,
+      onDismiss: () => close(null),
+    });
+    const close = (val) => { shell.close(); resolve(val); };
+    const list = shell.body;
+    list.innerHTML = '<div class="desc" style="color:var(--muted)">Loading…</div>';
+
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-text'; cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => close(null));
+    const okBtn = document.createElement('button');
+    okBtn.className = 'btn-primary'; okBtn.textContent = 'Save'; okBtn.disabled = true;
+    shell.foot.append(cancel, okBtn);
+
+    (async () => {
+      let options = [];
+      try {
+        const r = await cmd(command);
+        if (!r.ok) throw new Error(r.error || 'listing failed');
+        options = r.data || [];
+      } catch (e) {
+        list.innerHTML = '';
+        const err = document.createElement('div');
+        err.className = 'desc'; err.style.color = 'var(--error)';
+        err.textContent = `Could not list them: ${e.message || e}`;
+        list.appendChild(err);
+        return;
+      }
+      list.innerHTML = '';
+      if (!options.length) {
+        const empty = document.createElement('div');
+        empty.className = 'desc'; empty.style.color = 'var(--muted)';
+        empty.textContent = none;
+        list.appendChild(empty);
+        return;
+      }
+      for (const option of options) {
+        const r = document.createElement('label');
+        r.className = 'row';
+        r.style.cursor = 'pointer';
+        const info = document.createElement('div'); info.className = 'info';
+        const name = document.createElement('div'); name.className = 'name';
+        name.textContent = option.name;
+        info.appendChild(name);
+        // Albums carry their size, which tells two similarly named ones apart.
+        if (option.count != null) {
+          const desc = document.createElement('div'); desc.className = 'desc';
+          desc.textContent = `${option.count} items`;
+          info.appendChild(desc);
+        }
+        const box = document.createElement('input');
+        box.type = 'checkbox';
+        box.checked = selected.has(option.id);
+        box.addEventListener('change', () => {
+          if (box.checked) selected.add(option.id);
+          else selected.delete(option.id);
+        });
+        r.append(box, info);
+        list.appendChild(r);
+      }
+      okBtn.disabled = false;
+      okBtn.addEventListener('click', () => close(
+        options.filter((o) => selected.has(o.id))
+          .map((o) => ({ id: o.id, name: o.name })),
+      ));
+    })();
+  });
+}

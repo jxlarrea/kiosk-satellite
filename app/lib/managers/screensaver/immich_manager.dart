@@ -27,6 +27,55 @@ class ImmichAsset {
   final double? aspect;
 }
 
+/// One person or tag picked by name for a filter (issue #345). This is
+/// what the setting stores, so both UIs can show the names without asking
+/// the server again, the same shape the launcher keeps its apps in.
+class ImmichNamed {
+  const ImmichNamed({required this.id, required this.name});
+
+  final String id;
+  final String name;
+
+  Map<String, String> toJson() => {'id': id, 'name': name};
+}
+
+/// The `[{id, name}]` list a filter setting holds. Anything malformed reads
+/// as empty: a filter that cannot be parsed must not take the slideshow
+/// down with it.
+List<ImmichNamed> decodeImmichNamed(String json) {
+  try {
+    final decoded = jsonDecode(json);
+    if (decoded is! List) return const [];
+    return [
+      for (final item in decoded)
+        if (item is Map && '${item['id'] ?? ''}'.isNotEmpty)
+          ImmichNamed(id: '${item['id']}', name: '${item['name'] ?? ''}'),
+    ];
+  } catch (_) {
+    return const [];
+  }
+}
+
+/// Whether any filter narrows the playlist beyond the chosen source, so an
+/// empty playlist can say which of the two to look at.
+bool immichFiltersActive(SettingsManager settings) =>
+    decodeImmichNamed(settings.get(defs.screensaverImmichPeople)).isNotEmpty ||
+    decodeImmichNamed(
+      settings.get(defs.screensaverImmichExcludePeople),
+    ).isNotEmpty ||
+    decodeImmichNamed(settings.get(defs.screensaverImmichTags)).isNotEmpty ||
+    settings.get(defs.screensaverImmichFavoritesOnly) ||
+    immichTakenAfter(settings) != null;
+
+/// The oldest capture date the Taken within filter admits, or null for no
+/// limit. Computed at listing time, so a playlist refreshed tonight moves
+/// the window along with it.
+DateTime? immichTakenAfter(SettingsManager settings, {DateTime? now}) {
+  final days = int.tryParse(settings.get(defs.screensaverImmichTakenWithin));
+  if (days == null || days <= 0) return null;
+  return (now ?? DateTime.now()).toUtc().subtract(Duration(days: days));
+}
+
 /// The metadata overlay's lines and the setting that carries each, in the
 /// order they are drawn (issue #268). The panel, the corner bookkeeping and
 /// the detail lookup all read the same map, so a line that is off is a line
@@ -222,12 +271,21 @@ class ImmichManager extends Manager {
       }
       // Turning the album line back on has to re-look-up: the cached
       // details were gathered while the line was off, so they carry no
-      // album and would keep the row empty until the app restarts.
+      // album and would keep the row empty until the app restarts. A
+      // changed album pick moves the line for every asset too.
       if (e.key == defs.screensaverImmichMetadataAlbum.key ||
-          e.key == defs.screensaverImmichMetadata.key) {
+          e.key == defs.screensaverImmichMetadata.key ||
+          e.key == defs.screensaverImmichAlbum.key) {
         _details.clear();
       }
+      // A one-album pick from an older install or backup arrives as a bare
+      // id with its name in a setting of its own, in either order.
+      if (e.key == defs.screensaverImmichAlbum.key ||
+          e.key == defs.screensaverImmichAlbumName.key) {
+        unawaited(_migrateAlbums());
+      }
     });
+    await _migrateAlbums();
 
     commands.register(
       Command(
@@ -265,6 +323,38 @@ class ImmichManager extends Manager {
 
     commands.register(
       Command(
+        name: 'immichPeople',
+        description:
+            'The named people Immich recognizes, alphabetical: [{id, name}]. '
+            'Unnamed face clusters and hidden people are left out, since '
+            'the filters pick by name.',
+        handler: (_) async {
+          try {
+            return CommandResult.ok(await _people());
+          } catch (e) {
+            return CommandResult.fail(readableError(e));
+          }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'immichTags',
+        description:
+            'The Immich tags, alphabetical by full path: [{id, name}].',
+        handler: (_) async {
+          try {
+            return CommandResult.ok(await _tags());
+          } catch (e) {
+            return CommandResult.fail(readableError(e));
+          }
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
         name: 'immichCacheStats',
         description: 'Local Immich cache usage: {items, bytes}',
         handler: (_) async => CommandResult.ok(await cacheStats()),
@@ -284,6 +374,32 @@ class ImmichManager extends Manager {
     );
   }
 
+  /// The chosen albums, none meaning the whole library.
+  List<ImmichNamed> get _albumPicks =>
+      decodeImmichNamed(_settings.get(defs.screensaverImmichAlbum));
+
+  /// Fold the shape older installs stored, one bare album id plus its name
+  /// in immich_album_name, into the [{id, name}] list. The write runs the
+  /// normalizer, which makes the list; the name is filled here, since only
+  /// this side knows the setting it shipped in.
+  Future<void> _migrateAlbums() async {
+    final raw = _settings.get(defs.screensaverImmichAlbum);
+    if (raw.trim().isNotEmpty && !raw.trim().startsWith('[')) {
+      await _settings.set(defs.screensaverImmichAlbum, raw);
+      return; // the change comes back through the listener for the name
+    }
+    final picks = _albumPicks;
+    final legacyName = _settings.get(defs.screensaverImmichAlbumName);
+    if (picks.length == 1 &&
+        picks.single.name.isEmpty &&
+        legacyName.isNotEmpty) {
+      await _settings.set(
+        defs.screensaverImmichAlbum,
+        jsonEncode([ImmichNamed(id: picks.single.id, name: legacyName)]),
+      );
+    }
+  }
+
   /// Null when the connection works, a user-readable reason when it does not.
   Future<String?> _validate() async {
     if (_base.isEmpty) return 'Enter the server address first.';
@@ -299,11 +415,10 @@ class ImmichManager extends Manager {
       // previews (Immich's asset.view is a separate permission from
       // asset.download, issue #222), fails here at the button, not at 2am.
       await _albums();
-      final albumId = _settings.get(defs.screensaverImmichAlbum);
       final found = await _search(
         page: 1,
         size: _probeAssets,
-        albumId: albumId,
+        albumId: _albumPicks.firstOrNull?.id,
       );
       final items = ((found['items'] as List?) ?? const []).cast<Map>();
       // Several assets, not one: the search answers newest first, and the
@@ -408,11 +523,75 @@ class ImmichManager extends Manager {
     return albums;
   }
 
+  /// Every named, unhidden person, alphabetical. Immich pages this
+  /// endpoint on newer servers and answers the lot on older ones; both
+  /// shapes are read. Unnamed clusters are skipped: a filter picked by
+  /// name has nothing to show for them.
+  Future<List<Map<String, Object?>>> _people() async {
+    final people = <Map<String, Object?>>[];
+    for (var page = 1; page <= _maxPeoplePages; page++) {
+      final response = await http
+          .get(
+            Uri.parse(
+              '$_base/api/people?withHidden=false&page=$page&size=1000',
+            ),
+            headers: _headers,
+          )
+          .timeout(const Duration(seconds: 10));
+      _throwUnlessOk(response, scope: 'person.read');
+      final decoded = jsonDecode(response.body);
+      final list = decoded is Map ? decoded['people'] : decoded;
+      for (final person in (list as List? ?? const []).cast<Map>()) {
+        final name = '${person['name'] ?? ''}'.trim();
+        if (name.isEmpty || person['isHidden'] == true) continue;
+        people.add({'id': person['id'], 'name': name});
+      }
+      if (decoded is! Map || decoded['hasNextPage'] != true) break;
+    }
+    people.sort(
+      (a, b) =>
+          '${a['name']}'.toLowerCase().compareTo('${b['name']}'.toLowerCase()),
+    );
+    return people;
+  }
+
+  /// The people listing stops after this many pages of a thousand; a
+  /// library naming more people than that is not a photo frame's problem.
+  static const _maxPeoplePages = 20;
+
+  /// Every tag, alphabetical by full path ("Family/Kids"), which is what
+  /// Immich shows in its own tag picker and what tells two "Kids" apart.
+  Future<List<Map<String, Object?>>> _tags() async {
+    final response = await http
+        .get(Uri.parse('$_base/api/tags'), headers: _headers)
+        .timeout(const Duration(seconds: 10));
+    _throwUnlessOk(response, scope: 'tag.read');
+    final tags = [
+      for (final tag in (jsonDecode(response.body) as List).cast<Map>())
+        {'id': tag['id'], 'name': '${tag['value'] ?? tag['name'] ?? ''}'},
+    ];
+    tags.sort(
+      (a, b) =>
+          '${a['name']}'.toLowerCase().compareTo('${b['name']}'.toLowerCase()),
+    );
+    return tags;
+  }
+
+  /// One page of the metadata search. The filters are the search's own
+  /// fields, sent one person and one tag at a time: Immich reads a list of
+  /// several as "all of them in the same photo", and a frame set to show
+  /// the kids wants either of them. [withPeople] asks for each asset's
+  /// people, which the exclusion filter reads.
   Future<Map<String, dynamic>> _search({
     required int page,
     required int size,
     String? albumId,
     bool withExif = false,
+    String? personId,
+    String? tagId,
+    bool favorite = false,
+    DateTime? takenAfter,
+    bool withPeople = false,
   }) async {
     final response = await http
         .post(
@@ -422,7 +601,12 @@ class ImmichManager extends Manager {
             'page': page,
             'size': size,
             'withExif': withExif,
+            if (withPeople) 'withPeople': true,
             if (albumId != null && albumId.isNotEmpty) 'albumIds': [albumId],
+            if (personId != null) 'personIds': [personId],
+            if (tagId != null) 'tagIds': [tagId],
+            if (favorite) 'isFavorite': true,
+            if (takenAfter != null) 'takenAfter': takenAfter.toIso8601String(),
           }),
         )
         .timeout(const Duration(seconds: 20));
@@ -448,44 +632,110 @@ class ImmichManager extends Manager {
     );
   }
 
-  /// The playlist: every image and video of the configured source, in the
-  /// server's order (newest first). The view shuffles if asked to.
+  /// The playlist: every image and video of the configured source that
+  /// passes the filters, in the server's order (newest first). The view
+  /// shuffles if asked to.
   ///
   /// "Photos only" drops the videos here, at the source: motion/live photos
   /// often land in Immich as short video assets, and a two-second clip
   /// between stills makes the whole slideshow feel broken (issue #32).
+  ///
+  /// Several albums, people or tags mean "any of these", so the search runs
+  /// once per album, person and tag combination and the answers are merged
+  /// by id, then put back in newest-first order since each run was sorted
+  /// on its own. Excluded people cannot be asked of the server on this API,
+  /// so every asset comes back with its people and the ones carrying an
+  /// excluded person are dropped here (issue #345).
   Future<List<ImmichAsset>> listAssets() async {
-    final albumId = _settings.get(defs.screensaverImmichAlbum);
+    final albums = _albumPicks;
     final photosOnly = _settings.get(defs.screensaverImmichPhotosOnly);
     // The EXIF comes along only when something wants it: pairing portrait
     // photos needs every photo's shape up front to arrange the playlist,
     // and it is the one feature that does.
     final withExif = _settings.get(defs.screensaverImmichPairPortrait);
+    final people = decodeImmichNamed(
+      _settings.get(defs.screensaverImmichPeople),
+    );
+    final excluded = {
+      for (final p in decodeImmichNamed(
+        _settings.get(defs.screensaverImmichExcludePeople),
+      ))
+        p.id,
+    };
+    final tags = decodeImmichNamed(_settings.get(defs.screensaverImmichTags));
+    final favorite = _settings.get(defs.screensaverImmichFavoritesOnly);
+    final takenAfter = immichTakenAfter(_settings);
+    final albumIds = albums.isEmpty
+        ? <String?>[null]
+        : <String?>[for (final a in albums) a.id];
+    final personIds = people.isEmpty
+        ? <String?>[null]
+        : <String?>[for (final p in people) p.id];
+    final tagIds = tags.isEmpty
+        ? <String?>[null]
+        : <String?>[for (final t in tags) t.id];
+
     final assets = <ImmichAsset>[];
-    var page = 1;
-    while (assets.length < _maxPlaylist) {
-      final result = await _search(
-        page: page,
-        size: 500,
-        albumId: albumId,
-        withExif: withExif,
-      );
-      for (final item in (result['items'] as List).cast<Map>()) {
-        final isVideo = item['type'] == 'VIDEO';
-        if (photosOnly && isVideo) continue;
-        assets.add(
-          ImmichAsset(
-            id: item['id'] as String,
-            isVideo: isVideo,
-            aspect: isVideo ? null : exifAspect(item['exifInfo']),
-          ),
-        );
+    final created = <String, String>{};
+    for (final albumId in albumIds) {
+      for (final personId in personIds) {
+        for (final tagId in tagIds) {
+          var page = 1;
+          while (assets.length < _maxPlaylist) {
+            final result = await _search(
+              page: page,
+              size: 500,
+              albumId: albumId,
+              withExif: withExif,
+              personId: personId,
+              tagId: tagId,
+              favorite: favorite,
+              takenAfter: takenAfter,
+              withPeople: excluded.isNotEmpty,
+            );
+            for (final item in (result['items'] as List).cast<Map>()) {
+              final id = item['id'] as String;
+              if (created.containsKey(id)) continue;
+              final isVideo = item['type'] == 'VIDEO';
+              if (photosOnly && isVideo) continue;
+              if (excluded.isNotEmpty &&
+                  _carriesAnyOf(item['people'], excluded)) {
+                continue;
+              }
+              created[id] = '${item['fileCreatedAt'] ?? ''}';
+              assets.add(
+                ImmichAsset(
+                  id: id,
+                  isVideo: isVideo,
+                  aspect: isVideo ? null : exifAspect(item['exifInfo']),
+                ),
+              );
+            }
+            final next = result['nextPage'];
+            if (next == null) break;
+            page = next is num
+                ? next.toInt()
+                : int.tryParse('$next') ?? page + 1;
+          }
+        }
       }
-      final next = result['nextPage'];
-      if (next == null) break;
-      page = next is num ? next.toInt() : int.tryParse('$next') ?? page + 1;
+    }
+    if (albumIds.length * personIds.length * tagIds.length > 1) {
+      // ISO 8601 timestamps sort as strings; the server's own order is
+      // newest first, and the merge should read the same way.
+      assets.sort((a, b) => created[b.id]!.compareTo(created[a.id]!));
     }
     return assets;
+  }
+
+  /// Whether an asset's `people` list (present with `withPeople`) names
+  /// anyone in [ids].
+  static bool _carriesAnyOf(Object? people, Set<String> ids) {
+    if (people is! List) return false;
+    for (final person in people) {
+      if (person is Map && ids.contains('${person['id']}')) return true;
+    }
+    return false;
   }
 
   /// The streaming URL and headers for a video asset — playback goes
@@ -578,15 +828,14 @@ class ImmichManager extends Manager {
       ];
       if (location.isNotEmpty) out['location'] = location.join(', ');
 
-      // The album line: the configured album when one is selected, else the
-      // first album the asset belongs to (if any) — its own request, and
-      // only worth making in whole-library mode. Turned off, the line costs
-      // nothing at all: the extra request is never made.
-      final configured = _settings.get(defs.screensaverImmichAlbumName);
+      // The album line: the one configured album when exactly one is
+      // picked, else the album the asset belongs to, its own request, with
+      // a picked album preferred over any other it is also in. Turned off,
+      // the line costs nothing at all: the extra request is never made.
       if (immichMetadataFieldOn(_settings, 'album')) {
-        if (_settings.get(defs.screensaverImmichAlbum).isNotEmpty &&
-            configured.isNotEmpty) {
-          out['album'] = configured;
+        final picks = _albumPicks;
+        if (picks.length == 1 && picks.single.name.isNotEmpty) {
+          out['album'] = picks.single.name;
         } else {
           final albums = await http
               .get(
@@ -595,9 +844,14 @@ class ImmichManager extends Manager {
               )
               .timeout(const Duration(seconds: 10));
           if (albums.statusCode == 200) {
-            final list = jsonDecode(albums.body) as List;
-            if (list.isNotEmpty) {
-              out['album'] = '${(list.first as Map)['albumName'] ?? ''}';
+            final list = (jsonDecode(albums.body) as List).cast<Map>();
+            final picked = {for (final p in picks) p.id};
+            final album = list.firstWhere(
+              (a) => picked.contains('${a['id']}'),
+              orElse: () => list.isEmpty ? const {} : list.first,
+            );
+            if (album.isNotEmpty) {
+              out['album'] = '${album['albumName'] ?? ''}';
             }
           }
         }

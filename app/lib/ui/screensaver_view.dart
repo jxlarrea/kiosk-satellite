@@ -26,6 +26,7 @@ import '../managers/screensaver/immich_manager.dart'
     show
         ImmichAsset,
         arrangeImmichPairs,
+        immichFiltersActive,
         immichMetadataCorner,
         immichMetadataFieldOn,
         immichMetadataFields,
@@ -2679,7 +2680,11 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     try {
       final assets = await c.immich.listAssets();
       if (assets.isEmpty) {
-        setState(() => _problem = 'No media in the selected source.');
+        setState(
+          () => _problem = immichFiltersActive(c.settings)
+              ? 'No media matches the source and filters.'
+              : 'No media in the selected source.',
+        );
         return;
       }
       if (c.settings.get(defs.screensaverImmichShuffle)) {

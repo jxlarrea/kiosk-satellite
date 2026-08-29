@@ -4,6 +4,13 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- Filters for the Immich Media screensaver (#345), a group of their own on its settings page: People (only media with any of the people you tick), Exclude people (skip media with any of them, whoever else is in it), Tags (any of the tags picked by full path), Favorites only and Taken within (the past month up to the past 10 years, a window that moves with the calendar). Every filter set has to hold and they narrow whatever source is chosen, the library or an album. People and tags are picked by name from the server's own lists in both settings pages, with no face thumbnails, and picking several means any of them rather than all in one photo, which is how Immich itself reads a list. The people pickers need the `person.read` permission on the API key and the tag picker `tag.read`; a key without them keeps validating and running the screensaver, and the picker names what is missing. With a filter set and nothing left, the screensaver says so instead of going dark.
+
+### Changed
+- The Immich Media screensaver's Media source takes any number of albums, ticked off the server's list in both settings pages, instead of the library or one album. A photo in several of them shows once, and the metadata overlay's Album name line names a picked album. A single album chosen before this carries over as is.
+- The Immich Media screensaver page is organized into groups: Server Connection (address, key, Validate), Media (source, Photos only, the local cache), Slideshow (seconds per image, Shuffle, Transition, Fill the screen, Pair portrait photos), Metadata and Filters.
+
 ### Fixed
 - The device's own settings now mirror what the remote admin already showed for adaptive brightness: Default brightness stands down with "Adaptive brightness is on." while the switch is on, the screensaver's Brightness level and Dim level sliders carry the bright-room hint, and both pages refresh when the switch is flipped on its own page or from the remote admin instead of waiting for their next tap. The Modify system settings grant is also listed as needed while adaptive brightness is on.
 

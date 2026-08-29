@@ -18,6 +18,8 @@ import '../managers/btproxy/ble_identity.dart' show rssiTier, sortNearbyJson;
 import '../managers/camera/models.dart'
     show decodeCameraViewIds, encodeCameraViewIds;
 import '../managers/launcher/app_launcher_manager.dart' show decodeLauncherApps;
+import '../managers/screensaver/immich_manager.dart'
+    show ImmichNamed, decodeImmichNamed;
 import '../managers/notifications/notification_sounds.dart';
 import '../managers/screensaver/screensaver_manager.dart'
     show upsertScheduleEntry;
@@ -7692,21 +7694,6 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
-        // The Immich source is picked from the server's albums, not typed.
-        if (def.key == screensaverImmichAlbum.key) {
-          final name = c.settings.get(screensaverImmichAlbumName);
-          final label = (value as String).isEmpty
-              ? 'All media'
-              : (name.isEmpty ? 'Album' : name);
-          return ListTile(
-            title: Text(def.title),
-            subtitle: Text(def.description),
-            trailing: TextButton(
-              onPressed: () => _pickImmichAlbum(context),
-              child: Text(label),
-            ),
-          );
-        }
         // The At a Glance entities: a list, edited in its own screen rather
         // than typed as JSON.
         if (def.key == screensaverGlanceEntities.key) {
@@ -7735,6 +7722,22 @@ class SettingTile extends StatelessWidget {
             ),
             trailing: const Icon(Icons.edit_outlined),
             onTap: () => _pickLauncherApps(context),
+          );
+        }
+        // The Immich albums and the people and tag filters: names ticked
+        // off the server's lists, never typed as JSON (issue #345).
+        final immichNamed = _immichNamedRows[def.key];
+        if (immichNamed != null) {
+          final chosen = decodeImmichNamed(value as String);
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(
+              chosen.isEmpty
+                  ? immichNamed.empty
+                  : chosen.map((n) => n.name).join(', '),
+            ),
+            trailing: const Icon(Icons.edit_outlined),
+            onTap: () => _pickImmichNamed(context, immichNamed),
           );
         }
         // The camera screensaver's views are picked from the ones configured
@@ -7856,43 +7859,6 @@ class SettingTile extends StatelessWidget {
     onChanged();
   }
 
-  Future<void> _pickImmichAlbum(BuildContext context) async {
-    final result = await c.commands.execute('immichAlbums', const {});
-    if (!context.mounted) return;
-    if (!result.ok) {
-      showToast(
-        context,
-        title: 'Could not list the albums',
-        message: result.error,
-        kind: ToastKind.error,
-      );
-      return;
-    }
-    final albums = (result.data as List).cast<Map>();
-    final current = c.settings.get(screensaverImmichAlbum);
-    final picked = await showRadioPicker<String>(
-      context,
-      title: 'Media source',
-      selected: current,
-      options: [
-        const PickerOption('', 'All media'),
-        for (final album in albums)
-          PickerOption(
-            '${album['id']}',
-            '${album['name']}',
-            detail: '${album['count']} items',
-          ),
-      ],
-    );
-    if (picked == null) return;
-    final name = picked.isEmpty
-        ? ''
-        : '${albums.firstWhere((a) => '${a['id']}' == picked)['name']}';
-    await c.settings.setFromJson(screensaverImmichAlbum.key, picked);
-    await c.settings.setFromJson(screensaverImmichAlbumName.key, name);
-    onChanged();
-  }
-
   Future<void> _pickLauncherApps(BuildContext context) async {
     final result = await c.commands.execute('installedApps', const {});
     if (!context.mounted) return;
@@ -7966,6 +7932,123 @@ class SettingTile extends StatelessWidget {
         for (final app in apps)
           if (selected.contains('${app['package']}'))
             {'package': '${app['package']}', 'label': '${app['label']}'},
+      ]),
+    );
+    onChanged();
+  }
+
+  /// The Immich name pickers and what each asks the server for.
+  static final _immichNamedRows = {
+    screensaverImmichAlbum.key: const _ImmichNamedRow(
+      def: screensaverImmichAlbum,
+      command: 'immichAlbums',
+      empty: 'All media.',
+      none: 'No albums yet. Create one in Immich first.',
+      errorTitle: 'Could not list the albums',
+    ),
+    screensaverImmichPeople.key: const _ImmichNamedRow(
+      def: screensaverImmichPeople,
+      command: 'immichPeople',
+      empty: 'Anyone.',
+      none: 'No named people yet. Name them in Immich first.',
+      errorTitle: 'Could not list the people',
+    ),
+    screensaverImmichExcludePeople.key: const _ImmichNamedRow(
+      def: screensaverImmichExcludePeople,
+      command: 'immichPeople',
+      empty: 'No one.',
+      none: 'No named people yet. Name them in Immich first.',
+      errorTitle: 'Could not list the people',
+    ),
+    screensaverImmichTags.key: const _ImmichNamedRow(
+      def: screensaverImmichTags,
+      command: 'immichTags',
+      empty: 'Any.',
+      none: 'No tags yet. Create them in Immich first.',
+      errorTitle: 'Could not list the tags',
+    ),
+  };
+
+  Future<void> _pickImmichNamed(
+    BuildContext context,
+    _ImmichNamedRow row,
+  ) async {
+    final result = await c.commands.execute(row.command, const {});
+    if (!context.mounted) return;
+    if (!result.ok) {
+      showToast(
+        context,
+        title: row.errorTitle,
+        message: result.error,
+        kind: ToastKind.error,
+      );
+      return;
+    }
+    final options = [
+      for (final item in (result.data as List).cast<Map>())
+        ImmichNamed(id: '${item['id']}', name: '${item['name']}'),
+    ];
+    // Albums carry their size, which tells two similarly named ones apart.
+    final details = {
+      for (final item in (result.data as List).cast<Map>())
+        if (item['count'] != null) '${item['id']}': '${item['count']} items',
+    };
+    final selected = {
+      for (final n in decodeImmichNamed(c.settings.get(row.def))) n.id,
+    };
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(row.def.title),
+          content: SizedBox(
+            width: 420,
+            child: options.isEmpty
+                ? Text(row.none)
+                : EdgeFade(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final option in options)
+                          CheckboxListTile(
+                            value: selected.contains(option.id),
+                            title: Text(option.name),
+                            subtitle: details[option.id] == null
+                                ? null
+                                : Text(details[option.id]!),
+                            onChanged: (on) => setState(() {
+                              if (on == true) {
+                                selected.add(option.id);
+                              } else {
+                                selected.remove(option.id);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (saved != true) return;
+    // Rebuilt from the server's list, so renamed people and tags refresh
+    // and merged or deleted ones drop out on every save.
+    await c.settings.setFromJson(
+      row.def.key,
+      jsonEncode([
+        for (final option in options)
+          if (selected.contains(option.id)) option.toJson(),
       ]),
     );
     onChanged();
@@ -8677,4 +8760,22 @@ class _VsSliderRowState extends State<_VsSliderRow> {
       ],
     );
   }
+}
+
+/// One Immich name-picker row: the setting it edits, the command that
+/// lists the choices, and the words for an empty pick and an empty list.
+class _ImmichNamedRow {
+  const _ImmichNamedRow({
+    required this.def,
+    required this.command,
+    required this.empty,
+    required this.none,
+    required this.errorTitle,
+  });
+
+  final SettingDef<String> def;
+  final String command;
+  final String empty;
+  final String none;
+  final String errorTitle;
 }

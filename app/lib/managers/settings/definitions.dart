@@ -5,6 +5,8 @@
 /// serialize from these definitions — never from ad-hoc keys.
 library;
 
+import 'dart:convert';
+
 enum SettingType { string, boolean, number, select, password }
 
 class SettingDef<T> {
@@ -159,7 +161,7 @@ const Map<String, String> subpageHints = {
   'Home Assistant Media screensaver': 'Media source, timing, shuffle, fill',
   'Local Media screensaver': 'Folder, timing, shuffle, transition',
   'Photo Gallery screensaver': 'Photos, timing, shuffle, transition',
-  'Immich Media screensaver': 'Server, album, timing, caching, metadata',
+  'Immich Media screensaver': 'Server, media, slideshow, metadata, filters',
   'Camera Streams screensaver': 'Views to show, seconds per view, sound',
   'Widgets': 'Corner overlays and their scale',
   'At a Glance': 'Entities shown over the screensaver',
@@ -224,6 +226,20 @@ String normalizeBaseUrl(String value) {
 /// [SettingDef.normalizer] adapter for [normalizeBaseUrl].
 Object normalizeBaseUrlSetting(Object value) =>
     value is String ? normalizeBaseUrl(value) : value;
+
+/// The Immich album pick as the `[{id, name}]` list it is stored as. A
+/// bare album id is the shape the setting had while it held one album; it
+/// becomes a one-entry list, name left for the Immich manager to fill in
+/// from the album name that shipped beside it. Blank means the library.
+Object normalizeImmichAlbumsSetting(Object value) {
+  if (value is! String) return value;
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '[]';
+  if (trimmed.startsWith('[')) return trimmed;
+  return jsonEncode([
+    {'id': trimmed, 'name': ''},
+  ]);
+}
 
 // ── Browser ────────────────────────────────────────────────────────────
 
@@ -1951,7 +1967,7 @@ const screensaverImmichUrl = SettingDef<String>(
   description: 'The address of your Immich server, with its port.',
   placeholder: 'http://immich.local:2283',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Server Connection',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'immich',
@@ -1964,7 +1980,7 @@ const screensaverImmichApiKey = SettingDef<String>(
   title: 'API key',
   description: 'Created in Immich under Account Settings → API Keys.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Server Connection',
   subpage: 'Immich Media screensaver',
   secret: true,
   dependsOn: 'screensaver.mode',
@@ -1981,23 +1997,26 @@ const screensaverImmichValidated = SettingDef<bool>(
   title: 'Connection validated',
   description: '',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Server Connection',
   subpage: 'Immich Media screensaver',
   hidden: true,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'immich',
 );
 
-// The album id, or empty for the whole library. Rendered as a dropdown fed
-// by the immichAlbums command in both UIs, never typed.
+// The albums as [{id, name}], or an empty list for the whole library.
+// Ticked off the immichAlbums command's list in both UIs, never typed. Older
+// installs stored one bare album id here; the normalizer folds that into
+// the list and the manager fills in its name.
 const screensaverImmichAlbum = SettingDef<String>(
   key: 'screensaver.immich_album',
   type: SettingType.string,
-  defaultValue: '',
+  defaultValue: '[]',
   title: 'Media source',
-  description: 'The whole library, or a single album.',
+  description: 'The whole library, or the albums you pick.',
+  normalizer: normalizeImmichAlbumsSetting,
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Media',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
@@ -2011,12 +2030,13 @@ const screensaverImmichPhotosOnly = SettingDef<bool>(
   title: 'Photos only',
   description: 'Skip videos in the slideshow.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Media',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
 
-// The chosen album's name, for display when the server is unreachable.
+// The name of the one album older installs stored in immich_album, kept so
+// a migrated or imported pick keeps its name. Nothing writes it any more.
 const screensaverImmichAlbumName = SettingDef<String>(
   key: 'screensaver.immich_album_name',
   type: SettingType.string,
@@ -2024,7 +2044,7 @@ const screensaverImmichAlbumName = SettingDef<String>(
   title: 'Album name',
   description: '',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Media',
   subpage: 'Immich Media screensaver',
   hidden: true,
   dependsOn: 'screensaver.immich_validated',
@@ -2038,7 +2058,7 @@ const screensaverImmichInterval = SettingDef<num>(
   description:
       'How long each image shows before the next. Videos play in full.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Slideshow',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
@@ -2050,7 +2070,7 @@ const screensaverImmichShuffle = SettingDef<bool>(
   title: 'Shuffle',
   description: 'Cycle the media in random order.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Slideshow',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
@@ -2062,7 +2082,7 @@ const screensaverImmichTransition = SettingDef<String>(
   title: 'Transition',
   description: 'How one item hands off to the next.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Slideshow',
   subpage: 'Immich Media screensaver',
   options: _transitionOptions,
   optionLabels: _transitionLabels,
@@ -2078,7 +2098,7 @@ const screensaverImmichFill = SettingDef<bool>(
       'Enlarge photos that match the screen shape to cover it fully. '
       'Others keep their full frame.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Slideshow',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
@@ -2094,7 +2114,7 @@ const screensaverImmichPairPortrait = SettingDef<bool>(
   title: 'Pair portrait photos',
   description: 'Show two portrait photos side by side so they fill the screen.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Slideshow',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
@@ -2106,7 +2126,7 @@ const screensaverImmichCache = SettingDef<bool>(
   title: 'Cache media locally',
   description: 'Keep copies on the device so images load instantly.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Media',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
@@ -2118,7 +2138,7 @@ const screensaverImmichCacheMax = SettingDef<num>(
   title: 'Cache size (items)',
   description: 'The oldest items are deleted once the cache is full.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Media',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_cache',
 );
@@ -2130,7 +2150,7 @@ const screensaverImmichMetadata = SettingDef<bool>(
   title: 'Show metadata',
   description: 'Album, date, camera and location over the media.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Metadata',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
 );
@@ -2146,7 +2166,7 @@ const screensaverImmichMetadataAlbum = SettingDef<bool>(
   title: 'Album name',
   description: 'Show which album the photo comes from.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Metadata',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
@@ -2158,7 +2178,7 @@ const screensaverImmichMetadataDate = SettingDef<bool>(
   title: 'Date taken',
   description: 'Show when the photo was taken.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Metadata',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
@@ -2170,7 +2190,7 @@ const screensaverImmichMetadataCamera = SettingDef<bool>(
   title: 'Camera details',
   description: 'Show focal length, aperture and ISO.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Metadata',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
@@ -2182,7 +2202,7 @@ const screensaverImmichMetadataLocation = SettingDef<bool>(
   title: 'Location',
   description: 'Show the place the photo was taken.',
   category: 'Screensaver',
-  section: 'Immich Media screensaver',
+  section: 'Metadata',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
 );
@@ -2198,9 +2218,94 @@ const screensaverImmichMetadataPosition = SettingDef<String>(
   category: 'Screensaver',
   options: cornerOptions,
   optionLabels: cornerLabels,
-  section: 'Immich Media screensaver',
+  section: 'Metadata',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_metadata',
+);
+
+// ── Immich filters ──
+//
+// Narrow the source (the whole library or an album) to what a photo frame
+// should actually show (issue #345). Each filter is one field of the same
+// metadata search the playlist already runs, so they combine as AND with
+// the source and with each other. The people and tag lists are picked by
+// name from the server, stored as [{id, name}] like the launcher's apps so
+// both UIs can show the names without asking the server again.
+
+const screensaverImmichPeople = SettingDef<String>(
+  key: 'screensaver.immich_people',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'People',
+  description: 'Show only media with any of these people.',
+  category: 'Screensaver',
+  section: 'Filters',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichExcludePeople = SettingDef<String>(
+  key: 'screensaver.immich_exclude_people',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Exclude people',
+  description: 'Skip media with any of these people.',
+  category: 'Screensaver',
+  section: 'Filters',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichTags = SettingDef<String>(
+  key: 'screensaver.immich_tags',
+  type: SettingType.string,
+  defaultValue: '[]',
+  title: 'Tags',
+  description: 'Show only media with any of these tags.',
+  category: 'Screensaver',
+  section: 'Filters',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichFavoritesOnly = SettingDef<bool>(
+  key: 'screensaver.immich_favorites_only',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Favorites only',
+  description: 'Show only media marked as favorite.',
+  category: 'Screensaver',
+  section: 'Filters',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
+);
+
+/// The "Taken within" choices: the value is the number of days back, as a
+/// string, with the empty string for no limit. Days rather than calendar
+/// months, so the cutoff is the same arithmetic on both UIs and the server.
+const immichTakenWithinOptions = ['', '30', '90', '365', '730', '1825', '3650'];
+const immichTakenWithinLabels = {
+  '': 'Any time',
+  '30': 'Past month',
+  '90': 'Past 3 months',
+  '365': 'Past year',
+  '730': 'Past 2 years',
+  '1825': 'Past 5 years',
+  '3650': 'Past 10 years',
+};
+
+const screensaverImmichTakenWithin = SettingDef<String>(
+  key: 'screensaver.immich_taken_within',
+  type: SettingType.select,
+  defaultValue: '',
+  options: immichTakenWithinOptions,
+  optionLabels: immichTakenWithinLabels,
+  title: 'Taken within',
+  description: 'Skip media taken longer ago than this.',
+  category: 'Screensaver',
+  section: 'Filters',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_validated',
 );
 
 const screensaverPixelShift = SettingDef<bool>(
@@ -4839,19 +4944,24 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichAlbum,
   screensaverImmichPhotosOnly,
   screensaverImmichAlbumName,
+  screensaverImmichCache,
+  screensaverImmichCacheMax,
   screensaverImmichInterval,
   screensaverImmichShuffle,
   screensaverImmichTransition,
   screensaverImmichFill,
   screensaverImmichPairPortrait,
-  screensaverImmichCache,
-  screensaverImmichCacheMax,
   screensaverImmichMetadata,
   screensaverImmichMetadataAlbum,
   screensaverImmichMetadataDate,
   screensaverImmichMetadataCamera,
   screensaverImmichMetadataLocation,
   screensaverImmichMetadataPosition,
+  screensaverImmichPeople,
+  screensaverImmichExcludePeople,
+  screensaverImmichTags,
+  screensaverImmichFavoritesOnly,
+  screensaverImmichTakenWithin,
   screensaverWebsiteUrl,
   screensaverWebsiteDoubleTap,
   screensaverCameraViews,

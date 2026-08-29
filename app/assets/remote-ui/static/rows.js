@@ -11,7 +11,11 @@ import {
 import { api, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { updateAdaptiveBrightnessRows, updateFaceRows } from './notices.js';
-import { openLauncherAppsPicker, openMediaBrowser } from './pickers.js';
+import {
+  openImmichNamesPicker,
+  openLauncherAppsPicker,
+  openMediaBrowser,
+} from './pickers.js';
 import { loadSettings, refreshRealMacNote } from './settings.js';
 import {
   attachSlider,
@@ -19,6 +23,28 @@ import {
   swatch,
   timeBox,
 } from './widgets.js';
+
+// The Immich name-picker rows (albums, people, tags): which command lists
+// the choices, and the words for an empty pick and an empty list, the same
+// as the device's.
+const IMMICH_NAMED_ROWS = {
+  'screensaver.immich_album': {
+    command: 'immichAlbums', empty: 'All media',
+    none: 'No albums yet. Create one in Immich first.',
+  },
+  'screensaver.immich_people': {
+    command: 'immichPeople', empty: 'Anyone',
+    none: 'No named people yet. Name them in Immich first.',
+  },
+  'screensaver.immich_exclude_people': {
+    command: 'immichPeople', empty: 'No one',
+    none: 'No named people yet. Name them in Immich first.',
+  },
+  'screensaver.immich_tags': {
+    command: 'immichTags', empty: 'Any',
+    none: 'No tags yet. Create them in Immich first.',
+  },
+};
 
 // Bring the rows gated on `key` (dependsOn, transitively) in or out of the
 // card `anchorRow` sits in, reading the values already in state.settings —
@@ -217,45 +243,6 @@ export function settingRow(s) {
     return row;
   }
 
-  // The Immich source is a dropdown fed by the server's albums, mirroring
-  // the device's picker. The saved choice renders immediately (by its stored
-  // name); the live list replaces it when the server answers.
-  if (s.key === 'screensaver.immich_album') {
-    const byKey = Object.fromEntries((state.settings || []).map((o) => [o.key, o]));
-    const sel = document.createElement('select');
-    const rebuild = (albums) => {
-      sel.innerHTML = '';
-      const all = document.createElement('option');
-      all.value = ''; all.textContent = 'All media';
-      all.selected = !s.value;
-      sel.appendChild(all);
-      for (const a of albums) {
-        const opt = document.createElement('option');
-        opt.value = a.id; opt.textContent = a.name;
-        opt.selected = a.id === s.value;
-        sel.appendChild(opt);
-      }
-    };
-    rebuild(s.value
-      ? [{ id: s.value, name: byKey['screensaver.immich_album_name']?.value || 'Album' }]
-      : []);
-    (async () => {
-      try {
-        const res = await (await api('/api/commands/immichAlbums', { method: 'POST', body: '{}' })).json();
-        if (res.ok) rebuild(res.data || []);
-      } catch (_) {}
-    })();
-    sel.addEventListener('change', async () => {
-      const name = sel.value ? sel.options[sel.selectedIndex].textContent : '';
-      await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
-        'screensaver.immich_album': sel.value,
-        'screensaver.immich_album_name': name,
-      }) });
-    });
-    row.appendChild(sel);
-    return row;
-  }
-
   // The launcher whitelist, mirroring the device's checkbox picker. The
   // summary renders from the labels cached in the setting; the picker asks
   // the device for the live app list.
@@ -278,6 +265,39 @@ export function settingRow(s) {
       if (picked) {
         await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
           'launcher.apps': JSON.stringify(picked),
+        }) });
+        await loadSettings();
+      }
+    });
+    const controls = document.createElement('div');
+    controls.style.cssText =
+      'display:flex; gap:10px; align-items:center; min-width:0; max-width:60%; flex:0 1 auto';
+    controls.append(val, btn);
+    row.appendChild(controls);
+    return row;
+  }
+
+  // The Immich people and tag filters, mirroring the device's pickers: the
+  // chosen names as the summary, an Edit button opening the checkbox list.
+  const immichNamed = IMMICH_NAMED_ROWS[s.key];
+  if (immichNamed) {
+    let chosen = [];
+    try { chosen = JSON.parse(s.value || '[]') || []; } catch (_) {}
+    const val = document.createElement('span');
+    val.className = 'device';
+    val.style.cssText =
+      'flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap';
+    val.textContent = chosen.length ? chosen.map((n) => n.name).join(', ') : immichNamed.empty;
+    const btn = document.createElement('button');
+    btn.className = 'btn-ghost'; btn.textContent = 'Edit';
+    btn.style.flex = 'none';
+    btn.addEventListener('click', async () => {
+      const picked = await openImmichNamesPicker({
+        title: s.title, command: immichNamed.command, current: chosen, none: immichNamed.none,
+      });
+      if (picked) {
+        await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
+          [s.key]: JSON.stringify(picked),
         }) });
         await loadSettings();
       }

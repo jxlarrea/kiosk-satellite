@@ -96,7 +96,9 @@ result says whether anything stepped),
 focusedCameraId}`), `cameraGetConfig`, `restartApp`, `tts {text}`,
 `launchApp {package}` (open another Android app over the kiosk),
 `bringToFront` (come back in front of it), `installedApps` (every
-launchable app as `[{package, label}]`), `showAppLauncher` /
+launchable app as `[{package, label}]`), `immichAlbums`,
+`immichPeople` and `immichTags` (the Immich screensaver's albums, named
+people and tags as `[{id, name}]`, for its source and filter pickers), `showAppLauncher` /
 `hideAppLauncher` (the app launcher overlay;
 `showAppLauncher` refuses while the App Launcher is disabled in
 settings), `showNotification {message, title, duration, type, chime, scale, icon, chime_file, volume, image}` and
