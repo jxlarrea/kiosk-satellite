@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.96 - 2026-08-28
 
 ### Added
 - Filters for the Immich Media screensaver (#345), a group of their own on its settings page: People (only media with any of the people you tick), Exclude people (skip media with any of them, whoever else is in it), Tags (any of the tags picked by full path), Favorites only and Taken within (the past month up to the past 10 years, a window that moves with the calendar). Every filter set has to hold and they narrow whatever source is chosen, the library or an album. People and tags are picked by name from the server's own lists in both settings pages, with no face thumbnails, and picking several means any of them rather than all in one photo, which is how Immich itself reads a list. The people pickers need the `person.read` permission on the API key and the tag picker `tag.read`; a key without them keeps validating and running the screensaver, and the picker names what is missing. With a filter set and nothing left, the screensaver says so instead of going dark.
