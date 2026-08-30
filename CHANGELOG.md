@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.100 - 2026-08-29
 
 ### Fixed
 - The launcher icon read blurry on a Meta Portal, whose launcher draws 152 px tiles on a 160 dpi panel and scales the icon's 108 px raster up to fit. The adaptive icon's three layers are now vector drawables with a 432 dp intrinsic size, so any launcher that rasterizes the icon before scaling gets a sharp tile at any size.
