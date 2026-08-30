@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.102 - 2026-08-30
 
 ### Added
 - **Vignette strength** sliders for the soft shading behind the screensaver's corner overlays (#366), on the device and in the remote admin alike: one in the Widgets group for every corner widget and one under the Immich screensaver's Metadata settings for the photo details, each 0 to 100 percent with the shading the app has always drawn as the default of 80, so nothing changes on an existing install. Lower one for a cleaner photo frame on an OLED panel or in a bright room, raise it for readability on bright pictures, or set it to 0 to remove the shading entirely, and the two are independent, so the clock can stay backed while the photo's details go bare. Moving either while the screensaver shows previews live, like Widget scaling.
