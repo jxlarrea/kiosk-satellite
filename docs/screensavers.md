@@ -335,7 +335,15 @@ panel truly powers off (up to 60 minutes, in 5-minute steps; 0, the
 default, never does). Powering the panel off is device-admin territory
 on Android, so the setting needs the **Device admin** permission
 (Settings, Device, Permissions); without it the timer logs a warning
-and leaves the panel on.
+and leaves the panel on. The same Android call arms the lock screen on
+any device that has one, PIN or not, and a panel that wakes onto it
+would fall back asleep seconds later with the kiosk paused underneath.
+So every wake clears a lock screen that has no PIN, pattern or password
+behind it (on Android 10+ that takes the Display over other apps
+permission, which the wizard requests). One that is secured is left
+alone: the kiosk then waits behind it until someone unlocks the device,
+and the log says so. A kiosk that powers its panel off is best set up
+with no screen lock, or with the lock screen disabled outright.
 
 The screensaver session stays active behind the dark panel, which is
 what makes waking symmetrical: every dismiss source powers the panel

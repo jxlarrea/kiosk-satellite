@@ -2,6 +2,7 @@ package me.jxl.kiosk_satellite
 
 import android.app.AlarmManager
 import android.app.DownloadManager
+import android.app.KeyguardManager
 import android.app.admin.DevicePolicyManager
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -361,6 +362,10 @@ class BackgroundBridge(
                 // The second screen-on route, for a panel the wake lock
                 // left dark: "started", "no_overlay_grant" or "failed".
                 "wakeScreenViaActivity" -> result.success(wakeScreenViaActivity())
+                // The lock screen the screen-off's lockNow armed, once the
+                // panel is lit again: "not_locked", "secure", "started",
+                // "no_overlay_grant" or "failed" (issue #372).
+                "dismissKeyguard" -> result.success(dismissKeyguard())
                 // True panel off. Android only grants this to an active
                 // device admin (lockNow); plain apps have no API for it.
                 "screenOff" -> result.success(screenOff())
@@ -1065,6 +1070,19 @@ class BackgroundBridge(
         } catch (_: Exception) {
             "failed"
         }
+    }
+
+    /**
+     * Clear the lock screen a screen-off left armed, if it is one the app
+     * may clear: [WakeActivity] asks the keyguard to go once it is showing
+     * over it. A secured keyguard is reported, not fought, and a device
+     * whose keyguard is already down has nothing to do.
+     */
+    private fun dismissKeyguard(): String {
+        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (!km.isKeyguardLocked) return "not_locked"
+        if (WakeActivity.secure(km)) return "secure"
+        return wakeScreenViaActivity()
     }
 
     private fun bringToFront(): Boolean {

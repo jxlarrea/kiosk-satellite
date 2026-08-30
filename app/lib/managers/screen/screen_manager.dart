@@ -913,8 +913,13 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     if (!activityOnly) {
       await Future<void>.delayed(_wakeSettle);
       if (generation != _wakeGeneration) return;
-      // Lit, or unanswerable (no bridge): nothing more to do.
-      if (await _isInteractive() ?? true) return;
+      // Unanswerable (no bridge): nothing more to do.
+      final lit = await _isInteractive();
+      if (lit == null) return;
+      if (lit) {
+        await _dismissKeyguard();
+        return;
+      }
       log.warn(
         name,
         'the wake lock did not light the panel; trying the activity route',
@@ -942,9 +947,51 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     if (lit) {
       log.info(name, 'the activity route lit the panel');
       _setScreenOn(true, source: 'app');
+      await _dismissKeyguard();
     } else {
       log.warn(name, 'the panel stayed dark after both wake routes');
       _setScreenOn(false, source: 'probe');
+    }
+  }
+
+  /// Clear the lock screen the screen-off left armed (issue #372).
+  ///
+  /// screenOff is device-admin lockNow, and lockNow arms the keyguard on
+  /// any device that has one, PIN or not. A panel lit on top of it has
+  /// the kiosk paused underneath, so the screensaver stands down and
+  /// releases its wake hold, and the keyguard's own timeout sleeps the
+  /// panel again seconds later: unattended, the screen-on never sticks.
+  /// The native side launches WakeActivity, which asks the keyguard to go
+  /// once it is showing over it; an unsecured keyguard goes on its own. A
+  /// secured one is the person's lock and is left alone, named in the log
+  /// so a dark panel that keeps coming back has an explanation.
+  Future<void> _dismissKeyguard() async {
+    String? outcome;
+    try {
+      outcome = await _background.invokeMethod<String>('dismissKeyguard');
+    } catch (_) {
+      return;
+    }
+    switch (outcome) {
+      case 'started':
+        log.info(name, 'the panel lit on the lock screen; dismissing it');
+      case 'secure':
+        log.warn(
+          name,
+          'the panel lit on a secured lock screen; the kiosk stays behind '
+          'it until the device is unlocked',
+        );
+      case 'no_overlay_grant':
+        log.warn(
+          name,
+          'the panel lit on the lock screen; dismissing it needs the '
+          'Display over other apps permission',
+        );
+      case 'failed':
+        log.warn(
+          name,
+          'the panel lit on the lock screen and the dismiss could not start',
+        );
     }
   }
 

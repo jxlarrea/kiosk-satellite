@@ -31,6 +31,7 @@ void main() {
   late bool wakeLockLights;
   late bool activityLights;
   late String activityOutcome;
+  late String? keyguardOutcome;
   late List<String> calls;
   late List<ScreenStateChanged> events;
   late Logger log;
@@ -42,11 +43,13 @@ void main() {
     bool wakeLock = false,
     bool activity = false,
     String outcome = 'started',
+    String? keyguard,
   }) async {
     interactive = lit;
     wakeLockLights = wakeLock;
     activityLights = activity;
     activityOutcome = outcome;
+    keyguardOutcome = keyguard;
     calls = [];
     events = [];
     wakelockPlusPlatformInstance = _NoopWakelock();
@@ -66,6 +69,8 @@ void main() {
                 interactive = true;
               }
               return activityOutcome;
+            case 'dismissKeyguard':
+              return keyguardOutcome;
             case 'ambientDisplaySetting':
               return -1;
             default:
@@ -98,13 +103,65 @@ void main() {
       .map((e) => e.message);
 
   test('a wake lock that lights the panel is the whole story', () async {
-    await build(wakeLock: true);
+    await build(wakeLock: true, keyguard: 'not_locked');
     expect(screen.isScreenOn, isFalse, reason: 'seeded from the dark panel');
     await screen.screenOn();
     await settle();
     expect(calls, isNot(contains('wakeScreenViaActivity')));
     expect(screen.isScreenOn, isTrue);
     expect(warnings(), isEmpty);
+    // The lock screen is checked once the panel is known lit, never before.
+    expect(calls, contains('dismissKeyguard'));
+    expect(
+      calls.indexOf('isScreenInteractive', 1),
+      lessThan(calls.indexOf('dismissKeyguard')),
+    );
+  });
+
+  test('a panel lit on an unsecured lock screen has it dismissed', () async {
+    await build(wakeLock: true, keyguard: 'started');
+    await screen.screenOn();
+    await settle();
+    expect(calls, contains('dismissKeyguard'));
+    expect(warnings(), isEmpty);
+    expect(
+      log.recent.map((e) => e.message),
+      contains('the panel lit on the lock screen; dismissing it'),
+    );
+    expect(screen.isScreenOn, isTrue);
+  });
+
+  test('a secured lock screen is named, not fought', () async {
+    await build(wakeLock: true, keyguard: 'secure');
+    await screen.screenOn();
+    await settle();
+    expect(warnings(), [
+      'the panel lit on a secured lock screen; the kiosk stays behind it '
+          'until the device is unlocked',
+    ]);
+    // The panel is lit, whatever is on it.
+    expect(screen.isScreenOn, isTrue);
+  });
+
+  test('a lock screen the activity route lit is checked too', () async {
+    await build(activity: true, keyguard: 'started');
+    await screen.screenOn();
+    await settle();
+    expect(
+      calls.indexOf('wakeScreenViaActivity'),
+      lessThan(calls.indexOf('dismissKeyguard')),
+    );
+    expect(
+      log.recent.map((e) => e.message),
+      contains('the panel lit on the lock screen; dismissing it'),
+    );
+  });
+
+  test('a panel that stayed dark never asks about the lock screen', () async {
+    await build(keyguard: 'started');
+    await screen.screenOn();
+    await settle();
+    expect(calls, isNot(contains('dismissKeyguard')));
   });
 
   test(
