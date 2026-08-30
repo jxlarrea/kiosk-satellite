@@ -1,10 +1,9 @@
 # Amazon Fire tablets
 
-Verified on a Fire HD 10 (`KFTUWI`, Fire OS 8, Android 11). The lock
-screen behavior below was reported and confirmed on a Fire HD 8
-(`KFONWI`, Fire OS 7, Android 9) as well. Fire OS 5 tablets (Android
-5.1) are below the app's Android 7 minimum and `adb install` refuses them
-with `INSTALL_FAILED_OLDER_SDK`.
+Verified on a Fire HD 10 (`KFTUWI`, Fire OS 8, Android 11) and, for the
+lock screen, on a Fire HD 8 (`KFONWI`, Fire OS 7, Android 9). Fire OS 5
+tablets (Android 5.1) are below the app's Android 7 minimum and `adb
+install` refuses them with `INSTALL_FAILED_OLDER_SDK`.
 
 ## Install
 
@@ -44,8 +43,8 @@ adb shell dpm set-active-admin me.jxl.kiosk_satellite/.KioskAdminReceiver
 ```
 
 ```
-# The lock screen: without this, a screen turned off by the app wakes onto
-# the lock screen and goes dark again seconds later (see below)
+# Fire OS 8 only. The lock screen: without this, a screen turned off by the
+# app wakes onto the lock screen and goes dark again seconds later (see below)
 adb shell locksettings set-disabled true
 adb reboot
 ```
@@ -67,9 +66,10 @@ Turning the screen off, from the Home Assistant **Screen** entity or the
 screensaver's **Turn screen off after**, is Android's device-admin lock.
 That call arms the lock screen on any device that has one, and a Fire
 has one whether or not a passcode is set: with no passcode it is the
-swipe-away screen. Every other Android lets an app clear that unsecured
-lock screen when it wakes the panel, and the app does. Fire OS refuses
-the request to every app but Amazon's own:
+swipe-away screen. Android lets an app clear that unsecured lock screen
+when it wakes the panel, and the app does: on Fire OS 7 the wake lands on
+the kiosk with the lock screen gone and nothing below applies. Fire OS 8
+refuses the request to every app but Amazon's own:
 
 ```
 AmazonWindowManager: me.jxl.kiosk_satellite cannot dismissKeyguard without com.amazon.permission.ENABLE_KEYGUARD_FLAGS permission.
@@ -99,13 +99,24 @@ adb shell locksettings set-disabled true
 adb reboot
 ```
 
-The reboot is not optional: the lock screen reads the switch when it is
+The switch alone changes nothing: the lock screen reads it when it is
 created, so setting it live reports success, `locksettings get-disabled`
-answers `true` and the next screen-off still raises the lock screen until
-the tablet restarts. After the reboot the kiosk keeps the screen through
-the whole cycle and the screen-off still powers the panel down properly.
-`locksettings set-disabled false` and a reboot bring the lock screen
-back.
+answers `true` and the next screen-off still raises the lock screen. The
+reboot re-creates it. So does restarting System UI, which keeps adb
+alive on a wall-mounted tablet, provided the screen is on and unlocked
+at the time (restarted while the lock screen shows, it comes back
+showing and the switch appears not to have taken). Verified on Fire OS 7
+and 8:
+
+```
+adb shell locksettings set-disabled true
+adb shell am force-stop com.android.systemui
+```
+
+Give System UI a few seconds to come back before the next screen-off.
+After either route the kiosk keeps the screen through the whole cycle
+and the screen-off still powers the panel down properly. `locksettings
+set-disabled false` and the same restart bring the lock screen back.
 
 A Fire that never turns its panel off, one that runs a screensaver all
 night instead, never meets the lock screen and needs none of this.
@@ -114,7 +125,7 @@ night instead, never meets the lock screen and needs none of this.
 
 | Quirk | Effect | What to do |
 | --- | --- | --- |
-| The lock screen cannot be cleared by an app | A screen turned off by the app wakes onto the lock screen and sleeps again seconds later, see above | `adb shell locksettings set-disabled true` and a reboot, once |
+| Fire OS 8 lets no app clear the lock screen | A screen turned off by the app wakes onto the lock screen and sleeps again seconds later, see above. Fire OS 7 is not affected | `adb shell locksettings set-disabled true` and a reboot or a System UI restart, once |
 | Wireless debugging is off after every reboot, on a new port | A setup that ends in a reboot loses adb | Use a cable, or turn Wireless debugging back on afterwards and read the new port from its page |
 | Amazon's WebView has no WebRTC | Go2RTC camera streams cannot play over WebRTC | Nothing: the app falls back to MSE on its own and records the switch in the App Logs. **Prefer MSE over WebRTC** (Settings, Camera Streams, Playback) skips the failed attempt. See [Cameras](cameras.md) |
 | Bluetooth scanning is gated on location | Fire OS 8 is Android 11, where a scanner without the Location permission and Location Based Services on runs and hears nothing | Grant location (the block above) and turn **Location Based Services** on in the tablet's Settings. The Nearby devices row on the Bluetooth Proxy page reads the gate. See [ESPHome](esphome.md) |

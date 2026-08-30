@@ -342,7 +342,7 @@ So every wake clears a lock screen that has no PIN, pattern or password
 behind it (on Android 10+ that takes the Display over other apps
 permission, which the wizard requests). One that is secured is left
 alone: the kiosk then waits behind it until someone unlocks the device,
-and the log says so. Fire OS refuses the dismissal to every app but
+and the log says so. Fire OS 8 refuses the dismissal to every app but
 Amazon's own and the kiosk stays behind the lock screen there too, which
 the log names along with the fix, an adb switch and a reboot; see
 [Amazon Fire tablets](fire.md). A kiosk that powers its panel off is
