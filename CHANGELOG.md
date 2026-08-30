@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.104 - 2026-08-30
 
 ### Added
 - A **Device name** field on the setup wizard's first page, on the device and in the remote admin alike, above Remote administration and filled in with the device model. It is the name Home Assistant, the remote admin and the network use for the kiosk, and the ESPHome node name is built from it at the ESPHome server's first start, under a `ks-` prefix so every kiosk sorts together, so a Fire HD 10 left at its model name shows up as `ks-amazon-kftuwi` and a kiosk named Kitchen Tablet as `ks-kitchen-tablet` with `esphome.ks_kitchen_tablet_notification` actions, instead of a generated `kiosk-satellite-<id>`. A name typed in the ESPHome Node name setting itself is still taken as written. It can be changed any time under Settings, Device.
