@@ -80,6 +80,20 @@ the grant screen on the tablet. Over `adb`:
 adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow
 ```
 
+## Meta Portal
+
+Meta's Portal ships its own package verifier, which refuses every install
+an app starts unless the APK carries a Meta certificate. The updater
+downloads and shows Android's confirmation, then the install ends in
+`INSTALL_FAILED_VERIFICATION_FAILURE`. One adb line turns the verifier
+off, after which updates install like on any other Android 10 device:
+
+```
+adb shell settings put global package_verifier_enable 0
+```
+
+Everything else about a Portal is in [Meta Portal](portal.md).
+
 ## Hands-free on Android 11 and older: device ownership
 
 A device owner installs its own updates silently on any Android version.

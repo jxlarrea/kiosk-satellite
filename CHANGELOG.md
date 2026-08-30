@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- On a Meta Portal an update that Meta's package verifier rejected read as "install declined on the device screen", since Android delivers a verifier rejection the way it delivers a cancel. The app now reports the rejection as the failure it is, with the fix: the verifier has to be turned off once over adb, which the [Updates](docs/updates.md) and [Meta Portal](docs/portal.md) docs now cover.
+
 ## v2026.8.101 - 2026-08-29
 
 ### Fixed

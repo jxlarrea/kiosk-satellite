@@ -76,11 +76,25 @@ class ApkInstaller(private val context: Context, messenger: BinaryMessenger) {
                     val message = intent.getStringExtra(
                         PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "status $status"
                     // The person canceling Android's confirm screen is a normal
-                    // outcome, not an error worth alarming anyone over.
-                    val aborted = status == PackageInstaller.STATUS_FAILURE_ABORTED
+                    // outcome, not an error worth alarming anyone over. A
+                    // package verifier rejecting the APK arrives as ABORTED
+                    // too (a Meta Portal ships one that refuses every
+                    // certificate but Meta's own), and that one is an error
+                    // with a fix, so it is told apart by its message.
+                    val verifier = message.contains("VERIFICATION", ignoreCase = true)
+                    val aborted =
+                        status == PackageInstaller.STATUS_FAILURE_ABORTED && !verifier
                     Log.w(TAG, "install failed: $message")
                     channel.invokeMethod(
-                        if (aborted) "installDeclined" else "installFailed", message)
+                        if (aborted) "installDeclined" else "installFailed",
+                        if (verifier) {
+                            "a package verifier on this device rejected the " +
+                                "update ($message); on a Meta Portal turn it off " +
+                                "over adb, see the Meta Portal doc"
+                        } else {
+                            message
+                        },
+                    )
                 }
             }
         }
