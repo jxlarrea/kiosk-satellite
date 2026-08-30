@@ -228,6 +228,7 @@ from the default HACS repository.
 
 ### Device Specific
 - [Meta Portal](docs/portal.md): Notes about running Kiosk Satellite on a Portal device and required permissions for its Person detector.
+- [Amazon Fire tablets](docs/fire.md): Notes about running Kiosk Satellite on a Fire tablet, the lock screen it cannot clear and the adb switch that turns it off.
 
 ## License
 
