@@ -178,8 +178,8 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:wakeword` | `{model, phrase}` | Native engine detected the wake word. Native mic capture is **already stopped** when this fires, so the page may open `getUserMedia` immediately. |
 | `kiosksatellite:motion` | `{}` | Camera motion detected (rate-limited to 1/s) |
 | `kiosksatellite:face` | `{}` | Someone is looking at the kiosk: a camera-facing face at least as large as the Face sensitivity asks for, while Dismiss on face has the camera watching (rate-limited to 1/s) |
-| `kiosksatellite:proximity` | `{}` | Something came close to the proximity sensor while Dismiss on proximity had it watching; repeats every 5 s while it stays close |
-| `kiosksatellite:person` | `{}` | Someone is in view of the device's own person sensor (today the Meta Portal's) while Dismiss on person has it reading. Repeats every 2 s while they stay |
+| `kiosksatellite:proximity` | `{held}` | Something came close to the proximity sensor while Dismiss on proximity had it watching. Repeats every 5 s while it stays close, with `held: true` on the repeats and `false` on the approach itself |
+| `kiosksatellite:person` | `{held}` | Someone is in view of the device's own person sensor (today the Meta Portal's) while Dismiss on person has it reading. Repeats every 2 s while they stay, with `held: true` on the repeats and `false` when they arrive |
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | Screen power changed |
 | `kiosksatellite:screensaverstart` / `:screensaverstop` | `{}` | Screensaver state changed |
 | `kiosksatellite:sound-started` | `{id}` | A `playSound` sound actually began playing (audio is leaving the speaker). Time stop-word arming and speaking UI off this, not off the `playSound` resolve. |

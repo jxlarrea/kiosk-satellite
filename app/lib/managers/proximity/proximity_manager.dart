@@ -255,7 +255,9 @@ class ProximityManager extends Manager {
         bus.publish(const ProximityDetected());
         _hold = Timer.periodic(holdInterval, (_) {
           log.debug(name, 'still near');
-          bus.publish(const ProximityDetected());
+          // Held: postpones the next screensaver, never dismisses one that
+          // started with the thing already close.
+          bus.publish(const ProximityDetected(held: true));
         });
       },
       onError: (Object e) {

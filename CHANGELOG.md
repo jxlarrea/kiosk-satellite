@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- Dismiss on person, with Postpone screensaver on person off, dismissed every screensaver a few seconds after it started while someone was in front of the device, a start-and-dismiss loop. The sensor reports every couple of seconds while a person stays, which the postpone leg needs, and the dismiss leg acted on every report. It now acts only on someone arriving: a person already there when a screensaver starts leaves it up, and the same rule applies to Dismiss on proximity, whose sensor repeats while something stays close.
 - On a Meta Portal an update that Meta's package verifier rejected read as "install declined on the device screen", since Android delivers a verifier rejection the way it delivers a cancel. The app now reports the rejection as the failure it is, with the fix: the verifier has to be turned off once over adb, which the [Updates](docs/updates.md) and [Meta Portal](docs/portal.md) docs now cover.
 
 ## v2026.8.101 - 2026-08-29

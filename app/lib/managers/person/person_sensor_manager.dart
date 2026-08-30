@@ -496,8 +496,12 @@ class PersonSensorManager extends Manager {
     }
     _lastBeat = now;
     _lastLine = line.trim();
-    bus.publish(const PersonDetected());
+    // A beat while already present is the person staying, not arriving:
+    // held, so it feeds Postpone on person without dismissing a
+    // screensaver that started with them in the room.
+    final held = _present;
     _evaluate();
+    bus.publish(PersonDetected(held: held));
   }
 
   void _evaluate() {
@@ -513,7 +517,7 @@ class PersonSensorManager extends Manager {
     _hold = live
         ? Timer.periodic(holdInterval, (_) {
             if (!_present || _sub == null) return;
-            bus.publish(const PersonDetected());
+            bus.publish(const PersonDetected(held: true));
           })
         : null;
     bus.publish(PersonSensorChanged(present: live));

@@ -487,7 +487,9 @@ Something already resting on the sensor when it starts watching is not
 an approach, so a case or a stand that covers it cannot wake the
 screensaver every time it begins. While something stays close, the
 detection repeats every few seconds, which is what lets the postpone
-leg hold the screensaver off. Under [Lockdown Mode](kiosk.md) proximity
+leg hold the screensaver off. Those repeats never dismiss: only the
+approach itself does, so with Postpone off a screensaver that starts
+with something already close stays up. Under [Lockdown Mode](kiosk.md) proximity
 neither dismisses nor postpones, like motion.
 
 ## Person detection
@@ -501,6 +503,10 @@ such a sensor like the Meta Portal:
 - **Postpone screensaver on person**: also read it between screensavers,
   so someone in front of the device keeps resetting the idle timer. It
   requires Dismiss on person.
+
+Dismiss acts on someone arriving. A person already there when the
+screensaver starts is not an arrival, so with Postpone off that
+screensaver stays up until they leave and come back, or until a touch.
 
 On the Portal the sensor is the Smart Camera's people tracker, running
 all the time on a feed that never lights the camera LED, so there is no

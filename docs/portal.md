@@ -116,6 +116,10 @@ Detection**, a page that only exists on a Portal:
   so someone in front of the Portal keeps resetting the idle timer. It
   requires Dismiss on person.
 
+Dismiss acts on someone arriving. With Postpone off, a screensaver that
+starts while someone is already there stays up until they leave and come
+back.
+
 Both are independent of the camera legs: Motion Detection and Face
 Detection keep working exactly as they do elsewhere and can run at the
 same time.

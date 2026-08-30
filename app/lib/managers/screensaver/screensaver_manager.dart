@@ -379,7 +379,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       }
       notifyActivity('face');
     });
-    bus.on<PersonDetected>().listen((_) {
+    bus.on<PersonDetected>().listen((e) {
       // The device's own person sensor (discussion #353), under
       // Proximity's rules: lockdown holds, the postpone switch extends
       // Dismiss on person and never acts on its own, and the sensor
@@ -394,6 +394,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         return;
       }
       if (!_settings.get(defs.screensaverDismissOnPerson)) return;
+      // Dismiss acts on someone arriving. A held signal is someone who
+      // was already there when the screensaver started: with Postpone off
+      // that screensaver is wanted, and re-dismissing it on every
+      // heartbeat made a start-and-dismiss loop (issue #369).
+      if (e.held) return;
       // Now Playing keeps its own policy; someone there counts like
       // motion there.
       final showingNowPlaying =
@@ -405,7 +410,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       }
       notifyActivity('person');
     });
-    bus.on<ProximityDetected>().listen((_) {
+    bus.on<ProximityDetected>().listen((e) {
       // Same lockdown rule as motion.
       if (_settings.get(defs.lockdownEnabled)) return;
       if (!_active) {
@@ -419,6 +424,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         return;
       }
       if (!_settings.get(defs.screensaverDismissOnProximity)) return;
+      // The approach dismisses; something still close when the screensaver
+      // starts does not (issue #369, the same rule as the person sensor).
+      if (e.held) return;
       // Now Playing keeps its own policy; something coming close counts
       // like motion there.
       final showingNowPlaying =

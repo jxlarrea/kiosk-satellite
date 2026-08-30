@@ -241,6 +241,22 @@ void main() {
       expect(saver.isActive, isFalse);
     });
 
+    test('something still close when the screensaver starts does not '
+        'dismiss it (issue #369)', () async {
+      await buildSaver({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.dismiss_on_proximity': true,
+      });
+      await saver.start();
+      await pumpEventQueue();
+      bus.publish(const ProximityDetected(held: true));
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+      bus.publish(const ProximityDetected());
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
     test('leaves the screensaver alone with the switch off', () async {
       await buildSaver({
         'ks.screensaver.enabled': true,

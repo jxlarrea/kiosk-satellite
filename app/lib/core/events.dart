@@ -330,11 +330,22 @@ class FaceDetected extends AppEvent {
 /// (or its postpone leg does, between screensavers).
 /// Republished every couple of seconds while someone stays, so the
 /// postpone leg keeps holding the screensaver off, like [ProximityDetected].
+///
+/// [held] tells the two apart: false for the absent-to-present transition
+/// (someone arrived, which Dismiss on person acts on), true for every
+/// repeat while they stay (what Postpone on person holds the idle clock
+/// with). A person already there when a screensaver starts is a held
+/// signal, not an arrival, so the screensaver stays up.
 class PersonDetected extends AppEvent {
-  const PersonDetected();
+  const PersonDetected({this.held = false});
+
+  final bool held;
 
   @override
   String get wireName => 'person';
+
+  @override
+  Map<String, Object?> toJson() => {'held': held};
 }
 
 /// The device's person sensor reported someone in view, or the room empty
@@ -350,11 +361,20 @@ class PersonSensorChanged extends AppEvent {
 /// proximity" had it watching (or its postpone leg did, between
 /// screensavers). Republished every few seconds while it stays near, so
 /// the postpone leg keeps holding the screensaver off.
+///
+/// [held] is false for the far-to-near flip and true for the repeats,
+/// the same split as [PersonDetected]: Dismiss on proximity acts on the
+/// approach, Postpone on proximity on the whole stay.
 class ProximityDetected extends AppEvent {
-  const ProximityDetected();
+  const ProximityDetected({this.held = false});
+
+  final bool held;
 
   @override
   String get wireName => 'proximity';
+
+  @override
+  Map<String, Object?> toJson() => {'held': held};
 }
 
 /// A hand in front of the camera (the Show fingers gesture): the motion

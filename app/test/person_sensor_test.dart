@@ -8,6 +8,7 @@ import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/person/person_sensor_manager.dart';
+import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -134,6 +135,8 @@ void main() {
       lines.add(beat(clock));
       await pump();
       expect(faces, hasLength(1));
+      // The arrival: what Dismiss on person acts on.
+      expect(faces.single.held, isFalse);
       expect(sensor.present, isTrue);
       expect(states, [true]);
       expect(sensor.lastLine, contains('onNotifyPresence'));
@@ -149,6 +152,8 @@ void main() {
       );
       await pump();
       expect(faces, hasLength(2));
+      // Still there: held, for the postpone leg only (issue #369).
+      expect(faces.last.held, isTrue);
       expect(states, [true]);
     },
   );
@@ -263,10 +268,13 @@ void main() {
       async.flushMicrotasks();
       expect(faces, hasLength(1));
 
-      // Ten seconds on, still within the beat window: five hold ticks.
+      // Ten seconds on, still within the beat window: five hold ticks,
+      // every one of them held (issue #369).
       clock = clock.add(const Duration(seconds: 10));
       async.elapse(const Duration(seconds: 10));
       expect(faces, hasLength(6));
+      expect(faces.first.held, isFalse);
+      expect(faces.skip(1).every((f) => f.held), isTrue);
 
       // Nobody for a minute: the ticks stop with the presence.
       clock = clock.add(const Duration(seconds: 60));
@@ -369,5 +377,88 @@ void main() {
     expect((status['logAccess'] as Map)['effective'], isTrue);
     final support = await commands.execute('getPersonSensorSupport', const {});
     expect((support.data as Map)['supported'], isTrue);
+  });
+
+  group('the screensaver (issue #369)', () {
+    late ScreensaverManager saver;
+
+    Future<void> buildSaver(Map<String, Object> initial) async {
+      await build(initial);
+      saver = ScreensaverManager(bus, commands, Logger(), settings);
+      await saver.init();
+    }
+
+    test('Dismiss on, Postpone off: someone already there leaves a new '
+        'screensaver up, someone arriving dismisses it', () async {
+      await buildSaver({
+        'ks.screensaver.enabled': true,
+        'ks.screensaver.dismiss_on_person': true,
+        'ks.screensaver.postpone_on_person': false,
+      });
+      await saver.start();
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+
+      // The held repeats of a person who was in the room all along.
+      bus.publish(const PersonDetected(held: true));
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+
+      // The absent-to-present transition.
+      bus.publish(const PersonDetected());
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
+    test('Dismiss on, Postpone on: held presence keeps resetting the idle '
+        'clock, so the screensaver never starts while someone stays', () {
+      fakeAsync((async) {
+        buildSaver({
+          'ks.screensaver.enabled': true,
+          'ks.screensaver.timeout_seconds': 10,
+          'ks.screensaver.dismiss_on_person': true,
+          'ks.screensaver.postpone_on_person': true,
+        });
+        async.flushMicrotasks();
+        // A touch arms the idle clock.
+        bus.publish(const ActivityDetected(source: 'touch'));
+        async.flushMicrotasks();
+        expect(saver.isActive, isFalse);
+
+        // Held signals every 2 s for 30 s: three timeouts' worth.
+        for (var i = 0; i < 15; i++) {
+          async.elapse(const Duration(seconds: 2));
+          bus.publish(const PersonDetected(held: true));
+          async.flushMicrotasks();
+        }
+        expect(saver.isActive, isFalse);
+
+        // Nobody: the clock runs out.
+        async.elapse(const Duration(seconds: 11));
+        expect(saver.isActive, isTrue);
+      });
+    });
+
+    test('Postpone off: held presence does not hold the screensaver off', () {
+      fakeAsync((async) {
+        buildSaver({
+          'ks.screensaver.enabled': true,
+          'ks.screensaver.timeout_seconds': 10,
+          'ks.screensaver.dismiss_on_person': true,
+          'ks.screensaver.postpone_on_person': false,
+        });
+        async.flushMicrotasks();
+        bus.publish(const ActivityDetected(source: 'touch'));
+        async.flushMicrotasks();
+        for (var i = 0; i < 6; i++) {
+          async.elapse(const Duration(seconds: 2));
+          bus.publish(const PersonDetected(held: true));
+          async.flushMicrotasks();
+        }
+        // 12 s of a person staying: the screensaver started on time and,
+        // the held signals being no arrival, it is still up.
+        expect(saver.isActive, isTrue);
+      });
+    });
   });
 }
