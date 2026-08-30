@@ -38,6 +38,7 @@ grant that does need a human, **Install unknown apps**, is covered in
 | Nearby devices | The Bluetooth scan and connect pair behind the [Bluetooth proxy](esphome.md). A runtime prompt on Android 12+; granted at install before that, where Android instead requires Location plus location services on for scan results. |
 | System UI guard | An accessibility service that closes the notification shade and recents while kiosk protections hold. See [Kiosk and Lockdown](kiosk.md#required-system-permissions). |
 | Media library | Reading the folder the Local Media screensaver was pointed at. |
+| Log access | Devices with a person sensor of their own (today the Meta Portal): reading it for the screensaver's Person Detection. adb only and only in effect after the app restarts. See [Meta Portal](portal.md). |
 
 ## Granting everything from adb
 
@@ -83,6 +84,14 @@ adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite
 adb shell dpm set-active-admin me.jxl.kiosk_satellite/.KioskAdminReceiver
 ```
 
+On a Meta Portal, the grant behind the screensaver's **Person Detection**,
+which reaches the app at its next start:
+
+```
+adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS
+adb shell am force-stop me.jxl.kiosk_satellite
+```
+
 The `MANAGE_EXTERNAL_STORAGE` line is Android 11+ (All files access does
 not exist before that; the storage grant above covers older versions).
 The `deviceidle whitelist` line is the battery optimization exemption and
@@ -91,8 +100,9 @@ survives reboots.
 The System UI guard is an accessibility service, so it is enabled with a
 settings write rather than a grant. Note that this **replaces** the list of
 enabled accessibility services, which is usually empty on a dedicated
-panel; if the device uses others (a screen reader, for example), enable
-the guard from Android's Accessibility settings instead:
+panel; if the device uses others (a screen reader, for example, or the two
+Meta services a [Portal](portal.md) ships with), enable the guard from
+Android's Accessibility settings instead, or append to the list:
 
 ```
 adb shell settings put secure enabled_accessibility_services me.jxl.kiosk_satellite/me.jxl.kiosk_satellite.KioskAccessibilityService

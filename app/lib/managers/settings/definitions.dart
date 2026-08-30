@@ -140,6 +140,15 @@ class SettingDef<T> {
 /// says what it holds. Curated rather than generated from the titles, which
 /// read clumsily strung together. Served to the remote UI with the
 /// definitions.
+/// Definitions hidden on this particular device, on top of the static
+/// [SettingDef.hidden]: a page that only means something on one kind of
+/// hardware (Person Detection, a person sensor the device itself runs) is
+/// left out everywhere else rather than shown disabled. Filled once at
+/// boot by the manager that knows (before any settings page or remote
+/// request renders), and read by the device pages, the search index and
+/// the remote's `describe()` alike, so both UIs hide the same rows.
+final Set<String> deviceHiddenKeys = {};
+
 const Map<String, String> subpageHints = {
   'User Interface': 'Kiosk mode, dashboard carousel, haptics, tap sounds',
   'Theme': 'Match the app, or switch dark and light on a schedule',
@@ -169,6 +178,8 @@ const Map<String, String> subpageHints = {
   'Face Detection': 'Dismiss the screensaver when someone looks at it',
   'Proximity Detection':
       'Dismiss or postpone the screensaver on the proximity sensor',
+  'Person Detection':
+      "Dismiss or postpone the screensaver on the device's person sensor",
   'Scheduled Screensavers':
       'Switch to a different screensaver at set times of day.',
   // ESPHome.
@@ -2781,6 +2792,48 @@ const screensaverPostponeOnProximity = SettingDef<bool>(
   dependsOn: 'screensaver.dismiss_on_proximity',
 );
 
+// ── Screensaver: Person Detection ───────────────────────────────────────
+// Motion Detection's shape on a person sensor the device itself runs:
+// today the Meta Portal's, whose Smart Camera people tracker runs all the
+// time on a virtual camera feed that never lights the camera LED and logs
+// a heartbeat every 30 seconds while someone is in view (discussion
+// #353). Bodies at any angle, not faces: someone reading at the kiosk
+// with their back to it counts. No camera session of the app's, no face
+// model, next to no CPU. The page exists only where the person sensor
+// manager finds such a sensor (deviceHiddenKeys, filled at boot) and, on
+// the Portal, needs the READ_LOGS grant, which only adb can give.
+const screensaverDismissOnPerson = SettingDef<bool>(
+  key: 'screensaver.dismiss_on_person',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Dismiss on person',
+  description:
+      "Read the device's person sensor while the screensaver is up and "
+      'wake the screen when someone is in front of it. Needs the Log '
+      'access grant below.',
+  category: 'Screensaver',
+  section: 'Person Detection',
+  subpage: 'Person Detection',
+);
+
+// An extension of Dismiss on person, like Postpone on motion is of
+// Dismiss on motion: shown and acting only with that switch on. The
+// sensor reports every few seconds while someone stays, so the postpone
+// leg holds the idle clock continuously.
+const screensaverPostponeOnPerson = SettingDef<bool>(
+  key: 'screensaver.postpone_on_person',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Postpone screensaver on person',
+  description:
+      'Delay activating the screensaver while someone is in front of the '
+      'device.',
+  category: 'Screensaver',
+  section: 'Person Detection',
+  subpage: 'Person Detection',
+  dependsOn: 'screensaver.dismiss_on_person',
+);
+
 // ── Camera ─────────────────────────────────────────────────────────────
 // The device's own camera as a Home Assistant feature (discussion #72):
 // snapshots published over MQTT, and the sensor the screensaver's motion
@@ -5057,6 +5110,9 @@ const List<SettingDef<Object>> allSettings = [
   faceSensitivity,
   screensaverDismissOnProximity,
   screensaverPostponeOnProximity,
+  // The Person Detection page (Meta Portal only) sits under Proximity.
+  screensaverDismissOnPerson,
+  screensaverPostponeOnPerson,
   cameraEnabled,
   cameraDevice,
   cameraSnapshotResolution,

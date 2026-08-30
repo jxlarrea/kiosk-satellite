@@ -314,6 +314,13 @@ class BackgroundBridge(
                 // Whether the on-device vision runtimes (face detection,
                 // hand gestures) can load here at all (issue #331).
                 "visionSupport" -> result.success(VisionRuntime.describe())
+                // A Meta Portal's own people detector as the face source
+                // (discussion #353): whether its presence service is here
+                // at all, and whether the READ_LOGS grant that lets the app
+                // read its heartbeat is in the package manager and in
+                // effect for this process.
+                "personSensorSupport" -> result.success(personSensorSupport())
+                "readLogsState" -> result.success(readLogsState())
                 // The App Launcher's idle clock (issue #317): while armed,
                 // every touch in the other app comes back as "touchSeen",
                 // throttled to one a second, so the return timer can
@@ -770,6 +777,55 @@ class BackgroundBridge(
             android.util.Log.w("kiosk_satellite", "appIcon $packageName failed", e)
             null
         }
+    }
+
+    /// Whether this is a Meta Portal with Meta's presence service installed
+    /// and enabled: the package that owns PresenceManager and logs the
+    /// heartbeat. Anything else, including a Portal whose owner disabled
+    /// the Meta stack, answers unsupported with the reason.
+    private fun personSensorSupport(): Map<String, Any?> {
+        val pkg = "com.facebook.alohaservices.presence"
+        val info = try {
+            context.packageManager.getApplicationInfo(pkg, 0)
+        } catch (_: Exception) {
+            null
+        }
+        return when {
+            info == null -> mapOf(
+                "supported" to false,
+                "hint" to "Only on Meta Portal devices.",
+            )
+            !info.enabled -> mapOf(
+                "supported" to false,
+                "hint" to "Meta's presence service is disabled on this Portal.",
+            )
+            else -> mapOf("supported" to true)
+        }
+    }
+
+    /// The READ_LOGS grant: in the package manager, and in effect for this
+    /// process. The grant maps to the `log` group, handed out when the
+    /// process is forked, so a grant made while the app runs shows as
+    /// granted here but the process cannot read logd until it restarts.
+    private fun readLogsState(): Map<String, Any?> {
+        val granted = context.checkSelfPermission(
+            android.Manifest.permission.READ_LOGS,
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val logGid = android.os.Process.getGidForName("log")
+        val effective = try {
+            val groups = java.io.File("/proc/self/status").readLines()
+                .firstOrNull { it.startsWith("Groups:") }
+                ?.removePrefix("Groups:")
+                ?.trim()
+                ?.split(Regex("\\s+"))
+                ?.mapNotNull { it.toIntOrNull() }
+                ?: emptyList()
+            logGid > 0 && groups.contains(logGid)
+        } catch (_: Exception) {
+            // Cannot tell: trust the package manager.
+            granted
+        }
+        return mapOf("granted" to granted, "effective" to effective)
     }
 
     /// Whether "Usage access" is granted: the app-ops gate in front of

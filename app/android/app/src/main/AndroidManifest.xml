@@ -98,6 +98,14 @@
          system settings" screen, never a runtime prompt. -->
     <uses-permission android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions"/>
+    <!-- Reading another process's log lines: a Meta Portal's own people
+         detector logs a heartbeat while someone is in view, and tailing it
+         is the one way a sideloaded app can use that detector as the face
+         source (discussion #353). Android grants this only over adb
+         (pm grant), never through a dialog; it does nothing on any other
+         device. -->
+    <uses-permission android:name="android.permission.READ_LOGS"
+        tools:ignore="ProtectedPermissions"/>
     <!-- Which app is on screen, for the MQTT "Foreground app" sensor
          (issue #192). Granted via the special "Usage access" screen, never
          a runtime prompt; without it the sensor only knows when Kiosk
@@ -239,6 +247,11 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- A Meta Portal's presence service, whose heartbeat is the
+             camera-free face source there (discussion #353). Portals run
+             Android 9 and 10, where visibility is unfiltered anyway; this
+             keeps the probe honest should one ever run newer. -->
+        <package android:name="com.facebook.alohaservices.presence"/>
         <!-- Launching another app from an app:// link in the dashboard. Without
              this, package visibility hides every other app from us and
              getLaunchIntentForPackage returns null for all of them. Scoped to

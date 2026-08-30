@@ -324,6 +324,27 @@ class FaceDetected extends AppEvent {
   String get wireName => 'face';
 }
 
+/// Someone is in view of the device's own person sensor (discussion #353,
+/// today the Meta Portal's people tracker): the person sensor manager
+/// relays it while the screensaver's "Dismiss on person" has it reading
+/// (or its postpone leg does, between screensavers).
+/// Republished every couple of seconds while someone stays, so the
+/// postpone leg keeps holding the screensaver off, like [ProximityDetected].
+class PersonDetected extends AppEvent {
+  const PersonDetected();
+
+  @override
+  String get wireName => 'person';
+}
+
+/// The device's person sensor reported someone in view, or the room empty
+/// again (discussion #353). Internal: the settings rows read the state;
+/// [PersonDetected] is what the screensaver consumes.
+class PersonSensorChanged extends AppEvent {
+  const PersonSensorChanged({required this.present});
+  final bool present;
+}
+
 /// Something came close to the panel: the device's proximity sensor
 /// flipped from far to near while the screensaver's "Dismiss on
 /// proximity" had it watching (or its postpone leg did, between

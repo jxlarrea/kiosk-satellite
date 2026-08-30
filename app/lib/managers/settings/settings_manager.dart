@@ -412,7 +412,7 @@ class SettingsManager extends Manager {
         // device hides.
         if (def.dependsOn != null) 'dependsOn': def.dependsOn,
         if (def.dependsOn != null) 'dependsOnValue': def.dependsOnValue,
-        if (def.hidden) 'hidden': true,
+        if (def.hidden || deviceHiddenKeys.contains(def.key)) 'hidden': true,
         if (def.multiline) 'multiline': true,
         if (def.placeholder != null) 'placeholder': def.placeholder,
         if (def.options != null) 'options': def.options,

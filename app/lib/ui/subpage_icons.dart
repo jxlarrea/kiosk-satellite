@@ -41,6 +41,7 @@ const Map<String, Object> subpageIcons = {
   'Motion Detection': Icons.directions_walk,
   'Face Detection': Icons.face_outlined,
   'Proximity Detection': Icons.sensors,
+  'Person Detection': Icons.sensor_occupied_outlined,
   'Scheduled Screensavers': Icons.calendar_today_outlined,
   // ESPHome.
   'Notifications': Icons.notifications_outlined,

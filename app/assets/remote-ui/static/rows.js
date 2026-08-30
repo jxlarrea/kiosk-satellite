@@ -16,7 +16,7 @@ import {
   openLauncherAppsPicker,
   openMediaBrowser,
 } from './pickers.js';
-import { loadSettings, refreshRealMacNote } from './settings.js';
+import { loadSettings, refreshRealMacNote, updatePersonSensorRows } from './settings.js';
 import {
   attachSlider,
   messageBox,
@@ -173,6 +173,8 @@ export function settingRow(s) {
       || s.key === 'screensaver.dismiss_on_face') {
       updateFaceRows();
     }
+    // The Person Detection page's status row answers for its own switch.
+    if (s.key === 'screensaver.dismiss_on_person') updatePersonSensorRows();
     // The hints under the brightness sliders come and go with the
     // adaptive brightness switch (issue #343). After the gated sync, so
     // the curve rows the switch reveals are in place first.

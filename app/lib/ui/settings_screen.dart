@@ -27,6 +27,7 @@ import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/device/wifi_mac.dart'
     show WifiMacIdentity, WifiMacSource, wifiMacIdentity;
 import '../managers/settings/definitions.dart';
+import '../managers/person/person_sensor_manager.dart' show LogAccess;
 import '../managers/service/service_manager.dart'
     show batteryAdbHint, overlayAdbHint;
 import '../managers/settings/export_filename.dart';
@@ -218,7 +219,10 @@ const _categories = <(String, String, Object, String)>[
 
 List<SettingDef<Object>> _defsFor(String category) => [
   for (final def in allSettings)
-    if (def.category == category && !def.hidden) def,
+    if (def.category == category &&
+        !def.hidden &&
+        !deviceHiddenKeys.contains(def.key))
+      def,
 ];
 
 /// A category icon the way One UI paints them: a solid color disc with a
@@ -1214,6 +1218,12 @@ class _CategoryContentState extends State<_CategoryContent> {
       // And the proximity rows read the sensor's answer: the switch is
       // disabled without one, and the row under it names the one there is.
       widget.container.proximity.proximitySupport().then((_) {
+        if (mounted) setState(() {});
+      });
+      // And the Person Detection page reads the person sensor probe's:
+      // the page is hidden where the device has no such sensor
+      // (discussion #353).
+      widget.container.personSensor.sensorSupport().then((_) {
         if (mounted) setState(() {});
       });
     }
@@ -2357,6 +2367,15 @@ class _CategoryContentState extends State<_CategoryContent> {
     if (widget.category == 'ESPHome' &&
         !container.location.locationKnownUnsupported)
       locationEnabled.key: _LocationStatusRow(container: container),
+    // What the device's person sensor is reporting, live, under Dismiss
+    // on person: someone in view or not and the age of the last heartbeat,
+    // or why nothing is being read. Mirrored on the remote (settings.js,
+    // updatePersonSensorRows).
+    if (widget.category == 'Screensaver' &&
+        !container.personSensor.knownUnsupported)
+      screensaverDismissOnPerson.key: _PersonSensorStatusRow(
+        container: container,
+      ),
     // The sensor's reading, live, under the switch: the curve's two light
     // levels are typed against it, and what a sensor calls a lit room is
     // anyone's guess until it is on screen. Mirrored on the remote
@@ -2588,6 +2607,26 @@ class _CategoryContentState extends State<_CategoryContent> {
           for (final def in _defsFor(widget.category))
             if (def.subpage == subpage) def,
         ]),
+      ];
+    }
+
+    if (widget.category == 'Screensaver' && subpage == 'Person Detection') {
+      // The device's own person sensor (discussion #353, today the Meta
+      // Portal's): the two switches with the live Occupancy row, then the
+      // one grant reading it needs, which only adb can give. Mirrored on
+      // the remote (settings.js, updatePersonSensorRows).
+      return [
+        ...sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage) def,
+        ]),
+        const SectionHeading('Required system permissions'),
+        SearchLandingTarget(
+          id: 'x:person_log_access',
+          child: SettingsCard(
+            children: [_PersonSensorLogAccessTile(container: container)],
+          ),
+        ),
       ];
     }
 
@@ -7209,6 +7248,158 @@ class _LocationStatusRowState extends State<_LocationStatusRow> {
       title: const Text('Last coordinates'),
       subtitle: Text(text),
       trailing: coordinates == null ? null : Text(coordinates),
+    );
+  }
+}
+
+/// The adb line that grants log access, the only way Android gives it.
+const personSensorLogAccessCommand =
+    'adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS';
+
+/// The Person Detection page's Required system permissions group
+/// (discussion #353): one row, the READ_LOGS grant the device's sensor is
+/// read through. No dialog can
+/// give it, so the row shows the adb line while it is missing, and a
+/// Restart button while it is granted but not yet in effect (the grant
+/// reaches the process at its next start).
+class _PersonSensorLogAccessTile extends StatefulWidget {
+  const _PersonSensorLogAccessTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_PersonSensorLogAccessTile> createState() =>
+      _PersonSensorLogAccessTileState();
+}
+
+class _PersonSensorLogAccessTileState extends State<_PersonSensorLogAccessTile>
+    with WidgetsBindingObserver {
+  LogAccess? _access;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+    // The grant lands from a computer, not from this screen: re-read
+    // while the page is open so the row flips on its own.
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _refresh());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final access = await widget.container.personSensor.refreshAccess();
+    if (!mounted) return;
+    setState(() => _access = access);
+    widget.container.personSensor.sync();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final access = _access;
+    final ok = access?.effective == true;
+    return SettingsRow(
+      leading: Icon(
+        ok ? Icons.check_circle_outline : Icons.article_outlined,
+        color: ok ? null : theme.colorScheme.error,
+      ),
+      title: const Text('Log access'),
+      subtitle: Text(
+        access == null
+            ? 'Checking...'
+            : ok
+            ? "The device's person sensor can be read."
+            : access.granted
+            ? 'Granted. Restart Kiosk Satellite to apply it.'
+            : 'Android grants this only over adb, from a computer on the '
+                  'network:\n$personSensorLogAccessCommand\n'
+                  'Then restart Kiosk Satellite.',
+      ),
+      trailing: access != null && access.granted && !ok
+          ? TextButton(
+              onPressed: () =>
+                  widget.container.commands.execute('restartApp', const {}),
+              child: const Text('Restart'),
+            )
+          : null,
+    );
+  }
+}
+
+/// What the device's person sensor reports, under Dismiss on person,
+/// refreshed every few seconds while the page is open: someone in view or not with the age
+/// of the last heartbeat, or why nothing is being read (off, the grant, a
+/// tail waiting for its first beat).
+class _PersonSensorStatusRow extends StatefulWidget {
+  const _PersonSensorStatusRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_PersonSensorStatusRow> createState() => _PersonSensorStatusRowState();
+}
+
+class _PersonSensorStatusRowState extends State<_PersonSensorStatusRow> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sensor = widget.container.personSensor;
+    final String text;
+    String? value;
+    if (!sensor.wanted) {
+      text = 'Off.';
+    } else if (sensor.error != null) {
+      text = sensor.error!;
+    } else if (!sensor.running) {
+      text = 'Starting...';
+    } else if (sensor.lastBeat == null) {
+      text =
+          'Waiting for the first heartbeat. The sensor reports every 30 '
+          'seconds while someone is in view.';
+      value = 'Clear';
+    } else {
+      final age = DateTime.now().difference(sensor.lastBeat!);
+      final ago = age.inSeconds < 60
+          ? '${age.inSeconds}s ago'
+          : age.inMinutes < 60
+          ? '${age.inMinutes} min ago'
+          : '${age.inHours} h ago';
+      text = 'Last heartbeat $ago.';
+      value = sensor.present ? 'Detected' : 'Clear';
+    }
+    return SettingsRow(
+      leading: const Icon(Icons.sensor_occupied_outlined),
+      title: const Text('Occupancy'),
+      subtitle: Text(text),
+      trailing: value == null ? null : Text(value),
     );
   }
 }

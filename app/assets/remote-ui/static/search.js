@@ -27,6 +27,10 @@ export const SEARCH_EXTRAS = [
   { tab: 'esphome', title: 'Required system permissions', sub: 'GPS Sensor',
     desc: 'The Location grant the location sensors need.',
     heading: 'Required system permissions' },
+  // Only where the device has a person sensor: dropped with its page.
+  { tab: 'screensaver', title: 'Required system permissions', sub: 'Person Detection',
+    desc: "The Log access grant the device's person sensor needs.",
+    heading: 'Required system permissions', onlyWith: 'screensaver.dismiss_on_person' },
   { tab: 'esphome', title: 'Nearby devices', sub: 'Bluetooth Proxy',
     desc: 'The Bluetooth devices this kiosk hears, with names where known.' },
   { tab: 'esphome', title: 'Required system permissions', sub: 'Bluetooth Proxy',
@@ -147,7 +151,9 @@ export function searchSettingsIndex(query) {
   // Pages no setting declares, because their rows are live entity controls.
   DEFLESS_SUBPAGES.forEach(([tab, name]) => addSub(tab, name));
   const hits = [];
+  const shown = (key) => (state.settings || []).some((s) => s.key === key && !s.hidden);
   [...SEARCH_PAGES, ...subs, ...defs, ...SEARCH_EXTRAS].forEach((e, order) => {
+    if (e.onlyWith && !shown(e.onlyWith)) return;
     const title = e.title.toLowerCase();
     const hay = `${title} ${e.desc.toLowerCase()}`;
     if (!terms.every((t) => hay.includes(t))) return;

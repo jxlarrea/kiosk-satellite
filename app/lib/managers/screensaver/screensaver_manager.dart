@@ -379,6 +379,32 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       }
       notifyActivity('face');
     });
+    bus.on<PersonDetected>().listen((_) {
+      // The device's own person sensor (discussion #353), under
+      // Proximity's rules: lockdown holds, the postpone switch extends
+      // Dismiss on person and never acts on its own, and the sensor
+      // repeats while someone stays so the postpone leg keeps the
+      // screensaver off.
+      if (_settings.get(defs.lockdownEnabled)) return;
+      if (!_active) {
+        if (_settings.get(defs.screensaverPostponeOnPerson) &&
+            _settings.get(defs.screensaverDismissOnPerson)) {
+          _resetIdleTimer();
+        }
+        return;
+      }
+      if (!_settings.get(defs.screensaverDismissOnPerson)) return;
+      // Now Playing keeps its own policy; someone there counts like
+      // motion there.
+      final showingNowPlaying =
+          activeView.value != null &&
+          _sendspinNowPlaying &&
+          _settings.get(defs.sendspinFullscreen);
+      if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
+        return;
+      }
+      notifyActivity('person');
+    });
     bus.on<ProximityDetected>().listen((_) {
       // Same lockdown rule as motion.
       if (_settings.get(defs.lockdownEnabled)) return;

@@ -490,6 +490,25 @@ detection repeats every few seconds, which is what lets the postpone
 leg hold the screensaver off. Under [Lockdown Mode](kiosk.md) proximity
 neither dismisses nor postpones, like motion.
 
+## Person detection
+
+Motion Detection's two switches on a person sensor the device itself
+runs, under Person Detection, a page that only exists on devices with
+such a sensor like the Meta Portal:
+
+- **Dismiss on person**: read the sensor while the screensaver is up and
+  wake the screen when someone is in front of the device.
+- **Postpone screensaver on person**: also read it between screensavers,
+  so someone in front of the device keeps resetting the idle timer. It
+  requires Dismiss on person.
+
+On the Portal the sensor is the Smart Camera's people tracker, running
+all the time on a feed that never lights the camera LED, so there is no
+camera session and no camera light. It detects people at any angle, not
+faces, and it needs a one-time adb grant. Independent of the camera legs,
+which keep working alongside it. Everything else, the grant included, is
+in [Meta Portal](portal.md).
+
 ## Starting and dismissing
 
 The idle timeout is the normal path in. On demand, the screensaver can

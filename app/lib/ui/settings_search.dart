@@ -313,6 +313,15 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     anchorId: 'x:location_permissions',
     subpage: 'GPS Sensor',
   ),
+  // Only where the device has a person sensor: filtered out with its page
+  // where the page is hidden (deviceHiddenKeys).
+  SettingsSearchEntry(
+    category: 'Screensaver',
+    title: 'Required system permissions',
+    description: "The Log access grant the device's person sensor needs.",
+    anchorId: 'x:person_log_access',
+    subpage: 'Person Detection',
+  ),
   SettingsSearchEntry(
     category: 'ESPHome',
     title: 'Nearby devices',
@@ -374,6 +383,7 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
     for (final subpage in {
       for (final def in allSettings)
         if (!def.hidden &&
+            !deviceHiddenKeys.contains(def.key) &&
             def.subpage != null &&
             categories.contains(def.category))
           (def.category, def.subpage!),
@@ -386,7 +396,9 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
         isPage: true,
       ),
     for (final def in allSettings)
-      if (!def.hidden && categories.contains(def.category))
+      if (!def.hidden &&
+          !deviceHiddenKeys.contains(def.key) &&
+          categories.contains(def.category))
         SettingsSearchEntry(
           category: def.category,
           title: def.title,
@@ -394,7 +406,11 @@ List<SettingsSearchEntry> buildSettingsSearchIndex(
           defKey: def.key,
         ),
     for (final entry in handBuiltSearchEntries)
-      if (categories.contains(entry.category)) entry,
+      if (categories.contains(entry.category) &&
+          // The grant goes with its page (deviceHiddenKeys).
+          !(entry.anchorId == 'x:person_log_access' &&
+              deviceHiddenKeys.contains(screensaverDismissOnPerson.key)))
+        entry,
   ];
 }
 

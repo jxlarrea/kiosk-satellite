@@ -179,6 +179,7 @@ Dispatched on `window` as `CustomEvent`s:
 | `kiosksatellite:motion` | `{}` | Camera motion detected (rate-limited to 1/s) |
 | `kiosksatellite:face` | `{}` | Someone is looking at the kiosk: a camera-facing face at least as large as the Face sensitivity asks for, while Dismiss on face has the camera watching (rate-limited to 1/s) |
 | `kiosksatellite:proximity` | `{}` | Something came close to the proximity sensor while Dismiss on proximity had it watching; repeats every 5 s while it stays close |
+| `kiosksatellite:person` | `{}` | Someone is in view of the device's own person sensor (today the Meta Portal's) while Dismiss on person has it reading. Repeats every 2 s while they stay |
 | `kiosksatellite:screenon` / `:screenoff` | `{}` | Screen power changed |
 | `kiosksatellite:screensaverstart` / `:screensaverstop` | `{}` | Screensaver state changed |
 | `kiosksatellite:sound-started` | `{id}` | A `playSound` sound actually began playing (audio is leaving the speaker). Time stop-word arming and speaking UI off this, not off the `playSound` resolve. |

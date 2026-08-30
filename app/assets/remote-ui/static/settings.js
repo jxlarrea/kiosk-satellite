@@ -705,6 +705,8 @@ export async function loadSettings() {
     }
   }
 
+  updatePersonSensorRows();
+
   // ── Bluetooth Proxy nearby devices ───────────────────────────────────
   // The live list the device shows under the lookup toggle, same data:
   // the btProxyNearby command's identified inventory. Only with the proxy
@@ -2211,4 +2213,113 @@ export async function refreshRealMacNote() {
     fieldRow.classList.add('real-mac-field');
     note.insertAdjacentElement('afterend', fieldRow);
   }
+}
+
+/* The Person Detection page (a person sensor the device itself runs,
+   today the Meta Portal's), mirroring the device UI: the Occupancy row under Dismiss on person (Detected
+   or Clear on the right, the age of the last heartbeat or why nothing is
+   being read under the name), refreshed while the page is open, and the
+   one grant the heartbeat needs closing the page. Only adb can give that
+   grant, so the row shows the adb line with a copy box while it is
+   missing, and a Restart button while it is granted but not in effect.
+   The page's definitions are hidden where the device has no such
+   sensor, so the page is simply absent there. Idempotent: the switch's save path re-runs
+   it. */
+export function updatePersonSensorRows() {
+  const root = document.getElementById('tab-screensaver');
+  const panel = root?.querySelector('.subpage[data-subpage="Person Detection"]');
+  if (!panel) return;
+  for (const stale of panel.querySelectorAll('.person-status, .person-grant')) stale.remove();
+  if (window.__personSensorTimer) { clearInterval(window.__personSensorTimer); window.__personSensorTimer = 0; }
+  const row = panel.querySelector('[data-key="screensaver.dismiss_on_person"]');
+  if (!row) return;
+  const readStatus = () => cmd('getPersonSensor').then((r) => r.data || null)
+    .catch(() => null);
+  const ago = (ms) => {
+    const age = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    return age < 60 ? `${age}s ago` : age < 3600
+      ? `${Math.round(age / 60)} min ago` : `${Math.round(age / 3600)} h ago`;
+  };
+  // [desc, value]: the words under the name and who is in view.
+  const statusText = (st) => {
+    if (!st) return ['Status unavailable.', ''];
+    if (!st.enabled) return ['Off.', ''];
+    if (st.error) return [st.error, ''];
+    if (!st.running) return ['Starting...', ''];
+    if (!st.lastBeat) {
+      return ['Waiting for the first heartbeat. The sensor reports every '
+        + '30 seconds while someone is in view.', 'Clear'];
+    }
+    return [`Last heartbeat ${ago(st.lastBeat)}.`, st.present ? 'Detected' : 'Clear'];
+  };
+  const status = readOnlyRow('Occupancy', 'Checking...', '');
+  status.classList.add('person-status');
+  row.insertAdjacentElement('afterend', status);
+
+  // Required system permissions: the READ_LOGS grant.
+  const h = document.createElement('h2');
+  h.className = 'card-title person-grant';
+  h.textContent = 'Required system permissions';
+  const permCard = document.createElement('div');
+  permCard.className = 'card person-grant';
+  const permRow = document.createElement('div');
+  permRow.className = 'row';
+  const info = document.createElement('div');
+  info.className = 'info';
+  info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+  info.querySelector('.name').textContent = 'Log access';
+  info.querySelector('.desc').textContent = 'Checking...';
+  permRow.appendChild(info);
+  const stateEl = document.createElement('span');
+  stateEl.style.whiteSpace = 'nowrap';
+  permRow.appendChild(stateEl);
+  permCard.appendChild(permRow);
+  const command = 'adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS';
+  const copy = copyBox(command);
+  copy.el.classList.add('person-grant-command');
+  copy.el.style.cssText = 'margin:0 16px 12px;';
+  panel.append(h, permCard);
+
+  const paintPerm = (st) => {
+    const access = st && st.logAccess ? st.logAccess : null;
+    const ok = access === null ? null : access.effective === true;
+    info.querySelector('.desc').textContent = ok === null
+      ? 'Status unavailable.'
+      : ok ? "The device's person sensor can be read."
+      : access.granted
+        ? 'Granted. Restart Kiosk Satellite to apply it.'
+        : 'Android grants this only over adb, from a computer on the network. '
+          + 'Run the command below, then restart Kiosk Satellite.';
+    stateEl.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
+    stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
+    permRow.querySelector('button')?.remove();
+    copy.el.remove();
+    if (ok !== false) return;
+    if (access.granted) {
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost';
+      btn.textContent = 'Restart on device';
+      btn.style.cssText = 'flex-shrink:0;';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        try {
+          await api('/api/commands/restartApp', { method: 'POST', body: '{}' });
+        } catch (_) {}
+      });
+      permRow.appendChild(btn);
+    } else {
+      permCard.appendChild(copy.el);
+    }
+  };
+  const paint = async () => {
+    if (!status.isConnected) { clearInterval(window.__personSensorTimer); return; }
+    const st = await readStatus();
+    const [desc, value] = statusText(st);
+    status.querySelector('.desc').textContent = desc;
+    status.lastElementChild.textContent = value;
+    paintPerm(st);
+  };
+  if (window.__personSensorTimer) clearInterval(window.__personSensorTimer);
+  window.__personSensorTimer = setInterval(paint, 5000);
+  paint();
 }

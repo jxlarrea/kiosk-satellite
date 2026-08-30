@@ -246,6 +246,18 @@ class EspEntitySurface {
         loc.ok &&
         loc.data is Map &&
         (loc.data as Map)['supported'] != false;
+    // The Person sensor exists only while Dismiss on person is on, on a
+    // device whose probe has said it has a person sensor of its own
+    // (discussion #353); the switch re-registers the device, a
+    // setup-time choice like Report location.
+    final person = _settings.get(defs.screensaverDismissOnPerson)
+        ? await commands.execute('getPersonSensorSupport', const {})
+        : null;
+    final personPresent =
+        person != null &&
+        person.ok &&
+        person.data is Map &&
+        (person.data as Map)['supported'] != false;
     // The facing select only exists where there is a choice: single-camera
     // hardware (Echo Show 5) gets none. An empty answer means the probe
     // could not look yet, and optimism matches hasDeviceCamera above.
@@ -475,6 +487,16 @@ class EspEntitySurface {
           'objectId': 'motion',
           'name': 'Motion',
           'deviceClass': 'motion',
+        },
+      // Someone in view of the device's own person sensor (discussion
+      // #353): occupancy, since it reports people at any angle, not a
+      // face turned to the screen.
+      if (personPresent)
+        {
+          'type': 'binary_sensor',
+          'objectId': 'person',
+          'name': 'Person',
+          'deviceClass': 'occupancy',
         },
       // The GPS position (issue #363). Six decimals is about a tenth of
       // a meter; the default of none would round a coordinate to a whole
@@ -962,6 +984,9 @@ class EspEntitySurface {
     );
     _subs.add(bus.on<LocationChanged>().listen(_sendLocation));
     _subs.add(
+      bus.on<PersonSensorChanged>().listen((e) => _sendPerson(e.present)),
+    );
+    _subs.add(
       bus.on<CameraViewStateChanged>().listen((e) {
         _send('active_camera_view', e.viewName ?? 'none');
         _send('camera_view', e.viewName ?? 'Closed');
@@ -1335,6 +1360,7 @@ class EspEntitySurface {
     await _sendNextAlarm();
     await _sendAdminUrl();
     await _sendLastLocation();
+    await _sendPersonState();
     await _send('screensaver_active', _screensaverActive);
     await _sendDeviceInfo();
     // Settings-backed entities all report their stored values.
@@ -1482,6 +1508,27 @@ class EspEntitySurface {
       if (progress != null) 'progress': progress.toDouble(),
       'inProgress': progress != null,
     });
+  }
+
+  /// The person sensor's state onto the Person binary sensor.
+  Future<void> _sendPerson(bool present) async {
+    if (!_settings.get(defs.screensaverDismissOnPerson)) return;
+    await _send('person', present);
+  }
+
+  /// The sensor's current state at attach, so the entity reads a value
+  /// rather than unknown until the next change: clear while the sensor
+  /// is being read and nobody is there, unknown while it cannot be read
+  /// (the grant missing, say).
+  Future<void> _sendPersonState() async {
+    if (!_settings.get(defs.screensaverDismissOnPerson)) return;
+    final result = await commands.execute('getPersonSensor', const {});
+    if (!result.ok || result.data is! Map) return;
+    final status = result.data as Map;
+    await _send(
+      'person',
+      status['running'] == true ? status['present'] == true : null,
+    );
   }
 
   /// A fix from the receiver, onto the six location sensors at once.

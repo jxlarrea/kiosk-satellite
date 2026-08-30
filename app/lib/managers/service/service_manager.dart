@@ -77,6 +77,7 @@ class ServiceManager extends Manager {
     'esphome.entities',
     'btproxy.enabled',
     'location.enabled',
+    'screensaver.dismiss_on_person',
     'wake_word.enabled',
     'wake_word.background',
     'camera.enabled',
@@ -157,6 +158,13 @@ class ServiceManager extends Manager {
           'Location sensors',
           'Keeps GPS fixes arriving while the screen is off or another app '
               'is in front.',
+        ),
+      if (s.get(defs.screensaverDismissOnPerson))
+        const ServiceReason(
+          'person',
+          'Person detection',
+          "Keeps reading the device's person sensor while another app is "
+              'in front.',
         ),
       if (s.get(defs.mqttEnabled))
         const ServiceReason(

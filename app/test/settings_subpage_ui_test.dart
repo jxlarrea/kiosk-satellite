@@ -651,6 +651,66 @@ void main() {
       await drain(tester);
     });
 
+    testWidgets('the Person Detection page sits under Proximity Detection, '
+        'with its status row and grant, where the Portal probe is unanswered', (
+      tester,
+    ) async {
+      // No bridge answers here, which reads as "could be a Portal": the
+      // page renders. A device that answered unsupported hides it
+      // (deviceHiddenKeys, covered in portal_presence_test.dart).
+      await boot();
+      tester.view.physicalSize = const Size(500, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(home: SettingsScreen(container: container)),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Screensaver').first);
+      await settle(tester);
+
+      final person = find.widgetWithText(ListTile, 'Person Detection');
+      final proximity = find.widgetWithText(ListTile, 'Proximity Detection');
+      expect(person, findsOneWidget);
+      expect(
+        tester.getTopLeft(person).dy,
+        greaterThan(tester.getTopLeft(proximity).dy),
+      );
+      await tester.tap(person);
+      await settle(tester);
+
+      expect(find.widgetWithText(AppBar, 'Person Detection'), findsOneWidget);
+      expect(find.text(screensaverDismissOnPerson.title), findsOneWidget);
+      // The postpone switch rides the dismiss one, off by default.
+      expect(find.text(screensaverPostponeOnPerson.title), findsNothing);
+      // The status row under the switch, and the grant at the foot.
+      expect(find.text('Occupancy'), findsOneWidget);
+      final grants = find.widgetWithText(
+        SectionHeading,
+        'Required system permissions',
+      );
+      expect(grants, findsOneWidget);
+      expect(find.text('Log access'), findsOneWidget);
+      expect(
+        tester.getTopLeft(grants).dy,
+        greaterThan(
+          tester.getTopLeft(find.text(screensaverDismissOnPerson.title)).dy,
+        ),
+      );
+      // The page's own name would only repeat the title bar.
+      expect(
+        find.widgetWithText(SectionHeading, 'Person Detection'),
+        findsNothing,
+      );
+
+      await tester.tap(find.byType(Switch).first);
+      await settle(tester);
+      expect(container.settings.get(screensaverDismissOnPerson), isTrue);
+      expect(find.text(screensaverPostponeOnPerson.title), findsOneWidget);
+
+      await drain(tester);
+    });
+
     testWidgets('the GPS Sensor page sits under Bluetooth Proxy, with the '
         'grant at its foot', (tester) async {
       await boot();

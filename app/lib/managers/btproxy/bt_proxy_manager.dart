@@ -148,6 +148,9 @@ class BtProxyManager extends Manager {
       // setup-time choice, made knowing it re-registers the device
       // (issue #363).
       'location.enabled',
+      // The Person sensor exists only while Dismiss on person is on, the
+      // same way (discussion #353).
+      'screensaver.dismiss_on_person',
     };
     // The remote admin server's settings, which decide the web page port
     // reported to Home Assistant (the device page's Visit link).

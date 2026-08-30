@@ -196,6 +196,46 @@ void main() {
     expect(defs.subpageHints, contains('Notifications'));
   });
 
+  test('the Person Detection page holds its two switches, under Proximity', () {
+    final page = [
+      for (final d in defs.allSettings)
+        if (d.subpage == 'Person Detection') d.key,
+    ];
+    expect(page, [
+      defs.screensaverDismissOnPerson.key,
+      defs.screensaverPostponeOnPerson.key,
+    ]);
+    expect(defs.screensaverDismissOnPerson.section, 'Person Detection');
+    expect(defs.screensaverDismissOnPerson.dependsOn, isNull);
+    expect(
+      defs.screensaverPostponeOnPerson.dependsOn,
+      defs.screensaverDismissOnPerson.key,
+    );
+    final keys = defs.allSettings.map((d) => d.key).toList();
+    expect(
+      keys.indexOf(defs.screensaverDismissOnPerson.key),
+      greaterThan(keys.indexOf(defs.screensaverPostponeOnProximity.key)),
+    );
+    expect(defs.subpageHints, contains('Person Detection'));
+  });
+
+  test('a device-hidden definition is hidden in describe() too', () async {
+    await build();
+    defs.deviceHiddenKeys.add(defs.screensaverDismissOnPerson.key);
+    try {
+      final row = settings.describe().firstWhere(
+        (d) => d['key'] == defs.screensaverDismissOnPerson.key,
+      );
+      expect(row['hidden'], isTrue);
+    } finally {
+      defs.deviceHiddenKeys.clear();
+    }
+    final row = settings.describe().firstWhere(
+      (d) => d['key'] == defs.screensaverDismissOnPerson.key,
+    );
+    expect(row['hidden'], isNull);
+  });
+
   test('the ESPHome GPS Sensor page holds the switch and its interval', () {
     final moved = [
       for (final d in defs.allSettings)

@@ -905,6 +905,63 @@ void main() {
     });
   });
 
+  group('the Person sensor (discussion #353)', () {
+    List<String> ids(List<Map<String, Object?>> catalog) => [
+      for (final d in catalog) '${d['objectId']}',
+    ];
+    void stub(String name, Object? result) => commands.register(
+      Command(
+        name: name,
+        description: name,
+        handler: (_) async => CommandResult.ok(result),
+      ),
+    );
+
+    test('exists only with Dismiss on person on, on a device with a '
+        'person sensor', () async {
+      stub('getPersonSensorSupport', {'supported': true});
+      stub('getPersonSensor', {'running': true, 'present': false});
+      expect(ids(await surface.build()), isNot(contains('person')));
+      await settings.set(defs.screensaverDismissOnPerson, true);
+      final catalog = await surface.build();
+      final person = catalog.singleWhere((d) => d['objectId'] == 'person');
+      expect(person['type'], 'binary_sensor');
+      expect(person['deviceClass'], 'occupancy');
+    });
+
+    test('a device without one lists it never, switch or no switch', () async {
+      stub('getPersonSensorSupport', {'supported': false, 'hint': 'none'});
+      await settings.set(defs.screensaverDismissOnPerson, true);
+      expect(ids(await surface.build()), isNot(contains('person')));
+    });
+
+    test('reads the sensor at attach and follows its changes', () async {
+      stub('getPersonSensorSupport', {'supported': true});
+      stub('getPersonSensor', {'running': true, 'present': true});
+      await settings.set(defs.screensaverDismissOnPerson, true);
+      await surface.build();
+      await attach();
+      expect(pushed, contains(('person', true)));
+      pushed.clear();
+      bus.publish(const PersonSensorChanged(present: false));
+      await Future<void>.delayed(Duration.zero);
+      expect(pushed, contains(('person', false)));
+    });
+
+    test('unknown while the sensor cannot be read', () async {
+      stub('getPersonSensorSupport', {'supported': true});
+      stub('getPersonSensor', {
+        'running': false,
+        'present': false,
+        'error': 'Log access not granted.',
+      });
+      await settings.set(defs.screensaverDismissOnPerson, true);
+      await surface.build();
+      await attach();
+      expect(pushed, contains(('person', null)));
+    });
+  });
+
   group('the location sensors (issue #363)', () {
     const fix = {
       'latitude': 45.5019,

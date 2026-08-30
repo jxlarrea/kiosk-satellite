@@ -67,6 +67,7 @@ Turn on **Expose kiosk entities** and every entity below joins the device. Off b
 | **Speed** | sensor | Meters per second, which Home Assistant converts to the unit system's. Same requirement |
 | **Last location fix** | timestamp | When the receiver last reported. Same requirement. Kept across restarts |
 | **Motion** | binary sensor | Requires camera hardware. Reads unknown while the camera is off |
+| **Person** | binary sensor | Occupancy from a person sensor the device itself runs (today the Meta Portal's). Requires **Dismiss on person** on, which re-registers the device. Reads unknown while the sensor cannot be read. See [Meta Portal](portal.md) |
 | **Next alarm** | timestamp | The next alarm set on the device |
 | **Last interaction** | timestamp | The last touch, spoken turn or hand-made wake. Kept across restarts |
 
