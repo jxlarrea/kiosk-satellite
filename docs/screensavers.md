@@ -180,6 +180,13 @@ picked when adding or editing it. Widgets ride over every mode their
 type allows, but never over Black with Hide all extras. The group's
 **Widget scaling** slider (50 to 150 percent) sizes every widget for
 the screen, and moving it while the screensaver shows previews live.
+Every widget sits on a soft vignette, a dark shading in its corner that
+keeps the text readable on bright photos. The **Vignette strength**
+slider (0 to 100 percent, 80 by default) sets how dark for every
+widget, and previews live the same way. 0 turns the shading off for a
+clean photo-frame look, at the cost of readability on bright pictures.
+The Immich metadata overlay has a slider of its own under its Metadata
+settings.
 Widgets own their corners: the Immich metadata overlay steps to the
 first free corner when a widget claims its spot, and hides only when
 every corner is taken. The one exception is a pair of portrait Immich

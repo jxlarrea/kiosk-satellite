@@ -1,3 +1,4 @@
+import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -268,6 +269,50 @@ void main() {
       expect(entity.customName, isNull);
       expect(entity.displayName, 'Outside');
       expect(entity.attribute, isNull);
+    });
+  });
+
+  group('vignette strength', () {
+    test('is a Widgets group slider defaulting to the pre-slider look', () {
+      final def = defs.screensaverVignetteStrength;
+      expect(defs.allSettings, contains(def));
+      expect(def.defaultValue, 80);
+      expect(def.min, 0);
+      expect(def.max, 100);
+      expect(def.subpage, defs.screensaverWidgetScale.subpage);
+      expect(def.section, defs.screensaverWidgetScale.section);
+    });
+
+    test('the Immich metadata overlay has a twin slider of its own', () {
+      final def = defs.screensaverImmichVignetteStrength;
+      expect(defs.allSettings, contains(def));
+      expect(def.key, isNot(defs.screensaverVignetteStrength.key));
+      expect(def.defaultValue, defs.screensaverVignetteStrength.defaultValue);
+      expect(def.min, defs.screensaverVignetteStrength.min);
+      expect(def.max, defs.screensaverVignetteStrength.max);
+      expect(def.subpage, defs.screensaverImmichMetadataPosition.subpage);
+      expect(def.section, defs.screensaverImmichMetadataPosition.section);
+      expect(def.dependsOn, defs.screensaverImmichMetadata.key);
+    });
+
+    test('the default reproduces the original gradient', () {
+      final colors = vignetteColors(
+        defs.screensaverVignetteStrength.defaultValue,
+      );
+      expect(colors, [
+        const Color(0xCC000000),
+        const Color(0x99000000),
+        const Color(0x00000000),
+      ]);
+    });
+
+    test('scales with the slider and clamps out-of-range values', () {
+      expect(vignetteColors(100).first.a, 1.0);
+      expect(vignetteColors(50).first, const Color(0x80000000));
+      expect(vignetteColors(50)[1], const Color(0x60000000));
+      expect(vignetteColors(0).first, const Color(0x00000000));
+      expect(vignetteColors(250), vignetteColors(100));
+      expect(vignetteColors(-5), vignetteColors(0));
     });
   });
 

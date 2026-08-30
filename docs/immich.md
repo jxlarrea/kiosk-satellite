@@ -164,6 +164,11 @@ metadata** were off.
 In a right-hand corner the lines are right-aligned with their icons on
 the right, mirroring the layout of the corner widgets.
 
+The overlay sits on a soft vignette like the corner widgets do. Its
+**Vignette strength** slider (0 to 100 percent, 80 by default) sets how
+dark, independently of the widgets' own slider, and 0 removes it,
+leaving the text alone over the photo.
+
 A pair of portrait photos overrides the chosen corner, using both bottom
 corners so each photo's details sit under it.
 

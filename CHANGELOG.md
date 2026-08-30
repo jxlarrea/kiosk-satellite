@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Vignette strength** sliders for the soft shading behind the screensaver's corner overlays (#366), on the device and in the remote admin alike: one in the Widgets group for every corner widget and one under the Immich screensaver's Metadata settings for the photo details, each 0 to 100 percent with the shading the app has always drawn as the default of 80, so nothing changes on an existing install. Lower one for a cleaner photo frame on an OLED panel or in a bright room, raise it for readability on bright pictures, or set it to 0 to remove the shading entirely, and the two are independent, so the clock can stay backed while the photo's details go bare. Moving either while the screensaver shows previews live, like Widget scaling.
 - A **Hide names** toggle in the At a Glance row's Appearance group (#370), on the device and in the remote admin alike: every entity shows its icon and value only, with the value drawn larger in the room the name took, in the chips and the floating text style both. For a small panel read from across the room, where a temperature or a humidity is already named by its icon. The custom names stay stored for when the toggle goes back off.
 
 ### Fixed

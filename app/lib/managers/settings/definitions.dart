@@ -1330,6 +1330,29 @@ const screensaverWidgetScale = SettingDef<num>(
   unit: '%',
 );
 
+// One knob for every widget's corner vignette: the corners all sit on the
+// same panel, so they want the same darkness. The value is the darkness at
+// the corner itself; 80 is the look every install had before the slider,
+// and 0 paints nothing at all. The Immich metadata overlay has its own
+// slider (screensaverImmichVignetteStrength): a photo frame may want the
+// clock backed and the photo's details bare, or the other way around.
+const screensaverVignetteStrength = SettingDef<num>(
+  key: 'screensaver.vignette_strength',
+  type: SettingType.number,
+  defaultValue: 80,
+  title: 'Vignette strength',
+  description:
+      'Darkness of the shading behind the widgets, for readability on '
+      'bright photos. 0 turns it off.',
+  category: 'Screensaver',
+  section: 'Widgets',
+  subpage: 'Widgets',
+  min: 0,
+  max: 100,
+  step: 5,
+  unit: '%',
+);
+
 // ── Small clock (legacy; now a Widgets entry) ──
 //
 // Hidden since the Widgets group replaced these rows: they stay registered
@@ -2232,6 +2255,26 @@ const screensaverImmichMetadataPosition = SettingDef<String>(
   optionLabels: cornerLabels,
   section: 'Metadata',
   subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_metadata',
+);
+
+// The metadata overlay's own vignette, the widgets' slider's twin (same
+// range, same default, same meaning) so the two can be set apart.
+const screensaverImmichVignetteStrength = SettingDef<num>(
+  key: 'screensaver.immich_vignette_strength',
+  type: SettingType.number,
+  defaultValue: 80,
+  title: 'Vignette strength',
+  description:
+      'Darkness of the shading behind the details, for readability on '
+      'bright photos. 0 turns it off.',
+  category: 'Screensaver',
+  section: 'Metadata',
+  subpage: 'Immich Media screensaver',
+  min: 0,
+  max: 100,
+  step: 5,
+  unit: '%',
   dependsOn: 'screensaver.immich_metadata',
 );
 
@@ -5095,6 +5138,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichMetadataCamera,
   screensaverImmichMetadataLocation,
   screensaverImmichMetadataPosition,
+  screensaverImmichVignetteStrength,
   screensaverImmichPeople,
   screensaverImmichExcludePeople,
   screensaverImmichTags,
@@ -5111,6 +5155,7 @@ const List<SettingDef<Object>> allSettings = [
   // so it sits between them and the other overlay group, At a Glance.
   screensaverWidgets,
   screensaverWidgetScale,
+  screensaverVignetteStrength,
   // The behavior rows first, then the Appearance group under its own
   // heading at the end of the subpage.
   screensaverGlanceEnabled,

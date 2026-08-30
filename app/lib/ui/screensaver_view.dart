@@ -78,6 +78,8 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
     final live = {
       defs.screensaverWidgets.key,
       defs.screensaverWidgetScale.key,
+      defs.screensaverVignetteStrength.key,
+      defs.screensaverImmichVignetteStrength.key,
       defs.screensaverImmichMetadata.key,
       defs.screensaverImmichMetadataPosition.key,
       defs.screensaverGlanceEnabled.key,
@@ -749,25 +751,50 @@ Alignment _cornerAlignment(String corner) => switch (corner) {
   _ => Alignment.topRight,
 };
 
+/// The three stops of a corner vignette at [strength] percent, the corner's
+/// darkness. Front-loaded: still three quarters of the corner's darkness
+/// well past a third of the way out, so the text area is solidly backed
+/// before the long fade begins. At the default 80 the corner is 0xCC black
+/// and the middle stop 0x99, the look from before the Vignette strength
+/// slider: anything lighter left the widgets washing out on bright daylight
+/// photos, and the slider is there for whoever disagrees. Out-of-range
+/// values clamp, so an imported 250 is a full black corner, not an overflow.
+List<Color> vignetteColors(num strength) {
+  final corner = (strength.toDouble().clamp(0, 100) / 100 * 255).round();
+  return [
+    Color.fromARGB(corner, 0, 0, 0),
+    Color.fromARGB((corner * 0.75).round(), 0, 0, 0),
+    const Color(0x00000000),
+  ];
+}
+
 /// A soft radial darkening anchored to [corner], painted behind a corner
 /// overlay so its text survives a bright photo. Radial rather than a boxed
 /// gradient: it fades out in every direction, so there is no rectangle edge
-/// to catch the eye.
-Widget _cornerVignette(Alignment corner, {double radius = 0.7}) => DecoratedBox(
-  decoration: BoxDecoration(
-    gradient: RadialGradient(
-      center: corner,
-      radius: radius,
-      // Front-loaded: still ~60% black well past a third of the way
-      // out, so the text area is solidly backed before the long fade
-      // begins. 80% at the corner itself: anything lighter left the
-      // widgets washing out on bright daylight photos.
-      colors: const [Color(0xCC000000), Color(0x99000000), Color(0x00000000)],
-      stops: [0, 0.4, 1],
+/// to catch the eye. Its darkness is a Vignette strength slider, the
+/// widgets' unless [def] names the Immich metadata overlay's, read at build
+/// so a move in the remote admin previews live; at 0 nothing is painted at
+/// all.
+Widget _cornerVignette(
+  Alignment corner,
+  AppContainer container, {
+  double radius = 0.7,
+  defs.SettingDef<num> def = defs.screensaverVignetteStrength,
+}) {
+  final strength = container.settings.get(def);
+  if (strength <= 0) return const SizedBox.expand();
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: RadialGradient(
+        center: corner,
+        radius: radius,
+        colors: vignetteColors(strength),
+        stops: const [0, 0.4, 1],
+      ),
     ),
-  ),
-  child: const SizedBox.expand(),
-);
+    child: const SizedBox.expand(),
+  );
+}
 
 /// The small clock widget, shown over every screensaver mode except Clock.
 /// Minute-aligned ticks (it shows no seconds), a soft shadow so it reads on
@@ -862,7 +889,7 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _cornerVignette(corner),
+          _cornerVignette(corner, widget.container),
           Align(
             alignment: corner,
             child: Padding(
@@ -1041,7 +1068,7 @@ class _BatteryWidgetOverlayState extends State<BatteryWidgetOverlay> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _cornerVignette(corner, radius: 0.5),
+          _cornerVignette(corner, widget.container, radius: 0.5),
           Align(
             alignment: corner,
             child: Padding(
@@ -1329,7 +1356,7 @@ class _EntityWidgetOverlayState extends State<EntityWidgetOverlay> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _cornerVignette(corner, radius: 0.5),
+          _cornerVignette(corner, widget.container, radius: 0.5),
           Align(
             alignment: corner,
             child: Padding(
@@ -1682,7 +1709,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _cornerVignette(corner),
+          _cornerVignette(corner, widget.container),
           Align(
             alignment: corner,
             child: Padding(
@@ -3370,7 +3397,12 @@ class _ImmichMetadataState extends State<_ImmichMetadata> {
           AnimatedOpacity(
             opacity: lines.isEmpty ? 0 : 1,
             duration: _fade,
-            child: _cornerVignette(corner, radius: 0.6),
+            child: _cornerVignette(
+              corner,
+              widget.container,
+              radius: 0.6,
+              def: defs.screensaverImmichVignetteStrength,
+            ),
           ),
           AnimatedOpacity(
             opacity: _textVisible && lines.isNotEmpty ? 1 : 0,
