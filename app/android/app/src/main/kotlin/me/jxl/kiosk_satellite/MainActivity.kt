@@ -72,6 +72,13 @@ class MainActivity : FlutterActivity() {
         CutoutLayout.apply(this, mode)
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // The immersive mode, re-asserted from this side for a window that
+        // was just created under the cached engine (SystemBars).
+        if (hasFocus) SystemBars.reassertOnFocus(this)
+    }
+
     override fun onResume() {
         super.onResume()
         ActivityState.resumed = true

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart'
+    show AppLifecycleState, WidgetsBinding, WidgetsBindingObserver;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import 'no_cache_script.dart';
@@ -32,7 +34,7 @@ class ConsoleEntry {
 /// The manager does not build the widget — the UI layer owns the
 /// [InAppWebView] and calls [attach] from `onWebViewCreated`. Everything else
 /// (commands, events) flows through the attached controller.
-class BrowserManager extends Manager {
+class BrowserManager extends Manager with WidgetsBindingObserver {
   BrowserManager(super.bus, super.commands, super.log, this._settings);
 
   final SettingsManager _settings;
@@ -143,6 +145,8 @@ class BrowserManager extends Manager {
 
   @override
   Future<void> init() async {
+    // The freeze state rides the Activity: see _reassertFreeze.
+    WidgetsBinding.instance.addObserver(this);
     // Rendering freeze (browser.freeze_on_screensaver): while the screensaver
     // covers the dashboard, Chromium keeps compositing at full rate — the
     // occlusion lives in Flutter's layer tree, which Android knows nothing
@@ -744,6 +748,46 @@ class BrowserManager extends Manager {
   /// Whether the WebView's rendering is currently paused under the
   /// screensaver.
   bool get renderingFrozen => _frozen;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(_reassertFreeze());
+  }
+
+  /// Re-applies the wanted freeze state after every resume, retrying until
+  /// the dashboard view is found.
+  ///
+  /// The native side hides and reveals the view through the Activity's
+  /// window, and the Activity can be destroyed and re-created under the
+  /// process-wide engine (Back on a Portal's system bar finishes it, a tile
+  /// tap re-creates it). A thaw that ran while the old Activity was going
+  /// away (the screensaver standing down as the app lost the foreground)
+  /// reached no window, the books here still said "resumed", and the same
+  /// WebView came back into the new Activity INVISIBLE: a black dashboard
+  /// until the next screensaver cycle happened to hide and reveal it. The
+  /// platform view is re-attached a beat after the resume, so this asks a
+  /// few times; revealing a visible view is a no-op, so a healthy resume
+  /// costs nothing.
+  Future<void> _reassertFreeze() async {
+    for (final delay in const [0, 1, 2]) {
+      if (delay > 0) await Future<void>.delayed(Duration(seconds: delay));
+      final want = _wantFrozen;
+      final prefix = _origin(_currentUrl) ?? 'http';
+      final n = await WebViewFreeze.setHidden(hidden: want, urlPrefix: prefix);
+      if (n == 0) continue;
+      if (_frozen != want) {
+        log.info(
+          name,
+          want
+              ? 'rendering paused again after the Activity came back'
+              : 'rendering revealed again after the Activity came back',
+        );
+        _frozen = want;
+      }
+      if (!want) unawaited(runJs(maskVisibilityJs(false)));
+      return;
+    }
+  }
 
   /// Reconcile the WebView's native visibility with (screensaver up) AND
   /// (an overlay covering the dashboard) AND (the freeze optimization on).

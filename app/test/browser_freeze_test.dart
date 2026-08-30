@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
@@ -32,14 +33,16 @@ void main() {
     await browser.init();
   }
 
-  test('enabling the freeze turns on Keep connected in the background',
-      () async {
-    await build({'ks.browser.disable_suspend': false});
-    expect(settings.get(defs.disableSuspend), isFalse);
-    await settings.set(defs.freezeOnScreensaver, true);
-    await pumpEventQueue();
-    expect(settings.get(defs.disableSuspend), isTrue);
-  });
+  test(
+    'enabling the freeze turns on Keep connected in the background',
+    () async {
+      await build({'ks.browser.disable_suspend': false});
+      expect(settings.get(defs.disableSuspend), isFalse);
+      await settings.set(defs.freezeOnScreensaver, true);
+      await pumpEventQueue();
+      expect(settings.get(defs.disableSuspend), isTrue);
+    },
+  );
 
   test('disabling the freeze leaves Keep connected alone', () async {
     await build({
@@ -51,35 +54,38 @@ void main() {
     expect(settings.get(defs.disableSuspend), isFalse);
   });
 
-  test('an already-on Keep connected is not re-set (no rebuild churn)',
-      () async {
-    await build({});
-    var suspendChanges = 0;
-    bus.on<SettingChanged>().listen((e) {
-      if (e.key == defs.disableSuspend.key) suspendChanges++;
-    });
-    await settings.set(defs.freezeOnScreensaver, true);
-    await pumpEventQueue();
-    expect(settings.get(defs.disableSuspend), isTrue);
-    expect(suspendChanges, 0);
-  });
+  test(
+    'an already-on Keep connected is not re-set (no rebuild churn)',
+    () async {
+      await build({});
+      var suspendChanges = 0;
+      bus.on<SettingChanged>().listen((e) {
+        if (e.key == defs.disableSuspend.key) suspendChanges++;
+      });
+      await settings.set(defs.freezeOnScreensaver, true);
+      await pumpEventQueue();
+      expect(settings.get(defs.disableSuspend), isTrue);
+      expect(suspendChanges, 0);
+    },
+  );
 
-  test('screensaver events without a WebView never mark the page frozen',
-      () async {
-    await build({'ks.browser.freeze_on_screensaver': true});
-    bus.publish(const ScreensaverViewChanged(view: 'clock'));
-    bus.publish(const ScreensaverStateChanged(active: true));
-    // Past the paint delay: the freeze timer fires into a browser with no
-    // page loaded and must leave the state alone.
-    await Future<void>.delayed(const Duration(milliseconds: 1300));
-    expect(browser.renderingFrozen, isFalse);
-    bus.publish(const ScreensaverStateChanged(active: false));
-    await pumpEventQueue();
-    expect(browser.renderingFrozen, isFalse);
-  });
+  test(
+    'screensaver events without a WebView never mark the page frozen',
+    () async {
+      await build({'ks.browser.freeze_on_screensaver': true});
+      bus.publish(const ScreensaverViewChanged(view: 'clock'));
+      bus.publish(const ScreensaverStateChanged(active: true));
+      // Past the paint delay: the freeze timer fires into a browser with no
+      // page loaded and must leave the state alone.
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      expect(browser.renderingFrozen, isFalse);
+      bus.publish(const ScreensaverStateChanged(active: false));
+      await pumpEventQueue();
+      expect(browser.renderingFrozen, isFalse);
+    },
+  );
 
-  test('the screensaver alone does not freeze with the setting off',
-      () async {
+  test('the screensaver alone does not freeze with the setting off', () async {
     await build({});
     bus.publish(const ScreensaverViewChanged(view: 'clock'));
     bus.publish(const ScreensaverStateChanged(active: true));
@@ -97,9 +103,9 @@ void main() {
       calls = [];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        calls.add(call);
-        return 1;
-      });
+            calls.add(call);
+            return 1;
+          });
     });
 
     tearDown(() {
@@ -117,50 +123,91 @@ void main() {
       expect(calls, isEmpty);
     });
 
-    test('a thaw edge reveals even when the freeze never took by our books',
-        () async {
-      // The native side answered "no dashboard found" to the freeze, so
-      // the Dart side never marked itself frozen. The native view can still
-      // be hidden (it fell out of step through a rebuild or a navigation
-      // while hidden), and with the flag false every path used to return
-      // early, leaving a dashboard that never came back. The edge from
-      // wanted to not wanted now asks the native side to reveal
-      // regardless; on a visible view that is a no-op.
+    test('a resume re-applies the wanted state, retrying until the '
+        'dashboard is found', () async {
+      // The Activity can be destroyed and re-created under the engine; a
+      // thaw that ran against the dying one reached no window and the view
+      // came back hidden. Every resume re-asks, and the platform view is
+      // re-attached a beat after the resume, so a "not found" is retried.
+      var answers = <int>[0, 1];
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (call) async {
-        calls.add(call);
-        return call.arguments['hidden'] == true ? 0 : 1;
-      });
+            calls.add(call);
+            return answers.isEmpty ? 1 : answers.removeAt(0);
+          });
       await build({'ks.browser.freeze_on_screensaver': true});
       browser.onPageLoaded('http://ha.local:8123/lovelace/0');
-      bus.publish(const ScreensaverViewChanged(view: 'clock'));
-      bus.publish(const ScreensaverStateChanged(active: true));
-      await Future<void>.delayed(const Duration(milliseconds: 1300));
       expect(browser.renderingFrozen, isFalse);
-      expect(calls.last.arguments['hidden'], isTrue);
-      bus.publish(const ScreensaverStateChanged(active: false));
-      await pumpEventQueue();
-      expect(browser.renderingFrozen, isFalse);
-      expect(calls.last.arguments['hidden'], isFalse);
-      expect(calls.last.arguments['urlPrefix'], 'http://ha.local:8123');
-    });
 
-    test('a thaw with no dashboard origin to match still reveals every page',
-        () async {
-      await build({'ks.browser.freeze_on_screensaver': true});
-      browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+      browser.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await Future<void>.delayed(const Duration(milliseconds: 1300));
+      // Asked twice: the first answer was "no dashboard", the second took.
+      expect(calls.where((c) => c.method == 'setHidden'), hasLength(2));
+      expect(calls.last.arguments['hidden'], isFalse);
+      expect(browser.renderingFrozen, isFalse);
+
+      // With the screensaver up, the resume re-hides instead.
+      calls.clear();
+      answers = [1];
       bus.publish(const ScreensaverViewChanged(view: 'clock'));
       bus.publish(const ScreensaverStateChanged(active: true));
       await Future<void>.delayed(const Duration(milliseconds: 1300));
       expect(browser.renderingFrozen, isTrue);
-      // The page navigated somewhere with no origin while hidden.
-      browser.onPageLoaded('about:blank');
-      bus.publish(const ScreensaverStateChanged(active: false));
-      await pumpEventQueue();
-      expect(browser.renderingFrozen, isFalse);
-      expect(calls.last.arguments['hidden'], isFalse);
-      expect(calls.last.arguments['urlPrefix'], 'http');
+      calls.clear();
+      browser.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(calls.single.arguments['hidden'], isTrue);
+      expect(browser.renderingFrozen, isTrue);
     });
+
+    test(
+      'a thaw edge reveals even when the freeze never took by our books',
+      () async {
+        // The native side answered "no dashboard found" to the freeze, so
+        // the Dart side never marked itself frozen. The native view can still
+        // be hidden (it fell out of step through a rebuild or a navigation
+        // while hidden), and with the flag false every path used to return
+        // early, leaving a dashboard that never came back. The edge from
+        // wanted to not wanted now asks the native side to reveal
+        // regardless; on a visible view that is a no-op.
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, (call) async {
+              calls.add(call);
+              return call.arguments['hidden'] == true ? 0 : 1;
+            });
+        await build({'ks.browser.freeze_on_screensaver': true});
+        browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+        bus.publish(const ScreensaverViewChanged(view: 'clock'));
+        bus.publish(const ScreensaverStateChanged(active: true));
+        await Future<void>.delayed(const Duration(milliseconds: 1300));
+        expect(browser.renderingFrozen, isFalse);
+        expect(calls.last.arguments['hidden'], isTrue);
+        bus.publish(const ScreensaverStateChanged(active: false));
+        await pumpEventQueue();
+        expect(browser.renderingFrozen, isFalse);
+        expect(calls.last.arguments['hidden'], isFalse);
+        expect(calls.last.arguments['urlPrefix'], 'http://ha.local:8123');
+      },
+    );
+
+    test(
+      'a thaw with no dashboard origin to match still reveals every page',
+      () async {
+        await build({'ks.browser.freeze_on_screensaver': true});
+        browser.onPageLoaded('http://ha.local:8123/lovelace/0');
+        bus.publish(const ScreensaverViewChanged(view: 'clock'));
+        bus.publish(const ScreensaverStateChanged(active: true));
+        await Future<void>.delayed(const Duration(milliseconds: 1300));
+        expect(browser.renderingFrozen, isTrue);
+        // The page navigated somewhere with no origin while hidden.
+        browser.onPageLoaded('about:blank');
+        bus.publish(const ScreensaverStateChanged(active: false));
+        await pumpEventQueue();
+        expect(browser.renderingFrozen, isFalse);
+        expect(calls.last.arguments['hidden'], isFalse);
+        expect(calls.last.arguments['urlPrefix'], 'http');
+      },
+    );
 
     test('a covering mode freezes after the paint delay; a mid-session '
         'flip to dim thaws immediately', () async {
@@ -251,10 +298,9 @@ void main() {
     test('a rotation excursion is left alone: the rotation owns it', () async {
       await build({});
       browser.onPageLoaded('http://ha.local:8123/lovelace/0');
-      await commands.execute(
-        'showOverlayPage',
-        {'url': 'https://weather.example/'},
-      );
+      await commands.execute('showOverlayPage', {
+        'url': 'https://weather.example/',
+      });
       bus.publish(const ScreensaverStateChanged(active: true));
       // Past the freeze's paint delay, so the excursion's own freeze lands
       // inside this test rather than in the next one.
