@@ -187,6 +187,13 @@ class BtProxyManager extends Manager {
           e.key == defs.btproxyMacLookup.key) {
         return;
       }
+      // The scan intensity reaches the running scanner directly: a scan
+      // session restart is milliseconds, a server restart drops Home
+      // Assistant's session.
+      if (e.key == defs.btproxyScanDuty.key) {
+        if (_running) unawaited(_pushScanDuty());
+        return;
+      }
       // The first start writes the generated key into settings; restarting
       // on our own write would bounce the server (and HA's session) for a
       // value the running server already has.
@@ -492,6 +499,7 @@ class BtProxyManager extends Manager {
         'projectVersion': _appVersion,
         'bluetoothProxy': _settings.get(defs.btproxyEnabled),
         'connections': _settings.get(defs.btproxyConnections),
+        'scanDuty': _settings.get(defs.btproxyScanDuty),
         'minConnectRssi':
             int.tryParse(_settings.get(defs.btproxyMinConnectRssi)) ?? 0,
         'entities': _settings.get(defs.esphomeEntities)
@@ -540,6 +548,16 @@ class BtProxyManager extends Manager {
       // toggle stays on so enabling works once the grant exists.
       _startError = e is PlatformException ? (e.message ?? '$e') : '$e';
       log.warn(name, 'failed to start: $e');
+    }
+  }
+
+  Future<void> _pushScanDuty() async {
+    try {
+      await _channel.invokeMethod('scanDuty', {
+        'duty': _settings.get(defs.btproxyScanDuty),
+      });
+    } catch (e) {
+      log.warn(name, 'scan intensity not applied: $e');
     }
   }
 

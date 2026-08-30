@@ -42,16 +42,38 @@ import android.util.Log
  * ESPHome's scanner mode (passive/active) has no Android equivalent: the
  * platform scanner always performs active scanning and offers no SCAN_REQ
  * control. The requested mode is stored and echoed back to HA (some
- * integrations read it), but the radio behavior is the same either way;
- * kiosks are wall-powered so the duty cycle stays at LOW_LATENCY.
+ * integrations read it), but the radio behavior is the same either way.
+ * What the user does pick is the duty cycle ([ScanDuty]): BALANCED by
+ * default, since on a stack that spends real CPU per advertisement
+ * (Meta's logs a verbose line for every packet) a fifth of the listening
+ * time is the difference between a third of a core and a few percent,
+ * with the same devices heard; LOW_LATENCY for hearing slow beacons the
+ * moment they air.
  *
  * All state lives on the main-looper handler; public entry points post.
  */
+/** The scan window share the platform scanner is asked for. */
+internal enum class ScanDuty(val key: String, val androidMode: Int) {
+    /** A 100% window: every advertisement is heard the moment it airs. */
+    LOW_LATENCY("low_latency", ScanSettings.SCAN_MODE_LOW_LATENCY),
+    /** About a fifth of the time. */
+    BALANCED("balanced", ScanSettings.SCAN_MODE_BALANCED),
+    /** About a tenth. */
+    LOW_POWER("low_power", ScanSettings.SCAN_MODE_LOW_POWER);
+
+    companion object {
+        /** The setting's stored value; anything unknown is the default. */
+        fun fromKey(key: String?): ScanDuty =
+            entries.firstOrNull { it.key == key } ?: BALANCED
+    }
+}
+
 internal class BleScanEngine(
     private val context: Context,
     private val onAdvertisement: (BleAdvertisement) -> Unit,
     private val onStateChange: (ScannerState, ScannerMode) -> Unit,
     private val onLog: (String) -> Unit = {},
+    scanDuty: ScanDuty = ScanDuty.BALANCED,
 ) {
     private companion object {
         const val TAG = "KsBtProxy"
@@ -97,6 +119,9 @@ internal class BleScanEngine(
     // settings are what the stack objects to, re-trying them after every
     // recovery would just re-break the scanner on a cycle (issue #239).
     private var minimalSettings = false
+    // The duty cycle in force; a change restarts the scan session (a stop
+    // and a start, milliseconds), never the server.
+    private var duty = scanDuty
     // One adapter restart per run: a bounce that does not clear the stack
     // will not clear it on a loop either, and each one drops the proxy's
     // GATT connections for nothing.
@@ -104,6 +129,17 @@ internal class BleScanEngine(
 
     val isScanning: Boolean get() = scanning
     val lastAdvertisementAt: Long get() = lastCallbackAt
+    val scanDuty: ScanDuty get() = duty
+
+    /** Apply a new duty cycle; a running scan is restarted with it. */
+    fun setScanDuty(next: ScanDuty) {
+        handler.post {
+            if (next == duty) return@post
+            duty = next
+            note("scan intensity ${next.key}")
+            if (scanning) restartScan("scan intensity changed")
+        }
+    }
 
     private val adapter: BluetoothAdapter?
         get() = (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -284,7 +320,7 @@ internal class BleScanEngine(
 
         onStateChange(ScannerState.STARTING, mode)
         val settings = ScanSettings.Builder().apply {
-            setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            setScanMode(duty.androidMode)
             setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             setReportDelay(0)
             // Everything below is a refinement some stacks reject outright:
@@ -333,7 +369,7 @@ internal class BleScanEngine(
             // its shortest step through an endless failure loop. The first
             // onScanResult resets it instead.
             onStateChange(ScannerState.RUNNING, mode)
-            Log.i(TAG, "scan started ($reason)")
+            Log.i(TAG, "scan started ($reason, ${duty.key})")
         } catch (e: Exception) {
             note("startScan threw: $e")
             handleScanFailure(-1)

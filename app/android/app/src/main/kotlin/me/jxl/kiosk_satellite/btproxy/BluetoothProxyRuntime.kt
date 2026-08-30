@@ -27,6 +27,8 @@ internal object BluetoothProxyRuntime {
         val connections: Boolean,
         /** Refuse connects for devices heard below this RSSI; 0 = no gate. */
         val minConnectRssi: Int = 0,
+        /** The scan duty cycle, by the setting's key (see [ScanDuty]). */
+        val scanDuty: String = ScanDuty.BALANCED.key,
         /** The ESPHome node name to answer as: the mDNS instance, the
          *  <name>.local host, and what Home Assistant builds this
          *  device's action names from. Empty keeps the generated
@@ -91,6 +93,7 @@ internal object BluetoothProxyRuntime {
                     server?.reportScannerState(state, mode)
                 },
                 onLog = { line -> log("scan: $line") },
+                scanDuty = ScanDuty.fromKey(config.scanDuty),
             )
         } else {
             null
@@ -150,6 +153,11 @@ internal object BluetoothProxyRuntime {
             (if (connections != null)
                 " (connections enabled, ${connections.connectionLimit} slots)" else "") +
             (if (hub != null) " (${config.entities.size} entities)" else ""))
+    }
+
+    /** A new scan duty cycle for the running scanner; nothing without one. */
+    fun setScanDuty(key: String?) {
+        engine?.setScanDuty(ScanDuty.fromKey(key))
     }
 
     /** Push one entity's new value; ignored while stopped or unknown ids. */

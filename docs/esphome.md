@@ -20,6 +20,7 @@ The same connection can carry a **Bluetooth proxy**: BLE advertisements from nea
 | Setting | Effect |
 |---|---|
 | **Enable Bluetooth proxy** | Advertisements are relayed. Broadcast sensors and presence tracking work the moment it is on |
+| **Scan intensity** | How much of the time the radio listens. **Balanced** (the default) listens about a fifth of the time, **Low power** a tenth and **Continuous** all of it. The same devices are heard at every level; one that advertises rarely appears later and its signal readings update less often the less the radio listens. The difference is CPU, and it depends on the device's Bluetooth stack rather than on the kiosk: a Meta Portal logs a line per packet and spends a third of a core on a busy home at Continuous, a few percent at Balanced. Continuous is for a beacon that has to be seen the moment it airs. Applies at once, without dropping the Home Assistant connection |
 | **Allow device connections** (on by default) | Home Assistant connects to Bluetooth devices through the kiosk: locks, buttons, curtain motors, pairing and cache management included. Off returns the proxy to advertisement-only and tells Home Assistant so. The proxy only ever announces what it serves |
 | **Minimum signal for connections** | Connection requests for devices last heard below this level are refused at once, so Home Assistant fails over to a closer proxy instead of leaving the slot with a kiosk that can connect but not hold. Devices the kiosk has never heard are always let through, so pairing keeps working |
 

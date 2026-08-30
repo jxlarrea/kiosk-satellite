@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Scan intensity** setting on the Bluetooth Proxy page, on the device and in the remote admin alike: Balanced, Low power or Continuous, which ask Android to listen about a fifth, a tenth or all of the time. Devices are heard the same at every level, one that advertises rarely just takes longer to show up. The difference is CPU on devices whose Bluetooth stack pays per packet: a Meta Portal logs a line for every advertisement it hears and spent a third of a core in its Bluetooth process on a busy home, which Balanced cut to a few percent with the same devices heard. A change applies to the running scanner at once, without dropping the Home Assistant connection.
+
+### Changed
+- The Bluetooth proxy now scans at Balanced intensity by default instead of continuously, the new setting above. A beacon that has to be seen the moment it airs gets Continuous back with one switch.
+
 ## v2026.8.102 - 2026-08-30
 
 ### Added

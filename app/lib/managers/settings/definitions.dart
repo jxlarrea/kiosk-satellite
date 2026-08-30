@@ -4755,6 +4755,36 @@ const btproxyEnabled = SettingDef<bool>(
   dependsOn: 'esphome.enabled',
 );
 
+/// How much of the time the radio listens. BALANCED (about a fifth of the
+/// time) is the default: on some stacks every advertisement costs real CPU
+/// (Meta's Bluetooth stack logs a verbose line per packet, 500 lines a
+/// second in a busy home, a third of a core in the Bluetooth process plus
+/// the log daemon behind it) and a fifth of the window cut that to a
+/// twentieth on a Portal with the same devices heard. LOW_LATENCY (a 100%
+/// window, what the proxy did before this setting existed) hears slow
+/// beacons the moment they air, LOW_POWER listens a tenth of the time.
+/// Applied live;
+/// the scan session restarts, the server does not.
+const btproxyScanDuty = SettingDef<String>(
+  key: 'btproxy.scan_duty',
+  type: SettingType.select,
+  defaultValue: 'balanced',
+  title: 'Scan intensity',
+  description:
+      'How much of the time the radio listens. Lower cuts CPU; devices that '
+      'advertise rarely take longer to appear.',
+  category: 'ESPHome',
+  section: 'Bluetooth Proxy',
+  subpage: 'Bluetooth Proxy',
+  options: ['low_latency', 'balanced', 'low_power'],
+  optionLabels: {
+    'low_latency': 'Continuous',
+    'balanced': 'Balanced',
+    'low_power': 'Low power',
+  },
+  dependsOn: 'btproxy.enabled',
+);
+
 const btproxyConnections = SettingDef<bool>(
   key: 'btproxy.connections',
   type: SettingType.boolean,
@@ -5281,6 +5311,7 @@ const List<SettingDef<Object>> allSettings = [
   notificationsChimeFile,
   notificationsVolume,
   btproxyEnabled,
+  btproxyScanDuty,
   btproxyConnections,
   btproxyMinConnectRssi,
   btproxyMacLookup,
