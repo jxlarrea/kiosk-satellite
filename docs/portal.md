@@ -30,6 +30,31 @@ adb shell settings put secure enabled_accessibility_services "com.facebook.aloha
 Read the current value first with `adb shell settings get secure
 enabled_accessibility_services` in case your Portal lists something else.
 
+## Updates
+
+What the in-app updater does on a Portal, in order:
+
+| Step | On a Portal |
+| --- | --- |
+| Download | Works as anywhere |
+| Install unknown apps grant | Asked once, the first time, on Android's own screen |
+| Android's install confirmation | Shown on every update: Android 10 never installs silently for an app that is not the device owner |
+| The install itself | Fails with `INSTALL_FAILED_VERIFICATION_FAILURE` until Meta's package verifier is turned off, see the table above |
+| Relaunch | The app comes back on its own once the install goes through |
+
+So a Portal needs this once, from a computer:
+
+```
+adb shell settings put global package_verifier_enable 0
+```
+
+There is no hands-free path. Device ownership, which gives silent updates
+on Android 11 and older elsewhere, needs a device with no accounts, and a
+Portal carries Meta's own (`com.facebook.aloha.*`) that cannot be removed,
+so `dpm set-device-owner` refuses. Each update takes one tap on the
+confirmation, which the app brings to the front and re-arms the kiosk
+after.
+
 ## Person detection
 
 Portal OS runs a person detector all the time. It is what the Smart
