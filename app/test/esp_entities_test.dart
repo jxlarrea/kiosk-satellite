@@ -201,6 +201,7 @@ void main() {
       'model': 'samsung SM-X700',
       'osVersion': 'Android 13',
       'ip': '192.168.1.5',
+      'appVersion': '2026.8.104',
     });
     stub('evalJs', '"https://ha.local/lovelace/home"');
     stub('screenshot', base64Encode([1, 2, 3]));
@@ -324,6 +325,7 @@ void main() {
     for (final id in [
       'android_version',
       'android_build',
+      'app_version',
       'ipv4_interfaces',
       'ipv6_interfaces',
     ]) {
@@ -627,6 +629,7 @@ void main() {
     expect(byId['device_info'], 'samsung SM-X700');
     expect(byId['android_version'], 'Android 13');
     expect(byId['android_build'], 'TP1A.220624.014');
+    expect(byId['app_version'], '2026.8.104');
     expect(byId['ipv4_interfaces'], 'wlan0: 192.168.1.5');
     expect(byId['ipv6_interfaces'], 'wlan0: fe80::1');
     expect(byId['kiosk'], false);

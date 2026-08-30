@@ -755,6 +755,16 @@ class EspEntitySurface {
         icon: 'mdi:cellphone-cog',
         type: 'text_sensor',
       ),
+      // The release the kiosk is running, as a sensor a fleet can be
+      // sorted by: the Update entity only says whether a newer one exists,
+      // and the device registry's sw_version cannot be read from a
+      // template or a trigger (issue #381).
+      diagnostic(
+        'app_version',
+        'App version',
+        icon: 'mdi:tag-outline',
+        type: 'text_sensor',
+      ),
       diagnostic(
         'ipv4_address',
         'IPv4 address',
@@ -1631,6 +1641,8 @@ class EspEntitySurface {
     if (model.isNotEmpty) await _send('device_info', model);
     final version = '${data['osVersion'] ?? ''}';
     if (version.isNotEmpty) await _send('android_version', version);
+    final appVersion = '${data['appVersion'] ?? ''}';
+    if (appVersion.isNotEmpty) await _send('app_version', appVersion);
     final details = await commands.execute('getDeviceDetails', const {});
     final build = details.ok && details.data is Map
         ? '${(details.data as Map)['androidBuild'] ?? ''}'

@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- An **App version** diagnostic sensor on the ESPHome integration, holding the Kiosk Satellite release the device is running (#381). The Update entity only says whether a newer release exists, and a fleet dashboard listing every kiosk's version, or an automation that fires once a tablet reaches a version, had nothing to read.
+
 ### Changed
 - The docs no longer offer device ownership as something an Amazon Fire tablet can be talked into. Fire OS provisions Amazon's Parental Controls as profile owner on the first boot, Android allows one owner per user, and `dpm set-device-owner` refuses whatever the accounts say. [Amazon Fire tablets](docs/fire.md), [Updates](docs/updates.md) and [Kiosk and Lockdown](docs/kiosk.md) all said the accounts were the only obstacle. [Updates](docs/updates.md) now has an Amazon Fire tablets section next to the Meta Portal one, saying outright that a Fire update is never hands-free and what the one-tap path looks like.
 

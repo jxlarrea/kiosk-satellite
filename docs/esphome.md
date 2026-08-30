@@ -109,6 +109,7 @@ Each of these is a kiosk setting, readable and writable from Home Assistant, the
 | **Device** | text sensor | The model |
 | **Panel brightness** | sensor | Percent, as the panel reads it |
 | **Android version**, **Android build** | text sensor | |
+| **App version** | text sensor | The Kiosk Satellite release running on the device, so a fleet can be sorted by version |
 | **IPv4 address**, **IPv6 address** | text sensor | The primary address. IPv6 leads with a routable address over the link-local `fe80::` one |
 | **IPv4 addresses by interface**, **IPv6 addresses by interface** | text sensor | `wlan0: 192.168.1.5; eth0: 10.0.3.2`, so an automation can tell wired from wireless. Re-checked moments after any network change |
 | **App uptime**, **Network uptime** | timestamp | When the app started and when the network last came up |
