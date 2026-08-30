@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.105 - 2026-08-30
 
 ### Added
 - **Since** and **Timeframe** at the end of the Immich screensaver's **Taken within** choices (#383), on the device and in the remote admin alike. Since reveals a **From** date and shows everything taken from that day on, Timeframe reveals **From** and **To** and shows the days between them, both ends counting whole, picked off a calendar on either surface, whose month heading opens the years so a date decades back is a couple of taps away. The rolling windows move forward every night, which is wrong for a frame meant to start at a wedding, a birth or the year a scanned album begins, and there was no way to pin one. Clear in the picker puts an end back to open, and Any time drops the filter.
