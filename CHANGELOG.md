@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Added
+- A **Hide names** toggle in the At a Glance row's Appearance group (#370), on the device and in the remote admin alike: every entity shows its icon and value only, with the value drawn larger in the room the name took, in the chips and the floating text style both. For a small panel read from across the room, where a temperature or a humidity is already named by its icon. The custom names stay stored for when the toggle goes back off.
+
 ### Fixed
 - Dismiss on person, with Postpone screensaver on person off, dismissed every screensaver a few seconds after it started while someone was in front of the device, a start-and-dismiss loop. The sensor reports every couple of seconds while a person stays, which the postpone leg needs. The dismiss leg acted on every report. It now acts only on someone arriving: a person already there when a screensaver starts leaves it up. The same rule applies to Dismiss on proximity, whose sensor repeats while something stays close. For that to feel right the sensor also has to notice a person leaving, which the 30 second heartbeat alone told it 50 seconds late. The Portal's framing director reports losing the person within seconds. An exit is now read from that, so a person who steps out and comes back is an arrival again.
 - On a Meta Portal an update that Meta's package verifier rejected read as "install declined on the device screen", since Android delivers a verifier rejection the way it delivers a cancel. The app now reports the rejection as the failure it is, with the fix: the verifier has to be turned off once over adb, which the [Updates](docs/updates.md) and [Meta Portal](docs/portal.md) docs now cover.

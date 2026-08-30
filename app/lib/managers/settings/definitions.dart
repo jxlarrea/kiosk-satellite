@@ -2576,6 +2576,23 @@ const screensaverGlanceScale = SettingDef<num>(
   dependsOn: 'screensaver.glance_enabled',
 );
 
+// Icon and value only. On a small panel read from across the room the
+// name is the line that costs the most and says the least: an icon
+// already names a temperature or a humidity. Without the name the value
+// grows into the room the name took, so the reading gets bigger, not the
+// chip smaller. The custom names are kept, only not drawn.
+const screensaverGlanceHideNames = SettingDef<bool>(
+  key: 'screensaver.glance_hide_names',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Hide names',
+  description: 'Show only the icon and the value, with the value drawn larger.',
+  category: 'Screensaver',
+  section: 'Appearance',
+  subpage: 'At a Glance',
+  dependsOn: 'screensaver.glance_enabled',
+);
+
 // The chip circles follow the entity's state color by default (a lit light
 // glows amber); this keeps them in the neutral grey for a quieter row.
 const screensaverGlanceBwIcons = SettingDef<bool>(
@@ -5100,6 +5117,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverGlanceEntities,
   screensaverGlanceNowPlaying,
   screensaverGlanceScale,
+  screensaverGlanceHideNames,
   screensaverGlanceBwIcons,
   screensaverGlanceTextOnly,
   screensaverDismissOnMotion,

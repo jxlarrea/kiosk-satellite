@@ -20,6 +20,7 @@ Under **Appearance**:
 | Setting | Notes |
 | --- | --- |
 | Row scaling | Scales the whole row, like the widgets' Widget scaling. |
+| Hide names | Icon and value only, with the value drawn larger. |
 | Monochromatic icons | Keeps every icon in the neutral grey instead of its state color. |
 | Floating text style | Floating text instead of chips, the row's original look. |
 
@@ -74,6 +75,11 @@ grey, so a colored circle always means something is going on.
 **Monochromatic icons** keeps every circle in the neutral grey instead. The
 text never takes a color in any case: the state is read from the words, the
 color is only a hint.
+
+**Hide names** drops the name line from every entity and grows the value into
+the room it took, in both styles. Made for a small panel read from across the
+room, where the icon already says which reading is which. The custom names
+are kept for when the toggle goes back off.
 
 **Floating text style** switches back to the row's original look: floating
 text in one muted tone, no chip and no state color. On the Clock screensaver that tone

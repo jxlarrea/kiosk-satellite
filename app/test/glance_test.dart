@@ -327,6 +327,7 @@ void main() {
     for (final def in [
       defs.screensaverGlanceTextOnly,
       defs.screensaverGlanceBwIcons,
+      defs.screensaverGlanceHideNames,
     ]) {
       expect(defs.allSettings, contains(def));
       expect(def.defaultValue, isFalse);
@@ -346,7 +347,7 @@ void main() {
         'At a Glance',
         'At a Glance',
         'At a Glance',
-        ...List.filled(3, 'Appearance'),
+        ...List.filled(4, 'Appearance'),
       ],
     );
     expect(glancePage.last.section, 'Appearance');
@@ -525,7 +526,9 @@ void main() {
       expect(shape.side.style, BorderStyle.solid);
     });
 
-    testWidgets('Floating text style opts back into the floating text', (tester) async {
+    testWidgets('Floating text style opts back into the floating text', (
+      tester,
+    ) async {
       await pump(tester, settings: {'ks.screensaver.glance_text_only': true});
       expect(cardBoxes(), findsNothing);
       expect(find.text('Entity 0'), findsOneWidget);
@@ -604,6 +607,35 @@ void main() {
       await pump(tester, entities: mixed, narrow: true);
       // Wrapped, they all take the widest chip's width.
       expect({for (var i = 0; i < 4; i++) width(i)}.length, 1);
+    });
+
+    testWidgets('Hide names drops the name and grows the value', (
+      tester,
+    ) async {
+      await pump(tester);
+      double valueSize() =>
+          tester.widget<Text>(find.text('0')).style!.fontSize!;
+      final named = valueSize();
+      final height = tester.getSize(cardBoxes().first).height;
+      await pump(tester, settings: {'ks.screensaver.glance_hide_names': true});
+      expect(find.text('Entity 0'), findsNothing);
+      expect(find.text('0'), findsOneWidget);
+      expect(cardBoxes(), findsNWidgets(4));
+      // The value takes the room the name gave up: bigger type, and the
+      // pill no shorter than it was with two lines.
+      expect(valueSize(), greaterThan(named));
+      expect(tester.getSize(cardBoxes().first).height, height);
+      // The floating text style hides the name the same way.
+      await pump(
+        tester,
+        settings: {
+          'ks.screensaver.glance_hide_names': true,
+          'ks.screensaver.glance_text_only': true,
+        },
+      );
+      expect(find.text('Entity 0'), findsNothing);
+      expect(find.text('0'), findsOneWidget);
+      expect(valueSize(), greaterThan(named));
     });
 
     testWidgets('Monochromatic icons keeps every circle grey', (tester) async {

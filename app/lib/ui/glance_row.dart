@@ -81,6 +81,10 @@ class GlanceRow extends StatelessWidget {
     builder: (context, entities, _) {
       if (entities.isEmpty) return const SizedBox.shrink();
       final cards = !container.settings.get(defs.screensaverGlanceTextOnly);
+      // Hide names: icon and value only, the value grown into the
+      // name's room. Read once here so the chip measurement and the
+      // chips agree on the line they are sizing to.
+      final hideNames = container.settings.get(defs.screensaverGlanceHideNames);
       // The Row scaling slider, on top of the caller's own computed
       // scale, so every placement of the row follows it alike (the
       // Widget scaling precedent). Shadowing the field keeps the whole
@@ -106,7 +110,8 @@ class GlanceRow extends StatelessWidget {
             // wrap they take one shared width — the widest chip's — so
             // the grid's edges line up instead of reading as rags.
             final widths = [
-              for (final entity in entities) _chipWidth(entity, scale),
+              for (final entity in entities)
+                _chipWidth(entity, scale, hideNames: hideNames),
             ];
             final total =
                 widths.fold(0.0, (a, b) => a + b) +
@@ -123,7 +128,12 @@ class GlanceRow extends StatelessWidget {
                   children: [
                     for (final (index, entity) in entities.indexed) ...[
                       if (index > 0) SizedBox(width: spacing),
-                      _GlanceCard(entity: entity, scale: scale, bw: bw),
+                      _GlanceCard(
+                        entity: entity,
+                        scale: scale,
+                        bw: bw,
+                        hideName: hideNames,
+                      ),
                     ],
                   ],
                 ),
@@ -157,6 +167,7 @@ class GlanceRow extends StatelessWidget {
                             entity: entity,
                             scale: scale,
                             bw: bw,
+                            hideName: hideNames,
                           ),
                         ),
                       ],
@@ -215,6 +226,7 @@ class GlanceRow extends StatelessWidget {
                             entity: entity,
                             scale: scale * fit,
                             tint: tint,
+                            hideName: hideNames,
                           ),
                         ),
                       ),
@@ -235,7 +247,11 @@ class GlanceRow extends StatelessWidget {
 /// TextPainter so GlanceRow can pick between the content-hugging line and
 /// the uniform grid without laying anything out twice; keep the sizes here
 /// in lockstep with _GlanceCard's.
-double _chipWidth(GlanceEntity entity, double scale) {
+double _chipWidth(
+  GlanceEntity entity,
+  double scale, {
+  required bool hideNames,
+}) {
   double line(String text, double size, FontWeight weight) {
     final painter = TextPainter(
       text: TextSpan(
@@ -252,10 +268,16 @@ double _chipWidth(GlanceEntity entity, double scale) {
     return painter.width;
   }
 
-  final text = max(
-    line(entity.displayName, 13 * scale, FontWeight.w400),
-    line(glanceStateText(entity), 17 * scale, FontWeight.w600),
-  );
+  final text = hideNames
+      ? line(
+          glanceStateText(entity),
+          _GlanceCard.valueAloneSize * scale,
+          FontWeight.w600,
+        )
+      : max(
+          line(entity.displayName, 13 * scale, FontWeight.w400),
+          line(glanceStateText(entity), 17 * scale, FontWeight.w600),
+        );
   // 6 + 40 + 10 + 18: left pad, circle, gap, right pad; +2 for the border.
   return min(text + 74 * scale + 2, 250 * scale);
 }
@@ -343,6 +365,7 @@ class _GlanceCard extends StatelessWidget {
     required this.entity,
     required this.scale,
     required this.bw,
+    required this.hideName,
   });
 
   final GlanceEntity entity;
@@ -351,6 +374,14 @@ class _GlanceCard extends StatelessWidget {
   /// Monochromatic icons: keep the circle in the neutral grey even for an
   /// active entity.
   final bool bw;
+
+  /// Hide names: the value alone beside the circle, at [valueAloneSize].
+  final bool hideName;
+
+  /// The value's size when it has the chip to itself: as tall as the two
+  /// lines it replaces, so the chip keeps its height and the reading
+  /// gets bigger rather than the pill getting shorter.
+  static const valueAloneSize = 24.0;
 
   /// Dark enough to hold white text over a bright photo, translucent
   /// enough that the photo still shows the chip is sitting on it.
@@ -415,24 +446,25 @@ class _GlanceCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  entity.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: label,
-                    fontSize: 13 * scale,
-                    height: 1.15,
-                    fontFamily: 'Rubik',
+                if (!hideName)
+                  Text(
+                    entity.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: label,
+                      fontSize: 13 * scale,
+                      height: 1.15,
+                      fontFamily: 'Rubik',
+                    ),
                   ),
-                ),
                 Text(
                   glanceStateText(entity),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: value,
-                    fontSize: 17 * scale,
+                    fontSize: (hideName ? valueAloneSize : 17) * scale,
                     height: 1.2,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Rubik',
@@ -448,11 +480,20 @@ class _GlanceCard extends StatelessWidget {
 }
 
 class _GlanceItem extends StatelessWidget {
-  const _GlanceItem({required this.entity, required this.scale, this.tint});
+  const _GlanceItem({
+    required this.entity,
+    required this.scale,
+    required this.hideName,
+    this.tint,
+  });
 
   final GlanceEntity entity;
   final double scale;
   final Color? tint;
+
+  /// Hide names: the value alone beside the icon, grown to the height
+  /// the two lines took.
+  final bool hideName;
 
   @override
   Widget build(BuildContext context) {
@@ -471,24 +512,25 @@ class _GlanceItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                entity.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: label,
-                  fontSize: 15 * scale,
-                  height: 1.15,
-                  fontFamily: 'Rubik',
+              if (!hideName)
+                Text(
+                  entity.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: label,
+                    fontSize: 15 * scale,
+                    height: 1.15,
+                    fontFamily: 'Rubik',
+                  ),
                 ),
-              ),
               Text(
                 glanceStateText(entity),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: value,
-                  fontSize: 19 * scale,
+                  fontSize: (hideName ? 26 : 19) * scale,
                   height: 1.2,
                   fontWeight: FontWeight.w600,
                   fontFamily: 'Rubik',

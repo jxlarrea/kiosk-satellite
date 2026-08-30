@@ -83,6 +83,7 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       defs.screensaverGlanceEnabled.key,
       defs.screensaverGlanceTextOnly.key,
       defs.screensaverGlanceBwIcons.key,
+      defs.screensaverGlanceHideNames.key,
       defs.screensaverGlanceScale.key,
       for (final def in immichMetadataFields.values) def.key,
     };
