@@ -102,6 +102,29 @@ either, so nothing changes that.
 
 Everything else about a Portal is in [Meta Portal](portal.md).
 
+## Amazon Fire tablets
+
+Updates on a Fire are never hands-free. Fire OS 8 is Android 11, so
+every update shows Android's confirmation on the tablet, and the tier
+that removes it, device ownership, cannot be applied to any Fire:
+Amazon provisions its Parental Controls as profile owner on the main
+user at first boot, Android allows one owner per user and
+`dpm set-device-owner` answers "the user already has a profile owner".
+Parental Controls is a system package, so it cannot be removed, and
+behind it a registered Fire carries several Amazon accounts, which the
+command also refuses. No account removal or deregistration gets around
+the first block.
+
+What does work: the updater downloads the release, brings Android's
+confirmation to the front (standing Kiosk Mode down for it) and re-arms
+the kiosk after the install. So an update is one tap on the tablet, or
+one tap after the Home Assistant Install button or the remote admin's
+Install button started the download. The install unknown apps grant is
+the same as anywhere else, over `adb` or under Settings, Security &
+Privacy, Apps from Unknown Sources, and it sticks once given.
+
+Everything else about a Fire is in [Amazon Fire tablets](fire.md).
+
 ## Hands-free on Android 11 and older: device ownership
 
 A device owner installs its own updates silently on any Android version.
@@ -147,6 +170,6 @@ in-app update, since `adb` is now the installer of record.
 | Install in Home Assistant does nothing | The app has not seen the release yet. Tap the version line on the device or the app version in the remote admin to check now. |
 | The Update entity still shows the old version after the install | It refreshes when the app reconnects after its relaunch. If the app did not come back, see the next row. |
 | The update installed but the app stayed closed | **Display over other apps** is missing. Tap the app icon, then grant it so the next update returns on its own. |
-| Nothing happens after the download on Android 11 or older | The confirmation could not show. If it never appears, the ROM may have no way to give the install unknown apps grant. Grant it over `adb` if the toggle exists or make the app the device owner. On a Meta Portal the confirmation shows and the install fails afterwards, see [Meta Portal](#meta-portal). |
+| Nothing happens after the download on Android 11 or older | The confirmation could not show. If it never appears, the ROM may have no way to give the install unknown apps grant. Grant it over `adb` if the toggle exists or make the app the device owner. On a Meta Portal the confirmation shows and the install fails afterwards, see [Meta Portal](#meta-portal). On an Amazon Fire the confirmation is the most that can be had, see [Amazon Fire tablets](#amazon-fire-tablets). |
 | The download fails or stalls | The tablet cannot reach GitHub or the transfer went quiet and the app gave up. The Logs page of the remote admin shows why. The notice stays up, so the download can be started again. |
 | An update on Android 12+ asked for confirmation again | Something else installed the app in between, usually `adb`. One confirmed in-app update makes the following ones silent again. |
