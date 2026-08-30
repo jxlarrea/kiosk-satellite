@@ -2,11 +2,15 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## v2026.8.100 - 2026-08-29
+## v2026.8.101 - 2026-08-29
 
 ### Fixed
 - After the app's Activity was destroyed and re-created under the running engine (on a Meta Portal, Back on Meta's own bar closes the app and the next tap on its tile re-creates it), two things could come back wrong. The dashboard could return black: a screensaver that stood down as the app left the foreground revealed the WebView through a window that was already gone, so the same view came back hidden and stayed so until the next screensaver cycle. The app now re-applies the wanted state after every resume, retrying until the dashboard is found. And the system bars could stay up: the immersive mode asked for on resume raced the new window. On a Portal, Meta's bar service shows its bars for a new Activity until told otherwise. The native side now re-asserts the immersive mode whenever the window gains focus and again a beat later.
 - On a Meta Portal the Flutter side of the app could go dark for good while the dashboard kept showing: no screensaver, no drawer, no settings, with the Dart side and Home Assistant still running. Impeller rejects the Portal's Vulkan driver and runs its OpenGLES backend, which loses its context when Android destroys and re-creates the app's Activity (the Back button in Meta's bar closes the app, and the next tap on its tile re-creates it), and from then on every frame fails. The renderer guard now switches a Portal to the Legacy renderer (Skia) on its first start, flipping the setting so both settings pages say so, the same way it already does for GPUs that crash under Impeller.
+
+## v2026.8.100 - 2026-08-29
+
+### Fixed
 - The launcher icon read blurry on a Meta Portal, whose launcher draws 152 px tiles on a 160 dpi panel and scales the icon's 108 px raster up to fit. The adaptive icon's three layers are now vector drawables with a 432 dp intrinsic size, so any launcher that rasterizes the icon before scaling gets a sharp tile at any size.
 - The ESPHome Dashboard view select vanished for good when the app started before Home Assistant was reachable (#362). The option list was read once, as the server came up, and a read that failed on a network still coming up left the select out of the catalog for the whole run, with a restart racing the same way. The select now serves the last list it read while Home Assistant is still down and re-reads the list when Home Assistant reports a dashboard created, deleted or edited and when the dashboard's connection comes back after an outage, never on a timer. Only a list that actually changed re-registers the device, so a dashboard added or removed reaches the dropdown on its own with no toggle needed.
 
