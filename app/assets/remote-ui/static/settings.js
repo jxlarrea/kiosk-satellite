@@ -2288,8 +2288,9 @@ export function updatePersonSensorRows() {
       : ok ? "The device's person sensor can be read."
       : access.granted
         ? 'Granted. Restart Kiosk Satellite to apply it.'
-        : 'Android grants this only over adb, from a computer on the network. '
-          + 'Run the command below, then restart Kiosk Satellite.';
+        : 'Only adb can grant this, never a dialog on the device. The Meta '
+          + 'Portal doc has the full command, copied below. Restart Kiosk '
+          + 'Satellite afterwards.';
     stateEl.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
     stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
     permRow.querySelector('button')?.remove();

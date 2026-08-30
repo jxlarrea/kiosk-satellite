@@ -86,9 +86,10 @@ adb shell monkey -p me.jxl.kiosk_satellite -c android.intent.category.LAUNCHER 1
 ```
 
 The **Required system permissions** group at the foot of the Person
-Detection page shows the row. While the grant is missing it shows the
-command (with a copy box in the remote admin). Once granted but before
-the restart it offers a Restart button. The permission does nothing on
+Detection page shows the row. While the grant is missing it says that
+only adb can grant it and points here for the command (the remote admin
+also offers the command with a copy box). Once granted but before the
+restart it offers a Restart button. The permission does nothing on
 any other device and the app never reads the log unless Dismiss on person
 is on.
 

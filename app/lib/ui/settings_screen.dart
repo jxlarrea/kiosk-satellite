@@ -7252,10 +7252,6 @@ class _LocationStatusRowState extends State<_LocationStatusRow> {
   }
 }
 
-/// The adb line that grants log access, the only way Android gives it.
-const personSensorLogAccessCommand =
-    'adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS';
-
 /// The Person Detection page's Required system permissions group
 /// (discussion #353): one row, the READ_LOGS grant the device's sensor is
 /// read through. No dialog can
@@ -7324,9 +7320,9 @@ class _PersonSensorLogAccessTileState extends State<_PersonSensorLogAccessTile>
             ? "The device's person sensor can be read."
             : access.granted
             ? 'Granted. Restart Kiosk Satellite to apply it.'
-            : 'Android grants this only over adb, from a computer on the '
-                  'network:\n$personSensorLogAccessCommand\n'
-                  'Then restart Kiosk Satellite.',
+            : 'Only adb can grant this, never a dialog on the device. The '
+                  'Meta Portal doc has the full command. Restart Kiosk '
+                  'Satellite afterwards.',
       ),
       trailing: access != null && access.granted && !ok
           ? TextButton(
