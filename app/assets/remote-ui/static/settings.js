@@ -2282,7 +2282,8 @@ export function updatePersonSensorRows() {
 
   const paintPerm = (st) => {
     const access = st && st.logAccess ? st.logAccess : null;
-    const ok = access === null ? null : access.effective === true;
+    const ok = access === null ? null
+      : access.granted === true && access.effective === true;
     info.querySelector('.desc').textContent = ok === null
       ? 'Status unavailable.'
       : ok ? "The device's person sensor can be read."

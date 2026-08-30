@@ -7306,7 +7306,9 @@ class _PersonSensorLogAccessTileState extends State<_PersonSensorLogAccessTile>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final access = _access;
-    final ok = access?.effective == true;
+    // Both: a grant revoked while the app runs leaves the process its log
+    // group until the next start, and that is not Granted.
+    final ok = access != null && access.granted && access.effective;
     return SettingsRow(
       leading: Icon(
         ok ? Icons.check_circle_outline : Icons.article_outlined,
