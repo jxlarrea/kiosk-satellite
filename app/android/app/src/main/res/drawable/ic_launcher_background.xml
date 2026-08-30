@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The adaptive icon's background layer, as a vector so launchers that draw
+     icons larger than 48dp (a Meta Portal draws 152px tiles on an mdpi
+     panel) get a sharp icon at any size. Converted from
+     assets/icons/svg/adaptive-background.svg; keep the two in step.
+
+     Declared 432dp rather than the 108dp adaptive canvas on purpose: a
+     launcher that rasterizes the adaptive icon at its intrinsic size and
+     scales the bitmap to its tile (Meta's does) would otherwise blow a
+     108px raster up to 152px on an mdpi panel and blur every edge. The
+     viewport is the same, so nothing else changes; launchers that draw
+     at their own size ignore the intrinsic size anyway. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="432dp"
+    android:height="432dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <path android:pathData="M0 0h100v100H0z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="0"
+                android:startY="0"
+                android:endX="0"
+                android:endY="100">
+                <item android:color="#FF5DA3A6" android:offset="0"/>
+                <item android:color="#FF3A6F78" android:offset="1"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

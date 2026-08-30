@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The adaptive icon's foreground layer (the house), as a vector, 432dp for the
+     reason in ic_launcher_background.xml. Converted from
+     assets/icons/svg/adaptive-foreground.svg, whose group scales the mark
+     about the canvas center. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="432dp"
+    android:height="432dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <group
+        android:scaleX="0.558"
+        android:scaleY="0.558"
+        android:pivotX="50"
+        android:pivotY="50">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M42.4 3.1A12.4 12.4 0 0 1 57.6 3.1L90.6 26.8A12.4 12.4 0 0 1 96 37V83.8A12.4 12.4 0 0 1 83.6 96.2H16.4A12.4 12.4 0 0 1 4 83.8V37A12.4 12.4 0 0 1 9.4 26.8Z"/>
+        <path
+            android:fillColor="#FF18BCF2"
+            android:pathData="M26.8 51.7A4.3 4.3 0 0 1 35.4 51.7V69.7A4.3 4.3 0 0 1 26.8 69.7Z"/>
+        <path
+            android:fillColor="#FFF2B705"
+            android:pathData="M39.4 54A4.3 4.3 0 0 1 48 54V67.4A4.3 4.3 0 0 1 39.4 67.4Z"/>
+        <path
+            android:fillColor="#FF3FBF5F"
+            android:pathData="M52 43.7A4.3 4.3 0 0 1 60.6 43.7V77.7A4.3 4.3 0 0 1 52 77.7Z"/>
+        <path
+            android:fillColor="#FFE8604C"
+            android:pathData="M64.6 53.7A4.3 4.3 0 0 1 73.2 53.7V67.7A4.3 4.3 0 0 1 64.6 67.7Z"/>
+    </group>
+</vector>

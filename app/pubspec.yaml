@@ -70,17 +70,17 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
 
 # Launcher icons for both platforms, generated from the master art in
-# ../assets/icons (run: dart run flutter_launcher_icons). The adaptive
-# layers are the designed ones, not derived — Android composes them.
+# ../assets/icons (run: dart run flutter_launcher_icons). Only the legacy
+# Android mipmaps and the iOS set come from here. The Android adaptive
+# icon (android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml) and
+# its three layers in res/drawable are hand-kept vector drawables
+# converted from ../assets/icons/svg/adaptive-*.svg, so launchers that
+# draw icons larger than 48dp (a Meta Portal draws 152px tiles on an mdpi
+# panel) get a sharp icon; density PNG layers were upscaled there. The
+# 12% inset on the foreground lives in that XML.
 flutter_launcher_icons:
   android: true
   image_path_android: ../assets/icons/png-rounded/icon-1024.png
-  adaptive_icon_background: ../assets/icons/adaptive/ic_launcher_background.png
-  adaptive_icon_foreground: ../assets/icons/adaptive/ic_launcher_foreground.png
-  adaptive_icon_monochrome: ../assets/icons/adaptive/ic_launcher_monochrome.png
-  # The adaptive layers ship on the 108dp canvas. A 12% inset keeps the
-  # house clear of the launcher mask; at 0% it runs to the edge of a circle.
-  adaptive_icon_foreground_inset: 12
   ios: true
   image_path_ios: ../assets/icons/png-square/icon-1024.png
   remove_alpha_ios: true

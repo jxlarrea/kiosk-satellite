@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Fixed
+- The launcher icon read blurry on a Meta Portal, whose launcher draws 152 px tiles on a 160 dpi panel and scales the icon's 108 px raster up to fit. The adaptive icon's three layers are now vector drawables with a 432 dp intrinsic size, so any launcher that rasterizes the icon before scaling gets a sharp tile at any size.
 - The ESPHome Dashboard view select vanished for good when the app started before Home Assistant was reachable (#362). The option list was read once, as the server came up, and a read that failed on a network still coming up left the select out of the catalog for the whole run, with a restart racing the same way. The select now serves the last list it read while Home Assistant is still down and re-reads the list when Home Assistant reports a dashboard created, deleted or edited and when the dashboard's connection comes back after an outage, never on a timer. Only a list that actually changed re-registers the device, so a dashboard added or removed reaches the dropdown on its own with no toggle needed.
 
 ### Changed
