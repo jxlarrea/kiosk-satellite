@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.103 - 2026-08-30
 
 ### Added
 - A **Camera Preview** group on the Face Detection page (#371), on the device and in the remote admin alike: with **Show camera preview** on, a face that wakes the kiosk leaves a small round live view of the camera in a corner of the dashboard for a few seconds, white-rimmed and gone on its own, so you can see what the camera saw and why the screen woke. **Preview duration** (3 to 10 seconds), **Preview scaling** (50 to 150 percent) and **Preview position** (any corner) shape it. The view is the detector's own frames, drawn and dropped, and it answers no touch. Only a face that dismisses the screensaver shows it, not one that postpones the next.
