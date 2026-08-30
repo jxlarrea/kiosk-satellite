@@ -56,9 +56,10 @@ Install unknown apps. Over `adb`, alongside the rest of the
 adb shell appops set me.jxl.kiosk_satellite REQUEST_INSTALL_PACKAGES allow
 ```
 
-A stripped-down ROM without that Settings screen (the Meta Portal, for one)
-dead-ends here. Device ownership is the way through, since a device owner
-needs neither the grant nor the confirmation.
+A stripped-down ROM without that Settings screen dead-ends here. Device
+ownership is the way through where it is possible, since a device owner
+needs neither the grant nor the confirmation. The Meta Portal does show
+the screen. Its own obstacle is the verifier, see below.
 
 ### Confirming inside Kiosk Mode
 
@@ -91,6 +92,13 @@ off, after which updates install like on any other Android 10 device:
 ```
 adb shell settings put global package_verifier_enable 0
 ```
+
+Every update still needs someone at the Portal to tap Android's
+confirmation. The hands-free tier below, device ownership, is not
+available there: `dpm set-device-owner` refuses because of the Meta
+accounts the Portal signs in with. They cannot be removed without
+taking the Portal's own software down. The Portal cannot be rooted
+either, so nothing changes that.
 
 Everything else about a Portal is in [Meta Portal](portal.md).
 
@@ -136,6 +144,6 @@ in-app update, since `adb` is now the installer of record.
 | Install in Home Assistant does nothing | The app has not seen the release yet. Tap the version line on the device or the app version in the remote admin to check now. |
 | The Update entity still shows the old version after the install | It refreshes when the app reconnects after its relaunch. If the app did not come back, see the next row. |
 | The update installed but the app stayed closed | **Display over other apps** is missing. Tap the app icon, then grant it so the next update returns on its own. |
-| Nothing happens after the download on Android 11 or older | The confirmation could not show. If it never appears, the ROM may have no way to give the install unknown apps grant (the Portal case). Grant it over `adb` if the toggle exists or make the app the device owner. |
+| Nothing happens after the download on Android 11 or older | The confirmation could not show. If it never appears, the ROM may have no way to give the install unknown apps grant. Grant it over `adb` if the toggle exists or make the app the device owner. On a Meta Portal the confirmation shows and the install fails afterwards, see [Meta Portal](#meta-portal). |
 | The download fails or stalls | The tablet cannot reach GitHub or the transfer went quiet and the app gave up. The Logs page of the remote admin shows why. The notice stays up, so the download can be started again. |
 | An update on Android 12+ asked for confirmation again | Something else installed the app in between, usually `adb`. One confirmed in-app update makes the following ones silent again. |
