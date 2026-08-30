@@ -42,6 +42,7 @@ import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'clock_faces.dart';
 import 'glance_row.dart';
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
+import 'video_surface.dart';
 
 /// The screensaver overlay: whichever of the four views the manager says is
 /// active, or nothing.
@@ -2281,9 +2282,18 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
     if (_isVideo(file)) {
       // The previous slide holds the screen while the video spins up —
       // _index only moves once there are frames to hand off to.
-      final video = VideoPlayerController.file(file);
+      // Held apart from `video` so the catch can dispose an attempt that
+      // got as far as opening; openVideo disposes the ones that did not.
+      VideoPlayerController? opened;
       try {
-        await video.initialize();
+        final video = opened = await openVideo(
+          (viewType) => VideoPlayerController.file(file, viewType: viewType),
+          onFallback: (e) => c.log.warn(
+            'screensaver',
+            'decoder refused the video surface, retrying on a platform '
+                'view (${file.path}): $e',
+          ),
+        );
         await video.setVolume(0);
         var ended = false;
         video.addListener(() {
@@ -2320,7 +2330,7 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
         // `next` explicitly — _index never reached it, and retrying it
         // forever would loop on the same broken file.
         c.log.warn('screensaver', 'video failed (${file.path}): $e');
-        await video.dispose();
+        await opened?.dispose();
         if (mounted) unawaited(_show(next + 1));
         await old?.dispose();
         return;
@@ -2773,12 +2783,22 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     final asset = _assets[next];
     if (asset.isVideo) {
       // Streamed, never cached; the previous slide holds until frames exist.
-      final video = VideoPlayerController.networkUrl(
-        c.immich.videoUri(asset),
-        httpHeaders: c.immich.videoHeaders,
-      );
+      // Held apart from `video` so the catch can dispose an attempt that
+      // got as far as opening; openVideo disposes the ones that did not.
+      VideoPlayerController? opened;
       try {
-        await video.initialize();
+        final video = opened = await openVideo(
+          (viewType) => VideoPlayerController.networkUrl(
+            c.immich.videoUri(asset),
+            httpHeaders: c.immich.videoHeaders,
+            viewType: viewType,
+          ),
+          onFallback: (e) => c.log.warn(
+            'screensaver',
+            'decoder refused the video surface, retrying on a platform '
+                'view: $e',
+          ),
+        );
         await video.setVolume(0);
         var ended = false;
         video.addListener(() {
@@ -2823,7 +2843,7 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
         await video.play();
       } catch (e) {
         c.log.warn('screensaver', 'immich video failed (${asset.id}): $e');
-        await video.dispose();
+        await opened?.dispose();
         _failures++;
         _lastFailure = c.immich.readableError(e);
         if (mounted) unawaited(_show(next + 1));

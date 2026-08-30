@@ -95,3 +95,10 @@ and play.
 - **Media browser hides items** as incompatible: the renderer advertises
   what it can decode, and Home Assistant filters accordingly. Anything
   the device genuinely cannot play is better hidden than failing.
+- **A video shows an error icon**: the card names the reason and the App
+  Logs carry the full player error under the `dlna` tag. If it reads "This
+  device cannot decode this video", the device's hardware decoder refused
+  the file. Kiosk Satellite already retries such a video on a platform
+  view, which is what gets H.264 playing on MediaTek devices like the Echo
+  Show 8 and some Lenovo tablets; a failure that survives the retry is a
+  format the device truly cannot decode.

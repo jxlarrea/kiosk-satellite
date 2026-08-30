@@ -187,6 +187,7 @@ class DlnaManager extends Manager {
   Timer? _aliveTimer;
   Timer? _restartDebounce;
   Timer? _activityTick;
+  Timer? _failureStop;
   String _uuid = '';
   String _ip = '';
   String _appVersion = '';
@@ -300,6 +301,8 @@ class DlnaManager extends Manager {
     _aliveTimer = null;
     _activityTick?.cancel();
     _activityTick = null;
+    _failureStop?.cancel();
+    _failureStop = null;
     if (_ssdp != null) {
       _sendByeBye();
       _ssdp!.close();
@@ -840,6 +843,34 @@ class DlnaManager extends Manager {
     stopPlayback();
   }
 
+  /// The device's decoder refused the Flutter texture and the player is
+  /// starting over on a platform view (issue #374). Worth a line: the
+  /// second attempt costs a second of black, and knowing which devices
+  /// take this path is the only way to see the problem spread.
+  void reportDecoderFallback(String uri, String error) {
+    if (media.value?.uri != uri) return;
+    log.warn(
+      name,
+      'decoder refused the video surface, retrying on a platform view: $error',
+    );
+  }
+
+  /// Playback that never started, or one that died. The player shows the
+  /// reason; the log keeps it, and the controller is told the media stopped
+  /// so Home Assistant does not sit on PLAYING forever.
+  ///
+  /// The stop is delayed: it clears the media, and with it the card the
+  /// viewer is reading. A few seconds is long enough to see why the wall
+  /// went black.
+  void reportPlaybackFailure(String uri, String error) {
+    if (media.value?.uri != uri) return;
+    log.error(name, 'playback failed: $error');
+    _failureStop?.cancel();
+    _failureStop = Timer(const Duration(seconds: 6), () {
+      if (media.value?.uri == uri) stopPlayback();
+    });
+  }
+
   /// A user tap on the overlay is the same as a controller Stop.
   void userDismiss() => stopPlayback();
 
@@ -857,6 +888,8 @@ class DlnaManager extends Manager {
     _position = Duration.zero;
     _activityTick?.cancel();
     _activityTick = null;
+    _failureStop?.cancel();
+    _failureStop = null;
     return _notifyAvt();
   }
 

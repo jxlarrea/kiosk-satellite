@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 
 import '../app_container.dart';
 import '../managers/dlna/dlna_manager.dart';
+import 'video_surface.dart';
 
 /// Full-screen display for media pushed over DLNA: an image, a video, or
 /// audio (shown as a title card while it plays). Sits above the kiosk and
@@ -482,7 +483,7 @@ class _DlnaPlayer extends StatefulWidget {
 class _DlnaPlayerState extends State<_DlnaPlayer> {
   VideoPlayerController? _controller;
   Timer? _progress;
-  bool _failed = false;
+  String? _failure;
 
   @override
   void initState() {
@@ -496,17 +497,24 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
 
   Future<void> _start() async {
     try {
-      final controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.media.uri),
-        // HLS must be declared: ExoPlayer's by-extension sniffing misses
-        // signed HA camera-stream URLs and tries progressive extractors,
-        // which cannot read a playlist ("None of the available
-        // extractors could read the stream").
-        formatHint: widget.media.hls ? VideoFormat.hls : null,
+      final controller = await openVideo(
+        (viewType) => VideoPlayerController.networkUrl(
+          Uri.parse(widget.media.uri),
+          // HLS must be declared: ExoPlayer's by-extension sniffing misses
+          // signed HA camera-stream URLs and tries progressive extractors,
+          // which cannot read a playlist ("None of the available
+          // extractors could read the stream").
+          formatHint: widget.media.hls ? VideoFormat.hls : null,
+          viewType: viewType,
+        ),
+        onFallback: (e) =>
+            widget.dlna.reportDecoderFallback(widget.media.uri, '$e'),
       );
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
       _controller = controller;
-      await controller.initialize();
-      if (!mounted) return;
       _applyVolume();
       await controller.play();
       controller.addListener(_onPlayerEvent);
@@ -518,13 +526,40 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
       });
       setState(() {});
     } catch (e) {
-      if (mounted) setState(() => _failed = true);
+      _fail('$e');
     }
+  }
+
+  /// A player that never started, or one that died mid-stream. The reason
+  /// goes to the App Logs and onto the screen - a bare error icon left the
+  /// only account of the failure in logcat (issue #374).
+  void _fail(String error) {
+    if (!mounted || _failure != null) return;
+    setState(() => _failure = _readable(error));
+    widget.dlna.reportPlaybackFailure(widget.media.uri, error);
+  }
+
+  /// The card holds a sentence, not an ExoPlayer dump. Everything the
+  /// wording drops is in the log line the same failure writes.
+  static String _readable(String error) {
+    if (isVideoDecoderFailure(error)) {
+      return 'This device cannot decode this video.';
+    }
+    if (error.contains('Source error') ||
+        error.contains('UnrecognizedInputFormatException') ||
+        error.contains('extractors could read')) {
+      return 'This file could not be read.';
+    }
+    return 'This media could not be played.';
   }
 
   void _onPlayerEvent() {
     final v = _controller?.value;
     if (v == null) return;
+    if (v.hasError) {
+      _fail(v.errorDescription ?? 'unknown player error');
+      return;
+    }
     // Completion: position pinned at duration and not playing.
     if (v.isInitialized &&
         !v.isPlaying &&
@@ -571,9 +606,27 @@ class _DlnaPlayerState extends State<_DlnaPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    if (_failed) {
-      return const Center(
-        child: Icon(Icons.error_outline, color: Colors.white38, size: 72),
+    final failure = _failure;
+    if (failure != null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, color: Colors.white38, size: 72),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              failure,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white54, fontSize: 18),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'See the App Logs for details',
+            style: TextStyle(color: Colors.white24, fontSize: 14),
+          ),
+        ],
       );
     }
     final controller = _controller;
