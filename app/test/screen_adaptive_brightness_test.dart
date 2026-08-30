@@ -217,6 +217,25 @@ void main() {
     expect(await knob(), closeTo(0.3, 0.001));
   });
 
+  test('a knob turned under a screensaver that leaves brightness alone '
+      'lands at once', () async {
+    await build({});
+    bus.publish(const ScreensaverStateChanged(active: true));
+    await settle();
+    // A clock with Screensaver brightness off: no ceiling write came in.
+    await commands.execute('setBrightness', {'level': 0.4});
+    await settle();
+    expect(settings.get(defs.defaultBrightness), 0.4);
+    expect(writes.last, closeTo(0.4, 0.001));
+    // Same with the switch on: Maximum lands, dimmed for the room.
+    await build(on);
+    bus.publish(const ScreensaverStateChanged(active: true));
+    await settle();
+    await settings.set(defs.adaptiveMaxBrightness, 0.4);
+    await settle();
+    expect(writes.last, closeTo(0.2, 0.001));
+  });
+
   test('a knob turned under the screensaver waits for it to end', () async {
     await build(on);
     bus.publish(const ScreensaverStateChanged(active: true));

@@ -194,7 +194,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       final lux = _lastLux;
       _factor = lux == null ? 1.0 : _curve.factor(lux);
       _logAdaptiveOn(lux);
-      await setBrightness(_maxBrightness, ceiling: true);
+      await _setCeiling(_maxBrightness);
     } else if (_settings.get(defs.setBrightnessOnLaunch)) {
       // The default brightness, applied at start when its gate is on. Also
       // applied live as the slider moves (or the gate turns on): brightness
@@ -460,9 +460,14 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   bool get _adaptiveOn =>
       _lightSensor && _settings.get(defs.adaptiveBrightness);
 
-  /// The screensaver is showing: a knob turned now is stored and lands
-  /// when it ends, since the screensaver's own level owns the panel.
+  /// The screensaver is showing, and whether it has taken the panel this
+  /// session (a Dim or Black mode, its own brightness, a schedule entry's
+  /// level: all of them arrive as ceiling writes while it shows). A knob
+  /// turned while it owns the panel is stored and lands when it ends; a
+  /// screensaver that leaves brightness alone (a clock with Screensaver
+  /// brightness off) is no reason to hold a slider back.
   bool _screensaverActive = false;
+  bool _screensaverOwnsPanel = false;
   bool _knobPending = false;
 
   /// Why the last knob write was refused (the range validation), for the
@@ -488,17 +493,18 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   /// the room, or Default brightness as is. Under the screensaver it
   /// waits, and the mirrors still hear the new level.
   Future<void> _applyKnob() async {
-    if (_screensaverActive) {
+    if (_screensaverActive && _screensaverOwnsPanel) {
       _knobPending = true;
       final panel = _lastWritten ?? await _readPanel() ?? _knobLevel;
       bus.publish(BrightnessChanged(level: _knobLevel, panel: panel));
       return;
     }
-    await setBrightness(_knobLevel, ceiling: true);
+    await _setCeiling(_knobLevel);
   }
 
   Future<void> _onScreensaver(bool active) async {
     _screensaverActive = active;
+    _screensaverOwnsPanel = false;
     if (active) return;
     // The screensaver restored the ceiling it saved when it started; a
     // knob turned meanwhile, or Maximum brightness as the dashboard's
@@ -595,7 +601,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       await _applyKnob();
     } else if (!_screensaverActive) {
       final ceiling = _ceiling;
-      if (ceiling != null) await setBrightness(ceiling, ceiling: true);
+      if (ceiling != null) await _setCeiling(ceiling);
     }
   }
 
@@ -711,7 +717,13 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   /// when it would cross the other end of the adaptive range.
   Future<bool> setBrightness(double level, {bool ceiling = false}) async {
     final clamped = level.clamp(0.0, 1.0);
-    if (!ceiling) {
+    if (ceiling) {
+      // Only the screensaver asks for a ceiling from outside; while it
+      // shows, that is it taking the panel.
+      if (_screensaverActive) _screensaverOwnsPanel = true;
+      return _setCeiling(clamped);
+    }
+    {
       final def = _knobDef;
       // Trim float noise (ESPHome carries a float32: 0.6 arrives as
       // 0.6000000238) so a whole percent stores as one.
@@ -734,8 +746,13 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       }
       return true;
     }
-    _ceiling = clamped;
-    final panel = (clamped * _factor).clamp(0.0, 1.0);
+  }
+
+  /// Set the bright-room level for this session and put it on the panel,
+  /// dimmed by the factor.
+  Future<bool> _setCeiling(double level) async {
+    _ceiling = level;
+    final panel = (level * _factor).clamp(0.0, 1.0);
     if (!await _write(panel)) return false;
     bus.publish(BrightnessChanged(level: _levelFor(panel), panel: panel));
     return true;
