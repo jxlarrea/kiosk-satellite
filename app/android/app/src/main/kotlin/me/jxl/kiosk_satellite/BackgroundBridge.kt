@@ -366,6 +366,13 @@ class BackgroundBridge(
                 // panel is lit again: "not_locked", "secure", "started",
                 // "no_overlay_grant" or "failed" (issue #372).
                 "dismissKeyguard" -> result.success(dismissKeyguard())
+                // Whether the lock screen is still up, asked a moment after
+                // a dismiss: some ROMs refuse the request to every app but
+                // their own (Fire OS 8), and the refusal has no callback.
+                "keyguardLocked" -> result.success(
+                    (context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager)
+                        .isKeyguardLocked,
+                )
                 // True panel off. Android only grants this to an active
                 // device admin (lockNow); plain apps have no API for it.
                 "screenOff" -> result.success(screenOff())

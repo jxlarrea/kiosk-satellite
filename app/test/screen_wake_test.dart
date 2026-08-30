@@ -32,6 +32,7 @@ void main() {
   late bool activityLights;
   late String activityOutcome;
   late String? keyguardOutcome;
+  late bool keyguardStays;
   late List<String> calls;
   late List<ScreenStateChanged> events;
   late Logger log;
@@ -44,7 +45,9 @@ void main() {
     bool activity = false,
     String outcome = 'started',
     String? keyguard,
+    bool keyguardRefuses = false,
   }) async {
+    keyguardStays = keyguardRefuses;
     interactive = lit;
     wakeLockLights = wakeLock;
     activityLights = activity;
@@ -71,6 +74,8 @@ void main() {
               return activityOutcome;
             case 'dismissKeyguard':
               return keyguardOutcome;
+            case 'keyguardLocked':
+              return keyguardStays;
             case 'ambientDisplaySetting':
               return -1;
             default:
@@ -129,6 +134,23 @@ void main() {
       contains('the panel lit on the lock screen; dismissing it'),
     );
     expect(screen.isScreenOn, isTrue);
+  });
+
+  test('a dismissal that went through is verified quietly', () async {
+    await build(wakeLock: true, keyguard: 'started');
+    await screen.screenOn();
+    await settle();
+    expect(calls, contains('keyguardLocked'));
+    expect(warnings(), isEmpty);
+  });
+
+  test('a lock screen that refused to go is named, with the fix', () async {
+    await build(wakeLock: true, keyguard: 'started', keyguardRefuses: true);
+    await screen.screenOn();
+    await settle();
+    expect(warnings(), hasLength(1));
+    expect(warnings().first, contains('refused to go'));
+    expect(warnings().first, contains('locksettings set-disabled true'));
   });
 
   test('a secured lock screen is named, not fought', () async {

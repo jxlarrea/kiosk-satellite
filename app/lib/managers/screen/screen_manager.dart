@@ -934,7 +934,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
       final lit = await _isInteractive();
       if (lit == null) return;
       if (lit) {
-        await _dismissKeyguard();
+        await _dismissKeyguard(generation);
         return;
       }
       log.warn(
@@ -964,7 +964,7 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     if (lit) {
       log.info(name, 'the activity route lit the panel');
       _setScreenOn(true, source: 'app');
-      await _dismissKeyguard();
+      await _dismissKeyguard(generation);
     } else {
       log.warn(name, 'the panel stayed dark after both wake routes');
       _setScreenOn(false, source: 'probe');
@@ -982,7 +982,14 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
   /// once it is showing over it; an unsecured keyguard goes on its own. A
   /// secured one is the person's lock and is left alone, named in the log
   /// so a dark panel that keeps coming back has an explanation.
-  Future<void> _dismissKeyguard() async {
+  ///
+  /// The request is then checked, because a ROM can refuse it without a
+  /// word: Fire OS 8 lets only apps holding an Amazon signature permission
+  /// dismiss or show over its keyguard, and drops everyone else's request
+  /// with no callback. A lock screen still up after the request gets the
+  /// one fix that works there named in the log, so the person is not left
+  /// reading "dismissing it" over a panel that keeps going dark.
+  Future<void> _dismissKeyguard(int generation) async {
     String? outcome;
     try {
       outcome = await _background.invokeMethod<String>('dismissKeyguard');
@@ -992,6 +999,25 @@ class ScreenManager extends Manager with WidgetsBindingObserver {
     switch (outcome) {
       case 'started':
         log.info(name, 'the panel lit on the lock screen; dismissing it');
+        // The activity's own backstop is 3s; a dismissal that worked is
+        // long done by then.
+        await Future<void>.delayed(_activitySettle * 2);
+        if (generation != _wakeGeneration) return;
+        bool? locked;
+        try {
+          locked = await _background.invokeMethod<bool>('keyguardLocked');
+        } catch (_) {
+          return;
+        }
+        if (locked == true) {
+          log.warn(
+            name,
+            'the lock screen refused to go: this ROM lets only its own apps '
+            'dismiss it (Fire OS does), so the kiosk stays behind it. '
+            'Disable the lock screen: adb shell locksettings set-disabled '
+            'true, then reboot',
+          );
+        }
       case 'secure':
         log.warn(
           name,

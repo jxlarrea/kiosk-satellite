@@ -342,8 +342,13 @@ So every wake clears a lock screen that has no PIN, pattern or password
 behind it (on Android 10+ that takes the Display over other apps
 permission, which the wizard requests). One that is secured is left
 alone: the kiosk then waits behind it until someone unlocks the device,
-and the log says so. A kiosk that powers its panel off is best set up
-with no screen lock, or with the lock screen disabled outright.
+and the log says so. Fire OS 8 refuses the dismissal to every app but
+Amazon's own and the kiosk stays behind the lock screen there too, which
+the log names along with the fix: disable the lock screen from a
+computer with `adb shell locksettings set-disabled true` and reboot the
+tablet (the reboot matters, the keyguard reads the switch when it
+starts). A kiosk that powers its panel off is best set up with no screen
+lock, or with the lock screen disabled outright.
 
 The screensaver session stays active behind the dark panel, which is
 what makes waking symmetrical: every dismiss source powers the panel
