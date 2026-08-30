@@ -2277,7 +2277,7 @@ export function updatePersonSensorRows() {
   const command = 'adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS';
   const copy = copyBox(command);
   copy.el.classList.add('person-grant-command');
-  copy.el.style.cssText = 'margin:0 16px 12px;';
+  copy.el.style.cssText = 'margin:12px 16px;';
   panel.append(h, permCard);
 
   const paintPerm = (st) => {
