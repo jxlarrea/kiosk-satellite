@@ -154,7 +154,9 @@ rather than an app racing to close them.
 Making Kiosk Satellite the device owner is a one-time `adb` command on a
 device **without any Google or Samsung accounts signed in** (remove them
 first, or factory reset; accounts can be added back afterwards on most
-ROMs):
+ROMs) **and without an owner of its own**. That second rule rules out
+Amazon Fire tablets, which carry Parental Controls as profile owner from
+first boot, see [Amazon Fire tablets](fire.md):
 
 ```
 adb shell dpm set-device-owner me.jxl.kiosk_satellite/.KioskAdminReceiver

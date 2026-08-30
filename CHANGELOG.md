@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The docs no longer offer device ownership as something an Amazon Fire tablet can be talked into. Fire OS provisions Amazon's Parental Controls as profile owner on the first boot, Android allows one owner per user, and `dpm set-device-owner` refuses whatever the accounts say. [Amazon Fire tablets](docs/fire.md), [Updates](docs/updates.md) and [Kiosk and Lockdown](docs/kiosk.md) all said the accounts were the only obstacle.
+
 ## v2026.8.104 - 2026-08-30
 
 ### Added

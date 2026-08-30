@@ -119,7 +119,10 @@ see [Kiosk and Lockdown](kiosk.md#going-further-device-ownership).
 
 Android refuses the command while any account is signed in on the device
 (Google, Samsung, Meta and the like). Remove them first or start from a
-factory reset. With the tablet on `adb`:
+factory reset. It also refuses on a device that already has an owner:
+Amazon Fire tablets provision Parental Controls as profile owner at first
+boot, so no Fire can take this tier at all, whatever its accounts say. See
+[Amazon Fire tablets](fire.md). With the tablet on `adb`:
 
 ```
 adb shell dpm set-device-owner me.jxl.kiosk_satellite/.KioskAdminReceiver
