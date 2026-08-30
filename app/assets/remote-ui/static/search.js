@@ -1,4 +1,4 @@
-import { $, state } from './core.js';
+import { $, dependsSatisfiedBy, state } from './core.js';
 import { TABS, TAB_TITLES, currentPath, setNav, showTab } from './tabs.js';
 
 /* ---- Settings search ---- */
@@ -263,7 +263,7 @@ export function resolveSearchAnchor(e) {
     if (!s.dependsOn) return true;
     const dep = byKey[s.dependsOn];
     if (!dep) return true;
-    return dep.value === (s.dependsOnValue ?? true) && shown(dep);
+    return dependsSatisfiedBy(dep.value, s.dependsOnValue) && shown(dep);
   };
   let s = byKey[e.key];
   while (s && !shown(s)) s = s.dependsOn ? byKey[s.dependsOn] : null;

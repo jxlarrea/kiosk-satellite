@@ -56,6 +56,14 @@ export const cmd = (name, params = {}) =>
 // two stacked them instead of replacing them: the wizard filled the screen
 // and the settings UI of a not-yet-configured device sat right below it, one
 // scroll away. Route every switch through here so that cannot happen again.
+// Whether a gating setting's value satisfies a row's dependsOnValue, the
+// device's SettingDef.dependsSatisfiedBy: a list means any of them (the
+// Immich From date, which both Since and Timeframe want), a bare value
+// means equality, and an absent one the common boolean switch.
+export function dependsSatisfiedBy(value, want) {
+  return Array.isArray(want) ? want.includes(value) : value === (want ?? true);
+}
+
 export function showView(which) {
   for (const id of ['login', 'wizard', 'app']) {
     $(`#${id}`).classList.toggle('hidden', id !== which);

@@ -65,15 +65,42 @@ bool immichFiltersActive(SettingsManager settings) =>
     ).isNotEmpty ||
     decodeImmichNamed(settings.get(defs.screensaverImmichTags)).isNotEmpty ||
     settings.get(defs.screensaverImmichFavoritesOnly) ||
-    immichTakenAfter(settings) != null;
+    immichTakenAfter(settings) != null ||
+    immichTakenBefore(settings) != null;
 
 /// The oldest capture date the Taken within filter admits, or null for no
-/// limit. Computed at listing time, so a playlist refreshed tonight moves
-/// the window along with it.
+/// limit. A rolling window is computed at listing time, so a playlist
+/// refreshed tonight moves along with it; Since and Timeframe read the
+/// From date instead and stay where they were put (issue #383).
 DateTime? immichTakenAfter(SettingsManager settings, {DateTime? now}) {
-  final days = int.tryParse(settings.get(defs.screensaverImmichTakenWithin));
+  final within = settings.get(defs.screensaverImmichTakenWithin);
+  if (within == defs.immichTakenSince || within == defs.immichTakenRange) {
+    return _immichDay(settings.get(defs.screensaverImmichTakenFrom));
+  }
+  final days = int.tryParse(within);
   if (days == null || days <= 0) return null;
   return (now ?? DateTime.now()).toUtc().subtract(Duration(days: days));
+}
+
+/// The newest capture date admitted, or null for no limit. Only Timeframe
+/// sets one, and the To day counts whole: a photo taken that afternoon is
+/// in, which is what picking the day means (issue #383).
+DateTime? immichTakenBefore(SettingsManager settings) {
+  if (settings.get(defs.screensaverImmichTakenWithin) !=
+      defs.immichTakenRange) {
+    return null;
+  }
+  final day = _immichDay(settings.get(defs.screensaverImmichTakenTo));
+  return day?.add(const Duration(days: 1, microseconds: -1));
+}
+
+/// "YYYY-MM-DD" as the start of that day, UTC. Empty or malformed reads as
+/// no bound: a filter that cannot be parsed must not empty the frame.
+DateTime? _immichDay(String value) {
+  if (value.isEmpty) return null;
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return null;
+  return DateTime.utc(parsed.year, parsed.month, parsed.day);
 }
 
 /// The metadata overlay's lines and the setting that carries each, in the
@@ -603,6 +630,7 @@ class ImmichManager extends Manager {
     String? tagId,
     bool favorite = false,
     DateTime? takenAfter,
+    DateTime? takenBefore,
     bool withPeople = false,
   }) async {
     final response = await http
@@ -619,6 +647,8 @@ class ImmichManager extends Manager {
             if (tagId != null) 'tagIds': [tagId],
             if (favorite) 'isFavorite': true,
             if (takenAfter != null) 'takenAfter': takenAfter.toIso8601String(),
+            if (takenBefore != null)
+              'takenBefore': takenBefore.toIso8601String(),
           }),
         )
         .timeout(const Duration(seconds: 20));
@@ -677,6 +707,7 @@ class ImmichManager extends Manager {
     final tags = decodeImmichNamed(_settings.get(defs.screensaverImmichTags));
     final favorite = _settings.get(defs.screensaverImmichFavoritesOnly);
     final takenAfter = immichTakenAfter(_settings);
+    final takenBefore = immichTakenBefore(_settings);
     final albumIds = albums.isEmpty
         ? <String?>[null]
         : <String?>[for (final a in albums) a.id];
@@ -703,6 +734,7 @@ class ImmichManager extends Manager {
               tagId: tagId,
               favorite: favorite,
               takenAfter: takenAfter,
+              takenBefore: takenBefore,
               withPeople: excluded.isNotEmpty,
             );
             for (final item in (result['items'] as List).cast<Map>()) {

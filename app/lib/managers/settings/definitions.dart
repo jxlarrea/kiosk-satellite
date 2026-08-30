@@ -74,8 +74,17 @@ class SettingDef<T> {
   final String? dependsOn;
 
   /// The value [dependsOn] must hold. Defaults to `true` for the common
-  /// boolean-switch case; set to a string to gate on a mode select.
+  /// boolean-switch case; set to a string to gate on a mode select, or to a
+  /// list of them for a row that belongs to more than one mode (the Immich
+  /// From date, which both Since and Timeframe want).
   final Object dependsOnValue;
+
+  /// Whether [value] satisfies [dependsOnValue], which is a list when the
+  /// row belongs to several modes. Both UIs ask this same question, the
+  /// remote's over the serialized definition.
+  bool dependsSatisfiedBy(Object? value) => dependsOnValue is List
+      ? (dependsOnValue as List).contains(value)
+      : value == dependsOnValue;
 
   /// Persisted and readable, but never shown as a settings row. For state the
   /// app tracks on the user's behalf — e.g. whether the chosen media is a
@@ -2351,7 +2360,24 @@ const screensaverImmichFavoritesOnly = SettingDef<bool>(
 /// The "Taken within" choices: the value is the number of days back, as a
 /// string, with the empty string for no limit. Days rather than calendar
 /// months, so the cutoff is the same arithmetic on both UIs and the server.
-const immichTakenWithinOptions = ['', '30', '90', '365', '730', '1825', '3650'];
+///
+/// The last two are the fixed windows (issue #383) and carry no days: a
+/// rolling window moves forward every night, which is wrong for a frame
+/// pinned to a wedding or to the year a scanned album starts. `since`
+/// reads the From date, `range` reads From and To.
+const immichTakenWithinOptions = [
+  '',
+  '30',
+  '90',
+  '365',
+  '730',
+  '1825',
+  '3650',
+  immichTakenSince,
+  immichTakenRange,
+];
+const immichTakenSince = 'since';
+const immichTakenRange = 'range';
 const immichTakenWithinLabels = {
   '': 'Any time',
   '30': 'Past month',
@@ -2360,7 +2386,21 @@ const immichTakenWithinLabels = {
   '730': 'Past 2 years',
   '1825': 'Past 5 years',
   '3650': 'Past 10 years',
+  immichTakenSince: 'Since',
+  immichTakenRange: 'Timeframe',
 };
+
+/// A date filter's value: "YYYY-MM-DD", or empty for no bound. Both UIs
+/// pick it from a calendar, so the format is never typed.
+final _immichDatePattern = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+String? immichDateValidator(Object? value) {
+  final text = '${value ?? ''}';
+  if (text.isEmpty) return null;
+  if (!_immichDatePattern.hasMatch(text)) return 'Use YYYY-MM-DD.';
+  final parsed = DateTime.tryParse(text);
+  if (parsed == null) return 'That is not a date.';
+  return null;
+}
 
 const screensaverImmichTakenWithin = SettingDef<String>(
   key: 'screensaver.immich_taken_within',
@@ -2369,11 +2409,41 @@ const screensaverImmichTakenWithin = SettingDef<String>(
   options: immichTakenWithinOptions,
   optionLabels: immichTakenWithinLabels,
   title: 'Taken within',
-  description: 'Skip media taken longer ago than this.',
+  description: 'Only show media taken in this window.',
   category: 'Screensaver',
   section: 'Filters',
   subpage: 'Immich Media screensaver',
   dependsOn: 'screensaver.immich_validated',
+);
+
+const screensaverImmichTakenFrom = SettingDef<String>(
+  key: 'screensaver.immich_taken_from',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'From',
+  description: 'Skip media taken before this date.',
+  placeholder: 'Any time',
+  category: 'Screensaver',
+  section: 'Filters',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_taken_within',
+  dependsOnValue: [immichTakenSince, immichTakenRange],
+  validator: immichDateValidator,
+);
+
+const screensaverImmichTakenTo = SettingDef<String>(
+  key: 'screensaver.immich_taken_to',
+  type: SettingType.string,
+  defaultValue: '',
+  title: 'To',
+  description: 'Skip media taken after this date. The day itself counts.',
+  placeholder: 'Today',
+  category: 'Screensaver',
+  section: 'Filters',
+  subpage: 'Immich Media screensaver',
+  dependsOn: 'screensaver.immich_taken_within',
+  dependsOnValue: immichTakenRange,
+  validator: immichDateValidator,
 );
 
 const screensaverPixelShift = SettingDef<bool>(
@@ -5262,6 +5332,8 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichTags,
   screensaverImmichFavoritesOnly,
   screensaverImmichTakenWithin,
+  screensaverImmichTakenFrom,
+  screensaverImmichTakenTo,
   screensaverWebsiteUrl,
   screensaverWebsiteDoubleTap,
   screensaverCameraViews,

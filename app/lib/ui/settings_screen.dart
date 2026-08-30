@@ -37,6 +37,7 @@ import '../core/permissions.dart';
 import '../managers/wake_word/background_listening.dart';
 import '../managers/wake_word/system_permissions.dart';
 import 'color_picker.dart';
+import 'date_picker.dart';
 import 'gesture_settings.dart';
 import 'entity_picker.dart';
 import 'glance_entity_picker.dart';
@@ -8224,6 +8225,22 @@ class SettingTile extends StatelessWidget {
             ),
           );
         }
+        // A filter date is picked off a calendar, not typed: the control
+        // box shows the day and opens the date picker, on both surfaces
+        // (issue #383). Empty is no bound, which the placeholder names.
+        if (def.key == screensaverImmichTakenFrom.key ||
+            def.key == screensaverImmichTakenTo.key) {
+          final current = value as String;
+          return ListTile(
+            title: Text(def.title),
+            subtitle: Text(def.description),
+            trailing: DateBox(
+              value: current,
+              placeholder: def.placeholder ?? 'Not set',
+              onTap: () => _pickFilterDate(context, current),
+            ),
+          );
+        }
         // The ESPHome encryption key is read back and pasted into Home
         // Assistant, never typed: a read-only copy box, mirrored on the
         // remote. The tap copies the whole key, which a text selection
@@ -8512,6 +8529,19 @@ class SettingTile extends StatelessWidget {
 
   Future<void> _pickTime(BuildContext context, String current) async {
     final picked = await showKsTimePicker(
+      context,
+      title: def.title,
+      initial: current,
+    );
+    if (picked == null) return;
+    await c.settings.setFromJson(def.key, picked);
+    onChanged();
+  }
+
+  /// The From and To filter dates. Clear resolves to the empty string,
+  /// which is the open end the placeholder names, and cancel to null.
+  Future<void> _pickFilterDate(BuildContext context, String current) async {
+    final picked = await showKsDatePicker(
       context,
       title: def.title,
       initial: current,

@@ -6,7 +6,7 @@ import {
   updateMicChannelRow,
 } from './audio.js';
 import { MIC_GROUP_NOTE, cameraAction, exportFileName } from './cameras.js';
-import { $, api, cmd, state } from './core.js';
+import { $, api, cmd, dependsSatisfiedBy, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { renderServicePage } from './service.js';
 import { CATEGORY_TABS } from './gestures.js';
@@ -70,7 +70,7 @@ export async function loadSettings() {
     if (!s.dependsOn) return true;
     const dep = byKey[s.dependsOn];
     if (!dep) return true;
-    return dep.value === (s.dependsOnValue ?? true) && depSatisfied(dep);
+    return dependsSatisfiedBy(dep.value, s.dependsOnValue) && depSatisfied(dep);
   };
   const visible = (s) => !s.hidden && depSatisfied(s);
 
@@ -2168,7 +2168,7 @@ export async function refreshRealMacNote() {
     if (!s.dependsOn) return true;
     const dep = byKey[s.dependsOn];
     if (!dep) return true;
-    return dep.value === (s.dependsOnValue ?? true) && depSatisfied(dep);
+    return dependsSatisfiedBy(dep.value, s.dependsOnValue) && depSatisfied(dep);
   };
   const on = byKey['esphome.real_mac'];
   if (on?.value !== true || !depSatisfied(on)) return;

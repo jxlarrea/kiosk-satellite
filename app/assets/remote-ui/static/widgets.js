@@ -395,6 +395,206 @@ export function pickTime({ title, value }) {
   });
 }
 
+/* ---- Date ---- */
+const CALENDAR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+  + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+  + '<rect x="3" y="5" width="18" height="16" rx="2"/>'
+  + '<path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+  'August', 'September', 'October', 'November', 'December'];
+const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+// "YYYY-MM-DD" for a date, the form both surfaces and the Immich search
+// agree on. Local parts, never toISOString: a date west of UTC would come
+// back as the day before.
+const dateString = (d) =>
+  `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseDate = (v) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || ''));
+  if (!m) return null;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+// A calendar date at rest: the control box showing the value with a
+// calendar glyph, tap opens the picker. Empty reads `placeholder`, which
+// says what no date means here (Any time, Today). The device's DateBox is
+// the same (issue #383).
+export function dateBox({ title, value, placeholder = 'Not set', onPick,
+  full = false }) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'date-box';
+  if (full) btn.classList.add('full');
+  const text = document.createElement('span');
+  btn.appendChild(text);
+  btn.insertAdjacentHTML('beforeend', CALENDAR_ICON);
+  let current = value || '';
+  const set = (v) => {
+    current = v || '';
+    text.textContent = current || placeholder;
+    btn.classList.toggle('empty', !current);
+  };
+  set(current);
+  btn.addEventListener('click', async () => {
+    const picked = await pickDate({ title, value: current });
+    if (picked == null) return;
+    set(picked);
+    onPick(picked);
+  });
+  return { el: btn, set, get value() { return current; } };
+}
+
+// The one date picker, on both surfaces (the device's showKsDatePicker): a
+// month grid with the day tapped, the month stepped by the chevrons beside
+// its name, over Clear, Cancel and Set. Clear is a real answer here, the
+// open end of a filter, which no day on the calendar can say. Resolves to
+// "YYYY-MM-DD", "" for cleared, or null when cancelled.
+export function pickDate({ title, value, last = new Date(), first = new Date(1900, 0, 1) }) {
+  return new Promise((resolve) => {
+    const ceiling = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+    const floor = new Date(first.getFullYear(), first.getMonth(), first.getDate());
+    const today = new Date();
+    let selected = parseDate(value)
+      || new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (selected > ceiling) selected = new Date(ceiling);
+    if (selected < floor) selected = new Date(floor);
+    let shown = new Date(selected.getFullYear(), selected.getMonth(), 1);
+    let years = false;
+    const { back, body, foot } = modalShell({
+      title, width: 360, onDismiss: () => { back.remove(); resolve(null); },
+    });
+    const wrap = document.createElement('div');
+    wrap.className = 'date-pick';
+    const head = document.createElement('div');
+    head.className = 'date-head';
+    // The month name is the way into the years: a decade back is 120 taps
+    // on the chevrons, which is no way to reach the year a scanned album
+    // starts in. Tapping it swaps the days for a list of years, the way
+    // the device's calendar does.
+    const label = document.createElement('button');
+    label.type = 'button';
+    label.className = 'date-month';
+    label.innerHTML = '<span></span><svg viewBox="0 0 24 24" fill="none"'
+      + ' stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+      + ' stroke-linejoin="round">' + CHEVRONS.down + '</svg>';
+    const labelText = label.querySelector('span');
+    label.addEventListener('click', () => { years = !years; paint(); });
+    const grid = document.createElement('div');
+    grid.className = 'date-grid';
+    const yearList = document.createElement('div');
+    yearList.className = 'date-years';
+    const stepMonth = (delta) => {
+      shown = new Date(shown.getFullYear(), shown.getMonth() + delta, 1);
+      paint();
+    };
+    // The same chevron turned either way, so the two point at each other
+    // rather than both leaning the way the time stepper's do.
+    const prev = chevronButton('up', 'Previous month', () => stepMonth(-1));
+    const next = chevronButton('up', 'Next month', () => stepMonth(1));
+    prev.classList.add('date-step', 'date-prev');
+    next.classList.add('date-step', 'date-next');
+    head.append(prev, label, next);
+
+    // Six week rows always, blanks padding the short months out. A grid
+    // that grew a row in August moved the chevrons and resized the modal
+    // under the pointer.
+    const WEEKS = 6;
+    function paintMonth() {
+      grid.textContent = '';
+      for (const d of WEEKDAYS) {
+        const cell = document.createElement('div');
+        cell.className = 'date-weekday';
+        cell.textContent = d;
+        grid.appendChild(cell);
+      }
+      const lead = shown.getDay();
+      const days = new Date(shown.getFullYear(), shown.getMonth() + 1, 0).getDate();
+      for (let i = 0; i < WEEKS * 7; i++) {
+        const day = i - lead + 1;
+        if (day < 1 || day > days) {
+          const blank = document.createElement('div');
+          blank.className = 'date-day-blank';
+          grid.appendChild(blank);
+          continue;
+        }
+        const date = new Date(shown.getFullYear(), shown.getMonth(), day);
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'date-day';
+        cell.textContent = String(day);
+        cell.disabled = date > ceiling || date < floor;
+        if (dateString(date) === dateString(selected)) cell.classList.add('on');
+        cell.addEventListener('click', () => { selected = date; paint(); });
+        grid.appendChild(cell);
+      }
+      next.disabled = new Date(shown.getFullYear(), shown.getMonth() + 1, 1) > ceiling;
+      prev.disabled = new Date(shown.getFullYear(), shown.getMonth(), 0) < floor;
+    }
+
+    function paintYears() {
+      yearList.textContent = '';
+      for (let y = ceiling.getFullYear(); y >= floor.getFullYear(); y--) {
+        const cell = document.createElement('button');
+        cell.type = 'button';
+        cell.className = 'date-year';
+        cell.textContent = String(y);
+        if (y === shown.getFullYear()) cell.classList.add('on');
+        cell.addEventListener('click', () => {
+          // The month is kept, clamped into the range the new year allows.
+          const month = new Date(y, shown.getMonth(), 1);
+          shown = month > ceiling ? new Date(ceiling.getFullYear(), ceiling.getMonth(), 1)
+            : month < floor ? new Date(floor.getFullYear(), floor.getMonth(), 1)
+              : month;
+          years = false;
+          paint();
+        });
+        yearList.appendChild(cell);
+      }
+    }
+
+    function paint() {
+      labelText.textContent = `${MONTHS[shown.getMonth()]} ${shown.getFullYear()}`;
+      label.classList.toggle('open', years);
+      grid.hidden = years;
+      yearList.hidden = !years;
+      prev.hidden = years;
+      next.hidden = years;
+      if (years) {
+        paintYears();
+        // Open on the year showing, not at the top of the century. Its own
+        // scrollTop, not scrollIntoView, which drags the modal's body with
+        // it and hides the header.
+        const on = yearList.querySelector('.date-year.on');
+        if (on) {
+          yearList.scrollTop = on.offsetTop - (yearList.clientHeight - on.offsetHeight) / 2;
+        }
+      } else {
+        paintMonth();
+      }
+    }
+    paint();
+    const clear = document.createElement('button');
+    clear.className = 'btn-text';
+    clear.textContent = 'Clear';
+    clear.addEventListener('click', () => { back.remove(); resolve(''); });
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-text';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => { back.remove(); resolve(null); });
+    const setBtn = document.createElement('button');
+    setBtn.className = 'btn-primary';
+    setBtn.textContent = 'Set';
+    setBtn.addEventListener('click', () => {
+      back.remove();
+      resolve(dateString(selected));
+    });
+    wrap.append(head, grid, yearList);
+    body.appendChild(wrap);
+    foot.append(clear, cancel, setBtn);
+  });
+}
+
 /* ---- Color ---- */
 // The clock and widget tints, as the device stores them: "r,g,b".
 const COLOR_PRESETS = [['White', '#FAFAFA'], ['Warm', '#FFE0B2'],

@@ -542,6 +542,63 @@
   .time-label { font-size: 12.5px; color: var(--muted); }
   .time-colon { font-size: 44px; line-height: 1; color: var(--text);
     padding-bottom: 60px; }
+  /* A calendar date at rest: the time box with a calendar glyph, tap
+     opens the date picker (widgets.js pickDate). */
+  .date-box { display: inline-flex; align-items: center; gap: 10px;
+    flex: none; height: 44px; padding: 0 12px; border-radius: var(--radius-sm);
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); font-size: 15px; font-variant-numeric: tabular-nums;
+    cursor: pointer; }
+  .date-box.full { width: 100%; justify-content: space-between; }
+  .date-box.empty { color: var(--muted); }
+  .date-box svg { width: 20px; height: 20px; color: var(--muted); flex: none; }
+  .date-box:hover { border-color: var(--outline); }
+  .date-box:focus-visible { outline: 2px solid var(--primary);
+    outline-offset: 3px; }
+  /* The date picker: the month with a chevron either side over a seven
+     column grid, the picked day on the primary disc. */
+  .date-pick { display: flex; flex-direction: column; gap: 8px;
+    padding: 4px 0; }
+  /* The grid, the years and the month chevrons take turns, and each has a
+     display of its own that would outrank the [hidden] attribute. */
+  .date-pick [hidden] { display: none; }
+  .date-head { display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; }
+  /* The month is a button: it opens the years. Its chevron turns when
+     they are showing, the way the device's calendar marks the mode. */
+  .date-month { display: inline-flex; align-items: center; justify-content: center;
+    gap: 4px; flex: 1; padding: 4px 8px; border: none; border-radius: var(--radius-sm);
+    background: transparent; font-size: 16px; font-weight: 500;
+    color: var(--text); cursor: pointer; }
+  .date-month:hover { background: var(--surface-2); }
+  .date-month svg { width: 18px; height: 18px; color: var(--muted);
+    transition: transform .15s; }
+  .date-month.open svg { transform: rotate(180deg); }
+  .date-prev svg { transform: rotate(-90deg); }
+  .date-next svg { transform: rotate(90deg); }
+  /* Six week rows always, so a 31 day month starting on a Saturday does
+     not grow the dialog under the pointer. */
+  .date-grid { display: grid; grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: 32px repeat(6, 40px); gap: 2px; justify-items: center; }
+  .date-weekday { height: 32px; line-height: 32px; font-size: 12.5px;
+    color: var(--muted); }
+  .date-day { width: 40px; height: 40px; padding: 0; border: none;
+    border-radius: 50%; background: transparent; color: var(--text);
+    font-size: 15px; font-variant-numeric: tabular-nums; cursor: pointer; }
+  .date-day:hover:not(:disabled) { background: var(--surface-2); }
+  .date-day.on { background: var(--primary); color: var(--primary-ink); }
+  .date-day:disabled { color: var(--muted); opacity: .4; cursor: default; }
+  /* The years, in the space the days had: three columns, scrolled to the
+     year showing. */
+  .date-years { display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 4px; height: 284px; overflow-y: auto; align-content: start;
+    /* The offset parent for the scroll that opens on the current year. */
+    position: relative; }
+  .date-year { height: 40px; padding: 0; border: none; border-radius: 20px;
+    background: transparent; color: var(--text); font-size: 15px;
+    font-variant-numeric: tabular-nums; cursor: pointer; }
+  .date-year:hover { background: var(--surface-2); }
+  .date-year.on { background: var(--primary); color: var(--primary-ink); }
   /* A color at rest: a 34 circle swatch with an outline ring. The swatch
      is the value; tap opens the color picker (widgets.js pickColor). */
   .swatch { flex: none; width: 34px; height: 34px; padding: 0;

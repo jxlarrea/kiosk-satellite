@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- **Since** and **Timeframe** at the end of the Immich screensaver's **Taken within** choices (#383), on the device and in the remote admin alike. Since reveals a **From** date and shows everything taken from that day on, Timeframe reveals **From** and **To** and shows the days between them, both ends counting whole, picked off a calendar on either surface, whose month heading opens the years so a date decades back is a couple of taps away. The rolling windows move forward every night, which is wrong for a frame meant to start at a wedding, a birth or the year a scanned album begins, and there was no way to pin one. Clear in the picker puts an end back to open, and Any time drops the filter.
 - An **App version** diagnostic sensor on the ESPHome integration, holding the Kiosk Satellite release the device is running (#381). The Update entity only says whether a newer release exists, and a fleet dashboard listing every kiosk's version, or an automation that fires once a tablet reaches a version, had nothing to read.
 
 ### Changed

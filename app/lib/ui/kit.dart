@@ -555,6 +555,57 @@ class TimeBox extends StatelessWidget {
   }
 }
 
+/// A calendar date at rest: the control box showing the value with a 20
+/// calendar glyph, the TimeBox in every other respect. Tapping opens the
+/// date picker. Empty reads [placeholder] in muted text, which says what
+/// no date means here (Any time, Today) rather than Not set. The remote's
+/// .date-box is the same (issue #383).
+class DateBox extends StatelessWidget {
+  const DateBox({
+    super.key,
+    required this.value,
+    required this.onTap,
+    this.placeholder = 'Not set',
+    this.expand = false,
+  });
+
+  /// "YYYY-MM-DD", or empty for no date.
+  final String value;
+  final VoidCallback onTap;
+  final String placeholder;
+
+  /// Fill the available width, for a labeled field inside an editor.
+  final bool expand;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final text = Text(
+      value.isEmpty ? placeholder : value,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: value.isEmpty ? scheme.onSurfaceVariant : scheme.onSurface,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+    return ControlBox(
+      onTap: onTap,
+      child: Row(
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          if (expand) Expanded(child: text) else text,
+          const SizedBox(width: 10),
+          Icon(
+            Icons.event_outlined,
+            size: 20,
+            color: scheme.onSurfaceVariant,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// A value the user takes elsewhere (the ESPHome encryption key): the
 /// control box, read only, the value in mono, with a 36 copy disc inside
 /// its end. Tapping anywhere on the box copies; the disc turns to a

@@ -408,7 +408,7 @@ class SettingsManager extends Manager {
     // Transitive: the dependency must both hold *and* itself be visible, so a
     // setting can gate on a hidden flag that gates on the mode (folder
     // playlist settings → media_is_folder → mode == media).
-    return get(dep) == def.dependsOnValue && visible(dep);
+    return def.dependsSatisfiedBy(get(dep)) && visible(dep);
   }
 
   List<Map<String, Object?>> describe() => [

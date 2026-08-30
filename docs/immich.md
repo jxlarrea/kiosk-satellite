@@ -54,6 +54,8 @@ Validate button above), then these.
 | Filters | Tags | Any | See [Filters](#filters). |
 | Filters | Favorites only | off | See [Filters](#filters). |
 | Filters | Taken within | Any time | See [Filters](#filters). |
+| Filters | From | Any time | The date Since and Timeframe start at. |
+| Filters | To | Today | The date Timeframe ends at. |
 
 The playlist is fetched from the server each time the screensaver
 activates, so new uploads and album changes are picked up on the next
@@ -81,9 +83,18 @@ Every filter that is set has to hold, and a photo is never shown twice.
 - **Favorites only**: only media marked as favorite in Immich. The
   quickest way to curate a frame is to heart the photos that belong on
   it.
-- **Taken within**: skip media taken longer ago than the past month, 3
-  months, year, 2, 5 or 10 years. The window moves along with the
-  calendar, so a frame set to the past year keeps showing the past year.
+- **Taken within**: skip media outside a window. The rolling choices are
+  the past month, 3 months, year, 2, 5 or 10 years, and they move along
+  with the calendar, so a frame set to the past year keeps showing the
+  past year. **Since** and **Timeframe** pin the window instead: Since
+  reveals a **From** date and shows everything taken from that day on,
+  Timeframe reveals **From** and **To** and shows the days between them,
+  both ends counting whole. Pick a date off the calendar on either
+  surface, tapping the month heading to jump straight to a year rather
+  than stepping months. **Clear** in the picker puts an end back to open,
+  and Any time drops the filter altogether. A pinned window is the one to use for a
+  frame that should start at a wedding, a birth or the year a scanned
+  album begins, since a rolling one walks past it.
 
 Picking several people (or tags) means any of them, not all of them at
 once: Immich itself reads a list of people as "everyone in the same

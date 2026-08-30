@@ -89,6 +89,9 @@ void main() {
         final after = body['takenAfter'] == null
             ? null
             : DateTime.parse(body['takenAfter'] as String);
+        final before = body['takenBefore'] == null
+            ? null
+            : DateTime.parse(body['takenBefore'] as String);
         final items = <Map<String, Object?>>[];
         var index = 0;
         for (final asset in library) {
@@ -103,7 +106,8 @@ void main() {
               (wantPeople == null || wantPeople.every(people.contains)) &&
               (wantTags == null || wantTags.every(tags.contains)) &&
               (body['isFavorite'] != true || asset['favorite'] == true) &&
-              (after == null || taken.isAfter(after));
+              (after == null || taken.isAfter(after)) &&
+              (before == null || taken.isBefore(before));
           if (matches) {
             items.add({
               'id': asset['id'],
@@ -357,14 +361,123 @@ void main() {
     expect(immichFiltersActive(settings), isTrue);
   });
 
-  test('the "Taken within" choices all read as a day count', () {
+  test('the "Taken within" choices all read as a day count or a fixed '
+      'window', () {
     for (final option in defs.immichTakenWithinOptions) {
       expect(defs.immichTakenWithinLabels, contains(option));
-      if (option.isEmpty) continue;
+      if (option.isEmpty ||
+          option == defs.immichTakenSince ||
+          option == defs.immichTakenRange) {
+        continue;
+      }
       expect(int.parse(option), greaterThan(0));
     }
     expect(immichTakenAfter(settings), isNull);
+    expect(immichTakenBefore(settings), isNull);
     expect(immichFiltersActive(settings), isFalse);
+  });
+
+  group('fixed windows (issue #383)', () {
+    setUp(() async {
+      library = [
+        {
+          'id': 'before',
+          'people': <String>[],
+          'tags': <String>[],
+          'taken': DateTime.utc(2019, 12, 31, 23),
+        },
+        {
+          'id': 'start',
+          'people': <String>[],
+          'tags': <String>[],
+          'taken': DateTime.utc(2020, 1, 1, 8),
+        },
+        {
+          'id': 'end',
+          'people': <String>[],
+          'tags': <String>[],
+          'taken': DateTime.utc(2020, 6, 30, 22),
+        },
+        {
+          'id': 'after',
+          'people': <String>[],
+          'tags': <String>[],
+          'taken': DateTime.utc(2020, 7, 1, 1),
+        },
+      ];
+    });
+
+    test('Since keeps the From date instead of a rolling window', () async {
+      await settings.set(
+        defs.screensaverImmichTakenWithin,
+        defs.immichTakenSince,
+      );
+      await settings.set(defs.screensaverImmichTakenFrom, '2020-01-01');
+      expect(ids(await immich.listAssets()), ['start', 'end', 'after']);
+      expect(
+        searches.single['takenAfter'],
+        DateTime.utc(2020, 1, 1).toIso8601String(),
+      );
+      expect(searches.single.keys, isNot(contains('takenBefore')));
+      expect(immichFiltersActive(settings), isTrue);
+    });
+
+    test('Timeframe sends both ends and the To day counts whole', () async {
+      await settings.set(
+        defs.screensaverImmichTakenWithin,
+        defs.immichTakenRange,
+      );
+      await settings.set(defs.screensaverImmichTakenFrom, '2020-01-01');
+      await settings.set(defs.screensaverImmichTakenTo, '2020-06-30');
+      expect(ids(await immich.listAssets()), ['start', 'end']);
+      expect(
+        searches.single['takenBefore'],
+        DateTime.utc(2020, 6, 30, 23, 59, 59, 999, 999).toIso8601String(),
+      );
+    });
+
+    test('a cleared or malformed date is no bound at all', () async {
+      await settings.set(
+        defs.screensaverImmichTakenWithin,
+        defs.immichTakenSince,
+      );
+      expect(immichTakenAfter(settings), isNull);
+      expect(immichFiltersActive(settings), isFalse);
+      await settings.setFromJson(
+        defs.screensaverImmichTakenFrom.key,
+        'the day we moved',
+      );
+      expect(immichTakenAfter(settings), isNull);
+    });
+
+    test('the To date only counts under Timeframe', () async {
+      await settings.set(
+        defs.screensaverImmichTakenWithin,
+        defs.immichTakenSince,
+      );
+      await settings.set(defs.screensaverImmichTakenFrom, '2020-01-01');
+      await settings.set(defs.screensaverImmichTakenTo, '2020-06-30');
+      expect(immichTakenBefore(settings), isNull);
+    });
+
+    test('the date rows follow the mode on both UIs', () {
+      final from = defs.screensaverImmichTakenFrom;
+      final to = defs.screensaverImmichTakenTo;
+      expect(from.dependsSatisfiedBy(defs.immichTakenSince), isTrue);
+      expect(from.dependsSatisfiedBy(defs.immichTakenRange), isTrue);
+      expect(from.dependsSatisfiedBy('365'), isFalse);
+      expect(to.dependsSatisfiedBy(defs.immichTakenRange), isTrue);
+      expect(to.dependsSatisfiedBy(defs.immichTakenSince), isFalse);
+      // The remote admin renders from this, and must gate on the same list.
+      final described = settings
+          .describe()
+          .firstWhere((d) => d['key'] == from.key);
+      expect(described['dependsOn'], defs.screensaverImmichTakenWithin.key);
+      expect(described['dependsOnValue'], [
+        defs.immichTakenSince,
+        defs.immichTakenRange,
+      ]);
+    });
   });
 
   test('immichPeople lists named people alphabetically, hidden ones '

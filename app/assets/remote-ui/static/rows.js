@@ -8,7 +8,7 @@ import {
   entitySearchPicker,
   glanceEntityPicker,
 } from './cameras.js';
-import { api, state } from './core.js';
+import { api, dependsSatisfiedBy, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { updateAdaptiveBrightnessRows, updateFaceRows } from './notices.js';
 import {
@@ -19,6 +19,7 @@ import {
 import { loadSettings, refreshRealMacNote, updatePersonSensorRows } from './settings.js';
 import {
   attachSlider,
+  dateBox,
   messageBox,
   swatch,
   timeBox,
@@ -66,7 +67,7 @@ export function syncGatedRows(key, anchorRow) {
     if (!o.dependsOn) return true;
     const dep = byKey[o.dependsOn];
     if (!dep) return true;
-    return dep.value === (o.dependsOnValue ?? true) && depSatisfied(dep);
+    return dependsSatisfiedBy(dep.value, o.dependsOnValue) && depSatisfied(dep);
   };
   const visible = (o) => !o.hidden && depSatisfied(o);
   // Everything the flip can reach: the rows gated on this one, and the rows
@@ -1059,6 +1060,16 @@ export function settingRow(s) {
   if (s.key === 'ha.theme_dark_at' || s.key === 'ha.theme_light_at') {
     row.appendChild(timeBox({ title: s.title, value: s.value || '',
       onPick: (v) => save(v) }).el);
+    return row;
+  }
+
+  // A filter date is picked off a calendar, not typed: the control box
+  // shows the day and opens the date picker, the same one the device
+  // draws. Empty is the open end the placeholder names (issue #383).
+  if (s.key === 'screensaver.immich_taken_from'
+    || s.key === 'screensaver.immich_taken_to') {
+    row.appendChild(dateBox({ title: s.title, value: s.value || '',
+      placeholder: s.placeholder || 'Not set', onPick: (v) => save(v) }).el);
     return row;
   }
 
