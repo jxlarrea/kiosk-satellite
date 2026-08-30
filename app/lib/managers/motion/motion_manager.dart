@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/command_registry.dart';
@@ -175,11 +176,33 @@ class MotionManager extends Manager {
   /// fresh arguments.
   bool _streamMotion = true;
   bool _streamFaces = false;
+  bool _streamPreview = false;
   bool _streamPalms = false;
 
   bool get _wantMotion => enabled || _postponeEnabled || _sensorEnabled;
   bool get _wantFaces =>
       _screensaverActive ? faceEnabled : _postponeFaceEnabled;
+
+  /// The camera preview (discussion #371): the latest frame the native
+  /// side handed over while a preview is showing, null otherwise. The
+  /// kiosk screen's FacePreviewOverlay draws it; frames are JPEGs in
+  /// sensor orientation with their rotation and mirroring alongside
+  /// (see [FacePreviewFrame]).
+  final facePreview = ValueNotifier<FacePreviewFrame?>(null);
+
+  /// Whether a session should ask for the preview: the switch, on a
+  /// session that looks for faces (the only thing that can open the
+  /// window). The native side sizes its analysis stream up for it.
+  bool get _wantPreview => _wantFaces && _settings.get(defs.facePreview);
+
+  /// The hold that keeps the camera bound through a preview: a face
+  /// dismisses the screensaver, and without Postpone on face the session
+  /// would end with it, frames and all. While it runs, [_shouldRun] is
+  /// true and [_sync] leaves the session alone (a restart would close
+  /// the camera mid-preview); when it ends, [_sync] settles the camera
+  /// the way the session's end would have.
+  Timer? _previewHold;
+  bool get _previewHolding => _previewHold != null;
   bool get _wantPalms => palmEnabled && _screenOn;
 
   StreamSubscription<void>? _camera;
@@ -316,6 +339,11 @@ class MotionManager extends Manager {
       _faceSchedulePolicy = e.dismissOnFace;
       _sync();
     });
+    // A face woke the screen: show what the camera saw, for the
+    // configured span, on the session that saw it. Published ahead of
+    // the screensaver's stop, so the hold is up before the stop's
+    // ScreensaverStateChanged runs [_sync].
+    bus.on<FaceDismissedScreensaver>().listen((_) => _showPreview());
     // A voice interaction: idle the camera's analysis for its span. The
     // detection comes first (the page suspends wake detection a bridge
     // round trip later), the page's resume ends it.
@@ -355,6 +383,13 @@ class MotionManager extends Manager {
       // MQTT-side only (it lives in the HA discovery config): no reason to
       // restart the camera over it.
       if (e.key == defs.motionSensorOffDelay.key) return;
+      // The preview's look and span are read when a preview shows; only
+      // the switch itself changes what the session is bound with.
+      if (e.key == defs.facePreviewSeconds.key ||
+          e.key == defs.facePreviewScale.key ||
+          e.key == defs.facePreviewPosition.key) {
+        return;
+      }
       if (!isGate &&
           !e.key.startsWith('motion.') &&
           !e.key.startsWith('face.') &&
@@ -458,6 +493,7 @@ class MotionManager extends Manager {
   bool get _shouldRun =>
       _sensorEnabled ||
       _wantPalms ||
+      _previewHolding ||
       (_screensaverActive
           ? enabled || faceEnabled
           : (_postponeEnabled || _postponeFaceEnabled) && _screenOn);
@@ -468,12 +504,16 @@ class MotionManager extends Manager {
       _stop();
       return;
     }
+    // A preview in progress keeps the session it is drawn from as it
+    // is; the hold's end runs this again and settles it.
+    if (_previewHolding && _camera != null) return;
     // A session already up but asked for the wrong things restarts: the
     // native side takes its emission flags at bind time.
     if (_camera != null &&
         (_streamMotion != _wantMotion ||
             _streamFaces != _wantFaces ||
-            _streamPalms != _wantPalms)) {
+            _streamPalms != _wantPalms ||
+            _streamPreview != _wantPreview)) {
       log.info(
         name,
         'camera restarting (motion=$_wantMotion faces=$_wantFaces '
@@ -510,12 +550,14 @@ class MotionManager extends Manager {
       final motion = _wantMotion;
       final faces = _wantFaces;
       final palms = _wantPalms;
+      final preview = _wantPreview;
       final faceMinWidth = faceMinWidthFor(
         _settings.get(defs.faceSensitivity).toInt(),
       );
       _streamMotion = motion;
       _streamFaces = faces;
       _streamPalms = palms;
+      _streamPreview = preview;
       _boundBlind = !_screenOn;
       log.info(
         name,
@@ -523,6 +565,7 @@ class MotionManager extends Manager {
         '${startDelay > 0 ? ' delay=${startDelay}s' : ''}'
         '${faces ? ' faces>=${(faceMinWidth * 100).round()}%' : ''}'
         '${palms ? ' hands' : ''}'
+        '${preview ? ' preview' : ''}'
         '${motion ? '' : ' motion off'}'
         '${_boundBlind ? ', panel off: restart on wake unless frames flow' : ''})',
       );
@@ -539,6 +582,7 @@ class MotionManager extends Manager {
             faceMinWidth: faceMinWidth,
             fingers: palms,
             paused: _voiceTurn,
+            preview: preview,
           ).listen(
             (tick) {
               // Frames flowing again: the session is healthy, forget any
@@ -549,6 +593,14 @@ class MotionManager extends Manager {
               // this catches what was already on its way across.
               if (_voiceTurn) {
                 log.debug(name, 'dropped (voice interaction)');
+                return;
+              }
+              // A preview frame goes straight to the overlay, and only
+              // while a preview is being shown: the native window and
+              // the hold are armed together, but a frame already on its
+              // way across when the hold ends is not worth drawing.
+              if (tick.isPreview) {
+                if (_previewHolding) facePreview.value = tick.preview;
                 return;
               }
               // A face is not a lighting change, so the self-light quiet
@@ -626,10 +678,48 @@ class MotionManager extends Manager {
     _retry = null;
     _retryDelay = _retryFloor;
     _boundBlind = false;
+    // A session torn down under a preview (the camera switched off, a
+    // tuning change) takes the preview with it: its frames are gone.
+    _endPreview();
     if (_camera == null) return;
     _camera!.cancel();
     _camera = null;
     log.info(name, 'camera off');
+  }
+
+  /// Show the camera preview (discussion #371) on the running session:
+  /// hold the camera for the configured span, ask the native side to
+  /// emit frames for it, and drop it all when the span ends.
+  void _showPreview() {
+    if (!_settings.get(defs.facePreview)) return;
+    if (_camera == null || !_streamPreview) {
+      // A face can only come off a session, so this is a session bound
+      // before the switch was flipped (the flip restarts it, so once).
+      log.debug(name, 'no preview: the session was not bound for one');
+      return;
+    }
+    final span = Duration(
+      seconds: _settings.get(defs.facePreviewSeconds).toInt().clamp(3, 10),
+    );
+    log.info(name, 'camera preview for ${span.inSeconds}s');
+    _previewHold?.cancel();
+    _previewHold = Timer(span, () {
+      _previewHold = null;
+      facePreview.value = null;
+      _sync();
+    });
+    unawaited(
+      NativeMotion.showPreview(span).catchError((Object e) {
+        log.debug(name, 'showPreview failed: $e');
+      }),
+    );
+  }
+
+  void _endPreview() {
+    if (_previewHold == null) return;
+    _previewHold!.cancel();
+    _previewHold = null;
+    facePreview.value = null;
   }
 
   Future<bool> _ensurePermission() async {
@@ -641,5 +731,6 @@ class MotionManager extends Manager {
   Future<void> dispose() async {
     _pauseTimer?.cancel();
     _stop();
+    facePreview.dispose();
   }
 }

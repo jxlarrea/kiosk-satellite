@@ -470,6 +470,32 @@ low-powered devices most kiosks are.
 Under [Lockdown Mode](kiosk.md) a face neither dismisses nor postpones,
 like motion.
 
+### Camera preview
+
+**Show camera preview**, in the Camera Preview group of the same page,
+leaves a glimpse of what the camera saw behind a face wake: a small
+round live view of the camera, white-rimmed, in a corner of the
+dashboard for a few seconds, gone on its own. It shows the very frames
+the detector looks at, so tuning Face sensitivity, picking a camera or
+placing the device gets an answer on the screen, and someone who did not
+expect the kiosk to wake can see why it did. The frames are drawn and
+dropped, nothing is stored or sent anywhere, and the preview answers no
+touch: a tap on the dashboard under it lands on the dashboard.
+
+| Setting | What it does |
+| --- | --- |
+| Preview duration | 3 to 10 seconds on screen, 5 by default. |
+| Preview scaling | 50 to 150 percent of the base size, like Widget scaling. |
+| Preview position | Which corner it sits in, top right by default. |
+
+It shows only when a face dismisses the screensaver, not for a face that
+postpones the next one, which repeats every second or so for as long as
+someone is there. The camera stays on through the preview and is
+released after it, unless Postpone screensaver on face keeps it. With
+the switch on, the camera's analysis stream runs at 640x480 instead of
+320x240 for the sake of the picture, which costs the analysis itself
+nothing.
+
 ## Proximity detection
 
 Motion Detection's two switches, on the device's proximity sensor

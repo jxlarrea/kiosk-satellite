@@ -2808,6 +2808,81 @@ const faceSensitivity = SettingDef<num>(
   step: 1,
 );
 
+// ── Screensaver: Face Detection: Camera Preview ────────────────────────
+// A glimpse of what the camera saw (discussion #371): when a face
+// dismisses the screensaver, a small circular live preview sits in a
+// corner of the dashboard for a few seconds and goes away on its own. It
+// shows the frames the detector itself is looking at, so someone tuning
+// Face sensitivity, the camera pick or the placement of the device can see
+// what the kiosk sees, and a person who did not expect the screen to wake
+// can see why it did. Only on a dismissal: a face that postpones the next
+// screensaver is a face every second or so, and a preview on each would
+// never leave. The frames are drawn and dropped; nothing is stored or
+// sent anywhere. The three knobs under the switch are hidden and inert
+// without it.
+const facePreview = SettingDef<bool>(
+  key: 'face.preview',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show camera preview',
+  description:
+      'Show a small round live view of the camera in a corner of the screen '
+      'for a few seconds when a face wakes the kiosk.',
+  category: 'Screensaver',
+  section: 'Camera Preview',
+  subpage: 'Face Detection',
+  dependsOn: 'screensaver.dismiss_on_face',
+);
+
+const facePreviewSeconds = SettingDef<num>(
+  key: 'face.preview_seconds',
+  type: SettingType.number,
+  defaultValue: 5,
+  title: 'Preview duration',
+  description: 'How long the preview stays on screen.',
+  category: 'Screensaver',
+  section: 'Camera Preview',
+  subpage: 'Face Detection',
+  dependsOn: 'face.preview',
+  min: 3,
+  max: 10,
+  step: 1,
+  unit: 's',
+);
+
+// Widget scaling's shape (50..150 percent of the base size) rather than a
+// bare factor, so the slider reads the same as the screensaver's other
+// size knob on both surfaces.
+const facePreviewScale = SettingDef<num>(
+  key: 'face.preview_scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Preview scaling',
+  description: 'Scale the preview to better fit your screen size.',
+  category: 'Screensaver',
+  section: 'Camera Preview',
+  subpage: 'Face Detection',
+  dependsOn: 'face.preview',
+  min: 50,
+  max: 150,
+  step: 10,
+  unit: '%',
+);
+
+const facePreviewPosition = SettingDef<String>(
+  key: 'face.preview_position',
+  type: SettingType.select,
+  defaultValue: 'top_right',
+  title: 'Preview position',
+  description: 'Which corner the preview sits in.',
+  category: 'Screensaver',
+  section: 'Camera Preview',
+  subpage: 'Face Detection',
+  dependsOn: 'face.preview',
+  options: cornerOptions,
+  optionLabels: cornerLabels,
+);
+
 // ── Screensaver: Proximity Detection ───────────────────────────────────
 // Motion Detection's shape on the device's proximity sensor instead of
 // the camera: dismiss while the screensaver shows, postpone between
@@ -5201,6 +5276,10 @@ const List<SettingDef<Object>> allSettings = [
   screensaverDismissOnFace,
   screensaverPostponeOnFace,
   faceSensitivity,
+  facePreview,
+  facePreviewSeconds,
+  facePreviewScale,
+  facePreviewPosition,
   screensaverDismissOnProximity,
   screensaverPostponeOnProximity,
   // The Person Detection page (Meta Portal only) sits under Proximity.

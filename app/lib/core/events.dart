@@ -324,6 +324,16 @@ class FaceDetected extends AppEvent {
   String get wireName => 'face';
 }
 
+/// A face just dismissed the screensaver (discussion #371): the
+/// screensaver manager's answer to a [FaceDetected] that passed every
+/// gate and woke the screen, published right before the stop. Internal:
+/// the motion manager shows the camera preview off it, when that is on.
+/// Not a face that merely postponed the next screensaver, which repeats
+/// every second or so for as long as someone stays.
+class FaceDismissedScreensaver extends AppEvent {
+  const FaceDismissedScreensaver();
+}
+
 /// Someone is in view of the device's own person sensor (discussion #353,
 /// today the Meta Portal's people tracker): the person sensor manager
 /// relays it while the screensaver's "Dismiss on person" has it reading

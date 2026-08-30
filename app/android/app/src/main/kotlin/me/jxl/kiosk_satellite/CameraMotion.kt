@@ -1,6 +1,7 @@
 package me.jxl.kiosk_satellite
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.os.Build
@@ -24,6 +25,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -289,6 +291,21 @@ class CameraMotion(
         // between frames).
         private const val SUSPEND_CHECK_MS = 5_000L
         private const val SUSPEND_AFTER_MS = 10_000L
+
+        // The camera preview (discussion #371): while a preview window is
+        // open (showPreview on the control channel), the analyzed frames
+        // are also encoded as small JPEGs and emitted for the Dart side
+        // to draw. Every camera frame is eligible, not just the analysis
+        // slots (2 a second by default would be a slideshow), capped at
+        // PREVIEW_MIN_INTERVAL_NS apart and paced by the encoding's own
+        // cost so it never takes more than about 1/PREVIEW_DUTY of the
+        // analyzer's core: a 640x480 frame encodes in a few ms on a Tab
+        // S8 and in a few tens of ms on an Echo Show 8, so the fast
+        // device gets ten frames a second and the slow one about eight.
+        // The window is seconds long, so the budget is generous.
+        private const val PREVIEW_MIN_INTERVAL_NS = 100_000_000L
+        private const val PREVIEW_DUTY = 3L
+        private const val PREVIEW_JPEG_QUALITY = 70
     }
 
     private val eventChannel = EventChannel(messenger, CHANNEL)
@@ -411,6 +428,18 @@ class CameraMotion(
     /** Face sightings get their own 1/s rate limit, independent of motion's. */
     private var lastFaceEmitNs = 0L
 
+    /** The camera preview (see [PREVIEW_MIN_INTERVAL_NS]): whether the
+     *  session was bound with it in mind (the analysis stream is sized
+     *  up for it), until when the window is open (set on the main thread
+     *  by the control channel, read on the analyzer), when a frame was
+     *  last emitted and the paced interval to the next. Whether the bound
+     *  camera faces the person, so the Dart side mirrors the view. */
+    @Volatile private var previewWanted = false
+    @Volatile private var previewUntilNs = 0L
+    private var lastPreviewNs = 0L
+    private var previewIntervalNs = PREVIEW_MIN_INTERVAL_NS
+    @Volatile private var boundFront = true
+
     /** The vision inference gate (see [VISION_ACTIVITY_WINDOW_NS]): when
      *  the grid last saw a real change, when the detectors last ran, when
      *  one last found its subject, and when analysis began. Analyzer
@@ -474,6 +503,13 @@ class CameraMotion(
                 setPaused((call.arguments as? Map<*, *>)?.get("paused") == true)
                 result.success(null)
             }
+            "showPreview" -> {
+                val ms = ((call.arguments as? Map<*, *>)?.get("ms") as? Number)
+                    ?.toLong()?.coerceIn(0L, 60_000L) ?: 0L
+                previewUntilNs = System.nanoTime() + ms * 1_000_000L
+                Log.i(TAG, "camera preview for ${ms}ms")
+                result.success(null)
+            }
             else -> result.notImplemented()
         }
     }
@@ -532,6 +568,10 @@ class CameraMotion(
         faceMinWidth =
             ((args?.get("faceMinWidth") as? Number)?.toFloat() ?: 0.1f).coerceIn(0.01f, 1f)
         lastFaceEmitNs = 0L
+        previewWanted = args?.get("preview") == true
+        previewUntilNs = 0L
+        lastPreviewNs = 0L
+        previewIntervalNs = PREVIEW_MIN_INTERVAL_NS
         resetVisionGate()
 
         // With hands wanted the analyzer samples at least 4 fps so a hand
@@ -628,8 +668,11 @@ class CameraMotion(
             // tensor (about 108 real pixels for a typical crop) where the
             // same crop of a 640x480 frame fills it. The larger stream is
             // asked for only when hands are wanted, since it is what the
-            // camera pipeline hands over per frame.
-            val analysisSize = if (palmsWanted) Size(640, 480) else Size(320, 240)
+            // camera pipeline hands over per frame. The camera preview
+            // wants it too: its frames are shown, and 320x240 in a
+            // circle a few hundred pixels across is a blur.
+            val analysisSize =
+                if (palmsWanted || previewWanted) Size(640, 480) else Size(320, 240)
             val resolution = ResolutionSelector.Builder()
                 .setResolutionStrategy(
                     ResolutionStrategy(
@@ -674,6 +717,11 @@ class CameraMotion(
                     cameraProvider.bindToLifecycle(owner, selector, imageAnalysis)
                 }
                 boundCamera = camera
+                boundFront = try {
+                    camera.cameraInfo.lensFacing != CameraSelector.LENS_FACING_BACK
+                } catch (_: Exception) {
+                    facing == CameraSelector.DEFAULT_FRONT_CAMERA
+                }
                 if (fingersWanted) {
                     analysisExecutor.execute {
                         try {
@@ -717,7 +765,8 @@ class CameraMotion(
                         "minCells=$minChangedCells, motion=$motionWanted, " +
                         "faces=$facesWanted" +
                         (if (facesWanted) " minWidth=${"%.2f".format(faceMinWidth)}" else "") +
-                        ", palms=$palmsWanted, fingers=$fingersWanted)",
+                        ", palms=$palmsWanted, fingers=$fingersWanted" +
+                        (if (previewWanted) ", preview" else "") + ")",
                 )
                 armSuspendWatchdog(mySession, sink)
             } catch (e: Exception) {
@@ -792,6 +841,13 @@ class CameraMotion(
         try {
             lastFrameAtMs = SystemClock.elapsedRealtime()
             val now = System.nanoTime()
+            // The camera preview reads every frame the camera delivers
+            // while its window is open, ahead of the analysis slots (see
+            // PREVIEW_MIN_INTERVAL_NS), and never during a voice turn.
+            if (previewUntilNs > now && !paused && now - lastPreviewNs >= previewIntervalNs) {
+                lastPreviewNs = now
+                emitPreview(image, sink)
+            }
             // Drop frames that arrive before the next slot is due.
             if (lastProcessedNs != 0L && now - lastProcessedNs < frameIntervalNs) return
             lastProcessedNs = now
@@ -988,6 +1044,36 @@ class CameraMotion(
             }
         } finally {
             image.close()
+        }
+    }
+
+    /**
+     * The camera preview (discussion #371): encode this frame as a small
+     * JPEG and emit it as its own event kind ({"preview": bytes,
+     * "rotation": degrees, "mirror": front}). Sensor orientation as it
+     * comes, with the rotation that turns it upright for this display,
+     * so the analyzer pays for the encode alone and the Dart side turns
+     * the picture, which costs it nothing. Paced by its own cost (see
+     * [PREVIEW_DUTY]). Nothing in here may take the kiosk down: it runs
+     * on the analyzer's thread, so a failing frame is a skipped frame.
+     */
+    private fun emitPreview(image: ImageProxy, sink: EventChannel.EventSink) {
+        try {
+            val startNs = SystemClock.elapsedRealtimeNanos()
+            val bitmap = image.toBitmap()
+            val out = ByteArrayOutputStream(48 * 1024)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, PREVIEW_JPEG_QUALITY, out)
+            bitmap.recycle()
+            val bytes = out.toByteArray()
+            val costNs = SystemClock.elapsedRealtimeNanos() - startNs
+            previewIntervalNs = max(PREVIEW_MIN_INTERVAL_NS, costNs * PREVIEW_DUTY)
+            val rotation = image.imageInfo.rotationDegrees
+            val mirror = boundFront
+            mainHandler.post {
+                sink.success(mapOf("preview" to bytes, "rotation" to rotation, "mirror" to mirror))
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "preview frame failed: $e")
         }
     }
 

@@ -20,6 +20,15 @@ class NativeMotion {
   static Future<void> setPaused(bool paused) =>
       _control.invokeMethod<void>('setPaused', {'paused': paused});
 
+  /// Open the camera preview window on a running session (discussion
+  /// #371): for the next [duration] the native side also encodes the
+  /// analyzed frames as small JPEGs and emits them as preview ticks
+  /// (see [NativeMotionTick.previewJpeg]), paced to about ten a second
+  /// and by their own encoding cost. A no-op without a session. Throws
+  /// where the plugin is missing; callers treat that as best effort.
+  static Future<void> showPreview(Duration duration) => _control
+      .invokeMethod<void>('showPreview', {'ms': duration.inMilliseconds});
+
   static Stream<NativeMotionTick> stream({
     required double fps,
     required int sensitivity,
@@ -32,6 +41,7 @@ class NativeMotion {
     double faceMinWidth = 0.1,
     bool fingers = false,
     bool paused = false,
+    bool preview = false,
   }) {
     return _channel
         .receiveBroadcastStream(<String, Object?>{
@@ -63,6 +73,10 @@ class NativeMotion {
           // rebound mid-turn, on a native side recreated with the
           // Activity, starts idle like the one it replaces.
           'paused': paused,
+          // The camera preview (discussion #371) may be asked for on this
+          // session (see [showPreview]): the analysis stream is sized up
+          // for it, since its frames are what the preview is made of.
+          'preview': preview,
         })
         .map(NativeMotionTick.fromNative);
   }
@@ -73,7 +87,12 @@ class NativeMotion {
 /// a hand report carrying the hand count (0 when the hand has gone) and
 /// the fingers shown.
 class NativeMotionTick {
-  const NativeMotionTick._(this.faceWidth, this.palms, this.fingers);
+  const NativeMotionTick._(
+    this.faceWidth,
+    this.palms,
+    this.fingers, {
+    this.preview,
+  });
 
   /// Extended fingers on the largest hand, when the landmark stage judged
   /// it (null otherwise).
@@ -82,11 +101,16 @@ class NativeMotionTick {
   final double? faceWidth;
   final int? palms;
 
+  /// A camera preview frame (see [NativeMotion.showPreview]).
+  final FacePreviewFrame? preview;
+
   bool get isFace => faceWidth != null;
   bool get isPalms => palms != null;
+  bool get isPreview => preview != null;
 
-  /// Anything that is not a face sighting or a hand report is a motion
-  /// tick, which keeps the wire compatible with the original null events.
+  /// Anything that is not a face sighting, a hand report or a preview
+  /// frame is a motion tick, which keeps the wire compatible with the
+  /// original null events.
   static NativeMotionTick fromNative(Object? raw) {
     if (raw is Map) {
       final face = raw['face'];
@@ -102,9 +126,41 @@ class NativeMotionTick {
           fingers is num && fingers >= 0 ? fingers.toInt() : null,
         );
       }
+      final preview = raw['preview'];
+      if (preview is Uint8List) {
+        final rotation = raw['rotation'];
+        return NativeMotionTick._(
+          null,
+          null,
+          null,
+          preview: FacePreviewFrame(
+            jpeg: preview,
+            rotation: rotation is num ? rotation.toInt() : 0,
+            mirror: raw['mirror'] == true,
+          ),
+        );
+      }
     }
     return const NativeMotionTick._(null, null, null);
   }
+}
+
+/// One frame of the camera preview (discussion #371), as the native side
+/// hands it over: a JPEG of the analysis frame in sensor orientation,
+/// the rotation that turns it upright on this display (the frame's
+/// rotationDegrees, a multiple of 90) and whether it should be mirrored,
+/// which it is for a front camera so the view reads like a mirror to the
+/// person in it.
+class FacePreviewFrame {
+  const FacePreviewFrame({
+    required this.jpeg,
+    required this.rotation,
+    required this.mirror,
+  });
+
+  final Uint8List jpeg;
+  final int rotation;
+  final bool mirror;
 }
 
 /// The Face sensitivity slider (1..100) as the minimum face width the

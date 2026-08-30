@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,8 +25,17 @@ void main() {
   var listens = 0;
   Map<Object?, Object?>? lastArgs;
   MockStreamHandlerEventSink? sink;
+  final controlCalls = <MethodCall>[];
 
   setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('kiosk_satellite/motion/control'),
+          (call) async {
+            controlCalls.add(call);
+            return null;
+          },
+        );
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('flutter.baseflow.com/permissions/methods'),
@@ -56,6 +67,7 @@ void main() {
     listens = 0;
     lastArgs = null;
     sink = null;
+    controlCalls.clear();
     SharedPreferences.setMockInitialValues(initial);
     bus = EventBus();
     final log = Logger();
@@ -375,6 +387,181 @@ void main() {
       bus.publish(const FaceDetected());
       await pump();
       expect(saver.isActive, isFalse);
+    });
+  });
+
+  // The camera preview (discussion #371): a face wake shows what the
+  // camera saw for a few seconds, on the session that saw it.
+  group('camera preview', () {
+    const previewOn = {...faceOnly, 'ks.face.preview': true};
+
+    test('the switch binds the session with the preview asked for, and '
+        'only where faces are looked for', () async {
+      await build(previewOn);
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pump();
+      expect(lastArgs?['preview'], isTrue);
+
+      // Motion takes precedence: no faces, so nothing to preview.
+      await settings.set(defs.screensaverDismissOnMotion, true);
+      await pump();
+      expect(lastArgs?['faces'], isFalse);
+      expect(lastArgs?['preview'], isFalse);
+    });
+
+    test('without the switch the session is bound without it', () async {
+      await build(faceOnly);
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pump();
+      expect(lastArgs?['preview'], isFalse);
+    });
+
+    test('a face dismissing the screensaver holds the camera for the '
+        'configured span, asks the native side to show the preview, and '
+        'releases it when the span ends', () {
+      fakeAsync((async) {
+        build({...previewOn, 'ks.face.preview_seconds': 4});
+        async.flushMicrotasks();
+        bus.publish(const ScreensaverStateChanged(active: true));
+        async.flushMicrotasks();
+        expect(listens, 1);
+
+        // The screensaver's order: the dismissal event, then the stop.
+        bus.publish(const FaceDismissedScreensaver());
+        bus.publish(const ScreensaverStateChanged(active: false));
+        async.flushMicrotasks();
+        expect(controlCalls.map((c) => c.method), contains('showPreview'));
+        final show = controlCalls.firstWhere((c) => c.method == 'showPreview');
+        expect((show.arguments as Map)['ms'], 4000);
+        expect(listens, 1, reason: 'no rebind under the preview');
+        expect(sink, isNotNull, reason: 'the camera stays bound');
+
+        async.elapse(const Duration(seconds: 3));
+        expect(sink, isNotNull);
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(sink, isNull, reason: 'released when the span ends');
+        expect(motion.facePreview.value, isNull);
+      });
+    });
+
+    test('with the switch off a face dismissal changes nothing', () {
+      fakeAsync((async) {
+        build(faceOnly);
+        async.flushMicrotasks();
+        bus.publish(const ScreensaverStateChanged(active: true));
+        async.flushMicrotasks();
+        bus.publish(const FaceDismissedScreensaver());
+        bus.publish(const ScreensaverStateChanged(active: false));
+        async.flushMicrotasks();
+        expect(controlCalls.where((c) => c.method == 'showPreview'), isEmpty);
+        expect(sink, isNull, reason: 'released with the session');
+      });
+    });
+
+    test(
+      'preview frames reach the overlay while the preview shows, '
+      'upright and mirrored as the native side says, and not after',
+      () async {
+        await build(previewOn);
+        bus.publish(const ScreensaverStateChanged(active: true));
+        await pump();
+        final frames = <FacePreviewFrame?>[];
+        motion.facePreview.addListener(
+          () => frames.add(motion.facePreview.value),
+        );
+
+        // A frame with no preview showing is dropped.
+        sink!.success({'preview': Uint8List(3), 'rotation': 90});
+        await pump();
+        expect(frames, isEmpty);
+
+        bus.publish(const FaceDismissedScreensaver());
+        bus.publish(const ScreensaverStateChanged(active: false));
+        await pump();
+        final jpeg = Uint8List.fromList([1, 2, 3]);
+        sink!.success({'preview': jpeg, 'rotation': 270, 'mirror': true});
+        await pump();
+        expect(frames, hasLength(1));
+        expect(frames.single!.jpeg, jpeg);
+        expect(frames.single!.rotation, 270);
+        expect(frames.single!.mirror, isTrue);
+
+        // Switching the camera off ends the preview with the session.
+        await settings.set(defs.cameraEnabled, false);
+        await pump();
+        expect(motion.facePreview.value, isNull);
+        expect(sink, isNull);
+      },
+    );
+
+    test(
+      'the preview knobs do not restart the camera; the switch does',
+      () async {
+        await build(previewOn);
+        bus.publish(const ScreensaverStateChanged(active: true));
+        await pump();
+        expect(listens, 1);
+        await settings.set(defs.facePreviewSeconds, 8);
+        await settings.set(defs.facePreviewScale, 120);
+        await settings.set(defs.facePreviewPosition, 'bottom_left');
+        await pump();
+        expect(listens, 1);
+        await settings.set(defs.facePreview, false);
+        await pump();
+        expect(listens, 2);
+        expect(lastArgs?['preview'], isFalse);
+      },
+    );
+
+    test('the screensaver publishes the dismissal for a face that woke '
+        'it, and not for one motion precedence ignored', () async {
+      await build(previewOn);
+      final saver = ScreensaverManager(bus, commands, Logger(), settings);
+      await saver.init();
+      final dismissals = <FaceDismissedScreensaver>[];
+      bus.on<FaceDismissedScreensaver>().listen(dismissals.add);
+
+      await saver.start();
+      await pump();
+      bus.publish(const FaceDetected());
+      await pump();
+      expect(saver.isActive, isFalse);
+      expect(dismissals, hasLength(1));
+
+      await settings.set(defs.screensaverDismissOnMotion, true);
+      await saver.start();
+      await pump();
+      bus.publish(const FaceDetected());
+      await pump();
+      expect(saver.isActive, isTrue);
+      expect(dismissals, hasLength(1));
+    });
+
+    test('the four settings live in one Camera Preview group on the Face '
+        'Detection page, gated on the switch and it on Dismiss on face', () {
+      final group = defs.allSettings.where(
+        (d) => d.section == 'Camera Preview',
+      );
+      expect(group.map((d) => d.key), [
+        'face.preview',
+        'face.preview_seconds',
+        'face.preview_scale',
+        'face.preview_position',
+      ]);
+      for (final d in group) {
+        expect(d.subpage, 'Face Detection');
+        expect(d.category, 'Screensaver');
+      }
+      expect(defs.facePreview.dependsOn, defs.screensaverDismissOnFace.key);
+      expect(defs.facePreviewSeconds.dependsOn, defs.facePreview.key);
+      expect(defs.facePreviewScale.dependsOn, defs.facePreview.key);
+      expect(defs.facePreviewPosition.dependsOn, defs.facePreview.key);
+      expect(defs.facePreviewSeconds.min, 3);
+      expect(defs.facePreviewSeconds.max, 10);
+      expect(defs.facePreviewScale.min, 50);
+      expect(defs.facePreviewScale.max, 150);
+      expect(defs.facePreviewPosition.options, defs.cornerOptions);
     });
   });
 }

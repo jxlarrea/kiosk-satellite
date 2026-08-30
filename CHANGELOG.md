@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- A **Camera Preview** group on the Face Detection page (#371), on the device and in the remote admin alike: with **Show camera preview** on, a face that wakes the kiosk leaves a small round live view of the camera in a corner of the dashboard for a few seconds, white-rimmed and gone on its own, so you can see what the camera saw and why the screen woke. **Preview duration** (3 to 10 seconds), **Preview scaling** (50 to 150 percent) and **Preview position** (any corner) shape it. The view is the detector's own frames, drawn and dropped, and it answers no touch. Only a face that dismisses the screensaver shows it, not one that postpones the next.
 - A **Scan intensity** setting on the Bluetooth Proxy page, on the device and in the remote admin alike: Balanced, Low power or Continuous, which ask Android to listen about a fifth, a tenth or all of the time. Devices are heard the same at every level, one that advertises rarely just takes longer to show up. The difference is CPU on devices whose Bluetooth stack pays per packet: a Meta Portal logs a line for every advertisement it hears and spent a third of a core in its Bluetooth process on a busy home, which Balanced cut to a few percent with the same devices heard. A change applies to the running scanner at once, without dropping the Home Assistant connection.
 
 ### Changed

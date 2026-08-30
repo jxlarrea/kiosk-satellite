@@ -37,6 +37,7 @@ import 'notification_overlay.dart';
 import 'offline_notice.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
+import 'face_preview_overlay.dart';
 import 'kiosk_drawer.dart';
 import 'sendspin_player_overlay.dart';
 import 'toast.dart';
@@ -1193,6 +1194,10 @@ class _KioskScreenState extends State<KioskScreen>
                   // display, drawer open or not.
                   ScreensaverOverlay(container: c),
                   CameraViewOverlay(container: c),
+                  // The camera preview a face wake leaves behind
+                  // (discussion #371): over the screensaver, whose fade
+                  // out it appears through, and answering no touch.
+                  FacePreviewOverlay(motion: c.motion, settings: c.settings),
                   // Above every overlay a notification could arrive
                   // behind — the screensaver, a camera wall — because a
                   // message from the house is worth covering them for,

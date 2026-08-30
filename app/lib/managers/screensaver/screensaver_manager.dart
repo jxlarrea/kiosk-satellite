@@ -377,6 +377,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (showingNowPlaying && !_settings.get(defs.sendspinFullscreenMotion)) {
         return;
       }
+      // Before the stop, so the camera preview's hold (MotionManager) is
+      // armed by the time the session's end reaches it.
+      bus.publish(const FaceDismissedScreensaver());
       notifyActivity('face');
     });
     bus.on<PersonDetected>().listen((e) {
