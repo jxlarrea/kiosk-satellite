@@ -171,6 +171,7 @@ class DeviceDetails(
                 "read" -> result.success(read())
                 "uptime" -> result.success(uptime())
                 "plugged" -> result.success(plugged())
+                "battery" -> result.success(battery())
                 // The Bluetooth links this device holds (issue #281).
                 "bluetooth" -> result.success(bluetooth())
                 // The SSAID: stable per device + app signing key, surviving
@@ -402,6 +403,34 @@ class DeviceDetails(
         } ?: return null
         val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
         return if (plugged < 0) null else plugged > 0
+    }
+
+    /**
+     * The battery's charge, from the same sticky broadcast as [plugged]:
+     * `present` is the kernel's own word on whether there is a battery at
+     * all (EXTRA_PRESENT), and `level` the percent, null for a device
+     * without a battery, one whose broadcast carries no level, or a level
+     * outside 0..100 (issue #367). The BatteryManager capacity property the
+     * battery_plus plugin reads answers Integer.MIN_VALUE for a battery the
+     * kernel does not expose (0 on targets before Android 9), and the
+     * plugin screens only -1, so a mains-powered box read "-2147483648%".
+     * Null when the platform won't say, and the caller falls back.
+     */
+    private fun battery(): Map<String, Any?>? {
+        val intent = try {
+            context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        } catch (e: Exception) {
+            null
+        } ?: return null
+        val present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)
+        val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+        val percent = if (!present || level < 0 || scale <= 0) {
+            null
+        } else {
+            (level * 100 / scale).takeIf { it in 0..100 }
+        }
+        return mapOf("present" to present, "level" to percent)
     }
 
     /**

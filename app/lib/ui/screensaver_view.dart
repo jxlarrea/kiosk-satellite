@@ -1070,17 +1070,19 @@ class _BatteryWidgetOverlayState extends State<BatteryWidgetOverlay> {
 /// appears, matching the level Android itself starts warning at.
 const lowBatteryLevel = 20;
 
-/// Whether the battery widget draws at all. "Only when low" keeps the
-/// corner clear until the charge is worth walking over for: a device on
-/// the cable is already being dealt with, and a host that cannot report a
-/// level has no "low" to speak of, so neither shows.
+/// Whether the battery widget draws at all. A device without a battery
+/// (a mains-powered box, issue #367) has nothing to show: a bolt burning
+/// in the corner forever would only say the box is plugged in. "Only when
+/// low" keeps the corner clear until the charge is worth walking over for:
+/// a device on the cable is already being dealt with.
 bool batteryWidgetVisible({
   required bool lowOnly,
   required int? level,
   required bool charging,
 }) {
+  if (level == null) return false;
   if (!lowOnly) return true;
-  return !charging && level != null && level <= lowBatteryLevel;
+  return !charging && level <= lowBatteryLevel;
 }
 
 /// The battery glyph for a level: the bolt while it is on external power,

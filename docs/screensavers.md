@@ -249,6 +249,9 @@ power, and the percentage beside it.
 The reading is the device's own, not a Home Assistant entity, so it needs
 nothing configured and keeps working while Home Assistant is away. It is
 read once a minute, and a cable being plugged or pulled shows up at once.
+A device without a battery (a mains-powered box) leaves the corner clear:
+there is no charge to show, and a bolt burning in the corner forever would
+only say the box is plugged in.
 
 ### Entity
 

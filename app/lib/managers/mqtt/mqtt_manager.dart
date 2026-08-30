@@ -172,6 +172,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
   /// bring-up, revived by any later successful reading (issue #138).
   bool _cpuTempPresent = true;
 
+  /// Whether this device has a battery to report on; probed at bring-up
+  /// and revived by any later reading, so a mains-powered box gets no
+  /// Battery sensor rather than one stuck on a made-up percent (issue
+  /// #367). Charging is separate: the box still says when it is plugged.
+  bool _batteryPresent = true;
+
   /// Whether Android will tell this app about its Bluetooth links at all;
   /// probed at bring-up and revived by any later answer, so granting the
   /// Nearby devices permission brings the sensor with it (issue #281).
@@ -1152,6 +1158,10 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     final stats = await commands.execute('getStats', const {});
     _cpuTempPresent =
         stats.ok && stats.data is Map && (stats.data as Map)['temp'] != null;
+    // And for the battery, the same shape (issue #367): a device without
+    // one reports null from the one gate every consumer reads through.
+    _batteryPresent =
+        stats.ok && stats.data is Map && (stats.data as Map)['battery'] != null;
     // And for the Bluetooth links: they ride the proxy's master switch, and
     // a device with no adapter, or one whose Nearby devices grant is missing
     // on Android 12+, gets no sensor rather than one stuck on unknown
@@ -1803,6 +1813,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     final battery = (data['battery'] as num?)?.toInt();
     final charging = data['charging'] == true;
     final cpu = (data['cpu'] as num?)?.round();
+    if (battery != null && !_batteryPresent) {
+      // The bring-up probe read nothing (the platform had not answered
+      // yet) but the battery is there after all: revive the entity.
+      _batteryPresent = true;
+      unawaited(_publishDiscovery());
+    }
     if (battery != null && battery != _lastBattery) {
       _lastBattery = battery;
       _publish('$_base/battery/state', '$battery');
@@ -2059,14 +2075,15 @@ class MqttManager extends Manager with WidgetsBindingObserver {
         'brightness_scale': 255,
         'icon': 'mdi:tablet',
       }..remove('availability_topic'),
-      '$_prefix/sensor/ks_$_deviceId/battery/config': {
-        ...common('battery', 'Battery'),
-        'state_topic': '$_base/battery/state',
-        'device_class': 'battery',
-        'unit_of_measurement': '%',
-        'state_class': 'measurement',
-        'entity_category': 'diagnostic',
-      },
+      if (_batteryPresent)
+        '$_prefix/sensor/ks_$_deviceId/battery/config': {
+          ...common('battery', 'Battery'),
+          'state_topic': '$_base/battery/state',
+          'device_class': 'battery',
+          'unit_of_measurement': '%',
+          'state_class': 'measurement',
+          'entity_category': 'diagnostic',
+        },
       '$_prefix/binary_sensor/ks_$_deviceId/charging/config': {
         ...common('charging', 'Charging'),
         'state_topic': '$_base/charging/state',
@@ -2597,6 +2614,12 @@ class MqttManager extends Manager with WidgetsBindingObserver {
     // read one, instead of lingering as a dead entity.
     if (!_cpuTempPresent) {
       _publish('$_prefix/sensor/ks_$_deviceId/cpu_temp/config', '');
+    }
+    // And a Battery config on a device that has none (issue #367): an
+    // older build registered one unconditionally, and it would sit on the
+    // last percent it was ever fed.
+    if (!_batteryPresent) {
+      _publish('$_prefix/sensor/ks_$_deviceId/battery/config', '');
     }
     // Same for the Bluetooth links, off with the proxy switch or on a
     // device that will not report them.

@@ -69,6 +69,26 @@ class DeviceDetails {
     }
   }
 
+  /// The battery as the platform reports it (issue #367): `present` is the
+  /// kernel's own word on whether the device has one, `level` the charge
+  /// percent screened through [batteryPercent], so a battery-less device
+  /// reads null rather than the sentinel Android answers for a property
+  /// it cannot read. Null off Android or when the platform won't say, and
+  /// the caller falls back to the plugin read.
+  static Future<({bool present, int? level})?> battery() async {
+    try {
+      final raw = await _channel.invokeMapMethod<String, Object?>('battery');
+      if (raw == null) return null;
+      final present = raw['present'] != false;
+      return (
+        present: present,
+        level: present ? batteryPercent(raw['level']) : null,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Called whenever a Bluetooth link comes up or goes down, from the
   /// platform's own ACL broadcasts. The connected-devices sensors publish on
   /// it instead of waiting for the minute poll, which a link held for half a
@@ -159,4 +179,17 @@ class DeviceDetails {
     },
     'webview': {'package': webviewPackage, 'version': webviewVersion},
   };
+}
+
+/// A battery reading as a percent, or null for anything that is not one
+/// (issue #367): Android's BatteryManager answers Integer.MIN_VALUE (0 on
+/// targets before Android 9) for a capacity the kernel does not expose,
+/// and a value outside 0..100 is a sentinel of some kind, never a charge.
+/// Every consumer (the screensaver widget, MQTT, ESPHome, the remote admin
+/// and /api/health) reads through this one gate.
+int? batteryPercent(Object? raw) {
+  if (raw is! num) return null;
+  final level = raw.toInt();
+  if (level < 0 || level > 100) return null;
+  return level;
 }

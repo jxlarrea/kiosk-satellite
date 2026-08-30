@@ -140,11 +140,12 @@ export function batterySvg(level, charging) {
     + '<rect x="2" y="7" width="18" height="10" rx="2.5"/><path d="M22.5 10.5v3" stroke-linecap="round"/>' + inner + '</svg>';
 }
 export function renderStats(o) {
-  if (o.battery != null) {
-    document.querySelectorAll('.js-batt').forEach((el) => {
-      el.innerHTML = `${batterySvg(o.battery, o.charging)}${o.battery}%`;
-    });
-  }
+  // Null on a device without a battery: the header slot stays empty
+  // rather than showing a made-up percent (issue #367).
+  document.querySelectorAll('.js-batt').forEach((el) => {
+    el.innerHTML = o.battery == null
+      ? '' : `${batterySvg(o.battery, o.charging)}${o.battery}%`;
+  });
   setStat('.js-cpu', o.cpu != null ? `CPU ${Math.round(o.cpu)}%` : '');
   if (o.temp == null) { setStat('.js-temp', ''); return; }
   const t = Math.round(o.temp);

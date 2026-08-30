@@ -475,28 +475,59 @@ class DeviceManager extends Manager {
   /// carry the diagnosis (issue #138) without an adb session.
   bool _thermalLogged = false;
 
+  /// Logged once per run: that this device reports no battery, so a bug
+  /// report about a missing Battery entity carries its own answer.
+  bool _batteryLogged = false;
+
+  /// The charge percent, or null for a device with no battery to speak of
+  /// (issue #367): a mains-powered box whose kernel exposes none, or one
+  /// whose battery property answers a sentinel. The platform's own
+  /// presence flag and range check come first; the plugin read is the
+  /// fallback for hosts without the channel, screened the same way, since
+  /// the plugin passes Android's "unsupported" sentinel through as a level.
+  Future<int?> _batteryLevel() async {
+    int? level;
+    final native = await DeviceDetails.battery();
+    if (native != null) {
+      level = native.level;
+    } else {
+      try {
+        level = batteryPercent(await _battery.batteryLevel);
+      } catch (_) {
+        // Desktops and emulators without a battery.
+      }
+    }
+    if (level == null && !_batteryLogged) {
+      _batteryLogged = true;
+      log.info(
+        name,
+        native == null
+            ? 'no battery level: the platform did not answer'
+            : native.present
+            ? 'no battery level: the platform reports one but no valid charge'
+            : 'no battery: the platform reports none present',
+      );
+    }
+    return level;
+  }
+
   /// The battery as the corner widget shows it: the charge percent (null
-  /// when the host cannot say) and whether the device is on external
+  /// for a device without a battery) and whether the device is on external
   /// power. Its own read rather than [stats], which also samples the CPU
   /// for the admin header and would make a widget tick cost more than the
   /// reading it needs.
-  Future<({int? level, bool charging})> batteryStatus() async {
-    int? level;
-    try {
-      level = await _battery.batteryLevel;
-    } catch (_) {
-      // Desktops and emulators without a battery: the widget shows the
-      // charging state alone rather than a made-up number.
-    }
-    return (level: level, charging: await _chargingNow());
-  }
+  Future<({int? level, bool charging})> batteryStatus() async =>
+      (level: await _batteryLevel(), charging: await _chargingNow());
 
   /// The three live numbers the admin header shows. Its own read because the
   /// remote admin polls this every few seconds: [info] walks every network
   /// interface (twice) and queries the package on each call, all to produce
   /// fields a stats tick throws away.
   Future<Map<String, Object?>> stats() async {
-    final level = await _battery.batteryLevel;
+    // Through the same gate as the widget, and never a throw: a host
+    // without a battery used to fail the whole read and take the CPU
+    // numbers down with it.
+    final level = await _batteryLevel();
     final charging = await _chargingNow();
     final cpu = await DeviceDetails.cpu();
     if (!_thermalLogged && cpu.containsKey('temp') && cpu['temp'] == null) {

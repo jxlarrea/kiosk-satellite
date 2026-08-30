@@ -105,8 +105,13 @@ void main() {
       expect(defaults['label'], '');
       expect(defaults['color'], '250,250,250');
       // Every line defaults on; the entity's own readings gate them too.
-      for (final key in ['location', 'forecast', 'humidity', 'wind',
-          'visibility']) {
+      for (final key in [
+        'location',
+        'forecast',
+        'humidity',
+        'wind',
+        'visibility',
+      ]) {
         expect(defaults[key], isTrue, reason: key);
       }
     });
@@ -142,8 +147,7 @@ void main() {
       expect(screensaverWidgetAllowedOnMode('battery', 'camera'), isFalse);
     });
 
-    test('only when low: hidden until the charge is low and off the cable',
-        () {
+    test('only when low: hidden until the charge is low and off the cable', () {
       // Off by default: the widget is there to be read.
       expect(
         batteryWidgetVisible(lowOnly: false, level: 90, charging: false),
@@ -154,19 +158,39 @@ void main() {
         isFalse,
       );
       expect(
-        batteryWidgetVisible(lowOnly: true, level: lowBatteryLevel,
-            charging: false),
+        batteryWidgetVisible(
+          lowOnly: true,
+          level: lowBatteryLevel,
+          charging: false,
+        ),
         isTrue,
       );
-      // On the cable it is already being dealt with, and a host that
-      // cannot report a level has no "low" to speak of.
+      // On the cable it is already being dealt with.
       expect(
         batteryWidgetVisible(lowOnly: true, level: 5, charging: true),
+        isFalse,
+      );
+    });
+
+    test('a device without a battery draws nothing in either mode', () {
+      // A mains-powered box (issue #367): no charge to show, and a bolt
+      // burning in the corner forever would only say it is plugged in.
+      expect(
+        batteryWidgetVisible(lowOnly: false, level: null, charging: true),
+        isFalse,
+      );
+      expect(
+        batteryWidgetVisible(lowOnly: false, level: null, charging: false),
         isFalse,
       );
       expect(
         batteryWidgetVisible(lowOnly: true, level: null, charging: false),
         isFalse,
+      );
+      // A real 0% is a flat battery, not a missing one.
+      expect(
+        batteryWidgetVisible(lowOnly: true, level: 0, charging: false),
+        isTrue,
       );
     });
 
@@ -232,22 +256,19 @@ void main() {
       expect(entity.state, isNull);
     });
 
-    test(
-      'an empty label and attribute mean the Home Assistant name and '
-      'the state',
-      () {
-        final entity = entityWidgetEntity({
-          'entity': ' sensor.outside ',
-          'name': 'Outside',
-          'label': '  ',
-          'attribute': '',
-        });
-        expect(entity.entityId, 'sensor.outside');
-        expect(entity.customName, isNull);
-        expect(entity.displayName, 'Outside');
-        expect(entity.attribute, isNull);
-      },
-    );
+    test('an empty label and attribute mean the Home Assistant name and '
+        'the state', () {
+      final entity = entityWidgetEntity({
+        'entity': ' sensor.outside ',
+        'name': 'Outside',
+        'label': '  ',
+        'attribute': '',
+      });
+      expect(entity.entityId, 'sensor.outside');
+      expect(entity.customName, isNull);
+      expect(entity.displayName, 'Outside');
+      expect(entity.attribute, isNull);
+    });
   });
 
   group('legacy small clock migration', () {
@@ -296,23 +317,25 @@ void main() {
       expect(settings.get(defs.screensaverMiniClock), isFalse);
     });
 
-    test('re-migration replaces the old clock widget, not other corners',
-        () async {
-      final settings = await boot({
-        'ks.screensaver.mini_clock': true,
-        'ks.screensaver.mini_clock_position': 'top_right',
-        'ks.screensaver.widgets':
-            '[{"position":"top_left","type":"clock","config":{"h24":true}}]',
-        'ks.internal.screensaver.mini_clock_24h.migrated': '1',
-      });
-      final widgets = decodeScreensaverWidgets(
-        settings.get(defs.screensaverWidgets),
-      );
-      // The stale clock entry is dropped rather than left to fight the
-      // migrated one; a future non-clock widget would be kept.
-      expect(widgets, hasLength(1));
-      expect(widgets.single.position, 'top_right');
-      expect(widgets.single.config['h24'], isFalse);
-    });
+    test(
+      're-migration replaces the old clock widget, not other corners',
+      () async {
+        final settings = await boot({
+          'ks.screensaver.mini_clock': true,
+          'ks.screensaver.mini_clock_position': 'top_right',
+          'ks.screensaver.widgets':
+              '[{"position":"top_left","type":"clock","config":{"h24":true}}]',
+          'ks.internal.screensaver.mini_clock_24h.migrated': '1',
+        });
+        final widgets = decodeScreensaverWidgets(
+          settings.get(defs.screensaverWidgets),
+        );
+        // The stale clock entry is dropped rather than left to fight the
+        // migrated one; a future non-clock widget would be kept.
+        expect(widgets, hasLength(1));
+        expect(widgets.single.position, 'top_right');
+        expect(widgets.single.config['h24'], isFalse);
+      },
+    );
   });
 }

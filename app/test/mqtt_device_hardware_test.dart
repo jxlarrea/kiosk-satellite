@@ -60,6 +60,8 @@ void main() {
   late _RecordingLink link;
   Map<String, Object?> ips = const {'ipv4': {}, 'ipv6': {}};
   Map<String, Object?> uptime = const {'app': 4321, 'network': null};
+  // Null for a device without a battery (issue #367).
+  int? battery = 73;
 
   Future<void> build() async {
     SharedPreferences.setMockInitialValues({
@@ -70,31 +72,51 @@ void main() {
     final bus = EventBus();
     final log = Logger();
     final commands = CommandRegistry(log);
-    commands.register(Command(
-      name: 'getDeviceInfo',
-      description: 'stub',
-      handler: (_) async => CommandResult.ok(const {
-        'model': 'samsung SM-X700',
-        'osVersion': 'Android 13',
-        'appVersion': '2026.8.40',
-      }),
-    ));
-    commands.register(Command(
-      name: 'getDeviceDetails',
-      description: 'stub',
-      handler: (_) async =>
-          CommandResult.ok(const {'androidBuild': 'TP1A.220624.014'}),
-    ));
-    commands.register(Command(
-      name: 'getIpAddresses',
-      description: 'stub',
-      handler: (_) async => CommandResult.ok(ips),
-    ));
-    commands.register(Command(
-      name: 'getUptime',
-      description: 'stub',
-      handler: (_) async => CommandResult.ok(uptime),
-    ));
+    commands.register(
+      Command(
+        name: 'getDeviceInfo',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(const {
+          'model': 'samsung SM-X700',
+          'osVersion': 'Android 13',
+          'appVersion': '2026.8.40',
+        }),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'getDeviceDetails',
+        description: 'stub',
+        handler: (_) async =>
+            CommandResult.ok(const {'androidBuild': 'TP1A.220624.014'}),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'getIpAddresses',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(ips),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'getUptime',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(uptime),
+      ),
+    );
+    commands.register(
+      Command(
+        name: 'getStats',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok({
+          'battery': battery,
+          'charging': true,
+          'cpu': 12.4,
+          'temp': 41,
+        }),
+      ),
+    );
     final settings = SettingsManager(bus, commands, log);
     await settings.init();
     mqtt = MqttManager(bus, commands, log, settings);
@@ -108,7 +130,38 @@ void main() {
     await pumpEventQueue();
   }
 
-  tearDown(() async => mqtt.dispose());
+  tearDown(() async {
+    battery = 73;
+    await mqtt.dispose();
+  });
+
+  const batteryConfig = 'homeassistant/sensor/ks_testdev1/battery/config';
+  const batteryState = 'kiosksatellite/testdev1/battery/state';
+  const chargingState = 'kiosksatellite/testdev1/charging/state';
+
+  test(
+    'a device with a battery announces the sensor and its percent',
+    () async {
+      await build();
+      final config = jsonDecode(link.published[batteryConfig]!.last) as Map;
+      expect(config['device_class'], 'battery');
+      expect(link.published[batteryState], ['73']);
+    },
+  );
+
+  test(
+    'a device without a battery gets no Battery sensor (issue #367)',
+    () async {
+      battery = null;
+      await build();
+      // Retracted rather than left from an older build, and never fed.
+      expect(link.published[batteryConfig], ['']);
+      expect(link.published.containsKey(batteryState), isFalse);
+      // Charging is its own reading: a mains-powered box still says it is
+      // on external power.
+      expect(link.published[chargingState], ['ON']);
+    },
+  );
 
   test('discovery announces the five diagnostic sensors', () async {
     await build();
@@ -128,42 +181,58 @@ void main() {
       final config = jsonDecode(configs!.last) as Map;
       expect(config['entity_category'], 'diagnostic', reason: objectId);
     }
-    final uptimeConfig = jsonDecode(link
-        .published['homeassistant/sensor/ks_testdev1/app_uptime/config']!
-        .last) as Map;
+    final uptimeConfig =
+        jsonDecode(
+              link
+                  .published['homeassistant/sensor/ks_testdev1/app_uptime/config']!
+                  .last,
+            )
+            as Map;
     expect(uptimeConfig['device_class'], 'timestamp');
     expect(uptimeConfig.containsKey('unit_of_measurement'), isFalse);
   });
 
   test('the Device sensor carries the model with version and build', () async {
     await build();
-    expect(link.published['kiosksatellite/testdev1/device_info/state'],
-        ['samsung SM-X700']);
-    final attrs = jsonDecode(link
-        .published['kiosksatellite/testdev1/device_info/attributes']!
-        .single) as Map;
+    expect(link.published['kiosksatellite/testdev1/device_info/state'], [
+      'samsung SM-X700',
+    ]);
+    final attrs =
+        jsonDecode(
+              link
+                  .published['kiosksatellite/testdev1/device_info/attributes']!
+                  .single,
+            )
+            as Map;
     expect(attrs['android_version'], 'Android 13');
     expect(attrs['build'], 'TP1A.220624.014');
   });
 
-  test('the first IPv4 address is the state, the rest ride in attributes',
-      () async {
-    ips = const {
-      'ipv4': {
-        'wlan0': ['192.168.1.50'],
-        'eth0': ['10.0.3.2'],
-      },
-      'ipv6': {},
-    };
-    await build();
-    expect(link.published['kiosksatellite/testdev1/ipv4_address/state'],
-        ['192.168.1.50']);
-    final attrs = jsonDecode(link
-        .published['kiosksatellite/testdev1/ipv4_address/attributes']!
-        .single) as Map;
-    expect(attrs['other_addresses'], ['10.0.3.2']);
-    expect((attrs['interfaces'] as Map)['eth0'], ['10.0.3.2']);
-  });
+  test(
+    'the first IPv4 address is the state, the rest ride in attributes',
+    () async {
+      ips = const {
+        'ipv4': {
+          'wlan0': ['192.168.1.50'],
+          'eth0': ['10.0.3.2'],
+        },
+        'ipv6': {},
+      };
+      await build();
+      expect(link.published['kiosksatellite/testdev1/ipv4_address/state'], [
+        '192.168.1.50',
+      ]);
+      final attrs =
+          jsonDecode(
+                link
+                    .published['kiosksatellite/testdev1/ipv4_address/attributes']!
+                    .single,
+              )
+              as Map;
+      expect(attrs['other_addresses'], ['10.0.3.2']);
+      expect((attrs['interfaces'] as Map)['eth0'], ['10.0.3.2']);
+    },
+  );
 
   test('IPv6 prefers a global address over the link-local one', () async {
     ips = const {
@@ -173,36 +242,42 @@ void main() {
       },
     };
     await build();
-    expect(link.published['kiosksatellite/testdev1/ipv6_address/state'],
-        ['2001:db8::50']);
-    final attrs = jsonDecode(link
-        .published['kiosksatellite/testdev1/ipv6_address/attributes']!
-        .single) as Map;
+    expect(link.published['kiosksatellite/testdev1/ipv6_address/state'], [
+      '2001:db8::50',
+    ]);
+    final attrs =
+        jsonDecode(
+              link
+                  .published['kiosksatellite/testdev1/ipv6_address/attributes']!
+                  .single,
+            )
+            as Map;
     expect(attrs['other_addresses'], ['fe80::1234']);
   });
 
   test('no address at all publishes an empty (unknown) state', () async {
     ips = const {'ipv4': {}, 'ipv6': {}};
     await build();
-    expect(
-        link.published['kiosksatellite/testdev1/ipv4_address/state'], ['']);
-    expect(
-        link.published['kiosksatellite/testdev1/ipv6_address/state'], ['']);
+    expect(link.published['kiosksatellite/testdev1/ipv4_address/state'], ['']);
+    expect(link.published['kiosksatellite/testdev1/ipv6_address/state'], ['']);
   });
 
-  test('uptime publishes a start timestamp, network None while offline',
-      () async {
-    uptime = const {'app': 4321, 'network': null};
-    await build();
-    final states =
-        link.published['kiosksatellite/testdev1/app_uptime/state']!;
-    expect(states, hasLength(1));
-    final started = DateTime.parse(states.single);
-    final age = DateTime.now().toUtc().difference(started).inSeconds;
-    expect((age - 4321).abs(), lessThan(60));
-    expect(link.published['kiosksatellite/testdev1/network_uptime/state'],
-        ['None']);
-  });
+  test(
+    'uptime publishes a start timestamp, network None while offline',
+    () async {
+      uptime = const {'app': 4321, 'network': null};
+      await build();
+      final states =
+          link.published['kiosksatellite/testdev1/app_uptime/state']!;
+      expect(states, hasLength(1));
+      final started = DateTime.parse(states.single);
+      final age = DateTime.now().toUtc().difference(started).inSeconds;
+      expect((age - 4321).abs(), lessThan(60));
+      expect(link.published['kiosksatellite/testdev1/network_uptime/state'], [
+        'None',
+      ]);
+    },
+  );
 
   test('a live network publishes its own start timestamp', () async {
     uptime = const {'app': 4321, 'network': 99};
@@ -217,10 +292,13 @@ void main() {
 
   test('connectivity binds to the availability topic, ungated', () async {
     await build();
-    final config = jsonDecode(link
-        .published[
-            'homeassistant/binary_sensor/ks_testdev1/connectivity/config']!
-        .last) as Map;
+    final config =
+        jsonDecode(
+              link
+                  .published['homeassistant/binary_sensor/ks_testdev1/connectivity/config']!
+                  .last,
+            )
+            as Map;
     expect(config['state_topic'], 'kiosksatellite/testdev1/availability');
     expect(config['payload_on'], 'online');
     expect(config['payload_off'], 'offline');
@@ -230,14 +308,12 @@ void main() {
     expect(config.containsKey('availability_topic'), isFalse);
     // And nothing publishes to its state topic beyond the availability
     // publisher itself ('online' at bring-up).
-    expect(link.published['kiosksatellite/testdev1/availability'],
-        ['online']);
+    expect(link.published['kiosksatellite/testdev1/availability'], ['online']);
   });
 
   test('last seen stamps once per connect, not per poll', () async {
     await build();
-    final states =
-        link.published['kiosksatellite/testdev1/last_seen/state']!;
+    final states = link.published['kiosksatellite/testdev1/last_seen/state']!;
     // The bring-up ran the initial publish AND the first stats poll; only
     // the connect itself may stamp.
     expect(states, hasLength(1));

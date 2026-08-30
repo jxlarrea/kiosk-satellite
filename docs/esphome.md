@@ -95,7 +95,7 @@ Each of these is a kiosk setting, readable and writable from Home Assistant, the
 
 | Entity | Type | Notes |
 |---|---|---|
-| **Battery** | sensor | Percent |
+| **Battery** | sensor | Percent. Only a device with a battery gets the entity: a mains-powered box without one reports Charging alone |
 | **Charging** | binary sensor | |
 | **CPU usage** | sensor | Percent |
 | **CPU temperature** | sensor | Requires a device that reports one |

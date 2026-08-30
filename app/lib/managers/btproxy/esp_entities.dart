@@ -271,6 +271,12 @@ class EspEntitySurface {
     final stats = await commands.execute('getStats', const {});
     final cpuTempPresent =
         stats.ok && stats.data is Map && (stats.data as Map)['temp'] != null;
+    // A device without a battery gets no Battery sensor (issue #367): the
+    // one gate every consumer reads through answers null for a mains-
+    // powered box, and an entity that could only ever show a sentinel is
+    // worse than none. Charging stays: the box still says it is plugged.
+    final batteryPresent =
+        stats.ok && stats.data is Map && (stats.data as Map)['battery'] != null;
     // Bluetooth connections ride the proxy's master switch, and only exist
     // where Android answers at all: with no adapter, or no Nearby devices
     // grant on Android 12+, the sensor could never report anything but
@@ -628,13 +634,14 @@ class EspEntitySurface {
             'category': 1,
           },
       // ── Diagnostics ──────────────────────────────────────────────────
-      diagnostic(
-        'battery',
-        'Battery',
-        deviceClass: 'battery',
-        unit: '%',
-        stateClass: 1,
-      ),
+      if (batteryPresent)
+        diagnostic(
+          'battery',
+          'Battery',
+          deviceClass: 'battery',
+          unit: '%',
+          stateClass: 1,
+        ),
       diagnostic(
         'charging',
         'Charging',

@@ -24,6 +24,8 @@ void main() {
   late List<(String, List<int>)> images;
   late List<(String, Map<String, Object?>)> executed;
   var cameraPresent = true;
+  // Null for a device without a battery (issue #367).
+  int? battery = 73;
   var cameraFacings = <String>['front', 'back'];
   var bluetooth = <String, Object?>{};
   var vsState = <String, Object?>{};
@@ -33,6 +35,7 @@ void main() {
 
   setUp(() async {
     cameraPresent = true;
+    battery = 73;
     dashboardsUnreachable = false;
     catalogChanges = 0;
     cameraFacings = ['front', 'back'];
@@ -107,12 +110,18 @@ void main() {
         handler: (_) async => CommandResult.ok(cameraFacings),
       ),
     );
-    stub('getStats', {
-      'battery': 73,
-      'charging': true,
-      'cpu': 12.4,
-      'temp': 41,
-    });
+    commands.register(
+      Command(
+        name: 'getStats',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok({
+          'battery': battery,
+          'charging': true,
+          'cpu': 12.4,
+          'temp': 41,
+        }),
+      ),
+    );
     stub('cameraGetConfig', {
       'views': [
         {
@@ -567,6 +576,24 @@ void main() {
     expect(byId['ipv6_address'], '2001:db8::50');
     expect(byId['ipv6_interfaces'], 'wlan0: fe80::1234, 2001:db8::50');
   });
+
+  test(
+    'a device without a battery gets no Battery entity (issue #367)',
+    () async {
+      battery = null;
+      final catalog = await surface.build();
+      final ids = [for (final d in catalog) '${d['objectId']}'];
+      expect(ids, isNot(contains('battery')));
+      // Charging is its own reading: a mains-powered box still says it is
+      // on external power.
+      expect(ids, contains('charging'));
+      await attach();
+      final byId = {for (final (id, value) in pushed) id: value};
+      expect(byId.containsKey('battery'), isFalse);
+      expect(byId['charging'], true);
+      expect(byId['cpu'], 12);
+    },
+  );
 
   test('attach pushes an initial snapshot from the live sources', () async {
     await surface.build();
