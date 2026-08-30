@@ -11,24 +11,66 @@ the network (`adb connect <ip>:5555`) and accept the debugging prompt on
 the Portal's screen the first time. Nothing on the Portal blocks the
 install, the app or its foreground service.
 
-## What to know before provisioning
+## Setup in one sitting
 
-| Quirk | Effect | What to do |
-| --- | --- | --- |
-| Meta's notification layer drops the service notification (`not_in_allowlist`) | The Kiosk Satellite Service's notification never shows. The service still runs as a foreground service, so nothing is lost | Nothing |
-| Two Meta accessibility services are already enabled | The `settings put secure enabled_accessibility_services` line in [Permissions](permissions.md) replaces the list, which would disable Meta's key handling and the presence touch service | Append instead of replacing, see the block below |
-| Meta's package verifier rejects every app-initiated install | `com.facebook.appverifier` answers Android's package verification for installs an app starts and refuses any APK not signed by Meta, so the in-app updater ends in `INSTALL_FAILED_VERIFICATION_FAILURE` after the Install tap. The app logs the verifier's refusal. adb installs are exempt | Turn the verifier off once: `adb shell settings put global package_verifier_enable 0`. Reversible with `settings put global package_verifier_enable 1`. Device ownership does not get around it, the verifier runs for owner installs too |
-| `pm clear` revokes the runtime grants | A data reset from adb also resets microphone, camera, location and storage | Run the grant block again after a clear |
-| Impeller's OpenGLES backend wedges on Activity re-creation | Flutter's default renderer rejects the Portal's Vulkan driver and falls back to OpenGLES, which loses its context when Android destroys and re-creates the app's Activity. On a Portal the Back button in Meta's own bar at the top of the screen does exactly that: it closes the app, and the next tap on the tile re-creates it. From then on the dashboard WebView still shows but nothing Flutter draws does: no screensaver, no drawer, no settings | Nothing: the app switches itself to the Legacy renderer (Skia) on a Portal the first time it starts, and shows that under **Settings, Device**. Leave it on |
+Everything a Portal needs, from a computer on the same network. The
+grants are the Android 10 subset of [Permissions](permissions.md), the
+last block is Portal-specific and the reasons are further down this page.
 
-Appending the System UI guard to the accessibility list, in one line:
+```
+adb connect <portal ip>:5555
+adb install -r kiosk-satellite.apk
+```
+
+```
+adb shell pm grant me.jxl.kiosk_satellite android.permission.RECORD_AUDIO
+adb shell pm grant me.jxl.kiosk_satellite android.permission.CAMERA
+adb shell pm grant me.jxl.kiosk_satellite android.permission.ACCESS_COARSE_LOCATION
+adb shell pm grant me.jxl.kiosk_satellite android.permission.ACCESS_FINE_LOCATION
+adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_EXTERNAL_STORAGE
+adb shell pm grant me.jxl.kiosk_satellite android.permission.WRITE_EXTERNAL_STORAGE
+adb shell appops set me.jxl.kiosk_satellite SYSTEM_ALERT_WINDOW allow
+adb shell appops set me.jxl.kiosk_satellite WRITE_SETTINGS allow
+adb shell appops set me.jxl.kiosk_satellite GET_USAGE_STATS allow
+adb shell dumpsys deviceidle whitelist +me.jxl.kiosk_satellite
+adb shell dpm set-active-admin me.jxl.kiosk_satellite/.KioskAdminReceiver
+```
+
+```
+# In-app updates: Meta's package verifier would reject them
+adb shell settings put global package_verifier_enable 0
+# Person Detection: reading the Portal's own person sensor
+adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS
+# The grant reaches the app at its next start
+adb shell am force-stop me.jxl.kiosk_satellite
+adb shell monkey -p me.jxl.kiosk_satellite -c android.intent.category.LAUNCHER 1
+```
+
+Optional, the System UI guard behind Kiosk Mode's protections. A Portal
+already has two Meta accessibility services enabled, so append rather
+than run the line from the Permissions doc:
 
 ```
 adb shell settings put secure enabled_accessibility_services "com.facebook.aloha.system.device/com.facebook.aloha.system.device.accessibility.KeyEventAccessibilityService:com.facebook.alohaservices.presence/com.facebook.aloha.system.presence.touch.TouchEventAccessibilityService:me.jxl.kiosk_satellite/me.jxl.kiosk_satellite.KioskAccessibilityService"
 ```
 
-Read the current value first with `adb shell settings get secure
-enabled_accessibility_services` in case your Portal lists something else.
+Then finish the setup wizard on the Portal or from a browser at
+`http://<portal ip>:2324`. The app switches itself to the Legacy renderer
+on its first start, see below, and needs nothing else.
+
+## What to know before provisioning
+
+| Quirk | Effect | What to do |
+| --- | --- | --- |
+| Meta's notification layer drops the service notification (`not_in_allowlist`) | The Kiosk Satellite Service's notification never shows. The service still runs as a foreground service, so nothing is lost | Nothing |
+| Two Meta accessibility services are already enabled | The `settings put secure enabled_accessibility_services` line in [Permissions](permissions.md) replaces the list, which would disable Meta's key handling and the presence touch service | Append instead of replacing, the line in the setup block above does |
+| Meta's package verifier rejects every app-initiated install | `com.facebook.appverifier` answers Android's package verification for installs an app starts and refuses any APK not signed by Meta, so the in-app updater ends in `INSTALL_FAILED_VERIFICATION_FAILURE` after the Install tap. The app logs the verifier's refusal. adb installs are exempt | Turn the verifier off once: `adb shell settings put global package_verifier_enable 0`. Reversible with `settings put global package_verifier_enable 1`. Device ownership does not get around it, the verifier runs for owner installs too |
+| `pm clear` revokes the runtime grants | A data reset from adb also resets microphone, camera, location and storage | Run the grant block again after a clear |
+| Impeller's OpenGLES backend wedges on Activity re-creation | Flutter's default renderer rejects the Portal's Vulkan driver and falls back to OpenGLES, which loses its context when Android destroys and re-creates the app's Activity. On a Portal the Back button in Meta's own bar at the top of the screen does exactly that: it closes the app, and the next tap on the tile re-creates it. From then on the dashboard WebView still shows but nothing Flutter draws does: no screensaver, no drawer, no settings | Nothing: the app switches itself to the Legacy renderer (Skia) on a Portal the first time it starts, and shows that under **Settings, Device**. Leave it on |
+
+Read the current accessibility list first with `adb shell settings get
+secure enabled_accessibility_services` in case your Portal lists something
+else than the two services in the setup block above.
 
 ## Updates
 
