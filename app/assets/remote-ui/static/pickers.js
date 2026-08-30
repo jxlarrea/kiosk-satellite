@@ -191,6 +191,14 @@ export function openLauncherAppsPicker(current) {
 }
 
 
+// The struck-out eye a person hidden in Immich wears, the device's
+// Icons.visibility_off_outlined traced in the page's stroke style.
+const HIDDEN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+  + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+  + '<path d="M10.6 6.2A9.9 9.9 0 0 1 12 6c5 0 9 4.5 10 6a15.6 15.6 0 0 1-3.2 3.7"/>'
+  + '<path d="M6.6 8.3C4.2 9.8 2.5 11.6 2 12c1 1.5 5 6 10 6 1.7 0 3.2-.5 4.5-1.2"/>'
+  + '<path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="m3 3 18 18"/></svg>';
+
 // The Immich album, people and tag pickers (issue #345): every name the
 // server lists with a checkbox, resolving to the chosen [{id, name}] or
 // null on cancel. Names only, no face thumbnails: the list is the same the
@@ -246,10 +254,18 @@ export function openImmichNamesPicker({ title, command, current, none }) {
         const name = document.createElement('div'); name.className = 'name';
         name.textContent = option.name;
         info.appendChild(name);
-        // Albums carry their size, which tells two similarly named ones apart.
+        // Albums carry their size, which tells two similarly named ones
+        // apart, and a person hidden in Immich says so under a struck-out
+        // eye: the filter still works on them (issue #382).
         if (option.count != null) {
           const desc = document.createElement('div'); desc.className = 'desc';
           desc.textContent = `${option.count} items`;
+          info.appendChild(desc);
+        } else if (option.hidden) {
+          const desc = document.createElement('div');
+          desc.className = 'desc with-icon';
+          desc.innerHTML = HIDDEN_ICON + '<span></span>';
+          desc.querySelector('span').textContent = 'Hidden';
           info.appendChild(desc);
         }
         const box = document.createElement('input');

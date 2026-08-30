@@ -460,6 +460,10 @@
      muted; inside a row it is the 13 description. */
   .desc { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
   .row .info .desc { font-size: 13px; line-height: 1.35; margin-top: 3px; }
+  /* A description that leads with a glyph (the Immich pickers' Hidden),
+     the icon sized to the text and sitting on its line. */
+  .desc.with-icon { display: flex; align-items: center; gap: 5px; }
+  .desc.with-icon svg { width: 14px; height: 14px; flex: none; }
   /* A labeled field in an editor: the label above the control in 12.5
      muted, 6 apart, helper text beneath. A class, not inline styles, so a
      field shown again after style.display = '' comes back as the column

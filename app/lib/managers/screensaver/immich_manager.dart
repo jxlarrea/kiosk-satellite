@@ -325,9 +325,10 @@ class ImmichManager extends Manager {
       Command(
         name: 'immichPeople',
         description:
-            'The named people Immich recognizes, alphabetical: [{id, name}]. '
-            'Unnamed face clusters and hidden people are left out, since '
-            'the filters pick by name.',
+            'The named people Immich recognizes, alphabetical: '
+            '[{id, name, hidden}]. Unnamed face clusters are left out, since '
+            'the filters pick by name. People hidden in Immich come along '
+            'with hidden: true, since the filters still work on them.',
         handler: (_) async {
           try {
             return CommandResult.ok(await _people());
@@ -523,17 +524,24 @@ class ImmichManager extends Manager {
     return albums;
   }
 
-  /// Every named, unhidden person, alphabetical. Immich pages this
-  /// endpoint on newer servers and answers the lot on older ones; both
-  /// shapes are read. Unnamed clusters are skipped: a filter picked by
-  /// name has nothing to show for them.
+  /// Every named person, alphabetical. Immich pages this endpoint on newer
+  /// servers and answers the lot on older ones; both shapes are read.
+  /// Unnamed clusters are skipped: a filter picked by name has nothing to
+  /// show for them, and skipping them keeps the hidden ones (mostly
+  /// background faces) out of the picker.
+  ///
+  /// People hidden in Immich come along, marked `hidden` so the pickers can
+  /// say so (issue #382). Hiding a person only takes them out of Immich's
+  /// own listings: their faces stay on the assets, so both filters keep
+  /// working on them, and a person hidden after being picked no longer
+  /// vanishes from the filter the next time the row is saved.
   Future<List<Map<String, Object?>>> _people() async {
     final people = <Map<String, Object?>>[];
     for (var page = 1; page <= _maxPeoplePages; page++) {
       final response = await http
           .get(
             Uri.parse(
-              '$_base/api/people?withHidden=false&page=$page&size=1000',
+              '$_base/api/people?withHidden=true&page=$page&size=1000',
             ),
             headers: _headers,
           )
@@ -543,8 +551,12 @@ class ImmichManager extends Manager {
       final list = decoded is Map ? decoded['people'] : decoded;
       for (final person in (list as List? ?? const []).cast<Map>()) {
         final name = '${person['name'] ?? ''}'.trim();
-        if (name.isEmpty || person['isHidden'] == true) continue;
-        people.add({'id': person['id'], 'name': name});
+        if (name.isEmpty) continue;
+        people.add({
+          'id': person['id'],
+          'name': name,
+          if (person['isHidden'] == true) 'hidden': true,
+        });
       }
       if (decoded is! Map || decoded['hasNextPage'] != true) break;
     }

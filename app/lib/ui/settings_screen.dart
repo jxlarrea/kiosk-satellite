@@ -8428,6 +8428,14 @@ class SettingTile extends StatelessWidget {
       for (final item in (result.data as List).cast<Map>())
         if (item['count'] != null) '${item['id']}': '${item['count']} items',
     };
+    // A person hidden in Immich says so under a struck-out eye: the filter
+    // still works on them (issue #382), so the line explains the name
+    // rather than warning about it.
+    final hidden = {
+      for (final item in (result.data as List).cast<Map>())
+        if (item['hidden'] == true) '${item['id']}',
+    };
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final selected = {
       for (final n in decodeImmichNamed(c.settings.get(row.def))) n.id,
     };
@@ -8448,9 +8456,22 @@ class SettingTile extends StatelessWidget {
                           CheckboxListTile(
                             value: selected.contains(option.id),
                             title: Text(option.name),
-                            subtitle: details[option.id] == null
-                                ? null
-                                : Text(details[option.id]!),
+                            subtitle: details[option.id] != null
+                                ? Text(details[option.id]!)
+                                : hidden.contains(option.id)
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.visibility_off_outlined,
+                                        size: 14,
+                                        color: muted,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      const Text('Hidden'),
+                                    ],
+                                  )
+                                : null,
                             onChanged: (on) => setState(() {
                               if (on == true) {
                                 selected.add(option.id);

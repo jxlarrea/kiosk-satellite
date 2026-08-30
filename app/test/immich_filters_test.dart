@@ -59,6 +59,7 @@ void main() {
     },
   ];
   var peopleStatus = 200;
+  var peopleWithHidden = '';
   var peoplePages = <List<Map<String, Object?>>>[
     [
       {'id': 'bob', 'name': 'Bob'},
@@ -71,6 +72,7 @@ void main() {
   setUp(() async {
     searches.clear();
     peopleStatus = 200;
+    peopleWithHidden = '';
     server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     server.listen((request) async {
       final path = request.uri.path;
@@ -123,6 +125,7 @@ void main() {
         );
       } else if (path == '/api/people') {
         response.statusCode = peopleStatus;
+        peopleWithHidden = request.uri.queryParameters['withHidden'] ?? '';
         if (peopleStatus != 200) {
           response.write(jsonEncode({'message': 'Forbidden'}));
         } else {
@@ -364,12 +367,15 @@ void main() {
     expect(immichFiltersActive(settings), isFalse);
   });
 
-  test('immichPeople lists named, unhidden people alphabetically', () async {
+  test('immichPeople lists named people alphabetically, hidden ones '
+      'marked (issue #382)', () async {
     final result = await commands.execute('immichPeople', const {});
     expect(result.ok, isTrue);
+    expect(peopleWithHidden, 'true');
     expect(result.data, [
       {'id': 'alice', 'name': 'Alice'},
       {'id': 'bob', 'name': 'Bob'},
+      {'id': 'hidden', 'name': 'Hidden', 'hidden': true},
     ]);
   });
 

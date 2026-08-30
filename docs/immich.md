@@ -68,8 +68,10 @@ Every filter that is set has to hold, and a photo is never shown twice.
 
 - **People**: only media with any of these people in it. Tap the row and
   tick names off the list of people Immich has recognized and you have
-  named. Unnamed face clusters and people hidden in Immich are not
-  offered, so name the family in Immich first.
+  named. Unnamed face clusters are not offered, so name the family in
+  Immich first. People you have hidden in Immich are offered, marked
+  **Hidden** under a struck-out eye: hiding only takes them out of
+  Immich's own listings, and both filters still work on them.
 - **Exclude people**: skip media with any of these people, whoever else
   is in it. The same list, the opposite effect. Immich cannot answer this
   question on its own, so the kiosk asks for every asset's people and
@@ -212,7 +214,8 @@ its spot, so both are always readable at once.
   Immich; the rest of the screensaver does not need either.
 - **Nobody is listed under People**: the filters pick by name, and Immich
   only has names for the people you have named under its People page.
-  Name them there, then open the picker again.
+  Name them there, then open the picker again. Hiding a person in Immich
+  does not take them off this list.
 - **Validation passes but the log says a preview probe was skipped**:
   that asset has no preview on the server yet (still being processed,
   generation failed, an external library not scanned, or the file is
