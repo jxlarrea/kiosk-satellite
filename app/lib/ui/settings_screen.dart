@@ -7322,9 +7322,9 @@ class _PersonSensorLogAccessTileState extends State<_PersonSensorLogAccessTile>
             ? "The device's person sensor can be read."
             : access.granted
             ? 'Granted. Restart Kiosk Satellite to apply it.'
-            : 'Only adb can grant this, never a dialog on the device. The '
-                  'Meta Portal doc has the full command. Restart Kiosk '
-                  'Satellite afterwards.',
+            : 'This permission can only be granted via ADB. The Meta '
+                  'Portal doc has the full command. Restart Kiosk Satellite '
+                  'afterwards.',
       ),
       trailing: access != null && access.granted && !ok
           ? TextButton(

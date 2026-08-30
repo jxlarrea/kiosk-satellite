@@ -2277,7 +2277,8 @@ export function updatePersonSensorRows() {
   const command = 'adb shell pm grant me.jxl.kiosk_satellite android.permission.READ_LOGS';
   const copy = copyBox(command);
   copy.el.classList.add('person-grant-command');
-  copy.el.style.cssText = 'margin:12px 16px;';
+  // Full width and free to wrap, so the whole command reads on any screen.
+  copy.el.style.cssText = 'margin:12px 16px; width:calc(100% - 32px); max-width:none;';
   panel.append(h, permCard);
 
   const paintPerm = (st) => {
@@ -2289,9 +2290,8 @@ export function updatePersonSensorRows() {
       : ok ? "The device's person sensor can be read."
       : access.granted
         ? 'Granted. Restart Kiosk Satellite to apply it.'
-        : 'Only adb can grant this, never a dialog on the device. The Meta '
-          + 'Portal doc has the full command, copied below. Restart Kiosk '
-          + 'Satellite afterwards.';
+        : 'This permission can only be granted via ADB. Below is the full '
+          + 'command, ready to be copied. Restart Kiosk Satellite afterwards.';
     stateEl.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
     stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
     permRow.querySelector('button')?.remove();

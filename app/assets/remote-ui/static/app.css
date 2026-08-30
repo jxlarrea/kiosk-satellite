@@ -572,6 +572,10 @@
   .copy-box.empty .copy-value { font-family: inherit; font-size: 15px;
     color: var(--muted); }
   .copy-box:disabled { cursor: default; }
+  /* The Log access adb command: shown whole, wrapping rather than cut. */
+  .copy-box.person-grant-command .copy-value { white-space: normal;
+    overflow: visible; text-overflow: clip; word-break: break-all;
+    text-align: left; }
   .copy-box .copy-disc { width: 36px; height: 36px; }
   .copy-box .copy-disc.done { color: var(--primary); }
   .copy-box:not(:disabled):hover .copy-disc { background: var(--surface);
