@@ -35,11 +35,33 @@ object RendererGuard {
     private const val BOOT_WINDOW_MS = 90_000L
     private const val TRIP_AFTER = 2L
 
+    /** Set once the Meta Portal rule below has written the setting, so a
+     *  person who later turns Legacy renderer off on purpose is obeyed. */
+    private const val PORTAL_RULE_APPLIED = "flutter.ks.render.portal_rule_applied"
+
     /** The engine's shell arguments, or null for the defaults. Also runs
      *  the crash accounting, so call it exactly once per process. */
     fun engineArgs(context: Context): Array<String>? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         var disabled = prefs.getBoolean(DISABLED, false)
+        // Meta Portal (Adreno 615, Android 10): Impeller rejects the Vulkan
+        // driver and runs its OpenGLES backend, which does not survive the
+        // Activity being destroyed and re-created under the cached engine
+        // (the home app restarting, a permission dialog on some builds):
+        // from the re-attach on, every frame fails with EGL_BAD_ACCESS and
+        // the Flutter UI is gone for good while Dart and the WebView carry
+        // on, which no watchdog can tell from a healthy kiosk. Skia has no
+        // such failure, so the setting is flipped once, the way the crash
+        // net flips it, so both settings UIs tell the truth.
+        if (!disabled && !prefs.getBoolean(PORTAL_RULE_APPLIED, false) &&
+            android.os.Build.MANUFACTURER.equals("Facebook", ignoreCase = true)
+        ) {
+            disabled = true
+            prefs.edit().putBoolean(DISABLED, true)
+                .putBoolean(PORTAL_RULE_APPLIED, true).commit()
+            Log.w(TAG, "Meta Portal: Impeller's OpenGLES backend wedges on " +
+                "Activity re-creation; disabling Impeller for this device")
+        }
         val pendingSince = prefs.getLong(PENDING_SINCE, 0L)
         if (!disabled && pendingSince > 0L &&
             System.currentTimeMillis() - pendingSince < BOOT_WINDOW_MS

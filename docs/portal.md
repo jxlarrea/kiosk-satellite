@@ -18,6 +18,7 @@ install, the app or its foreground service.
 | Meta's notification layer drops the service notification (`not_in_allowlist`) | The Kiosk Satellite Service's notification never shows. The service still runs as a foreground service, so nothing is lost | Nothing |
 | Two Meta accessibility services are already enabled | The `settings put secure enabled_accessibility_services` line in [Permissions](permissions.md) replaces the list, which would disable Meta's key handling and the presence touch service | Append instead of replacing, see the block below |
 | `pm clear` revokes the runtime grants | A data reset from adb also resets microphone, camera, location and storage | Run the grant block again after a clear |
+| Impeller's OpenGLES backend wedges on Activity re-creation | Flutter's default renderer rejects the Portal's Vulkan driver and falls back to OpenGLES, which loses its context when Android destroys and re-creates the app's Activity. On a Portal the Back button in Meta's own bar at the top of the screen does exactly that: it closes the app, and the next tap on the tile re-creates it. From then on the dashboard WebView still shows but nothing Flutter draws does: no screensaver, no drawer, no settings | Nothing: the app switches itself to the Legacy renderer (Skia) on a Portal the first time it starts, and shows that under **Settings, Device**. Leave it on |
 
 Appending the System UI guard to the accessibility list, in one line:
 
