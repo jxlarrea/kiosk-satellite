@@ -192,10 +192,11 @@ Kiosk Satellite is distributed as a free APK for sideloading:
    [releases page](../../releases).
 2. Copy it to the tablet (or download it there directly) and open it.
    Allow installing from unknown sources when Android asks.
-3. Open the app and follow the setup wizard. Tip: enable remote
-   administration in the first step and finish the setup from a browser on
-   your computer, where pasting the Home Assistant access token is much
-   easier than typing it on glass.
+3. Open the app and follow the setup wizard. The first step names the
+   device, which is what Home Assistant and the network will call it. Tip:
+   enable remote administration in the same step and finish the setup from
+   a browser on your computer, where pasting the Home Assistant access
+   token is much easier than typing it on glass.
 
 **Requirements:** Android 7.0 or newer, a Home Assistant instance you can
 reach from the tablet, and a long-lived access token (HA profile →

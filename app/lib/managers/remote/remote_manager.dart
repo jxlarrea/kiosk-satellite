@@ -311,9 +311,16 @@ class RemoteManager extends Manager {
     // while no password exists on an unconfigured device — and answers
     // with a session token so the wizard continues authenticated.
     if (path == 'api/setup/status') {
+      // The name the device goes by right now: what was set, or the model.
+      // The wizard's first page seeds its Device name field with it, so
+      // the remote and device wizards start from the same value.
+      final info = await commands.execute('getDeviceInfo', const {});
+      final data = info.ok ? info.data as Map? : null;
+      final deviceName = data?['name'];
       return _json(200, {
         'setupNeeded': _setupMode,
         'passwordNeeded': _settings.get(defs.remotePassword).isEmpty,
+        'deviceName': deviceName is String ? deviceName : '',
         // An import applied its settings but the OS permission prompts are
         // still being answered on the device; the start URL (what ends
         // setup) lands after them. The UI shows "finish on the device"
@@ -361,6 +368,13 @@ class RemoteManager extends Manager {
       final password = body?['password'];
       if (password is! String || password.length < 4) {
         return _json(400, {'error': 'password must be at least 4 characters'});
+      }
+      // The first page's other field. It rides the same request because
+      // before a password exists there is no session to PATCH settings
+      // with; the wizard sends it whenever it sends a password.
+      final deviceName = body?['deviceName'];
+      if (deviceName is String) {
+        await _settings.set(defs.deviceName, deviceName.trim());
       }
       await _settings.set(defs.remotePassword, password);
       await _settings.set(defs.remoteEnabled, true);

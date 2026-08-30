@@ -25,8 +25,9 @@ import 'token_qr_scanner.dart';
 /// the first screen, in the app's One UI split layout — the step list on a
 /// left rail, the current step's work on the right, exactly like Settings.
 ///
-///   1. Welcome — and the offer to enable the remote admin, where typing a
-///      long-lived token is a paste instead of a chore.
+///   1. Welcome — the device name, seeded with the model, and the offer to
+///      enable the remote admin, where typing a long-lived token is a paste
+///      instead of a chore.
 ///   2. Connect — base URL + token; Next *is* the validation.
 ///   3. Dashboard — pick which one the kiosk shows.
 ///   4. Voice Satellite — when the card is found on the instance, offer the
@@ -95,6 +96,13 @@ class _SetupScreenState extends State<SetupScreen> {
       _fail("Can't connect", error);
     }
   }
+
+  // Step 1 — the device name. Seeded with the model so the kiosk carries a
+  // friendly name from its first minute: the ESPHome node name is taken
+  // from the device name at the server's first start, and a name typed here
+  // lands before that, so Home Assistant sees kitchen-tablet rather than a
+  // generated kiosk-satellite-<id>.
+  final _deviceName = TextEditingController();
 
   // Step 1 — remote admin. On by default: the remote admin is where the
   // token gets pasted and where the kiosk is managed afterwards.
@@ -187,6 +195,13 @@ class _SetupScreenState extends State<SetupScreen> {
     // earlier pass through this page) is the field's starting value, so
     // Next keeps it rather than refusing an empty box.
     _remotePassword.text = c.settings.get(defs.remotePassword);
+    // A name already set (the remote wizard, or an earlier pass) stands;
+    // otherwise the model, which is what the device would call itself
+    // anyway, offered as a starting point rather than an empty box.
+    final configuredName = c.settings.get(defs.deviceName).trim();
+    _deviceName.text = configuredName.isNotEmpty
+        ? configuredName
+        : c.device.model;
     c.device.ipAddress().then((ip) {
       if (mounted) setState(() => _deviceIp = ip);
     });
@@ -207,6 +222,7 @@ class _SetupScreenState extends State<SetupScreen> {
   @override
   void dispose() {
     _sub?.cancel();
+    _deviceName.dispose();
     _remotePassword.dispose();
     _haUrl.dispose();
     _haToken.dispose();
@@ -304,6 +320,11 @@ class _SetupScreenState extends State<SetupScreen> {
     });
     switch (_step) {
       case 0:
+        // Stored as typed, the model included: an explicit name is what
+        // the ESPHome node name and the MQTT device are built from, and
+        // an empty box falls back to the model on its own.
+        _deviceName.text = _deviceName.text.trim();
+        await c.settings.set(defs.deviceName, _deviceName.text);
         if (_remoteWanted) {
           final password = _remotePassword.text;
           if (password.length < 4) {
@@ -769,6 +790,24 @@ class _SetupScreenState extends State<SetupScreen> {
             'Turn this tablet into a Home Assistant kiosk. Setup takes a '
             'couple of minutes and this wizard walks you through it.',
           ),
+          // No group heading: the field's own label says all there is.
+          _Card([
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: LabeledField(
+                label: 'Device name',
+                helper:
+                    'How this kiosk is called in Home Assistant, in the '
+                    'remote admin and on the network. Change it any time '
+                    'under Settings, Device.',
+                child: TextField(
+                  controller: _deviceName,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(),
+                ),
+              ),
+            ),
+          ]),
           const SectionHeading('Remote administration'),
           _Card([
             SwitchListTile(

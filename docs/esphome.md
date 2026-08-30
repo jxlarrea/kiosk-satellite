@@ -253,7 +253,7 @@ actions:
 
 ## Node name
 
-The node name is the mDNS name Home Assistant discovers (`<node name>.local`) and the stem of the device's action names: `kitchen-tablet` makes `esphome.kitchen_tablet_notification`. A fresh install names itself after its device name. A kiosk already discovered keeps the generated `kiosk-satellite-<id>`.
+The node name is the mDNS name Home Assistant discovers (`<node name>.local`) and the stem of the device's action names: `kitchen-tablet` makes `esphome.kitchen_tablet_notification`. A fresh install names itself after its device name, the **Device name** field on the setup wizard's first page, which starts out as the device model. A kiosk already discovered keeps the generated `kiosk-satellite-<id>`.
 
 Change it under **Settings, ESPHome, Node name**. Anything typed is reduced to lower case, digits and single hyphens ("Kitchen Tablet" becomes `kitchen-tablet`) and must be unique among the kiosks on the network.
 

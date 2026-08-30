@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart';
+import 'package:kiosk_satellite/ui/kit.dart';
 import 'package:kiosk_satellite/ui/setup_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -131,6 +132,46 @@ void main() {
     await settle(tester);
     expect(find.text('Connect to Home Assistant'), findsOneWidget);
     expect(find.text('Kiosk Satellite Service'), findsNothing);
+  });
+
+  testWidgets('the Welcome page names the device first, from the model', (
+    tester,
+  ) async {
+    await boot();
+    container.device.model = 'Amazon KFTUWI';
+    tester.view.physicalSize = const Size(900, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(home: SetupScreen(container: container)),
+    );
+    await settle(tester);
+
+    // Above Remote administration (the rail names that group too, so the
+    // heading is the anchor), seeded with the model. No heading of its
+    // own: the field's label is enough.
+    final field = find.widgetWithText(TextField, 'Amazon KFTUWI');
+    expect(field, findsOneWidget);
+    final device = tester.getTopLeft(field);
+    final remote = tester.getTopLeft(
+      find.widgetWithText(SectionHeading, 'Remote administration'),
+    );
+    expect(device.dy, lessThan(remote.dy));
+
+    // What is typed is what the ESPHome node name and the MQTT device are
+    // built from, so Next stores it, remote administration on or off.
+    await tester.enterText(field, ' Kitchen Tablet ');
+    await tester.tap(find.byType(SwitchListTile));
+    await settle(tester);
+    await tester.tap(find.text('Next'));
+    await settle(tester);
+    expect(find.text('Connect to Home Assistant'), findsOneWidget);
+    expect(container.settings.get(deviceName), 'Kitchen Tablet');
+
+    // Back again: the stored name stands, not the model.
+    await tester.tap(find.text('Back'));
+    await settle(tester);
+    expect(find.widgetWithText(TextField, 'Kitchen Tablet'), findsOneWidget);
   });
 
   testWidgets('a missing grant never blocks the first page', (tester) async {

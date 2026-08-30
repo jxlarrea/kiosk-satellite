@@ -381,6 +381,19 @@ export function wizardSteps() {
       ? 'This tablet is waiting to be set up. First, protect this remote admin with a password.'
       : 'This tablet is waiting to be set up. The remote admin password is already set; type a new one here to change it.',
     body: (b) => {
+      // The device name first, seeded with what the device calls itself
+      // (the model, until someone names it): the ESPHome node name is
+      // taken from it at the server's first start, so a name given here
+      // reads as kitchen-tablet in Home Assistant rather than a generated
+      // kiosk-satellite-<id>.
+      const dev = wizardCard(b);
+      const nameField = wizardField(dev, 'wzDeviceName', 'text', 'Device name');
+      nameField.value = wizard.deviceName || '';
+      const note = document.createElement('div');
+      note.style.cssText = 'color:var(--muted); font-size:12.5px; line-height:1.5; margin-top:-4px';
+      note.textContent = 'How this kiosk is called in Home Assistant, in the remote admin '
+        + 'and on the network. Change it any time under Settings, Device.';
+      dev.appendChild(note);
       wizardHeading(b, 'Remote administration');
       // Always a field: with a password already set (on the tablet, or by
       // an earlier pass through this step) it changes it, and an empty
@@ -397,13 +410,23 @@ export function wizardSteps() {
       // The service's required grants first: the whole kiosk rides on
       // them, and the page just asked for them by name.
       const password = $('#wzPassword').value;
-      if (!wizard.needPassword && !password) return;
+      const deviceName = $('#wzDeviceName').value.trim();
+      wizard.deviceName = deviceName;
+      if (!wizard.needPassword && !password) {
+        // Keeping the password: the session it minted carries the name.
+        await api('/api/settings', { method: 'PATCH',
+          body: JSON.stringify({ 'device.name': deviceName }) });
+        return;
+      }
       if (password.length < 4) throw wizFail('Password too short', 'Use at least 4 characters.');
       // A change rides the session the current password minted; a first
-      // password has no session yet and goes bare.
+      // password has no session yet and goes bare. The name rides along
+      // either way: before a password exists there is nothing to PATCH
+      // settings with.
+      const body = JSON.stringify({ password, deviceName });
       const res = wizard.needPassword
-        ? await fetch('api/setup/password', { method: 'POST', body: JSON.stringify({ password }) })
-        : await api('/api/setup/password', { method: 'POST', body: JSON.stringify({ password }) });
+        ? await fetch('api/setup/password', { method: 'POST', body })
+        : await api('/api/setup/password', { method: 'POST', body });
       const out = await res.json();
       if (!res.ok) {
         // A password already exists: set on the tablet's own wizard, or by
@@ -686,6 +709,13 @@ export async function startWizard({ needPassword }) {
   wizard.needPassword = needPassword;
   // Read by logout(): a 401 must not rebuild a wizard that is already up.
   $('#wizard').dataset.needPassword = needPassword ? '1' : '0';
+  // The first page's Device name starting value: what is set, or the
+  // model. Public, like the rest of the status, since before a password
+  // exists there is no session to ask with.
+  try {
+    const setup = await (await fetch('api/setup/status')).json();
+    wizard.deviceName = setup?.deviceName || '';
+  } catch (_) { wizard.deviceName = ''; }
   wizard.i = 0;
   wizard.steps = wizardSteps();
   wizardShow();

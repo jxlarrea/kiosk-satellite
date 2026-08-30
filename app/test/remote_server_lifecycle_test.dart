@@ -172,13 +172,16 @@ void main() {
       Uri.parse('http://127.0.0.1:$port/api/setup/password'),
     );
     req.headers.contentType = ContentType.json;
-    req.write('{"password":"letmein"}');
+    // The page's Device name rides the same request: before the password
+    // lands there is no session to PATCH settings with.
+    req.write('{"password":"letmein","deviceName":" Kitchen Tablet "}');
     final res = await req.close();
     final body = await res.transform(utf8.decoder).join();
     client.close();
     expect(res.statusCode, 200);
     expect(body, contains('token'));
     expect(settings.get(defs.remotePassword), 'letmein');
+    expect(settings.get(defs.deviceName), 'Kitchen Tablet');
     await settle();
     expect(await listening(), isTrue);
 

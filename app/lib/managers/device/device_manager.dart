@@ -29,7 +29,11 @@ class DeviceManager extends Manager {
   @override
   String get name => 'device';
 
-  late final String model;
+  /// Manufacturer and model, the device's name until someone gives it one.
+  /// Empty until [init] reads it, not late: the setup wizard's first page
+  /// reads it as the Device name field's starting value and a widget test
+  /// pumps that page without booting the device manager.
+  String model = '';
   late final String osVersion;
   late final String appVersion;
   late final String packageName;
