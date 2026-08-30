@@ -44,7 +44,7 @@ Validate button above), then these.
 | Slideshow | Seconds per image | 10 | Videos ignore this and play to their end. |
 | Slideshow | Shuffle | off | Random order instead of the server's newest-first order. |
 | Slideshow | Transition | Crossfade | The same set every slideshow mode offers: none, crossfade, slide, zoom, Ken Burns, or random. |
-| Slideshow | Fill the screen | on | See below. |
+| Slideshow | Fill the screen | Smart | See below. |
 | Slideshow | Pair portrait photos | on | See below. |
 | Metadata | Show metadata | off | See below. |
 | Metadata | Album name, Date taken, Camera details, Location | on | One toggle per metadata line. |
@@ -100,13 +100,21 @@ showing a black screen.
 
 ## Fill the screen
 
-Most people want photos edge to edge. With **Fill the screen** on, a
-photo whose shape is close enough to the screen's (within about a 25
-percent crop along one axis) is enlarged to cover the whole panel. This
-admits the common 4:3 and 16:9 camera frames on a landscape tablet in
-either orientation. Portrait and square photos, which such a crop would
-ruin, keep their full frame and get the photo itself, enlarged, blurred
-and dimmed, as the backdrop instead of black bars.
+Most people want photos edge to edge. **Fill the screen** sets how far a
+photo may be cropped to get there.
+
+| Setting | What a photo gets |
+| --- | --- |
+| Off | Its full frame between black bars. |
+| Smart (default) | Enlarged to cover the whole panel if its shape is close enough to the screen's, within about a 25 percent crop along one axis. This admits the common 4:3 and 16:9 camera frames on a landscape tablet in either orientation. Portrait and square photos, which such a crop would ruin, keep their full frame and get the photo itself, enlarged, blurred and dimmed, as the backdrop instead of black bars. |
+| Always | Enlarged to cover the panel whatever its shape. Nothing is ever framed or letterboxed, at the cost of the crop: a 4:3 photo on a 2:1 panel loses roughly a third of its height, and a portrait photo on a landscape panel is cut down to a narrow band of its middle. |
+
+**Always** has no way to know what a photo is of, so whatever the crop
+takes is gone. On photos with a subject that is not centered, a person or
+a pet, it is the setting most likely to cut off the thing worth seeing.
+
+For portrait photos, **Pair portrait photos** below fills the panel with
+no such loss.
 
 ## Pair portrait photos
 

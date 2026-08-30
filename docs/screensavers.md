@@ -67,7 +67,7 @@ The **Background photo** is picked on the device (the picker copies it
 into app storage), or set remotely: the remote admin and the ESPHome
 **Clock background** text entity write a device file path into the same
 setting, applied live even while the clock is on screen, and an empty
-value clears it. The photo gets the same fill treatment as
+value clears it. The photo gets the same fill treatment as **Smart** in
 the photo modes, with a scrim so the clock stays readable.
 
 ### Home Assistant Media
@@ -154,10 +154,15 @@ Media) share one machinery:
 - **Transitions**: None, Crossfade, Slide, Zoom, Ken Burns, or Random.
   Ken Burns applies to stills only (videos crossfade), and Random rolls
   one of the real transitions on every change.
-- **Fill the screen** (on by default): a photo shaped close enough to
-  the panel (within about a 25 percent crop along one axis) is enlarged
-  edge to edge; portrait and square photos keep their full frame over an
-  enlarged, blurred and dimmed copy of themselves instead of black bars.
+- **Fill the screen** (Smart by default): how far a photo may be cropped
+  to reach the edges of the panel.
+
+  | Setting | What a photo gets |
+  | --- | --- |
+  | Off | Its full frame between black bars. |
+  | Smart | Enlarged edge to edge if its shape is close enough to the panel's (within about a 25 percent crop along one axis), which covers the common 4:3 and 16:9 camera frames in either orientation. Portrait and square photos keep their full frame over an enlarged, blurred and dimmed copy of themselves instead of black bars. |
+  | Always | Enlarged edge to edge whatever its shape, cutting off whatever does not fit. A 4:3 photo on a 2:1 panel loses roughly a third of its height, top and bottom. |
+
 - **Videos** play muted and in full, ignoring the per-image interval; a
   video the device cannot decode is skipped, not looped.
 - The playlist is read once per activation, so new photos appear the

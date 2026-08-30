@@ -256,6 +256,22 @@ class SettingsManager extends Manager {
       await _prefs.setBool('${_prefix}wake_word.enabled', true);
       log.info(name, 'migrated wake_word.enabled to always-on');
     }
+    // "Fill the screen" was a switch in the four photo modes and is now a
+    // choice of how far a photo may be cropped. The switch on is what
+    // 'smart' does, so a stored bool carries straight over and nobody's
+    // screensaver changes shape on update.
+    for (final key in const [
+      'screensaver.media_fill',
+      'screensaver.gallery_fill',
+      'screensaver.local_fill',
+      'screensaver.immich_fill',
+    ]) {
+      final fill = _prefs.get(_prefix + key);
+      if (fill is bool) {
+        await _prefs.setString(_prefix + key, fill ? 'smart' : 'off');
+        log.info(name, 'migrated $key ($fill)');
+      }
+    }
   }
 
   T get<T>(SettingDef<T> def) {

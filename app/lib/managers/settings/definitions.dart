@@ -1758,6 +1758,19 @@ const _transitionLabels = {
   'random': 'Random',
 };
 
+// How far a photo may be cropped to reach the edges of the panel, shared by
+// every photo mode. 'smart' is the old "Fill the screen" switch on: crop
+// only a photo already shaped close to the panel, and frame the rest over a
+// blurred copy of themselves. 'always' takes the crop whatever it costs,
+// which is what someone showing 4:3 camera shots on a 2:1 panel is asking
+// for when they say the bars bother them more than the missing sky.
+const _fillOptions = ['off', 'smart', 'always'];
+const _fillLabels = {'off': 'Off', 'smart': 'Smart', 'always': 'Always'};
+const _fillDescription =
+    'Off keeps the whole photo between black bars. Smart enlarges photos '
+    'shaped close to the screen, framing the rest over a blurred backdrop. '
+    'Always enlarges every photo, cutting off what does not fit.';
+
 const screensaverMediaTransition = SettingDef<String>(
   key: 'screensaver.media_transition',
   type: SettingType.select,
@@ -1775,17 +1788,17 @@ const screensaverMediaTransition = SettingDef<String>(
 // Gates on the mode, not on the folder flag: a single image wants filling
 // as much as a folder of them does. Videos and camera streams keep their
 // frame, as in every other mode.
-const screensaverMediaFill = SettingDef<bool>(
+const screensaverMediaFill = SettingDef<String>(
   key: 'screensaver.media_fill',
-  type: SettingType.boolean,
-  defaultValue: true,
+  type: SettingType.select,
+  defaultValue: 'smart',
   title: 'Fill the screen',
-  description:
-      'Enlarge photos that match the screen shape to cover it fully. '
-      'Others keep their full frame.',
+  description: _fillDescription,
   category: 'Screensaver',
   section: 'Home Assistant Media screensaver',
   subpage: 'Home Assistant Media screensaver',
+  options: _fillOptions,
+  optionLabels: _fillLabels,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'media',
 );
@@ -1884,17 +1897,17 @@ const screensaverGalleryTransition = SettingDef<String>(
   dependsOnValue: 'gallery',
 );
 
-const screensaverGalleryFill = SettingDef<bool>(
+const screensaverGalleryFill = SettingDef<String>(
   key: 'screensaver.gallery_fill',
-  type: SettingType.boolean,
-  defaultValue: true,
+  type: SettingType.select,
+  defaultValue: 'smart',
   title: 'Fill the screen',
-  description:
-      'Enlarge photos that match the screen shape to cover it fully. '
-      'Others keep their full frame.',
+  description: _fillDescription,
   category: 'Screensaver',
   section: 'Photo Gallery screensaver',
   subpage: 'Photo Gallery screensaver',
+  options: _fillOptions,
+  optionLabels: _fillLabels,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'gallery',
 );
@@ -1972,17 +1985,17 @@ const screensaverLocalTransition = SettingDef<String>(
   dependsOnValue: 'local',
 );
 
-const screensaverLocalFill = SettingDef<bool>(
+const screensaverLocalFill = SettingDef<String>(
   key: 'screensaver.local_fill',
-  type: SettingType.boolean,
-  defaultValue: true,
+  type: SettingType.select,
+  defaultValue: 'smart',
   title: 'Fill the screen',
-  description:
-      'Enlarge photos that match the screen shape to cover it fully. '
-      'Others keep their full frame.',
+  description: _fillDescription,
   category: 'Screensaver',
   section: 'Local Media screensaver',
   subpage: 'Local Media screensaver',
+  options: _fillOptions,
+  optionLabels: _fillLabels,
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'local',
 );
@@ -2124,24 +2137,24 @@ const screensaverImmichTransition = SettingDef<String>(
   dependsOn: 'screensaver.immich_validated',
 );
 
-const screensaverImmichFill = SettingDef<bool>(
+const screensaverImmichFill = SettingDef<String>(
   key: 'screensaver.immich_fill',
-  type: SettingType.boolean,
-  defaultValue: true,
+  type: SettingType.select,
+  defaultValue: 'smart',
   title: 'Fill the screen',
-  description:
-      'Enlarge photos that match the screen shape to cover it fully. '
-      'Others keep their full frame.',
+  description: _fillDescription,
   category: 'Screensaver',
   section: 'Slideshow',
   subpage: 'Immich Media screensaver',
+  options: _fillOptions,
+  optionLabels: _fillLabels,
   dependsOn: 'screensaver.immich_validated',
 );
 
 // Two portrait photos side by side instead of one framed by empty screen:
 // the pair fills a landscape panel the way a single portrait shot never
-// can. On by default, like Fill the screen, since filling the panel is
-// what people want from a photo frame.
+// can. On by default, like Fill the screen's Smart setting, since filling
+// the panel is what people want from a photo frame.
 const screensaverImmichPairPortrait = SettingDef<bool>(
   key: 'screensaver.immich_pair_portrait',
   type: SettingType.boolean,

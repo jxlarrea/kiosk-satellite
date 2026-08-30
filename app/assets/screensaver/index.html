@@ -194,12 +194,18 @@ function showElement(el, opts) {
 }
 
 /* ── Fill the screen ──────────────────────────────────────────────────────
-   The same recipe as the app's other photo modes: a photo shaped close
-   enough to the panel (crop capped at a 1.45x ratio mismatch) is
-   cover-fitted edge to edge, and one that keeps its full frame gets
-   itself, blurred and dimmed, as the backdrop instead of black bars. */
+   The same recipe as the app's other photo modes. On 'smart', a photo
+   shaped close enough to the panel (crop capped at a 1.45x ratio mismatch)
+   is cover-fitted edge to edge, and one that keeps its full frame gets
+   itself, blurred and dimmed, as the backdrop instead of black bars.
+   'always' drops the cap and crops every photo to the edges; 'off' keeps
+   every frame between black bars. */
 function fillFor(img) {
-  if (!CFG.mediaFill) return null;
+  const mode = CFG.mediaFill;
+  if (!mode || mode === 'off') return null;
+  // Always answers before the shapes are read: nothing it shows is ever
+  // framed, so an unreadable size has no decision to change.
+  if (mode === 'always') return 'cover';
   const w = img.naturalWidth, h = img.naturalHeight;
   const sw = window.innerWidth, sh = window.innerHeight;
   if (!w || !h || !sw || !sh) return null;

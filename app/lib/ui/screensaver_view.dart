@@ -38,11 +38,33 @@ import '../managers/camera/models.dart'
     show CameraViewConfig, decodeCameraViewIds;
 import '../managers/screensaver/screensaver_widgets.dart';
 import '../managers/settings/definitions.dart' as defs;
+
 import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'clock_faces.dart';
 import 'glance_row.dart';
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
 import 'video_surface.dart';
+
+/// Fill the screen, the one rule every photo mode follows.
+///
+/// [fill] is the mode's setting: 'off' never crops, 'always' always does,
+/// and 'smart' crops only a photo already shaped close to the frame it is
+/// given. "Close enough" caps the crop at roughly a quarter along one axis
+/// (a 1.45x ratio mismatch) — it admits the common cases (4:3 or 16:9
+/// camera frames on a 16:10 panel, either orientation, and a portrait shot
+/// in a portrait half) while shapes a crop would gut keep their full
+/// frame. True means cover-fit; false means the photo keeps its frame,
+/// over a blurred copy of itself unless [fill] is 'off'.
+///
+/// A null [photoAspect] is a shape that could not be read: Smart keeps the
+/// frame rather than guessing at a crop, while Always still covers, since
+/// the whole point of it is that no photo is ever framed.
+bool photoCovers(String fill, double? photoAspect, double frameAspect) {
+  if (fill == 'off') return false;
+  if (fill == 'always') return true;
+  if (photoAspect == null || photoAspect <= 0 || frameAspect <= 0) return false;
+  return max(photoAspect / frameAspect, frameAspect / photoAspect) <= 1.45;
+}
 
 /// The screensaver overlay: whichever of the four views the manager says is
 /// active, or nothing.
@@ -2341,9 +2363,12 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       // and knowing the aspect before the first frame means the backdrop
       // decision never flickers in after the slide is already up.
       double? aspect;
+      // Only Smart needs the shape: off never crops and Always always
+      // does, so neither has a decision to make from it.
       if (c.settings.get(
-        _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
-      )) {
+            _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
+          ) ==
+          'smart') {
         try {
           aspect = await _aspectOf(await file.readAsBytes());
         } catch (_) {}
@@ -2464,23 +2489,18 @@ class _LocalMediaScreensaverState extends State<LocalMediaScreensaver> {
       final isVideoSlide = video != null && video.value.isInitialized;
       // The index is in the key so a repeated file still hands off.
       final key = ValueKey('$_index:${_files[_index].path}');
-      // Fill the screen: same recipe as the Immich screensaver — photos
-      // shaped close enough to the panel are cover-fitted edge to edge
-      // (crop capped at a 1.45x ratio mismatch), and the ones that keep
-      // their full frame get the photo itself, blurred and dimmed, as the
-      // backdrop instead of black bars.
-      final fillWanted =
-          !isVideoSlide &&
-          c.settings.get(
-            _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
-          );
-      var covers = false;
-      if (fillWanted && _imageAspect != null) {
-        final size = MediaQuery.of(context).size;
-        final screen = size.width / size.height;
-        final photo = _imageAspect!;
-        covers = max(photo / screen, screen / photo) <= 1.45;
-      }
+      // Fill the screen: photoCovers holds the rule, shared with the
+      // Immich screensaver. A photo that keeps its frame gets the photo
+      // itself, blurred and dimmed, as the backdrop instead of black bars.
+      // Videos always keep their frame, in every mode.
+      final fill = c.settings.get(
+        _gallery ? defs.screensaverGalleryFill : defs.screensaverLocalFill,
+      );
+      final fillWanted = !isVideoSlide && fill != 'off';
+      final size = MediaQuery.of(context).size;
+      final covers =
+          fillWanted &&
+          photoCovers(fill, _imageAspect, size.width / size.height);
       final Widget inner;
       if (isVideoSlide) {
         inner = Center(
@@ -3057,12 +3077,8 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
   /// One photo filling the frame it is given: the whole panel on its own,
   /// or half of it when it shares the screen with another portrait shot.
   ///
-  /// Fill the screen: a photo shaped close enough to its frame is
-  /// cover-fitted edge to edge. "Close enough" caps the crop at roughly a
-  /// quarter along one axis (1.45x ratio mismatch) — it admits the common
-  /// cases (4:3 or 16:9 camera frames on a 16:10 panel, either
-  /// orientation, and a portrait shot in a portrait half) while shapes a
-  /// crop would gut keep their full frame. Those framed photos get the
+  /// Fill the screen: photoCovers holds the rule, and the frame here is
+  /// the whole panel or half of it. A photo that keeps its frame gets the
   /// photo itself, blurred and dimmed, as the backdrop instead of black
   /// bars — the Now Playing treatment.
   Widget _photoBlock({
@@ -3072,11 +3088,9 @@ class _ImmichScreensaverState extends State<ImmichScreensaver> {
     required int index,
     required String transition,
   }) {
-    final fillWanted = c.settings.get(defs.screensaverImmichFill);
-    var covers = false;
-    if (fillWanted && aspect != null && frameAspect > 0) {
-      covers = max(aspect / frameAspect, frameAspect / aspect) <= 1.45;
-    }
+    final fill = c.settings.get(defs.screensaverImmichFill);
+    final fillWanted = fill != 'off';
+    final covers = photoCovers(fill, aspect, frameAspect);
     Widget picture = Image(
       image: image,
       fit: covers ? BoxFit.cover : BoxFit.contain,

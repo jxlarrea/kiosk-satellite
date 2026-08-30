@@ -98,6 +98,46 @@ void main() {
     });
   });
 
+  group('Fill the screen, switch to choice', () {
+    test('a stored switch carries over to the matching choice', () async {
+      await build({
+        'ks.screensaver.media_fill': true,
+        'ks.screensaver.gallery_fill': false,
+        'ks.screensaver.local_fill': true,
+        'ks.screensaver.immich_fill': false,
+      });
+      expect(settings.get(defs.screensaverMediaFill), 'smart');
+      expect(settings.get(defs.screensaverGalleryFill), 'off');
+      expect(settings.get(defs.screensaverLocalFill), 'smart');
+      expect(settings.get(defs.screensaverImmichFill), 'off');
+    });
+
+    test('an install that never touched it lands on Smart', () async {
+      await build({});
+      expect(settings.get(defs.screensaverMediaFill), 'smart');
+      expect(settings.get(defs.screensaverImmichFill), 'smart');
+    });
+
+    test('a choice already stored is left alone', () async {
+      await build({'ks.screensaver.immich_fill': 'always'});
+      expect(settings.get(defs.screensaverImmichFill), 'always');
+    });
+
+    test('the choice rejects a value outside its options', () async {
+      await build({});
+      expect(
+        await settings.setFromJson('screensaver.immich_fill', 'cover'),
+        isFalse,
+      );
+      expect(settings.get(defs.screensaverImmichFill), 'smart');
+      expect(
+        await settings.setFromJson('screensaver.immich_fill', 'always'),
+        isTrue,
+      );
+      expect(settings.get(defs.screensaverImmichFill), 'always');
+    });
+  });
+
   test('secrets are masked in describe but report set/unset', () async {
     await build({'ks.remote.password': 'hunter2'});
     final described = settings.describe();
