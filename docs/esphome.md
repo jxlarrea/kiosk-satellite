@@ -62,6 +62,10 @@ Turn on **Expose kiosk entities** and every entity below joins the device. Off b
 | **Take camera snapshot** | button | Requires camera hardware |
 | **Last camera snapshot** | timestamp | Requires camera hardware. Kept across restarts |
 | **Ambient light** | sensor | Lux. Requires a light sensor |
+| **GPS latitude**, **GPS longitude** | sensor | Degrees, six decimals. Require **Report location** on and a GPS receiver. See [GPS sensor](#gps-sensor) |
+| **GPS accuracy**, **Altitude** | sensor | Meters. Same requirement |
+| **Speed** | sensor | Meters per second, which Home Assistant converts to the unit system's. Same requirement |
+| **Last location fix** | timestamp | When the receiver last reported. Same requirement. Kept across restarts |
 | **Motion** | binary sensor | Requires camera hardware. Reads unknown while the camera is off |
 | **Next alarm** | timestamp | The next alarm set on the device |
 | **Last interaction** | timestamp | The last touch, spoken turn or hand-made wake. Kept across restarts |
@@ -215,6 +219,36 @@ Over the [remote API](remote-api.md) the same two are `showNotification` (answer
 
 Give each kind of notification (a leak, a delivery, the laundry) its own `chime_file` in the automation and keep the settings as the default for the rest.
 
+## GPS sensor
+
+A tablet that travels (in an RV, say) can tell Home Assistant where it is from its own GPS receiver. Opt-in on **Settings, ESPHome, GPS Sensor**.
+
+| | |
+| --- | --- |
+| **Report location** | Reads the receiver and serves the six location sensors above. Off by default. Turning it on or off re-registers the device, so every entity is unavailable for a couple of seconds |
+| **Update interval** | Seconds between readings, 60 by default. A reading is only pushed when the receiver delivers one, so a parked kiosk costs Home Assistant nothing |
+| **Last coordinates** | Under the switch: the last reading's coordinates, with its accuracy and age, or why there is none |
+| No GPS receiver | The switch is disabled with the reason. Most kiosk-class tablets have none |
+| **Location** grant | The one permission the page asks for, plus location switched on in the device settings. **Grant** asks, or opens the location settings when the switch is what is off |
+| Screen off | The Kiosk Satellite Service attaches Android's location foreground type while the switch is on, so readings keep arriving with the panel off or another app in front |
+| Cold start | The first reading of a run comes from the receiver's last known position; a fresh fix under open sky can take a few minutes. The last reading is kept across restarts |
+
+The receiver is the GPS one only, never the network guess: in a vehicle a Wi-Fi position is worse than none. A `device_tracker` for the kiosk, for zones and border crossings, is one automation on the two coordinate sensors:
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: sensor.kitchen_tablet_last_location_fix
+actions:
+  - action: device_tracker.see
+    data:
+      dev_id: rv_tablet
+      gps:
+        - "{{ states('sensor.kitchen_tablet_gps_latitude') }}"
+        - "{{ states('sensor.kitchen_tablet_gps_longitude') }}"
+      gps_accuracy: "{{ states('sensor.kitchen_tablet_gps_accuracy') }}"
+```
+
 ## Node name
 
 The node name is the mDNS name Home Assistant discovers (`<node name>.local`) and the stem of the device's action names: `kitchen-tablet` makes `esphome.kitchen_tablet_notification`. A fresh install names itself after its device name. A kiosk already discovered keeps the generated `kiosk-satellite-<id>`.
@@ -261,7 +295,7 @@ The two connection sensors come and go with the Bluetooth proxy switch and are l
 | 12+ | The **Nearby devices** runtime pair (scan + connect), plus the **Location** permission and location services switched on. |
 | 6 to 11 | Bluetooth is granted at install. The **Location** permission and location services must be on. |
 
-Location is required on every version because Android treats beacons as location-inferable: an app that scans with location detached never receives iBeacon or Eddystone frames on Android 12 and newer, which is exactly what a Bermuda or iBeacon presence setup needs relayed. The app never reads the device's position. On Fire tablets the device switch is under **Location Based Services**.
+Location is required on every version because Android treats beacons as location-inferable: an app that scans with location detached never receives iBeacon or Eddystone frames on Android 12 and newer, which is exactly what a Bermuda or iBeacon presence setup needs relayed. The proxy never reads the device's position; only the [GPS sensor](#gps-sensor) does, when switched on. On Fire tablets the device switch is under **Location Based Services**.
 
 Symptom of a missing half: the proxy reports itself scanning, the phone (on old Android every device) never appears and Home Assistant sees a proxy that delivers little or nothing. The permission rows on the settings pages name whichever half is blocking. **Grant** asks in order or opens the system's location settings when the switch is what is off.
 

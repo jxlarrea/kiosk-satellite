@@ -166,6 +166,15 @@ class SystemPermissions {
       final connect = await ensureOsPermission(Permission.bluetoothConnect);
       if (!scan || !connect) return false;
     }
+    return requestLocation();
+  }
+
+  /// The location half on its own: the grant, then the OS location
+  /// settings screen when the permission is held but the system-wide
+  /// switch is off, the only place that can flip it. What the Bluetooth
+  /// proxy needs after its pair, and all the location sensors need
+  /// (issue #363). Returns whether a position can actually be read.
+  static Future<bool> requestLocation() async {
     if (!await ensureOsPermission(Permission.locationWhenInUse)) {
       return false;
     }

@@ -196,6 +196,32 @@ void main() {
     expect(defs.subpageHints, contains('Notifications'));
   });
 
+  test('the ESPHome GPS Sensor page holds the switch and its interval', () {
+    final moved = [
+      for (final d in defs.allSettings)
+        if (d.subpage == 'GPS Sensor') d.key,
+    ];
+    expect(moved, [defs.locationEnabled.key, defs.locationInterval.key]);
+    expect(defs.locationInterval.section, 'GPS Sensor');
+    // The switch rides the entities switch on the page above (the
+    // screensaver-mode shape: the whole page comes and goes with it), and
+    // the interval rides the switch on its own page.
+    expect(defs.locationEnabled.dependsOn, defs.esphomeEntities.key);
+    expect(defs.esphomeEntities.subpage, isNull);
+    expect(defs.locationInterval.dependsOn, defs.locationEnabled.key);
+    // Under the Bluetooth Proxy page, above Advanced settings.
+    final keys = defs.allSettings.map((d) => d.key).toList();
+    expect(
+      keys.indexOf(defs.locationEnabled.key),
+      greaterThan(keys.indexOf(defs.btproxyNearbySort.key)),
+    );
+    expect(
+      keys.indexOf(defs.locationEnabled.key),
+      lessThan(keys.indexOf(defs.esphomeRealMac.key)),
+    );
+    expect(defs.subpageHints, contains('GPS Sensor'));
+  });
+
   test('the ESPHome Bluetooth half is one page', () {
     final moved = [
       for (final d in defs.allSettings)

@@ -905,6 +905,123 @@ void main() {
     });
   });
 
+  group('the location sensors (issue #363)', () {
+    const fix = {
+      'latitude': 45.5019,
+      'longitude': -73.5674,
+      'time': 1756500000000,
+      'accuracy': 8.0,
+      'altitude': 31.0,
+      'speed': 0.5,
+    };
+    const locationIds = [
+      'gps_latitude',
+      'gps_longitude',
+      'gps_accuracy',
+      'altitude',
+      'speed',
+      'last_location_fix',
+    ];
+
+    List<String> ids(List<Map<String, Object?>> catalog) => [
+      for (final d in catalog) '${d['objectId']}',
+    ];
+
+    // The two location commands are not in the shared stubs: each test
+    // here decides what the manager answers.
+    void stub(String name, Object? result) => commands.register(
+      Command(
+        name: name,
+        description: name,
+        handler: (_) async => CommandResult.ok(result),
+      ),
+    );
+
+    test('exist only with Report location on, on a device with a '
+        'receiver', () async {
+      stub('getLocationSupport', {'supported': true});
+      stub('getLocation', {'enabled': true, 'streaming': true});
+      expect(ids(await surface.build()), isNot(containsAll(locationIds)));
+      await settings.set(defs.locationEnabled, true);
+      final catalog = await surface.build();
+      expect(ids(catalog), containsAll(locationIds));
+      // Six decimals, or a coordinate rounds to a whole degree; no state
+      // class on the coordinates, a mean position being nothing.
+      final lat = catalog.singleWhere((d) => d['objectId'] == 'gps_latitude');
+      expect(lat['unit'], '°');
+      expect(lat['accuracyDecimals'], 6);
+      expect(lat['stateClass'], isNull);
+      final speed = catalog.singleWhere((d) => d['objectId'] == 'speed');
+      expect(speed['deviceClass'], 'speed');
+      expect(speed['unit'], 'm/s');
+      final stamp = catalog.singleWhere(
+        (d) => d['objectId'] == 'last_location_fix',
+      );
+      expect(stamp['type'], 'text_sensor');
+      expect(stamp['deviceClass'], 'timestamp');
+    });
+
+    test(
+      'a device without a receiver lists none, switch or no switch',
+      () async {
+        stub('getLocationSupport', {'supported': false, 'hint': 'no GPS'});
+        await settings.set(defs.locationEnabled, true);
+        expect(ids(await surface.build()), isNot(containsAll(locationIds)));
+      },
+    );
+
+    test('a fix lands on all six at once', () async {
+      stub('getLocationSupport', {'supported': true});
+      stub('getLocation', {'enabled': true, 'streaming': true});
+      await settings.set(defs.locationEnabled, true);
+      await surface.build();
+      await attach();
+      pushed.clear();
+      bus.publish(
+        LocationChanged(
+          latitude: 45.5019,
+          longitude: -73.5674,
+          time: DateTime.fromMillisecondsSinceEpoch(1756500000000, isUtc: true),
+          accuracy: 8.4,
+          altitude: 31.2,
+          speed: 0.5,
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final byId = {for (final (id, value) in pushed) id: value};
+      expect(byId['gps_latitude'], 45.5019);
+      expect(byId['gps_longitude'], -73.5674);
+      expect(byId['gps_accuracy'], 8);
+      expect(byId['altitude'], 31);
+      expect(byId['speed'], 0.5);
+      expect(byId['last_location_fix'], '2025-08-29T20:40:00.000Z');
+    });
+
+    test(
+      'the last fix the manager holds seeds the sensors at attach',
+      () async {
+        stub('getLocationSupport', {'supported': true});
+        stub('getLocation', {'enabled': true, 'streaming': true, 'fix': fix});
+        await settings.set(defs.locationEnabled, true);
+        await surface.build();
+        await attach();
+        final byId = {for (final (id, value) in pushed) id: value};
+        expect(byId['gps_latitude'], 45.5019);
+        expect(byId['gps_longitude'], -73.5674);
+        expect(byId['last_location_fix'], '2025-08-29T20:40:00.000Z');
+      },
+    );
+
+    test('no fix yet leaves the sensors alone', () async {
+      stub('getLocationSupport', {'supported': true});
+      stub('getLocation', {'enabled': true, 'streaming': false});
+      await settings.set(defs.locationEnabled, true);
+      await surface.build();
+      await attach();
+      expect(pushed.map((p) => p.$1), isNot(contains('gps_latitude')));
+    });
+  });
+
   test('the persisted stamp reseeds Last interaction at attach', () async {
     await settings.setInternal(
       'esphome_last_interaction',

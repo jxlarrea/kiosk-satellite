@@ -578,6 +578,133 @@ export async function loadSettings() {
     }
   }
 
+  // ── GPS Sensor page (issue #363) ──────────────────────────────────────
+  // Mirror of the device's page: the Report location switch renders off
+  // and disabled with the reason on a device without a GPS receiver; with
+  // one, the last coordinates sit under the switch (the coordinates on
+  // the right, accuracy and age under the name), refreshed while the page
+  // is open, and the one grant the receiver needs closes the page. Only
+  // while the page exists, which is the entities switch's call.
+  {
+    const root = document.getElementById('tab-esphome');
+    const panel = root?.querySelector('.subpage[data-subpage="GPS Sensor"]');
+    const row = panel?.querySelector('[data-key="location.enabled"]');
+    if (panel && row) {
+      const note = (text) => {
+        const div = document.createElement('div');
+        div.className = 'row location-note';
+        div.style.cssText = 'font-size:12.5px; color:var(--muted);';
+        div.textContent = text;
+        return div;
+      };
+      const readFix = () => cmd('getLocation').then((r) => r.data || null)
+        .catch(() => null);
+      // [desc, value]: the words under the name and the coordinates on
+      // the right.
+      const fixText = (st) => {
+        if (!st) return ['Status unavailable.', ''];
+        if (!st.enabled) return ['Off.', ''];
+        if (st.error) return [st.error, ''];
+        const fix = st.fix;
+        if (!fix) {
+          return ['Waiting for the first fix. A cold start under open sky '
+            + 'can take a few minutes.', ''];
+        }
+        const age = Math.max(0, Math.round((Date.now() - fix.time) / 1000));
+        const ago = age < 60 ? `${age}s ago` : age < 3600
+          ? `${Math.round(age / 60)} min ago` : `${Math.round(age / 3600)} h ago`;
+        const acc = fix.accuracy == null ? '' : `±${Math.round(fix.accuracy)} m, `;
+        return [`${acc}${ago}`, `${fix.latitude.toFixed(5)}, ${fix.longitude.toFixed(5)}`];
+      };
+      const status = readOnlyRow('Last coordinates', 'Checking...', '');
+      status.classList.add('location-status');
+      row.insertAdjacentElement('afterend', status);
+      const paintFix = async () => {
+        if (!status.isConnected) { clearInterval(window.__locationTimer); return; }
+        const [desc, value] = fixText(await readFix());
+        status.querySelector('.desc').textContent = desc;
+        status.lastElementChild.textContent = value;
+      };
+      if (window.__locationTimer) clearInterval(window.__locationTimer);
+      window.__locationTimer = setInterval(paintFix, 5000);
+      paintFix();
+
+      cmd('getLocationSupport')
+        .then((res) => {
+          if (!(res && res.data && res.data.supported === false)) return;
+          const input = row.querySelector('.switch input');
+          if (input) { input.checked = false; input.disabled = true; }
+          status.remove();
+          clearInterval(window.__locationTimer);
+          row.insertAdjacentElement('afterend',
+            note(res.data.hint || 'Not available on this device.'));
+        })
+        .catch(() => {});
+
+      // Required system permissions: the location grant plus the
+      // system-wide location switch, like the proxy's location row.
+      const h = document.createElement('h2');
+      h.className = 'card-title';
+      h.textContent = 'Required system permissions';
+      const permCard = document.createElement('div');
+      permCard.className = 'card';
+      const permRow = document.createElement('div');
+      permRow.className = 'row';
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<div class="name"></div><div class="desc"></div>';
+      info.querySelector('.name').textContent = 'Location';
+      info.querySelector('.desc').textContent = 'Checking...';
+      permRow.appendChild(info);
+      const stateEl = document.createElement('span');
+      stateEl.style.whiteSpace = 'nowrap';
+      permRow.appendChild(stateEl);
+      permCard.appendChild(permRow);
+      panel.append(h, permCard);
+      const readPerm = () => cmd('getSystemPermissions')
+        .then((r) => r.data || null).catch(() => null);
+      const paintPerm = (p) => {
+        const ok = p === null ? null
+          : p.location === true && p.locationServicesOn === true;
+        info.querySelector('.desc').textContent = ok === null
+          ? 'Status unavailable.'
+          : ok ? 'The location sensors can read the GPS receiver.'
+          : p.location !== true
+            ? 'Without this the GPS receiver cannot be read and the location sensors stay unknown.'
+            : 'Location is off in the device settings, so the receiver delivers nothing.';
+        stateEl.textContent = ok === null ? '' : ok ? 'Granted' : 'Missing';
+        stateEl.style.color = ok ? 'var(--ok)' : 'var(--error)';
+        permRow.querySelector('button')?.remove();
+        if (ok !== false) return;
+        const btn = document.createElement('button');
+        btn.className = 'btn-ghost';
+        btn.textContent = 'Grant on device';
+        btn.style.cssText = 'flex-shrink:0;';
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            // The device runs the whole flow: the dialog, then the
+            // location settings screen when the system switch is off.
+            await api('/api/commands/requestOsPermissions', { method: 'POST',
+              body: JSON.stringify({ which: ['location'] }) });
+          } catch (_) {}
+          for (let i = 0; i < 30; i++) {
+            await new Promise((r) => setTimeout(r, 2500));
+            const now = await readPerm();
+            if (now && now.location === true && now.locationServicesOn === true) {
+              paintPerm(now);
+              paintFix();
+              return;
+            }
+          }
+          btn.disabled = false;
+        });
+        permRow.appendChild(btn);
+      };
+      readPerm().then(paintPerm);
+    }
+  }
+
   // ── Bluetooth Proxy nearby devices ───────────────────────────────────
   // The live list the device shows under the lookup toggle, same data:
   // the btProxyNearby command's identified inventory. Only with the proxy
@@ -832,7 +959,7 @@ export async function loadSettings() {
           'Bluetooth scanning can hear beacons.',
           p !== null && p.location === true
             ? 'Location is off in the device settings, so Bluetooth scanning finds nothing.'
-            : 'Android only delivers Bluetooth scan results, beacons included, with Location granted. The app never reads the device position.');
+            : 'Android only delivers Bluetooth scan results, beacons included, with Location granted. The proxy never reads the device position.');
       };
       readPerm().then(paint);
     }
@@ -1148,10 +1275,10 @@ export async function loadSettings() {
         missing: '',
         idle: 'Lets the Foreground app sensor name apps other than Kiosk Satellite.' },
       { key: 'location', name: 'Location', ask: 'location',
-        needed: on('btproxy.enabled'),
-        held: 'Pages and Bluetooth scanning can use the device location.',
-        missing: 'Android will not deliver Bluetooth scan results without Location. The app never reads the device position.',
-        idle: 'Used by pages that ask for your location, and needed by Bluetooth scanning.' },
+        needed: on('btproxy.enabled') || on('location.enabled'),
+        held: 'Pages, Bluetooth scanning and the location sensors can use the device position.',
+        missing: 'Android will not deliver Bluetooth scan results without Location, and the location sensors cannot read the GPS receiver.',
+        idle: 'Used by pages that ask for your location, by Bluetooth scanning and by the ESPHome location sensors.' },
     ];
 
     const readAll = async () => {

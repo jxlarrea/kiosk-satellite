@@ -308,6 +308,13 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'ESPHome',
+    title: 'Required system permissions',
+    description: 'The Location grant the location sensors need.',
+    anchorId: 'x:location_permissions',
+    subpage: 'GPS Sensor',
+  ),
+  SettingsSearchEntry(
+    category: 'ESPHome',
     title: 'Nearby devices',
     description:
         'The Bluetooth devices this kiosk hears, with names where known.',

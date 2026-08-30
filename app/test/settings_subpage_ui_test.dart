@@ -651,6 +651,65 @@ void main() {
       await drain(tester);
     });
 
+    testWidgets('the GPS Sensor page sits under Bluetooth Proxy, with the '
+        'grant at its foot', (tester) async {
+      await boot();
+      await container.settings.set(esphomeEnabled, true);
+      await container.settings.set(esphomeEntities, true);
+      tester.view.physicalSize = const Size(500, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(home: SettingsScreen(container: container)),
+      );
+      await settle(tester);
+      await tester.tap(find.text('ESPHome').first);
+      await settle(tester);
+
+      final location = find.widgetWithText(ListTile, 'GPS Sensor');
+      final proxy = find.widgetWithText(ListTile, 'Bluetooth Proxy');
+      final advanced = find.widgetWithText(ListTile, 'Advanced settings');
+      expect(location, findsOneWidget);
+      expect(
+        tester.getTopLeft(location).dy,
+        greaterThan(tester.getTopLeft(proxy).dy),
+      );
+      expect(
+        tester.getTopLeft(location).dy,
+        lessThan(tester.getTopLeft(advanced).dy),
+      );
+      // Its rows are on the page, not here.
+      expect(find.text(locationEnabled.title), findsNothing);
+
+      await tester.tap(location);
+      await settle(tester);
+
+      expect(find.widgetWithText(AppBar, 'GPS Sensor'), findsOneWidget);
+      expect(find.text(locationEnabled.title), findsOneWidget);
+      // The interval rides the switch, off by default.
+      expect(find.text(locationInterval.title), findsNothing);
+      // The last coordinates under the switch, and the grant at the foot.
+      expect(find.text('Last coordinates'), findsOneWidget);
+      final grants = find.widgetWithText(
+        SectionHeading,
+        'Required system permissions',
+      );
+      expect(grants, findsOneWidget);
+      expect(
+        tester.getTopLeft(grants).dy,
+        greaterThan(tester.getTopLeft(find.text(locationEnabled.title)).dy),
+      );
+      // The page's own name would only repeat the title bar.
+      expect(find.widgetWithText(SectionHeading, 'GPS Sensor'), findsNothing);
+
+      await tester.tap(find.byType(Switch).first);
+      await settle(tester);
+      expect(container.settings.get(locationEnabled), isTrue);
+      expect(find.text(locationInterval.title), findsOneWidget);
+
+      await drain(tester);
+    });
+
     testWidgets('the Bluetooth half moved, the entity server stayed', (
       tester,
     ) async {

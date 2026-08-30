@@ -144,6 +144,10 @@ class BtProxyManager extends Manager {
       'sendspin.ma_url',
       // The Voice Satellite switches exist only with a satellite bound.
       'ha.satellite_entity',
+      // The location sensors exist only while Report location is on: a
+      // setup-time choice, made knowing it re-registers the device
+      // (issue #363).
+      'location.enabled',
     };
     // The remote admin server's settings, which decide the web page port
     // reported to Home Assistant (the device page's Visit link).

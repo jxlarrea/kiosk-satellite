@@ -174,6 +174,7 @@ const Map<String, String> subpageHints = {
   // ESPHome.
   'Notifications': 'Notification sound, volume, test notification',
   'Bluetooth Proxy': 'Relay nearby Bluetooth devices to Home Assistant',
+  'GPS Sensor': 'Expose GPS sensor data to Home Assistant',
   'Advanced settings': 'Real or spoofed Wi-Fi MAC address',
   // Kiosk.
   'Allowed Actions': 'Which quick actions the kiosk menu offers',
@@ -4582,6 +4583,53 @@ const notificationsVolume = SettingDef<num>(
   dependsOn: 'esphome.enabled',
 );
 
+// ── Location ───────────────────────────────────────────────────────────
+// The device's GPS position as ESPHome sensors (issue #363: a tablet in an
+// RV is the one receiver that is always on and always in the vehicle).
+// Opt-in, since a GPS receiver costs battery and the position is the most
+// private thing a kiosk can report. The entities exist only while the
+// switch is on: flipping it re-registers the device, which is a deliberate
+// setup-time choice, not something an automation drives.
+
+/// Kept off in the setting itself where the device has no GPS receiver (at
+/// boot and whenever something turns it on: the remote API, a settings
+/// import), so every reader of the switch agrees, and both settings pages
+/// render it disabled with the reason.
+const locationEnabled = SettingDef<bool>(
+  key: 'location.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Report location',
+  description:
+      'Read the GPS position and serve it to Home Assistant as latitude, '
+      'longitude, accuracy, altitude and speed sensors. Turning this on or '
+      'off re-registers the ESPHome device.',
+  category: 'ESPHome',
+  section: 'GPS Sensor',
+  subpage: 'GPS Sensor',
+  dependsOn: 'esphome.entities',
+);
+
+/// How often the receiver is asked for a fix. Sixty seconds tracks a
+/// moving vehicle closely enough for zones and border crossings while
+/// keeping the recorder quiet; a fix is only pushed when one arrives, so a
+/// parked device with a steady position costs Home Assistant nothing.
+const locationInterval = SettingDef<num>(
+  key: 'location.interval',
+  type: SettingType.number,
+  defaultValue: 60,
+  title: 'Update interval',
+  description: 'Seconds between position readings.',
+  category: 'ESPHome',
+  section: 'GPS Sensor',
+  subpage: 'GPS Sensor',
+  min: 10,
+  max: 600,
+  step: 10,
+  unit: 's',
+  dependsOn: 'location.enabled',
+);
+
 const btproxyEnabled = SettingDef<bool>(
   key: 'btproxy.enabled',
   type: SettingType.boolean,
@@ -5118,6 +5166,9 @@ const List<SettingDef<Object>> allSettings = [
   btproxyMinConnectRssi,
   btproxyMacLookup,
   btproxyNearbySort,
+  // The GPS Sensor page sits under the Bluetooth Proxy one.
+  locationEnabled,
+  locationInterval,
   // The Advanced settings page closes the ESPHome page.
   esphomeRealMac,
   esphomeMacOverride,

@@ -48,6 +48,8 @@ void main() {
     await settings.set(defs.wakeWordBackground, true);
     await settings.set(defs.esphomeEnabled, true);
     await settings.set(defs.btproxyEnabled, true);
+    await settings.set(defs.esphomeEntities, true);
+    await settings.set(defs.locationEnabled, true);
     await settings.set(defs.mqttEnabled, true);
     await settings.set(defs.cameraEnabled, true);
     await settings.set(defs.remoteEnabled, true);
@@ -59,6 +61,7 @@ void main() {
       'listening',
       'esphome',
       'bluetooth',
+      'location',
       'mqtt',
       'camera',
       'remote',

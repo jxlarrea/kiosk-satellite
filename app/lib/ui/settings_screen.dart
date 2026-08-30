@@ -1225,6 +1225,10 @@ class _CategoryContentState extends State<_CategoryContent> {
       widget.container.btProxy.bleSupport().then((_) {
         if (mounted) setState(() {});
       });
+      // And the Report location switch reads the receiver's answer.
+      widget.container.location.locationSupport().then((_) {
+        if (mounted) setState(() {});
+      });
       _pollBtAdapter();
       _btAdapterTimer = Timer.periodic(
         const Duration(seconds: 5),
@@ -2203,6 +2207,21 @@ class _CategoryContentState extends State<_CategoryContent> {
           onChanged: null,
         ),
       ),
+    // No GPS receiver on this device (issue #363): the switch says so
+    // instead of offering sensors that could never read anything.
+    if (widget.category == 'ESPHome' &&
+        container.location.locationKnownUnsupported)
+      locationEnabled.key: SearchLandingTarget(
+        id: locationEnabled.key,
+        child: SwitchListTile(
+          title: Text(locationEnabled.title),
+          subtitle: Text(
+            container.location.locationHint ?? 'Not available on this device.',
+          ),
+          value: false,
+          onChanged: null,
+        ),
+      ),
     if (widget.category == 'Screensaver' &&
         !container.deviceCamera.effectiveEnabled)
       screensaverDismissOnMotion.key: SearchLandingTarget(
@@ -2332,6 +2351,12 @@ class _CategoryContentState extends State<_CategoryContent> {
     if (widget.category == 'Browser' &&
         container.settings.get(autoReloadOnError))
       autoReloadOnError.key: _OverlayGrantRow(key: UniqueKey()),
+    // The last coordinates, live, under the Report location switch: what
+    // the sensors are reading, or why they read nothing. Mirrored on the
+    // remote (settings.js, the GPS Sensor page block).
+    if (widget.category == 'ESPHome' &&
+        !container.location.locationKnownUnsupported)
+      locationEnabled.key: _LocationStatusRow(container: container),
     // The sensor's reading, live, under the switch: the curve's two light
     // levels are typed against it, and what a sensor calls a lit room is
     // anyone's guess until it is on screen. Mirrored on the remote
@@ -2563,6 +2588,25 @@ class _CategoryContentState extends State<_CategoryContent> {
           for (final def in _defsFor(widget.category))
             if (def.subpage == subpage) def,
         ]),
+      ];
+    }
+
+    if (widget.category == 'ESPHome' && subpage == 'GPS Sensor') {
+      // The switch and its interval, then the one grant the receiver
+      // needs. Mirrored on the remote (settings.js, the GPS Sensor page
+      // block).
+      return [
+        ...sectioned([
+          for (final def in _defsFor(widget.category))
+            if (def.subpage == subpage) def,
+        ]),
+        const SectionHeading('Required system permissions'),
+        SearchLandingTarget(
+          id: 'x:location_permissions',
+          child: SettingsCard(
+            children: [_LocationPermissionsTile(container: container)],
+          ),
+        ),
       ];
     }
 
@@ -6724,20 +6768,24 @@ class _DevicePermissionsTileState extends State<_DevicePermissionsTile>
         // Pages ask for this themselves when they need it, and Bluetooth
         // scanning cannot run without it on any Android version: the scan
         // deliberately drops neverForLocation so beacon frames survive
-        // (issue #246). The app itself never reads the device position.
+        // (issue #246). The location sensors are the one native reader of
+        // the position, and only while switched on (issue #363).
         _row(
           granted: perms?.location,
-          needed: settings.get(btproxyEnabled),
+          needed: settings.get(btproxyEnabled) || settings.get(locationEnabled),
           missingIcon: Icons.location_off_outlined,
           title: 'Location',
-          held: 'Pages and Bluetooth scanning can use the device location.',
+          held:
+              'Pages, Bluetooth scanning and the location sensors can use '
+              'the device position.',
           missing:
-              'Android will not deliver Bluetooth scan results '
-              'without Location. The app never reads the device position.',
+              'Android will not deliver Bluetooth scan results without '
+              'Location, and the location sensors cannot read the GPS '
+              'receiver.',
           idle:
-              'Used by pages that ask for your location, and needed by '
-              'Bluetooth scanning.',
-          onGrant: () => ensureOsPermission(Permission.locationWhenInUse),
+              'Used by pages that ask for your location, by Bluetooth '
+              'scanning and by the ESPHome location sensors.',
+          onGrant: SystemPermissions.requestLocation,
         ),
       ]),
     );
@@ -7004,6 +7052,167 @@ class _RealMacStatusRowState extends State<_RealMacStatusRow> {
   }
 }
 
+/// The GPS Sensor page's Required system permissions group (issue #363):
+/// one row, the location grant plus the system-wide location switch,
+/// which is what the receiver needs before it reads anything. Grant runs
+/// the dialog, then the OS location settings screen when the switch is
+/// what is off, and nudges the location manager so a stream refused for
+/// the missing grant comes up at once.
+class _LocationPermissionsTile extends StatefulWidget {
+  const _LocationPermissionsTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_LocationPermissionsTile> createState() =>
+      _LocationPermissionsTileState();
+}
+
+class _LocationPermissionsTileState extends State<_LocationPermissionsTile>
+    with WidgetsBindingObserver {
+  SystemPermissions? _perms;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The dialog reports nothing on the way back; re-read on return.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final perms = await SystemPermissions.read();
+      if (!mounted) return;
+      setState(() {
+        _perms = perms;
+        _failed = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _failed = true);
+    }
+    widget.container.location.sync();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final perms = _perms;
+    final granted = _failed
+        ? null
+        : perms == null
+        ? null
+        : perms.location && perms.locationServicesOn;
+    return SettingsRow(
+      leading: Icon(
+        granted == true
+            ? Icons.check_circle_outline
+            : Icons.location_off_outlined,
+        color: granted == true ? null : theme.colorScheme.error,
+      ),
+      title: const Text('Location'),
+      subtitle: Text(
+        perms == null || !perms.location
+            ? 'Without this the GPS receiver cannot be read and the '
+                  'location sensors stay unknown.'
+            : !perms.locationServicesOn
+            ? 'Location is off in the device settings, so the receiver '
+                  'delivers nothing.'
+            : 'The location sensors can read the GPS receiver.',
+      ),
+      trailing: granted == true
+          ? null
+          : TextButton(
+              onPressed: () async {
+                await SystemPermissions.requestLocation();
+                await _refresh();
+              },
+              child: const Text('Grant'),
+            ),
+    );
+  }
+}
+
+/// The last coordinates under the Report location switch, refreshed every
+/// few seconds while the page is open: the coordinates on the right with
+/// accuracy and age under the name, or why there are none yet (the grant,
+/// the receiver, a cold start).
+class _LocationStatusRow extends StatefulWidget {
+  const _LocationStatusRow({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_LocationStatusRow> createState() => _LocationStatusRowState();
+}
+
+class _LocationStatusRowState extends State<_LocationStatusRow> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final location = widget.container.location;
+    final fix = location.last;
+    final String text;
+    String? coordinates;
+    if (!location.enabled) {
+      text = 'Off.';
+    } else if (location.error != null) {
+      text = location.error!;
+    } else if (fix == null) {
+      text =
+          'Waiting for the first fix. A cold start under open sky can '
+          'take a few minutes.';
+    } else {
+      final age = DateTime.now().toUtc().difference(fix.time);
+      final ago = age.inSeconds < 60
+          ? '${age.inSeconds}s ago'
+          : age.inMinutes < 60
+          ? '${age.inMinutes} min ago'
+          : '${age.inHours} h ago';
+      coordinates =
+          '${fix.latitude.toStringAsFixed(5)}, '
+          '${fix.longitude.toStringAsFixed(5)}';
+      text =
+          '${fix.accuracy == null ? '' : '±${fix.accuracy!.round()} m, '}'
+          '$ago';
+    }
+    return SettingsRow(
+      leading: const Icon(Icons.my_location_outlined),
+      title: const Text('Last coordinates'),
+      subtitle: Text(text),
+      trailing: coordinates == null ? null : Text(coordinates),
+    );
+  }
+}
+
 class _BtProxyPermissionsTile extends StatefulWidget {
   const _BtProxyPermissionsTile();
 
@@ -7104,7 +7313,7 @@ class _BtProxyPermissionsTileState extends State<_BtProxyPermissionsTile>
           title: 'Location',
           subtitle: perms == null || !perms.location
               ? 'Android only delivers Bluetooth scan results, beacons '
-                    'included, with Location granted. The app never reads '
+                    'included, with Location granted. The proxy never reads '
                     'the device position.'
               : !perms.locationServicesOn
               ? 'Location is off in the device settings, so Bluetooth '

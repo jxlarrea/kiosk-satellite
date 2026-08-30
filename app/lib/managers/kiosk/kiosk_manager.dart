@@ -403,6 +403,11 @@ class KioskManager extends Manager with WidgetsBindingObserver {
               results[name] =
                   name == 'bluetoothScan' || name == 'bluetoothConnect'
                   ? await SystemPermissions.requestBluetooth()
+                  // The grant, then the location settings screen when
+                  // the system switch is what is off: the sensors need
+                  // both, like scanning does.
+                  : name == 'location'
+                  ? await SystemPermissions.requestLocation()
                   : (await known[name]!.request()).isGranted;
             } catch (_) {
               results[name] = false;

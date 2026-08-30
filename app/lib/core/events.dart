@@ -130,6 +130,35 @@ class LightLevelChanged extends AppEvent {
   final double lux;
 }
 
+/// A GPS fix arrived (issue #363): the location manager relays the native
+/// receiver's reading while Report location is on. Internal-only; the
+/// ESPHome surface mirrors it into the location sensors.
+class LocationChanged extends AppEvent {
+  const LocationChanged({
+    required this.latitude,
+    required this.longitude,
+    required this.time,
+    this.accuracy,
+    this.altitude,
+    this.speed,
+  });
+
+  final double latitude;
+  final double longitude;
+
+  /// When the receiver took the fix.
+  final DateTime time;
+
+  /// Horizontal accuracy in meters, null when the receiver gave none.
+  final double? accuracy;
+
+  /// Meters above the WGS84 ellipsoid, null when the receiver gave none.
+  final double? altitude;
+
+  /// Ground speed in meters per second, null when the receiver gave none.
+  final double? speed;
+}
+
 /// External power was connected or removed. Android broadcasts every battery
 /// change; the device manager re-reads the plugged flag on each and only a
 /// genuine flip travels here. Internal-only; MQTT mirrors it into the

@@ -69,6 +69,11 @@
          Android 14+ requires the connectedDevice type for that, and the type
          requires this permission; attached while the Bluetooth proxy is on. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"/>
+    <!-- Keeps GPS fixes arriving while the app is not on screen: Android 10+
+         only delivers location to a backgrounded app through a location-type
+         foreground service; attached while Report location is on and the
+         location permission granted. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <!-- The service's notification. Denied, the service still runs; it just says
          nothing, which is worse for the person in the room than for us. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
@@ -151,7 +156,7 @@
         <service
             android:name=".KioskSatelliteService"
             android:exported="false"
-            android:foregroundServiceType="specialUse|microphone|camera|connectedDevice">
+            android:foregroundServiceType="specialUse|microphone|camera|connectedDevice|location">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Keeps the kiosk's Home Assistant, MQTT and ESPHome connections alive while the screen is off or another app is in front."/>

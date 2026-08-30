@@ -83,6 +83,7 @@ class KioskSatelliteService : Service() {
         const val REASON_LISTENING = "listening"
         const val REASON_CAMERA = "camera"
         const val REASON_KIOSK = "kiosk"
+        const val REASON_LOCATION = "location"
 
         /// Live while the service is up, so the exit path knows whose
         /// onDestroy gets to end the process.
@@ -194,6 +195,9 @@ class KioskSatelliteService : Service() {
             if (Build.VERSION.SDK_INT >= 29 &&
                 types and ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE != 0
             ) names.add("connectedDevice")
+            if (Build.VERSION.SDK_INT >= 29 &&
+                types and ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION != 0
+            ) names.add("location")
             return names
         }
     }
@@ -307,6 +311,15 @@ class KioskSatelliteService : Service() {
                 granted(android.Manifest.permission.BLUETOOTH_SCAN))
         ) {
             types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+        }
+        // Location keeps GPS fixes arriving off screen: from Android 10 a
+        // backgrounded app only receives location through a service of
+        // this type (or the background location grant, which the app
+        // never asks for).
+        if (REASON_LOCATION in reasons && Build.VERSION.SDK_INT >= 29 &&
+            granted(android.Manifest.permission.ACCESS_FINE_LOCATION)
+        ) {
+            types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
         }
         return types
     }
@@ -464,6 +477,7 @@ class KioskSatelliteService : Service() {
         if (REASON_BLUETOOTH in reasons) labels.add("relaying Bluetooth devices")
         if (REASON_MQTT in reasons) labels.add("publishing over MQTT")
         if (REASON_CAMERA in reasons) labels.add("watching the camera")
+        if (REASON_LOCATION in reasons) labels.add("reporting the location")
         if (REASON_REMOTE in reasons) labels.add("serving the remote admin")
         if (REASON_KIOSK in reasons) labels.add("guarding kiosk mode")
         labels.add("keeping Home Assistant connected")

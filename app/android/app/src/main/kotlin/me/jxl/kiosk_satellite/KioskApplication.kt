@@ -62,6 +62,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
     private lateinit var apkInstaller: ApkInstaller
     private lateinit var lightSensor: LightSensor
     private lateinit var proximitySensor: ProximitySensor
+    private lateinit var locationSensor: LocationSensor
     private lateinit var haptics: HapticsBridge
     private lateinit var tapSound: TapSoundBridge
     private lateinit var bluetoothProxy: BluetoothProxyBridge
@@ -127,6 +128,7 @@ class KioskApplication : Application(), CameraXConfig.Provider {
         apkInstaller = ApkInstaller(applicationContext, messenger)
         lightSensor = LightSensor(applicationContext, messenger)
         proximitySensor = ProximitySensor(applicationContext, messenger)
+        locationSensor = LocationSensor(applicationContext, messenger)
         haptics = HapticsBridge(applicationContext, messenger)
         tapSound = TapSoundBridge(applicationContext, messenger)
         bluetoothProxy = BluetoothProxyBridge(applicationContext, messenger)

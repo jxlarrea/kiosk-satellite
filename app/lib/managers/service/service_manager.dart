@@ -74,7 +74,9 @@ class ServiceManager extends Manager {
     'remote.enabled',
     'mqtt.enabled',
     'esphome.enabled',
+    'esphome.entities',
     'btproxy.enabled',
+    'location.enabled',
     'wake_word.enabled',
     'wake_word.background',
     'camera.enabled',
@@ -146,6 +148,15 @@ class ServiceManager extends Manager {
           'bluetooth',
           'Bluetooth proxy',
           'Keeps Bluetooth scanning running while the app is not on screen.',
+        ),
+      if (s.get(defs.esphomeEnabled) &&
+          s.get(defs.esphomeEntities) &&
+          s.get(defs.locationEnabled))
+        const ServiceReason(
+          'location',
+          'Location sensors',
+          'Keeps GPS fixes arriving while the screen is off or another app '
+              'is in front.',
         ),
       if (s.get(defs.mqttEnabled))
         const ServiceReason(

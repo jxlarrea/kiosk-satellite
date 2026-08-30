@@ -235,6 +235,17 @@ class EspEntitySurface {
     final prox = await commands.execute('getProximitySupport', const {});
     final proximityPresent =
         prox.ok && prox.data is Map && (prox.data as Map)['supported'] != false;
+    // The location sensors are opt-in and follow the receiver the same
+    // pessimistic way: listed only with Report location on, on a device
+    // the probe has said has a GPS receiver (issue #363).
+    final loc = _settings.get(defs.locationEnabled)
+        ? await commands.execute('getLocationSupport', const {})
+        : null;
+    final locationPresent =
+        loc != null &&
+        loc.ok &&
+        loc.data is Map &&
+        (loc.data as Map)['supported'] != false;
     // The facing select only exists where there is a choice: single-camera
     // hardware (Echo Show 5) gets none. An empty answer means the probe
     // could not look yet, and optimism matches hasDeviceCamera above.
@@ -465,6 +476,62 @@ class EspEntitySurface {
           'name': 'Motion',
           'deviceClass': 'motion',
         },
+      // The GPS position (issue #363). Six decimals is about a tenth of
+      // a meter; the default of none would round a coordinate to a whole
+      // degree. Latitude and longitude carry no state class on purpose:
+      // a long-term mean of a position is nothing.
+      if (locationPresent) ...[
+        {
+          'type': 'sensor',
+          'objectId': 'gps_latitude',
+          'name': 'GPS latitude',
+          'icon': 'mdi:latitude',
+          'unit': '°',
+          'accuracyDecimals': 6,
+        },
+        {
+          'type': 'sensor',
+          'objectId': 'gps_longitude',
+          'name': 'GPS longitude',
+          'icon': 'mdi:longitude',
+          'unit': '°',
+          'accuracyDecimals': 6,
+        },
+        {
+          'type': 'sensor',
+          'objectId': 'gps_accuracy',
+          'name': 'GPS accuracy',
+          'icon': 'mdi:crosshairs-gps',
+          'deviceClass': 'distance',
+          'unit': 'm',
+          'stateClass': 1,
+        },
+        {
+          'type': 'sensor',
+          'objectId': 'altitude',
+          'name': 'Altitude',
+          'icon': 'mdi:altimeter',
+          'deviceClass': 'distance',
+          'unit': 'm',
+          'stateClass': 1,
+        },
+        {
+          'type': 'sensor',
+          'objectId': 'speed',
+          'name': 'Speed',
+          'deviceClass': 'speed',
+          'unit': 'm/s',
+          'stateClass': 1,
+          'accuracyDecimals': 1,
+        },
+        {
+          'type': 'text_sensor',
+          'objectId': 'last_location_fix',
+          'name': 'Last location fix',
+          'icon': 'mdi:map-marker-check-outline',
+          'deviceClass': 'timestamp',
+        },
+      ],
       {
         'type': 'text_sensor',
         'objectId': 'next_alarm',
@@ -893,6 +960,7 @@ class EspEntitySurface {
         _send('illuminance', e.lux.round());
       }),
     );
+    _subs.add(bus.on<LocationChanged>().listen(_sendLocation));
     _subs.add(
       bus.on<CameraViewStateChanged>().listen((e) {
         _send('active_camera_view', e.viewName ?? 'none');
@@ -1266,6 +1334,7 @@ class EspEntitySurface {
     await _sendUpdateState();
     await _sendNextAlarm();
     await _sendAdminUrl();
+    await _sendLastLocation();
     await _send('screensaver_active', _screensaverActive);
     await _sendDeviceInfo();
     // Settings-backed entities all report their stored values.
@@ -1413,6 +1482,45 @@ class EspEntitySurface {
       if (progress != null) 'progress': progress.toDouble(),
       'inProgress': progress != null,
     });
+  }
+
+  /// A fix from the receiver, onto the six location sensors at once.
+  Future<void> _sendLocation(LocationChanged e) async {
+    if (!_settings.get(defs.locationEnabled)) return;
+    await _send('gps_latitude', e.latitude);
+    await _send('gps_longitude', e.longitude);
+    await _send('gps_accuracy', e.accuracy?.round());
+    await _send('altitude', e.altitude?.round());
+    await _send('speed', e.speed);
+    await _send('last_location_fix', e.time.toUtc().toIso8601String());
+  }
+
+  /// The last fix the location manager holds, from this run or the last
+  /// one, so the sensors read a position at attach rather than unknown
+  /// until the next fix (the broker-retention role).
+  Future<void> _sendLastLocation() async {
+    if (!_settings.get(defs.locationEnabled)) return;
+    final result = await commands.execute('getLocation', const {});
+    final fix = result.ok && result.data is Map
+        ? (result.data as Map)['fix']
+        : null;
+    if (fix is! Map) return;
+    final lat = fix['latitude'];
+    final lon = fix['longitude'];
+    final time = fix['time'];
+    if (lat is! num || lon is! num) return;
+    await _sendLocation(
+      LocationChanged(
+        latitude: lat.toDouble(),
+        longitude: lon.toDouble(),
+        time: time is num
+            ? DateTime.fromMillisecondsSinceEpoch(time.toInt(), isUtc: true)
+            : DateTime.now().toUtc(),
+        accuracy: (fix['accuracy'] as num?)?.toDouble(),
+        altitude: (fix['altitude'] as num?)?.toDouble(),
+        speed: (fix['speed'] as num?)?.toDouble(),
+      ),
+    );
   }
 
   Future<void> _sendNextAlarm() async {

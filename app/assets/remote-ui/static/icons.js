@@ -89,6 +89,8 @@ export const SUBPAGE_ICONS = {
   'Notifications': svg('<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15z"/>'
     + '<path d="M10 20a2 2 0 0 0 4 0"/>'),
   'Bluetooth Proxy': svg('<path d="m6.5 7 11 10-5.5 5V2l5.5 5-11 10"/>'),
+  'GPS Sensor': svg('<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/>'
+    + '<circle cx="12" cy="10" r="2.5"/>'),
   'Advanced settings': svg('<path d="M4 7h10m4 0h2M4 12h2m4 0h10M4 17h8m4 0h4"/>'
     + '<circle cx="16" cy="7" r="2"/><circle cx="8" cy="12" r="2"/>'
     + '<circle cx="14" cy="17" r="2"/>'),
