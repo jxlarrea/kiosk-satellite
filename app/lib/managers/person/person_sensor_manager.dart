@@ -137,11 +137,12 @@ class PersonSensorManager extends Manager {
 
   /// The log tags followed. The first two carry the 30 second heartbeat.
   /// The framing director's are the Smart Camera's auto-framing deciding
-  /// whether to move the crop, which it logs every few seconds while a
-  /// tracked person moves: a person walking in registers on their first
-  /// steps rather than on the next heartbeat. Everything else is filtered
-  /// out by `logcat` itself, so the tail costs nothing while the room is
-  /// empty.
+  /// how to move the crop: tracking lines every second or two while it
+  /// follows a person (an arrival registers on the first step rather than
+  /// on the next heartbeat) and brake lines once a second while it has
+  /// nobody to follow (an exit registers in seconds rather than after the
+  /// heartbeat window). Everything else is filtered out by `logcat`
+  /// itself.
   static const logTags = [
     'PresenceManager:I',
     'aloha.CameraServiceController:I',
@@ -154,7 +155,24 @@ class PersonSensorManager extends Manager {
   /// center. Either means someone is in view now. Its other lines (hold
   /// and reframe moves) happen on the way out as well, so they say
   /// nothing.
-  static const _framingMarkers = ['boundaryviolated', 'framingdistance'];
+  static const _framingMarkers = [
+    'boundaryviolated',
+    'framingdistance',
+    'fast track',
+  ];
+
+  /// The director braking to its default frame: it lost the person. Logged
+  /// once a second for as long as the room stays empty, starting within a
+  /// few seconds of someone leaving, so a short run of these is absence
+  /// long before the heartbeat window runs out. Its hold and reframe lines
+  /// happen on the way in and out alike and say nothing.
+  static const _brakeMarker = 'brake';
+
+  /// How long the director has to keep braking before the person counts as
+  /// gone. Three consecutive lines: one stray line while someone stands
+  /// still must not read as an exit, since the next tracking line would
+  /// then read as an arrival and dismiss the screensaver.
+  static const absentAfterBrake = Duration(seconds: 3);
 
   static const _channel = MethodChannel('kiosk_satellite/background');
 
@@ -225,6 +243,10 @@ class PersonSensorManager extends Manager {
   /// When the newest live beat arrived, null before the first.
   DateTime? get lastBeat => _lastBeat;
   DateTime? _lastBeat;
+
+  /// When the current run of brake lines began, null while the director
+  /// is tracking someone or quiet.
+  DateTime? _brakeSince;
 
   /// The newest beat line, for the status row and bug reports.
   String? get lastLine => _lastLine;
@@ -466,7 +488,11 @@ class PersonSensorManager extends Manager {
     // The tag sits between the level letter and the colon.
     final head = sep < 0 ? '' : trimmed.substring(0, sep).toLowerCase();
     if (head.contains('trackandhold')) {
-      if (_containsAny(lower, _framingMarkers)) _beat(now, line);
+      if (_containsAny(lower, _framingMarkers)) {
+        _beat(now, line);
+      } else if (lower.contains(_brakeMarker)) {
+        _brake(now);
+      }
       return;
     }
     if (!lower.contains('presence')) return;
@@ -484,7 +510,20 @@ class PersonSensorManager extends Manager {
     _beat(now, line);
   }
 
+  /// A brake line: the start of a run marks the time, a run that has
+  /// lasted [absentAfterBrake] clears the presence. Someone leaving and
+  /// coming straight back is then an arrival again, which Dismiss on
+  /// person acts on, instead of one long stay.
+  void _brake(DateTime now) {
+    _brakeSince ??= now;
+    if (!_present || now.difference(_brakeSince!) < absentAfterBrake) return;
+    log.debug(name, 'framing director lost the person');
+    _lastBeat = null;
+    _evaluate();
+  }
+
   void _beat(DateTime now, String line) {
+    _brakeSince = null;
     // One echo of the matched line when presence begins and every five
     // minutes after, so a bug report shows what the firmware writes
     // without the log filling with heartbeats.
@@ -593,6 +632,7 @@ class PersonSensorManager extends Manager {
     if (_sub == null) return;
     _teardown();
     _lastBeat = null;
+    _brakeSince = null;
     log.info(name, 'presence heartbeat off');
   }
 

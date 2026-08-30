@@ -286,6 +286,49 @@ void main() {
     });
   });
 
+  test('the director braking for three seconds ends the presence, so the '
+      'next tracking line is an arrival again', () async {
+    await build(on);
+    await pump();
+    final faces = <PersonDetected>[];
+    bus.on<PersonDetected>().listen(faces.add);
+    String director(String text) =>
+        beat(clock, text: 'aloha.TrackAndHoldAiDirector: $text');
+
+    lines.add(director('Forcing fast track movement'));
+    await pump();
+    expect(sensor.present, isTrue);
+    expect(faces.single.held, isFalse);
+
+    // Brake lines a second apart, each read at its own time: two seconds
+    // of braking is not an exit.
+    for (var i = 0; i < 3; i++) {
+      lines.add(director('Forcing brake movement'));
+      await pump();
+      clock = clock.add(const Duration(seconds: 1));
+    }
+    expect(sensor.present, isTrue);
+
+    // The line three seconds after the first one is.
+    lines.add(director('Forcing brake movement'));
+    await pump();
+    expect(sensor.present, isFalse);
+
+    // Back within the heartbeat window: an arrival, not a stay.
+    clock = clock.add(const Duration(seconds: 5));
+    lines.add(director('Forcing fast track movement'));
+    await pump();
+    expect(sensor.present, isTrue);
+    expect(faces, hasLength(2));
+    expect(faces.last.held, isFalse);
+
+    // Hold and reframe lines say nothing either way.
+    lines.add(director('Forcing hold reframe movement'));
+    await pump();
+    expect(faces, hasLength(2));
+    expect(sensor.present, isTrue);
+  });
+
   test('a missing grant leaves the tail off with the reason', () async {
     granted = false;
     effective = false;

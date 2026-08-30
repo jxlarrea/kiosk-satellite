@@ -130,7 +130,7 @@ same time.
 | Camera light | Never | On while the camera runs |
 | Needs | The Log access grant | Camera enabled, camera grant |
 | Detects | Anyone the Portal counts as present, any angle | A face turned toward the screen, within the distance Face sensitivity sets |
-| Latency | A few seconds when the person moves (the framing director logs every move it tracks), otherwise the next heartbeat, up to 30 seconds. Absence takes 50 seconds without either | Under a second |
+| Latency | Arrival: a second or two, from the framing director's tracking lines, otherwise the next heartbeat, up to 30 seconds. Absence: about three seconds once the director reports nobody to follow, 50 seconds without any signal at worst | Under a second |
 | In the dark | Meta's detector weakens in low light | Fails |
 
 Presence is a state rather than a sighting: while someone is in view,
@@ -187,8 +187,9 @@ is the only door.
   PresenceManager:I aloha.CameraServiceController:I
   aloha.TrackAndHoldAiDirectorDefaultNudgeMovement:I` should print `Notify
   people presence` and `onNotifyPresence presence updated` every 30 seconds
-  while someone stands in front of it plus `boundaryViolatedPct` lines
-  whenever they move. With the room empty only `Forcing brake movement`
-  lines appear, once a second, which the app ignores. The app logs each
+  while someone stands in front of it plus `Forcing fast track movement`
+  and `boundaryViolatedPct` lines while it follows them. With the room
+  empty only `Forcing brake movement` lines appear, once a second, which
+  is what tells the app the person left. The app logs each
   matched line when presence begins and every five minutes after, under
   the `portal` tag.
