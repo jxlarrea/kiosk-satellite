@@ -21,13 +21,49 @@ const _maxLength = 40;
 /// becomes `cocina-pequena` rather than losing the letter (and gaining a
 /// hyphen where it was).
 const _fold = {
-  'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
-  'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
-  'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
-  'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
-  'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u',
-  'ñ': 'n', 'ç': 'c', 'ý': 'y', 'ÿ': 'y', 'ß': 'ss',
+  'à': 'a',
+  'á': 'a',
+  'â': 'a',
+  'ã': 'a',
+  'ä': 'a',
+  'å': 'a',
+  'è': 'e',
+  'é': 'e',
+  'ê': 'e',
+  'ë': 'e',
+  'ì': 'i',
+  'í': 'i',
+  'î': 'i',
+  'ï': 'i',
+  'ò': 'o',
+  'ó': 'o',
+  'ô': 'o',
+  'õ': 'o',
+  'ö': 'o',
+  'ù': 'u',
+  'ú': 'u',
+  'û': 'u',
+  'ü': 'u',
+  'ñ': 'n',
+  'ç': 'c',
+  'ý': 'y',
+  'ÿ': 'y',
+  'ß': 'ss',
 };
+
+/// The node name a fresh install takes from its device name: the slug
+/// under a `ks-` prefix, so every kiosk sorts together in Home Assistant's
+/// ESPHome list and the mDNS browser (`ks-amazon-kftuwi`, `ks-kitchen`).
+/// A device name that already starts with "ks" ("KS Kitchen") keeps the
+/// one prefix. Empty when the name has nothing usable, the caller's cue to
+/// leave the generated name in place. A name typed in the Node name
+/// setting itself is never prefixed; that one is taken as written.
+String esphomeNodeFromDeviceName(String deviceName) {
+  final slug = esphomeNodeSlug(deviceName);
+  if (slug.isEmpty) return '';
+  if (slug == 'ks' || slug.startsWith('ks-')) return slug;
+  return 'ks-$slug';
+}
 
 /// [name] as a DNS label: lowercase, letters, digits and single hyphens.
 /// Empty when nothing usable survives, which is the caller's cue to keep

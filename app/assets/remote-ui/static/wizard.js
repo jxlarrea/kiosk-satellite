@@ -384,8 +384,8 @@ export function wizardSteps() {
       // The device name first, seeded with what the device calls itself
       // (the model, until someone names it): the ESPHome node name is
       // taken from it at the server's first start, so a name given here
-      // reads as kitchen-tablet in Home Assistant rather than a generated
-      // kiosk-satellite-<id>.
+      // reads as ks-kitchen-tablet in Home Assistant rather than a
+      // generated kiosk-satellite-<id>.
       const dev = wizardCard(b);
       const nameField = wizardField(dev, 'wzDeviceName', 'text', 'Device name');
       nameField.value = wizard.deviceName || '';

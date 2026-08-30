@@ -100,8 +100,8 @@ class _SetupScreenState extends State<SetupScreen> {
   // Step 1 — the device name. Seeded with the model so the kiosk carries a
   // friendly name from its first minute: the ESPHome node name is taken
   // from the device name at the server's first start, and a name typed here
-  // lands before that, so Home Assistant sees kitchen-tablet rather than a
-  // generated kiosk-satellite-<id>.
+  // lands before that, so Home Assistant sees ks-kitchen-tablet rather
+  // than a generated kiosk-satellite-<id>.
   final _deviceName = TextEditingController();
 
   // Step 1 — remote admin. On by default: the remote admin is where the

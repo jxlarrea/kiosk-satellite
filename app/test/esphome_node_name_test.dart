@@ -28,6 +28,13 @@ void main() {
       expect(esphomeNodeSlug("Ana's Tablet (2)"), 'ana-s-tablet-2');
       expect(esphomeNodeSlug('Cocina Pequeña'), 'cocina-pequena');
       expect(esphomeNodeSlug('Tablet_01'), 'tablet-01');
+      // A fresh install's name, from the device name: the slug under a
+      // ks- prefix, and a name that already starts with KS keeps one.
+      expect(esphomeNodeFromDeviceName('Amazon KFTUWI'), 'ks-amazon-kftuwi');
+      expect(esphomeNodeFromDeviceName('Kitchen Tablet'), 'ks-kitchen-tablet');
+      expect(esphomeNodeFromDeviceName('KS Kitchen'), 'ks-kitchen');
+      expect(esphomeNodeFromDeviceName('ks'), 'ks');
+      expect(esphomeNodeFromDeviceName('Kiosk'), 'ks-kiosk');
     });
 
     test('an already valid name passes through untouched', () {
@@ -39,6 +46,8 @@ void main() {
 
     test('nothing usable yields nothing, never a bare hyphen', () {
       expect(esphomeNodeSlug(''), '');
+      expect(esphomeNodeFromDeviceName(''), '');
+      expect(esphomeNodeFromDeviceName('日本語'), '');
       expect(esphomeNodeSlug('   '), '');
       expect(esphomeNodeSlug('---'), '');
       expect(esphomeNodeSlug('日本語'), '');
@@ -62,16 +71,17 @@ void main() {
       });
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('kiosk_satellite/bluetooth_proxy'),
-        (call) async {
-          sent.add(call);
-          if (call.method != 'start') return null;
-          // The native side answers with the name it came up under: what
-          // it was handed, or its generated identity when handed nothing.
-          final asked = (call.arguments as Map)['nodeName'] as String? ?? '';
-          return asked.isEmpty ? 'kiosk-satellite-ad603b' : asked;
-        },
-      );
+            const MethodChannel('kiosk_satellite/bluetooth_proxy'),
+            (call) async {
+              sent.add(call);
+              if (call.method != 'start') return null;
+              // The native side answers with the name it came up under: what
+              // it was handed, or its generated identity when handed nothing.
+              final asked =
+                  (call.arguments as Map)['nodeName'] as String? ?? '';
+              return asked.isEmpty ? 'kiosk-satellite-ad603b' : asked;
+            },
+          );
       final bus = EventBus();
       final log = Logger();
       final commands = CommandRegistry(log);
@@ -86,21 +96,18 @@ void main() {
 
     String startedWith() =>
         (sent.firstWhere((c) => c.method == 'start').arguments
-            as Map)['nodeName'] as String;
+                as Map)['nodeName']
+            as String;
 
     test('a fresh install names itself after the device', () async {
       final settings = await boot({
         'ks.device.name': 'KS Master Bedroom Satellite',
       });
       expect(startedWith(), 'ks-master-bedroom-satellite');
-      expect(
-        settings.get(defs.esphomeNodeName),
-        'ks-master-bedroom-satellite',
-      );
+      expect(settings.get(defs.esphomeNodeName), 'ks-master-bedroom-satellite');
     });
 
-    test('an install that already announced itself keeps its name',
-        () async {
+    test('an install that already announced itself keeps its name', () async {
       final settings = await boot({
         'ks.device.name': 'KS Master Bedroom Satellite',
         // A stored key is the mark of a server that has run before, and
@@ -123,11 +130,13 @@ void main() {
       expect(settings.get(defs.esphomeNodeName), 'master-bedroom');
     });
 
-    test('an unnamed fresh install falls back to the generated identity',
-        () async {
-      final settings = await boot({'ks.device.name': ''});
-      expect(startedWith(), '');
-      expect(settings.get(defs.esphomeNodeName), 'kiosk-satellite-ad603b');
-    });
+    test(
+      'an unnamed fresh install falls back to the generated identity',
+      () async {
+        final settings = await boot({'ks.device.name': ''});
+        expect(startedWith(), '');
+        expect(settings.get(defs.esphomeNodeName), 'kiosk-satellite-ad603b');
+      },
+    );
   });
 }

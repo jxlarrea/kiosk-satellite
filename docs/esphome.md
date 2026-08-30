@@ -8,7 +8,7 @@ The same connection can carry a **Bluetooth proxy**: BLE advertisements from nea
 
 1. **Settings, ESPHome, Enable ESPHome.** The first start generates the encryption key and shows it in the same section. Turn on **Enable Bluetooth proxy** below it if the kiosk should relay Bluetooth too.
 2. Grant **Nearby devices** and **Location** when prompted (also under **Settings, Device, Permissions Manager**) and keep the device's location switch on. See [Permissions by Android version](#permissions-by-android-version) for why.
-3. In Home Assistant, **Settings, Devices & services** shows a discovered ESPHome device named `kiosk-satellite-<id>`. Hit **Configure** and paste the key.
+3. In Home Assistant, **Settings, Devices & services** shows a discovered ESPHome device named `ks-<device name>` (`ks-amazon-kftuwi` for a Fire HD 10 left at its model name, see [Node name](#node-name)). Hit **Configure** and paste the key.
 
 | Situation | What to do |
 |---|---|
@@ -253,9 +253,9 @@ actions:
 
 ## Node name
 
-The node name is the mDNS name Home Assistant discovers (`<node name>.local`) and the stem of the device's action names: `kitchen-tablet` makes `esphome.kitchen_tablet_notification`. A fresh install names itself after its device name, the **Device name** field on the setup wizard's first page, which starts out as the device model. A kiosk already discovered keeps the generated `kiosk-satellite-<id>`.
+The node name is the mDNS name Home Assistant discovers (`<node name>.local`) and the stem of the device's action names: `kitchen-tablet` makes `esphome.kitchen_tablet_notification`. A fresh install names itself `ks-` plus its device name, the **Device name** field on the setup wizard's first page, which starts out as the device model: `ks-amazon-kftuwi`, or `ks-kitchen-tablet` for a kiosk named Kitchen Tablet. A device name that already starts with KS is not prefixed twice. A kiosk already discovered keeps the generated `kiosk-satellite-<id>`.
 
-Change it under **Settings, ESPHome, Node name**. Anything typed is reduced to lower case, digits and single hyphens ("Kitchen Tablet" becomes `kitchen-tablet`) and must be unique among the kiosks on the network.
+Change it under **Settings, ESPHome, Node name**. Anything typed is taken as written, without the prefix, reduced to lower case, digits and single hyphens ("Kitchen Tablet" becomes `kitchen-tablet`) and must be unique among the kiosks on the network.
 
 | After a rename | |
 |---|---|

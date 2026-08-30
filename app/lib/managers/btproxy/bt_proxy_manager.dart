@@ -390,13 +390,16 @@ class BtProxyManager extends Manager {
   }
 
   /// The node name to serve under: what the user set, or on a brand-new
-  /// install a slug of the device name, so Home Assistant's action names
-  /// read like the kiosk. Empty leaves the native generated identity,
-  /// which is what every install that already has an entry keeps.
+  /// install the device name under a `ks-` prefix, so Home Assistant's
+  /// action names read like the kiosk. Empty leaves the native generated
+  /// identity, which is what every install that already has an entry
+  /// keeps.
   String _nodeName({required bool firstEver}) {
     final chosen = esphomeNodeSlug(_settings.get(defs.esphomeNodeName));
     if (chosen.isNotEmpty) return chosen;
-    return firstEver ? esphomeNodeSlug(_settings.get(defs.deviceName)) : '';
+    return firstEver
+        ? esphomeNodeFromDeviceName(_settings.get(defs.deviceName))
+        : '';
   }
 
   /// One restart for a burst of changes, queued behind whatever
