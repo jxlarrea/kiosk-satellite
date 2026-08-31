@@ -175,7 +175,8 @@ const Map<String, String> subpageHints = {
   'Adaptive brightness': 'Follow the room light with the ambient light sensor',
   // Screensaver. The six mode pages only exist while that mode is the
   // one selected, since every setting on them gates on it.
-  'Clock screensaver': 'Style, size, colors, background photo',
+  'Clock screensaver':
+      'Style, font, size, colors, night mode, background photo',
   'Home Assistant Media screensaver': 'Media source, timing, shuffle, fill',
   'Local Media screensaver': 'Folder, timing, shuffle, transition',
   'Photo Gallery screensaver': 'Photos, timing, shuffle, transition',
@@ -1522,6 +1523,50 @@ const screensaverClockStyle = SettingDef<String>(
   dependsOnValue: 'clock',
 );
 
+// The typeface, any face (issue #391): the app's own Rubik plus Android's
+// generic families, resolved through the platform font manager. What each
+// generic maps to is the ROM's call (AOSP serves Noto Serif, Dancing
+// Script, Coming Soon; Fire OS substitutes Amazon's faces), which is the
+// point: the clock wears the device's own serif, not a specific one. Two
+// bundled exceptions for looks no system font has: Nunito (the rounded
+// Apple StandBy face the issue's screenshot shows) and LCD, DSEG14
+// (28 KB), the LED alarm clock. clockFontFamily (clock_faces.dart) maps
+// the stored value to the family name.
+const screensaverClockFont = SettingDef<String>(
+  key: 'screensaver.clock_font',
+  type: SettingType.select,
+  defaultValue: 'rubik',
+  title: 'Font',
+  description: 'The typeface the clock is drawn in.',
+  category: 'Screensaver',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
+  options: [
+    'rubik',
+    'nunito',
+    'system',
+    'serif',
+    'condensed',
+    'monospace',
+    'casual',
+    'cursive',
+    'lcd',
+  ],
+  optionLabels: {
+    'rubik': 'Rubik',
+    'nunito': 'Nunito',
+    'system': 'System',
+    'serif': 'Serif',
+    'condensed': 'Condensed',
+    'monospace': 'Monospace',
+    'casual': 'Casual',
+    'cursive': 'Cursive',
+    'lcd': 'LCD',
+  },
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
 const screensaverClock24h = SettingDef<bool>(
   key: 'screensaver.clock_24h',
   type: SettingType.boolean,
@@ -1684,6 +1729,74 @@ const screensaverRollerBgColor = SettingDef<String>(
   subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_style',
   dependsOnValue: 'roller',
+);
+
+// ── Night mode (issue #391) ──
+//
+// In a dark room the digits take a color of their own, dim red by
+// default, the way a bedside clock stays readable without lighting the
+// room. Driven by the ambient light sensor: on a device without one the
+// switch renders disabled with the reason (settings_screen.dart and
+// notices.js both key off the same probe adaptive brightness uses).
+
+const screensaverClockNight = SettingDef<bool>(
+  key: 'screensaver.clock_night',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Night mode',
+  description: 'Recolor the clock while the room is dark.',
+  category: 'Screensaver',
+  section: 'Night mode',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
+// A slider, unlike the adaptive curve's typed ends: this threshold only
+// has to mean "dark", and 1 to 100 lx covers what any sensor calls a dark
+// room, where the curve's bright end has no usable fixed scale.
+const screensaverClockNightLux = SettingDef<num>(
+  key: 'screensaver.clock_night_lux',
+  type: SettingType.number,
+  defaultValue: 5,
+  title: 'Light level',
+  description: 'At or below this light level the clock takes the night color.',
+  category: 'Screensaver',
+  section: 'Night mode',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.clock_night',
+  min: 1,
+  max: 100,
+  step: 1,
+  unit: ' lx',
+);
+
+const screensaverClockNightColor = SettingDef<String>(
+  key: 'screensaver.clock_night_color',
+  type: SettingType.string,
+  defaultValue: '130,34,34',
+  title: 'Night color',
+  description: 'The color of the clock in the dark.',
+  category: 'Screensaver',
+  section: 'Night mode',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.clock_night',
+);
+
+// The backdrop in the dark, pure black by default: a face tuned for a lit
+// room (an inverted e-ink pair, the flip clock's shaded wall) should not
+// keep glowing at night. Takes the whole screen behind any face; the flip
+// cards keep their own color on top of it.
+const screensaverClockNightBgColor = SettingDef<String>(
+  key: 'screensaver.clock_night_bg_color',
+  type: SettingType.string,
+  defaultValue: '0,0,0',
+  title: 'Night background',
+  description: 'The color behind the clock in the dark.',
+  category: 'Screensaver',
+  section: 'Night mode',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.clock_night',
 );
 
 // ── Media (mode: media) ──
@@ -5363,6 +5476,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverSavedBrightness,
   screensaverBlackHideExtras,
   screensaverClockStyle,
+  screensaverClockFont,
   screensaverClock24h,
   screensaverClockSeconds,
   screensaverClockDate,
@@ -5374,6 +5488,10 @@ const List<SettingDef<Object>> allSettings = [
   screensaverFlipBgColor,
   screensaverRollerDigitColor,
   screensaverRollerBgColor,
+  screensaverClockNight,
+  screensaverClockNightLux,
+  screensaverClockNightColor,
+  screensaverClockNightBgColor,
   screensaverMediaId,
   screensaverMediaIsFolder,
   screensaverMediaInterval,

@@ -2387,6 +2387,19 @@ class _CategoryContentState extends State<_CategoryContent> {
           onChanged: null,
         ),
       ),
+    // The Clock screensaver's Night mode (issue #391) has nothing to
+    // watch without the sensor either: same disabled switch, same reason.
+    // Mirrored on the remote (notices.js, updateClockNightRows).
+    if (widget.category == 'Screensaver' && !container.device.hasLightSensor)
+      screensaverClockNight.key: SearchLandingTarget(
+        id: screensaverClockNight.key,
+        child: SwitchListTile(
+          title: Text(screensaverClockNight.title),
+          subtitle: const Text(_noLightSensorNote),
+          value: false,
+          onChanged: null,
+        ),
+      ),
     if (widget.category == 'Camera' && container.deviceCamera.cameraKnownAbsent)
       cameraEnabled.key: SearchLandingTarget(
         id: cameraEnabled.key,

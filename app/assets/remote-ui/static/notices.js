@@ -348,18 +348,7 @@ export async function updateProximityRows() {
    path re-runs it when the switch flips. The sensor is asked about once
    per page load. */
 export async function updateAdaptiveBrightnessRows() {
-  if (state.lightSensor === undefined) {
-    try {
-      const res = await (await api('/api/commands/getLightLevel',
-        { method: 'POST', body: '{}' })).json();
-      const data = res.data && typeof res.data === 'object' ? res.data : null;
-      state.lightSensor = data ? data.present === true : null;
-      if (data && typeof data.lux === 'number') {
-        state.lightLux = data.lux;
-        state.lightLive = data.live === true;
-      }
-    } catch (_) { state.lightSensor = null; }
-  }
+  await probeLightSensor();
   for (const stale of document.querySelectorAll('.adaptive-note')) stale.remove();
   const note = (text) => hintRow(text, { className: 'adaptive-note' });
   const row = document.querySelector('[data-key="screen.adaptive_brightness"]');
@@ -401,6 +390,43 @@ export async function updateAdaptiveBrightnessRows() {
     const slider = document.querySelector(`[data-key="${key}"]`);
     if (slider) slider.insertAdjacentElement('afterend', note(ADAPTIVE_NOTE));
   }
+}
+
+/* The sensor is asked about once per page load; the adaptive brightness
+   rows and the Clock screensaver's Night mode share the answer, and a
+   shared in-flight promise keeps the two from asking twice at once. */
+let lightSensorProbe;
+function probeLightSensor() {
+  if (state.lightSensor !== undefined) return Promise.resolve();
+  lightSensorProbe ??= (async () => {
+    try {
+      const res = await (await api('/api/commands/getLightLevel',
+        { method: 'POST', body: '{}' })).json();
+      const data = res.data && typeof res.data === 'object' ? res.data : null;
+      state.lightSensor = data ? data.present === true : null;
+      if (data && typeof data.lux === 'number') {
+        state.lightLux = data.lux;
+        state.lightLive = data.live === true;
+      }
+    } catch (_) { state.lightSensor = null; }
+  })();
+  return lightSensorProbe;
+}
+
+/* Night mode on the Clock screensaver page (issue #391), mirroring the
+   device: on a device without an ambient light sensor the switch renders
+   off and disabled with the reason. With one, the generic rows already
+   say everything. Idempotent, like the adaptive rows above. */
+export async function updateClockNightRows() {
+  await probeLightSensor();
+  for (const stale of document.querySelectorAll('.clock-night-note')) stale.remove();
+  if (state.lightSensor !== false) return;
+  const row = document.querySelector('[data-key="screensaver.clock_night"]');
+  if (!row) return;
+  const input = row.querySelector('.switch input');
+  if (input) { input.checked = false; input.disabled = true; }
+  row.insertAdjacentElement('afterend',
+    hintRow(NO_LIGHT_SENSOR_NOTE, { className: 'clock-night-note' }));
 }
 
 /* A fresh sensor reading from the WebSocket: the live row, if it is up. */

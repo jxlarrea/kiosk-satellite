@@ -15,6 +15,7 @@ import {
   updateCameraFacingsRow,
   updateCameraGrantNotice,
   updateCameraSnapshotPanel,
+  updateClockNightRows,
   updateDimModeNotice,
   updateFaceRows,
   updateMotionCameraRows,
@@ -1255,6 +1256,7 @@ export async function loadSettings() {
   updateProximityRows();
   updateDimModeNotice();
   updateAdaptiveBrightnessRows();
+  updateClockNightRows();
   updateScreenOffAdminNotice();
   updateAutoReloadOverlayNotice();
   updateImmichValidateRow();

@@ -109,3 +109,20 @@ flutter:
     - family: Rubik
       fonts:
         - asset: assets/fonts/Rubik.ttf
+    # The Clock screensaver's Nunito option (issue #391): the OP's Apple
+    # StandBy reference is SF Pro Rounded, and Nunito (Google Fonts, SIL
+    # OFL) is the closest open rounded face. A variable TTF with a wght
+    # axis, like Rubik, so the clock's light and heavy weights are real.
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito.ttf
+    # The Clock screensaver's LCD font option (issue #391): DSEG14 Classic
+    # (keshikan/DSEG, SIL OFL, license beside the file), the segmented
+    # display face of an LED alarm clock. The fourteen-segment cut rather
+    # than DSEG7: digits render identically to seven-segment, but letters
+    # and punctuation exist too, so the date and AM/PM stay in character
+    # instead of falling back to the platform font. Single weight; the
+    # clock's light and heavy weights all land on it.
+    - family: DSEG14
+      fonts:
+        - asset: assets/fonts/DSEG14.ttf

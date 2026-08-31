@@ -8,9 +8,36 @@ import 'package:flutter/material.dart';
 /// face — [ClockScreensaver] passes the current time in and each face
 /// animates only the digits that changed.
 ///
-/// The bundled Rubik, same as the digital face: a variable font, so the
-/// heavy weights these faces lean on are real rather than synthesized.
-const _fontFamily = 'Rubik';
+/// The font family for a `screensaver.clock_font` value (issue #391).
+/// Besides Rubik and two bundled faces (Nunito, the rounded Apple StandBy
+/// look, and DSEG14, the LCD option, neither a look any system font has),
+/// the options are Android's own generic families, which
+/// the engine resolves through the platform font manager (fonts.xml
+/// aliases every Android ships, though what each maps to varies by ROM —
+/// AOSP serves Noto Serif for serif, Dancing Script for cursive; Fire OS
+/// substitutes Amazon's faces). Null is the platform default (Roboto on
+/// stock Android), and an alias a ROM lacks falls back there too, so a
+/// stale stored value can never break the clock; anything unknown keeps
+/// Rubik, the original face.
+/// The digital face's time weight for a `screensaver.clock_font` value.
+/// The face is w300 by design, but Nunito exists to be the Apple StandBy
+/// look, whose digits are heavy: at w300 it read as a thin clock that
+/// happened to be rounded. Nunito is a variable font, so w700 is a real
+/// cut of the axis, not a synthetic bold.
+FontWeight clockFontWeight(String font) =>
+    font == 'nunito' ? FontWeight.w700 : FontWeight.w300;
+
+String? clockFontFamily(String font) => switch (font) {
+  'nunito' => 'Nunito',
+  'system' => null,
+  'serif' => 'serif',
+  'condensed' => 'sans-serif-condensed',
+  'monospace' => 'monospace',
+  'casual' => 'casual',
+  'cursive' => 'cursive',
+  'lcd' => 'DSEG14',
+  _ => 'Rubik',
+};
 
 /// The screen behind the flip cards, derived from the card color rather
 /// than picked: the reference face is three colors — digits, cards, and a
@@ -38,6 +65,7 @@ class FlipClockFace extends StatelessWidget {
     required this.digitColor,
     required this.cardColor,
     required this.scale,
+    required this.fontFamily,
   });
 
   final DateTime now;
@@ -45,6 +73,7 @@ class FlipClockFace extends StatelessWidget {
   final Color digitColor;
   final Color cardColor;
   final double scale;
+  final String? fontFamily;
 
   String get _hours {
     final h = use24h ? now.hour : (now.hour % 12 == 0 ? 12 : now.hour % 12);
@@ -72,6 +101,7 @@ class FlipClockFace extends StatelessWidget {
           height: cardH,
           digitColor: digitColor,
           cardColor: cardColor,
+          fontFamily: fontFamily,
         ),
         SizedBox(width: gap),
         _FlipCard(
@@ -80,6 +110,7 @@ class FlipClockFace extends StatelessWidget {
           height: cardH,
           digitColor: digitColor,
           cardColor: cardColor,
+          fontFamily: fontFamily,
         ),
       ],
     );
@@ -93,6 +124,7 @@ class _FlipCard extends StatefulWidget {
     required this.height,
     required this.digitColor,
     required this.cardColor,
+    required this.fontFamily,
   });
 
   final String value;
@@ -100,6 +132,7 @@ class _FlipCard extends StatefulWidget {
   final double height;
   final Color digitColor;
   final Color cardColor;
+  final String? fontFamily;
 
   @override
   State<_FlipCard> createState() => _FlipCardState();
@@ -140,7 +173,7 @@ class _FlipCardState extends State<_FlipCard>
       child: Text(
         value,
         style: TextStyle(
-          fontFamily: _fontFamily,
+          fontFamily: widget.fontFamily,
           color: widget.digitColor,
           fontSize: widget.height * 0.66,
           fontWeight: FontWeight.w400,
@@ -282,11 +315,13 @@ class RollerClockFace extends StatefulWidget {
     required this.use24h,
     required this.digitColor,
     required this.scale,
+    required this.fontFamily,
   });
 
   final bool use24h;
   final Color digitColor;
   final double scale;
+  final String? fontFamily;
 
   @override
   State<RollerClockFace> createState() => _RollerClockFaceState();
@@ -352,6 +387,7 @@ class _RollerClockFaceState extends State<RollerClockFace>
             height: colH,
             fontSize: fontSize,
             color: digitColor,
+            fontFamily: widget.fontFamily,
           ),
         ],
       ],
@@ -368,6 +404,7 @@ class _RollingDigit extends StatefulWidget {
     required this.height,
     required this.fontSize,
     required this.color,
+    required this.fontFamily,
   });
 
   final String digit;
@@ -384,6 +421,7 @@ class _RollingDigit extends StatefulWidget {
   final double height;
   final double fontSize;
   final Color color;
+  final String? fontFamily;
 
   @override
   State<_RollingDigit> createState() => _RollingDigitState();
@@ -430,7 +468,7 @@ class _RollingDigitState extends State<_RollingDigit>
         child: Text(
           d,
           style: TextStyle(
-            fontFamily: _fontFamily,
+            fontFamily: widget.fontFamily,
             color: widget.color,
             fontSize: widget.fontSize,
             fontWeight: FontWeight.w800,

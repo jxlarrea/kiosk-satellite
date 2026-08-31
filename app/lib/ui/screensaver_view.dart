@@ -67,6 +67,26 @@ bool photoCovers(String fill, double? photoAspect, double frameAspect) {
   return max(photoAspect / frameAspect, frameAspect / photoAspect) <= 1.45;
 }
 
+/// The Night mode decision (issue #391): whether the clock wears its night
+/// color, given the last decision.
+///
+/// Entering at the threshold but leaving only a quarter above it keeps a
+/// reading hovering on the line from flickering the color back and forth:
+/// the sensor's native damper spaces events out, it does not steady them.
+/// A null [lux] is a sensor that has not spoken and has no persisted last
+/// reading, which cannot claim the room is dark.
+bool clockNightActive({
+  required bool previous,
+  required bool enabled,
+  required double? lux,
+  required double threshold,
+}) {
+  if (!enabled || lux == null) return false;
+  if (lux <= threshold) return true;
+  if (lux > threshold * 1.25) return false;
+  return previous;
+}
+
 /// The screensaver overlay: whichever of the four views the manager says is
 /// active, or nothing.
 ///
@@ -329,11 +349,10 @@ class _Dismissable extends StatelessWidget {
 }
 
 /// A full-screen digital clock over black, mirroring Voice Satellite's clock.
-/// The clock's font: the bundled Rubik, the same face every other piece of
-/// app text uses, so the screensaver never looks like a different app from
-/// the settings behind it.
-const _clockFontFamily = 'Rubik';
-
+/// The font is the Font setting's pick (issue #391), Rubik by default, so
+/// out of the box the screensaver never looks like a different app from the
+/// settings behind it; clockFontFamily (clock_faces.dart) does the mapping
+/// for all three faces.
 class ClockScreensaver extends StatefulWidget {
   const ClockScreensaver({super.key, required this.container});
 
@@ -358,6 +377,12 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   DateTime _now = DateTime.now();
   Offset _offset = Offset.zero;
 
+  /// Whether Night mode has the digits (issue #391). Kept as state, not
+  /// derived per build: leaving night above the threshold rather than at
+  /// it needs the last decision (see [clockNightActive]).
+  bool _night = false;
+  StreamSubscription<LightLevelChanged>? _luxSub;
+
   /// The background photo, resolved off the path setting: the provider and
   /// the aspect its fill treatment keys off. [_bgPath] is what they were
   /// resolved FROM, so a changed path re-resolves and an unchanged one
@@ -377,13 +402,44 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     }
     // The face only rebuilds on clock ticks, a minute apart with seconds
     // off — a background pushed over MQTT (issue #150) must not wait out
-    // the minute.
+    // the minute. The Night mode and Font keys ride the same listener so
+    // they can be tuned from the remote admin against the live face.
     _bgSub = widget.container.bus.on<SettingChanged>().listen((e) {
-      if (e.key == defs.screensaverClockBackground.key && mounted) {
+      if (!mounted) return;
+      if (e.key == defs.screensaverClockBackground.key ||
+          e.key == defs.screensaverClockFont.key) {
+        setState(() {});
+      }
+      if (e.key == defs.screensaverClockNight.key ||
+          e.key == defs.screensaverClockNightLux.key ||
+          e.key == defs.screensaverClockNightColor.key ||
+          e.key == defs.screensaverClockNightBgColor.key) {
+        _night = _computeNight();
         setState(() {});
       }
     });
+    _night = _computeNight();
+    _luxSub = widget.container.bus.on<LightLevelChanged>().listen((_) {
+      final next = _computeNight();
+      if (next != _night && mounted) setState(() => _night = next);
+    });
   }
+
+  bool _computeNight() {
+    final s = widget.container.settings;
+    final d = widget.container.device;
+    return clockNightActive(
+      previous: _night,
+      enabled: s.get(defs.screensaverClockNight) && d.hasLightSensor,
+      lux: d.lightLux,
+      threshold: s.get(defs.screensaverClockNightLux).toDouble(),
+    );
+  }
+
+  /// The digit color Night mode imposes, or null while it stands down.
+  Color? _nightColor() => _night
+      ? _rgb(defs.screensaverClockNightColor, const Color(0xFF822222))
+      : null;
 
   // Re-align to each wall-clock second (or minute, when seconds are not
   // shown — the face only changes once a minute then, and a per-second
@@ -426,6 +482,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     _tick?.cancel();
     _shift?.cancel();
     _bgSub?.cancel();
+    _luxSub?.cancel();
     super.dispose();
   }
 
@@ -572,26 +629,26 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   /// The center of the face for the non-digital styles (issue #56). The
   /// shell around it — glance row, pixel shift, anchor — is shared, so the
   /// style only swaps what sits in the middle.
-  Widget _styledFace(String style, double scale) {
+  Widget _styledFace(String style, double scale, String? fontFamily) {
     if (style == 'flip') {
       return FlipClockFace(
         now: _now,
         use24h: widget.container.settings.get(defs.screensaverClock24h),
-        digitColor: _rgb(
-          defs.screensaverFlipDigitColor,
-          const Color(0xFF212121),
-        ),
+        digitColor:
+            _nightColor() ??
+            _rgb(defs.screensaverFlipDigitColor, const Color(0xFF212121)),
         cardColor: _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
         scale: scale,
+        fontFamily: fontFamily,
       );
     }
     return RollerClockFace(
       use24h: widget.container.settings.get(defs.screensaverClock24h),
-      digitColor: _rgb(
-        defs.screensaverRollerDigitColor,
-        const Color(0xFFFAFAFA),
-      ),
+      digitColor:
+          _nightColor() ??
+          _rgb(defs.screensaverRollerDigitColor, const Color(0xFFFAFAFA)),
       scale: scale,
+      fontFamily: fontFamily,
     );
   }
 
@@ -600,7 +657,15 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     final s = widget.container.settings;
     final style = s.get(defs.screensaverClockStyle);
     final scale = (s.get(defs.screensaverClockScale) / 100).clamp(0.5, 3.0);
-    final color = _color();
+    // Night mode (issue #391) takes the digits and the backdrop, pure
+    // black behind them by default; the flip cards keep their own color.
+    final color = _nightColor() ?? _color();
+    final nightBg = _night
+        ? _rgb(defs.screensaverClockNightBgColor, Colors.black)
+        : null;
+    final fontValue = s.get(defs.screensaverClockFont);
+    final font = clockFontFamily(fontValue);
+    final timeWeight = clockFontWeight(fontValue);
     final size = MediaQuery.of(context).size;
     // The At a Glance row sits under the clock and needs room for itself,
     // so the clock gives some back rather than pushing the row off a short
@@ -615,14 +680,16 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         min(size.width * 0.05, size.height * 0.07) * scale * clockShrink;
 
     return ColoredBox(
-      color: switch (style) {
-        'roller' => _rgb(defs.screensaverRollerBgColor, Colors.black),
-        // The flip backdrop follows the card color (see flipBackdrop).
-        'flip' => flipBackdrop(
-          _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
-        ),
-        _ => _rgb(defs.screensaverClockBgColor, Colors.black),
-      },
+      color:
+          nightBg ??
+          switch (style) {
+            'roller' => _rgb(defs.screensaverRollerBgColor, Colors.black),
+            // The flip backdrop follows the card color (see flipBackdrop).
+            'flip' => flipBackdrop(
+              _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
+            ),
+            _ => _rgb(defs.screensaverClockBgColor, Colors.black),
+          },
       // Expand: both children are pinned to the display, so the stack must
       // be the display rather than sized to whatever the clock happens to
       // measure.
@@ -652,17 +719,19 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                 // of the clock — and stays legible on every face, whose
                 // backdrops all follow the user's colors now (issue #173:
                 // a white backdrop under grey-on-black glance rows).
-                tint: switch (style) {
-                  'flip' => _rgb(
-                    defs.screensaverFlipDigitColor,
-                    const Color(0xFF212121),
-                  ),
-                  'roller' => _rgb(
-                    defs.screensaverRollerDigitColor,
-                    const Color(0xFFFAFAFA),
-                  ),
-                  _ => _color(),
-                },
+                tint:
+                    _nightColor() ??
+                    switch (style) {
+                      'flip' => _rgb(
+                        defs.screensaverFlipDigitColor,
+                        const Color(0xFF212121),
+                      ),
+                      'roller' => _rgb(
+                        defs.screensaverRollerDigitColor,
+                        const Color(0xFFFAFAFA),
+                      ),
+                      _ => _color(),
+                    },
               ),
             ),
           Align(
@@ -670,17 +739,17 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
             child: Transform.translate(
               offset: _offset,
               child: style != 'digital'
-                  ? _styledFace(style, scale * clockShrink)
+                  ? _styledFace(style, scale * clockShrink, font)
                   : Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           _time(),
                           style: TextStyle(
-                            fontFamily: _clockFontFamily,
+                            fontFamily: font,
                             color: color,
                             fontSize: clockSize,
-                            fontWeight: FontWeight.w300,
+                            fontWeight: timeWeight,
                             letterSpacing: clockSize * 0.02,
                             fontFeatures: const [FontFeature.tabularFigures()],
                             height: 1.0,
@@ -691,7 +760,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                           Text(
                             _date(),
                             style: TextStyle(
-                              fontFamily: _clockFontFamily,
+                              fontFamily: font,
                               // The date sits back a little, as in VS (~65% of the clock).
                               color: color.withValues(alpha: 0.65),
                               fontSize: dateSize,

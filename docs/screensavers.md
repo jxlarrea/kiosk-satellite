@@ -55,6 +55,7 @@ follow the device language.
 
 | Setting | Notes |
 | --- | --- |
+| Font | All faces. Rubik (the app's own face, the default), Nunito (a rounded face in the style of Apple's StandBy clock), one of the device's own families (System, Serif, Condensed, Monospace, Casual or Cursive, where what each maps to is the device's call) or LCD, a segmented display font in the style of an LED alarm clock that covers the date and AM/PM as well as the digits. |
 | 24-hour clock | All faces. |
 | Show seconds | Digital only. |
 | Show date | Digital only, on by default. |
@@ -69,6 +70,17 @@ into app storage), or set remotely: the remote admin and the ESPHome
 setting, applied live even while the clock is on screen, and an empty
 value clears it. The photo gets the same fill treatment as **Smart** in
 the photo modes, with a scrim so the clock stays readable.
+
+**Night mode** recolors the digits while the room is dark, the way a
+bedside clock stays readable without lighting the room. It uses the
+ambient light sensor, so the switch is disabled on devices without one.
+
+| Setting | Notes |
+| --- | --- |
+| Night mode | Off by default. |
+| Light level | 1 to 100 lx, 5 by default. At or below it the digits take the night color; they return a little above it, so a reading hovering on the line cannot flicker the color. |
+| Night color | A muted red by default. Applies to the digits on every face, the date and the At a Glance row; the flip cards keep their own color. |
+| Night background | The screen behind the clock in the dark, pure black by default, so a face tuned for a lit room does not keep glowing at night. |
 
 ### Home Assistant Media
 

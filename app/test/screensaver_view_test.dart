@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/ui/screensaver_view.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
@@ -261,6 +262,69 @@ void main() {
       expect(defs.screensaverWebsiteDoubleTap.section, 'Website screensaver');
       expect(defs.screensaverWebsiteDoubleTap.dependsOn, 'screensaver.mode');
       expect(defs.screensaverWebsiteDoubleTap.dependsOnValue, 'website');
+    });
+  });
+
+  // The Clock screensaver's Night mode (issue #391): at or below the
+  // threshold the digits take the night color, and they only give it back
+  // a quarter above it, so a reading hovering on the line cannot flicker
+  // the face.
+  group('night mode', () {
+    bool active(double? lux, {bool previous = false, bool enabled = true}) =>
+        clockNightActive(
+          previous: previous,
+          enabled: enabled,
+          lux: lux,
+          threshold: 5,
+        );
+
+    test('a dark room turns the color on, at or below the threshold', () {
+      expect(active(2), isTrue);
+      expect(active(5), isTrue);
+      expect(active(5, previous: true), isTrue);
+    });
+
+    test('a lit room turns it off', () {
+      expect(active(50), isFalse);
+      expect(active(50, previous: true), isFalse);
+    });
+
+    test('the band just above the threshold holds the last decision', () {
+      expect(active(6), isFalse);
+      expect(active(6, previous: true), isTrue);
+      // A quarter above the threshold always releases.
+      expect(active(6.3, previous: true), isFalse);
+    });
+
+    test('disabled or sensorless never claims the dark', () {
+      expect(active(2, enabled: false), isFalse);
+      expect(active(null), isFalse);
+      expect(active(null, previous: true), isFalse);
+    });
+
+    test('the group lives on the Clock page, gated and off by default', () {
+      // Schema-driven surfaces (device, remote, search) all render from
+      // the definitions; the remote's syncGatedRows needs the gate and
+      // its rows in one card, so all three share the section.
+      expect(defs.screensaverClockNight.defaultValue, isFalse);
+      expect(defs.screensaverClockNight.dependsOn, 'screensaver.mode');
+      expect(defs.screensaverClockNight.dependsOnValue, 'clock');
+      for (final def in [
+        defs.screensaverClockNightLux,
+        defs.screensaverClockNightColor,
+        defs.screensaverClockNightBgColor,
+      ]) {
+        expect(def.section, defs.screensaverClockNight.section);
+        expect(def.subpage, defs.screensaverClockNight.subpage);
+        expect(def.dependsOn, defs.screensaverClockNight.key);
+      }
+      // Both UIs draw a color picker off the suffix alone.
+      expect(defs.screensaverClockNightColor.key, endsWith('_color'));
+      expect(defs.screensaverClockNightBgColor.key, endsWith('_color'));
+      expect(defs.screensaverClockNightBgColor.defaultValue, '0,0,0');
+      expect(defs.screensaverClockNightLux.defaultValue, 5);
+      expect(defs.screensaverClockNightLux.min, 1);
+      expect(defs.screensaverClockNightLux.max, 100);
     });
   });
 }
