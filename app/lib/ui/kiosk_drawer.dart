@@ -318,7 +318,7 @@ class KioskDrawer extends StatelessWidget {
                               // it sit exactly like every other row.
                               //
                               // No exit while the kiosk IS the device's
-                              // home app: killing the home only has the
+                              // home screen: killing the home only has the
                               // system relaunch it, so the entry could
                               // never deliver what it promises (issue
                               // #219). Turn the Home Launcher off first;

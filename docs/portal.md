@@ -5,7 +5,7 @@ Mini and Portal+ run the same OS family on Android 9 or 10 and should
 behave the same, but were not tested.
 
 Once installed, turn on the [Home Launcher](home-launcher.md): it replaces
-Meta's launcher as the device's home app, so the Portal boots straight
+Meta's launcher as the device's home screen, so the Portal boots straight
 into the kiosk and the stock launcher, which wants a Facebook or WhatsApp
 login, drops out of the picture entirely.
 

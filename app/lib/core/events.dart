@@ -656,7 +656,7 @@ class HomeRoleChanged extends AppEvent {
 }
 
 /// A HOME press landed on the kiosk while it was already in front, with
-/// the kiosk as the device's home app (issue #219). The kiosk screen
+/// the kiosk as the device's home screen (issue #219). The kiosk screen
 /// answers it the way every launcher does: close what is open, return to
 /// the start screen.
 class HomeKeyPressed extends AppEvent {

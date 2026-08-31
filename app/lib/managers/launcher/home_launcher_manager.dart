@@ -11,7 +11,7 @@ import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
 
 /// The home-launcher role (issue #219): registering the kiosk as the
-/// device's home app, replacing the OEM launcher. The system then starts
+/// device's home screen, replacing the OEM launcher. The system then starts
 /// the kiosk at boot itself and every HOME press lands back on it, with
 /// no screen pinning and no consent dialog.
 ///
@@ -33,7 +33,7 @@ class HomeLauncherManager extends Manager {
   /// forwards the role relays as bus events.
   static const _lock = MethodChannel('kiosk_satellite/kiosk_lock');
 
-  /// Internal key remembering who was the home app before the takeover.
+  /// Internal key remembering who was the home screen before the takeover.
   /// Cosmetic: release lands there immediately instead of on the next
   /// HOME press. The undo itself never depends on it.
   static const _previousKey = 'home.previous_launcher';
@@ -42,9 +42,9 @@ class HomeLauncherManager extends Manager {
   /// settings row can explain itself after the native marker is cleared.
   static const _fuseReasonKey = 'home.fuse_reason';
 
-  /// Whether the kiosk is the device's home app right now, cached for the
+  /// Whether the kiosk is the device's home screen right now, cached for the
   /// synchronous readers: the kiosk screen's PopScope must refuse the
-  /// system pop while the role is held (a home app never finishes on
+  /// system pop while the role is held (a home screen never finishes on
   /// back), and predictive back asks before any channel round trip could
   /// answer. Updated from every native status read and role relay.
   final roleHeld = ValueNotifier<bool>(false);
@@ -77,14 +77,14 @@ class HomeLauncherManager extends Manager {
       Command(
         name: 'acquireHomeRole',
         description:
-            'Ask the device to make Kiosk Satellite the home app. Silent '
+            'Ask the device to make Kiosk Satellite the home screen. Silent '
             'with device ownership; otherwise the system dialog or home '
             'settings open on the device for someone to confirm.',
         handler: (_) async {
           final status = await _status();
           if (status['supported'] != true) {
             return const CommandResult.fail(
-              'this device does not allow changing the home app',
+              'this device does not allow changing the home screen',
             );
           }
           if (await _acquire(deviceOwner: status['deviceOwner'] == true)) {
@@ -101,7 +101,7 @@ class HomeLauncherManager extends Manager {
       Command(
         name: 'releaseHomeRole',
         description:
-            'Stop being the home app and hand the screen back to the '
+            'Stop being the home screen and hand the screen back to the '
             'previous launcher. Works with the kiosk UI unreachable: this '
             'is the remote recovery lever.',
         handler: (_) async {
@@ -131,7 +131,7 @@ class HomeLauncherManager extends Manager {
           log.warn(
             name,
             'home launcher enable rejected: this device does not allow '
-            'changing the home app (${status['reason']})',
+            'changing the home screen (${status['reason']})',
           );
           await _settings.set(defs.homeLauncherEnabled, false);
           return;
@@ -157,7 +157,7 @@ class HomeLauncherManager extends Manager {
       log.info(
         name,
         e.held
-            ? 'Kiosk Satellite is now the home app'
+            ? 'Kiosk Satellite is now the home screen'
             : 'home role not granted',
       );
     });
@@ -178,7 +178,7 @@ class HomeLauncherManager extends Manager {
         log.warn(
           name,
           'home launcher was on in the stored settings but this device '
-          'does not allow changing the home app (${status['reason']}); '
+          'does not allow changing the home screen (${status['reason']}); '
           'turning it off',
         );
         await _settings.set(defs.homeLauncherEnabled, false);

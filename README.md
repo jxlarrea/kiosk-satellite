@@ -220,7 +220,7 @@ from the default HACS repository.
 - [Immich](docs/immich.md): the Immich photo-frame screensaver, metadata overlay, local cache.
 - [At a Glance](docs/at-a-glance.md): a row of entity states on the screensaver.
 - [Kiosk and Lockdown](docs/kiosk.md): Kiosk Mode's protections, Lockdown Mode, the grants they need, and the device owner tier.
-- [Home Launcher](docs/home-launcher.md): Kiosk Satellite as the device's home app, what that replaces, and the crash fuse that hands the role back if the app cannot start.
+- [Home Launcher](docs/home-launcher.md): Kiosk Satellite as the device's home screen, what that replaces, and the crash fuse that hands the role back if the app cannot start.
 - [Gestures](docs/gestures.md): touch gestures mapped to configurable actions.
 - [Microphone](docs/microphone.md): capture mode, gain and AGC, for devices whose microphone reads too quiet.
 - [Optimizations](docs/optimizations.md): the connection and performance switches, what each one does and when to use it.

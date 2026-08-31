@@ -1026,9 +1026,9 @@ const homeLauncherEnabled = SettingDef<bool>(
   key: 'home.enabled',
   type: SettingType.boolean,
   defaultValue: false,
-  title: 'Act as the home app',
+  title: 'Act as the home screen',
   description:
-      'Register Kiosk Satellite as the device home app: the kiosk starts '
+      'Register Kiosk Satellite as the device home screen: the kiosk starts '
       'at boot and every home press returns to it. Turns itself off and '
       'restores the previous launcher if the app fails to start '
       'repeatedly.',
@@ -1045,7 +1045,7 @@ const homeKeepPinning = SettingDef<bool>(
   defaultValue: false,
   title: 'Keep screen pinning',
   description:
-      'Pin the screen even while Kiosk Satellite is the home app. Blocks '
+      'Pin the screen even while Kiosk Satellite is the home screen. Blocks '
       'recents and back natively, but brings back the pinning '
       'confirmation dialog on devices without device ownership.',
   category: 'Home',
@@ -5238,12 +5238,12 @@ const List<SettingDef<Object>> allSettings = [
   lockdownBlackout,
   lockdownAllowScreensaver,
   lockdownExitGesture,
+  homeLauncherEnabled,
+  homeKeepPinning,
   launcherEnabled,
   launcherApps,
   launcherAutoReturn,
   launcherAutoReturnSeconds,
-  homeLauncherEnabled,
-  homeKeepPinning,
   // The Screen & Audio page: screen first, then the volume mixer, then the
   // hand-built device pickers, then capture tuning. Both UIs render this
   // category in this order.

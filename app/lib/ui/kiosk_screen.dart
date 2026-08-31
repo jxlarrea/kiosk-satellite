@@ -531,7 +531,7 @@ class _KioskScreenState extends State<KioskScreen>
         c.browser.goBack();
       }
     });
-    // A HOME press with the kiosk as the device's home app and already in
+    // A HOME press with the kiosk as the device's home screen and already in
     // front (issue #219): what every launcher's HOME means, close what is
     // open and land on the dashboard. One sweep rather than back's one
     // layer at a time, because HOME is the "get me back" button.
@@ -1310,7 +1310,7 @@ class _KioskScreenState extends State<KioskScreen>
               // via KioskBackPressed.
               //
               // The home role vetoes the pop the same way (issue #219): a
-              // home app never finishes on back, and letting the pop
+              // home screen never finishes on back, and letting the pop
               // through either fell to the task below (a Meta Portal's
               // still-running launcher) or had the system tear down and
               // relaunch the home Activity on every press.

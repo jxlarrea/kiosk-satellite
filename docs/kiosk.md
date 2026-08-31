@@ -46,7 +46,7 @@ device that is not fully managed, Android asks for consent with an "App is
 pinned" dialog the first time. Answer **Got it** once and later pins are
 silent. On some devices the dialog returns on every boot; the
 [Home Launcher](home-launcher.md) ends that, since with the kiosk as the
-home app the pin is skipped and the home button lands on the kiosk by
+home screen the pin is skipped and the home button lands on the kiosk by
 itself. Kiosk Mode no longer depends on that answer, though: if pinning was
 declined or ever lost, the app pulls itself back to the front about a
 second after losing the foreground, and closing it from the recents screen

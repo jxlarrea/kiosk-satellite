@@ -253,9 +253,9 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
   ),
   SettingsSearchEntry(
     category: 'Home',
-    title: 'Home app status',
+    title: 'Home screen status',
     description:
-        'Whether Kiosk Satellite is the device home app, and where to '
+        'Whether Kiosk Satellite is the device home screen, and where to '
         'finish setting it as the default.',
     anchorId: 'x:home_role',
   ),

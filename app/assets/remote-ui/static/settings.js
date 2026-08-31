@@ -363,7 +363,7 @@ export async function loadSettings() {
     // crash-fuse self-disable. Mirrors the device page's Status card.
     {
       const tab = document.getElementById('tab-home');
-      // On a device that cannot change its home app every setting on this
+      // On a device that cannot change its home screen every setting on this
       // tab is hidden and the generic renderer printed its "Nothing here."
       // placeholder; the status card below is the tab's real content.
       if (!tab.querySelector('[data-key]')) tab.innerHTML = '';
@@ -376,7 +376,7 @@ export async function loadSettings() {
       row.className = 'row';
       const info = document.createElement('div');
       info.className = 'info';
-      info.innerHTML = '<div class="name">Home app</div>'
+      info.innerHTML = '<div class="name">Home screen</div>'
         + '<div class="desc">Checking...</div>';
       row.appendChild(info);
       const state = document.createElement('span');
@@ -389,7 +389,7 @@ export async function loadSettings() {
         .then((res) => res.data || null).catch(() => null);
       const render = (s) => {
         // The overview's Exit tile goes with the held role: killing the
-        // home app only has the system relaunch it, so the tile could
+        // home screen only has the system relaunch it, so the tile could
         // never deliver. Restart stays, it comes back by design.
         document.getElementById('tileExitApp')
           ?.classList.toggle('hidden', !!s && s.held === true);
@@ -400,11 +400,11 @@ export async function loadSettings() {
         if (s.supported !== true) {
           desc.textContent = s.reason === 'fireos'
             ? 'Fire OS does not allow replacing its launcher.'
-            : 'This device does not allow changing the home app.';
+            : 'This device does not allow changing the home screen.';
           return;
         }
         if (s.held === true) {
-          desc.textContent = 'Kiosk Satellite is the home app. The kiosk '
+          desc.textContent = 'Kiosk Satellite is the home screen. The kiosk '
             + 'starts at boot and every home press returns to it.';
           state.textContent = 'Active';
           state.style.color = 'var(--ok)';
@@ -415,7 +415,7 @@ export async function loadSettings() {
             ? 'Turned off automatically after repeated failed starts; the '
               + 'previous launcher was restored. Turn the switch back on '
               + 'to try again.'
-            : 'Not the home app.';
+            : 'Not the home screen.';
           return;
         }
         desc.textContent = 'Waiting for a confirmation on the device: the '

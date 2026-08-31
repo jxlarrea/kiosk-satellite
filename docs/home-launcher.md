@@ -1,6 +1,6 @@
 # Home Launcher
 
-Kiosk Satellite can register as the device's home app, replacing the
+Kiosk Satellite can register as the device's home screen, replacing the
 stock launcher. The system then starts the kiosk at boot itself, so the
 screen never flashes the old launcher first, and every press of the home
 button lands back on the kiosk with no screen pinning and no consent
@@ -10,7 +10,7 @@ Meta Portal, this removes the launcher from the picture entirely.
 This is a different thing from the [App Launcher](kiosk.md): that one
 opens other apps from inside the kiosk, this one makes the kiosk the
 screen those apps return to. They compose well, and a device that acts as
-the home app usually wants the App Launcher on too, so there is still a
+the home screen usually wants the App Launcher on too, so there is still a
 sanctioned way into other apps.
 
 ## Turning it on
@@ -19,8 +19,8 @@ Settings, then **Home Launcher**; the same page is in the remote admin.
 
 | Setting | What it does |
 | --- | --- |
-| Act as the home app | The master switch. What happens next depends on the device, see below. |
-| Keep screen pinning | Pin the screen even while Kiosk Satellite is the home app. Blocks recents and back natively, but brings back the pinning confirmation dialog on devices without device ownership. |
+| Act as the home screen | The master switch. What happens next depends on the device, see below. |
+| Keep screen pinning | Pin the screen even while Kiosk Satellite is the home screen. Blocks recents and back natively, but brings back the pinning confirmation dialog on devices without device ownership. |
 
 The **Status** row under the switches tells the live state: whether the
 role is held, whether the device is still waiting for a confirmation, and
@@ -34,7 +34,7 @@ What enabling looks like per device:
 | Android 7 to 9 | The system's home settings open for you to pick Kiosk Satellite. |
 | Amazon Fire tablets | Not supported: Fire OS does not allow replacing its launcher. The switches do not appear on a Fire; the page only says why. |
 
-While the switch is off, Kiosk Satellite has no home-app footprint at
+While the switch is off, Kiosk Satellite has no home-screen footprint at
 all: it appears in no launcher chooser and no default-apps list.
 
 ## What changes while it holds
@@ -49,7 +49,7 @@ all: it appears in no launcher chooser and no default-apps list.
   open, the menu, settings, the app launcher, a screensaver, and lands on
   the dashboard, the way every launcher's home press works.
 - **Exit Application** leaves the menu and **Exit app** leaves the remote
-  admin overview: killing the home app only has the system relaunch it,
+  admin overview: killing the home screen only has the system relaunch it,
   so neither could deliver. Turn the home launcher off first to exit.
   **Restart app** stays, it comes back by design.
 
@@ -60,7 +60,7 @@ Kiosk Satellite from home duty and Android hands the screen back to the
 remaining launcher on its own. The previous launcher is reopened
 immediately when it is still installed. Every path works:
 
-- The **Act as the home app** switch, on the device or in the remote
+- The **Act as the home screen** switch, on the device or in the remote
   admin.
 - The `releaseHomeRole` [remote API command](remote-api.md), which works
   even when the kiosk's screen is unusable, as long as the process runs.
@@ -68,7 +68,7 @@ immediately when it is still installed. Every path works:
 
 ## If the app cannot start
 
-A home app that crashes on every start would otherwise leave the device
+A home screen that crashes on every start would otherwise leave the device
 showing a black screen forever, with the system relaunching the same
 broken app. Kiosk Satellite carries a native fuse against exactly that:
 three starts in a row that never reach a drawn frame, within a few

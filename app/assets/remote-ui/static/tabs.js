@@ -16,7 +16,7 @@ import { clearSearchReturnTab, searchReturnTab } from './search.js';
 // tab lives in the URL, so a reload keeps you where you were, Back goes back,
 // and #settings can be bookmarked or handed to someone. Everything is served
 // from one root, so without this a reload always dumped you on the dashboard.
-export const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'launcher', 'home', 'screenaudio', 'screensaver',
+export const TABS = ['dashboard', 'homeassistant', 'voicesatellite', 'browser', 'kiosk', 'lockdown', 'home', 'launcher', 'screenaudio', 'screensaver',
   'camera', 'mqtt', 'sendspin', 'cameras', 'dlna', 'esphome', 'files', 'gestures', 'device', 'about', 'logs'];
 // Old bookmarks from before the tabs were consolidated keep landing
 // somewhere sensible.

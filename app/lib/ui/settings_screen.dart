@@ -202,12 +202,17 @@ const _categories = <(String, String, Object, String)>[
     'Exit gesture, PIN, hardware buttons',
   ),
   (
+    'Home',
+    'Home Launcher',
+    Icons.home_outlined,
+    'Replace the device home screen',
+  ),
+  (
     'Launcher',
     'App Launcher',
     Icons.apps_outlined,
     'Open other apps from the kiosk',
   ),
-  ('Home', 'Home Launcher', Icons.home_outlined, 'Replace the device home app'),
   ('Gestures', 'Gestures', Icons.gesture, 'Touch, palm and clap gestures'),
   (
     'Device',
@@ -3199,7 +3204,7 @@ class _KioskPermissionsTileState extends State<_KioskPermissionsTile>
 }
 
 /// The Home Launcher's status row (issue #219): whether the kiosk is the
-/// device's home app right now, in the permission rows' shape. The
+/// device's home screen right now, in the permission rows' shape. The
 /// home.enabled switch above it is intent; on devices without device
 /// ownership the role needs a tap in a system dialog, and this row is
 /// where that is finished ("Set as default"), where an unsupported device
@@ -3265,7 +3270,7 @@ class _HomeRoleTileState extends State<_HomeRoleTile>
     if (s == null) {
       return const SettingsRow(
         leading: Icon(Icons.home_outlined),
-        title: Text('Home app'),
+        title: Text('Home screen'),
         subtitle: Text('Checking the device...'),
       );
     }
@@ -3273,11 +3278,11 @@ class _HomeRoleTileState extends State<_HomeRoleTile>
       final fireos = s['reason'] == 'fireos';
       return SettingsRow(
         leading: Icon(Icons.info_outline, color: muted),
-        title: const Text('Home app'),
+        title: const Text('Home screen'),
         subtitle: Text(
           fireos
               ? 'Fire OS does not allow replacing its launcher.'
-              : 'This device does not allow changing the home app.',
+              : 'This device does not allow changing the home screen.',
           style: TextStyle(color: muted),
         ),
       );
@@ -3291,7 +3296,7 @@ class _HomeRoleTileState extends State<_HomeRoleTile>
           Icons.warning_amber_outlined,
           color: theme.colorScheme.error,
         ),
-        title: const Text('Home app'),
+        title: const Text('Home screen'),
         subtitle: Text(
           'Turned off automatically after repeated failed starts; the '
           'previous launcher was restored. Turn the switch back on to try '
@@ -3302,9 +3307,9 @@ class _HomeRoleTileState extends State<_HomeRoleTile>
     if (held) {
       return const SettingsRow(
         leading: Icon(Icons.check_circle_outline),
-        title: Text('Home app'),
+        title: Text('Home screen'),
         subtitle: Text(
-          'Kiosk Satellite is the home app. The kiosk starts at boot and '
+          'Kiosk Satellite is the home screen. The kiosk starts at boot and '
           'every home press returns to it.',
         ),
       );
@@ -3312,9 +3317,9 @@ class _HomeRoleTileState extends State<_HomeRoleTile>
     if (!enabled) {
       return SettingsRow(
         leading: Icon(Icons.home_outlined, color: muted),
-        title: const Text('Home app'),
+        title: const Text('Home screen'),
         subtitle: Text(
-          'Not the home app. Turn on Act as the home app above.',
+          'Not the home screen. Turn on Act as the home screen above.',
           style: TextStyle(color: muted),
         ),
       );
@@ -3327,9 +3332,9 @@ class _HomeRoleTileState extends State<_HomeRoleTile>
         : false);
     return SettingsRow(
       leading: Icon(Icons.error_outline, color: theme.colorScheme.error),
-      title: const Text('Home app'),
+      title: const Text('Home screen'),
       subtitle: const Text(
-        'Not the current home app yet: the device is waiting for a '
+        'Not the current home screen yet: the device is waiting for a '
         'confirmation.',
       ),
       trailing: TextButton(
