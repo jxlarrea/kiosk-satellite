@@ -13,7 +13,7 @@ import 'theme.dart';
 import 'toast.dart';
 
 /// Slide-out menu (swipe from the left edge), Fully Kiosk style: Home,
-/// Settings, Clear web cache, Log out, Exit Application.
+/// Settings, Clear web cache, Exit Application.
 ///
 /// Not a Material [Drawer]: the kiosk pushes its content aside rather than
 /// being covered (see KioskScreen), so this pane is square-cornered and
@@ -316,32 +316,7 @@ class KioskDrawer extends StatelessWidget {
                               // The group rule: the hairlines' geometry, a
                               // shade stronger, so the rows either side of
                               // it sit exactly like every other row.
-                              if (!restricted)
-                                const Divider(height: 1, thickness: 1),
-                              if (!restricted)
-                                _item(
-                                  divided: false,
-                                  context,
-                                  Icons.logout_outlined,
-                                  'Log out',
-                                  () async {
-                                    onClose();
-                                    if (context.mounted &&
-                                        await showConfirmDialog(
-                                          context,
-                                          title: 'Log out',
-                                          message:
-                                              'Clear cookies and site data, '
-                                              'then reload the start page?',
-                                          confirmLabel: 'Log out',
-                                        )) {
-                                      await c.commands.execute(
-                                        'logout',
-                                        const {},
-                                      );
-                                    }
-                                  },
-                                ),
+                              //
                               // No exit while the kiosk IS the device's
                               // home app: killing the home only has the
                               // system relaunch it, so the entry could
@@ -349,8 +324,10 @@ class KioskDrawer extends StatelessWidget {
                               // #219). Turn the Home Launcher off first;
                               // Restart stays, it comes back by design.
                               if (!restricted && !c.homeLauncher.roleHeld.value)
+                                const Divider(height: 1, thickness: 1),
+                              if (!restricted && !c.homeLauncher.roleHeld.value)
                                 _item(
-                                  divided: sep(),
+                                  divided: false,
                                   context,
                                   Icons.power_settings_new_outlined,
                                   'Exit Application',
