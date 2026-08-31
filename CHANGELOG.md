@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.106 - 2026-08-31
 
 ### Added
 - **Dpad and keyboard navigation** (#377): a TV remote, a dpad or a keyboard's arrow keys can now drive the kiosk, which used to ignore them entirely. Left opens the menu, the arrows walk its entries and the settings pages with the focused row lit, center or Enter taps the focused row and back closes what is open. Walking up a page scrolls its title back into view, the arrows leave the search box instead of being taken by its cursor and any key dismisses a showing screensaver and counts as activity for the idle clock. Over the dashboard itself the arrows belong to the page, so it scrolls and keeps whatever keys it binds, and inside a text field they stay with the cursor. Kiosk mode holds the same doors it holds against the edge swipe: opening while locked earns at most the restricted quick menu and Lockdown Mode swallows every key.
