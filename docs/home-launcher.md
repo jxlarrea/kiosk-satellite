@@ -30,7 +30,7 @@ What enabling looks like per device:
 
 | Device | What happens |
 | --- | --- |
-| Device owner ([the ownership tier](kiosk.md#going-further-device-ownership)) | Silent. The role is taken immediately, including from the remote admin or a Home Assistant automation with nobody at the screen. |
+| Already provisioned as device owner ([the ownership tier](kiosk.md#going-further-device-ownership)) | Silent: the home role lands with no dialog, including from the remote admin or a Home Assistant automation with nobody at the screen. Ownership itself is a separate adb step done beforehand; this feature never grants or changes it. |
 | Android 10 and newer | The system asks once with a small dialog. Android silently refuses the dialog after two denials; past that the Status row opens the system's own home settings instead. |
 | Android 7 to 9 | The system's home settings open for you to pick Kiosk Satellite. |
 | Amazon Fire tablets | Not supported: Fire OS does not allow replacing its launcher. The switches do not appear on a Fire; the page only says why. |
