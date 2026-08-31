@@ -76,10 +76,22 @@ object HomeRole {
      *  itself the moment it opens and HOME keeps landing on the Fire
      *  launcher with the role held (verified on Fire OS 8). The one
      *  escape is a build where HOME actually resolves to us, which
-     *  [isHeld] would report. */
+     *  [isHeld] would report.
+     *
+     *  Fire OS is detected by its launcher package, not by the Amazon
+     *  brand: LineageOS builds on Amazon hardware keep the manufacturer
+     *  string (Amazon on Fire tablets, Amzn on an Echo Show) while
+     *  swapping the launcher for one the role genuinely moves to, and
+     *  those builds must not be gated. The package is visible through the
+     *  manifest's HOME queries entry. */
     fun isSupported(context: Context): Pair<Boolean, String> {
-        val amazon = Build.MANUFACTURER.equals("Amazon", ignoreCase = true)
-        if (amazon && !isHeld(context)) return false to "fireos"
+        val fireOs = try {
+            context.packageManager.getPackageInfo("com.amazon.firelauncher", 0)
+            true
+        } catch (_: Exception) {
+            false
+        }
+        if (fireOs && !isHeld(context)) return false to "fireos"
         if (Build.VERSION.SDK_INT >= 29) {
             val role = context.getSystemService(RoleManager::class.java)
             val available = role?.isRoleAvailable(RoleManager.ROLE_HOME) == true
