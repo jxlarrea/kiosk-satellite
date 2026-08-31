@@ -982,28 +982,6 @@ const launcherApps = SettingDef<String>(
   dependsOn: 'launcher.enabled',
 );
 
-const launcherLayout = SettingDef<String>(
-  key: 'launcher.layout',
-  type: SettingType.select,
-  defaultValue: 'grid',
-  options: ['grid', 'list'],
-  optionLabels: {'grid': 'Grid', 'list': 'List'},
-  title: 'Layout',
-  description: 'How the launcher arranges the apps.',
-  category: 'Launcher',
-  dependsOn: 'launcher.enabled',
-);
-
-const launcherShowIcons = SettingDef<bool>(
-  key: 'launcher.show_icons',
-  type: SettingType.boolean,
-  defaultValue: true,
-  title: 'Show icons',
-  description: 'Show app icons in the launcher.',
-  category: 'Launcher',
-  dependsOn: 'launcher.enabled',
-);
-
 // The way back without a gesture or a hand: after an app opened through
 // launchApp (the launcher, a gesture, MQTT), an idle clock brings the
 // kiosk to the front again. Idle, not elapsed (issue #317): a touch
@@ -5262,8 +5240,6 @@ const List<SettingDef<Object>> allSettings = [
   lockdownExitGesture,
   launcherEnabled,
   launcherApps,
-  launcherLayout,
-  launcherShowIcons,
   launcherAutoReturn,
   launcherAutoReturnSeconds,
   homeLauncherEnabled,

@@ -58,8 +58,7 @@ class SettingsManager extends Manager {
               'deviceName': get(deviceName),
               'exportedAt': DateTime.now().toIso8601String(),
               'settings': export(withSecrets: true),
-              if (local.ok && local.data is String)
-                'localStorage': local.data,
+              if (local.ok && local.data is String) 'localStorage': local.data,
             });
           },
         ),
@@ -166,40 +165,46 @@ class SettingsManager extends Manager {
             // the device to become configured instead.
             if (firstSetup) {
               importFinishing = true;
-              unawaited(Future(() async {
-                try {
-                  await commands.execute('requestOsPermissions', {
-                    'which': [
-                      if (get(wakeWordEnabled) || get(webMicrophone))
-                        'microphone',
-                      if (get(cameraEnabled) || get(webCamera)) 'camera',
-                      // Unconditional like the setup wizard's: the Home
-                      // Assistant and MQTT connections are held open with
-                      // the screen off whatever else is configured, and
-                      // Doze is what stops them (issue #156).
-                      'batteryOptimizations',
-                      if (get(wakeWordBackground)) 'notifications',
-                      if (get(wakeWordBackground) ||
-                          get(kioskStartOnBoot) ||
-                          get(autoReloadOnError))
-                        'overlay',
-                      'writeSettings',
-                      'deviceAdmin',
-                    ],
-                  });
-                  if (heldStartUrl != null) {
-                    await setFromJson(startUrl.key, heldStartUrl);
-                    await commands.execute('loadUrl', {'url': get(startUrl)});
+              unawaited(
+                Future(() async {
+                  try {
+                    await commands.execute('requestOsPermissions', {
+                      'which': [
+                        if (get(wakeWordEnabled) || get(webMicrophone))
+                          'microphone',
+                        if (get(cameraEnabled) || get(webCamera)) 'camera',
+                        // Unconditional like the setup wizard's: the Home
+                        // Assistant and MQTT connections are held open with
+                        // the screen off whatever else is configured, and
+                        // Doze is what stops them (issue #156).
+                        'batteryOptimizations',
+                        if (get(wakeWordBackground)) 'notifications',
+                        if (get(wakeWordBackground) ||
+                            get(kioskStartOnBoot) ||
+                            get(autoReloadOnError))
+                          'overlay',
+                        'writeSettings',
+                        'deviceAdmin',
+                      ],
+                    });
+                    if (heldStartUrl != null) {
+                      await setFromJson(startUrl.key, heldStartUrl);
+                      await commands.execute('loadUrl', {'url': get(startUrl)});
+                    }
+                    log.info(
+                      name,
+                      'imported setup finished (permissions done)',
+                    );
+                  } finally {
+                    importFinishing = false;
                   }
-                  log.info(name, 'imported setup finished (permissions done)');
-                } finally {
-                  importFinishing = false;
-                }
-              }));
+                }),
+              );
               log.info(
-                  name,
-                  'imported configuration ($applied settings); permission '
-                  'prompts continue on the device');
+                name,
+                'imported configuration ($applied settings); permission '
+                'prompts continue on the device',
+              );
               return CommandResult.ok({
                 'applied': applied,
                 'pendingSetup': heldStartUrl != null,
@@ -232,6 +237,11 @@ class SettingsManager extends Manager {
     }
     // The strategy the drawer toggle used to restore. Nothing to restore now.
     await _prefs.remove('${_prefix}ha.kiosk_mode_last');
+    // The app launcher's Layout and Show icons settings configured the old
+    // modal; the full-screen tile view (the Portal-launcher look) is the
+    // one design now, so the rows are gone and stored values with them.
+    await _prefs.remove('${_prefix}launcher.layout');
+    await _prefs.remove('${_prefix}launcher.show_icons');
     // The Bluetooth proxy toggle used to be the master switch for the whole
     // ESPHome server; now esphome.enabled is. An install that ran the proxy
     // must keep its server (and its Home Assistant config entry) across the
@@ -519,10 +529,12 @@ class SettingsManager extends Manager {
       // this batch can still be running when the loop ends; hold the flag
       // through a generous settle window rather than dropping it on a
       // microtask boundary nobody can reason about.
-      unawaited(Future<void>.delayed(
-        const Duration(seconds: 1),
-        () => importing = false,
-      ));
+      unawaited(
+        Future<void>.delayed(
+          const Duration(seconds: 1),
+          () => importing = false,
+        ),
+      );
     }
   }
 }

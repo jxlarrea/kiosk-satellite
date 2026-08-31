@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Changed
+- The App Launcher is a full-screen wall of tiles now, the Meta Portal launcher's look, in place of the old small modal: each app sits large and centered on a rounded surface washed with a soft gradient pulled from its own icon's colors, labels beneath, the set centered on a ground that follows the app's light or dark theme, with dpad and keyboard walking the tiles. The **Layout** and **Show icons** settings only configured the old modal and are gone.
 - The menu's **Log out** entry is gone: signing in to Home Assistant happens through the access token, so the entry only cleared site data and signed right back in on the reload, promising an exit it could not deliver. The `logout` remote command still exists for wiping the browser session by hand.
 
 ### Added

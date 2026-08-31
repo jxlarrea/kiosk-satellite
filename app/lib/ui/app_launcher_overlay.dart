@@ -1,16 +1,21 @@
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
 import '../app_container.dart';
 import '../managers/launcher/app_launcher_manager.dart';
-import '../managers/settings/definitions.dart' as defs;
+import 'theme.dart';
 import 'toast.dart';
 
-/// The app launcher (issue #114): the whitelisted apps as a grid or list
-/// over the dashboard. Shown and hidden through the manager's [visible]
-/// notifier so every surface — the menu, quick actions, MQTT, the remote
-/// admin — opens the same overlay.
+/// The app launcher (issue #114): the whitelisted apps as a full-screen
+/// wall of tiles over the dashboard, the Meta Portal launcher's look. Each
+/// app sits on a rounded surface washed with a soft diagonal gradient
+/// pulled from its own icon's dominant color, the icon large and centered
+/// on it, the label beneath; the set is centered on a ground that follows
+/// the app's light or dark theme. Shown and hidden through the manager's
+/// [visible] notifier so every surface — the menu, quick actions, the
+/// remote admin, an automation — opens the same overlay.
 class AppLauncherOverlay extends StatelessWidget {
   const AppLauncherOverlay({super.key, required this.container});
 
@@ -21,13 +26,13 @@ class AppLauncherOverlay extends StatelessWidget {
     valueListenable: container.launcher.visible,
     builder: (context, visible, _) {
       if (!visible) return const SizedBox.shrink();
-      return Positioned.fill(child: _LauncherPanel(container: container));
+      return Positioned.fill(child: _LauncherScreen(container: container));
     },
   );
 }
 
-class _LauncherPanel extends StatelessWidget {
-  const _LauncherPanel({required this.container});
+class _LauncherScreen extends StatelessWidget {
+  const _LauncherScreen({required this.container});
 
   final AppContainer container;
 
@@ -55,87 +60,65 @@ class _LauncherPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final apps = container.launcher.apps;
-    final grid = container.settings.get(defs.launcherLayout) == 'grid';
-    final icons = container.settings.get(defs.launcherShowIcons);
     return GestureDetector(
+      // The empty ground dismisses, same as the old modal's scrim; the
+      // tiles swallow their own taps.
       behavior: HitTestBehavior.opaque,
       onTap: _close,
       child: ColoredBox(
-        color: Colors.black54,
-        child: Center(
-          child: GestureDetector(
-            // Swallow taps on the panel so only the scrim closes.
-            onTap: () {},
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560, maxHeight: 480),
-              child: Material(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(28),
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 12, 8, 0),
-                      child: Row(
-                        children: [
-                          Text('Apps', style: theme.textTheme.titleLarge),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: _close,
+        color: theme.colorScheme.surface,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              // Centered both ways while the wall fits, an ordinary
+              // vertical scroll once it does not.
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 48,
+                            vertical: 56,
                           ),
-                        ],
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            runAlignment: WrapAlignment.center,
+                            spacing: 32,
+                            runSpacing: 36,
+                            children: [
+                              for (var i = 0; i < apps.length; i++)
+                                _AppTile(
+                                  container: container,
+                                  app: apps[i],
+                                  // Dpad and keyboard land somewhere useful
+                                  // the moment the wall opens (issue #377).
+                                  autofocus: i == 0,
+                                  onTap: () => _open(context, apps[i]),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    Flexible(
-                      child: grid
-                          ? GridView.extent(
-                              shrinkWrap: true,
-                              padding: const EdgeInsets.all(16),
-                              maxCrossAxisExtent: 112,
-                              mainAxisSpacing: 4,
-                              crossAxisSpacing: 4,
-                              children: [
-                                for (final app in apps)
-                                  _GridTile(
-                                    container: container,
-                                    app: app,
-                                    icons: icons,
-                                    onTap: () => _open(context, app),
-                                  ),
-                              ],
-                            )
-                          : ListView(
-                              shrinkWrap: true,
-                              padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
-                              children: [
-                                for (final app in apps)
-                                  ListTile(
-                                    leading: icons
-                                        ? _AppIcon(
-                                            container: container,
-                                            package: app.package,
-                                            size: 40,
-                                          )
-                                        : null,
-                                    title: Text(
-                                      app.label,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    onTap: () => _open(context, app),
-                                  ),
-                              ],
-                            ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.close),
+                  iconSize: 28,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  onPressed: _close,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -143,71 +126,214 @@ class _LauncherPanel extends StatelessWidget {
   }
 }
 
-class _GridTile extends StatelessWidget {
-  const _GridTile({
+/// One app on the wall: the gradient tile, the icon, the label.
+class _AppTile extends StatefulWidget {
+  const _AppTile({
     required this.container,
     required this.app,
-    required this.icons,
+    required this.autofocus,
     required this.onTap,
   });
 
   final AppContainer container;
   final LauncherApp app;
-  final bool icons;
+  final bool autofocus;
   final VoidCallback onTap;
 
+  static const double side = 150;
+  static const double iconSize = 88;
+
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(16),
-    child: Padding(
-      padding: const EdgeInsets.all(8),
+  State<_AppTile> createState() => _AppTileState();
+}
+
+class _AppTileState extends State<_AppTile> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return SizedBox(
+      width: _AppTile.side,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (icons) ...[
-            _AppIcon(container: container, package: app.package, size: 52),
-            const SizedBox(height: 8),
-          ],
+          FutureBuilder<(Uint8List?, Color?)>(
+            future: _tileData(widget.container, widget.app.package),
+            builder: (context, snapshot) {
+              final (bytes, tint) = snapshot.data ?? (null, null);
+              final gradient = _tileGradient(
+                // Icon-less apps keep the brand's sage so the tile still
+                // reads as a surface, not a hole.
+                tint ?? scheme.primary,
+                theme.brightness,
+              );
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                width: _AppTile.side,
+                height: _AppTile.side,
+                decoration: BoxDecoration(
+                  gradient: gradient,
+                  borderRadius: BorderRadius.circular(Ks.radiusCard),
+                  // The dpad's whereabouts: a firm ring, readable over any
+                  // gradient the icons produce.
+                  border: Border.all(
+                    color: _focused ? scheme.onSurface : Colors.transparent,
+                    width: 3,
+                  ),
+                ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  borderRadius: BorderRadius.circular(Ks.radiusCard),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: widget.onTap,
+                    autofocus: widget.autofocus,
+                    onFocusChange: (f) => setState(() => _focused = f),
+                    child: Center(
+                      child: bytes == null
+                          ? Icon(
+                              Icons.apps_outlined,
+                              size: _AppTile.iconSize,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            )
+                          : Image.memory(
+                              bytes,
+                              width: _AppTile.iconSize,
+                              height: _AppTile.iconSize,
+                            ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
           Text(
-            app.label,
+            widget.app.label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: theme.textTheme.bodyLarge,
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
 }
 
-/// One app's icon from the manager's cache, with a generic stand-in while
-/// it loads or when the app cannot provide one.
-class _AppIcon extends StatelessWidget {
-  const _AppIcon({
-    required this.container,
-    required this.package,
-    required this.size,
-  });
+/// The icon bytes and the dominant color in one await, so a tile paints
+/// its final face in a single build once both are cached.
+Future<(Uint8List?, Color?)> _tileData(
+  AppContainer container,
+  String package,
+) async {
+  final bytes = await container.launcher.icon(package);
+  if (bytes == null) return (null, null);
+  return (bytes, await _dominantColor(package, bytes));
+}
 
-  final AppContainer container;
-  final String package;
-  final double size;
+/// Dominant colors per package. Icons are immutable for the app's life
+/// (the manager caches the bytes the same way) and the set is bounded by
+/// the whitelist, so nothing here is ever evicted.
+final _dominantCache = <String, Color?>{};
 
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: size,
-    height: size,
-    child: FutureBuilder<Uint8List?>(
-      future: container.launcher.icon(package),
-      builder: (context, snapshot) {
-        final bytes = snapshot.data;
-        if (bytes == null) {
-          return Icon(Icons.apps_outlined, size: size * 0.8);
+/// The color the tile's gradient is built from: the most present clearly
+/// saturated color in the icon, found on a tiny decode. Saturation is
+/// weighted over raw count so a colorful glyph beats its white or gray
+/// backdrop, but never zeroed, so a genuinely monochrome icon still
+/// yields its own tone rather than nothing.
+Future<Color?> _dominantColor(String package, Uint8List bytes) async {
+  if (_dominantCache.containsKey(package)) return _dominantCache[package];
+  Color? result;
+  try {
+    final codec = await ui.instantiateImageCodec(
+      bytes,
+      targetWidth: 24,
+      targetHeight: 24,
+    );
+    final image = (await codec.getNextFrame()).image;
+    final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    image.dispose();
+    if (data != null) {
+      // Cluster the clearly colored pixels by hue (30-degree buckets) and
+      // let the largest single hue win, averaged over its own pixels
+      // only. Averaging across hues is what a multicolored icon (Chrome)
+      // must never get: red plus green plus blue is mud. Gray pixels are
+      // kept aside as the fallback for genuinely monochrome icons.
+      const buckets = 12;
+      final count = List<int>.filled(buckets, 0);
+      final sum = List.generate(buckets, (_) => [0, 0, 0]);
+      var grayCount = 0;
+      final graySum = [0, 0, 0];
+      for (var i = 0; i + 3 < data.lengthInBytes; i += 4) {
+        final a = data.getUint8(i + 3);
+        if (a < 200) continue;
+        final r = data.getUint8(i);
+        final g = data.getUint8(i + 1);
+        final b = data.getUint8(i + 2);
+        final hsv = HSVColor.fromColor(Color.fromARGB(255, r, g, b));
+        if (hsv.saturation >= 0.28 && hsv.value >= 0.15) {
+          final k = (hsv.hue ~/ (360 / buckets)) % buckets;
+          count[k]++;
+          sum[k]
+            ..[0] += r
+            ..[1] += g
+            ..[2] += b;
+        } else {
+          grayCount++;
+          graySum
+            ..[0] += r
+            ..[1] += g
+            ..[2] += b;
         }
-        return Image.memory(bytes, width: size, height: size);
-      },
-    ),
+      }
+      var best = 0;
+      for (var k = 1; k < buckets; k++) {
+        if (count[k] > count[best]) best = k;
+      }
+      // A hue needs to be more than a stray anti-aliased edge to speak
+      // for the icon; below that the icon is effectively monochrome.
+      final total = count.fold(0, (a, b) => a + b) + grayCount;
+      if (total > 0 && count[best] >= total * 0.04) {
+        result = Color.fromARGB(
+          255,
+          sum[best][0] ~/ count[best],
+          sum[best][1] ~/ count[best],
+          sum[best][2] ~/ count[best],
+        );
+      } else if (grayCount > 0) {
+        result = Color.fromARGB(
+          255,
+          graySum[0] ~/ grayCount,
+          graySum[1] ~/ grayCount,
+          graySum[2] ~/ grayCount,
+        );
+      }
+    }
+  } catch (_) {
+    // A broken icon just falls back to the brand tint.
+  }
+  _dominantCache[package] = result;
+  return result;
+}
+
+/// The Portal look: one soft diagonal wash of the app's own color, deep
+/// on the dark theme, pastel on the light one. Saturation is floored so
+/// near-gray icons still produce a visible surface, and capped so neon
+/// glyphs do not glow.
+LinearGradient _tileGradient(Color tint, Brightness brightness) {
+  final hsl = HSLColor.fromColor(tint);
+  final sat = hsl.saturation.clamp(0.22, 0.68);
+  final dark = brightness == Brightness.dark;
+  HSLColor tone(double lightness) =>
+      hsl.withSaturation(sat).withLightness(lightness);
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: dark
+        ? [tone(0.42).toColor(), tone(0.24).toColor()]
+        : [tone(0.80).toColor(), tone(0.60).toColor()],
   );
 }
