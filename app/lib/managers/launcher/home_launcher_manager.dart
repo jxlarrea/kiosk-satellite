@@ -238,7 +238,14 @@ class HomeLauncherManager extends Manager {
   Future<bool> _acquire({required bool deviceOwner}) async {
     if (deviceOwner) {
       final ok = await _invoke<bool>('homeRoleAcquireSilent') ?? false;
-      if (ok) roleHeld.value = true;
+      if (ok) {
+        roleHeld.value = true;
+        // Taking the role only changes what HOME resolves to; nothing
+        // launches. A silent enable is a remote one by nature, the
+        // device may have no home button (an Echo Show), and whoever
+        // flipped it expects the kiosk on screen, so finish the job.
+        unawaited(commands.execute('bringToFront', const {}));
+      }
       return ok;
     }
     // The dialog needs a foreground Activity; the kiosk_lock channel only

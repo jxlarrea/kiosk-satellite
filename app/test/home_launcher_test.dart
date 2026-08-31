@@ -121,11 +121,26 @@ void main() {
 
   group('enable', () {
     test('device owner: fuse cleared, previous launcher stored, silent '
-        'acquire', () async {
+        'acquire, kiosk brought to the front', () async {
       nativeStatus = status(deviceOwner: true);
       await build({});
+      // A silent enable is a remote one; the flip must end with the kiosk
+      // on screen, not just the resolution changed (an Echo Show has no
+      // home button to summon it with).
+      var broughtToFront = 0;
+      commands.register(
+        Command(
+          name: 'bringToFront',
+          description: '',
+          handler: (_) async {
+            broughtToFront++;
+            return const CommandResult.ok();
+          },
+        ),
+      );
       await settings.set(defs.homeLauncherEnabled, true);
       await settle();
+      expect(broughtToFront, 1);
       final seen = methods(backgroundCalls);
       expect(seen, contains('homeFuseClear'));
       expect(seen, contains('homeRoleAcquireSilent'));
