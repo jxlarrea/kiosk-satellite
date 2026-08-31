@@ -118,11 +118,15 @@ class HomeLauncherManager extends Manager {
       if (e.value == true) {
         final status = await _status();
         if (status['supported'] != true) {
+          // The rows are hidden on such a device, so this write came in
+          // raw (the API, an import). Storing an intent the device can
+          // never honor would leave every surface lying; revert it.
           log.warn(
             name,
-            'home launcher enabled but this device does not allow '
+            'home launcher enable rejected: this device does not allow '
             'changing the home app (${status['reason']})',
           );
+          await _settings.set(defs.homeLauncherEnabled, false);
           return;
         }
         // A deliberate enable is the fuse's reset, and the moment to
@@ -152,6 +156,27 @@ class HomeLauncherManager extends Manager {
 
     // Boot reconciliation.
     final status = await _status();
+    if (status['supported'] != true) {
+      // An unsupported device gets no toggle at all (user-decided): the
+      // rows disappear from both UIs before any page renders, and only
+      // the status row stays to say why. Runs in init like the person
+      // sensor's gate, so nothing ever flashes. A stored true (a config
+      // imported from a supported device) is cleared so no surface
+      // claims an intent this device cannot honor.
+      defs.deviceHiddenKeys
+        ..add(defs.homeLauncherEnabled.key)
+        ..add(defs.homeKeepPinning.key);
+      if (_settings.get(defs.homeLauncherEnabled)) {
+        log.warn(
+          name,
+          'home launcher was on in the stored settings but this device '
+          'does not allow changing the home app (${status['reason']}); '
+          'turning it off',
+        );
+        await _settings.set(defs.homeLauncherEnabled, false);
+      }
+      return;
+    }
     if (status['fuseTripped'] == true) {
       // The fuse gave HOME back to the OEM launcher while Dart was in no
       // state to be asked. Surface it loudly and make the stored setting

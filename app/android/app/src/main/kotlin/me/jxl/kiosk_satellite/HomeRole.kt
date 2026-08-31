@@ -208,6 +208,11 @@ object HomeRole {
      * lands somewhere immediately instead of on the next HOME press.
      */
     fun release(context: Context, previous: String?) {
+        // Releasing a role that was never engaged must be a silent no-op:
+        // the manager reverts a stored-but-unsupported enable through this
+        // path, and launching the landing intent there would yank the
+        // kiosk behind the OEM launcher for nothing.
+        val hadAlias = aliasEnabled(context)
         try {
             if (isDeviceOwner(context)) {
                 val dpm = context.getSystemService(DevicePolicyManager::class.java)
@@ -219,6 +224,7 @@ object HomeRole {
             Log.w(TAG, "clearing preferred home failed: ${e.message}")
         }
         setAliasEnabled(context, false)
+        if (!hadAlias) return
         // Cosmetic landing only. Not getLaunchIntentForPackage: a home app
         // does not necessarily have a LAUNCHER entry.
         try {

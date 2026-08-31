@@ -41,6 +41,9 @@ void main() {
       Future<void>.delayed(const Duration(milliseconds: 20));
 
   Future<void> build(Map<String, Object> initial) async {
+    // Global and mutated by init on unsupported devices; each scenario
+    // starts from a clean slate.
+    defs.deviceHiddenKeys.clear();
     SharedPreferences.setMockInitialValues(initial);
     bus = EventBus();
     final log = Logger();
@@ -159,13 +162,35 @@ void main() {
       },
     );
 
-    test('unsupported device: nothing is engaged', () async {
+    test('unsupported device: the rows are hidden and a raw enable is '
+        'reverted, nothing engaged', () async {
       nativeStatus = status(supported: false);
       await build({});
+      expect(
+        defs.deviceHiddenKeys,
+        containsAll([defs.homeLauncherEnabled.key, defs.homeKeepPinning.key]),
+      );
       await settings.set(defs.homeLauncherEnabled, true);
       await settle();
+      expect(settings.get(defs.homeLauncherEnabled), isFalse);
       expect(methods(backgroundCalls), isNot(contains('homeFuseClear')));
       expect(lockCalls, isEmpty);
+    });
+
+    test('unsupported device with a stored true (imported config): '
+        'flipped off at boot', () async {
+      nativeStatus = status(supported: false);
+      await build({'ks.home.enabled': true});
+      expect(settings.get(defs.homeLauncherEnabled), isFalse);
+    });
+
+    test('supported device leaves the rows visible', () async {
+      nativeStatus = status();
+      await build({});
+      expect(
+        defs.deviceHiddenKeys.contains(defs.homeLauncherEnabled.key),
+        isFalse,
+      );
     });
 
     test(

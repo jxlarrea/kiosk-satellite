@@ -33,7 +33,7 @@ What enabling looks like per device:
 | Device owner ([the ownership tier](kiosk.md#going-further-device-ownership)) | Silent. The role is taken immediately, including from the remote admin or a Home Assistant automation with nobody at the screen. |
 | Android 10 and newer | The system asks once with a small dialog. Android silently refuses the dialog after two denials; past that the Status row opens the system's own home settings instead. |
 | Android 7 to 9 | The system's home settings open for you to pick Kiosk Satellite. |
-| Amazon Fire tablets | Not supported: Fire OS does not allow replacing its launcher. The page says so and nothing is changed. |
+| Amazon Fire tablets | Not supported: Fire OS does not allow replacing its launcher. The switches do not appear on a Fire; the page only says why. |
 
 While the switch is off, Kiosk Satellite has no home-app footprint at
 all: it appears in no launcher chooser and no default-apps list.

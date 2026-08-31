@@ -363,6 +363,10 @@ export async function loadSettings() {
     // crash-fuse self-disable. Mirrors the device page's Status card.
     {
       const tab = document.getElementById('tab-home');
+      // On a device that cannot change its home app every setting on this
+      // tab is hidden and the generic renderer printed its "Nothing here."
+      // placeholder; the status card below is the tab's real content.
+      if (!tab.querySelector('[data-key]')) tab.innerHTML = '';
       const h = document.createElement('h2');
       h.className = 'card-title';
       h.textContent = 'Status';
