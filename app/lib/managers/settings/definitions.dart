@@ -192,7 +192,7 @@ const Map<String, String> subpageHints = {
   'Scheduled Screensavers':
       'Switch to a different screensaver at set times of day.',
   // ESPHome.
-  'Notifications': 'Notification sound, volume, test notification',
+  'Notifications': 'Transparency, blur, notification sound, test notification',
   'Bluetooth Proxy': 'Relay nearby Bluetooth devices to Home Assistant',
   'GPS Sensor': 'Expose GPS sensor data to Home Assistant',
   'Advanced settings': 'Real or spoofed Wi-Fi MAC address',
@@ -4786,9 +4786,57 @@ Object normalizeMacAddressSetting(Object value) =>
     value is String ? (normalizeMacAddress(value) ?? value.trim()) : value;
 
 // ── Notifications ──────────────────────────────────────────────────────
-// What a notification pushed from Home Assistant sounds like (issue #320).
-// Both are the device's defaults: the `notification` action can name a
-// sound and a volume per call, and falls back to these when it does not.
+// What a notification pushed from Home Assistant looks and sounds like
+// (issues #320, #390). The sound rows are the device's defaults: the
+// `notification` action can name a sound and a volume per call, and falls
+// back to these when it does not.
+
+/// How see-through the notification cards are (issue #390: a card over a
+/// screensaver clock should not blot it out). Zero is the opaque card
+/// there always was; the default lets a little of the screen through. The
+/// slider fades the card's surface only - the words and the icon stay
+/// solid, because a notification that cannot be read defeats itself.
+const notificationsTransparency = SettingDef<num>(
+  key: 'notifications.transparency',
+  type: SettingType.number,
+  defaultValue: 0.2,
+  title: 'Transparency',
+  description:
+      'Lets the screen behind show through the notification cards. '
+      'Text and icons stay solid.',
+  category: 'ESPHome',
+  section: 'Appearance',
+  subpage: 'Notifications',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+  dependsOn: 'esphome.enabled',
+);
+
+/// Frosts what shows through a transparent card, so the message stays
+/// readable over a busy photo. A slider rather than a switch: how much
+/// frost a photo needs is taste, and one fixed strength read as broken on
+/// some screens. Zero is no blur at all. Does nothing while the card is
+/// opaque, which is why it lives beside the transparency slider rather
+/// than gating on it.
+const notificationsBlur = SettingDef<num>(
+  key: 'notifications.blur',
+  type: SettingType.number,
+  defaultValue: 0.3,
+  title: 'Background blur',
+  description:
+      'Blurs what shows through a transparent notification card. Note: '
+      'Blur cannot be applied over the Home Assistant dashboard surface.',
+  category: 'ESPHome',
+  section: 'Appearance',
+  subpage: 'Notifications',
+  min: 0,
+  max: 1,
+  step: 0.05,
+  unit: '%',
+  dependsOn: 'esphome.enabled',
+);
 
 /// The name of a file in the sounds folder (see NotificationSounds), or
 /// empty for the bundled chime. A name rather than a path so a backup
@@ -4804,7 +4852,7 @@ const notificationsChimeFile = SettingDef<String>(
       'Sound files are read from Android/data/me.jxl.kiosk_satellite/'
       'files/sounds on the device, also reachable from the File Manager.',
   category: 'ESPHome',
-  section: 'Notifications',
+  section: 'Sound',
   subpage: 'Notifications',
   dependsOn: 'esphome.enabled',
   validator: validateNotificationSound,
@@ -4861,7 +4909,7 @@ const notificationsVolume = SettingDef<num>(
       'How loud the notification sound plays, apart from the media and '
       'assistant volumes.',
   category: 'ESPHome',
-  section: 'Notifications',
+  section: 'Sound',
   subpage: 'Notifications',
   min: 0,
   max: 1,
@@ -5509,6 +5557,8 @@ const List<SettingDef<Object>> allSettings = [
   btproxyPort,
   esphomeNodeName,
   // The Notifications page sits above the Bluetooth Proxy one.
+  notificationsTransparency,
+  notificationsBlur,
   notificationsChimeFile,
   notificationsVolume,
   btproxyEnabled,

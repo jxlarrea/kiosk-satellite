@@ -209,6 +209,13 @@ The action answers with the card's id, `{"id": 7}`, which `response_variable` ha
 
 Over the [remote API](remote-api.md) the same two are `showNotification` (answers with the same `id`) and `dismissNotification` (takes it, `0` or nothing to clear the screen).
 
+### Appearance
+
+| | |
+|---|---|
+| **Transparency** | Lets the screen behind show through the cards, so a card over the screensaver leaves the clock readable. 20% by default; 0% is a fully opaque card. Text and icons stay solid at every setting |
+| **Background blur** | Frosts what shows through a transparent card, keeping the message readable over a busy photo. 30% by default; 0% is no blur and the top is a heavy frost. Does nothing while the cards are opaque, and cannot be applied over the Home Assistant dashboard surface: a card over the dashboard stays transparent but unblurred |
+
 ### Sounds
 
 | | |

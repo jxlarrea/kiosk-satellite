@@ -5,6 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
+- An **Appearance** group on the ESPHome Notifications settings page, on the device and in the remote admin alike (#390): a **Transparency** slider lets the screen behind show through the notification cards, so a card over the screensaver no longer blots out the clock, and a **Background blur** slider frosts what shows through so the message stays readable over a busy photo (the blur cannot reach the Home Assistant dashboard surface, which shows through transparent but unblurred). Text and icons stay solid at every setting, and the sound rows now sit under their own **Sound** heading.
 - **Scale UI** slider on the Device settings page, in a new **User Interface** group and mirrored in the remote admin: sizes the app's own screens, the menu, settings, dialogs and overlays, from 50 to 150 percent, for high density displays where the chrome reads tiny next to a correctly sized dashboard. Web content, the dashboard, external pages and camera views, keeps its exact size and never reflows, and the slider applies live from either surface.
 
 ### Changed

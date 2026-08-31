@@ -1,7 +1,13 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../core/events.dart';
 import '../managers/notifications/notification_manager.dart';
+import '../managers/settings/definitions.dart' as defs;
+import '../managers/settings/settings_manager.dart';
 import 'mdi_icon.dart';
 import 'theme.dart';
 
@@ -13,9 +19,10 @@ import 'theme.dart';
 /// only ever one. This is the house talking to whoever is in the room -
 /// read at a distance, from the top edge, where nothing else of the kiosk
 /// lives, and stacked, because the washing machine finishing does not
-/// mean the front door opening can be forgotten. Cards are opaque and
-/// tappable so they read over a photo screensaver and can be waved away
-/// one at a time.
+/// mean the front door opening can be forgotten. Cards read over a photo
+/// screensaver (how much shows through them is the Appearance settings')
+/// and the whole surface is tappable, so they can be waved away one at a
+/// time.
 class NotificationOverlay extends StatefulWidget {
   const NotificationOverlay({required this.notifications, super.key});
 
@@ -34,15 +41,29 @@ class _NotificationOverlayState extends State<NotificationOverlay> {
   /// Ids on their way out, so a rebuild does not resurrect them.
   final _leaving = <int>{};
 
+  StreamSubscription<SettingChanged>? _appearanceSub;
+
   @override
   void initState() {
     super.initState();
     _drawn.addAll(widget.notifications.current.value);
     widget.notifications.current.addListener(_onChanged);
+    // Cards already up follow the Appearance settings live: the way to
+    // tune transparency is a test notification on the tablet and the
+    // slider on the remote UI, and a card that only listened on arrival
+    // would sit unchanged through the whole adjustment.
+    _appearanceSub = widget.notifications.bus.on<SettingChanged>().listen((e) {
+      if (e.key != defs.notificationsTransparency.key &&
+          e.key != defs.notificationsBlur.key) {
+        return;
+      }
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _appearanceSub?.cancel();
     widget.notifications.current.removeListener(_onChanged);
     super.dispose();
   }
@@ -115,6 +136,7 @@ class _NotificationOverlayState extends State<NotificationOverlay> {
                     _NotificationCard(
                       key: ValueKey(note.id),
                       note: note,
+                      settings: widget.notifications.settings,
                       leaving: _leaving.contains(note.id),
                       onDismiss: () => _dismiss(note.id),
                       onGone: () => _gone(note.id),
@@ -133,12 +155,14 @@ class _NotificationCard extends StatefulWidget {
   const _NotificationCard({
     super.key,
     required this.note,
+    required this.settings,
     required this.leaving,
     required this.onDismiss,
     required this.onGone,
   });
 
   final KioskNotification note;
+  final SettingsManager settings;
   final bool leaving;
   final VoidCallback onDismiss;
   final VoidCallback onGone;
@@ -228,6 +252,20 @@ class _NotificationCardState extends State<_NotificationCard>
     // a small box.
     final scale = widget.note.scale;
     double px(double value) => value * scale;
+    // How much of the card still covers the screen (issue #390: a card
+    // over a screensaver clock should not blot it out). The fill, the
+    // hairline and the shadow fade together; the icon and the words stay
+    // solid, because a notification that cannot be read defeats itself.
+    final solidity =
+        1 -
+        widget.settings
+            .get(defs.notificationsTransparency)
+            .toDouble()
+            .clamp(0.0, 1.0);
+    final blur = widget.settings
+        .get(defs.notificationsBlur)
+        .toDouble()
+        .clamp(0.0, 1.0);
     return ConstrainedBox(
       // Per card, not per stack: 720 is an ordinary notification's width
       // and a scaled one is wider in proportion, up to the screen. A small
@@ -247,151 +285,170 @@ class _NotificationCardState extends State<_NotificationCard>
               // Between cards only: the stack's own top edge is the
               // overlay's padding.
               padding: EdgeInsets.only(bottom: px(12)),
+              // A notification lands over arbitrary content - a dashboard,
+              // a photo - so it carries a shadow to lift it off same-tone
+              // backgrounds. The shadow stays outside the clip below (which
+              // would cut it off) and fades with the fill: it shows
+              // *through* a translucent card, where at full strength it
+              // read as a gray wash over the very thing the transparency
+              // was set to reveal.
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
-                  border: Border.all(color: scheme.outlineVariant),
-                  // A notification lands over arbitrary content - a
-                  // dashboard, a photo - so it carries a shadow to lift it
-                  // off same-tone backgrounds.
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black26,
+                      color: Colors.black.withValues(alpha: 0.26 * solidity),
                       blurRadius: px(16),
                       offset: Offset(0, px(4)),
                     ),
                   ],
                 ),
-                child: Material(
-                  type: MaterialType.transparency,
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
-                    // Anywhere on the card dismisses that card: the whole
-                    // surface is the target for someone reaching past a
-                    // counter, and it is the only way out of a pinned one
-                    // (duration 0) short of Home Assistant.
-                    onTap: widget.onDismiss,
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        px(20),
-                        px(18),
-                        px(12),
-                        px(18),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: px(52),
-                            height: px(52),
-                            decoration: BoxDecoration(
-                              color: iconBg,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              // A caller's own icon wins over the one the
-                              // kind picks, and falls back to it while the
-                              // path is read or when the name is not an
-                              // icon at all.
-                              child: mdi == null
-                                  ? Icon(icon, size: px(30), color: iconFg)
-                                  : MdiIcon(
-                                      name: mdi,
-                                      size: px(30),
-                                      color: iconFg,
-                                      fallback: icon,
-                                    ),
-                            ),
+                  child: _surface(
+                    scheme: scheme,
+                    solidity: solidity,
+                    blur: solidity < 1 && blur > 0,
+                    // Full slider is a heavy frost read as shapes, not
+                    // edges; the low end is a light diffusion.
+                    sigma: px(40) * blur,
+                    radius: BorderRadius.circular(px(Ks.radiusCard)),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(px(Ks.radiusCard)),
+                        // Anywhere on the card dismisses that card: the whole
+                        // surface is the target for someone reaching past a
+                        // counter, and it is the only way out of a pinned one
+                        // (duration 0) short of Home Assistant.
+                        onTap: widget.onDismiss,
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            px(20),
+                            px(18),
+                            px(12),
+                            px(18),
                           ),
-                          SizedBox(width: px(16)),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (title != null)
-                                  Padding(
-                                    padding: EdgeInsets.only(bottom: px(4)),
-                                    child: Text(
-                                      title,
-                                      style: TextStyle(
-                                        fontFamily: Ks.displayFont,
-                                        fontSize: px(24),
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.2,
-                                        color: scheme.onSurface,
-                                      ),
-                                    ),
-                                  ),
-                                Text(
-                                  widget.note.message,
-                                  style: TextStyle(
-                                    fontSize: px(20),
-                                    height: 1.35,
-                                    color: title == null
-                                        ? scheme.onSurface
-                                        : scheme.onSurfaceVariant,
-                                  ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: px(52),
+                                height: px(52),
+                                decoration: BoxDecoration(
+                                  color: iconBg,
+                                  shape: BoxShape.circle,
                                 ),
-                                // The picture joins after the words, so
-                                // the card grows to it rather than jumping.
-                                AnimatedSize(
-                                  duration: const Duration(milliseconds: 200),
-                                  curve: Curves.easeOut,
-                                  alignment: Alignment.topCenter,
-                                  child: image == null
-                                      ? const SizedBox.shrink()
-                                      : Padding(
-                                          padding: EdgeInsets.only(top: px(12)),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              px(Ks.radiusControl),
-                                            ),
-                                            child: ConstrainedBox(
-                                              // As wide as the text, no
-                                              // taller than this: a
-                                              // portrait frame letterboxes
-                                              // rather than filling the
-                                              // screen.
-                                              constraints: BoxConstraints(
-                                                maxHeight: px(360),
-                                              ),
-                                              child: Image.memory(
-                                                image,
-                                                fit: BoxFit.contain,
-                                                width: double.infinity,
-                                                // Decoded no larger than
-                                                // it is drawn: a 4K
-                                                // snapshot must not cost a
-                                                // low-RAM tablet its
-                                                // dashboard.
-                                                cacheWidth:
-                                                    (px(680) *
-                                                            MediaQuery.devicePixelRatioOf(
-                                                              context,
-                                                            ))
-                                                        .round(),
-                                                gaplessPlayback: true,
-                                                errorBuilder: (_, _, _) =>
-                                                    const SizedBox.shrink(),
-                                              ),
-                                            ),
-                                          ),
+                                child: Center(
+                                  // A caller's own icon wins over the one the
+                                  // kind picks, and falls back to it while the
+                                  // path is read or when the name is not an
+                                  // icon at all.
+                                  child: mdi == null
+                                      ? Icon(icon, size: px(30), color: iconFg)
+                                      : MdiIcon(
+                                          name: mdi,
+                                          size: px(30),
+                                          color: iconFg,
+                                          fallback: icon,
                                         ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              SizedBox(width: px(16)),
+                              Expanded(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (title != null)
+                                      Padding(
+                                        padding: EdgeInsets.only(bottom: px(4)),
+                                        child: Text(
+                                          title,
+                                          style: TextStyle(
+                                            fontFamily: Ks.displayFont,
+                                            fontSize: px(24),
+                                            fontWeight: FontWeight.w600,
+                                            height: 1.2,
+                                            color: scheme.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                    Text(
+                                      widget.note.message,
+                                      style: TextStyle(
+                                        fontSize: px(20),
+                                        height: 1.35,
+                                        color: title == null
+                                            ? scheme.onSurface
+                                            : scheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    // The picture joins after the words, so
+                                    // the card grows to it rather than jumping.
+                                    AnimatedSize(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      curve: Curves.easeOut,
+                                      alignment: Alignment.topCenter,
+                                      child: image == null
+                                          ? const SizedBox.shrink()
+                                          : Padding(
+                                              padding: EdgeInsets.only(
+                                                top: px(12),
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      px(Ks.radiusControl),
+                                                    ),
+                                                child: ConstrainedBox(
+                                                  // As wide as the text, no
+                                                  // taller than this: a
+                                                  // portrait frame letterboxes
+                                                  // rather than filling the
+                                                  // screen.
+                                                  constraints: BoxConstraints(
+                                                    maxHeight: px(360),
+                                                  ),
+                                                  child: Image.memory(
+                                                    image,
+                                                    fit: BoxFit.contain,
+                                                    width: double.infinity,
+                                                    // Decoded no larger than
+                                                    // it is drawn: a 4K
+                                                    // snapshot must not cost a
+                                                    // low-RAM tablet its
+                                                    // dashboard.
+                                                    cacheWidth:
+                                                        (px(680) *
+                                                                MediaQuery.devicePixelRatioOf(
+                                                                  context,
+                                                                ))
+                                                            .round(),
+                                                    gaplessPlayback: true,
+                                                    errorBuilder: (_, _, _) =>
+                                                        const SizedBox.shrink(),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: px(8)),
+                              IconButton(
+                                iconSize: px(26),
+                                color: scheme.onSurfaceVariant,
+                                onPressed: widget.onDismiss,
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ],
                           ),
-                          SizedBox(width: px(8)),
-                          IconButton(
-                            iconSize: px(26),
-                            color: scheme.onSurfaceVariant,
-                            onPressed: widget.onDismiss,
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -401,6 +458,35 @@ class _NotificationCardState extends State<_NotificationCard>
           ),
         ),
       ),
+    );
+  }
+
+  /// The card's surface: the fill and hairline that the transparency
+  /// slider fades, behind everything solid, optionally over a backdrop
+  /// blur. The blur layer only exists while it could show something - a
+  /// BackdropFilter costs a saveLayer even when the card is opaque.
+  Widget _surface({
+    required ColorScheme scheme,
+    required double solidity,
+    required bool blur,
+    required double sigma,
+    required BorderRadius radius,
+    required Widget child,
+  }) {
+    final surface = DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh.withValues(alpha: solidity),
+        borderRadius: radius,
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: solidity),
+        ),
+      ),
+      child: child,
+    );
+    if (!blur) return surface;
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+      child: surface,
     );
   }
 }
