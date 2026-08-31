@@ -799,7 +799,7 @@ class BackgroundBridge(
         if (packageName.isNullOrBlank()) return null
         return try {
             val drawable = context.packageManager.getApplicationIcon(packageName)
-            val size = 96
+            val size = 192
             val bitmap = android.graphics.Bitmap.createBitmap(
                 size, size, android.graphics.Bitmap.Config.ARGB_8888,
             )
@@ -815,6 +815,7 @@ class BackgroundBridge(
             null
         }
     }
+
 
     /// Whether this is a Meta Portal with Meta's presence service installed
     /// and enabled: the package that owns PresenceManager and logs the

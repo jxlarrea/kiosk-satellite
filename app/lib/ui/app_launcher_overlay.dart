@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
@@ -16,25 +17,65 @@ import 'toast.dart';
 /// the app's light or dark theme. Shown and hidden through the manager's
 /// [visible] notifier so every surface — the menu, quick actions, the
 /// remote admin, an automation — opens the same overlay.
-class AppLauncherOverlay extends StatelessWidget {
+class AppLauncherOverlay extends StatefulWidget {
   const AppLauncherOverlay({super.key, required this.container});
 
   final AppContainer container;
 
   @override
+  State<AppLauncherOverlay> createState() => _AppLauncherOverlayState();
+}
+
+class _AppLauncherOverlayState extends State<AppLauncherOverlay> {
+  @override
+  void initState() {
+    super.initState();
+    // The overlay is mounted in the kiosk stack from app start, visible
+    // or not: warm every tile's icon, glyph and extracted color now, so
+    // the first open ever paints complete on its first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (final app in widget.container.launcher.apps) {
+        unawaited(_warmTile(widget.container, app.package));
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
-    valueListenable: container.launcher.visible,
+    valueListenable: widget.container.launcher.visible,
     builder: (context, visible, _) {
       if (!visible) return const SizedBox.shrink();
-      return Positioned.fill(child: _LauncherScreen(container: container));
+      return Positioned.fill(
+        child: _LauncherScreen(container: widget.container),
+      );
     },
   );
 }
 
-class _LauncherScreen extends StatelessWidget {
+/// Whether the wall is currently being driven by dpad or keyboard keys:
+/// any key arriving at it arms the focus ring, any touch stands it down,
+/// and every open starts ringless. Flutter's own highlightMode cannot
+/// carry this, because the kiosk routes nav keys into the view by hand
+/// (issue #377) and the framework never counts them.
+final _keysDriving = ValueNotifier<bool>(false);
+
+class _LauncherScreen extends StatefulWidget {
   const _LauncherScreen({required this.container});
 
   final AppContainer container;
+
+  @override
+  State<_LauncherScreen> createState() => _LauncherScreenState();
+}
+
+class _LauncherScreenState extends State<_LauncherScreen> {
+  AppContainer get container => widget.container;
+
+  @override
+  void initState() {
+    super.initState();
+    _keysDriving.value = false;
+  }
 
   void _close() => container.launcher.visible.value = false;
 
@@ -60,70 +101,81 @@ class _LauncherScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final apps = container.launcher.apps;
-    return GestureDetector(
-      // The empty ground dismisses, same as the old modal's scrim; the
-      // tiles swallow their own taps.
-      behavior: HitTestBehavior.opaque,
-      onTap: _close,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: _groundGradient(
-            theme.colorScheme.surface,
-            theme.brightness,
-          ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              // Centered both ways while the wall fits, an ordinary
-              // vertical scroll once it does not.
-              Positioned.fill(
-                child: LayoutBuilder(
-                  builder: (context, constraints) => SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 48,
-                            vertical: 56,
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (_, event) {
+        _keysDriving.value = true;
+        return KeyEventResult.ignored;
+      },
+      child: Listener(
+        onPointerDown: (_) => _keysDriving.value = false,
+        child: GestureDetector(
+          // The empty ground dismisses, same as the old modal's scrim; the
+          // tiles swallow their own taps.
+          behavior: HitTestBehavior.opaque,
+          onTap: _close,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: _groundGradient(
+                theme.colorScheme.surface,
+                theme.brightness,
+              ),
+            ),
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  // Centered both ways while the wall fits, an ordinary
+                  // vertical scroll once it does not.
+                  Positioned.fill(
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
                           ),
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            runAlignment: WrapAlignment.center,
-                            spacing: 32,
-                            runSpacing: 36,
-                            children: [
-                              for (var i = 0; i < apps.length; i++)
-                                _AppTile(
-                                  container: container,
-                                  app: apps[i],
-                                  // Dpad and keyboard land somewhere useful
-                                  // the moment the wall opens (issue #377).
-                                  autofocus: i == 0,
-                                  onTap: () => _open(context, apps[i]),
-                                ),
-                            ],
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 48,
+                                vertical: 56,
+                              ),
+                              child: Wrap(
+                                alignment: WrapAlignment.center,
+                                runAlignment: WrapAlignment.center,
+                                spacing: 32,
+                                runSpacing: 36,
+                                children: [
+                                  for (var i = 0; i < apps.length; i++)
+                                    _AppTile(
+                                      container: container,
+                                      app: apps[i],
+                                      // Dpad and keyboard land somewhere useful
+                                      // the moment the wall opens (issue #377).
+                                      autofocus: i == 0,
+                                      onTap: () => _open(context, apps[i]),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      iconSize: 28,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      onPressed: _close,
+                    ),
+                  ),
+                ],
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: IconButton(
-                  icon: const Icon(Icons.close),
-                  iconSize: 28,
-                  color: theme.colorScheme.onSurfaceVariant,
-                  onPressed: _close,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -155,28 +207,52 @@ class _AppTile extends StatefulWidget {
 class _AppTileState extends State<_AppTile> {
   bool _focused = false;
 
+  /// The ring marks the dpad's whereabouts, so it only exists while the
+  /// device is being driven by keys: the first tile autofocuses for the
+  /// dpad's sake, and on a touch tablet the ring popping onto it a beat
+  /// after the wall opened read as a rendering glitch.
+  bool get _showRing => _focused && _keysDriving.value;
+
+  void _onKeysDriving() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _keysDriving.addListener(_onKeysDriving);
+  }
+
+  @override
+  void dispose() {
+    _keysDriving.removeListener(_onKeysDriving);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final launcher = widget.container.launcher;
     final package = widget.app.package;
-    // The synchronous path: with the icon warmed by the manager and its
-    // color already extracted, the tile paints its final face on the very
-    // first frame. The async path exists only for the first-ever open on
-    // a cold cache, and it holds a neutral surface rather than flashing a
-    // wrong color and correcting itself.
-    final iconReady = launcher.hasIcon(package);
-    final bytes = iconReady ? launcher.cachedIcon(package) : null;
-    final colorReady =
-        iconReady && (bytes == null || _dominantCache.containsKey(package));
+    // The synchronous path: with the icon and glyph warmed by the manager
+    // and the color already extracted, the tile paints its final face on
+    // the very first frame. The async path exists only for a cold cache,
+    // and it holds a neutral surface rather than flashing a wrong color
+    // and correcting itself.
+    final ready =
+        launcher.hasIcon(package) &&
+        (launcher.cachedIcon(package) == null ||
+            _dominantCache.containsKey(package));
     Widget tile;
-    if (colorReady) {
-      tile = _body(theme, loading: false, bytes: bytes);
+    if (ready) {
+      tile = _body(theme, loading: false);
     } else {
-      tile = FutureBuilder<(Uint8List?, Color?)>(
-        future: _tileData(widget.container, package),
-        builder: (context, snapshot) =>
-            _body(theme, loading: !snapshot.hasData, bytes: snapshot.data?.$1),
+      tile = FutureBuilder<void>(
+        future: _warmTile(widget.container, package),
+        builder: (context, snapshot) => _body(
+          theme,
+          loading: snapshot.connectionState != ConnectionState.done,
+        ),
       );
     }
     return SizedBox(
@@ -198,9 +274,12 @@ class _AppTileState extends State<_AppTile> {
     );
   }
 
-  Widget _body(ThemeData theme, {required bool loading, Uint8List? bytes}) {
+  Widget _body(ThemeData theme, {required bool loading}) {
     final scheme = theme.colorScheme;
-    final tint = bytes == null ? null : _dominantCache[widget.app.package];
+    final launcher = widget.container.launcher;
+    final package = widget.app.package;
+    final bytes = loading ? null : launcher.cachedIcon(package);
+    final tint = bytes == null ? null : _dominantCache[package];
     return AnimatedContainer(
       duration: const Duration(milliseconds: 120),
       width: _AppTile.side,
@@ -219,9 +298,9 @@ class _AppTileState extends State<_AppTile> {
         color: loading ? scheme.surfaceContainerHighest : null,
         borderRadius: BorderRadius.circular(Ks.radiusCard),
         // The dpad's whereabouts: a firm ring, readable over any
-        // gradient the icons produce.
+        // gradient the icons produce, and only while keys are driving.
         border: Border.all(
-          color: _focused ? scheme.onSurface : Colors.transparent,
+          color: _showRing ? scheme.onSurface : Colors.transparent,
           width: 3,
         ),
       ),
@@ -255,15 +334,12 @@ class _AppTileState extends State<_AppTile> {
   }
 }
 
-/// The icon bytes and the dominant color in one await, so a tile paints
-/// its final face in a single build once both are cached.
-Future<(Uint8List?, Color?)> _tileData(
-  AppContainer container,
-  String package,
-) async {
+/// Everything a tile needs in one await: the icon and the extracted
+/// color, both cached, so a tile paints its final face in a single build
+/// afterward.
+Future<void> _warmTile(AppContainer container, String package) async {
   final bytes = await container.launcher.icon(package);
-  if (bytes == null) return (null, null);
-  return (bytes, await _dominantColor(package, bytes));
+  if (bytes != null) await _dominantColor(package, bytes);
 }
 
 /// Dominant colors per package. Icons are immutable for the app's life
@@ -372,8 +448,8 @@ LinearGradient _tileGradient(Color tint, Brightness brightness) {
   );
 }
 
-/// The wall's ground: the theme surface as a quiet vertical gradient, a
-/// touch of depth instead of a flat sheet, in both themes.
+/// The wall's ground: the theme surface as an unmistakable vertical
+/// gradient, lit at the top and settling deeper below, in both themes.
 LinearGradient _groundGradient(Color surface, Brightness brightness) {
   final hsl = HSLColor.fromColor(surface);
   final dark = brightness == Brightness.dark;
@@ -383,7 +459,7 @@ LinearGradient _groundGradient(Color surface, Brightness brightness) {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: dark
-        ? [tone(0.05).toColor(), tone(-0.02).toColor()]
-        : [tone(0.03).toColor(), tone(-0.06).toColor()],
+        ? [tone(0.08).toColor(), tone(-0.06).toColor()]
+        : [tone(0.04).toColor(), tone(-0.11).toColor()],
   );
 }
