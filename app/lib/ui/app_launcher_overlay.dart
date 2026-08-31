@@ -450,16 +450,22 @@ LinearGradient _tileGradient(Color tint, Brightness brightness) {
 
 /// The wall's ground: the theme surface as an unmistakable vertical
 /// gradient, lit at the top and settling deeper below, in both themes.
+/// The light theme pins its own endpoints instead of offsetting the
+/// surface: the paper tone sits so close to white that a relative lift
+/// clamps flat and the wall read as a plain sheet.
 LinearGradient _groundGradient(Color surface, Brightness brightness) {
   final hsl = HSLColor.fromColor(surface);
   final dark = brightness == Brightness.dark;
-  HSLColor tone(double delta) =>
-      hsl.withLightness((hsl.lightness + delta).clamp(0.0, 1.0));
+  HSLColor tone(double lightness) =>
+      hsl.withLightness(lightness.clamp(0.0, 1.0));
   return LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: dark
-        ? [tone(0.08).toColor(), tone(-0.06).toColor()]
-        : [tone(0.04).toColor(), tone(-0.11).toColor()],
+        ? [
+            tone(hsl.lightness + 0.08).toColor(),
+            tone(hsl.lightness - 0.06).toColor(),
+          ]
+        : [tone(0.99).toColor(), tone(0.78).toColor()],
   );
 }
