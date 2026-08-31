@@ -121,11 +121,39 @@ set-disabled false` and the same restart bring the lock screen back.
 A Fire that never turns its panel off, one that runs a screensaver all
 night instead, never meets the lock screen and needs none of this.
 
+## The microphone after a reboot
+
+A sideloaded app on Fire OS 8 keeps its microphone until the tablet
+reboots, and loses it on the way back up. The app asks for it again the
+next time it opens the mic, so the permission prompt reappears once after
+each reboot, on wake word, on a page calling `getUserMedia`, on a gesture
+that listens. Tapping Allow is the whole of it. Restarting the app alone
+never triggers this, only a reboot, which is the tell.
+
+Fire OS runs a boot-time service, `AudioRecordPermissionEnforcer` in
+`/system/framework/fosservices.jar`, that walks every installed app on
+each boot and revokes `android.permission.RECORD_AUDIO` from any it does
+not trust. Its allowlist passes an app only if the app is a system app,
+or it was installed through an Amazon source (the Appstore,
+`com.amazon.venezia`) *and* Amazon's own remote config, delivered over
+Arcus, names it. A sideloaded APK is neither, so its microphone grant is
+stripped at every boot. `RECORD_AUDIO` alone is singled out this way:
+camera and location, granted the same way, survive the reboot untouched.
+
+Nothing puts a stop to it. Spoofing the installer to `com.amazon.venezia`
+does not get past it, the Arcus allowlist is the second half of the test
+and there is no way to put an app on it. On a device that could be
+provisioned as device owner the grant would be set through policy and
+outlast the enforcer, but no Fire can be, see the last row below. A Fire
+that never reboots never meets the enforcer, and one that does re-asks
+once on the next mic open, which is a tap.
+
 ## What to know before provisioning
 
 | Quirk | Effect | What to do |
 | --- | --- | --- |
 | Fire OS 8 lets no app clear the lock screen | A screen turned off by the app wakes onto the lock screen and sleeps again seconds later, see above. Fire OS 7 is not affected | `adb shell locksettings set-disabled true` and a reboot or a System UI restart, once |
+| Fire OS revokes the mic from sideloaded apps at every boot | The microphone permission holds until the tablet reboots. A boot-time enforcer strips `RECORD_AUDIO` from any app not installed through Amazon, so the app re-asks on the next mic open after a reboot, see above. Camera and location are not touched | Tap Allow on the prompt when it reappears after a reboot. Nothing to pre-empt it |
 | Wireless debugging is off after every reboot, on a new port | A setup that ends in a reboot loses adb | Use a cable, or turn Wireless debugging back on afterwards and read the new port from its page |
 | Amazon's WebView has no WebRTC | Go2RTC camera streams cannot play over WebRTC | Nothing: the app falls back to MSE on its own and records the switch in the App Logs. **Prefer MSE over WebRTC** (Settings, Camera Streams, Playback) skips the failed attempt. See [Cameras](cameras.md) |
 | Bluetooth scanning is gated on location | Fire OS 8 is Android 11, where a scanner without the Location permission and Location Based Services on runs and hears nothing | Grant location (the block above) and turn **Location Based Services** on in the tablet's Settings. The Nearby devices row on the Bluetooth Proxy page reads the gate. See [ESPHome](esphome.md) |
