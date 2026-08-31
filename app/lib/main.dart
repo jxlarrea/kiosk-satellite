@@ -11,6 +11,7 @@ import 'core/frame_watchdog.dart';
 import 'core/ha_http_overrides.dart';
 import 'core/locale_dates.dart';
 import 'managers/settings/definitions.dart' as defs;
+import 'ui/key_nav.dart';
 import 'ui/kiosk_screen.dart';
 import 'ui/setup_screen.dart';
 import 'ui/theme.dart';
@@ -140,9 +141,9 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
     WidgetsBinding.instance.addObserver(this);
     // The theme setting applies live, including when flipped from the remote
     // admin — the whole point of changing it from another room is seeing it.
-    _sub = widget.container.bus
-        .on<SettingChanged>()
-        .listen((e) => e.key == defs.uiTheme.key ? setState(() {}) : null);
+    _sub = widget.container.bus.on<SettingChanged>().listen(
+      (e) => e.key == defs.uiTheme.key ? setState(() {}) : null,
+    );
     // A wake-driven resume must never cycle the socket: record the wake and
     // drop any pending nudge the resume it caused had scheduled.
     _wakeSub = widget.container.bus.on<WakeWordDetected>().listen((_) {
@@ -229,6 +230,13 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
         'system' => ThemeMode.system,
         _ => ThemeMode.light,
       },
+      // Above the Navigator, so every route — settings, its subpages, the
+      // pickers — walks dpad/arrow focus under the same policy (issue
+      // #377): reading order, and the page header scrolled back into view
+      // when focus reaches a page's first row.
+      builder: (context, child) =>
+          FocusTraversalGroup(policy: KsTraversalPolicy(), child: child!),
+      navigatorObservers: [kioskRouteObserver],
       home: configured
           ? KioskScreen(container: container)
           : SetupScreen(container: container),

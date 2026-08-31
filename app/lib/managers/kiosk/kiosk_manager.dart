@@ -118,6 +118,19 @@ class KioskManager extends Manager with WidgetsBindingObserver {
   Future<void> setLockShieldPassThrough(bool value) =>
       _invoke<void>('lockShieldPassThrough', {'value': value});
 
+  bool _navCapture = false;
+
+  /// Tell the native side whether Flutter has a surface up that navigates
+  /// with the dpad/arrow keys (issue #377): the drawer, the settings
+  /// route, the screensaver, a lockdown or a full-screen overlay. While
+  /// false, MainActivity hands those keys to the frontmost WebView (all
+  /// but left, which opens the drawer). Kept and re-pushed on each new
+  /// Activity, which starts with the flag down.
+  Future<void> setNavCapture(bool capture) {
+    _navCapture = capture;
+    return _invoke<void>('navCapture', capture);
+  }
+
   @override
   Future<void> init() async {
     commands.register(
@@ -561,6 +574,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
         case 'ready':
           // A fresh Activity starts unarmed; re-push the flags.
           await _apply();
+          if (_navCapture) await _invoke<void>('navCapture', true);
         case 'exitGesture':
           log.info(name, 'exit gesture detected');
           bus.publish(const KioskExitGesture());

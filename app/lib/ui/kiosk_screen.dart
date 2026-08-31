@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -38,11 +39,19 @@ import 'offline_notice.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'face_preview_overlay.dart';
+import 'key_nav.dart';
 import 'kiosk_drawer.dart';
 import 'sendspin_player_overlay.dart';
 import 'toast.dart';
 import 'settings_screen.dart';
 import 'web_console_panel.dart';
+
+/// Watches the navigator for the kiosk screen (issue #377): a dialog
+/// pushed over it — the exit confirm, the PIN prompt, a picker — must flip
+/// the native key routing to Flutter, or the dpad keeps feeding the
+/// dashboard WebView behind the modal. Registered on the MaterialApp in
+/// main.dart.
+final kioskRouteObserver = RouteObserver<ModalRoute<void>>();
 
 /// The kiosk itself: a fullscreen WebView with the JS bridge, the
 /// screensaver overlay, and a slide-out menu (swipe from the left edge —
@@ -64,8 +73,23 @@ class KioskScreen extends StatefulWidget {
 }
 
 class _KioskScreenState extends State<KioskScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   AppContainer get c => widget.container;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) kioskRouteObserver.subscribe(this, route);
+  }
+
+  /// A route was pushed over the kiosk (a dialog, the settings) or popped
+  /// back off: the key capture depends on it (see [kioskRouteObserver]).
+  @override
+  void didPushNext() => _syncNavCapture();
+
+  @override
+  void didPopNext() => _syncNavCapture();
 
   bool _consoleOpen = false;
   StreamSubscription<SettingChanged>? _settingsSub;
@@ -75,6 +99,7 @@ class _KioskScreenState extends State<KioskScreen>
   StreamSubscription<KioskBackPressed>? _backSub;
   StreamSubscription<WakeWordDetected>? _wakeSub;
   StreamSubscription<CameraViewStateChanged>? _cameraSub;
+  StreamSubscription<ScreensaverStateChanged>? _saverSub;
   StreamSubscription<WebViewRebuildRequested>? _rebuildSub;
 
   /// Whether the Activity has attached to the process-wide engine. The
@@ -99,6 +124,14 @@ class _KioskScreenState extends State<KioskScreen>
   )..addListener(_syncMenuBusy);
 
   void _closeDrawer() => _drawer.fling(velocity: -1);
+
+  /// The drawer pane's focus scope (issue #377): dpad/arrow navigation puts
+  /// focus here, and the scope keeps the arrows walking the menu's own
+  /// entries — a directional search never leaves its nearest scope, so
+  /// focus cannot wander off into the kiosk plane behind it.
+  final FocusScopeNode _drawerFocus = FocusScopeNode(
+    debugLabel: 'kiosk drawer',
+  );
 
   /// Whether the drawer, when open, shows only the kiosk-allowed quick
   /// actions. Set at the moment it opens: an edge swipe while kiosk mode is
@@ -231,6 +264,9 @@ class _KioskScreenState extends State<KioskScreen>
   }
 
   Future<void> _onSettingChanged(SettingChanged e) async {
+    // Lockdown flipping is the one key-capture state with no listener of
+    // its own here; the sync is diffed, so the rest cost nothing.
+    _syncNavCapture();
     // HA kiosk mode and its hide choices are applied live: restyling the
     // page in place, with no reload and nothing lost from it.
     if (e.key == defs.haKioskMode.key ||
@@ -428,6 +464,11 @@ class _KioskScreenState extends State<KioskScreen>
     });
     _settingsSub = c.bus.on<SettingChanged>().listen(_onSettingChanged);
     _gestureSub = c.bus.on<KioskExitGesture>().listen(_onExitGesture);
+    // Dpad and keyboard navigation (issue #377), registered on both stages
+    // of the key pipeline; see _onKey for why it takes two.
+    HardwareKeyboard.instance.addHandler(_onKey);
+    FocusManager.instance.addEarlyKeyEventHandler(_onEarlyKey);
+    _syncNavCapture();
     // A service call, script, automation or event fired from a gesture
     // changes nothing on this screen, so the toast is the only sign the
     // gesture landed, or the only word on why it did not.
@@ -463,6 +504,12 @@ class _KioskScreenState extends State<KioskScreen>
     });
     _cameraSub = c.bus.on<CameraViewStateChanged>().listen((_) {
       if (mounted) setState(() {});
+      _syncNavCapture();
+    });
+    // The screensaver takes the keys the moment it shows (any of them
+    // dismisses it) and hands them back when it goes.
+    _saverSub = c.bus.on<ScreensaverStateChanged>().listen((_) {
+      _syncNavCapture();
     });
     _backSub = c.bus.on<KioskBackPressed>().listen((_) {
       if (!mounted || _settingsOpen) return;
@@ -872,6 +919,156 @@ class _KioskScreenState extends State<KioskScreen>
   /// pickers) are legitimate, and the foreground reclaim stands down.
   void _syncMenuBusy() {
     c.kiosk.menuBusy = _settingsOpen || _drawer.value > 0;
+    // However the drawer closed — key, tap, swipe, the kiosk taking the
+    // screen back — focus must not stay on an entry that just left the
+    // screen: the next arrow press would walk an invisible menu.
+    if (_drawer.value == 0 && _drawerFocus.hasFocus) _drawerFocus.unfocus();
+    _syncNavCapture();
+  }
+
+  /// Push whether Flutter wants the dpad/arrow keys right now (issue
+  /// #377). While nothing here navigates, MainActivity hands them to the
+  /// dashboard WebView instead, so the page keeps scrolling and its own
+  /// key handling; the moment a surface of ours is up, they come here.
+  /// Diffed — every caller is a state listener that fires often.
+  bool? _lastNavCapture;
+  void _syncNavCapture() {
+    final capture =
+        _settingsOpen ||
+        !(ModalRoute.of(context)?.isCurrent ?? true) ||
+        _drawer.value > 0 ||
+        c.screensaver.isActive ||
+        c.kiosk.lockdownActive ||
+        c.launcher.visible.value ||
+        c.camera.activeViewId.value != null;
+    if (capture == _lastNavCapture) return;
+    _lastNavCapture = capture;
+    unawaited(c.kiosk.setNavCapture(capture));
+  }
+
+  /// The dpad, arrow and select keys MainActivity routes into Flutter
+  /// (issue #377), plus whatever a physical keyboard sends on its own.
+  static final _navKeys = <LogicalKeyboardKey>{
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.select,
+    LogicalKeyboardKey.enter,
+    LogicalKeyboardKey.numpadEnter,
+  };
+
+  static final _volumeKeys = <LogicalKeyboardKey>{
+    LogicalKeyboardKey.audioVolumeUp,
+    LogicalKeyboardKey.audioVolumeDown,
+    LogicalKeyboardKey.audioVolumeMute,
+  };
+
+  /// One decision per key event, replayed to whichever pipeline stage asks
+  /// second (issue #377). The HardwareKeyboard handler sees every key even
+  /// when nothing in Flutter holds focus — the state a TV box idles in, and
+  /// exactly when the drawer must still open. The early FocusManager
+  /// handler sees the same event object again a moment later, and its
+  /// verdict is the one that actually stops the framework's shortcuts from
+  /// double-acting (a HardwareKeyboard handler's result never reaches the
+  /// focus system).
+  KeyEvent? _decidedKey;
+  bool _keyHandled = false;
+
+  bool _onKey(KeyEvent event) {
+    if (identical(event, _decidedKey)) return _keyHandled;
+    _decidedKey = event;
+    _keyHandled = _decideKey(event);
+    return _keyHandled;
+  }
+
+  KeyEventResult _onEarlyKey(KeyEvent event) =>
+      _onKey(event) ? KeyEventResult.handled : KeyEventResult.ignored;
+
+  bool _decideKey(KeyEvent event) {
+    if (event is KeyUpEvent) return false;
+    final key = event.logicalKey;
+    final nav = _navKeys.contains(key);
+    // Under lockdown no key does anything — not even count as activity —
+    // exactly as the shield keeps a touch from doing either.
+    if (c.kiosk.lockdownActive) return nav;
+    // A key press is activity like a touch is: it resets the idle clock
+    // and dismisses a showing screensaver. Repeats from a held key are not
+    // new activity, and volume stays out — nudging the volume during a
+    // night screensaver should not light the room. Neither is a press
+    // that is driving the menu or the settings: its ping is delivered on
+    // the event bus a beat after the press acts, so the very key that
+    // activates "Start Screensaver" would race the start it commanded and
+    // dismiss it mid-flight. A screensaver already showing takes the ping
+    // whatever sits open under it — dismissal is the point then.
+    final drivingUi =
+        (_settingsOpen || _drawer.value > 0) && !c.screensaver.isActive;
+    if (event is KeyDownEvent && !_volumeKeys.contains(key) && !drivingUi) {
+      c.bus.publish(const ActivityDetected(source: 'key'));
+    }
+    if (!nav) return false;
+    // A focused slider answers to every arrow, vertical included, so up
+    // and down could never leave its row: this handler runs ahead of the
+    // slider's own shortcuts, and turns the vertical arrows back into
+    // traversal. Left and right stay with the slider — adjusting is what
+    // a focused slider is for. Applies wherever the slider lives; the
+    // settings pages are full of them.
+    final vertical = key == LogicalKeyboardKey.arrowUp
+        ? TraversalDirection.up
+        : key == LogicalKeyboardKey.arrowDown
+        ? TraversalDirection.down
+        : null;
+    if (vertical != null) {
+      final focus = FocusManager.instance.primaryFocus;
+      if (focus?.context?.findAncestorWidgetOfExactType<Slider>() != null) {
+        focus!.focusInDirection(vertical);
+        return true;
+      }
+    }
+    switch (decideNavKey(
+      lockdown: false,
+      screensaverActive: c.screensaver.isActive,
+      overlayUp:
+          c.launcher.visible.value ||
+          c.browser.overlayUrl.value != null ||
+          c.camera.activeViewId.value != null,
+      // Any route above this one: settings, and every dialog — the exit
+      // confirm, the PIN prompt, a picker.
+      routeCovered:
+          _settingsOpen || !(ModalRoute.of(context)?.isCurrent ?? true),
+      drawerOpen: _drawer.value > 0,
+      drawerFocused: _drawerFocus.hasFocus,
+      openAllowed: !c.kiosk.locked || _quickMenuAvailable,
+      isLeft: key == LogicalKeyboardKey.arrowLeft,
+    )) {
+      case KeyNavAction.pass:
+        return false;
+      case KeyNavAction.swallow:
+        return true;
+      case KeyNavAction.openDrawer:
+        // Mirrors the edge swipe: opening while locked earns only the
+        // restricted quick menu, never the full one.
+        setState(() => _drawerRestricted = c.kiosk.locked);
+        _drawer.fling(velocity: 1);
+        _focusDrawer();
+        return true;
+      case KeyNavAction.focusDrawer:
+        _focusDrawer();
+        return true;
+    }
+  }
+
+  /// Move focus onto the drawer's first entry, next frame — the pane must
+  /// have rebuilt out of its focus-excluded closed state first.
+  void _focusDrawer() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _drawer.status == AnimationStatus.dismissed) return;
+      _drawerFocus.requestFocus();
+      // nextFocus, not a directional search: reading order starts at the
+      // menu's first entry, where a directional bootstrap picked whichever
+      // row its geometry liked best.
+      _drawerFocus.nextFocus();
+    });
   }
 
   /// Whether a WebView permission request may be granted: its Web Content
@@ -990,6 +1187,9 @@ class _KioskScreenState extends State<KioskScreen>
   void dispose() {
     BackgroundListening.onDownloadComplete = null;
     _refreshingFailsafe?.cancel();
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    FocusManager.instance.removeEarlyKeyEventHandler(_onEarlyKey);
+    _drawerFocus.dispose();
     _drawer.dispose();
     _settingsSub?.cancel();
     _gestureSub?.cancel();
@@ -998,7 +1198,9 @@ class _KioskScreenState extends State<KioskScreen>
     _rebuildSub?.cancel();
     _backSub?.cancel();
     _wakeSub?.cancel();
+    kioskRouteObserver.unsubscribe(this);
     _cameraSub?.cancel();
+    _saverSub?.cancel();
     c.browser.overlayUrl.removeListener(_onOverlayChanged);
     c.launcher.visible.removeListener(_onOverlayChanged);
     super.dispose();
@@ -1006,6 +1208,7 @@ class _KioskScreenState extends State<KioskScreen>
 
   void _onOverlayChanged() {
     if (mounted) setState(() {});
+    _syncNavCapture();
   }
 
   @override
@@ -1057,14 +1260,17 @@ class _KioskScreenState extends State<KioskScreen>
     // menu itself closed is the intuitive gesture, not just swiping the
     // kiosk. Taps and vertical scrolling inside the menu are untouched
     // (different gesture axes).
-    final drawerPane = GestureDetector(
-      onHorizontalDragUpdate: _drawerDragUpdate,
-      onHorizontalDragEnd: _drawerDragEnd,
-      child: KioskDrawer(
-        container: c,
-        onClose: _closeDrawer,
-        onSettings: _openSettings,
-        restricted: _drawerRestricted,
+    final drawerPane = FocusScope(
+      node: _drawerFocus,
+      child: GestureDetector(
+        onHorizontalDragUpdate: _drawerDragUpdate,
+        onHorizontalDragEnd: _drawerDragEnd,
+        child: KioskDrawer(
+          container: c,
+          onClose: _closeDrawer,
+          onSettings: _openSettings,
+          restricted: _drawerRestricted,
+        ),
       ),
     );
     return Scaffold(
@@ -1132,13 +1338,22 @@ class _KioskScreenState extends State<KioskScreen>
                     height: size.height + overdraw,
                     child: kioskPlane,
                   ),
-                  // The drawer plane, sliding in from the same seam.
+                  // The drawer plane, sliding in from the same seam. While
+                  // fully closed its entries sit just offscreen, still
+                  // built: without the exclusion a directional focus search
+                  // (issue #377) would happily land on them. Status, not
+                  // value, so the pane is focusable the instant an open
+                  // begins — _focusDrawer runs before the first tick moves
+                  // the value off zero.
                   Positioned(
                     left: dx - _drawerWidth,
                     top: 0,
                     bottom: 0,
                     width: _drawerWidth,
-                    child: drawerPane,
+                    child: ExcludeFocus(
+                      excluding: _drawer.status == AnimationStatus.dismissed,
+                      child: drawerPane,
+                    ),
                   ),
                   // While open, the visible slice of the kiosk closes the
                   // drawer on tap or drag — no scrim: dimming the content

@@ -595,11 +595,7 @@ class DateBox extends StatelessWidget {
         children: [
           if (expand) Expanded(child: text) else text,
           const SizedBox(width: 10),
-          Icon(
-            Icons.event_outlined,
-            size: 20,
-            color: scheme.onSurfaceVariant,
-          ),
+          Icon(Icons.event_outlined, size: 20, color: scheme.onSurfaceVariant),
         ],
       ),
     );
@@ -726,24 +722,48 @@ class KsDropdown<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        border: Border.all(color: scheme.outlineVariant),
-        borderRadius: BorderRadius.circular(Ks.radiusControl),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          isExpanded: expand,
-          borderRadius: BorderRadius.circular(Ks.radiusControl),
-          iconEnabledColor: scheme.onSurfaceVariant,
-          style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
-          items: items,
-          onChanged: onChanged,
-        ),
+    // Dpad/arrow traversal (issue #377) focuses the DropdownButton inside,
+    // whose own focus tint is invisible against the box: the one control
+    // whose row showed nothing while every other row lit up. The wrapper
+    // watches the inner button's focus and lights the box the way an
+    // InkWell row lights — a gray wash and a firmer outline, no ring.
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      child: Builder(
+        builder: (context) {
+          final focused = Focus.of(context).hasFocus;
+          return Container(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: focused
+                  ? Color.alphaBlend(
+                      scheme.onSurface.withValues(alpha: 0.10),
+                      scheme.surfaceContainerHighest,
+                    )
+                  : scheme.surfaceContainerHighest,
+              border: Border.all(
+                color: focused ? scheme.outline : scheme.outlineVariant,
+              ),
+              borderRadius: BorderRadius.circular(Ks.radiusControl),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<T>(
+                value: value,
+                isExpanded: expand,
+                borderRadius: BorderRadius.circular(Ks.radiusControl),
+                focusColor: Colors.transparent,
+                iconEnabledColor: scheme.onSurfaceVariant,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface,
+                ),
+                items: items,
+                onChanged: onChanged,
+              ),
+            ),
+          );
+        },
       ),
     );
   }

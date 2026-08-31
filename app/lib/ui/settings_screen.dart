@@ -294,6 +294,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// the hub on narrow screens), typing swaps the content for results, and a
   /// tapped result opens its pane and scrolls to the row.
   final _searchCtl = TextEditingController();
+
+  /// The field's own focus, the editing stage of the two-stage search
+  /// pill (see _searchField): held only while typing is actually wanted.
+  final _searchFocus = FocusNode(debugLabel: 'settings search');
   bool _showResults = false;
 
   /// The row the last tapped result lands on; the epoch re-arms the landing
@@ -317,6 +321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
     _searchCtl.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -383,54 +388,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: padding,
-      child: TextField(
-        controller: _searchCtl,
-        textInputAction: TextInputAction.search,
-        onTap: () {
-          if (_query.isNotEmpty && !_showResults) {
-            setState(() => _showResults = true);
+      child: Focus(
+        // Dpad/arrow navigation (issue #377), the TV two-stage pattern:
+        // the arrows land on THIS node — the pill shows its ring and no
+        // keyboard opens — and center or enter hands focus to the field
+        // inside, which is when editing (and the IME) actually starts. A
+        // field focused directly would pop the keyboard on every pass of
+        // the traversal. Vertical arrows move on from either stage — they
+        // mean nothing to a single-line field, whose trap once held a
+        // remote with no touch for good — while left and right stay with
+        // the cursor while editing.
+        onKeyEvent: (node, event) {
+          if (event is KeyUpEvent) return KeyEventResult.ignored;
+          final key = event.logicalKey;
+          if (node.hasPrimaryFocus &&
+              (key == LogicalKeyboardKey.select ||
+                  key == LogicalKeyboardKey.enter ||
+                  key == LogicalKeyboardKey.numpadEnter)) {
+            _searchFocus.requestFocus();
+            return KeyEventResult.handled;
           }
+          final down = key == LogicalKeyboardKey.arrowDown;
+          if (!down && key != LogicalKeyboardKey.arrowUp) {
+            return KeyEventResult.ignored;
+          }
+          node.focusInDirection(
+            down ? TraversalDirection.down : TraversalDirection.up,
+          );
+          return KeyEventResult.handled;
         },
-        onChanged: (_) => setState(() => _showResults = _query.isNotEmpty),
-        decoration: InputDecoration(
-          hintText: 'Search settings',
-          prefixIcon: Icon(Icons.search, color: scheme.onSurfaceVariant),
-          suffixIcon: _query.isEmpty
-              ? null
-              : IconButton(
-                  tooltip: 'Clear search',
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => setState(() {
-                    _searchCtl.clear();
-                    _showResults = false;
-                  }),
+        child: Builder(
+          builder: (context) {
+            // Rebuilds on this subtree's focus changes: the ring below
+            // shows for the hovering stage exactly as it does for editing.
+            final hovering =
+                Focus.of(context).hasFocus && !_searchFocus.hasFocus;
+            return TextField(
+              controller: _searchCtl,
+              focusNode: _searchFocus,
+              textInputAction: TextInputAction.search,
+              onTap: () {
+                if (_query.isNotEmpty && !_showResults) {
+                  setState(() => _showResults = true);
+                }
+              },
+              onChanged: (_) =>
+                  setState(() => _showResults = _query.isNotEmpty),
+              decoration: InputDecoration(
+                hintText: 'Search settings',
+                prefixIcon: Icon(Icons.search, color: scheme.onSurfaceVariant),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => setState(() {
+                          _searchCtl.clear();
+                          _showResults = false;
+                        }),
+                      ),
+                filled: true,
+                // The card surface, not the rail highlight: on dark the selected
+                // category tile uses surfaceContainerHighest, and a field in the
+                // same color read as another selected row.
+                fillColor: scheme.surfaceContainer,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
                 ),
-          filled: true,
-          // The card surface, not the rail highlight: on dark the selected
-          // category tile uses surfaceContainerHighest, and a field in the
-          // same color read as another selected row.
-          fillColor: scheme.surfaceContainer,
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 12,
-          ),
-          // The pill, on every state: the theme's enabled and focused
-          // borders (the 12 control radius with a hairline) would win over
-          // a lone `border`, which is what squared the field off. No ring
-          // at rest, the primary ring on focus, the remote's search pill.
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(100),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(100),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(100),
-            borderSide: BorderSide(color: scheme.primary),
-          ),
+                // The pill, on every state: the theme's enabled and focused
+                // borders (the 12 control radius with a hairline) would win over
+                // a lone `border`, which is what squared the field off. No ring
+                // at rest, the primary ring on focus, the remote's search pill.
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(100),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(100),
+                  borderSide: hovering
+                      ? BorderSide(color: scheme.primary)
+                      : BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(100),
+                  borderSide: BorderSide(color: scheme.primary),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

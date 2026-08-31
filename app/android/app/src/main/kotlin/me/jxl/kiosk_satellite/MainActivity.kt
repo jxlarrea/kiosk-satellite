@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
@@ -43,6 +45,10 @@ class MainActivity : FlutterActivity() {
     private var kioskLock: KioskLock? = null
     private var webViewFreeze: WebViewFreeze? = null
 
+    /** See dispatchKeyEvent: where native focus sits while Flutter owns
+     *  the navigation keys. */
+    private var focusParking: View? = null
+
     override fun provideFlutterEngine(context: Context): FlutterEngine? =
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
 
@@ -70,6 +76,40 @@ class MainActivity : FlutterActivity() {
         val mode = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
             .getString("flutter.ks.browser.cutout_mode", null) ?: "always"
         CutoutLayout.apply(this, mode)
+        // One transparent pixel that can hold native focus; see
+        // dispatchKeyEvent. Not clickable, so the touch at that pixel
+        // falls through to the app.
+        focusParking = View(this).apply {
+            isFocusable = true
+            isFocusableInTouchMode = true
+        }
+        addContentView(
+            focusParking,
+            android.view.ViewGroup.LayoutParams(1, 1),
+        )
+        // The app comes up with the FlutterView focused — with a dpad or
+        // keyboard attached that is a green frame around the whole screen
+        // before a single key is pressed. Park once the first layout is in.
+        window.decorView.post { parkFocusIfIdle() }
+    }
+
+    /**
+     * Move native focus onto the parking pixel whenever the FlutterView
+     * itself holds it (or nothing does) and no field is taking text: One
+     * UI paints its hardware-key focus frame around the focused view, and
+     * around the screen-filling FlutterView that is a green border
+     * wrapping the entire app. Text input is the one thing that genuinely
+     * needs the FlutterView focused, and it takes the focus back on its
+     * own. A focused WebView is left alone — the frame skips it, and the
+     * dashboard needs its focus for page navigation.
+     */
+    fun parkFocusIfIdle() {
+        val parking = focusParking ?: return
+        val focused = currentFocus
+        if (focused != null &&
+            focused !== findViewById<View>(FLUTTER_VIEW_ID)) return
+        if (isTextEditing()) return
+        parking.requestFocus()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -206,7 +246,108 @@ class MainActivity : FlutterActivity() {
     // are observed, never consumed.
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (kioskLock?.onKey(event) == true) return true
+        // Dpad, arrow and select keys are routed by hand, whichever native
+        // view holds focus (issue #377): left unrouted they sink into
+        // whatever view happens to be focused, and a TV remote has no way
+        // to reach the menu. While Flutter has a surface up that navigates
+        // (drawer, settings, screensaver, lockdown — the navCapture flag),
+        // every key goes into the FlutterView; over the bare dashboard,
+        // left goes to Flutter (it opens the drawer) and the rest go to
+        // the frontmost WebView, so the page keeps its scrolling and its
+        // own key handling. Text entry is the exception — arrows belong to
+        // the cursor while a field is taking input, wherever that field
+        // lives.
+        if (isNavKey(event.keyCode) && !isTextEditing()) {
+            val toFlutter = kioskLock?.navCapture == true ||
+                event.keyCode == KeyEvent.KEYCODE_DPAD_LEFT
+            if (toFlutter && event.action == KeyEvent.ACTION_DOWN) {
+                // Park native focus on the one-pixel spot even while
+                // Flutter owns the keys (they are routed by hand below,
+                // native focus plays no part): One UI paints a green focus
+                // frame around the natively focused view during
+                // hardware-key navigation, and around the screen-filling
+                // FlutterView that is a green border wrapping the entire
+                // app. Around one transparent pixel it paints nothing
+                // anyone can see. The WebView cannot be the spot: focusing
+                // it echoes back into Flutter's focus tree and steals the
+                // focused menu row. A Flutter text field taking input
+                // pulls focus back to the FlutterView for the IME on its
+                // own.
+                focusParking?.takeIf { !it.isFocused }?.requestFocus()
+            }
+            if (!toFlutter) {
+                frontWebView(findViewById(FLUTTER_VIEW_ID))?.let {
+                    // Chromium quietly drops keys while its renderer is
+                    // unfocused, and nothing on a touchless device had ever
+                    // focused the WebView.
+                    if (!it.hasFocus()) it.requestFocus()
+                    it.dispatchKeyEvent(webViewKey(event))
+                    return true
+                }
+            }
+            findViewById<View>(FLUTTER_VIEW_ID)?.let {
+                it.dispatchKeyEvent(event)
+                return true
+            }
+        }
         return super.dispatchKeyEvent(event)
+    }
+
+    /** The keys a TV remote or a keyboard's arrows navigate with. */
+    private fun isNavKey(code: Int): Boolean = when (code) {
+        KeyEvent.KEYCODE_DPAD_UP,
+        KeyEvent.KEYCODE_DPAD_DOWN,
+        KeyEvent.KEYCODE_DPAD_LEFT,
+        KeyEvent.KEYCODE_DPAD_RIGHT,
+        KeyEvent.KEYCODE_DPAD_CENTER,
+        KeyEvent.KEYCODE_ENTER,
+        KeyEvent.KEYCODE_NUMPAD_ENTER -> true
+        else -> false
+    }
+
+    /** Whether the focused view is taking text right now. */
+    private fun isTextEditing(): Boolean =
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
+            ?.isAcceptingText == true
+
+    /**
+     * The key as the page should see it. Dpad up and down become Tab and
+     * Shift+Tab: a dashboard's controls are focusables the way a desktop
+     * browser walks them with Tab — Chromium hands the dpad to the page as
+     * plain arrow keys, which a Home Assistant dashboard ignores. Focus
+     * movement scrolls the page along with it. Right stays an arrow (a
+     * focused slider answers to it); center and enter already activate the
+     * focused control.
+     */
+    private fun webViewKey(event: KeyEvent): KeyEvent = when (event.keyCode) {
+        KeyEvent.KEYCODE_DPAD_UP -> KeyEvent(
+            event.downTime, event.eventTime, event.action,
+            KeyEvent.KEYCODE_TAB, event.repeatCount, KeyEvent.META_SHIFT_ON,
+        )
+        KeyEvent.KEYCODE_DPAD_DOWN -> KeyEvent(
+            event.downTime, event.eventTime, event.action,
+            KeyEvent.KEYCODE_TAB, event.repeatCount, 0,
+        )
+        else -> event
+    }
+
+    /**
+     * The WebView a navigation key belongs to: the last shown one in tree
+     * order. Platform views attach in creation order, so a rotation's
+     * overlay page sits after the dashboard it covers, and a frozen
+     * (hidden) plane is skipped by the isShown check.
+     */
+    private fun frontWebView(root: View?): android.webkit.WebView? {
+        if (root == null) return null
+        var found: android.webkit.WebView? = null
+        fun walk(v: View) {
+            if (v is android.webkit.WebView && v.isShown) found = v
+            if (v is android.view.ViewGroup) {
+                for (i in 0 until v.childCount) walk(v.getChildAt(i))
+            }
+        }
+        walk(root)
+        return found
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {

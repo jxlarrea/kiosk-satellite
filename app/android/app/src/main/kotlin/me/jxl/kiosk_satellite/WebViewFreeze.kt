@@ -92,7 +92,7 @@ class WebViewFreeze(
      *  to be revealed again. */
     private fun setHidden(hidden: Boolean, prefix: String): Int {
         val target = if (hidden) View.INVISIBLE else View.VISIBLE
-        return forEachWebView(prefix) { view ->
+        val changed = forEachWebView(prefix) { view ->
             if (view.visibility != target) {
                 if (target == View.VISIBLE) {
                     revealWithoutScrollbarFlash(view)
@@ -101,6 +101,16 @@ class WebViewFreeze(
                 }
             }
         }
+        // Hiding a focused WebView makes Android reassign its focus, and
+        // the FlutterView is what it picks — which, with a dpad attached,
+        // is the system's green focus frame around the whole app (issue
+        // #377). Posted so the reassignment has happened first.
+        if (hidden && changed > 0) {
+            activity.window.decorView.post {
+                (activity as? MainActivity)?.parkFocusIfIdle()
+            }
+        }
+        return changed
     }
 
     /**

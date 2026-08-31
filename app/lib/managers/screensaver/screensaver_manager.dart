@@ -851,9 +851,16 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // overlay, not the OS powering the panel off, which would also freeze the
     // app and take the admin server down with it.
     await commands.execute('keepScreenAwake', {'enabled': true});
+    // A dismissal can land while the await above runs — the activity ping
+    // of the very key press that commanded the start arrives on the event
+    // bus a beat later (issue #377). stop() has then already undone
+    // everything; carrying on would rebuild the visuals over a session the
+    // manager no longer owns, a ghost screensaver no key can dismiss.
+    if (!_active) return;
     log.info(name, 'start ($_effectiveMode)');
     _armScreenOffTimer();
     await _applyVisuals();
+    if (!_active) return;
     bus.publish(const ScreensaverStateChanged(active: true));
   }
 

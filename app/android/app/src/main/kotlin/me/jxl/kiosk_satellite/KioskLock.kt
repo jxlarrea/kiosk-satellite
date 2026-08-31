@@ -94,6 +94,15 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
     private val channel = MethodChannel(messenger, "kiosk_satellite/kiosk_lock")
     private val main = Handler(Looper.getMainLooper())
 
+    /**
+     * Whether Flutter currently has a surface that wants the dpad/arrow
+     * keys (issue #377): the drawer, the settings route, the screensaver
+     * or a lockdown. Pushed from the kiosk screen as those open and close;
+     * while false, MainActivity hands the keys to the dashboard WebView
+     * instead (all but left, which opens the drawer).
+     */
+    @Volatile var navCapture = false
+
     @Volatile private var blockVolume = false
     @Volatile private var blockBack = false
     @Volatile private var gestureTaps = 0
@@ -156,6 +165,16 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                     call.argument<String>("cutout")?.let {
                         CutoutLayout.apply(activity, it)
                     }
+                    result.success(null)
+                }
+                "navCapture" -> {
+                    navCapture = call.arguments as? Boolean ?: false
+                    // The flip often rides a surface change that moves
+                    // native focus back onto the FlutterView (the settings
+                    // route hides the focused dashboard WebView, and
+                    // Android reassigns); re-park so the system's focus
+                    // frame never wraps the app between key presses.
+                    main.post { (activity as? MainActivity)?.parkFocusIfIdle() }
                     result.success(null)
                 }
                 "hasOverlayPermission" ->
