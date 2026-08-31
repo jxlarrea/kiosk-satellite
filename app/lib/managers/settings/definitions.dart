@@ -1036,6 +1036,44 @@ const launcherAutoReturnSeconds = SettingDef<num>(
   dependsOn: 'launcher.auto_return',
 );
 
+// ── Home Launcher ──────────────────────────────────────────────────────
+// The HOME role (issue #219): the kiosk registers as the device's home
+// app and replaces the OEM launcher outright. The system starts it at
+// boot itself (no stock-launcher flash) and every HOME press lands on the
+// kiosk with no pinning and no consent dialog. The safety net is native
+// (HomeFuse): a kiosk that crash-loops while holding HOME hands the role
+// back to the OEM launcher on its own, so nobody is ever stranded.
+
+const homeLauncherEnabled = SettingDef<bool>(
+  key: 'home.enabled',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Act as the home app',
+  description:
+      'Register Kiosk Satellite as the device home app: the kiosk starts '
+      'at boot and every home press returns to it. Turns itself off and '
+      'restores the previous launcher if the app fails to start '
+      'repeatedly.',
+  category: 'Home',
+);
+
+// The role already makes HOME land on the kiosk, so on devices without
+// device ownership the consent-gated pin is skipped by default; this
+// turns it back on for the native recents/back blocking it still buys.
+// Device-owner installs pin silently either way and ignore this.
+const homeKeepPinning = SettingDef<bool>(
+  key: 'home.keep_pinning',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Keep screen pinning',
+  description:
+      'Pin the screen even while Kiosk Satellite is the home app. Blocks '
+      'recents and back natively, but brings back the pinning '
+      'confirmation dialog on devices without device ownership.',
+  category: 'Home',
+  dependsOn: 'home.enabled',
+);
+
 // ── Screen & Audio ─────────────────────────────────────────────────────
 
 // What the last screen-off actually did to the panel: on some devices the
@@ -5228,6 +5266,8 @@ const List<SettingDef<Object>> allSettings = [
   launcherShowIcons,
   launcherAutoReturn,
   launcherAutoReturnSeconds,
+  homeLauncherEnabled,
+  homeKeepPinning,
   // The Screen & Audio page: screen first, then the volume mixer, then the
   // hand-built device pickers, then capture tuning. Both UIs render this
   // category in this order.

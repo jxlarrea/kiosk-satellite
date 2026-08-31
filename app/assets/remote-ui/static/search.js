@@ -8,7 +8,7 @@ import { TABS, TAB_TITLES, currentPath, setNav, showTab } from './tabs.js';
 // not cover. Keep SEARCH_EXTRAS in step with handBuiltSearchEntries there.
 export const SEARCH_CATEGORY_TABS = {
   'Browser': 'browser', 'Kiosk': 'kiosk', 'Lockdown': 'lockdown',
-  'Launcher': 'launcher', 'Screen & Audio': 'screenaudio',
+  'Launcher': 'launcher', 'Home': 'home', 'Screen & Audio': 'screenaudio',
   'Screensaver': 'screensaver', 'Camera': 'camera',
   'Home Assistant': 'homeassistant', 'Voice Satellite': 'voicesatellite',
   'MQTT': 'mqtt', 'Sendspin': 'sendspin', 'DLNA': 'dlna',
@@ -22,6 +22,9 @@ export const SEARCH_CATEGORY_TABS = {
 export const DEFLESS_SUBPAGES = [['voicesatellite', 'Appearance'],
   ['device', 'Hardware'], ['device', 'Home Assistant'], ['device', 'WebView']];
 export const SEARCH_EXTRAS = [
+  { tab: 'home', title: 'Home app status',
+    desc: 'Whether Kiosk Satellite is the device home app, and where to '
+      + 'finish setting it as the default.' },
   { tab: 'esphome', title: 'Test notification', sub: 'Notifications',
     desc: 'The Home Assistant action that sends notifications, and a button to show one.' },
   { tab: 'esphome', title: 'Required system permissions', sub: 'GPS Sensor',

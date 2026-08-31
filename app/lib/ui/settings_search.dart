@@ -252,6 +252,14 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     anchorId: 'x:launcher_permissions',
   ),
   SettingsSearchEntry(
+    category: 'Home',
+    title: 'Home app status',
+    description:
+        'Whether Kiosk Satellite is the device home app, and where to '
+        'finish setting it as the default.',
+    anchorId: 'x:home_role',
+  ),
+  SettingsSearchEntry(
     category: 'Screen & Audio',
     title: 'Master volume',
     description:

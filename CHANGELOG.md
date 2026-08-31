@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Home Launcher** (#219): Kiosk Satellite can register as the device's home app, replacing the stock launcher outright, on its own settings page on the device and in the remote admin. The system then boots straight into the kiosk instead of flashing the old launcher first, every home press returns to the kiosk and Kiosk Mode's **Disable home button** no longer needs screen pinning or its consent dialog, which some devices re-asked on every boot (**Keep screen pinning** opts the pin back in for its native recents and back blocking). Enabling is one tap in a system dialog on Android 10+, a pick in the system's home settings on older releases and fully silent with [device ownership](docs/kiosk.md), including from the remote admin; a home press while the kiosk is already up closes the menu, settings, overlays and screensaver and lands on the dashboard. The safety net is native and independent of the app's own engine: three starts in a row that never draw a frame hand the home role back to the stock launcher automatically, so a broken install can never strand the device, and turning the feature off, the `releaseHomeRole` remote command and uninstalling all restore the previous launcher on their own. Not available on Fire OS, which locks its launcher; see the new [Home Launcher](docs/home-launcher.md) docs.
+
 ## v2026.8.106 - 2026-08-31
 
 ### Added

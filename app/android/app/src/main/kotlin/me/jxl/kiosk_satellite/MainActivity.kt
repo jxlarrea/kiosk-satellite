@@ -53,7 +53,20 @@ class MainActivity : FlutterActivity() {
         FlutterEngineCache.getInstance().get(KioskApplication.ENGINE_ID)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The home-launcher crash fuse (issue #219): a kiosk that cannot
+        // boot while it IS the home app must give HOME back to the OEM
+        // launcher instead of stranding whoever is at the screen. Counted
+        // before super.onCreate so a crash inside the Flutter attach
+        // itself still lands on the counter; the finish() waits until
+        // after super, where it is legal, and a finished Activity skips
+        // the rest of its lifecycle so the system re-resolves HOME on its
+        // next dispatch.
+        val fuseTripped = HomeFuse.noteBootAttempt(this)
         super.onCreate(savedInstanceState)
+        if (fuseTripped) {
+            finish()
+            return
+        }
         // Lay the window out edge to edge ourselves. Flutter's immersive mode
         // hides the bars through the legacy systemUiVisibility layout flags,
         // and Lenovo's ZUI ROMs honor the hide but not the layout: the status
@@ -158,8 +171,22 @@ class MainActivity : FlutterActivity() {
     override fun onFlutterUiDisplayed() {
         super.onFlutterUiDisplayed()
         // A frame is on screen, so the renderer works on this GPU: stand
-        // the early-crash net down (issue #127, RendererGuard).
+        // the early-crash net down (issue #127, RendererGuard) and the
+        // home-launcher fuse with it (issue #219, HomeFuse).
         RendererGuard.noteFirstFrame(this)
+        HomeFuse.noteHealthy(this)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != HomeRole.REQ_HOME_ROLE) return
+        // The dialog's resultCode is not trustworthy across OEMs; what the
+        // role actually resolves to is. Denials are counted because Android
+        // quietly auto-denies the dialog after about two refusals, at which
+        // point the UI switches to the system's home settings screen.
+        val held = HomeRole.isHeld(this)
+        HomeFuse.noteRoleResult(this, held)
+        kioskLock?.notifyHomeRoleResult(held)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -358,9 +385,19 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        // Activity already running (launchMode singleTop): push instead of pull.
+        // Activity already running (launchMode singleTask finds the one
+        // instance): push instead of pull.
         intent.getStringExtra("ks.provision")?.let {
             provisionChannel?.invokeMethod("provision", it)
+        }
+        // A HOME press while the kiosk is the home app and already in
+        // front lands here. Everywhere else HOME means "back to the start
+        // screen", so the kiosk honors that: Dart closes whatever is open
+        // and returns to the dashboard (issue #219).
+        if (intent.action == Intent.ACTION_MAIN &&
+            intent.hasCategory(Intent.CATEGORY_HOME)
+        ) {
+            kioskLock?.notifyHomePressed()
         }
     }
 }

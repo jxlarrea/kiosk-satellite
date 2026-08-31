@@ -584,6 +584,14 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           bus.publish(GestureDetected(id: id));
         case 'backPressed':
           bus.publish(const KioskBackPressed());
+        // The home-launcher relays (issue #219): the role dialog's
+        // outcome, and a HOME press on the already-front kiosk. Forwarded
+        // as bus events; the home launcher manager and the kiosk screen
+        // own what happens next.
+        case 'homeRoleResult':
+          bus.publish(HomeRoleChanged(held: call.arguments == true));
+        case 'homePressed':
+          bus.publish(const HomeKeyPressed());
       }
       return null;
     });
@@ -592,6 +600,7 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       if (!e.key.startsWith('kiosk.') &&
           !e.key.startsWith('gestures.') &&
           !e.key.startsWith('lockdown.') &&
+          !e.key.startsWith('home.') &&
           e.key != defs.browserCutoutMode.key) {
         return;
       }
@@ -767,6 +776,11 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       // (device owner) or not at all; the lifecycle watchdog reclaims
       // the foreground instead.
       'homeSilent': lockdown && !kioskHome,
+      // With the home role held on a non-owner device the native side
+      // skips the pin (HOME already returns to the kiosk); this setting
+      // asks it to pin anyway. The role check itself is native and always
+      // current, so only the preference rides the bundle (issue #219).
+      'homeRolePin': _settings.get(defs.homeKeepPinning),
       'gestureTaps': !on ? 0 : gestureTapCount(gesture),
       // The System UI guard (accessibility service, owner-enabled once in
       // Android settings): shade slams shut whenever the status bar is

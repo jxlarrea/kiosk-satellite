@@ -355,6 +355,98 @@ export async function loadSettings() {
       });
       sync();
     }
+
+    // ── Home Launcher status (issue #219) ────────────────────────────────
+    // The toggle above is intent; on devices without device ownership the
+    // role itself needs a tap in a system dialog on the tablet. This row
+    // tells the live state, offers to start the request, and explains a
+    // crash-fuse self-disable. Mirrors the device page's Status card.
+    {
+      const tab = document.getElementById('tab-home');
+      const h = document.createElement('h2');
+      h.className = 'card-title';
+      h.textContent = 'Status';
+      const card = document.createElement('div');
+      card.className = 'card';
+      const row = document.createElement('div');
+      row.className = 'row';
+      const info = document.createElement('div');
+      info.className = 'info';
+      info.innerHTML = '<div class="name">Home app</div>'
+        + '<div class="desc">Checking...</div>';
+      row.appendChild(info);
+      const state = document.createElement('span');
+      state.style.whiteSpace = 'nowrap';
+      row.appendChild(state);
+      card.appendChild(row);
+      tab.append(h, card);
+      const status = () => api('/api/commands/homeLauncherStatus',
+        { method: 'POST', body: '{}' }).then((r) => r.json())
+        .then((res) => res.data || null).catch(() => null);
+      const render = (s) => {
+        const desc = info.querySelector('.desc');
+        row.querySelector('button')?.remove();
+        state.textContent = '';
+        if (!s) { desc.textContent = 'Status unavailable.'; return; }
+        if (s.supported !== true) {
+          desc.textContent = s.reason === 'fireos'
+            ? 'Fire OS does not allow replacing its launcher.'
+            : 'This device does not allow changing the home app.';
+          return;
+        }
+        if (s.held === true) {
+          desc.textContent = 'Kiosk Satellite is the home app. The kiosk '
+            + 'starts at boot and every home press returns to it.';
+          state.textContent = 'Active';
+          state.style.color = 'var(--ok)';
+          return;
+        }
+        if (s.enabled !== true) {
+          desc.textContent = s.storedFuseReason
+            ? 'Turned off automatically after repeated failed starts; the '
+              + 'previous launcher was restored. Turn the switch back on '
+              + 'to try again.'
+            : 'Not the home app.';
+          return;
+        }
+        desc.textContent = 'Waiting for a confirmation on the device: the '
+          + 'system dialog or home settings open there.';
+        state.textContent = 'Not set';
+        state.style.color = 'var(--error)';
+        const btn = document.createElement('button');
+        btn.className = 'btn-ghost';
+        btn.textContent = 'Set on device';
+        btn.style.cssText = 'flex-shrink:0;';
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          try {
+            await api('/api/commands/acquireHomeRole',
+              { method: 'POST', body: '{}' });
+          } catch (_) { }
+          // The confirmation happens on the tablet; keep re-reading until
+          // the role lands so the row flips by itself.
+          let tries = 30;
+          const tick = setInterval(async () => {
+            const now = await status();
+            if ((now && now.held === true) || --tries <= 0) {
+              clearInterval(tick);
+              render(now);
+            }
+          }, 2000);
+        });
+        row.appendChild(btn);
+      };
+      status().then(render);
+      // The toggle flips the role machinery on the device; re-read once
+      // it has had a beat to act. Delegated for the same reason as the
+      // launcher group above.
+      tab.addEventListener('change', (e) => {
+        const key = e.target.closest?.('[data-key]')?.dataset.key;
+        if (key === 'home.enabled' || key === 'home.keep_pinning') {
+          setTimeout(() => status().then(render), 800);
+        }
+      });
+    }
   }
 
   // ── Freshly generated encryption key ─────────────────────────────────

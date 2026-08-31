@@ -4,6 +4,11 @@ Verified on a Portal Go (Android 10, `QKQ1.210213.001`). Portal, Portal
 Mini and Portal+ run the same OS family on Android 9 or 10 and should
 behave the same, but were not tested.
 
+Once installed, turn on the [Home Launcher](home-launcher.md): it replaces
+Meta's launcher as the device's home app, so the Portal boots straight
+into the kiosk and the stock launcher, which wants a Facebook or WhatsApp
+login, drops out of the picture entirely.
+
 ## Install
 
 The APK installs over plain `adb install` like anywhere else. Connect over

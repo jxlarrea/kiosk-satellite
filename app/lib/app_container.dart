@@ -17,6 +17,7 @@ import 'managers/home_assistant/home_assistant_manager.dart';
 import 'managers/js_api/js_api_manager.dart';
 import 'managers/kiosk/kiosk_manager.dart';
 import 'managers/launcher/app_launcher_manager.dart';
+import 'managers/launcher/home_launcher_manager.dart';
 import 'managers/motion/motion_manager.dart';
 import 'managers/notifications/notification_manager.dart';
 import 'managers/location/location_manager.dart';
@@ -58,6 +59,7 @@ class AppContainer {
     browser.urlMapper = proxy.mapUrl;
     kiosk = KioskManager(bus, commands, log, settings);
     launcher = AppLauncherManager(bus, commands, log, settings);
+    homeLauncher = HomeLauncherManager(bus, commands, log, settings);
     gestures = GesturesManager(bus, commands, log, settings);
     screensaver = ScreensaverManager(bus, commands, log, settings);
     immich = ImmichManager(bus, commands, log, settings);
@@ -120,6 +122,7 @@ class AppContainer {
   late final CameraManager camera;
   late final KioskManager kiosk;
   late final AppLauncherManager launcher;
+  late final HomeLauncherManager homeLauncher;
   late final GesturesManager gestures;
   late final ScreensaverManager screensaver;
   late final ImmichManager immich;
@@ -159,6 +162,9 @@ class AppContainer {
     // After kiosk: it listens for the AppLaunched its launchApp emits,
     // and its bringToFront/screenOn calls resolve at execute time.
     launcher,
+    // Same placement logic: its role relays arrive as bus events KioskManager
+    // forwards, and its acquire path invokes the kiosk_lock channel.
+    homeLauncher,
     screensaver,
     immich,
     deviceCamera,

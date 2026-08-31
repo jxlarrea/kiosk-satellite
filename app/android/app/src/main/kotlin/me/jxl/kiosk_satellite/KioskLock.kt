@@ -105,6 +105,12 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
 
     @Volatile private var blockVolume = false
     @Volatile private var blockBack = false
+
+    /** With the home role held, screen pinning is skipped on non-owner
+     *  devices (HOME already lands on the kiosk, and the consent dialog
+     *  is the one thing pinning still buys there); the home.keep_pinning
+     *  setting turns the pin back on regardless. */
+    @Volatile private var homeRolePin = false
     @Volatile private var gestureTaps = 0
     @Volatile private var gestureTapHold = false
     private var barWatch = false
@@ -138,6 +144,8 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                         call.argument<List<Map<String, Any?>>>("gestures"))
                     setWakeOnScreenOff(call.argument<Boolean>("power") ?: false)
                     setShield(call.argument<Boolean>("statusBar") ?: false)
+                    homeRolePin =
+                        call.argument<Boolean>("homeRolePin") ?: false
                     setPinned(
                         call.argument<Boolean>("home") ?: false,
                         call.argument<Boolean>("homeSilent") ?: false,
@@ -200,6 +208,26 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                         Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                     )
                     result.success(null)
+                }
+                // The home-launcher acquisition surfaces (issue #219). They
+                // live on this Activity-scoped channel because both need a
+                // foreground Activity: the role dialog is delivered through
+                // startActivityForResult, and the settings screens only
+                // open cleanly from one.
+                "homeRoleRequest" -> {
+                    // Past two recorded denials Android auto-denies the
+                    // dialog before it is seen; the system picker is the
+                    // path that still works.
+                    if (HomeFuse.roleDenials(activity) >= 2) {
+                        HomeRole.openHomeSettings(activity)
+                    } else {
+                        HomeRole.requestRole(activity)
+                    }
+                    result.success(true)
+                }
+                "homeOpenSettings" -> {
+                    HomeRole.openHomeSettings(activity)
+                    result.success(true)
                 }
                 "requestOverlayPermission" -> {
                     activity.startActivity(
@@ -459,15 +487,27 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
         val pinned =
             am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
         try {
-            if (enabled && !pinned) {
+            val dpm = activity.getSystemService(DevicePolicyManager::class.java)
+            val owner = dpm.isDeviceOwnerApp(activity.packageName)
+            // With the home role held on a non-owner device, the pin is
+            // skipped unless home.keep_pinning asks for it (issue #219):
+            // HOME already lands back on the kiosk through the role, and
+            // the recents/back gap is the reclaim watchdog's and the
+            // accessibility guard's job either way. What skipping buys is
+            // the death of the consent dialog SystemUI raises on every
+            // plain pin. Computed as one effective value so the unpin half
+            // below stays symmetric: flipping keep_pinning off mid-session
+            // drops an existing pin on the next apply.
+            val want = enabled &&
+                !(!owner && !homeRolePin && HomeRole.isHeld(activity))
+            if (want && !pinned) {
                 // Device owner (provisioned with `dpm set-device-owner`):
                 // whitelist ourselves first, so startLockTask enters the
                 // real LOCKED mode — no confirmation, no "app is pinned"
                 // toast, no Back+Recents escape, home and recents removed
                 // from the bar. Without it, plain screen pinning: the
                 // ceiling Android sets for a store app.
-                val dpm = activity.getSystemService(DevicePolicyManager::class.java)
-                val owner = dpm.isDeviceOwnerApp(activity.packageName)
+                //
                 // Plain pinning is consent-gated: SystemUI holds the pin
                 // until whoever is at the screen answers a dialog that
                 // offers "No thanks" and spells out the unpin gesture —
@@ -487,10 +527,21 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
                 }
                 activity.startLockTask()
             }
-            if (!enabled && pinned) activity.stopLockTask()
+            if (!want && pinned) activity.stopLockTask()
         } catch (_: Exception) {
             // Racing the pin state (or a denied confirmation) is not fatal.
         }
+    }
+
+    /** MainActivity relays: the role dialog's outcome, and a HOME press
+     *  landing on the already-front kiosk. Dart turns them into bus
+     *  events. */
+    fun notifyHomeRoleResult(held: Boolean) {
+        main.post { channel.invokeMethod("homeRoleResult", held) }
+    }
+
+    fun notifyHomePressed() {
+        main.post { channel.invokeMethod("homePressed", null) }
     }
 
     fun dispose() {

@@ -207,6 +207,7 @@ const _categories = <(String, String, Object, String)>[
     Icons.apps_outlined,
     'Open other apps from the kiosk',
   ),
+  ('Home', 'Home Launcher', Icons.home_outlined, 'Replace the device home app'),
   ('Gestures', 'Gestures', Icons.gesture, 'Touch, palm and clap gestures'),
   (
     'Device',
@@ -1964,6 +1965,19 @@ class _CategoryContentState extends State<_CategoryContent> {
             ),
           ),
         ],
+        // The home role's live state (issue #219): the toggle above is
+        // intent, and on devices without ownership the role itself needs a
+        // tap in a system dialog. This row is where that state is told and
+        // finished, and where the crash fuse explains itself.
+        if (widget.category == 'Home') ...[
+          const SectionHeading('Status'),
+          SearchLandingTarget(
+            id: 'x:home_role',
+            child: SettingsCard(
+              children: [_HomeRoleTile(container: container)],
+            ),
+          ),
+        ],
         // Return automatically's grants (issue #317), only while it is on:
         // the launcher without it needs nothing from the OS.
         if (widget.category == 'Launcher' &&
@@ -3180,6 +3194,150 @@ class _KioskPermissionsTileState extends State<_KioskPermissionsTile>
           },
         ),
       ]),
+    );
+  }
+}
+
+/// The Home Launcher's status row (issue #219): whether the kiosk is the
+/// device's home app right now, in the permission rows' shape. The
+/// home.enabled switch above it is intent; on devices without device
+/// ownership the role needs a tap in a system dialog, and this row is
+/// where that is finished ("Set as default"), where an unsupported device
+/// says so, and where the crash fuse explains a self-disable.
+class _HomeRoleTile extends StatefulWidget {
+  const _HomeRoleTile({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_HomeRoleTile> createState() => _HomeRoleTileState();
+}
+
+class _HomeRoleTileState extends State<_HomeRoleTile>
+    with WidgetsBindingObserver {
+  Map<String, Object?>? _status;
+  StreamSubscription<HomeRoleChanged>? _roleSub;
+  StreamSubscription<SettingChanged>? _setSub;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _roleSub = widget.container.bus.on<HomeRoleChanged>().listen(
+      (_) => _refresh(),
+    );
+    _setSub = widget.container.bus.on<SettingChanged>().listen((e) {
+      if (e.key.startsWith('home.')) _refresh();
+    });
+    _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _roleSub?.cancel();
+    _setSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // The role dialog and the system home settings both report nothing
+    // back; coming home from them is the refresh signal.
+    if (state == AppLifecycleState.resumed) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final res = await widget.container.commands.execute(
+      'homeLauncherStatus',
+      const {},
+    );
+    if (!mounted) return;
+    final data = res.data;
+    setState(() => _status = data is Map ? data.cast<String, Object?>() : null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = _status;
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+    if (s == null) {
+      return const SettingsRow(
+        leading: Icon(Icons.home_outlined),
+        title: Text('Home app'),
+        subtitle: Text('Checking the device...'),
+      );
+    }
+    if (s['supported'] != true) {
+      final fireos = s['reason'] == 'fireos';
+      return SettingsRow(
+        leading: Icon(Icons.info_outline, color: muted),
+        title: const Text('Home app'),
+        subtitle: Text(
+          fireos
+              ? 'Fire OS does not allow replacing its launcher.'
+              : 'This device does not allow changing the home app.',
+          style: TextStyle(color: muted),
+        ),
+      );
+    }
+    final enabled = s['enabled'] == true;
+    final held = s['held'] == true;
+    final fuseReason = '${s['storedFuseReason'] ?? ''}';
+    if (!enabled && fuseReason.isNotEmpty) {
+      return SettingsRow(
+        leading: Icon(
+          Icons.warning_amber_outlined,
+          color: theme.colorScheme.error,
+        ),
+        title: const Text('Home app'),
+        subtitle: Text(
+          'Turned off automatically after repeated failed starts; the '
+          'previous launcher was restored. Turn the switch back on to try '
+          'again.',
+        ),
+      );
+    }
+    if (held) {
+      return const SettingsRow(
+        leading: Icon(Icons.check_circle_outline),
+        title: Text('Home app'),
+        subtitle: Text(
+          'Kiosk Satellite is the home app. The kiosk starts at boot and '
+          'every home press returns to it.',
+        ),
+      );
+    }
+    if (!enabled) {
+      return SettingsRow(
+        leading: Icon(Icons.home_outlined, color: muted),
+        title: const Text('Home app'),
+        subtitle: Text(
+          'Not the home app. Turn on Act as the home app above.',
+          style: TextStyle(color: muted),
+        ),
+      );
+    }
+    // Enabled but the role has not landed: finish it here. Past two
+    // denials Android silently refuses the dialog, so the system's own
+    // picker is the path that still works.
+    final settingsPath = (s['roleDenials'] is num
+        ? (s['roleDenials']! as num) >= 2
+        : false);
+    return SettingsRow(
+      leading: Icon(Icons.error_outline, color: theme.colorScheme.error),
+      title: const Text('Home app'),
+      subtitle: const Text(
+        'Not the current home app yet: the device is waiting for a '
+        'confirmation.',
+      ),
+      trailing: TextButton(
+        onPressed: () async {
+          await widget.container.commands.execute('acquireHomeRole', const {});
+        },
+        child: Text(settingsPath ? 'Open home settings' : 'Set as default'),
+      ),
     );
   }
 }

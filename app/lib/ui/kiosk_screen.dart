@@ -97,6 +97,7 @@ class _KioskScreenState extends State<KioskScreen>
   StreamSubscription<GestureActionCompleted>? _gestureResultSub;
   StreamSubscription<WebConsoleRequested>? _consoleReqSub;
   StreamSubscription<KioskBackPressed>? _backSub;
+  StreamSubscription<HomeKeyPressed>? _homeSub;
   StreamSubscription<WakeWordDetected>? _wakeSub;
   StreamSubscription<CameraViewStateChanged>? _cameraSub;
   StreamSubscription<ScreensaverStateChanged>? _saverSub;
@@ -529,6 +530,19 @@ class _KioskScreenState extends State<KioskScreen>
       } else {
         c.browser.goBack();
       }
+    });
+    // A HOME press with the kiosk as the device's home app and already in
+    // front (issue #219): what every launcher's HOME means, close what is
+    // open and land on the dashboard. One sweep rather than back's one
+    // layer at a time, because HOME is the "get me back" button.
+    _homeSub = c.bus.on<HomeKeyPressed>().listen((_) {
+      if (!mounted) return;
+      if (_drawer.value > 0) _closeDrawer();
+      if (_settingsOpen) Navigator.of(context).popUntil((r) => r.isFirst);
+      c.launcher.visible.value = false;
+      if (c.browser.overlayUrl.value != null) c.browser.dismissOverlay();
+      if (c.camera.activeViewId.value != null) c.camera.hideView();
+      unawaited(c.commands.execute('stopScreensaver', const {}));
     });
     // canPop below depends on the overlay's presence.
     c.browser.overlayUrl.addListener(_onOverlayChanged);
@@ -1197,6 +1211,7 @@ class _KioskScreenState extends State<KioskScreen>
     _consoleReqSub?.cancel();
     _rebuildSub?.cancel();
     _backSub?.cancel();
+    _homeSub?.cancel();
     _wakeSub?.cancel();
     kioskRouteObserver.unsubscribe(this);
     _cameraSub?.cancel();

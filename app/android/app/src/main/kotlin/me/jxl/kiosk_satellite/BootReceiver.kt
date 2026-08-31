@@ -26,6 +26,10 @@ class BootReceiver : BroadcastReceiver() {
             "FlutterSharedPreferences", Context.MODE_PRIVATE)
         if (!prefs.getBoolean("flutter.ks.kiosk.start_on_boot", false)) return
         KioskSatelliteService.ensureRunning(context)
+        // As the device's home app the system has already launched the
+        // kiosk itself, before this broadcast arrives; a second start is
+        // harmless but log-noisy (issue #219).
+        if (HomeRole.isHeld(context)) return
         // The launcher's own intent, not a bare component one: it carries
         // the flags that surface an existing task instead of rooting a
         // duplicate beside it.

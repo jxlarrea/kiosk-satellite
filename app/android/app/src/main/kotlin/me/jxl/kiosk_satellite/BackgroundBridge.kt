@@ -106,6 +106,31 @@ class BackgroundBridge(
                 )
                 // The system settings app, for a gesture action (issue #99).
                 "openSystemSettings" -> result.success(openSystemSettings())
+                // The home-launcher role (issue #219). These live on the
+                // engine-scoped bridge on purpose: releasing the role is
+                // the remote rescue for a kiosk whose UI is unreachable,
+                // and the device-owner acquire is what lets a remote flip
+                // complete silently. Both must work with no Activity alive.
+                "homeRoleStatus" -> result.success(HomeRole.status(context))
+                "homeRoleAcquireSilent" ->
+                    result.success(HomeRole.acquireSilent(context))
+                "homeRoleRelease" -> {
+                    HomeRole.release(
+                        context, call.argument<String>("previous"))
+                    HomeFuse.clear(context)
+                    result.success(true)
+                }
+                "homeFuseClear" -> {
+                    HomeFuse.clear(context)
+                    result.success(true)
+                }
+                // Re-engage the alias alone (a settings import landed with
+                // home.enabled on but the component still off); the role
+                // itself is acquired through the Activity-scoped request.
+                "homeAliasEnable" -> {
+                    HomeRole.setAliasEnabled(context, true)
+                    result.success(true)
+                }
                 // The device's next alarm, as the clock app set it
                 // (issue #42).
                 "nextAlarm" -> result.success(nextAlarm())

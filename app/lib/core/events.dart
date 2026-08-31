@@ -648,6 +648,21 @@ class AppLaunched extends AppEvent {
   final String package;
 }
 
+/// The system's home-role dialog came back (issue #219). [held] is what
+/// the role actually resolves to now, not the dialog's own result code.
+class HomeRoleChanged extends AppEvent {
+  const HomeRoleChanged({required this.held});
+  final bool held;
+}
+
+/// A HOME press landed on the kiosk while it was already in front, with
+/// the kiosk as the device's home app (issue #219). The kiosk screen
+/// answers it the way every launcher does: close what is open, return to
+/// the start screen.
+class HomeKeyPressed extends AppEvent {
+  const HomeKeyPressed();
+}
+
 // ── Gestures (issue #99) ───────────────────────────────────────────────
 
 /// A configured hidden gesture was detected natively. [id] is the mapping

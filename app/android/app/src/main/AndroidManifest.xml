@@ -144,6 +144,25 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- The home-launcher registration (issue #219), disabled until the
+             feature is turned on: enabled, this is what makes the kiosk an
+             eligible HOME app. An alias rather than a filter on MainActivity
+             so the app has zero HOME footprint while the feature is off, and
+             deliberately without a LAUNCHER category so
+             getLaunchIntentForPackage keeps resolving MainActivity and every
+             recovery path stays as it is. Toggled by HomeRole; the crash
+             fuse (HomeFuse) disables it when the kiosk cannot boot. -->
+        <activity-alias
+            android:name=".HomeAlias"
+            android:targetActivity=".MainActivity"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.HOME"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity-alias>
         <!-- The screen-on fallback: launching this lights the panel where
              the app's wake lock does not. See WakeActivity. -->
         <activity
@@ -260,6 +279,14 @@
         <intent>
             <action android:name="android.intent.action.MAIN"/>
             <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
+        <!-- Resolving the CURRENT default home app (HomeRole): who to hand
+             the screen back to when the home-launcher feature is turned
+             off, and whether we are it. Filtered visibility on Android 11+
+             hides other home apps without this. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.HOME"/>
         </intent>
     </queries>
 </manifest>

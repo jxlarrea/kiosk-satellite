@@ -101,7 +101,10 @@ launchable app as `[{package, label}]`), `immichAlbums`,
 people and tags as `[{id, name}]`, for its source and filter pickers), `showAppLauncher` /
 `hideAppLauncher` (the app launcher overlay;
 `showAppLauncher` refuses while the App Launcher is disabled in
-settings), `showNotification {message, title, duration, type, chime, scale, icon, chime_file, volume, image}` and
+settings), `homeLauncherStatus`, `acquireHomeRole` and `releaseHomeRole`
+(the [Home Launcher](home-launcher.md) role: its live state, starting the
+takeover, and giving the role back; `releaseHomeRole` is the recovery
+lever and works with no kiosk screen up, as long as the process runs), `showNotification {message, title, duration, type, chime, scale, icon, chime_file, volume, image}` and
 `dismissNotification {id}` (a message over whatever is on screen, the
 screensaver included; `duration` is seconds, `0` stays until dismissed,
 omitted uses 30, `chime` defaults to on, and `scale` draws the card

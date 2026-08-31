@@ -11,8 +11,10 @@ it lifts.
 Everything here is what Android lets an ordinary app do, and the setting
 descriptions say honestly where the OS keeps the last word: the power
 button cannot be intercepted (the screen is re-woken instead), and the home
-button is only blocked through OS screen pinning. For a device that must be
-escape-proof against a determined adult with time alone, see
+button is only blocked through OS screen pinning, unless the
+[Home Launcher](home-launcher.md) makes the kiosk what the home button
+opens in the first place. For a device that must be escape-proof against a
+determined adult with time alone, see
 [Going further](#going-further-device-ownership) at the end.
 
 ## Kiosk Mode
@@ -42,7 +44,10 @@ it.
 **Disable home button** works through Android screen pinning, and on a
 device that is not fully managed, Android asks for consent with an "App is
 pinned" dialog the first time. Answer **Got it** once and later pins are
-silent. Kiosk Mode no longer depends on that answer, though: if pinning was
+silent. On some devices the dialog returns on every boot; the
+[Home Launcher](home-launcher.md) ends that, since with the kiosk as the
+home app the pin is skipped and the home button lands on the kiosk by
+itself. Kiosk Mode no longer depends on that answer, though: if pinning was
 declined or ever lost, the app pulls itself back to the front about a
 second after losing the foreground, and closing it from the recents screen
 relaunches it immediately. Two situations are deliberately left alone: apps
