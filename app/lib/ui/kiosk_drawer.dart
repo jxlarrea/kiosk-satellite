@@ -342,7 +342,13 @@ class KioskDrawer extends StatelessWidget {
                                     }
                                   },
                                 ),
-                              if (!restricted)
+                              // No exit while the kiosk IS the device's
+                              // home app: killing the home only has the
+                              // system relaunch it, so the entry could
+                              // never deliver what it promises (issue
+                              // #219). Turn the Home Launcher off first;
+                              // Restart stays, it comes back by design.
+                              if (!restricted && !c.homeLauncher.roleHeld.value)
                                 _item(
                                   divided: sep(),
                                   context,

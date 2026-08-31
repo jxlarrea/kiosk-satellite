@@ -48,6 +48,10 @@ all: it appears in no launcher chooser and no default-apps list.
 - A home press while the kiosk is already on screen closes whatever is
   open, the menu, settings, the app launcher, a screensaver, and lands on
   the dashboard, the way every launcher's home press works.
+- **Exit Application** leaves the menu and **Exit app** leaves the remote
+  admin overview: killing the home app only has the system relaunch it,
+  so neither could deliver. Turn the home launcher off first to exit.
+  **Restart app** stays, it comes back by design.
 
 ## Getting back out
 

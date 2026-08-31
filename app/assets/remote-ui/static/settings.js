@@ -388,6 +388,11 @@ export async function loadSettings() {
         { method: 'POST', body: '{}' }).then((r) => r.json())
         .then((res) => res.data || null).catch(() => null);
       const render = (s) => {
+        // The overview's Exit tile goes with the held role: killing the
+        // home app only has the system relaunch it, so the tile could
+        // never deliver. Restart stays, it comes back by design.
+        document.getElementById('tileExitApp')
+          ?.classList.toggle('hidden', !!s && s.held === true);
         const desc = info.querySelector('.desc');
         row.querySelector('button')?.remove();
         state.textContent = '';
