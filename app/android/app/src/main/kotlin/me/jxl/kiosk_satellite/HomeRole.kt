@@ -70,15 +70,21 @@ object HomeRole {
         Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
 
     /** Whether this device lets an app take the HOME role at all, and if
-     *  not, why. Fire OS pins HOME to the Fire launcher; the probe runs
-     *  first so a hypothetical unlocked Amazon build still works. */
+     *  not, why. Fire OS is unsupported outright: its role service claims
+     *  ROLE_HOME is available and even accepts a holder over adb, but the
+     *  request dialog is denied silently, the home-settings screen closes
+     *  itself the moment it opens and HOME keeps landing on the Fire
+     *  launcher with the role held (verified on Fire OS 8). The one
+     *  escape is a build where HOME actually resolves to us, which
+     *  [isHeld] would report. */
     fun isSupported(context: Context): Pair<Boolean, String> {
         val amazon = Build.MANUFACTURER.equals("Amazon", ignoreCase = true)
+        if (amazon && !isHeld(context)) return false to "fireos"
         if (Build.VERSION.SDK_INT >= 29) {
             val role = context.getSystemService(RoleManager::class.java)
             val available = role?.isRoleAvailable(RoleManager.ROLE_HOME) == true
             if (available) return true to ""
-            return false to if (amazon) "fireos" else "unavailable"
+            return false to "unavailable"
         }
         // Pre-role releases: supported when the system offers a way to pick
         // a home app, or another home app exists to fall back to.
@@ -88,16 +94,25 @@ object HomeRole {
         val others = pm.queryIntentActivities(homeIntent(), 0)
             .any { it.activityInfo?.packageName != context.packageName }
         if (settingsResolves || others) return true to ""
-        return false to if (amazon) "fireos" else "unavailable"
+        return false to "unavailable"
     }
 
-    /** Whether the kiosk is the device's home app right now. */
+    /** Whether the kiosk is the device's home app right now. What HOME
+     *  actually resolves to is the ground truth; the role only breaks the
+     *  tie while no launcher owns the resolution (right after a crash the
+     *  preferred entry can transiently read as a chooser while the role
+     *  stands). A concrete rival resolution outranks a nominally held
+     *  role: Fire OS grants the role over adb yet keeps sending HOME to
+     *  its own launcher, and claiming "held" there would be a lie. */
     fun isHeld(context: Context): Boolean {
+        val current = currentDefaultHome(context)
+        if (current == context.packageName) return true
+        if (current != null) return false
         if (Build.VERSION.SDK_INT >= 29) {
             val role = context.getSystemService(RoleManager::class.java)
             if (role?.isRoleHeld(RoleManager.ROLE_HOME) == true) return true
         }
-        return currentDefaultHome(context) == context.packageName
+        return false
     }
 
     /** The package HOME resolves to today, or null while a chooser would
