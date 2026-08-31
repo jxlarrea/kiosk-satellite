@@ -1,31 +1,27 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/ui/clock_faces.dart';
 
 void main() {
-  group('flipBackdrop', () {
-    test('a bright card gets a darker backdrop', () {
-      final card = const Color(0xFFF5F5F5);
-      final bg = flipBackdrop(card);
-      expect(bg.computeLuminance(), lessThan(card.computeLuminance()));
-    });
-
-    test('a dark card gets a lighter backdrop', () {
-      final card = const Color(0xFF1A1A2E);
-      final bg = flipBackdrop(card);
-      expect(bg.computeLuminance(), greaterThan(card.computeLuminance()));
-    });
-
-    test('extremes stay in range', () {
-      expect(flipBackdrop(const Color(0xFFFFFFFF)).computeLuminance(),
-          lessThan(1.0));
-      expect(flipBackdrop(const Color(0xFF000000)).computeLuminance(),
-          greaterThan(0.0));
+  group('flip clock colors', () {
+    // The wall is its own picker now, not a shade derived from the cards:
+    // the derived shade read as an unwanted gradient on OLED panels
+    // (issue #391), and the defaults are that issue's reference look,
+    // light digits on near-black cards over a pure black wall.
+    test('the wall is a picked color with the OLED defaults', () {
+      expect(defs.screensaverFlipBackdropColor.key, endsWith('_color'));
+      expect(defs.screensaverFlipBackdropColor.defaultValue, '0,0,0');
+      expect(
+        defs.screensaverFlipBackdropColor.dependsOn,
+        'screensaver.clock_style',
+      );
+      expect(defs.screensaverFlipBackdropColor.dependsOnValue, 'flip');
+      expect(defs.screensaverFlipBgColor.defaultValue, '20,20,20');
+      expect(defs.screensaverFlipDigitColor.defaultValue, '250,250,250');
     });
   });
   group('rollerProgress', () {
-    test('minute and hour digits reflect elapsed fraction of their period',
-        () {
+    test('minute and hour digits reflect elapsed fraction of their period', () {
       final p = rollerProgress(DateTime(2026, 7, 27, 9, 52, 30), true);
       // Hour tens: '0' holds from 00:00 to 10:00 in 24h mode.
       expect(p[0], closeTo((9 * 3600 + 52 * 60 + 30) / (10 * 3600), 1e-9));

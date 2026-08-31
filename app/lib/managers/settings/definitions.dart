@@ -1673,14 +1673,15 @@ const screensaverClockBackground = SettingDef<String>(
   placeholder: 'Path to an image on the device',
 );
 
-// One color pair per face rather than a shared one: visibility can only
-// key off a single setting value, and the two faces want opposite defaults
-// (dark digits on light cards for Flip, light digits on black for Roller).
+// One color set per face rather than a shared one: visibility can only
+// key off a single setting value, and each face wants its own defaults.
+// Flip defaults to the OLED-friendly look of the issue #391 reference,
+// light digits on near-black cards over a pure black wall.
 
 const screensaverFlipDigitColor = SettingDef<String>(
   key: 'screensaver.flip_digit_color',
   type: SettingType.string,
-  defaultValue: '33,33,33',
+  defaultValue: '250,250,250',
   title: 'Digit color',
   description: 'The color of the flip digits.',
   category: 'Screensaver',
@@ -1690,14 +1691,29 @@ const screensaverFlipDigitColor = SettingDef<String>(
   dependsOnValue: 'flip',
 );
 
+// Key says bg for historical reasons; this is the card face. The wall
+// behind the cards is flip_backdrop_color below, its own picker since the
+// derived shade the wall used to take read as an unwanted gradient on
+// OLED panels (issue #391).
 const screensaverFlipBgColor = SettingDef<String>(
   key: 'screensaver.flip_bg_color',
   type: SettingType.string,
-  defaultValue: '245,245,245',
+  defaultValue: '20,20,20',
   title: 'Card color',
-  description:
-      'The color of the cards. The backdrop shades itself to '
-      'match.',
+  description: 'The color of the cards.',
+  category: 'Screensaver',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.clock_style',
+  dependsOnValue: 'flip',
+);
+
+const screensaverFlipBackdropColor = SettingDef<String>(
+  key: 'screensaver.flip_backdrop_color',
+  type: SettingType.string,
+  defaultValue: '0,0,0',
+  title: 'Background color',
+  description: 'The color behind the cards.',
   category: 'Screensaver',
   section: 'Clock screensaver',
   subpage: 'Clock screensaver',
@@ -5486,6 +5502,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockBgColor,
   screensaverFlipDigitColor,
   screensaverFlipBgColor,
+  screensaverFlipBackdropColor,
   screensaverRollerDigitColor,
   screensaverRollerBgColor,
   screensaverClockNight,

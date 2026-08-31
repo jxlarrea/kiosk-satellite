@@ -11,6 +11,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - **Scale UI** slider on the Device settings page, in a new **User Interface** group and mirrored in the remote admin: sizes the app's own screens, the menu, settings, dialogs and overlays, from 50 to 150 percent, for high density displays where the chrome reads tiny next to a correctly sized dashboard. Web content, the dashboard, external pages and camera views, keeps its exact size and never reflows, and the slider applies live from either surface.
 
 ### Changed
+- The Flip Clock defaults to the OLED look now, light digits on near-black cards over a pure black background, and the screen behind the cards is a **Background color** picker of its own instead of a shade derived from the card color, which read as an unwanted gradient on OLED panels; the hinge line across each card shows that background through the split rather than a derived grey, and Night mode's background overrides it in the dark like every other face. Custom card and digit colors carry over; a customized card color no longer moves the wall, which now has its own picker.
 - **App theme** moved from the Device page's top rows into the new **User Interface** group, next to the Scale UI slider, on the device and in the remote admin alike.
 
 ## v2026.8.107 - 2026-08-31

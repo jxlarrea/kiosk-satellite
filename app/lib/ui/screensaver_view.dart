@@ -441,6 +441,10 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
       ? _rgb(defs.screensaverClockNightColor, const Color(0xFF822222))
       : null;
 
+  /// The backdrop Night mode imposes, likewise.
+  Color? _nightBg() =>
+      _night ? _rgb(defs.screensaverClockNightBgColor, Colors.black) : null;
+
   // Re-align to each wall-clock second (or minute, when seconds are not
   // shown — the face only changes once a minute then, and a per-second
   // rebuild would be 60x the wakeups for identical pixels) rather than
@@ -636,8 +640,12 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         use24h: widget.container.settings.get(defs.screensaverClock24h),
         digitColor:
             _nightColor() ??
-            _rgb(defs.screensaverFlipDigitColor, const Color(0xFF212121)),
-        cardColor: _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
+            _rgb(defs.screensaverFlipDigitColor, const Color(0xFFFAFAFA)),
+        cardColor: _rgb(defs.screensaverFlipBgColor, const Color(0xFF141414)),
+        // The hinge gap shows the wall, so it follows the same override
+        // the wall itself takes in the dark.
+        backdropColor:
+            _nightBg() ?? _rgb(defs.screensaverFlipBackdropColor, Colors.black),
         scale: scale,
         fontFamily: fontFamily,
       );
@@ -660,9 +668,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     // Night mode (issue #391) takes the digits and the backdrop, pure
     // black behind them by default; the flip cards keep their own color.
     final color = _nightColor() ?? _color();
-    final nightBg = _night
-        ? _rgb(defs.screensaverClockNightBgColor, Colors.black)
-        : null;
+    final nightBg = _nightBg();
     final fontValue = s.get(defs.screensaverClockFont);
     final font = clockFontFamily(fontValue);
     final timeWeight = clockFontWeight(fontValue);
@@ -684,10 +690,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
           nightBg ??
           switch (style) {
             'roller' => _rgb(defs.screensaverRollerBgColor, Colors.black),
-            // The flip backdrop follows the card color (see flipBackdrop).
-            'flip' => flipBackdrop(
-              _rgb(defs.screensaverFlipBgColor, const Color(0xFFF5F5F5)),
-            ),
+            'flip' => _rgb(defs.screensaverFlipBackdropColor, Colors.black),
             _ => _rgb(defs.screensaverClockBgColor, Colors.black),
           },
       // Expand: both children are pinned to the display, so the stack must
@@ -724,7 +727,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                     switch (style) {
                       'flip' => _rgb(
                         defs.screensaverFlipDigitColor,
-                        const Color(0xFF212121),
+                        const Color(0xFFFAFAFA),
                       ),
                       'roller' => _rgb(
                         defs.screensaverRollerDigitColor,

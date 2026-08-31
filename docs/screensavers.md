@@ -60,7 +60,7 @@ follow the device language.
 | Show seconds | Digital only. |
 | Show date | Digital only, on by default. |
 | Clock size | 50 to 300 percent. |
-| Clock color | Digital only; Flip and Roller have their own digit and card or background colors. |
+| Clock color | Digital only; Flip has its own digit, card and background colors (light digits on near-black cards over pure black by default) and Roller its own digit and background colors. |
 | Background color | Digital only; the solid color behind the clock, black by default. White here with a black clock color gives the inverted face e-ink panels read best. |
 | Background photo | A photo behind the clock instead of the solid color, any face. |
 

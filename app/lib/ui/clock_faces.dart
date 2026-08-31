@@ -39,24 +39,15 @@ String? clockFontFamily(String font) => switch (font) {
   _ => 'Rubik',
 };
 
-/// The screen behind the flip cards, derived from the card color rather
-/// than picked: the reference face is three colors — digits, cards, and a
-/// backdrop just far enough from the cards to outline them. A bright card
-/// gets a slightly darker backdrop, a dark card a slightly lighter one, so
-/// the cards always read as cards without a third picker to keep in tune.
-Color flipBackdrop(Color card) {
-  final hsl = HSLColor.fromColor(card);
-  final l = hsl.lightness;
-  // Asymmetric on purpose: darkening reads stronger than lightening, so a
-  // bright card needs less of a shift to outline than a dark one.
-  final shifted = l > 0.5 ? l - 0.08 : l + 0.16;
-  return hsl.withLightness(shifted.clamp(0.0, 1.0)).toColor();
-}
-
 /// A split-flap clock: two rounded cards (hours, minutes) with a hinge line
 /// across the middle. A changing card animates the classic two-phase flip —
 /// the top half of the old value folds down over the hinge, then the bottom
 /// half of the new value unfolds from it.
+///
+/// [backdropColor] is the wall behind the cards — the hinge gap paints it,
+/// so the split shows the background rather than a derived grey (the shade
+/// the wall used to take read as an unwanted gradient on OLED panels,
+/// issue #391).
 class FlipClockFace extends StatelessWidget {
   const FlipClockFace({
     super.key,
@@ -64,6 +55,7 @@ class FlipClockFace extends StatelessWidget {
     required this.use24h,
     required this.digitColor,
     required this.cardColor,
+    required this.backdropColor,
     required this.scale,
     required this.fontFamily,
   });
@@ -72,6 +64,7 @@ class FlipClockFace extends StatelessWidget {
   final bool use24h;
   final Color digitColor;
   final Color cardColor;
+  final Color backdropColor;
   final double scale;
   final String? fontFamily;
 
@@ -101,6 +94,7 @@ class FlipClockFace extends StatelessWidget {
           height: cardH,
           digitColor: digitColor,
           cardColor: cardColor,
+          backdropColor: backdropColor,
           fontFamily: fontFamily,
         ),
         SizedBox(width: gap),
@@ -110,6 +104,7 @@ class FlipClockFace extends StatelessWidget {
           height: cardH,
           digitColor: digitColor,
           cardColor: cardColor,
+          backdropColor: backdropColor,
           fontFamily: fontFamily,
         ),
       ],
@@ -124,6 +119,7 @@ class _FlipCard extends StatefulWidget {
     required this.height,
     required this.digitColor,
     required this.cardColor,
+    required this.backdropColor,
     required this.fontFamily,
   });
 
@@ -132,6 +128,7 @@ class _FlipCard extends StatefulWidget {
   final double height;
   final Color digitColor;
   final Color cardColor;
+  final Color backdropColor;
   final String? fontFamily;
 
   @override
@@ -240,12 +237,12 @@ class _FlipCardState extends State<_FlipCard>
                   child: _half(widget.value, top: false),
                 ),
               ),
-            // The hinge line across the middle, in the backdrop color so
-            // the three surfaces stay one palette.
+            // The hinge gap across the middle, painted the wall's own
+            // color so the split shows the background through the card.
             Container(
               width: widget.width,
               height: max(widget.height * 0.008, 1.5),
-              color: flipBackdrop(widget.cardColor),
+              color: widget.backdropColor,
             ),
           ],
         );
