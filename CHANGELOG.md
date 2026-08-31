@@ -7,6 +7,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ### Added
 - **Dpad and keyboard navigation** (#377): a TV remote, a dpad or a keyboard's arrow keys can now drive the kiosk, which used to ignore them entirely. Left opens the menu, the arrows walk its entries and the settings pages with the focused row lit, center or Enter taps the focused row and back closes what is open. Walking up a page scrolls its title back into view, the arrows leave the search box instead of being taken by its cursor and any key dismisses a showing screensaver and counts as activity for the idle clock. Over the dashboard itself the arrows belong to the page, so it scrolls and keeps whatever keys it binds, and inside a text field they stay with the cursor. Kiosk mode holds the same doors it holds against the edge swipe: opening while locked earns at most the restricted quick menu and Lockdown Mode swallows every key.
 
+### Fixed
+- The **Xavier Larrea** and **Buy me a coffee** links closing every settings page now open in the link overlay above the dashboard, like a link tapped on the dashboard does. They loaded straight into the kiosk view, which replaced the dashboard page and took the Voice Satellite session down with it until the next reload.
+
 ## v2026.8.105 - 2026-08-30
 
 ### Added

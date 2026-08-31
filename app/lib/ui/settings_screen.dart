@@ -5935,7 +5935,9 @@ class _RotationCardState extends State<_RotationCard> {
 
 /// The maker's mark, closing every settings page: centered, quiet, with
 /// the name linking to GitHub and the coffee cup to the tip jar. Links
-/// open in the kiosk view, the only browser this device has.
+/// open in the link overlay above the dashboard, like a dashboard link
+/// does — loading them into the kiosk view itself replaced the dashboard
+/// page and took the Voice Satellite session down with it.
 class _MadeByFooter extends StatelessWidget {
   const _MadeByFooter({required this.container});
 
@@ -5943,7 +5945,7 @@ class _MadeByFooter extends StatelessWidget {
 
   void _open(BuildContext context, String url) {
     Navigator.of(context).popUntil((route) => route.isFirst);
-    container.commands.execute('loadUrl', {'url': url});
+    container.browser.showLinkOverlay(url);
   }
 
   @override
