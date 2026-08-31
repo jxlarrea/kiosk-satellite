@@ -2,6 +2,14 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- **Scale UI** slider on the Device settings page, in a new **User Interface** group and mirrored in the remote admin: sizes the app's own screens, the menu, settings, dialogs and overlays, from 50 to 150 percent, for high density displays where the chrome reads tiny next to a correctly sized dashboard. Web content, the dashboard, external pages and camera views, keeps its exact size and never reflows, and the slider applies live from either surface.
+
+### Changed
+- **App theme** moved from the Device page's top rows into the new **User Interface** group, next to the Scale UI slider, on the device and in the remote admin alike.
+
 ## v2026.8.107 - 2026-08-31
 
 ### Changed

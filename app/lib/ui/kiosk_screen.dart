@@ -33,6 +33,7 @@ import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/gestures/gesture_mappings.dart';
 import '../managers/settings/definitions.dart' as defs;
 import 'app_launcher_overlay.dart';
+import 'ui_scale.dart' show UiScaleExempt;
 import 'lockdown_shield.dart';
 import 'notification_overlay.dart';
 import 'offline_notice.dart';
@@ -1255,7 +1256,9 @@ class _KioskScreenState extends State<KioskScreen>
       children: [
         // Held back until the Activity attach (the scaffold's black shows,
         // exactly what the splash was showing); see _waitForActivityAttach.
-        if (_activityAttached) _webView(),
+        // Exempt from the Scale UI factor: the dashboard has its own zoom
+        // setting, and scaling the platform view would reflow and blur it.
+        if (_activityAttached) UiScaleExempt(child: _webView()),
         // Directly over the dashboard: it hides Chromium's error page, and
         // everything below in this list (an overlay page, the player) is
         // content that belongs on top of the dashboard, error or not.
@@ -1957,19 +1960,23 @@ class _OverlayHostState extends State<_OverlayHost>
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    _OverlayWebView(
-                      url: kept,
-                      key: ValueKey(kept),
-                      paused: url == null,
-                      container: c,
-                      onRenderGone: () {
-                        c.browser.log.warn(
-                          'browser',
-                          'overlay renderer gone — dropping the overlay',
-                        );
-                        c.browser.dismissOverlay();
-                        setState(() => _lastUrl = null);
-                      },
+                    // Exempt from the Scale UI factor like every WebView:
+                    // an external page renders at its own scale.
+                    UiScaleExempt(
+                      child: _OverlayWebView(
+                        url: kept,
+                        key: ValueKey(kept),
+                        paused: url == null,
+                        container: c,
+                        onRenderGone: () {
+                          c.browser.log.warn(
+                            'browser',
+                            'overlay renderer gone — dropping the overlay',
+                          );
+                          c.browser.dismissOverlay();
+                          setState(() => _lastUrl = null);
+                        },
+                      ),
                     ),
                     // A link-opened overlay has no rotation pass to move it
                     // along (issue #86): the floating close is the visible

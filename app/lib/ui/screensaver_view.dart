@@ -43,6 +43,7 @@ import 'camera_view_overlay.dart' show ClosingCameraPlayer;
 import 'clock_faces.dart';
 import 'glance_row.dart';
 import 'sendspin_player_overlay.dart' show SendspinFullscreenView;
+import 'ui_scale.dart' show UiScaleExempt;
 import 'video_surface.dart';
 
 /// Fill the screen, the one rule every photo mode follows.
@@ -164,9 +165,10 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                     container: container,
                     child: ClockScreensaver(container: container),
                   ),
-                  'media' || 'website' => ScreensaverWebView(
-                    container: container,
-                    mode: view,
+                  // Exempt from the Scale UI factor like every WebView: the
+                  // page renders at its own scale.
+                  'media' || 'website' => UiScaleExempt(
+                    child: ScreensaverWebView(container: container, mode: view),
                   ),
                   'local' || 'gallery' => _Dismissable(
                     container: container,

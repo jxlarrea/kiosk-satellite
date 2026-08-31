@@ -420,6 +420,35 @@ void main() {
       );
     });
 
+    testWidgets('the User Interface group carries the Scale UI slider', (
+      tester,
+    ) async {
+      await boot();
+      tester.view.physicalSize = const Size(500, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(home: SettingsScreen(container: container)),
+      );
+      await settle(tester);
+      await tester.tap(find.text('Device').first);
+      await settle(tester);
+
+      expect(
+        find.widgetWithText(SectionHeading, 'User Interface'),
+        findsOneWidget,
+      );
+      expect(find.text('Scale UI'), findsOneWidget);
+      // Above the hand-built cards that close the page.
+      final ui = tester.getTopLeft(
+        find.widgetWithText(SectionHeading, 'User Interface'),
+      );
+      final config = tester.getTopLeft(
+        find.widgetWithText(SectionHeading, 'Configuration'),
+      );
+      expect(ui.dy, lessThan(config.dy));
+    });
+
     testWidgets('the Remote Administration page carries the Access card', (
       tester,
     ) async {

@@ -10,6 +10,7 @@ import '../app_container.dart';
 import '../managers/camera/camera_manager.dart';
 import '../managers/camera/models.dart';
 import '../managers/settings/definitions.dart' as defs;
+import 'ui_scale.dart' show UiScaleExempt;
 
 class CameraViewOverlay extends StatelessWidget {
   const CameraViewOverlay({super.key, required this.container});
@@ -429,7 +430,10 @@ class _CameraPlayerState extends State<CameraPlayer> {
     child: Stack(
       fit: StackFit.expand,
       children: [
-        _buildWebView(),
+        // Exempt from the Scale UI factor like every WebView: the camera
+        // grid renders at its own scale, and a scaled platform view would
+        // resample the streams.
+        UiScaleExempt(child: _buildWebView()),
         // Android composites a fresh WebView surface before the page's
         // first frame exists, and what it composites is white — a visible
         // flash as the view slides up. Cover the WebView in black until

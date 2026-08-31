@@ -13,6 +13,7 @@ import 'core/locale_dates.dart';
 import 'managers/settings/definitions.dart' as defs;
 import 'ui/key_nav.dart';
 import 'ui/kiosk_screen.dart';
+import 'ui/ui_scale.dart';
 import 'ui/setup_screen.dart';
 import 'ui/theme.dart';
 
@@ -139,10 +140,13 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // The theme setting applies live, including when flipped from the remote
-    // admin — the whole point of changing it from another room is seeing it.
+    // The theme and Scale UI settings apply live, including when flipped from
+    // the remote admin — the whole point of changing them from another room
+    // is seeing it.
     _sub = widget.container.bus.on<SettingChanged>().listen(
-      (e) => e.key == defs.uiTheme.key ? setState(() {}) : null,
+      (e) => e.key == defs.uiTheme.key || e.key == defs.uiScale.key
+          ? setState(() {})
+          : null,
     );
     // A wake-driven resume must never cycle the socket: record the wake and
     // drop any pending nudge the resume it caused had scheduled.
@@ -233,9 +237,15 @@ class _KioskSatelliteAppState extends State<KioskSatelliteApp>
       // Above the Navigator, so every route — settings, its subpages, the
       // pickers — walks dpad/arrow focus under the same policy (issue
       // #377): reading order, and the page header scrolled back into view
-      // when focus reaches a page's first row.
-      builder: (context, child) =>
-          FocusTraversalGroup(policy: KsTraversalPolicy(), child: child!),
+      // when focus reaches a page's first row. The Scale UI factor sits at
+      // the same altitude for the same reason: every route, dialog and
+      // overlay scales, with the WebViews opting back out (UiScaleExempt).
+      builder: (context, child) => UiScaler(
+        scale: (container.settings.get(defs.uiScale).toDouble() / 100)
+            .clamp(0.5, 1.5)
+            .toDouble(),
+        child: FocusTraversalGroup(policy: KsTraversalPolicy(), child: child!),
+      ),
       navigatorObservers: [kioskRouteObserver],
       home: configured
           ? KioskScreen(container: container)

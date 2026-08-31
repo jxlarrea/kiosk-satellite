@@ -5148,6 +5148,7 @@ const uiTheme = SettingDef<String>(
       "Light or dark for the app's own screens: menu, settings, "
       'dialogs. System follows the Android setting.',
   category: 'Device',
+  section: 'User Interface',
   options: ['dark', 'light', 'system'],
   optionLabels: {'dark': 'Dark', 'light': 'Light', 'system': 'System'},
 );
@@ -5190,6 +5191,26 @@ const legacyWebView = SettingDef<bool>(
       'appears. Turns itself on where the device needs it; takes effect on '
       'the next app start.',
   category: 'Device',
+);
+
+// Applied by UiScaler above the Navigator, so every route and overlay
+// scales; the WebViews opt back out (UiScaleExempt), since web pages have
+// their own zoom settings and are the reason a high density device needs
+// this at all: the dashboard is sized right while the chrome reads tiny.
+const uiScale = SettingDef<num>(
+  key: 'ui.scale',
+  type: SettingType.number,
+  defaultValue: 100,
+  title: 'Scale UI',
+  description:
+      "Size of the app's own screens: menu, settings, dialogs. "
+      'For high density displays. Web content keeps its size.',
+  category: 'Device',
+  section: 'User Interface',
+  min: 50,
+  max: 150,
+  step: 5,
+  unit: '%',
 );
 
 /// All settings, in display order.
@@ -5503,9 +5524,11 @@ const List<SettingDef<Object>> allSettings = [
   esphomeRealMac,
   esphomeMacOverride,
   deviceName,
-  uiTheme,
   disableImpeller,
   legacyWebView,
+  // The User Interface group: consecutive, or the heading would repeat.
+  uiTheme,
+  uiScale,
   // The two pages, service first, close the Device page.
   serviceCpuAwake,
   remoteEnabled,
