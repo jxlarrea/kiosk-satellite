@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/kiosk/kiosk_manager.dart';
 import 'package:kiosk_satellite/managers/launcher/home_launcher_manager.dart';
@@ -239,6 +240,26 @@ void main() {
       expect(res.ok, isTrue);
       expect(settings.get(defs.homeLauncherEnabled), isFalse);
       expect(methods(backgroundCalls), contains('homeRoleRelease'));
+    });
+  });
+
+  group('roleHeld cache (the PopScope veto)', () {
+    test('seeded from the boot status read', () async {
+      nativeStatus = status(held: true, aliasEnabled: true);
+      await build({'ks.home.enabled': true});
+      expect(home.roleHeld.value, isTrue);
+    });
+
+    test('follows HomeRoleChanged and drops on release', () async {
+      nativeStatus = status();
+      await build({});
+      expect(home.roleHeld.value, isFalse);
+      bus.publish(const HomeRoleChanged(held: true));
+      await settle();
+      expect(home.roleHeld.value, isTrue);
+      await commands.execute('releaseHomeRole', const {});
+      await settle();
+      expect(home.roleHeld.value, isFalse);
     });
   });
 

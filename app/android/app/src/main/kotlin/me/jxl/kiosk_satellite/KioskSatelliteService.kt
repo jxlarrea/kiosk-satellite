@@ -406,7 +406,11 @@ class KioskSatelliteService : Service() {
             getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE)
         val guarded =
             prefs.getBoolean("flutter.ks.lockdown.enabled", false) ||
-                prefs.getBoolean("flutter.ks.kiosk.enabled", false)
+                prefs.getBoolean("flutter.ks.kiosk.enabled", false) ||
+                // The device's home app must come back however its task
+                // died: a Meta Portal's bar can finish it through paths
+                // the back swallow never sees (issue #219).
+                HomeRole.isHeld(this)
         if (!exiting && guarded &&
             android.provider.Settings.canDrawOverlays(this)
         ) {

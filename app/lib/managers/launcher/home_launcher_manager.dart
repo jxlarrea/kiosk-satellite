@@ -42,6 +42,13 @@ class HomeLauncherManager extends Manager {
   /// settings row can explain itself after the native marker is cleared.
   static const _fuseReasonKey = 'home.fuse_reason';
 
+  /// Whether the kiosk is the device's home app right now, cached for the
+  /// synchronous readers: the kiosk screen's PopScope must refuse the
+  /// system pop while the role is held (a home app never finishes on
+  /// back), and predictive back asks before any channel round trip could
+  /// answer. Updated from every native status read and role relay.
+  final roleHeld = ValueNotifier<bool>(false);
+
   StreamSubscription<SettingChanged>? _settingSub;
   StreamSubscription<HomeRoleChanged>? _roleSub;
 
@@ -146,6 +153,7 @@ class HomeLauncherManager extends Manager {
     });
 
     _roleSub = bus.on<HomeRoleChanged>().listen((e) {
+      roleHeld.value = e.held;
       log.info(
         name,
         e.held
@@ -216,6 +224,7 @@ class HomeLauncherManager extends Manager {
 
   Future<Map<String, Object?>> _status() async {
     final raw = await _invoke<Map<Object?, Object?>>('homeRoleStatus');
+    if (raw != null) roleHeld.value = raw['held'] == true;
     return {
       'enabled': _settings.get(defs.homeLauncherEnabled),
       'storedFuseReason': storedFuseReason,
@@ -228,7 +237,9 @@ class HomeLauncherManager extends Manager {
   /// was set in motion (the role itself may still need a tap on device).
   Future<bool> _acquire({required bool deviceOwner}) async {
     if (deviceOwner) {
-      return await _invoke<bool>('homeRoleAcquireSilent') ?? false;
+      final ok = await _invoke<bool>('homeRoleAcquireSilent') ?? false;
+      if (ok) roleHeld.value = true;
+      return ok;
     }
     // The dialog needs a foreground Activity; the kiosk_lock channel only
     // has a native handler while one is attached, so a headless flip
@@ -253,6 +264,7 @@ class HomeLauncherManager extends Manager {
     await _invoke<bool>('homeRoleRelease', {
       'previous': previous.isEmpty ? null : previous,
     });
+    roleHeld.value = false;
     log.info(name, 'home role released');
   }
 

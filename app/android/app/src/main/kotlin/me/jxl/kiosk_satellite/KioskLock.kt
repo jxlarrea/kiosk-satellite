@@ -274,12 +274,21 @@ class KioskLock(private val activity: Activity, messenger: BinaryMessenger) {
             // Back would background the whole kiosk. Swallowed here; Dart
             // decides what it means instead (close the menu, step the page's
             // history) — never leaving the app.
-            KeyEvent.KEYCODE_BACK -> if (blockBack) {
-                if (event.action == KeyEvent.ACTION_UP) {
-                    main.post { channel.invokeMethod("backPressed", null) }
+            //
+            // Held home role, kiosk mode or not: a home app must never
+            // finish on back, the way every launcher ignores it. On a Meta
+            // Portal the top bar's back finished the home Activity and the
+            // screen fell through to Meta's still-running launcher task
+            // below, which read as the kiosk crashing (issue #219). Android
+            // 12+ moves a task root to back instead of finishing it, so
+            // this also keeps back from hiding the kiosk there.
+            KeyEvent.KEYCODE_BACK ->
+                if (blockBack || HomeRole.isHeld(activity)) {
+                    if (event.action == KeyEvent.ACTION_UP) {
+                        main.post { channel.invokeMethod("backPressed", null) }
+                    }
+                    return true
                 }
-                return true
-            }
         }
         return false
     }

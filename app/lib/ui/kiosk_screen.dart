@@ -547,6 +547,7 @@ class _KioskScreenState extends State<KioskScreen>
     // canPop below depends on the overlay's presence.
     c.browser.overlayUrl.addListener(_onOverlayChanged);
     c.launcher.visible.addListener(_onOverlayChanged);
+    c.homeLauncher.roleHeld.addListener(_onOverlayChanged);
 
     // Download feedback lives in-app: the kiosk hides the status bar, so the
     // DownloadManager notification is invisible and without this a download
@@ -1218,6 +1219,7 @@ class _KioskScreenState extends State<KioskScreen>
     _saverSub?.cancel();
     c.browser.overlayUrl.removeListener(_onOverlayChanged);
     c.launcher.visible.removeListener(_onOverlayChanged);
+    c.homeLauncher.roleHeld.removeListener(_onOverlayChanged);
     super.dispose();
   }
 
@@ -1306,10 +1308,17 @@ class _KioskScreenState extends State<KioskScreen>
               // still deliver Back as a KeyEvent are caught in KioskLock
               // before it ever reaches here, and land in the same handling
               // via KioskBackPressed.
+              //
+              // The home role vetoes the pop the same way (issue #219): a
+              // home app never finishes on back, and letting the pop
+              // through either fell to the task below (a Meta Portal's
+              // still-running launcher) or had the system tear down and
+              // relaunch the home Activity on every press.
               canPop:
                   !open &&
                   !c.kiosk.locked &&
                   !c.kiosk.lockdownActive &&
+                  !c.homeLauncher.roleHeld.value &&
                   c.browser.overlayUrl.value == null &&
                   !c.launcher.visible.value &&
                   c.camera.activeViewId.value == null,
