@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.8.108 - 2026-08-31
 
 ### Added
 - A **Font** setting on the Clock screensaver page, on the device and in the remote admin alike (#391): the typeface for all three clock faces, either Rubik (the default and the app's own face), Nunito (a rounded face in the style of Apple's StandBy clock), one of the device's own font families (System, Serif, Condensed, Monospace, Casual or Cursive, resolved through Android's font manager) or LCD, a segmented display font in the style of an LED alarm clock that covers the date and AM/PM as well as the digits. Applies live to a clock already on screen.
