@@ -32,9 +32,16 @@ void main() {
   var ips = <String, Object?>{};
   var dashboardsUnreachable = false;
   var catalogChanges = 0;
+  var updateStatus = <String, Object?>{};
 
   setUp(() async {
     cameraPresent = true;
+    updateStatus = {
+      'currentVersion': '2026.8.52',
+      'availableVersion': '2026.8.53',
+      'availableNotes': 'Notes',
+      'releaseUrl': 'https://example/r',
+    };
     battery = 73;
     dashboardsUnreachable = false;
     catalogChanges = 0;
@@ -190,12 +197,13 @@ void main() {
     stub('isScreenOn', true);
     stub('getBrightness', 0.4);
     stub('getVolume', 55);
-    stub('getUpdateStatus', {
-      'currentVersion': '2026.8.52',
-      'availableVersion': '2026.8.53',
-      'availableNotes': 'Notes',
-      'releaseUrl': 'https://example/r',
-    });
+    commands.register(
+      Command(
+        name: 'getUpdateStatus',
+        description: 'stub',
+        handler: (_) async => CommandResult.ok(updateStatus),
+      ),
+    );
     stub('getNextAlarm', {'at': '2026-08-19T07:00:00+00:00'});
     stub('getDeviceInfo', {
       'model': 'samsung SM-X700',
@@ -668,6 +676,20 @@ void main() {
     expect(executed[3].$2['viewId'], 'v1');
     expect(executed[4].$2['viewId'], 'v1');
     expect(executed[6].$2['path'], 'lovelace/cameras');
+  });
+
+  test('a mid-download update state carries a 0-100 percentage', () async {
+    await surface.build();
+    await attach();
+    pushed.clear();
+    // The manager reports a 0..1 fraction; the wire wants percent.
+    updateStatus['progress'] = 0.42;
+    bus.publish(const UpdateStateChanged());
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    final state =
+        pushed.lastWhere((p) => p.$1 == 'update').$2 as Map<String, Object?>;
+    expect(state['inProgress'], true);
+    expect(state['progress'], closeTo(42, 1e-9));
   });
 
   test('setting-backed entities write settings and echo real state', () async {

@@ -1522,7 +1522,10 @@ class EspEntitySurface {
       'title': 'Kiosk Satellite',
       'summary': notes.length > 250 ? notes.substring(0, 250) : notes,
       'url': data['releaseUrl'] is String ? data['releaseUrl'] : '',
-      if (progress != null) 'progress': progress.toDouble(),
+      // UpdateStateResponse's progress field is a 0-100 percentage; the
+      // manager's notifier is a 0..1 fraction.
+      if (progress != null)
+        'progress': progress.toDouble().clamp(0.0, 1.0) * 100,
       'inProgress': progress != null,
     });
   }
