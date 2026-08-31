@@ -214,6 +214,12 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
         visible.value = false;
         return;
       }
+      // A changed whitelist warms its icons right away, so the next open
+      // never waits on them.
+      if (e.key == defs.launcherApps.key) {
+        warmIcons();
+        return;
+      }
       if (e.key != defs.launcherAutoReturn.key || e.value != true) return;
       try {
         final can =
@@ -234,6 +240,10 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
 
     if (Platform.isAndroid) WidgetsBinding.instance.addObserver(this);
     BackgroundListening.onTouchSeen = touchSeen;
+
+    // The whitelist is small and icons are immutable: warm them at boot
+    // so the launcher's very first open paints complete.
+    if (_settings.get(defs.launcherEnabled)) warmIcons();
   }
 
   @override
@@ -320,15 +330,33 @@ class AppLauncherManager extends Manager with WidgetsBindingObserver {
     }
   }
 
+  /// The cached icon without a channel round trip, for the overlay's
+  /// synchronous first frame; [hasIcon] tells a missing app's cached null
+  /// from a fetch that has not happened yet.
+  Uint8List? cachedIcon(String package) => _icons[package];
+  bool hasIcon(String package) => _icons.containsKey(package);
+
+  /// Fetch every whitelisted icon into the cache ahead of need, so the
+  /// launcher's first open paints its tiles in one frame instead of
+  /// flashing placeholders while each icon loads.
+  void warmIcons() {
+    for (final app in apps) {
+      if (!_icons.containsKey(app.package)) unawaited(icon(app.package));
+    }
+  }
+
   /// The launcher icon for [package] as PNG bytes, memoized. Null when the
   /// app is gone or the platform cannot render one.
   Future<Uint8List?> icon(String package) async {
     if (_icons.containsKey(package)) return _icons[package];
     Uint8List? bytes;
     try {
-      bytes = await _channel.invokeMethod<Uint8List>('appIcon', {
+      // Typed by hand rather than through invokeMethod's cast: an answer
+      // of the wrong shape means no icon, never a throw out of a warm-up.
+      final raw = await _channel.invokeMethod<Object?>('appIcon', {
         'package': package,
       });
+      bytes = raw is Uint8List ? raw : null;
     } on MissingPluginException {
       bytes = null;
     } on PlatformException catch (e) {

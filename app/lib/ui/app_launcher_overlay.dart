@@ -65,8 +65,13 @@ class _LauncherScreen extends StatelessWidget {
       // tiles swallow their own taps.
       behavior: HitTestBehavior.opaque,
       onTap: _close,
-      child: ColoredBox(
-        color: theme.colorScheme.surface,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: _groundGradient(
+            theme.colorScheme.surface,
+            theme.brightness,
+          ),
+        ),
         child: SafeArea(
           child: Stack(
             children: [
@@ -153,62 +158,33 @@ class _AppTileState extends State<_AppTile> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final launcher = widget.container.launcher;
+    final package = widget.app.package;
+    // The synchronous path: with the icon warmed by the manager and its
+    // color already extracted, the tile paints its final face on the very
+    // first frame. The async path exists only for the first-ever open on
+    // a cold cache, and it holds a neutral surface rather than flashing a
+    // wrong color and correcting itself.
+    final iconReady = launcher.hasIcon(package);
+    final bytes = iconReady ? launcher.cachedIcon(package) : null;
+    final colorReady =
+        iconReady && (bytes == null || _dominantCache.containsKey(package));
+    Widget tile;
+    if (colorReady) {
+      tile = _body(theme, loading: false, bytes: bytes);
+    } else {
+      tile = FutureBuilder<(Uint8List?, Color?)>(
+        future: _tileData(widget.container, package),
+        builder: (context, snapshot) =>
+            _body(theme, loading: !snapshot.hasData, bytes: snapshot.data?.$1),
+      );
+    }
     return SizedBox(
       width: _AppTile.side,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FutureBuilder<(Uint8List?, Color?)>(
-            future: _tileData(widget.container, widget.app.package),
-            builder: (context, snapshot) {
-              final (bytes, tint) = snapshot.data ?? (null, null);
-              final gradient = _tileGradient(
-                // Icon-less apps keep the brand's sage so the tile still
-                // reads as a surface, not a hole.
-                tint ?? scheme.primary,
-                theme.brightness,
-              );
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                width: _AppTile.side,
-                height: _AppTile.side,
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(Ks.radiusCard),
-                  // The dpad's whereabouts: a firm ring, readable over any
-                  // gradient the icons produce.
-                  border: Border.all(
-                    color: _focused ? scheme.onSurface : Colors.transparent,
-                    width: 3,
-                  ),
-                ),
-                child: Material(
-                  type: MaterialType.transparency,
-                  borderRadius: BorderRadius.circular(Ks.radiusCard),
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: widget.onTap,
-                    autofocus: widget.autofocus,
-                    onFocusChange: (f) => setState(() => _focused = f),
-                    child: Center(
-                      child: bytes == null
-                          ? Icon(
-                              Icons.apps_outlined,
-                              size: _AppTile.iconSize,
-                              color: Colors.white.withValues(alpha: 0.9),
-                            )
-                          : Image.memory(
-                              bytes,
-                              width: _AppTile.iconSize,
-                              height: _AppTile.iconSize,
-                            ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+          tile,
           const SizedBox(height: 12),
           Text(
             widget.app.label,
@@ -218,6 +194,62 @@ class _AppTileState extends State<_AppTile> {
             style: theme.textTheme.bodyLarge,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _body(ThemeData theme, {required bool loading, Uint8List? bytes}) {
+    final scheme = theme.colorScheme;
+    final tint = bytes == null ? null : _dominantCache[widget.app.package];
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      width: _AppTile.side,
+      height: _AppTile.side,
+      decoration: BoxDecoration(
+        // Loading holds a quiet neutral; the gradient arrives with the
+        // icon in the same build, one soft cut instead of a color flash.
+        gradient: loading
+            ? null
+            : _tileGradient(
+                // Icon-less apps keep the brand's sage so the tile still
+                // reads as a surface, not a hole.
+                tint ?? scheme.primary,
+                theme.brightness,
+              ),
+        color: loading ? scheme.surfaceContainerHighest : null,
+        borderRadius: BorderRadius.circular(Ks.radiusCard),
+        // The dpad's whereabouts: a firm ring, readable over any
+        // gradient the icons produce.
+        border: Border.all(
+          color: _focused ? scheme.onSurface : Colors.transparent,
+          width: 3,
+        ),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: BorderRadius.circular(Ks.radiusCard),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: widget.onTap,
+          autofocus: widget.autofocus,
+          onFocusChange: (f) => setState(() => _focused = f),
+          child: Center(
+            child: loading
+                ? const SizedBox.shrink()
+                : bytes == null
+                ? Icon(
+                    Icons.apps_outlined,
+                    size: _AppTile.iconSize,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  )
+                : Image.memory(
+                    bytes,
+                    width: _AppTile.iconSize,
+                    height: _AppTile.iconSize,
+                    gaplessPlayback: true,
+                  ),
+          ),
+        ),
       ),
     );
   }
@@ -320,9 +352,11 @@ Future<Color?> _dominantColor(String package, Uint8List bytes) async {
 }
 
 /// The Portal look: one soft diagonal wash of the app's own color, deep
-/// on the dark theme, pastel on the light one. Saturation is floored so
-/// near-gray icons still produce a visible surface, and capped so neon
-/// glyphs do not glow.
+/// on the dark theme and only a shade lifted on the light one — a rich
+/// surface either way, never a pastel (which also let dark edges baked
+/// into some icons show through). Saturation is floored so near-gray
+/// icons still produce a visible surface, and capped so neon glyphs do
+/// not glow.
 LinearGradient _tileGradient(Color tint, Brightness brightness) {
   final hsl = HSLColor.fromColor(tint);
   final sat = hsl.saturation.clamp(0.22, 0.68);
@@ -334,6 +368,22 @@ LinearGradient _tileGradient(Color tint, Brightness brightness) {
     end: Alignment.bottomRight,
     colors: dark
         ? [tone(0.42).toColor(), tone(0.24).toColor()]
-        : [tone(0.80).toColor(), tone(0.60).toColor()],
+        : [tone(0.56).toColor(), tone(0.38).toColor()],
+  );
+}
+
+/// The wall's ground: the theme surface as a quiet vertical gradient, a
+/// touch of depth instead of a flat sheet, in both themes.
+LinearGradient _groundGradient(Color surface, Brightness brightness) {
+  final hsl = HSLColor.fromColor(surface);
+  final dark = brightness == Brightness.dark;
+  HSLColor tone(double delta) =>
+      hsl.withLightness((hsl.lightness + delta).clamp(0.0, 1.0));
+  return LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: dark
+        ? [tone(0.05).toColor(), tone(-0.02).toColor()]
+        : [tone(0.03).toColor(), tone(-0.06).toColor()],
   );
 }
