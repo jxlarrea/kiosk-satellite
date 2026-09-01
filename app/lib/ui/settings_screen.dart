@@ -4156,8 +4156,11 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                       ),
                       colorRow(),
                       // The temperature always shows; each other line also
-                      // needs the entity to carry the reading.
+                      // needs the entity to carry the reading. Feels like
+                      // rides the temperature line, so it sits where the
+                      // temperature does, between Location and Forecast.
                       toggle('Location', 'location'),
+                      toggle('Feels like', 'feels_like'),
                       toggle('Forecast', 'forecast'),
                       toggle('Humidity', 'humidity'),
                       toggle('Wind speed', 'wind'),

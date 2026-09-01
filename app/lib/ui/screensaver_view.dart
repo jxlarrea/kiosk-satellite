@@ -1510,9 +1510,11 @@ GlanceEntity entityWidgetEntity(Map<String, Object?> config) {
 }
 
 /// The weather widget: one Home Assistant weather entity in a corner —
-/// the location name, a big temperature, the forecast with its icon, and
-/// optional humidity, wind and visibility lines, each shown only when its
-/// toggle is on AND the entity actually carries the reading. Fed by its
+/// the location name, a big temperature (with the apparent temperature
+/// after it when the Feels like toggle is on), the forecast with its
+/// icon, and optional humidity, wind and visibility lines, each shown
+/// only when its toggle is on AND the entity actually carries the
+/// reading. Fed by its
 /// own subscribe_entities socket while the screensaver shows (the At a
 /// Glance pattern), so the readings stay live without polling.
 class WeatherWidgetOverlay extends StatefulWidget {
@@ -1675,6 +1677,9 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     return value is num ? value : null;
   }
 
+  String _degrees(num value) =>
+      '${value.round()}${_attributes['temperature_unit'] ?? '°'}';
+
   @override
   Widget build(BuildContext context) {
     // Nothing sensible to draw before the first snapshot, or while the
@@ -1736,6 +1741,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
     }
 
     final temperature = _num('temperature');
+    final feelsLike = _num('apparent_temperature');
     final humidity = _num('humidity');
     final wind = _num('wind_speed');
     final visibility = _num('visibility');
@@ -1779,7 +1785,16 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
         ),
       if (temperature != null)
         Text(
-          '${temperature.round()}${_attributes['temperature_unit'] ?? '°'}',
+          // The apparent temperature rides the temperature line rather
+          // than taking a detail row of its own: "30°C / 33°C" reads as
+          // one fact, the real reading and what it feels like. When both
+          // round to the same number the pair would say nothing, so the
+          // single reading shows.
+          _on('feels_like') &&
+                  feelsLike != null &&
+                  feelsLike.round() != temperature.round()
+              ? '${_degrees(temperature)} / ${_degrees(feelsLike)}'
+              : _degrees(temperature),
           // Proportional figures, not tabular: the block hugs its corner,
           // so a leading 1's tabular side-bearing would only read as the
           // number sitting off the lines around it.
