@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 /// shared brand palette (the remote admin UI's CSS carries the same values —
 /// see assets/remote-ui/static/app.css):
 ///
-///   sage green  #749C6F  primary / success
+///   teal        #5DA3A6  primary (the mark's keyline)
 ///   teal        #558387  secondary accent
+///   sage green  #749C6F  success
 ///   ochre       #CE9C3E  warning / tertiary
 ///   rust        #C7642A  error / danger
 ///   light bg    #F5F4F2  warm paper
@@ -14,7 +15,13 @@ import 'package:flutter/material.dart';
 /// The exact palette values are used on the dark background, where they have
 /// comfortable contrast. On the light background each accent is darkened just
 /// enough to stay legible as text — same hue, deeper tone.
-const _sage = Color(0xFF749C6F);
+const _teal = Color(0xFF5DA3A6);
+
+/// The brand sage: no longer the primary, but still the green of the settings
+/// rail's accent cycle and of success states (the remote admin's --ok).
+/// Exact value on dark, darkened a step for light surfaces.
+const ksSage = Color(0xFF749C6F);
+const ksSageOnLight = Color(0xFF56814F);
 const _lightBg = Color(0xFFF5F4F2);
 const _darkBg = Color(0xFF202124);
 
@@ -53,13 +60,13 @@ abstract final class Ks {
 
 ColorScheme _lightScheme() =>
     ColorScheme.fromSeed(
-      seedColor: _sage,
+      seedColor: _teal,
       brightness: Brightness.light,
     ).copyWith(
-      primary: const Color(0xFF56814F), // sage, darkened for light surfaces
+      primary: const Color(0xFF488284), // teal, darkened for light surfaces
       onPrimary: Colors.white,
-      primaryContainer: const Color(0xFFDCE7D8),
-      onPrimaryContainer: const Color(0xFF243B20),
+      primaryContainer: const Color(0xFFD4E3E4),
+      onPrimaryContainer: const Color(0xFF1B3437),
       secondary: const Color(0xFF44686C), // teal, darkened
       onSecondary: Colors.white,
       secondaryContainer: const Color(0xFFD4E3E4),
@@ -86,13 +93,16 @@ ColorScheme _lightScheme() =>
 
 ColorScheme _darkScheme() =>
     ColorScheme.fromSeed(
-      seedColor: _sage,
+      seedColor: _teal,
       brightness: Brightness.dark,
     ).copyWith(
-      primary: _sage, // exact brand values carry the dark theme
-      onPrimary: Colors.white,
-      primaryContainer: const Color(0xFF3A4A37),
-      onPrimaryContainer: const Color(0xFFD9E6D5),
+      primary: _teal, // exact brand values carry the dark theme
+      // Dark ink, not white: the keyline teal is too light to carry white
+      // text, and it is how the palette already inks teal fills in the dark
+      // (onSecondary).
+      onPrimary: const Color(0xFF102A2C),
+      primaryContainer: const Color(0xFF2F4649),
+      onPrimaryContainer: const Color(0xFFD0E3E5),
       secondary: const Color(0xFF6C9B9F), // teal, lifted a step for text
       onSecondary: const Color(0xFF102A2C),
       secondaryContainer: const Color(0xFF2F4649),

@@ -246,8 +246,13 @@ class _CategoryIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // The cycle's green is the brand sage, pinned rather than riding the
+    // primary: with the primary teal it would double the secondary and the
+    // green would leave the rail.
     final accents = [
-      scheme.primary, // sage
+      Theme.of(context).brightness == Brightness.dark
+          ? ksSage
+          : ksSageOnLight, // sage
       scheme.secondary, // teal
       scheme.tertiary, // ochre
       scheme.error, // rust

@@ -1,22 +1,22 @@
   /* Kiosk Satellite brand palette, shared with the app's own theme (see
-     lib/ui/theme.dart): sage green primary, teal accent, ochre warning, rust
-     error. Exact values on the dark background; darkened a step for text on
-     the light one. --primary is the text/border accent, --primary-fill the
-     solid-fill tone, one and the same in dark. */
+     lib/ui/theme.dart): the mark's keyline teal as primary, sage green
+     success, ochre warning, rust error. Exact values on the dark background;
+     darkened a step for text on the light one. --primary is the text/border
+     accent, --primary-fill the solid-fill tone, one and the same in dark. */
   :root {
     color-scheme: light;
     --bg: #f5f4f2; --surface: #ffffff; --surface-2: #e8e6e1;
     --surface-high: #efede9;
     --border: #e3e0da; --divider: #e3e0da; --outline: #b4b1ab;
     --text: #212327; --muted: #5d6066;
-    --primary: #56814f; --primary-fill: #749c6f; --primary-ink: #ffffff;
-    --primary-soft: #e3eae1;
+    --primary: #488284; --primary-fill: #5da3a6; --primary-ink: #ffffff;
+    --primary-soft: #dfeaea;
     --accent: #44686c;
     --ok: #56814f; --warn: #9c742a; --error: #a9501f; --error-ink: #ffffff;
     --debug: #9a9da3;
     /* The tinted containers, the device's *Container scheme colors: the
        toast discs and the banners. */
-    --primary-container: #dce7d8; --on-primary-container: #243b20;
+    --primary-container: #d4e3e4; --on-primary-container: #1b3437;
     --secondary-container: #d4e3e4; --on-secondary-container: #1b3437;
     --tertiary-container: #f1e0bb; --on-tertiary-container: #3d2d06;
     --error-container: #f6dbcb; --on-error-container: #54250a;
@@ -29,12 +29,12 @@
     --surface-high: #303136;
     --border: #3c3e43; --divider: #3c3e43; --outline: #5f6368;
     --text: #e8eaed; --muted: #b6babf;
-    --primary: #749c6f; --primary-fill: #749c6f; --primary-ink: #ffffff;
-    --primary-soft: #333f31;
+    --primary: #5da3a6; --primary-fill: #5da3a6; --primary-ink: #102a2c;
+    --primary-soft: #2f4142;
     --accent: #7aa6aa;
     --ok: #749c6f; --warn: #ce9c3e; --error: #d97e4c; --error-ink: #2e1204;
     --debug: #7d8188;
-    --primary-container: #3a4a37; --on-primary-container: #d9e6d5;
+    --primary-container: #2f4649; --on-primary-container: #d0e3e5;
     --secondary-container: #2f4649; --on-secondary-container: #d0e3e5;
     --tertiary-container: #4a3a12; --on-tertiary-container: #efdfb5;
     --error-container: #5a2a0e; --on-error-container: #f4d7c5;
@@ -313,7 +313,9 @@
   .disc { flex: none; width: 38px; height: 38px; border-radius: 50%;
     display: grid; place-items: center; color: #fff; }
   .disc svg { width: 19px; height: 19px; }
-  .d1 { background: var(--primary); }
+  /* The cycle's green is the brand sage, not the primary: with the primary
+     teal it would double .d2 and the green would leave the rail. */
+  .d1 { background: var(--ok); }
   .d2 { background: var(--accent); }
   .d3 { background: var(--warn); }
   .d4 { background: var(--error); }
