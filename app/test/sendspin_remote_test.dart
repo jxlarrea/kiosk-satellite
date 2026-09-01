@@ -257,13 +257,21 @@ void main() {
       expect(emitted.last!['positionMs'], 42000);
     });
 
-    test('a fresh server position stamp becomes the extrapolation base', () {
-      final measuredAt = DateTime.now().millisecondsSinceEpoch / 1000.0 - 5;
+    test('the arrival time is the extrapolation base, not the stamp', () {
+      // The dict's elapsed time is live when serialized; its stamp marks
+      // the player's last report, which can be far back. Basing on the
+      // stamp counted that gap twice.
+      final measuredAt = DateTime.now().millisecondsSinceEpoch / 1000.0 - 20;
       remote.publishQueue(_queue(measuredAt: measuredAt));
-      expect(emitted.single!['receivedAt'], (measuredAt * 1000).round());
+      final receivedAt = emitted.single!['receivedAt'] as int;
+      expect(
+        (DateTime.now().millisecondsSinceEpoch - receivedAt).abs(),
+        lessThan(5000),
+      );
+      expect(emitted.single!.containsKey('positionAtMs'), isFalse);
     });
 
-    test('a wildly skewed stamp falls back to arrival time', () {
+    test('a wildly skewed stamp changes nothing either', () {
       remote.publishQueue(_queue(measuredAt: 1000.0));
       final receivedAt = emitted.single!['receivedAt'] as int;
       expect(

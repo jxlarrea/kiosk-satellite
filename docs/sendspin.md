@@ -190,9 +190,11 @@ the whole playback group exactly as the Large card's buttons do, and a
 progress bar with the elapsed and total time. Where the server allows
 seeking (Music Assistant does) the bar carries a thumb and dragging it
 jumps the track; elsewhere it is the card's progress line at full size.
-Music Assistant sends no fresh progress report after a seek, so the
-player carries the new position itself until the server's next report,
-which keeps the bar, the floating card and the lyrics on the audio. The
+Music Assistant sends no fresh progress report after a seek or a queue
+jump, so the player carries a seek's target itself and otherwise reads
+the server's own queue time every few seconds, re-basing the moment the
+two drift apart, which keeps the bar, the floating card and the lyrics
+on the audio. The
 buttons and the bar stay put between songs while the cover and the title
 cross-fade behind them.
 

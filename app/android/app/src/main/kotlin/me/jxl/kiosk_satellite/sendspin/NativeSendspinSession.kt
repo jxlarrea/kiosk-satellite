@@ -215,11 +215,20 @@ class NativeSendspinSession(
     fun sendCommand(command: String, arg: Long = 0L): Boolean {
         if (handle == 0L) return false
         val sent = NativeSendspin.nativeSendCommand(handle, command, arg)
-        if (sent && command == "seek") {
-            seekOffsetMs = arg - NativeSendspin.nativeGetTrackProgressMs(handle)
-            events.onPositionUpdate(arg)
-        }
+        if (sent && command == "seek") rebasePosition(arg)
         return sent
+    }
+
+    /**
+     * Take [positionMs] as the track's position from now on: a seek just
+     * sent, or the server's own queue time when the engine's metadata
+     * progress has gone stale (Music Assistant leaves it behind after a
+     * queue jump). Carried by every push until the next real report.
+     */
+    fun rebasePosition(positionMs: Long) {
+        if (handle == 0L) return
+        seekOffsetMs = positionMs - NativeSendspin.nativeGetTrackProgressMs(handle)
+        events.onPositionUpdate(positionMs)
     }
 
     /** The engine's progress with any seek displacement applied. */

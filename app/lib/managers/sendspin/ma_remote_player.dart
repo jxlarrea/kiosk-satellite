@@ -233,6 +233,10 @@ class MaRemotePlayer {
             ...snap,
             'positionMs': (elapsed * 1000).round(),
             'receivedAt': DateTime.now().millisecondsSinceEpoch,
+            // A time the server just measured, as opposed to a queue
+            // dict's stamp-extrapolated one: the only kind the local
+            // player's position re-base trusts.
+            'timeFresh': true,
           });
         }
       case 'player_updated' when objectId == playerId:
@@ -269,22 +273,21 @@ class MaRemotePlayer {
       _emit(null);
       return;
     }
-    // The server stamps the position it reports ('positionAtMs'); trust
-    // that stamp as the extrapolation base when the clocks roughly agree,
-    // since the elapsed time in a queue event can be seconds old by the
-    // time it arrives. Wildly apart means an unsynced clock somewhere:
-    // fall back to arrival time rather than freeze or run the bar wild.
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final measuredAt = (snap['positionAtMs'] as num?)?.toInt();
-    final receivedAt = measuredAt != null && (now - measuredAt).abs() < 60000
-        ? measuredAt
-        : now;
+    // The elapsed time in a queue dict is live at the moment the server
+    // serializes it, while its stamp ('positionAtMs') marks when the
+    // server last heard from the player, which for a Sendspin player can
+    // be half a minute back. Extrapolating from the stamp counted that
+    // gap twice and ran the bar twenty seconds ahead of the audio; the
+    // arrival time is the base.
     _emit({
       for (final e in snap.entries)
         if (e.key != 'state' && e.key != 'positionAtMs') e.key: e.value,
-      'receivedAt': receivedAt,
+      'receivedAt': DateTime.now().millisecondsSinceEpoch,
       'playing': playing,
       'supportedCommands': commands,
+      // A time the server just measured, in a queue dict or a time
+      // event alike: what the local player's position follows.
+      'timeFresh': true,
     });
   }
 

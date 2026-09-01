@@ -197,6 +197,11 @@ class SendspinBridge(
                     session?.setDuckFactor(duckFactor)
                     result.success(true)
                 }
+                "rebasePosition" -> {
+                    val ms = call.argument<Number>("positionMs")?.toLong()
+                    if (ms != null) session?.rebasePosition(ms)
+                    result.success(ms != null)
+                }
                 "control" -> {
                     val command = call.argument<String>("command") ?: ""
                     // Seek carries its position (ms); the rest take no value.

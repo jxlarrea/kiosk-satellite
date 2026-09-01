@@ -97,6 +97,20 @@ class SendspinManager extends Manager {
   String _watcherKey = '';
   String _watchSig = '';
 
+  /// When the local player last sent a seek, epoch ms: the re-base stands
+  /// down for a moment after it.
+  int _seekSentAt = 0;
+
+  /// When the position was last taken from the server's queue time, epoch
+  /// ms: for a while after it the engine's own position pushes are set
+  /// aside, since the engine's extrapolation is what went wrong.
+  int _maPositionAt = 0;
+
+  /// Asks the watcher for the queue every few seconds while the local
+  /// player plays: the server sends no time events of its own, and its
+  /// queue's elapsed time is the one reading that matches the audio.
+  Timer? _queuePoll;
+
   /// A track paused under the media controls keeps the full-screen view,
   /// paused with its play button, for as long as the floating card keeps
   /// its paused look (sendspin.paused_hide_minutes): the person who
@@ -351,14 +365,22 @@ class SendspinManager extends Manager {
           // Metadata arrives as deltas: a progress-only update carries no
           // title, and the server may send literal "null" strings. Absent
           // fields must not clobber what an earlier message established.
+          // The engine's own position stands aside for a while after
+          // the server's queue time was taken instead (see
+          // _rebaseFromQueue): its extrapolation is the thing that
+          // drifts, and every push would drag the bar back to it.
+          final engineTime =
+              DateTime.now().millisecondsSinceEpoch - _maPositionAt > 20000;
           _status = {
             ..._status,
             for (final e in map.entries)
               if (e.value != null &&
                   '${e.value}' != 'null' &&
-                  '${e.value}'.isNotEmpty)
+                  '${e.value}'.isNotEmpty &&
+                  (e.key != 'positionMs' || engineTime))
                 e.key: e.value,
-            'receivedAt': DateTime.now().millisecondsSinceEpoch,
+            if (engineTime || map.containsKey('title'))
+              'receivedAt': DateTime.now().millisecondsSinceEpoch,
           };
         case 'volumeChanged':
           _status = {..._status, ...map};
@@ -383,6 +405,7 @@ class SendspinManager extends Manager {
           final playing = map['playing'] == true;
           if (playing != _playing) {
             _playing = playing;
+            _syncQueuePoll();
             // The same signal Voice Satellite media playback raises: hold
             // the screensaver and rotation while music is audible here.
             // NOT raised in full-screen player mode: there the screensaver
@@ -752,6 +775,7 @@ class SendspinManager extends Manager {
   Future<void> dispose() async {
     _restartDebounce?.cancel();
     _pausedHoldTimer?.cancel();
+    _queuePoll?.cancel();
     final watcher = _watcher;
     _watcher = null;
     await watcher?.stop();
@@ -878,6 +902,7 @@ class SendspinManager extends Manager {
     _watcher = null;
     _watchSig = '';
     if (old != null) unawaited(old.stop());
+    _syncQueuePoll();
     if (!want) return;
     _watcher = remoteFactory(
       baseUrl: _settings.get(defs.sendspinMaUrl),
@@ -887,6 +912,7 @@ class SendspinManager extends Manager {
       log: log,
       label: 'queue watcher',
     )..start();
+    _syncQueuePoll();
   }
 
   /// A queue snapshot for the local player: only its shuffle flag and
@@ -894,6 +920,7 @@ class SendspinManager extends Manager {
   /// edit refreshes the panel while it is open.
   void _onWatchSnapshot(Map<String, Object?>? snapshot) {
     if (snapshot == null || _watcher == null) return;
+    _rebaseFromQueue(snapshot);
     final shuffle = snapshot['shuffle'] == true;
     if (shuffle != (_status['shuffle'] == true)) {
       _status = {..._status, 'shuffle': shuffle};
@@ -909,6 +936,61 @@ class SendspinManager extends Manager {
       _watchSig = sig;
       if (!first && queueOpen) unawaited(refreshQueue());
     }
+  }
+
+  /// Keep the queue poll running exactly while the local player plays
+  /// with the watcher up.
+  void _syncQueuePoll() {
+    final want = _watcher != null && _playing;
+    if (want == (_queuePoll != null)) return;
+    _queuePoll?.cancel();
+    _queuePoll = null;
+    if (!want) return;
+    _queuePoll = Timer.periodic(const Duration(seconds: 5), (_) {
+      unawaited(_watcher?.refresh());
+    });
+  }
+
+  /// The server's queue time as the position's authority for the local
+  /// player. The engine extrapolates from the last metadata progress
+  /// report, and Music Assistant leaves that report behind after a queue
+  /// jump or a seek (or freezes it), so the engine can run a whole minute
+  /// ahead of the audio or stand still. The watcher reads the queue's
+  /// live elapsed time every few seconds; when it disagrees with what is
+  /// on screen by more than a moment, for the same track and with both
+  /// sides playing, the position is re-based on it here and in the
+  /// engine's pushes alike, so the two cannot ping-pong.
+  void _rebaseFromQueue(Map<String, Object?> snapshot) {
+    if (_remote != null || !_playing || snapshot['playing'] != true) return;
+    if (snapshot['timeFresh'] != true) return;
+    if ('${snapshot['title'] ?? ''}' != '${_status['title'] ?? ''}') return;
+    // Our own seek is in flight for a moment: the server's next time
+    // reports may still describe the place it left.
+    if (DateTime.now().millisecondsSinceEpoch - _seekSentAt < 4000) return;
+    final maPos = (snapshot['positionMs'] as num?)?.toInt();
+    final maAt = (snapshot['receivedAt'] as num?)?.toInt();
+    final ourPos = (_status['positionMs'] as num?)?.toInt();
+    final ourAt = (_status['receivedAt'] as num?)?.toInt();
+    if (maPos == null || maAt == null || ourPos == null || ourAt == null) {
+      return;
+    }
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final maNow = maPos + (now - maAt);
+    final ourNow = ourPos + (now - ourAt);
+    if ((maNow - ourNow).abs() < 2500) return;
+    log.info(
+      name,
+      'position re-based on Music Assistant: '
+      '${ourNow ~/ 1000}s to ${maNow ~/ 1000}s',
+    );
+    _status = {..._status, 'positionMs': maNow, 'receivedAt': now};
+    _maPositionAt = now;
+    _publishNowPlaying();
+    unawaited(
+      _channel
+          .invokeMethod('rebasePosition', {'positionMs': maNow})
+          .catchError((_) => null),
+    );
   }
 
   /// The track on screen changed (or went away): re-read what Music
@@ -1101,6 +1183,7 @@ class SendspinManager extends Manager {
   /// Assistant's own seek, in whole seconds.
   Future<bool> seek(int positionMs) async {
     if (_remote case final remote?) return remote.seek(positionMs);
+    _seekSentAt = DateTime.now().millisecondsSinceEpoch;
     try {
       return await _channel.invokeMethod<bool>('control', {
             'command': 'seek',

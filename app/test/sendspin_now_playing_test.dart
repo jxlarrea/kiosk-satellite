@@ -357,6 +357,89 @@ void main() {
       },
     );
 
+    test('the watcher re-bases a position the engine ran away with', () async {
+      await build(
+        extra: {
+          'ks.sendspin.ma_player': '',
+          'ks.sendspin.enabled': true,
+          'ks.sendspin.client_id': 'abc123',
+        },
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      // The engine says 150s into the song and playing.
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      final native = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        native.add(call);
+        return true;
+      });
+      const codec = StandardMethodCodec();
+      Future<void> fromNative(String method, Map<String, Object?> args) =>
+          messenger.handlePlatformMessage(
+            channel.name,
+            codec.encodeMethodCall(MethodCall(method, args)),
+            (_) {},
+          );
+      await fromNative('metadataChanged', {
+        'title': 'Song',
+        'positionMs': 150000,
+        'durationMs': 180000,
+      });
+      await fromNative('playingChanged', {'playing': true});
+      expect(sendspin.nowPlaying.value?['positionMs'], 150000);
+      // The server's queue time says 99s: the screen and the engine
+      // take it.
+      final now = DateTime.now().millisecondsSinceEpoch;
+      // A queue dict's stamp-extrapolated time is not trusted...
+      fake!.onSnapshot({
+        'title': 'Song',
+        'playing': true,
+        'positionMs': 99000,
+        'receivedAt': now,
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(sendspin.nowPlaying.value?['positionMs'], 150000);
+      // ...a time the server just measured is.
+      fake!.onSnapshot({
+        'title': 'Song',
+        'playing': true,
+        'positionMs': 99000,
+        'receivedAt': now,
+        'timeFresh': true,
+      });
+      await Future<void>.delayed(Duration.zero);
+      final shown = sendspin.nowPlaying.value?['positionMs'] as int;
+      expect(shown, inInclusiveRange(99000, 99500));
+      final rebase = native.where((c) => c.method == 'rebasePosition');
+      expect(rebase, hasLength(1));
+      // A second word from the server that agrees changes nothing.
+      fake!.onSnapshot({
+        'title': 'Song',
+        'playing': true,
+        'positionMs': 99000,
+        'receivedAt': now,
+        'timeFresh': true,
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(native.where((c) => c.method == 'rebasePosition'), hasLength(1));
+      // The engine's next position push is set aside: its extrapolation
+      // is what drifted, and the server's time stands.
+      await fromNative('metadataChanged', {'positionMs': 200000});
+      final held = sendspin.nowPlaying.value?['positionMs'] as int;
+      expect(held, inInclusiveRange(99000, 99500));
+      // Another track's time is not this track's.
+      fake!.onSnapshot({
+        'title': 'Other',
+        'playing': true,
+        'positionMs': 5000,
+        'receivedAt': now,
+        'timeFresh': true,
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(native.where((c) => c.method == 'rebasePosition'), hasLength(1));
+    });
+
     test('a pause under the controls keeps the view', () async {
       await build();
       fake!.onSnapshot({'title': 'Song', 'playing': true});
