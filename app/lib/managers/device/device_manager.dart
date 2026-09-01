@@ -1,5 +1,5 @@
 import 'dart:collection' show ListQueue;
-import 'dart:convert' show LineSplitter, utf8;
+import 'dart:convert' show LineSplitter, Utf8Decoder;
 import 'dart:io';
 
 import 'dart:async' show StreamSubscription, unawaited;
@@ -394,14 +394,19 @@ class DeviceManager extends Manager {
             final tail = ListQueue<String>(lines + 1);
             final stderrTail = StringBuffer();
             await Future.wait([
+              // allowMalformed: logcat buffers carry whatever bytes apps and
+              // the platform wrote; one truncated sequence must not void the
+              // whole dump (issue #404, FydeOS).
               proc.stdout
-                  .transform(utf8.decoder)
+                  .transform(const Utf8Decoder(allowMalformed: true))
                   .transform(const LineSplitter())
                   .forEach((line) {
                     if (tail.length >= lines) tail.removeFirst();
                     tail.add(line);
                   }),
-              proc.stderr.transform(utf8.decoder).forEach(stderrTail.write),
+              proc.stderr
+                  .transform(const Utf8Decoder(allowMalformed: true))
+                  .forEach(stderrTail.write),
             ]);
             final exitCode = await proc.exitCode;
             if (exitCode != 0) {

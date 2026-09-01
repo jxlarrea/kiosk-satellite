@@ -8,6 +8,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - A **Feels like** toggle on the Weather screensaver widget, on the device and in the remote admin alike: with it on, the apparent temperature shows after the real one on the temperature line, "30°C / 33°C", read from the weather entity's own apparent temperature attribute. Off by default, and the single temperature stays whenever the entity does not report the reading or both round to the same number.
 
 ### Fixed
+- The remote admin's logcat viewer no longer fails with a format error on devices whose log buffer carries bytes that are not valid UTF-8, as FydeOS builds do. Malformed bytes now come through as replacement characters and the rest of the dump stays readable.
 - Camera View no longer opens as a black screen on devices with an Android System WebView older than 91, such as the Lenovo Smart Clock. Those WebViews cannot run injected scripts before the page's own, so the view read its camera list before the list existed and initialized empty. The bundled camera page, and the media and website screensaver page that shared the same startup, now wait for their configuration before building anything, and the app hands it over a second time after the page loads for the WebViews where the early injection arrives late.
 
 ## v2026.9.2 - 2026-09-01
