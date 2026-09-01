@@ -40,6 +40,7 @@ import 'offline_notice.dart';
 import 'dlna_media_overlay.dart';
 import 'camera_view_overlay.dart';
 import 'face_preview_overlay.dart';
+import 'back_nav.dart';
 import 'key_nav.dart';
 import 'kiosk_drawer.dart';
 import 'sendspin_player_overlay.dart';
@@ -140,6 +141,110 @@ class _KioskScreenState extends State<KioskScreen>
   /// locked opens it restricted (kiosk.allow_drawer); the exit gesture (and
   /// its PIN) always earns the full menu.
   bool _drawerRestricted = false;
+
+  /// Deadline of the double-back window (discussion #312): a back press
+  /// over the bare kiosk opens the menu and arms this; a press before it
+  /// lapses performs the back the first one swallowed, and re-arms it, so
+  /// a run of quick presses steps the history without the menu reopening
+  /// between them.
+  DateTime? _backArmedUntil;
+
+  static const _backAgainWindow = Duration(seconds: 3);
+
+  /// One ladder for every back press — the predictive pop (the PopScope in
+  /// build) and the KeyEvent path KioskLock routes here as KioskBackPressed
+  /// land in the same place, so the two can never drift apart.
+  void _handleBack() {
+    final deadline = _backArmedUntil;
+    final armed = deadline != null && DateTime.now().isBefore(deadline);
+    _backArmedUntil = null;
+    final action = decideBack(
+      drawerOpen: _drawer.value > 0,
+      armed: armed,
+      launcherVisible: c.launcher.visible.value,
+      overlayUp: c.browser.overlayUrl.value != null,
+      cameraViewUp: c.camera.activeViewId.value != null,
+      cameraFocused: c.camera.focusedCameraId.value != null,
+      screensaverActive: c.screensaver.isActive,
+      lockdown: c.kiosk.lockdownActive,
+      locked: c.kiosk.locked,
+      quickMenuAvailable: _quickMenuAvailable,
+    );
+    c.log.info(
+      'kiosk',
+      'back: ${action.name} (armed=$armed, drawer=${_drawer.value > 0})',
+    );
+    switch (action) {
+      case BackAction.stopScreensaver:
+        unawaited(c.commands.execute('stopScreensaver', const {}));
+      case BackAction.closeDrawer:
+        _closeDrawer();
+      case BackAction.closeDrawerAndBack:
+        dismissToast();
+        _closeDrawer();
+        unawaited(_performBack());
+        _backArmedUntil = DateTime.now().add(_backAgainWindow);
+      case BackAction.hideLauncher:
+        c.launcher.visible.value = false;
+      case BackAction.dismissOverlay:
+        // A link or rotation page covers the dashboard: back uncovers it.
+        c.browser.dismissOverlay();
+      case BackAction.unfocusCamera:
+        c.camera.focusCamera(null);
+      case BackAction.hideCameraView:
+        c.camera.hideView();
+      case BackAction.openDrawer:
+        // Mirrors the edge swipe: opening while locked earns only the
+        // restricted quick menu, never the full one.
+        setState(() => _drawerRestricted = c.kiosk.locked);
+        _drawer.fling(velocity: 1);
+        _backArmedUntil = DateTime.now().add(_backAgainWindow);
+        // No toast while the home role is held: a home screen's back has
+        // no app to close and usually no history to step, so there is
+        // nothing to promise — back simply means the menu there. The
+        // double-back window still arms for the times history exists.
+        if (!c.homeLauncher.roleHeld.value) {
+          showToast(
+            context,
+            title: _backWouldLeaveApp
+                ? 'Press back again to close the app'
+                : 'Press back again to go back',
+            duration: _backAgainWindow,
+          );
+        }
+      case BackAction.back:
+        unawaited(_performBack());
+        _backArmedUntil = DateTime.now().add(_backAgainWindow);
+    }
+  }
+
+  bool get _backWouldLeaveApp => backLeavesApp(
+    locked: c.kiosk.locked,
+    lockdown: c.kiosk.lockdownActive,
+    homeRoleHeld: c.homeLauncher.roleHeld.value,
+  );
+
+  static const _adminChannel = MethodChannel('kiosk_satellite/admin');
+
+  /// The back the menu press swallowed: what a press over the bare kiosk
+  /// did before the menu took the first one. Leaving means backgrounding
+  /// the task, never finishing the Activity: on Fire OS 8 a relaunch after
+  /// a finish reattaches to the cached engine with Flutter's own rendering
+  /// dead — the WebView keeps drawing, so the wedge only shows when a menu
+  /// or toast should appear over it. SystemNavigator.pop stays as the
+  /// fallback for an Activity-less edge where backgrounding cannot land.
+  Future<void> _performBack() async {
+    if (_backWouldLeaveApp) {
+      try {
+        await _adminChannel.invokeMethod<bool>('moveTaskToBack');
+      } catch (e) {
+        c.log.warn('kiosk', 'moveTaskToBack failed, falling back: $e');
+        await SystemNavigator.pop();
+      }
+    } else {
+      c.browser.goBack();
+    }
+  }
 
   /// Whether the locked kiosk still offers the edge swipe: the owner opted
   /// in, and at least one allowed action would actually show — a menu with
@@ -515,22 +620,7 @@ class _KioskScreenState extends State<KioskScreen>
     });
     _backSub = c.bus.on<KioskBackPressed>().listen((_) {
       if (!mounted || _settingsOpen) return;
-      if (_drawer.value > 0) {
-        _closeDrawer();
-      } else if (c.launcher.visible.value) {
-        c.launcher.visible.value = false;
-      } else if (c.browser.overlayUrl.value != null) {
-        // A link or rotation page covers the dashboard: back uncovers it.
-        c.browser.dismissOverlay();
-      } else if (c.camera.activeViewId.value != null) {
-        if (c.camera.focusedCameraId.value != null) {
-          c.camera.focusCamera(null);
-        } else {
-          c.camera.hideView();
-        }
-      } else {
-        c.browser.goBack();
-      }
+      _handleBack();
     });
     // A HOME press with the kiosk as the device's home screen and already in
     // front (issue #219): what every launcher's HOME means, close what is
@@ -545,7 +635,7 @@ class _KioskScreenState extends State<KioskScreen>
       if (c.camera.activeViewId.value != null) c.camera.hideView();
       unawaited(c.commands.execute('stopScreensaver', const {}));
     });
-    // canPop below depends on the overlay's presence.
+    // The build and the native key routing both follow these surfaces.
     c.browser.overlayUrl.addListener(_onOverlayChanged);
     c.launcher.visible.addListener(_onOverlayChanged);
     c.homeLauncher.roleHeld.addListener(_onOverlayChanged);
@@ -1304,46 +1394,25 @@ class _KioskScreenState extends State<KioskScreen>
             final dx = _drawerWidth * _drawer.value;
             final open = _drawer.value > 0;
             return PopScope(
-              // System back closes the drawer first. A closed kiosk keeps
-              // the default behavior — except in kiosk mode, where back must
-              // never background the app: it steps the page's history
-              // instead. This is the predictive-back path; devices that
-              // still deliver Back as a KeyEvent are caught in KioskLock
-              // before it ever reaches here, and land in the same handling
-              // via KioskBackPressed.
-              //
-              // The home role vetoes the pop the same way (issue #219): a
+              // Back is never left to the default pop. Over the bare kiosk
+              // the first press opens the menu instead (discussion #312:
+              // the OS back gesture owns the left edge on gesture
+              // navigation devices, so the menu swipe arrives as a back
+              // press), and everything else back does — close a layer,
+              // step the page's history, leave the app — runs through the
+              // one ladder in _handleBack, which knows kiosk mode and the
+              // home role must never background the app (issue #219): a
               // home screen never finishes on back, and letting the pop
               // through either fell to the task below (a Meta Portal's
               // still-running launcher) or had the system tear down and
-              // relaunch the home Activity on every press.
-              canPop:
-                  !open &&
-                  !c.kiosk.locked &&
-                  !c.kiosk.lockdownActive &&
-                  !c.homeLauncher.roleHeld.value &&
-                  c.browser.overlayUrl.value == null &&
-                  !c.launcher.visible.value &&
-                  c.camera.activeViewId.value == null,
+              // relaunch the home Activity on every press. This is the
+              // predictive-back path; devices that still deliver Back as
+              // a KeyEvent are caught in KioskLock before it ever reaches
+              // here, and land in the same ladder via KioskBackPressed.
+              canPop: false,
               onPopInvokedWithResult: (didPop, _) {
                 if (didPop) return;
-                if (open) {
-                  _closeDrawer();
-                } else if (c.launcher.visible.value) {
-                  c.launcher.visible.value = false;
-                } else if (c.browser.overlayUrl.value != null) {
-                  // A link or rotation page covers the dashboard: back
-                  // uncovers it.
-                  c.browser.dismissOverlay();
-                } else if (c.camera.activeViewId.value != null) {
-                  if (c.camera.focusedCameraId.value != null) {
-                    c.camera.focusCamera(null);
-                  } else {
-                    c.camera.hideView();
-                  }
-                } else {
-                  c.browser.goBack();
-                }
+                _handleBack();
               },
               child: Stack(
                 fit: StackFit.expand,

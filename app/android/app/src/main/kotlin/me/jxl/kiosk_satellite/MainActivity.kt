@@ -238,6 +238,15 @@ class MainActivity : FlutterActivity() {
                         result.error("admin", e.message, null)
                     }
                 }
+                // Back's "leave the app" (discussion #312). Backgrounds the
+                // task with the Activity kept alive, the way Android 12+
+                // itself treats back on a root launcher activity. Finishing
+                // instead (SystemNavigator.pop) proved fatal on Fire OS 8:
+                // the relaunch reattaches to the cached engine and comes up
+                // with Flutter's own rendering dead — the WebView, a native
+                // child view, keeps drawing, so the wedge only shows the
+                // moment a menu or toast should appear over it.
+                "moveTaskToBack" -> result.success(moveTaskToBack(true))
                 else -> result.notImplemented()
             }
         }
