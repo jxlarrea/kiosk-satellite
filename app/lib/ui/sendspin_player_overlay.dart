@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'glance_row.dart';
 import 'lyrics_view.dart';
 import 'theme.dart';
@@ -246,7 +247,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     _panelShown = sideBySide || stacked;
 
     Widget panel() => queue
-        ? _QueueView(container: c, fontSize: (short * 0.03).clamp(13.0, 18.0))
+        ? _QueueView(container: c, fontSize: (short * 0.035).clamp(14.0, 21.0))
         : LyricsView(
             container: c,
             fontSize: (short * 0.055).clamp(15.0, 26.0),
@@ -543,6 +544,7 @@ class _QueueViewState extends State<_QueueView> {
 
   final _scroll = ScrollController();
   final _nowPlayingKey = GlobalKey();
+  final _lastPlayedKey = GlobalKey();
   List<Map<String, Object?>>? _scrolledFor;
 
   /// The row just tapped, spinning until its track is what this device
@@ -593,17 +595,26 @@ class _QueueViewState extends State<_QueueView> {
     if (!ok && _pendingId == id) _clearPending();
   }
 
-  /// Land the Now Playing heading at the top once per queue listing:
-  /// on open, and again when a track change re-lists it.
+  /// Land the Now Playing heading near the top once per queue listing,
+  /// on open and again when a track change re-lists it, with half of the
+  /// row that just played showing above it: a hint that there is a past
+  /// to scroll up to, and a glimpse of what that was.
   void _scrollToNowPlaying(List<Map<String, Object?>> items) {
     if (identical(_scrolledFor, items)) return;
     _scrolledFor = items;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _nowPlayingKey.currentContext;
-      if (!mounted || context == null) return;
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0,
+      final heading = _nowPlayingKey.currentContext?.findRenderObject();
+      if (!mounted || heading is! RenderBox || !_scroll.hasClients) return;
+      final viewport = RenderAbstractViewport.of(heading);
+      final top = viewport.getOffsetToReveal(heading, 0).offset;
+      final played = _lastPlayedKey.currentContext?.findRenderObject();
+      final peek = played is RenderBox ? played.size.height / 2 : 0.0;
+      final target = (top - peek).clamp(
+        _scroll.position.minScrollExtent,
+        _scroll.position.maxScrollExtent,
+      );
+      _scroll.animateTo(
+        target,
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
       );
@@ -642,7 +653,7 @@ class _QueueViewState extends State<_QueueView> {
     ),
   );
 
-  Widget _row(Map<String, Object?> item) {
+  Widget _row(Map<String, Object?> item, {Key? key}) {
     final current = item['current'] == true;
     final played = item['played'] == true;
     final duration = (item['durationMs'] as num?)?.toInt() ?? 0;
@@ -659,6 +670,7 @@ class _QueueViewState extends State<_QueueView> {
         ? Colors.white24
         : Colors.white38;
     return InkWell(
+      key: key,
       onTap: () => _play(id, '${item['title'] ?? ''}'),
       borderRadius: BorderRadius.circular(10),
       child: Padding(
@@ -767,7 +779,11 @@ class _QueueViewState extends State<_QueueView> {
               controller: _scroll,
               padding: const EdgeInsets.symmetric(vertical: 24),
               children: [
-                for (final item in played) _row(item),
+                for (final (i, item) in played.indexed)
+                  _row(
+                    item,
+                    key: i == played.length - 1 ? _lastPlayedKey : null,
+                  ),
                 if (current >= 0) ...[
                   _heading('Now playing', key: _nowPlayingKey),
                   _row(items[current]),
@@ -1045,7 +1061,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
         children: [
           if (duration > 0) ...[
             SizedBox(
-              height: 28 * scale,
+              height: 24 * scale,
               child: SliderTheme(
                 data: SliderThemeData(
                   trackHeight: 4 * scale,
@@ -1085,32 +1101,38 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
               ],
             ),
           ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              heart,
-              SizedBox(width: 12 * scale),
-              shuffle,
-              SizedBox(width: 20 * scale),
-              if (has('previous'))
-                transport(Icons.skip_previous_rounded, 'previous', size: 44),
-              SizedBox(width: 16 * scale),
-              if (has(playing ? 'pause' : 'play'))
-                transport(
-                  playing
-                      ? Icons.pause_circle_filled_rounded
-                      : Icons.play_circle_fill_rounded,
-                  playing ? 'pause' : 'play',
-                  size: 68,
-                ),
-              SizedBox(width: 16 * scale),
-              if (has('next'))
-                transport(Icons.skip_next_rounded, 'next', size: 44),
-              SizedBox(width: 20 * scale),
-              lyrics,
-              SizedBox(width: 12 * scale),
-              queue,
-            ],
+          // The buttons ride up into the tap-target padding above them,
+          // so the bar sits close over the transport instead of a line
+          // of empty space away.
+          Transform.translate(
+            offset: Offset(0, -12 * scale),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                heart,
+                SizedBox(width: 12 * scale),
+                shuffle,
+                SizedBox(width: 20 * scale),
+                if (has('previous'))
+                  transport(Icons.skip_previous_rounded, 'previous', size: 44),
+                SizedBox(width: 16 * scale),
+                if (has(playing ? 'pause' : 'play'))
+                  transport(
+                    playing
+                        ? Icons.pause_circle_filled_rounded
+                        : Icons.play_circle_fill_rounded,
+                    playing ? 'pause' : 'play',
+                    size: 68,
+                  ),
+                SizedBox(width: 16 * scale),
+                if (has('next'))
+                  transport(Icons.skip_next_rounded, 'next', size: 44),
+                SizedBox(width: 20 * scale),
+                lyrics,
+                SizedBox(width: 12 * scale),
+                queue,
+              ],
+            ),
           ),
         ],
       ),
