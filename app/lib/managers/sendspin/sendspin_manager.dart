@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:math' show Random;
+import 'dart:math' show Random, max;
 
 import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
 import 'package:flutter/services.dart';
@@ -72,6 +72,10 @@ class SendspinManager extends Manager {
   /// on, fetched while sendspin.fullscreen_queue is on. The panel takes
   /// the lyrics' place while it is.
   final queueItems = ValueNotifier<List<Map<String, Object?>>>(const []);
+
+  /// How many items follow the playing one, from the server's own count:
+  /// the number beside the panel's Up next heading.
+  final queueUpNext = ValueNotifier<int>(0);
 
   /// Whether the queue panel is on, the persisted setting behind the
   /// view's queue button.
@@ -1121,9 +1125,12 @@ class SendspinManager extends Manager {
     final index = (queue['current_index'] as num?)?.toInt() ?? 0;
     final currentId =
         '${(queue['current_item'] as Map?)?['queue_item_id'] ?? ''}';
+    // The whole queue, what came before included: the panel lists the
+    // played items faded above the playing one, the way Music Assistant
+    // does. Capped where a queue is longer than anyone scrolls.
     final res = await _api().call(
       'player_queues/items',
-      args: {'queue_id': queueId, 'limit': 50, 'offset': index},
+      args: {'queue_id': queueId, 'limit': 500, 'offset': 0},
     );
     final items = res.result;
     if (_trackKey != key || !res.ok || items is! List) return;
@@ -1132,11 +1139,18 @@ class SendspinManager extends Manager {
     // position comes from the offset, the identity from the item id.
     queueItems.value = [
       for (final (i, it) in items.indexed)
-        if (it is Map) _queueRow(it, index + i, currentId),
+        if (it is Map) _queueRow(it, i, index, currentId),
     ];
+    final total = (queue['items'] as num?)?.toInt() ?? items.length;
+    queueUpNext.value = max(0, total - index - 1);
   }
 
-  static Map<String, Object?> _queueRow(Map it, int index, String currentId) {
+  static Map<String, Object?> _queueRow(
+    Map it,
+    int index,
+    int currentIndex,
+    String currentId,
+  ) {
     final media = it['media_item'] is Map
         ? (it['media_item'] as Map).cast<String, Object?>()
         : const <String, Object?>{};
@@ -1153,6 +1167,7 @@ class SendspinManager extends Manager {
       'artist': artist,
       if (duration != null) 'durationMs': (duration * 1000).round(),
       'current': id.isNotEmpty && id == currentId,
+      'played': index < currentIndex,
     };
   }
 

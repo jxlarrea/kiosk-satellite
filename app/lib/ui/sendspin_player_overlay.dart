@@ -519,11 +519,14 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
   }
 }
 
-/// The queue from the playing track on, in the lyrics' slot: the playing
-/// row lit with a play mark by its duration, the rest receding, a tap on
-/// any row jumping the queue there with a spinner in the mark's place
-/// until the server has switched. Scrollable, unlike the lyrics: a queue
-/// is for looking ahead.
+/// The queue in the lyrics' slot, laid out the way Music Assistant's own
+/// is: what already played faded above a Now Playing heading, the
+/// playing row under it, then an Up next heading with the count and the
+/// rest. It opens on the Now Playing heading and goes back there at each
+/// track change; scrolling up shows the past. A tap on any row jumps the
+/// queue there, with a spinner by its duration until this device is
+/// actually playing it. Scrollable, unlike the lyrics: a queue is for
+/// looking around.
 class _QueueView extends StatefulWidget {
   const _QueueView({required this.container, required this.fontSize});
 
@@ -537,6 +540,10 @@ class _QueueView extends StatefulWidget {
 class _QueueViewState extends State<_QueueView> {
   AppContainer get container => widget.container;
   double get fontSize => widget.fontSize;
+
+  final _scroll = ScrollController();
+  final _nowPlayingKey = GlobalKey();
+  List<Map<String, Object?>>? _scrolledFor;
 
   /// The row just tapped, spinning until its track is what this device
   /// is actually playing (the server switches its queue at once, the
@@ -556,6 +563,7 @@ class _QueueViewState extends State<_QueueView> {
   void dispose() {
     container.sendspin.nowPlaying.removeListener(_onNowPlaying);
     _pendingTimeout?.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -585,6 +593,140 @@ class _QueueViewState extends State<_QueueView> {
     if (!ok && _pendingId == id) _clearPending();
   }
 
+  /// Land the Now Playing heading at the top once per queue listing:
+  /// on open, and again when a track change re-lists it.
+  void _scrollToNowPlaying(List<Map<String, Object?>> items) {
+    if (identical(_scrolledFor, items)) return;
+    _scrolledFor = items;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _nowPlayingKey.currentContext;
+      if (!mounted || context == null) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  Widget _heading(String label, {int? count, Key? key}) => Padding(
+    key: key,
+    padding: EdgeInsets.fromLTRB(12, fontSize * 0.9, 12, fontSize * 0.4),
+    child: Row(
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: fontSize * 0.7,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
+        ),
+        if (count != null) ...[
+          const SizedBox(width: 10),
+          Text(
+            '$count',
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: fontSize * 0.7,
+              fontWeight: FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+        const SizedBox(width: 14),
+        const Expanded(child: Divider(color: Colors.white24, height: 1)),
+      ],
+    ),
+  );
+
+  Widget _row(Map<String, Object?> item) {
+    final current = item['current'] == true;
+    final played = item['played'] == true;
+    final duration = (item['durationMs'] as num?)?.toInt() ?? 0;
+    final id = '${item['id'] ?? ''}';
+    final waiting = _pendingId != null && _pendingId == id;
+    final titleColor = current
+        ? Colors.white
+        : played
+        ? Colors.white38
+        : Colors.white70;
+    final subColor = current
+        ? Colors.white70
+        : played
+        ? Colors.white24
+        : Colors.white38;
+    return InkWell(
+      onTap: () => _play(id, '${item['title'] ?? ''}'),
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${item['title'] ?? ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: Ks.displayFont,
+                      color: titleColor,
+                      fontSize: current ? fontSize : fontSize * 0.9,
+                      fontWeight: current ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                  if ('${item['artist'] ?? ''}'.isNotEmpty)
+                    Text(
+                      '${item['artist']}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: subColor,
+                        fontSize: fontSize * 0.8,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // A constant slot before the duration: the spinner while a
+            // tap is on its way, nothing otherwise, so the durations line
+            // up whatever a row is doing.
+            SizedBox(
+              width: fontSize,
+              height: fontSize,
+              child: waiting
+                  ? Padding(
+                      padding: EdgeInsets.all(fontSize * 0.1),
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white70,
+                      ),
+                    )
+                  : null,
+            ),
+            if (duration > 0) ...[
+              const SizedBox(width: 8),
+              Text(
+                _clock(duration),
+                style: TextStyle(
+                  color: subColor,
+                  fontSize: fontSize * 0.8,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<List<Map<String, Object?>>>(
@@ -598,6 +740,12 @@ class _QueueViewState extends State<_QueueView> {
             ),
           );
         }
+        final current = items.indexWhere((it) => it['current'] == true);
+        final played = current < 0
+            ? const <Map<String, Object?>>[]
+            : items.sublist(0, current);
+        final upcoming = current < 0 ? items : items.sublist(current + 1);
+        _scrollToNowPlaying(items);
         return ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
             begin: Alignment.topCenter,
@@ -611,98 +759,23 @@ class _QueueViewState extends State<_QueueView> {
             stops: [0.0, 0.06, 0.94, 1.0],
           ).createShader(bounds),
           blendMode: BlendMode.dstIn,
-          // Enough padding that the playing row, first in the list, sits
-          // clear of the top fade.
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 48),
-            itemCount: items.length,
-            itemBuilder: (context, i) {
-              final item = items[i];
-              final current = item['current'] == true;
-              final duration = (item['durationMs'] as num?)?.toInt() ?? 0;
-              final id = '${item['id'] ?? ''}';
-              final waiting = _pendingId != null && _pendingId == id;
-              return InkWell(
-                onTap: () => _play(id, '${item['title'] ?? ''}'),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 7,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${item['title'] ?? ''}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: Ks.displayFont,
-                                color: current ? Colors.white : Colors.white70,
-                                fontSize: current ? fontSize : fontSize * 0.9,
-                                fontWeight: current
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                              ),
-                            ),
-                            if ('${item['artist'] ?? ''}'.isNotEmpty)
-                              Text(
-                                '${item['artist']}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: current
-                                      ? Colors.white70
-                                      : Colors.white38,
-                                  fontSize: fontSize * 0.8,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // A constant slot before the duration: the spinner
-                      // while a tap is on its way, the play mark on the
-                      // playing row, nothing on the rest.
-                      SizedBox(
-                        width: fontSize,
-                        height: fontSize,
-                        child: waiting
-                            ? Padding(
-                                padding: EdgeInsets.all(fontSize * 0.1),
-                                child: const CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white70,
-                                ),
-                              )
-                            : current
-                            ? Icon(
-                                Icons.play_arrow_rounded,
-                                size: fontSize,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                      if (duration > 0) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          _clock(duration),
-                          style: TextStyle(
-                            color: Colors.white38,
-                            fontSize: fontSize * 0.8,
-                            fontFeatures: const [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
+          // Every row is built, not just the visible ones, so the Now
+          // Playing heading has a context to scroll to wherever it sits.
+          child: ValueListenableBuilder<int>(
+            valueListenable: container.sendspin.queueUpNext,
+            builder: (context, upNext, _) => ListView(
+              controller: _scroll,
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              children: [
+                for (final item in played) _row(item),
+                if (current >= 0) ...[
+                  _heading('Now playing', key: _nowPlayingKey),
+                  _row(items[current]),
+                ],
+                _heading('Up next', count: upNext),
+                for (final item in upcoming) _row(item),
+              ],
+            ),
           ),
         );
       },

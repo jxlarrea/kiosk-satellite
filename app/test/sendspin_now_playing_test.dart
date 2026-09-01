@@ -36,7 +36,8 @@ class _FakeApi extends MusicAssistantApi {
     final Object result = switch (command) {
       'player_queues/get_active_queue' => {
         'queue_id': 'q1',
-        'current_index': 3,
+        'current_index': 1,
+        'items': 3,
         'current_item': {
           'queue_item_id': 'item-a',
           'media_item': {'uri': 'library://track/1', 'name': 'Song'},
@@ -51,6 +52,18 @@ class _FakeApi extends MusicAssistantApi {
       'music/favorites/add_item' => favorite = true,
       'music/favorites/remove_item' => favorite = false,
       'player_queues/items' => [
+        {
+          'queue_item_id': 'item-0',
+          'index': 0,
+          'name': 'Z - Before',
+          'duration': 90,
+          'media_item': {
+            'name': 'Before',
+            'artists': [
+              {'name': 'Z'},
+            ],
+          },
+        },
         {
           'queue_item_id': 'item-a',
           'index': 0,
@@ -716,8 +729,25 @@ void main() {
           ?.fontWeight;
       expect(weight('Song'), FontWeight.w700);
       expect(weight('Next'), FontWeight.w500);
-      // The playing row wears the play mark; nothing else does.
-      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      // Laid out like Music Assistant's queue: the played item faded
+      // above a Now Playing heading, the playing row, then Up next with
+      // the server's count and the rest.
+      expect(find.text('NOW PLAYING'), findsOneWidget);
+      expect(find.text('UP NEXT'), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
+      Color? titleColor(String text) => tester
+          .widget<Text>(
+            find.descendant(
+              of: find.byType(ListView),
+              matching: find.text(text),
+            ),
+          )
+          .style
+          ?.color;
+      expect(titleColor('Before'), Colors.white38);
+      expect(titleColor('Song'), Colors.white);
+      expect(titleColor('Next'), Colors.white70);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       // A row jumps the queue there, by item id, and spins until the
       // server has switched.
@@ -744,7 +774,6 @@ void main() {
       };
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
       // The new title also starts a favorite lookup whose retry waits
       // two seconds for the server's queue to catch up; let it run out
       // before the tree goes away.
