@@ -143,12 +143,19 @@
     outline: 2px solid var(--primary); outline-offset: 3px; }
   .hidden { display: none !important; }
 
-  /* Boot splash: just the mark, breathing, until the boot decides which
-     section owns the page. */
-  #splash { min-height: 100%; display: grid; place-items: center; }
-  #splash .brand-mark { width: 87px; height: 87px;
-    animation: splash-breathe 1.8s ease-in-out infinite; }
-  @keyframes splash-breathe { 50% { opacity: .55; } }
+  /* Boot splash: the banner wordmark centered and still with a spinner
+     right below it, until the boot decides which section owns the page.
+     One banner per theme - the wordmark's ink is baked into each file. */
+  #splash { min-height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 40px;
+    padding: 24px; }
+  #splash .splash-banner { width: min(400px, 78vw); }
+  :root[data-theme="dark"] #splash .light { display: none; }
+  :root:not([data-theme="dark"]) #splash .dark { display: none; }
+  .splash-spinner { width: 38px; height: 38px; border-radius: 50%;
+    border: 3.5px solid var(--surface-2); border-top-color: var(--primary);
+    animation: splash-spin .8s linear infinite; }
+  @keyframes splash-spin { to { transform: rotate(360deg); } }
 
   /* Login */
   #login { min-height: 100%; display: grid; place-items: center; padding: 24px; }
