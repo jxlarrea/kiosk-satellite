@@ -965,7 +965,7 @@ class _CameraSettingsPanelState extends State<CameraSettingsPanel> {
 /// tiles first, matching the live view, so number one always sits on the
 /// biggest tile and unfilled slots are the smallest. Small sizes drop the
 /// numbers and serve as the dropdown's layout icons. The layout tables
-/// mirror assets/camera-view/index.html and the remote UI preview.
+/// mirror assets/camera-view/camera-view.js and the remote UI preview.
 class CameraGridPreview extends StatelessWidget {
   const CameraGridPreview({
     super.key,

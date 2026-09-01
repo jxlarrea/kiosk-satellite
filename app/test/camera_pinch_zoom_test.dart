@@ -8,7 +8,7 @@ import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 /// the setting, the three places that carry it, and the two rules the page
 /// applies it under.
 void main() {
-  final page = File('assets/camera-view/index.html').readAsStringSync();
+  final page = File('assets/camera-view/camera-view.js').readAsStringSync();
 
   test('the setting is registered and on by default', () {
     expect(defs.cameraPinchZoom.defaultValue, isTrue);
@@ -48,7 +48,9 @@ void main() {
   });
 
   test('the remote admin shows the row with the other playback settings', () {
-    final remote = File('assets/remote-ui/static/cameras.js').readAsStringSync();
+    final remote = File(
+      'assets/remote-ui/static/cameras.js',
+    ).readAsStringSync();
     final keys = RegExp(
       r'const playbackKeys = \[(.*?)\];',
       dotAll: true,

@@ -725,7 +725,7 @@ export async function editCameraView(config, view) {
   // count, chosen in a dropdown like UniFi's and numbered in camera order.
   // GRIDS is [columns, rows] in layout units, SPANS lists
   // [columnSpan, rowSpan] for the leading tiles that cover several units.
-  // Mirrored in assets/camera-view/index.html and ui/camera_settings.dart.
+  // Mirrored in assets/camera-view/camera-view.js and ui/camera_settings.dart.
   const GRIDS = {
     1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
     7: [4, 4], 8: [3, 4], 9: [3, 3], 10: [4, 4], 11: [5, 4], 12: [6, 6],

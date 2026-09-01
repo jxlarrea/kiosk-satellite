@@ -2126,7 +2126,17 @@ setInterval(function () {
       // (issue #224). Only the website mode has a page of theirs to run it
       // on; the bundled screensaver is ours.
       onLoadStop: (controller, url) async {
-        if (!topLevel) return;
+        if (!topLevel) {
+          // WebViews older than 91 have no DOCUMENT_START_SCRIPT, and the
+          // fallback injection of the config UserScript loses the race
+          // against the bundled page's parse (issue #399). The page waits
+          // for its config rather than reading it at parse time; hand it
+          // over now for the WebViews where the injection arrived late.
+          await controller.evaluateJavascript(
+            source: 'window.ksSetConfig && window.ksSetConfig($_configJson);',
+          );
+          return;
+        }
         // This view outlives a settings change, so the flags baked in at
         // creation can be stale by the time a page loads.
         await _applyKiosk(controller);

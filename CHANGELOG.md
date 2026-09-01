@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- Camera View no longer opens as a black screen on devices with an Android System WebView older than 91, such as the Lenovo Smart Clock. Those WebViews cannot run injected scripts before the page's own, so the view read its camera list before the list existed and initialized empty. The bundled camera page, and the media and website screensaver page that shared the same startup, now wait for their configuration before building anything, and the app hands it over a second time after the page loads for the WebViews where the early injection arrives late.
+
 ## v2026.9.2 - 2026-09-01
 
 ### Fixed

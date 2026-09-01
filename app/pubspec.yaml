@@ -91,7 +91,9 @@ flutter:
     - assets/remote-ui/index.html
     - assets/remote-ui/static/
     - assets/screensaver/index.html
+    - assets/screensaver/screensaver.js
     - assets/camera-view/index.html
+    - assets/camera-view/camera-view.js
     - assets/camera-view/hls.light.min.js
     - assets/branding/icon.png
     - assets/branding/mark.png

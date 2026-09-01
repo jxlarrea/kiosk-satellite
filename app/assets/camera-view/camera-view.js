@@ -1,0 +1,1208 @@
+'use strict';
+const CFG = window.__ksCameraView || { cameras: [], showCameraNames: true };
+const grid = document.getElementById('grid');
+const bridge = (name, value) =>
+  window.flutter_inappwebview.callHandler(name, value);
+const sessions = new Map();
+let focusId = CFG.focusedCameraId || null;
+let swipeStart = null;
+let lastTap = null;
+let tapTimer = null;
+let closing = false;
+let hiddenTimer = null;
+const DOUBLE_TAP_MS = 350;
+// A view left open when the panel times off keeps every decoder running for
+// nothing. Give the page a grace period first: a passing drawer or dialog
+// must not cost a full renegotiation round.
+const HIDDEN_STOP_MS = 10000;
+// An ICE 'disconnected' usually heals itself within a couple of seconds;
+// tearing the session down on sight turns a blip into a visible reconnect.
+const DISCONNECT_GRACE_MS = 4000;
+// How long a connected stream may deliver packets without decoding a single
+// frame before the tile says so. Long enough to cover a slow first keyframe.
+const DECODE_POLL_MS = 2500;
+const DECODE_GRACE_MS = 10000;
+// Android WebViews advertise H.265 receive support whether or not anything
+// can decode it, so the offer leaves it out unless the setting says the
+// device really plays it (issue #160).
+const ALLOW_H265 = CFG.allowH265 === true;
+// Same-mode failures in a row before trying the next transport anyway:
+// covers failures that never name a culprit (a WebView that cannot even
+// form a WebRTC offer fails generically).
+const MODE_STRIKE_LIMIT = 3;
+// A live stream (MSE or HLS) receiving no data: allow a slow first
+// keyframe, then reconnect.
+const MSE_STALL_POLL_MS = 5000;
+const MSE_STALL_MS = 12000;
+// Each camera carries its transports in preference order (built by the
+// app: Go2RTC does WebRTC/MSE with "Prefer MSE" deciding which leads,
+// issue #160; HA cameras do WebRTC signaling and/or HLS; WHEP is WebRTC).
+const MODE_LABEL = { webrtc: 'WebRTC', mse: 'MSE', hls: 'HLS', mjpeg: 'MJPEG' };
+// Sound is opt-in and only ever for one camera at a time: several cameras
+// playing their microphones over each other is noise, so a multi-camera
+// grid stays muted and video-only, and a camera qualifies only when it is
+// alone on screen — a one-camera view, or the focused tile (issue #235).
+const SINGLE_AUDIO = CFG.singleAudio === true;
+function audioFor(cameraId) {
+  return SINGLE_AUDIO && (CFG.cameras.length === 1 || focusId === cameraId);
+}
+
+// The codec families offered in the Go2RTC MSE handshake. Video only unless
+// the session carries sound (see SINGLE_AUDIO): for a muted grid a silent
+// audio track is bandwidth for nothing. isTypeSupported is honest for MSE
+// (unlike the WebRTC receiver capabilities that started issue #160), but
+// H.265 stays gated on the same setting so both transports tell one story.
+const MSE_CODECS = [
+  'avc1.640029', 'avc1.64002A', 'avc1.4D401F', 'avc1.42E01F',
+  'hvc1.1.6.L153.B0', 'hev1.1.6.L153.B0',
+];
+const MSE_AUDIO_CODECS = ['mp4a.40.2', 'mp4a.40.5', 'flac', 'opus'];
+function mseCodecs(audio) {
+  if (!window.MediaSource) return '';
+  const video = MSE_CODECS
+    .filter((codec) => ALLOW_H265 || !/^h(vc|ev)1/i.test(codec))
+    .filter((codec) =>
+      MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`));
+  if (!video.length) return '';
+  return video
+    .concat(audio ? MSE_AUDIO_CODECS.filter((codec) =>
+      MediaSource.isTypeSupported(`video/mp4; codecs="${codec}"`)) : [])
+    .join(',');
+}
+
+function log(message, level) {
+  try {
+    bridge('cameraLog', { message: String(message), level: level || 'debug' });
+  } catch (_) {}
+}
+
+// What a failed negotiation gets to claim. A server that answered and turned
+// the offer down is not a network fault, and a tile that says otherwise sends
+// people looking at their Wi-Fi instead of their stream (issue #160).
+function signalingFailure(result) {
+  if (!result || result.ok === true) return 'Connection failed';
+  if (result.status === 404) return 'Stream not found on the camera server';
+  if (result.status === 401 || result.status === 403) {
+    return 'The camera server rejected the login';
+  }
+  if (result.status) return 'The camera server could not start this stream';
+  if (result.kind === 'network') return 'Cannot reach the camera server';
+  return 'Connection failed';
+}
+
+// 'video/H265' as a person writes it.
+function codecLabel(mimeType) {
+  return (mimeType || 'unknown')
+    .replace(/^(video|audio)\//, '')
+    .replace(/^H26/i, 'H.26');
+}
+
+// The human name of the first codec in an MSE mime ('video/mp4;
+// codecs="avc1.64001f"' -> 'H.264').
+function mseCodecLabel(mimeType) {
+  const match = /codecs="([^"]+)"/.exec(mimeType || '');
+  const codec = ((match && match[1]) || '').split(',')[0];
+  if (/^avc/i.test(codec)) return 'H.264';
+  if (/^h(vc|ev)/i.test(codec)) return 'H.265';
+  return codec || 'this stream';
+}
+
+function orientation() {
+  return innerWidth >= innerHeight ? 'landscape' : 'portrait';
+}
+
+// The UniFi Protect view layouts, one per grid size. GRIDS is
+// [columns, rows] in layout units; SPANS lists [columnSpan, rowSpan] for
+// the leading tiles that cover more than one unit. Everything else is a
+// single unit placed by grid auto-flow in reading order. Cameras fill the
+// slots largest-first, so camera one always has the biggest tile and any
+// empty slots are the smallest. Portrait swaps the axes and flows
+// column-first, which is an exact transposition.
+// Mirrored in ui/camera_settings.dart and remote-ui/index.html.
+const GRIDS = {
+  1: [1, 1], 2: [2, 1], 3: [2, 2], 4: [2, 2], 5: [4, 2], 6: [3, 3],
+  7: [4, 4], 8: [3, 4], 9: [3, 3], 10: [4, 4], 11: [5, 4], 12: [6, 6],
+};
+const SPANS = {
+  3: [[1, 2]],
+  5: [[2, 2]],
+  6: [[2, 2]],
+  7: [[2, 2], [2, 2], [2, 2]],
+  8: [[1, 2], [1, 2], [1, 1], [1, 1], [1, 2], [1, 2]],
+  10: [[2, 2], [1, 1], [1, 1], [1, 1], [1, 1], [2, 2]],
+  11: [[2, 2], [2, 2], [1, 1], [1, 1], [2, 2]],
+  12: [[3, 3], [3, 3], [3, 3]],
+};
+
+// How many tiles the layout holds: the view's chosen grid, and never fewer
+// than its cameras. Slots past the camera count are empty placeholders.
+const SLOTS = Math.max(1, CFG.cameras.length, CFG.grid || 0);
+
+// Slot indexes ordered largest tile first (reading order breaks ties):
+// the n-th camera lives in slot PRIORITY[n].
+const PRIORITY = (() => {
+  const spans = SPANS[SLOTS] || [];
+  const area = (slot) => {
+    const span = spans[slot];
+    return span ? span[0] * span[1] : 1;
+  };
+  return Array.from({ length: SLOTS }, (_, slot) => slot)
+    .sort((a, b) => area(b) - area(a) || a - b);
+})();
+
+function applyLayout() {
+  grid.className = `${focusId ? 'focus' : ''}`
+    + `${CFG.showCameraNames === false ? ' hide-names' : ''}`;
+  // A hand-edited config can exceed the 12 the UI offers; fall back to the
+  // nearest square-ish uniform grid rather than losing tiles.
+  const fallbackCols = Math.ceil(Math.sqrt(SLOTS));
+  let [cols, rows] = GRIDS[SLOTS]
+    || [fallbackCols, Math.ceil(SLOTS / fallbackCols)];
+  const spans = SPANS[SLOTS] || [];
+  const portrait = orientation() === 'portrait';
+  if (portrait) [cols, rows] = [rows, cols];
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  grid.style.gridAutoFlow = portrait ? 'column' : 'row';
+  let index = 0;
+  for (const tile of grid.children) {
+    let [columnSpan, rowSpan] = spans[index] || [1, 1];
+    if (portrait) [columnSpan, rowSpan] = [rowSpan, columnSpan];
+    tile.style.gridColumn = columnSpan > 1 ? `span ${columnSpan}` : '';
+    tile.style.gridRow = rowSpan > 1 ? `span ${rowSpan}` : '';
+    index++;
+    const active = !focusId
+      || (!!tile.dataset.id && tile.dataset.id === focusId);
+    tile.classList.toggle('hidden', !active);
+    tile.classList.toggle('focused', !!focusId && active);
+  }
+  applyZoom();
+}
+
+function setStatus(cameraId, text) {
+  const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
+  if (tile) tile.querySelector('.status').textContent = text || '';
+}
+
+function waitForIce(pc) {
+  if (pc.iceGatheringState === 'complete') return Promise.resolve();
+  return new Promise((resolve) => {
+    const finish = () => {
+      pc.removeEventListener('icegatheringstatechange', changed);
+      clearTimeout(timer);
+      resolve();
+    };
+    const changed = () => {
+      if (pc.iceGatheringState === 'complete') finish();
+    };
+    const timer = setTimeout(finish, 2500);
+    pc.addEventListener('icegatheringstatechange', changed);
+  });
+}
+
+function stop(cameraId) {
+  const session = sessions.get(cameraId);
+  if (!session) return;
+  session.wanted = false;
+  clearTimeout(session.retry);
+  clearTimeout(session.grace);
+  clearInterval(session.decode);
+  clearInterval(session.stallWatch);
+  if (session.hls) {
+    try { session.hls.destroy(); } catch (_) {}
+    session.hls = null;
+  }
+  if (session.pc) {
+    session.pc.ontrack = null;
+    session.pc.onconnectionstatechange = null;
+    for (const receiver of session.pc.getReceivers()) {
+      if (receiver.track) receiver.track.stop();
+    }
+    session.pc.close();
+  }
+  if (session.ws) {
+    session.ws.onmessage = null;
+    session.ws.onclose = null;
+    session.ws.onerror = null;
+    session.ws.close();
+  }
+  if (session.video) {
+    session.video.pause();
+    if (session.video.srcObject) {
+      for (const track of session.video.srcObject.getTracks()) track.stop();
+    }
+    session.video.srcObject = null;
+    session.video.removeAttribute('src');
+    session.video.load();
+    session.video.remove();
+  }
+  if (session.img) {
+    session.img.onerror = null;
+    session.img.removeAttribute('src');
+    session.img.remove();
+    session.img = null;
+  }
+  sessions.delete(cameraId);
+}
+
+function shutdown() {
+  for (const camera of CFG.cameras) stop(camera.id);
+}
+
+// Home Assistant signals its ICE candidates AFTER the answer (trickle);
+// the app relays each one here for the camera's live peer connection.
+// Candidates for a peer that was already replaced fail addIceCandidate
+// harmlessly - the app closes the old signaling session on renegotiation,
+// so stragglers are a frame or two at most.
+window.ksAddCandidate = (cameraId, candidate) => {
+  const session = sessions.get(cameraId);
+  if (!session || !session.pc) return;
+  session.pc.addIceCandidate(candidate)
+    .catch((error) => log(`candidate ${cameraId}: ${error}`));
+};
+
+function clearPendingTap() {
+  clearTimeout(tapTimer);
+  tapTimer = null;
+  lastTap = null;
+}
+
+function closeView() {
+  if (closing) return;
+  closing = true;
+  clearPendingTap();
+  shutdown();
+  bridge('cameraClose');
+}
+
+async function start(cameraId, fullscreen) {
+  stop(cameraId);
+  const camera = CFG.cameras.find((candidate) => candidate.id === cameraId);
+  // The transports this camera can use, in preference order (built by the
+  // app from what the camera's server or Home Assistant offers).
+  const modes = camera && Array.isArray(camera.transports)
+      && camera.transports.length
+    ? camera.transports.slice()
+    : ['webrtc'];
+  const session = {
+    wanted: true, pc: null, ws: null, hls: null, mediaSource: null,
+    sourceBuffer: null, queue: [], video: null, img: null, retry: null,
+    grace: null, decode: null, stallWatch: null, attempt: 0, modes,
+    modeIndex: 0, modeFailures: 0, fullscreen: !!fullscreen,
+    audio: audioFor(cameraId),
+  };
+  sessions.set(cameraId, session);
+
+  // Retire a peer connection without letting its own teardown come back as
+  // another failure: closing fires connectionstatechange one last time, and
+  // a live handler there would count a second strike and double the backoff
+  // for what was a single drop.
+  const discard = (pc) => {
+    pc.ontrack = null;
+    pc.onconnectionstatechange = null;
+    pc.close();
+  };
+
+  // The tile's video element, shared by both transports. WebRTC feeds it a
+  // srcObject, MSE a MediaSource url; each side clears the other's source
+  // before attaching its own.
+  const ensureVideo = () => {
+    const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
+    if (!tile) return null;
+    // A previous attempt may have run over MJPEG; the img gives way.
+    const stray = tile.querySelector('img.mjpeg');
+    if (stray) {
+      stray.onerror = null;
+      stray.remove();
+      if (session.img === stray) session.img = null;
+    }
+    let video = tile.querySelector('video');
+    if (!video) {
+      video = document.createElement('video');
+      video.autoplay = true;
+      video.muted = !session.audio;
+      video.playsInline = true;
+      if (!session.audio) video.setAttribute('muted', '');
+      video.setAttribute('playsinline', '');
+      // Chromium overlays a Cast button on any src-backed video the moment
+      // a cast target exists on the network, so MSE tiles grew a gray icon
+      // in the corner (seen on the Echo Show 8). A camera tile is not a
+      // castable movie; say so. WebRTC's srcObject never casts, hence the
+      // icon only ever appearing on MSE.
+      video.disableRemotePlayback = true;
+      video.setAttribute('disableremoteplayback', '');
+      video.disablePictureInPicture = true;
+      tile.insertBefore(video, tile.firstChild);
+    }
+    session.video = video;
+    return video;
+  };
+
+  // Drop the current attempt's transport (never the video element: a black
+  // flash between retries reads as worse than a frozen last frame).
+  const releaseTransport = () => {
+    clearInterval(session.decode);
+    session.decode = null;
+    clearInterval(session.stallWatch);
+    session.stallWatch = null;
+    clearTimeout(session.grace);
+    session.grace = null;
+    if (session.img) {
+      // Unlike the video element, the img's src IS its connection, so a
+      // retry has to drop it; the element itself stays for the next
+      // attempt to reuse.
+      session.img.onerror = null;
+      session.img.removeAttribute('src');
+    }
+    if (session.hls) {
+      try { session.hls.destroy(); } catch (_) {}
+      session.hls = null;
+    }
+    if (session.pc) {
+      discard(session.pc);
+      session.pc = null;
+    }
+    if (session.ws) {
+      session.ws.onmessage = null;
+      session.ws.onclose = null;
+      session.ws.onerror = null;
+      session.ws.close();
+      session.ws = null;
+    }
+    session.mediaSource = null;
+    session.sourceBuffer = null;
+    session.queue = [];
+  };
+
+  // A tile can negotiate, connect and take packets while decoding nothing at
+  // all: the device accepted a codec it cannot actually play, and no error is
+  // raised anywhere - it just stays black. Watch the decoder and say what
+  // happened, on the tile and in the app log (issue #160).
+  const watchDecode = (pc) => {
+    clearInterval(session.decode);
+    let waited = 0;
+    session.decode = setInterval(async () => {
+      if (!session.wanted || session.pc !== pc) {
+        clearInterval(session.decode);
+        session.decode = null;
+        return;
+      }
+      waited += DECODE_POLL_MS;
+      let stats;
+      try { stats = await pc.getStats(); } catch (_) { return; }
+      let inbound = null;
+      let inboundAudio = null;
+      const codecs = new Map();
+      stats.forEach((report) => {
+        if (report.type === 'codec') codecs.set(report.id, report.mimeType);
+        if (report.type === 'inbound-rtp' && report.kind === 'video') {
+          inbound = report;
+        }
+        if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+          inboundAudio = report;
+        }
+      });
+      if (!inbound) return;
+      const codec = codecLabel(codecs.get(inbound.codecId));
+      if (inbound.framesDecoded > 0) {
+        clearInterval(session.decode);
+        session.decode = null;
+        // A session carrying sound says what its microphone track is doing:
+        // "no audio received" is the answer to the first question a silent
+        // baby monitor raises (issue #235).
+        const sound = !session.audio
+          ? ''
+          : inboundAudio && inboundAudio.packetsReceived > 0
+            ? ` with ${codecLabel(codecs.get(inboundAudio.codecId))} sound`
+            : ', no audio received from the camera';
+        log(`${cameraId}: playing ${codec} `
+          + `${inbound.frameWidth}x${inbound.frameHeight}${sound}`);
+        bridge('cameraPlaying', cameraId);
+        return;
+      }
+      if (waited < DECODE_GRACE_MS || !inbound.packetsReceived) return;
+      clearInterval(session.decode);
+      session.decode = null;
+      log(`${cameraId}: ${codec} stream connected `
+        + `(${inbound.packetsReceived} packets, ${inbound.framesReceived} `
+        + 'frames) but decoded 0 frames; this device cannot play it', 'warn');
+      // The one failure that names WebRTC itself: connected, fed, decoding
+      // nothing. Where the camera has another transport, switch instead of
+      // parking an error on the tile (issue #160).
+      if (session.modes.length > 1) {
+        retry(`Trying ${nextModeLabel()}...`, true);
+      } else {
+        setStatus(cameraId, `This device cannot decode ${codec}`);
+      }
+    }, DECODE_POLL_MS);
+  };
+
+  const modeName = () => session.modes[session.modeIndex];
+  const nextModeLabel = () =>
+    MODE_LABEL[session.modes[(session.modeIndex + 1) % session.modes.length]];
+
+  // One retry ladder across both transports. A hard failure that names the
+  // transport as the problem (a connected stream decoding nothing, an MSE
+  // codec the device refuses) switches immediately; anonymous failures
+  // (signaling, connection drops) switch after MODE_STRIKE_LIMIT in a row,
+  // which is what carries a device that cannot form a WebRTC offer at all
+  // onto MSE without a human touching anything (issue #160).
+  const retry = (message, switchMode) => {
+    releaseTransport();
+    if (!session.wanted) return;
+    session.attempt++;
+    session.modeFailures++;
+    if (session.modes.length > 1 &&
+        (switchMode || session.modeFailures >= MODE_STRIKE_LIMIT)) {
+      session.modeIndex = (session.modeIndex + 1) % session.modes.length;
+      session.modeFailures = 0;
+      log(`${cameraId}: switching to ${MODE_LABEL[modeName()]}`);
+    }
+    const delay = Math.min(30000, 1000 * Math.pow(2, session.attempt));
+    setStatus(cameraId,
+      typeof message === 'function' ? message(Math.round(delay / 1000)) : message);
+    clearTimeout(session.retry);
+    session.retry = setTimeout(connect, delay);
+  };
+
+  const connect = () => {
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    clearTimeout(session.grace);
+    session.grace = null;
+    if (modeName() === 'mse') {
+      connectMse();
+    } else if (modeName() === 'hls') {
+      connectHls();
+    } else if (modeName() === 'mjpeg') {
+      connectMjpeg();
+    } else {
+      connectWebrtc();
+    }
+  };
+
+  // Home Assistant's camera proxy stream: multipart JPEG into an <img>,
+  // no decoder negotiation at all. The only transport a stills-only
+  // camera (UniFi package cameras and their kin) has, and the last rung
+  // for every other Home Assistant camera. Video only, frame rates are
+  // whatever the camera produces, and the proxy transcodes server-side,
+  // so the fancier transports always get their chance first.
+  const connectMjpeg = async () => {
+    setStatus(cameraId, 'Connecting...');
+    let info = null;
+    try {
+      info = await bridge('cameraMjpeg', { cameraId });
+    } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    if (!info || info.ok !== true) {
+      log(`${cameraId}: MJPEG endpoint failed: ${info && info.error}`);
+      retry((seconds) =>
+        `Cannot reach Home Assistant. Retrying in ${seconds}s`,
+        session.modes.length > 1);
+      return;
+    }
+    const tile = document.querySelector(`.tile[data-id="${CSS.escape(cameraId)}"]`);
+    if (!tile) return;
+    // The tile may have carried a video transport on a previous attempt.
+    const video = tile.querySelector('video');
+    if (video) {
+      if (video.srcObject) {
+        for (const track of video.srcObject.getTracks()) track.stop();
+      }
+      video.remove();
+      session.video = null;
+    }
+    let img = tile.querySelector('img.mjpeg');
+    if (!img) {
+      img = document.createElement('img');
+      img.className = 'mjpeg';
+      tile.insertBefore(img, tile.firstChild);
+    }
+    session.img = img;
+    const stale = () => !session.wanted || session.img !== img;
+    img.onerror = () => {
+      if (stale()) return;
+      log(`${cameraId}: MJPEG stream failed`, 'warn');
+      retry(() => 'Reconnecting...');
+    };
+    img.src = info.url;
+    // Multipart images fire no reliable load event per frame; the first
+    // decoded frame shows up as a natural size instead.
+    const startedAt = performance.now();
+    session.decode = setInterval(() => {
+      if (stale()) {
+        clearInterval(session.decode);
+        session.decode = null;
+        return;
+      }
+      if (img.naturalWidth > 0) {
+        clearInterval(session.decode);
+        session.decode = null;
+        session.attempt = 0;
+        session.modeFailures = 0;
+        setStatus(cameraId, '');
+        log(`${cameraId}: playing over MJPEG `
+          + `(${img.naturalWidth}x${img.naturalHeight})`);
+        bridge('cameraPlaying', cameraId);
+      } else if (performance.now() - startedAt > MSE_STALL_MS) {
+        clearInterval(session.decode);
+        session.decode = null;
+        log(`${cameraId}: MJPEG delivered no frame`, 'warn');
+        retry(() => 'Reconnecting...');
+      }
+    }, 500);
+  };
+
+  const connectMse = async () => {
+    setStatus(cameraId, 'Connecting...');
+    const codecs = mseCodecs(session.audio);
+    if (!codecs) {
+      log(`${cameraId}: MSE unavailable (no MediaSource or no codec)`, 'warn');
+      if (session.modes.length > 1) {
+        retry(`Trying ${nextModeLabel()}...`, true);
+      } else {
+        setStatus(cameraId, 'This device cannot play MSE streams');
+      }
+      return;
+    }
+    let info = null;
+    try {
+      info = await bridge('cameraMse', { cameraId, fullscreen: session.fullscreen });
+    } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    if (!info || info.ok !== true) {
+      log(`${cameraId}: MSE endpoint failed: ${info && info.error}`);
+      retry((seconds) => `Cannot reach the camera server. Retrying in ${seconds}s`);
+      return;
+    }
+    const ws = new WebSocket(info.url);
+    ws.binaryType = 'arraybuffer';
+    session.ws = ws;
+    const mediaSource = new MediaSource();
+    session.mediaSource = mediaSource;
+    const video = ensureVideo();
+    if (!video) return;
+    video.srcObject = null;
+    video.src = URL.createObjectURL(mediaSource);
+    video.play().catch((error) => log(`play ${cameraId}: ${error}`));
+
+    const stale = () => !session.wanted || session.ws !== ws;
+    let mime = null;
+    let opened = false;
+    let playingLogged = false;
+    let lastDataAt = performance.now();
+
+    // Appends run strictly one at a time; everything else queues. When the
+    // queue is idle, trim the back buffer so an all-day view never grows an
+    // unbounded fMP4 tail.
+    const pump = () => {
+      const buffer = session.sourceBuffer;
+      if (stale() || !buffer || buffer.updating ||
+          mediaSource.readyState !== 'open') {
+        return;
+      }
+      if (session.queue.length) {
+        try {
+          buffer.appendBuffer(session.queue.shift());
+        } catch (error) {
+          log(`${cameraId}: MSE append failed: ${error}`, 'warn');
+          retry(() => 'Reconnecting...');
+        }
+        return;
+      }
+      try {
+        const buffered = video.buffered;
+        if (buffered.length && video.currentTime - buffered.start(0) > 30) {
+          buffer.remove(buffered.start(0), video.currentTime - 10);
+        }
+      } catch (_) {}
+    };
+
+    const maybeCreateBuffer = () => {
+      if (stale() || !opened || !mime || session.sourceBuffer) return;
+      const label = mseCodecLabel(mime);
+      if (!MediaSource.isTypeSupported(mime)) {
+        log(`${cameraId}: MSE offered ${mime}, unsupported here`, 'warn');
+        if (session.modes.length > 1) {
+          retry(`Trying ${nextModeLabel()}...`, true);
+        } else {
+          releaseTransport();
+          setStatus(cameraId, `This device cannot decode ${label}`);
+        }
+        return;
+      }
+      try {
+        const buffer = mediaSource.addSourceBuffer(mime);
+        buffer.mode = 'segments';
+        session.sourceBuffer = buffer;
+        buffer.addEventListener('updateend', pump);
+        pump();
+      } catch (error) {
+        log(`${cameraId}: MSE source buffer failed: ${error}`, 'warn');
+        retry(() => 'Reconnecting...', session.modes.length > 1);
+      }
+    };
+
+    mediaSource.addEventListener('sourceopen', () => {
+      opened = true;
+      // The url has served its purpose (the element resolved it to the
+      // MediaSource); revoking it now keeps retries from accumulating blobs.
+      try { URL.revokeObjectURL(video.src); } catch (_) {}
+      maybeCreateBuffer();
+    });
+    ws.onopen = () => {
+      if (!stale()) ws.send(JSON.stringify({ type: 'mse', value: codecs }));
+    };
+    ws.onmessage = (event) => {
+      if (stale()) return;
+      if (typeof event.data === 'string') {
+        let message = null;
+        try { message = JSON.parse(event.data); } catch (_) { return; }
+        if (message && message.type === 'mse' && message.value) {
+          mime = message.value;
+          maybeCreateBuffer();
+        } else if (message && message.type === 'error') {
+          log(`${cameraId}: MSE server error: ${message.value}`, 'warn');
+          retry(() => 'The camera server could not start this stream. Retrying...');
+        }
+        return;
+      }
+      lastDataAt = performance.now();
+      session.queue.push(event.data);
+      if (!playingLogged && session.sourceBuffer) {
+        playingLogged = true;
+        session.attempt = 0;
+        session.modeFailures = 0;
+        setStatus(cameraId, '');
+        log(`${cameraId}: playing over MSE (${mime})`);
+        bridge('cameraPlaying', cameraId);
+      }
+      pump();
+    };
+    ws.onclose = () => {
+      if (stale()) return;
+      retry(() => 'Reconnecting...');
+    };
+    ws.onerror = () => {
+      if (stale()) return;
+      retry((seconds) => `Connection failed. Retrying in ${seconds}s`);
+    };
+    // A socket that stays open while frames stop coming, and a live stream
+    // drifting behind its own buffer, are both silent failures without this.
+    session.stallWatch = setInterval(() => {
+      if (stale()) return;
+      if (performance.now() - lastDataAt > MSE_STALL_MS) {
+        log(`${cameraId}: MSE stalled (no data)`, 'warn');
+        retry(() => 'Reconnecting...');
+        return;
+      }
+      try {
+        const buffered = video.buffered;
+        if (buffered.length &&
+            buffered.end(buffered.length - 1) - video.currentTime > 5) {
+          video.currentTime = buffered.end(buffered.length - 1) - 0.3;
+        }
+      } catch (_) {}
+    }, MSE_STALL_POLL_MS);
+  };
+
+  // Home Assistant cameras with no WebRTC path stream HLS through the
+  // app's loopback relay (hls.js on top of the same MediaSource the MSE
+  // rung uses; the relay handles Home Assistant's CORS and certificates).
+  // Latency is HLS-typical — seconds, not the near-realtime of WebRTC —
+  // which is why this rung never outranks a WebRTC transport.
+  const connectHls = async () => {
+    setStatus(cameraId, 'Connecting...');
+    // hls.js loads deferred (see the script tag); it has run by
+    // DOMContentLoaded, so a connect racing the page load waits rather
+    // than misreading a still-parsing player as HLS-incapable.
+    if (!window.Hls && document.readyState === 'loading') {
+      await new Promise((resolve) =>
+        document.addEventListener('DOMContentLoaded', resolve, { once: true }));
+      if (!session.wanted || sessions.get(cameraId) !== session) return;
+    }
+    if (!window.Hls || !Hls.isSupported()) {
+      log(`${cameraId}: HLS unavailable (no MediaSource)`, 'warn');
+      if (session.modes.length > 1) {
+        retry(`Trying ${nextModeLabel()}...`, true);
+      } else {
+        setStatus(cameraId, 'This device cannot play HLS streams');
+      }
+      return;
+    }
+    let info = null;
+    try {
+      info = await bridge('cameraHls', { cameraId });
+    } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    if (!info || info.ok !== true) {
+      // Home Assistant saying no to the stream is this transport's
+      // answer, not a blip: a camera advertised as streamable that is
+      // not (it happens) moves on to MJPEG right away instead of
+      // striking out three times first.
+      log(`${cameraId}: HLS endpoint failed: ${info && info.error}`);
+      retry((seconds) =>
+        `Home Assistant could not start this stream. Retrying in ${seconds}s`,
+        session.modes.length > 1);
+      return;
+    }
+    const video = ensureVideo();
+    if (!video) return;
+    // The tile may have carried a WebRTC stream on a previous attempt.
+    if (video.srcObject) {
+      for (const track of video.srcObject.getTracks()) track.stop();
+      video.srcObject = null;
+    }
+    const hls = new Hls({
+      // A camera is an endless live stream, not a recording: no duration,
+      // a short tail (an all-day view must not grow buffers), and a seek
+      // back to the live edge when playback falls too far behind it.
+      liveDurationInfinity: true,
+      backBufferLength: 30,
+      liveSyncDurationCount: 3,
+      liveMaxLatencyDurationCount: 10,
+    });
+    session.hls = hls;
+    const stale = () => !session.wanted || session.hls !== hls;
+    let playingLogged = false;
+    let recovered = false;
+    let lastDataAt = performance.now();
+    hls.on(Hls.Events.FRAG_BUFFERED, () => {
+      if (stale()) return;
+      lastDataAt = performance.now();
+      if (playingLogged) return;
+      playingLogged = true;
+      session.attempt = 0;
+      session.modeFailures = 0;
+      setStatus(cameraId, '');
+      const level = hls.levels && hls.levels[hls.currentLevel];
+      log(`${cameraId}: playing over HLS`
+        + (level && level.codecs ? ` (${level.codecs})` : ''));
+      bridge('cameraPlaying', cameraId);
+    });
+    hls.on(Hls.Events.ERROR, (event, data) => {
+      if (stale() || !data || !data.fatal) return;
+      log(`${cameraId}: HLS ${data.type}: ${data.details}`, 'warn');
+      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        // hls.js's own second chance first (flush and re-append); past
+        // that the failure names the transport — this device cannot play
+        // what the stream carries — so switch rather than hammer on.
+        if (!recovered) {
+          recovered = true;
+          try {
+            hls.recoverMediaError();
+            return;
+          } catch (_) {}
+        }
+        if (session.modes.length > 1) {
+          retry(`Trying ${nextModeLabel()}...`, true);
+        } else {
+          releaseTransport();
+          setStatus(cameraId, 'This device cannot decode this stream');
+        }
+        return;
+      }
+      // Network trouble, or the stream's signed URL aged out: the retry
+      // asks Home Assistant for a fresh playlist either way.
+      retry(() => 'Reconnecting...');
+    });
+    hls.loadSource(info.url);
+    hls.attachMedia(video);
+    video.play().catch((error) => log(`play ${cameraId}: ${error}`));
+    // Playlists that keep answering while segments stop coming are the
+    // same silent failure the MSE stall watch exists for.
+    session.stallWatch = setInterval(() => {
+      if (stale()) return;
+      if (performance.now() - lastDataAt > MSE_STALL_MS) {
+        log(`${cameraId}: HLS stalled (no data)`, 'warn');
+        retry(() => 'Reconnecting...');
+      }
+    }, MSE_STALL_POLL_MS);
+  };
+
+  const connectWebrtc = async () => {
+    setStatus(cameraId, 'Connecting...');
+    if (!window.RTCPeerConnection) {
+      // The Fire-tablet case in its purest form: no WebRTC at all.
+      log(`${cameraId}: this WebView has no WebRTC`, 'warn');
+      if (session.modes.length > 1) {
+        retry(`Trying ${nextModeLabel()}...`, true);
+      } else {
+        setStatus(cameraId, 'This device cannot play WebRTC streams');
+      }
+      return;
+    }
+    // Home Assistant cameras carry the ICE servers HA's backend expects
+    // (TURN for cloud setups); everything else answers null and streams
+    // with browser defaults, which is what a LAN Go2RTC needs.
+    let rtcConfig = null;
+    try { rtcConfig = await bridge('cameraRtcConfig', { cameraId }); } catch (_) {}
+    if (!session.wanted || sessions.get(cameraId) !== session) return;
+    const pc = new RTCPeerConnection(
+      rtcConfig && rtcConfig.iceServers ? { iceServers: rtcConfig.iceServers } : {});
+    session.pc = pc;
+    const transceiver = pc.addTransceiver('video', { direction: 'recvonly' });
+    if (session.audio) pc.addTransceiver('audio', { direction: 'recvonly' });
+    // Leaving H.265 out of the offer costs nothing where a stream is H.264
+    // already, and turns an undecodable H.265 camera into either a Go2RTC
+    // transcode (servers that carry ffmpeg) or a visible signaling error.
+    if (!ALLOW_H265 && transceiver.setCodecPreferences &&
+        window.RTCRtpReceiver && RTCRtpReceiver.getCapabilities) {
+      try {
+        const capabilities = RTCRtpReceiver.getCapabilities('video');
+        const usable = (capabilities ? capabilities.codecs : [])
+          .filter((codec) => !/h265|hevc/i.test(codec.mimeType));
+        if (usable.length) transceiver.setCodecPreferences(usable);
+      } catch (error) {
+        log(`codecs ${cameraId}: ${error}`);
+      }
+    }
+    pc.ontrack = (event) => {
+      if (!session.wanted || !event.streams.length) return;
+      const video = ensureVideo();
+      if (!video) return;
+      // With sound negotiated this fires once per track for the same
+      // stream; reattaching it would restart the element's load and abort
+      // the play() already in flight.
+      if (video.srcObject === event.streams[0]) return;
+      // The tile may have carried an MSE source on a previous attempt.
+      if (video.src) {
+        video.removeAttribute('src');
+        video.load();
+      }
+      video.srcObject = event.streams[0];
+      video.play().catch((error) => log(`play ${cameraId}: ${error}`));
+      setStatus(cameraId, '');
+    };
+    pc.onconnectionstatechange = () => {
+      if (!session.wanted || session.pc !== pc) return;
+      const state = pc.connectionState;
+      if (state === 'failed' || state === 'closed') {
+        retry(() => 'Reconnecting...');
+      } else if (state === 'disconnected') {
+        // Ride it out: WebRTC recovers most of these on its own, and a
+        // renegotiation costs a visibly black tile for a second or two.
+        if (session.grace) return;
+        setStatus(cameraId, 'Reconnecting...');
+        session.grace = setTimeout(() => {
+          session.grace = null;
+          if (session.wanted && session.pc === pc &&
+              pc.connectionState === 'disconnected') {
+            retry(() => 'Reconnecting...');
+          }
+        }, DISCONNECT_GRACE_MS);
+      } else if (state === 'connected') {
+        clearTimeout(session.grace);
+        session.grace = null;
+        session.attempt = 0;
+        session.modeFailures = 0;
+        setStatus(cameraId, '');
+        watchDecode(pc);
+      }
+    };
+    let signaling = null;
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      await waitForIce(pc);
+      signaling = await bridge('cameraOffer', {
+        cameraId,
+        offer: pc.localDescription.sdp,
+        fullscreen,
+      });
+      if (!session.wanted) {
+        pc.close();
+        return;
+      }
+      if (!signaling || signaling.ok !== true) {
+        throw new Error(signaling && signaling.error || 'signaling failed');
+      }
+      await pc.setRemoteDescription({ type: 'answer', sdp: signaling.answer });
+    } catch (error) {
+      log(`connect ${cameraId}: ${error}`);
+      const headline = signalingFailure(signaling);
+      // A server that answered and refused has told this transport no;
+      // where another transport exists, try it now rather than after
+      // three identical refusals. Network failures keep the strikes:
+      // they condemn the network, not the transport.
+      const refused = !!signaling && signaling.ok !== true &&
+        signaling.kind !== 'network';
+      retry((seconds) => `${headline}. Retrying in ${seconds}s`,
+        refused && session.modes.length > 1);
+    }
+  };
+  connect();
+}
+
+function syncPeers() {
+  for (const camera of CFG.cameras) {
+    const wanted = !focusId || camera.id === focusId;
+    const fullscreen = !!focusId && camera.id === focusId;
+    const session = sessions.get(camera.id);
+    if (!wanted) {
+      stop(camera.id);
+    } else if (!session) {
+      start(camera.id, fullscreen);
+    } else if ((session.fullscreen !== fullscreen && camera.hasFullscreen)
+        || session.audio !== audioFor(camera.id)) {
+      // Focusing a camera that is already streaming has to renegotiate, or
+      // the grid's deliberately small stream is what fills the screen. Only
+      // worth the interruption for a camera that has a separate stream —
+      // or when focus changes whether this camera carries sound, which
+      // needs an audio track negotiated in or out (issue #235).
+      start(camera.id, fullscreen);
+    }
+  }
+}
+
+function setFocus(cameraId, notify) {
+  focusId = cameraId || null;
+  resetZoom();
+  applyLayout();
+  syncPeers();
+  if (notify) bridge('cameraFocus', { cameraId: focusId || '' });
+}
+
+// Tiles go into the DOM in slot reading order (that is what auto-flow
+// places), each holding the camera whose priority rank owns the slot;
+// slots whose rank runs past the camera count stay empty.
+const slotCamera = [];
+PRIORITY.forEach((slot, rank) => {
+  slotCamera[slot] = CFG.cameras[rank];
+});
+for (let slot = 0; slot < SLOTS; slot++) {
+  const camera = slotCamera[slot];
+  const tile = document.createElement('div');
+  tile.className = 'tile';
+  if (camera) {
+    tile.dataset.id = camera.id;
+    tile.innerHTML =
+      `<div class="status">${camera.missing ? 'Stream missing from Go2RTC' : 'Connecting...'}</div>` +
+      `<div class="name"></div>`;
+    tile.querySelector('.name').textContent = camera.name;
+  }
+  grid.appendChild(tile);
+}
+
+// ── Pinch to zoom (issue #286) ─────────────────────────────────────────
+// A wide-angle camera puts the thing worth looking at in a corner of the
+// frame, and a kiosk has no other way of getting closer to it. Two fingers
+// scale the picture inside its tile and one finger moves around it; nothing
+// is asked of the camera, this is only which part of the frame is on screen.
+// The same rule the sound follows: one camera filling the view (a one-camera
+// view, or the focused tile), never a grid, and never the screensaver, whose
+// grid is scenery rather than a control surface.
+const PINCH_ZOOM = CFG.pinchZoom !== false && CFG.interactive !== false;
+const ZOOM_MAX = 5;
+// How far a gesture travels before the click that ends it counts as a pan
+// rather than a tap on the tile.
+const ZOOM_SLOP = 8;
+const zoom = { scale: 1, x: 0, y: 0 };
+const points = new Map();
+let pinch = null;
+let gestureTravel = 0;
+
+// The tile zooming applies to, or null while several share the screen.
+function zoomTile() {
+  if (!PINCH_ZOOM) return null;
+  const camera = CFG.cameras.length === 1 ? CFG.cameras[0] : null;
+  const id = focusId || (camera && camera.id);
+  return id
+    ? document.querySelector(`.tile[data-id="${CSS.escape(id)}"]`)
+    : null;
+}
+
+// Keep the picture's own edges inside the tile. object-fit letterboxes a
+// stream whose shape differs from the tile's, and panning out over those
+// bars is panning into nothing, so the limits follow the picture rather
+// than the element.
+function clampZoom(tile) {
+  const width = tile.clientWidth;
+  const height = tile.clientHeight;
+  const media = tile.querySelector('video, img.mjpeg');
+  const mediaWidth = media ? media.videoWidth || media.naturalWidth || 0 : 0;
+  const mediaHeight = media ? media.videoHeight || media.naturalHeight || 0 : 0;
+  let shownWidth = width;
+  let shownHeight = height;
+  if (mediaWidth && mediaHeight) {
+    const fit = Math.min(width / mediaWidth, height / mediaHeight);
+    shownWidth = mediaWidth * fit;
+    shownHeight = mediaHeight * fit;
+  }
+  const maxX = Math.max(0, (shownWidth * zoom.scale - width) / 2);
+  const maxY = Math.max(0, (shownHeight * zoom.scale - height) / 2);
+  zoom.x = Math.min(maxX, Math.max(-maxX, zoom.x));
+  zoom.y = Math.min(maxY, Math.max(-maxY, zoom.y));
+}
+
+function applyZoom() {
+  const tile = zoomTile();
+  for (const other of grid.children) {
+    if (other !== tile) other.classList.remove('zoomed');
+  }
+  if (!tile) return;
+  clampZoom(tile);
+  tile.style.setProperty('--zoom-scale', zoom.scale);
+  tile.style.setProperty('--zoom-x', `${zoom.x}px`);
+  tile.style.setProperty('--zoom-y', `${zoom.y}px`);
+  tile.classList.toggle('zoomed', zoom.scale > 1);
+}
+
+function resetZoom() {
+  zoom.scale = 1;
+  zoom.x = 0;
+  zoom.y = 0;
+  applyZoom();
+}
+
+// The two live fingers: how far apart they are, and the point between them.
+function pinchPoints() {
+  const [first, second] = [...points.values()];
+  return {
+    distance: Math.max(1, Math.hypot(first.x - second.x, first.y - second.y)),
+    x: (first.x + second.x) / 2,
+    y: (first.y + second.y) / 2,
+  };
+}
+
+grid.addEventListener('click', (event) => {
+  // As a screensaver the grid is scenery, not a control surface: focus and
+  // the close gestures belong to the view someone opened deliberately, and
+  // here any touch simply wakes the kiosk like any other screensaver.
+  if (CFG.interactive === false) {
+    bridge('cameraDismiss');
+    return;
+  }
+  // The click that ends a pinch or a pan is not a tap on the tile. Reading
+  // it clears it: a click the page never sees (a gesture the WebView took
+  // for itself) must not go on swallowing the taps that follow.
+  const travelled = gestureTravel;
+  gestureTravel = 0;
+  if (travelled > ZOOM_SLOP) return;
+  const tile = event.target.closest('.tile');
+  if (!tile) return;
+
+  const cameraId = tile.dataset.id;
+  const now = performance.now();
+  if (lastTap &&
+      lastTap.cameraId === cameraId &&
+      now - lastTap.at <= DOUBLE_TAP_MS) {
+    clearPendingTap();
+    // A zoomed picture is what the double tap is most likely aiming at;
+    // it takes the zoom off first, and the next one leaves the view.
+    if (zoom.scale > 1) {
+      resetZoom();
+    } else if (focusId) {
+      setFocus(null, true);
+    } else {
+      closeView();
+    }
+    return;
+  }
+
+  clearPendingTap();
+  lastTap = { cameraId, at: now };
+  const camera = CFG.cameras.find((candidate) => candidate.id === cameraId);
+  const canFocus = !focusId && CFG.cameras.length > 1 &&
+    camera && !camera.missing;
+  tapTimer = setTimeout(() => {
+    tapTimer = null;
+    lastTap = null;
+    if (canFocus && !focusId) setFocus(cameraId, true);
+  }, DOUBLE_TAP_MS);
+});
+document.addEventListener('pointerdown', (event) => {
+  if (CFG.interactive === false) return;
+  if (points.size === 0) gestureTravel = 0;
+  points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (points.size === 2 && zoomTile()) {
+    const start = pinchPoints();
+    pinch = {
+      distance: start.distance, x: start.x, y: start.y,
+      scale: zoom.scale, offsetX: zoom.x, offsetY: zoom.y,
+    };
+    clearPendingTap();
+  }
+  // A finger that lands to pinch or to pan is not the start of an edge
+  // swipe: dragging a zoomed picture rightwards must not close the view.
+  swipeStart = points.size === 1 && zoom.scale === 1 && event.clientX <= 36
+    ? { x: event.clientX, y: event.clientY }
+    : null;
+}, true);
+document.addEventListener('pointermove', (event) => {
+  const point = points.get(event.pointerId);
+  if (!point) return;
+  const dx = event.clientX - point.x;
+  const dy = event.clientY - point.y;
+  point.x = event.clientX;
+  point.y = event.clientY;
+  const tile = zoomTile();
+  if (!tile) return;
+  if (pinch && points.size >= 2) {
+    const now = pinchPoints();
+    const rect = tile.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const scale = Math.min(ZOOM_MAX,
+      Math.max(1, pinch.scale * (now.distance / pinch.distance)));
+    // Hold whatever lies between the fingers still while the scale
+    // changes, so the zoom goes where the fingers are rather than to the
+    // middle of the tile, and the pair dragging moves the picture with it.
+    const ratio = scale / pinch.scale;
+    zoom.scale = scale;
+    zoom.x = now.x - centerX - (pinch.x - centerX - pinch.offsetX) * ratio;
+    zoom.y = now.y - centerY - (pinch.y - centerY - pinch.offsetY) * ratio;
+  } else if (points.size === 1 && zoom.scale > 1) {
+    zoom.x += dx;
+    zoom.y += dy;
+  } else {
+    return;
+  }
+  gestureTravel += Math.abs(dx) + Math.abs(dy);
+  applyZoom();
+}, true);
+document.addEventListener('pointerup', (event) => {
+  points.delete(event.pointerId);
+  if (points.size < 2) pinch = null;
+  if (!swipeStart) return;
+  const dx = event.clientX - swipeStart.x;
+  const dy = Math.abs(event.clientY - swipeStart.y);
+  swipeStart = null;
+  if (dx < 80 || dx <= dy) return;
+  clearPendingTap();
+  if (focusId) {
+    setFocus(null, true);
+  } else {
+    closeView();
+  }
+}, true);
+document.addEventListener('pointercancel', (event) => {
+  points.delete(event.pointerId);
+  if (points.size < 2) pinch = null;
+  swipeStart = null;
+}, true);
+addEventListener('resize', applyLayout);
+addEventListener('pagehide', shutdown);
+// The screen going off does not close the view, and a dozen decoders running
+// behind a dark panel is pure drain. Drop the streams once the page has been
+// hidden long enough to mean it, and pick them up again on the way back.
+document.addEventListener('visibilitychange', () => {
+  if (closing) return;
+  if (document.visibilityState === 'hidden') {
+    // Fingers the page will never see lifted: forget them, or the next
+    // single touch arrives as the second half of a pinch.
+    points.clear();
+    pinch = null;
+    clearTimeout(hiddenTimer);
+    hiddenTimer = setTimeout(() => {
+      hiddenTimer = null;
+      log('hidden: releasing camera streams');
+      shutdown();
+    }, HIDDEN_STOP_MS);
+  } else {
+    clearTimeout(hiddenTimer);
+    hiddenTimer = null;
+    syncPeers();
+  }
+});
+applyLayout();
+syncPeers();

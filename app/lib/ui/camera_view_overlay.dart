@@ -101,16 +101,14 @@ class _ClosingCameraPlayerState extends State<ClosingCameraPlayer>
     value: widget.interactive && widget.view != null ? 0 : 1,
   )..addStatusListener(_onSlideStatus);
 
-  late final Animation<Offset> _slideOffset = Tween(
-    begin: const Offset(0, 1),
-    end: Offset.zero,
-  ).animate(
-    CurvedAnimation(
-      parent: _slide,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    ),
-  );
+  late final Animation<Offset> _slideOffset =
+      Tween(begin: const Offset(0, 1), end: Offset.zero).animate(
+        CurvedAnimation(
+          parent: _slide,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeInCubic,
+        ),
+      );
 
   @override
   void initState() {
@@ -316,7 +314,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
     }
     widget.container.camera.closeHaSessions();
     widget.container.camera.closeRelaySessions();
-    controller.evaluateJavascript(source: 'shutdown();');
+    controller.evaluateJavascript(source: 'window.shutdown && shutdown();');
     controller.loadUrl(urlRequest: URLRequest(url: WebUri('about:blank')));
   }
 
@@ -344,7 +342,7 @@ class _CameraPlayerState extends State<CameraPlayer> {
   void _syncFocus() {
     final cameraId = widget.container.camera.focusedCameraId.value;
     _controller?.evaluateJavascript(
-      source: 'setFocus(${jsonEncode(cameraId)}, false);',
+      source: 'window.setFocus && setFocus(${jsonEncode(cameraId)}, false);',
     );
   }
 
@@ -447,189 +445,200 @@ class _CameraPlayerState extends State<CameraPlayer> {
   );
 
   Widget _buildWebView() => InAppWebView(
-      key: ValueKey(_epoch),
-      onRenderProcessGone: (controller, detail) {
-        widget.container.log.warn(
-          'camera',
-          'WebView renderer gone (crashed: ${detail.didCrash}) — '
-              'rebuilding the camera view',
-        );
-        // The old renderer took its streams with it; a fresh page
-        // renegotiates from the injected config. _tornDown stays false so
-        // the eventual real teardown still runs against the new page.
-        // The cover comes back for the fresh surface's own white phase.
-        if (mounted) {
-          setState(() {
-            _epoch++;
-            _pageVisible = false;
-          });
-        }
-      },
-      onPageCommitVisible: (controller, url) {
-        if (mounted && !_pageVisible) setState(() => _pageVisible = true);
-      },
-      initialFile: 'assets/camera-view/index.html',
-      initialUserScripts: UnmodifiableListView([
-        UserScript(
-          source: 'window.__ksCameraView = $_configJson;',
-          injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
-        ),
-      ]),
-      initialSettings: InAppWebViewSettings(
-        // Transparent, with the black ColoredBox behind showing through:
-        // an opaque WebView composites its default white background for
-        // the first frame or two before the page paints, which flashed
-        // white as the view slid up (worse once hls.js sat in the parse
-        // path, but present without it).
-        transparentBackground: true,
-        mediaPlaybackRequiresUserGesture: false,
-        allowsInlineMediaPlayback: true,
-        supportZoom: false,
+    key: ValueKey(_epoch),
+    onRenderProcessGone: (controller, detail) {
+      widget.container.log.warn(
+        'camera',
+        'WebView renderer gone (crashed: ${detail.didCrash}) — '
+            'rebuilding the camera view',
+      );
+      // The old renderer took its streams with it; a fresh page
+      // renegotiates from the injected config. _tornDown stays false so
+      // the eventual real teardown still runs against the new page.
+      // The cover comes back for the fresh surface's own white phase.
+      if (mounted) {
+        setState(() {
+          _epoch++;
+          _pageVisible = false;
+        });
+      }
+    },
+    onPageCommitVisible: (controller, url) {
+      if (mounted && !_pageVisible) setState(() => _pageVisible = true);
+    },
+    onLoadStop: (controller, url) {
+      // WebViews older than 91 have no DOCUMENT_START_SCRIPT, and the
+      // fallback injection of the UserScript below loses the race against
+      // the local page's parse (issue #399). The page waits for its config
+      // rather than reading it at parse time; hand it over now for the
+      // WebViews where the injection arrived late. Where it arrived on
+      // time the page has already booted and dropped the hook.
+      controller.evaluateJavascript(
+        source: 'window.ksSetConfig && window.ksSetConfig($_configJson);',
+      );
+    },
+    initialFile: 'assets/camera-view/index.html',
+    initialUserScripts: UnmodifiableListView([
+      UserScript(
+        source: 'window.__ksCameraView = $_configJson;',
+        injectionTime: UserScriptInjectionTime.AT_DOCUMENT_START,
       ),
-      onWebViewCreated: (controller) {
-        _controller = controller;
-        // This player is the camera surface: Home Assistant's trickled ICE
-        // candidates (issue #124) land on the manager and are pushed into
-        // the page's matching peer connection from here.
-        widget.container.camera.onRemoteCandidate = (cameraId, candidate) {
-          _controller?.evaluateJavascript(
-            source:
-                'window.ksAddCandidate && ksAddCandidate('
-                '${jsonEncode(cameraId)}, ${jsonEncode(candidate)});',
-          );
-        };
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraRtcConfig',
-          callback: (args) async {
-            try {
-              final request = (args.first as Map).cast<String, Object?>();
-              return await widget.container.camera.rtcConfigFor(
-                '${request['cameraId'] ?? ''}',
-              );
-            } catch (_) {
-              return null;
-            }
-          },
+    ]),
+    initialSettings: InAppWebViewSettings(
+      // Transparent, with the black ColoredBox behind showing through:
+      // an opaque WebView composites its default white background for
+      // the first frame or two before the page paints, which flashed
+      // white as the view slid up (worse once hls.js sat in the parse
+      // path, but present without it).
+      transparentBackground: true,
+      mediaPlaybackRequiresUserGesture: false,
+      allowsInlineMediaPlayback: true,
+      supportZoom: false,
+    ),
+    onWebViewCreated: (controller) {
+      _controller = controller;
+      // This player is the camera surface: Home Assistant's trickled ICE
+      // candidates (issue #124) land on the manager and are pushed into
+      // the page's matching peer connection from here.
+      widget.container.camera.onRemoteCandidate = (cameraId, candidate) {
+        _controller?.evaluateJavascript(
+          source:
+              'window.ksAddCandidate && ksAddCandidate('
+              '${jsonEncode(cameraId)}, ${jsonEncode(candidate)});',
         );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraOffer',
-          callback: (args) async {
-            try {
-              final request = (args.first as Map).cast<String, Object?>();
-              final answer = await widget.container.camera.negotiate(
-                cameraId: '${request['cameraId'] ?? ''}',
-                offer: '${request['offer'] ?? ''}',
-                fullscreen: request['fullscreen'] == true,
-              );
-              return {'ok': true, 'answer': answer};
-            } catch (error) {
-              widget.container.log.warn(
-                'camera',
-                'WebRTC signaling failed: $error',
-              );
-              // What the tile is allowed to claim: a server that answered and
-              // refused is not a network problem, and saying so sends people
-              // hunting the wrong thing (issue #160).
-              return {
-                'ok': false,
-                'error': '$error',
-                'kind': error is SocketException || error is TimeoutException
-                    ? 'network'
-                    : 'server',
-                if (error is CameraSignalingException) 'status': error.statusCode,
-              };
-            }
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraMse',
-          callback: (args) async {
-            try {
-              final request = (args.first as Map).cast<String, Object?>();
-              return await widget.container.camera.mseEndpoint(
-                cameraId: '${request['cameraId'] ?? ''}',
-                fullscreen: request['fullscreen'] == true,
-              );
-            } catch (error) {
-              return {'ok': false, 'error': '$error'};
-            }
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraHls',
-          callback: (args) async {
-            try {
-              final request = (args.first as Map).cast<String, Object?>();
-              return await widget.container.camera.hlsEndpoint(
-                cameraId: '${request['cameraId'] ?? ''}',
-              );
-            } catch (error) {
-              return {'ok': false, 'error': '$error'};
-            }
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraMjpeg',
-          callback: (args) async {
-            try {
-              final request = (args.first as Map).cast<String, Object?>();
-              return await widget.container.camera.mjpegEndpoint(
-                cameraId: '${request['cameraId'] ?? ''}',
-              );
-            } catch (error) {
-              return {'ok': false, 'error': '$error'};
-            }
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraFocus',
-          callback: (args) {
+      };
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraRtcConfig',
+        callback: (args) async {
+          try {
             final request = (args.first as Map).cast<String, Object?>();
-            final id = '${request['cameraId'] ?? ''}';
-            widget.container.camera.focusCamera(id.isEmpty ? null : id);
+            return await widget.container.camera.rtcConfigFor(
+              '${request['cameraId'] ?? ''}',
+            );
+          } catch (_) {
             return null;
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraClose',
-          callback: (_) {
-            widget.container.camera.hideView();
-            return null;
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraDismiss',
-          callback: (_) {
-            widget.onDismiss?.call();
-            return null;
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraPlaying',
-          callback: (args) {
-            widget.onPlaying?.call();
-            return null;
-          },
-        );
-        controller.addJavaScriptHandler(
-          handlerName: 'cameraLog',
-          callback: (args) {
-            final first = args.isEmpty ? null : args.first;
-            final entry = first is Map
-                ? first.cast<String, Object?>()
-                : const <String, Object?>{};
-            final message = '${entry['message'] ?? first ?? ''}';
-            // A stream that connects and then decodes nothing is the one
-            // camera failure with no error behind it, so the page reports it
-            // as a warning and it shows up in About > App Logs (issue #160).
-            if (entry['level'] == 'warn') {
-              widget.container.log.warn('camera', message);
-            } else {
-              widget.container.log.debug('camera', message);
-            }
-            return null;
-          },
-        );
-      },
-    );
+          }
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraOffer',
+        callback: (args) async {
+          try {
+            final request = (args.first as Map).cast<String, Object?>();
+            final answer = await widget.container.camera.negotiate(
+              cameraId: '${request['cameraId'] ?? ''}',
+              offer: '${request['offer'] ?? ''}',
+              fullscreen: request['fullscreen'] == true,
+            );
+            return {'ok': true, 'answer': answer};
+          } catch (error) {
+            widget.container.log.warn(
+              'camera',
+              'WebRTC signaling failed: $error',
+            );
+            // What the tile is allowed to claim: a server that answered and
+            // refused is not a network problem, and saying so sends people
+            // hunting the wrong thing (issue #160).
+            return {
+              'ok': false,
+              'error': '$error',
+              'kind': error is SocketException || error is TimeoutException
+                  ? 'network'
+                  : 'server',
+              if (error is CameraSignalingException) 'status': error.statusCode,
+            };
+          }
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraMse',
+        callback: (args) async {
+          try {
+            final request = (args.first as Map).cast<String, Object?>();
+            return await widget.container.camera.mseEndpoint(
+              cameraId: '${request['cameraId'] ?? ''}',
+              fullscreen: request['fullscreen'] == true,
+            );
+          } catch (error) {
+            return {'ok': false, 'error': '$error'};
+          }
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraHls',
+        callback: (args) async {
+          try {
+            final request = (args.first as Map).cast<String, Object?>();
+            return await widget.container.camera.hlsEndpoint(
+              cameraId: '${request['cameraId'] ?? ''}',
+            );
+          } catch (error) {
+            return {'ok': false, 'error': '$error'};
+          }
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraMjpeg',
+        callback: (args) async {
+          try {
+            final request = (args.first as Map).cast<String, Object?>();
+            return await widget.container.camera.mjpegEndpoint(
+              cameraId: '${request['cameraId'] ?? ''}',
+            );
+          } catch (error) {
+            return {'ok': false, 'error': '$error'};
+          }
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraFocus',
+        callback: (args) {
+          final request = (args.first as Map).cast<String, Object?>();
+          final id = '${request['cameraId'] ?? ''}';
+          widget.container.camera.focusCamera(id.isEmpty ? null : id);
+          return null;
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraClose',
+        callback: (_) {
+          widget.container.camera.hideView();
+          return null;
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraDismiss',
+        callback: (_) {
+          widget.onDismiss?.call();
+          return null;
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraPlaying',
+        callback: (args) {
+          widget.onPlaying?.call();
+          return null;
+        },
+      );
+      controller.addJavaScriptHandler(
+        handlerName: 'cameraLog',
+        callback: (args) {
+          final first = args.isEmpty ? null : args.first;
+          final entry = first is Map
+              ? first.cast<String, Object?>()
+              : const <String, Object?>{};
+          final message = '${entry['message'] ?? first ?? ''}';
+          // A stream that connects and then decodes nothing is the one
+          // camera failure with no error behind it, so the page reports it
+          // as a warning and it shows up in About > App Logs (issue #160).
+          if (entry['level'] == 'warn') {
+            widget.container.log.warn('camera', message);
+          } else {
+            widget.container.log.debug('camera', message);
+          }
+          return null;
+        },
+      );
+    },
+  );
 }
