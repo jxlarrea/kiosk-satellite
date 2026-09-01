@@ -143,6 +143,13 @@
     outline: 2px solid var(--primary); outline-offset: 3px; }
   .hidden { display: none !important; }
 
+  /* Boot splash: just the mark, breathing, until the boot decides which
+     section owns the page. */
+  #splash { min-height: 100%; display: grid; place-items: center; }
+  #splash .brand-mark { width: 87px; height: 87px;
+    animation: splash-breathe 1.8s ease-in-out infinite; }
+  @keyframes splash-breathe { 50% { opacity: .55; } }
+
   /* Login */
   #login { min-height: 100%; display: grid; place-items: center; padding: 24px; }
   .login-card .btn-primary { width: 100%; }

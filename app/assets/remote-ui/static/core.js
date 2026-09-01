@@ -65,7 +65,7 @@ export function dependsSatisfiedBy(value, want) {
 }
 
 export function showView(which) {
-  for (const id of ['login', 'wizard', 'app']) {
+  for (const id of ['splash', 'login', 'wizard', 'app']) {
     $(`#${id}`).classList.toggle('hidden', id !== which);
   }
 }
@@ -87,6 +87,9 @@ export async function login() {
   }
   state.token = (await res.json()).token;
   localStorage.setItem('ks_token', state.token);
+  // Back on the splash while start() gathers the app's data, rather than
+  // a login card that sits frozen with the password still in it.
+  showView('splash');
   start();
 }
 export function logout() {

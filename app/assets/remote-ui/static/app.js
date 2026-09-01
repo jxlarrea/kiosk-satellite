@@ -23,16 +23,22 @@ export async function start() {
     startWizard({ needPassword: false });
     return;
   }
-  showView('app');
+  // Build the whole app behind the splash and reveal it ready: quick-control
+  // tiles, brightness, settings and panels all populated. Showing it earlier
+  // put a page of dead buttons and a parked slider on screen first.
   const info = await (await api('/api/info')).json();
   applyInfo(info, info.currentUrl);
   refreshUpdateBadge();
   await loadSettings();
   await loadConsole();
-  await loadScreenshot();
   loadViewJump();
   // Whatever the URL asked for, now that the panels it needs exist.
   showTab(decodeURIComponent(location.hash.slice(1)) || 'dashboard', { push: false });
+  showView('app');
+  // The screenshot is the one thing not worth holding the splash for: the
+  // tablet reads back and encodes its screen, and the panel has its own
+  // placeholder. It lands into the visible page.
+  loadScreenshot();
   // No auto-refresh at all: each capture makes the tablet read back and
   // encode its screen, and an admin tab left open would otherwise poll the
   // device forever. One shot on load plus the Refresh button is the deal,

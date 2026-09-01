@@ -19,8 +19,16 @@
 </head>
 <body>
 
+<!-- Boot splash: the page's default view. Which section replaces it (login,
+     wizard or the app) is only known after the device has answered, and the
+     app itself waits for its data, so neither the login card nor a
+     half-populated overview ever flashes first. -->
+<section id="splash">
+  <span class="brand-mark"></span>
+</section>
+
 <!-- Login -->
-<section id="login">
+<section id="login" class="hidden">
   <div class="login-card">
     <img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA5MjQuNDQgOTU5LjU1Ij48cGF0aCBmaWxsPSIjZmZmIiBzdHJva2U9IiM1ZGEzYTYiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iNTIuMTUiIGQ9Ik0zOTAuMTYsNTAuNzVjNDIuNDEtMzIuODksMTAxLjcxLTMyLjg5LDE0NC4xMiwwbDMxMi44OSwyMjQuNzFjMzEuOTQsMjEuODUsNTEuMDksNTguMDEsNTEuMiw5Ni43MXY0NDMuNzNjMCw2NC45My01Mi42NCwxMTcuNTctMTE3LjU3LDExNy41N0gxNDMuNjRjLTY0LjkzLDAtMTE3LjU3LTUyLjY0LTExNy41Ny0xMTcuNTd2LTQ0My43M2MuMTEtMzguNywxOS4yNi03NC44Nyw1MS4yLTk2LjcxTDM5MC4xNiw1MC43NVoiLz48cGF0aCBmaWxsPSIjMThiY2YyIiBkPSJNMjQyLjI1LDUxMS41NWMwLTIyLjUyLDE4LjI1LTQwLjc3LDQwLjc3LTQwLjc3czQwLjc3LDE4LjI1LDQwLjc3LDQwLjc3djE3MC42N2MwLDIyLjUyLTE4LjI1LDQwLjc3LTQwLjc3LDQwLjc3cy00MC43Ny0xOC4yNS00MC43Ny00MC43N3YtMTcwLjY3aDBaIi8+PHBhdGggZmlsbD0iI2YyYjcwNSIgZD0iTTM2MS43Miw1MzMuMzVjLjAyLTIyLjUyLDE4LjI4LTQwLjc2LDQwLjgtNDAuNzQsMjIuNS4wMiw0MC43MywxOC4yNSw0MC43NCw0MC43NHYxMjcuMDVjLS4wMiwyMi41Mi0xOC4yOCw0MC43Ni00MC44LDQwLjc0LTIyLjUtLjAxLTQwLjczLTE4LjI1LTQwLjc0LTQwLjc0di0xMjcuMDVaIi8+PHBhdGggZmlsbD0iIzNmYmY1ZiIgZD0iTTQ4MS4xOSw0MzUuNjljLjAyLTIyLjUyLDE4LjI4LTQwLjc2LDQwLjgtNDAuNzQsMjIuNS4wMiw0MC43MywxOC4yNSw0MC43NCw0MC43NHYzMjIuMzdjLS4wMiwyMi41Mi0xOC4yOCw0MC43Ni00MC44LDQwLjc0LTIyLjUtLjAxLTQwLjczLTE4LjI1LTQwLjc0LTQwLjc0di0zMjIuMzdaIi8+PHBhdGggZmlsbD0iI2U4NjA0YyIgZD0iTTYwMC42NSw1MzAuNTFjLjAyLTIyLjUyLDE4LjI4LTQwLjc2LDQwLjgtNDAuNzQsMjIuNS4wMiw0MC43MywxOC4yNSw0MC43NCw0MC43NHYxMzIuNzRjLS4wMiwyMi41Mi0xOC4yOCw0MC43Ni00MC44LDQwLjc0LTIyLjUtLjAxLTQwLjczLTE4LjI1LTQwLjc0LTQwLjc0di0xMzIuNzRaIi8+PC9zdmc+" alt="" width="64" height="64">
     <h1>Kiosk Satellite</h1>

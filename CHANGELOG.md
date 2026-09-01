@@ -4,6 +4,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 
 ## Unreleased
 
+### Fixed
+- The remote admin no longer flashes the login box on the way into a signed-in session or shows the overview before it is ready, dead quick-control tiles and a brightness slider parked at the wrong value. The page now opens on a splash with the Kiosk Satellite mark and swaps straight to whichever view owns it: the login box only when there really is no session, the setup wizard on an unconfigured device or the app fully populated, with only the screenshot panel filling in after. A device that cannot be reached yet keeps the splash up and retries behind it instead of stranding a half-built page.
+
 ### Changed
 - The toast that floats over the bottom of the screen is smaller now, its icon, text and padding brought down to sit with the rest of the UI instead of reading a size class larger. Like the rest of the app's own surfaces it follows the Scale UI slider.
 
