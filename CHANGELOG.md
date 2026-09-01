@@ -2,7 +2,7 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## v2026.9.109 - 2026-09-01
+## v2026.9.1 - 2026-09-01
 
 ### Added
 - Pressing back over the bare dashboard opens the menu now, the double-back pattern well known from Instagram and TikTok (#312). A toast says to press back again and a second press within three seconds performs the back the first one swallowed, closing the app on a plain setup or stepping the page history where Kiosk Mode, lockdown or the Home Launcher role keeps the app in front. A run of quick presses keeps stepping the history without the menu reopening between them. This matters most on gesture navigation devices, where the OS claims the left edge for its own back gesture and the swipe that opens the menu never reaches the app: the back press that swipe turns into opens it instead. While Kiosk Mode is locked, back opens only the restricted quick menu and only where the edge swipe would, lockdown never opens the menu on back and a back press while the screensaver is showing now simply dismisses it. With the Home Launcher role held the menu opens without the toast, since a home screen's back has no app to close and usually no history to step.
