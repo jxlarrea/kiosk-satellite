@@ -495,7 +495,7 @@ export async function loadSettings() {
   // twice in Home Assistant; warn where the choice is made, mirroring
   // the device page.
   if (byKey['esphome.entities']?.value === true &&
-      depSatisfied(byKey['esphome.entities']) &&
+      depSatisfied(byKey['esphome.entities'], byKey) &&
       byKey['mqtt.enabled']?.value === true) {
     const row = document.querySelector('[data-key="esphome.entities"]');
     if (row) {
@@ -813,7 +813,7 @@ export async function loadSettings() {
   // gated away; the hand-built cards must follow the same rule or they
   // linger on a page whose settings rows have all vanished.
   if (byKey['btproxy.enabled']?.value === true &&
-      depSatisfied(byKey['btproxy.enabled'])) {
+      depSatisfied(byKey['btproxy.enabled'], byKey)) {
     // No heading of its own: the lookup toggle's "Nearby devices" section
     // heading (from the definitions) already labels this stretch of the
     // page, and the list card slots in right under it. That heading is on
