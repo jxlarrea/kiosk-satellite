@@ -77,7 +77,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   the house, with metadata, artwork and volume in Home Assistant.
 
 <p align="center">
- <img src="assets/screenshots/sendspin-horizontal.png" alt="Sendspin" width="650"/>
+ <img src="assets/screenshots/now-playing.png" alt="Now Playing Sendspin" width="650"/>
 </p>
 
 &bull; **Screensavers**: dim, black, clock, Home Assistant media, local
