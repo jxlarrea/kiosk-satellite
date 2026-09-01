@@ -318,7 +318,7 @@ class _KioskScreenState extends State<KioskScreen>
   late final PullToRefreshController _pullToRefresh = PullToRefreshController(
     settings: PullToRefreshSettings(
       enabled: _ptrEnabled,
-      color: const Color(0xFF5DA3A6), // brand teal on the stock spinner
+      color: const Color(0xFF488284), // brand teal on the stock spinner
     ),
     onRefresh: _triggerRefresh,
   );

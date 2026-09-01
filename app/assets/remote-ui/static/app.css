@@ -2,14 +2,15 @@
      lib/ui/theme.dart): the mark's keyline teal as primary, sage green
      success, ochre warning, rust error. Exact values on the dark background;
      darkened a step for text on the light one. --primary is the text/border
-     accent, --primary-fill the solid-fill tone, one and the same in dark. */
+     accent, --primary-fill the solid-fill tone; the deepened teal is dark
+     enough to serve as both in both themes. */
   :root {
     color-scheme: light;
     --bg: #f5f4f2; --surface: #ffffff; --surface-2: #e8e6e1;
     --surface-high: #efede9;
     --border: #e3e0da; --divider: #e3e0da; --outline: #b4b1ab;
     --text: #212327; --muted: #5d6066;
-    --primary: #488284; --primary-fill: #5da3a6; --primary-ink: #ffffff;
+    --primary: #488284; --primary-fill: #488284; --primary-ink: #ffffff;
     --primary-soft: #dfeaea;
     --accent: #44686c;
     --ok: #56814f; --warn: #9c742a; --error: #a9501f; --error-ink: #ffffff;
@@ -29,7 +30,7 @@
     --surface-high: #303136;
     --border: #3c3e43; --divider: #3c3e43; --outline: #5f6368;
     --text: #e8eaed; --muted: #b6babf;
-    --primary: #5da3a6; --primary-fill: #5da3a6; --primary-ink: #102a2c;
+    --primary: #488284; --primary-fill: #488284; --primary-ink: #ffffff;
     --primary-soft: #2f4142;
     --accent: #7aa6aa;
     --ok: #749c6f; --warn: #ce9c3e; --error: #d97e4c; --error-ink: #2e1204;

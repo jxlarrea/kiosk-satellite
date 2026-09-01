@@ -66,7 +66,7 @@ const pullToRefreshProbeScript = '''
       'will-change:transform;pointer-events:none');
     el.innerHTML =
       '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="#5da3a6" stroke-width="2.6" stroke-linecap="round">' +
+      'stroke="#488284" stroke-width="2.6" stroke-linecap="round">' +
       '<path d="M19.5 12a7.5 7.5 0 1 1-2.4-5.5"/>' +
       '<path d="M17.5 2.5v4.4h-4.4" stroke-width="2.4"/></svg>';
     (document.body || document.documentElement).appendChild(el);

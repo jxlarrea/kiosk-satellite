@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// shared brand palette (the remote admin UI's CSS carries the same values —
 /// see assets/remote-ui/static/app.css):
 ///
-///   teal        #5DA3A6  primary (the mark's keyline)
+///   teal        #488284  primary (the mark's keyline, deepened a step)
 ///   teal        #558387  secondary accent
 ///   sage green  #749C6F  success
 ///   ochre       #CE9C3E  warning / tertiary
@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 /// The exact palette values are used on the dark background, where they have
 /// comfortable contrast. On the light background each accent is darkened just
 /// enough to stay legible as text — same hue, deeper tone.
-const _teal = Color(0xFF5DA3A6);
+const _teal = Color(0xFF488284);
 
 /// The brand sage: no longer the primary, but still the green of the settings
 /// rail's accent cycle and of success states (the remote admin's --ok).
@@ -63,7 +63,7 @@ ColorScheme _lightScheme() =>
       seedColor: _teal,
       brightness: Brightness.light,
     ).copyWith(
-      primary: const Color(0xFF488284), // teal, darkened for light surfaces
+      primary: _teal, // already deep enough to carry text on light surfaces
       onPrimary: Colors.white,
       primaryContainer: const Color(0xFFD4E3E4),
       onPrimaryContainer: const Color(0xFF1B3437),
@@ -97,10 +97,7 @@ ColorScheme _darkScheme() =>
       brightness: Brightness.dark,
     ).copyWith(
       primary: _teal, // exact brand values carry the dark theme
-      // Dark ink, not white: the keyline teal is too light to carry white
-      // text, and it is how the palette already inks teal fills in the dark
-      // (onSecondary).
-      onPrimary: const Color(0xFF102A2C),
+      onPrimary: Colors.white,
       primaryContainer: const Color(0xFF2F4649),
       onPrimaryContainer: const Color(0xFFD0E3E5),
       secondary: const Color(0xFF6C9B9F), // teal, lifted a step for text
