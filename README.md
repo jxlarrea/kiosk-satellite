@@ -84,7 +84,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   folders, a photo gallery picked straight from the system picker, or an
   [Immich](docs/immich.md) library or album as a full photo frame with
   metadata overlay, all with crossfade / slide / zoom / Ken Burns
-  transitions and an optional corner clock.
+  transitions and an optional corner clock. Supports dismiss on motion, face detection and presence detection.
 
 &bull; **Remote administration**: an embedded web admin at
   `http://<device-ip>:2324` mirrors every setting, shows a live
@@ -238,3 +238,17 @@ under
 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/):
 you may use and share it, but commercial use and derivative works are not
 permitted. See [LICENSE](LICENSE).
+
+## Acknowledgements
+
+Kiosk Satellite stands on a lot of amazing projects. Thanks to:
+
+- [Home Assistant](https://www.home-assistant.io/) and [ESPHome](https://esphome.io/), the ecosystem this app was made for.
+- [Music Assistant](https://www.music-assistant.io/) which carries the media player experience in Kiosk Satellite.
+- [Immich](https://immich.app/) for the photo-frame screensaver which everyone loves.
+- [Flutter](https://flutter.dev/) and [flutter_inappwebview](https://inappwebview.dev/), which carries the whole dashboard experience.
+- [ONNX Runtime](https://onnxruntime.ai/) for on-device wake word inference, running [vsWakeWord](https://github.com/jxlarrea/voice-satellite-card-integration), [openWakeWord](https://github.com/dscripka/openWakeWord) and [microWakeWord](https://github.com/kahrendt/microWakeWord) models.
+- [Material Design Icons](https://pictogrammers.com/library/mdi/) for the icon set.
+- The [Rubik](https://fonts.google.com/specimen/Rubik), [Nunito](https://fonts.google.com/specimen/Nunito) and [DSEG](https://github.com/keshikan/DSEG) fonts, all under the SIL Open Font License.
+
+And every package author in `pubspec.yaml` whose work this app quietly depends on.
