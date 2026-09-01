@@ -304,6 +304,38 @@ class SendspinManager extends Manager {
     }
   }
 
+  /// The kiosk menu's Now Playing entry: bring the view up now. A playing
+  /// track takes the screensaver slot on its own; a paused one is held,
+  /// the way a pause made on the view holds it, so the view opens paused
+  /// with its play button instead of the regular screensaver. The
+  /// screensaver start itself goes through the same command the menu's
+  /// Start Screensaver uses, with every refusal that has.
+  Future<void> showFullscreen() async {
+    final now = nowPlaying.value;
+    if (now == null) return;
+    if (now['playing'] != true &&
+        _settings.get(defs.sendspinFullscreenControls)) {
+      _pausedHold = true;
+      _pausedHoldTimer?.cancel();
+      _pausedHoldTimer = Timer(
+        Duration(
+          minutes: _settings.get(defs.sendspinPausedHideMinutes).toInt(),
+        ),
+        () {
+          _pausedHoldTimer = null;
+          if (!_pausedHold) return;
+          _pausedHold = false;
+          _publishShowing();
+        },
+      );
+      _publishShowing();
+      // The takeover flag rides the bus to the screensaver; let it land
+      // before the session starts.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    await commands.execute('startScreensaver', const {});
+  }
+
   void _endPausedHold() {
     _pausedHold = false;
     _pausedHoldTimer?.cancel();
@@ -545,6 +577,7 @@ class SendspinManager extends Manager {
         'sendspin.fullscreen_controls',
         'sendspin.fullscreen_queue',
         'sendspin.fullscreen_on_play',
+        'sendspin.fullscreen_shortcut',
         'sendspin.fullscreen_motion',
         'sendspin.duck_percent',
         'sendspin.paused_hide_minutes',

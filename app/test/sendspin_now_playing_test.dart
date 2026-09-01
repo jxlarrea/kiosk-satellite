@@ -148,13 +148,15 @@ void main() {
       expect(keys[first + 1], defs.sendspinFullscreenControls.key);
       expect(keys[first + 2], defs.sendspinFullscreenQueue.key);
       expect(keys[first + 3], defs.sendspinFullscreenOnPlay.key);
-      expect(keys[first + 4], defs.sendspinFullscreenMotion.key);
-      expect(defs.sendspinFullscreenQueue.section, 'Now Playing');
+      expect(keys[first + 4], defs.sendspinFullscreenShortcut.key);
+      expect(keys[first + 5], defs.sendspinFullscreenMotion.key);
+      // The view's own buttons flip lyrics and the queue and the choice
+      // sticks: neither draws a settings row any more.
+      expect(defs.sendspinFullscreenQueue.hidden, isTrue);
+      expect(defs.sendspinLyrics.hidden, isTrue);
       expect(defs.sendspinFullscreenQueue.defaultValue, isFalse);
-      expect(
-        defs.sendspinFullscreenQueue.dependsOn,
-        'sendspin.fullscreen_controls',
-      );
+      expect(defs.sendspinFullscreenShortcut.defaultValue, isFalse);
+      expect(defs.sendspinFullscreenShortcut.dependsOn, 'sendspin.fullscreen');
     });
 
     test('controls default on, launch on play off, both behind the view', () {
@@ -473,6 +475,30 @@ void main() {
       fake!.onSnapshot(null);
       await pumpEventQueue();
       expect(sendspin.fullscreenActive.value, isFalse);
+    });
+
+    test('the menu entry brings a paused track up held', () async {
+      // Paused with the dashboard up, then the kiosk menu's Now Playing:
+      // the view must open on the paused track, not on the clock.
+      await build();
+      fake!.onSnapshot({'title': 'Song', 'playing': true});
+      fake!.onSnapshot({'title': 'Song', 'playing': false});
+      await pumpEventQueue();
+      expect(sendspin.fullscreenActive.value, isFalse);
+      final started = <String>[];
+      commands.register(
+        Command(
+          name: 'startScreensaver',
+          description: 'test',
+          handler: (_) async {
+            started.add('start');
+            return const CommandResult.ok();
+          },
+        ),
+      );
+      await sendspin.showFullscreen();
+      expect(sendspin.fullscreenActive.value, isTrue);
+      expect(started, ['start']);
     });
 
     test('a pause while the view is not on screen arms nothing', () async {

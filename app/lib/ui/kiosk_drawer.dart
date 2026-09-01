@@ -248,6 +248,17 @@ class KioskDrawer extends StatelessWidget {
                                 if (c.settings.get(defs.sendspinPlayerActive) &&
                                     c.settings.get(defs.sendspinPlayerShortcut))
                                   _sendspinItem(context, divided: sep()),
+                              // The Now Playing view's entry: the same
+                              // opt-in shape as the card's, and like it
+                              // only while there is a track to show.
+                              if (!restricted ||
+                                  c.settings.get(defs.kioskAllowSendspinPlayer))
+                                if (c.settings.get(defs.sendspinPlayerActive) &&
+                                    c.settings.get(defs.sendspinFullscreen) &&
+                                    c.settings.get(
+                                      defs.sendspinFullscreenShortcut,
+                                    ))
+                                  _nowPlayingItem(context, divided: sep()),
                               if (!restricted ||
                                   c.settings.get(defs.kioskAllowScreensaver))
                                 _item(
@@ -576,6 +587,28 @@ class KioskDrawer extends StatelessWidget {
             } else {
               c.bus.publish(const SendspinShowPlayerRequested());
             }
+          },
+        );
+      },
+    );
+  }
+
+  /// The Now Playing row: present while a track is loaded (playing or
+  /// paused), gone otherwise, so it never leads to the regular
+  /// screensaver by mistake.
+  Widget _nowPlayingItem(BuildContext context, {required bool divided}) {
+    return ValueListenableBuilder<Map<String, Object?>?>(
+      valueListenable: c.sendspin.nowPlaying,
+      builder: (context, now, _) {
+        if (now == null) return const SizedBox.shrink();
+        return _item(
+          divided: divided,
+          context,
+          Icons.album_outlined,
+          'Now Playing',
+          () {
+            onClose();
+            unawaited(c.sendspin.showFullscreen());
           },
         );
       },

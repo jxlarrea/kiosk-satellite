@@ -30,7 +30,7 @@ view's.
 | Duck volume during voice interactions | 10% | While the voice assistant listens or speaks, music drops to this fraction of its volume. Capped at 25% so wake word and speech detection stay reliable. |
 | Show the floating media player | on | The now-playing card described below. |
 | Player size | Compact | Compact is display-only; Large adds previous, play/pause and next buttons sized for touch. |
-| Hide the paused player after | 3 min | How long a paused card stays before hiding itself. |
+| Hide the paused player after | 3 min | How long a paused player stays on screen, the floating card and the Now Playing view alike. |
 
 ### Now Playing
 
@@ -41,8 +41,8 @@ under the player.
 | --- | --- | --- |
 | "Now Playing" instead of the screensaver | off | The full-screen view described below. |
 | Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
-| Show queue | off | The queue from the playing track on, in place of the lyrics on the view. The view's queue button flips it. Needs the Music Assistant server address and token. |
 | Launch Now Playing when music starts playing | off | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
+| Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up, while a track is loaded. A paused track opens paused, with its play button. |
 | Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
 
 ### Music Assistant
@@ -60,8 +60,7 @@ own API, which is a separate address with its own token.
 | Show in the kiosk menu | on | The shortcut described below. |
 | Close after inactivity | 0s | Seconds without a touch on the Music Assistant page before it closes itself and the dashboard returns. Zero leaves it open until someone closes it. |
 | Hide the close button | off | Remove the floating close button from the Music Assistant page, for the corner it shares with the page's own controls. The back button and the inactivity timer still close it. |
-| Show lyrics | off | Synced lyrics on the "Now Playing" screen, described below. |
-| Lyrics timing | +0.3s | Shifts the lyrics against the music. Positive shows each line earlier. |
+| Lyrics timing | +0.3s | Shifts the lyrics against the music. Positive shows each line earlier. Shown while the view's lyrics toggle is on. |
 
 Music Assistant's Sendspin provider is built in and always enabled, and
 players register themselves on connection: there is nothing to add on the
@@ -202,11 +201,9 @@ Four smaller toggles flank the transport the way Music Assistant's own
 player lays them out. On the left, a **heart** adds the playing track to
 the Music Assistant favorites or takes it out again, lit while it is one,
 and **shuffle**, lit while the queue is shuffled and following a shuffle
-set from Music Assistant itself within a moment. On the right, **lyrics**,
-lit while **Show lyrics** is on, and **queue**, lit while **Show queue**
-is. Both flip their setting, so the choice sticks across sessions and
-either settings surface shows the same state, and the two keep each
-other exclusive: lyrics and the queue share one slot, beside the cover on
+set from Music Assistant itself within a moment. On the right, **lyrics** and
+**queue**, each lit while it is the panel. The choice sticks across
+sessions, and the two keep each other exclusive: lyrics and the queue share one slot, beside the cover on
 a landscape screen and under it on a portrait one. The queue is laid
 out the way Music Assistant's own is: what already played, faded, above
 a Now Playing heading, the playing track under it, then an Up next
@@ -244,7 +241,7 @@ cover gives back a little size so everything fits a short screen.
 
 ### Lyrics
 
-With **Show lyrics** on, the view splits: the cover and track to one side,
+With the view's lyrics toggle on, the view splits: the cover and track to one side,
 the song's lyrics to the other, the current line lit and the rest receding as
 it scrolls itself in time with the music. The line follows Sendspin's own
 synced position, the same one that keeps the audio aligned, so it tracks what

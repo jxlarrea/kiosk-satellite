@@ -4409,8 +4409,8 @@ const sendspinPausedHideMinutes = SettingDef<num>(
   defaultValue: 3,
   title: 'Hide the paused player after',
   description:
-      'How long a paused player card stays on screen before hiding '
-      'itself. It returns the moment playback resumes.',
+      'How long a paused player stays on screen. It applies to both the '
+      'floating player and the Now Playing view.',
   category: 'Sendspin',
   section: 'Sendspin player',
   min: 1,
@@ -4478,9 +4478,8 @@ const sendspinFullscreenControls = SettingDef<bool>(
 );
 
 /// The queue panel in the lyrics' slot, persisted like the lyrics are:
-/// the view's queue button flips it, and so does either settings surface.
-/// Both on at once, the queue wins on screen; the buttons keep the two
-/// exclusive when they do the flipping.
+/// the view's queue button flips it and keeps the two exclusive. No
+/// settings row, for the same reason the lyrics have none.
 const sendspinFullscreenQueue = SettingDef<bool>(
   key: 'sendspin.fullscreen_queue',
   type: SettingType.boolean,
@@ -4488,10 +4487,25 @@ const sendspinFullscreenQueue = SettingDef<bool>(
   title: 'Show queue',
   description:
       'The queue from the playing track on, in place of the lyrics on the '
-      'Now Playing view. Needs the Music Assistant server address and token.',
+      'Now Playing view.',
   category: 'Sendspin',
   section: 'Now Playing',
-  dependsOn: 'sendspin.fullscreen_controls',
+  hidden: true,
+);
+
+/// The kiosk menu's way to the Now Playing view on demand, the twin of
+/// the floating player's entry: the entry shows while a track is loaded
+/// and brings the view up, paused with its play button if the music is.
+const sendspinFullscreenShortcut = SettingDef<bool>(
+  key: 'sendspin.fullscreen_shortcut',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show in the kiosk menu',
+  description:
+      'Add an entry in the kiosk menu that shows the Now Playing view.',
+  category: 'Sendspin',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
 );
 
 /// Bring the view up the moment playback starts rather than waiting for
@@ -4727,10 +4741,13 @@ const sendspinLyrics = SettingDef<bool>(
       'included); tracks it cannot match are looked up on LRCLIB directly.',
   category: 'Sendspin',
   section: 'Music Assistant',
-  // Gone, not greyed, while a remote player is followed: lyrics are forced
-  // off there (the position reporting is too coarse to sing along with),
-  // and a switch that cannot do anything only invites flipping it. The
-  // timing row below rides this row's dependsOn transitively.
+  // The Now Playing view's own lyrics button flips this and the choice
+  // sticks, so no settings row: two places to flip one thing only invite
+  // confusion. Off while a remote player is followed (the position
+  // reporting is too coarse to sing along with), which the button
+  // honors by staying out; the timing row rides this dependsOn
+  // transitively, so it shows only while lyrics are on.
+  hidden: true,
   dependsOn: 'sendspin.ma_player',
   dependsOnValue: '',
 );
@@ -5739,6 +5756,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinFullscreenControls,
   sendspinFullscreenQueue,
   sendspinFullscreenOnPlay,
+  sendspinFullscreenShortcut,
   sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,
