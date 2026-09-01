@@ -156,9 +156,9 @@ class _ToastCardState extends State<_ToastCard>
         child: IgnorePointer(
           ignoring: actionLabel == null,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(Ks.inset, 0, Ks.inset, 24),
+            padding: const EdgeInsets.fromLTRB(Ks.inset, 0, Ks.inset, 20),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: FadeTransition(
                 opacity: CurvedAnimation(
                   parent: _controller,
@@ -197,20 +197,20 @@ class _ToastCardState extends State<_ToastCard>
                       type: MaterialType.transparency,
                       borderRadius: BorderRadius.circular(Ks.radiusCard),
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(17, 14, 22, 14),
+                        padding: const EdgeInsets.fromLTRB(14, 11, 18, 11),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 43,
-                              height: 43,
+                              width: 34,
+                              height: 34,
                               decoration: BoxDecoration(
                                 color: iconBg,
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(icon, size: 24, color: iconFg),
+                              child: Icon(icon, size: 19, color: iconFg),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             Flexible(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,7 @@ class _ToastCardState extends State<_ToastCard>
                                   Text(
                                     widget.title,
                                     style: TextStyle(
-                                      fontSize: 17.5,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                       height: 1.3,
                                       color: scheme.onSurface,
@@ -227,11 +227,11 @@ class _ToastCardState extends State<_ToastCard>
                                   ),
                                   if (message != null && message.isNotEmpty)
                                     Padding(
-                                      padding: const EdgeInsets.only(top: 3),
+                                      padding: const EdgeInsets.only(top: 2),
                                       child: Text(
                                         message,
                                         style: TextStyle(
-                                          fontSize: 15.5,
+                                          fontSize: 13.5,
                                           height: 1.35,
                                           color: scheme.onSurfaceVariant,
                                         ),
@@ -244,9 +244,9 @@ class _ToastCardState extends State<_ToastCard>
                               const SizedBox(width: 10),
                               TextButton(
                                 style: TextButton.styleFrom(
-                                  minimumSize: const Size(0, 43),
+                                  minimumSize: const Size(0, 36),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
+                                    horizontal: 12,
                                   ),
                                 ),
                                 onPressed: () {

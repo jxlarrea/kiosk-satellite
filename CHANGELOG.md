@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Changed
+- The toast that floats over the bottom of the screen is smaller now, its icon, text and padding brought down to sit with the rest of the UI instead of reading a size class larger. Like the rest of the app's own surfaces it follows the Scale UI slider.
+
 ## v2026.9.1 - 2026-09-01
 
 ### Added
