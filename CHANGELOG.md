@@ -5,7 +5,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 ## Unreleased
 
 ### Added
-- A **Feels like** toggle on the Weather screensaver widget, on the device and in the remote admin alike: with it on, the apparent temperature shows after the real one on the temperature line, "30°C / 33°C", read from the weather entity's own apparent temperature attribute. Off by default, and the single temperature stays whenever the entity does not report the reading or both round to the same number.
+- A **Feels like** toggle on the Weather screensaver widget, on the device and in the remote admin alike: with it on, the apparent temperature shows after the real one on the temperature line, "30°C / 33°C", read from the weather entity's own apparent temperature attribute. Off by default, and the single temperature stays whenever the entity does not report the reading or both round to the same number. A **Feels like only** toggle goes further and puts the apparent temperature in the real one's place.
 
 ### Fixed
 - A docked navbar-card no longer sits a sidebar-width off center when kiosk mode hides the sidebar on an instance running Material You Utilities. That module re-declares the sidebar width variable forcefully enough to beat the app's zeroing where both land, so kiosk mode now zeroes the width again one level down, on the dashboard root, where its word is final for every card.

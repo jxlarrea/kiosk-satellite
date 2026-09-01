@@ -246,6 +246,7 @@ the text.
 | Corner | first free corner | |
 | Color | white | Text and icons alike. |
 | Feels like | off | The apparent temperature after the real one on the temperature line, "30°C / 33°C". Needs the entity to report it, and when both round to the same number only one shows. |
+| Feels like only | off | The apparent temperature in the real one's place. Wins over Feels like, and falls back to the real reading when the entity does not report it. |
 | Location, Forecast, Humidity, Wind speed, Visibility | on | One toggle per line. A line also needs the entity to actually carry that reading; whatever the entity lacks is simply left out. |
 
 Readings arrive over a live Home Assistant subscription while the

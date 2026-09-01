@@ -1789,10 +1789,14 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
           // than taking a detail row of its own: "30°C / 33°C" reads as
           // one fact, the real reading and what it feels like. When both
           // round to the same number the pair would say nothing, so the
-          // single reading shows.
-          _on('feels_like') &&
-                  feelsLike != null &&
-                  feelsLike.round() != temperature.round()
+          // single reading shows. Feels like only goes further and puts
+          // the apparent temperature in the real one's place; an entity
+          // without the reading keeps the real one either way.
+          feelsLike == null
+              ? _degrees(temperature)
+              : _on('feels_like_only')
+              ? _degrees(feelsLike)
+              : _on('feels_like') && feelsLike.round() != temperature.round()
               ? '${_degrees(temperature)} / ${_degrees(feelsLike)}'
               : _degrees(temperature),
           // Proportional figures, not tabular: the block hugs its corner,

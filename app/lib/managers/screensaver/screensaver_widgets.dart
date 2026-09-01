@@ -23,7 +23,9 @@
 ///      no city attribute, so the place is named by hand), color ("r,g,b"
 ///      text and icon color), feels_like (the apparent temperature after
 ///      the real one, "30°C / 33°C", collapsed to one number when both
-///      round the same; off by default), and the line
+///      round the same; off by default), feels_like_only (the apparent
+///      temperature in the real one's place; off by default, wins over
+///      feels_like), and the line
 ///      toggles location, forecast, humidity, wind, visibility. The
 ///      temperature always shows; every line needs its toggle on AND the
 ///      entity to actually carry the reading.
@@ -86,6 +88,7 @@ Map<String, Object?> screensaverWidgetDefaults(String type) => switch (type) {
     'label': '',
     'color': '250,250,250',
     'feels_like': false,
+    'feels_like_only': false,
     'location': true,
     'forecast': true,
     'humidity': true,

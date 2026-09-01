@@ -118,6 +118,7 @@ void main() {
       // Feels like alone starts off: the temperature line stays a single
       // reading until asked otherwise.
       expect(defaults['feels_like'], isFalse);
+      expect(defaults['feels_like_only'], isFalse);
     });
 
     test('decodes alongside a clock, one corner each', () {

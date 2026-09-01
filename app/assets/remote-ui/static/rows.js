@@ -533,8 +533,8 @@ export function settingRow(s) {
     const DEFAULTS = {
       clock: { color: '250,250,250', h24: false, date: false },
       weather: { entity: '', name: '', label: '', color: '250,250,250',
-        feels_like: false, location: true, forecast: true, humidity: true,
-        wind: true, visibility: true },
+        feels_like: false, feels_like_only: false, location: true,
+        forecast: true, humidity: true, wind: true, visibility: true },
       battery: { color: '250,250,250', percent: true, low: false },
       entity: { entity: '', name: '', label: '', attribute: '',
         show_name: true, color: '250,250,250' },
@@ -770,14 +770,18 @@ export function settingRow(s) {
         refs.feelsLike = cameraToggle('Feels like',
           config.feels_like === true,
           'The apparent temperature after the real one, "30° / 33°".');
+        refs.feelsLikeOnly = cameraToggle('Feels like only',
+          config.feels_like_only === true,
+          "The apparent temperature in the real one's place.");
         refs.forecast = cameraToggle('Forecast',
           config.forecast === true, 'The conditions, with a matching icon.');
         refs.humidity = cameraToggle('Humidity', config.humidity === true);
         refs.wind = cameraToggle('Wind speed', config.wind === true);
         refs.visibility = cameraToggle('Visibility', config.visibility === true);
         typeBlock.append(refs.entity.wrap, refs.label.wrap, refs.color.wrap,
-          refs.location.wrap, refs.feelsLike.wrap, refs.forecast.wrap,
-          refs.humidity.wrap, refs.wind.wrap, refs.visibility.wrap);
+          refs.location.wrap, refs.feelsLike.wrap, refs.feelsLikeOnly.wrap,
+          refs.forecast.wrap, refs.humidity.wrap, refs.wind.wrap,
+          refs.visibility.wrap);
       };
       renderTypeBlock();
       typeSel.select.addEventListener('change', () => {
@@ -822,6 +826,7 @@ export function settingRow(s) {
               name: option ? option.textContent : entity,
               label: refs.label.input.value.trim(), color,
               feels_like: refs.feelsLike.input.checked,
+              feels_like_only: refs.feelsLikeOnly.input.checked,
               location: refs.location.input.checked,
               forecast: refs.forecast.input.checked,
               humidity: refs.humidity.input.checked,

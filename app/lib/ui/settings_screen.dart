@@ -4161,6 +4161,7 @@ class _WidgetsEditorState extends State<_WidgetsEditor> {
                       // temperature does, between Location and Forecast.
                       toggle('Location', 'location'),
                       toggle('Feels like', 'feels_like'),
+                      toggle('Feels like only', 'feels_like_only'),
                       toggle('Forecast', 'forecast'),
                       toggle('Humidity', 'humidity'),
                       toggle('Wind speed', 'wind'),
