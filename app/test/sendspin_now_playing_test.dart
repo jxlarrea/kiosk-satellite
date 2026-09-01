@@ -453,10 +453,17 @@ void main() {
       expect(native.where((c) => c.method == 'rebasePosition'), hasLength(1));
     });
 
-    test('a pause under the controls keeps the view', () async {
-      await build();
+    /// The view on screen: a screensaver session up with a playing track.
+    Future<void> showView() async {
+      bus.publish(const ScreensaverStateChanged(active: true));
+      await pumpEventQueue();
       fake!.onSnapshot({'title': 'Song', 'playing': true});
       expect(sendspin.fullscreenActive.value, isTrue);
+    }
+
+    test('a pause under the controls keeps the view', () async {
+      await build();
+      await showView();
       fake!.onSnapshot({'title': 'Song', 'playing': false});
       await pumpEventQueue();
       expect(sendspin.fullscreenActive.value, isTrue);
@@ -468,9 +475,31 @@ void main() {
       expect(sendspin.fullscreenActive.value, isFalse);
     });
 
+    test('a pause while the view is not on screen arms nothing', () async {
+      // Paused from the phone with the dashboard up: the next idle
+      // timeout must bring the regular screensaver, not a paused view.
+      await build();
+      fake!.onSnapshot({'title': 'Song', 'playing': true});
+      fake!.onSnapshot({'title': 'Song', 'playing': false});
+      await pumpEventQueue();
+      expect(sendspin.fullscreenActive.value, isFalse);
+    });
+
+    test('dismissing the view ends a held pause', () async {
+      await build();
+      await showView();
+      fake!.onSnapshot({'title': 'Song', 'playing': false});
+      await pumpEventQueue();
+      expect(sendspin.fullscreenActive.value, isTrue);
+      bus.publish(const ScreensaverStateChanged(active: false));
+      await pumpEventQueue();
+      expect(sendspin.fullscreenActive.value, isFalse);
+      expect(events.last.active, isFalse);
+    });
+
     test('without the controls a pause gives the screensaver back', () async {
       await build(extra: {'ks.sendspin.fullscreen_controls': false});
-      fake!.onSnapshot({'title': 'Song', 'playing': true});
+      await showView();
       fake!.onSnapshot({'title': 'Song', 'playing': false});
       await pumpEventQueue();
       expect(sendspin.fullscreenActive.value, isFalse);
@@ -478,7 +507,7 @@ void main() {
 
     test('switching the controls off drops a held pause', () async {
       await build();
-      fake!.onSnapshot({'title': 'Song', 'playing': true});
+      await showView();
       fake!.onSnapshot({'title': 'Song', 'playing': false});
       await settings.set(defs.sendspinFullscreenControls, false);
       await pumpEventQueue();
@@ -498,6 +527,8 @@ void main() {
     test('the hold runs out with the card\'s paused timeout', () {
       fakeAsync((async) {
         build(extra: {'ks.sendspin.paused_hide_minutes': 1});
+        async.flushMicrotasks();
+        bus.publish(const ScreensaverStateChanged(active: true));
         async.flushMicrotasks();
         fake!.onSnapshot({'title': 'Song', 'playing': true});
         fake!.onSnapshot({'title': 'Song', 'playing': false});

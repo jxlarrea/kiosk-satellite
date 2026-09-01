@@ -115,12 +115,20 @@ class SendspinManager extends Manager {
   /// queue's elapsed time is the one reading that matches the audio.
   Timer? _queuePoll;
 
-  /// A track paused under the media controls keeps the full-screen view,
-  /// paused with its play button, for as long as the floating card keeps
-  /// its paused look (sendspin.paused_hide_minutes): the person who
-  /// pressed pause on that screen is not done with it, but a display
-  /// paused all night should give the regular screensaver back.
+  /// A track paused while the full-screen view is up, with its media
+  /// controls, keeps the view, paused with its play button, for as long
+  /// as the floating card keeps its paused look
+  /// (sendspin.paused_hide_minutes): the person who pressed pause on that
+  /// screen is not done with it. It ends when the view is dismissed, when
+  /// playback resumes, and when the time runs out, and a pause landing
+  /// while the view is not showing never arms it: otherwise a paused
+  /// track owned the screensaver slot and the view kept coming back at
+  /// every idle timeout.
   bool _pausedHold = false;
+
+  /// Whether a screensaver session is up, which is the only time the
+  /// full-screen view can be on screen.
+  bool _screensaverActive = false;
   Timer? _pausedHoldTimer;
 
   /// True while any non-media interaction (voice, announcement, timer) is
@@ -267,9 +275,14 @@ class SendspinManager extends Manager {
     final playing = value?['playing'] == true;
     if (playing || value == null) {
       _endPausedHold();
-    } else if (wasPlaying && _settings.get(defs.sendspinFullscreenControls)) {
-      // A pause landing under the controls (after the track-change grace
-      // has ruled out a song boundary): hold the view.
+    } else if (wasPlaying &&
+        wasShowing &&
+        _screensaverActive &&
+        _settings.get(defs.sendspinFullscreen) &&
+        _settings.get(defs.sendspinFullscreenControls)) {
+      // A pause landing under the controls of a view that is on screen
+      // (after the track-change grace has ruled out a song boundary):
+      // hold the view.
       _pausedHold = true;
       _pausedHoldTimer?.cancel();
       _pausedHoldTimer = Timer(
@@ -439,6 +452,16 @@ class SendspinManager extends Manager {
     // Voice interactions (anything but media, which is playback itself,
     // ours included): hide the floating player and duck the audio so the
     // microphone hears the person, not the song.
+    // The view leaving the screen ends a held pause: nobody is looking at
+    // the paused track any more, and the regular screensaver should have
+    // the slot back at the next idle timeout.
+    bus.on<ScreensaverStateChanged>().listen((e) {
+      _screensaverActive = e.active;
+      if (!e.active && _pausedHold) {
+        _endPausedHold();
+        _publishShowing();
+      }
+    });
     bus.on<VoiceInteractionChanged>().listen((e) {
       if (e.reason == 'media') return;
       if (e.active) {

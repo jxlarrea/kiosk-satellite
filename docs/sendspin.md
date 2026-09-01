@@ -224,8 +224,9 @@ above it, never the buttons under a finger.
 Pausing from the view keeps it up, paused, with its play button, for as
 long as **Hide the paused player after** keeps the floating card: the
 person who pressed pause on that screen is not done with it. Once the
-time runs out, or the track goes away, the regular screensaver takes the
-slot back. With the controls off a pause swaps the view back to the
+view is dismissed, the time runs out or the track goes away, the regular
+screensaver takes the slot back, and a pause made while the view is not
+on screen never holds it. With the controls off a pause swaps the view back to the
 regular screensaver at once, as before.
 
 With controls on screen a tap can no longer mean "dismiss", so the view
