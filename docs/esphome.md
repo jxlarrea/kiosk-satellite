@@ -43,6 +43,7 @@ Turn on **Expose kiosk entities** and every entity below joins the device. Off b
 |---|---|---|
 | **Screen** | light | Screen on or off, with the panel brightness |
 | **Screensaver active** | switch | Starts and stops the screensaver |
+| **Now Playing** | switch | On while the full-screen Now Playing view is on screen. Turning it on brings the view up, paused with its play button when the music is; off dismisses it. Requires the "Now Playing" instead of the screensaver setting on |
 | **Volume** | number | Media volume, percent |
 | **Voice Satellite** | switch | Starts and stops the engine in the page, the same as the Start and Stop buttons on the kiosk's Voice Satellite settings. Requires a satellite bound to the kiosk (the setup wizard and the Voice Satellite settings page both record that). Binding or unbinding re-lists the entities at the next server start |
 | **Postpone screensaver** | button | Restarts the idle countdown |

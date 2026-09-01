@@ -93,6 +93,16 @@ class EspEntitySurface {
   bool _deviceCameraPresent = false;
   bool _screensaverActive = false;
 
+  /// Whether the Now Playing view has something to show, mirrored from
+  /// the Sendspin manager's event: with a session up, that is the view on
+  /// screen.
+  bool _nowPlayingActive = false;
+
+  bool get _nowPlayingShown =>
+      _screensaverActive &&
+      _nowPlayingActive &&
+      _settings.get(defs.sendspinFullscreen);
+
   /// Whether the Voice Satellite entities are in this run's catalog, so a
   /// push never names an entity Home Assistant was never told about.
   bool _voiceSatellite = false;
@@ -350,6 +360,18 @@ class EspEntitySurface {
         'name': 'Screensaver active',
         'icon': 'mdi:sleep',
       },
+      // The full-screen Now Playing view: on while it is on screen, and a
+      // turn-on brings it up the way the kiosk menu entry does (a paused
+      // track opens paused). Only with the view enabled, like the menu
+      // entry: a switch that can only fail is worse than no switch.
+      if (_settings.get(defs.sendspinPlayerActive) &&
+          _settings.get(defs.sendspinFullscreen))
+        {
+          'type': 'switch',
+          'objectId': 'now_playing',
+          'name': 'Now Playing',
+          'icon': 'mdi:album',
+        },
       {
         'type': 'number',
         'objectId': 'volume',
@@ -933,6 +955,13 @@ class EspEntitySurface {
       bus.on<ScreensaverStateChanged>().listen((e) {
         _screensaverActive = e.active;
         _send('screensaver_active', e.active);
+        _send('now_playing', _nowPlayingShown);
+      }),
+    );
+    _subs.add(
+      bus.on<SendspinNowPlayingChanged>().listen((e) {
+        _nowPlayingActive = e.active;
+        _send('now_playing', _nowPlayingShown);
       }),
     );
     _subs.add(bus.on<ScreenStateChanged>().listen((_) => _sendScreen()));
@@ -1155,6 +1184,13 @@ class EspEntitySurface {
           value == true ? 'startScreensaver' : 'stopScreensaver',
           const {},
         );
+      case 'now_playing':
+        if (value == true) {
+          await commands.execute('showNowPlaying', const {});
+        } else if (_nowPlayingShown) {
+          // Off means the view, not whatever screensaver may follow it.
+          await commands.execute('stopScreensaver', const {});
+        }
       case 'volume':
         await commands.execute('setVolume', {
           'percent': ((value as num?) ?? 0),
@@ -1378,7 +1414,18 @@ class EspEntitySurface {
     await _sendAdminUrl();
     await _sendLastLocation();
     await _sendPersonState();
+    // Both states are seeded from the managers rather than assumed off:
+    // a screensaver session, and a Now Playing view launched by playback,
+    // may well be up before the server starts (an app start with music
+    // already playing brings the view up two seconds ahead of it).
+    final saver = await commands.execute('isScreensaverActive', const {});
+    if (saver.ok && saver.data is bool) _screensaverActive = saver.data as bool;
+    final player = await commands.execute('sendspinStatus', const {});
+    if (player.ok && player.data is Map) {
+      _nowPlayingActive = (player.data as Map)['fullscreenActive'] == true;
+    }
     await _send('screensaver_active', _screensaverActive);
+    await _send('now_playing', _nowPlayingShown);
     await _sendDeviceInfo();
     // Settings-backed entities all report their stored values.
     for (final entry in _settingSwitches.entries) {

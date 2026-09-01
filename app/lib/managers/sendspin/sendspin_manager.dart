@@ -636,11 +636,30 @@ class SendspinManager extends Manager {
             'enabled': _settings.get(defs.sendspinEnabled),
             'running': _running,
             'playing': _playing,
+            'fullscreenActive': fullscreenActive.value,
             if (_remote != null)
               'remotePlayer': _settings.get(defs.sendspinMaPlayerName),
             ..._status,
             ...live,
           });
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'showNowPlaying',
+        description:
+            'Bring the full-screen Now Playing view up now, paused with its '
+            'play button when the music is. Nothing happens with no track '
+            'loaded or the view disabled.',
+        handler: (_) async {
+          if (nowPlaying.value == null ||
+              !_settings.get(defs.sendspinFullscreen)) {
+            return const CommandResult.fail('nothing to show');
+          }
+          await showFullscreen();
+          return const CommandResult.ok();
         },
       ),
     );

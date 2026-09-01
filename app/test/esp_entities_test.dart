@@ -71,6 +71,8 @@ void main() {
       'ks.btproxy.connections': true,
       'ks.motion.sensor': true,
       'ks.screensaver.brightness_level': 0.4,
+      'ks.sendspin.player_active': true,
+      'ks.sendspin.fullscreen': true,
     });
     bus = EventBus();
     log = Logger();
@@ -258,6 +260,63 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 80));
   }
 
+  test('Now Playing follows the view and brings it up', () async {
+    commands.register(
+      Command(
+        name: 'showNowPlaying',
+        description: 'stub',
+        handler: (p) async {
+          executed.add(('showNowPlaying', Map<String, Object?>.from(p)));
+          return const CommandResult.ok();
+        },
+      ),
+    );
+    await attach();
+    // Off at attach: no session, nothing to show.
+    expect(pushed, contains(('now_playing', false)));
+    pushed.clear();
+    // A session with a track to show is the view on screen; a session
+    // without one (the clock) is not.
+    bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+    bus.publish(const ScreensaverStateChanged(active: true));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(pushed.last, ('now_playing', true));
+    bus.publish(const SendspinNowPlayingChanged(active: false));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    expect(pushed.last, ('now_playing', false));
+    // Turning it on asks the Sendspin manager for the view; off while it
+    // shows stops the session, off otherwise does nothing.
+    await surface.handleCommand('now_playing', true);
+    expect(executed.map((e) => e.$1), contains('showNowPlaying'));
+    executed.clear();
+    await surface.handleCommand('now_playing', false);
+    expect(executed.map((e) => e.$1), isNot(contains('stopScreensaver')));
+    bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await surface.handleCommand('now_playing', false);
+    expect(executed.map((e) => e.$1), contains('stopScreensaver'));
+  });
+
+  test('Now Playing is seeded from the managers at attach', () async {
+    // The view launched by playback before the server came up: the
+    // switch must not start off asserting "off".
+    for (final (name, result) in [
+      ('isScreensaverActive', true),
+      ('sendspinStatus', {'fullscreenActive': true}),
+    ]) {
+      commands.register(
+        Command(
+          name: name,
+          description: 'stub',
+          handler: (_) async => CommandResult.ok(result),
+        ),
+      );
+    }
+    await attach();
+    expect(pushed, contains(('screensaver_active', true)));
+    expect(pushed, contains(('now_playing', true)));
+  });
+
   test('the catalog mirrors the MQTT entity set', () async {
     final catalog = await surface.build();
     final ids = [for (final d in catalog) '${d['objectId']}'];
@@ -266,6 +325,7 @@ void main() {
       containsAll([
         'screen',
         'screensaver_active',
+        'now_playing',
         'volume',
         'postpone_screensaver',
         'screensaver_next_slide',
