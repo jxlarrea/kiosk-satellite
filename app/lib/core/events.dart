@@ -70,6 +70,17 @@ class ScreensaverStateChanged extends AppEvent {
   String get wireName => active ? 'screensaverstart' : 'screensaverstop';
 }
 
+/// The moment the idle clock will start the screensaver moved (issue
+/// #406): armed or re-armed by a touch, a dismissal or a setting, null when
+/// nothing is counting down (the screensaver off or showing, a voice turn,
+/// a camera view, hold mode, another app in front). Internal: the ESPHome
+/// Next screensaver sensor rides it, as a single timestamp Home Assistant
+/// can trigger on rather than a seconds counter churning the recorder.
+class ScreensaverCountdownChanged extends AppEvent {
+  const ScreensaverCountdownChanged({required this.due});
+  final DateTime? due;
+}
+
 /// The motion policy the active screensaver schedule entry imposes (issue
 /// #89): true/false overrides the "Dismiss on motion" switch for the
 /// entry's duration, null returns to the switch. Published at session start

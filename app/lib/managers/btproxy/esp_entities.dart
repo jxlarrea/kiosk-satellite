@@ -15,6 +15,7 @@ import '../mqtt/interaction_stamp.dart';
 import '../sendspin/music_assistant_api.dart';
 import '../settings/definitions.dart' as defs;
 import '../settings/settings_manager.dart';
+import 'countdown_stamp.dart';
 
 /// The kiosk entities served over the ESPHome native API: the full MQTT
 /// catalog, one entity at a time, so the MQTT integration can sunset. This
@@ -124,6 +125,18 @@ class EspEntitySurface {
     _send('last_interaction', iso);
     _settings.setInternal('esphome_last_interaction', iso);
   });
+
+  /// The Next screensaver sensor (issue #406). The manager's due moment,
+  /// throttled the way Last interaction is so a stream of touches, each
+  /// nudging the moment a few seconds, does not land a recorder row apiece.
+  late final _countdown = CountdownStamp(
+    (due) => _send('next_screensaver', due?.toUtc().toIso8601String()),
+  );
+  DateTime? _idleDue;
+
+  /// Unknown while the screensaver shows: a clock still running under a
+  /// commanded session is not a moment anyone wants to trigger on.
+  void _sendCountdown() => _countdown.set(_screensaverActive ? null : _idleDue);
 
   /// Settings-backed switches: objectId -> (name, icon, definition).
   /// Mirrors the MQTT _settingSwitches map, entity ids and all.
@@ -599,6 +612,16 @@ class EspEntitySurface {
         'icon': 'mdi:gesture-tap',
         'deviceClass': 'timestamp',
       },
+      // When the idle clock will start the screensaver (issue #406): one
+      // timestamp Home Assistant can trigger on, rather than a seconds
+      // countdown churning the recorder. Unknown while nothing counts down.
+      {
+        'type': 'text_sensor',
+        'objectId': 'next_screensaver',
+        'name': 'Next screensaver',
+        'icon': 'mdi:timer-sand',
+        'deviceClass': 'timestamp',
+      },
       // ── Config ───────────────────────────────────────────────────────
       for (final e in _settingNumbers.entries)
         {
@@ -956,6 +979,13 @@ class EspEntitySurface {
         _screensaverActive = e.active;
         _send('screensaver_active', e.active);
         _send('now_playing', _nowPlayingShown);
+        _sendCountdown();
+      }),
+    );
+    _subs.add(
+      bus.on<ScreensaverCountdownChanged>().listen((e) {
+        _idleDue = e.due;
+        _sendCountdown();
       }),
     );
     _subs.add(
@@ -1124,6 +1154,7 @@ class EspEntitySurface {
     _viewsNudge?.cancel();
     _viewsNudge = null;
     _interaction.dispose();
+    _countdown.dispose();
   }
 
   /// A command from Home Assistant landed (via the native hub). State
@@ -1420,6 +1451,12 @@ class EspEntitySurface {
     // already playing brings the view up two seconds ahead of it).
     final saver = await commands.execute('isScreensaverActive', const {});
     if (saver.ok && saver.data is bool) _screensaverActive = saver.data as bool;
+    // The idle clock is usually already running when the server comes up.
+    final due = await commands.execute('getScreensaverDue', const {});
+    _idleDue = due.ok && due.data is String
+        ? DateTime.tryParse(due.data as String)
+        : null;
+    _sendCountdown();
     final player = await commands.execute('sendspinStatus', const {});
     if (player.ok && player.data is Map) {
       _nowPlayingActive = (player.data as Map)['fullscreenActive'] == true;

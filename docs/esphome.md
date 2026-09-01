@@ -72,6 +72,7 @@ Turn on **Expose kiosk entities** and every entity below joins the device. Off b
 | **Person** | binary sensor | Occupancy from a person sensor the device itself runs (today the Meta Portal's). Requires **Dismiss on person** on, which re-registers the device. Reads unknown while the sensor cannot be read. See [Meta Portal](portal.md) |
 | **Next alarm** | timestamp | The next alarm set on the device |
 | **Last interaction** | timestamp | The last touch, spoken turn or hand-made wake. Kept across restarts |
+| **Next screensaver** | timestamp | When the idle clock will start the screensaver. Moves on every touch, dismissal or timeout change, so an automation can trigger on it directly or a template can count down to it without the device pushing a value every second. Unknown while nothing counts down: the screensaver off or showing, a voice turn, a camera view, hold mode, another app in front. Under a stream of touches it republishes at most once a minute, and always before the moment it last reported passes |
 
 > [!NOTE]
 > A changed Dashboard view list re-registers the device, which makes every entity unavailable for a couple of seconds. It only happens for a list that actually moved.

@@ -246,7 +246,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       _cameraViewActive = event.active;
       if (event.active) {
         unawaited(stop());
-        _idleTimer?.cancel();
+        _cancelIdleTimer();
       } else {
         _resetIdleTimer();
       }
@@ -261,7 +261,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         log.debug(name, 'dismissed by wake word');
         stop();
       }
-      _idleTimer?.cancel();
+      _cancelIdleTimer();
     });
     // The page resuming wake detection (active again) is the end of the turn —
     // only now does the idle countdown begin. A stuck turn is covered by the
@@ -461,7 +461,13 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       notifyActivity('proximity');
     });
     bus.on<SettingChanged>().listen((e) {
-      if (e.key.startsWith('screensaver.')) _resetIdleTimer();
+      // The saved brightness is the session's own bookkeeping, written
+      // as it starts and stops: re-arming on it put a due moment on the
+      // wire in the middle of every start (issue #406).
+      if (e.key.startsWith('screensaver.') &&
+          e.key != defs.screensaverSavedBrightness.key) {
+        _resetIdleTimer();
+      }
       // An old backup import re-arms the legacy small clock switch; its
       // sub-keys land in the same batch, so fold them into a widget only
       // after the batch has settled (the importing flag holds for 1s).
@@ -496,7 +502,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (e.key == defs.lockdownEnabled.key) {
         if (e.value == true && !_settings.get(defs.lockdownAllowScreensaver)) {
           unawaited(stop());
-          _idleTimer?.cancel();
+          _cancelIdleTimer();
         } else {
           _resetIdleTimer();
         }
@@ -508,7 +514,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
           _resetIdleTimer();
         } else {
           unawaited(stop());
-          _idleTimer?.cancel();
+          _cancelIdleTimer();
         }
       }
       // Hold mode pins whatever is on screen right now (issue #266): a
@@ -518,7 +524,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       if (e.key == defs.haHoldMode.key) {
         if (e.value == true) {
           unawaited(stop());
-          _idleTimer?.cancel();
+          _cancelIdleTimer();
         } else {
           _resetIdleTimer();
         }
@@ -654,6 +660,17 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       )
       ..register(
         Command(
+          name: 'getScreensaverDue',
+          description:
+              'When the idle clock will start the screensaver, ISO 8601 UTC, '
+              'or null while nothing is counting down',
+          quiet: true,
+          handler: (_) async =>
+              CommandResult.ok(_idleDue?.toUtc().toIso8601String()),
+        ),
+      )
+      ..register(
+        Command(
           name: 'getScreensaverSuppressed',
           description:
               'Whether the page should stand down its own screensaver. '
@@ -717,7 +734,7 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
         final on = (await commands.execute('isScreenOn', const {})).data;
         if (on == false || !_lifecyclePaused) return;
         _behindAnotherApp = true;
-        _idleTimer?.cancel();
+        _cancelIdleTimer();
         if (_active) {
           log.info(name, 'another app is in front; standing down');
           await stop();
@@ -739,17 +756,43 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
 
   void _resetIdleTimer() {
     _idleTimer?.cancel();
-    if (_cameraViewActive || _behindAnotherApp) return;
+    if (_cameraViewActive || _behindAnotherApp) return _setIdleDue(null);
     if (!_settings.get(defs.screensaverEnabled) || _paused || _voiceTurn) {
-      return;
+      return _setIdleDue(null);
     }
     // Hold mode (issue #266): the current view stays put, so the idle
     // clock never arms while it is on. Releasing the hold re-arms it
     // through the SettingChanged branch above.
-    if (_settings.get(defs.haHoldMode)) return;
+    if (_settings.get(defs.haHoldMode)) return _setIdleDue(null);
     final seconds = _settings.get(defs.screensaverTimeoutSeconds).toInt();
-    if (seconds <= 0) return;
-    _idleTimer = Timer(Duration(seconds: seconds), start);
+    if (seconds <= 0) return _setIdleDue(null);
+    final wait = Duration(seconds: seconds);
+    _idleTimer = Timer(wait, () {
+      // The clock ran out: nothing is counting down any more, whether or
+      // not start() below actually gets to show anything.
+      _setIdleDue(null);
+      start();
+    });
+    _setIdleDue(clock().add(wait));
+  }
+
+  /// Stops the idle clock without re-arming it; the countdown sensor
+  /// reads unknown until the next [_resetIdleTimer].
+  void _cancelIdleTimer() {
+    _idleTimer?.cancel();
+    _idleTimer = null;
+    _setIdleDue(null);
+  }
+
+  /// The moment the idle clock will start the screensaver, null while it
+  /// is not running (issue #406). Announced on the bus on every move.
+  DateTime? get idleDue => _idleDue;
+  DateTime? _idleDue;
+
+  void _setIdleDue(DateTime? due) {
+    if (due == _idleDue) return;
+    _idleDue = due;
+    bus.publish(ScreensaverCountdownChanged(due: due));
   }
 
   /// Whether the Sendspin "Now Playing" view is what the screensaver slot

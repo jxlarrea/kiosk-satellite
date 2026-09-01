@@ -352,6 +352,7 @@ void main() {
         'motion',
         'next_alarm',
         'last_interaction',
+        'next_screensaver',
         'screensaver_brightness_level',
         'assistant_volume',
         'media_volume',
@@ -1189,6 +1190,51 @@ void main() {
       await attach();
       expect(pushed.map((p) => p.$1), isNot(contains('gps_latitude')));
     });
+  });
+
+  test('Next screensaver follows the idle clock and reads unknown while '
+      'the screensaver shows (issue #406)', () async {
+    await surface.build();
+    await attach();
+    pushed.clear();
+    final due = DateTime.utc(2026, 9, 1, 12, 5);
+    bus.publish(ScreensaverCountdownChanged(due: due));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(pushed, [('next_screensaver', '2026-09-01T12:05:00.000Z')]);
+    // The clock ran out and the screensaver came up: nothing to wait for.
+    pushed.clear();
+    bus.publish(const ScreensaverCountdownChanged(due: null));
+    bus.publish(const ScreensaverStateChanged(active: true));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(pushed.where((p) => p.$1 == 'next_screensaver'), [
+      ('next_screensaver', null),
+    ]);
+    // A moment arriving under a showing session waits for the dismissal.
+    pushed.clear();
+    final next = DateTime.utc(2026, 9, 1, 12, 20);
+    bus.publish(ScreensaverCountdownChanged(due: next));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(pushed.any((p) => p.$1 == 'next_screensaver'), isFalse);
+    bus.publish(const ScreensaverStateChanged(active: false));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    expect(pushed.where((p) => p.$1 == 'next_screensaver'), [
+      ('next_screensaver', '2026-09-01T12:20:00.000Z'),
+    ]);
+  });
+
+  test('Next screensaver is seeded from the running clock at attach', () async {
+    commands.register(
+      Command(
+        name: 'getScreensaverDue',
+        description: 'stub',
+        handler: (_) async =>
+            const CommandResult.ok('2026-09-01T12:05:00.000Z'),
+      ),
+    );
+    await surface.build();
+    await attach();
+    final byId = {for (final (id, value) in pushed) id: value};
+    expect(byId['next_screensaver'], '2026-09-01T12:05:00.000Z');
   });
 
   test('the persisted stamp reseeds Last interaction at attach', () async {
