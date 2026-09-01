@@ -159,9 +159,9 @@ void main() {
       expect(defs.sendspinFullscreenShortcut.dependsOn, 'sendspin.fullscreen');
     });
 
-    test('controls default on, launch on play off, both behind the view', () {
+    test('controls and launch on play default on, both behind the view', () {
       expect(defs.sendspinFullscreenControls.defaultValue, isTrue);
-      expect(defs.sendspinFullscreenOnPlay.defaultValue, isFalse);
+      expect(defs.sendspinFullscreenOnPlay.defaultValue, isTrue);
       expect(defs.sendspinFullscreenControls.dependsOn, 'sendspin.fullscreen');
       expect(defs.sendspinFullscreenOnPlay.dependsOn, 'sendspin.fullscreen');
     });
@@ -238,7 +238,7 @@ void main() {
     });
 
     test('launch on play starts the session when playback starts', () async {
-      await build({'ks.sendspin.fullscreen_on_play': true});
+      await build({});
       expect(saver.isActive, isFalse);
       bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
       await pumpEventQueue();
@@ -246,8 +246,8 @@ void main() {
       expect(saver.activeView.value, 'clock');
     });
 
-    test('off by default: playback waits for the idle timeout', () async {
-      await build({});
+    test('switched off, playback waits for the idle timeout', () async {
+      await build({'ks.sendspin.fullscreen_on_play': false});
       bus.publish(const SendspinNowPlayingChanged(active: true, playing: true));
       await pumpEventQueue();
       expect(saver.isActive, isFalse);
@@ -476,6 +476,48 @@ void main() {
       await pumpEventQueue();
       expect(sendspin.fullscreenActive.value, isFalse);
     });
+
+    test(
+      'a queue cleared in Music Assistant drops the stopped track',
+      () async {
+        // Local mode with the watcher up: the stream's end read as a pause
+        // and the card stayed; the server's empty queue says otherwise.
+        await build(
+          extra: {
+            'ks.sendspin.ma_player': '',
+            'ks.sendspin.enabled': true,
+            'ks.sendspin.client_id': 'abc123',
+          },
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(channel, (call) async => true);
+        const codec = StandardMethodCodec();
+        Future<void> fromNative(String method, Map<String, Object?> args) =>
+            messenger.handlePlatformMessage(
+              channel.name,
+              codec.encodeMethodCall(MethodCall(method, args)),
+              (_) {},
+            );
+        await fromNative('stateChanged', {'connected': true});
+        await fromNative('metadataChanged', {'title': 'Song'});
+        await fromNative('playingChanged', {'playing': true});
+        expect(sendspin.nowPlaying.value?['playing'], isTrue);
+        // A connection blip is not a cleared queue.
+        fake!.onSnapshot(null);
+        expect(sendspin.nowPlaying.value, isNotNull);
+        // The stream ends and the server says the queue is empty.
+        await fromNative('playingChanged', {'playing': false});
+        fake!.queueEmpty = true;
+        fake!.onSnapshot(null);
+        expect(sendspin.nowPlaying.value, isNull);
+        expect(sendspin.fullscreenActive.value, isFalse);
+        // The next native event does not conjure the old track back.
+        await fromNative('volumeChanged', {'volume': 40});
+        expect(sendspin.nowPlaying.value, isNull);
+      },
+    );
 
     test('the menu entry brings a paused track up held', () async {
       // Paused with the dashboard up, then the kiosk menu's Now Playing:

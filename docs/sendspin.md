@@ -41,8 +41,8 @@ under the player.
 | --- | --- | --- |
 | "Now Playing" instead of the screensaver | off | The full-screen view described below. |
 | Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
-| Launch Now Playing when music starts playing | off | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
-| Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up, while a track is loaded. A paused track opens paused, with its play button. |
+| Launch Now Playing when music starts playing | on | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
+| Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up. A paused track opens paused, with its play button. With nothing playing and no queue for this player, the entry stays out. |
 | Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
 
 ### Music Assistant
@@ -209,7 +209,8 @@ out the way Music Assistant's own is: what already played, faded, above
 a Now Playing heading, the playing track under it, then an Up next
 heading with the count of what follows and the rest. It opens on the Now
 Playing heading and goes back there at each track change, follows the
-queue as Music Assistant changes it, and a tap on any row jumps the
+queue as Music Assistant changes it (a queue cleared there takes the
+last track off the card and the view), and a tap on any row jumps the
 queue there, the row spinning until this device is actually playing it. The heart and the queue need the Music
 Assistant server address and token; the lyrics toggle stays out while
 another player is controlled, where lyrics are off by design.

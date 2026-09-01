@@ -172,7 +172,7 @@ const _categories = <(String, String, Object, String)>[
     // The one category that answers to a product rather than a feature, so
     // it wears that product's mark instead of a Material glyph.
     'assets/svg/music-assistant.svg',
-    'Configuration, Sendspin player, lyrics',
+    'Configuration, Sendspin, Now Playing',
   ),
   (
     'Cameras',

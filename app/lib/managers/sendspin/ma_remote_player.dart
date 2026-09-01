@@ -72,6 +72,12 @@ class MaRemotePlayer {
   /// without a native pause stop instead.
   bool _sawPlayback = false;
 
+  /// Whether the server's last word on the queue was that it holds no
+  /// track: a cleared queue, as opposed to a connection that dropped. The
+  /// local player's watcher reads it to tell a stop from a pause, which
+  /// the Sendspin stream alone cannot.
+  bool queueEmpty = false;
+
   Map<String, Object?>? _snapshot;
 
   void start() {
@@ -262,6 +268,7 @@ class MaRemotePlayer {
       queue,
       webBase: musicAssistantWebUrl(_api.baseUrl),
     );
+    queueEmpty = queue is Map && snap == null;
     if (snap == null) {
       _emit(null);
       return;

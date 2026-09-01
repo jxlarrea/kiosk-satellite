@@ -336,6 +336,29 @@ class SendspinManager extends Manager {
     await commands.execute('startScreensaver', const {});
   }
 
+  /// Nothing to show any more: take the paused track off the card and
+  /// the view, and forget its metadata so the next native event does not
+  /// bring it back as a paused card.
+  void _dropStoppedTrack() {
+    _idleGrace?.cancel();
+    _idleGrace = null;
+    _uiPlaying = false;
+    _endPausedHold();
+    _status = {
+      for (final e in _status.entries)
+        if (!const {
+          'title',
+          'artist',
+          'album',
+          'artworkUrl',
+          'positionMs',
+          'durationMs',
+        }.contains(e.key))
+          e.key: e.value,
+    };
+    _setNowPlaying(null);
+  }
+
   void _endPausedHold() {
     _pausedHold = false;
     _pausedHoldTimer?.cancel();
@@ -998,7 +1021,17 @@ class SendspinManager extends Manager {
   /// its identity are read. Shuffle lands on the card state; a queue
   /// edit refreshes the panel while it is open.
   void _onWatchSnapshot(Map<String, Object?>? snapshot) {
-    if (snapshot == null || _watcher == null) return;
+    if (_watcher == null) return;
+    if (snapshot == null) {
+      // The queue cleared in Music Assistant: the stream merely ended,
+      // which read as a pause, and the last track sat on the card and
+      // the view with controls that had nothing left to act on.
+      if (_watcher!.queueEmpty && !_playing && nowPlaying.value != null) {
+        log.info(name, 'queue cleared in Music Assistant; track dropped');
+        _dropStoppedTrack();
+      }
+      return;
+    }
     _rebaseFromQueue(snapshot);
     final shuffle = snapshot['shuffle'] == true;
     if (shuffle != (_status['shuffle'] == true)) {

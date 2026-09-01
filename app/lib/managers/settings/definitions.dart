@@ -4502,7 +4502,9 @@ const sendspinFullscreenShortcut = SettingDef<bool>(
   defaultValue: false,
   title: 'Show in the kiosk menu',
   description:
-      'Add an entry in the kiosk menu that shows the Now Playing view.',
+      'Add an entry in the kiosk menu that shows the Now Playing view. '
+      "WARNING: If nothing is playing or there is no queue for this "
+      "player, it won't show up.",
   category: 'Sendspin',
   section: 'Now Playing',
   dependsOn: 'sendspin.fullscreen',
@@ -4514,7 +4516,7 @@ const sendspinFullscreenShortcut = SettingDef<bool>(
 const sendspinFullscreenOnPlay = SettingDef<bool>(
   key: 'sendspin.fullscreen_on_play',
   type: SettingType.boolean,
-  defaultValue: false,
+  defaultValue: true,
   title: 'Launch Now Playing when music starts playing',
   description:
       'Open the Now Playing view as soon as playback starts instead of '
