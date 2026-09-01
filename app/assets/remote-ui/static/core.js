@@ -64,6 +64,30 @@ export function dependsSatisfiedBy(value, want) {
   return Array.isArray(want) ? want.includes(value) : value === (want ?? true);
 }
 
+// Whether a row's gates hold, given the definitions by key: the device's
+// SettingsManager.visible(). Transitive, a dependency must hold and itself
+// be shown, and a second gate (alsoDependsOn, the flip clock's night card
+// color under both Night mode and the Flip style) must hold the same way.
+// The chain ignores the `hidden` flag: a row may gate on a hidden
+// bookkeeping flag (the media playlist rows on media_is_folder), while
+// hidden rows themselves are simply never rendered.
+export function depSatisfied(s, byKey) {
+  const holds = (key, want) => {
+    if (!key) return true;
+    const dep = byKey[key];
+    if (!dep) return true;
+    return dependsSatisfiedBy(dep.value, want) && depSatisfied(dep, byKey);
+  };
+  return holds(s.dependsOn, s.dependsOnValue)
+    && holds(s.alsoDependsOn, s.alsoDependsOnValue);
+}
+
+// The rows whose gates name `key`, either one: what a flip of that setting
+// can reach directly.
+export function gatedOn(all, key) {
+  return all.filter((o) => o.dependsOn === key || o.alsoDependsOn === key);
+}
+
 export function showView(which) {
   for (const id of ['splash', 'login', 'wizard', 'app']) {
     $(`#${id}`).classList.toggle('hidden', id !== which);

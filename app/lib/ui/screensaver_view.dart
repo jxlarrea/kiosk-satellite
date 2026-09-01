@@ -106,6 +106,14 @@ class ScreensaverOverlay extends StatefulWidget {
 class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
   StreamSubscription<SettingChanged>? _widgetsSub;
 
+  /// Whether the Clock screensaver's Night mode holds (issue #391). Decided
+  /// here rather than in the clock face because the corner widgets, which
+  /// ride over the face from this overlay, take the night color too. Kept
+  /// as state, not derived per build: leaving night above the threshold
+  /// rather than at it needs the last decision (see [clockNightActive]).
+  bool _night = false;
+  StreamSubscription<LightLevelChanged>? _luxSub;
+
   AppContainer get container => widget.container;
 
   @override
@@ -135,16 +143,59 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       defs.sendspinFullscreenControls.key,
       for (final def in immichMetadataFields.values) def.key,
     };
+    // The Night mode keys ride along so they can be tuned from the remote
+    // admin against the live face: the decision is remade, since the
+    // switch and the threshold are its inputs.
+    final night = {
+      defs.screensaverClockNight.key,
+      defs.screensaverClockNightLux.key,
+      defs.screensaverClockNightColor.key,
+      defs.screensaverClockNightBgColor.key,
+      defs.screensaverClockNightCardColor.key,
+    };
     _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
-      if (live.contains(e.key) && mounted) setState(() {});
+      if (!mounted) return;
+      if (night.contains(e.key)) {
+        _night = _computeNight();
+        setState(() {});
+      } else if (live.contains(e.key)) {
+        setState(() {});
+      }
+    });
+    _night = _computeNight();
+    _luxSub = container.bus.on<LightLevelChanged>().listen((_) {
+      final next = _computeNight();
+      if (next != _night && mounted) setState(() => _night = next);
     });
   }
 
   @override
   void dispose() {
     _widgetsSub?.cancel();
+    _luxSub?.cancel();
     super.dispose();
   }
+
+  bool _computeNight() {
+    final s = container.settings;
+    final d = container.device;
+    return clockNightActive(
+      previous: _night,
+      enabled: s.get(defs.screensaverClockNight) && d.hasLightSensor,
+      lux: d.lightLux,
+      threshold: s.get(defs.screensaverClockNightLux).toDouble(),
+    );
+  }
+
+  /// The color Night mode imposes on the corner widgets over the Clock
+  /// screensaver, or null: on any other view the widgets keep their own,
+  /// Night mode being the clock's.
+  Color? _widgetNightColor(String view) => view == 'clock' && _night
+      ? _rgbOr(
+          container.settings.get(defs.screensaverClockNightColor),
+          const Color(0xFF822222),
+        )
+      : null;
 
   @override
   Widget build(BuildContext context) {
@@ -187,7 +238,10 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                 switch (view) {
                   'clock' => _Dismissable(
                     container: container,
-                    child: ClockScreensaver(container: container),
+                    child: ClockScreensaver(
+                      container: container,
+                      night: _night,
+                    ),
                   ),
                   // Exempt from the Scale UI factor like every WebView: the
                   // page renders at its own scale.
@@ -308,18 +362,22 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
                                       'clock' => ClockWidgetOverlay(
                                         container: container,
                                         spec: spec,
+                                        nightColor: _widgetNightColor(view),
                                       ),
                                       'weather' => WeatherWidgetOverlay(
                                         container: container,
                                         spec: spec,
+                                        nightColor: _widgetNightColor(view),
                                       ),
                                       'battery' => BatteryWidgetOverlay(
                                         container: container,
                                         spec: spec,
+                                        nightColor: _widgetNightColor(view),
                                       ),
                                       'entity' => EntityWidgetOverlay(
                                         container: container,
                                         spec: spec,
+                                        nightColor: _widgetNightColor(view),
                                       ),
                                       _ => const SizedBox.shrink(),
                                     },
@@ -358,9 +416,19 @@ class _Dismissable extends StatelessWidget {
 /// settings behind it; clockFontFamily (clock_faces.dart) does the mapping
 /// for all three faces.
 class ClockScreensaver extends StatefulWidget {
-  const ClockScreensaver({super.key, required this.container});
+  const ClockScreensaver({
+    super.key,
+    required this.container,
+    this.night = false,
+  });
 
   final AppContainer container;
+
+  /// Whether Night mode holds (issue #391): the digits, the date, the At a
+  /// Glance row and the flip cards take their night colors and the night
+  /// background covers the backdrop. Decided by the overlay above, which
+  /// applies the same color to the corner widgets riding over the face.
+  final bool night;
 
   @override
   State<ClockScreensaver> createState() => _ClockScreensaverState();
@@ -381,12 +449,6 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   DateTime _now = DateTime.now();
   Offset _offset = Offset.zero;
 
-  /// Whether Night mode has the digits (issue #391). Kept as state, not
-  /// derived per build: leaving night above the threshold rather than at
-  /// it needs the last decision (see [clockNightActive]).
-  bool _night = false;
-  StreamSubscription<LightLevelChanged>? _luxSub;
-
   /// The background photo, resolved off the path setting: the provider and
   /// the aspect its fill treatment keys off. [_bgPath] is what they were
   /// resolved FROM, so a changed path re-resolves and an unchanged one
@@ -406,48 +468,33 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     }
     // The face only rebuilds on clock ticks, a minute apart with seconds
     // off — a background pushed over MQTT (issue #150) must not wait out
-    // the minute. The Night mode and Font keys ride the same listener so
-    // they can be tuned from the remote admin against the live face.
+    // the minute. The Font key rides the same listener so it can be tuned
+    // from the remote admin against the live face; the Night mode keys
+    // reach the face through the overlay, which owns that decision.
     _bgSub = widget.container.bus.on<SettingChanged>().listen((e) {
       if (!mounted) return;
       if (e.key == defs.screensaverClockBackground.key ||
           e.key == defs.screensaverClockFont.key) {
         setState(() {});
       }
-      if (e.key == defs.screensaverClockNight.key ||
-          e.key == defs.screensaverClockNightLux.key ||
-          e.key == defs.screensaverClockNightColor.key ||
-          e.key == defs.screensaverClockNightBgColor.key) {
-        _night = _computeNight();
-        setState(() {});
-      }
     });
-    _night = _computeNight();
-    _luxSub = widget.container.bus.on<LightLevelChanged>().listen((_) {
-      final next = _computeNight();
-      if (next != _night && mounted) setState(() => _night = next);
-    });
-  }
-
-  bool _computeNight() {
-    final s = widget.container.settings;
-    final d = widget.container.device;
-    return clockNightActive(
-      previous: _night,
-      enabled: s.get(defs.screensaverClockNight) && d.hasLightSensor,
-      lux: d.lightLux,
-      threshold: s.get(defs.screensaverClockNightLux).toDouble(),
-    );
   }
 
   /// The digit color Night mode imposes, or null while it stands down.
-  Color? _nightColor() => _night
+  Color? _nightColor() => widget.night
       ? _rgb(defs.screensaverClockNightColor, const Color(0xFF822222))
       : null;
 
   /// The backdrop Night mode imposes, likewise.
-  Color? _nightBg() =>
-      _night ? _rgb(defs.screensaverClockNightBgColor, Colors.black) : null;
+  Color? _nightBg() => widget.night
+      ? _rgb(defs.screensaverClockNightBgColor, Colors.black)
+      : null;
+
+  /// The flip card color Night mode imposes, likewise: the cards are the
+  /// one part of the face the night background leaves alone.
+  Color? _nightCard() => widget.night
+      ? _rgb(defs.screensaverClockNightCardColor, const Color(0xFF141414))
+      : null;
 
   // Re-align to each wall-clock second (or minute, when seconds are not
   // shown — the face only changes once a minute then, and a per-second
@@ -490,18 +537,11 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     _tick?.cancel();
     _shift?.cancel();
     _bgSub?.cancel();
-    _luxSub?.cancel();
     super.dispose();
   }
 
-  Color _rgb(defs.SettingDef<String> def, Color orElse) {
-    final raw = widget.container.settings.get(def);
-    final parts = raw.split(',').map((p) => int.tryParse(p.trim())).toList();
-    if (parts.length == 3 && parts.every((p) => p != null)) {
-      return Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!);
-    }
-    return orElse;
-  }
+  Color _rgb(defs.SettingDef<String> def, Color orElse) =>
+      _rgbOr(widget.container.settings.get(def), orElse);
 
   Color _color() => _rgb(defs.screensaverClockColor, const Color(0xFFFAFAFA));
 
@@ -645,7 +685,9 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         digitColor:
             _nightColor() ??
             _rgb(defs.screensaverFlipDigitColor, const Color(0xFFFAFAFA)),
-        cardColor: _rgb(defs.screensaverFlipBgColor, const Color(0xFF141414)),
+        cardColor:
+            _nightCard() ??
+            _rgb(defs.screensaverFlipBgColor, const Color(0xFF141414)),
         // The hinge gap shows the wall, so it follows the same override
         // the wall itself takes in the dark.
         backdropColor:
@@ -670,7 +712,8 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     final style = s.get(defs.screensaverClockStyle);
     final scale = (s.get(defs.screensaverClockScale) / 100).clamp(0.5, 3.0);
     // Night mode (issue #391) takes the digits and the backdrop, pure
-    // black behind them by default; the flip cards keep their own color.
+    // black behind them by default; the flip cards take a night color of
+    // their own in _styledFace.
     final color = _nightColor() ?? _color();
     final nightBg = _nightBg();
     final fontValue = s.get(defs.screensaverClockFont);
@@ -907,10 +950,15 @@ class ClockWidgetOverlay extends StatefulWidget {
     super.key,
     required this.container,
     required this.spec,
+    this.nightColor,
   });
 
   final AppContainer container;
   final ScreensaverWidget spec;
+
+  /// The Clock screensaver's night color while its Night mode holds
+  /// (issue #391), in place of the widget's own; null otherwise.
+  final Color? nightColor;
 
   @override
   State<ClockWidgetOverlay> createState() => _ClockWidgetOverlayState();
@@ -974,7 +1022,7 @@ class _ClockWidgetOverlayState extends State<ClockWidgetOverlay> {
   @override
   Widget build(BuildContext context) {
     final corner = _cornerAlignment(widget.spec.position);
-    final color = _widgetRgb(widget.spec.config['color']);
+    final color = widget.nightColor ?? _widgetRgb(widget.spec.config['color']);
     final size = MediaQuery.of(context).size;
     // Proportional to the panel, but floored: on a small low-density screen
     // (the Echo Show 5's 480 logical pixels) the proportional size lands
@@ -1055,10 +1103,15 @@ class BatteryWidgetOverlay extends StatefulWidget {
     super.key,
     required this.container,
     required this.spec,
+    this.nightColor,
   });
 
   final AppContainer container;
   final ScreensaverWidget spec;
+
+  /// The Clock screensaver's night color while its Night mode holds
+  /// (issue #391), in place of the widget's own; null otherwise.
+  final Color? nightColor;
 
   @override
   State<BatteryWidgetOverlay> createState() => _BatteryWidgetOverlayState();
@@ -1133,7 +1186,7 @@ class _BatteryWidgetOverlayState extends State<BatteryWidgetOverlay> {
       return const SizedBox.shrink();
     }
     final corner = _cornerAlignment(widget.spec.position);
-    final color = _widgetRgb(widget.spec.config['color']);
+    final color = widget.nightColor ?? _widgetRgb(widget.spec.config['color']);
     final size = MediaQuery.of(context).size;
     // Two thirds of the small clock: readable across a room, without a
     // corner of the photo given over to a battery.
@@ -1231,12 +1284,15 @@ IconData _batteryIcon(int? level, {required bool charging}) {
 }
 
 /// A widget's "r,g,b" color, falling back to the overlays' near-white.
-Color _widgetRgb(Object? raw) {
-  final parts = '$raw'.split(',').map((p) => int.tryParse(p.trim())).toList();
+Color _widgetRgb(Object? raw) => _rgbOr('$raw', const Color(0xFFFAFAFA));
+
+/// An "r,g,b" setting value as a color, or [orElse] for anything else.
+Color _rgbOr(String raw, Color orElse) {
+  final parts = raw.split(',').map((p) => int.tryParse(p.trim())).toList();
   if (parts.length == 3 && parts.every((p) => p != null)) {
     return Color.fromARGB(255, parts[0]!, parts[1]!, parts[2]!);
   }
-  return const Color(0xFFFAFAFA);
+  return orElse;
 }
 
 /// The entity widget (issue #336): one Home Assistant entity's reading in
@@ -1252,10 +1308,15 @@ class EntityWidgetOverlay extends StatefulWidget {
     super.key,
     required this.container,
     required this.spec,
+    this.nightColor,
   });
 
   final AppContainer container;
   final ScreensaverWidget spec;
+
+  /// The Clock screensaver's night color while its Night mode holds
+  /// (issue #391), in place of the widget's own; null otherwise.
+  final Color? nightColor;
 
   @override
   State<EntityWidgetOverlay> createState() => _EntityWidgetOverlayState();
@@ -1404,7 +1465,7 @@ class _EntityWidgetOverlayState extends State<EntityWidgetOverlay> {
     // says "…" on the way in.
     if (_entity.state == null) return const SizedBox.shrink();
     final corner = _cornerAlignment(widget.spec.position);
-    final color = _widgetRgb(widget.spec.config['color']);
+    final color = widget.nightColor ?? _widgetRgb(widget.spec.config['color']);
     final size = MediaQuery.of(context).size;
     // The value is the battery widget's size, the name the weather
     // widget's detail line, so the corner overlays all read as one
@@ -1526,10 +1587,15 @@ class WeatherWidgetOverlay extends StatefulWidget {
     super.key,
     required this.container,
     required this.spec,
+    this.nightColor,
   });
 
   final AppContainer container;
   final ScreensaverWidget spec;
+
+  /// The Clock screensaver's night color while its Night mode holds
+  /// (issue #391), in place of the widget's own; null otherwise.
+  final Color? nightColor;
 
   @override
   State<WeatherWidgetOverlay> createState() => _WeatherWidgetOverlayState();
@@ -1692,7 +1758,7 @@ class _WeatherWidgetOverlayState extends State<WeatherWidgetOverlay> {
       return const SizedBox.shrink();
     }
     final corner = _cornerAlignment(widget.spec.position);
-    final color = _widgetRgb(widget.spec.config['color']);
+    final color = widget.nightColor ?? _widgetRgb(widget.spec.config['color']);
     final size = MediaQuery.of(context).size;
     // The temperature is exactly the small clock's size, and the location
     // and detail lines take the Immich metadata panel's fixed sizes, so

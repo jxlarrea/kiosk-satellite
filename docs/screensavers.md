@@ -79,8 +79,9 @@ ambient light sensor, so the switch is disabled on devices without one.
 | --- | --- |
 | Night mode | Off by default. |
 | Light level | 1 to 100 lx, 5 by default. At or below it the digits take the night color; they return a little above it, so a reading hovering on the line cannot flicker the color. |
-| Night color | A muted red by default. Applies to the digits on every face, the date and the At a Glance row; the flip cards keep their own color. |
+| Night color | A muted red by default. Applies to the digits on every face, the date, the At a Glance row and the corner widgets over the clock, in place of each widget's own color. |
 | Night background | The screen behind the clock in the dark, pure black by default, so a face tuned for a lit room does not keep glowing at night. |
+| Night card color | Flip only. The cards in the dark, near-black by default, since a card color tuned for daylight keeps glowing on the night background. |
 
 ### Home Assistant Media
 
@@ -197,6 +198,9 @@ picked when adding or editing it. Widgets ride over every mode their
 type allows, but never over Black with Hide all extras. The group's
 **Widget scaling** slider (50 to 150 percent) sizes every widget for
 the screen, and moving it while the screensaver shows previews live.
+Over the Clock screensaver, every widget takes the clock's **Night
+color** while its Night mode holds, in place of its own color, so a
+white corner does not light the room the red digits were dimmed for.
 Every widget sits on a soft vignette, a dark shading in its corner that
 keeps the text readable on bright photos. The **Vignette strength**
 slider (0 to 100 percent, 80 by default) sets how dark for every

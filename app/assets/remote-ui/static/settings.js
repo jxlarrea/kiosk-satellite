@@ -6,7 +6,7 @@ import {
   updateMicChannelRow,
 } from './audio.js';
 import { MIC_GROUP_NOTE, cameraAction, exportFileName } from './cameras.js';
-import { $, api, cmd, dependsSatisfiedBy, state } from './core.js';
+import { $, api, cmd, depSatisfied, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { renderServicePage } from './service.js';
 import { CATEGORY_TABS } from './gestures.js';
@@ -63,17 +63,8 @@ export async function loadSettings() {
   // by whoever is not in the room. Transitive, matching the device: a row is
   // shown only if its dependency holds and that dependency is itself shown.
   const byKey = Object.fromEntries(settings.map((s) => [s.key, s]));
-  // Mirrors SettingsManager.visible(): the dependency chain ignores the
-  // `hidden` flag, a row may gate on a hidden bookkeeping flag (the media
-  // playlist settings gate on media_is_folder, which is hidden), while
-  // hidden rows themselves are simply never rendered.
-  const depSatisfied = (s) => {
-    if (!s.dependsOn) return true;
-    const dep = byKey[s.dependsOn];
-    if (!dep) return true;
-    return dependsSatisfiedBy(dep.value, s.dependsOnValue) && depSatisfied(dep);
-  };
-  const visible = (s) => !s.hidden && depSatisfied(s);
+  // Mirrors SettingsManager.visible() (depSatisfied, core.js).
+  const visible = (s) => !s.hidden && depSatisfied(s, byKey);
 
   // The Home Assistant Media mode only offers itself with HA connected.
   state.haConfigured = (byKey['ha.url']?.value || '') !== '' &&
@@ -2267,14 +2258,8 @@ export async function refreshRealMacNote() {
     row.parentNode.querySelector(`.${cls}`)?.remove();
   }
   const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
-  const depSatisfied = (s) => {
-    if (!s.dependsOn) return true;
-    const dep = byKey[s.dependsOn];
-    if (!dep) return true;
-    return dependsSatisfiedBy(dep.value, s.dependsOnValue) && depSatisfied(dep);
-  };
   const on = byKey['esphome.real_mac'];
-  if (on?.value !== true || !depSatisfied(on)) return;
+  if (on?.value !== true || !depSatisfied(on, byKey)) return;
   let res;
   try { res = await cmd('esphomeStatus'); } catch { return; }
   // Stale by the time the device answered: the row was re-rendered or

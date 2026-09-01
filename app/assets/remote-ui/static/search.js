@@ -1,4 +1,4 @@
-import { $, dependsSatisfiedBy, state } from './core.js';
+import { $, depSatisfied, state } from './core.js';
 import { TABS, TAB_TITLES, currentPath, setNav, showTab } from './tabs.js';
 
 /* ---- Settings search ---- */
@@ -261,13 +261,7 @@ export function resolveSearchAnchor(e) {
   // the way a tab result lands on the top of its tab.
   if (!e.key) return e.entry ? e : e.isPage ? null : e;
   const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
-  const shown = (s) => {
-    if (s.hidden) return false;
-    if (!s.dependsOn) return true;
-    const dep = byKey[s.dependsOn];
-    if (!dep) return true;
-    return dependsSatisfiedBy(dep.value, s.dependsOnValue) && shown(dep);
-  };
+  const shown = (s) => !s.hidden && depSatisfied(s, byKey);
   let s = byKey[e.key];
   while (s && !shown(s)) s = s.dependsOn ? byKey[s.dependsOn] : null;
   // The subpage comes from the row actually landed on: a gated row resolves

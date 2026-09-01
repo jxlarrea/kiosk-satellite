@@ -409,7 +409,13 @@ class SettingsManager extends Manager {
   /// Whether [def] should be shown at all: its [SettingDef.dependsOn] switch
   /// is on, or it has none.
   bool visible(SettingDef<Object> def) {
-    final key = def.dependsOn;
+    // Both gates must hold, each through its own chain; a row with one
+    // gate has the second trivially satisfied.
+    return _gateHolds(def.dependsOn, def.dependsSatisfiedBy) &&
+        _gateHolds(def.alsoDependsOn, def.alsoDependsSatisfiedBy);
+  }
+
+  bool _gateHolds(String? key, bool Function(Object?) satisfied) {
     if (key == null) return true;
     final dep = allSettings.where((d) => d.key == key).firstOrNull;
     // A dependency that does not exist is a typo in the definitions, and
@@ -418,7 +424,7 @@ class SettingsManager extends Manager {
     // Transitive: the dependency must both hold *and* itself be visible, so a
     // setting can gate on a hidden flag that gates on the mode (folder
     // playlist settings → media_is_folder → mode == media).
-    return def.dependsSatisfiedBy(get(dep)) && visible(dep);
+    return satisfied(get(dep)) && visible(dep);
   }
 
   List<Map<String, Object?>> describe() => [
@@ -438,6 +444,9 @@ class SettingsManager extends Manager {
         // device hides.
         if (def.dependsOn != null) 'dependsOn': def.dependsOn,
         if (def.dependsOn != null) 'dependsOnValue': def.dependsOnValue,
+        if (def.alsoDependsOn != null) 'alsoDependsOn': def.alsoDependsOn,
+        if (def.alsoDependsOn != null)
+          'alsoDependsOnValue': def.alsoDependsOnValue,
         if (def.hidden || deviceHiddenKeys.contains(def.key)) 'hidden': true,
         if (def.multiline) 'multiline': true,
         if (def.placeholder != null) 'placeholder': def.placeholder,

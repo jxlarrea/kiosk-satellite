@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/core/events.dart';
+import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
+import 'package:kiosk_satellite/ui/clock_faces.dart';
 import 'package:kiosk_satellite/ui/screensaver_view.dart';
 import 'package:kiosk_satellite/ui/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The Clock screensaver's Night mode (issue #391): the settings page
 /// gates the group on the ambient light sensor the same way adaptive
-/// brightness does, and the face itself swaps the digit color with the
-/// room's light, live off the sensor events.
+/// brightness does, and the overlay swaps the digit color, the flip cards
+/// and the corner widgets with the room's light, live off the sensor
+/// events.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -88,6 +92,73 @@ void main() {
       await tab(tester, 'Clock screensaver');
       expect(find.text('Light level'), findsNothing);
       expect(find.text('Night color'), findsNothing);
+      expect(find.text('Night card color'), findsNothing);
+    });
+
+    testWidgets('the card color needs the switch AND the Flip style', (
+      tester,
+    ) async {
+      await open(tester, {
+        'ks.screensaver.clock_night': true,
+        'ks.screensaver.clock_style': 'flip',
+      });
+      await tab(tester, 'Screensaver');
+      await tab(tester, 'Clock screensaver');
+      expect(find.text('Night card color'), findsOneWidget);
+    });
+
+    testWidgets('no cards on the other faces, so no card color', (
+      tester,
+    ) async {
+      await open(tester, {
+        'ks.screensaver.clock_night': true,
+        'ks.screensaver.clock_style': 'roller',
+      });
+      await tab(tester, 'Screensaver');
+      await tab(tester, 'Clock screensaver');
+      expect(find.text('Night color'), findsOneWidget);
+      expect(find.text('Night card color'), findsNothing);
+    });
+  });
+
+  group('definition gates', () {
+    // The card color is the first row with two gates; the schema carries
+    // both to the remote admin, and visible() wants both to hold.
+    test('describe() carries the second gate', () async {
+      final container = await makeContainer({});
+      final row = container.settings.describe().singleWhere(
+        (r) => r['key'] == defs.screensaverClockNightCardColor.key,
+      );
+      expect(row['dependsOn'], defs.screensaverClockNight.key);
+      expect(row['alsoDependsOn'], defs.screensaverClockStyle.key);
+      expect(row['alsoDependsOnValue'], 'flip');
+    });
+
+    test('visible() wants both gates', () async {
+      final def = defs.screensaverClockNightCardColor;
+      var container = await makeContainer({
+        'ks.screensaver.clock_night': true,
+        'ks.screensaver.clock_style': 'flip',
+      });
+      expect(container.settings.visible(def), isTrue);
+      container = await makeContainer({
+        'ks.screensaver.clock_night': true,
+        'ks.screensaver.clock_style': 'digital',
+      });
+      expect(container.settings.visible(def), isFalse);
+      container = await makeContainer({
+        'ks.screensaver.clock_night': false,
+        'ks.screensaver.clock_style': 'flip',
+      });
+      expect(container.settings.visible(def), isFalse);
+      // The first gate's own chain still counts: Night mode gates on the
+      // Clock mode, so another mode hides the row with the whole group.
+      container = await makeContainer({
+        'ks.screensaver.mode': 'black',
+        'ks.screensaver.clock_night': true,
+        'ks.screensaver.clock_style': 'flip',
+      });
+      expect(container.settings.visible(def), isFalse);
     });
   });
 
@@ -116,8 +187,13 @@ void main() {
         sensor: sensor,
         lux: lux,
       );
+      // The overlay, not the face alone: the Night decision lives there so
+      // the corner widgets riding over the face can share it.
+      container.screensaver.activeView.value = 'clock';
       await tester.pumpWidget(
-        MaterialApp(home: ClockScreensaver(container: container)),
+        MaterialApp(
+          home: Stack(children: [ScreensaverOverlay(container: container)]),
+        ),
       );
       return container;
     }
@@ -189,6 +265,123 @@ void main() {
         lux: 2,
       );
       expect(digitColor(tester), const Color(0xFFFAFAFA));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the flip cards take the night card color in the dark', (
+      tester,
+    ) async {
+      await pumpClock(
+        tester,
+        prefs: {
+          'ks.screensaver.clock_style': 'flip',
+          // A daylight card that would glow on the night's black wall.
+          'ks.screensaver.flip_bg_color': '240,240,240',
+          'ks.screensaver.clock_night_card_color': '40,10,10',
+        },
+        lux: 2,
+      );
+      expect(
+        tester.widget<FlipClockFace>(find.byType(FlipClockFace)).cardColor,
+        const Color(0xFF280A0A),
+      );
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('in the light the flip cards keep their own color', (
+      tester,
+    ) async {
+      await pumpClock(
+        tester,
+        prefs: {
+          'ks.screensaver.clock_style': 'flip',
+          'ks.screensaver.flip_bg_color': '240,240,240',
+          'ks.screensaver.clock_night_card_color': '40,10,10',
+        },
+        lux: 200,
+      );
+      expect(
+        tester.widget<FlipClockFace>(find.byType(FlipClockFace)).cardColor,
+        const Color(0xFFF0F0F0),
+      );
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
+
+  group('corner widgets', () {
+    // The battery widget renders off the device_details channel alone, so
+    // it is the one corner widget a test can put on screen.
+    setUp(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('kiosk_satellite/device_details'),
+            (call) async => switch (call.method) {
+              'battery' => {'present': true, 'level': 80},
+              'plugged' => false,
+              _ => null,
+            },
+          );
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(
+            const MethodChannel('kiosk_satellite/device_details'),
+            null,
+          );
+    });
+
+    Color? batteryColor(WidgetTester tester) => tester
+        .widget<Icon>(
+          find.descendant(
+            of: find.byType(BatteryWidgetOverlay),
+            matching: find.byType(Icon),
+          ),
+        )
+        .color;
+
+    Future<AppContainer> pumpWithBattery(
+      WidgetTester tester, {
+      required double lux,
+      String view = 'clock',
+    }) async {
+      final container = await makeContainer({
+        'ks.screensaver.clock_night': true,
+        'ks.screensaver.clock_show_date': false,
+        'ks.screensaver.widgets':
+            '[{"position":"top_right","type":"battery",'
+            '"config":{"color":"250,250,250","percent":true}}]',
+      }, lux: lux);
+      container.screensaver.activeView.value = view;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Stack(children: [ScreensaverOverlay(container: container)]),
+        ),
+      );
+      // The battery read answers asynchronously.
+      await tester.pump();
+      await tester.pump();
+      return container;
+    }
+
+    testWidgets('a widget over the clock takes the night color', (
+      tester,
+    ) async {
+      await pumpWithBattery(tester, lux: 2);
+      expect(batteryColor(tester), nightRed);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('and keeps its own in the light', (tester) async {
+      await pumpWithBattery(tester, lux: 200);
+      expect(batteryColor(tester), const Color(0xFFFAFAFA));
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('Night mode is the clock\'s: over Black the widget keeps '
+        'its own color', (tester) async {
+      await pumpWithBattery(tester, lux: 2, view: 'black');
+      expect(batteryColor(tester), const Color(0xFFFAFAFA));
       await tester.pumpWidget(const SizedBox());
     });
   });

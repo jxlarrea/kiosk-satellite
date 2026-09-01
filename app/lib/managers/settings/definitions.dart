@@ -23,6 +23,8 @@ class SettingDef<T> {
     this.secret = false,
     this.dependsOn,
     this.dependsOnValue = true,
+    this.alsoDependsOn,
+    this.alsoDependsOnValue = true,
     this.hidden = false,
     this.min,
     this.max,
@@ -85,6 +87,20 @@ class SettingDef<T> {
   bool dependsSatisfiedBy(Object? value) => dependsOnValue is List
       ? (dependsOnValue as List).contains(value)
       : value == dependsOnValue;
+
+  /// A second gate, for a row that only means anything under two settings
+  /// at once (the flip clock's night card color: Night mode on AND the
+  /// Flip style picked). Both must hold, each through its own chain, and
+  /// both UIs read it beside [dependsOn]. Search and the subpage rules
+  /// follow [dependsOn] alone, so that one is the row's parent.
+  final String? alsoDependsOn;
+
+  /// The value [alsoDependsOn] must hold, the shape of [dependsOnValue].
+  final Object alsoDependsOnValue;
+
+  bool alsoDependsSatisfiedBy(Object? value) => alsoDependsOnValue is List
+      ? (alsoDependsOnValue as List).contains(value)
+      : value == alsoDependsOnValue;
 
   /// Persisted and readable, but never shown as a settings row. For state the
   /// app tracks on the user's behalf — e.g. whether the chosen media is a
@@ -1792,7 +1808,7 @@ const screensaverClockNightColor = SettingDef<String>(
   type: SettingType.string,
   defaultValue: '130,34,34',
   title: 'Night color',
-  description: 'The color of the clock in the dark.',
+  description: 'The color of the clock and the widgets in the dark.',
   category: 'Screensaver',
   section: 'Night mode',
   subpage: 'Clock screensaver',
@@ -1813,6 +1829,25 @@ const screensaverClockNightBgColor = SettingDef<String>(
   section: 'Night mode',
   subpage: 'Clock screensaver',
   dependsOn: 'screensaver.clock_night',
+);
+
+// The flip cards in the dark: the one part of a face the night background
+// does not cover, and a card color tuned for daylight kept glowing on the
+// night's black wall. Near-black by default, the day card default, so a
+// stock flip clock looks the same at night with or without this row. Only
+// with the Flip style picked, since no other face has cards.
+const screensaverClockNightCardColor = SettingDef<String>(
+  key: 'screensaver.clock_night_card_color',
+  type: SettingType.string,
+  defaultValue: '20,20,20',
+  title: 'Night card color',
+  description: 'The color of the flip cards in the dark.',
+  category: 'Screensaver',
+  section: 'Night mode',
+  subpage: 'Clock screensaver',
+  dependsOn: 'screensaver.clock_night',
+  alsoDependsOn: 'screensaver.clock_style',
+  alsoDependsOnValue: 'flip',
 );
 
 // ── Media (mode: media) ──
@@ -5586,6 +5621,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverClockNightLux,
   screensaverClockNightColor,
   screensaverClockNightBgColor,
+  screensaverClockNightCardColor,
   screensaverMediaId,
   screensaverMediaIsFolder,
   screensaverMediaInterval,

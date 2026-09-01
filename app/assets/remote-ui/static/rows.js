@@ -8,7 +8,7 @@ import {
   entitySearchPicker,
   glanceEntityPicker,
 } from './cameras.js';
-import { api, dependsSatisfiedBy, state } from './core.js';
+import { api, depSatisfied, gatedOn, state } from './core.js';
 import { readOnlyRow } from './device.js';
 import { updateAdaptiveBrightnessRows, updateFaceRows } from './notices.js';
 import {
@@ -63,17 +63,12 @@ export function syncGatedRows(key, anchorRow) {
   if (!anchor || !card) return false;
   // The same visibility rule loadSettings() renders by, so a row that comes
   // back in place is exactly the row a re-render would have drawn.
-  const depSatisfied = (o) => {
-    if (!o.dependsOn) return true;
-    const dep = byKey[o.dependsOn];
-    if (!dep) return true;
-    return dependsSatisfiedBy(dep.value, o.dependsOnValue) && depSatisfied(dep);
-  };
-  const visible = (o) => !o.hidden && depSatisfied(o);
-  // Everything the flip can reach: the rows gated on this one, and the rows
-  // gated on those in turn (a revealed row may be a gate itself).
+  const visible = (o) => !o.hidden && depSatisfied(o, byKey);
+  // Everything the flip can reach: the rows gated on this one, by either
+  // gate, and the rows gated on those in turn (a revealed row may be a
+  // gate itself).
   const reached = [];
-  const walk = (k) => all.filter((o) => o.dependsOn === k)
+  const walk = (k) => gatedOn(all, k)
     .forEach((o) => { reached.push(o); walk(o.key); });
   walk(key);
   const sameCard = (o) => o.category === anchor.category
@@ -164,7 +159,7 @@ export function settingRow(s) {
     // hand-built Home Assistant cards use. A loadSettings() here rebuilds
     // every tab and re-runs the device probes they own, which reads as the
     // whole page reloading under the switch just flipped.
-    if ((state.settings || []).some((o) => o.dependsOn === s.key)) {
+    if (gatedOn(state.settings || [], s.key).length) {
       if (!syncGatedRows(s.key, row)) await loadSettings();
     }
     // The face detection notes answer for Dismiss on motion as it is now
