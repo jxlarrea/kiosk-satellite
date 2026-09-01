@@ -206,9 +206,10 @@ is. Both flip their setting, so the choice sticks across sessions and
 either settings surface shows the same state, and the two keep each
 other exclusive: lyrics and the queue share one slot, beside the cover on
 a landscape screen and under it on a portrait one. The queue lists the
-playing track and everything after it, the playing one lit, follows the
-queue as Music Assistant changes it, and a tap on any row jumps the
-queue there. The heart and the queue need the Music
+playing track and everything after it, the playing one lit with a play
+mark by its duration, follows the queue as Music Assistant changes it,
+and a tap on any row jumps the queue there, the row spinning until this
+device is actually playing it. The heart and the queue need the Music
 Assistant server address and token; the lyrics toggle stays out while
 another player is controlled, where lyrics are off by design.
 

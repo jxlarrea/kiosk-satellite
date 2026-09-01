@@ -633,14 +633,39 @@ void main() {
           ?.fontWeight;
       expect(weight('Song'), FontWeight.w700);
       expect(weight('Next'), FontWeight.w500);
-      // A row jumps the queue there, by item id.
+      // The playing row wears the play mark; nothing else does.
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      // A row jumps the queue there, by item id, and spins until the
+      // server has switched.
       await tester.tap(
         find.descendant(of: find.byType(ListView), matching: find.text('Next')),
       );
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
       await settle(tester);
       final play = _FakeApi.calls.indexOf('player_queues/play_index');
       expect(play, isNonNegative);
       expect(_FakeApi.args[play]['index'], 'item-b');
+      // The server re-listing the queue is not the end of the wait: the
+      // audio on this device is.
+      container.sendspin.queueItems.value = [
+        for (final it in container.sendspin.queueItems.value)
+          {...it, 'current': it['id'] == 'item-b'},
+      ];
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      container.sendspin.nowPlaying.value = {
+        ...container.sendspin.nowPlaying.value!,
+        'title': 'Next',
+      };
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
+      // The new title also starts a favorite lookup whose retry waits
+      // two seconds for the server's queue to catch up; let it run out
+      // before the tree goes away.
+      await tester.pump(const Duration(seconds: 3));
       // The lyrics button hands the slot back.
       await tester.tap(find.byIcon(Icons.lyrics_outlined));
       await settle(tester);

@@ -270,13 +270,13 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   art: art,
                   title: title,
                   artist: artist,
-                  artSize: artSize * 0.62,
-                  titleSize: titleSize * 0.7,
+                  artSize: artSize * 0.85,
+                  titleSize: titleSize * 0.75,
                   artistSize: artistSize * 0.85,
                   gap: gap * 0.5,
                   horizontalPadding: 8,
                 ),
-                width: artSize * 0.62 * 1.8,
+                width: artSize * 0.85 * 1.5,
               ),
             ),
             SizedBox(width: (screen.width * 0.04).clamp(12.0, 48.0)),
@@ -393,7 +393,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   16,
                   gap * 0.4,
                   16,
-                  (screen.height * 0.04).clamp(10.0, 32.0),
+                  (screen.height * 0.03).clamp(8.0, 24.0),
                 ),
                 child: Center(
                   child: _NowPlayingControls(
@@ -520,13 +520,70 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
 }
 
 /// The queue from the playing track on, in the lyrics' slot: the playing
-/// row lit, the rest receding, a tap on any row jumping the queue there.
-/// Scrollable, unlike the lyrics: a queue is for looking ahead.
-class _QueueView extends StatelessWidget {
+/// row lit with a play mark by its duration, the rest receding, a tap on
+/// any row jumping the queue there with a spinner in the mark's place
+/// until the server has switched. Scrollable, unlike the lyrics: a queue
+/// is for looking ahead.
+class _QueueView extends StatefulWidget {
   const _QueueView({required this.container, required this.fontSize});
 
   final AppContainer container;
   final double fontSize;
+
+  @override
+  State<_QueueView> createState() => _QueueViewState();
+}
+
+class _QueueViewState extends State<_QueueView> {
+  AppContainer get container => widget.container;
+  double get fontSize => widget.fontSize;
+
+  /// The row just tapped, spinning until its track is what this device
+  /// is actually playing (the server switches its queue at once, the
+  /// audio a couple of seconds later, and that gap is the wait), another
+  /// row is tapped, or the jump plainly did not happen.
+  String? _pendingId;
+  String _pendingTitle = '';
+  Timer? _pendingTimeout;
+
+  @override
+  void initState() {
+    super.initState();
+    container.sendspin.nowPlaying.addListener(_onNowPlaying);
+  }
+
+  @override
+  void dispose() {
+    container.sendspin.nowPlaying.removeListener(_onNowPlaying);
+    _pendingTimeout?.cancel();
+    super.dispose();
+  }
+
+  void _onNowPlaying() {
+    if (_pendingId == null || !mounted) return;
+    final title = '${container.sendspin.nowPlaying.value?['title'] ?? ''}';
+    if (title == _pendingTitle) _clearPending();
+  }
+
+  void _clearPending() {
+    _pendingTimeout?.cancel();
+    _pendingTimeout = null;
+    if (mounted) setState(() => _pendingId = null);
+  }
+
+  Future<void> _play(String id, String title) async {
+    if (id.isEmpty) return;
+    _pendingTimeout?.cancel();
+    setState(() {
+      _pendingId = id;
+      _pendingTitle = title;
+    });
+    _pendingTimeout = Timer(const Duration(seconds: 15), () {
+      if (_pendingId == id) _clearPending();
+    });
+    final ok = await container.sendspin.playQueueItem(id);
+    if (!ok && _pendingId == id) _clearPending();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -563,9 +620,10 @@ class _QueueView extends StatelessWidget {
               final item = items[i];
               final current = item['current'] == true;
               final duration = (item['durationMs'] as num?)?.toInt() ?? 0;
+              final id = '${item['id'] ?? ''}';
+              final waiting = _pendingId != null && _pendingId == id;
               return InkWell(
-                onTap: () =>
-                    container.sendspin.playQueueItem('${item['id'] ?? ''}'),
+                onTap: () => _play(id, '${item['title'] ?? ''}'),
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -606,8 +664,31 @@ class _QueueView extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      // A constant slot before the duration: the spinner
+                      // while a tap is on its way, the play mark on the
+                      // playing row, nothing on the rest.
+                      SizedBox(
+                        width: fontSize,
+                        height: fontSize,
+                        child: waiting
+                            ? Padding(
+                                padding: EdgeInsets.all(fontSize * 0.1),
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white70,
+                                ),
+                              )
+                            : current
+                            ? Icon(
+                                Icons.play_arrow_rounded,
+                                size: fontSize,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
                       if (duration > 0) ...[
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
                         Text(
                           _clock(duration),
                           style: TextStyle(
@@ -930,7 +1011,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                 Text(_clock(duration), style: timeStyle),
               ],
             ),
-            SizedBox(height: 4 * scale),
           ],
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
