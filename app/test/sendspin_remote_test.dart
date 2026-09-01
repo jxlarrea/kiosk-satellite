@@ -79,6 +79,7 @@ class _FakeRemote extends MaRemotePlayer {
     required super.playerId,
     required super.onSnapshot,
     required super.log,
+    super.label,
   });
 
   final sent = <String>[];
@@ -159,8 +160,10 @@ void main() {
         musicAssistantWebUrl('https://ma.local:8095', player: ''),
         'https://ma.local:8095',
       );
-      expect(musicAssistantWebUrl('https://ma.local:8095'),
-          'https://ma.local:8095');
+      expect(
+        musicAssistantWebUrl('https://ma.local:8095'),
+        'https://ma.local:8095',
+      );
     });
 
     test('the landing player is whoever the kiosk represents', () {
@@ -255,8 +258,7 @@ void main() {
     });
 
     test('a fresh server position stamp becomes the extrapolation base', () {
-      final measuredAt =
-          DateTime.now().millisecondsSinceEpoch / 1000.0 - 5;
+      final measuredAt = DateTime.now().millisecondsSinceEpoch / 1000.0 - 5;
       remote.publishQueue(_queue(measuredAt: measuredAt));
       expect(emitted.single!['receivedAt'], (measuredAt * 1000).round());
     });
@@ -315,12 +317,14 @@ void main() {
             required playerId,
             required onSnapshot,
             required log,
+            String label = 'remote player',
           }) => fake = _FakeRemote(
             baseUrl: baseUrl,
             token: token,
             playerId: playerId,
             onSnapshot: onSnapshot,
             log: log,
+            label: label,
           );
       await sendspin.init();
       await Future<void>.delayed(Duration.zero);
@@ -398,7 +402,10 @@ void main() {
 
     test('no pick means no follower, and the local player runs', () async {
       await build(player: '');
-      expect(fake, isNull);
+      // What the factory built here is the local player's queue watcher
+      // (a server is configured), not a follower of another player.
+      expect(fake?.label, 'queue watcher');
+      expect(fake?.playerId, 'abc123');
       expect(nativeCalls.map((c) => c.method), contains('start'));
       // The registered name is remembered for the shortcut's landing.
       expect(settings.get(defs.sendspinLocalPlayerName), 'Wall Tablet');

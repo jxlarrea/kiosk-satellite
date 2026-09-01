@@ -53,6 +53,58 @@ class SendspinManager extends Manager {
   /// update, for on-screen position extrapolation). Null when idle.
   final nowPlaying = ValueNotifier<Map<String, Object?>?>(null);
 
+  /// Whether the full-screen Now Playing view has something to show: the
+  /// track is playing, or paused under the view's media controls and
+  /// still inside the paused hold. The screensaver slot renders the view
+  /// on this (with sendspin.fullscreen), never on the raw playing flag.
+  final fullscreenActive = ValueNotifier<bool>(false);
+
+  /// Whether the playing track is a favorite in Music Assistant: null
+  /// while unknown (no server configured, nothing playing, or the lookup
+  /// still out). The Now Playing view's heart reads and flips it.
+  final favorite = ValueNotifier<bool?>(null);
+
+  /// The Music Assistant item behind [favorite]: uri, media_type,
+  /// item_id and provider, what the add and remove commands need.
+  Map<String, Object?>? _favoriteItem;
+
+  /// The Now Playing view's queue panel: the items from the playing one
+  /// on, fetched while sendspin.fullscreen_queue is on. The panel takes
+  /// the lyrics' place while it is.
+  final queueItems = ValueNotifier<List<Map<String, Object?>>>(const []);
+
+  /// Whether the queue panel is on, the persisted setting behind the
+  /// view's queue button.
+  bool get queueOpen => _settings.get(defs.sendspinFullscreenQueue);
+  String _queueId = '';
+
+  /// The track the favorite and queue lookups belong to, so an answer
+  /// arriving after the song changed is dropped.
+  String _trackKey = '';
+
+  /// True from a lyrics lookup starting to its answer: the view holds
+  /// its panel layout through it rather than dropping to the plain look
+  /// for the beat the fetch takes.
+  final lyricsPending = ValueNotifier<bool>(false);
+
+  /// The local player's queue, watched over the Music Assistant socket:
+  /// the Sendspin server pushes no controller state when the queue is
+  /// shuffled or edited from elsewhere, so shuffle and the queue panel
+  /// would otherwise only catch up at the next track. The same follower
+  /// class as the remote player's, pointed at this device's own player,
+  /// its snapshots read for the queue state only, never for the card.
+  MaRemotePlayer? _watcher;
+  String _watcherKey = '';
+  String _watchSig = '';
+
+  /// A track paused under the media controls keeps the full-screen view,
+  /// paused with its play button, for as long as the floating card keeps
+  /// its paused look (sendspin.paused_hide_minutes): the person who
+  /// pressed pause on that screen is not done with it, but a display
+  /// paused all night should give the regular screensaver back.
+  bool _pausedHold = false;
+  Timer? _pausedHoldTimer;
+
   /// True while any non-media interaction (voice, announcement, timer) is
   /// in progress: the floating player hides and playback ducks.
   final voiceActive = ValueNotifier<bool>(false);
@@ -113,6 +165,7 @@ class SendspinManager extends Manager {
     required String playerId,
     required void Function(Map<String, Object?>?) onSnapshot,
     required Logger log,
+    String label,
   })
   remoteFactory = MaRemotePlayer.new;
 
@@ -151,6 +204,7 @@ class SendspinManager extends Manager {
     _lyricsKey = key;
     lyrics.value = const [];
     if (title.isEmpty) return;
+    lyricsPending.value = true;
     final api = apiFactory(
       baseUrl: _settings.get(defs.sendspinMaUrl),
       token: _settings.get(defs.sendspinMaToken),
@@ -185,17 +239,54 @@ class SendspinManager extends Manager {
           : 'lyrics for $artist - $title (${parsed.length} lines, $source)',
     );
     lyrics.value = parsed;
+    lyricsPending.value = false;
   }
 
   void _setNowPlaying(Map<String, Object?>? value) {
-    final wasShowing = nowPlaying.value?['playing'] == true;
+    final wasPlaying = nowPlaying.value?['playing'] == true;
+    final wasShowing = fullscreenActive.value;
     nowPlaying.value = value;
-    final showing = value?['playing'] == true;
-    if (wasShowing != showing) {
-      // The screensaver's motion policy tracks the full-screen display,
-      // which only shows while actually playing.
-      bus.publish(SendspinNowPlayingChanged(active: showing));
+    final playing = value?['playing'] == true;
+    if (playing || value == null) {
+      _endPausedHold();
+    } else if (wasPlaying && _settings.get(defs.sendspinFullscreenControls)) {
+      // A pause landing under the controls (after the track-change grace
+      // has ruled out a song boundary): hold the view.
+      _pausedHold = true;
+      _pausedHoldTimer?.cancel();
+      _pausedHoldTimer = Timer(
+        Duration(
+          minutes: _settings.get(defs.sendspinPausedHideMinutes).toInt(),
+        ),
+        () {
+          _pausedHoldTimer = null;
+          if (!_pausedHold) return;
+          _pausedHold = false;
+          _publishShowing();
+        },
+      );
     }
+    final showing = playing || (value != null && _pausedHold);
+    if (wasShowing != showing || wasPlaying != playing) {
+      fullscreenActive.value = showing;
+      bus.publish(SendspinNowPlayingChanged(active: showing, playing: playing));
+    }
+  }
+
+  void _endPausedHold() {
+    _pausedHold = false;
+    _pausedHoldTimer?.cancel();
+    _pausedHoldTimer = null;
+  }
+
+  /// Re-derive the showing flag after the hold ends on its own, or the
+  /// controls are switched off under a held pause.
+  void _publishShowing() {
+    final playing = nowPlaying.value?['playing'] == true;
+    final showing = playing || (nowPlaying.value != null && _pausedHold);
+    if (fullscreenActive.value == showing) return;
+    fullscreenActive.value = showing;
+    bus.publish(SendspinNowPlayingChanged(active: showing, playing: playing));
   }
 
   void _publishNowPlaying() {
@@ -242,6 +333,7 @@ class SendspinManager extends Manager {
 
   @override
   Future<void> init() async {
+    nowPlaying.addListener(_onTrackChanged);
     _channel.setMethodCallHandler((call) async {
       final args = call.arguments;
       final map = args is Map
@@ -279,7 +371,14 @@ class SendspinManager extends Manager {
             unawaited(_settings.set(defs.mediaVolume, vol));
           }
         case 'controllerChanged':
-          _status = {..._status, ...map};
+          // The Sendspin server's controller state does not follow a
+          // shuffle set elsewhere; with the queue watcher up, its word on
+          // shuffle is the live one.
+          _status = {
+            ..._status,
+            for (final e in map.entries)
+              if (e.key != 'shuffle' || _watcher == null) e.key: e.value,
+          };
         case 'playingChanged':
           final playing = map['playing'] == true;
           if (playing != _playing) {
@@ -342,6 +441,28 @@ class SendspinManager extends Manager {
           e.key == defs.sendspinEnabled.key) {
         _syncFlags();
       }
+      // The lyrics toggle flipping mid-track (the Now Playing view's
+      // button, or either settings surface): fetch for the track already
+      // playing, or clear what is up. The per-track fetch below only
+      // runs at track changes.
+      if (e.key == defs.sendspinLyrics.key) unawaited(_refreshLyrics());
+      // The queue panel switching on (the view's button, or either
+      // settings surface) fetches the queue; off drops it.
+      if (e.key == defs.sendspinFullscreenQueue.key) {
+        if (e.value == true) {
+          unawaited(refreshQueue());
+        } else {
+          queueItems.value = const [];
+        }
+      }
+      // The controls going away take a held pause with them: the view
+      // has no play button to hold the screen for any more.
+      if (e.key == defs.sendspinFullscreenControls.key &&
+          e.value != true &&
+          _pausedHold) {
+        _endPausedHold();
+        _publishShowing();
+      }
       // The remote follower has its own lifecycle, deliberately not tied
       // to the local player's enable switch: following a remote player is
       // what the device does INSTEAD of being a player.
@@ -349,6 +470,7 @@ class SendspinManager extends Manager {
           e.key == defs.sendspinMaUrl.key ||
           e.key == defs.sendspinMaToken.key) {
         _syncRemote();
+        _syncWatcher();
       }
       // Only connection-shaping settings restart the client; the UI-only
       // ones (card visibility, size, position, fullscreen mode) must not
@@ -370,6 +492,9 @@ class SendspinManager extends Manager {
         'sendspin.player_size',
         'sendspin.player_pos',
         'sendspin.fullscreen',
+        'sendspin.fullscreen_controls',
+        'sendspin.fullscreen_queue',
+        'sendspin.fullscreen_on_play',
         'sendspin.fullscreen_motion',
         'sendspin.duck_percent',
         'sendspin.paused_hide_minutes',
@@ -626,6 +751,10 @@ class SendspinManager extends Manager {
   @override
   Future<void> dispose() async {
     _restartDebounce?.cancel();
+    _pausedHoldTimer?.cancel();
+    final watcher = _watcher;
+    _watcher = null;
+    await watcher?.stop();
     final remote = _remote;
     _remote = null;
     await remote?.stop();
@@ -707,6 +836,283 @@ class SendspinManager extends Manager {
     }
   }
 
+  bool get _maConfigured =>
+      _settings.get(defs.sendspinMaUrl).trim().isNotEmpty &&
+      _settings.get(defs.sendspinMaToken).trim().isNotEmpty;
+
+  MusicAssistantApi _api() => apiFactory(
+    baseUrl: _settings.get(defs.sendspinMaUrl),
+    token: _settings.get(defs.sendspinMaToken),
+  );
+
+  /// The queue Music Assistant is playing on the shown player: the
+  /// followed one, or this device's own (which Music Assistant resolves
+  /// through the player's active source, a wrapping universal player
+  /// included).
+  Future<Map<String, Object?>?> _activeQueue() async {
+    final String playerId =
+        _remote?.playerId ?? _settings.get(defs.sendspinClientId);
+    if (playerId.isEmpty) return null;
+    final res = await _api().call(
+      'player_queues/get_active_queue',
+      args: {'player_id': playerId},
+    );
+    final queue = res.result;
+    return res.ok && queue is Map ? queue.cast<String, Object?>() : null;
+  }
+
+  /// Start, restart or stop the queue watcher to match the moment: the
+  /// local player running with a Music Assistant server configured and no
+  /// remote player followed (the follower already carries that queue).
+  void _syncWatcher() {
+    final clientId = _settings.get(defs.sendspinClientId);
+    final want =
+        _remote == null && _running && _maConfigured && clientId.isNotEmpty;
+    final key = want
+        ? '${_settings.get(defs.sendspinMaUrl)}|'
+              '${_settings.get(defs.sendspinMaToken)}|$clientId'
+        : '';
+    if (key == _watcherKey && (want == (_watcher != null))) return;
+    _watcherKey = key;
+    final old = _watcher;
+    _watcher = null;
+    _watchSig = '';
+    if (old != null) unawaited(old.stop());
+    if (!want) return;
+    _watcher = remoteFactory(
+      baseUrl: _settings.get(defs.sendspinMaUrl),
+      token: _settings.get(defs.sendspinMaToken),
+      playerId: clientId,
+      onSnapshot: _onWatchSnapshot,
+      log: log,
+      label: 'queue watcher',
+    )..start();
+  }
+
+  /// A queue snapshot for the local player: only its shuffle flag and
+  /// its identity are read. Shuffle lands on the card state; a queue
+  /// edit refreshes the panel while it is open.
+  void _onWatchSnapshot(Map<String, Object?>? snapshot) {
+    if (snapshot == null || _watcher == null) return;
+    final shuffle = snapshot['shuffle'] == true;
+    if (shuffle != (_status['shuffle'] == true)) {
+      _status = {..._status, 'shuffle': shuffle};
+      if (_remote == null && nowPlaying.value != null) {
+        nowPlaying.value = {...nowPlaying.value!, 'shuffle': shuffle};
+      }
+    }
+    final sig =
+        '${snapshot['queueItemId']}|${snapshot['currentIndex']}|'
+        '${snapshot['queueLength']}|$shuffle';
+    if (sig != _watchSig) {
+      final first = _watchSig.isEmpty;
+      _watchSig = sig;
+      if (!first && queueOpen) unawaited(refreshQueue());
+    }
+  }
+
+  /// The track on screen changed (or went away): re-read what Music
+  /// Assistant knows about it for the favorite heart and the queue panel.
+  void _onTrackChanged() {
+    final now = nowPlaying.value;
+    final key = now == null
+        ? ''
+        : '${now['artist'] ?? ''}|${now['title'] ?? ''}';
+    if (key == _trackKey) return;
+    _trackKey = key;
+    if (now == null) {
+      favorite.value = null;
+      _favoriteItem = null;
+      queueItems.value = const [];
+      return;
+    }
+    unawaited(_refreshFavorite());
+    if (queueOpen) unawaited(refreshQueue());
+  }
+
+  Future<void> _refreshFavorite() async {
+    final key = _trackKey;
+    favorite.value = null;
+    _favoriteItem = null;
+    if (!_maConfigured || key == '|') return;
+    final title = '${nowPlaying.value?['title'] ?? ''}';
+    // Music Assistant's queue can lag the Sendspin metadata by a beat at
+    // a track boundary: an item that is not the one on screen gets one
+    // more look after a moment.
+    for (var attempt = 0; attempt < 2; attempt++) {
+      final queue = await _activeQueue();
+      if (_trackKey != key) return;
+      final media = (queue?['current_item'] as Map?)?['media_item'];
+      final uri = media is Map ? '${media['uri'] ?? ''}' : '';
+      final name = media is Map ? '${media['name'] ?? ''}' : '';
+      if (uri.isNotEmpty && (name == title || attempt == 1)) {
+        await _resolveFavorite(uri, key);
+        return;
+      }
+      await Future<void>.delayed(const Duration(seconds: 2));
+      if (_trackKey != key) return;
+    }
+  }
+
+  /// Read the item's library state: the library copy when it has one
+  /// (favorites always do), the provider item otherwise.
+  Future<void> _resolveFavorite(String uri, String key) async {
+    final res = await _api().call('music/item_by_uri', args: {'uri': uri});
+    final item = res.result;
+    if (_trackKey != key || !res.ok || item is! Map) return;
+    _favoriteItem = {
+      'uri': uri,
+      'media_type': item['media_type'],
+      'item_id': item['item_id'],
+      'provider': item['provider'],
+    };
+    favorite.value = item['favorite'] == true;
+  }
+
+  /// Flip the playing track's favorite in Music Assistant: the Now
+  /// Playing view's heart. Optimistic on screen, re-read from the server
+  /// after, and put back on a refusal.
+  Future<bool> toggleFavorite() async {
+    final item = _favoriteItem;
+    final current = favorite.value;
+    if (item == null || current == null) return false;
+    final key = _trackKey;
+    favorite.value = !current;
+    final res = current
+        ? await _api().call(
+            'music/favorites/remove_item',
+            args: {
+              'media_type': item['media_type'],
+              'library_item_id': item['item_id'],
+            },
+          )
+        : await _api().call(
+            'music/favorites/add_item',
+            args: {'item': item['uri']},
+          );
+    if (_trackKey != key) return res.ok;
+    if (!res.ok) {
+      log.warn(name, 'favorite toggle failed: ${res.error}');
+      favorite.value = current;
+      return false;
+    }
+    await _resolveFavorite('${item['uri']}', key);
+    return true;
+  }
+
+  /// The view's queue button: flip the persisted panel setting, taking
+  /// the lyrics down with it when it goes up, since the two share one
+  /// slot. The setting's own change handler fetches the queue.
+  Future<void> toggleQueue() async {
+    final on = !queueOpen;
+    // The incoming panel goes up before the other comes down, so the
+    // layout never passes through the plain look between them.
+    await _settings.set(defs.sendspinFullscreenQueue, on);
+    if (on && _settings.get(defs.sendspinLyrics)) {
+      await _settings.set(defs.sendspinLyrics, false);
+    }
+  }
+
+  /// The view's lyrics button: the mirror of [toggleQueue].
+  Future<void> toggleLyrics() async {
+    final on = !_settings.get(defs.sendspinLyrics);
+    await _settings.set(defs.sendspinLyrics, on);
+    if (on && queueOpen) {
+      await _settings.set(defs.sendspinFullscreenQueue, false);
+    }
+  }
+
+  /// Fetch the queue from the playing item on: title, artist, duration
+  /// and the queue index of each, the playing one flagged.
+  Future<void> refreshQueue() async {
+    if (!_maConfigured) {
+      queueItems.value = const [];
+      return;
+    }
+    final key = _trackKey;
+    final queue = await _activeQueue();
+    if (queue == null) {
+      queueItems.value = const [];
+      return;
+    }
+    final queueId = '${queue['queue_id'] ?? ''}';
+    final index = (queue['current_index'] as num?)?.toInt() ?? 0;
+    final currentId =
+        '${(queue['current_item'] as Map?)?['queue_item_id'] ?? ''}';
+    final res = await _api().call(
+      'player_queues/items',
+      args: {'queue_id': queueId, 'limit': 50, 'offset': index},
+    );
+    final items = res.result;
+    if (_trackKey != key || !res.ok || items is! List) return;
+    _queueId = queueId;
+    // Music Assistant leaves every item's own index at zero here: the
+    // position comes from the offset, the identity from the item id.
+    queueItems.value = [
+      for (final (i, it) in items.indexed)
+        if (it is Map) _queueRow(it, index + i, currentId),
+    ];
+  }
+
+  static Map<String, Object?> _queueRow(Map it, int index, String currentId) {
+    final media = it['media_item'] is Map
+        ? (it['media_item'] as Map).cast<String, Object?>()
+        : const <String, Object?>{};
+    final artist = ((media['artists'] as List?) ?? const [])
+        .map((a) => a is Map ? '${a['name'] ?? ''}' : '')
+        .where((s) => s.isNotEmpty)
+        .join('/');
+    final duration = (it['duration'] as num?) ?? (media['duration'] as num?);
+    final id = '${it['queue_item_id'] ?? ''}';
+    return {
+      'index': index,
+      'id': id,
+      'title': '${media['name'] ?? it['name'] ?? ''}',
+      'artist': artist,
+      if (duration != null) 'durationMs': (duration * 1000).round(),
+      'current': id.isNotEmpty && id == currentId,
+    };
+  }
+
+  /// Jump the queue to the item [queueItemId]: a tap on a row of the
+  /// queue panel. The id, not the position: Music Assistant takes either,
+  /// and the id survives a shuffle between the fetch and the tap.
+  Future<bool> playQueueItem(String queueItemId) async {
+    if (_queueId.isEmpty || queueItemId.isEmpty) return false;
+    final res = await _api().call(
+      'player_queues/play_index',
+      args: {'queue_id': _queueId, 'index': queueItemId},
+    );
+    if (!res.ok) log.warn(name, 'play queue item failed: ${res.error}');
+    return res.ok;
+  }
+
+  /// Shuffle the queue on or off: the Now Playing view's shuffle toggle.
+  /// Locally the controller role's shuffle and unshuffle commands; for a
+  /// followed player Music Assistant's queue setting.
+  Future<bool> setShuffle(bool on) async {
+    if (_remote case final remote?) return remote.setShuffle(on);
+    return control(on ? 'shuffle' : 'unshuffle');
+  }
+
+  /// Jump the playing track to [positionMs]: the Now Playing view's
+  /// progress bar. Locally the controller role's seek command, which the
+  /// server advertises like any other; for a followed player Music
+  /// Assistant's own seek, in whole seconds.
+  Future<bool> seek(int positionMs) async {
+    if (_remote case final remote?) return remote.seek(positionMs);
+    try {
+      return await _channel.invokeMethod<bool>('control', {
+            'command': 'seek',
+            'value': positionMs,
+          }) ??
+          false;
+    } catch (e) {
+      log.warn(name, 'seek failed: $e');
+      return false;
+    }
+  }
+
   Future<void> _start() async {
     // The player name is the same identity everything else shows: the
     // device name setting, or the hardware model via getDeviceInfo.
@@ -743,6 +1149,7 @@ class SendspinManager extends Manager {
       });
       _running = true;
       log.info(name, 'player started as "$playerName"');
+      _syncWatcher();
     } catch (e) {
       log.warn(name, 'start failed: $e');
     }
@@ -751,6 +1158,7 @@ class SendspinManager extends Manager {
   Future<void> _stop() async {
     if (!_running) return;
     _running = false;
+    _syncWatcher();
     try {
       await _channel.invokeMethod('stop');
     } catch (e) {

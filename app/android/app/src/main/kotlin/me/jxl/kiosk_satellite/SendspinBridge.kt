@@ -199,11 +199,13 @@ class SendspinBridge(
                 }
                 "control" -> {
                     val command = call.argument<String>("command") ?: ""
+                    // Seek carries its position (ms); the rest take no value.
+                    val value = call.argument<Number>("value")?.toLong() ?: 0L
                     val allowed = supportedCommands
                     if (command.isNotEmpty() &&
                         (allowed.isEmpty() || command in allowed)
                     ) {
-                        session?.sendCommand(command)
+                        session?.sendCommand(command, value)
                         result.success(true)
                     } else {
                         result.success(false)
@@ -557,9 +559,12 @@ class SendspinBridge(
             publishVolumeIfChanged()
         }
 
-        override fun onSupportedCommands(commands: List<String>) {
+        override fun onControllerState(commands: List<String>, shuffle: Boolean, repeat: String) {
             supportedCommands = commands
-            emit("controllerChanged", mapOf("supportedCommands" to commands))
+            emit(
+                "controllerChanged",
+                mapOf("supportedCommands" to commands, "shuffle" to shuffle, "repeat" to repeat),
+            )
         }
 
         override fun onStreamActiveChanged(active: Boolean) {

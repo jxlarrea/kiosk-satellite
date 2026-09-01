@@ -43,7 +43,8 @@ class NativeSendspinSession(
         fun onPositionUpdate(positionMs: Long)
         fun onServerVolume(volume: Int)
         fun onServerMuted(muted: Boolean)
-        fun onSupportedCommands(commands: List<String>)
+        /** The server's controller state: what it accepts, and the shuffle and repeat it is in. */
+        fun onControllerState(commands: List<String>, shuffle: Boolean, repeat: String)
         fun onStreamActiveChanged(active: Boolean)
     }
 
@@ -199,10 +200,31 @@ class NativeSendspinSession(
         NativeSendspin.nativeUpdateMuted(handle, muted)
     }
 
-    fun sendCommand(command: String): Boolean {
+    /**
+     * A seek's displacement from the engine's own progress, in ms. Music
+     * Assistant restarts the stream at the new position but sends no fresh
+     * metadata progress for it, so the engine keeps extrapolating from the
+     * report before the seek and the UI would show the old place while the
+     * audio plays the new one. The target is adopted here and carried by
+     * every position push until the server's next real metadata report,
+     * which re-bases everything.
+     */
+    @Volatile private var seekOffsetMs = 0L
+
+    /** [arg] is the command's value where it takes one: the seek position in ms. */
+    fun sendCommand(command: String, arg: Long = 0L): Boolean {
         if (handle == 0L) return false
-        return NativeSendspin.nativeSendCommand(handle, command, 0)
+        val sent = NativeSendspin.nativeSendCommand(handle, command, arg)
+        if (sent && command == "seek") {
+            seekOffsetMs = arg - NativeSendspin.nativeGetTrackProgressMs(handle)
+            events.onPositionUpdate(arg)
+        }
+        return sent
     }
+
+    /** The engine's progress with any seek displacement applied. */
+    private fun displayedProgressMs(): Long =
+        (NativeSendspin.nativeGetTrackProgressMs(handle).toLong() + seekOffsetMs).coerceAtLeast(0L)
 
     fun onNetworkAvailable() {
         if (destroyed.get() || handle == 0L) return
@@ -284,7 +306,7 @@ class NativeSendspinSession(
     private fun pushPosition() {
         if (destroyed.get()) return
         if (streamActive && handle != 0L) {
-            events.onPositionUpdate(NativeSendspin.nativeGetTrackProgressMs(handle).toLong())
+            events.onPositionUpdate(displayedProgressMs())
         }
         controlHandler.postDelayed(::pushPosition, POSITION_PUSH_INTERVAL_MS)
     }
@@ -330,6 +352,9 @@ class NativeSendspinSession(
             durationMs: Long,
             timestampUs: Long,
         ) {
+            // A real server report: whatever it says about the position
+            // outranks a seek the client carried on its own.
+            if (progressMs >= 0) seekOffsetMs = 0L
             events.onMetadata(title, artist, album, artworkUrl, progressMs, durationMs)
         }
 
@@ -348,8 +373,10 @@ class NativeSendspinSession(
             shuffle: Boolean,
             seekMaxMs: Long,
         ) {
-            events.onSupportedCommands(
+            events.onControllerState(
                 commands.split(',').map { it.trim() }.filter { it.isNotEmpty() },
+                shuffle,
+                repeat,
             )
         }
 

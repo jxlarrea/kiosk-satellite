@@ -4438,6 +4438,11 @@ const sendspinDuckPercent = SettingDef<num>(
   dependsOn: 'sendspin.enabled',
 );
 
+// ── Now Playing (Sendspin section) ─────────────────────────────────────
+// The full-screen music display that stands in for the screensaver. Its
+// own group: the rows decide what the screen does while music plays, not
+// how the player plays it.
+
 const sendspinFullscreen = SettingDef<bool>(
   key: 'sendspin.fullscreen',
   type: SettingType.boolean,
@@ -4448,8 +4453,61 @@ const sendspinFullscreen = SettingDef<bool>(
       'Playing view with album art. With nothing playing, the regular '
       'screensaver runs.',
   category: 'Sendspin',
-  section: 'Sendspin player',
+  section: 'Now Playing',
   dependsOn: 'sendspin.player_active',
+);
+
+/// The transport on the full-screen view: the same previous, play/pause
+/// and next buttons the large floating card carries, plus a progress bar
+/// that seeks where the server allows it. With controls on screen a tap
+/// can no longer mean "dismiss", so the view grows a close button and the
+/// screensaver's touch dismissal stands down for it (the back button and
+/// the motion policy are unchanged).
+const sendspinFullscreenControls = SettingDef<bool>(
+  key: 'sendspin.fullscreen_controls',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Show media controls',
+  description:
+      'Previous, play/pause and next buttons and a progress bar on the '
+      'Now Playing view. With controls on, a close button dismisses it '
+      'instead of a tap anywhere.',
+  category: 'Sendspin',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
+);
+
+/// The queue panel in the lyrics' slot, persisted like the lyrics are:
+/// the view's queue button flips it, and so does either settings surface.
+/// Both on at once, the queue wins on screen; the buttons keep the two
+/// exclusive when they do the flipping.
+const sendspinFullscreenQueue = SettingDef<bool>(
+  key: 'sendspin.fullscreen_queue',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Show queue',
+  description:
+      'The queue from the playing track on, in place of the lyrics on the '
+      'Now Playing view. Needs the Music Assistant server address and token.',
+  category: 'Sendspin',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen_controls',
+);
+
+/// Bring the view up the moment playback starts rather than waiting for
+/// the idle timeout: the display is the point of the music, and someone
+/// who queued a song from their phone expects the wall to show it now.
+const sendspinFullscreenOnPlay = SettingDef<bool>(
+  key: 'sendspin.fullscreen_on_play',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Launch Now Playing when music starts playing',
+  description:
+      'Open the Now Playing view as soon as playback starts instead of '
+      'waiting for the screensaver timeout.',
+  category: 'Sendspin',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen',
 );
 
 const sendspinFullscreenMotion = SettingDef<bool>(
@@ -4462,7 +4520,7 @@ const sendspinFullscreenMotion = SettingDef<bool>(
       'only touch dismisses it, so a walk-past does not interrupt the '
       'music display.',
   category: 'Sendspin',
-  section: 'Sendspin player',
+  section: 'Now Playing',
   dependsOn: 'sendspin.fullscreen',
 );
 
@@ -5678,6 +5736,9 @@ const List<SettingDef<Object>> allSettings = [
   sendspinPausedHideMinutes,
   sendspinDismissKeepsPlaying,
   sendspinFullscreen,
+  sendspinFullscreenControls,
+  sendspinFullscreenQueue,
+  sendspinFullscreenOnPlay,
   sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,

@@ -31,7 +31,13 @@ class MaRemotePlayer {
     required this.playerId,
     required this.onSnapshot,
     required this.log,
+    this.label = 'remote player',
   }) : _api = MusicAssistantApi(baseUrl: baseUrl, token: token);
+
+  /// What the log calls this connection: the follower of a remote player,
+  /// or the watcher that keeps the local player's queue state (shuffle,
+  /// the queue panel) in step with Music Assistant.
+  final String label;
 
   static const _name = 'sendspin';
 
@@ -39,7 +45,7 @@ class MaRemotePlayer {
   /// supported_features: transport acts on the queue, which Music
   /// Assistant drives for any player (a pause it cannot pass through
   /// becomes a stop server-side).
-  static const commands = ['play', 'pause', 'stop', 'next', 'previous'];
+  static const commands = ['play', 'pause', 'stop', 'next', 'previous', 'seek'];
 
   final MusicAssistantApi _api;
   final Logger log;
@@ -97,7 +103,7 @@ class MaRemotePlayer {
       });
       publishQueue(queue);
     } catch (e) {
-      log.warn(_name, 'remote player queue lookup failed: $e');
+      log.warn(_name, '$label queue lookup failed: $e');
     }
   }
 
@@ -111,6 +117,40 @@ class MaRemotePlayer {
       return true;
     } catch (e) {
       log.warn(_name, 'remote $command failed: $e');
+      return false;
+    }
+  }
+
+  /// Shuffle the followed player's queue on or off: a queue setting in
+  /// Music Assistant, not a player command, echoed back by queue_updated.
+  Future<bool> setShuffle(bool on) async {
+    final session = _session;
+    if (session == null || _queueId.isEmpty) return false;
+    try {
+      await session.send('player_queues/shuffle', {
+        'queue_id': _queueId,
+        'shuffle_enabled': on,
+      });
+      return true;
+    } catch (e) {
+      log.warn(_name, 'remote shuffle failed: $e');
+      return false;
+    }
+  }
+
+  /// Seek the followed player's queue: Music Assistant takes the position
+  /// in whole seconds and answers with a queue_time_updated for the bar.
+  Future<bool> seek(int positionMs) async {
+    final session = _session;
+    if (session == null) return false;
+    try {
+      await session.send('players/cmd/seek', {
+        'player_id': playerId,
+        'position': (positionMs / 1000).round(),
+      });
+      return true;
+    } catch (e) {
+      log.warn(_name, 'remote seek failed: $e');
       return false;
     }
   }
@@ -134,18 +174,14 @@ class MaRemotePlayer {
       // socket from a dead one.
       socket.pingInterval = const Duration(seconds: 20);
       _socket = socket;
-      final session = MaSession(
-        socket,
-        onEvent: handleEvent,
-        onDone: _onDone,
-      );
+      final session = MaSession(socket, onEvent: handleEvent, onDone: _onDone);
       _session = session;
       await session.send('auth', {'token': _api.token});
       _attempts = 0;
-      log.info(_name, 'following remote player $playerId');
+      log.info(_name, '$label: following $playerId');
       await refresh();
     } catch (e) {
-      log.warn(_name, 'remote player connect failed: $e');
+      log.warn(_name, '$label connect failed: $e');
       await _close();
       _scheduleRetry();
     }
@@ -153,7 +189,7 @@ class MaRemotePlayer {
 
   void _onDone() {
     if (_stopped) return;
-    log.info(_name, 'remote player connection closed');
+    log.info(_name, '$label connection closed');
     unawaited(_close());
     // Nothing live to show while disconnected; an empty card would lie.
     _emit(null);
@@ -240,8 +276,7 @@ class MaRemotePlayer {
     // fall back to arrival time rather than freeze or run the bar wild.
     final now = DateTime.now().millisecondsSinceEpoch;
     final measuredAt = (snap['positionAtMs'] as num?)?.toInt();
-    final receivedAt =
-        measuredAt != null && (now - measuredAt).abs() < 60000
+    final receivedAt = measuredAt != null && (now - measuredAt).abs() < 60000
         ? measuredAt
         : now;
     _emit({

@@ -19,7 +19,8 @@ that stands in for the screensaver while music plays.
 Settings → **Music Assistant** on the device, or the matching tab in the
 remote admin. The page opens on the Music Assistant group described
 further down; the **Sendspin player** group below it holds the settings in
-this table.
+this table, and the **Now Playing** group after that the full-screen
+view's.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
@@ -30,7 +31,18 @@ this table.
 | Show the floating media player | on | The now-playing card described below. |
 | Player size | Compact | Compact is display-only; Large adds previous, play/pause and next buttons sized for touch. |
 | Hide the paused player after | 3 min | How long a paused card stays before hiding itself. |
+
+### Now Playing
+
+The full-screen music display described further down, in its own group
+under the player.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
 | "Now Playing" instead of the screensaver | off | The full-screen view described below. |
+| Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
+| Show queue | off | The queue from the playing track on, in place of the lyrics on the view. The view's queue button flips it. Needs the Music Assistant server address and token. |
+| Launch Now Playing when music starts playing | off | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
 | Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
 
 ### Music Assistant
@@ -163,10 +175,66 @@ panel, and large title and artist text. Songs cross-fade into each other.
 
 ![Now Playing full screen](../assets/screenshots/sendspin-now-playing.png)
 
-It behaves like a screensaver, deliberately without controls: touch
-dismisses it, motion only if allowed by its setting. With nothing
-playing, the regular screensaver appears as usual, and a pause swaps the
-view back to the regular screensaver live.
+It starts like a screensaver, at the idle timeout, or the moment music
+starts with **Launch Now Playing when music starts playing** on: the wall
+shows the song someone just queued from their phone without waiting for
+the room to go idle. Motion dismisses it only if allowed by its setting.
+With nothing playing, the regular screensaver appears as usual, and a
+pause swaps the view back to the regular screensaver live.
+
+### Media controls
+
+**Show media controls**, on by default, puts the floating card's transport
+under the cover: previous, play/pause and next sized for touch, acting on
+the whole playback group exactly as the Large card's buttons do, and a
+progress bar with the elapsed and total time. Where the server allows
+seeking (Music Assistant does) the bar carries a thumb and dragging it
+jumps the track; elsewhere it is the card's progress line at full size.
+Music Assistant sends no fresh progress report after a seek, so the
+player carries the new position itself until the server's next report,
+which keeps the bar, the floating card and the lyrics on the audio. The
+buttons and the bar stay put between songs while the cover and the title
+cross-fade behind them.
+
+Four smaller toggles flank the transport the way Music Assistant's own
+player lays them out. On the left, a **heart** adds the playing track to
+the Music Assistant favorites or takes it out again, lit while it is one,
+and **shuffle**, lit while the queue is shuffled and following a shuffle
+set from Music Assistant itself within a moment. On the right, **lyrics**,
+lit while **Show lyrics** is on, and **queue**, lit while **Show queue**
+is. Both flip their setting, so the choice sticks across sessions and
+either settings surface shows the same state, and the two keep each
+other exclusive: lyrics and the queue share one slot, beside the cover on
+a landscape screen and under it on a portrait one. The queue lists the
+playing track and everything after it, the playing one lit, follows the
+queue as Music Assistant changes it, and a tap on any row jumps the
+queue there. The heart and the queue need the Music
+Assistant server address and token; the lyrics toggle stays out while
+another player is controlled, where lyrics are off by design.
+
+The transport keeps its place along the bottom of the screen whatever
+the layout does: the lyrics or the queue appearing rearranges the cover
+above it, never the buttons under a finger.
+
+Pausing from the view keeps it up, paused, with its play button, for as
+long as **Hide the paused player after** keeps the floating card: the
+person who pressed pause on that screen is not done with it. Once the
+time runs out, or the track goes away, the regular screensaver takes the
+slot back. With the controls off a pause swaps the view back to the
+regular screensaver at once, as before.
+
+With controls on screen a tap can no longer mean "dismiss", so the view
+carries a close button in the top right corner, the same floating close
+the Music Assistant page wears, and touches anywhere else do nothing but
+press what they land on. The back button dismisses it as it does any
+screensaver, and the motion setting is unchanged. With the controls off
+the view is the control-free display it always was: a tap anywhere
+dismisses it.
+
+Lyrics and the At a Glance row keep their layouts, with the transport
+under the cover in each: beside the lyrics on a landscape screen, above
+them on a portrait one, and above the row on the plain view, where the
+cover gives back a little size so everything fits a short screen.
 
 ### Lyrics
 

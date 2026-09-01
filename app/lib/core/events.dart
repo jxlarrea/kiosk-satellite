@@ -690,13 +690,17 @@ class GestureActionCompleted extends AppEvent {
 
 // ── Sendspin ───────────────────────────────────────────────────────────
 
-/// The Sendspin now-playing display state: true while a track is loaded
-/// (playing, paused, or inside the track-change grace period). The
-/// screensaver consumes it to apply the full-screen player's own motion
-/// dismissal policy.
+/// The Sendspin now-playing display state. [active] is whether the
+/// full-screen view has something to show: a track playing (the
+/// track-change grace period included), or one paused under the view's
+/// media controls for as long as the floating card would hold its paused
+/// look. The screensaver consumes it for the takeover and the view's own
+/// motion policy, and [playing] alone for launch on play, which wants the
+/// moment playback starts, not the moment a paused track appears.
 class SendspinNowPlayingChanged extends AppEvent {
-  const SendspinNowPlayingChanged({required this.active});
+  const SendspinNowPlayingChanged({required this.active, this.playing = false});
   final bool active;
+  final bool playing;
 }
 
 /// Someone asked for the floating player card right now (the "Show the

@@ -7,6 +7,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'glance_row.dart';
 import 'lyrics_view.dart';
+import 'theme.dart';
 
 import '../app_container.dart';
 import '../core/events.dart';
@@ -113,11 +114,23 @@ class _MarqueeState extends State<_Marquee>
   }
 }
 
+/// Minutes and seconds of a millisecond count, "3:07".
+String _clock(int ms) {
+  final s = (ms / 1000).round();
+  final m = s ~/ 60;
+  return '$m:${(s % 60).toString().padLeft(2, '0')}';
+}
+
 /// The full-screen now-playing view that stands in for the screensaver
 /// while music plays (sendspin.fullscreen): album art as a blurred, dimmed
 /// backdrop, the art again as a centered panel, and large title/artist
-/// text. Deliberately control-free — it behaves exactly like a screensaver
-/// and the host wraps it in the same tap-to-dismiss surface.
+/// text. Without its media controls it behaves exactly like a screensaver
+/// and the host wraps it in the same tap-to-dismiss surface; with them
+/// (sendspin.fullscreen_controls, the default) the screensaver manager
+/// holds the touch reports, the transport sits pinned along the bottom of
+/// the screen and a close button in the corner is the way out. Lyrics or
+/// the queue take the space beside (landscape) or under (portrait) the
+/// cover; the transport never moves for them.
 class SendspinFullscreenView extends StatefulWidget {
   const SendspinFullscreenView({super.key, required this.container});
 
@@ -133,11 +146,27 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
   Uint8List? _artBytes;
   String _artUrl = '';
 
+  /// Whether the last build showed a panel beside or under the cover:
+  /// with lyrics on and their lookup still out, the layout holds rather
+  /// than dropping to the plain look and back for the beat it takes.
+  bool _panelShown = false;
+
+  /// The lyrics and queue settings decide the layout, so a flip from the
+  /// view's own buttons or either settings surface rebuilds it.
+  StreamSubscription<SettingChanged>? _settingsSub;
+
   @override
   void initState() {
     super.initState();
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
     c.sendspin.lyrics.addListener(_onNowPlaying);
+    c.sendspin.lyricsPending.addListener(_onNowPlaying);
+    _settingsSub = c.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.sendspinLyrics.key ||
+          e.key == defs.sendspinFullscreenQueue.key) {
+        _onNowPlaying();
+      }
+    });
     // The entity list going from empty to populated (or back) changes the
     // whole layout, not just the row, so the view rebuilds with it.
     c.glance.entities.addListener(_onNowPlaying);
@@ -148,7 +177,9 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
     c.sendspin.lyrics.removeListener(_onNowPlaying);
+    c.sendspin.lyricsPending.removeListener(_onNowPlaying);
     c.glance.entities.removeListener(_onNowPlaying);
+    _settingsSub?.cancel();
     super.dispose();
   }
 
@@ -178,30 +209,135 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     // Sized off the panel, not fixed: a 360px cover with 40px type fits a
     // tablet but overflows small panels (the Echo Show's 480px-tall
     // screen). Everything scales from the shortest side and caps at the
-    // tablet design sizes.
+    // tablet design sizes; a panel that still does not fit its slot is
+    // scaled down as one piece.
     final screen = MediaQuery.sizeOf(context);
     final short = screen.shortestSide;
     final artSize = (short * 0.52).clamp(120.0, 360.0);
     final titleSize = (short * 0.085).clamp(20.0, 40.0);
     final artistSize = (short * 0.047).clamp(13.0, 22.0);
     final gap = (screen.height * 0.05).clamp(12.0, 40.0);
-    // Lyrics take whatever spare axis the panel has: a second column on a
-    // landscape screen, the space under the cover on a portrait one. A panel
-    // too small for either keeps the plain now-playing look rather than
-    // squeezing two lines of lyric into a corner.
+    final controls = c.settings.get(defs.sendspinFullscreenControls);
+    final controlsScale = (short / 800).clamp(0.7, 1.0);
+    // The queue panel (controls only: its button lives there) and the
+    // lyrics share one slot, the queue winning while it is open. Either
+    // takes whatever spare axis the panel has: a second column on a
+    // landscape screen, the space under the cover on a portrait one. A
+    // panel too small for either keeps the plain now-playing look rather
+    // than squeezing two lines into a corner.
+    final queue = controls && c.sendspin.queueOpen;
+    final lyricsOn = !queue && c.settings.get(defs.sendspinLyrics);
     final haveLyrics =
-        c.settings.get(defs.sendspinLyrics) &&
-        c.sendspin.lyrics.value.isNotEmpty;
+        lyricsOn &&
+        (c.sendspin.lyrics.value.isNotEmpty ||
+            (c.sendspin.lyricsPending.value && _panelShown));
+    final havePanel = queue || haveLyrics;
     final landscape = screen.width > screen.height;
-    final showLyrics = haveLyrics && landscape && screen.width >= 560;
-    final stackLyrics = haveLyrics && !landscape && screen.height >= 620;
+    final sideBySide = havePanel && landscape && screen.width >= 560;
+    final stacked = havePanel && !landscape && screen.height >= 620;
     // The At a Glance row joins the plain layout only (issue #209): the
-    // lyrics layouts already spend every free pixel on the words.
+    // panel layouts already spend every free pixel on the words.
     final glance =
-        !showLyrics &&
-        !stackLyrics &&
+        !sideBySide &&
+        !stacked &&
         c.settings.get(defs.screensaverGlanceNowPlaying) &&
         c.glance.entities.value.isNotEmpty;
+    final edge = (screen.width * 0.06).clamp(16.0, 64.0);
+    _panelShown = sideBySide || stacked;
+
+    Widget panel() => queue
+        ? _QueueView(container: c, fontSize: (short * 0.03).clamp(13.0, 18.0))
+        : LyricsView(
+            container: c,
+            fontSize: (short * 0.055).clamp(15.0, 26.0),
+            centred: stacked,
+          );
+
+    final Widget content;
+    if (sideBySide) {
+      // Art and words to one side, the panel to the other: a lyric needs
+      // the height, and stacking it under a 360px cover leaves room for
+      // about two lines.
+      content = Padding(
+        padding: EdgeInsets.fromLTRB(edge, 12, edge, 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 5,
+              child: _fitted(
+                _trackPanel(
+                  art: art,
+                  title: title,
+                  artist: artist,
+                  artSize: artSize * 0.62,
+                  titleSize: titleSize * 0.7,
+                  artistSize: artistSize * 0.85,
+                  gap: gap * 0.5,
+                  horizontalPadding: 8,
+                ),
+                width: artSize * 0.62 * 1.8,
+              ),
+            ),
+            SizedBox(width: (screen.width * 0.04).clamp(12.0, 48.0)),
+            Expanded(flex: 6, child: panel()),
+          ],
+        ),
+      );
+    } else if (stacked) {
+      // Portrait: cover and track up top, the panel filling everything
+      // below them. Left as the plain centred view, a tall panel spends
+      // its whole lower half on nothing.
+      content = Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          (screen.height * 0.05).clamp(12.0, 48.0),
+          20,
+          0,
+        ),
+        child: LayoutBuilder(
+          builder: (context, box) => Column(
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: box.maxHeight * 0.5),
+                child: _fitted(
+                  _trackPanel(
+                    art: art,
+                    title: title,
+                    artist: artist,
+                    artSize: artSize * 0.66,
+                    titleSize: titleSize * 0.8,
+                    artistSize: artistSize * 0.9,
+                    gap: gap * 0.6,
+                    horizontalPadding: 12,
+                  ),
+                  width: screen.width - 40,
+                ),
+              ),
+              SizedBox(height: (screen.height * 0.03).clamp(10.0, 32.0)),
+              Expanded(child: panel()),
+            ],
+          ),
+        ),
+      );
+    } else {
+      content = Center(
+        child: _fitted(
+          _trackPanel(
+            art: art,
+            title: title,
+            artist: artist,
+            artSize: artSize,
+            titleSize: titleSize,
+            artistSize: artistSize,
+            gap: gap,
+            horizontalPadding: 0,
+          ),
+          width: min(screen.width - 96, artSize * 2.2),
+        ),
+      );
+    }
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -230,115 +366,90 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
             filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
             child: const ColoredBox(color: Color(0x99000000)),
           ),
-        if (showLyrics)
-          // Art and words to one side, lyrics to the other: a lyric needs
-          // the height, and stacking it under a 360px cover leaves room for
-          // about two lines.
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: (screen.width * 0.06).clamp(16.0, 64.0),
-              vertical: 12,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: _nowPlayingPanel(
-                    art: art,
-                    title: title,
-                    artist: artist,
-                    artSize: artSize * 0.62,
-                    titleSize: titleSize * 0.7,
-                    artistSize: artistSize * 0.85,
-                    gap: gap * 0.5,
-                    horizontalPadding: 8,
-                  ),
+        // The content above, the row and the transport pinned below it:
+        // the transport keeps its place whatever the content does.
+        Column(
+          children: [
+            Expanded(child: content),
+            if (glance)
+              Padding(
+                padding: EdgeInsets.only(
+                  top: 8,
+                  bottom: controls
+                      ? 4
+                      : (screen.height * 0.06).clamp(12.0, 48.0),
                 ),
-                SizedBox(width: (screen.width * 0.04).clamp(12.0, 48.0)),
-                Expanded(
-                  flex: 6,
-                  child: LyricsView(
+                // The default cards carry their own backdrop, and the
+                // text-only style's grey-on-black palette reads over the
+                // black backdrop and the scrimmed art alike, so no tint.
+                child: GlanceRow(
+                  container: c,
+                  scale: min(1.0, screen.height / 480).clamp(0.75, 1.0),
+                ),
+              ),
+            if (controls)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  gap * 0.4,
+                  16,
+                  (screen.height * 0.04).clamp(10.0, 32.0),
+                ),
+                child: Center(
+                  child: _NowPlayingControls(
                     container: c,
-                    fontSize: (short * 0.055).clamp(15.0, 26.0),
+                    // A wide bar: most of the screen, so the thumb has
+                    // room to land and the times can read at a distance.
+                    width: min(
+                      max(artSize * 1.4, screen.width * 0.62),
+                      screen.width - 32,
+                    ),
+                    scale: controlsScale,
                   ),
                 ),
-              ],
-            ),
-          )
-        else if (stackLyrics)
-          // Portrait: cover and track up top, the lyrics filling everything
-          // below them. Left as the plain centred view, a tall panel spends
-          // its whole lower half on nothing.
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              (screen.height * 0.05).clamp(12.0, 48.0),
-              20,
-              12,
-            ),
-            child: Column(
-              children: [
-                _nowPlayingPanel(
-                  art: art,
-                  title: title,
-                  artist: artist,
-                  artSize: artSize * 0.66,
-                  titleSize: titleSize * 0.8,
-                  artistSize: artistSize * 0.9,
-                  gap: gap * 0.6,
-                  horizontalPadding: 12,
-                ),
-                SizedBox(height: (screen.height * 0.03).clamp(10.0, 32.0)),
-                Expanded(
-                  child: LyricsView(
-                    container: c,
-                    fontSize: (short * 0.052).clamp(15.0, 24.0),
-                    centred: true,
+              ),
+          ],
+        ),
+        // With the transport up a tap is a button press, so the way out is
+        // explicit: the same floating close the page overlays wear. It
+        // reports its own source so the manager can tell it from the
+        // touches it is holding.
+        if (controls)
+          Positioned(
+            top: 12,
+            right: 12,
+            child: SafeArea(
+              child: Material(
+                color: Colors.black45,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => c.screensaver.notifyActivity('close'),
+                  child: const Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(Icons.close, color: Colors.white, size: 24),
                   ),
                 ),
-              ],
-            ),
-          )
-        else ...[
-          // With the row pinned below, the panel gives back some size and
-          // rides a little high, so both fit a short screen (the Echo
-          // Show's 480px) without touching.
-          Align(
-            alignment: Alignment(0, glance ? -0.35 : 0),
-            child: _nowPlayingPanel(
-              art: art,
-              title: title,
-              artist: artist,
-              artSize: artSize * (glance ? 0.78 : 1.0),
-              titleSize: titleSize * (glance ? 0.85 : 1.0),
-              artistSize: artistSize * (glance ? 0.9 : 1.0),
-              gap: gap * (glance ? 0.6 : 1.0),
-              horizontalPadding: 48,
-            ),
-          ),
-          if (glance)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: screen.height * 0.06,
-              // The default cards carry their own backdrop, and the
-              // text-only style's grey-on-black palette reads over the
-              // black backdrop and the scrimmed art alike, so no tint.
-              child: GlanceRow(
-                container: c,
-                scale: min(1.0, screen.height / 480).clamp(0.75, 1.0),
               ),
             ),
-        ],
+          ),
       ],
     );
   }
 
-  /// The cover, title and artist as one block. Shared by both layouts so a
-  /// change to the look lands in each: on its own in the middle, or beside
-  /// the lyrics at reduced size.
-  Widget _nowPlayingPanel({
+  /// The panel at its natural size when its slot allows, scaled down as
+  /// one piece when it does not: the cover, the title and the artist
+  /// shrink together instead of overflowing on a short screen. [width]
+  /// bounds the text so a long title wraps rather than stretching.
+  Widget _fitted(Widget panel, {required double width}) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: SizedBox(width: width, child: panel),
+  );
+
+  /// The cover, title and artist as one block. Shared by every layout so
+  /// a change to the look lands in each: on its own in the middle, or
+  /// beside the panel at reduced size.
+  Widget _trackPanel({
     required Uint8List? art,
     required String title,
     required String artist,
@@ -402,6 +513,452 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The queue from the playing track on, in the lyrics' slot: the playing
+/// row lit, the rest receding, a tap on any row jumping the queue there.
+/// Scrollable, unlike the lyrics: a queue is for looking ahead.
+class _QueueView extends StatelessWidget {
+  const _QueueView({required this.container, required this.fontSize});
+
+  final AppContainer container;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<Map<String, Object?>>>(
+      valueListenable: container.sendspin.queueItems,
+      builder: (context, items, _) {
+        if (items.isEmpty) {
+          return Center(
+            child: Text(
+              'Nothing queued',
+              style: TextStyle(color: Colors.white38, fontSize: fontSize),
+            ),
+          );
+        }
+        return ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.transparent,
+              Colors.white,
+              Colors.white,
+              Colors.transparent,
+            ],
+            stops: [0.0, 0.06, 0.94, 1.0],
+          ).createShader(bounds),
+          blendMode: BlendMode.dstIn,
+          // Enough padding that the playing row, first in the list, sits
+          // clear of the top fade.
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 48),
+            itemCount: items.length,
+            itemBuilder: (context, i) {
+              final item = items[i];
+              final current = item['current'] == true;
+              final duration = (item['durationMs'] as num?)?.toInt() ?? 0;
+              return InkWell(
+                onTap: () =>
+                    container.sendspin.playQueueItem('${item['id'] ?? ''}'),
+                borderRadius: BorderRadius.circular(10),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${item['title'] ?? ''}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: Ks.displayFont,
+                                color: current ? Colors.white : Colors.white70,
+                                fontSize: current ? fontSize : fontSize * 0.9,
+                                fontWeight: current
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                            if ('${item['artist'] ?? ''}'.isNotEmpty)
+                              Text(
+                                '${item['artist']}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: current
+                                      ? Colors.white70
+                                      : Colors.white38,
+                                  fontSize: fontSize * 0.8,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (duration > 0) ...[
+                        const SizedBox(width: 12),
+                        Text(
+                          _clock(duration),
+                          style: TextStyle(
+                            color: Colors.white38,
+                            fontSize: fontSize * 0.8,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// The Now Playing view's transport (sendspin.fullscreen_controls): the
+/// large card's previous, play/pause and next at wall-tablet size, over a
+/// progress bar that seeks where the server allows it, flanked by the
+/// smaller toggles the way Music Assistant's own player lays them out:
+/// favorite and shuffle to the left, lyrics and queue to the right. Its
+/// own widget with its own tick, so the position refresh rebuilds these
+/// few pixels and not the blurred backdrop behind them.
+class _NowPlayingControls extends StatefulWidget {
+  const _NowPlayingControls({
+    required this.container,
+    required this.width,
+    required this.scale,
+  });
+
+  final AppContainer container;
+
+  /// The bar's width; the buttons center under it.
+  final double width;
+
+  /// Everything scales down from the tablet sizes on a small panel.
+  final double scale;
+
+  @override
+  State<_NowPlayingControls> createState() => _NowPlayingControlsState();
+}
+
+class _NowPlayingControlsState extends State<_NowPlayingControls> {
+  AppContainer get c => widget.container;
+
+  Timer? _tick;
+
+  /// The thumb while a finger holds it, in ms; null between drags.
+  double? _dragMs;
+
+  /// A seek just sent, held on screen until the next position report
+  /// replaces it, so the bar does not snap back for the beat the round
+  /// trip takes. The local engine adopts the target itself (Music
+  /// Assistant sends no fresh progress after a seek), so the report that
+  /// replaces this one already agrees with it.
+  int? _seekMs;
+  int? _seekAt;
+
+  /// The shuffle toggle as just pressed, shown until the server reports
+  /// the state again (or reports it unchanged, which means it refused).
+  bool? _shuffleOverride;
+  bool? _lastShuffle;
+
+  /// The lyrics and queue toggles read settings, so they follow the
+  /// setting bus.
+  StreamSubscription<SettingChanged>? _settingsSub;
+
+  @override
+  void initState() {
+    super.initState();
+    c.sendspin.nowPlaying.addListener(_onNowPlaying);
+    c.sendspin.favorite.addListener(_rebuild);
+    _settingsSub = c.bus.on<SettingChanged>().listen((e) {
+      if (e.key == defs.sendspinLyrics.key ||
+          e.key == defs.sendspinFullscreenQueue.key) {
+        _rebuild();
+      }
+    });
+    _onNowPlaying();
+  }
+
+  @override
+  void dispose() {
+    c.sendspin.nowPlaying.removeListener(_onNowPlaying);
+    c.sendspin.favorite.removeListener(_rebuild);
+    _settingsSub?.cancel();
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  void _rebuild() {
+    if (mounted) setState(() {});
+  }
+
+  void _onNowPlaying() {
+    final now = c.sendspin.nowPlaying.value;
+    final playing = now?['playing'] == true;
+    // Any fresh word from the server on shuffle outranks the press.
+    final shuffle = now?['shuffle'] == true;
+    if (shuffle != _lastShuffle) {
+      _lastShuffle = shuffle;
+      _shuffleOverride = null;
+    }
+    // Half a second: the bar moves visibly without the tick showing up in
+    // a low-end panel's frame budget.
+    if (playing && _tick == null) {
+      _tick = Timer.periodic(
+        const Duration(milliseconds: 500),
+        (_) => setState(() {}),
+      );
+    } else if (!playing) {
+      _tick?.cancel();
+      _tick = null;
+    }
+    final receivedAt = (now?['receivedAt'] as num?)?.toInt();
+    final seekAt = _seekAt;
+    if (seekAt != null && receivedAt != null && receivedAt > seekAt) {
+      _seekMs = null;
+      _seekAt = null;
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleShuffle(bool on) async {
+    setState(() => _shuffleOverride = on);
+    final ok = await c.sendspin.setShuffle(on);
+    if (!ok && mounted) setState(() => _shuffleOverride = null);
+  }
+
+  Future<void> _seek(double ms) async {
+    final target = ms.round();
+    setState(() {
+      _dragMs = null;
+      _seekMs = target;
+      _seekAt = DateTime.now().millisecondsSinceEpoch;
+    });
+    final ok = await c.sendspin.seek(target);
+    if (!ok && mounted) {
+      setState(() {
+        _seekMs = null;
+        _seekAt = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = c.sendspin.nowPlaying.value;
+    if (now == null) return const SizedBox.shrink();
+    final playing = now['playing'] == true;
+    final duration = (now['durationMs'] as num?)?.toInt() ?? 0;
+    // Live position: the last report plus the wall time since, the way
+    // the card and the lyrics extrapolate it; a seek in flight shows its
+    // target for at most a few seconds.
+    var position = (now['positionMs'] as num?)?.toInt() ?? 0;
+    final receivedAt = (now['receivedAt'] as num?)?.toInt();
+    final wall = DateTime.now().millisecondsSinceEpoch;
+    if (playing && receivedAt != null) position += wall - receivedAt;
+    final seekAt = _seekAt;
+    if (_seekMs != null && seekAt != null) {
+      if (wall - seekAt < 4000) {
+        position = _seekMs! + (playing ? wall - seekAt : 0);
+      } else {
+        _seekMs = null;
+        _seekAt = null;
+      }
+    }
+    if (duration > 0) position = position.clamp(0, duration);
+
+    final supported =
+        (now['supportedCommands'] as List?)?.map((e) => '$e').toList() ??
+        const <String>[];
+    bool has(String cmd) => supported.isEmpty || supported.contains(cmd);
+    final canSeek = duration > 0 && has('seek');
+    final scale = widget.scale;
+    final shown = (_dragMs ?? position.toDouble()).clamp(
+      0.0,
+      duration > 0 ? duration.toDouble() : 0.0,
+    );
+    final timeStyle = TextStyle(
+      color: Colors.white70,
+      fontSize: 17 * scale,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+
+    Widget btn(
+      IconData icon,
+      VoidCallback? onPressed, {
+      required double size,
+      Color color = Colors.white,
+    }) => IconButton(
+      icon: Icon(icon, size: size * scale),
+      color: color,
+      disabledColor: color,
+      padding: EdgeInsets.zero,
+      constraints: BoxConstraints(
+        minWidth: (size + 16) * scale,
+        minHeight: (size + 16) * scale,
+      ),
+      onPressed: onPressed,
+    );
+    Widget transport(IconData icon, String command, {required double size}) =>
+        btn(icon, () => c.sendspin.control(command), size: size);
+    // The four toggles: lit when on, dimmed when off. A missing one
+    // leaves its width behind so the transport stays centered under the
+    // cover either way.
+    const toggleSize = 24.0;
+    final toggleBlank = SizedBox(width: (toggleSize + 16) * scale);
+    final maConfigured =
+        c.settings.get(defs.sendspinMaUrl).trim().isNotEmpty &&
+        c.settings.get(defs.sendspinMaToken).trim().isNotEmpty;
+    // The heart: unknown (the lookup still out) draws faint and inert,
+    // and without a Music Assistant server there is nothing to favorite
+    // into.
+    final favorite = c.sendspin.favorite.value;
+    final heart = maConfigured
+        ? btn(
+            favorite == true
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            favorite == null ? null : c.sendspin.toggleFavorite,
+            size: toggleSize,
+            color: favorite == true
+                ? Colors.white
+                : favorite == null
+                ? Colors.white24
+                : Colors.white38,
+          )
+        : toggleBlank;
+    final shuffleOn = _shuffleOverride ?? (now['shuffle'] == true);
+    final shuffle = has('shuffle')
+        ? btn(
+            Icons.shuffle_rounded,
+            () => _toggleShuffle(!shuffleOn),
+            size: toggleSize,
+            color: shuffleOn ? Colors.white : Colors.white38,
+          )
+        : toggleBlank;
+    // Lyrics belong to the local player only: a followed player's
+    // position is too coarse to sing along with, and the setting hides.
+    // Lit only while they are actually the panel: the queue outranks
+    // them while it is open.
+    final queueOpen = c.sendspin.queueOpen;
+    final lyricsOn = c.settings.get(defs.sendspinLyrics) && !queueOpen;
+    final lyrics = c.settings.get(defs.sendspinMaPlayer).isEmpty
+        ? btn(
+            lyricsOn ? Icons.lyrics_rounded : Icons.lyrics_outlined,
+            c.sendspin.toggleLyrics,
+            size: toggleSize,
+            color: lyricsOn ? Colors.white : Colors.white38,
+          )
+        : toggleBlank;
+    final queue = maConfigured
+        ? btn(
+            Icons.queue_music_rounded,
+            c.sendspin.toggleQueue,
+            size: toggleSize,
+            color: queueOpen ? Colors.white : Colors.white38,
+          )
+        : toggleBlank;
+
+    // The bar takes the cover's width, but never less than the row of
+    // buttons under it needs: on a small panel the buttons keep their
+    // tap targets and the bar widens to match.
+    double item(double size) =>
+        max((size + 16) * scale, kMinInteractiveDimension);
+    final rowWidth =
+        item(toggleSize) * 4 +
+        item(44) * 2 +
+        item(68) +
+        (12 * 2 + 20 * 2 + 16 * 2) * scale;
+    return SizedBox(
+      width: max(widget.width, rowWidth),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (duration > 0) ...[
+            SizedBox(
+              height: 28 * scale,
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 4 * scale,
+                  activeTrackColor: Colors.white,
+                  inactiveTrackColor: Colors.white30,
+                  disabledActiveTrackColor: Colors.white,
+                  disabledInactiveTrackColor: Colors.white30,
+                  thumbColor: Colors.white,
+                  disabledThumbColor: Colors.transparent,
+                  overlayColor: Colors.white24,
+                  // No thumb where a seek cannot land: the bar reads as
+                  // the card's progress line then.
+                  thumbShape: RoundSliderThumbShape(
+                    enabledThumbRadius: 7 * scale,
+                    disabledThumbRadius: 0,
+                  ),
+                  overlayShape: RoundSliderOverlayShape(
+                    overlayRadius: 16 * scale,
+                  ),
+                  trackShape: const RectangularSliderTrackShape(),
+                ),
+                child: Slider(
+                  value: shown,
+                  max: duration.toDouble(),
+                  onChanged: canSeek
+                      ? (v) => setState(() => _dragMs = v)
+                      : null,
+                  onChangeEnd: canSeek ? _seek : null,
+                ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(_clock(shown.round()), style: timeStyle),
+                Text(_clock(duration), style: timeStyle),
+              ],
+            ),
+            SizedBox(height: 4 * scale),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              heart,
+              SizedBox(width: 12 * scale),
+              shuffle,
+              SizedBox(width: 20 * scale),
+              if (has('previous'))
+                transport(Icons.skip_previous_rounded, 'previous', size: 44),
+              SizedBox(width: 16 * scale),
+              if (has(playing ? 'pause' : 'play'))
+                transport(
+                  playing
+                      ? Icons.pause_circle_filled_rounded
+                      : Icons.play_circle_fill_rounded,
+                  playing ? 'pause' : 'play',
+                  size: 68,
+                ),
+              SizedBox(width: 16 * scale),
+              if (has('next'))
+                transport(Icons.skip_next_rounded, 'next', size: 44),
+              SizedBox(width: 20 * scale),
+              lyrics,
+              SizedBox(width: 12 * scale),
+              queue,
+            ],
+          ),
         ],
       ),
     );
@@ -609,12 +1166,6 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         if (has('next')) btn(Icons.skip_next, 'next'),
       ],
     );
-  }
-
-  String _clock(int ms) {
-    final s = (ms / 1000).round();
-    final m = s ~/ 60;
-    return '$m:${(s % 60).toString().padLeft(2, '0')}';
   }
 
   @override

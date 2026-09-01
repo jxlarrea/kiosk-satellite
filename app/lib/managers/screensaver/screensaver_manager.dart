@@ -199,6 +199,9 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// mirrored from its bus event for the motion-dismiss policy above.
   bool _sendspinNowPlaying = false;
 
+  /// Whether Sendspin playback is running, for the launch-on-play edge.
+  bool _sendspinPlaying = false;
+
   /// The double-tap dismiss chain (discussion #248). One physical tap
   /// reports here twice — the kiosk screen's raw pointer Listener
   /// ('touch') and the screensaver WebView's JS bridge ('touch_page') —
@@ -305,10 +308,26 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
       unawaited(_onNotificationsChanged(e.showing));
     });
     bus.on<SendspinNowPlayingChanged>().listen((e) {
+      final startedPlaying = e.playing && !_sendspinPlaying;
+      _sendspinPlaying = e.playing;
+      final changed = _sendspinNowPlaying != e.active;
       _sendspinNowPlaying = e.active;
       // Mid-session flip: music started (dim gives way to Now Playing at
       // full brightness) or stopped (the configured mode re-asserts).
-      if (_active) unawaited(_applyVisuals());
+      if (_active) {
+        if (changed) unawaited(_applyVisuals());
+        return;
+      }
+      // Launch on play (sendspin.fullscreen_on_play): playback starting
+      // is the cue for the music display, not the idle clock. start()
+      // keeps every refusal it has for a timed start (hold mode, a
+      // voice turn, another app in front, lockdown).
+      if (startedPlaying &&
+          _settings.get(defs.sendspinFullscreen) &&
+          _settings.get(defs.sendspinFullscreenOnPlay)) {
+        log.info(name, 'Now Playing launched by playback');
+        unawaited(start());
+      }
     });
     bus.on<MotionDetected>().listen((_) {
       // Under lockdown the screen must stay locked: motion neither
@@ -652,6 +671,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   void notifySlideChanged() => bus.publish(const ScreensaverSlideChanged());
 
   void notifyActivity(String source) {
+    // Now Playing with its controls up: a touch there is a button press
+    // or a seek and a key press is the dpad walking the buttons, so
+    // neither dismisses. The view's close button reports as 'close', and
+    // the back button, the motion policy and every other source still
+    // land below.
+    if (_nowPlayingHoldsTouch &&
+        (source == 'touch' || source == 'touch_page' || source == 'key')) {
+      return;
+    }
     if (_active &&
         _doubleTapToDismiss &&
         (source == 'touch' || source == 'touch_page')) {
@@ -728,6 +756,15 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// actually shows right now.
   bool get _nowPlayingTakeover =>
       _sendspinNowPlaying && _settings.get(defs.sendspinFullscreen);
+
+  /// Whether the Now Playing view is on screen with its media controls
+  /// (sendspin.fullscreen_controls), which is when a tap stops meaning
+  /// "dismiss".
+  bool get _nowPlayingHoldsTouch =>
+      _active &&
+      activeView.value != null &&
+      _nowPlayingTakeover &&
+      _settings.get(defs.sendspinFullscreenControls);
 
   /// The schedule entry in force right now, or null when the schedule is
   /// off or empty.

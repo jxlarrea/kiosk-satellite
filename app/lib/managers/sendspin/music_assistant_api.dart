@@ -93,18 +93,16 @@ class MusicAssistantApi {
   /// A Music Assistant address is typically https with a self-signed
   /// certificate (the add-on generates its own), so a normal client refuses
   /// it. The user typed this address themselves, on their own network.
-  static HttpClient newHttpClient() =>
-      HttpClient()
-        ..connectionTimeout = const Duration(seconds: 10)
-        ..badCertificateCallback = (_, _, _) => true;
+  static HttpClient newHttpClient() => HttpClient()
+    ..connectionTimeout = const Duration(seconds: 10)
+    ..badCertificateCallback = (_, _, _) => true;
 
   /// `wss://host:8095/ws` from the address as typed, however it was typed.
   Uri get socketUri {
     final trimmed = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
-    final withScheme =
-        trimmed.startsWith('http') || trimmed.startsWith('ws')
-            ? trimmed
-            : 'https://$trimmed';
+    final withScheme = trimmed.startsWith('http') || trimmed.startsWith('ws')
+        ? trimmed
+        : 'https://$trimmed';
     final uri = Uri.parse(withScheme);
     return uri.replace(
       scheme: switch (uri.scheme) {
@@ -264,11 +262,9 @@ class MusicAssistantApi {
       // lookups (LRCLIB et al), measured north of 30s when a provider is
       // slow — and lyrics arriving late still beat lyrics never arriving,
       // on a track that runs minutes.
-      final result = await session.send(
-        'metadata/get_track_lyrics',
-        {'track': track},
-        timeout: const Duration(seconds: 45),
-      );
+      final result = await session.send('metadata/get_track_lyrics', {
+        'track': track,
+      }, timeout: const Duration(seconds: 45));
       // The reply is (plain lyrics, LRC lyrics).
       if (result is! List || result.length < 2) return null;
       final lrc = result[1];
@@ -322,6 +318,12 @@ Map<String, Object?>? queueTrackSnapshot(Object? queue, {String? webBase}) {
     if (duration != null) 'durationMs': (duration * 1000).round(),
     'positionMs': ((elapsed ?? 0) * 1000).round(),
     if (measuredAt != null) 'positionAtMs': (measuredAt * 1000).round(),
+    'shuffle': queue['shuffle_enabled'] == true,
+    // The queue's identity beside the track's, so a watcher can tell a
+    // queue edit from a progress tick.
+    'queueItemId': '${item['queue_item_id'] ?? ''}',
+    'currentIndex': (queue['current_index'] as num?)?.toInt() ?? 0,
+    'queueLength': (queue['items'] as num?)?.toInt() ?? 0,
     ...switch (queueImageUrl(item['image'], webBase)) {
       final url? => {'artworkUrl': url},
       null => const <String, Object?>{},
@@ -384,7 +386,9 @@ class MaSession {
         if (completer == null || completer.isCompleted) return;
         if (message.containsKey('error_code')) {
           completer.completeError(
-            MusicAssistantError('${message['details'] ?? message['error_code']}'),
+            MusicAssistantError(
+              '${message['details'] ?? message['error_code']}',
+            ),
           );
         } else {
           final result = message['result'];
@@ -435,21 +439,23 @@ class MaSession {
     final id = '${++_nextId}';
     final completer = Completer<Object?>();
     _pending[id] = completer;
-    _socket.add(jsonEncode({
-      'message_id': id,
-      'command': command,
-      if (args.isNotEmpty) 'args': args,
-    }));
+    _socket.add(
+      jsonEncode({
+        'message_id': id,
+        'command': command,
+        if (args.isNotEmpty) 'args': args,
+      }),
+    );
     return completer.future.timeout(timeout);
   }
 }
 
 class MusicAssistantResult {
   const MusicAssistantResult.success(this.result, this.serverInfo)
-      : error = null;
+    : error = null;
   const MusicAssistantResult.failure(this.error)
-      : result = null,
-        serverInfo = const {};
+    : result = null,
+      serverInfo = const {};
 
   final Object? result;
   final Map<String, Object?> serverInfo;

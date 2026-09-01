@@ -4,6 +4,7 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/sendspin/ma_remote_player.dart';
 import 'package:kiosk_satellite/managers/sendspin/music_assistant_api.dart';
 import 'package:kiosk_satellite/managers/sendspin/sendspin_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
@@ -22,6 +23,15 @@ class _FakeApi extends MusicAssistantApi {
   final Map<String, Object?>? track;
   int calls = 0;
 
+  /// The favorite and queue lookups the recovered card triggers must
+  /// never open a real socket from a test.
+  @override
+  Future<MusicAssistantResult> call(
+    String command, {
+    Map<String, Object?> args = const {},
+    Duration timeout = const Duration(seconds: 15),
+  }) async => const MusicAssistantResult.failure('offline');
+
   @override
   Future<Map<String, Object?>?> fetchActiveQueueTrack({
     required String playerId,
@@ -29,6 +39,23 @@ class _FakeApi extends MusicAssistantApi {
     calls++;
     return track;
   }
+}
+
+class _IdleRemote extends MaRemotePlayer {
+  _IdleRemote({
+    required super.baseUrl,
+    required super.token,
+    required super.playerId,
+    required super.onSnapshot,
+    required super.log,
+    super.label,
+  });
+
+  @override
+  void start() {}
+
+  @override
+  Future<void> stop() async {}
 }
 
 void main() {
@@ -59,6 +86,24 @@ void main() {
     sendspin = SendspinManager(bus, commands, log, settings);
     api = _FakeApi(track);
     sendspin.apiFactory = ({required baseUrl, required token}) => api;
+    // The queue watcher the local player brings up with a server
+    // configured must not open a socket from a test either.
+    sendspin.remoteFactory =
+        ({
+          required baseUrl,
+          required token,
+          required playerId,
+          required onSnapshot,
+          required log,
+          String label = 'remote player',
+        }) => _IdleRemote(
+          baseUrl: baseUrl,
+          token: token,
+          playerId: playerId,
+          onSnapshot: onSnapshot,
+          log: log,
+          label: label,
+        );
     await sendspin.init();
     // Let the queued _start transition finish so _running is true.
     await Future<void>.delayed(Duration.zero);

@@ -609,7 +609,8 @@ Any touch dismisses it and resets the timer. Beyond touch:
 - **Music on the Sendspin player** holds it off, unless the player's
   **"Now Playing" instead of the screensaver** mode is on, in which case
   the screensaver becomes a full-screen now-playing view while music
-  plays (see [Sendspin](sendspin.md)).
+  plays, and can start the moment playback does (see
+  [Sendspin](sendspin.md)).
 - The ESPHome **Screensaver** switch (the master enable) takes a showing
   screensaver down when turned off; **Screensaver active** turned off
   and the **Postpone screensaver** button dismiss one and re-arm the

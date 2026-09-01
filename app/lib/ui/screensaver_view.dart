@@ -131,6 +131,8 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
       defs.screensaverGlanceBwIcons.key,
       defs.screensaverGlanceHideNames.key,
       defs.screensaverGlanceScale.key,
+      // The Now Playing transport, read at build by the full-screen view.
+      defs.sendspinFullscreenControls.key,
       for (final def in immichMetadataFields.values) def.key,
     };
     _widgetsSub = container.bus.on<SettingChanged>().listen((e) {
@@ -156,17 +158,19 @@ class _ScreensaverOverlayState extends State<ScreensaverOverlay> {
         final blackBare =
             view == 'black' &&
             container.settings.get(defs.screensaverBlackHideExtras);
-        return ValueListenableBuilder<Map<String, Object?>?>(
-          valueListenable: container.sendspin.nowPlaying,
+        return ValueListenableBuilder<bool>(
+          valueListenable: container.sendspin.fullscreenActive,
           builder: (context, nowPlaying, child) {
             // Music playing with the full-screen player enabled: the
             // screensaver slot shows the now-playing view instead of the
-            // configured mode, dismissed exactly like any screensaver.
+            // configured mode, dismissed exactly like any screensaver
+            // (with its media controls up, the manager holds the touch
+            // reports and the view's own close button dismisses instead).
             // Falls back live when playback ends mid-screensaver; a track
             // merely PAUSED gets the regular screensaver, not a frozen
-            // now-playing panel.
-            if (nowPlaying?['playing'] == true &&
-                container.settings.get(defs.sendspinFullscreen)) {
+            // now-playing panel, unless it was paused under the controls,
+            // which hold it with a play button for a while.
+            if (nowPlaying && container.settings.get(defs.sendspinFullscreen)) {
               return Positioned.fill(
                 child: _Dismissable(
                   container: container,
