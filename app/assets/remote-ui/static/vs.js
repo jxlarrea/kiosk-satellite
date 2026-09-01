@@ -163,14 +163,15 @@ export async function renderVsControls(root, { auto = false } = {}) {
       'Start or Stop the Voice Satellite engine.', '');
     const status = row.querySelector('span');
     status.textContent = engine.running ? 'Running' : 'Stopped';
-    status.style.color = engine.running ? 'var(--ok)' : 'var(--muted)';
+    status.style.color = engine.running ? 'var(--primary)' : 'var(--muted)';
     status.style.marginRight = '10px';
     const btn = document.createElement('button');
     btn.className = 'btn-ghost';
     btn.textContent = engine.running ? 'Stop' : 'Start';
     btn.style.cssText = engine.running
       ? 'background:var(--error); border-color:transparent; color:#fff'
-      : 'background:var(--ok); border-color:transparent; color:#fff';
+      : 'background:var(--primary-fill); border-color:transparent;'
+        + ' color:var(--primary-ink)';
     // Both halves must agree a start can work: the page's own answer AND a
     // satellite actually assigned - without one there is nothing to start.
     btn.disabled = !engine.running && !(engine.canStart && data.satellite);
