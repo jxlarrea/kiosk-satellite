@@ -67,7 +67,9 @@ const kioskModeScript = '''
       // on this host and sizes the drawer shell and content padding from it.
       // Cards that dodge the sidebar (navbar-card among them, #253) read the
       // same variables, so both must say zero or a fixed-position card keeps
-      // leaving room for a sidebar that is not there.
+      // leaving room for a sidebar that is not there. These can be outranked
+      // by a theme module declaring the same variable in this root with more
+      // specificity, so hui-root declares them once more (#403).
       return S.sidebar
         ? ':host{--ha-sidebar-width:0px!important;}' +
           'ha-drawer{--mdc-drawer-width:0px!important;}' +
@@ -88,6 +90,7 @@ const kioskModeScript = '''
         : '';
     }
     if (tag === 'hui-root') {
+      var rules = '';
       // Panel cards size themselves against the header through
       // var(--kiosk-header-height, var(--header-height)), the contract the
       // kiosk-mode resource established (the advanced camera card among
@@ -97,11 +100,23 @@ const kioskModeScript = '''
       // height plus the safe-area inset, and a padding that keeps the inset
       // leaves a cutout-sized band where the header was, doubled because
       // #view and hui-view nest (#249).
-      return S.header
-        ? '.header,.toolbar,app-header,ch-header{display:none!important;}' +
+      if (S.header) {
+        rules += '.header,.toolbar,app-header,ch-header{display:none!important;}' +
           '#view,hui-view{padding-top:0!important;' +
-          'min-height:100vh!important;--kiosk-header-height:0px;}'
-        : '';
+          'min-height:100vh!important;--kiosk-header-height:0px;}';
+      }
+      // The width variables are zeroed again here because the declaration on
+      // home-assistant-main can be outranked in place: Material You Utilities
+      // rewrites all of its styles to !important and declares
+      // --ha-sidebar-width on :host([expanded]), which beats a plain :host
+      // rule on specificity (#403). A declaration on this host starts a new
+      // cascade below it, so whatever won up there no longer matters to
+      // anything inside the dashboard, navbar-card included.
+      if (S.sidebar) {
+        rules +=
+          ':host{--ha-sidebar-width:0px!important;--mdc-drawer-width:0px!important;}';
+      }
+      return rules;
     }
     return '';
   }

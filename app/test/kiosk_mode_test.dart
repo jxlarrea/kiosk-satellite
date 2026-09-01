@@ -171,6 +171,23 @@ void main() {
       expect(kioskModeScript, contains('--mdc-drawer-width:0px!important'));
     });
 
+    test('zeroes the sidebar width again on hui-root', () {
+      // The home-assistant-main declaration can be outranked in its own
+      // root: Material You Utilities rewrites its styles to !important and
+      // declares --ha-sidebar-width on :host([expanded]), which beats a
+      // plain :host rule on specificity, and navbar-card then docks itself a
+      // sidebar-width from the edge (#403). Declared once more on hui-root,
+      // the cascade restarts below whatever won above, so dashboard cards
+      // always see zero.
+      expect(
+        kioskModeScript,
+        contains(
+          ':host{--ha-sidebar-width:0px!important;'
+          '--mdc-drawer-width:0px!important;}',
+        ),
+      );
+    });
+
     test('declares a zero kiosk header height for panel cards', () {
       // Cards that fill a panel view size themselves with
       // calc(100vh - var(--kiosk-header-height, var(--header-height))), the
