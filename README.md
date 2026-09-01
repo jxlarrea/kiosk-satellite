@@ -30,7 +30,7 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   permissions your choices need. Run it on the tablet or from a browser
   on your computer.
 
-&bull; **Voice Satellite, natively**: the kiosk gets its own
+&bull; **[Voice Satellite](https://github.com/jxlarrea/voice-satellite-card-integration), natively**: the kiosk gets its own
   `assist_satellite` entity and the app's built-in engine takes over
   wake-word detection: it keeps listening with the screen off, at a
   fraction of the CPU a browser needs. No configuration in Voice
