@@ -2,10 +2,10 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
-## Unreleased
+## v2026.9.2 - 2026-09-01
 
 ### Fixed
-- The remote admin no longer flashes the login box on the way into a signed-in session or shows the overview before it is ready, dead quick-control tiles and a brightness slider parked at the wrong value. The page now opens on a splash with the Kiosk Satellite mark and swaps straight to whichever view owns it: the login box only when there really is no session, the setup wizard on an unconfigured device or the app fully populated, with only the screenshot panel filling in after. A device that cannot be reached yet keeps the splash up and retries behind it instead of stranding a half-built page.
+- The remote admin no longer flashes the login box on the way into a signed-in session or shows the overview before it is ready, dead quick-control tiles and a brightness slider parked at the wrong value. The page now opens on a boot splash, the Kiosk Satellite banner with a spinner turning below it, one banner per theme, and swaps straight to whichever view owns it: the login box only when there really is no session, the setup wizard on an unconfigured device or the app fully populated, with only the screenshot panel filling in after. A device that cannot be reached yet keeps the splash up and retries behind it instead of stranding a half-built page.
 
 ### Changed
 - The primary accent is the teal of the app icon's keyline now instead of the sage green, which matched nothing in the logo: buttons, switches, sliders, links and focus rings on the device and in the remote admin alike, exact on dark and darkened a step for text on light. Sage stays as the green of success states and of the settings rail's icon discs, so the four-color accent cycle keeps its green.
