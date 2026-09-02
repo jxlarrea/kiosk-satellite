@@ -55,7 +55,7 @@ follow the device language.
 
 | Setting | Notes |
 | --- | --- |
-| Font Family | All faces. Rubik (the app's own face, the default), Nunito (a rounded face in the style of Apple's StandBy clock), one of the device's own families (System, Serif, Condensed, Monospace, Casual or Cursive, where what each maps to is the device's call) or LCD, a segmented display font in the style of an LED alarm clock that covers the date and AM/PM as well as the digits. |
+| Font Family | All faces. Rubik (the app's own face, the default), Nunito (a rounded face in the style of Apple's StandBy clock), Inter (a clean grotesque in the style of Helvetica Neue), one of the device's own families (System, Serif, Condensed, Monospace, Casual or Cursive, where what each maps to is the device's call) or LCD, a segmented display font in the style of an LED alarm clock that covers the date and AM/PM as well as the digits. |
 | Font weight | All faces. Default keeps each face's own weight: the digital face light (heavy in Nunito), the flip cards regular, the roller heavy. Light, Regular, Medium, Bold or Black set one weight for the digits. The LCD font has a single weight and ignores it. |
 | 24-hour clock | All faces. |
 | Show seconds | Digital only. |

@@ -17,6 +17,7 @@ void main() {
   const families = {
     'rubik': 'Rubik',
     'nunito': 'Nunito',
+    'inter': 'Inter',
     'system': null,
     'serif': 'serif',
     'condensed': 'sans-serif-condensed',
@@ -65,6 +66,17 @@ void main() {
     expect(defs.screensaverClockFontWeight.dependsOnValue, 'clock');
   });
 
+  test('Inter asks for its display optical size, the rest for nothing', () {
+    expect(clockOpticalSize('inter'), 32);
+    expect(clockOpticalSize('rubik'), isNull);
+    expect(clockOpticalSize('lcd'), isNull);
+    expect(clockFontVariations(null, FontWeight.w300), isNull);
+    expect(clockFontVariations(32, FontWeight.w700), [
+      const FontVariation('opsz', 32),
+      const FontVariation('wght', 700),
+    ]);
+  });
+
   test('the definition offers exactly the mapped set, Rubik by default', () {
     expect(defs.screensaverClockFont.defaultValue, 'rubik');
     expect(defs.screensaverClockFont.options, families.keys.toList());
@@ -80,7 +92,7 @@ void main() {
   test('the LCD and Nunito faces are bundled: neither look exists in any '
       'system font', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    for (final family in ['DSEG14', 'Nunito']) {
+    for (final family in ['DSEG14', 'Nunito', 'Inter']) {
       expect(pubspec.contains('- family: $family'), isTrue);
       expect(File('assets/fonts/$family.ttf').existsSync(), isTrue);
       expect(File('assets/fonts/$family-OFL.txt').existsSync(), isTrue);

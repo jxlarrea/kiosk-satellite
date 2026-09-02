@@ -118,6 +118,14 @@ flutter:
     - family: Nunito
       fonts:
         - asset: assets/fonts/Nunito.ttf
+    # The Clock screensaver's Inter option: the open neo-grotesque that
+    # stands in for Helvetica Neue (rsms/inter, SIL OFL, license beside
+    # the file). The Google Fonts variable cut, with a wght axis for the
+    # weight picker and an opsz axis whose display end the faces ask for
+    # at clock sizes, where the text cut's loose spacing shows.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
     # The Clock screensaver's LCD font option (issue #391): DSEG14 Classic
     # (keshikan/DSEG, SIL OFL, license beside the file), the segmented
     # display face of an LED alarm clock. The fourteen-segment cut rather

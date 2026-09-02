@@ -682,6 +682,9 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     final weight = clockWeightOverride(
       widget.container.settings.get(defs.screensaverClockFontWeight),
     );
+    final opticalSize = clockOpticalSize(
+      widget.container.settings.get(defs.screensaverClockFont),
+    );
     if (style == 'flip') {
       return FlipClockFace(
         now: _now,
@@ -699,6 +702,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
         scale: scale,
         fontFamily: fontFamily,
         weight: weight,
+        opticalSize: opticalSize,
       );
     }
     return RollerClockFace(
@@ -709,6 +713,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
       scale: scale,
       fontFamily: fontFamily,
       weight: weight,
+      opticalSize: opticalSize,
     );
   }
 
@@ -727,6 +732,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     final timeWeight =
         clockWeightOverride(s.get(defs.screensaverClockFontWeight)) ??
         clockFontWeight(fontValue);
+    final opticalSize = clockOpticalSize(fontValue);
     final size = MediaQuery.of(context).size;
     // The At a Glance row sits under the clock and needs room for itself,
     // so the clock gives some back rather than pushing the row off a short
@@ -808,6 +814,10 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
                             color: color,
                             fontSize: clockSize,
                             fontWeight: timeWeight,
+                            fontVariations: clockFontVariations(
+                              opticalSize,
+                              timeWeight,
+                            ),
                             letterSpacing: clockSize * 0.02,
                             fontFeatures: const [FontFeature.tabularFigures()],
                             height: 1.0,

@@ -1560,6 +1560,7 @@ const screensaverClockFont = SettingDef<String>(
   options: [
     'rubik',
     'nunito',
+    'inter',
     'system',
     'serif',
     'condensed',
@@ -1571,6 +1572,7 @@ const screensaverClockFont = SettingDef<String>(
   optionLabels: {
     'rubik': 'Rubik',
     'nunito': 'Nunito',
+    'inter': 'Inter',
     'system': 'System',
     'serif': 'Serif',
     'condensed': 'Condensed',

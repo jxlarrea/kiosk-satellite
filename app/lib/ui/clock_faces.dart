@@ -30,6 +30,26 @@ FontWeight? clockWeightOverride(String weight) => switch (weight) {
   _ => null,
 };
 
+/// The optical size a face should ask a `screensaver.clock_font` value
+/// for, or null where the font has no such axis. Inter's text cut is
+/// spaced for body sizes and reads loose as a clock; its display end
+/// (32, the axis maximum) is the one made for large type.
+double? clockOpticalSize(String font) => font == 'inter' ? 32 : null;
+
+/// The variations a digit style should carry: none for fonts without an
+/// optical size axis, so their weight keeps coming from fontWeight the
+/// way it always has; with one, the optical size and the weight together,
+/// since naming any axis takes over from the automatic weight mapping.
+List<FontVariation>? clockFontVariations(
+  double? opticalSize,
+  FontWeight weight,
+) => opticalSize == null
+    ? null
+    : [
+        FontVariation('opsz', opticalSize),
+        FontVariation('wght', weight.value.toDouble()),
+      ];
+
 /// The digital face's time weight for a `screensaver.clock_font` value.
 /// The face is w300 by design, but Nunito exists to be the Apple StandBy
 /// look, whose digits are heavy: at w300 it read as a thin clock that
@@ -40,6 +60,7 @@ FontWeight clockFontWeight(String font) =>
 
 String? clockFontFamily(String font) => switch (font) {
   'nunito' => 'Nunito',
+  'inter' => 'Inter',
   'system' => null,
   'serif' => 'serif',
   'condensed' => 'sans-serif-condensed',
@@ -70,6 +91,7 @@ class FlipClockFace extends StatelessWidget {
     required this.scale,
     required this.fontFamily,
     this.weight,
+    this.opticalSize,
   });
 
   final DateTime now;
@@ -82,6 +104,9 @@ class FlipClockFace extends StatelessWidget {
 
   /// The digits' weight, or null for the cards' own regular.
   final FontWeight? weight;
+
+  /// The font's optical size to ask for, where it has the axis.
+  final double? opticalSize;
 
   String get _hours {
     final h = use24h ? now.hour : (now.hour % 12 == 0 ? 12 : now.hour % 12);
@@ -112,6 +137,7 @@ class FlipClockFace extends StatelessWidget {
           backdropColor: backdropColor,
           fontFamily: fontFamily,
           weight: weight,
+          opticalSize: opticalSize,
         ),
         SizedBox(width: gap),
         _FlipCard(
@@ -123,6 +149,7 @@ class FlipClockFace extends StatelessWidget {
           backdropColor: backdropColor,
           fontFamily: fontFamily,
           weight: weight,
+          opticalSize: opticalSize,
         ),
       ],
     );
@@ -139,6 +166,7 @@ class _FlipCard extends StatefulWidget {
     required this.backdropColor,
     required this.fontFamily,
     this.weight,
+    this.opticalSize,
   });
 
   final String value;
@@ -149,6 +177,7 @@ class _FlipCard extends StatefulWidget {
   final Color backdropColor;
   final String? fontFamily;
   final FontWeight? weight;
+  final double? opticalSize;
 
   @override
   State<_FlipCard> createState() => _FlipCardState();
@@ -193,6 +222,10 @@ class _FlipCardState extends State<_FlipCard>
           color: widget.digitColor,
           fontSize: widget.height * 0.66,
           fontWeight: widget.weight ?? FontWeight.w400,
+          fontVariations: clockFontVariations(
+            widget.opticalSize,
+            widget.weight ?? FontWeight.w400,
+          ),
           fontFeatures: const [FontFeature.tabularFigures()],
           height: 1.0,
         ),
@@ -333,6 +366,7 @@ class RollerClockFace extends StatefulWidget {
     required this.scale,
     required this.fontFamily,
     this.weight,
+    this.opticalSize,
   });
 
   final bool use24h;
@@ -342,6 +376,9 @@ class RollerClockFace extends StatefulWidget {
 
   /// The digits' weight, or null for the roller's own heavy.
   final FontWeight? weight;
+
+  /// The font's optical size to ask for, where it has the axis.
+  final double? opticalSize;
 
   @override
   State<RollerClockFace> createState() => _RollerClockFaceState();
@@ -409,6 +446,7 @@ class _RollerClockFaceState extends State<RollerClockFace>
             color: digitColor,
             fontFamily: widget.fontFamily,
             weight: widget.weight,
+            opticalSize: widget.opticalSize,
           ),
         ],
       ],
@@ -427,6 +465,7 @@ class _RollingDigit extends StatefulWidget {
     required this.color,
     required this.fontFamily,
     this.weight,
+    this.opticalSize,
   });
 
   final String digit;
@@ -445,6 +484,7 @@ class _RollingDigit extends StatefulWidget {
   final Color color;
   final String? fontFamily;
   final FontWeight? weight;
+  final double? opticalSize;
 
   @override
   State<_RollingDigit> createState() => _RollingDigitState();
@@ -496,6 +536,8 @@ class _RollingDigitState extends State<_RollingDigit>
             fontSize: widget.fontSize,
             fontWeight: widget.weight ?? FontWeight.w800,
             fontVariations: [
+              if (widget.opticalSize case final opsz?)
+                FontVariation('opsz', opsz),
               FontVariation(
                 'wght',
                 (widget.weight ?? FontWeight.w800).value.toDouble(),

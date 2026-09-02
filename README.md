@@ -249,6 +249,6 @@ Kiosk Satellite stands on a lot of amazing projects. Thanks to:
 - [Flutter](https://flutter.dev/) and [flutter_inappwebview](https://inappwebview.dev/), which carries the whole dashboard experience.
 - [ONNX Runtime](https://onnxruntime.ai/) for on-device wake word inference, running [vsWakeWord](https://github.com/jxlarrea/voice-satellite-card-integration), [openWakeWord](https://github.com/dscripka/openWakeWord) and [microWakeWord](https://github.com/kahrendt/microWakeWord) models.
 - [Material Design Icons](https://pictogrammers.com/library/mdi/) for the icon set.
-- The [Rubik](https://fonts.google.com/specimen/Rubik), [Nunito](https://fonts.google.com/specimen/Nunito) and [DSEG](https://github.com/keshikan/DSEG) fonts, all under the SIL Open Font License.
+- The [Rubik](https://fonts.google.com/specimen/Rubik), [Nunito](https://fonts.google.com/specimen/Nunito), [Inter](https://rsms.me/inter/) and [DSEG](https://github.com/keshikan/DSEG) fonts, all under the SIL Open Font License.
 
 And every package author in `pubspec.yaml` whose work this app quietly depends on.
