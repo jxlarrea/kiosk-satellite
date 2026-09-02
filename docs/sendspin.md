@@ -290,7 +290,10 @@ is the panel. The volume toggle swaps the progress bar for a volume slider
 with the level beside it, back to the progress bar four seconds after the
 last touch or on a second tap: the device's media volume for this device's
 own player, the followed player's own volume otherwise and for a Sonos
-the room's or the group's while the room plays in one. The choice sticks across
+the room's or the group's while the room plays in one. The speaker
+beside the slider mutes: the player's own mute where it has one and
+for this device's own player its media volume held at zero until the
+unmute puts the level back. The choice sticks across
 sessions and the two keep each other exclusive: lyrics and the queue
 share one slot, beside the cover on a landscape screen and under it on a
 portrait one. The queue is laid out the way Music Assistant's own is: what
