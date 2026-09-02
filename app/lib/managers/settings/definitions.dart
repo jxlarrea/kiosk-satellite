@@ -4545,6 +4545,24 @@ const sendspinFullscreenShortcut = SettingDef<bool>(
   dependsOn: 'sendspin.fullscreen',
 );
 
+/// Dismiss the view with a double tap anywhere on it instead of the close
+/// button, which goes away (issue #409: hunting for the button on a
+/// screen everyone is used to tapping). Taps on the transport, the
+/// toggles and the queue rows never count, so a quick double press on
+/// Next skips twice rather than closing the view.
+const sendspinFullscreenDoubleTap = SettingDef<bool>(
+  key: 'sendspin.fullscreen_double_tap',
+  type: SettingType.boolean,
+  defaultValue: false,
+  title: 'Double tap to dismiss',
+  description:
+      'A double tap anywhere on the Now Playing view dismisses it, and the '
+      'close button goes away.',
+  category: 'Sendspin',
+  section: 'Now Playing',
+  dependsOn: 'sendspin.fullscreen_controls',
+);
+
 /// Bring the view up the moment playback starts rather than waiting for
 /// the idle timeout: the display is the point of the music, and someone
 /// who queued a song from their phone expects the wall to show it now.
@@ -5790,11 +5808,16 @@ const List<SettingDef<Object>> allSettings = [
   sendspinPlayerSize,
   sendspinPausedHideMinutes,
   sendspinDismissKeepsPlaying,
-  sendspinFullscreen,
+  // The order the group reads in, the user's call: the launch first,
+  // the controls and the menu entry, then the view's own switch and the
+  // two dismissal rows. Every row but the switch gates on the switch;
+  // the gating does not care where the gate sits.
+  sendspinFullscreenOnPlay,
   sendspinFullscreenControls,
   sendspinFullscreenQueue,
-  sendspinFullscreenOnPlay,
   sendspinFullscreenShortcut,
+  sendspinFullscreen,
+  sendspinFullscreenDoubleTap,
   sendspinFullscreenMotion,
   sendspinPlayerPos,
   sendspinClientId,

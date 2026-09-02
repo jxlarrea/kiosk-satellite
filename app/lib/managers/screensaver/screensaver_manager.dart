@@ -223,9 +223,26 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// tap could talk to), and never while the Sendspin now-playing view
   /// has taken the slot over — that view is ours, not a page.
   bool get _doubleTapToDismiss =>
-      activeView.value == 'website' &&
-      !_nowPlayingTakeover &&
-      _settings.get(defs.screensaverWebsiteDoubleTap);
+      (activeView.value == 'website' &&
+          !_nowPlayingTakeover &&
+          _settings.get(defs.screensaverWebsiteDoubleTap)) ||
+      (_nowPlayingHoldsTouch &&
+          _settings.get(defs.sendspinFullscreenDoubleTap));
+
+  /// When a touch last landed on one of the Now Playing view's controls,
+  /// the transport, the toggles or a queue row. The view reports it from
+  /// the pointer's way down, ahead of the kiosk screen's own report of
+  /// the same touch, so the double-tap chain can leave that touch alone:
+  /// a quick double press on Next must skip twice, not close the view.
+  DateTime? _controlTouchAt;
+
+  void markControlTouch() => _controlTouchAt = clock();
+
+  bool get _touchOnControl {
+    final at = _controlTouchAt;
+    return at != null &&
+        clock().difference(at) < const Duration(milliseconds: 150);
+  }
 
   @override
   Future<void> init() async {
@@ -695,7 +712,14 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
     // land below.
     if (_nowPlayingHoldsTouch &&
         (source == 'touch' || source == 'touch_page' || source == 'key')) {
-      return;
+      // Unless a double tap anywhere is the way out (issue #409): then a
+      // touch off the controls runs the chain below, the same one the
+      // website screensaver uses.
+      if (source != 'touch' ||
+          !_settings.get(defs.sendspinFullscreenDoubleTap) ||
+          _touchOnControl) {
+        return;
+      }
     }
     if (_active &&
         _doubleTapToDismiss &&

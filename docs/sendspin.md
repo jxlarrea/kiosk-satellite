@@ -39,10 +39,11 @@ under the player.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| "Now Playing" instead of the screensaver | off | The full-screen view described below. |
-| Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
 | Launch Now Playing when music starts playing | on | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
+| Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
 | Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up. A paused track opens paused, with its play button. With nothing playing and no queue for this player, the entry stays out. |
+| "Now Playing" instead of the screensaver | off | The full-screen view described below. |
+| Double tap to dismiss | off | A double tap anywhere on the view dismisses it and the close button goes away. Taps on the buttons and the queue rows never count. |
 | Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
 
 ### Music Assistant
@@ -230,7 +231,10 @@ regular screensaver at once, as before.
 With controls on screen a tap can no longer mean "dismiss", so the view
 carries a close button in the top right corner, the same floating close
 the Music Assistant page wears, and touches anywhere else do nothing but
-press what they land on. The back button dismisses it as it does any
+press what they land on. **Double tap to dismiss** trades the button for
+a double tap anywhere on the view, for the screen everyone is used to
+tapping: a tap on the transport, the toggles or a queue row never counts,
+so a quick double press on Next skips twice. The back button dismisses it as it does any
 screensaver, and the motion setting is unchanged. With the controls off
 the view is the control-free display it always was: a tap anywhere
 dismisses it.

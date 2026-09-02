@@ -220,6 +220,10 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     final gap = (screen.height * 0.05).clamp(12.0, 40.0);
     final controls = c.settings.get(defs.sendspinFullscreenControls);
     final controlsScale = (short / 800).clamp(0.7, 1.0);
+    // Double tap to dismiss (issue #409) replaces the close button: the
+    // manager runs the tap chain on touches off the controls.
+    final doubleTap =
+        controls && c.settings.get(defs.sendspinFullscreenDoubleTap);
     // The queue panel (controls only: its button lives there) and the
     // lyrics share one slot, the queue winning while it is open. Either
     // takes whatever spare axis the panel has: a second column on a
@@ -247,7 +251,13 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
     _panelShown = sideBySide || stacked;
 
     Widget panel() => queue
-        ? _QueueView(container: c, fontSize: (short * 0.035).clamp(14.0, 21.0))
+        ? _ControlTouch(
+            container: c,
+            child: _QueueView(
+              container: c,
+              fontSize: (short * 0.035).clamp(14.0, 21.0),
+            ),
+          )
         : LyricsView(
             container: c,
             fontSize: (short * 0.055).clamp(15.0, 26.0),
@@ -397,15 +407,18 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                   (screen.height * 0.03).clamp(8.0, 24.0),
                 ),
                 child: Center(
-                  child: _NowPlayingControls(
+                  child: _ControlTouch(
                     container: c,
-                    // A wide bar: most of the screen, so the thumb has
-                    // room to land and the times can read at a distance.
-                    width: min(
-                      max(artSize * 1.4, screen.width * 0.62),
-                      screen.width - 32,
+                    child: _NowPlayingControls(
+                      container: c,
+                      // A wide bar: most of the screen, so the thumb has
+                      // room to land and the times can read at a distance.
+                      width: min(
+                        max(artSize * 1.4, screen.width * 0.62),
+                        screen.width - 32,
+                      ),
+                      scale: controlsScale,
                     ),
-                    scale: controlsScale,
                   ),
                 ),
               ),
@@ -415,7 +428,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
         // explicit: the same floating close the page overlays wear. It
         // reports its own source so the manager can tell it from the
         // touches it is holding.
-        if (controls)
+        if (controls && !doubleTap)
           Positioned(
             top: 12,
             right: 12,
@@ -518,6 +531,25 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
       ),
     );
   }
+}
+
+/// Marks a touch as landing on something the Now Playing view acts on
+/// (the transport, the toggles, a queue row), for the screensaver
+/// manager's double-tap chain to leave alone. A raw pointer listener,
+/// deliberately: it hears the pointer on its way down, before the kiosk
+/// screen's own listener reports the same touch as activity, and it
+/// never competes with the buttons for the gesture.
+class _ControlTouch extends StatelessWidget {
+  const _ControlTouch({required this.container, required this.child});
+
+  final AppContainer container;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (_) => container.screensaver.markControlTouch(),
+    child: child,
+  );
 }
 
 /// The queue in the lyrics' slot, laid out the way Music Assistant's own

@@ -144,12 +144,18 @@ void main() {
       }
       // The group renders as one card only while its defs sit together.
       final keys = defs.allSettings.map((d) => d.key).toList();
-      final first = keys.indexOf(defs.sendspinFullscreen.key);
+      final first = keys.indexOf(defs.sendspinFullscreenOnPlay.key);
       expect(keys[first + 1], defs.sendspinFullscreenControls.key);
       expect(keys[first + 2], defs.sendspinFullscreenQueue.key);
-      expect(keys[first + 3], defs.sendspinFullscreenOnPlay.key);
-      expect(keys[first + 4], defs.sendspinFullscreenShortcut.key);
-      expect(keys[first + 5], defs.sendspinFullscreenMotion.key);
+      expect(keys[first + 3], defs.sendspinFullscreenShortcut.key);
+      expect(keys[first + 4], defs.sendspinFullscreen.key);
+      expect(keys[first + 5], defs.sendspinFullscreenDoubleTap.key);
+      expect(keys[first + 6], defs.sendspinFullscreenMotion.key);
+      expect(defs.sendspinFullscreenDoubleTap.defaultValue, isFalse);
+      expect(
+        defs.sendspinFullscreenDoubleTap.dependsOn,
+        'sendspin.fullscreen_controls',
+      );
       // The view's own buttons flip lyrics and the queue and the choice
       // sticks: neither draws a settings row any more.
       expect(defs.sendspinFullscreenQueue.hidden, isTrue);
@@ -215,6 +221,41 @@ void main() {
       saver.notifyActivity('screen on');
       await pumpEventQueue();
       expect(saver.isActive, isFalse);
+    });
+
+    test('double tap to dismiss: two taps close it, one does not', () async {
+      await build({'ks.sendspin.fullscreen_double_tap': true});
+      var now = DateTime(2026, 9, 2, 1);
+      saver.clock = () => now;
+      await showNowPlaying();
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+      now = now.add(const Duration(milliseconds: 300));
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.isActive, isFalse);
+    });
+
+    test('double tap to dismiss leaves the controls alone', () async {
+      // A quick double press on Next: the view's control listener marks
+      // each touch before the kiosk screen reports it.
+      await build({'ks.sendspin.fullscreen_double_tap': true});
+      var now = DateTime(2026, 9, 2, 1);
+      saver.clock = () => now;
+      await showNowPlaying();
+      saver.markControlTouch();
+      saver.notifyActivity('touch');
+      now = now.add(const Duration(milliseconds: 300));
+      saver.markControlTouch();
+      saver.notifyActivity('touch');
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
+      // The key and page sources stay out of the chain either way.
+      saver.notifyActivity('key');
+      saver.notifyActivity('touch_page');
+      await pumpEventQueue();
+      expect(saver.isActive, isTrue);
     });
 
     test('without controls a touch dismisses as before', () async {
@@ -904,6 +945,14 @@ void main() {
       expect(find.byIcon(Icons.lyrics_rounded), findsNothing);
       // The transport is still there and still centered: the blank
       // stands in for the toggle.
+      expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
+    });
+
+    testWidgets('double tap to dismiss takes the close button away', (
+      tester,
+    ) async {
+      await pump(tester, settings: {'ks.sendspin.fullscreen_double_tap': true});
+      expect(find.byIcon(Icons.close), findsNothing);
       expect(find.byIcon(Icons.skip_next_rounded), findsOneWidget);
     });
 
