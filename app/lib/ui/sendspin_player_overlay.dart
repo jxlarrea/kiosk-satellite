@@ -1207,8 +1207,10 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (volumeOpen) ...[
-            // The volume in the seek bar's place: the same bar, the level
-            // beside it instead of the times.
+            // The volume in the seek bar's place, the same two rows the
+            // seek bar takes (the bar, then the times' line with the level
+            // at the right), so the block keeps its height and nothing
+            // above it moves.
             SizedBox(
               height: 24 * scale,
               child: Row(
@@ -1218,6 +1220,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                     color: Colors.white70,
                     size: 28 * scale,
                   ),
+                  SizedBox(width: 8 * scale),
                   Expanded(
                     child: SliderTheme(
                       data: SliderThemeData(
@@ -1247,19 +1250,19 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: 44 * scale,
-                    child: Text(
-                      level == null ? '' : '${level.round()}%',
-                      style: timeStyle,
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
                 ],
               ),
             ),
-            // The times row's height, so the transport under it stays put.
-            SizedBox(height: 20 * scale),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('', style: timeStyle),
+                Text(
+                  level == null ? '' : '${level.round()}%',
+                  style: timeStyle,
+                ),
+              ],
+            ),
           ] else if (duration > 0) ...[
             SizedBox(
               height: 24 * scale,
