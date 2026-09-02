@@ -1391,9 +1391,12 @@ Future<Uint8List?> fetchSendspinArtwork(AppContainer c, String url) async {
       ..badCertificateCallback = (cert, host, port) =>
           host.isNotEmpty && (host == serverHost || host == maHost);
     final request = await client.getUrl(Uri.parse(url));
-    final response = await request.close();
+    // Bounded: a speaker's art proxy can hang on an image it cannot
+    // fetch, and a fetch that never ends would hold the cover blank for
+    // the next track too.
+    final response = await request.close().timeout(const Duration(seconds: 12));
     final bytes = <int>[];
-    await for (final part in response) {
+    await for (final part in response.timeout(const Duration(seconds: 12))) {
       bytes.addAll(part);
     }
     client.close();

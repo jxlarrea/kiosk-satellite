@@ -62,6 +62,24 @@ void main() {
     });
   });
 
+  group('SonosPlayer.publicArtLookup', () {
+    test('finds the Spotify and Deezer ids behind a track URI', () {
+      expect(
+        SonosPlayer.publicArtLookup(
+          'x-sonos-spotify:spotify%3atrack%3a2EPxhPbZczxce6wHbuOlQ6?sid=9&flags=8232&sn=2',
+        ),
+        ('spotify', '2EPxhPbZczxce6wHbuOlQ6'),
+      );
+      expect(
+        SonosPlayer.publicArtLookup(
+          'x-sonos-http:sonos%3aa78b8e1eb-DZR%3a28%3a1788373720219%3amiddle%3a2997%3a%3adzrs.trk.3965376601%3adefault%3aSD.mp4?sid=303&flags=0&sn=1',
+        ),
+        ('deezer', '3965376601'),
+      );
+      expect(SonosPlayer.publicArtLookup('x-rincon-stream:RINCON_1'), isNull);
+    });
+  });
+
   group('SonosPlayer.snapshotFrom', () {
     test('a playing station track: no duration, no seek, absolute art', () {
       final snap = SonosPlayer.snapshotFrom(

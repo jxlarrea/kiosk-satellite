@@ -159,6 +159,10 @@ the group the room belongs to, so regrouping from the Sonos app re-points
 it on its own. A radio stream has no pause on a Sonos, so the pause button
 stops it, the way the speaker itself does and the queue panel shows
 nothing queued while a station or a line-in plays outside the queue.
+Artwork for Spotify and Deezer tracks comes from the service's public
+image lookup: the speaker only proxies those images through itself and
+hangs when it cannot reach the service, which a speaker on a walled-off
+VLAN often cannot.
 
 With another player picked the device is a remote control, not a player:
 its own Sendspin player shuts down and shows as offline in Music

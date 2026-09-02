@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
@@ -68,6 +70,14 @@ class SonosPlayer implements RemotePlayer {
   int? _volume;
   bool? _muted;
   Map<String, Object?>? _snapshot;
+
+  /// Public artwork by track URI, for the streaming services whose art
+  /// the speaker only proxies. The proxy fetches the image from the
+  /// service itself and hangs when it cannot, which a speaker on a
+  /// walled-off VLAN does often; the services answer the tablet
+  /// directly, no key needed. Bounded: a queue's worth of tracks.
+  static final Map<String, String?> _artCache = {};
+  final Set<String> _artPending = {};
 
   /// The group the room plays in, as of the last topology read: the
   /// coordinator takes the transport, the queue and the group volume.
@@ -182,6 +192,7 @@ class SonosPlayer implements RemotePlayer {
     _playing = snap?['playing'] == true;
     if (_playing) _sawPlayback = true;
     queueEmpty = snap == null;
+    if (snap != null) _preferPublicArt(snap);
     // A poll that changed nothing stays quiet: the surfaces extrapolate
     // the position from the last report, and a fresh map every second
     // would rebuild the whole view (blur and all) under a finger. What
@@ -190,6 +201,84 @@ class SonosPlayer implements RemotePlayer {
     // report is getting old.
     if (!_differs(_snapshot, snap)) return;
     _emit(snap);
+  }
+
+  /// Swap the speaker's art proxy for the service's own image where one
+  /// is known, or start finding it, after which the next poll picks it
+  /// up (or this one is re-emitted when the answer lands).
+  void _preferPublicArt(Map<String, Object?> snap) {
+    final art = '${snap['artworkUrl'] ?? ''}';
+    final uri = '${snap['trackUri'] ?? ''}';
+    if (!art.contains('/getaa?') || uri.isEmpty) return;
+    final lookup = publicArtLookup(uri);
+    if (lookup == null) return;
+    if (_artCache.containsKey(uri)) {
+      final found = _artCache[uri];
+      if (found != null) snap['artworkUrl'] = found;
+      return;
+    }
+    if (!_artPending.add(uri)) return;
+    unawaited(
+      fetchPublicArt(lookup).then((found) {
+        _artPending.remove(uri);
+        if (_artCache.length > 200) _artCache.clear();
+        _artCache[uri] = found;
+        final current = _snapshot;
+        if (found != null && current != null && current['trackUri'] == uri) {
+          _emit({...current, 'artworkUrl': found});
+        }
+      }),
+    );
+  }
+
+  /// The service and track id behind a Sonos track URI, for the services
+  /// with a public cover lookup: Spotify (`x-sonos-spotify:spotify:track:id`)
+  /// and Deezer (`dzrs.trk.id` inside a Sonos HTTP URI). Null otherwise.
+  @visibleForTesting
+  static (String service, String id)? publicArtLookup(String trackUri) {
+    final decoded = Uri.decodeFull(Uri.decodeFull(trackUri));
+    final spotify = RegExp(r'spotify:track:([A-Za-z0-9]+)').firstMatch(decoded);
+    if (spotify != null) return ('spotify', spotify[1]!);
+    final deezer = RegExp(r'dzrs\.trk\.(\d+)').firstMatch(decoded);
+    if (deezer != null) return ('deezer', deezer[1]!);
+    return null;
+  }
+
+  /// The cover's public URL for [lookup], or null when the service does
+  /// not answer. Spotify's oEmbed hands back a 300 pixel thumbnail whose
+  /// id names the size; the same id with the 640 marker is the full
+  /// cover.
+  static Future<String?> fetchPublicArt((String, String) lookup) async {
+    final (service, id) = lookup;
+    final url = switch (service) {
+      'spotify' => 'https://open.spotify.com/oembed?url=spotify%3Atrack%3A$id',
+      'deezer' => 'https://api.deezer.com/track/$id',
+      _ => null,
+    };
+    if (url == null) return null;
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 6);
+    try {
+      final request = await client.getUrl(Uri.parse(url));
+      final response = await request.close().timeout(
+        const Duration(seconds: 8),
+      );
+      if (response.statusCode != 200) return null;
+      final body = jsonDecode(await response.transform(utf8.decoder).join());
+      if (body is! Map) return null;
+      if (service == 'spotify') {
+        final thumb = '${body['thumbnail_url'] ?? ''}';
+        if (thumb.isEmpty) return null;
+        return thumb.replaceFirst('ab67616d00001e02', 'ab67616d0000b273');
+      }
+      final album = body['album'];
+      if (album is! Map) return null;
+      final cover = '${album['cover_xl'] ?? album['cover_big'] ?? ''}';
+      return cover.isEmpty ? null : cover;
+    } catch (_) {
+      return null;
+    } finally {
+      client.close(force: true);
+    }
   }
 
   static const _stable = [
@@ -268,7 +357,9 @@ class SonosPlayer implements RemotePlayer {
     final durationMs = duration?.inMilliseconds ?? 0;
     final art = item['art'] ?? '';
     final tracks = int.tryParse(position['Track'] ?? '') ?? 0;
+    final trackUri = (position['TrackURI'] ?? '').trim();
     return {
+      if (trackUri.isNotEmpty) 'trackUri': trackUri,
       'title': title,
       if (artist.isNotEmpty) 'artist': artist,
       if (album.isNotEmpty) 'album': album,
