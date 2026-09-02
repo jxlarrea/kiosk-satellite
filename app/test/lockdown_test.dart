@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
@@ -152,6 +153,32 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 1300));
       expect(reclaims, 0);
     });
+
+    test(
+      'Android Settings opened by the app is sanctioned too (issue #417)',
+      () async {
+        await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+        TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger
+            .setMockMethodCallHandler(
+              const MethodChannel('kiosk_satellite/background'),
+              (call) async => call.method == 'openSystemSettings' ? true : null,
+            );
+        addTearDown(() {
+          TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger
+              .setMockMethodCallHandler(
+                const MethodChannel('kiosk_satellite/background'),
+                null,
+              );
+        });
+        expect(
+          (await commands.execute('openSystemSettings', const {})).ok,
+          true,
+        );
+        kiosk.didChangeAppLifecycleState(AppLifecycleState.paused);
+        await Future<void>.delayed(const Duration(milliseconds: 1300));
+        expect(reclaims, 0);
+      },
+    );
 
     test('a dark panel holds the reclaim fire (issue #291)', () async {
       await build({'ks.lockdown.enabled': true});

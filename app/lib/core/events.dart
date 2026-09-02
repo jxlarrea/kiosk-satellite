@@ -651,9 +651,13 @@ class KioskBackPressed extends AppEvent {
   const KioskBackPressed();
 }
 
-/// Another app was opened over the kiosk through launchApp — the app
-/// launcher, a gesture action, MQTT, the remote admin. Internal: the
-/// launcher manager arms its auto-return clock off it (issue #114).
+/// Something was raised over the kiosk on purpose: another app through
+/// launchApp (the app launcher, a gesture action, MQTT, the remote admin),
+/// a deep link through openUri or the Android Settings app through
+/// openSystemSettings. Internal: the launcher manager arms its auto-return
+/// clock off it (issue #114) and the kiosk manager's foreground reclaim
+/// lets the pause that follows stand (issue #417). [package] is the app's
+/// package, or the URI itself for a deep link, whose app is unknown.
 class AppLaunched extends AppEvent {
   const AppLaunched({required this.package});
   final String package;

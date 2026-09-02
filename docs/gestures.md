@@ -72,7 +72,7 @@ The chooser groups them: Kiosk Satellite, Android, Home Assistant.
 | Toggle hold mode | Pins the current view (screensaver, dashboard rotation and the return to home timer pause); the same gesture again releases it. Works well as a clap mapping while cooking from a recipe. |
 | Open another app | By package name, kiosk still running behind it. |
 | Open a deep link | Any URI another app claims, `myapp://path`. |
-| Open Android Settings | |
+| Open Android Settings | The system Settings app, kiosk still running behind it. |
 | Call a service | Domain, service, optional entity and data. |
 | Run a script | A `script.*` entity, run through `script.turn_on`. |
 | Trigger an automation | An `automation.*` entity, run through `automation.trigger`. |

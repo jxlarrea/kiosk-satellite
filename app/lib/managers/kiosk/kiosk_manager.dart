@@ -150,33 +150,14 @@ class KioskManager extends Manager with WidgetsBindingObserver {
           if (package.isEmpty) {
             return const CommandResult.fail('package required');
           }
-          // A pinned task cannot be switched away from: the launch used to
-          // "succeed" while Android showed its unpin toast instead of the
-          // app (issue #250). The resume re-pin in
-          // didChangeAppLifecycleState arms the pin again on the way back.
-          final wasPinned = await _invoke<bool>('unpin') ?? false;
-          try {
-            final launched = await _backgroundChannel.invokeMethod<bool>(
-              'launchApp',
-              {'package': package},
-            );
-            if (launched != true) {
-              // Nothing came up, so no pause and no resume re-pin: put the
-              // pin back now rather than leave the kiosk unprotected.
-              if (wasPinned) await _apply();
-              return CommandResult.fail(
-                '$package is not installed, or has no app to open',
-              );
-            }
-            log.info(name, 'opened $package');
-            bus.publish(AppLaunched(package: package));
-            return const CommandResult.ok();
-          } on PlatformException catch (e) {
-            if (wasPinned) await _apply();
-            return CommandResult.fail('could not open $package: $e');
-          } on MissingPluginException {
-            return const CommandResult.fail('opening apps is Android-only');
-          }
+          return _openOverKiosk(
+            what: package,
+            open: () => _backgroundChannel.invokeMethod<bool>('launchApp', {
+              'package': package,
+            }),
+            notOpened: '$package is not installed, or has no app to open',
+            unavailable: 'opening apps is Android-only',
+          );
         },
       ),
     );
@@ -192,21 +173,14 @@ class KioskManager extends Manager with WidgetsBindingObserver {
         handler: (p) async {
           final uri = '${p['uri'] ?? ''}'.trim();
           if (uri.isEmpty) return const CommandResult.fail('uri required');
-          try {
-            final opened = await _backgroundChannel.invokeMethod<bool>(
-              'openUri',
-              {'uri': uri},
-            );
-            if (opened != true) {
-              return CommandResult.fail('nothing on the device opens $uri');
-            }
-            log.info(name, 'opened uri $uri');
-            return const CommandResult.ok();
-          } on PlatformException catch (e) {
-            return CommandResult.fail('could not open $uri: $e');
-          } on MissingPluginException {
-            return const CommandResult.fail('opening URIs is Android-only');
-          }
+          return _openOverKiosk(
+            what: 'uri $uri',
+            package: uri,
+            open: () =>
+                _backgroundChannel.invokeMethod<bool>('openUri', {'uri': uri}),
+            notOpened: 'nothing on the device opens $uri',
+            unavailable: 'opening URIs is Android-only',
+          );
         },
       ),
     );
@@ -259,22 +233,14 @@ class KioskManager extends Manager with WidgetsBindingObserver {
       Command(
         name: 'openSystemSettings',
         description: 'Open the Android Settings app over the kiosk.',
-        handler: (_) async {
-          try {
-            final opened = await _backgroundChannel.invokeMethod<bool>(
-              'openSystemSettings',
-            );
-            if (opened != true) {
-              return const CommandResult.fail('could not open settings');
-            }
-            log.info(name, 'opened Android settings');
-            return const CommandResult.ok();
-          } on PlatformException catch (e) {
-            return CommandResult.fail('could not open settings: $e');
-          } on MissingPluginException {
-            return const CommandResult.fail('Android settings is Android-only');
-          }
-        },
+        handler: (_) => _openOverKiosk(
+          what: 'Android settings',
+          package: 'com.android.settings',
+          open: () =>
+              _backgroundChannel.invokeMethod<bool>('openSystemSettings'),
+          notOpened: 'could not open settings',
+          unavailable: 'Android settings is Android-only',
+        ),
       ),
     );
 
@@ -622,6 +588,48 @@ class KioskManager extends Manager with WidgetsBindingObserver {
     });
 
     await _apply();
+  }
+
+  /// The one way anything is raised over the kiosk on purpose: another
+  /// app, a deep link, the Android Settings app. Every such launch takes
+  /// the same two steps or the guards undo it. A pinned task cannot be
+  /// switched away from, so the launch used to "succeed" while Android
+  /// showed its unpin toast instead of the app (issue #250): unpin first,
+  /// and the resume re-pin in didChangeAppLifecycleState arms the pin
+  /// again on the way back. And the pause the launch causes looks like an
+  /// escape to the Disable home reclaim, which pulled Android Settings
+  /// back under the kiosk a second after a gesture opened it (issue #417):
+  /// [AppLaunched] marks the pause sanctioned, hands the launcher's
+  /// auto-return the way back and has the foreground app sensor re-read.
+  /// [open] reports whether anything came up; [what] names it in the log
+  /// and, unless [package] says otherwise, on the event.
+  Future<CommandResult> _openOverKiosk({
+    required String what,
+    String? package,
+    required Future<bool?> Function() open,
+    required String notOpened,
+    required String unavailable,
+  }) async {
+    final wasPinned = await _invoke<bool>('unpin') ?? false;
+    try {
+      if (await open() != true) {
+        // Nothing came up, so no pause and no resume re-pin: put the pin
+        // back now rather than leave the kiosk unprotected.
+        if (wasPinned) await _apply();
+        return CommandResult.fail(notOpened);
+      }
+      log.info(name, 'opened $what');
+      // Stamped here as well as off the bus: the pause can land before
+      // the bus delivers, and a late stamp is a reclaim that fires.
+      _appLaunchedAt = DateTime.now();
+      bus.publish(AppLaunched(package: package ?? what));
+      return const CommandResult.ok();
+    } on PlatformException catch (e) {
+      if (wasPinned) await _apply();
+      return CommandResult.fail('could not open $what: $e');
+    } on MissingPluginException {
+      return CommandResult.fail(unavailable);
+    }
   }
 
   /// The unpinned half of lockdown's home protection: if the app loses the

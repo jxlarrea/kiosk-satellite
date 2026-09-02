@@ -18,6 +18,7 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - The lyrics toggle stays on the Now Playing view while a Music Assistant player is followed: the player's queue time is read every few seconds, close enough to sing along with.
 
 ### Fixed
+- **Android Settings opened by a gesture stays open under Kiosk Mode**. With Disable home button on, the Open Android Settings and Open a deep link actions raised their screen and the kiosk's foreground guard pulled it back under the dashboard a second later, since only the Open another app action told the guard the pause was wanted. All three now take the same road as Open another app: the screen pin stands down first, the guard leaves the pause alone and the app launcher's Return after timer and the foreground app sensor pick the launch up as well. The kiosk re-pins on its way back, as before.
 - A **Multi-finger tap or hold keeps the finger count it was given**. Saved from the remote admin, the gesture took its count from the Show fingers dropdown instead of its own, so every new one came out as a 5-finger gesture and the editor showed 3 fingers whatever was picked. On the device, the Fingers dropdown's pick was dropped on save, so a 2-finger gesture stayed at 3. A gesture already saved with five fingers needs a re-save to take the count picked.
 
 ## v2026.9.6 - 2026-09-02

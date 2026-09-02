@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
+import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
 import 'package:kiosk_satellite/managers/kiosk/kiosk_manager.dart';
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
@@ -40,8 +41,9 @@ void main() {
     await settings.init();
 
     lockCalls = [];
-    binding.defaultBinaryMessenger.setMockMethodCallHandler(lockChannel,
-        (call) async {
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(lockChannel, (
+      call,
+    ) async {
       lockCalls.add(call.method);
       switch (call.method) {
         case 'unpin':
@@ -56,9 +58,14 @@ void main() {
           return null;
       }
     });
-    binding.defaultBinaryMessenger.setMockMethodCallHandler(backgroundChannel,
-        (call) async {
-      if (call.method == 'launchApp') return launchWorks;
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(backgroundChannel, (
+      call,
+    ) async {
+      if (call.method == 'launchApp' ||
+          call.method == 'openUri' ||
+          call.method == 'openSystemSettings') {
+        return launchWorks;
+      }
       return null;
     });
 
@@ -72,8 +79,10 @@ void main() {
   tearDown(() async {
     await kiosk.dispose();
     binding.defaultBinaryMessenger.setMockMethodCallHandler(lockChannel, null);
-    binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(backgroundChannel, null);
+    binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      backgroundChannel,
+      null,
+    );
   });
 
   group('launchApp under the pin', () {
@@ -82,8 +91,9 @@ void main() {
       pinned = true;
       launchWorks = true;
       await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
-      final result =
-          await commands.execute('launchApp', {'package': 'com.example.app'});
+      final result = await commands.execute('launchApp', {
+        'package': 'com.example.app',
+      });
       expect(result.ok, true);
       expect(lockCalls, contains('unpin'));
       expect(lockCalls, isNot(contains('apply')));
@@ -94,23 +104,53 @@ void main() {
       pinned = true;
       launchWorks = false;
       await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
-      final result =
-          await commands.execute('launchApp', {'package': 'com.example.gone'});
+      final result = await commands.execute('launchApp', {
+        'package': 'com.example.gone',
+      });
       expect(result.ok, false);
       expect(lockCalls, contains('unpin'));
       expect(lockCalls, contains('apply'));
       expect(lockCalls.indexOf('unpin'), lessThan(lockCalls.indexOf('apply')));
     });
 
-    test('a failed launch that never held a pin does not re-apply',
-        () async {
+    test('a failed launch that never held a pin does not re-apply', () async {
       pinned = false;
       launchWorks = false;
       await build({});
-      final result =
-          await commands.execute('launchApp', {'package': 'com.example.gone'});
+      final result = await commands.execute('launchApp', {
+        'package': 'com.example.gone',
+      });
       expect(result.ok, false);
       expect(lockCalls, isNot(contains('apply')));
+    });
+
+    test('Android Settings and a deep link take the same road (issue #417): '
+        'unpin first, and the launch is published as sanctioned', () async {
+      pinned = true;
+      launchWorks = true;
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+      final launched = <String>[];
+      bus.on<AppLaunched>().listen((e) => launched.add(e.package));
+
+      expect((await commands.execute('openSystemSettings', const {})).ok, true);
+      expect(lockCalls, contains('unpin'));
+      expect(lockCalls, isNot(contains('apply')));
+      lockCalls.clear();
+      pinned = true;
+
+      expect((await commands.execute('openUri', {'uri': 'geo:0,0'})).ok, true);
+      expect(lockCalls, contains('unpin'));
+      await pumpEventQueue();
+      expect(launched, ['com.android.settings', 'geo:0,0']);
+    });
+
+    test('Android Settings that does not come up re-arms the pin', () async {
+      pinned = true;
+      launchWorks = false;
+      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+      final result = await commands.execute('openSystemSettings', const {});
+      expect(result.ok, false);
+      expect(lockCalls.indexOf('unpin'), lessThan(lockCalls.indexOf('apply')));
     });
   });
 
@@ -143,16 +183,18 @@ void main() {
       expect(lockCalls, isNot(contains('apply')));
     });
 
-    test('back-to-back resumes re-apply once (consent-dialog loop guard)',
-        () async {
-      pinned = false;
-      launchWorks = true;
-      await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
-      kiosk.didChangeAppLifecycleState(AppLifecycleState.resumed);
-      await pumpEventQueue();
-      kiosk.didChangeAppLifecycleState(AppLifecycleState.resumed);
-      await pumpEventQueue();
-      expect(lockCalls.where((m) => m == 'apply').length, 1);
-    });
+    test(
+      'back-to-back resumes re-apply once (consent-dialog loop guard)',
+      () async {
+        pinned = false;
+        launchWorks = true;
+        await build({'ks.kiosk.enabled': true, 'ks.kiosk.disable_home': true});
+        kiosk.didChangeAppLifecycleState(AppLifecycleState.resumed);
+        await pumpEventQueue();
+        kiosk.didChangeAppLifecycleState(AppLifecycleState.resumed);
+        await pumpEventQueue();
+        expect(lockCalls.where((m) => m == 'apply').length, 1);
+      },
+    );
   });
 }
