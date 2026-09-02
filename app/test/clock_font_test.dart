@@ -47,6 +47,24 @@ void main() {
     }
   });
 
+  test('the weight override maps every step and leaves Default alone', () {
+    expect(clockWeightOverride('default'), isNull);
+    expect(clockWeightOverride('light'), FontWeight.w300);
+    expect(clockWeightOverride('regular'), FontWeight.w400);
+    expect(clockWeightOverride('medium'), FontWeight.w500);
+    expect(clockWeightOverride('bold'), FontWeight.w700);
+    expect(clockWeightOverride('black'), FontWeight.w900);
+    expect(clockWeightOverride('garbage'), isNull);
+    expect(defs.screensaverClockFontWeight.defaultValue, 'default');
+    for (final option in defs.screensaverClockFontWeight.options!) {
+      expect(defs.screensaverClockFontWeight.optionLabels?[option], isNotNull);
+    }
+    expect(defs.screensaverClockFontWeight.section, 'Clock screensaver');
+    expect(defs.screensaverClockFontWeight.subpage, 'Clock screensaver');
+    expect(defs.screensaverClockFontWeight.dependsOn, 'screensaver.mode');
+    expect(defs.screensaverClockFontWeight.dependsOnValue, 'clock');
+  });
+
   test('the definition offers exactly the mapped set, Rubik by default', () {
     expect(defs.screensaverClockFont.defaultValue, 'rubik');
     expect(defs.screensaverClockFont.options, families.keys.toList());
@@ -96,6 +114,38 @@ void main() {
       }
       return null;
     }
+
+    FontWeight? faceWeight(WidgetTester tester, Pattern data) {
+      for (final t in tester.widgetList<Text>(find.byType(Text))) {
+        if ((t.data ?? '').contains(data)) return t.style?.fontWeight;
+      }
+      return null;
+    }
+
+    testWidgets('a picked weight lands on every face; Default keeps each '
+        "face's own", (tester) async {
+      await pumpClock(tester, {'ks.screensaver.clock_font_weight': 'bold'});
+      expect(faceWeight(tester, ':'), FontWeight.w700);
+      await pumpClock(tester, {
+        'ks.screensaver.clock_style': 'flip',
+        'ks.screensaver.clock_font_weight': 'light',
+      });
+      expect(faceWeight(tester, RegExp(r'^\d\d$')), FontWeight.w300);
+      await pumpClock(tester, {'ks.screensaver.clock_style': 'flip'});
+      expect(faceWeight(tester, RegExp(r'^\d\d$')), FontWeight.w400);
+      await pumpClock(tester, {
+        'ks.screensaver.clock_style': 'roller',
+        'ks.screensaver.clock_font_weight': 'medium',
+      });
+      expect(faceWeight(tester, RegExp(r'^\d$')), FontWeight.w500);
+      await pumpClock(tester, {'ks.screensaver.clock_style': 'roller'});
+      expect(faceWeight(tester, RegExp(r'^\d$')), FontWeight.w800);
+      // Default on the digital face: light, or heavy in Nunito.
+      await pumpClock(tester, {});
+      expect(faceWeight(tester, ':'), FontWeight.w300);
+      await pumpClock(tester, {'ks.screensaver.clock_font': 'nunito'});
+      expect(faceWeight(tester, ':'), FontWeight.w700);
+    });
 
     testWidgets('the digital face', (tester) async {
       await pumpClock(tester, {'ks.screensaver.clock_font': 'monospace'});

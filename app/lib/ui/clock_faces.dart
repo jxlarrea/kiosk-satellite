@@ -19,6 +19,17 @@ import 'package:flutter/material.dart';
 /// stock Android), and an alias a ROM lacks falls back there too, so a
 /// stale stored value can never break the clock; anything unknown keeps
 /// Rubik, the original face.
+/// The weight a `screensaver.clock_font_weight` value asks for, or null
+/// for Default, which leaves each face to its own.
+FontWeight? clockWeightOverride(String weight) => switch (weight) {
+  'light' => FontWeight.w300,
+  'regular' => FontWeight.w400,
+  'medium' => FontWeight.w500,
+  'bold' => FontWeight.w700,
+  'black' => FontWeight.w900,
+  _ => null,
+};
+
 /// The digital face's time weight for a `screensaver.clock_font` value.
 /// The face is w300 by design, but Nunito exists to be the Apple StandBy
 /// look, whose digits are heavy: at w300 it read as a thin clock that
@@ -58,6 +69,7 @@ class FlipClockFace extends StatelessWidget {
     required this.backdropColor,
     required this.scale,
     required this.fontFamily,
+    this.weight,
   });
 
   final DateTime now;
@@ -67,6 +79,9 @@ class FlipClockFace extends StatelessWidget {
   final Color backdropColor;
   final double scale;
   final String? fontFamily;
+
+  /// The digits' weight, or null for the cards' own regular.
+  final FontWeight? weight;
 
   String get _hours {
     final h = use24h ? now.hour : (now.hour % 12 == 0 ? 12 : now.hour % 12);
@@ -96,6 +111,7 @@ class FlipClockFace extends StatelessWidget {
           cardColor: cardColor,
           backdropColor: backdropColor,
           fontFamily: fontFamily,
+          weight: weight,
         ),
         SizedBox(width: gap),
         _FlipCard(
@@ -106,6 +122,7 @@ class FlipClockFace extends StatelessWidget {
           cardColor: cardColor,
           backdropColor: backdropColor,
           fontFamily: fontFamily,
+          weight: weight,
         ),
       ],
     );
@@ -121,6 +138,7 @@ class _FlipCard extends StatefulWidget {
     required this.cardColor,
     required this.backdropColor,
     required this.fontFamily,
+    this.weight,
   });
 
   final String value;
@@ -130,6 +148,7 @@ class _FlipCard extends StatefulWidget {
   final Color cardColor;
   final Color backdropColor;
   final String? fontFamily;
+  final FontWeight? weight;
 
   @override
   State<_FlipCard> createState() => _FlipCardState();
@@ -173,7 +192,7 @@ class _FlipCardState extends State<_FlipCard>
           fontFamily: widget.fontFamily,
           color: widget.digitColor,
           fontSize: widget.height * 0.66,
-          fontWeight: FontWeight.w400,
+          fontWeight: widget.weight ?? FontWeight.w400,
           fontFeatures: const [FontFeature.tabularFigures()],
           height: 1.0,
         ),
@@ -313,12 +332,16 @@ class RollerClockFace extends StatefulWidget {
     required this.digitColor,
     required this.scale,
     required this.fontFamily,
+    this.weight,
   });
 
   final bool use24h;
   final Color digitColor;
   final double scale;
   final String? fontFamily;
+
+  /// The digits' weight, or null for the roller's own heavy.
+  final FontWeight? weight;
 
   @override
   State<RollerClockFace> createState() => _RollerClockFaceState();
@@ -385,6 +408,7 @@ class _RollerClockFaceState extends State<RollerClockFace>
             fontSize: fontSize,
             color: digitColor,
             fontFamily: widget.fontFamily,
+            weight: widget.weight,
           ),
         ],
       ],
@@ -402,6 +426,7 @@ class _RollingDigit extends StatefulWidget {
     required this.fontSize,
     required this.color,
     required this.fontFamily,
+    this.weight,
   });
 
   final String digit;
@@ -419,6 +444,7 @@ class _RollingDigit extends StatefulWidget {
   final double fontSize;
   final Color color;
   final String? fontFamily;
+  final FontWeight? weight;
 
   @override
   State<_RollingDigit> createState() => _RollingDigitState();
@@ -468,8 +494,13 @@ class _RollingDigitState extends State<_RollingDigit>
             fontFamily: widget.fontFamily,
             color: widget.color,
             fontSize: widget.fontSize,
-            fontWeight: FontWeight.w800,
-            fontVariations: const [FontVariation('wght', 800)],
+            fontWeight: widget.weight ?? FontWeight.w800,
+            fontVariations: [
+              FontVariation(
+                'wght',
+                (widget.weight ?? FontWeight.w800).value.toDouble(),
+              ),
+            ],
             height: 1.0,
           ),
         ),

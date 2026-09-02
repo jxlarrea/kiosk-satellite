@@ -474,7 +474,8 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     _bgSub = widget.container.bus.on<SettingChanged>().listen((e) {
       if (!mounted) return;
       if (e.key == defs.screensaverClockBackground.key ||
-          e.key == defs.screensaverClockFont.key) {
+          e.key == defs.screensaverClockFont.key ||
+          e.key == defs.screensaverClockFontWeight.key) {
         setState(() {});
       }
     });
@@ -678,6 +679,9 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
   /// shell around it — glance row, pixel shift, anchor — is shared, so the
   /// style only swaps what sits in the middle.
   Widget _styledFace(String style, double scale, String? fontFamily) {
+    final weight = clockWeightOverride(
+      widget.container.settings.get(defs.screensaverClockFontWeight),
+    );
     if (style == 'flip') {
       return FlipClockFace(
         now: _now,
@@ -694,6 +698,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
             _nightBg() ?? _rgb(defs.screensaverFlipBackdropColor, Colors.black),
         scale: scale,
         fontFamily: fontFamily,
+        weight: weight,
       );
     }
     return RollerClockFace(
@@ -703,6 +708,7 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
           _rgb(defs.screensaverRollerDigitColor, const Color(0xFFFAFAFA)),
       scale: scale,
       fontFamily: fontFamily,
+      weight: weight,
     );
   }
 
@@ -718,7 +724,9 @@ class _ClockScreensaverState extends State<ClockScreensaver> {
     final nightBg = _nightBg();
     final fontValue = s.get(defs.screensaverClockFont);
     final font = clockFontFamily(fontValue);
-    final timeWeight = clockFontWeight(fontValue);
+    final timeWeight =
+        clockWeightOverride(s.get(defs.screensaverClockFontWeight)) ??
+        clockFontWeight(fontValue);
     final size = MediaQuery.of(context).size;
     // The At a Glance row sits under the clock and needs room for itself,
     // so the clock gives some back rather than pushing the row off a short

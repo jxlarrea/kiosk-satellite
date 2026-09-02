@@ -1552,7 +1552,7 @@ const screensaverClockFont = SettingDef<String>(
   key: 'screensaver.clock_font',
   type: SettingType.select,
   defaultValue: 'rubik',
-  title: 'Font',
+  title: 'Font Family',
   description: 'The typeface the clock is drawn in.',
   category: 'Screensaver',
   section: 'Clock screensaver',
@@ -1578,6 +1578,35 @@ const screensaverClockFont = SettingDef<String>(
     'casual': 'Casual',
     'cursive': 'Cursive',
     'lcd': 'LCD',
+  },
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'clock',
+);
+
+/// How heavy the digits are drawn, on every face. Default is each face's
+/// own weight (the digital face light, or heavy in Nunito; the flip cards
+/// regular; the roller heavy), the rest a fixed weight. Rubik and Nunito
+/// are variable fonts, so every step is real; the LCD segments have one
+/// weight and ignore this.
+const screensaverClockFontWeight = SettingDef<String>(
+  key: 'screensaver.clock_font_weight',
+  type: SettingType.select,
+  defaultValue: 'default',
+  title: 'Font weight',
+  description:
+      "How heavy the clock's digits are drawn. Default is each face's own "
+      'weight.',
+  category: 'Screensaver',
+  section: 'Clock screensaver',
+  subpage: 'Clock screensaver',
+  options: ['default', 'light', 'regular', 'medium', 'bold', 'black'],
+  optionLabels: {
+    'default': 'Default',
+    'light': 'Light',
+    'regular': 'Regular',
+    'medium': 'Medium',
+    'bold': 'Bold',
+    'black': 'Black',
   },
   dependsOn: 'screensaver.mode',
   dependsOnValue: 'clock',
@@ -5623,6 +5652,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverBlackHideExtras,
   screensaverClockStyle,
   screensaverClockFont,
+  screensaverClockFontWeight,
   screensaverClock24h,
   screensaverClockSeconds,
   screensaverClockDate,
