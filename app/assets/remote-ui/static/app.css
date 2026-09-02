@@ -522,6 +522,10 @@
   .hint-row.warn { color: var(--warn); }
   .hint-row svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
   .row:has(+ .hint-row) { border-bottom: none; }
+  /* A hint that stands on its own under a row, hairline between them,
+     the way the device draws a WarnRow after a row. */
+  .row:has(+ .hint-row.divided) { border-bottom: 1px solid var(--divider); }
+  .hint-row.divided { padding-top: 12px; }
   #tab-esphome .bt-inert { pointer-events: none; opacity: 0.45; }
   /* In a row a field carries no label, the name is the label. Text caps
      at 220 on the wide pane; numbers are 90 wide, right aligned, tabular. */

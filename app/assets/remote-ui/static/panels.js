@@ -167,18 +167,15 @@ export async function updatePlayerRow() {
       }
     }, 600));
   }
-  // What the pick did to this device, under the card that holds it.
-  const sourceRow = tab.querySelector('[data-key="sendspin.player_source"]');
-  const card = sourceRow?.closest('.card');
+  const row = tab.querySelector('[data-key="sendspin.player"]');
+  // What the pick did to this device, under the row that holds it.
   tab.querySelector('.player-warn')?.remove();
-  if (card && source) {
+  if (row && source) {
     const note = hintRow(`This device's own Sendspin player stays offline `
       + `while ${currentName || 'another player'} is controlled.`, { warn: true });
-    note.classList.add('player-warn');
-    note.style.cssText = 'margin: 10px 20px 0;';
-    card.insertAdjacentElement('afterend', note);
+    note.classList.add('player-warn', 'divided');
+    row.insertAdjacentElement('afterend', note);
   }
-  const row = tab.querySelector('[data-key="sendspin.player"]');
   if (!row || !source || row.querySelector('select')) return;
   row.querySelectorAll('input, select').forEach((el) => el.remove());
   const sel = document.createElement('select');

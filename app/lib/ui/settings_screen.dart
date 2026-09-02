@@ -1941,26 +1941,23 @@ class _CategoryContentState extends State<_CategoryContent> {
           // default is what the app has always done.
           _subpageEntryCard(container, 'Screen & Audio', 'Microphone settings'),
         ] else
-          ..._withPlayerWarn(
-            container,
-            _withMqttDeprecation(
-              _withEsphomeStartError(
-                _sectionedCards(
-                  container,
-                  // With the Camera master switch off (or no camera on the
-                  // device at all), motion detection cannot run: the dismiss
-                  // switch renders disabled (below) with the reason, instead of
-                  // lying enabled; its tuning rows live in the Camera section
-                  // now and hide with the master there. A camera-less device
-                  // keeps only the disabled master switch.
-                  widget.category == 'Camera' &&
-                          container.deviceCamera.cameraKnownAbsent
-                      ? const [cameraEnabled]
-                      : _defsFor(widget.category),
-                  () => setState(() {}),
-                  replace: _rowReplacements(container),
-                  after: _rowExtras(container),
-                ),
+          ..._withMqttDeprecation(
+            _withEsphomeStartError(
+              _sectionedCards(
+                container,
+                // With the Camera master switch off (or no camera on the
+                // device at all), motion detection cannot run: the dismiss
+                // switch renders disabled (below) with the reason, instead of
+                // lying enabled; its tuning rows live in the Camera section
+                // now and hide with the master there. A camera-less device
+                // keeps only the disabled master switch.
+                widget.category == 'Camera' &&
+                        container.deviceCamera.cameraKnownAbsent
+                    ? const [cameraEnabled]
+                    : _defsFor(widget.category),
+                () => setState(() {}),
+                replace: _rowReplacements(container),
+                after: _rowExtras(container),
               ),
             ),
           ),
@@ -2274,25 +2271,6 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// shown disabled with the reason it cannot be used. Keyed by setting
   /// key and handed to every render of the category, the pages below it
   /// included, so a replacement follows its row onto its page.
-  /// Say what the source pick just did to this device, under the card
-  /// that holds the pick: its own player is gone from Music Assistant
-  /// and the rows about it are gone from this page. Outside the card,
-  /// the way a note about a card reads.
-  List<Widget> _withPlayerWarn(AppContainer container, List<Widget> cards) {
-    if (widget.category != 'Sendspin' ||
-        container.settings.get(sendspinPlayerSource).isEmpty) {
-      return cards;
-    }
-    final name = container.settings.get(sendspinPlayerName).trim();
-    final note = WarnRow(
-      "This device's own Sendspin player stays offline while "
-      '${name.isEmpty ? 'another player' : name} is controlled.',
-    );
-    final first = cards.indexWhere((w) => w is SettingsCard);
-    if (first < 0) return cards;
-    return [...cards.take(first + 1), note, ...cards.skip(first + 1)];
-  }
-
   /// A Sonos lyrics switch without a Music Assistant connection: disabled,
   /// saying what it needs, since the lyrics can only come from there.
   bool get _maConfigured =>
@@ -2602,6 +2580,16 @@ class _CategoryContentState extends State<_CategoryContent> {
       mqttPassword.key: _MqttValidateRow(container: container),
     if (widget.category == 'Sendspin')
       sendspinMaToken.key: _MaValidateRow(container: container),
+    // Say what the pick just did to this device, under the row that
+    // holds it: its own player is gone from Music Assistant and the rows
+    // about it are gone from this page.
+    if (widget.category == 'Sendspin' &&
+        container.settings.get(sendspinPlayerSource).isNotEmpty)
+      sendspinPlayer.key: WarnRow(
+        "This device's own Sendspin player stays offline while "
+        '${container.settings.get(sendspinPlayerName).trim().isEmpty ? 'another player' : container.settings.get(sendspinPlayerName).trim()} '
+        'is controlled.',
+      ),
     // The live list right under the sort picker that orders it.
     // Rides the section's dependsOn: with the proxy off there is
     // nothing to list and none of these rows render.
