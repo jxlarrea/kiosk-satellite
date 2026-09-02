@@ -30,6 +30,7 @@ import {
   updateBrightnessGrantNotices,
   updateImmichValidateRow,
   updatePlayerRow,
+  updateSonosPage,
   updateMaValidateRow,
   updateMqttValidateRow,
 } from './panels.js';
@@ -1254,6 +1255,7 @@ export async function loadSettings() {
   updateMqttValidateRow();
   updateMaValidateRow();
   updatePlayerRow();
+  updateSonosPage();
 
   // Mirror of the device's Access card, under the Remote Administration
   // group on the Device tab. Here the address is simply where this page

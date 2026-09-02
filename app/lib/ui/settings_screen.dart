@@ -170,7 +170,7 @@ const _categories = <(String, String, Object, String)>[
     'Sendspin',
     'Media Player',
     Icons.play_circle_outline,
-    'Player, floating player, Now Playing',
+    'Music Assistant, Sendspin, Sonos',
   ),
   (
     'Cameras',
@@ -2565,7 +2565,7 @@ class _CategoryContentState extends State<_CategoryContent> {
     // from Music Assistant, and the rows about it are gone from this
     // page.
     if (widget.category == 'Sendspin' &&
-        container.settings.get(sendspinPlayer).trim().isNotEmpty)
+        container.settings.get(sendspinPlayerSource).isNotEmpty)
       sendspinPlayer.key: WarnRow(
         "This device's own Sendspin player stays offline while "
         '${container.settings.get(sendspinPlayerName).trim().isEmpty ? 'another player' : container.settings.get(sendspinPlayerName)} '
@@ -2866,6 +2866,23 @@ class _CategoryContentState extends State<_CategoryContent> {
                     !container.settings.get(themeMatchApp)))
               def,
         ]);
+      case 'Sonos' when widget.category == 'Sendspin':
+        // The setting, then the speakers the device knows: a live list
+        // with a search and an address field, which no definition can
+        // draw.
+        return [
+          ...sectioned([
+            for (final def in _defsFor(widget.category))
+              if (def.subpage == subpage) def,
+          ]),
+          const SectionHeading('Speakers'),
+          SearchLandingTarget(
+            id: 'x:sonos_speakers',
+            child: SettingsCard(
+              children: [_SonosSpeakersCard(container: container)],
+            ),
+          ),
+        ];
       default:
         return sectioned([
           for (final def in _defsFor(widget.category))
@@ -5057,18 +5074,16 @@ class _MaValidateRowState extends State<_MaValidateRow> {
   );
 }
 
-/// Which player the Now Playing surfaces follow (issue #265): this
-/// device's own Sendspin player, a Music Assistant player, or a Home
-/// Assistant media player — a wall tablet showing and controlling the
-/// kitchen speakers instead of itself. The lists are live, fetched when
-/// the row is tapped.
+/// Which player of the picked source the Now Playing surfaces follow
+/// (issue #265): a wall tablet showing and controlling the kitchen
+/// speakers instead of itself. The list is the source's, fetched when the
+/// row is tapped.
 class _PlayerRow extends StatefulWidget {
   const _PlayerRow({required this.container, required this.onChanged});
 
   final AppContainer container;
 
-  /// Rebuilds the pane: the local player's page entry and the warning
-  /// under this row come and go with the pick.
+  /// Rebuilds the pane: the warning under the source row names the pick.
   final VoidCallback onChanged;
 
   @override
@@ -5078,11 +5093,15 @@ class _PlayerRow extends StatefulWidget {
 class _PlayerRowState extends State<_PlayerRow> {
   Future<void> _pick() async {
     final container = widget.container;
+    final source = container.settings.get(sendspinPlayerSource);
     final current = container.settings.get(sendspinPlayer);
     final result = await showDialog<List<String>>(
       context: context,
-      builder: (ctx) =>
-          _PlayerPickerDialog(container: container, current: current),
+      builder: (ctx) => _PlayerPickerDialog(
+        container: container,
+        source: source,
+        current: current,
+      ),
     );
     if (result == null) return;
     await container.settings.set(sendspinPlayer, result[0]);
@@ -5092,7 +5111,7 @@ class _PlayerRowState extends State<_PlayerRow> {
     // sees the rows it should.
     await container.settings.set(
       sendspinPlayerActive,
-      container.settings.get(sendspinEnabled) || result[0].isNotEmpty,
+      container.settings.get(sendspinEnabled) || source.isNotEmpty,
     );
     if (mounted) setState(() {});
     widget.onChanged();
@@ -5102,8 +5121,8 @@ class _PlayerRowState extends State<_PlayerRow> {
   Widget build(BuildContext context) {
     final settings = widget.container.settings;
     final name = settings.get(sendspinPlayerName).trim();
-    final remote = settings.get(sendspinPlayer).trim().isNotEmpty;
-    final label = remote && name.isNotEmpty ? name : 'This device';
+    final picked = settings.get(sendspinPlayer).trim().isNotEmpty;
+    final label = picked && name.isNotEmpty ? name : 'Pick a player';
     return SettingsRow(
       title: Text(sendspinPlayer.title),
       subtitle: Text(sendspinPlayer.description),
@@ -5114,7 +5133,15 @@ class _PlayerRowState extends State<_PlayerRow> {
           children: [
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 200),
-              child: Text(label, overflow: TextOverflow.ellipsis),
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: picked
+                    ? null
+                    : TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+              ),
             ),
             const SizedBox(width: 6),
             const Icon(Icons.arrow_drop_down, size: 22),
@@ -5126,14 +5153,18 @@ class _PlayerRowState extends State<_PlayerRow> {
   }
 }
 
-/// The grouped player list: this device first, then every source's
-/// players under its own caption, each fetched live. A source that
-/// cannot be listed says why in its group instead of hiding. Past a
-/// handful of rows a search field filters by name and id.
+/// The picked source's players, fetched live. A source that cannot be
+/// listed says why instead of an empty list. Past a handful of rows a
+/// search field filters by name and id.
 class _PlayerPickerDialog extends StatefulWidget {
-  const _PlayerPickerDialog({required this.container, required this.current});
+  const _PlayerPickerDialog({
+    required this.container,
+    required this.source,
+    required this.current,
+  });
 
   final AppContainer container;
+  final String source;
   final String current;
 
   @override
@@ -5142,93 +5173,40 @@ class _PlayerPickerDialog extends StatefulWidget {
 
 class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
   List<Map<String, Object?>>? _players;
-  Map<String, String> _notes = const {};
-  String? _error;
+  String? _note;
   String _query = '';
 
-  static const _groups = <(String, String)>[
-    ('ma', 'Music Assistant'),
-    ('ha', 'Home Assistant'),
-    ('sonos', 'Sonos'),
-  ];
+  static const _titles = {
+    'ma': 'Music Assistant player',
+    'ha': 'Home Assistant media player',
+    'sonos': 'Sonos room',
+  };
 
   @override
   void initState() {
     super.initState();
-    widget.container.commands.execute('mediaPlayers', const {}).then((result) {
-      if (!mounted) return;
-      setState(() {
-        if (!result.ok) {
-          _error = result.error;
-          _players = const [];
-          return;
-        }
-        final data = result.data;
-        final list = data is Map ? data['players'] : null;
-        _players = [
-          for (final p in (list as List? ?? const []))
-            if (p is Map) p.cast<String, Object?>(),
-        ];
-        final notes = data is Map ? data['notes'] : null;
-        _notes = {
-          if (notes is Map)
-            for (final e in notes.entries) '${e.key}': '${e.value}',
-        };
-      });
-    });
-  }
-
-  Future<void> _addSonos() async {
-    final controller = TextEditingController();
-    final host = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add a Sonos by address'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.url,
-          decoration: const InputDecoration(hintText: '192.168.1.40'),
-          onSubmitted: (v) => Navigator.pop(ctx, v),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-    if (host == null || host.trim().isEmpty || !mounted) return;
-    final result = await widget.container.commands.execute('sonosAdd', {
-      'host': host.trim(),
-    });
-    if (!mounted) return;
-    if (!result.ok) {
-      showToast(
-        context,
-        title: 'No Sonos found',
-        message: result.error,
-        kind: ToastKind.error,
-      );
-      return;
-    }
-    final rows = [
-      for (final p in (result.data as List? ?? const []))
-        if (p is Map) p.cast<String, Object?>(),
-    ];
-    setState(() {
-      _notes = {..._notes}..remove('sonos');
-      _players = [
-        for (final p in _players ?? const <Map<String, Object?>>[])
-          if (p['group'] != 'sonos' || !rows.any((r) => r['id'] == p['id'])) p,
-        ...rows,
-      ];
-    });
+    widget.container.commands
+        .execute('mediaPlayers', {'source': widget.source})
+        .then((result) {
+          if (!mounted) return;
+          setState(() {
+            if (!result.ok) {
+              _note = result.error;
+              _players = const [];
+              return;
+            }
+            final data = result.data;
+            final list = data is Map ? data['players'] : null;
+            _players = [
+              for (final p in (list as List? ?? const []))
+                if (p is Map && p['group'] == widget.source)
+                  p.cast<String, Object?>(),
+            ];
+            final notes = data is Map ? data['notes'] : null;
+            final note = notes is Map ? notes[widget.source] : null;
+            _note = note == null ? null : '$note';
+          });
+        });
   }
 
   bool _matches(Map<String, Object?> p) {
@@ -5243,26 +5221,6 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
     final theme = Theme.of(context);
     final players = _players;
     final scheme = theme.colorScheme;
-    Widget caption(String text) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 4),
-      child: Text(
-        text.toUpperCase(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: scheme.onSurfaceVariant,
-          letterSpacing: 0.6,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-    Widget note(String text) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 4, 24, 10),
-      child: Text(
-        text,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: scheme.onSurfaceVariant,
-        ),
-      ),
-    );
     final body = players == null
         ? const Padding(
             padding: EdgeInsets.all(24),
@@ -5272,9 +5230,8 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
             groupValue: widget.current,
             onChanged: (value) {
               final id = value ?? '';
-              final name = id.isEmpty
-                  ? ''
-                  : '${players.firstWhere((p) => '${p['id']}' == id, orElse: () => const {})['name'] ?? ''}';
+              final name =
+                  '${players.firstWhere((p) => '${p['id']}' == id, orElse: () => const {})['name'] ?? ''}';
               Navigator.pop(context, [id, name]);
             },
             child: ListView(
@@ -5284,7 +5241,6 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
                     child: TextField(
-                      autofocus: false,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(Icons.search),
                         hintText: 'Search players',
@@ -5293,47 +5249,205 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
                       onChanged: (v) => setState(() => _query = v.trim()),
                     ),
                   ),
-                if (_error != null) note(_error!),
-                const RadioListTile<String>(
-                  value: '',
-                  title: Text('This device'),
-                  subtitle: Text('Sendspin player'),
-                ),
-                for (final (group, label) in _groups)
-                  if (group == 'sonos' ||
-                      _notes.containsKey(group) ||
-                      players.any((p) => p['group'] == group)) ...[
-                    caption(label),
-                    if (_notes.containsKey(group)) note(_notes[group]!),
-                    for (final p in players)
-                      if (p['group'] == group && _matches(p))
-                        RadioListTile<String>(
-                          value: '${p['id']}',
-                          title: Text('${p['name']}'),
-                          subtitle: p['available'] == false
-                              ? const Text('Offline')
-                              : p['sub'] != null
-                              ? Text('${p['sub']}')
-                              : null,
-                        ),
-                    // A speaker on another VLAN never answers the
-                    // search; its address does.
-                    if (group == 'sonos')
-                      ListTile(
-                        leading: const Icon(Icons.add),
-                        title: const Text('Add by address'),
-                        textColor: scheme.primary,
-                        iconColor: scheme.primary,
-                        onTap: _addSonos,
+                if (_note != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                    child: Text(
+                      _note!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
                       ),
-                  ],
+                    ),
+                  ),
+                for (final p in players)
+                  if (_matches(p))
+                    RadioListTile<String>(
+                      value: '${p['id']}',
+                      title: Text('${p['name']}'),
+                      subtitle: p['available'] == false
+                          ? const Text('Offline')
+                          : p['sub'] != null
+                          ? Text('${p['sub']}')
+                          : null,
+                    ),
               ],
             ),
           );
     return AlertDialog(
-      title: const Text('Player'),
+      title: Text(_titles[widget.source] ?? 'Player'),
       contentPadding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
       content: SizedBox(width: 440, child: body),
+    );
+  }
+}
+
+/// The Sonos page's speakers: every room the device knows, with a way to
+/// forget one, a search of the network for more, and an address field for
+/// a speaker the search cannot reach (another VLAN). Everything inline:
+/// no prompt, no popup.
+class _SonosSpeakersCard extends StatefulWidget {
+  const _SonosSpeakersCard({required this.container});
+
+  final AppContainer container;
+
+  @override
+  State<_SonosSpeakersCard> createState() => _SonosSpeakersCardState();
+}
+
+class _SonosSpeakersCardState extends State<_SonosSpeakersCard> {
+  List<Map<String, Object?>>? _speakers;
+  bool _busy = false;
+  final _host = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_load());
+  }
+
+  @override
+  void dispose() {
+    _host.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load({bool discover = false}) async {
+    setState(() => _busy = true);
+    final result = await widget.container.commands.execute('sonosSpeakers', {
+      'discover': discover,
+    });
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _speakers = [
+        for (final p in (result.data as List? ?? const []))
+          if (p is Map) p.cast<String, Object?>(),
+      ];
+    });
+    if (discover && (_speakers?.isEmpty ?? true)) {
+      showToast(
+        context,
+        title: 'No Sonos found',
+        message: 'Nothing answered on this network. Add one by address.',
+        kind: ToastKind.warning,
+      );
+    }
+  }
+
+  Future<void> _add() async {
+    final host = _host.text.trim();
+    if (host.isEmpty) return;
+    setState(() => _busy = true);
+    final result = await widget.container.commands.execute('sonosAdd', {
+      'host': host,
+    });
+    if (!mounted) return;
+    if (!result.ok) {
+      setState(() => _busy = false);
+      showToast(
+        context,
+        title: 'No Sonos found',
+        message: result.error,
+        kind: ToastKind.error,
+      );
+      return;
+    }
+    _host.clear();
+    await _load();
+  }
+
+  Future<void> _forget(String id) async {
+    await widget.container.commands.execute('sonosForget', {'id': id});
+    await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final speakers = _speakers;
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (speakers == null)
+          const ListTile(title: Text('Looking…'))
+        else if (speakers.isEmpty)
+          const ListTile(
+            title: Text('No speakers yet'),
+            subtitle: Text(
+              'Search this network, or add a speaker by its address.',
+            ),
+          )
+        else
+          for (final p in speakers)
+            ListTile(
+              leading: const Icon(Icons.speaker_outlined),
+              title: Text('${p['name']}'),
+              subtitle: Text('${p['host']}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Forget',
+                onPressed: _busy ? null : () => _forget('${p['id']}'),
+              ),
+            ),
+        const Divider(height: 1),
+        SettingsRow(
+          title: const Text('Search the network'),
+          subtitle: const Text(
+            'Finds the speakers on this network. A speaker on another '
+            'network never answers; add it by address below.',
+          ),
+          trailing: _busy
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.4),
+                )
+              : OutlinedButton(
+                  onPressed: () => _load(discover: true),
+                  child: const Text('Search'),
+                ),
+        ),
+        SettingsRow(
+          title: const Text('Add by address'),
+          subtitle: const Text(
+            'The speaker\'s address on the network. Its whole household '
+            'is remembered from it.',
+          ),
+          stack: true,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 200,
+                child: TextField(
+                  controller: _host,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    hintText: '192.168.1.40',
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => _add(),
+                ),
+              ),
+              const SizedBox(width: 12),
+              FilledButton(
+                onPressed: _busy ? null : _add,
+                child: const Text('Add'),
+              ),
+            ],
+          ),
+        ),
+        if (speakers != null && speakers.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+            child: Text(
+              'Pick a room under Player source, Sonos.',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
+      ],
     );
   }
 }

@@ -47,6 +47,7 @@ const Map<String, Object> subpageIcons = {
   // here; it wears the mark the category rail used to.
   'Sendspin Player': Icons.speaker_group_outlined,
   'Music Assistant': 'assets/svg/music-assistant.svg',
+  'Sonos': Icons.speaker_outlined,
   'Floating Player': Icons.picture_in_picture_alt_outlined,
   'Now Playing': Icons.fullscreen,
   // ESPHome.

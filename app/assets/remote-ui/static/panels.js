@@ -141,103 +141,178 @@ export function updateMaValidateRow() {
   anchor.insertAdjacentElement('afterend', row);
 }
 
-/* Which player the Now Playing surfaces follow (issue #265): this device's
-   own Sendspin player, a Music Assistant player or a Home Assistant media
-   player. The definition renders as a text field; this swaps in the
-   grouped select the device's picker dialog offers, fed by the
-   mediaPlayers command, and puts the device's warning under it while
-   another player is followed. */
+/* Which player of the picked source the Now Playing surfaces follow
+   (issue #265). The definition renders as a text field; this swaps in a
+   select fed by the mediaPlayers command for that source, and puts the
+   device's warning under the source row while another source is picked. */
 export async function updatePlayerRow() {
   const tab = document.getElementById('tab-sendspin');
   if (!tab) return;
-  const row = tab.querySelector('[data-key="sendspin.player"]');
-  if (!row || row.querySelector('select')) return;
   const byKey = Object.fromEntries(
     (state.settings || []).map((s) => [s.key, s]));
+  const source = byKey['sendspin.player_source']?.value || '';
   const currentId = byKey['sendspin.player']?.value || '';
   const currentName = byKey['sendspin.player_name']?.value || '';
+  // A source change flips rows across pages (the whole local player page
+  // next door), so the page re-renders on it.
+  const sourceSel = tab.querySelector('[data-key="sendspin.player_source"] select');
+  if (sourceSel && !sourceSel.dataset.playerHook) {
+    sourceSel.dataset.playerHook = '1';
+    sourceSel.addEventListener('change', () => setTimeout(loadSettings, 400));
+  }
+  const sourceRow = tab.querySelector('[data-key="sendspin.player_source"]');
+  if (sourceRow && source && !tab.querySelector('.player-warn')) {
+    const note = hintRow(`This device's own Sendspin player stays offline `
+      + `while ${currentName || 'another player'} is controlled.`, { warn: true });
+    note.classList.add('player-warn');
+    sourceRow.insertAdjacentElement('afterend', note);
+  }
+  const row = tab.querySelector('[data-key="sendspin.player"]');
+  if (!row || !source || row.querySelector('select')) return;
   row.querySelectorAll('input, select').forEach((el) => el.remove());
   const sel = document.createElement('select');
   sel.className = 'field';
   sel.style.cssText = 'flex-shrink:0; max-width:240px;';
-  const add = (parent, value, label) => {
+  const add = (value, label) => {
     const option = document.createElement('option');
     option.value = value; option.textContent = label;
     option.selected = value === currentId;
-    parent.appendChild(option);
+    sel.appendChild(option);
     return option;
   };
-  add(sel, '', 'This device');
-  if (currentId) add(sel, currentId, currentName || currentId);
+  add('', 'Pick a player');
+  if (currentId) add(currentId, currentName || currentId);
   row.appendChild(sel);
-  if (currentId) {
-    const note = hintRow(`This device's own Sendspin player stays offline `
-      + `while ${currentName || 'another player'} is controlled.`, { warn: true });
-    note.classList.add('player-warn');
-    row.insertAdjacentElement('afterend', note);
-  }
   let res;
-  try { res = await (await api('/api/commands/mediaPlayers', { method: 'POST', body: '{}' })).json(); }
-  catch (_) { res = { ok: false }; }
-  const players = res.ok && Array.isArray(res.data?.players) ? res.data.players : null;
+  try {
+    res = await (await api('/api/commands/mediaPlayers', {
+      method: 'POST', body: JSON.stringify({ source }) })).json();
+  } catch (_) { res = { ok: false }; }
+  const players = res.ok && Array.isArray(res.data?.players)
+    ? res.data.players.filter((p) => p.group === source) : null;
   if (players) {
-    // Rebuild from the live lists, keeping the selection.
+    // Rebuild from the live list, keeping the selection.
     sel.textContent = '';
-    add(sel, '', 'This device');
-    const notes = res.data.notes || {};
+    add('', 'Pick a player');
+    const note = (res.data.notes || {})[source];
+    if (note && !players.length) add(`note:${source}`, note).disabled = true;
     let seen = false;
-    for (const [group, label] of [['ma', 'Music Assistant'], ['ha', 'Home Assistant'], ['sonos', 'Sonos']]) {
-      const rows = players.filter((p) => p.group === group);
-      if (!rows.length && !notes[group] && group !== 'sonos') continue;
-      const og = document.createElement('optgroup');
-      og.label = label;
-      if (notes[group] && !rows.length) {
-        const o = add(og, `note:${group}`, notes[group]);
-        o.disabled = true;
-      }
-      for (const p of rows) {
-        if (p.id === currentId) seen = true;
-        add(og, p.id, p.available === false ? `${p.name} (offline)` : p.name);
-      }
-      // A speaker on another VLAN never answers the search; its address does.
-      if (group === 'sonos') add(og, 'add:sonos', 'Add by address\u2026');
-      sel.appendChild(og);
+    for (const p of players) {
+      if (p.id === currentId) seen = true;
+      add(p.id, p.available === false ? `${p.name} (offline)` : p.name);
     }
-    if (currentId && !seen) add(sel, currentId, currentName || currentId);
+    if (currentId && !seen) add(currentId, currentName || currentId);
   }
   sel.addEventListener('change', async () => {
-    if (sel.value === 'add:sonos') {
-      sel.value = currentId;
-      const host = window.prompt('Sonos address', '');
-      if (!host) return;
-      let out;
-      try { out = await (await api('/api/commands/sonosAdd', { method: 'POST', body: JSON.stringify({ host: host.trim() }) })).json(); }
-      catch (_) { out = { ok: false, error: 'The device did not answer.' }; }
-      if (!out.ok) { showToast({ title: 'No Sonos found', message: out.error || '', kind: 'error' }); return; }
-      showToast({ title: 'Sonos added', message: (out.data || []).map((p) => p.name).join(', '), kind: 'success' });
-      // The rows come back through the live list on the re-render.
-      row.querySelector('select')?.remove();
-      await updatePlayerRow();
-      return;
-    }
     const name = sel.value
       ? ((players || []).find((p) => p.id === sel.value) || {}).name
         || sel.options[sel.selectedIndex].textContent
       : '';
-    // player_active mirrors what the device computes: the card rows gate
-    // on it (local enabled OR another player followed).
-    const active = sel.value !== ''
-      || byKey['sendspin.enabled']?.value === true;
     await api('/api/settings', { method: 'PATCH', body: JSON.stringify({
       'sendspin.player': sel.value,
       'sendspin.player_name': name,
-      'sendspin.player_active': active,
+      'sendspin.player_active': true,
     }) });
-    // The pick flips rows across pages (the whole local player page
-    // next door), which syncGatedRows cannot place; take the full
-    // re-render.
     await loadSettings();
   });
+}
+
+/* The Sonos page's speakers, under its setting: every room the device
+   knows with a Forget, a search of the network, and an address field for a
+   speaker the search cannot reach. Mirror of the device's card. */
+export async function updateSonosPage() {
+  const panel = document.querySelector('#tab-sendspin > .subpage[data-subpage="Sonos"]');
+  if (!panel || panel.querySelector('.sonos-speakers')) return;
+  const h = document.createElement('h2');
+  h.className = 'card-title';
+  h.textContent = 'Speakers';
+  const card = document.createElement('div');
+  card.className = 'card sonos-speakers';
+  panel.append(h, card);
+  const list = document.createElement('div');
+  card.appendChild(list);
+  const render = (speakers) => {
+    list.textContent = '';
+    if (!speakers.length) {
+      list.appendChild(readOnlyRow('No speakers yet',
+        'Search this network, or add a speaker by its address.', ''));
+    }
+    for (const p of speakers) {
+      const r = readOnlyRow(p.name, p.host, '');
+      r.querySelector('span')?.remove();
+      const forget = document.createElement('button');
+      forget.className = 'icon-btn';
+      forget.title = 'Forget';
+      forget.setAttribute('aria-label', 'Forget');
+      forget.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
+      forget.addEventListener('click', async () => {
+        const out = await (await api('/api/commands/sonosForget', {
+          method: 'POST', body: JSON.stringify({ id: p.id }) })).json();
+        if (out.ok) render(out.data || []);
+      });
+      r.appendChild(forget);
+      list.appendChild(r);
+    }
+  };
+  const load = async (discover) => {
+    let out;
+    try {
+      out = await (await api('/api/commands/sonosSpeakers', {
+        method: 'POST', body: JSON.stringify({ discover }) })).json();
+    } catch (_) { out = { ok: false }; }
+    render(out.ok ? (out.data || []) : []);
+    if (discover && out.ok && !(out.data || []).length) {
+      showToast({ title: 'No Sonos found',
+        message: 'Nothing answered on this network. Add one by address.', kind: 'warning' });
+    }
+  };
+  const search = readOnlyRow('Search the network',
+    'Finds the speakers on this network. A speaker on another network never '
+    + 'answers; add it by address below.', '');
+  search.querySelector('span')?.remove();
+  const searchBtn = document.createElement('button');
+  searchBtn.className = 'btn-ghost';
+  searchBtn.textContent = 'Search';
+  searchBtn.addEventListener('click', async () => {
+    searchBtn.disabled = true; searchBtn.textContent = 'Searching…';
+    await load(true);
+    searchBtn.disabled = false; searchBtn.textContent = 'Search';
+  });
+  search.appendChild(searchBtn);
+  card.appendChild(search);
+  const addRow = readOnlyRow('Add by address',
+    "The speaker's address on the network. Its whole household is remembered from it.", '');
+  addRow.querySelector('span')?.remove();
+  const controls = document.createElement('div');
+  controls.style.cssText = 'display:flex; gap:10px; align-items:center;';
+  const input = document.createElement('input');
+  input.className = 'field';
+  input.placeholder = '192.168.1.40';
+  input.style.cssText = 'width: 180px;';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn-primary';
+  addBtn.textContent = 'Add';
+  const add = async () => {
+    const host = input.value.trim();
+    if (!host) return;
+    addBtn.disabled = true;
+    let out;
+    try {
+      out = await (await api('/api/commands/sonosAdd', {
+        method: 'POST', body: JSON.stringify({ host }) })).json();
+    } catch (_) { out = { ok: false, error: 'The device did not answer.' }; }
+    addBtn.disabled = false;
+    if (!out.ok) { showToast({ title: 'No Sonos found', message: out.error || '', kind: 'error' }); return; }
+    input.value = '';
+    showToast({ title: 'Sonos added', message: (out.data || []).map((p) => p.name).join(', '), kind: 'success' });
+    await load(false);
+  };
+  addBtn.addEventListener('click', add);
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
+  controls.append(input, addBtn);
+  addRow.appendChild(controls);
+  card.appendChild(addRow);
+  await load(false);
 }
 
 /* Both notices land between the Screen card and the Audio Volume heading,

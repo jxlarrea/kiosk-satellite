@@ -300,6 +300,7 @@ void main() {
         'ks.${defs.sendspinMaUrl.key}': 'ma.local',
         'ks.${defs.sendspinMaToken.key}': 'token',
         'ks.${defs.sendspinPlayer.key}': player,
+        if (player.isNotEmpty) 'ks.${defs.sendspinPlayerSource.key}': 'ma',
         'ks.${defs.sendspinPlayerName.key}': 'Kitchen',
         'ks.${defs.sendspinLyrics.key}': true,
       });
@@ -457,9 +458,12 @@ void main() {
       expect(settings.visible(defs.sendspinFullscreen), isTrue);
       expect(settings.visible(defs.sendspinDismissKeepsPlaying), isTrue);
 
-      await settings.set(defs.sendspinPlayer, '');
+      // Back to this device: the source pick clears the player pick too.
+      await settings.set(defs.sendspinPlayerSource, '');
       // The manager recomputes the surface flag over the async bus.
       await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+      expect(settings.get(defs.sendspinPlayer), '');
       expect(settings.visible(defs.sendspinLyrics), isTrue);
       expect(settings.visible(defs.sendspinEnabled), isTrue);
       expect(settings.visible(defs.sendspinServer), isTrue);
@@ -471,7 +475,7 @@ void main() {
       await build(enabled: false);
       expect(settings.get(defs.sendspinPlayerActive), isTrue);
 
-      await settings.set(defs.sendspinPlayer, '');
+      await settings.set(defs.sendspinPlayerSource, '');
       await Future<void>.delayed(Duration.zero);
       await Future<void>.delayed(Duration.zero);
       expect(settings.get(defs.sendspinPlayerActive), isFalse);

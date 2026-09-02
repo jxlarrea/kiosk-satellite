@@ -26,14 +26,15 @@ voice control through Voice Satellite.
 ## Setup
 
 Settings → **Media Player** on the device, or the matching tab in the
-remote admin. The page opens on the **Player** picker, then one entry per
-page: Sendspin Player, Music Assistant, Floating Player and Now Playing.
+remote admin. The page opens on the player pick, then one entry per page:
+Sendspin Player, Music Assistant, Sonos, Floating Player and Now Playing.
 
 ### Player
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Player | This device | What the floating player and Now Playing show and control: this device's own Sendspin player, a Music Assistant player, a Home Assistant media player, or a Sonos room. Described under Following another player. |
+| Player source | This device | What the floating player and Now Playing show and control: this device's own Sendspin player, or a player in Home Assistant, Music Assistant or a Sonos household. Anything but this device takes the local player offline. |
+| Player | | Shown for any source but this device: that source's players, described under Following another player. |
 
 ### Sendspin Player
 
@@ -70,6 +71,16 @@ shortcut.
 | Close after inactivity | 0s | Seconds without a touch on the Music Assistant page before it closes itself and the dashboard returns. Zero leaves it open until someone closes it. |
 | Hide the close button | off | Remove the floating close button from the Music Assistant page, for the corner it shares with the page's own controls. The back button and the inactivity timer still close it. |
 
+### Sonos
+
+The speakers the kiosk follows directly, described under Following another
+player.
+
+| Setting | Default | Notes |
+| --- | --- | --- |
+| Adjust the group volume | on | While the followed room plays in a group, the Now Playing volume slider sets the whole group's volume, the way the Sonos app's group slider does. Off, only that room's. |
+| Speakers | | Every room the kiosk knows, each with a Forget. **Search** finds the speakers on the tablet's own network. **Add by address** takes a speaker's IP for one the search cannot reach, reads the household from it and remembers every room. |
+
 ### Floating Player
 
 | Setting | Default | Notes |
@@ -95,10 +106,10 @@ shortcut.
 ## Following another player
 
 By default the floating card and the "Now Playing" screen belong to this
-device's own player: what plays here is what they show. **Player** points
-them at a player elsewhere instead, for the wall tablet whose job is to
-show and steer the music without making any of it. The picker lists every
-source it can reach:
+device's own player: what plays here is what they show. **Player source**
+points them at a player elsewhere instead, for the wall tablet whose job
+is to show and steer the music without making any of it, and the
+**Player** dropdown under it lists that source's players:
 
 - **This device**, the Sendspin player above.
 - **Music Assistant** players, the server's own list, when its address and
@@ -109,10 +120,9 @@ source it can reach:
 - **Sonos** rooms, read from the speakers themselves over their local
   interface, with no Home Assistant or Music Assistant in between. The
   list names every room of the household the way the Sonos app does,
-  rooms playing together as one entry. Speakers are found by a search on
-  the tablet's own network; a speaker on another VLAN never answers that,
-  so **Add by address** takes its IP, reads the household from it and
-  remembers it, after which its rooms list without a search.
+  rooms playing together as one entry. The speakers come from the Sonos
+  page: found by its search on the tablet's own network, or added there by
+  address for a speaker on another VLAN, which the search never reaches.
 
 Pick a player and the card, the full-screen view and the transport buttons
 all follow it: its track, its artwork, its progress, its play and pause,
@@ -421,10 +431,10 @@ license and attribution ship in the source tree.
   sends its now-playing snapshots on its own schedule, after the audio
   boundary. The card keeps the previous song on screen and cross-fades
   when the update arrives.
-- **No Sonos found**: the search is a multicast on the tablet's own
-  network, which a speaker on another VLAN never hears. Add it by address
-  instead; the kiosk needs to reach the speaker on port 1400, which a
-  router between the two usually allows.
+- **No Sonos found**: the Sonos page's search is a multicast on the
+  tablet's own network, which a speaker on another VLAN never hears. Add
+  it by address on that page instead; the kiosk needs to reach the
+  speaker on port 1400, which a router between the two usually allows.
 - **A followed Home Assistant player shows no track**: the entity has to
   report a `media_title`. Players that only stream line-in or a TV input
   carry none, and the card stays empty until something with metadata

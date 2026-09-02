@@ -222,6 +222,7 @@ class SendspinManager extends Manager {
     required String uuid,
     required void Function(Map<String, Object?>?) onSnapshot,
     required Logger log,
+    bool groupVolume,
   })
   sonosRemoteFactory = SonosPlayer.new;
 
@@ -613,10 +614,16 @@ class SendspinManager extends Manager {
     });
 
     bus.on<SettingChanged>().listen((e) {
-      // The card-surface flag rides the two settings that decide it.
+      // The card-surface flag rides the settings that decide it.
       if (e.key == defs.sendspinPlayer.key ||
+          e.key == defs.sendspinPlayerSource.key ||
           e.key == defs.sendspinEnabled.key) {
         _syncFlags();
+      }
+      // The source filters the pick: a pick from another source, or any
+      // pick once the source is this device again, is stale.
+      if (e.key == defs.sendspinPlayerSource.key) {
+        unawaited(_reconcilePick());
       }
       // The lyrics toggle flipping mid-track (the Now Playing view's
       // button, or either settings surface): fetch for the track already
@@ -644,9 +651,11 @@ class SendspinManager extends Manager {
       // to the local player's enable switch: following a remote player is
       // what the device does INSTEAD of being a player.
       if (e.key == defs.sendspinPlayer.key ||
+          e.key == defs.sendspinPlayerSource.key ||
           e.key == defs.sendspinMaUrl.key ||
           e.key == defs.sendspinMaToken.key ||
           e.key == defs.sendspinSonosHosts.key ||
+          e.key == defs.sendspinSonosGroupVolume.key ||
           e.key == defs.haUrl.key ||
           e.key == defs.haToken.key) {
         _syncRemote();
@@ -698,6 +707,7 @@ class SendspinManager extends Manager {
         // runs at all, so it goes through the restart below.
         'sendspin.player_name',
         'sendspin.sonos_hosts',
+        'sendspin.sonos_group_volume',
         'sendspin.player_active',
         'sendspin.local_player_name',
       ];
@@ -842,13 +852,19 @@ class SendspinManager extends Manager {
         name: 'mediaPlayers',
         description:
             'The players the Now Playing surfaces can follow, grouped by '
-            'source: Music Assistant players, Home Assistant media players. '
-            'Returns id, name, group and availability per player, and a '
-            'note per group that could not be listed.',
-        handler: (_) async {
+            'source: Music Assistant players, Home Assistant media players, '
+            'Sonos rooms. Returns id, name, group and availability per '
+            'player, and a note per group that could not be listed. With '
+            'source set, only that group.',
+        params: const {'source': 'ma | ha | sonos, default all'},
+        handler: (p) async {
+          final only = '${p['source'] ?? ''}'.trim();
+          bool want(String group) => only.isEmpty || only == group;
           final players = <Map<String, Object?>>[];
           final notes = <String, String>{};
-          if (_maConfigured) {
+          if (!want('ma')) {
+            // Skipped.
+          } else if (_maConfigured) {
             try {
               players.addAll(await _maPlayers());
             } catch (e) {
@@ -859,7 +875,9 @@ class SendspinManager extends Manager {
           }
           final haUrl = defs.normalizeBaseUrl(_settings.get(defs.haUrl));
           final haToken = _settings.get(defs.haToken).trim();
-          if (haUrl.isEmpty || haToken.isEmpty) {
+          if (!want('ha')) {
+            // Skipped.
+          } else if (haUrl.isEmpty || haToken.isEmpty) {
             notes['ha'] = 'Connect Home Assistant to list its media players.';
           } else {
             try {
@@ -868,13 +886,51 @@ class SendspinManager extends Manager {
               notes['ha'] = 'Home Assistant did not answer: $e';
             }
           }
-          final sonos = await _sonosPlayers(discover: true);
-          if (sonos.isEmpty) {
-            notes['sonos'] =
-                'No Sonos found on this network. Add one by its address.';
+          if (want('sonos')) {
+            // The rooms of the speakers the Sonos page knows; the search
+            // there finds new ones.
+            final sonos = await _sonosPlayers(discover: false);
+            if (sonos.isEmpty) {
+              notes['sonos'] =
+                  'No Sonos speakers known yet. Find or add one on the '
+                  'Sonos page.';
+            }
+            players.addAll(sonos);
           }
-          players.addAll(sonos);
           return CommandResult.ok({'players': players, 'notes': notes});
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'sonosSpeakers',
+        description:
+            'The Sonos speakers this device knows, by room: id, name and '
+            'address. With discover, a search on the network first.',
+        params: const {'discover': 'true to search the network first'},
+        handler: (p) async {
+          if (p['discover'] == true) {
+            await _sonosPlayers(discover: true);
+          }
+          return CommandResult.ok(_sonosSpeakerRows());
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'sonosForget',
+        description: 'Forget a Sonos speaker the device knows, by id.',
+        params: const {'id': 'the speaker id (RINCON_...)'},
+        handler: (p) async {
+          final id = '${p['id'] ?? ''}'.trim();
+          final hosts = _sonosHosts;
+          if (!hosts.containsKey(id))
+            return const CommandResult.fail('unknown');
+          hosts.remove(id);
+          await _settings.set(defs.sendspinSonosHosts, jsonEncode(hosts));
+          return CommandResult.ok(_sonosSpeakerRows());
         },
       ),
     );
@@ -1008,8 +1064,39 @@ class SendspinManager extends Manager {
     return _sonosRows(groups);
   }
 
-  /// Another player is picked, whether or not its system is reachable.
-  bool get _remotePicked => !_source.isLocal;
+  /// Another source is picked, whether or not a player of it is yet, or
+  /// its system reachable: the device is a remote control from the
+  /// source pick on.
+  bool get _remotePicked =>
+      _settings.get(defs.sendspinPlayerSource).isNotEmpty || !_source.isLocal;
+
+  /// Keep the pick of the source: a source switched back to this device
+  /// drops the pick, a source switched to another system drops a pick
+  /// that belongs elsewhere.
+  Future<void> _reconcilePick() async {
+    final sourceKey = _settings.get(defs.sendspinPlayerSource);
+    final picked = _source;
+    final kind = switch (sourceKey) {
+      'ha' => PlayerSourceKind.homeAssistant,
+      'ma' => PlayerSourceKind.musicAssistant,
+      'sonos' => PlayerSourceKind.sonos,
+      _ => PlayerSourceKind.local,
+    };
+    if (picked.isLocal || picked.kind == kind) return;
+    await _settings.set(defs.sendspinPlayer, '');
+    await _settings.set(defs.sendspinPlayerName, '');
+  }
+
+  /// The known speakers by room, for the Sonos page.
+  List<Map<String, Object?>> _sonosSpeakerRows() =>
+      [
+        for (final e in _sonosHosts.entries)
+          {'id': e.key, 'name': e.value['name'], 'host': e.value['host']},
+      ]..sort(
+        (a, b) => '${a['name']}'.toLowerCase().compareTo(
+          '${b['name']}'.toLowerCase(),
+        ),
+      );
 
   /// Music Assistant's players, for the picker. This device's own player
   /// has no business in the list: "This device" already is that choice,
@@ -1107,7 +1194,9 @@ class SendspinManager extends Manager {
             PlayerSourceKind.musicAssistant =>
               'ma|${source.id}|$maUrl|$maToken',
             PlayerSourceKind.homeAssistant => 'ha|${source.id}|$haUrl|$haToken',
-            PlayerSourceKind.sonos => 'sonos|${source.id}|$sonosHost',
+            PlayerSourceKind.sonos =>
+              'sonos|${source.id}|$sonosHost|'
+                  '${_settings.get(defs.sendspinSonosGroupVolume)}',
             _ => '',
           }
         : '';
@@ -1140,6 +1229,7 @@ class SendspinManager extends Manager {
         uuid: source.id,
         onSnapshot: _onRemoteSnapshot,
         log: log,
+        groupVolume: _settings.get(defs.sendspinSonosGroupVolume),
       ),
       _ => remoteFactory(
         baseUrl: maUrl,

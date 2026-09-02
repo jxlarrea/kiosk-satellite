@@ -280,6 +280,19 @@ class SettingsManager extends Manager {
       await _prefs.remove('${_prefix}sendspin.ma_player');
       await _prefs.remove('${_prefix}sendspin.ma_player_name');
     }
+    // The pick is filtered by a source now: a pick stored before the
+    // source existed names its own.
+    final picked = _prefs.getString('${_prefix}sendspin.player') ?? '';
+    if (picked.trim().isNotEmpty &&
+        (_prefs.getString('${_prefix}sendspin.player_source') ?? '').isEmpty) {
+      final source = picked.startsWith('ha:')
+          ? 'ha'
+          : picked.startsWith('sonos:')
+          ? 'sonos'
+          : 'ma';
+      await _prefs.setString('${_prefix}sendspin.player_source', source);
+      log.info(name, 'migrated sendspin.player_source = $source');
+    }
     // The wake word master switch is retired (hidden, forced on): with the
     // switch gone from the UI, a stored false would strand detection off
     // with no way back, so it is rewritten once.

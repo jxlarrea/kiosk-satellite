@@ -355,6 +355,15 @@ const List<SettingsSearchEntry> handBuiltSearchEntries = [
     subpage: 'Kiosk Satellite Service',
   ),
   SettingsSearchEntry(
+    category: 'Sendspin',
+    title: 'Speakers',
+    description:
+        'The Sonos speakers this device knows, a search of the network '
+        'and an address field.',
+    anchorId: 'x:sonos_speakers',
+    subpage: 'Sonos',
+  ),
+  SettingsSearchEntry(
     category: 'Device',
     title: 'Required system permissions',
     description: 'The grants the Kiosk Satellite Service needs.',

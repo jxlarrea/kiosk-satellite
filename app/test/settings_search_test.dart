@@ -12,7 +12,7 @@ const _pages = <(String, String, String)>[
   ('Browser', 'Web Browsing', 'Cache, SSL'),
   ('Screensaver', 'Screensaver', 'Idle timeout'),
   ('Camera', 'Camera', 'Device camera'),
-  ('Sendspin', 'Media Player', 'Player, floating player, Now Playing'),
+  ('Sendspin', 'Media Player', 'Music Assistant, Sendspin, Sonos'),
   ('Kiosk', 'Kiosk Mode', 'Exit gesture'),
   ('Device', 'Device', 'Name, app theme'),
 ];

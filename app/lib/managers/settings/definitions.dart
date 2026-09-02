@@ -211,6 +211,7 @@ const Map<String, String> subpageHints = {
   // Media Player.
   'Sendspin Player': 'Make this device a synchronized Music Assistant player',
   'Music Assistant': 'Server, token, kiosk menu shortcut',
+  'Sonos': 'Speakers on the network, add one by address',
   'Floating Player': 'The small card over the dashboard',
   'Now Playing': 'Full-screen view while music plays',
   // ESPHome.
@@ -4400,23 +4401,44 @@ const cameraConfig = SettingDef<String>(
 // The category keeps its Sendspin id and keys from when it was only the
 // local player.
 
+/// Where the player the surfaces follow lives: this device, or one of the
+/// systems that can list players. The pick below is filtered to it, and
+/// anything but this device takes the local Sendspin player offline.
+const sendspinPlayerSource = SettingDef<String>(
+  key: 'sendspin.player_source',
+  type: SettingType.select,
+  defaultValue: '',
+  title: 'Player source',
+  description:
+      'What the floating player and Now Playing show and control: this '
+      'device, or a player elsewhere.',
+  category: 'Sendspin',
+  options: ['', 'ha', 'ma', 'sonos'],
+  optionLabels: {
+    '': 'This device',
+    'ha': 'Home Assistant',
+    'ma': 'Music Assistant',
+    'sonos': 'Sonos',
+  },
+);
+
 /// Which player the floating card, the full-screen view and the transport
 /// controls follow: empty is this device's own Sendspin player, otherwise
 /// `ma:<player id>` for a Music Assistant player, `ha:<entity id>` for a
 /// Home Assistant media player or `sonos:<player id>` for a Sonos speaker
-/// followed directly. Visible so both settings surfaces place it first,
-/// but its row is hand-built on each: a grouped picker fed by the live
-/// player lists, never a text field.
+/// followed directly, always of the source picked above. Visible so both
+/// settings surfaces place it under the source, but its row is
+/// hand-built on each: a picker fed by that source's live player list,
+/// never a text field.
 const sendspinPlayer = SettingDef<String>(
   key: 'sendspin.player',
   type: SettingType.string,
   defaultValue: '',
   title: 'Player',
-  description:
-      'What the floating player and Now Playing show and control: this '
-      'device, or a player elsewhere.',
+  description: 'The player of that source to show and control.',
   category: 'Sendspin',
-  section: 'Player',
+  dependsOn: 'sendspin.player_source',
+  dependsOnValue: ['ha', 'ma', 'sonos'],
 );
 
 /// The picked player's display name: what the settings rows show and what
@@ -4430,6 +4452,22 @@ const sendspinPlayerName = SettingDef<String>(
   description: 'Internal display name of the controlled player.',
   category: 'Sendspin',
   hidden: true,
+);
+
+/// Whether the Now Playing volume slider sets the whole group's volume
+/// while the followed Sonos room plays in one, the way the Sonos app's
+/// group slider does, or only the room's own.
+const sendspinSonosGroupVolume = SettingDef<bool>(
+  key: 'sendspin.sonos_group_volume',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Adjust the group volume',
+  description:
+      'While the followed room plays in a group, the volume slider sets '
+      "the whole group's volume. Off, only that room's.",
+  category: 'Sendspin',
+  subpage: 'Sonos',
+  section: 'Sonos',
 );
 
 /// The Sonos speakers this device has met, as JSON: player id to host
@@ -4448,11 +4486,11 @@ const sendspinSonosHosts = SettingDef<String>(
 
 const sendspinEnabled = SettingDef<bool>(
   key: 'sendspin.enabled',
-  // Gone while another player is followed (issue #265): the local player
+  // Gone while another source is picked (issue #265): the local player
   // never runs in that mode, so the switch could not do anything. The
   // local-audio rows below ride this dependsOn transitively, and the
   // page entry goes with them.
-  dependsOn: 'sendspin.player',
+  dependsOn: 'sendspin.player_source',
   dependsOnValue: '',
   type: SettingType.boolean,
   defaultValue: false,
@@ -5892,9 +5930,9 @@ const List<SettingDef<Object>> allSettings = [
   // Music Assistant leads the page it names: the server is what the kiosk
   // browses, asks for lyrics and hands people through the menu, and the
   // Sendspin player below is one of the things it drives.
+  sendspinPlayerSource,
   sendspinPlayer,
   sendspinPlayerName,
-  sendspinSonosHosts,
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,
@@ -5905,6 +5943,8 @@ const List<SettingDef<Object>> allSettings = [
   sendspinMaShortcut,
   sendspinMaAutoClose,
   sendspinMaHideClose,
+  sendspinSonosGroupVolume,
+  sendspinSonosHosts,
   sendspinShowPlayer,
   sendspinPlayerSize,
   sendspinPausedHideMinutes,

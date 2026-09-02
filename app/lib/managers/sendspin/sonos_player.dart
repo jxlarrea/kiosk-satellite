@@ -24,8 +24,13 @@ class SonosPlayer implements RemotePlayer {
     required this.uuid,
     required this.onSnapshot,
     required this.log,
+    this.groupVolume = true,
     this.clientFactory = SonosClient.new,
   });
+
+  /// Whether the volume slider sets the whole group's volume while the
+  /// room plays in one, or only the room's own.
+  final bool groupVolume;
 
   static const _name = 'sendspin';
 
@@ -120,7 +125,9 @@ class SonosPlayer implements RemotePlayer {
       if (_ticks % 5 == 0) {
         final settings = await co.transportSettings();
         _shuffle = (settings['PlayMode'] ?? '').contains('SHUFFLE');
-        _volume = _grouped ? await co.groupVolume() : await _room.volume();
+        _volume = _grouped && groupVolume
+            ? await co.groupVolume()
+            : await _room.volume();
       }
       _ticks++;
       _publish(transport, position);
@@ -314,7 +321,7 @@ class SonosPlayer implements RemotePlayer {
   @override
   Future<bool> setVolume(int percent) async {
     try {
-      if (_grouped) {
+      if (_grouped && groupVolume) {
         await _coordinator.setGroupVolume(percent);
       } else {
         await _room.setVolume(percent);

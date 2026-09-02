@@ -22,6 +22,8 @@ export const SEARCH_CATEGORY_TABS = {
 export const DEFLESS_SUBPAGES = [['voicesatellite', 'Appearance'],
   ['device', 'Hardware'], ['device', 'Home Assistant'], ['device', 'WebView']];
 export const SEARCH_EXTRAS = [
+  { tab: 'sendspin', title: 'Speakers', sub: 'Sonos',
+    desc: 'The Sonos speakers this device knows, a search of the network and an address field.' },
   { tab: 'home', title: 'Home screen status',
     desc: 'Whether Kiosk Satellite is the device home screen, and where to '
       + 'finish setting it as the default.' },

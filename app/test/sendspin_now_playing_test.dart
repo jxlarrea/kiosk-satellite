@@ -355,6 +355,7 @@ void main() {
         'ks.sendspin.ma_url': 'ma.local',
         'ks.sendspin.ma_token': 'token',
         'ks.sendspin.player': 'ma:p1',
+        'ks.sendspin.player_source': 'ma',
         'ks.sendspin.player_name': 'Kitchen',
         'ks.sendspin.fullscreen': true,
         ...extra,
@@ -401,6 +402,7 @@ void main() {
         await build(
           extra: {
             'ks.sendspin.player': '',
+            'ks.sendspin.player_source': '',
             'ks.sendspin.enabled': true,
             'ks.sendspin.client_id': 'abc123',
           },
@@ -421,6 +423,7 @@ void main() {
       await build(
         extra: {
           'ks.sendspin.player': '',
+          'ks.sendspin.player_source': '',
           'ks.sendspin.enabled': true,
           'ks.sendspin.client_id': 'abc123',
         },
@@ -530,6 +533,7 @@ void main() {
         await build(
           extra: {
             'ks.sendspin.player': '',
+            'ks.sendspin.player_source': '',
             'ks.sendspin.enabled': true,
             'ks.sendspin.client_id': 'abc123',
           },
@@ -948,6 +952,7 @@ void main() {
         tester,
         settings: {
           'ks.sendspin.player': 'ma:p1',
+          'ks.sendspin.player_source': 'ma',
           'ks.sendspin.player_name': 'Kitchen',
         },
       );
