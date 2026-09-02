@@ -29,6 +29,11 @@ Settings → **Media Player** on the device or the matching tab in the
 remote admin. The page opens on the player pick, then one entry per page:
 Sendspin Player, Music Assistant, Sonos, Floating Player and Now Playing.
 
+One rule holds for every source and the page says so at the top: the
+floating player and Now Playing show only while the picked player has a
+track playing or a queue loaded. With nothing playing or queued, neither
+appears.
+
 ### Player
 
 | Setting | Default | Notes |

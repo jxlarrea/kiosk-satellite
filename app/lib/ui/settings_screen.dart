@@ -131,6 +131,13 @@ List<Widget> _sectionedCards(
   return out;
 }
 
+/// The Media Player page's opening note: the one thing people ask about
+/// whatever the source, said before the source is picked.
+const _mediaPlayerIntro =
+    'The floating player and Now Playing show only while the picked '
+    'player has a track playing or a queue loaded. With nothing playing '
+    'or queued, neither appears.';
+
 /// (defs category, page title, icon, subtitle)
 // The icon is a Material [IconData], or the path of an SVG asset for a
 // category named after a product with a mark of its own.
@@ -1940,7 +1947,10 @@ class _CategoryContentState extends State<_CategoryContent> {
           // it is there for devices whose audio stack misbehaves, and every
           // default is what the app has always done.
           _subpageEntryCard(container, 'Screen & Audio', 'Microphone settings'),
-        ] else
+        ] else ...[
+          // What every source has in common, said once at the top: the
+          // surfaces only show for a player with something to show.
+          if (widget.category == 'Sendspin') const GroupNote(_mediaPlayerIntro),
           ..._withMqttDeprecation(
             _withEsphomeStartError(
               _sectionedCards(
@@ -1961,6 +1971,7 @@ class _CategoryContentState extends State<_CategoryContent> {
               ),
             ),
           ),
+        ],
         // Last and on their own card, like the Voice Satellite permissions:
         // the OS's to give, not ours to set. Always shown - Lockdown Mode
         // has no page on the device, so its grants live here too.

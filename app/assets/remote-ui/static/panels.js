@@ -148,6 +148,16 @@ export function updateMaValidateRow() {
 export async function updatePlayerRow() {
   const tab = document.getElementById('tab-sendspin');
   if (!tab) return;
+  // What every source has in common, said once at the top of the page.
+  if (!tab.querySelector('.media-player-intro')) {
+    const intro = document.createElement('div');
+    intro.className = 'group-note media-player-intro';
+    intro.style.cssText = 'padding: 0 20px 12px;';
+    intro.textContent = 'The floating player and Now Playing show only while '
+      + 'the picked player has a track playing or a queue loaded. With nothing '
+      + 'playing or queued, neither appears.';
+    tab.prepend(intro);
+  }
   const byKey = Object.fromEntries(
     (state.settings || []).map((s) => [s.key, s]));
   const source = byKey['sendspin.player_source']?.value || '';
