@@ -918,6 +918,44 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   bool? _shuffleOverride;
   bool? _lastShuffle;
 
+  /// The volume slider standing in for the seek bar: opened by its
+  /// toggle, closed by a second tap or a few seconds after the last
+  /// touch. The dragged level holds for a moment after release, until
+  /// the source reports the new level back.
+  bool _volumeOpen = false;
+  double? _volumeDrag;
+  Timer? _volumeClose;
+  Timer? _volumeHold;
+
+  void _armVolumeClose() {
+    _volumeClose?.cancel();
+    _volumeClose = Timer(const Duration(seconds: 4), () {
+      _volumeClose = null;
+      if (!mounted || !_volumeOpen) return;
+      setState(() => _volumeOpen = false);
+    });
+  }
+
+  void _toggleVolume() {
+    setState(() => _volumeOpen = !_volumeOpen);
+    if (_volumeOpen) {
+      _armVolumeClose();
+    } else {
+      _volumeClose?.cancel();
+      _volumeClose = null;
+    }
+  }
+
+  Future<void> _setVolume(double level) async {
+    _armVolumeClose();
+    _volumeHold?.cancel();
+    _volumeHold = Timer(const Duration(seconds: 3), () {
+      _volumeHold = null;
+      if (mounted) setState(() => _volumeDrag = null);
+    });
+    await c.sendspin.setVolume(level.round());
+  }
+
   /// The lyrics and queue toggles read settings, so they follow the
   /// setting bus.
   StreamSubscription<SettingChanged>? _settingsSub;
@@ -942,6 +980,8 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     c.sendspin.favorite.removeListener(_rebuild);
     _settingsSub?.cancel();
     _tick?.cancel();
+    _volumeClose?.cancel();
+    _volumeHold?.cancel();
     super.dispose();
   }
 
@@ -1112,6 +1152,20 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
             color: queueOpen ? Colors.white : Colors.white38,
           )
         : toggleBlank;
+    // The volume toggle leads the left cluster; the right one keeps a
+    // blank so the transport stays centered with three slots a side.
+    final volumeAvailable = c.sendspin.volumeAvailable;
+    final volumeOpen = _volumeOpen && volumeAvailable;
+    final level =
+        _volumeDrag ?? c.sendspin.volumeLevel?.toDouble().clamp(0.0, 100.0);
+    final volume = volumeAvailable
+        ? btn(
+            volumeOpen ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+            _toggleVolume,
+            size: toggleSize,
+            color: volumeOpen ? Colors.white : Colors.white38,
+          )
+        : toggleBlank;
 
     // The bar takes the cover's width, but never less than the row of
     // buttons under it needs: on a small panel the buttons keep their
@@ -1119,16 +1173,73 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     double item(double size) =>
         max((size + 16) * scale, kMinInteractiveDimension);
     final rowWidth =
-        item(toggleSize) * 4 +
+        item(toggleSize) * 6 +
         item(44) * 2 +
         item(68) +
-        (12 * 2 + 20 * 2 + 16 * 2) * scale;
+        (12 * 4 + 20 * 2 + 16 * 2) * scale;
+    // Never wider than the screen: a portrait phone shrinks the row of
+    // buttons a little instead of overflowing it.
+    final maxWidth = MediaQuery.sizeOf(context).width - 24 * scale;
     return SizedBox(
-      width: max(widget.width, rowWidth),
+      width: max(widget.width, rowWidth).clamp(0.0, max(maxWidth, 200.0)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (duration > 0) ...[
+          if (volumeOpen) ...[
+            // The volume in the seek bar's place: the same bar, the level
+            // beside it instead of the times.
+            SizedBox(
+              height: 24 * scale,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.volume_down_rounded,
+                    color: Colors.white70,
+                    size: 20 * scale,
+                  ),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderThemeData(
+                        trackHeight: 4 * scale,
+                        activeTrackColor: Colors.white,
+                        inactiveTrackColor: Colors.white30,
+                        thumbColor: Colors.white,
+                        overlayColor: Colors.white24,
+                        thumbShape: RoundSliderThumbShape(
+                          enabledThumbRadius: 7 * scale,
+                        ),
+                        overlayShape: RoundSliderOverlayShape(
+                          overlayRadius: 16 * scale,
+                        ),
+                        trackShape: const RectangularSliderTrackShape(),
+                      ),
+                      child: Slider(
+                        value: level ?? 0,
+                        max: 100,
+                        onChanged: level == null
+                            ? null
+                            : (v) {
+                                _armVolumeClose();
+                                setState(() => _volumeDrag = v);
+                              },
+                        onChangeEnd: level == null ? null : _setVolume,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 44 * scale,
+                    child: Text(
+                      level == null ? '' : '${level.round()}%',
+                      style: timeStyle,
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // The times row's height, so the transport under it stays put.
+            SizedBox(height: 20 * scale),
+          ] else if (duration > 0) ...[
             SizedBox(
               height: 24 * scale,
               child: SliderTheme(
@@ -1175,32 +1286,44 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
           // of empty space away.
           Transform.translate(
             offset: Offset(0, -12 * scale),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                heart,
-                SizedBox(width: 12 * scale),
-                shuffle,
-                SizedBox(width: 20 * scale),
-                if (has('previous'))
-                  transport(Icons.skip_previous_rounded, 'previous', size: 44),
-                SizedBox(width: 16 * scale),
-                if (has(playing ? 'pause' : 'play'))
-                  transport(
-                    playing
-                        ? Icons.pause_circle_filled_rounded
-                        : Icons.play_circle_fill_rounded,
-                    playing ? 'pause' : 'play',
-                    size: 68,
-                  ),
-                SizedBox(width: 16 * scale),
-                if (has('next'))
-                  transport(Icons.skip_next_rounded, 'next', size: 44),
-                SizedBox(width: 20 * scale),
-                lyrics,
-                SizedBox(width: 12 * scale),
-                queue,
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  volume,
+                  SizedBox(width: 12 * scale),
+                  heart,
+                  SizedBox(width: 12 * scale),
+                  shuffle,
+                  SizedBox(width: 20 * scale),
+                  if (has('previous'))
+                    transport(
+                      Icons.skip_previous_rounded,
+                      'previous',
+                      size: 44,
+                    ),
+                  SizedBox(width: 16 * scale),
+                  if (has(playing ? 'pause' : 'play'))
+                    transport(
+                      playing
+                          ? Icons.pause_circle_filled_rounded
+                          : Icons.play_circle_fill_rounded,
+                      playing ? 'pause' : 'play',
+                      size: 68,
+                    ),
+                  SizedBox(width: 16 * scale),
+                  if (has('next'))
+                    transport(Icons.skip_next_rounded, 'next', size: 44),
+                  SizedBox(width: 20 * scale),
+                  lyrics,
+                  SizedBox(width: 12 * scale),
+                  queue,
+                  SizedBox(width: 12 * scale),
+                  toggleBlank,
+                ],
+              ),
             ),
           ),
         ],

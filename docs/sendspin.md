@@ -268,12 +268,18 @@ the bar, the floating card and the lyrics on the audio. The buttons and
 the bar stay put between songs while the cover and the title cross-fade
 behind them.
 
-Four smaller toggles flank the transport the way Music Assistant's own
-player lays them out. On the left, a **heart** adds the playing track to
-the Music Assistant favorites or takes it out again, lit while it is one,
-and **shuffle**, lit while the queue is shuffled and following a shuffle
-set from Music Assistant itself within a moment. On the right, **lyrics** and
-**queue**, each lit while it is the panel. The choice sticks across
+Smaller toggles flank the transport the way Music Assistant's own player
+lays them out, three slots a side, a blank standing in for any the source
+lacks so the transport never leaves center. On the left, **volume**, a
+**heart** that adds the playing track to the Music Assistant favorites or
+takes it out again, lit while it is one, and **shuffle**, lit while the
+queue is shuffled and following a shuffle set from Music Assistant itself
+within a moment. On the right, **lyrics** and **queue**, each lit while it
+is the panel. The volume toggle swaps the progress bar for a volume slider
+with the level beside it, back to the progress bar four seconds after the
+last touch or on a second tap: the device's media volume for this device's
+own player, the followed player's own volume otherwise, and for a Sonos
+the room's, or the group's while the room plays in one. The choice sticks across
 sessions, and the two keep each other exclusive: lyrics and the queue
 share one slot, beside the cover on a landscape screen and under it on a
 portrait one. The queue is laid out the way Music Assistant's own is: what

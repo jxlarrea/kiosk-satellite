@@ -960,6 +960,31 @@ void main() {
       expect(find.byIcon(Icons.speaker_outlined), findsOneWidget);
     });
 
+    testWidgets('the volume toggle swaps the seek bar for a volume slider', (
+      tester,
+    ) async {
+      await pump(tester, settings: {'ks.audio.media_volume': 40});
+      // Closed: the seek bar and its times, the toggle dimmed.
+      expect(find.byIcon(Icons.volume_down_rounded), findsOneWidget);
+      expect(find.text('40%'), findsNothing);
+      await tester.tap(find.byIcon(Icons.volume_down_rounded));
+      await tester.pump();
+      // Open: the level beside the slider, the toggle lit.
+      expect(find.text('40%'), findsOneWidget);
+      expect(find.byIcon(Icons.volume_up_rounded), findsOneWidget);
+      // Dragging sets the device's media volume.
+      await tester.drag(find.byType(Slider).first, const Offset(200, 0));
+      await tester.pump();
+      expect(container.settings.get(defs.mediaVolume), greaterThan(40));
+      // A second tap closes it again.
+      await tester.tap(find.byIcon(Icons.volume_up_rounded));
+      await tester.pump();
+      expect(find.byIcon(Icons.volume_down_rounded), findsOneWidget);
+      expect(find.textContaining('%'), findsNothing);
+      // The held level's timer runs out before the tree goes.
+      await tester.pump(const Duration(seconds: 4));
+    });
+
     testWidgets('double tap to dismiss takes the close button away', (
       tester,
     ) async {

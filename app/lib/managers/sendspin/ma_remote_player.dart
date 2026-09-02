@@ -115,6 +115,10 @@ class MaRemotePlayer implements RemotePlayer {
 
   Map<String, Object?>? _snapshot;
 
+  /// The player's volume as Music Assistant last reported it, 0 to 100:
+  /// read with the queue on a refresh and pushed by player_updated.
+  int? _volume;
+
   @override
   void start() {
     unawaited(_connect());
@@ -146,10 +150,24 @@ class MaRemotePlayer implements RemotePlayer {
       final queue = await session.send('player_queues/get_active_queue', {
         'player_id': playerId,
       });
+      try {
+        final player = await session.send('players/get', {
+          'player_id': playerId,
+        });
+        _readVolume(player);
+      } catch (_) {
+        // The queue is the thing; a missing volume is a slider at rest.
+      }
       publishQueue(queue);
     } catch (e) {
       log.warn(_name, '$label queue lookup failed: $e');
     }
+  }
+
+  void _readVolume(Object? player) {
+    if (player is! Map) return;
+    final level = player['volume_level'];
+    if (level is num) _volume = level.round().clamp(0, 100);
   }
 
   /// Send a transport command for the followed player. False when the
@@ -309,6 +327,12 @@ class MaRemotePlayer implements RemotePlayer {
         // Play, pause, a queue handoff into or out of a group — all land
         // here. The queue answer is authoritative, so just look it up,
         // debounced: one action fires a handful of these back to back.
+        // The volume rides the event itself, and lands at once.
+        _readVolume(data);
+        final snap = _snapshot;
+        if (snap != null && _volume != null && snap['volume'] != _volume) {
+          _emit({...snap, 'volume': _volume});
+        }
         _refreshDebounce?.cancel();
         _refreshDebounce = Timer(
           const Duration(milliseconds: 400),
@@ -352,6 +376,7 @@ class MaRemotePlayer implements RemotePlayer {
       'receivedAt': DateTime.now().millisecondsSinceEpoch,
       'playing': playing,
       'supportedCommands': commands,
+      'volume': ?_volume,
       // A time the server just measured, in a queue dict or a time
       // event alike: what the local player's position follows.
       'timeFresh': true,

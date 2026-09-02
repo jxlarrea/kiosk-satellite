@@ -250,6 +250,21 @@ class SendspinManager extends Manager {
   /// Whether lyrics can follow the music for the current source.
   bool get lyricsAvailable => _remote?.lyricsSynced ?? true;
 
+  /// Whether the Now Playing view can set the volume: always for the
+  /// local player (the device's media volume), and for a followed player
+  /// that reports volume among its commands.
+  bool get volumeAvailable =>
+      _remote == null ||
+      ((nowPlaying.value?['supportedCommands'] as List?)?.contains('volume') ??
+          false);
+
+  /// The volume the view's slider shows, 0 to 100: the media volume
+  /// setting locally, the followed player's last report otherwise. Null
+  /// while unknown.
+  int? get volumeLevel => _remote == null
+      ? _settings.get(defs.mediaVolume).toInt()
+      : (nowPlaying.value?['volume'] as num?)?.toInt();
+
   /// What [_syncRemote] last built a follower for, so an unrelated
   /// settings burst does not tear a healthy connection down.
   String _remoteKey = '';
