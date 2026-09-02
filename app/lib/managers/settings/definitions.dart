@@ -4432,6 +4432,20 @@ const sendspinPlayerName = SettingDef<String>(
   hidden: true,
 );
 
+/// The Sonos speakers this device has met, as JSON: player id to host
+/// and room name. Discovery only reaches the tablet's own VLAN, so a
+/// speaker added by address (or found once) is remembered here and the
+/// picker lists its whole household from it without a search.
+const sendspinSonosHosts = SettingDef<String>(
+  key: 'sendspin.sonos_hosts',
+  type: SettingType.string,
+  defaultValue: '{}',
+  title: 'Known Sonos speakers',
+  description: 'Internal: the Sonos speakers found or added by address.',
+  category: 'Sendspin',
+  hidden: true,
+);
+
 const sendspinEnabled = SettingDef<bool>(
   key: 'sendspin.enabled',
   // Gone while another player is followed (issue #265): the local player
@@ -5880,6 +5894,7 @@ const List<SettingDef<Object>> allSettings = [
   // Sendspin player below is one of the things it drives.
   sendspinPlayer,
   sendspinPlayerName,
+  sendspinSonosHosts,
   sendspinEnabled,
   sendspinServer,
   sendspinCodec,

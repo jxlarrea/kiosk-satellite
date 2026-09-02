@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' show Random, max;
 
 import 'package:flutter/foundation.dart' show ValueNotifier, visibleForTesting;
@@ -16,6 +17,8 @@ import 'lyrics.dart';
 import 'ma_remote_player.dart';
 import 'music_assistant_api.dart';
 import 'remote_player.dart';
+import 'sonos_client.dart';
+import 'sonos_player.dart';
 
 /// The device as a synchronized Sendspin audio player.
 ///
@@ -212,6 +215,16 @@ class SendspinManager extends Manager {
   })
   haRemoteFactory = HaRemotePlayer.new;
 
+  /// Builds the Sonos follower. Swapped in tests for the same reason.
+  @visibleForTesting
+  RemotePlayer Function({
+    required String host,
+    required String uuid,
+    required void Function(Map<String, Object?>?) onSnapshot,
+    required Logger log,
+  })
+  sonosRemoteFactory = SonosPlayer.new;
+
   /// Live while another player is followed instead of this device's own
   /// (sendspin.player): it feeds [nowPlaying] and takes the transport
   /// commands; the local player never runs in that mode.
@@ -224,13 +237,15 @@ class SendspinManager extends Manager {
       _remotePicked ? _settings.get(defs.sendspinPlayerName) : '';
 
   /// Whether the Now Playing view can list a queue: Music Assistant holds
-  /// one for the local player and for any player it drives; a Home
-  /// Assistant player has none.
-  bool get queueAvailable => _maConfigured && (_remote?.hasQueue ?? true);
+  /// one for the local player and for any player it drives, a Sonos has
+  /// its own, a Home Assistant player has none.
+  bool get queueAvailable =>
+      _remote == null ? _maConfigured : _remote!.hasQueue;
 
   /// Whether the playing track can be marked a favorite: Music
-  /// Assistant's library, so the same sources as the queue.
-  bool get favoriteAvailable => queueAvailable;
+  /// Assistant's library, for the local player and its own players.
+  bool get favoriteAvailable =>
+      _remote == null ? _maConfigured : _remote!.hasFavorites;
 
   /// Whether lyrics can follow the music for the current source.
   bool get lyricsAvailable => _remote?.lyricsSynced ?? true;
@@ -616,6 +631,7 @@ class SendspinManager extends Manager {
       if (e.key == defs.sendspinPlayer.key ||
           e.key == defs.sendspinMaUrl.key ||
           e.key == defs.sendspinMaToken.key ||
+          e.key == defs.sendspinSonosHosts.key ||
           e.key == defs.haUrl.key ||
           e.key == defs.haToken.key) {
         _syncRemote();
@@ -666,6 +682,7 @@ class SendspinManager extends Manager {
         // is deliberately NOT here — it decides whether the local player
         // runs at all, so it goes through the restart below.
         'sendspin.player_name',
+        'sendspin.sonos_hosts',
         'sendspin.player_active',
         'sendspin.local_player_name',
       ];
@@ -836,7 +853,42 @@ class SendspinManager extends Manager {
               notes['ha'] = 'Home Assistant did not answer: $e';
             }
           }
+          final sonos = await _sonosPlayers(discover: true);
+          if (sonos.isEmpty) {
+            notes['sonos'] =
+                'No Sonos found on this network. Add one by its address.';
+          }
+          players.addAll(sonos);
           return CommandResult.ok({'players': players, 'notes': notes});
+        },
+      ),
+    );
+
+    commands.register(
+      Command(
+        name: 'sonosAdd',
+        description:
+            'Remember a Sonos speaker by address, for a speaker discovery '
+            'cannot reach (another VLAN), and list the rooms of its '
+            'household.',
+        params: const {'host': 'the speaker address, without a port'},
+        handler: (p) async {
+          final host = '${p['host'] ?? ''}'.trim().replaceAll(
+            RegExp(r'^https?://|[:/].*$'),
+            '',
+          );
+          if (host.isEmpty) return const CommandResult.fail('no address');
+          try {
+            final groups = await SonosClient(host).zoneGroups();
+            if (groups.isEmpty) {
+              return const CommandResult.fail('The speaker listed no rooms.');
+            }
+            await _rememberSonos(groups);
+            return CommandResult.ok(_sonosRows(groups));
+          } catch (e) {
+            log.warn(name, 'Sonos at $host: $e');
+            return CommandResult.fail('No Sonos answered at $host.');
+          }
         },
       ),
     );
@@ -854,6 +906,92 @@ class SendspinManager extends Manager {
   /// The player the surfaces are set to follow.
   PlayerSource get _source =>
       PlayerSource.parse(_settings.get(defs.sendspinPlayer));
+
+  /// The Sonos speakers this device knows: id to host and room name.
+  Map<String, Map<String, String>> get _sonosHosts {
+    try {
+      final decoded = jsonDecode(_settings.get(defs.sendspinSonosHosts));
+      if (decoded is! Map) return {};
+      return {
+        for (final e in decoded.entries)
+          if (e.value is Map)
+            '${e.key}': {
+              'host': '${(e.value as Map)['host'] ?? ''}',
+              'name': '${(e.value as Map)['name'] ?? ''}',
+            },
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Remember every room of the households in [groups], so the picker
+  /// lists them without a search next time and a followed room keeps
+  /// its address.
+  Future<void> _rememberSonos(List<SonosGroup> groups) async {
+    final hosts = _sonosHosts;
+    for (final g in groups) {
+      for (final m in g.members) {
+        hosts[m.uuid] = {'host': m.host, 'name': m.name};
+      }
+    }
+    final encoded = jsonEncode(hosts);
+    if (encoded != _settings.get(defs.sendspinSonosHosts)) {
+      await _settings.set(defs.sendspinSonosHosts, encoded);
+    }
+  }
+
+  /// Picker rows for [groups]: one per group, named the way the Sonos
+  /// app names it, its coordinator's room the pick.
+  static List<Map<String, Object?>> _sonosRows(List<SonosGroup> groups) =>
+      [
+        for (final g in groups)
+          {
+            'id': 'sonos:${g.leader.uuid}',
+            'name': g.name,
+            'sub': g.leader.host,
+            'group': 'sonos',
+            'available': true,
+          },
+      ]..sort(
+        (a, b) => '${a['name']}'.toLowerCase().compareTo(
+          '${b['name']}'.toLowerCase(),
+        ),
+      );
+
+  /// The Sonos groups on the network: the households of every speaker
+  /// this device knows, plus, with [discover], whatever answers a
+  /// multicast search on the tablet's own VLAN. One topology read per
+  /// household answers for all its rooms.
+  Future<List<Map<String, Object?>>> _sonosPlayers({
+    required bool discover,
+  }) async {
+    final hosts = <String>{
+      for (final h in _sonosHosts.values)
+        if (h['host']!.isNotEmpty) h['host']!,
+    };
+    if (discover) hosts.addAll(await SonosClient.discover());
+    final seen = <String>{};
+    final groups = <SonosGroup>[];
+    for (final host in hosts) {
+      if (seen.contains(host)) continue;
+      try {
+        final found = await SonosClient(host).zoneGroups();
+        for (final g in found) {
+          for (final m in g.members) {
+            seen.add(m.host);
+          }
+          if (!groups.any((x) => x.leader.uuid == g.leader.uuid)) {
+            groups.add(g);
+          }
+        }
+      } catch (e) {
+        log.warn(name, 'Sonos at $host did not answer: $e');
+      }
+    }
+    if (groups.isNotEmpty) await _rememberSonos(groups);
+    return _sonosRows(groups);
+  }
 
   /// Another player is picked, whether or not its system is reachable.
   bool get _remotePicked => !_source.isLocal;
@@ -940,19 +1078,21 @@ class SendspinManager extends Manager {
     final maToken = _settings.get(defs.sendspinMaToken).trim();
     final haUrl = defs.normalizeBaseUrl(_settings.get(defs.haUrl));
     final haToken = _settings.get(defs.haToken).trim();
+    final sonosHost = _sonosHosts[source.id]?['host'] ?? '';
     final want = switch (source.kind) {
       PlayerSourceKind.local => false,
       PlayerSourceKind.musicAssistant =>
         source.id.isNotEmpty && maUrl.isNotEmpty && maToken.isNotEmpty,
       PlayerSourceKind.homeAssistant =>
         source.id.isNotEmpty && haUrl.isNotEmpty && haToken.isNotEmpty,
-      PlayerSourceKind.sonos => false,
+      PlayerSourceKind.sonos => source.id.isNotEmpty && sonosHost.isNotEmpty,
     };
     final key = want
         ? switch (source.kind) {
             PlayerSourceKind.musicAssistant =>
               'ma|${source.id}|$maUrl|$maToken',
             PlayerSourceKind.homeAssistant => 'ha|${source.id}|$haUrl|$haToken',
+            PlayerSourceKind.sonos => 'sonos|${source.id}|$sonosHost',
             _ => '',
           }
         : '';
@@ -977,6 +1117,12 @@ class SendspinManager extends Manager {
         baseUrl: haUrl,
         token: haToken,
         entityId: source.id,
+        onSnapshot: _onRemoteSnapshot,
+        log: log,
+      ),
+      PlayerSourceKind.sonos => sonosRemoteFactory(
+        host: sonosHost,
+        uuid: source.id,
         onSnapshot: _onRemoteSnapshot,
         log: log,
       ),
@@ -1186,7 +1332,7 @@ class SendspinManager extends Manager {
     final remote = _remote;
     final want = remote == null
         ? _watcher != null && _playing
-        : remote.hasQueue && nowPlaying.value?['playing'] == true;
+        : remote is MaRemotePlayer && nowPlaying.value?['playing'] == true;
     if (want == (_queuePoll != null)) return;
     _queuePoll?.cancel();
     _queuePoll = null;
@@ -1352,6 +1498,17 @@ class SendspinManager extends Manager {
   /// Fetch the queue from the playing item on: title, artist, duration
   /// and the queue index of each, the playing one flagged.
   Future<void> refreshQueue() async {
+    // A source with a queue of its own (a Sonos) answers for itself.
+    if (_remote case final remote?) {
+      final key = _trackKey;
+      final own = await remote.fetchQueue();
+      if (_trackKey != key) return;
+      if (own != null) {
+        queueItems.value = own.items;
+        queueUpNext.value = own.upNext;
+        return;
+      }
+    }
     if (!_maConfigured) {
       queueItems.value = const [];
       return;
@@ -1416,6 +1573,9 @@ class SendspinManager extends Manager {
   /// queue panel. The id, not the position: Music Assistant takes either,
   /// and the id survives a shuffle between the fetch and the tap.
   Future<bool> playQueueItem(String queueItemId) async {
+    if (_remote case final remote?) {
+      if (await remote.playQueueItem(queueItemId)) return true;
+    }
     if (_queueId.isEmpty || queueItemId.isEmpty) return false;
     final res = await _api().call(
       'player_queues/play_index',

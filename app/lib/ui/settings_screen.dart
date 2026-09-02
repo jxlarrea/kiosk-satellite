@@ -5178,6 +5178,59 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
     });
   }
 
+  Future<void> _addSonos() async {
+    final controller = TextEditingController();
+    final host = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add a Sonos by address'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(hintText: '192.168.1.40'),
+          onSubmitted: (v) => Navigator.pop(ctx, v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    if (host == null || host.trim().isEmpty || !mounted) return;
+    final result = await widget.container.commands.execute('sonosAdd', {
+      'host': host.trim(),
+    });
+    if (!mounted) return;
+    if (!result.ok) {
+      showToast(
+        context,
+        title: 'No Sonos found',
+        message: result.error,
+        kind: ToastKind.error,
+      );
+      return;
+    }
+    final rows = [
+      for (final p in (result.data as List? ?? const []))
+        if (p is Map) p.cast<String, Object?>(),
+    ];
+    setState(() {
+      _notes = {..._notes}..remove('sonos');
+      _players = [
+        for (final p in _players ?? const <Map<String, Object?>>[])
+          if (p['group'] != 'sonos' || !rows.any((r) => r['id'] == p['id'])) p,
+        ...rows,
+      ];
+    });
+  }
+
   bool _matches(Map<String, Object?> p) {
     if (_query.isEmpty) return true;
     final q = _query.toLowerCase();
@@ -5247,7 +5300,8 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
                   subtitle: Text('Sendspin player'),
                 ),
                 for (final (group, label) in _groups)
-                  if (_notes.containsKey(group) ||
+                  if (group == 'sonos' ||
+                      _notes.containsKey(group) ||
                       players.any((p) => p['group'] == group)) ...[
                     caption(label),
                     if (_notes.containsKey(group)) note(_notes[group]!),
@@ -5262,6 +5316,16 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
                               ? Text('${p['sub']}')
                               : null,
                         ),
+                    // A speaker on another VLAN never answers the
+                    // search; its address does.
+                    if (group == 'sonos')
+                      ListTile(
+                        leading: const Icon(Icons.add),
+                        title: const Text('Add by address'),
+                        textColor: scheme.primary,
+                        iconColor: scheme.primary,
+                        onTap: _addSonos,
+                      ),
                   ],
               ],
             ),

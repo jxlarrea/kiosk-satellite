@@ -55,9 +55,19 @@ class HaRemotePlayer implements RemotePlayer {
   @override
   bool queueEmpty = false;
 
-  /// Home Assistant's media_player model has no queue of its own.
+  /// Home Assistant's media_player model has no queue of its own, and
+  /// no library.
   @override
   bool get hasQueue => false;
+
+  @override
+  bool get hasFavorites => false;
+
+  @override
+  Future<RemoteQueue?> fetchQueue() async => null;
+
+  @override
+  Future<bool> playQueueItem(String id) async => false;
 
   @override
   bool get lyricsSynced => true;

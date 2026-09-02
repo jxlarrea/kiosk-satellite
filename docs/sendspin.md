@@ -15,9 +15,10 @@ speaker in the house. Through the Music Assistant integration it also
 shows up in Home Assistant as a `media_player` entity with full metadata,
 artwork and volume control.
 
-Or the surfaces follow a player elsewhere: any Music Assistant player, or
-any Home Assistant media player, for the wall tablet whose job is to show
-and steer the kitchen speakers without making any music itself.
+Or the surfaces follow a player elsewhere: any Music Assistant player, any
+Home Assistant media player, or a Sonos speaker directly, for the wall
+tablet whose job is to show and steer the kitchen speakers without making
+any music itself.
 
 Browsing and queueing happen in Music Assistant (or its dashboard card),
 voice control through Voice Satellite.
@@ -32,7 +33,7 @@ page: Sendspin Player, Music Assistant, Floating Player and Now Playing.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Player | This device | What the floating player and Now Playing show and control: this device's own Sendspin player, a Music Assistant player, or a Home Assistant media player. Described under Following another player. |
+| Player | This device | What the floating player and Now Playing show and control: this device's own Sendspin player, a Music Assistant player, a Home Assistant media player, or a Sonos room. Described under Following another player. |
 
 ### Sendspin Player
 
@@ -105,6 +106,13 @@ source it can reach:
 - **Home Assistant** media players, every `media_player` entity by name
   with the entity id beneath, over the Home Assistant connection the kiosk
   already has. This device's own entities stay out of the list.
+- **Sonos** rooms, read from the speakers themselves over their local
+  interface, with no Home Assistant or Music Assistant in between. The
+  list names every room of the household the way the Sonos app does,
+  rooms playing together as one entry. Speakers are found by a search on
+  the tablet's own network; a speaker on another VLAN never answers that,
+  so **Add by address** takes its IP, reads the household from it and
+  remembers it, after which its rooms list without a search.
 
 Pick a player and the card, the full-screen view and the transport buttons
 all follow it: its track, its artwork, its progress, its play and pause,
@@ -120,11 +128,24 @@ What each source offers differs a little:
 | This device | yes | yes | yes | yes |
 | Music Assistant player | yes | yes | yes | yes |
 | Home Assistant media player | yes | yes | no | no |
+| Sonos, direct | yes | yes | yes | no |
 
 Every Home Assistant media player is treated the same, whatever integration
 stands behind it. Buttons a player cannot honor stay out of the view: a
 player that reports no seeking has no thumb on its progress bar, one
 without previous and next has no skip buttons.
+
+A Sonos that Home Assistant also knows appears under both groups. Picked
+under Home Assistant it is a generic player like any other. Picked under
+Sonos, the kiosk talks to the speaker directly: the track, artwork and
+position are read from the speaker once a second while it plays, so the
+lyrics stay in step, the queue panel lists the speaker's own queue with a
+tap to jump, shuffle sets the speaker's play mode, and the volume is the
+room's, or the group's while the room plays in one. The follower tracks
+the group the room belongs to, so regrouping from the Sonos app re-points
+it on its own. A radio stream has no pause on a Sonos, so the pause button
+stops it, the way the speaker itself does, and the queue panel shows
+nothing queued while a station or a line-in plays outside the queue.
 
 With another player picked the device is a remote control, not a player:
 its own Sendspin player shuts down and shows as offline in Music
@@ -365,7 +386,13 @@ on one long-lived socket: the active queue on connect, then the queue and
 player events the server pushes. A followed Home Assistant player is one
 `subscribe_entities` subscription on the Home Assistant websocket, with
 the transport sent back as `media_player` service calls on the same
-socket.
+socket. A followed Sonos is polled over the speaker's UPnP services on
+port 1400: the transport state and position from the group's coordinator
+once a second while playing and every few seconds otherwise, the play
+mode and the volume a little less often, the household topology every
+half minute, and the queue through the speaker's ContentDirectory. Polling
+rather than events keeps it working across VLANs, where a speaker could
+never reach an event callback on the tablet.
 
 The implementation is adapted from
 [SendspinDroid](https://github.com/chrisuthe/SendspinDroid) (MIT), whose
@@ -388,6 +415,10 @@ license and attribution ship in the source tree.
   sends its now-playing snapshots on its own schedule, after the audio
   boundary. The card keeps the previous song on screen and cross-fades
   when the update arrives.
+- **No Sonos found**: the search is a multicast on the tablet's own
+  network, which a speaker on another VLAN never hears. Add it by address
+  instead; the kiosk needs to reach the speaker on port 1400, which a
+  router between the two usually allows.
 - **A followed Home Assistant player shows no track**: the entity has to
   report a `media_title`. Players that only stream line-in or a TV input
   carry none, and the card stays empty until something with metadata

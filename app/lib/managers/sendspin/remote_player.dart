@@ -22,6 +22,10 @@ abstract interface class RemotePlayer {
   /// jump within it.
   bool get hasQueue;
 
+  /// Whether the source keeps a library the playing track can be marked
+  /// a favorite in.
+  bool get hasFavorites;
+
   /// Whether the source reports position closely enough for synced lyrics
   /// to follow the music.
   bool get lyricsSynced;
@@ -46,6 +50,25 @@ abstract interface class RemotePlayer {
 
   /// Set the player's volume, 0 to 100.
   Future<bool> setVolume(int percent);
+
+  /// The queue the player plays from, for the Now Playing panel, or null
+  /// when the source keeps none of its own here (Music Assistant's is
+  /// read through its API by the manager).
+  Future<RemoteQueue?> fetchQueue();
+
+  /// Jump the queue to the row [id] a [fetchQueue] answer carried. False
+  /// when the source handles it elsewhere or refused.
+  Future<bool> playQueueItem(String id);
+}
+
+/// A queue as the Now Playing panel lists it: rows with index, id, title,
+/// artist, durationMs, current and played, and how many follow the
+/// playing one.
+class RemoteQueue {
+  const RemoteQueue({required this.items, required this.upNext});
+
+  final List<Map<String, Object?>> items;
+  final int upNext;
 }
 
 /// The source a `sendspin.player` value names.

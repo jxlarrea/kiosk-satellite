@@ -67,9 +67,19 @@ class MaRemotePlayer implements RemotePlayer {
   final String playerId;
   final void Function(Map<String, Object?>? snapshot) onSnapshot;
 
-  /// Music Assistant keeps a queue for every player it drives.
+  /// Music Assistant keeps a queue for every player it drives, read by
+  /// the manager through the API, and a library to favorite into.
   @override
   bool get hasQueue => true;
+
+  @override
+  bool get hasFavorites => true;
+
+  @override
+  Future<RemoteQueue?> fetchQueue() async => null;
+
+  @override
+  Future<bool> playQueueItem(String id) async => false;
 
   /// The queue's live elapsed time, read every few seconds while playing,
   /// keeps the position within a moment of the audio.

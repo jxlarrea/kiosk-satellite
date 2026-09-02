@@ -1,6 +1,6 @@
 import { $, api, cmd, state } from './core.js';
 import { readOnlyRow } from './device.js';
-import { hintRow } from './widgets.js';
+import { hintRow, showToast } from './widgets.js';
 import { loadSettings } from './settings.js';
 import { radioRow } from './views.js';
 import { messageBox, modalShell } from './widgets.js';
@@ -188,7 +188,7 @@ export async function updatePlayerRow() {
     let seen = false;
     for (const [group, label] of [['ma', 'Music Assistant'], ['ha', 'Home Assistant'], ['sonos', 'Sonos']]) {
       const rows = players.filter((p) => p.group === group);
-      if (!rows.length && !notes[group]) continue;
+      if (!rows.length && !notes[group] && group !== 'sonos') continue;
       const og = document.createElement('optgroup');
       og.label = label;
       if (notes[group] && !rows.length) {
@@ -199,11 +199,27 @@ export async function updatePlayerRow() {
         if (p.id === currentId) seen = true;
         add(og, p.id, p.available === false ? `${p.name} (offline)` : p.name);
       }
+      // A speaker on another VLAN never answers the search; its address does.
+      if (group === 'sonos') add(og, 'add:sonos', 'Add by address\u2026');
       sel.appendChild(og);
     }
     if (currentId && !seen) add(sel, currentId, currentName || currentId);
   }
   sel.addEventListener('change', async () => {
+    if (sel.value === 'add:sonos') {
+      sel.value = currentId;
+      const host = window.prompt('Sonos address', '');
+      if (!host) return;
+      let out;
+      try { out = await (await api('/api/commands/sonosAdd', { method: 'POST', body: JSON.stringify({ host: host.trim() }) })).json(); }
+      catch (_) { out = { ok: false, error: 'The device did not answer.' }; }
+      if (!out.ok) { showToast({ title: 'No Sonos found', message: out.error || '', kind: 'error' }); return; }
+      showToast({ title: 'Sonos added', message: (out.data || []).map((p) => p.name).join(', '), kind: 'success' });
+      // The rows come back through the live list on the re-render.
+      row.querySelector('select')?.remove();
+      await updatePlayerRow();
+      return;
+    }
     const name = sel.value
       ? ((players || []).find((p) => p.id === sel.value) || {}).name
         || sel.options[sel.selectedIndex].textContent
