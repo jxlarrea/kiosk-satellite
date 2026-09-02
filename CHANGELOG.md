@@ -16,6 +16,9 @@ All notable changes to Kiosk Satellite are documented here. Full release notes f
 - The floating player's kiosk menu entry reads **Show Floating Player** and **Hide Floating Player**, the Allowed Actions row **Floating Player**, the gesture action **Show the floating player** and the card's setting **Show the floating player**.
 - The lyrics toggle stays on the Now Playing view while a Music Assistant player is followed: the player's queue time is read every few seconds, close enough to sing along with.
 
+### Fixed
+- A **Multi-finger tap or hold keeps the finger count it was given**. Saved from the remote admin, the gesture took its count from the Show fingers dropdown instead of its own, so every new one came out as a 5-finger gesture and the editor showed 3 fingers whatever was picked. On the device, the Fingers dropdown's pick was dropped on save, so a 2-finger gesture stayed at 3. A gesture already saved with five fingers needs a re-save to take the count picked.
+
 ## v2026.9.6 - 2026-09-02
 
 ### Added

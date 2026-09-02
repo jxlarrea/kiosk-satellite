@@ -300,7 +300,7 @@ class _GestureSettingsPanelState extends State<GestureSettingsPanel> {
                               ),
                             ],
                             onChanged: (value) => setDialogState(
-                              () => fingerCount = value ?? fingerCount,
+                              () => fingers = value ?? fingers,
                             ),
                           ),
                         ),

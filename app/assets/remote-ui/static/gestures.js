@@ -613,7 +613,7 @@ export async function editGesture(existing) {
       }
       if (type === 'corner_taps') trigger.taps = Number(tapsSel.select.value);
       if (type === 'finger_taps' || type === 'finger_hold') {
-        trigger.fingers = Number(fingerCountSel.select.value);
+        trigger.fingers = Number(fingersSel.select.value);
       }
       if (type === 'finger_taps') trigger.taps = Number(fingerTapsSel.select.value);
       if (type === 'corner_hold' || type === 'finger_hold') {
