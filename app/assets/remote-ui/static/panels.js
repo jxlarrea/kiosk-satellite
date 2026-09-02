@@ -159,12 +159,18 @@ export async function updatePlayerRow() {
   const sourceSel = tab.querySelector('[data-key="sendspin.player_source"] select');
   if (sourceSel && !sourceSel.dataset.playerHook) {
     sourceSel.dataset.playerHook = '1';
-    sourceSel.addEventListener('change', () => setTimeout(() => {
+    sourceSel.addEventListener('change', () => setTimeout(async () => {
       const stale = tab.querySelector('[data-key="sendspin.player"] select');
-      if (stale && stale.dataset.source !== sourceSel.value) {
-        stale.remove();
-        updatePlayerRow();
-      }
+      if (!stale || stale.dataset.source === sourceSel.value) return;
+      // The device drops a pick that belongs to another source: read the
+      // settings back so the select is built from what it now holds,
+      // without a re-render.
+      try {
+        const { settings } = await (await api('/api/settings')).json();
+        if (Array.isArray(settings)) state.settings = settings;
+      } catch (_) {}
+      stale.remove();
+      updatePlayerRow();
     }, 600));
   }
   const row = tab.querySelector('[data-key="sendspin.player"]');

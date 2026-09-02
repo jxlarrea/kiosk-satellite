@@ -76,6 +76,11 @@ export function syncGatedRows(key, anchorRow) {
     // A section split across a page boundary is two cards, and only one of
     // them is in the DOM: placing a row from the other lands it nowhere.
     && (o.subpage || '') === (anchor.subpage || '');
+  // A flip that changes nothing on screen (a source switched between two
+  // values that hide the same rows) needs no re-render, wherever the rows
+  // it reaches live: only a row whose presence must change counts.
+  const changes = (o) => visible(o) !== !!document.querySelector(`[data-key="${o.key}"]`);
+  if (!reached.some(changes)) return true;
   if (!reached.every(sameCard)) return false;
   // Schema order within the card decides where a returning row goes back:
   // in front of the first row after it that is currently on screen.
