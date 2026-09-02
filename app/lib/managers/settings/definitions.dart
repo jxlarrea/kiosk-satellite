@@ -3437,9 +3437,9 @@ const motionSensitivity = SettingDef<num>(
 // ── Schedule ───────────────────────────────────────────────────────────
 // Time-of-day screensaver switching, the same idea as the Home Assistant
 // theme schedule: each entry names a time, the mode to show from then on,
-// and the brightness to hold while it is active. The entry list is custom
-// UI in both settings surfaces (times, mode dropdowns and sliders per
-// row), so only the JSON list is stored.
+// and optionally the brightness to hold while it is active. The entry list
+// is custom UI in both settings surfaces (times, mode dropdowns and sliders
+// per row), so only the JSON list is stored.
 
 const screensaverScheduleEnabled = SettingDef<bool>(
   key: 'screensaver.schedule_enabled',
@@ -3455,8 +3455,10 @@ const screensaverScheduleEnabled = SettingDef<bool>(
 /// JSON list of `{"at": "HH:MM", "mode": "...", "brightness": 0..1}`
 /// entries, kept sorted by time. Each entry applies from its
 /// time until the next entry's; the latest entry of the day carries over
-/// past midnight. The brightness overrides the global screensaver
-/// brightness while the entry is active.
+/// past midnight. The brightness, when present, overrides the global
+/// screensaver brightness while the entry is active; absent (issue #411)
+/// the entry follows the Screensaver brightness switch, which may leave
+/// the panel to the device or adaptive brightness.
 const screensaverSchedule = SettingDef<String>(
   key: 'screensaver.schedule',
   type: SettingType.string,

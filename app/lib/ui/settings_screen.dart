@@ -3670,9 +3670,11 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
     final entry = <String, Object?>{
       'at': existing?['at'] ?? '19:00',
       'mode': existing?['mode'] ?? s.get(screensaverMode),
-      'brightness':
-          (existing?['brightness'] as num?)?.toDouble() ??
-          s.get(screensaverBrightnessLevel).toDouble(),
+      // Optional (issue #411): absent follows the Screensaver brightness
+      // switch outside the schedule, so an entry can leave the panel to
+      // adaptive brightness like the main screensaver does.
+      if (existing?['brightness'] is num)
+        'brightness': (existing!['brightness'] as num).toDouble(),
       if (existing?['motion'] is bool) 'motion': existing!['motion'],
       if (existing?['face'] is bool) 'face': existing!['face'],
       if (existing?['widgets'] is bool) 'widgets': existing!['widgets'],
@@ -3720,7 +3722,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                     }),
             ),
           );
-          final level = (entry['brightness'] as num).toDouble();
+          final level = (entry['brightness'] as num?)?.toDouble();
           return AlertDialog(
             title: Text(existing == null ? 'Add time' : '${entry['at']}'),
             content: SizedBox(
@@ -3766,34 +3768,57 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
                         ),
                       ),
                     ),
-                    // The brightness this entry runs at, always set: an
-                    // entry carrying none would silently inherit whatever
-                    // the global slider says, which is what people set a
-                    // night entry to escape.
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.brightness_6_outlined,
-                          size: 18,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        Expanded(
-                          child: Slider(
-                            value: level.clamp(0.0, 1.0),
-                            onChanged: (v) =>
-                                setDialogState(() => entry['brightness'] = v),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 44,
-                          child: Text(
-                            '${(level * 100).round()}%',
-                            textAlign: TextAlign.end,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                      ],
+                    // The same switch as the main screensaver page: off,
+                    // the entry follows the Screensaver brightness setting
+                    // outside the schedule (which may itself be off, leaving
+                    // the panel to the device or adaptive brightness); on,
+                    // the slider below is this entry's own level.
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Screensaver brightness'),
+                      subtitle: Text(
+                        level == null
+                            ? 'Follows the Screensaver brightness setting.'
+                            : 'Applies to every mode except Black.',
+                      ),
+                      value: level != null,
+                      onChanged: (on) => setDialogState(() {
+                        if (on) {
+                          entry['brightness'] = s
+                              .get(screensaverBrightnessLevel)
+                              .toDouble();
+                        } else {
+                          entry.remove('brightness');
+                        }
+                      }),
                     ),
+                    if (level != null)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.brightness_6_outlined,
+                            size: 18,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          Expanded(
+                            child: Slider(
+                              value: level.clamp(0.0, 1.0),
+                              onChanged: (v) =>
+                                  setDialogState(() => entry['brightness'] = v),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 44,
+                            child: Text(
+                              '${(level * 100).round()}%',
+                              textAlign: TextAlign.end,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
                     override(
                       'Dismiss on motion',
                       'motion',
@@ -3870,9 +3895,7 @@ class _ScheduleEditorState extends State<_ScheduleEditor> {
         ListTile(
           leading: const Icon(Icons.add),
           title: const Text('Add time'),
-          subtitle: const Text(
-            'A screensaver and brightness from that time on.',
-          ),
+          subtitle: const Text('A screensaver from that time on.'),
           onTap: () => _edit(context, null),
         ),
       ],
@@ -8436,7 +8459,7 @@ class SettingTile extends StatelessWidget {
             onTap: views.isEmpty ? null : () => _pickCameraViews(context),
           );
         }
-        // The screensaver schedule: times with a mode and brightness each,
+        // The screensaver schedule: times with a mode and overrides each,
         // edited in place rather than typed as JSON.
         if (def.key == screensaverSchedule.key) {
           return _ScheduleEditor(container: c, onChanged: onChanged);

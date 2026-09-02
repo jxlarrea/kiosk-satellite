@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Screensaver brightness** switch on each scheduled screensaver entry, on the device and in the remote admin alike, the same switch the main screensaver page has. Off, the entry follows the Screensaver brightness setting outside the schedule, so a kiosk on adaptive brightness keeps following the room through photos by day and a clock by night instead of being pinned to one level per entry. On, the slider is that entry's own level, as every entry was before. Existing entries keep the brightness they had.
+
 ## v2026.9.5 - 2026-09-02
 
 ### Fixed

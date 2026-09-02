@@ -342,8 +342,9 @@ export function settingRow(s) {
     };
 
     // The labeled editor modal, the same fields in the same order as the
-    // device's dialog: time, screensaver, brightness, then the three
-    // overrides. Six controls do not fit in a row on either UI.
+    // device's dialog: time, screensaver, the brightness switch and its
+    // slider, then the four overrides. That many controls do not fit in a
+    // row on either UI.
     const editEntry = async (existing) => {
       const others = entries.filter((e) => e !== existing);
       const brightnessDef = (state.settings || [])
@@ -351,9 +352,9 @@ export function settingRow(s) {
       const start = existing || {
         at: '19:00',
         mode: (modeDef && modeDef.value) || 'clock',
-        brightness: (brightnessDef && typeof brightnessDef.value === 'number')
-          ? brightnessDef.value : 0.2,
       };
+      const globalLevel = (brightnessDef && typeof brightnessDef.value === 'number')
+        ? brightnessDef.value : 0.2;
       const body = document.createElement('div');
 
       // Inside an editor the time is a labeled field, full width, opening
@@ -371,9 +372,15 @@ export function settingRow(s) {
         modes.map((m) => ({ value: m, label: label(m) })),
         modes.includes(start.mode) ? start.mode : ((modeDef && modeDef.value) || 'clock'));
 
-      // The brightness this entry runs at, always set: an entry carrying
-      // none would silently inherit whatever the global slider says, which
-      // is what a night entry is usually set to escape.
+      // The same switch as the main screensaver page: off, the entry
+      // follows the Screensaver brightness setting outside the schedule
+      // (which may itself be off, leaving the panel to the device or
+      // adaptive brightness); on, the slider below is this entry's own
+      // level.
+      const hasLevel = typeof start.brightness === 'number';
+      const brightOn = cameraToggle('Screensaver brightness', hasLevel,
+        hasLevel ? 'Applies to every mode except Black.'
+          : 'Follows the Screensaver brightness setting.');
       const brightWrap = document.createElement('label');
       brightWrap.className = 'form-field';
       const brightTitle = document.createElement('span');
@@ -384,8 +391,7 @@ export function settingRow(s) {
       const rng = document.createElement('input');
       rng.type = 'range'; rng.className = 'range';
       rng.min = '0'; rng.max = '100'; rng.step = '5';
-      rng.value = String(Math.round(
-        ((typeof start.brightness === 'number') ? start.brightness : 0.2) * 100));
+      rng.value = String(Math.round((hasLevel ? start.brightness : globalLevel) * 100));
       rng.style.cssText = 'flex:1;';
       const pct = document.createElement('span');
       pct.className = 'device';
@@ -394,6 +400,15 @@ export function settingRow(s) {
       rng.addEventListener('input', () => { pct.textContent = rng.value + '%'; });
       brightLine.append(rng, pct);
       brightWrap.append(brightTitle, brightLine);
+      // Inline display, not the hidden attribute: .form-field's own
+      // display:flex would outrank [hidden] and keep the slider showing.
+      brightWrap.style.display = hasLevel ? '' : 'none';
+      brightOn.input.addEventListener('change', () => {
+        brightWrap.style.display = brightOn.input.checked ? '' : 'none';
+        brightOn.wrap.querySelector('.desc').textContent = brightOn.input.checked
+          ? 'Applies to every mode except Black.'
+          : 'Follows the Screensaver brightness setting.';
+      });
 
       // The three overrides share one shape: Default follows the matching
       // setting outside the schedule, On and Off decide it for this entry's
@@ -428,8 +443,8 @@ export function settingRow(s) {
       const widgets = overrideField('Widgets', start.widgets);
       const glance = overrideField('At a glance', start.glance);
 
-      body.append(timeWrap, modeSel.wrap, brightWrap, motion.wrap, face.wrap,
-        widgets.wrap, glance.wrap);
+      body.append(timeWrap, modeSel.wrap, brightOn.wrap, brightWrap,
+        motion.wrap, face.wrap, widgets.wrap, glance.wrap);
 
       return cameraEditor({
         title: existing ? String(start.at) : 'Add time',
@@ -440,8 +455,8 @@ export function settingRow(s) {
           const entry = {
             at: time.value,
             mode: modeSel.select.value,
-            brightness: (+rng.value) / 100,
           };
+          if (brightOn.input.checked) entry.brightness = (+rng.value) / 100;
           for (const [key, field] of [['motion', motion], ['face', face],
             ['widgets', widgets], ['glance', glance]]) {
             if (field.select.value) entry[key] = field.select.value === 'on';
@@ -490,7 +505,7 @@ export function settingRow(s) {
     // The add row is the last row of the card, the whole row the button,
     // mirrored on the device.
     const addRow = () => cameraListRow('Add time',
-      'A screensaver and brightness from that time on.', [],
+      'A screensaver from that time on.', [],
       { icon: 'add', onClick: () => editEntry(null) });
 
     const repaint = () => {

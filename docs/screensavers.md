@@ -316,8 +316,8 @@ Assistant outage.
 **Screensaver brightness** gives the screensaver its own panel
 brightness, applied when it starts and restored when it ends. Dim and
 Black ignore it (they have their own levels), and a
-[schedule](#schedule) entry's brightness overrides it while that entry
-is active. Moving the slider while the screensaver shows applies
+[schedule](#schedule) entry with its own brightness overrides it while
+that entry is active. Moving the slider while the screensaver shows applies
 immediately, so it can be tuned by eye. The pre-screensaver brightness
 is saved persistently, so even an app restart mid-screensaver cannot
 make the night level the new normal.
@@ -402,12 +402,18 @@ dashboard straight back.
 ## Schedule
 
 **Scheduled screensavers** switches to a different screensaver at set
-times of day. Each entry under **Times** carries a time, a mode, a
-brightness and four overrides — motion, face, widgets and At a glance —
-edited by tapping the entry; it applies from its time until the next
-entry, and the last entry of the day carries over past midnight.
-There is no day-of-week dimension, deliberately: the schedule describes
-a day, every day.
+times of day. Each entry under **Times** carries a time, a mode, its own
+**Screensaver brightness** switch and four overrides — motion, face,
+widgets and At a glance — edited by tapping the entry; it applies from
+its time until the next entry, and the last entry of the day carries
+over past midnight. There is no day-of-week dimension, deliberately: the
+schedule describes a day, every day.
+
+The entry's brightness switch works like the one under
+[Brightness](#brightness): off, the entry follows that setting, so a
+kiosk on [Adaptive brightness](screen.md#adaptive-brightness) keeps
+following the room through photos by day and a clock by night; on, the
+slider is this entry's level for its hours, Black aside.
 
 The typical shape is two entries: photos at a comfortable brightness
 from the morning, Black (or Clock, dimmed) from the evening. The motion
