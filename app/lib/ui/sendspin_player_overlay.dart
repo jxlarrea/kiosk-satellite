@@ -783,7 +783,7 @@ class _QueueViewState extends State<_QueueView> {
         // it has seen a key, so the row tints itself.
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: focused ? Colors.white24 : Colors.transparent,
+            color: focused ? Colors.white12 : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Padding(
