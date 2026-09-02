@@ -79,6 +79,14 @@ class SonosPlayer implements RemotePlayer {
   static final Map<String, String?> _artCache = {};
   final Set<String> _artPending = {};
 
+  /// A tablet kept off the internet cannot reach the services: after a
+  /// few lookups in a row come back empty, the follower stops asking for
+  /// a while and the speaker's proxy carries the art on its own.
+  static int _artMisses = 0;
+  static DateTime? _artHoldUntil;
+  static const _artMissLimit = 3;
+  static const _artHold = Duration(minutes: 15);
+
   /// The group the room plays in, as of the last topology read: the
   /// coordinator takes the transport, the queue and the group volume.
   SonosGroup? _group;
@@ -217,10 +225,26 @@ class SonosPlayer implements RemotePlayer {
       if (found != null) snap['artworkUrl'] = found;
       return;
     }
+    final hold = _artHoldUntil;
+    if (hold != null) {
+      if (DateTime.now().isBefore(hold)) return;
+      _artHoldUntil = null;
+      _artMisses = 0;
+    }
     if (!_artPending.add(uri)) return;
     unawaited(
       fetchPublicArt(lookup).then((found) {
         _artPending.remove(uri);
+        if (found == null) {
+          if (++_artMisses >= _artMissLimit) {
+            _artHoldUntil = DateTime.now().add(_artHold);
+            log.info(_name, 'public artwork out of reach; using the speaker');
+          }
+          // Not cached: the next look may be after the hold, with the
+          // network back.
+          return;
+        }
+        _artMisses = 0;
         if (_artCache.length > 200) _artCache.clear();
         _artCache[uri] = found;
         final current = _snapshot;
