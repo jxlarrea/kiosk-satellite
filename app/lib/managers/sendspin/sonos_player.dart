@@ -248,7 +248,7 @@ class SonosPlayer implements RemotePlayer {
         if (_artCache.length > 200) _artCache.clear();
         _artCache[uri] = found;
         final current = _snapshot;
-        if (found != null && current != null && current['trackUri'] == uri) {
+        if (current != null && current['trackUri'] == uri) {
           _emit({...current, 'artworkUrl': found});
         }
       }),
