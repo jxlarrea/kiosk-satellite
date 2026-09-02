@@ -94,17 +94,24 @@ class GroupNote extends StatelessWidget {
   }
 }
 
-/// An informational line inside a card, under the row it explains.
+/// An informational line inside a card, under the row it explains, or
+/// with [inset] off, on the page itself above a card, flush with the
+/// card's edge.
 class HintRow extends StatelessWidget {
-  const HintRow(this.text, {super.key});
+  const HintRow(this.text, {super.key, this.inset = true});
 
   final String text;
+
+  /// The card's row inset on both sides, the default inside a card; off
+  /// for a hint standing on the page, where the inset reads as a gap.
+  final bool inset;
 
   @override
   Widget build(BuildContext context) {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final side = inset ? Ks.inset : 0.0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Ks.inset, 8, Ks.inset, 12),
+      padding: EdgeInsets.fromLTRB(side, 8, side, 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -154,7 +154,7 @@ export async function updatePlayerRow() {
       + 'the picked player has a track playing or a queue loaded. With nothing '
       + 'playing or queued, neither appears.');
     intro.classList.add('media-player-intro');
-    intro.style.cssText = 'margin: 0 20px 4px;';
+    intro.style.cssText = 'margin: 0 0 4px;';
     tab.prepend(intro);
   }
   const byKey = Object.fromEntries(

@@ -1950,7 +1950,8 @@ class _CategoryContentState extends State<_CategoryContent> {
         ] else ...[
           // What every source has in common, said once at the top: the
           // surfaces only show for a player with something to show.
-          if (widget.category == 'Sendspin') const HintRow(_mediaPlayerIntro),
+          if (widget.category == 'Sendspin')
+            const HintRow(_mediaPlayerIntro, inset: false),
           ..._withMqttDeprecation(
             _withEsphomeStartError(
               _sectionedCards(
