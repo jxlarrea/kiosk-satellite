@@ -84,7 +84,7 @@ class SendspinManager extends Manager {
 
   /// Whether the queue panel is on: the persisted setting behind the
   /// view's queue button, for a source that has a queue to show. A
-  /// followed player without one leaves the slot to the lyrics, and the
+  /// followed player without one leaves the slot to the lyrics and the
   /// setting waits for a source that can use it.
   bool get queueOpen =>
       _settings.get(defs.sendspinFullscreenQueue) && queueAvailable;
@@ -248,11 +248,20 @@ class SendspinManager extends Manager {
   bool get favoriteAvailable =>
       _remote == null ? _maConfigured : _remote!.hasFavorites;
 
-  /// Whether lyrics can follow the music for the current source.
-  bool get lyricsAvailable => _remote?.lyricsSynced ?? true;
+  /// Whether lyrics can follow the music for the current source. A
+  /// followed Sonos takes them from Music Assistant, so it needs the
+  /// connection and its own switch on.
+  bool get lyricsAvailable {
+    final remote = _remote;
+    if (remote == null) return true;
+    if (remote is SonosPlayer) {
+      return _maConfigured && _settings.get(defs.sendspinSonosLyrics);
+    }
+    return remote.lyricsSynced;
+  }
 
   /// Whether the Now Playing view can set the volume: always for the
-  /// local player (the device's media volume), and for a followed player
+  /// local player (the device's media volume) and for a followed player
   /// that reports volume among its commands.
   bool get volumeAvailable =>
       _remote == null ||
@@ -283,8 +292,7 @@ class SendspinManager extends Manager {
     // No lyrics for a followed player whose position is too coarse to
     // sing along with: lyrics that lag the music are worse than none.
     final remote = _remote;
-    if (!_settings.get(defs.sendspinLyrics) ||
-        (remote != null && !remote.lyricsSynced)) {
+    if (!_settings.get(defs.sendspinLyrics) || !lyricsAvailable) {
       if (lyrics.value.isNotEmpty) lyrics.value = const [];
       _lyricsKey = '';
       return;
@@ -620,7 +628,7 @@ class SendspinManager extends Manager {
           e.key == defs.sendspinEnabled.key) {
         _syncFlags();
       }
-      // The source filters the pick: a pick from another source, or any
+      // The source filters the pick: a pick from another source or any
       // pick once the source is this device again, is stale.
       if (e.key == defs.sendspinPlayerSource.key) {
         unawaited(_reconcilePick());
@@ -629,7 +637,10 @@ class SendspinManager extends Manager {
       // button, or either settings surface): fetch for the track already
       // playing, or clear what is up. The per-track fetch below only
       // runs at track changes.
-      if (e.key == defs.sendspinLyrics.key) unawaited(_refreshLyrics());
+      if (e.key == defs.sendspinLyrics.key ||
+          e.key == defs.sendspinSonosLyrics.key) {
+        unawaited(_refreshLyrics());
+      }
       // The queue panel switching on (the view's button, or either
       // settings surface) fetches the queue; off drops it.
       if (e.key == defs.sendspinFullscreenQueue.key) {
@@ -708,6 +719,7 @@ class SendspinManager extends Manager {
         'sendspin.player_name',
         'sendspin.sonos_hosts',
         'sendspin.sonos_group_volume',
+        'sendspin.sonos_lyrics',
         'sendspin.player_active',
         'sendspin.local_player_name',
       ];
@@ -782,7 +794,7 @@ class SendspinManager extends Manager {
         name: 'sendspinControl',
         description:
             'Send a transport command to the Sendspin group this player '
-            'belongs to, or to the followed player when one is set (play, '
+            'belongs to or to the followed player when one is set (play, '
             'pause, next, previous).',
         params: const {'command': 'play | pause | next | previous'},
         handler: (p) async {
@@ -854,7 +866,7 @@ class SendspinManager extends Manager {
             'The players the Now Playing surfaces can follow, grouped by '
             'source: Music Assistant players, Home Assistant media players, '
             'Sonos rooms. Returns id, name, group and availability per '
-            'player, and a note per group that could not be listed. With '
+            'player and a note per group that could not be listed. With '
             'source set, only that group.',
         params: const {'source': 'ma | ha | sonos, default all'},
         handler: (p) async {
@@ -940,7 +952,7 @@ class SendspinManager extends Manager {
         name: 'sonosAdd',
         description:
             'Remember a Sonos speaker by address, for a speaker discovery '
-            'cannot reach (another VLAN), and list the rooms of its '
+            'cannot reach (another VLAN) and list the rooms of its '
             'household.',
         params: const {'host': 'the speaker address, without a port'},
         handler: (p) async {
@@ -1429,8 +1441,8 @@ class SendspinManager extends Manager {
   }
 
   /// Keep the queue poll running exactly while the local player plays
-  /// with the watcher up, or a followed Music Assistant player plays: the
-  /// server sends no time events for a queue of its own accord, and the
+  /// with the watcher up or a followed Music Assistant player plays: the
+  /// server sends no time events for a queue of its own accord and the
   /// queue's live elapsed time is what keeps the bar and the lyrics on
   /// the audio either way.
   void _syncQueuePoll() {
@@ -1698,7 +1710,7 @@ class SendspinManager extends Manager {
     return control(on ? 'shuffle' : 'unshuffle');
   }
 
-  /// Set the volume, 0 to 100: the followed player's own, or this
+  /// Set the volume, 0 to 100: the followed player's own or this
   /// device's media volume for the local player.
   Future<bool> setVolume(int percent) async {
     if (_remote case final remote?) return remote.setVolume(percent);

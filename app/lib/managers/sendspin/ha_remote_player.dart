@@ -13,7 +13,7 @@ import 'remote_player.dart';
 ///
 /// One websocket to Home Assistant carries everything: `subscribe_entities`
 /// for the one entity (the full state on subscribe, then diffs as the
-/// player changes), and `call_service` for the transport, shuffle, seek and
+/// player changes) and `call_service` for the transport, shuffle, seek and
 /// volume. Track, artwork, position and the supported buttons all come
 /// from the entity's attributes, so a Sonos, a Chromecast and a receiver
 /// look the same here; nothing is special-cased per integration.

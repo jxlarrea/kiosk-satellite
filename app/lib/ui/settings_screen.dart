@@ -1941,23 +1941,26 @@ class _CategoryContentState extends State<_CategoryContent> {
           // default is what the app has always done.
           _subpageEntryCard(container, 'Screen & Audio', 'Microphone settings'),
         ] else
-          ..._withMqttDeprecation(
-            _withEsphomeStartError(
-              _sectionedCards(
-                container,
-                // With the Camera master switch off (or no camera on the
-                // device at all), motion detection cannot run: the dismiss
-                // switch renders disabled (below) with the reason, instead of
-                // lying enabled; its tuning rows live in the Camera section
-                // now and hide with the master there. A camera-less device
-                // keeps only the disabled master switch.
-                widget.category == 'Camera' &&
-                        container.deviceCamera.cameraKnownAbsent
-                    ? const [cameraEnabled]
-                    : _defsFor(widget.category),
-                () => setState(() {}),
-                replace: _rowReplacements(container),
-                after: _rowExtras(container),
+          ..._withPlayerWarn(
+            container,
+            _withMqttDeprecation(
+              _withEsphomeStartError(
+                _sectionedCards(
+                  container,
+                  // With the Camera master switch off (or no camera on the
+                  // device at all), motion detection cannot run: the dismiss
+                  // switch renders disabled (below) with the reason, instead of
+                  // lying enabled; its tuning rows live in the Camera section
+                  // now and hide with the master there. A camera-less device
+                  // keeps only the disabled master switch.
+                  widget.category == 'Camera' &&
+                          container.deviceCamera.cameraKnownAbsent
+                      ? const [cameraEnabled]
+                      : _defsFor(widget.category),
+                  () => setState(() {}),
+                  replace: _rowReplacements(container),
+                  after: _rowExtras(container),
+                ),
               ),
             ),
           ),
@@ -2271,7 +2274,45 @@ class _CategoryContentState extends State<_CategoryContent> {
   /// shown disabled with the reason it cannot be used. Keyed by setting
   /// key and handed to every render of the category, the pages below it
   /// included, so a replacement follows its row onto its page.
+  /// Say what the source pick just did to this device, under the card
+  /// that holds the pick: its own player is gone from Music Assistant
+  /// and the rows about it are gone from this page. Outside the card,
+  /// the way a note about a card reads.
+  List<Widget> _withPlayerWarn(AppContainer container, List<Widget> cards) {
+    if (widget.category != 'Sendspin' ||
+        container.settings.get(sendspinPlayerSource).isEmpty) {
+      return cards;
+    }
+    final name = container.settings.get(sendspinPlayerName).trim();
+    final note = WarnRow(
+      "This device's own Sendspin player stays offline while "
+      '${name.isEmpty ? 'another player' : name} is controlled.',
+    );
+    final first = cards.indexWhere((w) => w is SettingsCard);
+    if (first < 0) return cards;
+    return [...cards.take(first + 1), note, ...cards.skip(first + 1)];
+  }
+
+  /// A Sonos lyrics switch without a Music Assistant connection: disabled,
+  /// saying what it needs, since the lyrics can only come from there.
+  bool get _maConfigured =>
+      widget.container.settings.get(sendspinMaUrl).trim().isNotEmpty &&
+      widget.container.settings.get(sendspinMaToken).trim().isNotEmpty;
+
   Map<String, Widget> _rowReplacements(AppContainer container) => {
+    if (widget.category == 'Sendspin' && !_maConfigured)
+      sendspinSonosLyrics.key: SearchLandingTarget(
+        id: sendspinSonosLyrics.key,
+        child: SwitchListTile(
+          title: Text(sendspinSonosLyrics.title),
+          subtitle: const Text(
+            'Needs a Music Assistant connection. Set the server address '
+            'and token on the Music Assistant page.',
+          ),
+          value: false,
+          onChanged: null,
+        ),
+      ),
     // The player pick (issue #265): a grouped picker fed by the live
     // player lists, in the place of the plain text field its definition
     // would draw.
@@ -2561,16 +2602,6 @@ class _CategoryContentState extends State<_CategoryContent> {
       mqttPassword.key: _MqttValidateRow(container: container),
     if (widget.category == 'Sendspin')
       sendspinMaToken.key: _MaValidateRow(container: container),
-    // Say what the pick just did to this device: its own player is gone
-    // from Music Assistant, and the rows about it are gone from this
-    // page.
-    if (widget.category == 'Sendspin' &&
-        container.settings.get(sendspinPlayerSource).isNotEmpty)
-      sendspinPlayer.key: WarnRow(
-        "This device's own Sendspin player stays offline while "
-        '${container.settings.get(sendspinPlayerName).trim().isEmpty ? 'another player' : container.settings.get(sendspinPlayerName)} '
-        'is controlled.',
-      ),
     // The live list right under the sort picker that orders it.
     // Rides the section's dependsOn: with the proxy off there is
     // nothing to list and none of these rows render.
@@ -5282,7 +5313,7 @@ class _PlayerPickerDialogState extends State<_PlayerPickerDialog> {
 }
 
 /// The Sonos page's speakers: every room the device knows, with a way to
-/// forget one, a search of the network for more, and an address field for
+/// forget one, a search of the network for more and an address field for
 /// a speaker the search cannot reach (another VLAN). Everything inline:
 /// no prompt, no popup.
 class _SonosSpeakersCard extends StatefulWidget {
@@ -5335,11 +5366,37 @@ class _SonosSpeakersCardState extends State<_SonosSpeakersCard> {
   }
 
   Future<void> _add() async {
-    final host = _host.text.trim();
-    if (host.isEmpty) return;
+    _host.clear();
+    final host = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add a Sonos by address'),
+        content: SizedBox(
+          width: 420,
+          child: TextField(
+            controller: _host,
+            autofocus: true,
+            keyboardType: TextInputType.url,
+            decoration: const InputDecoration(hintText: '192.168.1.40'),
+            onSubmitted: (v) => Navigator.pop(ctx, v),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, _host.text),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+    if (host == null || host.trim().isEmpty || !mounted) return;
     setState(() => _busy = true);
     final result = await widget.container.commands.execute('sonosAdd', {
-      'host': host,
+      'host': host.trim(),
     });
     if (!mounted) return;
     if (!result.ok) {
@@ -5374,7 +5431,7 @@ class _SonosSpeakersCardState extends State<_SonosSpeakersCard> {
           const ListTile(
             title: Text('No speakers yet'),
             subtitle: Text(
-              'Search this network, or add a speaker by its address.',
+              'Search this network or add a speaker by its address.',
             ),
           )
         else
@@ -5393,8 +5450,8 @@ class _SonosSpeakersCardState extends State<_SonosSpeakersCard> {
         SettingsRow(
           title: const Text('Search the network'),
           subtitle: const Text(
-            'Finds the speakers on this network. A speaker on another '
-            'network never answers; add it by address below.',
+            'Finds Sonos speakers on this network. The speakers must be on '
+            'the same VLAN as this device to be auto discovered.',
           ),
           trailing: _busy
               ? const SizedBox(
@@ -5410,31 +5467,12 @@ class _SonosSpeakersCardState extends State<_SonosSpeakersCard> {
         SettingsRow(
           title: const Text('Add by address'),
           subtitle: const Text(
-            'The speaker\'s address on the network. Its whole household '
-            'is remembered from it.',
+            'The speaker\'s address on the network. The whole household '
+            'is added from it.',
           ),
-          stack: true,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 200,
-                child: TextField(
-                  controller: _host,
-                  keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(
-                    hintText: '192.168.1.40',
-                    isDense: true,
-                  ),
-                  onSubmitted: (_) => _add(),
-                ),
-              ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: _busy ? null : _add,
-                child: const Text('Add'),
-              ),
-            ],
+          trailing: FilledButton(
+            onPressed: _busy ? null : _add,
+            child: const Text('Add'),
           ),
         ),
         if (speakers != null && speakers.isNotEmpty)

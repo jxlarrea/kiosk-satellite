@@ -143,7 +143,7 @@ export function updateMaValidateRow() {
 
 /* Which player of the picked source the Now Playing surfaces follow
    (issue #265). The definition renders as a text field; this swaps in a
-   select fed by the mediaPlayers command for that source, and puts the
+   select fed by the mediaPlayers command for that source and puts the
    device's warning under the source row while another source is picked. */
 export async function updatePlayerRow() {
   const tab = document.getElementById('tab-sendspin');
@@ -153,25 +153,37 @@ export async function updatePlayerRow() {
   const source = byKey['sendspin.player_source']?.value || '';
   const currentId = byKey['sendspin.player']?.value || '';
   const currentName = byKey['sendspin.player_name']?.value || '';
-  // A source change flips rows across pages (the whole local player page
-  // next door), so the page re-renders on it.
+  // A source change that reaches the local player's page entry re-renders
+  // the page through the generic save; one that stays in the card leaves
+  // the player select on the old source, so it is rebuilt in place then.
   const sourceSel = tab.querySelector('[data-key="sendspin.player_source"] select');
   if (sourceSel && !sourceSel.dataset.playerHook) {
     sourceSel.dataset.playerHook = '1';
-    sourceSel.addEventListener('change', () => setTimeout(loadSettings, 400));
+    sourceSel.addEventListener('change', () => setTimeout(() => {
+      const stale = tab.querySelector('[data-key="sendspin.player"] select');
+      if (stale && stale.dataset.source !== sourceSel.value) {
+        stale.remove();
+        updatePlayerRow();
+      }
+    }, 600));
   }
+  // What the pick did to this device, under the card that holds it.
   const sourceRow = tab.querySelector('[data-key="sendspin.player_source"]');
-  if (sourceRow && source && !tab.querySelector('.player-warn')) {
+  const card = sourceRow?.closest('.card');
+  tab.querySelector('.player-warn')?.remove();
+  if (card && source) {
     const note = hintRow(`This device's own Sendspin player stays offline `
       + `while ${currentName || 'another player'} is controlled.`, { warn: true });
     note.classList.add('player-warn');
-    sourceRow.insertAdjacentElement('afterend', note);
+    note.style.cssText = 'margin: 10px 20px 0;';
+    card.insertAdjacentElement('afterend', note);
   }
   const row = tab.querySelector('[data-key="sendspin.player"]');
   if (!row || !source || row.querySelector('select')) return;
   row.querySelectorAll('input, select').forEach((el) => el.remove());
   const sel = document.createElement('select');
   sel.className = 'field';
+  sel.dataset.source = source;
   sel.style.cssText = 'flex-shrink:0; max-width:240px;';
   const add = (value, label) => {
     const option = document.createElement('option');
@@ -218,11 +230,25 @@ export async function updatePlayerRow() {
 }
 
 /* The Sonos page's speakers, under its setting: every room the device
-   knows with a Forget, a search of the network, and an address field for a
+   knows with a Forget, a search of the network and an address field for a
    speaker the search cannot reach. Mirror of the device's card. */
 export async function updateSonosPage() {
   const panel = document.querySelector('#tab-sendspin > .subpage[data-subpage="Sonos"]');
-  if (!panel || panel.querySelector('.sonos-speakers')) return;
+  if (!panel) return;
+  // The lyrics switch means nothing without Music Assistant, where the
+  // lyrics come from: disabled, saying what it needs, as on the device.
+  const byKey = Object.fromEntries((state.settings || []).map((s) => [s.key, s]));
+  const maConfigured = (byKey['sendspin.ma_url']?.value || '').trim() !== ''
+    && byKey['sendspin.ma_token']?.value === '__set__';
+  const lyricsRow = panel.querySelector('[data-key="sendspin.sonos_lyrics"]');
+  if (lyricsRow && !maConfigured && !lyricsRow.dataset.gated) {
+    lyricsRow.dataset.gated = '1';
+    const box = lyricsRow.querySelector('input[type="checkbox"]');
+    if (box) { box.checked = false; box.disabled = true; }
+    lyricsRow.querySelector('.desc').textContent = 'Needs a Music Assistant '
+      + 'connection. Set the server address and token on the Music Assistant page.';
+  }
+  if (panel.querySelector('.sonos-speakers')) return;
   const h = document.createElement('h2');
   h.className = 'card-title';
   h.textContent = 'Speakers';
@@ -235,7 +261,7 @@ export async function updateSonosPage() {
     list.textContent = '';
     if (!speakers.length) {
       list.appendChild(readOnlyRow('No speakers yet',
-        'Search this network, or add a speaker by its address.', ''));
+        'Search this network or add a speaker by its address.', ''));
     }
     for (const p of speakers) {
       const r = readOnlyRow(p.name, p.host, '');
@@ -267,8 +293,8 @@ export async function updateSonosPage() {
     }
   };
   const search = readOnlyRow('Search the network',
-    'Finds the speakers on this network. A speaker on another network never '
-    + 'answers; add it by address below.', '');
+    'Finds Sonos speakers on this network. The speakers must be on the same '
+    + 'VLAN as this device to be auto discovered.', '');
   search.querySelector('span')?.remove();
   const searchBtn = document.createElement('button');
   searchBtn.className = 'btn-ghost';
@@ -281,36 +307,49 @@ export async function updateSonosPage() {
   search.appendChild(searchBtn);
   card.appendChild(search);
   const addRow = readOnlyRow('Add by address',
-    "The speaker's address on the network. Its whole household is remembered from it.", '');
+    "The speaker's address on the network. The whole household is added from it.", '');
   addRow.querySelector('span')?.remove();
-  const controls = document.createElement('div');
-  controls.style.cssText = 'display:flex; gap:10px; align-items:center;';
-  const input = document.createElement('input');
-  input.className = 'field';
-  input.placeholder = '192.168.1.40';
-  input.style.cssText = 'width: 180px;';
   const addBtn = document.createElement('button');
   addBtn.className = 'btn-primary';
   addBtn.textContent = 'Add';
-  const add = async () => {
-    const host = input.value.trim();
-    if (!host) return;
-    addBtn.disabled = true;
-    let out;
-    try {
-      out = await (await api('/api/commands/sonosAdd', {
-        method: 'POST', body: JSON.stringify({ host }) })).json();
-    } catch (_) { out = { ok: false, error: 'The device did not answer.' }; }
-    addBtn.disabled = false;
-    if (!out.ok) { showToast({ title: 'No Sonos found', message: out.error || '', kind: 'error' }); return; }
-    input.value = '';
-    showToast({ title: 'Sonos added', message: (out.data || []).map((p) => p.name).join(', '), kind: 'success' });
-    await load(false);
-  };
-  addBtn.addEventListener('click', add);
-  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
-  controls.append(input, addBtn);
-  addRow.appendChild(controls);
+  addBtn.style.cssText = 'flex-shrink:0;';
+  addBtn.addEventListener('click', () => {
+    // The address in a modal, the way every value is entered here.
+    const shell = modalShell({ title: 'Add a Sonos by address', width: 440,
+      onDismiss: () => shell.close() });
+    const input = document.createElement('input');
+    input.className = 'field';
+    input.placeholder = '192.168.1.40';
+    input.style.cssText = 'width:100%;';
+    shell.body.appendChild(input);
+    const cancel = document.createElement('button');
+    cancel.className = 'btn-text';
+    cancel.textContent = 'Cancel';
+    cancel.addEventListener('click', () => shell.close());
+    const ok = document.createElement('button');
+    ok.className = 'btn-primary';
+    ok.textContent = 'Add';
+    const submit = async () => {
+      const host = input.value.trim();
+      if (!host) return;
+      ok.disabled = true;
+      let out;
+      try {
+        out = await (await api('/api/commands/sonosAdd', {
+          method: 'POST', body: JSON.stringify({ host }) })).json();
+      } catch (_) { out = { ok: false, error: 'The device did not answer.' }; }
+      ok.disabled = false;
+      if (!out.ok) { showToast({ title: 'No Sonos found', message: out.error || '', kind: 'error' }); return; }
+      shell.close();
+      showToast({ title: 'Sonos added', message: (out.data || []).map((p) => p.name).join(', '), kind: 'success' });
+      await load(false);
+    };
+    ok.addEventListener('click', submit);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+    shell.foot.append(cancel, ok);
+    input.focus();
+  });
+  addRow.appendChild(addBtn);
   card.appendChild(addRow);
   await load(false);
 }

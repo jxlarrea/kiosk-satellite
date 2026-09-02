@@ -4397,11 +4397,11 @@ const cameraConfig = SettingDef<String>(
 // kiosk menu entries) and the players they can follow: this device as a
 // synchronized Sendspin audio player (the Music Assistant native protocol,
 // whose client lives in Kotlin under sendspin/), a Music Assistant player,
-// a Home Assistant media player, or a Sonos speaker followed directly.
+// a Home Assistant media player or a Sonos speaker followed directly.
 // The category keeps its Sendspin id and keys from when it was only the
 // local player.
 
-/// Where the player the surfaces follow lives: this device, or one of the
+/// Where the player the surfaces follow lives: this device or one of the
 /// systems that can list players. The pick below is filtered to it, and
 /// anything but this device takes the local Sendspin player offline.
 const sendspinPlayerSource = SettingDef<String>(
@@ -4411,7 +4411,7 @@ const sendspinPlayerSource = SettingDef<String>(
   title: 'Player source',
   description:
       'What the floating player and Now Playing show and control: this '
-      'device, or a player elsewhere.',
+      'device or a player elsewhere.',
   category: 'Sendspin',
   options: ['', 'ha', 'ma', 'sonos'],
   optionLabels: {
@@ -4454,9 +4454,26 @@ const sendspinPlayerName = SettingDef<String>(
   hidden: true,
 );
 
+/// Lyrics for a followed Sonos come from Music Assistant's providers,
+/// which is the one source of them the speaker itself cannot be: the
+/// switch only means anything with a Music Assistant connection, and
+/// both settings surfaces say so on the row while there is none.
+const sendspinSonosLyrics = SettingDef<bool>(
+  key: 'sendspin.sonos_lyrics',
+  type: SettingType.boolean,
+  defaultValue: true,
+  title: 'Enable lyrics',
+  description:
+      'Lyrics for the followed Sonos room, from Music Assistant. Needs '
+      'the Music Assistant server address and token.',
+  category: 'Sendspin',
+  subpage: 'Sonos',
+  section: 'Sonos',
+);
+
 /// Whether the Now Playing volume slider sets the whole group's volume
 /// while the followed Sonos room plays in one, the way the Sonos app's
-/// group slider does, or only the room's own.
+/// group slider does or only the room's own.
 const sendspinSonosGroupVolume = SettingDef<bool>(
   key: 'sendspin.sonos_group_volume',
   type: SettingType.boolean,
@@ -4488,7 +4505,7 @@ const sendspinEnabled = SettingDef<bool>(
   key: 'sendspin.enabled',
   // Gone while another source is picked (issue #265): the local player
   // never runs in that mode, so the switch could not do anything. The
-  // local-audio rows below ride this dependsOn transitively, and the
+  // local-audio rows below ride this dependsOn transitively and the
   // page entry goes with them.
   dependsOn: 'sendspin.player_source',
   dependsOnValue: '',
@@ -4539,7 +4556,7 @@ const sendspinCodec = SettingDef<String>(
 );
 
 /// Per-device playback offset (issue: Bluetooth speakers). The sync engine
-/// can only align what it can measure, and a Bluetooth speaker's own buffer
+/// can only align what it can measure and a Bluetooth speaker's own buffer
 /// sits past the DAC where Android's timestamps cannot see it — so that one
 /// endpoint lags the group and the only remedy used to be delaying twenty
 /// others. Negative plays this device earlier by the same amount instead.
@@ -4614,13 +4631,13 @@ const sendspinMaToken = SettingDef<String>(
   subpage: 'Music Assistant',
   section: 'Music Assistant',
   // As with the Home Assistant token: masks the row on a wall-mounted
-  // screen, and keeps the token out of a configuration export unless the
+  // screen and keeps the token out of a configuration export unless the
   // export was explicitly asked to carry secrets.
   secret: true,
 );
 
 /// The name the local player last registered with in Music Assistant —
-/// the device name, or the hardware model when none is set. Stored by
+/// the device name or the hardware model when none is set. Stored by
 /// SendspinManager at every player start so the Music Assistant shortcut
 /// can land the web interface on this device's own player without
 /// re-deriving the name (issue #265).
@@ -4651,7 +4668,7 @@ const sendspinPlayerActive = SettingDef<bool>(
 
 /// The kiosk menu's way into Music Assistant itself (browsing, queueing,
 /// playlists). Deliberately not a player UI of our own: Music Assistant's
-/// web interface is already complete, already maintained, and already the
+/// web interface is already complete, already maintained and already the
 /// one the household knows — the shortcut simply puts it a swipe away,
 /// over the dashboard, on the surface a tapped link would get.
 const sendspinMaShortcut = SettingDef<bool>(
@@ -4668,7 +4685,7 @@ const sendspinMaShortcut = SettingDef<bool>(
 );
 
 /// A wall tablet's way back to the dashboard when whoever queued a song
-/// walked off: the dashboard is what the screen is for, and a Music
+/// walked off: the dashboard is what the screen is for and a Music
 /// Assistant page left open is a screen doing nothing. Zero keeps it up
 /// until someone closes it, which is right for a desk.
 const sendspinMaAutoClose = SettingDef<num>(
@@ -4858,7 +4875,7 @@ const sendspinFullscreenDoubleTap = SettingDef<bool>(
 );
 
 /// Bring the view up the moment playback starts rather than waiting for
-/// the idle timeout: the display is the point of the music, and someone
+/// the idle timeout: the display is the point of the music and someone
 /// who queued a song from their phone expects the wall to show it now.
 const sendspinFullscreenOnPlay = SettingDef<bool>(
   key: 'sendspin.fullscreen_on_play',
@@ -5943,6 +5960,7 @@ const List<SettingDef<Object>> allSettings = [
   sendspinMaShortcut,
   sendspinMaAutoClose,
   sendspinMaHideClose,
+  sendspinSonosLyrics,
   sendspinSonosGroupVolume,
   sendspinSonosHosts,
   sendspinShowPlayer,

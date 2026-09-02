@@ -9,7 +9,7 @@ import '../dlna/upnp_xml.dart';
 /// and ZoneGroupTopology services, plus the discovery that finds speakers
 /// and the parsers for what they answer. No events: the follower polls,
 /// which works across VLANs where a speaker could never reach a callback
-/// on the tablet, and a speaker answers a call in a few milliseconds.
+/// on the tablet and a speaker answers a call in a few milliseconds.
 class SonosClient {
   SonosClient(this.host);
 
@@ -61,7 +61,7 @@ class SonosClient {
       request.headers.set('Content-Type', 'text/xml; charset="utf-8"');
       request.headers.set('SOAPACTION', '"$service#$action"');
       // A plain body with its length: the speaker's HTTP server does not
-      // read a chunked request, and without the length Dart sends one.
+      // read a chunked request and without the length Dart sends one.
       final bytes = utf8.encode(body);
       request.headers.contentLength = bytes.length;
       request.add(bytes);
@@ -323,7 +323,7 @@ class SonosClient {
       });
       await done.future;
     } catch (_) {
-      // No network, or multicast refused: nothing found is the answer.
+      // No network or multicast refused: nothing found is the answer.
     } finally {
       sock?.close();
     }

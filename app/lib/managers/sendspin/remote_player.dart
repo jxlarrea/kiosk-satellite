@@ -5,7 +5,7 @@
 /// Every follower publishes the same map shape SendspinManager builds for
 /// the local player ('title', 'artist', 'album', 'durationMs',
 /// 'positionMs', 'receivedAt', 'artworkUrl', 'playing', 'shuffle',
-/// 'supportedCommands', and 'volume' when the source reports one), or
+/// 'supportedCommands' and 'volume' when the source reports one), or
 /// null when there is nothing to show, so the surfaces need not know which
 /// kind of player they are looking at.
 abstract interface class RemotePlayer {
@@ -51,7 +51,7 @@ abstract interface class RemotePlayer {
   /// Set the player's volume, 0 to 100.
   Future<bool> setVolume(int percent);
 
-  /// The queue the player plays from, for the Now Playing panel, or null
+  /// The queue the player plays from, for the Now Playing panel or null
   /// when the source keeps none of its own here (Music Assistant's is
   /// read through its API by the manager).
   Future<RemoteQueue?> fetchQueue();
@@ -62,7 +62,7 @@ abstract interface class RemotePlayer {
 }
 
 /// A queue as the Now Playing panel lists it: rows with index, id, title,
-/// artist, durationMs, current and played, and how many follow the
+/// artist, durationMs, current and played and how many follow the
 /// playing one.
 class RemoteQueue {
   const RemoteQueue({required this.items, required this.upNext});

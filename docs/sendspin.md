@@ -16,7 +16,7 @@ shows up in Home Assistant as a `media_player` entity with full metadata,
 artwork and volume control.
 
 Or the surfaces follow a player elsewhere: any Music Assistant player, any
-Home Assistant media player, or a Sonos speaker directly, for the wall
+Home Assistant media player or a Sonos speaker directly, for the wall
 tablet whose job is to show and steer the kitchen speakers without making
 any music itself.
 
@@ -25,7 +25,7 @@ voice control through Voice Satellite.
 
 ## Setup
 
-Settings → **Media Player** on the device, or the matching tab in the
+Settings → **Media Player** on the device or the matching tab in the
 remote admin. The page opens on the player pick, then one entry per page:
 Sendspin Player, Music Assistant, Sonos, Floating Player and Now Playing.
 
@@ -33,7 +33,7 @@ Sendspin Player, Music Assistant, Sonos, Floating Player and Now Playing.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
-| Player source | This device | What the floating player and Now Playing show and control: this device's own Sendspin player, or a player in Home Assistant, Music Assistant or a Sonos household. Anything but this device takes the local player offline. |
+| Player source | This device | What the floating player and Now Playing show and control: this device's own Sendspin player or a player in Home Assistant, Music Assistant or a Sonos household. Anything but this device takes the local player offline. |
 | Player | | Shown for any source but this device: that source's players, described under Following another player. |
 
 ### Sendspin Player
@@ -59,7 +59,7 @@ server side.
 The Sendspin protocol carries the audio and the track's name, artist and
 album, and nothing beyond that. Anything richer comes from Music Assistant's
 own API, which is a separate address with its own token: lyrics, the queue,
-favorites, the list of its players for the picker, and the kiosk menu
+favorites, the list of its players for the picker and the kiosk menu
 shortcut.
 
 | Setting | Default | Notes |
@@ -78,8 +78,9 @@ player.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
+| Enable lyrics | on | Lyrics for the followed Sonos room, from Music Assistant. Needs the Music Assistant server address and token; without them the switch is disabled and says so. |
 | Adjust the group volume | on | While the followed room plays in a group, the Now Playing volume slider sets the whole group's volume, the way the Sonos app's group slider does. Off, only that room's. |
-| Speakers | | Every room the kiosk knows, each with a Forget. **Search** finds the speakers on the tablet's own network. **Add by address** takes a speaker's IP for one the search cannot reach, reads the household from it and remembers every room. |
+| Speakers | | Every room the kiosk knows, each with a Forget. **Search** finds Sonos speakers on the tablet's own network, which must be on the same VLAN as the device to be auto discovered. **Add by address** asks for a speaker's IP for one the search cannot reach and adds the whole household from it. |
 
 ### Floating Player
 
@@ -96,8 +97,8 @@ player.
 | Setting | Default | Notes |
 | --- | --- | --- |
 | "Now Playing" instead of the screensaver | off | The full-screen view described below. |
-| Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
-| Double tap to dismiss | off | A double tap anywhere on the view dismisses it, and the close button is not shown. Taps on the buttons and the queue rows never count. |
+| Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere and a pause keeps the view up for the paused player timeout. |
+| Double tap to dismiss | off | A double tap anywhere on the view dismisses it and the close button is not shown. Taps on the buttons and the queue rows never count. |
 | Launch Now Playing when music starts playing | on | Open the view as soon as playback starts instead of waiting for the screensaver timeout. |
 | Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
 | Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up. A paused track opens paused, with its play button. With nothing playing and no queue for this player, the entry stays out. |
@@ -108,7 +109,7 @@ player.
 By default the floating card and the "Now Playing" screen belong to this
 device's own player: what plays here is what they show. **Player source**
 points them at a player elsewhere instead, for the wall tablet whose job
-is to show and steer the music without making any of it, and the
+is to show and steer the music without making any of it and the
 **Player** dropdown under it lists that source's players:
 
 - **This device**, the Sendspin player above.
@@ -121,7 +122,7 @@ is to show and steer the music without making any of it, and the
   interface, with no Home Assistant or Music Assistant in between. The
   list names every room of the household the way the Sonos app does,
   rooms playing together as one entry. The speakers come from the Sonos
-  page: found by its search on the tablet's own network, or added there by
+  page: found by its search on the tablet's own network or added there by
   address for a speaker on another VLAN, which the search never reaches.
 
 Pick a player and the card, the full-screen view and the transport buttons
@@ -138,7 +139,7 @@ What each source offers differs a little:
 | This device | yes | yes | yes | yes |
 | Music Assistant player | yes | yes | yes | yes |
 | Home Assistant media player | yes | yes | no | no |
-| Sonos, direct | yes | yes | yes | no |
+| Sonos, direct | yes | with Music Assistant | yes | no |
 
 Every Home Assistant media player is treated the same, whatever integration
 stands behind it. Buttons a player cannot honor stay out of the view: a
@@ -150,11 +151,11 @@ under Home Assistant it is a generic player like any other. Picked under
 Sonos, the kiosk talks to the speaker directly: the track, artwork and
 position are read from the speaker once a second while it plays, so the
 lyrics stay in step, the queue panel lists the speaker's own queue with a
-tap to jump, shuffle sets the speaker's play mode, and the volume is the
-room's, or the group's while the room plays in one. The follower tracks
+tap to jump, shuffle sets the speaker's play mode and the volume is the
+room's or the group's while the room plays in one. The follower tracks
 the group the room belongs to, so regrouping from the Sonos app re-points
 it on its own. A radio stream has no pause on a Sonos, so the pause button
-stops it, the way the speaker itself does, and the queue panel shows
+stops it, the way the speaker itself does and the queue panel shows
 nothing queued while a station or a line-in plays outside the queue.
 
 With another player picked the device is a remote control, not a player:
@@ -182,7 +183,7 @@ The interface is Music Assistant's, not a copy of it, so browsing and
 queueing stay whatever the server's current version makes them. Playback
 itself needs nothing more than the Sendspin player above: queue to this
 device and it plays here. The page opens with the right player already
-selected: this device's own, or the followed Music Assistant player when
+selected: this device's own or the followed Music Assistant player when
 **Player** points at one.
 
 **Close after inactivity** puts the dashboard back on its own, for the wall
@@ -229,7 +230,7 @@ light/dark theme.
 The Large size adds previous, play/pause and next buttons sized for
 touch. They act on the whole playback group through the Sendspin
 controller role, so skipping a track here skips it on every speaker in
-the group, or on the followed player when there is one.
+the group or on the followed player when there is one.
 
 Card behavior:
 
@@ -282,26 +283,26 @@ Smaller toggles flank the transport the way Music Assistant's own player
 lays them out, three slots a side, a blank standing in for any the source
 lacks so the transport never leaves center. On the left, **volume**, a
 **heart** that adds the playing track to the Music Assistant favorites or
-takes it out again, lit while it is one, and **shuffle**, lit while the
+takes it out again, lit while it is one and **shuffle**, lit while the
 queue is shuffled and following a shuffle set from Music Assistant itself
 within a moment. On the right, **lyrics** and **queue**, each lit while it
 is the panel. The volume toggle swaps the progress bar for a volume slider
 with the level beside it, back to the progress bar four seconds after the
 last touch or on a second tap: the device's media volume for this device's
-own player, the followed player's own volume otherwise, and for a Sonos
-the room's, or the group's while the room plays in one. The choice sticks across
-sessions, and the two keep each other exclusive: lyrics and the queue
+own player, the followed player's own volume otherwise and for a Sonos
+the room's or the group's while the room plays in one. The choice sticks across
+sessions and the two keep each other exclusive: lyrics and the queue
 share one slot, beside the cover on a landscape screen and under it on a
 portrait one. The queue is laid out the way Music Assistant's own is: what
 already played, faded, above a Now Playing heading, the playing track
 under it, then an Up next heading with the count of what follows and the
 rest. It opens on the Now Playing heading and goes back there at each
 track change, follows the queue as Music Assistant changes it (a queue
-cleared there takes the last track off the card and the view), and a tap
+cleared there takes the last track off the card and the view) and a tap
 on any row jumps the queue there, the row spinning until the player is
 actually playing it. The heart and the queue need the Music Assistant
-server address and token, and a source with a Music Assistant queue behind
-it: a followed Home Assistant player has neither, and its toggles stay
+server address and token and a source with a Music Assistant queue behind
+it: a followed Home Assistant player has neither and its toggles stay
 out, with a blank keeping the transport centered.
 
 The transport keeps its place along the bottom of the screen whatever
@@ -323,7 +324,7 @@ press what they land on. **Double tap to dismiss** trades the button for
 a double tap anywhere on the view, for the screen everyone is used to
 tapping: a tap on the transport, the toggles or a queue row never counts,
 so a quick double press on Next skips twice. The back button dismisses it
-as it does any screensaver, and the motion setting is unchanged. With the
+as it does any screensaver and the motion setting is unchanged. With the
 controls off the view is the control-free display it always was: a tap
 anywhere dismisses it.
 
@@ -340,13 +341,13 @@ rest receding as it scrolls itself in time with the music. For this
 device's own player the line follows Sendspin's own synced position, the
 same one that keeps the audio aligned. For a followed player it follows
 the position that player's system reports: Music Assistant's queue time,
-read every few seconds, or the Home Assistant entity's last position plus
+read every few seconds or the Home Assistant entity's last position plus
 the time since, refreshed at every transport event.
 
 Lyrics come from Music Assistant when it is set up, so **Music Assistant
 needs a lyrics provider of its own** for that: add one under its
 Settings, then Providers; LRCLIB is free and needs no account. Tracks
-Music Assistant cannot match, and every track when no Music Assistant
+Music Assistant cannot match and every track when no Music Assistant
 server is configured, are looked up on LRCLIB directly by title, artist
 and length.
 
@@ -406,7 +407,7 @@ socket. A followed Sonos is polled over the speaker's UPnP services on
 port 1400: the transport state and position from the group's coordinator
 once a second while playing and every few seconds otherwise, the play
 mode and the volume a little less often, the household topology every
-half minute, and the queue through the speaker's ContentDirectory. Polling
+half minute and the queue through the speaker's ContentDirectory. Polling
 rather than events keeps it working across VLANs, where a speaker could
 never reach an event callback on the tablet.
 
@@ -437,5 +438,5 @@ license and attribution ship in the source tree.
   speaker on port 1400, which a router between the two usually allows.
 - **A followed Home Assistant player shows no track**: the entity has to
   report a `media_title`. Players that only stream line-in or a TV input
-  carry none, and the card stays empty until something with metadata
+  carry none and the card stays empty until something with metadata
   plays.

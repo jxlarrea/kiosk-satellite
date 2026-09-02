@@ -68,7 +68,7 @@ class MaRemotePlayer implements RemotePlayer {
   final void Function(Map<String, Object?>? snapshot) onSnapshot;
 
   /// Music Assistant keeps a queue for every player it drives, read by
-  /// the manager through the API, and a library to favorite into.
+  /// the manager through the API and a library to favorite into.
   @override
   bool get hasQueue => true;
 
@@ -327,7 +327,7 @@ class MaRemotePlayer implements RemotePlayer {
         // Play, pause, a queue handoff into or out of a group — all land
         // here. The queue answer is authoritative, so just look it up,
         // debounced: one action fires a handful of these back to back.
-        // The volume rides the event itself, and lands at once.
+        // The volume rides the event itself and lands at once.
         _readVolume(data);
         final snap = _snapshot;
         if (snap != null && _volume != null && snap['volume'] != _volume) {

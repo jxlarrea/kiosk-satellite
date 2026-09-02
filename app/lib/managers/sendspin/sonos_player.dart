@@ -15,7 +15,7 @@ import 'sonos_client.dart';
 /// Everything is polled: transport state and position from the group's
 /// coordinator once a second while playing (every few seconds otherwise),
 /// the play mode and the volume a little less often, the topology every
-/// half minute. A speaker answers each call in milliseconds, and polling
+/// half minute. A speaker answers each call in milliseconds and polling
 /// works across VLANs where the speaker could never reach an event
 /// callback on the tablet.
 class SonosPlayer implements RemotePlayer {
@@ -29,7 +29,7 @@ class SonosPlayer implements RemotePlayer {
   });
 
   /// Whether the volume slider sets the whole group's volume while the
-  /// room plays in one, or only the room's own.
+  /// room plays in one or only the room's own.
   final bool groupVolume;
 
   static const _name = 'sendspin';
@@ -73,7 +73,7 @@ class SonosPlayer implements RemotePlayer {
   SonosGroup? _group;
   int _topologyAt = 0;
 
-  /// The room's own client, and the coordinator's (the same one while the
+  /// The room's own client and the coordinator's (the same one while the
   /// room plays alone).
   late final SonosClient _room = clientFactory(host);
   SonosClient get _coordinator {
@@ -317,7 +317,7 @@ class SonosPlayer implements RemotePlayer {
     }
   }
 
-  /// The room's own volume, or the group's when the room plays in one.
+  /// The room's own volume or the group's when the room plays in one.
   @override
   Future<bool> setVolume(int percent) async {
     try {
