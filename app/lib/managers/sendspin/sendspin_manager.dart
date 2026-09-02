@@ -962,7 +962,7 @@ class SendspinManager extends Manager {
           );
           if (host.isEmpty) return const CommandResult.fail('no address');
           try {
-            final groups = await SonosClient(host).zoneGroups();
+            final groups = await _sonosGroupsAt(host);
             if (groups.isEmpty) {
               return const CommandResult.fail('The speaker listed no rooms.');
             }
@@ -1059,7 +1059,7 @@ class SendspinManager extends Manager {
     for (final host in hosts) {
       if (seen.contains(host)) continue;
       try {
-        final found = await SonosClient(host).zoneGroups();
+        final found = await _sonosGroupsAt(host);
         for (final g in found) {
           for (final m in g.members) {
             seen.add(m.host);
@@ -1097,6 +1097,17 @@ class SendspinManager extends Manager {
     if (picked.isLocal || picked.kind == kind) return;
     await _settings.set(defs.sendspinPlayer, '');
     await _settings.set(defs.sendspinPlayerName, '');
+  }
+
+  /// One topology read from the speaker at [host], its connections
+  /// dropped after.
+  static Future<List<SonosGroup>> _sonosGroupsAt(String host) async {
+    final client = SonosClient(host);
+    try {
+      return await client.zoneGroups();
+    } finally {
+      client.close();
+    }
   }
 
   /// The known speakers by room, for the Sonos page.

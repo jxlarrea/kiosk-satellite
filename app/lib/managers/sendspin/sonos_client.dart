@@ -38,6 +38,16 @@ class SonosClient {
 
   String get baseUrl => 'http://$host:$port';
 
+  /// One connection pool per speaker: a poll makes a few calls a second
+  /// for as long as the room is followed, and a fresh client (and TCP
+  /// handshake) for each would cost the tablet more than the speaker.
+  final HttpClient _client = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 5)
+    ..idleTimeout = const Duration(seconds: 15);
+
+  /// Drop the pooled connections. The client is unusable after this.
+  void close() => _client.close(force: true);
+
   /// One SOAP action. Returns the response's argument elements by name,
   /// unescaped. Throws on a transport error, a non-200 answer or a UPnP
   /// fault, with the fault's error code in the message.
@@ -53,9 +63,8 @@ class SonosClient {
         '<s:Body><u:$action xmlns:u="$service">'
         '${args.entries.map((e) => '<${e.key}>${escapeXml(e.value)}</${e.key}>').join()}'
         '</u:$action></s:Body></s:Envelope>';
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
     try {
-      final request = await client.postUrl(
+      final request = await _client.postUrl(
         Uri.parse('$baseUrl${_paths[service]}'),
       );
       request.headers.set('Content-Type', 'text/xml; charset="utf-8"');
@@ -80,8 +89,10 @@ class SonosClient {
         );
       }
       return parseSoapArgs(text);
-    } finally {
-      client.close(force: true);
+    } on SonosError {
+      rethrow;
+    } catch (e) {
+      throw SonosError('$action failed: $e');
     }
   }
 

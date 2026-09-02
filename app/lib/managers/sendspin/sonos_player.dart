@@ -75,13 +75,17 @@ class SonosPlayer implements RemotePlayer {
   int _topologyAt = 0;
 
   /// The room's own client and the coordinator's (the same one while the
-  /// room plays alone).
+  /// room plays alone), each kept for its connections.
   late final SonosClient _room = clientFactory(host);
+  SonosClient? _leader;
   SonosClient get _coordinator {
     final leader = _group?.leader;
-    return leader == null || leader.host == host
-        ? _room
-        : clientFactory(leader.host);
+    if (leader == null || leader.host == host) return _room;
+    if (_leader?.host != leader.host) {
+      _leader?.close();
+      _leader = clientFactory(leader.host);
+    }
+    return _leader!;
   }
 
   bool get _grouped => (_group?.members.length ?? 1) > 1;
@@ -97,6 +101,9 @@ class SonosPlayer implements RemotePlayer {
     _running = false;
     _tick?.cancel();
     _tick = null;
+    _room.close();
+    _leader?.close();
+    _leader = null;
   }
 
   @override

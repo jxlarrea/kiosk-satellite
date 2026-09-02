@@ -71,10 +71,13 @@ Turn any Android device into a beautiful, dedicated Home Assistant kiosk. Purpos
   call a Home Assistant service or script, open another app and more,
   all invisible to guests.
 
-&bull; **Sendspin player**: the tablet doubles as a synchronized
+&bull; **Media player**: the tablet doubles as a synchronized
   [Sendspin](https://www.sendspin-audio.com/) speaker for Music
   Assistant, in sample-accurate sync with every other Sendspin player in
-  the house, with metadata, artwork and volume in Home Assistant.
+  the house, with metadata, artwork and volume in Home Assistant. Or it
+  follows a player elsewhere, any Music Assistant player, any Home
+  Assistant media player or a Sonos speaker directly, showing and steering
+  its music with artwork, lyrics, the queue and volume on screen.
 
 <p align="center">
  <img src="assets/screenshots/now-playing.png" alt="Now Playing Sendspin" width="650"/>
