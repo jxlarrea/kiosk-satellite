@@ -43,7 +43,7 @@ under the player.
 | Show media controls | on | Previous, play/pause and next buttons and a progress bar on the view. With controls on, a close button dismisses the view instead of a tap anywhere, and a pause keeps the view up for the paused player timeout. |
 | Show in the kiosk menu | off | Add a Now Playing entry to the kiosk menu that brings the view up. A paused track opens paused, with its play button. With nothing playing and no queue for this player, the entry stays out. |
 | "Now Playing" instead of the screensaver | off | The full-screen view described below. |
-| Double tap to dismiss | off | A double tap anywhere on the view dismisses it and the close button goes away. Taps on the buttons and the queue rows never count. |
+| Double tap to dismiss | off | A double tap anywhere on the view dismisses it, and the close button is not shown. Taps on the buttons and the queue rows never count. |
 | Dismiss "Now Playing" on motion | off | Off, only touch dismisses it, so someone walking past does not interrupt the music display. |
 
 ### Music Assistant

@@ -4587,8 +4587,8 @@ const sendspinFullscreenDoubleTap = SettingDef<bool>(
   defaultValue: false,
   title: 'Double tap to dismiss',
   description:
-      'A double tap anywhere on the Now Playing view dismisses it, and the '
-      'close button goes away.',
+      'A double tap anywhere on the Now Playing view dismisses it. The '
+      "close button won't be shown.",
   category: 'Sendspin',
   section: 'Now Playing',
   dependsOn: 'sendspin.fullscreen_controls',
