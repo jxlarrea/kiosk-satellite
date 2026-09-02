@@ -4600,8 +4600,8 @@ const sendspinDuckPercent = SettingDef<num>(
 // ── Music Assistant (Sendspin section) ─────────────────────────────────
 // The Sendspin player speaks Music Assistant's player protocol, which
 // carries the track but nothing about it beyond title, artist and album.
-// Anything richer — lyrics, the queue, favorites — comes from Music
-// Assistant's own API, which is a separate connection with its own
+// Anything richer (lyrics, the queue) comes from Music Assistant's own
+// API, which is a separate connection with its own
 // address and token.
 
 const sendspinMaUrl = SettingDef<String>(

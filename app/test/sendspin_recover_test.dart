@@ -23,8 +23,8 @@ class _FakeApi extends MusicAssistantApi {
   final Map<String, Object?>? track;
   int calls = 0;
 
-  /// The favorite and queue lookups the recovered card triggers must
-  /// never open a real socket from a test.
+  /// The queue lookup the recovered card triggers must never open a
+  /// real socket from a test.
   @override
   Future<MusicAssistantResult> call(
     String command, {

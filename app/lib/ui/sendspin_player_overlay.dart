@@ -955,7 +955,7 @@ class _QueueViewState extends State<_QueueView> {
 /// large card's previous, play/pause and next at wall-tablet size, over a
 /// progress bar that seeks where the server allows it, flanked by the
 /// smaller toggles the way Music Assistant's own player lays them out:
-/// favorite and shuffle to the left, lyrics and queue to the right. Its
+/// volume and shuffle to the left, lyrics and queue to the right. Its
 /// own widget with its own tick, so the position refresh rebuilds these
 /// few pixels and not the blurred backdrop behind them.
 class _NowPlayingControls extends StatefulWidget {
@@ -1048,7 +1048,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   void initState() {
     super.initState();
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
-    c.sendspin.favorite.addListener(_rebuild);
     // Nothing else on the view takes focus, so without this a dpad had
     // nothing to walk from.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1066,7 +1065,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   @override
   void dispose() {
     c.sendspin.nowPlaying.removeListener(_onNowPlaying);
-    c.sendspin.favorite.removeListener(_rebuild);
     _settingsSub?.cancel();
     _tick?.cancel();
     _volumeClose?.cancel();
@@ -1198,24 +1196,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     // cover either way.
     const toggleSize = 24.0;
     final toggleBlank = SizedBox(width: (toggleSize + 16) * scale);
-    // The heart: unknown (the lookup still out) draws faint and inert,
-    // and without a Music Assistant library behind the source there is
-    // nothing to favorite into.
-    final favorite = c.sendspin.favorite.value;
-    final heart = c.sendspin.favoriteAvailable
-        ? btn(
-            favorite == true
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
-            favorite == null ? null : c.sendspin.toggleFavorite,
-            size: toggleSize,
-            color: favorite == true
-                ? Colors.white
-                : favorite == null
-                ? Colors.white24
-                : Colors.white38,
-          )
-        : toggleBlank;
     final shuffleOn = _shuffleOverride ?? (now['shuffle'] == true);
     final shuffle = has('shuffle')
         ? btn(
@@ -1248,7 +1228,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
           )
         : toggleBlank;
     // The volume toggle leads the left cluster; the right one keeps a
-    // blank so the transport stays centered with three slots a side.
+    // blank so the transport stays centered with two slots a side.
     final volumeAvailable = c.sendspin.volumeAvailable;
     final volumeOpen = _volumeOpen && volumeAvailable;
     final level =
@@ -1296,7 +1276,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     double item(double size) =>
         max((size + 16) * scale, kMinInteractiveDimension);
     final rowWidth =
-        item(toggleSize) * 6 +
+        item(toggleSize) * 4 +
         item(44) * 2 +
         item(68) +
         (12 * 4 + 20 * 2 + 16 * 2) * scale;
@@ -1428,7 +1408,6 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                 children: [
                   ...cluster([
                     ('volume', volume),
-                    ('heart', heart),
                     ('shuffle', shuffle),
                   ], left: true),
                   SizedBox(width: 20 * scale),

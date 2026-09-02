@@ -64,15 +64,6 @@ class SendspinManager extends Manager {
   /// on this (with sendspin.fullscreen), never on the raw playing flag.
   final fullscreenActive = ValueNotifier<bool>(false);
 
-  /// Whether the playing track is a favorite in Music Assistant: null
-  /// while unknown (no server configured, nothing playing, or the lookup
-  /// still out). The Now Playing view's heart reads and flips it.
-  final favorite = ValueNotifier<bool?>(null);
-
-  /// The Music Assistant item behind [favorite]: uri, media_type,
-  /// item_id and provider, what the add and remove commands need.
-  Map<String, Object?>? _favoriteItem;
-
   /// The Now Playing view's queue panel: the items from the playing one
   /// on, fetched while sendspin.fullscreen_queue is on. The panel takes
   /// the lyrics' place while it is.
@@ -90,8 +81,8 @@ class SendspinManager extends Manager {
       _settings.get(defs.sendspinFullscreenQueue) && queueAvailable;
   String _queueId = '';
 
-  /// The track the favorite and queue lookups belong to, so an answer
-  /// arriving after the song changed is dropped.
+  /// The track the queue lookup belongs to, so an answer arriving after
+  /// the song changed is dropped.
   String _trackKey = '';
 
   /// True from a lyrics lookup starting to its answer: the view holds
@@ -242,11 +233,6 @@ class SendspinManager extends Manager {
   /// its own, a Home Assistant player has none.
   bool get queueAvailable =>
       _remote == null ? _maConfigured : _remote!.hasQueue;
-
-  /// Whether the playing track can be marked a favorite: Music
-  /// Assistant's library, for the local player and its own players.
-  bool get favoriteAvailable =>
-      _remote == null ? _maConfigured : _remote!.hasFavorites;
 
   /// Whether lyrics can follow the music for the current source. A
   /// followed Sonos takes them from Music Assistant, so it needs the
@@ -1513,8 +1499,8 @@ class SendspinManager extends Manager {
     );
   }
 
-  /// The track on screen changed (or went away): re-read what Music
-  /// Assistant knows about it for the favorite heart and the queue panel.
+  /// The track on screen changed (or went away): re-read the queue
+  /// panel's listing.
   void _onTrackChanged() {
     final now = nowPlaying.value;
     final key = now == null
@@ -1523,83 +1509,10 @@ class SendspinManager extends Manager {
     if (key == _trackKey) return;
     _trackKey = key;
     if (now == null) {
-      favorite.value = null;
-      _favoriteItem = null;
       queueItems.value = const [];
       return;
     }
-    unawaited(_refreshFavorite());
     if (queueOpen) unawaited(refreshQueue());
-  }
-
-  Future<void> _refreshFavorite() async {
-    final key = _trackKey;
-    favorite.value = null;
-    _favoriteItem = null;
-    if (!_maConfigured || key == '|') return;
-    final title = '${nowPlaying.value?['title'] ?? ''}';
-    // Music Assistant's queue can lag the Sendspin metadata by a beat at
-    // a track boundary: an item that is not the one on screen gets one
-    // more look after a moment.
-    for (var attempt = 0; attempt < 2; attempt++) {
-      final queue = await _activeQueue();
-      if (_trackKey != key) return;
-      final media = (queue?['current_item'] as Map?)?['media_item'];
-      final uri = media is Map ? '${media['uri'] ?? ''}' : '';
-      final name = media is Map ? '${media['name'] ?? ''}' : '';
-      if (uri.isNotEmpty && (name == title || attempt == 1)) {
-        await _resolveFavorite(uri, key);
-        return;
-      }
-      await Future<void>.delayed(const Duration(seconds: 2));
-      if (_trackKey != key) return;
-    }
-  }
-
-  /// Read the item's library state: the library copy when it has one
-  /// (favorites always do), the provider item otherwise.
-  Future<void> _resolveFavorite(String uri, String key) async {
-    final res = await _api().call('music/item_by_uri', args: {'uri': uri});
-    final item = res.result;
-    if (_trackKey != key || !res.ok || item is! Map) return;
-    _favoriteItem = {
-      'uri': uri,
-      'media_type': item['media_type'],
-      'item_id': item['item_id'],
-      'provider': item['provider'],
-    };
-    favorite.value = item['favorite'] == true;
-  }
-
-  /// Flip the playing track's favorite in Music Assistant: the Now
-  /// Playing view's heart. Optimistic on screen, re-read from the server
-  /// after, and put back on a refusal.
-  Future<bool> toggleFavorite() async {
-    final item = _favoriteItem;
-    final current = favorite.value;
-    if (item == null || current == null) return false;
-    final key = _trackKey;
-    favorite.value = !current;
-    final res = current
-        ? await _api().call(
-            'music/favorites/remove_item',
-            args: {
-              'media_type': item['media_type'],
-              'library_item_id': item['item_id'],
-            },
-          )
-        : await _api().call(
-            'music/favorites/add_item',
-            args: {'item': item['uri']},
-          );
-    if (_trackKey != key) return res.ok;
-    if (!res.ok) {
-      log.warn(name, 'favorite toggle failed: ${res.error}');
-      favorite.value = current;
-      return false;
-    }
-    await _resolveFavorite('${item['uri']}', key);
-    return true;
   }
 
   /// The view's queue button: flip the persisted panel setting, taking

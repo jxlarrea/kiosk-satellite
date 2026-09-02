@@ -17,11 +17,10 @@ import 'package:kiosk_satellite/ui/sendspin_player_overlay.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A Music Assistant that answers the few commands the view needs: one
-/// queue, one track, and a favorite flag the commands flip.
+/// queue and one track.
 class _FakeApi extends MusicAssistantApi {
   _FakeApi() : super(baseUrl: 'ma.local', token: 't');
 
-  static bool favorite = false;
   static final calls = <String>[];
   static final args = <Map<String, Object?>>[];
 
@@ -43,14 +42,6 @@ class _FakeApi extends MusicAssistantApi {
           'media_item': {'uri': 'library://track/1', 'name': 'Song'},
         },
       },
-      'music/item_by_uri' => {
-        'favorite': favorite,
-        'item_id': '1',
-        'media_type': 'track',
-        'provider': 'library',
-      },
-      'music/favorites/add_item' => favorite = true,
-      'music/favorites/remove_item' => favorite = false,
       'player_queues/items' => [
         {
           'queue_item_id': 'item-0',
@@ -686,7 +677,6 @@ void main() {
       addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
       container = AppContainer();
       await container.settings.init();
-      _FakeApi.favorite = false;
       _FakeApi.calls.clear();
       _FakeApi.args.clear();
       container.sendspin.apiFactory = ({required baseUrl, required token}) =>
@@ -818,36 +808,13 @@ void main() {
       }
     }
 
-    testWidgets('without a Music Assistant server the heart and queue '
-        'stay out', (tester) async {
+    testWidgets('without a Music Assistant server the queue stays out', (
+      tester,
+    ) async {
       await pump(tester);
-      expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
       expect(find.byIcon(Icons.queue_music_rounded), findsNothing);
-      // The transport is still centered: blanks stand in for them.
+      // The transport is still centered: a blank stands in for it.
       expect(find.byIcon(Icons.shuffle_rounded), findsOneWidget);
-    });
-
-    testWidgets('the heart reads the favorite and flips it', (tester) async {
-      await pump(tester, settings: ma);
-      await settle(tester);
-      expect(_FakeApi.calls, contains('music/item_by_uri'));
-      Color? heartColor(IconData icon) => tester
-          .widget<IconButton>(
-            find.ancestor(
-              of: find.byIcon(icon),
-              matching: find.byType(IconButton),
-            ),
-          )
-          .color;
-      expect(heartColor(Icons.favorite_border_rounded), Colors.white38);
-      await tester.tap(find.byIcon(Icons.favorite_border_rounded));
-      await settle(tester);
-      expect(_FakeApi.calls, contains('music/favorites/add_item'));
-      expect(heartColor(Icons.favorite_rounded), Colors.white);
-      await tester.tap(find.byIcon(Icons.favorite_rounded));
-      await settle(tester);
-      expect(_FakeApi.calls, contains('music/favorites/remove_item'));
-      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
     });
 
     testWidgets('the queue button opens the panel and persists it', (
@@ -922,10 +889,6 @@ void main() {
       };
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      // The new title also starts a favorite lookup whose retry waits
-      // two seconds for the server's queue to catch up; let it run out
-      // before the tree goes away.
-      await tester.pump(const Duration(seconds: 3));
       // The lyrics button hands the slot back.
       await tester.tap(find.byIcon(Icons.lyrics_outlined));
       await settle(tester);

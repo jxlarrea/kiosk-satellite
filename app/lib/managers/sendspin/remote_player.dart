@@ -22,10 +22,6 @@ abstract interface class RemotePlayer {
   /// jump within it.
   bool get hasQueue;
 
-  /// Whether the source keeps a library the playing track can be marked
-  /// a favorite in.
-  bool get hasFavorites;
-
   /// Whether the source reports position closely enough for synced lyrics
   /// to follow the music.
   bool get lyricsSynced;

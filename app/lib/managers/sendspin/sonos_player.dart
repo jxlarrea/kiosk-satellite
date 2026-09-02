@@ -54,9 +54,6 @@ class SonosPlayer implements RemotePlayer {
   @override
   bool get hasQueue => true;
 
-  @override
-  bool get hasFavorites => false;
-
   /// Position is read from the speaker itself every second.
   @override
   bool get lyricsSynced => true;

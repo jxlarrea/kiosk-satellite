@@ -64,8 +64,7 @@ server side.
 The Sendspin protocol carries the audio and the track's name, artist and
 album, and nothing beyond that. Anything richer comes from Music Assistant's
 own API, which is a separate address with its own token: lyrics, the queue,
-favorites, the list of its players for the picker and the kiosk menu
-shortcut.
+the list of its players for the picker and the kiosk menu shortcut.
 
 | Setting | Default | Notes |
 | --- | --- | --- |
@@ -141,12 +140,12 @@ reports.
 
 What each source offers differs a little:
 
-| | Track, art, transport | Lyrics | Queue panel | Favorite |
-| --- | --- | --- | --- | --- |
-| This device | yes | yes | yes | yes |
-| Music Assistant player | yes | yes | yes | yes |
-| Home Assistant media player | yes | yes | no | no |
-| Sonos, direct | yes | with Music Assistant | yes | no |
+| | Track, art, transport | Lyrics | Queue panel |
+| --- | --- | --- | --- |
+| This device | yes | yes | yes |
+| Music Assistant player | yes | yes | yes |
+| Home Assistant media player | yes | yes | no |
+| Sonos, direct | yes | with Music Assistant | yes |
 
 Every Home Assistant media player is treated the same, whatever integration
 stands behind it. Buttons a player cannot honor stay out of the view: a
@@ -291,12 +290,10 @@ the bar stay put between songs while the cover and the title cross-fade
 behind them.
 
 Smaller toggles flank the transport the way Music Assistant's own player
-lays them out, three slots a side, a blank standing in for any the source
-lacks so the transport never leaves center. On the left, **volume**, a
-**heart** that adds the playing track to the Music Assistant favorites or
-takes it out again, lit while it is one and **shuffle**, lit while the
-queue is shuffled and following a shuffle set from Music Assistant itself
-within a moment. On the right, **lyrics** and **queue**, each lit while it
+lays them out, two slots a side, a blank standing in for any the source
+lacks so the transport never leaves center. On the left, **volume** and
+**shuffle**, lit while the queue is shuffled and following a shuffle set
+from Music Assistant itself within a moment. On the right, **lyrics** and **queue**, each lit while it
 is the panel. The volume toggle swaps the progress bar for a volume slider
 with the level beside it, back to the progress bar four seconds after the
 last touch or on a second tap: the device's media volume for this device's
@@ -314,10 +311,9 @@ rest. It opens on the Now Playing heading and goes back there at each
 track change, follows the queue as Music Assistant changes it (a queue
 cleared there takes the last track off the card and the view) and a tap
 on any row jumps the queue there, the row spinning until the player is
-actually playing it. The heart and the queue need the Music Assistant
-server address and token and a source with a Music Assistant queue behind
-it: a followed Home Assistant player has neither and its toggles stay
-out, with a blank keeping the transport centered.
+actually playing it. The queue needs a source with a queue behind it: a
+followed Home Assistant player has none and its toggle stays out, with a
+blank keeping the transport centered.
 
 The transport keeps its place along the bottom of the screen whatever
 the layout does: the lyrics or the queue appearing rearranges the cover
