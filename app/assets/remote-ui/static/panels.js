@@ -223,9 +223,14 @@ export async function updatePlayerRow() {
     const note = (res.data.notes || {})[source];
     if (note && !players.length) add(`note:${source}`, note).disabled = true;
     let seen = false;
+    // Two players with one name (a speaker two integrations both know)
+    // tell apart by their id.
+    const names = {};
+    for (const p of players) names[p.name] = (names[p.name] || 0) + 1;
     for (const p of players) {
       if (p.id === currentId) seen = true;
-      add(p.id, p.available === false ? `${p.name} (offline)` : p.name);
+      const label = names[p.name] > 1 && p.sub ? `${p.name} (${p.sub})` : p.name;
+      add(p.id, p.available === false ? `${label} (offline)` : label);
     }
     if (currentId && !seen) add(currentId, currentName || currentId);
   }

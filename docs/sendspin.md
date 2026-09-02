@@ -117,7 +117,9 @@ is to show and steer the music without making any of it and the
   token are set. Offline players are marked.
 - **Home Assistant** media players, every `media_player` entity by name
   with the entity id beneath, over the Home Assistant connection the kiosk
-  already has. This device's own entities stay out of the list.
+  already has. This device's own entities stay out of the list, and so do
+  Music Assistant's, which only know what Music Assistant plays and which
+  the Music Assistant source lists as its own players.
 - **Sonos** rooms, read from the speakers themselves over their local
   interface, with no Home Assistant or Music Assistant in between. The
   list names every room of the household the way the Sonos app does,

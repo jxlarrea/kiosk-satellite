@@ -438,6 +438,10 @@ class HaRemotePlayer implements RemotePlayer {
         final attrs = item['attributes'] is Map
             ? (item['attributes'] as Map)
             : const {};
+        // Music Assistant's own entities are its players seen through
+        // Home Assistant: they only know what Music Assistant plays, and
+        // the Music Assistant source lists the same players itself.
+        if (attrs.containsKey('mass_player_type')) continue;
         players.add({
           'id': id,
           'name': '${attrs['friendly_name'] ?? id}',
