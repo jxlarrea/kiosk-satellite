@@ -793,97 +793,103 @@ class _QueueViewState extends State<_QueueView> {
     final duration = (item['durationMs'] as num?)?.toInt() ?? 0;
     final id = '${item['id'] ?? ''}';
     final waiting = _pendingId != null && _pendingId == id;
-    final titleColor = current
-        ? Colors.white
-        : played
-        ? Colors.white38
-        : Colors.white70;
-    final subColor = current
-        ? Colors.white70
-        : played
-        ? Colors.white24
-        : Colors.white38;
     return _FocusTint(
       key: key,
-      builder: (context, focused, onFocusChange) => InkWell(
-        onTap: () => _play(id, '${item['title'] ?? ''}'),
-        borderRadius: BorderRadius.circular(10),
-        onFocusChange: onFocusChange,
-        // A dpad walking the rows needs to see where it is, whatever the
-        // focus highlight mode: a touch device paints no ink ring until
-        // it has seen a key, so the row tints itself.
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: focused ? Colors.white12 : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${item['title'] ?? ''}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: Ks.displayFont,
-                          color: titleColor,
-                          fontSize: current ? fontSize : fontSize * 0.9,
-                          fontWeight: current
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                        ),
-                      ),
-                      if ('${item['artist'] ?? ''}'.isNotEmpty)
+      builder: (context, focused, onFocusChange) {
+        // A focused row reads at full strength whatever its place in
+        // the queue, the way the playing one does.
+        final titleColor = current || focused
+            ? Colors.white
+            : played
+            ? Colors.white38
+            : Colors.white70;
+        final subColor = current || focused
+            ? Colors.white70
+            : played
+            ? Colors.white24
+            : Colors.white38;
+        return InkWell(
+          onTap: () => _play(id, '${item['title'] ?? ''}'),
+          borderRadius: BorderRadius.circular(10),
+          onFocusChange: onFocusChange,
+          // A dpad walking the rows needs to see where it is, whatever the
+          // focus highlight mode: a touch device paints no ink ring until
+          // it has seen a key, so the row tints itself.
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: focused
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          '${item['artist']}',
+                          '${item['title'] ?? ''}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: subColor,
-                            fontSize: fontSize * 0.8,
+                            fontFamily: Ks.displayFont,
+                            color: titleColor,
+                            fontSize: current ? fontSize : fontSize * 0.9,
+                            fontWeight: current
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                // A constant slot before the duration: the spinner while a
-                // tap is on its way, nothing otherwise, so the durations line
-                // up whatever a row is doing.
-                SizedBox(
-                  width: fontSize,
-                  height: fontSize,
-                  child: waiting
-                      ? Padding(
-                          padding: EdgeInsets.all(fontSize * 0.1),
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white70,
+                        if ('${item['artist'] ?? ''}'.isNotEmpty)
+                          Text(
+                            '${item['artist']}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: subColor,
+                              fontSize: fontSize * 0.8,
+                            ),
                           ),
-                        )
-                      : null,
-                ),
-                if (duration > 0) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    _clock(duration),
-                    style: TextStyle(
-                      color: subColor,
-                      fontSize: fontSize * 0.8,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  // A constant slot before the duration: the spinner while a
+                  // tap is on its way, nothing otherwise, so the durations line
+                  // up whatever a row is doing.
+                  SizedBox(
+                    width: fontSize,
+                    height: fontSize,
+                    child: waiting
+                        ? Padding(
+                            padding: EdgeInsets.all(fontSize * 0.1),
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white70,
+                            ),
+                          )
+                        : null,
+                  ),
+                  if (duration > 0) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      _clock(duration),
+                      style: TextStyle(
+                        color: subColor,
+                        fontSize: fontSize * 0.8,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
