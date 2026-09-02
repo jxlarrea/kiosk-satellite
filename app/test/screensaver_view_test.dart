@@ -4,6 +4,7 @@ import 'package:kiosk_satellite/core/command_registry.dart';
 import 'package:kiosk_satellite/core/event_bus.dart';
 import 'package:kiosk_satellite/core/events.dart';
 import 'package:kiosk_satellite/core/logging.dart';
+import 'package:kiosk_satellite/managers/browser/viewport_zoom_script.dart';
 import 'package:kiosk_satellite/managers/screensaver/screensaver_manager.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
 import 'package:kiosk_satellite/managers/settings/settings_manager.dart';
@@ -262,6 +263,39 @@ void main() {
       expect(defs.screensaverWebsiteDoubleTap.section, 'Website screensaver');
       expect(defs.screensaverWebsiteDoubleTap.dependsOn, 'screensaver.mode');
       expect(defs.screensaverWebsiteDoubleTap.dependsOnValue, 'website');
+    });
+  });
+
+  // The Website screensaver's zoom level: a page built for a monitor lands
+  // a little large on a wall tablet, so the group carries the same slider
+  // the Browser page has, scaling this WebView alone.
+  group('website zoom', () {
+    test('the slider lives in the Website group, 1x by default', () {
+      expect(defs.screensaverWebsiteZoom.defaultValue, 1);
+      expect(defs.screensaverWebsiteZoom.min, 0.5);
+      expect(defs.screensaverWebsiteZoom.max, 4);
+      expect(defs.screensaverWebsiteZoom.unit, 'x');
+      expect(defs.screensaverWebsiteZoom.section, 'Website screensaver');
+      expect(defs.screensaverWebsiteZoom.dependsOn, 'screensaver.mode');
+      expect(defs.screensaverWebsiteZoom.dependsOnValue, 'website');
+      // Its own key: the dashboard's zoom must not reach the screensaver,
+      // a dashboard at 1.5x wants its wall page at 1x.
+      expect(defs.screensaverWebsiteZoom.key, isNot(defs.browserZoom.key));
+    });
+
+    test('the script pins the viewport to the level', () {
+      final js = viewportZoomJs(zoom: 0.8, pinch: false);
+      expect(js, contains("'initial-scale=' + z"));
+      expect(js, contains('var z = 0.8;'));
+      expect(js, contains("'user-scalable=no'"));
+      expect(js, contains('if (false) {'));
+    });
+
+    test('pinch to zoom relaxes the clamp a frame later', () {
+      final js = viewportZoomJs(zoom: 1.5, pinch: true);
+      expect(js, contains('if (true) {'));
+      expect(js, contains('requestAnimationFrame'));
+      expect(js, contains("'user-scalable=yes'"));
     });
   });
 

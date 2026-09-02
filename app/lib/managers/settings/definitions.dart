@@ -2037,6 +2037,25 @@ const screensaverWebsiteUrl = SettingDef<String>(
   dependsOnValue: 'website',
 );
 
+// The website's own zoom level, since a page built for a monitor lands a
+// little large on a wall tablet (a Magic Frame at 1x). The same viewport
+// scale the Browser page's Zoom level uses, applied to this WebView only.
+const screensaverWebsiteZoom = SettingDef<num>(
+  key: 'screensaver.website_zoom',
+  type: SettingType.number,
+  defaultValue: 1,
+  title: 'Zoom level',
+  description: 'Scales the whole external screensaver webview.',
+  category: 'Screensaver',
+  section: 'Website screensaver',
+  min: 0.5,
+  max: 4,
+  step: 0.05,
+  unit: 'x',
+  dependsOn: 'screensaver.mode',
+  dependsOnValue: 'website',
+);
+
 const screensaverWebsiteDoubleTap = SettingDef<bool>(
   key: 'screensaver.website_double_tap',
   type: SettingType.boolean,
@@ -5720,6 +5739,7 @@ const List<SettingDef<Object>> allSettings = [
   screensaverImmichTakenFrom,
   screensaverImmichTakenTo,
   screensaverWebsiteUrl,
+  screensaverWebsiteZoom,
   screensaverWebsiteDoubleTap,
   screensaverCameraViews,
   screensaverCameraViewSeconds,

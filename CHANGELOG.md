@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Added
+- A **Zoom level** slider in the Website screensaver group, on the device and in the remote admin alike, 0.5x to 4x at 1x by default: it scales the whole page the way the Browser page's zoom level scales the dashboard, through the viewport rather than CSS zoom so the page's own menus and overlays keep landing where they should, and it applies to the website screensaver alone, so a dashboard zoomed for reading from across the room can show a Magic Frame or a DAKboard at the size it was built for. Applies live to a page already on screen and again after every page load.
+
 ## v2026.9.6 - 2026-09-02
 
 ### Added

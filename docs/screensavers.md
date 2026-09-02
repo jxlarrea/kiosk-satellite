@@ -126,6 +126,12 @@ page, so it behaves like every other mode. A page that fails to load, or
 whose server answers with an error, is retried every ten seconds instead
 of parking an error page for the night.
 
+**Zoom level** scales the whole page, the same way the Browser page's
+zoom level scales the dashboard, and applies to this screensaver only.
+Below 1x fits a page built for a monitor onto a small tablet, above 1x
+enlarges one meant to be read up close. Applies live to a page already
+on screen.
+
 A page from your own Home Assistant gets two things extra. It signs in
 with the session the dashboard already holds, since the login form it
 would otherwise show cannot be answered here (the first touch dismisses

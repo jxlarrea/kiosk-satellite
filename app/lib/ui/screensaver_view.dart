@@ -16,6 +16,7 @@ import '../core/events.dart';
 import '../core/image_orientation.dart';
 import '../core/locale_dates.dart';
 import '../managers/browser/ha_session_script.dart';
+import '../managers/browser/viewport_zoom_script.dart';
 import '../managers/browser/vs_suppress_script.dart';
 import '../managers/home_assistant/kiosk_mode.dart';
 import '../managers/glance/glance_manager.dart'
@@ -2030,6 +2031,19 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
     );
   }
 
+  /// The website's zoom level as a viewport scale, the dashboard's own
+  /// mechanism (viewport_zoom_script.dart). Re-asserted after every load:
+  /// the rewritten meta dies with each document.
+  Future<void> _applyZoom(InAppWebViewController controller) async {
+    final settings = widget.container.settings;
+    await controller.evaluateJavascript(
+      source: viewportZoomJs(
+        zoom: settings.get(defs.screensaverWebsiteZoom),
+        pinch: settings.get(defs.pinchToZoom),
+      ),
+    );
+  }
+
   /// Bumped to recreate the WebView after its renderer dies. Without the
   /// onRenderProcessGone handler below, Android answers a renderer death
   /// in an unhandling WebView by killing the whole app — the dashboard
@@ -2049,13 +2063,20 @@ class _ScreensaverWebViewState extends State<ScreensaverWebView> {
       widget.container.screensaver.attachSlides(_step);
     }
     _kioskSub = widget.container.bus.on<SettingChanged>().listen((e) {
+      final controller = _webView;
+      if (controller == null) return;
+      // The website's zoom level applies live too, through the viewport
+      // clamp; the bundled page has no such setting.
+      if (e.key == defs.screensaverWebsiteZoom.key) {
+        if (widget.mode == 'website') unawaited(_applyZoom(controller));
+        return;
+      }
       if (e.key != defs.haKioskMode.key &&
           e.key != defs.haKioskHideHeader.key &&
           e.key != defs.haKioskHideSidebar.key) {
         return;
       }
-      final controller = _webView;
-      if (controller != null) unawaited(_applyKiosk(controller));
+      unawaited(_applyKiosk(controller));
     });
   }
 
@@ -2247,6 +2268,9 @@ setInterval(function () {
         // This view outlives a settings change, so the flags baked in at
         // creation can be stale by the time a page loads.
         await _applyKiosk(controller);
+        if (widget.container.settings.get(defs.screensaverWebsiteZoom) != 1) {
+          await _applyZoom(controller);
+        }
         final inject = widget.container.settings.get(
           defs.browserInjectJsExternal,
         );
