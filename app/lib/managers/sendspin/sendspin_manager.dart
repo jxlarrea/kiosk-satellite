@@ -1711,10 +1711,38 @@ class SendspinManager extends Manager {
   }
 
   /// Set the volume, 0 to 100: the followed player's own or this
-  /// device's media volume for the local player.
+  /// device's media volume for the local player. A level set by hand
+  /// ends a local mute.
   Future<bool> setVolume(int percent) async {
     if (_remote case final remote?) return remote.setVolume(percent);
+    _localMuteLevel = null;
     await _settings.set(defs.mediaVolume, percent.clamp(0, 100));
+    return true;
+  }
+
+  /// The media volume before a local mute, so the unmute can put it back;
+  /// null while not muted. The local player has no mute of its own, so
+  /// zero volume stands in for it.
+  int? _localMuteLevel;
+
+  /// Whether the shown player is muted: the followed player's own word or
+  /// the local stand-in.
+  bool get muted => _remote == null
+      ? _localMuteLevel != null
+      : nowPlaying.value?['muted'] == true;
+
+  /// Mute or unmute the shown player: the view's speaker button beside
+  /// the volume slider.
+  Future<bool> toggleMute() async {
+    if (_remote case final remote?) return remote.setMute(!muted);
+    final level = _localMuteLevel;
+    if (level != null) {
+      _localMuteLevel = null;
+      await _settings.set(defs.mediaVolume, level);
+    } else {
+      _localMuteLevel = _settings.get(defs.mediaVolume).toInt();
+      await _settings.set(defs.mediaVolume, 0);
+    }
     return true;
   }
 

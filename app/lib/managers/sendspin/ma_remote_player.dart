@@ -115,9 +115,11 @@ class MaRemotePlayer implements RemotePlayer {
 
   Map<String, Object?>? _snapshot;
 
-  /// The player's volume as Music Assistant last reported it, 0 to 100:
-  /// read with the queue on a refresh and pushed by player_updated.
+  /// The player's volume as Music Assistant last reported it, 0 to 100,
+  /// and whether it is muted: read with the queue on a refresh and
+  /// pushed by player_updated.
   int? _volume;
+  bool? _muted;
 
   @override
   void start() {
@@ -168,6 +170,26 @@ class MaRemotePlayer implements RemotePlayer {
     if (player is! Map) return;
     final level = player['volume_level'];
     if (level is num) _volume = level.round().clamp(0, 100);
+    final muted = player['volume_muted'];
+    if (muted is bool) _muted = muted;
+  }
+
+  /// Mute the followed player: a player command in Music Assistant,
+  /// echoed back by player_updated.
+  @override
+  Future<bool> setMute(bool muted) async {
+    final session = _session;
+    if (session == null) return false;
+    try {
+      await session.send('players/cmd/volume_mute', {
+        'player_id': playerId,
+        'muted': muted,
+      });
+      return true;
+    } catch (e) {
+      log.warn(_name, 'remote mute failed: $e');
+      return false;
+    }
   }
 
   /// Send a transport command for the followed player. False when the
@@ -330,8 +352,10 @@ class MaRemotePlayer implements RemotePlayer {
         // The volume rides the event itself and lands at once.
         _readVolume(data);
         final snap = _snapshot;
-        if (snap != null && _volume != null && snap['volume'] != _volume) {
-          _emit({...snap, 'volume': _volume});
+        if (snap != null &&
+            ((_volume != null && snap['volume'] != _volume) ||
+                (_muted != null && snap['muted'] != _muted))) {
+          _emit({...snap, 'volume': ?_volume, 'muted': ?_muted});
         }
         _refreshDebounce?.cancel();
         _refreshDebounce = Timer(
@@ -377,6 +401,7 @@ class MaRemotePlayer implements RemotePlayer {
       'playing': playing,
       'supportedCommands': commands,
       'volume': ?_volume,
+      'muted': ?_muted,
       // A time the server just measured, in a queue dict or a time
       // event alike: what the local player's position follows.
       'timeFresh': true,

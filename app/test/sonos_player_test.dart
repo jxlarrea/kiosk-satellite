@@ -75,6 +75,7 @@ void main() {
         host: '10.11.12.70',
         shuffle: false,
         volume: 9,
+        muted: true,
       );
       expect(snap, isNotNull);
       expect(snap!['title'], 'drop dead');
@@ -88,6 +89,7 @@ void main() {
         containsAll(['pause', 'next', 'volume']),
       );
       expect(snap['volume'], 9);
+      expect(snap['muted'], isTrue);
       expect(snap['trackNumber'], 2);
       expect(
         snap['artworkUrl'],

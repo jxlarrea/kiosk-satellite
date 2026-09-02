@@ -1158,9 +1158,16 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     final volumeOpen = _volumeOpen && volumeAvailable;
     final level =
         _volumeDrag ?? c.sendspin.volumeLevel?.toDouble().clamp(0.0, 100.0);
+    final muted = c.sendspin.muted;
     final volume = volumeAvailable
         ? btn(
-            volumeOpen ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+            muted
+                ? (volumeOpen
+                      ? Icons.volume_off_rounded
+                      : Icons.volume_off_outlined)
+                : (volumeOpen
+                      ? Icons.volume_up_rounded
+                      : Icons.volume_up_outlined),
             _toggleVolume,
             size: toggleSize,
             color: volumeOpen ? Colors.white : Colors.white38,
@@ -1215,12 +1222,20 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
               height: 24 * scale,
               child: Row(
                 children: [
-                  Icon(
-                    Icons.volume_up_rounded,
-                    color: Colors.white70,
-                    size: 28 * scale,
+                  // The speaker beside the slider mutes: lit and crossed
+                  // while it is.
+                  btn(
+                    muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                    () async {
+                      _armVolumeClose();
+                      await c.sendspin.toggleMute();
+                      // The local mute is the manager's alone; a followed
+                      // player reports its own back through the snapshot.
+                      if (mounted) setState(() {});
+                    },
+                    size: 28,
+                    color: muted ? Colors.white : Colors.white70,
                   ),
-                  SizedBox(width: 8 * scale),
                   Expanded(
                     child: SliderTheme(
                       data: SliderThemeData(

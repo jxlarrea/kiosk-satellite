@@ -66,6 +66,7 @@ class SonosPlayer implements RemotePlayer {
   bool _playing = false;
   bool _shuffle = false;
   int? _volume;
+  bool? _muted;
   Map<String, Object?>? _snapshot;
 
   /// The group the room plays in, as of the last topology read: the
@@ -125,9 +126,13 @@ class SonosPlayer implements RemotePlayer {
       if (_ticks % 5 == 0) {
         final settings = await co.transportSettings();
         _shuffle = (settings['PlayMode'] ?? '').contains('SHUFFLE');
-        _volume = _grouped && groupVolume
-            ? await co.groupVolume()
-            : await _room.volume();
+        if (_grouped && groupVolume) {
+          _volume = await co.groupVolume();
+          _muted = await co.groupMute();
+        } else {
+          _volume = await _room.volume();
+          _muted = await _room.mute();
+        }
       }
       _ticks++;
       _publish(transport, position);
@@ -164,6 +169,7 @@ class SonosPlayer implements RemotePlayer {
       host: _coordinator.host,
       shuffle: _shuffle,
       volume: _volume,
+      muted: _muted,
       sawPlayback: _sawPlayback,
     );
     _playing = snap?['playing'] == true;
@@ -187,6 +193,7 @@ class SonosPlayer implements RemotePlayer {
     'playing',
     'shuffle',
     'volume',
+    'muted',
     'durationMs',
     'trackNumber',
     'stream',
@@ -218,6 +225,7 @@ class SonosPlayer implements RemotePlayer {
     required String host,
     bool shuffle = false,
     int? volume,
+    bool? muted,
     bool sawPlayback = false,
   }) {
     final state = transport['CurrentTransportState'] ?? '';
@@ -274,7 +282,8 @@ class SonosPlayer implements RemotePlayer {
         'shuffle',
         'volume',
       ],
-      if (volume != null) 'volume': volume,
+      'volume': ?volume,
+      'muted': ?muted,
       if (art.isNotEmpty)
         'artworkUrl': art.startsWith('http')
             ? art
@@ -365,6 +374,24 @@ class SonosPlayer implements RemotePlayer {
       return true;
     } catch (e) {
       log.warn(_name, 'Sonos volume failed: $e');
+      return false;
+    }
+  }
+
+  /// Mute the room, or the group while the room plays in one.
+  @override
+  Future<bool> setMute(bool muted) async {
+    try {
+      if (_grouped && groupVolume) {
+        await _coordinator.setGroupMute(muted);
+      } else {
+        await _room.setMute(muted);
+      }
+      _muted = muted;
+      unawaited(_poll());
+      return true;
+    } catch (e) {
+      log.warn(_name, 'Sonos mute failed: $e');
       return false;
     }
   }

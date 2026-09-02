@@ -137,6 +137,10 @@ class HaRemotePlayer implements RemotePlayer {
     'volume_level': (percent.clamp(0, 100)) / 100,
   });
 
+  @override
+  Future<bool> setMute(bool muted) =>
+      _callService('volume_mute', {'is_volume_muted': muted});
+
   Future<bool> _callService(
     String service, [
     Map<String, Object?> data = const {},

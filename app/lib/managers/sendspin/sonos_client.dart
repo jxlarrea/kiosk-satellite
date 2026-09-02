@@ -154,6 +154,39 @@ class SonosClient {
     'DesiredVolume': '${level.clamp(0, 100)}',
   });
 
+  Future<bool?> mute() async {
+    final r = await call(renderingControl, 'GetMute', {
+      'InstanceID': '0',
+      'Channel': 'Master',
+    });
+    return switch (r['CurrentMute']) {
+      '1' => true,
+      '0' => false,
+      _ => null,
+    };
+  }
+
+  Future<void> setMute(bool muted) => call(renderingControl, 'SetMute', {
+    'InstanceID': '0',
+    'Channel': 'Master',
+    'DesiredMute': muted ? '1' : '0',
+  });
+
+  Future<bool?> groupMute() async {
+    final r = await call(groupRendering, 'GetGroupMute', {'InstanceID': '0'});
+    return switch (r['CurrentMute']) {
+      '1' => true,
+      '0' => false,
+      _ => null,
+    };
+  }
+
+  Future<void> setGroupMute(bool muted) => call(
+    groupRendering,
+    'SetGroupMute',
+    {'InstanceID': '0', 'DesiredMute': muted ? '1' : '0'},
+  );
+
   Future<int?> groupVolume() async {
     final r = await call(groupRendering, 'GetGroupVolume', {'InstanceID': '0'});
     return int.tryParse(r['CurrentVolume'] ?? '');

@@ -25,7 +25,10 @@ List<LyricLine> parseLrc(String? lrc) {
   // The format's own correction tag, in milliseconds, which some providers
   // use to fix a file they know runs early or late. Positive means the
   // lyrics should appear LATER, per the LRC convention.
-  final offsetTag = RegExp(r'^\[offset:\s*([+-]?\d+)\s*\]$', caseSensitive: false);
+  final offsetTag = RegExp(
+    r'^\[offset:\s*([+-]?\d+)\s*\]$',
+    caseSensitive: false,
+  );
   var offsetMs = 0;
   final lines = <LyricLine>[];
   for (final raw in lrc.split(RegExp(r'\r?\n'))) {
@@ -49,9 +52,10 @@ List<LyricLine> parseLrc(String? lrc) {
       final milliseconds = fraction == null
           ? 0
           : fraction.length == 3
-              ? int.parse(fraction)
-              : int.parse(fraction) * 10;
-      final at = Duration(
+          ? int.parse(fraction)
+          : int.parse(fraction) * 10;
+      final at =
+          Duration(
             minutes: minutes,
             seconds: seconds,
             milliseconds: milliseconds,

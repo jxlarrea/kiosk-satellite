@@ -38,8 +38,9 @@ class LrclibApi {
       // LRCLIB asks clients to identify themselves with something a
       // maintainer could contact; the app-wide string carries the link.
       request.headers.set(HttpHeaders.userAgentHeader, AppIdentity.userAgent);
-      final response =
-          await request.close().timeout(const Duration(seconds: 25));
+      final response = await request.close().timeout(
+        const Duration(seconds: 25),
+      );
       if (response.statusCode != 200) return null;
       final body = await response
           .transform(utf8.decoder)

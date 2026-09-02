@@ -51,6 +51,9 @@ abstract interface class RemotePlayer {
   /// Set the player's volume, 0 to 100.
   Future<bool> setVolume(int percent);
 
+  /// Mute or unmute the player, leaving its level where it is.
+  Future<bool> setMute(bool muted);
+
   /// The queue the player plays from, for the Now Playing panel or null
   /// when the source keeps none of its own here (Music Assistant's is
   /// read through its API by the manager).

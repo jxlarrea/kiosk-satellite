@@ -982,7 +982,20 @@ void main() {
       await tester.drag(find.byType(Slider).first, const Offset(200, 0));
       await tester.pump();
       expect(container.settings.get(defs.mediaVolume), greaterThan(40));
-      // A second tap closes it again.
+      // The speaker beside the slider mutes: the media volume drops to
+      // zero and the glyph crosses out, and a second press puts the level
+      // back.
+      final level = container.settings.get(defs.mediaVolume);
+      await tester.tap(find.byIcon(Icons.volume_up_rounded).first);
+      await tester.pump();
+      expect(container.settings.get(defs.mediaVolume), 0);
+      expect(container.sendspin.muted, isTrue);
+      expect(find.byIcon(Icons.volume_off_rounded), findsNWidgets(2));
+      await tester.tap(find.byIcon(Icons.volume_off_rounded).first);
+      await tester.pump();
+      expect(container.settings.get(defs.mediaVolume), level);
+      expect(container.sendspin.muted, isFalse);
+      // A second tap on the toggle closes it again.
       await tester.tap(find.byIcon(Icons.volume_up_rounded).last);
       await tester.pump();
       expect(find.byIcon(Icons.volume_up_outlined), findsOneWidget);
