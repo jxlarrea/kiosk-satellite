@@ -150,12 +150,11 @@ export async function updatePlayerRow() {
   if (!tab) return;
   // What every source has in common, said once at the top of the page.
   if (!tab.querySelector('.media-player-intro')) {
-    const intro = document.createElement('div');
-    intro.className = 'group-note media-player-intro';
-    intro.style.cssText = 'padding: 0 20px 12px;';
-    intro.textContent = 'The floating player and Now Playing show only while '
+    const intro = hintRow('The floating player and Now Playing show only while '
       + 'the picked player has a track playing or a queue loaded. With nothing '
-      + 'playing or queued, neither appears.';
+      + 'playing or queued, neither appears.');
+    intro.classList.add('media-player-intro');
+    intro.style.cssText = 'margin: 0 20px 4px;';
     tab.prepend(intro);
   }
   const byKey = Object.fromEntries(
