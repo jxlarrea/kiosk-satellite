@@ -1160,12 +1160,33 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
         _volumeDrag ?? c.sendspin.volumeLevel?.toDouble().clamp(0.0, 100.0);
     final volume = volumeAvailable
         ? btn(
-            volumeOpen ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+            volumeOpen ? Icons.volume_up_rounded : Icons.volume_up_outlined,
             _toggleVolume,
             size: toggleSize,
             color: volumeOpen ? Colors.white : Colors.white38,
           )
         : toggleBlank;
+    // Each side packs its buttons against the transport and pushes the
+    // blanks for what the source lacks to the outside, so the buttons
+    // sit where they always do and the transport stays centered. Keyed,
+    // so a button keeps its element (and the press under a finger) when
+    // a neighbor comes or goes.
+    List<Widget> cluster(List<(String, Widget)> items, {required bool left}) {
+      final present = [
+        for (final (key, w) in items)
+          if (w != toggleBlank) KeyedSubtree(key: ValueKey(key), child: w),
+      ];
+      final blanks = [
+        for (var i = present.length; i < items.length; i++) toggleBlank,
+      ];
+      final ordered = left ? [...blanks, ...present] : [...present, ...blanks];
+      return [
+        for (final (i, w) in ordered.indexed) ...[
+          if (i > 0) SizedBox(width: 12 * scale),
+          w,
+        ],
+      ];
+    }
 
     // The bar takes the cover's width, but never less than the row of
     // buttons under it needs: on a small panel the buttons keep their
@@ -1193,9 +1214,9 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
               child: Row(
                 children: [
                   Icon(
-                    Icons.volume_down_rounded,
+                    Icons.volume_up_rounded,
                     color: Colors.white70,
-                    size: 20 * scale,
+                    size: 28 * scale,
                   ),
                   Expanded(
                     child: SliderTheme(
@@ -1292,11 +1313,11 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  volume,
-                  SizedBox(width: 12 * scale),
-                  heart,
-                  SizedBox(width: 12 * scale),
-                  shuffle,
+                  ...cluster([
+                    ('volume', volume),
+                    ('heart', heart),
+                    ('shuffle', shuffle),
+                  ], left: true),
                   SizedBox(width: 20 * scale),
                   if (has('previous'))
                     transport(
@@ -1317,11 +1338,11 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                   if (has('next'))
                     transport(Icons.skip_next_rounded, 'next', size: 44),
                   SizedBox(width: 20 * scale),
-                  lyrics,
-                  SizedBox(width: 12 * scale),
-                  queue,
-                  SizedBox(width: 12 * scale),
-                  toggleBlank,
+                  ...cluster([
+                    ('lyrics', lyrics),
+                    ('queue', queue),
+                    ('spare', toggleBlank),
+                  ], left: false),
                 ],
               ),
             ),

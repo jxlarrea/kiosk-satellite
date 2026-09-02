@@ -169,7 +169,42 @@ class SonosPlayer implements RemotePlayer {
     _playing = snap?['playing'] == true;
     if (_playing) _sawPlayback = true;
     queueEmpty = snap == null;
+    // A poll that changed nothing stays quiet: the surfaces extrapolate
+    // the position from the last report, and a fresh map every second
+    // would rebuild the whole view (blur and all) under a finger. What
+    // gets through: a new track, a state flip, a level change, and the
+    // position when it has drifted from the extrapolation or the last
+    // report is getting old.
+    if (!_differs(_snapshot, snap)) return;
     _emit(snap);
+  }
+
+  static const _stable = [
+    'title',
+    'artist',
+    'album',
+    'artworkUrl',
+    'playing',
+    'shuffle',
+    'volume',
+    'durationMs',
+    'trackNumber',
+    'stream',
+  ];
+
+  static bool _differs(Map<String, Object?>? old, Map<String, Object?>? now) {
+    if (old == null || now == null) return old != now;
+    for (final k in _stable) {
+      if (old[k] != now[k]) return true;
+    }
+    final oldPos = (old['positionMs'] as num?)?.toInt() ?? 0;
+    final oldAt = (old['receivedAt'] as num?)?.toInt() ?? 0;
+    final newPos = (now['positionMs'] as num?)?.toInt() ?? 0;
+    final newAt = (now['receivedAt'] as num?)?.toInt() ?? 0;
+    final elapsed = newAt - oldAt;
+    if (elapsed > 10000) return true;
+    final expected = now['playing'] == true ? oldPos + elapsed : oldPos;
+    return (newPos - expected).abs() > 1500;
   }
 
   /// The Now Playing map for a transport and position answer: null with
