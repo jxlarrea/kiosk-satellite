@@ -125,6 +125,7 @@ class FlipClockFace extends StatelessWidget {
     );
     final cardW = cardH * 0.84;
     final gap = cardH * 0.08;
+    final fontSize = _fontSize(cardW, cardH);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -132,6 +133,7 @@ class FlipClockFace extends StatelessWidget {
           value: _hours,
           width: cardW,
           height: cardH,
+          fontSize: fontSize,
           digitColor: digitColor,
           cardColor: cardColor,
           backdropColor: backdropColor,
@@ -144,6 +146,7 @@ class FlipClockFace extends StatelessWidget {
           value: _minutes,
           width: cardW,
           height: cardH,
+          fontSize: fontSize,
           digitColor: digitColor,
           cardColor: cardColor,
           backdropColor: backdropColor,
@@ -154,13 +157,60 @@ class FlipClockFace extends StatelessWidget {
       ],
     );
   }
+
+  /// The digits' size: 0.66 of the card's height, brought down for a font
+  /// whose digit pair is wider than the card at that size (Inter's tabular
+  /// figures, a heavy weight), which would otherwise wrap its second digit
+  /// onto a line below. Measured once here so both cards share one size
+  /// rather than the single-digit hour keeping the full size while the
+  /// minutes shrink beside it. Tabular figures share an advance, so "00"
+  /// is as wide as any pair.
+  double _fontSize(double cardW, double cardH) {
+    final size = cardH * 0.66;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: '00',
+        style: flipDigitStyle(
+          fontFamily: fontFamily,
+          color: digitColor,
+          fontSize: size,
+          weight: weight,
+          opticalSize: opticalSize,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final room = cardW * 0.92;
+    final width = painter.width;
+    painter.dispose();
+    return width > room ? size * room / width : size;
+  }
 }
+
+/// A flip card's digit style, the one the cards draw with and the face
+/// measures with, so the size it picks is the size that gets drawn.
+TextStyle flipDigitStyle({
+  required String? fontFamily,
+  required Color color,
+  required double fontSize,
+  required FontWeight? weight,
+  required double? opticalSize,
+}) => TextStyle(
+  fontFamily: fontFamily,
+  color: color,
+  fontSize: fontSize,
+  fontWeight: weight ?? FontWeight.w400,
+  fontVariations: clockFontVariations(opticalSize, weight ?? FontWeight.w400),
+  fontFeatures: const [FontFeature.tabularFigures()],
+  height: 1.0,
+);
 
 class _FlipCard extends StatefulWidget {
   const _FlipCard({
     required this.value,
     required this.width,
     required this.height,
+    required this.fontSize,
     required this.digitColor,
     required this.cardColor,
     required this.backdropColor,
@@ -172,6 +222,7 @@ class _FlipCard extends StatefulWidget {
   final String value;
   final double width;
   final double height;
+  final double fontSize;
   final Color digitColor;
   final Color cardColor;
   final Color backdropColor;
@@ -215,19 +266,22 @@ class _FlipCardState extends State<_FlipCard>
         color: widget.cardColor,
         borderRadius: BorderRadius.circular(widget.height * 0.09),
       ),
-      child: Text(
-        value,
-        style: TextStyle(
-          fontFamily: widget.fontFamily,
-          color: widget.digitColor,
-          fontSize: widget.height * 0.66,
-          fontWeight: widget.weight ?? FontWeight.w400,
-          fontVariations: clockFontVariations(
-            widget.opticalSize,
-            widget.weight ?? FontWeight.w400,
+      // One line always: the face sized the digits to fit, and the
+      // FittedBox is the belt should a fallback font measure differently
+      // from what it draws, shrinking rather than wrapping.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          value,
+          maxLines: 1,
+          softWrap: false,
+          style: flipDigitStyle(
+            fontFamily: widget.fontFamily,
+            color: widget.digitColor,
+            fontSize: widget.fontSize,
+            weight: widget.weight,
+            opticalSize: widget.opticalSize,
           ),
-          fontFeatures: const [FontFeature.tabularFigures()],
-          height: 1.0,
         ),
       ),
     );

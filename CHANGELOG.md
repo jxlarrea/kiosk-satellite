@@ -2,6 +2,11 @@
 
 All notable changes to Kiosk Satellite are documented here. Full release notes for each version are available on the [releases page](https://github.com/jxlarrea/kiosk-satellite/releases).
 
+## Unreleased
+
+### Fixed
+- The Flip clock's digits stay on one line in every font. Inter's tabular figures are wider than the card allows at the digits' size, so a card like "55" broke its second digit onto a line below. The face now measures the pair and brings the digits down to fit only when a font asks for more room than the card has, one size for both cards so the hour keeps step with the minutes, and the fonts that already fit draw exactly as before.
+
 ## v2026.9.4 - 2026-09-02
 
 ### Added

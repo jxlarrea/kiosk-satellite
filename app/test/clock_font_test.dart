@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kiosk_satellite/app_container.dart';
 import 'package:kiosk_satellite/managers/settings/definitions.dart' as defs;
@@ -182,6 +183,53 @@ void main() {
         'ks.screensaver.clock_style': 'flip',
       });
       expect(faceFont(tester, RegExp(r'^\d+$')), 'sans-serif-condensed');
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('a wide font keeps both flip digits on one line: Inter\'s '
+        'tabular pair is wider than the card and wrapped its second digit '
+        'onto a line below', (tester) async {
+      // The test font draws every glyph a full em wide, so two digits at
+      // the card's font size overflow it the way Inter's do on a device.
+      await pumpClock(tester, {
+        'ks.screensaver.clock_font': 'inter',
+        'ks.screensaver.clock_style': 'flip',
+      });
+      final face = tester.getRect(find.byType(FlipClockFace));
+      // Each card is 0.84 of its height wide, and the face is its height.
+      final cardW = face.height * 0.84;
+      final digits = find.byWidgetPredicate(
+        (w) => w is Text && RegExp(r'^\d+$').hasMatch(w.data ?? ''),
+      );
+      expect(digits, findsWidgets);
+      // One size for the face: the single-digit hour does not keep the
+      // full size while the minutes shrink beside it.
+      final sizes = {
+        for (final e in digits.evaluate()) (e.widget as Text).style!.fontSize!,
+      };
+      expect(sizes, hasLength(1));
+      expect(sizes.single, lessThan(face.height * 0.66));
+      for (final e in digits.evaluate()) {
+        final text = e.widget as Text;
+        final rich = find.descendant(
+          of: find.byWidget(text),
+          matching: find.byType(RichText),
+        );
+        final paragraph = tester.renderObject<RenderParagraph>(rich);
+        // The style's line height is one em, so a wrapped pair lays out
+        // twice the font size tall.
+        expect(
+          paragraph.textSize.height,
+          lessThanOrEqualTo(text.style!.fontSize! * 1.01),
+          reason: '${text.data} wrapped',
+        );
+        // And the pair is shrunk to sit inside the card, not spilling out.
+        expect(
+          tester.getRect(rich).width,
+          lessThanOrEqualTo(cardW),
+          reason: '${text.data} overflows the card',
+        );
+      }
       await tester.pumpWidget(const SizedBox());
     });
 
