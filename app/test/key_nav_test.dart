@@ -14,9 +14,11 @@ void main() {
     bool drawerFocused = false,
     bool openAllowed = true,
     bool isLeft = false,
+    bool nowPlayingControls = false,
   }) => decideNavKey(
     lockdown: lockdown,
     screensaverActive: screensaverActive,
+    nowPlayingControls: nowPlayingControls,
     overlayUp: overlayUp,
     routeCovered: routeCovered,
     drawerOpen: drawerOpen,
@@ -26,6 +28,24 @@ void main() {
   );
 
   group('decideNavKey', () {
+    test('Now Playing with controls lets the arrows walk its buttons', () {
+      expect(
+        decide(screensaverActive: true, nowPlayingControls: true),
+        KeyNavAction.pass,
+      );
+      // Without controls the view is a screensaver like any other.
+      expect(decide(screensaverActive: true), KeyNavAction.swallow);
+      // Lockdown still wins.
+      expect(
+        decide(
+          lockdown: true,
+          screensaverActive: true,
+          nowPlayingControls: true,
+        ),
+        KeyNavAction.swallow,
+      );
+    });
+
     test('left over the bare kiosk opens the drawer', () {
       expect(decide(isLeft: true), KeyNavAction.openDrawer);
     });
@@ -72,10 +92,7 @@ void main() {
 
     test('a covering route - settings, a dialog - owns its keys', () {
       expect(decide(routeCovered: true, isLeft: true), KeyNavAction.pass);
-      expect(
-        decide(routeCovered: true, drawerOpen: true),
-        KeyNavAction.pass,
-      );
+      expect(decide(routeCovered: true, drawerOpen: true), KeyNavAction.pass);
     });
 
     test('launcher, camera view and rotation pages are left alone', () {

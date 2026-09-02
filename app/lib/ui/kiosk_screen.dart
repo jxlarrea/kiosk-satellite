@@ -1070,6 +1070,7 @@ class _KioskScreenState extends State<KioskScreen>
     switch (decideNavKey(
       lockdown: false,
       screensaverActive: c.screensaver.isActive,
+      nowPlayingControls: c.screensaver.nowPlayingControlsUp,
       overlayUp:
           c.launcher.visible.value ||
           c.browser.overlayUrl.value != null ||

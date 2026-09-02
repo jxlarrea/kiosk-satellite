@@ -478,6 +478,7 @@ class _SendspinFullscreenViewState extends State<SendspinFullscreenView> {
                 shape: const CircleBorder(),
                 child: InkWell(
                   customBorder: const CircleBorder(),
+                  focusColor: Colors.white24,
                   onTap: () => c.screensaver.notifyActivity('close'),
                   child: const Padding(
                     padding: EdgeInsets.all(10),
@@ -745,6 +746,8 @@ class _QueueViewState extends State<_QueueView> {
       key: key,
       onTap: () => _play(id, '${item['title'] ?? ''}'),
       borderRadius: BorderRadius.circular(10),
+      // A dpad walking the rows needs to see where it is.
+      focusColor: Colors.white24,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         child: Row(
@@ -918,6 +921,10 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
   bool? _shuffleOverride;
   bool? _lastShuffle;
 
+  /// Where a dpad lands when the view comes up: play or pause, the
+  /// middle of the transport, so left and right reach everything else.
+  final _playFocus = FocusNode(debugLabel: 'now playing play');
+
   /// The volume slider standing in for the seek bar: opened by its
   /// toggle, closed by a second tap or a few seconds after the last
   /// touch. The dragged level holds for a moment after release, until
@@ -965,6 +972,11 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     super.initState();
     c.sendspin.nowPlaying.addListener(_onNowPlaying);
     c.sendspin.favorite.addListener(_rebuild);
+    // Nothing else on the view takes focus, so without this a dpad had
+    // nothing to walk from.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_playFocus.hasFocus) _playFocus.requestFocus();
+    });
     _settingsSub = c.bus.on<SettingChanged>().listen((e) {
       if (e.key == defs.sendspinLyrics.key ||
           e.key == defs.sendspinFullscreenQueue.key) {
@@ -982,6 +994,7 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
     _tick?.cancel();
     _volumeClose?.cancel();
     _volumeHold?.cancel();
+    _playFocus.dispose();
     super.dispose();
   }
 
@@ -1085,10 +1098,15 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
       VoidCallback? onPressed, {
       required double size,
       Color color = Colors.white,
+      FocusNode? focusNode,
     }) => IconButton(
       icon: Icon(icon, size: size * scale),
       color: color,
       disabledColor: color,
+      // A dpad walking the buttons needs to see where it is, on a dark
+      // backdrop the theme's ring would vanish into.
+      focusColor: Colors.white24,
+      focusNode: focusNode,
       padding: EdgeInsets.zero,
       constraints: BoxConstraints(
         minWidth: (size + 16) * scale,
@@ -1345,12 +1363,13 @@ class _NowPlayingControlsState extends State<_NowPlayingControls> {
                     ),
                   SizedBox(width: 16 * scale),
                   if (has(playing ? 'pause' : 'play'))
-                    transport(
+                    btn(
                       playing
                           ? Icons.pause_circle_filled_rounded
                           : Icons.play_circle_fill_rounded,
-                      playing ? 'pause' : 'play',
+                      () => c.sendspin.control(playing ? 'pause' : 'play'),
                       size: 68,
+                      focusNode: _playFocus,
                     ),
                   SizedBox(width: 16 * scale),
                   if (has('next'))
@@ -1596,6 +1615,9 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
         .join(' — ')
         .replaceAll(' — ', ' · ');
     final playing = now['playing'] == true;
+    // With the Now Playing view enabled, the corner badge is the way to
+    // it; without, it stays the state glyph it always was.
+    final fullscreen = c.settings.get(defs.sendspinFullscreen);
 
     // Live position: last reported position plus wall time since it was
     // reported, frozen while paused, clamped to the track.
@@ -1726,7 +1748,9 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                                         SizedBox(
                                           width: _corner,
                                           child: Icon(
-                                            playing
+                                            fullscreen
+                                                ? Icons.fullscreen_rounded
+                                                : playing
                                                 ? Icons.graphic_eq
                                                 : Icons.pause_circle_outline,
                                             size: _large ? 20 : 16,
@@ -1819,6 +1843,25 @@ class _SendspinPlayerOverlayState extends State<SendspinPlayerOverlay> {
                             ),
                           ],
                         ),
+                        // Last, so it sits over the title row: the glyph
+                        // there is drawn text and would take the tap.
+                        if (fullscreen)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                // Out of the dpad's path: with the view
+                                // gone, focus would land here and paint
+                                // a ring on a card nobody is walking.
+                                canRequestFocus: false,
+                                onTap: () => c.sendspin.showFullscreen(),
+                                child: const SizedBox(width: 48, height: 48),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

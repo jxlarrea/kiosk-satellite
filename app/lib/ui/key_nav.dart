@@ -93,6 +93,7 @@ enum KeyNavAction {
 KeyNavAction decideNavKey({
   required bool lockdown,
   required bool screensaverActive,
+  bool nowPlayingControls = false,
   required bool overlayUp,
   required bool routeCovered,
   required bool drawerOpen,
@@ -103,7 +104,12 @@ KeyNavAction decideNavKey({
   // Lockdown swallows keys like its shield swallows touches: nothing on
   // screen may answer.
   if (lockdown) return KeyNavAction.swallow;
-  if (screensaverActive) return KeyNavAction.swallow;
+  // The Now Playing view with its media controls up is a page of
+  // buttons: the arrows walk them and select presses them, the way a
+  // touch there is a press and not a dismissal.
+  if (screensaverActive) {
+    return nowPlayingControls ? KeyNavAction.pass : KeyNavAction.swallow;
+  }
   if (overlayUp || routeCovered) return KeyNavAction.pass;
   if (drawerOpen) {
     return drawerFocused ? KeyNavAction.pass : KeyNavAction.focusDrawer;

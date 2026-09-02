@@ -827,6 +827,11 @@ class ScreensaverManager extends Manager with WidgetsBindingObserver {
   /// Whether the Now Playing view is on screen with its media controls
   /// (sendspin.fullscreen_controls), which is when a tap stops meaning
   /// "dismiss".
+  /// Whether the Now Playing view is up with its media controls: keys
+  /// walk its buttons then instead of dismissing (the kiosk screen's key
+  /// routing reads it).
+  bool get nowPlayingControlsUp => _nowPlayingHoldsTouch;
+
   bool get _nowPlayingHoldsTouch =>
       _active &&
       activeView.value != null &&
